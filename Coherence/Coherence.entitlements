@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Phase 0: intentionally EMPTY. Free provisioning cannot sign iCloud, Sign in
+  with Apple, or HealthKit entitlements. Capabilities are added later:
+
+    Phase 1 (paid program): com.apple.developer.healthkit = true
+    Phase 7: com.apple.developer.applesignin = ["Default"]
+             com.apple.developer.icloud-container-identifiers = ["iCloud.com.lockout.coherence"]
+             com.apple.developer.icloud-services = ["CloudKit"]
+             aps-environment = "development"
+-->
+<plist version="1.0">
+<dict/>
+</plist>

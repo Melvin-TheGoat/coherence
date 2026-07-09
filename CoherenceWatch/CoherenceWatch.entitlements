@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Phase 0: intentionally EMPTY. Phase 1 (paid program) adds:
+    com.apple.developer.healthkit = true
+-->
+<plist version="1.0">
+<dict/>
+</plist>
