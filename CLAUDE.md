@@ -19,8 +19,12 @@ integration). The full plan lives in `App_ROADMAP_v2.md`.
 
 ## Toolchain notes (this machine)
 
-- XcodeGen is installed at `~/.local/bin/xcodegen` (resources in
-  `~/.local/share/xcodegen`) — Homebrew is not present. `~/.local/bin` is on PATH.
+- XcodeGen location differs per machine — resolve it with `which xcodegen`
+  before invoking, don't hardcode a path:
+  - On Melvin's machine it's installed via **Homebrew** at `/opt/homebrew/bin/xcodegen`.
+  - On Aziz's (cofounder) machine Homebrew is **not** present; XcodeGen lives at
+    `~/.local/bin/xcodegen` (resources in `~/.local/share/xcodegen`), and
+    `~/.local/bin` is on PATH.
 - No iPhone 15 simulator exists here; use **iPhone 17** as the iOS Simulator
   destination in `xcodebuild` commands.
 - Regenerate the project after any `project.yml` change: `xcodegen generate`.
