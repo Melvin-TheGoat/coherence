@@ -1,5 +1,11 @@
 name: Coherence
 
+fileGroups:
+  - CLAUDE.md
+  - README.md
+  - project.yml
+  - App_ROADMAP_v2.md
+
 options:
   bundleIdPrefix: com.lockout
   createIntermediateGroups: true

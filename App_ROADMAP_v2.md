@@ -12,7 +12,7 @@ Execution model: instructions pasted into **Claude Code in a terminal** (no IDE 
 - **The phone is the only persistence layer.** SwiftData lives on iOS. The Watch holds **no** store; it captures heartbeat data, computes stats, and ships the result to the phone over WatchConnectivity. The phone performs every write. "One writer per object" is preserved as a *logical* rule (the Watch is the logical author of heartbeat data; the physical write happens on the phone when the payload lands).
 - **Phone-triggered start = `HKHealthStore.startWatchApp(with:)`.** You cannot launch a watchOS app from the phone via WatchConnectivity. `startWatchApp` is the supported mechanism. Therefore the **iOS target carries the HealthKit entitlement + usage strings to issue the launch command only** — it reads zero biometric data. All heartbeat *logic* stays on the Watch.
 - **Foreign keys are stored as plain `UUID` properties, not SwiftData `@Relationship`.** Matches the ERD, honors "screens read independently," and avoids CloudKit relationship-optionality constraints.
-- **CloudKit compatibility is non-negotiable in every model** *even before CloudKit is switched on*: no `@Attribute(.unique)`, no non-optional relationships, every stored property optional or defaulted. Uniqueness (one Streak/user, one Stats/session, one User/appleUserID) is enforced in code, never in schema. CloudKit itself is enabled in Phase 7 — the models are built for it from Phase 0 so the flip is a one-line change.
+- **CloudKit compatibility is non-negotiable in every model** *even before CloudKit is switched on*: no `@Attribute(.unique)`, no non-optional relationships, every stored property optional or defaulted. Uniqueness (one Stats/session, one User/appleUserID) is enforced in code, never in schema. CloudKit itself is enabled in Phase 7 — the models are built for it from Phase 0 so the flip is a one-line change.
 - **Auth is Sign in with Apple only in v1.** No passwords, no Google. Apple handles verification, resets, and credential storage; this removes `auth_provider`, `provider_user_id`, `password_hash`, and `email_verified` from the User model, and removes the cross-provider account-collision problem entirely. Additive to re-add later.
 - **Timed sessions are clocked by the Watch** (it fires the authoritative end-haptic). The phone runs a parallel timer only to stop audio. Open-ended sessions end from a Watch button.
 - **Coherence is analyzed with overlapping sliding windows.** A 60 s window is required to resolve the ~0.1 Hz peak, but non-overlapping windows would yield one point per minute — a 10-point graph for a 10-minute session. The window advances by a small `hopSec` instead, producing a smooth trajectory. `windowSec` and `hopSec` are both stored on every result so old sessions remain interpretable after the parameters change.
@@ -28,7 +28,7 @@ Execution model: instructions pasted into **Claude Code in a terminal** (no IDE 
 
 # Phase 0 — Project skeleton, schema, local store, CLAUDE.md
 
-**GOAL:** A regenerable XcodeGen project with iOS + watchOS targets, all 7 SwiftData models (CloudKit-safe in shape, local in storage), a local ModelContainer on the phone, a central color catalog, and a `CLAUDE.md` that future sessions inherit — building green in the simulator.
+**GOAL:** A regenerable XcodeGen project with iOS + watchOS targets, all 6 SwiftData models (CloudKit-safe in shape, local in storage), a local ModelContainer on the phone, a central color catalog, and a `CLAUDE.md` that future sessions inherit — building green in the simulator.
 
 ### PASTE INTO CLAUDE CODE
 ```
@@ -50,7 +50,7 @@ We are building "Coherence," a heart-coherence meditation app for iPhone + Apple
    - "CoherenceTests": iOS unit-test bundle, host application Coherence, sources [CoherenceTests, Shared].
    Set options.bundleIdPrefix com.lockout, createIntermediateGroups true. Leave DEVELOPMENT_TEAM empty (I set it in Xcode).
 
-4. Create the 7 SwiftData models in Shared/Models/, one file each. EVERY property must be optional OR have a default (CloudKit requirement — we enable CloudKit in Phase 7 and the models must already be compatible). NO @Attribute(.unique) anywhere. Store enums as String with computed enum accessors. Store foreign keys as plain UUID? properties (NOT @Relationship). Exact fields:
+4. Create the 6 SwiftData models in Shared/Models/, one file each. EVERY property must be optional OR have a default (CloudKit requirement — we enable CloudKit in Phase 7 and the models must already be compatible). NO @Attribute(.unique) anywhere. Store enums as String with computed enum accessors. Store foreign keys as plain UUID? properties (NOT @Relationship). Exact fields:
 
    User.swift — id:UUID=UUID(), appleUserID:String="", email:String?, displayName:String?, marketingOptIn:Bool=false, createdAt:Date=Date(), updatedAt:Date=Date(), deletedAt:Date?
    Preferences.swift — id:UUID=UUID(), userID:UUID?, onboardingComplete:Bool=false, defaultDurationSec:Int? (nil=open-ended), remindersEnabled:Bool=false, reminderTime:Date?, theme:String="system", hapticsEnabled:Bool=true, createdAt:Date=Date(), updatedAt:Date=Date()
@@ -58,7 +58,10 @@ We are building "Coherence," a heart-coherence meditation app for iPhone + Apple
    Session.swift — id:UUID=UUID(), userID:UUID?, trackID:UUID? (nil=silence), mode:String="silence", startedAt:Date=Date(), durationSec:Int=0, createdAt:Date=Date(). NO updatedAt — immutable.
    HeartbeatSeries.swift — id:UUID=UUID(), sessionID:UUID?, healthkitUUID:String="", beatCount:Int=0, createdAt:Date=Date()
    MeditationStats.swift — id:UUID=UUID(), sessionID:UUID?, coherenceScore:Double? (nil=too short), coherenceTimeseries:[Double]=[], hrvTimeseries:[Double]=[], heartRateTimeseries:[Double]=[], windowSec:Int=60, hopSec:Int=5, meanHR:Double=0, rmssd:Double=0, peakFrequencyHz:Double?, algorithmVersion:String="1.0.0", createdAt:Date=Date()
-   Streak.swift — id:UUID=UUID(), userID:UUID?, currentDays:Int=0, longestDays:Int=0, lastSessionDate:Date? (local day-start), createdAt:Date=Date() (row birth, immutable), updatedAt:Date=Date()
+
+   NOTE: Streak is NOT a stored model — it is derived at read time from Session dates. Instead create Shared/Engine/StreakCalculator.swift (pure Swift, imports Foundation ONLY — no SwiftData/HealthKit/UI):
+     func streak(from sessionDates: [Date], today: Date = Date(), calendar: Calendar = .current) -> (current: Int, longest: Int)
+   Reduce sessionDates to a Set of local day-starts via calendar.startOfDay. current: anchor = today if present in the set, else yesterday if present, else return current 0; then walk backward from the anchor counting consecutive days present. longest: the maximum run of consecutive calendar days over all unique days. Handle empty input (returns 0, 0). Keep it allocation-light and deterministic.
 
    NOTE on MeditationStats: windowSec is the FFT analysis window; hopSec is how far the window advances between points. The three timeseries arrays are sampled at hopSec, share one index, and are always the same length. Both values are stored per-row so a result stays interpretable if the parameters ever change.
 
@@ -80,7 +83,7 @@ We are building "Coherence," a heart-coherence meditation app for iPhone + Apple
    Coherence/Info.plist — NSHealthShareUsageDescription and NSHealthUpdateUsageDescription (short honest strings); UIBackgroundModes ["remote-notification"].
    CoherenceWatch/Info.plist — NSHealthShareUsageDescription, NSHealthUpdateUsageDescription; WKBackgroundModes ["workout-processing"]; WKApplication true.
 
-10. Write CLAUDE.md at repo root capturing: the product ("coherence as evidence, not a training score"), the architecture decisions from the top of ROADMAP.md (phone is sole store; Watch is stateless sensor/compute/transfer; startWatchApp for triggering; FKs as UUIDs; CloudKit-safe modeling from day one with CloudKit itself enabled in Phase 7; Apple-only auth; Watch-clocked timing; sliding-window coherence with windowSec + hopSec), the full 7-entity schema, the session-end sequence, and the conventions (colors via catalog only; all HealthKit/heartbeat code in the Watch target only, except iOS calling startWatchApp; the three timeseries share one windowSec/hopSec and one index; sessions and stats immutable; screens never pass data to screens, only IDs).
+10. Write CLAUDE.md at repo root capturing: the product ("coherence as evidence, not a training score"), the architecture decisions from the top of ROADMAP.md (phone is sole store; Watch is stateless sensor/compute/transfer; startWatchApp for triggering; FKs as UUIDs; CloudKit-safe modeling from day one with CloudKit itself enabled in Phase 7; Apple-only auth; Watch-clocked timing; sliding-window coherence with windowSec + hopSec), the full 6-entity schema, the session-end sequence, and the conventions (colors via catalog only; all HealthKit/heartbeat code in the Watch target only, except iOS calling startWatchApp; the three timeseries share one windowSec/hopSec and one index; sessions and stats immutable; screens never pass data to screens, only IDs).
 
 11. Regenerate the project: `xcodegen generate`. Then run a headless build of both schemes with xcodebuild to confirm they compile (iOS simulator destination, generic watchOS simulator destination). Fix any compile errors. Do NOT attempt device builds or signing. Add a .gitignore for Xcode/SwiftPM. Init git and make the first commit "Phase 0: project skeleton + schema".
 ```
@@ -239,17 +242,17 @@ Tag `phase3-engine-verified`.
 
 ---
 
-# Phase 4 — Session pipeline: trigger → capture → transfer → persist → streak
+# Phase 4 — Session pipeline: trigger → capture → transfer → persist
 
-**GOAL:** From the phone you start a real session; the Watch captures and computes; the phone receives the payload and writes Session + HeartbeatSeries + MeditationStats and updates the Streak.
+**GOAL:** From the phone you start a real session; the Watch captures and computes; the phone receives the payload and writes Session + HeartbeatSeries + MeditationStats.
 
-> **Pre-account users.** Accounts don't exist until Phase 7. Until then, the app creates a single local User row on first launch with `appleUserID = ""` and treats it as the current user, so `Session.userID` and `Streak.userID` are never nil. At Phase 7, first successful Sign in with Apple **adopts** this row — it fills in `appleUserID`, `email`, `displayName` rather than creating a second User. Your Phase 4–6 test sessions therefore survive into the real account. Write this rule in CLAUDE.md now.
+> **Pre-account users.** Accounts don't exist until Phase 7. Until then, the app creates a single local User row on first launch with `appleUserID = ""` and treats it as the current user, so `Session.userID` is never nil. At Phase 7, first successful Sign in with Apple **adopts** this row — it fills in `appleUserID`, `email`, `displayName` rather than creating a second User. Your Phase 4–6 test sessions therefore survive into the real account. Write this rule in CLAUDE.md now.
 
 ### PASTE INTO CLAUDE CODE
 ```
 Wire the end-to-end pipeline. Respect target boundaries: capture/compute on Watch, ALL persistence on iOS.
 
-0. Local user bootstrap (iOS): on first launch, if no User row exists, create one with appleUserID = "" plus its Preferences and Streak rows. Expose a `currentUser()` accessor. Phase 7 will adopt this row at sign-in rather than creating a new one. Never create a second User while appleUserID is "".
+0. Local user bootstrap (iOS): on first launch, if no User row exists, create one with appleUserID = "" plus its Preferences row. Expose a `currentUser()` accessor. Phase 7 will adopt this row at sign-in rather than creating a new one. Never create a second User while appleUserID is "".
 
 1. WatchConnectivity: create Shared/Connectivity/SessionPayload.swift, a Codable struct { sessionID: UUID; startedAt: Date; mode: String; trackID: UUID?; durationSec: Int; healthkitUUID: String; beatCount: Int; result: CoherenceResult-flattened fields (including windowSec and hopSec); discard: Bool }. Create WCSessionManager on each side (activate WCSession).
 
@@ -263,13 +266,14 @@ Wire the end-to-end pipeline. Respect target boundaries: capture/compute on Watc
 
 4. Phone-side persistence: on receiving SessionPayload (iOS), in SessionCoordinator:
    - if discard OR durationSec < 60 -> write nothing, just dismiss.
-   - else, in ONE ModelContext transaction: insert Session (actual duration, userID = currentUser().id), insert HeartbeatSeries (healthkitUUID, beatCount, sessionID), insert MeditationStats (all engine fields including windowSec and hopSec, algorithmVersion), then update Streak.
-   - Streak logic (in code): fetch the user's Streak (create if absent, setting createdAt once). Compare today's LOCAL calendar day to lastSessionDate: same day -> no change; exactly one day later -> currentDays += 1; more than one day -> currentDays = 1. Always longestDays = max(longestDays, currentDays). Set lastSessionDate = today (local day-start), updatedAt = now.
-   - Enforce single-writer/uniqueness in code: never create a second Stats for a sessionID, never a second Streak per user.
+   - else, in ONE ModelContext transaction: insert Session (actual duration, userID = currentUser().id), insert HeartbeatSeries (healthkitUUID, beatCount, sessionID), insert MeditationStats (all engine fields including windowSec and hopSec, algorithmVersion). No streak write — streak is derived at read time from Session dates via StreakCalculator.
+   - Enforce single-writer/uniqueness in code: never create a second Stats for a sessionID.
 
-5. Temporary Phase-4 iOS UI: a "Begin (Silence, 2 min)" button and, after the payload lands, a debug screen dumping the written Session.durationSec, Stats.coherenceScore, Stats.meanHR, Stats.coherenceTimeseries.count, and Streak.currentDays.
+5. Temporary Phase-4 iOS UI: a "Begin (Silence, 2 min)" button and, after the payload lands, a debug screen dumping the written Session.durationSec, Stats.coherenceScore, Stats.meanHR, Stats.coherenceTimeseries.count, and the current streak (computed via StreakCalculator over the user's Session start dates, not read from a stored row).
 
-6. Build both schemes headlessly; run engine tests. Commit "Phase 4: session pipeline".
+6. Add StreakCalculatorTests.swift in CoherenceTests/ with these named tests (pass explicit today/calendar for determinism): test_sameDayDoesNotIncrement (two sessions on the same local day -> current stays 1), test_oneDayGapContinues (consecutive days -> current increments), test_multiDayGapResets (a gap > 1 day -> current resets to the run ending at the anchor), test_longestSurvivesBreak (longest reflects the best past run even after a break), test_emptyReturnsZero (empty input -> (0, 0)).
+
+7. Build both schemes headlessly; run engine tests. Commit "Phase 4: session pipeline".
 ```
 
 ### YOU DO MANUALLY
@@ -338,9 +342,9 @@ Build three READER screens (iOS). None of them writes. None receives data from a
 
 2. Calendar: fetches all Sessions for the user, groups by started_at LOCAL day, marks days with sessions. Tapping a day opens that day's Meditation Logged (pass sessionID only — never the fetched objects). If a day has multiple sessions, show a simple list of that day's sessions first, then tap through to one. Keep the list dumb; a richer day-detail design is a later decision.
 
-3. Stats: independent fetches — total sessions, current + longest streak (from Streak), most-used mode (from Session.mode), mean coherence trend. Read-only.
+3. Stats: independent fetches — total sessions, current + longest streak (computed via StreakCalculator from the user's Sessions), most-used mode (from Session.mode), mean coherence trend. Read-only.
 
-4. Assemble the tab bar (Calendar, Stats, Meditation Setup, Profile placeholder) — all mutually reachable. Streak displays on BOTH Calendar and Stats.
+4. Assemble the tab bar (Calendar, Stats, Meditation Setup, Profile placeholder) — all mutually reachable. Streak displays on BOTH Calendar and Stats, computed via StreakCalculator from the user's Sessions.
 
 5. Build; run tests. Commit "Phase 6: reader screens".
 ```
@@ -374,7 +378,7 @@ Build accounts, sync, and settings (iOS). Apple-only auth — no passwords, no G
 2. Sign in with Apple (AuthenticationServices): on success, read the credential's user identifier (appleUserID), and — ONLY on first sign-in — the name and email (Apple gives these once; persist immediately). Account matching, in this order:
    a. Query User by appleUserID. If found, sign in as that user.
    b. Else, if the local bootstrap User exists (appleUserID == ""), ADOPT it: set appleUserID, email, displayName on that row. Do NOT create a second User — the pre-account sessions and streak belong to it.
-   c. Else create a new User plus its Preferences and Streak rows in one transaction.
+   c. Else create a new User plus its Preferences row in one transaction.
    Set email only if provided; detect Hide My Email by checking whether email ends in "privaterelay.appleid.com" (no separate column). display_name and email are nullable — tolerate their absence. There is no email verification flow: Apple vouches for the address.
 
 3. Preferences / Profile-Settings screen: reads + writes User (display_name, marketing_opt_in) and Preferences (theme, reminders_enabled + reminder_time, default_duration_sec, haptics_enabled). Re-expose Purpose and Science content here. Theme switch drives the app appearance (system/light/dark) via the asset catalog.
@@ -383,7 +387,7 @@ Build accounts, sync, and settings (iOS). Apple-only auth — no passwords, no G
 
 5. Marketing email list export: on marketing_opt_in true AND a non-relay email present, POST {email} to the configured list provider (leave the endpoint as a TODO constant) — do NOT build a backend. Explicit opt-in only.
 
-6. Account deletion (Apple requirement): a "Delete Account" control that (a) soft-deletes — set User.deletedAt = now, sign the user out — and (b) a purge routine that runs on app launch: find Users where deletedAt <= now - 30 days and HARD-DELETE the User row and every row FK'd to it (Preferences, Sessions, HeartbeatSeries, MeditationStats, Streak) in one transaction. HealthKit raw data is never ours (we only hold references), so no HealthKit deletion is needed.
+6. Account deletion (Apple requirement): a "Delete Account" control that (a) soft-deletes — set User.deletedAt = now, sign the user out — and (b) a purge routine that runs on app launch: find Users where deletedAt <= now - 30 days and HARD-DELETE the User row and every row FK'd to it (Preferences, Sessions, HeartbeatSeries, MeditationStats) in one transaction. HealthKit raw data is never ours (we only hold references), so no HealthKit deletion is needed.
 
 7. Build; run tests. Commit "Phase 7: accounts + CloudKit + settings + deletion".
 ```
@@ -416,4 +420,4 @@ Tag `phase7-v1-feature-complete`.
 - The three timeseries share one `windowSec`, one `hopSec`, and one index. Never hardcode either value in the UI — read them from the stored row.
 - Screens read storage independently and pass only IDs; Sessions and Stats are immutable.
 - Every SwiftData model stays CloudKit-safe: optional/defaulted properties, no `.unique`, no non-optional relationships.
-- Uniqueness is enforced in code: one Streak per user, one Stats per session, one User per appleUserID, one bootstrap User while appleUserID is "".
+- Uniqueness is enforced in code: one Stats per session, one User per appleUserID, one bootstrap User while appleUserID is "".

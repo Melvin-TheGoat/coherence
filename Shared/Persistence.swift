@@ -20,7 +20,6 @@ enum Persistence {
         Session.self,
         HeartbeatSeries.self,
         MeditationStats.self,
-        Streak.self,
     ])
 
     /// Persistent local store, CloudKit disabled. Used now (Phase 0 onward).

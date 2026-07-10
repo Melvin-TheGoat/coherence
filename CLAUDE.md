@@ -51,10 +51,10 @@ integration). The full plan lives in `App_ROADMAP_v2.md`.
   User and eliminates cross-provider account collision. Re-addable later.
 - **Pre-account users.** Accounts don't exist until Phase 7. From Phase 4 the app
   creates a single local **bootstrap** User on first launch with `appleUserID == ""`
-  (plus its Preferences + Streak), so `Session.userID`/`Streak.userID` are never
-  nil. First Sign in with Apple **adopts** that row (fills in appleUserID/email/
-  displayName) rather than creating a second User — pre-account test sessions and
-  streak survive into the real account. Never create a second User while
+  (plus its Preferences), so `Session.userID` is never nil. First Sign in with
+  Apple **adopts** that row (fills in appleUserID/email/displayName) rather than
+  creating a second User — pre-account test sessions (and the streak derived from
+  them) survive into the real account. Never create a second User while
   `appleUserID == ""`.
 - **Timed sessions are clocked by the Watch** (it fires the authoritative
   end-haptic). The phone runs a parallel timer only to stop audio. Open-ended
@@ -85,7 +85,7 @@ Phase 0 entitlements files are empty (`<dict/>`). Add later:
   `com.apple.developer.icloud-container-identifiers` = ["iCloud.com.lockout.coherence"];
   `com.apple.developer.icloud-services` = ["CloudKit"]; `aps-environment` = "development"
 
-## Schema (7 SwiftData models, `Shared/Models/`)
+## Schema (6 SwiftData models, `Shared/Models/`)
 
 All properties optional or defaulted; enums stored as String with computed
 accessors; FKs as plain `UUID?`.
@@ -106,8 +106,10 @@ accessors; FKs as plain `UUID?`.
   **Immutable.** The three timeseries share one windowSec/hopSec and one index and
   are always the same length. Point i's timestamp = `session.startedAt + i*hopSec
   + windowSec/2` (window center).
-- **Streak** — id, userID?, currentDays, longestDays, lastSessionDate? (local
-  day-start), createdAt (immutable), updatedAt
+
+**Streak is not stored.** It is derived at read time via `StreakCalculator`
+(`Shared/Engine/StreakCalculator.swift`, pure Foundation) over the user's
+Session `startedAt` dates — Sessions are the single source of truth.
 
 Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
 (guided/frequency/nature), SessionMode (guided/frequency/nature/silence).
@@ -121,9 +123,8 @@ Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
 3. Watch assembles a `SessionPayload` (actual elapsed duration; `discard=true` if
    elapsed < 60 s) and sends it to the phone via `transferUserInfo`.
 4. Phone, in ONE ModelContext transaction: if not discarded, insert Session +
-   HeartbeatSeries + MeditationStats, then update Streak (local-calendar-day
-   comparison: same day → no change; +1 day → currentDays += 1; gap → reset to 1;
-   longestDays = max(longestDays, currentDays)).
+   HeartbeatSeries + MeditationStats. No streak write — the streak is derived
+   at read time from Session dates via `StreakCalculator`.
 
 ## Conventions (enforced every phase)
 
@@ -136,8 +137,8 @@ Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
   hardcode either in the UI — read them from the stored MeditationStats row.
 - **Screens read storage independently and pass only IDs** (a sessionID or a
   date), never fetched objects. Sessions and Stats are immutable.
-- **Uniqueness enforced in code:** one Streak per user, one Stats per session, one
-  User per appleUserID, one bootstrap User while appleUserID is "".
+- **Uniqueness enforced in code:** one Stats per session, one User per
+  appleUserID, one bootstrap User while appleUserID is "".
 
 ## Targets & layout
 
