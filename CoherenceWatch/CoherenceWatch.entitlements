@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Phase 0: intentionally EMPTY. Phase 1 (paid program) adds:
-    com.apple.developer.healthkit = true
+  Phase 1 (paid program): HealthKit enabled. The Watch is where all heartbeat
+  logic lives — it runs the workout and reads beat-to-beat data.
 -->
 <plist version="1.0">
-<dict/>
+<dict>
+	<key>com.apple.developer.healthkit</key>
+	<true/>
+</dict>
 </plist>
