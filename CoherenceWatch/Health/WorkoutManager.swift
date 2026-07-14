@@ -31,6 +31,17 @@ final class WorkoutManager: NSObject, ObservableObject {
         guard !isRunning else { return }
         statusMessage = nil
 
+        // Recording a workout needs WRITE access to the workout type. Read grants
+        // are opaque by design, but share status is readable — check it up front
+        // so a missing "Workouts" toggle names itself instead of surfacing as a
+        // generic "Not authorized" from beginCollection.
+        let shareStatus = store.authorizationStatus(for: HKObjectType.workoutType())
+        guard shareStatus == .sharingAuthorized else {
+            log.error("workoutType share not authorized (status \(shareStatus.rawValue))")
+            statusMessage = "Enable Workouts for Coherence: iPhone Health app → Sharing → Apps → Coherence."
+            return
+        }
+
         let config = HKWorkoutConfiguration()
         config.activityType = .mindAndBody
         config.locationType = .unknown
