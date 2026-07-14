@@ -2,14 +2,13 @@ import Foundation
 import HealthKit
 import os
 
-/// Runs the on-wrist workout for a meditation session and publishes the live
-/// heart rate. Watch-only.
+/// Runs the on-wrist workout for a meditation session, publishes the live heart
+/// rate, and on end reads back the beat-to-beat series. Watch-only.
 ///
-/// Phase 1 scope: start an `HKWorkoutSession` + `HKLiveWorkoutBuilder`
-/// (`.mindAndBody`) and surface the most recent BPM. Deliberately NO timer, NO
-/// haptics, NO RR-interval readback, NO persistence — those arrive in later
-/// phases. This phase exists to prove permissions + entitlements + an on-device
-/// workout only.
+/// Phase 1 proved live BPM. Phase 2 adds RR-interval readback: after the workout
+/// finishes, query the recorded `HKHeartbeatSeriesSample` and convert per-beat
+/// timestamps into RR intervals. Still NO timer, haptics, or persistence — those
+/// arrive in later phases.
 @MainActor
 final class WorkoutManager: NSObject, ObservableObject {
 
@@ -17,8 +16,10 @@ final class WorkoutManager: NSObject, ObservableObject {
     @Published var currentHR: Double?
     /// True while a workout session is actively collecting.
     @Published var isRunning = false
-    /// Last error surfaced to the UI (nil when healthy). Phase 1 debug aid.
+    /// Last error surfaced to the UI (nil when healthy). Debug aid.
     @Published var statusMessage: String?
+    /// The beat-to-beat readback from the most recent session (Phase 2 debug UI).
+    @Published var captured: CapturedSeries?
 
     private let store = HealthKitAuth.store
     private var session: HKWorkoutSession?
@@ -78,18 +79,42 @@ final class WorkoutManager: NSObject, ObservableObject {
         }
     }
 
-    /// Ends the session and tears down the builder. Phase 1 discards the result;
-    /// RR-interval readback from the finished workout arrives in Phase 2.
-    func end() {
-        guard let session, let builder else { return }
+    /// Ends the session, finishes the workout, then reads back the recorded
+    /// heartbeat series as RR intervals. Returns nil (and sets `statusMessage`)
+    /// when no series was recorded — the make-or-break outcome of this phase.
+    @discardableResult
+    func end() async -> CapturedSeries? {
+        guard let session, let builder else { return nil }
+        isRunning = false
+        statusMessage = nil
+        captured = nil
+
         session.end()
-        builder.endCollection(withEnd: Date()) { [weak self] _, _ in
-            builder.finishWorkout { _, _ in }
-            Task { @MainActor in
-                self?.currentHR = nil
-                self?.teardown()
-            }
+        let workout = await finish(builder)
+        currentHR = nil
+        teardown()
+
+        guard let workout else {
+            statusMessage = "Workout didn't finish"
+            return nil
         }
+
+        guard let series = await heartbeatSeries(for: workout) else {
+            log.error("No HKHeartbeatSeriesSample in \(workout.startDate)–\(workout.endDate)")
+            statusMessage = "NO SERIES"
+            return nil
+        }
+
+        let readback = await readIntervals(from: series)
+        let result = CapturedSeries(
+            rrIntervals: readback.rr,
+            healthkitUUID: series.uuid.uuidString,
+            beatCount: readback.count
+        )
+        captured = result
+        log.debug("Captured \(result.beatCount) beats, \(result.rrIntervals.count) RR intervals")
+        if result.beatCount == 0 { statusMessage = "NO SERIES" }
+        return result
     }
 
     /// Drops references and marks the manager idle so a fresh `start()` can run.
@@ -97,6 +122,78 @@ final class WorkoutManager: NSObject, ObservableObject {
         isRunning = false
         session = nil
         builder = nil
+    }
+
+    // MARK: - Readback
+
+    /// Ends collection and finishes the builder, returning the saved `HKWorkout`.
+    private func finish(_ builder: HKLiveWorkoutBuilder) async -> HKWorkout? {
+        await withCheckedContinuation { continuation in
+            builder.endCollection(withEnd: Date()) { _, _ in
+                builder.finishWorkout { workout, _ in
+                    continuation.resume(returning: workout)
+                }
+            }
+        }
+    }
+
+    /// Finds the heartbeat series recorded during the workout. HealthKit can lag
+    /// a second or two persisting the series after `finishWorkout`, so retry a
+    /// few times before concluding there is none.
+    private func heartbeatSeries(for workout: HKWorkout, attempts: Int = 5) async -> HKHeartbeatSeriesSample? {
+        for attempt in 0..<attempts {
+            if let series = await querySeries(from: workout.startDate, to: workout.endDate) {
+                return series
+            }
+            if attempt < attempts - 1 {
+                try? await Task.sleep(for: .seconds(1))
+            }
+        }
+        return nil
+    }
+
+    /// One-shot query for the most recent heartbeat series in a date window.
+    private func querySeries(from start: Date, to end: Date) async -> HKHeartbeatSeriesSample? {
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
+        let sort = [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKSeriesType.heartbeat(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: sort
+            ) { _, samples, _ in
+                continuation.resume(returning: (samples as? [HKHeartbeatSeriesSample])?.first)
+            }
+            store.execute(query)
+        }
+    }
+
+    /// Enumerates the series beat-by-beat, converting time-since-series-start
+    /// values into RR intervals (seconds). Intervals that span a recorded gap are
+    /// dropped so downstream analysis never sees a bogus multi-second interval.
+    private func readIntervals(from series: HKHeartbeatSeriesSample) async -> (rr: [Double], count: Int) {
+        await withCheckedContinuation { (continuation: CheckedContinuation<(rr: [Double], count: Int), Never>) in
+            var previous: TimeInterval?
+            var rr: [Double] = []
+            var count = 0
+            var finished = false
+
+            let query = HKHeartbeatSeriesQuery(heartbeatSeries: series) { _, timeSinceStart, precededByGap, done, error in
+                if finished { return }
+                if error != nil || done {
+                    finished = true
+                    continuation.resume(returning: (rr, count))
+                    return
+                }
+                count += 1
+                if let previous, !precededByGap {
+                    rr.append(timeSinceStart - previous)
+                }
+                previous = timeSinceStart
+            }
+            store.execute(query)
+        }
     }
 }
 

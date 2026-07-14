@@ -1,17 +1,16 @@
 import SwiftUI
 
-/// Phase 1 Watch UI: authorize HealthKit, start a workout, watch the live BPM
-/// update on the wrist, and end. This is a proving-ground screen — the real
-/// session UI (haptics, timing, no live biometrics) arrives in later phases.
+/// Phase 2 Watch UI: authorize, run a workout showing live BPM, then on End read
+/// back the recorded heartbeat series and dump the raw RR data to eyeball it.
+/// Temporary proving-ground UI — the real session UI (haptics, timing, no live
+/// biometrics) arrives in later phases.
 struct WatchContentView: View {
     @StateObject private var workout = WorkoutManager()
     @State private var isAuthorized = false
+    @State private var isEnding = false
 
     var body: some View {
-        ZStack {
-            AppColor.backgroundPrimary
-                .ignoresSafeArea()
-
+        ScrollView {
             VStack(spacing: 12) {
                 Text(bpmText)
                     .font(.system(size: 48, weight: .semibold, design: .rounded))
@@ -30,9 +29,14 @@ struct WatchContentView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(AppColor.textSecondary)
                 }
+
+                if let captured = workout.captured {
+                    readback(captured)
+                }
             }
             .padding()
         }
+        .background(AppColor.backgroundPrimary.ignoresSafeArea())
     }
 
     @ViewBuilder
@@ -42,15 +46,42 @@ struct WatchContentView: View {
                 Task { isAuthorized = await HealthKitAuth.authorize() }
             }
         } else if workout.isRunning {
-            Button("End") { workout.end() }
+            Button(isEnding ? "Reading…" : "End") {
+                isEnding = true
+                Task {
+                    await workout.end()
+                    isEnding = false
+                }
+            }
+            .disabled(isEnding)
         } else {
             Button("Start") { workout.start() }
         }
     }
 
+    /// Raw beat-to-beat dump for Phase 2 verification.
+    @ViewBuilder
+    private func readback(_ captured: CapturedSeries) -> some View {
+        VStack(spacing: 4) {
+            Text("beats: \(captured.beatCount)")
+            Text("uuid: \(captured.healthkitUUID.prefix(8))…")
+            Text("first RR (ms):")
+            Text(firstIntervalsMS(captured.rrIntervals))
+                .multilineTextAlignment(.center)
+        }
+        .font(.system(.caption2, design: .monospaced))
+        .foregroundStyle(AppColor.textSecondary)
+    }
+
     private var bpmText: String {
         guard let hr = workout.currentHR else { return "—" }
         return String(Int(hr.rounded()))
+    }
+
+    private func firstIntervalsMS(_ rr: [Double]) -> String {
+        rr.prefix(10)
+            .map { String(Int(($0 * 1000).rounded())) }
+            .joined(separator: ", ")
     }
 }
 
