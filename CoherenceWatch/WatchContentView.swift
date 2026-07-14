@@ -56,6 +56,10 @@ struct WatchContentView: View {
             .disabled(isEnding)
         } else {
             Button("Start") { workout.start() }
+            Button("Scan 24h") {
+                Task { await workout.scanRecentSeries() }
+            }
+            .font(.caption2)
         }
     }
 

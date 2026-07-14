@@ -124,6 +124,36 @@ final class WorkoutManager: NSObject, ObservableObject {
         builder = nil
     }
 
+    // MARK: - Diagnostics
+
+    /// Phase 2 diagnostic: is ANY heartbeat series readable in the last 24h,
+    /// independent of our own workout? Run Apple's Mindfulness/Breathe app for a
+    /// few minutes, then tap this. It separates the two failure modes behind
+    /// "NO SERIES":
+    ///   • finds a series  -> reads work; our workout just isn't recording one
+    ///                        (mechanism failure -> fallback: read Apple's series)
+    ///   • finds nothing   -> heartbeat-series READ auth is likely off, or no
+    ///                        app on this watch records beat-to-beat data at all
+    func scanRecentSeries() async {
+        statusMessage = "Scanning…"
+        captured = nil
+
+        let end = Date()
+        let start = end.addingTimeInterval(-24 * 60 * 60)
+        guard let latest = await querySeries(from: start, to: end) else {
+            statusMessage = "0 series in last 24h"
+            return
+        }
+
+        let readback = await readIntervals(from: latest)
+        captured = CapturedSeries(
+            rrIntervals: readback.rr,
+            healthkitUUID: latest.uuid.uuidString,
+            beatCount: readback.count
+        )
+        statusMessage = "Found a series (24h scan)"
+    }
+
     // MARK: - Readback
 
     /// Ends collection and finishes the builder, returning the saved `HKWorkout`.
