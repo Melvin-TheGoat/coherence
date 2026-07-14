@@ -12,10 +12,15 @@ enum HealthKitAuth {
     /// The single store instance the Watch uses for auth and workouts.
     static let store = HKHealthStore()
 
-    /// Types we READ: live heart rate, the beat-to-beat series, and workouts.
+    /// Types we READ: live heart rate, HRV, the beat-to-beat series, and workouts.
+    ///
+    /// HealthKit requires HRV (SDNN) read authorization to be requested alongside
+    /// the heartbeat series — the series can be used to derive HRV, so Apple
+    /// bundles their permissions and throws if you ask for one without the other.
     private static var readTypes: Set<HKObjectType> {
         [
             HKQuantityType(.heartRate),
+            HKQuantityType(.heartRateVariabilitySDNN),
             HKSeriesType.heartbeat(),
             HKObjectType.workoutType(),
         ]
