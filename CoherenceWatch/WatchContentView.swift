@@ -23,6 +23,13 @@ struct WatchContentView: View {
 
                 control
                     .tint(AppColor.accentGold)
+
+                if let message = workout.statusMessage {
+                    Text(message)
+                        .font(.caption2)
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
             }
             .padding()
         }

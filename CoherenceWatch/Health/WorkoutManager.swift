@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import os
 
 /// Runs the on-wrist workout for a meditation session and publishes the live
 /// heart rate. Watch-only.
@@ -16,13 +17,20 @@ final class WorkoutManager: NSObject, ObservableObject {
     @Published var currentHR: Double?
     /// True while a workout session is actively collecting.
     @Published var isRunning = false
+    /// Last error surfaced to the UI (nil when healthy). Phase 1 debug aid.
+    @Published var statusMessage: String?
 
     private let store = HealthKitAuth.store
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
 
+    private let log = Logger(subsystem: "com.lockout.coherence.watchkitapp", category: "Workout")
+
     /// Starts a mind-and-body workout session and begins live collection.
     func start() {
+        guard !isRunning else { return }
+        statusMessage = nil
+
         let config = HKWorkoutConfiguration()
         config.activityType = .mindAndBody
         config.locationType = .unknown
@@ -40,10 +48,21 @@ final class WorkoutManager: NSObject, ObservableObject {
 
             let startDate = Date()
             session.startActivity(with: startDate)
-            builder.beginCollection(withStart: startDate) { [weak self] _, _ in
-                Task { @MainActor in self?.isRunning = true }
+            builder.beginCollection(withStart: startDate) { [weak self] success, error in
+                Task { @MainActor in
+                    guard let self else { return }
+                    if success {
+                        self.isRunning = true
+                    } else {
+                        self.log.error("beginCollection failed: \(String(describing: error))")
+                        self.statusMessage = "Start failed: \(error?.localizedDescription ?? "unknown")"
+                        self.teardown()
+                    }
+                }
             }
         } catch {
+            log.error("Failed to create workout session: \(error.localizedDescription)")
+            statusMessage = "Session error: \(error.localizedDescription)"
             isRunning = false
         }
     }
@@ -56,12 +75,17 @@ final class WorkoutManager: NSObject, ObservableObject {
         builder.endCollection(withEnd: Date()) { [weak self] _, _ in
             builder.finishWorkout { _, _ in }
             Task { @MainActor in
-                self?.isRunning = false
                 self?.currentHR = nil
-                self?.session = nil
-                self?.builder = nil
+                self?.teardown()
             }
         }
+    }
+
+    /// Drops references and marks the manager idle so a fresh `start()` can run.
+    private func teardown() {
+        isRunning = false
+        session = nil
+        builder = nil
     }
 }
 
@@ -88,12 +112,20 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
         didChangeTo toState: HKWorkoutSessionState,
         from fromState: HKWorkoutSessionState,
         date: Date
-    ) {}
+    ) {
+        Task { @MainActor in
+            self.log.debug("Workout session \(fromState.rawValue) -> \(toState.rawValue)")
+        }
+    }
 
     nonisolated func workoutSession(
         _ workoutSession: HKWorkoutSession,
         didFailWithError error: Error
     ) {
-        Task { @MainActor in self.isRunning = false }
+        Task { @MainActor in
+            self.log.error("Workout session failed: \(error.localizedDescription)")
+            self.statusMessage = "Workout failed: \(error.localizedDescription)"
+            self.teardown()
+        }
     }
 }
