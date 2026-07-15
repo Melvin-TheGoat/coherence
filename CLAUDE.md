@@ -5,17 +5,28 @@
 **Coherence** is a heart-coherence meditation app for iPhone + Apple Watch.
 
 The product stance: **coherence as evidence, not a training score.** During a
-guided (or silent/frequency/nature) meditation the Apple Watch records
-beat-to-beat heart data; afterward the phone computes an FFT-based coherence
-score targeting the ~0.1 Hz peak and shows the coherence *trajectory* over the
-session. The number is real biometric evidence of what happened in the body —
-not a gamified target to chase. The mid-session screen deliberately shows **no
-live biometrics**; evidence comes after, not during.
+guided (or silent/frequency/nature) meditation the Apple Watch records the
+**heart-rate stream** during a workout session (see the ARCHITECTURE UPDATE
+below — this was originally beat-to-beat RR data); afterward the phone computes
+an FFT-based coherence score targeting the ~0.1 Hz peak and shows the coherence
+*trajectory* over the session. The number is real biometric evidence of what
+happened in the body — not a gamified target to chase. The mid-session screen
+deliberately shows **no live biometrics**; evidence comes after, not during.
 
 Stack: Swift / SwiftUI / SwiftData / HealthKit. Project defined via **XcodeGen**
 (`project.yml` → `xcodegen generate` → `Coherence.xcodeproj`). Development is
 done by pasting phase instructions into Claude Code in a terminal (no IDE
 integration). The full plan lives in `App_ROADMAP_v2.md`.
+
+### Product copy (marketing / in-app content)
+
+- `SCIENCE.md` — the evidence-based "Science of Coherence" page. Peer-reviewed
+  sources only; all citations verified. **Firewall rule:** the science page stays
+  strictly peer-reviewed — no HeartMath big claims, no influencers (e.g. Dispenza).
+- `PURPOSE.md` — the brand / "why we built this" page (aspirational identity &
+  manifestation voice: meditation as a tool to rewrite the subconscious identity
+  and ease the friction between the user and their goals). Not a place for
+  scientific claims.
 
 ## Toolchain notes (this machine)
 
@@ -26,6 +37,31 @@ integration). The full plan lives in `App_ROADMAP_v2.md`.
 - Regenerate the project after any `project.yml` change: `xcodegen generate`.
 
 ## Architecture decisions (baked in — do not relitigate)
+
+> **⚠️ ARCHITECTURE UPDATE (2026-07-14) — supersedes the RR-interval design in the
+> Session-end sequence & Schema below.**
+>
+> **Coherence's data source changed from beat-to-beat RR intervals to the Apple Watch
+> heart-rate stream.** We confirmed (Apple Developer Forums; Marco Altini / HRV4Training)
+> that the Apple Watch does **not** expose continuous beat-to-beat (RR / inter-beat)
+> intervals from its optical sensor to third-party apps. During a workout, apps get only
+> **averaged heart rate (BPM)** (~every 1–5 s via `HKLiveWorkoutBuilder`) plus sparse HRV
+> SDNN. `HKHeartbeatSeriesBuilder` only records beats you *supply* (e.g. from an external
+> BLE chest strap), not the optical sensor; true RR appears only during the built-in
+> Breathe app, in short bursts we cannot trigger or control.
+>
+> **Decision — "Option A":** compute coherence from the continuous **heart-rate (BPM) time
+> series** the Watch streams during the workout session, not RR intervals. This preserves
+> the **Apple-Watch-only, no-extra-hardware** promise. Rejected: external BLE chest strap
+> (research-grade but breaks the hardware story) and Breathe-app HRV (too sparse for a
+> per-session trajectory). The product stance ("evidence after, not during") is unaffected —
+> a slightly coarser post-session trajectory is still real biometric evidence.
+>
+> **OPEN ITEM — validate on-device in Phase 1:** the actual HR sample rate from
+> `HKLiveWorkoutBuilder`. ~1 Hz → resolves the 0.1 Hz peak cleanly; ~5 s → too coarse, will
+> need interpolation and/or a wider `windowSec`. The `HeartbeatSeries`/`MeditationStats`
+> models and the Session-end sequence below are annotated to reflect Option A; finalize the
+> exact field semantics once the sample rate is measured.
 
 - **The phone is the only persistence layer.** SwiftData lives on iOS. The Watch
   holds **no** store; it captures heartbeat data, computes stats, and ships the
@@ -64,7 +100,8 @@ integration). The full plan lives in `App_ROADMAP_v2.md`.
   point per minute. The window advances by a small `hopSec` (5 s) instead,
   producing a smooth trajectory (~109 points for a 10-minute session). `windowSec`
   and `hopSec` are both stored on every result so old sessions stay interpretable
-  if the parameters change.
+  if the parameters change. The analysis **input** is the resampled Watch
+  heart-rate stream (per the ARCHITECTURE UPDATE), not RR intervals.
 
 **HARD GATE:** Phase 0 runs on a free Apple ID with a local store. Phase 1 onward
 requires the paid Apple Developer Program ($99/yr) — HealthKit on device,
@@ -99,13 +136,21 @@ accessors; FKs as plain `UUID?`.
 - **Session** — id, userID?, trackID? (nil=silence), mode, startedAt, durationSec,
   createdAt. **Immutable — no updatedAt.**
 - **HeartbeatSeries** — id, sessionID?, healthkitUUID, beatCount, createdAt.
-  A *reference* to the HealthKit sample; we never store raw biometrics.
+  A *reference* to the source HealthKit workout/sample; we never store raw
+  biometrics. (Option A: `healthkitUUID` references the workout and `beatCount`
+  becomes the heart-rate sample count — finalize field semantics once the on-device
+  sample rate is measured; see the ARCHITECTURE UPDATE.)
 - **MeditationStats** — id, sessionID?, coherenceScore? (nil=too short),
   coherenceTimeseries[], hrvTimeseries[], heartRateTimeseries[], windowSec (60),
   hopSec (5), meanHR, rmssd, peakFrequencyHz?, algorithmVersion, createdAt.
   **Immutable.** The three timeseries share one windowSec/hopSec and one index and
   are always the same length. Point i's timestamp = `session.startedAt + i*hopSec
-  + windowSec/2` (window center).
+  + windowSec/2` (window center). NOTE (Option A): coherence, `peakFrequencyHz`,
+  `heartRateTimeseries` and `meanHR` derive directly from the HR stream. True
+  RR-based HRV metrics (`rmssd`, and an RR-derived `hrvTimeseries`) **cannot** be
+  computed from BPM samples — under the HR-stream design these are approximated from
+  HR-stream variability or deferred (decide in Phase 3). Fields stay in the schema
+  for CloudKit stability.
 - **Streak** — id, userID?, currentDays, longestDays, lastSessionDate? (local
   day-start), createdAt (immutable), updatedAt
 
@@ -114,10 +159,13 @@ Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
 
 ## Session-end sequence
 
-1. Watch `end()`: finish `HKLiveWorkoutBuilder`, query the recorded
-   `HKHeartbeatSeriesSample`, convert per-beat timestamps to RR intervals (sec),
-   capture the sample UUID and beat count → `CapturedSeries`.
-2. Watch runs `CoherenceEngine.analyze(rrIntervals:windowSec:hopSec:)`.
+1. Watch `end()`: finish `HKLiveWorkoutBuilder` and collect the **heart-rate (BPM)
+   samples** streamed during the session (the live workout builder's heart-rate
+   quantity type), each with its timestamp → `CapturedSeries`. (Superseded: we no
+   longer query `HKHeartbeatSeriesSample` or convert to RR intervals — see the
+   ARCHITECTURE UPDATE. Apple does not expose optical-sensor RR to third-party apps.)
+2. Watch resamples the heart-rate series onto an even time base and runs
+   `CoherenceEngine.analyze(heartRateSamples:windowSec:hopSec:)`.
 3. Watch assembles a `SessionPayload` (actual elapsed duration; `discard=true` if
    elapsed < 60 s) and sends it to the phone via `transferUserInfo`.
 4. Phone, in ONE ModelContext transaction: if not discarded, insert Session +
