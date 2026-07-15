@@ -18,8 +18,12 @@ final class WorkoutManager: NSObject, ObservableObject {
     @Published var isRunning = false
     /// Last error surfaced to the UI (nil when healthy). Debug aid.
     @Published var statusMessage: String?
-    /// HR sampling-cadence summary for the last session (option-4 measurement).
+    /// Cadence of the HR samples the live builder surfaced (option-4 measurement).
     @Published var samplingReport: String?
+    /// Cadence of the HR samples HealthKit actually STORED for the workout —
+    /// often denser than the live callback. Tests the "wait for it to populate"
+    /// idea: a smoother trajectory, though never beat-to-beat / HRV.
+    @Published var storedReport: String?
 
     private let store = HealthKitAuth.store
     private var session: HKWorkoutSession?
@@ -36,6 +40,7 @@ final class WorkoutManager: NSObject, ObservableObject {
         guard !isRunning else { return }
         statusMessage = nil
         samplingReport = nil
+        storedReport = nil
         hrSampleTimes = []
 
         // Recording a workout needs WRITE access to the workout type. Read grants
@@ -98,11 +103,13 @@ final class WorkoutManager: NSObject, ObservableObject {
         currentHR = nil
         teardown()
 
-        guard workout != nil else {
+        guard let workout else {
             statusMessage = "Workout didn't finish"
             return
         }
-        samplingReport = makeSamplingReport()
+        samplingReport = cadenceSummary("live", hrSampleTimes)
+        let storedTimes = await storedHRSampleTimes(from: workout.startDate, to: workout.endDate)
+        storedReport = cadenceSummary("stored", storedTimes)
     }
 
     /// Drops references and marks the manager idle so a fresh `start()` can run.
@@ -123,24 +130,45 @@ final class WorkoutManager: NSObject, ObservableObject {
         }
     }
 
-    /// Summarizes the spacing between the distinct HR samples surfaced this
-    /// session: count, span, and mean/min/max gap between consecutive samples.
-    private func makeSamplingReport() -> String {
-        let times = hrSampleTimes.sorted()
-        guard times.count >= 2 else {
-            return "HR samples: \(times.count) — too few to measure"
+    /// Summarizes the spacing between a set of HR sample timestamps: count, span,
+    /// and mean/min/max gap between consecutive samples.
+    private func cadenceSummary(_ label: String, _ times: [Date]) -> String {
+        let sorted = times.sorted()
+        guard sorted.count >= 2 else {
+            return "\(label): \(sorted.count) samples — too few"
         }
         var gaps: [Double] = []
-        gaps.reserveCapacity(times.count - 1)
-        for i in 1..<times.count {
-            gaps.append(times[i].timeIntervalSince(times[i - 1]))
+        gaps.reserveCapacity(sorted.count - 1)
+        for i in 1..<sorted.count {
+            gaps.append(sorted[i].timeIntervalSince(sorted[i - 1]))
         }
-        let span = times.last!.timeIntervalSince(times.first!)
+        let span = sorted.last!.timeIntervalSince(sorted.first!)
         let mean = gaps.reduce(0, +) / Double(gaps.count)
         return String(
-            format: "%d HR samples / %.0fs\ngap mean %.1fs  min %.1fs  max %.1fs",
-            times.count, span, mean, gaps.min() ?? 0, gaps.max() ?? 0
+            format: "%@: %d / %.0fs\n  gap ~%.1fs (min %.1f max %.1f)",
+            label, sorted.count, span, mean, gaps.min() ?? 0, gaps.max() ?? 0
         )
+    }
+
+    /// The timestamps of every heart-rate measurement HealthKit STORED for the
+    /// workout window, expanded from its series-backed samples. Denser than the
+    /// live callback when the watch batched deliveries.
+    private func storedHRSampleTimes(from start: Date, to end: Date) async -> [Date] {
+        let hrType = HKQuantityType(.heartRate)
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: [])
+        return await withCheckedContinuation { (continuation: CheckedContinuation<[Date], Never>) in
+            var times: [Date] = []
+            var finished = false
+            let query = HKQuantitySeriesSampleQuery(quantityType: hrType, predicate: predicate) { _, _, dateInterval, _, done, _ in
+                if finished { return }
+                if let dateInterval { times.append(dateInterval.start) }
+                if done {
+                    finished = true
+                    continuation.resume(returning: times)
+                }
+            }
+            store.execute(query)
+        }
     }
 }
 

@@ -36,6 +36,13 @@ struct WatchContentView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(AppColor.textSecondary)
                 }
+
+                if let stored = workout.storedReport {
+                    Text(stored)
+                        .font(.system(.caption2, design: .monospaced))
+                        .multilineTextAlignment(.center)
+                        .foregroundStyle(AppColor.accentGold)
+                }
             }
             .padding()
         }
