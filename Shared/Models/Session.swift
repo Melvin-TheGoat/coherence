@@ -9,6 +9,9 @@ final class Session {
     var userID: UUID?
     var trackID: UUID?                // nil = silence
     var mode: String = "silence"
+    /// Opt-in belly-breathing posture (lie down, wrist on belly). Authoritative
+    /// for which signals a reader expects and which stillness method was used.
+    var bellyBreathing: Bool = false
     var startedAt: Date = Date()
     var durationSec: Int = 0
     var createdAt: Date = Date()
@@ -25,6 +28,7 @@ final class Session {
         userID: UUID? = nil,
         trackID: UUID? = nil,
         mode: String = "silence",
+        bellyBreathing: Bool = false,
         startedAt: Date = Date(),
         durationSec: Int = 0,
         createdAt: Date = Date()
@@ -33,6 +37,7 @@ final class Session {
         self.userID = userID
         self.trackID = trackID
         self.mode = mode
+        self.bellyBreathing = bellyBreathing
         self.startedAt = startedAt
         self.durationSec = durationSec
         self.createdAt = createdAt

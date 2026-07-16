@@ -1,27 +1,23 @@
 import Foundation
 import HealthKit
 
-/// HealthKit authorization for the Watch. All heartbeat / HealthKit code lives in
-/// the Watch target — the iOS target only calls `startWatchApp` (Phase 4) and
-/// reads no biometric data.
+/// HealthKit authorization for the Watch. All HealthKit code lives in the Watch
+/// target — the iOS target only calls `startWatchApp` (Phase 4) and reads no
+/// biometric data.
 ///
-/// Phase 1 requests the permissions a mind-and-body workout needs plus the
-/// beat-to-beat series type we read back in Phase 2.
+/// Minimal scope for the motion-based model: heart-rate READ (the deceleration
+/// signal) + workout SHARE (to run the `.mindAndBody` session that keeps the app
+/// active and streams HR). No HRV / heartbeat-series — those were for the dropped
+/// coherence path.
 enum HealthKitAuth {
 
     /// The single store instance the Watch uses for auth and workouts.
     static let store = HKHealthStore()
 
-    /// Types we READ: live heart rate, HRV, the beat-to-beat series, and workouts.
-    ///
-    /// HealthKit requires HRV (SDNN) read authorization to be requested alongside
-    /// the heartbeat series — the series can be used to derive HRV, so Apple
-    /// bundles their permissions and throws if you ask for one without the other.
+    /// Types we READ: live heart rate and workouts.
     private static var readTypes: Set<HKObjectType> {
         [
             HKQuantityType(.heartRate),
-            HKQuantityType(.heartRateVariabilitySDNN),
-            HKSeriesType.heartbeat(),
             HKObjectType.workoutType(),
         ]
     }

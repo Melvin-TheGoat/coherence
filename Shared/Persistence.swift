@@ -18,7 +18,6 @@ enum Persistence {
         Preferences.self,
         MeditationTrack.self,
         Session.self,
-        HeartbeatSeries.self,
         MeditationStats.self,
     ])
 

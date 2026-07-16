@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// Option-4 measurement UI: authorize, run a mind-and-body workout showing live
-/// BPM, then on End report how finely the Watch sampled heart rate (sample count
-/// and the gaps between samples). Temporary proving-ground UI — the real session
-/// UI (haptics, timing, no live biometrics) arrives in later phases.
+/// Minimal Watch UI: authorize HealthKit, run a mind-and-body workout showing
+/// live BPM, and end. Temporary proving-ground UI — the real session UI (belly
+/// posture, haptics, timing, no live biometrics) arrives in later phases.
 struct WatchContentView: View {
     @StateObject private var workout = WorkoutManager()
     @State private var isAuthorized = false
@@ -28,20 +27,6 @@ struct WatchContentView: View {
                         .font(.caption2)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(AppColor.textSecondary)
-                }
-
-                if let report = workout.samplingReport {
-                    Text(report)
-                        .font(.system(.caption2, design: .monospaced))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-
-                if let stored = workout.storedReport {
-                    Text(stored)
-                        .font(.system(.caption2, design: .monospaced))
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(AppColor.accentGold)
                 }
             }
             .padding()
