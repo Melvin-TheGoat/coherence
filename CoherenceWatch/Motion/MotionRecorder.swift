@@ -99,6 +99,21 @@ enum BreathingEstimator {
         return bpm
     }
 
+    /// Breaths/min estimated per sliding window (0 where unreadable) — the shape
+    /// of the Phase-3 `breathingRateTimeseries`, using this crude estimator.
+    static func rateSeries(_ samples: [MotionSample], windowSec: Double, hopSec: Double) -> [Double] {
+        guard let first = samples.first, let last = samples.last,
+              (last.t - first.t) >= windowSec else { return [] }
+        var out: [Double] = []
+        var start = first.t
+        while start + windowSec <= last.t + 0.001 {
+            let window = samples.filter { $0.t >= start && $0.t < start + windowSec }
+            out.append(breathsPerMinute(window, windowSec: .greatestFiniteMagnitude) ?? 0)
+            start += hopSec
+        }
+        return out
+    }
+
     private static func detrend(_ y: inout [Double], times t: [Double]) {
         let n = Double(y.count)
         guard n > 1 else { return }

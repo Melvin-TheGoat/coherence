@@ -14,8 +14,9 @@ struct CaptureSummary {
     let motionCount: Int
     let hrCount: Int
     let bellyBreathing: Bool
-    let finalBreaths: Double?      // nil = no clear breathing signal
-    let pitchSeries: [PitchPoint]
+    let finalBreaths: Double?      // nil = no clear breathing signal (avg)
+    let pitchSeries: [PitchPoint]  // edges trimmed + downsampled
+    let rateSeries: [Double]       // breaths/min per 30s/5s window (0 = unreadable)
 }
 
 /// Runs the on-wrist workout, streams live heart rate, and captures CoreMotion
@@ -124,19 +125,51 @@ final class WorkoutManager: NSObject, ObservableObject {
         _ = await finish(builder)
         currentHR = nil
 
-        let samples = motion.snapshot()
+        // Trim lead-in/lead-out (lying down after Start, getting up before End)
+        // so those transients don't dominate the analysis or the plot.
+        let all = motion.snapshot()
+        let core = trimEdges(all, seconds: 5)
+
         let finalBreaths = bellyBreathing
-            ? BreathingEstimator.breathsPerMinute(samples, windowSec: .greatestFiniteMagnitude)
+            ? BreathingEstimator.breathsPerMinute(core, windowSec: .greatestFiniteMagnitude)
             : nil
+        let rate = bellyBreathing
+            ? BreathingEstimator.rateSeries(core, windowSec: 30, hopSec: 5)
+            : []
+        let pitch = downsample(core, maxPoints: 120)
+
         capture = CaptureSummary(
-            motionCount: samples.count,
+            motionCount: all.count,
             hrCount: hrSamples.count,
             bellyBreathing: bellyBreathing,
             finalBreaths: finalBreaths,
-            pitchSeries: downsample(samples, maxPoints: 120)
+            pitchSeries: pitch,
+            rateSeries: rate
         )
-        log.debug("Captured \(samples.count) motion, \(self.hrSamples.count) HR; breaths=\(String(describing: finalBreaths))")
+        dumpToConsole(all: all, core: core, pitch: pitch, rate: rate, finalBreaths: finalBreaths)
         teardown()
+    }
+
+    /// Drops the first/last `seconds` of samples (sit-down / stand-up transients),
+    /// unless the session is too short to spare them.
+    private func trimEdges(_ samples: [MotionSample], seconds: Double) -> [MotionSample] {
+        guard let first = samples.first, let last = samples.last,
+              (last.t - first.t) > (2 * seconds + 10) else { return samples }
+        let lo = first.t + seconds
+        let hi = last.t - seconds
+        return samples.filter { $0.t >= lo && $0.t <= hi }
+    }
+
+    /// Prints copy-pasteable integer lists to the Xcode console: the trimmed pitch
+    /// waveform (milliradians) and the per-window breaths/min series.
+    private func dumpToConsole(all: [MotionSample], core: [MotionSample], pitch: [PitchPoint], rate: [Double], finalBreaths: Double?) {
+        let span = (all.last?.t ?? 0) - (all.first?.t ?? 0)
+        print("=== CAPTURE (\(bellyBreathing ? "belly" : "regular")) ===")
+        print(String(format: "span=%.0fs motion=%d core=%d hr=%d", span, all.count, core.count, hrSamples.count))
+        guard bellyBreathing else { return }
+        print("pitch_mrad n=\(pitch.count) (edges trimmed): \(pitch.map { Int(($0.pitch * 1000).rounded()) })")
+        print("rate_bpm n=\(rate.count) win=30 hop=5 (0=unreadable): \(rate.map { Int($0.rounded()) })")
+        print("meanBreaths=\(finalBreaths.map { String(format: "%.1f", $0) } ?? "nil")")
     }
 
     /// Recomputes the live breaths/min estimate every 2 s for belly sessions.

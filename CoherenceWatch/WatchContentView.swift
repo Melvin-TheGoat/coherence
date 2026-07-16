@@ -81,17 +81,35 @@ struct WatchContentView: View {
                 .foregroundStyle(AppColor.textSecondary)
 
             if capture.bellyBreathing {
+                // Raw belly waveform (edges trimmed) — always shown so the signal
+                // is visible even when the aggregate estimate can't lock a rate.
+                Text("breath waveform")
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary)
+                Chart(capture.pitchSeries) { point in
+                    LineMark(x: .value("t", point.t), y: .value("pitch", point.pitch))
+                        .foregroundStyle(AppColor.accentGold)
+                }
+                .chartXAxis(.hidden)
+                .chartYAxis(.hidden)
+                .frame(height: 90)
+
+                if !capture.rateSeries.isEmpty {
+                    Text("breaths/min over time")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                    Chart(Array(capture.rateSeries.enumerated()), id: \.offset) { item in
+                        LineMark(x: .value("i", item.offset), y: .value("bpm", item.element))
+                            .foregroundStyle(AppColor.textPrimary)
+                    }
+                    .chartYScale(domain: 0...15)
+                    .frame(height: 70)
+                }
+
                 if let breaths = capture.finalBreaths {
-                    Text(String(format: "≈ %.1f breaths/min", breaths))
+                    Text(String(format: "≈ %.1f breaths/min (avg)", breaths))
                         .font(.caption)
                         .foregroundStyle(AppColor.accentGold)
-                    Chart(capture.pitchSeries) { point in
-                        LineMark(x: .value("t", point.t), y: .value("pitch", point.pitch))
-                            .foregroundStyle(AppColor.accentGold)
-                    }
-                    .chartXAxis(.hidden)
-                    .chartYAxis(.hidden)
-                    .frame(height: 90)
                 } else {
                     Text("no clear breathing signal")
                         .font(.caption2)
