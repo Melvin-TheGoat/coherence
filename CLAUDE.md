@@ -2,20 +2,63 @@
 
 ## Product
 
-**Coherence** is a heart-coherence meditation app for iPhone + Apple Watch.
+**Coherence** is a guided-meditation app for iPhone + Apple Watch that gives the
+user **biometric evidence their practice landed** — measured on the Watch,
+shown *after* the session, never as a live score to chase.
 
-The product stance: **coherence as evidence, not a training score.** During a
-guided (or silent/frequency/nature) meditation the Apple Watch records
-beat-to-beat heart data; afterward the phone computes an FFT-based coherence
-score targeting the ~0.1 Hz peak and shows the coherence *trajectory* over the
-session. The number is real biometric evidence of what happened in the body —
-not a gamified target to chase. The mid-session screen deliberately shows **no
-live biometrics**; evidence comes after, not during.
+The product stance: **evidence, not a training score.** The mid-session screen
+deliberately shows **no live biometrics**; evidence comes after, not during.
 
-Stack: Swift / SwiftUI / SwiftData / HealthKit. Project defined via **XcodeGen**
-(`project.yml` → `xcodegen generate` → `Coherence.xcodeproj`). Development is
-done by pasting phase instructions into Claude Code in a terminal (no IDE
-integration). The full plan lives in `App_ROADMAP_v2.md`.
+**The evidence is three motion/heart signals** (not heart coherence — see below):
+
+1. **Stillness** — how physically still the body was, from the Watch
+   accelerometer (`CMDeviceMotion.userAcceleration` magnitude / jerk). Low motion
+   = deeper settling. Output: a stillness curve + a stillness score.
+2. **Heart-rate deceleration** — the downward drift of heart rate as the user
+   relaxes, from the ~5 s averaged HR stream (fine for a *trend*; we don't need
+   beat-to-beat). Output: an HR curve + a decline metric (start→end / slope).
+3. **Belly breathing** (optional, the headline feature) — when the user opts in,
+   lies down, and rests the watch wrist flat on the belly, diaphragmatic
+   breathing tilts the wrist. From `CMDeviceMotion.attitude` (gravity-tilt pitch)
+   we recover the breathing waveform → rate, depth, regularity, and a
+   **resonance-match** score vs ~6 breaths/min (0.1 Hz). Motion sensors run at
+   tens of Hz, wildly above what breathing needs.
+
+A session combines these into one "your practice landed" summary. **Belly
+breathing is opt-in**; most users do a **Regular** session (2 signals: stillness
++ HR). Belly sessions add the third. See the Schema and Session-end sections.
+
+Stack: Swift / SwiftUI / SwiftData / HealthKit / **CoreMotion**. Project defined
+via **XcodeGen** (`project.yml` → `xcodegen generate` → `Coherence.xcodeproj`).
+Development is done by pasting phase instructions into Claude Code in a terminal
+(no IDE integration). The full plan lives in `App_ROADMAP_v2.md`. The app name
+and bundle IDs stay `Coherence` / `com.lockout.coherence`.
+
+## Why not heart coherence (do not relitigate)
+
+The original plan was HeartMath-style **heart coherence** — the ~0.1 Hz peak in
+beat-to-beat HRV. **It is not achievable on Apple Watch for a third-party app**,
+verified on-device (Phase 2) and in research:
+
+- A third-party `.mindAndBody` `HKWorkoutSession` records **averaged HR only**
+  (~5 s cadence), **not** an `HKHeartbeatSeriesSample`. No beat-to-beat / RR.
+- Coherence needs RR sampled fast enough to resolve 0.1 Hz. By Nyquist you need
+  >0.2 Hz just to *detect* it, several× that to characterize it; the watch's
+  usable stream tops out ~0.2 Hz. Right at the floor — can't reconstruct the peak.
+- Every workaround dead-ends: Mindful/Breathe series is real RR but capped at
+  5 min; ECG is a 30-s finger-on-crown snapshot; SensorKit raw PPG is
+  research-only; camera PPG can't run long (torch heat/battery/finger-on-lens).
+- True coherence remains possible only with an **external BLE HRV sensor** (Polar
+  H10 / HeartMath-style ear clip, RR over CoreBluetooth) — parked as a future
+  "Pro" tier, not v1.
+
+So we measure resonance breathing **directly via motion** instead of inferring it
+from the heart. Backed by peer-reviewed work: Bernardi et al. 2020 (*Sci Rep* —
+wrist-accelerometer respiration, MAE ~0.7–1.1 breaths/min, best during
+non-activity); Hung 2020 (*Front Physiol* — abdomen placement, best supine);
+Steffen 2017 / Shaffer & Meehan 2020 / Laborde 2022 (resonance breathing
+~4.5–7 breaths/min); Kox/Kirk 2015 (meditation lowers HR). Full citations in
+`belly-meditation-spec.md`.
 
 ## Toolchain notes (this machine)
 
@@ -32,15 +75,15 @@ integration). The full plan lives in `App_ROADMAP_v2.md`.
 ## Architecture decisions (baked in — do not relitigate)
 
 - **The phone is the only persistence layer.** SwiftData lives on iOS. The Watch
-  holds **no** store; it captures heartbeat data, computes stats, and ships the
-  result to the phone over WatchConnectivity. The phone performs every write.
+  holds **no** store; it captures motion + heart data, computes stats, and ships
+  the result to the phone over WatchConnectivity. The phone performs every write.
   "One writer per object" is a *logical* rule: the Watch is the logical author of
-  heartbeat data; the physical write happens on the phone when the payload lands.
+  session data; the physical write happens on the phone when the payload lands.
 - **Phone-triggered start = `HKHealthStore.startWatchApp(with:)`.** You cannot
   launch a watchOS app from the phone via WatchConnectivity. Therefore the iOS
   target carries the HealthKit entitlement + usage strings **only** to issue the
-  launch command — it reads zero biometric data. All heartbeat *logic* is on the
-  Watch.
+  launch command — it reads zero biometric data. All sensor/analysis *logic* is
+  on the Watch.
 - **Foreign keys are plain `UUID?` properties, not SwiftData `@Relationship`.**
   Honors "screens read independently" and avoids CloudKit relationship-optionality
   constraints.
@@ -63,12 +106,14 @@ integration). The full plan lives in `App_ROADMAP_v2.md`.
 - **Timed sessions are clocked by the Watch** (it fires the authoritative
   end-haptic). The phone runs a parallel timer only to stop audio. Open-ended
   sessions end from a Watch button.
-- **Coherence is analyzed with overlapping sliding windows.** A 60 s window is
-  needed to resolve the ~0.1 Hz peak, but non-overlapping windows would give one
-  point per minute. The window advances by a small `hopSec` (5 s) instead,
-  producing a smooth trajectory (~109 points for a 10-minute session). `windowSec`
-  and `hopSec` are both stored on every result so old sessions stay interpretable
-  if the parameters change.
+- **Signals are analyzed with overlapping sliding windows.** Each per-window
+  metric (breathing rate, stillness, HR) is computed on a `windowSec` window that
+  advances by a small `hopSec` (5 s), producing smooth curves instead of one
+  point per minute. The three resampled timeseries share one `windowSec`, one
+  `hopSec`, and one index/length. Both values are stored on every result so old
+  sessions stay interpretable if the parameters change. (`windowSec` default 30 s
+  — long enough to estimate a slow breathing rate; there is no longer a 60 s
+  coherence constraint.)
 
 **HARD GATE:** Phase 0 runs on a free Apple ID with a local store. Phase 1 onward
 requires the paid Apple Developer Program ($99/yr) — HealthKit on device,
@@ -89,7 +134,13 @@ Phase 0 entitlements files are empty (`<dict/>`). Add later:
   `com.apple.developer.icloud-container-identifiers` = ["iCloud.com.lockout.coherence"];
   `com.apple.developer.icloud-services` = ["CloudKit"]; `aps-environment` = "development"
 
-## Schema (6 SwiftData models, `Shared/Models/`)
+**Info.plist usage strings:** the Watch needs `NSMotionUsageDescription`
+(CoreMotion drives stillness + belly-breathing) alongside the HealthKit strings.
+**HealthKit scope is minimal:** the Watch requests heart-rate **READ** + workout
+**SHARE** only — no HRV/heartbeat-series read (those were for the dropped
+coherence path).
+
+## Schema (5 SwiftData models, `Shared/Models/`)
 
 All properties optional or defaulted; enums stored as String with computed
 accessors; FKs as plain `UUID?`.
@@ -100,16 +151,24 @@ accessors; FKs as plain `UUID?`.
   remindersEnabled, reminderTime?, theme, hapticsEnabled, createdAt, updatedAt
 - **MeditationTrack** — id, type (guided/frequency/nature), title, trackDescription?,
   audioURL, durationSec?, sortOrder, isActive, createdAt, updatedAt
-- **Session** — id, userID?, trackID? (nil=silence), mode, startedAt, durationSec,
-  createdAt. **Immutable — no updatedAt.**
-- **HeartbeatSeries** — id, sessionID?, healthkitUUID, beatCount, createdAt.
-  A *reference* to the HealthKit sample; we never store raw biometrics.
-- **MeditationStats** — id, sessionID?, coherenceScore? (nil=too short),
-  coherenceTimeseries[], hrvTimeseries[], heartRateTimeseries[], windowSec (60),
-  hopSec (5), meanHR, rmssd, peakFrequencyHz?, algorithmVersion, createdAt.
-  **Immutable.** The three timeseries share one windowSec/hopSec and one index and
-  are always the same length. Point i's timestamp = `session.startedAt + i*hopSec
-  + windowSec/2` (window center).
+- **Session** — id, userID?, trackID? (nil=silence), mode, **bellyBreathing (Bool,
+  default false)**, startedAt, durationSec, createdAt. **Immutable — no updatedAt.**
+  `bellyBreathing` is captured at setup and is authoritative for which signals a
+  reader expects and which stillness method was used.
+- **MeditationStats** — id, sessionID?, **immutable**. Fields:
+  - HR: `heartRateTimeseries[]`, `meanHR`, `startHR?`, `endHR?`, `hrDecline?`
+  - Stillness: `stillnessTimeseries[]`, `stillnessScore?`, `stillnessMethod`
+    (String: `"total"` for regular, `"breathingExcluded"` for belly)
+  - Breathing (belly only; empty/nil otherwise): `breathingRateTimeseries[]`,
+    `breathDepthTimeseries[]`, `meanBreathingRate?`, `breathingRegularity?`,
+    `resonanceMatchScore?`
+  - Summary: `overallScore?` (the combined "practice landed" number)
+  - `windowSec` (30), `hopSec` (5), `algorithmVersion`, `createdAt`
+  The resampled timeseries (HR, stillness, breathing-rate) share one
+  windowSec/hopSec and one index and are the same length. Point i's timestamp =
+  `session.startedAt + i*hopSec + windowSec/2` (window center). When a belly
+  session's breathing signal can't be read, breathing fields stay empty/nil and
+  the session degrades to a 2-signal (Regular) result — see Session-end.
 
 **Streak is not stored.** It is derived at read time via `StreakCalculator`
 (`Shared/Engine/StreakCalculator.swift`, pure Foundation) over the user's
@@ -117,17 +176,28 @@ Session `startedAt` dates — Sessions are the single source of truth.
 
 Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
 (guided/frequency/nature), SessionMode (guided/frequency/nature/silence).
+`bellyBreathing` is a separate Bool on Session (orthogonal to audio mode), not a
+SessionMode case — a Guided or Silence session can each be belly or regular.
 
 ## Session-end sequence
 
-1. Watch `end()`: finish `HKLiveWorkoutBuilder`, query the recorded
-   `HKHeartbeatSeriesSample`, convert per-beat timestamps to RR intervals (sec),
-   capture the sample UUID and beat count → `CapturedSeries`.
-2. Watch runs `CoherenceEngine.analyze(rrIntervals:windowSec:hopSec:)`.
-3. Watch assembles a `SessionPayload` (actual elapsed duration; `discard=true` if
-   elapsed < 60 s) and sends it to the phone via `transferUserInfo`.
+1. During the session the Watch runs an `HKWorkoutSession` (`.mindAndBody`) to
+   stay active and stream averaged HR, and captures `CMDeviceMotion` continuously
+   (gravity-tilt pitch + userAcceleration, 10–25 Hz).
+2. Watch `end()`: finish the workout, assemble the raw capture (motion waveform +
+   HR samples), and run
+   `SignalEngine.analyze(motion:hr:bellyBreathing:windowSec:hopSec:)`:
+   - **Always**: stillness curve + score, HR curve + decline, overall score.
+   - **Belly only**: breathing rate/depth/regularity/resonance, and stillness from
+     the **breathing-band-excluded** residual (not total motion).
+   - **Belly fallback**: if the breathing signal is too weak/absent (bad wrist
+     placement), leave breathing fields empty and score stillness the **regular
+     (total-motion)** way — the session degrades to a 2-signal result and the UI
+     says "we couldn't read your breathing this time."
+3. Watch assembles a `SessionPayload` (actual elapsed duration; `bellyBreathing`
+   flag; `discard=true` if too short) and sends it via `transferUserInfo`.
 4. Phone, in ONE ModelContext transaction: if not discarded, insert Session +
-   HeartbeatSeries + MeditationStats. No streak write — the streak is derived
+   MeditationStats. No HeartbeatSeries. No streak write — the streak is derived
    at read time from Session dates via `StreakCalculator`.
 
 ## Conventions (enforced every phase)
@@ -135,10 +205,14 @@ Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
 - **Never hardcode a hex value.** Every color routes through `AppColor` /
   `Shared/Assets.xcassets`. Named colors: BackgroundPrimary, BackgroundSecondary,
   AccentGold, TextPrimary, TextSecondary (each with light + dark variants).
-- **All heartbeat / HealthKit code lives in the Watch target only.** The one
-  exception: iOS calls `startWatchApp` to trigger, reading no biometric data.
-- **The three timeseries share one windowSec, one hopSec, one index.** Never
+- **All sensor / HealthKit / CoreMotion code lives in the Watch target only.**
+  The one exception: iOS calls `startWatchApp` to trigger, reading no biometric
+  data.
+- **The resampled timeseries share one windowSec, one hopSec, one index.** Never
   hardcode either in the UI — read them from the stored MeditationStats row.
+- **Read which signals a session has from `Session.bellyBreathing` + populated
+  Stats fields.** Regular sessions have 2 signals (stillness + HR); belly
+  sessions may have 3, or degrade to 2 if breathing couldn't be read.
 - **Screens read storage independently and pass only IDs** (a sessionID or a
   date), never fetched objects. Sessions and Stats are immutable.
 - **Uniqueness enforced in code:** one Stats per session, one User per
@@ -149,8 +223,8 @@ Enums (`Shared/Models/Enums.swift`): Theme (system/light/dark), TrackType
 - `Coherence/` — iOS app sources (bundle `com.lockout.coherence`, embeds the Watch)
 - `CoherenceWatch/` — watchOS app sources (no ModelContainer)
 - `Shared/` — compiled into both apps + the test target: `Models/`, `Engine/`
-  (pure-Swift coherence engine, Phase 3), `Theme/AppColor.swift`, `Persistence.swift`,
-  `Assets.xcassets`
+  (pure-Swift signal engine — breathing/stillness/HR, Phase 3 — plus
+  `StreakCalculator`), `Theme/AppColor.swift`, `Persistence.swift`, `Assets.xcassets`
 - `CoherenceTests/` — iOS unit tests (host app Coherence)
 
 ## Build
