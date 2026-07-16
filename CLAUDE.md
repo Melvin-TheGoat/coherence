@@ -60,6 +60,38 @@ Steffen 2017 / Shaffer & Meehan 2020 / Laborde 2022 (resonance breathing
 ~4.5–7 breaths/min); Kox/Kirk 2015 (meditation lowers HR). Full citations in
 `belly-meditation-spec.md`.
 
+## Belly breathing — VERIFIED on-device (Phase 2, tag `phase2-motion-verified`)
+
+The core assumption holds: **`CMDeviceMotion` gravity-tilt pitch recovers a clean
+breathing waveform from the wrist resting on the belly.** Confirmed on real
+hardware — both slow held breaths (~2/min) and resonance pace (~5/min) were
+recovered, and the breaths are literally countable in the raw pitch series.
+
+**Placement is decisive** (matches Hung 2020): the watch wrist must lie **flat on
+top of the belly**, supine. Wrist on the *side* of the belly / hands interlocked
+produced **no readable signal** — and the weak-signal fallback correctly refused
+to invent a number rather than guessing. Bad placement is a real failure mode; the
+UI must coach it, and the 2-signal degrade path must stay.
+
+**Constraints the Phase-3 engine must honor** (learned the hard way, don't repeat):
+
+- **Rate estimation must be continuous, not integer-crossing.** Counting
+  zero-crossings quantizes the rate to `60/windowSec` (2 breaths/min at a 30 s
+  window), so it can only ever emit even numbers — it can *never* report 5/min
+  even when the user is breathing at exactly 5. Use **FFT + parabolic peak
+  interpolation** (or averaged peak-to-peak intervals) for fractional rates.
+- **Frequency-domain estimation is shape-agnostic** — a 15 s breath-hold flattens
+  the top of the wave but leaves the period unchanged, so the fundamental is still
+  the correct rate. Don't special-case holds.
+- **Support slow held breaths (~2/min ≈ 0.033 Hz)** — below the nominal 0.05 Hz
+  (3/min) band-pass floor. Widen the low cutoff or the rate is thrown away.
+- **Trim the first/last ~5 s.** Lying down after Start and getting up before End
+  are large transients that otherwise dominate both the analysis and the y-axis.
+- **Two-stage movement rejection.** A median filter (~0.45 s) kills *impulse*
+  spikes, but **sustained** arm movement (reaching for a phone) is too wide for it
+  and reads as a bogus fast rate. Gate on **`userAccel`** — the same signal that
+  feeds stillness — and exclude high-motion windows.
+
 ## Toolchain notes (this machine)
 
 - XcodeGen location differs per machine — resolve it with `which xcodegen`
