@@ -73,14 +73,17 @@ enum BreathingEstimator {
     /// nil when there's no clear oscillation (flat signal / bad placement).
     static func breathsPerMinute(_ samples: [MotionSample], windowSec: Double = 30) -> Double? {
         guard let last = samples.last else { return nil }
-        let window = samples.filter { $0.t >= last.t - windowSec }
-        guard window.count >= 20 else { return nil }
+        let recent = samples.filter { $0.t >= last.t - windowSec }
+        guard recent.count >= 20 else { return nil }
 
-        let times = window.map(\.t)
+        // Median-filter to remove impulse spikes (reaching for the phone, arm
+        // adjustments) before analysis — they'd otherwise add false crossings.
+        let cleaned = medianFiltered(recent)
+        let times = cleaned.map(\.t)
         let span = times.last! - times.first!
         guard span > 10 else { return nil }   // need a few breaths' worth of time
 
-        var pitch = window.map(\.pitch)
+        var pitch = cleaned.map(\.pitch)
         detrend(&pitch, times: times)
         let smoothed = movingAverage(pitch, window: 10)   // ~0.5 s at 20 Hz
 
@@ -95,8 +98,29 @@ enum BreathingEstimator {
         guard crossings >= 1 else { return nil }
 
         let bpm = (Double(crossings) / span) * 60
-        guard (3...30).contains(bpm) else { return nil }   // plausible breathing band
+        // Accept slow held breaths (~2/min) up to fast breathing. Below this the
+        // signal is indistinguishable from posture drift.
+        guard (1.5...30).contains(bpm) else { return nil }
         return bpm
+    }
+
+    /// Median-filters the pitch channel to strip impulse spikes (sudden arm
+    /// movements) while preserving the slow breathing wave. Window ~0.45 s.
+    static func medianFiltered(_ samples: [MotionSample], window: Int = 9) -> [MotionSample] {
+        guard window >= 3, samples.count >= window else { return samples }
+        let half = window / 2
+        var out = samples
+        for i in 0..<samples.count {
+            let lo = Swift.max(0, i - half)
+            let hi = Swift.min(samples.count - 1, i + half)
+            var vals: [Double] = []
+            vals.reserveCapacity(hi - lo + 1)
+            for j in lo...hi { vals.append(samples[j].pitch) }
+            vals.sort()
+            let med = vals[vals.count / 2]
+            out[i] = MotionSample(t: samples[i].t, pitch: med, roll: samples[i].roll, userAccel: samples[i].userAccel)
+        }
+        return out
     }
 
     /// Breaths/min estimated per sliding window (0 where unreadable) — the shape

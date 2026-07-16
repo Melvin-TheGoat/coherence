@@ -129,6 +129,9 @@ final class WorkoutManager: NSObject, ObservableObject {
         // so those transients don't dominate the analysis or the plot.
         let all = motion.snapshot()
         let core = trimEdges(all, seconds: 5)
+        // De-spike for the plot/console so the waveform we look at matches what
+        // the estimator sees (which median-filters internally per window).
+        let cleaned = BreathingEstimator.medianFiltered(core)
 
         let finalBreaths = bellyBreathing
             ? BreathingEstimator.breathsPerMinute(core, windowSec: .greatestFiniteMagnitude)
@@ -136,7 +139,7 @@ final class WorkoutManager: NSObject, ObservableObject {
         let rate = bellyBreathing
             ? BreathingEstimator.rateSeries(core, windowSec: 30, hopSec: 5)
             : []
-        let pitch = downsample(core, maxPoints: 120)
+        let pitch = downsample(cleaned, maxPoints: 120)
 
         capture = CaptureSummary(
             motionCount: all.count,
