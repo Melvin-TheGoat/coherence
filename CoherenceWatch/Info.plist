@@ -29,8 +29,10 @@
 		<string>workout-processing</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Coherence uses heart data recorded on your Apple Watch to measure your coherence after a session.</string>
+	<string>Coherence uses your Apple Watch heart rate to show how your body settled during a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Coherence records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
+	<string>Coherence records a mindful workout on your Apple Watch so it can measure your session.</string>
+	<key>NSMotionUsageDescription</key>
+	<string>Coherence reads Apple Watch motion to measure your stillness and, during belly breathing, your breath from the rise and fall of your belly.</string>
 </dict>
 </plist>
