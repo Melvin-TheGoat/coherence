@@ -1,0 +1,387 @@
+import Foundation
+
+// MARK: - Engine input types
+//
+// Plain value types that form the engine's contract. They live here (not in the
+// Watch's MotionRecorder) so the pure-Swift engine, both apps, and the test target
+// share ONE definition.
+//
+// NOTE (deviation from the Phase-3 spec): the spec listed a `gravity` field on
+// MotionSample, but the Watch's CoreMotion capture never records it and the
+// analysis never uses it, so the shipped struct is {t, pitch, roll, userAccel} —
+// matching what `MotionRecorder` actually produces. Adding an unused field would
+// be dead weight and force a change to verified Phase-2 capture code.
+
+/// One CoreMotion device-motion sample, timestamped from the start of recording.
+/// `pitch`/`roll` are attitude angles (radians); `userAccel` is the magnitude of
+/// user acceleration (g), gravity removed by CoreMotion's sensor fusion.
+struct MotionSample {
+    let t: TimeInterval
+    let pitch: Double
+    let roll: Double
+    let userAccel: Double
+
+    init(t: TimeInterval, pitch: Double, roll: Double, userAccel: Double) {
+        self.t = t
+        self.pitch = pitch
+        self.roll = roll
+        self.userAccel = userAccel
+    }
+}
+
+/// One averaged heart-rate sample (BPM) from `HKLiveWorkoutBuilder`, timestamped
+/// from the start of the session.
+struct HRSample {
+    let t: TimeInterval
+    let bpm: Double
+
+    init(t: TimeInterval, bpm: Double) {
+        self.t = t
+        self.bpm = bpm
+    }
+}
+
+// MARK: - Engine output
+
+/// The computed output of the signal engine for one session — a plain value type
+/// (the persisted `MeditationStats` @Model mirrors these fields).
+///
+/// The three resampled timeseries (heartRate, stillness, breathingRate) share ONE
+/// overlapping sliding window and ONE index. `heartRateTimeseries` and
+/// `stillnessTimeseries` always have length == window count. `breathingRateTimeseries`
+/// and `breathDepthTimeseries` have length == window count ONLY for a belly session
+/// with a readable breathing signal; otherwise they are EMPTY (the convention the
+/// tests assert). Point `i`'s timestamp = `startedAt + i*hopSec + windowSec/2`.
+struct SignalResult {
+    // Heart rate (always)
+    var heartRateTimeseries: [Double]
+    var meanHR: Double
+    var startHR: Double?
+    var endHR: Double?
+    var hrDecline: Double?               // startHR - endHR; positive = slowed
+
+    // Stillness (always)
+    var stillnessTimeseries: [Double]
+    var stillnessScore: Double?
+    var stillnessMethod: String          // "total" | "breathingExcluded"
+
+    // Belly breathing (only when opted in AND the signal was readable)
+    var breathingRateTimeseries: [Double]
+    var breathDepthTimeseries: [Double]
+    var meanBreathingRate: Double?
+    var breathingRegularity: Double?
+    var resonanceMatchScore: Double?
+
+    // Combined "practice landed" summary
+    var overallScore: Double?
+
+    var windowSec: Int
+    var hopSec: Int
+    var algorithmVersion: String
+}
+
+// MARK: - Engine
+//
+// Pure Swift (Foundation only — Accelerate is permitted by the spec but unnecessary
+// at these lengths). Turns a raw capture into stillness / HR-decline / breathing
+// metrics plus aligned timeseries and one overall score.
+//
+// WINDOWS: window `i` covers `[i*hopSec, i*hopSec + windowSec)`. Count =
+// `floor((totalSec - windowSec) / hopSec) + 1`, or 0 if the session is shorter than
+// one window. `totalSec` is the max end time across the motion and HR channels.
+//
+// BREATHING BAND: 0.05–0.5 Hz (3–30 breaths/min). Resonance target: ~0.1 Hz (6/min).
+//
+// OVERALL SCORE WEIGHTING (documented, renormalized over whichever signals exist):
+//   belly + readable breathing → stillness .30, hrDecline .25, resonance .25, regularity .20
+//   otherwise (2-signal)       → stillness .55, hrDecline .45
+// `hrDecline` is normalized as `clamp(decline / 15 bpm, 0, 1)` before weighting.
+enum SignalEngine {
+
+    static let version = "2.0.0"
+
+    private static let breathBandLo = 0.05   // Hz
+    private static let breathBandHi = 0.5     // Hz
+    private static let resonanceHz = 0.1      // ~6 breaths/min
+    private static let concentrationMin = 0.30 // band power concentration for "clear"
+    private static let ampFloor = 0.004        // rad; below this the pitch is flat
+    private static let hrDeclineFull = 15.0    // bpm drop that maps to 1.0
+    private static let stillnessGain = 5.0     // activity → stillness sharpness
+    private static let attitudeWeight = 1.0    // radians vs g weighting in activity
+
+    static func analyze(
+        motion: [MotionSample],
+        hr: [HRSample],
+        bellyBreathing: Bool,
+        windowSec: Int = 30,
+        hopSec: Int = 5
+    ) -> SignalResult {
+
+        let totalSec = max(motion.last?.t ?? 0, hr.last?.t ?? 0)
+        let w = Double(windowSec)
+        let h = Double(hopSec)
+        let windowCount = totalSec >= w ? Int(((totalSec - w) / h).rounded(.down)) + 1 : 0
+
+        // Empty / too-short session: valid but blank result.
+        guard windowCount > 0 else {
+            let meanHR = hr.isEmpty ? 0 : hr.map(\.bpm).reduce(0, +) / Double(hr.count)
+            return SignalResult(
+                heartRateTimeseries: [], meanHR: meanHR, startHR: nil, endHR: nil, hrDecline: nil,
+                stillnessTimeseries: [], stillnessScore: nil, stillnessMethod: "total",
+                breathingRateTimeseries: [], breathDepthTimeseries: [],
+                meanBreathingRate: nil, breathingRegularity: nil, resonanceMatchScore: nil,
+                overallScore: nil, windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
+            )
+        }
+
+        let windows: [(lo: Double, hi: Double)] = (0..<windowCount).map {
+            (Double($0) * h, Double($0) * h + w)
+        }
+
+        // MARK: Heart rate (always)
+        let heartRateTimeseries = resampleHR(hr, windows: windows)
+        let meanHR = hr.isEmpty ? 0 : hr.map(\.bpm).reduce(0, +) / Double(hr.count)
+        let startHR = heartRateTimeseries.first
+        let endHR = heartRateTimeseries.last
+        let hrDecline: Double? = (startHR != nil && endHR != nil) ? startHR! - endHR! : nil
+
+        // MARK: Breathing (belly only) — computed first so stillness knows whether
+        // the breathing band should be excluded (readable) or not (fell back).
+        var breathingRateTimeseries: [Double] = []
+        var breathDepthTimeseries: [Double] = []
+        var meanBreathingRate: Double?
+        var breathingRegularity: Double?
+        var resonanceMatchScore: Double?
+        var breathingReadable = false
+
+        // Band-passed pitch is reused by both breathing and belly-stillness.
+        let times = motion.map(\.t)
+        let pitchBP = bandPass(motion.map(\.pitch), times: times)
+
+        if bellyBreathing {
+            let amp = stddev(pitchBP)
+            let (bestF, bestP, totalP) = dominantFrequency(times: times, values: pitchBP,
+                                                            fMin: breathBandLo, fMax: breathBandHi)
+            let concentration = (totalP > 0 && !pitchBP.isEmpty)
+                ? 2 * bestP / (totalP * Double(pitchBP.count)) : 0
+
+            if amp >= ampFloor && concentration >= concentrationMin && bestF > 0 {
+                breathingReadable = true
+
+                // Per-window rate (dominant band frequency) + depth (peak-to-trough).
+                var rates: [Double] = []
+                for win in windows {
+                    let idx = indices(times, in: win)
+                    if idx.count >= 8 {
+                        let wt = idx.map { times[$0] }
+                        let wp = idx.map { pitchBP[$0] }
+                        let (f, p, tot) = dominantFrequency(times: wt, values: wp,
+                                                            fMin: breathBandLo, fMax: breathBandHi)
+                        let conc = (tot > 0) ? 2 * p / (tot * Double(wp.count)) : 0
+                        let rate = (conc >= concentrationMin && f > 0) ? f * 60 : 0
+                        rates.append(rate)
+                        let depth = (wp.max() ?? 0) - (wp.min() ?? 0)
+                        breathDepthTimeseries.append(depth)
+                    } else {
+                        rates.append(0)
+                        breathDepthTimeseries.append(0)
+                    }
+                }
+                breathingRateTimeseries = rates
+
+                let readable = rates.filter { $0 > 0 }
+                if readable.isEmpty {
+                    breathingReadable = false
+                    breathingRateTimeseries = []
+                    breathDepthTimeseries = []
+                } else {
+                    meanBreathingRate = readable.reduce(0, +) / Double(readable.count)
+                    resonanceMatchScore = resonanceMatch(meanBreathingRate!)
+                    breathingRegularity = regularity(pitchBP: pitchBP, times: times)
+                }
+            }
+        }
+
+        // MARK: Stillness (always). Belly + readable → exclude the breathing band so
+        // the deliberate oscillation isn't penalized as restlessness; else score the
+        // full motion ("total").
+        let excludeBreathing = bellyBreathing && breathingReadable
+        let stillnessMethod = excludeBreathing ? "breathingExcluded" : "total"
+
+        // Residual attitude channels for the belly case (breathing band removed).
+        let rollBP = bandPass(motion.map(\.roll), times: times)
+        let pitchResid = zip(motion.map(\.pitch), pitchBP).map { $0 - $1 }
+        let rollResid = zip(motion.map(\.roll), rollBP).map { $0 - $1 }
+
+        var stillnessTimeseries: [Double] = []
+        for win in windows {
+            let idx = indices(times, in: win)
+            let accel = idx.map { motion[$0].userAccel }
+            let pitchCh = idx.map { excludeBreathing ? pitchResid[$0] : motion[$0].pitch }
+            let rollCh  = idx.map { excludeBreathing ? rollResid[$0]  : motion[$0].roll }
+            let activity = rms(accel) + attitudeWeight * (stddev(pitchCh) + stddev(rollCh))
+            stillnessTimeseries.append(1 / (1 + stillnessGain * activity))
+        }
+        let stillnessScore = stillnessTimeseries.isEmpty
+            ? nil : stillnessTimeseries.reduce(0, +) / Double(stillnessTimeseries.count)
+
+        // MARK: Overall score
+        let overallScore = combine(
+            stillness: stillnessScore,
+            hrDecline: hrDecline,
+            resonance: resonanceMatchScore,
+            regularity: breathingRegularity
+        )
+
+        return SignalResult(
+            heartRateTimeseries: heartRateTimeseries, meanHR: meanHR,
+            startHR: startHR, endHR: endHR, hrDecline: hrDecline,
+            stillnessTimeseries: stillnessTimeseries, stillnessScore: stillnessScore,
+            stillnessMethod: stillnessMethod,
+            breathingRateTimeseries: breathingRateTimeseries, breathDepthTimeseries: breathDepthTimeseries,
+            meanBreathingRate: meanBreathingRate, breathingRegularity: breathingRegularity,
+            resonanceMatchScore: resonanceMatchScore,
+            overallScore: overallScore,
+            windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
+        )
+    }
+
+    // MARK: - HR resampling
+
+    /// Per-window mean BPM, gaps filled by nearest-known window so the series has no
+    /// holes (length == window count).
+    private static func resampleHR(_ hr: [HRSample], windows: [(lo: Double, hi: Double)]) -> [Double] {
+        guard !hr.isEmpty else { return windows.map { _ in 0 } }
+        var raw: [Double?] = windows.map { win in
+            let vals = hr.filter { $0.t >= win.lo && $0.t < win.hi }.map(\.bpm)
+            return vals.isEmpty ? nil : vals.reduce(0, +) / Double(vals.count)
+        }
+        // Forward then backward fill.
+        var last: Double?
+        for i in raw.indices { if let v = raw[i] { last = v } else { raw[i] = last } }
+        var next: Double?
+        for i in raw.indices.reversed() { if let v = raw[i] { next = v } else { raw[i] = next } }
+        let fallback = hr.map(\.bpm).reduce(0, +) / Double(hr.count)
+        return raw.map { $0 ?? fallback }
+    }
+
+    // MARK: - Breathing helpers
+
+    /// Closeness of a rate (breaths/min) to the ~6/min resonance target, 0..1.
+    private static func resonanceMatch(_ rate: Double) -> Double {
+        let target = resonanceHz * 60          // 6
+        return exp(-0.5 * pow((rate - target) / 2.0, 2))   // rate 6 → 1.0
+    }
+
+    /// Regularity from the variance of breath-to-breath intervals (up-crossings of
+    /// the band-passed pitch). Lower coefficient-of-variation → higher regularity.
+    private static func regularity(pitchBP: [Double], times: [Double]) -> Double? {
+        var crossTimes: [Double] = []
+        for i in 1..<pitchBP.count where pitchBP[i - 1] <= 0 && pitchBP[i] > 0 {
+            crossTimes.append(times[i])
+        }
+        guard crossTimes.count >= 3 else { return nil }
+        var intervals: [Double] = []
+        for i in 1..<crossTimes.count { intervals.append(crossTimes[i] - crossTimes[i - 1]) }
+        let m = intervals.reduce(0, +) / Double(intervals.count)
+        guard m > 0 else { return nil }
+        let cv = stddev(intervals) / m
+        return exp(-cv)   // CV 0 → 1.0
+    }
+
+    /// Direct band-limited DFT scan for the dominant frequency in `[fMin, fMax]`,
+    /// using actual sample times (robust to non-uniform sampling). Returns the best
+    /// frequency, its power, and the signal's total (mean-removed) power.
+    private static func dominantFrequency(
+        times: [Double], values: [Double], fMin: Double, fMax: Double
+    ) -> (freq: Double, power: Double, total: Double) {
+        guard values.count >= 8 else { return (0, 0, 0) }
+        let mean = values.reduce(0, +) / Double(values.count)
+        let x = values.map { $0 - mean }
+        let total = x.reduce(0) { $0 + $1 * $1 }
+        guard total > 0 else { return (0, 0, 0) }
+        let steps = 120
+        var bestF = 0.0, bestP = -1.0
+        for k in 0...steps {
+            let f = fMin + (fMax - fMin) * Double(k) / Double(steps)
+            var re = 0.0, im = 0.0
+            for i in 0..<x.count {
+                let ang = 2 * Double.pi * f * times[i]
+                re += x[i] * cos(ang)
+                im -= x[i] * sin(ang)
+            }
+            let p = re * re + im * im
+            if p > bestP { bestP = p; bestF = f }
+        }
+        return (bestF, bestP, total)
+    }
+
+    // MARK: - Filtering / stats
+
+    /// Band-pass ~[0.05, 0.5] Hz via difference of two centered moving averages
+    /// (fast low-pass minus slow low-pass). Zero-phase, adequate for this band.
+    private static func bandPass(_ y: [Double], times: [Double]) -> [Double] {
+        guard y.count > 2 else { return y.map { _ in 0 } }
+        let fs = sampleRate(times)
+        let fastWin = max(1, Int((fs * 1.0).rounded()))    // ~1 s  → LP ~0.5 Hz
+        let slowWin = max(1, Int((fs * 10.0).rounded()))   // ~10 s → LP ~0.05 Hz
+        let fast = movingAverage(y, fastWin)
+        let slow = movingAverage(y, slowWin)
+        return zip(fast, slow).map { $0 - $1 }
+    }
+
+    private static func sampleRate(_ times: [Double]) -> Double {
+        guard let first = times.first, let last = times.last, last > first, times.count > 1
+        else { return 20 }
+        return Double(times.count - 1) / (last - first)
+    }
+
+    private static func movingAverage(_ y: [Double], _ win: Int) -> [Double] {
+        guard win > 1, !y.isEmpty else { return y }
+        let half = win / 2
+        var out = [Double](repeating: 0, count: y.count)
+        for i in 0..<y.count {
+            let lo = max(0, i - half), hi = min(y.count - 1, i + half)
+            var s = 0.0
+            for j in lo...hi { s += y[j] }
+            out[i] = s / Double(hi - lo + 1)
+        }
+        return out
+    }
+
+    private static func indices(_ times: [Double], in win: (lo: Double, hi: Double)) -> [Int] {
+        (0..<times.count).filter { times[$0] >= win.lo && times[$0] < win.hi }
+    }
+
+    private static func rms(_ y: [Double]) -> Double {
+        guard !y.isEmpty else { return 0 }
+        return (y.reduce(0) { $0 + $1 * $1 } / Double(y.count)).squareRoot()
+    }
+
+    private static func stddev(_ y: [Double]) -> Double {
+        let n = Double(y.count)
+        guard n > 1 else { return 0 }
+        let m = y.reduce(0, +) / n
+        return (y.reduce(0) { $0 + ($1 - m) * ($1 - m) } / n).squareRoot()
+    }
+
+    // MARK: - Score combination
+
+    private static func combine(
+        stillness: Double?, hrDecline: Double?, resonance: Double?, regularity: Double?
+    ) -> Double? {
+        var terms: [(value: Double, weight: Double)] = []
+        let breathing = resonance != nil || regularity != nil
+        let wStill = breathing ? 0.30 : 0.55
+        let wHR = breathing ? 0.25 : 0.45
+
+        if let s = stillness { terms.append((s, wStill)) }
+        if let d = hrDecline { terms.append((min(max(d / hrDeclineFull, 0), 1), wHR)) }
+        if let r = resonance { terms.append((r, 0.25)) }
+        if let g = regularity { terms.append((g, 0.20)) }
+
+        let totalWeight = terms.reduce(0) { $0 + $1.weight }
+        guard totalWeight > 0 else { return nil }
+        return terms.reduce(0) { $0 + $1.value * $1.weight } / totalWeight
+    }
+}

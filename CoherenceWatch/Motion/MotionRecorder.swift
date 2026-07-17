@@ -1,17 +1,9 @@
 import Foundation
 import CoreMotion
 
-/// One CoreMotion device-motion sample, timestamped from the start of recording.
-/// `pitch`/`roll` are attitude angles (radians); `userAccel` is the magnitude of
-/// user acceleration (g), gravity removed by CoreMotion's sensor fusion.
-struct MotionSample {
-    let t: TimeInterval     // seconds since recording start
-    let pitch: Double
-    let roll: Double
-    let userAccel: Double
-}
-
-/// Captures `CMDeviceMotion` on the Watch at ~20 Hz. The gravity-tilt pitch is
+/// Captures `CMDeviceMotion` on the Watch at ~20 Hz.
+/// (`MotionSample` is defined in `Shared/Engine/SignalEngine.swift` so the engine,
+/// both apps, and the test target share one definition.) The gravity-tilt pitch is
 /// the belly-breathing signal; userAcceleration feeds stillness. Watch-only.
 ///
 /// Runs alongside the `HKWorkoutSession` (which keeps the app foregrounded so
