@@ -52,7 +52,7 @@ struct HRSample {
 /// and `breathDepthTimeseries` have length == window count ONLY for a belly session
 /// with a readable breathing signal; otherwise they are EMPTY (the convention the
 /// tests assert). Point `i`'s timestamp = `startedAt + i*hopSec + windowSec/2`.
-struct SignalResult {
+struct SignalResult: Codable, Equatable {
     // Heart rate (always)
     var heartRateTimeseries: [Double]
     var meanHR: Double
