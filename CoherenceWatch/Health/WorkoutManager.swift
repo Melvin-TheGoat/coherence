@@ -129,9 +129,10 @@ final class WorkoutManager: NSObject, ObservableObject {
         if bellyBreathing {
             print("=== BELLY DIAG (dur \(durationSec)s, breaths=\(result.meanBreathingRate.map { String(format: "%.1f", $0) } ?? "nil")) ===")
             print(SignalEngine.bellyDiagnostics(motion: motionTrim))
-            let step = Swift.max(1, motionTrim.count / 120)
-            let pitchMrad = stride(from: 0, to: motionTrim.count, by: step).map { Int((motionTrim[$0].pitch * 1000).rounded()) }
-            print("pitch_mrad n=\(pitchMrad.count): \(pitchMrad)")
+            let step = Swift.max(1, motionTrim.count / 100)
+            let idx = stride(from: 0, to: motionTrim.count, by: step)
+            print("pitch_mrad: \(idx.map { Int((motionTrim[$0].pitch * 1000).rounded()) })")
+            print("roll_mrad:  \(idx.map { Int((motionTrim[$0].roll * 1000).rounded()) })")
         }
         #endif
 

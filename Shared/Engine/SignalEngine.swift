@@ -387,21 +387,50 @@ enum SignalEngine {
 
     // MARK: - Diagnostics (temporary Phase-4 belly debugging)
 
-    /// The whole-session breathing-readability inputs, for console logging when a
-    /// belly session unexpectedly falls back to 2-signal. Pass the SAME trimmed +
-    /// rebased motion that `analyze` receives.
+    /// Per-axis breathing-readability inputs (pitch, roll, and a PCA dominant
+    /// axis), for console logging when a belly session falls back to 2-signal.
+    /// Reveals which axis actually carries the breathing given the watch's real
+    /// (palm-on-belly, offset) placement. Pass the SAME trimmed + rebased motion
+    /// `analyze` receives.
     static func bellyDiagnostics(motion: [MotionSample]) -> String {
         let times = motion.map(\.t)
-        let pitchBP = bandPass(motion.map(\.pitch), times: times)
-        let amp = stddev(pitchBP)
-        let (bestF, bestP, totalP) = dominantFrequency(times: times, values: pitchBP,
-                                                        fMin: breathBandLo, fMax: breathBandHi)
-        let conc = (totalP > 0 && !pitchBP.isEmpty) ? 2 * bestP / (totalP * Double(pitchBP.count)) : 0
-        let readable = amp >= ampFloor && conc >= concentrationMin && bestF > 0
-        return String(
-            format: "amp=%.4f (floor %.4f) conc=%.3f (min %.2f) bestF=%.3fHz (%.1f/min) fs=%.1f n=%d → %@",
-            amp, ampFloor, conc, concentrationMin, bestF, bestF * 60,
-            sampleRate(times), pitchBP.count, readable ? "READABLE" : "REJECTED"
-        )
+        func line(_ label: String, _ raw: [Double]) -> String {
+            let bp = bandPass(raw, times: times)
+            let amp = stddev(bp)
+            let (f, p, tot) = dominantFrequency(times: times, values: bp, fMin: breathBandLo, fMax: breathBandHi)
+            let conc = (tot > 0 && !bp.isEmpty) ? 2 * p / (tot * Double(bp.count)) : 0
+            let ok = amp >= ampFloor && conc >= concentrationMin && f > 0
+            return String(format: "%@ amp=%.4f conc=%.3f bestF=%.3fHz (%.1f/min) %@",
+                          label, amp, conc, f, f * 60, ok ? "OK" : "reject")
+        }
+        let pca = principalComponent(motion.map(\.pitch), motion.map(\.roll))
+        return [
+            String(format: "floor amp %.4f · min conc %.2f · fs %.1f · n %d",
+                   ampFloor, concentrationMin, sampleRate(times), times.count),
+            line("pitch", motion.map(\.pitch)),
+            line("roll ", motion.map(\.roll)),
+            line("pca  ", pca),
+        ].joined(separator: "\n")
+    }
+
+    /// The projection of two mean-removed channels onto their dominant (largest-
+    /// variance) axis — a 2D PCA that finds the breathing oscillation regardless of
+    /// how the watch is rotated on the belly.
+    private static func principalComponent(_ a: [Double], _ b: [Double]) -> [Double] {
+        let n = Double(a.count)
+        guard n > 1, a.count == b.count else { return a }
+        let ma = a.reduce(0, +) / n, mb = b.reduce(0, +) / n
+        let ca = a.map { $0 - ma }, cb = b.map { $0 - mb }
+        var caa = 0.0, cbb = 0.0, cab = 0.0
+        for i in 0..<a.count { caa += ca[i] * ca[i]; cbb += cb[i] * cb[i]; cab += ca[i] * cb[i] }
+        caa /= n; cbb /= n; cab /= n
+        let tr = caa + cbb, det = caa * cbb - cab * cab
+        let disc = max(0, tr * tr / 4 - det).squareRoot()
+        let lambda = tr / 2 + disc
+        var vx = cab, vy = lambda - caa
+        if abs(vx) < 1e-12 && abs(vy) < 1e-12 { vx = 1; vy = 0 }
+        let norm = (vx * vx + vy * vy).squareRoot()
+        vx /= norm; vy /= norm
+        return zip(ca, cb).map { $0 * vx + $1 * vy }
     }
 }
