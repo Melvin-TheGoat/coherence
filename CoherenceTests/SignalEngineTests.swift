@@ -64,6 +64,15 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertGreaterThan(r.resonanceMatchScore ?? 0, 0.9)
     }
 
+    /// A slow held breath (~2/min, 0.033 Hz) is below the naive 3/min band floor —
+    /// the engine must still read it, not throw it away (Phase-2 constraint).
+    func test_slowHeldBreath_readsAboutTwo() {
+        let m = motion(dur: 180, pitch: sine(0.0333, amp: 0.12))
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
+        XCTAssertNotNil(r.meanBreathingRate, "slow held breaths must not be discarded")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 2, accuracy: 0.7)
+    }
+
     /// Random pitch either fails the readability gate (weak fallback) or reads a low
     /// regularity — never a confident, regular breath.
     func test_noisyPitch_lowRegularity() {

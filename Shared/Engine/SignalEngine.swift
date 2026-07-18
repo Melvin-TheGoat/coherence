@@ -90,7 +90,7 @@ struct SignalResult: Codable, Equatable {
 // `floor((totalSec - windowSec) / hopSec) + 1`, or 0 if the session is shorter than
 // one window. `totalSec` is the max end time across the motion and HR channels.
 //
-// BREATHING BAND: 0.05–0.5 Hz (3–30 breaths/min). Resonance target: ~0.1 Hz (6/min).
+// BREATHING BAND: 0.033–0.5 Hz (~2–30 breaths/min). Resonance target: ~0.1 Hz (6/min).
 //
 // OVERALL SCORE WEIGHTING (documented, renormalized over whichever signals exist):
 //   belly + readable breathing → stillness .30, hrDecline .25, resonance .25, regularity .20
@@ -100,7 +100,7 @@ enum SignalEngine {
 
     static let version = "2.0.0"
 
-    private static let breathBandLo = 0.05   // Hz
+    private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
     private static let resonanceHz = 0.1      // ~6 breaths/min
     private static let concentrationMin = 0.30 // band power concentration for "clear"
@@ -324,7 +324,7 @@ enum SignalEngine {
         guard y.count > 2 else { return y.map { _ in 0 } }
         let fs = sampleRate(times)
         let fastWin = max(1, Int((fs * 1.0).rounded()))    // ~1 s  → LP ~0.5 Hz
-        let slowWin = max(1, Int((fs * 10.0).rounded()))   // ~10 s → LP ~0.05 Hz
+        let slowWin = max(1, Int((fs * 20.0).rounded()))   // ~20 s → LP ~0.025 Hz (passes ~2/min)
         let fast = movingAverage(y, fastWin)
         let slow = movingAverage(y, slowWin)
         return zip(fast, slow).map { $0 - $1 }
