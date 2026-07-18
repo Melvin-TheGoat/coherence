@@ -1,27 +1,47 @@
 import SwiftUI
 
-/// Phase 0 placeholder. Confirms the app launches, the local ModelContainer is
-/// injected, and colors resolve through the asset catalog (gold on near-black).
+/// Phase-4 debug UI: trigger a Regular or Belly session on the Watch and dump the
+/// persisted result. The real setup hierarchy replaces this in Phase 5.
 struct ContentView: View {
+    @EnvironmentObject private var coordinator: SessionCoordinator
+
     var body: some View {
         ZStack {
-            AppColor.backgroundPrimary
-                .ignoresSafeArea()
+            AppColor.backgroundPrimary.ignoresSafeArea()
 
-            VStack(spacing: 12) {
+            VStack(spacing: 20) {
                 Text("Coherence")
                     .font(.largeTitle.weight(.semibold))
                     .foregroundStyle(AppColor.accentGold)
-                Text("coherence as evidence, not a training score")
+
+                VStack(spacing: 12) {
+                    Button("Begin — Regular (2 min)") {
+                        coordinator.begin(mode: "silence", trackID: nil, plannedDurationSec: 120,
+                                          bellyBreathing: false, hapticsEnabled: true)
+                    }
+                    Button("Begin — Belly (2 min)") {
+                        coordinator.begin(mode: "silence", trackID: nil, plannedDurationSec: 120,
+                                          bellyBreathing: true, hapticsEnabled: true)
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppColor.accentGold)
+
+                Text(coordinator.status)
                     .font(.footnote)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
+
+                if let summary = coordinator.lastSummary {
+                    Text(summary)
+                        .font(.system(.footnote, design: .monospaced))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.leading)
+                        .padding()
+                        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12))
+                }
             }
             .padding()
         }
     }
-}
-
-#Preview {
-    ContentView()
 }

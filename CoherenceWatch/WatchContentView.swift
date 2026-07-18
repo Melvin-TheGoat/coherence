@@ -1,117 +1,69 @@
 import SwiftUI
-import Charts
 
-/// Phase-2 proving-ground UI: authorize, pick Regular vs Belly breathing, run a
-/// workout that captures motion + HR, and on end eyeball the raw capture (sample
-/// counts, and for belly the pitch waveform + estimated breaths/min). The real
-/// session UI (haptics, timing, no live biometrics) arrives in later phases.
+/// Phase-4 Watch session UI: authorize once, then wait for the phone to start a
+/// session. During a session it shows only elapsed time + an End control — no
+/// live biometrics (evidence comes after, not during).
 struct WatchContentView: View {
-    @StateObject private var workout = WorkoutManager()
-    @State private var isAuthorized = false
-    @State private var belly = false
-    @State private var isEnding = false
+    @EnvironmentObject private var manager: WatchSessionManager
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 12) {
-                Text(bpmText)
-                    .font(.system(size: 44, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(AppColor.accentGold)
-                Text("BPM")
-                    .font(.caption2)
-                    .foregroundStyle(AppColor.textSecondary)
+        ZStack {
+            AppColor.backgroundPrimary.ignoresSafeArea()
+            content
+                .padding()
+        }
+    }
 
-                if isAuthorized && !workout.isRunning && workout.capture == nil {
-                    Toggle("Belly breathing", isOn: $belly)
-                        .font(.caption)
+    @ViewBuilder
+    private var content: some View {
+        if !manager.authorized {
+            VStack(spacing: 10) {
+                Text("Coherence")
+                    .font(.headline)
+                    .foregroundStyle(AppColor.accentGold)
+                Button("Authorize") { Task { await manager.authorize() } }
+                    .tint(AppColor.accentGold)
+                if let msg = manager.statusMessage {
+                    Text(msg).font(.caption2).foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+        } else {
+            switch manager.phase {
+            case .idle:
+                VStack(spacing: 8) {
+                    Text("Ready")
+                        .font(.headline)
+                        .foregroundStyle(AppColor.accentGold)
+                    Text("Start a session from your phone")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
+            case .running:
+                VStack(spacing: 12) {
+                    Text(timeString(manager.elapsed))
+                        .font(.system(size: 40, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(AppColor.accentGold)
+                    if manager.params?.bellyBreathing == true {
+                        Text("belly breathing")
+                            .font(.caption2)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    Button("End") { manager.endByUser() }
                         .tint(AppColor.accentGold)
                 }
-
-                if workout.isRunning && belly {
-                    Text(liveBreathsText)
-                        .font(.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-
-                control
-                    .tint(AppColor.accentGold)
-
-                if let message = workout.statusMessage {
-                    Text(message)
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-
-                if let capture = workout.capture {
-                    captureView(capture)
-                }
-            }
-            .padding()
-        }
-        .background(AppColor.backgroundPrimary.ignoresSafeArea())
-    }
-
-    @ViewBuilder
-    private var control: some View {
-        if !isAuthorized {
-            Button("Authorize") {
-                Task { isAuthorized = await HealthKitAuth.authorize() }
-            }
-        } else if workout.isRunning {
-            Button(isEnding ? "Ending…" : "End") {
-                isEnding = true
-                Task {
-                    await workout.end()
-                    isEnding = false
-                }
-            }
-            .disabled(isEnding)
-        } else {
-            Button("Start") { workout.start(bellyBreathing: belly) }
-        }
-    }
-
-    @ViewBuilder
-    private func captureView(_ capture: CaptureSummary) -> some View {
-        VStack(spacing: 6) {
-            Text("motion: \(capture.motionCount)  hr: \(capture.hrCount)")
-                .font(.system(.caption2, design: .monospaced))
-                .foregroundStyle(AppColor.textSecondary)
-
-            if capture.bellyBreathing {
-                // Raw belly waveform (edges trimmed) — always shown so the signal
-                // is visible even when the aggregate estimate can't lock a rate.
-                Text("breath waveform")
-                    .font(.caption2)
+            case .sending:
+                Text("Saving…")
+                    .font(.headline)
                     .foregroundStyle(AppColor.textSecondary)
-                Chart(capture.pitchSeries) { point in
-                    LineMark(x: .value("t", point.t), y: .value("pitch", point.pitch))
+            case .sent:
+                VStack(spacing: 6) {
+                    Text("Done")
+                        .font(.headline)
                         .foregroundStyle(AppColor.accentGold)
-                }
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
-                .frame(height: 90)
-
-                if !capture.rateSeries.isEmpty {
-                    Text("breaths/min over time")
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                    Chart(Array(capture.rateSeries.enumerated()), id: \.offset) { item in
-                        LineMark(x: .value("i", item.offset), y: .value("bpm", item.element))
-                            .foregroundStyle(AppColor.textPrimary)
-                    }
-                    .chartYScale(domain: 0...15)
-                    .frame(height: 70)
-                }
-
-                if let breaths = capture.finalBreaths {
-                    Text(String(format: "≈ %.1f breaths/min (avg)", breaths))
-                        .font(.caption)
-                        .foregroundStyle(AppColor.accentGold)
-                } else {
-                    Text("no clear breathing signal")
+                    Text("Sent to your phone")
                         .font(.caption2)
                         .foregroundStyle(AppColor.textSecondary)
                 }
@@ -119,17 +71,7 @@ struct WatchContentView: View {
         }
     }
 
-    private var bpmText: String {
-        guard let hr = workout.currentHR else { return "—" }
-        return String(Int(hr.rounded()))
+    private func timeString(_ seconds: Int) -> String {
+        String(format: "%d:%02d", seconds / 60, seconds % 60)
     }
-
-    private var liveBreathsText: String {
-        guard let b = workout.liveBreaths else { return "reading breath…" }
-        return String(format: "≈ %.1f breaths/min", b)
-    }
-}
-
-#Preview {
-    WatchContentView()
 }
