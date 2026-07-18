@@ -106,9 +106,30 @@ UI must coach it, and the 2-signal degrade path must stay.
   persistence (`SessionStore` in `Shared/Session/`: bootstrap-User fetch-or-create,
   one-transaction idempotent Session+Stats write, streak-date read). 11 tests
   (5 streak + 6 persistence), in-memory store.
-- **Phase 4 device-wiring PENDING** — WCSession managers, the `startWatchApp`
-  trigger, the Watch rewire to params + `SignalEngine`, iOS trigger UI, and iOS
-  HealthKit auth. Needs both devices to verify; rewrites the Phase-2 Watch UI.
+- **Phase 4 device-wiring DONE (built) — partially verified on-device.**
+  WCSession both sides (`WatchSessionManager`, `Coherence/Session/SessionCoordinator`),
+  `startWatchApp` launch, the Watch rewired to receive `SessionParams` → run the
+  workout + motion → `SignalEngine` → ship `SessionPayload` → iOS persists via
+  `SessionStore`. Temp iOS Begin-Regular/Belly buttons. Params delivered over three
+  channels (message / user-info / applicationContext) deduped by sessionID.
+  - **Regular sessions VERIFIED end-to-end** on the phone: a still session scored
+    stillness ~0.86, `hrDecline +8.8` (HR settled), `overall ~0.74`; a fidgety one
+    scored ~0.22 with `hrDecline −20` — the engine clearly discriminates settling
+    from motion. `durationSec` is wall-clock; motion now shares the HR clock.
+  - **Liveness insight (worth building in):** "good stillness + HR sensed the whole
+    session" defeats the take-the-watch-off cheat, since a removed watch loses HR.
+  - **⚠️ Belly breathing returns `breaths nil` on-device — UNDER INVESTIGATION.**
+    The engine's unit tests pass on synthetic 0.1 Hz signals, but real palm-on-belly
+    motion is rejected (falls back to 2-signal). **Key placement fact:** users rest
+    the **PALM on the belly**, so the watch sits **offset (up/left), not flat** —
+    the breathing tilt likely lives in **roll or a pitch+roll mix, but the engine
+    analyzes `pitch` only.** `SignalEngine.bellyDiagnostics` (DEBUG) now logs
+    amp/concentration/bestF for pitch, roll, and a **2D-PCA** axis + dumps both
+    waveforms to the Watch console. NEXT: read that output; likely fix = **switch
+    the engine's breathing axis from pitch-only to the PCA dominant axis**
+    (placement-tolerant, per spec) and/or lower `concentrationMin` (0.30). Engine is
+    Aziz's — coordinate the change.
+  - Not tagged. Tag `phase4-pipeline-verified` only after belly reads a real rate.
 
 ## Toolchain notes (this machine)
 
