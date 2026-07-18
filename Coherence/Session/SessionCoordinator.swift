@@ -56,11 +56,18 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 hapticsEnabled: hapticsEnabled
             )
 
-            // Deliver params: queued user-info always; message too if reachable.
+            // Deliver params over every available channel: queued user-info
+            // always; a message if reachable now; and application-context so a
+            // cold-launching watch app picks it up on activation (dedup'd by
+            // sessionID on the watch).
             if let data = try? JSONEncoder().encode(params) {
-                WCSession.default.transferUserInfo([WCKeys.params: data])
-                if WCSession.default.isReachable {
-                    WCSession.default.sendMessage([WCKeys.params: data], replyHandler: nil, errorHandler: nil)
+                let wc = WCSession.default
+                wc.transferUserInfo([WCKeys.params: data])
+                if wc.isReachable {
+                    wc.sendMessage([WCKeys.params: data], replyHandler: nil, errorHandler: nil)
+                }
+                if wc.activationState == .activated {
+                    try? wc.updateApplicationContext([WCKeys.params: data])
                 }
             }
 

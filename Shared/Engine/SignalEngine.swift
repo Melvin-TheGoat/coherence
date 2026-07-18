@@ -384,4 +384,24 @@ enum SignalEngine {
         guard totalWeight > 0 else { return nil }
         return terms.reduce(0) { $0 + $1.value * $1.weight } / totalWeight
     }
+
+    // MARK: - Diagnostics (temporary Phase-4 belly debugging)
+
+    /// The whole-session breathing-readability inputs, for console logging when a
+    /// belly session unexpectedly falls back to 2-signal. Pass the SAME trimmed +
+    /// rebased motion that `analyze` receives.
+    static func bellyDiagnostics(motion: [MotionSample]) -> String {
+        let times = motion.map(\.t)
+        let pitchBP = bandPass(motion.map(\.pitch), times: times)
+        let amp = stddev(pitchBP)
+        let (bestF, bestP, totalP) = dominantFrequency(times: times, values: pitchBP,
+                                                        fMin: breathBandLo, fMax: breathBandHi)
+        let conc = (totalP > 0 && !pitchBP.isEmpty) ? 2 * bestP / (totalP * Double(pitchBP.count)) : 0
+        let readable = amp >= ampFloor && conc >= concentrationMin && bestF > 0
+        return String(
+            format: "amp=%.4f (floor %.4f) conc=%.3f (min %.2f) bestF=%.3fHz (%.1f/min) fs=%.1f n=%d → %@",
+            amp, ampFloor, conc, concentrationMin, bestF, bestF * 60,
+            sampleRate(times), pitchBP.count, readable ? "READABLE" : "REJECTED"
+        )
+    }
 }

@@ -26,6 +26,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     let workout = WorkoutManager()
     private var timer: Task<Void, Never>?
+    /// Sessions already started, so the three delivery channels (message,
+    /// user-info, application-context) don't double-trigger and a stale context
+    /// doesn't re-launch an old session.
+    private var handledSessionIDs: Set<UUID> = []
     private let log = Logger(subsystem: "com.lockout.coherence.watchkitapp", category: "WatchSession")
 
     override init() {
@@ -46,9 +50,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
         authorized = workout.isWorkoutAuthorized
     }
 
-    /// Starts a session from received params (no-op if one is already running).
+    /// Starts a session from received params (no-op if already running or if this
+    /// session was already handled via another delivery channel).
     private func begin(_ p: SessionParams) async {
-        guard phase == .idle else { return }
+        guard phase == .idle, !handledSessionIDs.contains(p.sessionID) else { return }
+        handledSessionIDs.insert(p.sessionID)
         params = p
         elapsed = 0
         let started = await workout.start(bellyBreathing: p.bellyBreathing)
@@ -129,7 +135,13 @@ final class WatchSessionManager: NSObject, ObservableObject {
 }
 
 extension WatchSessionManager: WCSessionDelegate {
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        // A params context queued before the app launched is delivered here.
+        if activationState == .activated {
+            let ctx = session.receivedApplicationContext
+            if !ctx.isEmpty { handleParams(ctx) }
+        }
+    }
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         handleParams(message)
@@ -137,5 +149,9 @@ extension WatchSessionManager: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
         handleParams(userInfo)
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
+        handleParams(applicationContext)
     }
 }

@@ -84,7 +84,7 @@ final class WorkoutManager: NSObject, ObservableObject {
             }
             sessionStart = startDate
             isRunning = true
-            motion.start()
+            motion.start(reference: startDate)   // share the HR clock
             return true
         } catch {
             log.error("Failed to create workout session: \(error.localizedDescription)")
@@ -99,6 +99,9 @@ final class WorkoutManager: NSObject, ObservableObject {
     func finish() async -> FinishedSession? {
         guard let session, let builder, let startedAt = sessionStart else { return nil }
         isRunning = false
+        // Wall-clock at End — the true session length, unaffected by the HR
+        // samples that keep arriving during the ~seconds-long workout teardown.
+        let durationSec = Int(Date().timeIntervalSince(startedAt).rounded())
         motion.stop()
         session.end()
         _ = await finishBuilder(builder)
@@ -120,8 +123,18 @@ final class WorkoutManager: NSObject, ObservableObject {
             .map { HRSample(t: $0.t - lo, bpm: $0.bpm) }
 
         let result = SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: bellyBreathing)
-        let durationSec = Int(elapsed.rounded())
         log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
+
+        #if DEBUG
+        if bellyBreathing {
+            print("=== BELLY DIAG (dur \(durationSec)s, breaths=\(result.meanBreathingRate.map { String(format: "%.1f", $0) } ?? "nil")) ===")
+            print(SignalEngine.bellyDiagnostics(motion: motionTrim))
+            let step = Swift.max(1, motionTrim.count / 120)
+            let pitchMrad = stride(from: 0, to: motionTrim.count, by: step).map { Int((motionTrim[$0].pitch * 1000).rounded()) }
+            print("pitch_mrad n=\(pitchMrad.count): \(pitchMrad)")
+        }
+        #endif
+
         teardown()
         return FinishedSession(startedAt: startedAt, durationSec: durationSec, result: result)
     }

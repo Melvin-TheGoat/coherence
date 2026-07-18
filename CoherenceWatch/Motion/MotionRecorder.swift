@@ -20,11 +20,13 @@ final class MotionRecorder {
     var isAvailable: Bool { manager.isDeviceMotionAvailable }
 
     /// Begins device-motion updates at ~20 Hz. Clears any prior buffer.
-    func start() {
+    /// Pass `reference` (the workout start) so motion timestamps share the HR
+    /// clock; defaults to now.
+    func start(reference: Date? = nil) {
         guard manager.isDeviceMotionAvailable else { return }
         lock.lock()
         buffer.removeAll(keepingCapacity: true)
-        startTime = Date()
+        startTime = reference ?? Date()
         lock.unlock()
 
         queue.maxConcurrentOperationCount = 1
