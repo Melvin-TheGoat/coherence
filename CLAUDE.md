@@ -92,6 +92,24 @@ UI must coach it, and the 2-signal degrade path must stay.
   and reads as a bogus fast rate. Gate on **`userAccel`** — the same signal that
   feeds stillness — and exclude high-motion windows.
 
+## Progress (built + tested)
+
+- **Phases 0–2 done.** Phase 2 belly-breathing verified on-device (above).
+- **Phase 3 done** — `SignalEngine` (`Shared/Engine/SignalEngine.swift`), pure
+  Foundation. Stillness / HR-decline / belly-breathing metrics with **continuous
+  fractional rate** estimation (band-limited DFT scan, *not* integer zero-crossing),
+  a breathing band widened to **0.033–0.5 Hz** so ~2/min held breaths survive, two
+  stillness methods (`total` vs breathing-band-excluded), and the weak-signal
+  fallback. 10 synthetic-signal unit tests.
+- **Phase 4 backbone done** — the Codable transfer contract (`SessionParams` /
+  `SessionPayload` in `Shared/Connectivity/`; `SignalResult` is Codable) and iOS
+  persistence (`SessionStore` in `Shared/Session/`: bootstrap-User fetch-or-create,
+  one-transaction idempotent Session+Stats write, streak-date read). 11 tests
+  (5 streak + 6 persistence), in-memory store.
+- **Phase 4 device-wiring PENDING** — WCSession managers, the `startWatchApp`
+  trigger, the Watch rewire to params + `SignalEngine`, iOS trigger UI, and iOS
+  HealthKit auth. Needs both devices to verify; rewrites the Phase-2 Watch UI.
+
 ## Toolchain notes (this machine)
 
 - XcodeGen location differs per machine — resolve it with `which xcodegen`
@@ -103,6 +121,16 @@ UI must coach it, and the 2-signal degrade path must stay.
 - No iPhone 15 simulator exists here; use **iPhone 17** as the iOS Simulator
   destination in `xcodebuild` commands.
 - Regenerate the project after any `project.yml` change: `xcodegen generate`.
+- **Close Xcode before `xcodegen generate`** (or reopen the project after) — regen
+  while it's open yields "the active scheme has no targets."
+- **Signing is per-developer and LOCAL (never committed).** The repo commits
+  `DEVELOPMENT_TEAM: ""` and `com.lockout.coherence`. But the two cofounders have
+  **separate individual Apple Developer accounts**, and one bundle ID can't be
+  registered to both once HealthKit (an explicit App-ID capability) is enabled — so
+  each dev sets their own `DEVELOPMENT_TEAM` **and** a unique bundle-ID prefix in
+  their own uncommitted `project.yml` (+ the Watch `WKCompanionAppBundleIdentifier`
+  in `CoherenceWatch/Info.plist`). Aziz's local values: team `H5ZH6P56Q8`, IDs
+  `com.azizmahmud.808*`. Keep these out of commits. Proper fix later: an Org account.
 
 ## Architecture decisions (baked in — do not relitigate)
 
@@ -255,8 +283,10 @@ SessionMode case — a Guided or Silence session can each be belly or regular.
 - `Coherence/` — iOS app sources (bundle `com.lockout.coherence`, embeds the Watch)
 - `CoherenceWatch/` — watchOS app sources (no ModelContainer)
 - `Shared/` — compiled into both apps + the test target: `Models/`, `Engine/`
-  (pure-Swift signal engine — breathing/stillness/HR, Phase 3 — plus
-  `StreakCalculator`), `Theme/AppColor.swift`, `Persistence.swift`, `Assets.xcassets`
+  (`SignalEngine.swift` — breathing/stillness/HR analysis — plus `StreakCalculator`),
+  `Connectivity/` (`SessionPayload.swift` — the Codable Watch↔phone transfer
+  contract), `Session/` (`SessionStore.swift` — iOS persistence helpers),
+  `Theme/AppColor.swift`, `Persistence.swift`, `Assets.xcassets`
 - `CoherenceTests/` — iOS unit tests (host app Coherence)
 
 ## Build
