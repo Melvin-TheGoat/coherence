@@ -128,6 +128,18 @@ UI must coach it, and the 2-signal degrade path must stay.
     6/min where pitch-only returned nil (all pitch tests still pass), **and a real
     palm-on-belly session on-device now returns a real breathing rate.**
   - Tagged `phase4-pipeline-verified` — Regular + Belly both verified end-to-end.
+- **Phase 5 STARTED, then DEFERRED.** Track seeding is done (`TrackSeeder`,
+  `Shared/Session/`, 3 tests). The rest of Phase 5 — setup hierarchy, **audio**,
+  haptics, mid-session screen — is **deferred** (resequenced 2026-07-19): nail the
+  biometric data first. See the RESEQUENCED notes in `App_ROADMAP_v2.md`.
+- **NEXT (in progress): Phase 6 pulled forward — the biometric-evidence graphs.**
+  Post-session results screen (HR-settling / stillness / belly-breathing curves) +
+  logged history / calendar / streak, reading `MeditationStats`. No dependency on
+  audio. Temp "Begin Regular/Belly" buttons stay as the session trigger for now.
+- **Recent fixes.** Belly payload was silently dropped (a non-finite Double made
+  `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
+  the Watch send logs encode errors). Stale application context replayed a finished
+  session on cold Watch launch (the phone now clears it on payload receipt).
 
 ## Toolchain notes (this machine)
 

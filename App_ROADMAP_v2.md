@@ -292,6 +292,13 @@ Tag `phase4-pipeline-verified`. This is the second-riskiest gate; the product ex
 
 # Phase 5 — Audio playback + meditation setup hierarchy
 
+> **⚠️ RESEQUENCED (2026-07-19): DEFERRED until after the biometric-evidence work.**
+> Priority is nailing the biometric data (capture + display) before setup/audio
+> polish. **Phase 6 (Meditation Logged / Calendar / Stats — the evidence graphs)
+> runs FIRST**, using the temp "Begin Regular/Belly" buttons as the session
+> trigger. This audio + setup-hierarchy + haptics work comes after the graphs are
+> solid. (Step 1 — built-in track seeding — is already done; the rest waits.)
+
 **GOAL:** The real setup flow — mode chooser, track lists, silence, duration picker, open-ended sessions with a Watch end control, and bookend haptics — driving the Phase-4 pipeline.
 
 ### PASTE INTO CLAUDE CODE
@@ -333,6 +340,12 @@ Tag `phase5-flow-complete`.
 ---
 
 # Phase 6 — Meditation Logged, Calendar, Stats (pure readers)
+
+> **⚠️ RESEQUENCED (2026-07-19): PULLED FORWARD — runs before Phase 5 (audio).**
+> This is the biometric-evidence display: the post-session results screen with the
+> three signal graphs (HR-settling, stillness, belly-breathing) + the logged
+> history / calendar / streak. It reads `MeditationStats` already produced by the
+> Phase-4 pipeline, so it has NO dependency on the deferred audio/setup work.
 
 **GOAL:** The emotional payoff and history screens — each reads storage independently, screens pass only IDs, no screen writes.
 
