@@ -17,6 +17,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
     @Published var status: String = "Idle"
     /// Summary of the most recently persisted session (Phase-4 debug UI).
     @Published var lastSummary: String?
+    /// ID of the most recently persisted session — opens the results graphs.
+    @Published var lastSessionID: UUID?
 
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
@@ -104,6 +106,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let stats = statsFor(session.id, in: context)
         let streak = StreakCalculator.streak(from: SessionStore.sessionStartDates(in: context))
         lastSummary = summaryLine(session: session, stats: stats, currentStreak: streak.current)
+        lastSessionID = session.id
         status = "Saved ✓"
     }
 

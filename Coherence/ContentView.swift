@@ -4,6 +4,7 @@ import SwiftUI
 /// persisted result. The real setup hierarchy replaces this in Phase 5.
 struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
+    @State private var showResults = false
 
     var body: some View {
         ZStack {
@@ -40,8 +41,19 @@ struct ContentView: View {
                         .padding()
                         .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12))
                 }
+
+                if coordinator.lastSessionID != nil {
+                    Button("View graphs") { showResults = true }
+                        .buttonStyle(.bordered)
+                        .tint(AppColor.accentGold)
+                }
             }
             .padding()
+        }
+        .sheet(isPresented: $showResults) {
+            if let id = coordinator.lastSessionID {
+                SessionResultsView(sessionID: id)
+            }
         }
     }
 }
