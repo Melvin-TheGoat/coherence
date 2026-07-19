@@ -47,6 +47,16 @@ struct ContentView: View {
                         .buttonStyle(.bordered)
                         .tint(AppColor.accentGold)
                 }
+
+                // TEMP: belly readability numbers, for calibrating the gate.
+                if let diag = coordinator.lastBellyDiag {
+                    Text(diag)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.leading)
+                        .padding(8)
+                        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 8))
+                }
             }
             .padding()
         }

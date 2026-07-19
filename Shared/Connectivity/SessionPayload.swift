@@ -43,6 +43,9 @@ struct SessionPayload: Codable, Equatable {
     let durationSec: Int
     let discard: Bool
     let result: SignalResult?
+    /// TEMP diagnostic (belly only): the readability numbers, for calibrating the
+    /// gate from the phone. Optional → backward-compatible; remove once dialed in.
+    let bellyDiag: String?
 
     init(
         sessionID: UUID,
@@ -52,7 +55,8 @@ struct SessionPayload: Codable, Equatable {
         bellyBreathing: Bool,
         durationSec: Int,
         discard: Bool,
-        result: SignalResult?
+        result: SignalResult?,
+        bellyDiag: String? = nil
     ) {
         self.sessionID = sessionID
         self.startedAt = startedAt
@@ -62,5 +66,6 @@ struct SessionPayload: Codable, Equatable {
         self.durationSec = durationSec
         self.discard = discard
         self.result = result
+        self.bellyDiag = bellyDiag
     }
 }

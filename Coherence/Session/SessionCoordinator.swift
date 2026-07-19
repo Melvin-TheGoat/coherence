@@ -19,6 +19,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
     @Published var lastSummary: String?
     /// ID of the most recently persisted session — opens the results graphs.
     @Published var lastSessionID: UUID?
+    /// TEMP belly readability diagnostic from the last session (nil for regular).
+    @Published var lastBellyDiag: String?
 
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
@@ -97,6 +99,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // application context so a cold-launching Watch can't replay a finished
         // session (application context lingers until overwritten).
         try? WCSession.default.updateApplicationContext([:])
+
+        // Capture the belly diagnostic before any early return, so even a discarded
+        // or breathing-nil session still surfaces its readability numbers.
+        lastBellyDiag = payload.bellyDiag
 
         let context = container.mainContext
         guard let session = SessionStore.persist(payload, in: context) else {

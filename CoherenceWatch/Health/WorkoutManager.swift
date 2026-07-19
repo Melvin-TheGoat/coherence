@@ -7,6 +7,9 @@ struct FinishedSession {
     let startedAt: Date
     let durationSec: Int
     let result: SignalResult
+    /// TEMP diagnostic (belly only): amp/concentration/bestF per axis, surfaced to
+    /// the phone to calibrate the readability gate. Remove once belly is dialed in.
+    let bellyDiag: String?
 }
 
 /// Runs the on-wrist workout and captures CoreMotion (stillness + belly breathing)
@@ -125,19 +128,15 @@ final class WorkoutManager: NSObject, ObservableObject {
         let result = SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: bellyBreathing)
         log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
 
+        // TEMP: compute the belly diagnostic and ship it to the phone (below), so the
+        // amp/concentration/bestF numbers are readable without the flaky Watch console.
+        let bellyDiag = bellyBreathing ? SignalEngine.bellyDiagnostics(motion: motionTrim) : nil
         #if DEBUG
-        if bellyBreathing {
-            print("=== BELLY DIAG (dur \(durationSec)s, breaths=\(result.meanBreathingRate.map { String(format: "%.1f", $0) } ?? "nil")) ===")
-            print(SignalEngine.bellyDiagnostics(motion: motionTrim))
-            let step = Swift.max(1, motionTrim.count / 100)
-            let idx = stride(from: 0, to: motionTrim.count, by: step)
-            print("pitch_mrad: \(idx.map { Int((motionTrim[$0].pitch * 1000).rounded()) })")
-            print("roll_mrad:  \(idx.map { Int((motionTrim[$0].roll * 1000).rounded()) })")
-        }
+        if let bellyDiag { print("=== BELLY DIAG (dur \(durationSec)s) ===\n\(bellyDiag)") }
         #endif
 
         teardown()
-        return FinishedSession(startedAt: startedAt, durationSec: durationSec, result: result)
+        return FinishedSession(startedAt: startedAt, durationSec: durationSec, result: result, bellyDiag: bellyDiag)
     }
 
     /// Drops references and marks the manager idle so a fresh `start()` can run.

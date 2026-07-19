@@ -93,7 +93,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
             bellyBreathing: p.bellyBreathing,
             durationSec: finished.durationSec,
             discard: discard,
-            result: discard ? nil : finished.result
+            result: discard ? nil : finished.result,
+            bellyDiag: finished.bellyDiag
         )
         send(payload)
         phase = .sent
