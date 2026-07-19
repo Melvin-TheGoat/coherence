@@ -91,6 +91,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
     }
 
     private func persist(_ payload: SessionPayload) {
+        // The session is complete — clear the "start" command from the persistent
+        // application context so a cold-launching Watch can't replay a finished
+        // session (application context lingers until overwritten).
+        try? WCSession.default.updateApplicationContext([:])
+
         let context = container.mainContext
         guard let session = SessionStore.persist(payload, in: context) else {
             status = "Session discarded (too short / unreadable)"

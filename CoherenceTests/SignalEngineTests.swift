@@ -177,6 +177,40 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.breathingRateTimeseries.count, r.heartRateTimeseries.count)
     }
 
+    /// A belly result with non-finite values (as messy real motion can produce)
+    /// FAILS to JSON-encode raw — reproducing the silent belly-send bug — but the
+    /// sanitized copy encodes cleanly with finite values.
+    func test_sanitizeMakesResultEncodable() throws {
+        var r = SignalEngine.analyze(motion: motion(dur: 120, pitch: sine(0.1, amp: 0.1)),
+                                     hr: [], bellyBreathing: true)
+        r.meanBreathingRate = .nan
+        r.breathDepthTimeseries = [0.1, .infinity, 0.1]
+        r.stillnessScore = -.infinity
+
+        XCTAssertThrowsError(try JSONEncoder().encode(r), "raw NaN/Inf must break encoding")
+
+        let clean = r.sanitized()
+        XCTAssertNoThrow(try JSONEncoder().encode(clean))
+        XCTAssertNil(clean.meanBreathingRate)                              // non-finite optional → nil
+        XCTAssertNil(clean.stillnessScore)
+        XCTAssertTrue(clean.breathDepthTimeseries.allSatisfy { $0.isFinite })
+    }
+
+    /// The engine's output is always finite (it sanitizes before returning), so the
+    /// payload always encodes.
+    func test_analyzeOutputIsFinite() {
+        let r = SignalEngine.analyze(
+            motion: motion(dur: 120, pitch: sine(0.1, amp: 0.1), roll: sine(0.1, amp: 0.05)),
+            hr: [], bellyBreathing: true)
+        let scalars = [r.meanHR] + [r.startHR, r.endHR, r.hrDecline, r.stillnessScore,
+                                    r.meanBreathingRate, r.breathingRegularity,
+                                    r.resonanceMatchScore, r.overallScore].compactMap { $0 }
+        let all = r.heartRateTimeseries + r.stillnessTimeseries
+            + r.breathingRateTimeseries + r.breathDepthTimeseries + scalars
+        XCTAssertTrue(all.allSatisfy { $0.isFinite })
+        XCTAssertNoThrow(try JSONEncoder().encode(r))
+    }
+
     /// Window count = floor((totalSec - windowSec) / hopSec) + 1.
     func test_windowCount() {
         let dur = 600.0

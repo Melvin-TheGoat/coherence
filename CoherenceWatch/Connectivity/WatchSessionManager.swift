@@ -122,9 +122,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     private func send(_ payload: SessionPayload) {
-        guard let data = try? JSONEncoder().encode(payload) else { return }
-        WCSession.default.transferUserInfo([WCKeys.payload: data])
-        log.debug("Sent payload for session \(payload.sessionID)")
+        // Don't swallow encode failures — a non-finite Double makes JSONEncoder
+        // throw, which previously dropped the whole transfer silently (belly-nil bug).
+        do {
+            let data = try JSONEncoder().encode(payload)
+            WCSession.default.transferUserInfo([WCKeys.payload: data])
+            log.debug("Sent payload for session \(payload.sessionID)")
+        } catch {
+            log.error("Payload encode FAILED — session NOT sent: \(String(describing: error))")
+            statusMessage = "Send failed (encode)."
+        }
     }
 
     private nonisolated func handleParams(_ dict: [String: Any]) {

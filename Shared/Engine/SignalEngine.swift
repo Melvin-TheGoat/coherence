@@ -80,6 +80,30 @@ struct SignalResult: Codable, Equatable {
     var algorithmVersion: String
 }
 
+extension SignalResult {
+    /// A copy with every non-finite Double replaced: NaN/Inf → 0 for required
+    /// values and array elements, → nil for optionals. Real (messy) motion can push
+    /// a breathing/stillness value non-finite; `JSONEncoder` throws on NaN/Inf, which
+    /// silently dropped the whole WatchConnectivity transfer (the belly-nil bug).
+    /// Sanitizing keeps the payload encodable AND the persisted stats clean.
+    func sanitized() -> SignalResult {
+        func f(_ x: Double) -> Double { x.isFinite ? x : 0 }
+        func o(_ x: Double?) -> Double? { x.flatMap { $0.isFinite ? $0 : nil } }
+        func a(_ arr: [Double]) -> [Double] { arr.map { $0.isFinite ? $0 : 0 } }
+        return SignalResult(
+            heartRateTimeseries: a(heartRateTimeseries), meanHR: f(meanHR),
+            startHR: o(startHR), endHR: o(endHR), hrDecline: o(hrDecline),
+            stillnessTimeseries: a(stillnessTimeseries), stillnessScore: o(stillnessScore),
+            stillnessMethod: stillnessMethod,
+            breathingRateTimeseries: a(breathingRateTimeseries),
+            breathDepthTimeseries: a(breathDepthTimeseries),
+            meanBreathingRate: o(meanBreathingRate), breathingRegularity: o(breathingRegularity),
+            resonanceMatchScore: o(resonanceMatchScore), overallScore: o(overallScore),
+            windowSec: windowSec, hopSec: hopSec, algorithmVersion: algorithmVersion
+        )
+    }
+}
+
 // MARK: - Engine
 //
 // Pure Swift (Foundation only — Accelerate is permitted by the spec but unnecessary
@@ -249,7 +273,7 @@ enum SignalEngine {
             resonanceMatchScore: resonanceMatchScore,
             overallScore: overallScore,
             windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
-        )
+        ).sanitized()   // guarantee finite values — JSONEncoder throws on NaN/Inf
     }
 
     // MARK: - HR resampling
