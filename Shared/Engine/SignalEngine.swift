@@ -154,13 +154,19 @@ enum SignalEngine {
         var resonanceMatchScore: Double?
         var breathingReadable = false
 
-        // Band-passed pitch is reused by both breathing and belly-stillness.
+        // Band-passed attitude, plus the placement-tolerant breathing axis. Which
+        // axis the belly's rise/fall tilts the wrist into depends on how it sits —
+        // palm-on-belly offsets the watch off flat, so the breathing lands in roll
+        // or a pitch+roll mix. Read breathing from the PCA principal axis of
+        // (pitch, roll), not pitch alone, so it's recovered whatever the orientation.
         let times = motion.map(\.t)
         let pitchBP = bandPass(motion.map(\.pitch), times: times)
+        let rollBP = bandPass(motion.map(\.roll), times: times)
+        let breathBP = principalComponent(pitchBP, rollBP)
 
         if bellyBreathing {
-            let amp = stddev(pitchBP)
-            let (bestF, bestP, totalP) = dominantFrequency(times: times, values: pitchBP,
+            let amp = stddev(breathBP)
+            let (bestF, bestP, totalP) = dominantFrequency(times: times, values: breathBP,
                                                             fMin: breathBandLo, fMax: breathBandHi)
             let concentration = (totalP > 0 && !pitchBP.isEmpty)
                 ? 2 * bestP / (totalP * Double(pitchBP.count)) : 0
@@ -174,7 +180,7 @@ enum SignalEngine {
                     let idx = indices(times, in: win)
                     if idx.count >= 8 {
                         let wt = idx.map { times[$0] }
-                        let wp = idx.map { pitchBP[$0] }
+                        let wp = idx.map { breathBP[$0] }
                         let (f, p, tot) = dominantFrequency(times: wt, values: wp,
                                                             fMin: breathBandLo, fMax: breathBandHi)
                         let conc = (tot > 0) ? 2 * p / (tot * Double(wp.count)) : 0
@@ -197,7 +203,7 @@ enum SignalEngine {
                 } else {
                     meanBreathingRate = readable.reduce(0, +) / Double(readable.count)
                     resonanceMatchScore = resonanceMatch(meanBreathingRate!)
-                    breathingRegularity = regularity(pitchBP: pitchBP, times: times)
+                    breathingRegularity = regularity(signal: breathBP, times: times)
                 }
             }
         }
@@ -208,8 +214,8 @@ enum SignalEngine {
         let excludeBreathing = bellyBreathing && breathingReadable
         let stillnessMethod = excludeBreathing ? "breathingExcluded" : "total"
 
-        // Residual attitude channels for the belly case (breathing band removed).
-        let rollBP = bandPass(motion.map(\.roll), times: times)
+        // Residual attitude channels for the belly case: the breathing band is
+        // removed from BOTH axes, so stillness is already axis-agnostic (no PCA).
         let pitchResid = zip(motion.map(\.pitch), pitchBP).map { $0 - $1 }
         let rollResid = zip(motion.map(\.roll), rollBP).map { $0 - $1 }
 
@@ -274,10 +280,10 @@ enum SignalEngine {
     }
 
     /// Regularity from the variance of breath-to-breath intervals (up-crossings of
-    /// the band-passed pitch). Lower coefficient-of-variation → higher regularity.
-    private static func regularity(pitchBP: [Double], times: [Double]) -> Double? {
+    /// the band-passed breathing-axis signal). Lower CoV → higher regularity.
+    private static func regularity(signal: [Double], times: [Double]) -> Double? {
         var crossTimes: [Double] = []
-        for i in 1..<pitchBP.count where pitchBP[i - 1] <= 0 && pitchBP[i] > 0 {
+        for i in 1..<signal.count where signal[i - 1] <= 0 && signal[i] > 0 {
             crossTimes.append(times[i])
         }
         guard crossTimes.count >= 3 else { return nil }

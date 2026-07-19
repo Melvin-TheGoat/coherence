@@ -64,6 +64,26 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertGreaterThan(r.resonanceMatchScore ?? 0, 0.9)
     }
 
+    /// Palm-on-belly puts the oscillation in ROLL, not pitch. The engine must still
+    /// read it — it analyzes the PCA axis of (pitch, roll), not pitch alone. (This
+    /// is the on-device belly-nil bug: pitch-only would return nil here.)
+    func test_breathingInRoll_readsSixBreaths() {
+        let m = motion(dur: 120, pitch: { _ in 0 }, roll: sine(0.1, amp: 0.1))
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
+        XCTAssertNotNil(r.meanBreathingRate, "breathing in roll must be read, not just pitch")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6, accuracy: 0.5)
+    }
+
+    /// Oscillation split across pitch+roll (wrist at an angle) — PCA recombines the
+    /// two half-amplitude axes into one full-amplitude breathing signal.
+    func test_breathingDiagonalAxis_readsSixBreaths() {
+        let s = sine(0.1, amp: 0.07)
+        let m = motion(dur: 120, pitch: s, roll: s)
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
+        XCTAssertNotNil(r.meanBreathingRate)
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6, accuracy: 0.5)
+    }
+
     /// A slow held breath (~2/min, 0.033 Hz) is below the naive 3/min band floor —
     /// the engine must still read it, not throw it away (Phase-2 constraint).
     func test_slowHeldBreath_readsAboutTwo() {
