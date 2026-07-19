@@ -128,6 +128,23 @@ UI must coach it, and the 2-signal degrade path must stay.
     6/min where pitch-only returned nil (all pitch tests still pass), **and a real
     palm-on-belly session on-device now returns a real breathing rate.**
   - Tagged `phase4-pipeline-verified` — Regular + Belly both verified end-to-end.
+  - **Belly axis selection — now by CONCENTRATION, not PCA variance (CONFIRMED
+    on-device ✅).** PCA maximizes *variance*, so a large low-concentration sway on
+    one axis captured the principal axis and buried a clean breathing peak on the
+    other → intermittent `nil` (the "shakiness"). The engine now scores pitch, roll,
+    AND their PCA axis and reads from the **cleanest peak** clearing the amp floor
+    (`selectBreathingAxis`); `bellyDiagnostics` computes axes the same way (band-pass
+    → PCA) and marks the chosen one `←reads`. Regression test
+    `test_cleanRollUnderNoisyPitch_selectsRollAxis`; 33 tests pass. On-device: a
+    reclined 2-min session read all three axes ~5.5–5.7/min (`breaths 5.6`).
+  - **Posture is the real lever (matches Hung 2020 supine).** A **seated** belly
+    session mis-reads: postural sway lands on an axis as a clean ~4/min oscillation
+    the engine can't distinguish from a slow breath, so it can win over the true
+    ~6/min breath on another axis. **Reclined/supine, watch flat on belly** reads
+    accurately. Concentration selection can't fix seated — that's physics; the setup
+    screen must coach posture. **TODO (product): a dedicated seated belly mode** —
+    Aziz wants an option for people who sit up to breathe; needs its own approach
+    (tighter stillness gating / calibration), not just the current path.
 - **Phase 5 STARTED, then DEFERRED.** Track seeding is done (`TrackSeeder`,
   `Shared/Session/`, 3 tests). The rest of Phase 5 — setup hierarchy, **audio**,
   haptics, mid-session screen — is **deferred** (resequenced 2026-07-19): nail the

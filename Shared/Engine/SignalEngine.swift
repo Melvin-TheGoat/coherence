@@ -181,12 +181,19 @@ enum SignalEngine {
         // Band-passed attitude, plus the placement-tolerant breathing axis. Which
         // axis the belly's rise/fall tilts the wrist into depends on how it sits —
         // palm-on-belly offsets the watch off flat, so the breathing lands in roll
-        // or a pitch+roll mix. Read breathing from the PCA principal axis of
-        // (pitch, roll), not pitch alone, so it's recovered whatever the orientation.
+        // or a pitch+roll mix. We therefore choose the breathing axis by *cleanest
+        // peak* (highest concentration) among pitch, roll, and their PCA principal
+        // axis — NOT by variance. PCA alone maximizes variance, so a large
+        // non-breathing sway (e.g. postural pitch drift while sitting up) captures
+        // it and buries a clean breathing peak sitting on the other axis. Selecting
+        // by concentration recovers that peak (verified on-device: a sitting-up
+        // session read nil from PCA while roll carried a clean 0.43-conc signal).
         let times = motion.map(\.t)
         let pitchBP = bandPass(motion.map(\.pitch), times: times)
         let rollBP = bandPass(motion.map(\.roll), times: times)
-        let breathBP = principalComponent(pitchBP, rollBP)
+        let breathBP = bellyBreathing
+            ? selectBreathingAxis(pitchBP: pitchBP, rollBP: rollBP, times: times)
+            : principalComponent(pitchBP, rollBP)
 
         if bellyBreathing {
             let amp = stddev(breathBP)
@@ -319,6 +326,32 @@ enum SignalEngine {
         return exp(-cv)   // CV 0 → 1.0
     }
 
+    /// The candidate breathing axes (band-passed), in a fixed order: the raw pitch
+    /// and roll attitude channels, plus their PCA principal axis. All three are
+    /// scored the same way; `analyze` and `bellyDiagnostics` share this list so the
+    /// diagnostic numbers reflect exactly what the engine reads.
+    private static func breathingCandidates(pitchBP: [Double], rollBP: [Double]) -> [(label: String, bp: [Double])] {
+        [("pitch", pitchBP), ("roll ", rollBP), ("pca  ", principalComponent(pitchBP, rollBP))]
+    }
+
+    /// Fraction of a band-passed axis's power sitting in its single dominant peak
+    /// (0..1-ish) — the "how clean is the breathing" measure the readability gate uses.
+    private static func bandConcentration(_ bp: [Double], times: [Double]) -> Double {
+        let (_, p, tot) = dominantFrequency(times: times, values: bp, fMin: breathBandLo, fMax: breathBandHi)
+        return (tot > 0 && !bp.isEmpty) ? 2 * p / (tot * Double(bp.count)) : 0
+    }
+
+    /// Picks the cleanest breathing axis: the highest-concentration candidate among
+    /// those clearing the amplitude floor (a near-flat axis can show a spuriously
+    /// high concentration, so gate on amplitude first). See the call site for why
+    /// concentration beats PCA's variance criterion.
+    private static func selectBreathingAxis(pitchBP: [Double], rollBP: [Double], times: [Double]) -> [Double] {
+        let cands = breathingCandidates(pitchBP: pitchBP, rollBP: rollBP)
+        let ranked = cands.map { (bp: $0.bp,
+                                  rank: stddev($0.bp) >= ampFloor ? bandConcentration($0.bp, times: times) : -1) }
+        return ranked.max(by: { $0.rank < $1.rank })!.bp
+    }
+
     /// Direct band-limited DFT scan for the dominant frequency in `[fMin, fMax]`,
     /// using actual sample times (robust to non-uniform sampling). Returns the best
     /// frequency, its power, and the signal's total (mean-removed) power.
@@ -424,23 +457,28 @@ enum SignalEngine {
     /// `analyze` receives.
     static func bellyDiagnostics(motion: [MotionSample]) -> String {
         let times = motion.map(\.t)
-        func line(_ label: String, _ raw: [Double]) -> String {
-            let bp = bandPass(raw, times: times)
+        let pitchBP = bandPass(motion.map(\.pitch), times: times)
+        let rollBP = bandPass(motion.map(\.roll), times: times)
+        let cands = breathingCandidates(pitchBP: pitchBP, rollBP: rollBP)
+
+        // The axis analyze() actually reads from (same rule as selectBreathingAxis).
+        let ranked = cands.map { (label: $0.label,
+                                  rank: stddev($0.bp) >= ampFloor ? bandConcentration($0.bp, times: times) : -1) }
+        let selected = ranked.max(by: { $0.rank < $1.rank })!.label
+
+        func line(_ label: String, _ bp: [Double]) -> String {
             let amp = stddev(bp)
             let (f, p, tot) = dominantFrequency(times: times, values: bp, fMin: breathBandLo, fMax: breathBandHi)
             let conc = (tot > 0 && !bp.isEmpty) ? 2 * p / (tot * Double(bp.count)) : 0
             let ok = amp >= ampFloor && conc >= concentrationMin && f > 0
-            return String(format: "%@ amp=%.4f conc=%.3f bestF=%.3fHz (%.1f/min) %@",
-                          label, amp, conc, f, f * 60, ok ? "OK" : "reject")
+            let mark = label == selected ? " ←reads" : ""
+            return String(format: "%@ amp=%.4f conc=%.3f bestF=%.3fHz (%.1f/min) %@%@",
+                          label, amp, conc, f, f * 60, ok ? "OK" : "reject", mark)
         }
-        let pca = principalComponent(motion.map(\.pitch), motion.map(\.roll))
-        return [
+        return ([
             String(format: "floor amp %.4f · min conc %.2f · fs %.1f · n %d",
                    ampFloor, concentrationMin, sampleRate(times), times.count),
-            line("pitch", motion.map(\.pitch)),
-            line("roll ", motion.map(\.roll)),
-            line("pca  ", pca),
-        ].joined(separator: "\n")
+        ] + cands.map { line($0.label, $0.bp) }).joined(separator: "\n")
     }
 
     /// The projection of two mean-removed channels onto their dominant (largest-

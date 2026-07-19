@@ -39,6 +39,13 @@ struct WatchContentView: View {
                         .font(.caption2)
                         .foregroundStyle(AppColor.textSecondary)
                         .multilineTextAlignment(.center)
+                    // TEMP: surface why a launch didn't turn into a running session.
+                    if let msg = manager.statusMessage {
+                        Text(msg)
+                            .font(.caption2)
+                            .foregroundStyle(AppColor.accentGold)
+                            .multilineTextAlignment(.center)
+                    }
                 }
             case .running:
                 VStack(spacing: 12) {

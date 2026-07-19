@@ -16,12 +16,15 @@ struct ContentView: View {
                     .foregroundStyle(AppColor.accentGold)
 
                 VStack(spacing: 12) {
-                    Button("Begin — Regular (2 min)") {
-                        coordinator.begin(mode: "silence", trackID: nil, plannedDurationSec: 120,
+                    // TEMP debug triggers: open-ended (plannedDurationSec nil) so the
+                    // session runs until you tap End on the Watch — no auto-shutoff
+                    // during testing. Timed sessions remain a real product feature.
+                    Button("Begin — Regular") {
+                        coordinator.begin(mode: "silence", trackID: nil, plannedDurationSec: nil,
                                           bellyBreathing: false, hapticsEnabled: true)
                     }
-                    Button("Begin — Belly (2 min)") {
-                        coordinator.begin(mode: "silence", trackID: nil, plannedDurationSec: 120,
+                    Button("Begin — Belly") {
+                        coordinator.begin(mode: "silence", trackID: nil, plannedDurationSec: nil,
                                           bellyBreathing: true, hapticsEnabled: true)
                     }
                 }

@@ -57,12 +57,15 @@ final class WatchSessionManager: NSObject, ObservableObject {
         handledSessionIDs.insert(p.sessionID)
         params = p
         elapsed = 0
+        statusMessage = "Params received — starting…"   // TEMP: prove params arrived
         let started = await workout.start(bellyBreathing: p.bellyBreathing)
         guard started else {
-            statusMessage = workout.statusMessage
+            // workout.start() sets its own failure message; surface it on Ready.
+            statusMessage = workout.statusMessage ?? "Couldn't start (unknown)."
             params = nil
             return
         }
+        statusMessage = nil
         phase = .running
         startTimer(planned: p.plannedDurationSec)
     }

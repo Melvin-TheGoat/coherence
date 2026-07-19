@@ -84,6 +84,27 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.meanBreathingRate ?? 0, 6, accuracy: 0.5)
     }
 
+    /// The on-device "sitting up" failure: a clean 6/min breath lands in ROLL while a
+    /// large, broadband (low-concentration) postural sway dominates PITCH. PCA
+    /// maximizes variance, so it locks onto the noisy pitch axis and would return nil
+    /// — but the engine selects the breathing axis by *concentration*, so it reads the
+    /// clean roll peak. (Reproduces the 2:34 session: pitch amp high / conc 0.26,
+    /// roll conc 0.43, pca rejected.)
+    func test_cleanRollUnderNoisyPitch_selectsRollAxis() {
+        // Pitch: four in-band sines → high variance, power smeared across peaks (low
+        // concentration). Roll: one clean 0.1 Hz breath (high concentration).
+        let pitchSway: (Double) -> Double = { t in
+            0.08 * (sin(2 * .pi * 0.06 * t) + sin(2 * .pi * 0.13 * t)
+                  + sin(2 * .pi * 0.22 * t) + sin(2 * .pi * 0.35 * t))
+        }
+        let m = motion(dur: 120, pitch: pitchSway, roll: sine(0.1, amp: 0.05))
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
+
+        XCTAssertNotNil(r.meanBreathingRate,
+                        "clean roll breath must be read even when pitch variance dominates (axis-by-concentration)")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6, accuracy: 0.7)
+    }
+
     /// A slow held breath (~2/min, 0.033 Hz) is below the naive 3/min band floor —
     /// the engine must still read it, not throw it away (Phase-2 constraint).
     func test_slowHeldBreath_readsAboutTwo() {
