@@ -106,7 +106,7 @@ UI must coach it, and the 2-signal degrade path must stay.
   persistence (`SessionStore` in `Shared/Session/`: bootstrap-User fetch-or-create,
   one-transaction idempotent Session+Stats write, streak-date read). 11 tests
   (5 streak + 6 persistence), in-memory store.
-- **Phase 4 device-wiring DONE (built) — partially verified on-device.**
+- **Phase 4 device-wiring DONE — VERIFIED end-to-end on-device (Regular + Belly).**
   WCSession both sides (`WatchSessionManager`, `Coherence/Session/SessionCoordinator`),
   `startWatchApp` launch, the Watch rewired to receive `SessionParams` → run the
   workout + motion → `SignalEngine` → ship `SessionPayload` → iOS persists via
@@ -118,18 +118,16 @@ UI must coach it, and the 2-signal degrade path must stay.
     from motion. `durationSec` is wall-clock; motion now shares the HR clock.
   - **Liveness insight (worth building in):** "good stillness + HR sensed the whole
     session" defeats the take-the-watch-off cheat, since a removed watch loses HR.
-  - **Belly breathing: axis fix APPLIED (pending on-device re-test).** Real
-    palm-on-belly places the breathing tilt in **roll or a pitch+roll mix**, but the
-    engine read **pitch only** → rejected → 2-signal fallback (Melvin's diagnosis via
-    `bellyDiagnostics` + the `principalComponent` helper). Fix (Aziz): breathing is
-    now read from the **PCA principal axis of (pitch, roll)** — placement-tolerant,
-    and it *raises* concentration by recombining a split signal, so the 0.30 gate was
-    left as-is. Proven synthetically: `test_breathingInRoll` / `test_breathingDiagonalAxis`
-    read 6/min where pitch-only returned nil; all pitch-axis tests still pass.
-    NEXT: run a real belly session — confirm `bellyDiagnostics` shows the `pca` line
-    `OK` and `breaths` is a real rate. If still rejected, read amp/conc and consider
-    lowering `concentrationMin`.
-  - Not tagged. Tag `phase4-pipeline-verified` only after belly reads a real rate.
+  - **Belly breathing: axis fix CONFIRMED on-device ✅.** Real palm-on-belly places
+    the breathing tilt in **roll or a pitch+roll mix**, but the engine read **pitch
+    only** → rejected → 2-signal fallback (Melvin's diagnosis via `bellyDiagnostics`
+    + the `principalComponent` helper). Fix (Aziz): breathing is now read from the
+    **PCA principal axis of (pitch, roll)** — placement-tolerant, and it *raises*
+    concentration by recombining a split signal, so the 0.30 gate was left as-is.
+    Verified: synthetic `test_breathingInRoll` / `test_breathingDiagonalAxis` read
+    6/min where pitch-only returned nil (all pitch tests still pass), **and a real
+    palm-on-belly session on-device now returns a real breathing rate.**
+  - Tagged `phase4-pipeline-verified` — Regular + Belly both verified end-to-end.
 
 ## Toolchain notes (this machine)
 
