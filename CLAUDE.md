@@ -118,17 +118,17 @@ UI must coach it, and the 2-signal degrade path must stay.
     from motion. `durationSec` is wall-clock; motion now shares the HR clock.
   - **Liveness insight (worth building in):** "good stillness + HR sensed the whole
     session" defeats the take-the-watch-off cheat, since a removed watch loses HR.
-  - **⚠️ Belly breathing returns `breaths nil` on-device — UNDER INVESTIGATION.**
-    The engine's unit tests pass on synthetic 0.1 Hz signals, but real palm-on-belly
-    motion is rejected (falls back to 2-signal). **Key placement fact:** users rest
-    the **PALM on the belly**, so the watch sits **offset (up/left), not flat** —
-    the breathing tilt likely lives in **roll or a pitch+roll mix, but the engine
-    analyzes `pitch` only.** `SignalEngine.bellyDiagnostics` (DEBUG) now logs
-    amp/concentration/bestF for pitch, roll, and a **2D-PCA** axis + dumps both
-    waveforms to the Watch console. NEXT: read that output; likely fix = **switch
-    the engine's breathing axis from pitch-only to the PCA dominant axis**
-    (placement-tolerant, per spec) and/or lower `concentrationMin` (0.30). Engine is
-    Aziz's — coordinate the change.
+  - **Belly breathing: axis fix APPLIED (pending on-device re-test).** Real
+    palm-on-belly places the breathing tilt in **roll or a pitch+roll mix**, but the
+    engine read **pitch only** → rejected → 2-signal fallback (Melvin's diagnosis via
+    `bellyDiagnostics` + the `principalComponent` helper). Fix (Aziz): breathing is
+    now read from the **PCA principal axis of (pitch, roll)** — placement-tolerant,
+    and it *raises* concentration by recombining a split signal, so the 0.30 gate was
+    left as-is. Proven synthetically: `test_breathingInRoll` / `test_breathingDiagonalAxis`
+    read 6/min where pitch-only returned nil; all pitch-axis tests still pass.
+    NEXT: run a real belly session — confirm `bellyDiagnostics` shows the `pca` line
+    `OK` and `breaths` is a real rate. If still rejected, read amp/conc and consider
+    lowering `concentrationMin`.
   - Not tagged. Tag `phase4-pipeline-verified` only after belly reads a real rate.
 
 ## Toolchain notes (this machine)
