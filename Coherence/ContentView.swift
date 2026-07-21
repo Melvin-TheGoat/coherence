@@ -5,13 +5,15 @@ import SwiftUI
 struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @State private var showResults = false
+    @State private var showCalendar = false
+    @State private var showHistory = false
 
     var body: some View {
         ZStack {
             AppColor.backgroundPrimary.ignoresSafeArea()
 
             VStack(spacing: 20) {
-                Text("Coherence")
+                Text("808")
                     .font(.largeTitle.weight(.semibold))
                     .foregroundStyle(AppColor.accentGold)
 
@@ -45,11 +47,15 @@ struct ContentView: View {
                         .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12))
                 }
 
-                if coordinator.lastSessionID != nil {
-                    Button("View graphs") { showResults = true }
-                        .buttonStyle(.bordered)
-                        .tint(AppColor.accentGold)
+                HStack(spacing: 12) {
+                    if coordinator.lastSessionID != nil {
+                        Button("View graphs") { showResults = true }
+                    }
+                    Button("Calendar") { showCalendar = true }
+                    Button("History") { showHistory = true }
                 }
+                .buttonStyle(.bordered)
+                .tint(AppColor.accentGold)
 
                 // TEMP: belly readability numbers, for calibrating the gate.
                 if let diag = coordinator.lastBellyDiag {
@@ -67,6 +73,12 @@ struct ContentView: View {
             if let id = coordinator.lastSessionID {
                 SessionResultsView(sessionID: id)
             }
+        }
+        .sheet(isPresented: $showCalendar) {
+            SessionHistoryView()
+        }
+        .sheet(isPresented: $showHistory) {
+            NavigationStack { AllSessionsView() }
         }
     }
 }

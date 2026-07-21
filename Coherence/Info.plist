@@ -13,7 +13,7 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Coherence</string>
+	<string>808</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -29,9 +29,9 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Coherence uses heart data recorded on your Apple Watch to measure your coherence after a session.</string>
+	<string>808 uses heart data recorded on your Apple Watch to measure how your body settled after a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Coherence records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
+	<string>808 records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

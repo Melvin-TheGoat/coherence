@@ -18,7 +18,7 @@ struct WatchContentView: View {
     private var content: some View {
         if !manager.authorized {
             VStack(spacing: 10) {
-                Text("Coherence")
+                Text("808")
                     .font(.headline)
                     .foregroundStyle(AppColor.accentGold)
                 Button("Authorize") { Task { await manager.authorize() } }

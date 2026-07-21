@@ -13,7 +13,7 @@
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Coherence</string>
+	<string>808</string>
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
@@ -29,10 +29,10 @@
 		<string>workout-processing</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Coherence uses your Apple Watch heart rate to show how your body settled during a session.</string>
+	<string>808 uses your Apple Watch heart rate to show how your body settled during a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Coherence records a mindful workout on your Apple Watch so it can measure your session.</string>
+	<string>808 records a mindful workout on your Apple Watch so it can measure your session.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>Coherence reads Apple Watch motion to measure your stillness and, during belly breathing, your breath from the rise and fall of your belly.</string>
+	<string>808 reads Apple Watch motion to measure your stillness and, during belly breathing, your breath from the rise and fall of your belly.</string>
 </dict>
 </plist>

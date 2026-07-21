@@ -31,8 +31,15 @@ breathing is opt-in**; most users do a **Regular** session (2 signals: stillness
 Stack: Swift / SwiftUI / SwiftData / HealthKit / **CoreMotion**. Project defined
 via **XcodeGen** (`project.yml` → `xcodegen generate` → `Coherence.xcodeproj`).
 Development is done by pasting phase instructions into Claude Code in a terminal
-(no IDE integration). The full plan lives in `App_ROADMAP_v2.md`. The app name
-and bundle IDs stay `Coherence` / `com.lockout.coherence`.
+(no IDE integration). The full plan lives in `App_ROADMAP_v2.md`.
+
+**Product name is `808`** (Aziz + Melvin's rebrand, 2026-07-20) — the user-facing
+name only: `CFBundleDisplayName`, the in-app titles (iPhone + Watch), and the
+Health permission prompts all read **808**. The **internal Xcode targets, folders,
+module, and bundle IDs stay `Coherence` / `com.lockout.coherence`** — Swift forbids
+a module/type name starting with a digit, and renaming the targets would be
+invisible to users while creating a large merge for Melvin, so it was deliberately
+NOT done. "Rename the app" = change the display name, not the project.
 
 ## Why not heart coherence (do not relitigate)
 
@@ -149,10 +156,26 @@ UI must coach it, and the 2-signal degrade path must stay.
   `Shared/Session/`, 3 tests). The rest of Phase 5 — setup hierarchy, **audio**,
   haptics, mid-session screen — is **deferred** (resequenced 2026-07-19): nail the
   biometric data first. See the RESEQUENCED notes in `App_ROADMAP_v2.md`.
-- **NEXT (in progress): Phase 6 pulled forward — the biometric-evidence graphs.**
-  Post-session results screen (HR-settling / stillness / belly-breathing curves) +
-  logged history / calendar / streak, reading `MeditationStats`. No dependency on
-  audio. Temp "Begin Regular/Belly" buttons stay as the session trigger for now.
+- **Phase 6 (in progress) — the biometric-evidence graphs + logged history.**
+  - **Post-session results screen DONE** (`Coherence/Session/SessionResultsView.swift`):
+    HR-settling / stillness / belly-breathing curves + summary tiles, read from
+    `MeditationStats` by sessionID. `SessionEvidence` (`Shared/Session/`) builds the
+    plottable series (window-center timestamps); 4 tests.
+  - **History + calendar DONE.** `SessionCalendar` (`Shared/Session/`, pure
+    Foundation: practiced-day set + 6×7 month grid, 5 tests). Two screens, split by
+    Aziz's request into separate home buttons:
+    - **Calendar** (`SessionHistoryView`) — streak (current/longest via
+      `StreakCalculator`) + total sessions + a month calendar dotted on practiced
+      days. Tapping a practiced day pushes that day's sessions (`DaySessionsView`).
+    - **History** (`AllSessionsView`) — the full session log, newest first.
+    Both lists share `SessionRow` and navigate to `SessionResultsView` by ID; all
+    read storage independently via `@Query` (refresh live when a payload lands).
+  - Temp "Begin Regular/Belly" buttons + Calendar/History buttons are the current
+    home screen; the real setup hierarchy replaces them later.
+- **Recent fixes.** Belly payload was silently dropped (a non-finite Double made
+  `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
+  the Watch send logs encode errors). Stale application context replayed a finished
+  session on cold Watch launch (the phone now clears it on payload receipt).
 - **Recent fixes.** Belly payload was silently dropped (a non-finite Double made
   `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
   the Watch send logs encode errors). Stale application context replayed a finished
