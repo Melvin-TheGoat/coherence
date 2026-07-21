@@ -60,12 +60,15 @@ verified on-device (Phase 2) and in research:
   "Pro" tier, not v1.
 
 So we measure resonance breathing **directly via motion** instead of inferring it
-from the heart. Backed by peer-reviewed work: Bernardi et al. 2020 (*Sci Rep* —
-wrist-accelerometer respiration, MAE ~0.7–1.1 breaths/min, best during
-non-activity); Hung 2020 (*Front Physiol* — abdomen placement, best supine);
-Steffen 2017 / Shaffer & Meehan 2020 / Laborde 2022 (resonance breathing
-~4.5–7 breaths/min); Kox/Kirk 2015 (meditation lowers HR). Full citations in
-`belly-meditation-spec.md`.
+from the heart. Backed by peer-reviewed work: **Leube et al. 2020** (*Sci Rep* 10:14530
+— wrist-accelerometer respiration, outperforms ECG-derived, 223 subjects); **Hughes,
+Liu & Zheng 2020** (*Front Physiol* 11:823 — accelerometer respiration, abdomen
+placement, error <2 breaths/min, best supine); resonance breathing ~4.5–7 breaths/min
+(Vaschillo 2006, Lehrer & Gevirtz 2014); meditation → elevated theta EEG (Lomas 2015,
+Lagopoulos 2009, Aftanas & Golocheikine 2001). **Full verified citations (author, year,
+journal, DOI) live in `SCIENCE.md`.** NOTE: earlier notes here misattributed refs 1–2
+as "Bernardi 2020" and "Hung 2020" — corrected to Leube and Hughes after verifying the
+primary sources (2026-07-20).
 
 ## Belly breathing — VERIFIED on-device (Phase 2, tag `phase2-motion-verified`)
 
@@ -74,7 +77,7 @@ breathing waveform from the wrist resting on the belly.** Confirmed on real
 hardware — both slow held breaths (~2/min) and resonance pace (~5/min) were
 recovered, and the breaths are literally countable in the raw pitch series.
 
-**Placement is decisive** (matches Hung 2020): the watch wrist must lie **flat on
+**Placement is decisive** (matches Hughes et al. 2020): the watch wrist must lie **flat on
 top of the belly**, supine. Wrist on the *side* of the belly / hands interlocked
 produced **no readable signal** — and the weak-signal fallback correctly refused
 to invent a number rather than guessing. Bad placement is a real failure mode; the
@@ -144,7 +147,7 @@ UI must coach it, and the 2-signal degrade path must stay.
     → PCA) and marks the chosen one `←reads`. Regression test
     `test_cleanRollUnderNoisyPitch_selectsRollAxis`; 33 tests pass. On-device: a
     reclined 2-min session read all three axes ~5.5–5.7/min (`breaths 5.6`).
-  - **Posture is the real lever (matches Hung 2020 supine).** A **seated** belly
+  - **Posture is the real lever (matches Hughes et al. 2020, supine).** A **seated** belly
     session mis-reads: postural sway lands on an axis as a clean ~4/min oscillation
     the engine can't distinguish from a slow breath, so it can win over the true
     ~6/min breath on another axis. **Reclined/supine, watch flat on belly** reads
