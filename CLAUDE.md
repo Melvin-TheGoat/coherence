@@ -164,8 +164,30 @@ UI must coach it, and the 2-signal degrade path must stay.
   in Hughes et al. 2020 (supine ≫ seated). Begin triggers the Watch via the
   coordinator (`effectiveMinutes` → `plannedDurationSec`). The home screen's two
   temp Begin buttons are replaced by one **"Begin session"** → this sheet; the
-  belly diagnostic box + Calendar/History buttons stay. Still deferred (resequenced
-  2026-07-19): **audio**, haptics, the mid-session screen. See `App_ROADMAP_v2.md`.
+  belly diagnostic box + Calendar/History buttons stay. Haptics + the mid-session
+  screen are still deferred. See `App_ROADMAP_v2.md`.
+- **Phase 5 — AUDIO started (frequency tones), phone-side synthesis.**
+  `Coherence/Audio/ToneEngine.swift` synthesizes all tones at runtime via
+  `AVAudioEngine` — **no audio files, no licensing** (this is why frequencies went
+  first). `FrequencyCatalog` = 7 MVP presets: 3 brainwave-entrainment states
+  (Deep Meditation θ~6 Hz, Calm α~8 Hz, Deep Rest δ~2.5 Hz) + 4 pure "frequency"
+  tones (Harmony 432, Manifest 528, Visualize 852, Awaken 963). The **Sound section
+  in `SessionSetupView`** lets you pick one + Speaker(isochronic)/Headphones(binaural)
+  and **Preview** it. Playback during the live session is NOT wired yet (preview only).
+  - **Key facts (don't relitigate):** the *pulse rate* IS the brainwave rate (must
+    stay in-band; 6 Hz theta is the best-*demonstrated* entrainment rate per the PLOS
+    2023 review); the *carrier pitch* is purely aesthetic (no entrainment effect).
+    Pure tones are built from octave-locked layers only (no detuned voices → no
+    beating) and skip the delay + octave-up + heavy reverb (those caused a "ring"
+    behind 852); entrainment tones keep the detuned pad + delay (pulse masks it).
+    Solfeggio tones are labeled tradition-only (subtitles like "natural tuning"), not
+    claimed as proven — matches the SCIENCE.md honesty line.
+  - **NEXT (tomorrow): ElevenLabs hybrid.** AI music (ElevenLabs Music v2, commercial
+    license included) can't produce an exact frequency — so the plan is: Aziz makes
+    lush ambient **beds** on ElevenLabs; the `ToneEngine` tones become the **exact
+    frequency layer mixed underneath**. Keeps the pro sound AND the honest frequency
+    claim. Then wire live-session playback (phone plays, stops on timer/Watch-end) +
+    persist which track played.
 - **Phase 6 (in progress) — the biometric-evidence graphs + logged history.**
   - **Post-session results screen DONE** (`Coherence/Session/SessionResultsView.swift`):
     HR-settling / stillness / belly-breathing curves + summary tiles, read from

@@ -11,6 +11,12 @@ struct SessionSetupView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @Environment(\.dismiss) private var dismiss
 
+    @StateObject private var tone = ToneEngine()
+    /// Selected sound preset id; nil = Silence.
+    @State private var soundID: String? = nil
+    /// Delivery for beat presets: false = Speaker (isochronic), true = Headphones (binaural).
+    @State private var headphones = false
+
     @State private var belly = false
     /// Selected preset length in minutes; nil = open-ended (end from the Watch).
     /// Ignored while `isCustom` is on.
@@ -48,6 +54,7 @@ struct SessionSetupView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     modeSection
                     durationSection
+                    soundSection
                     if belly { postureCoaching }
                     beginButton
                 }
@@ -65,6 +72,7 @@ struct SessionSetupView: View {
                     Button("Done") { customFocused = false }.tint(AppColor.accentGold)
                 }
             }
+            .onDisappear { tone.stop() }
         }
     }
 
@@ -175,6 +183,84 @@ struct SessionSetupView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: Sound (preview)
+
+    private var selectedPreset: FrequencyPreset? { FrequencyCatalog.preset(id: soundID) }
+
+    private var soundSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Sound")
+                .font(.headline)
+                .foregroundStyle(AppColor.textPrimary)
+            soundRow(title: "Silence", subtitle: "No audio", id: nil)
+            ForEach(FrequencyCatalog.all) { p in
+                soundRow(title: p.title, subtitle: p.subtitle, id: p.id)
+            }
+            if let p = selectedPreset {
+                if p.hasBeat {
+                    Picker("Delivery", selection: $headphones) {
+                        Text("Speaker").tag(false)
+                        Text("Headphones").tag(true)
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: headphones) { _, _ in restartPreviewIfPlaying(p) }
+                    Text(headphones ? "Binaural — put headphones in." : "Isochronic — plays on the speaker.")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Button { previewToggle(p) } label: {
+                    Label(tone.playingID == p.id ? "Stop preview" : "Preview",
+                          systemImage: tone.playingID == p.id ? "stop.fill" : "play.fill")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .tint(AppColor.accentGold)
+            }
+        }
+    }
+
+    private func soundRow(title: String, subtitle: String, id: String?) -> some View {
+        let selected = soundID == id
+        return Button {
+            tone.stop()
+            soundID = id
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(AppColor.accentGold)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12)
+                .stroke(selected ? AppColor.accentGold : .clear, lineWidth: 1.5))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func previewToggle(_ p: FrequencyPreset) {
+        if tone.playingID == p.id {
+            tone.stop()
+        } else {
+            tone.play(p, method: headphones ? .binaural : .isochronic)
+        }
+    }
+
+    private func restartPreviewIfPlaying(_ p: FrequencyPreset) {
+        if tone.playingID == p.id {
+            tone.play(p, method: headphones ? .binaural : .isochronic)
+        }
+    }
+
     // MARK: Posture coaching (belly only)
 
     private var postureCoaching: some View {
@@ -208,6 +294,7 @@ struct SessionSetupView: View {
 
     private var beginButton: some View {
         Button {
+            tone.stop()   // preview only for now — live-session playback is the next increment
             coordinator.begin(mode: "silence", trackID: nil,
                               plannedDurationSec: effectiveMinutes.map { $0 * 60 },
                               bellyBreathing: belly, hapticsEnabled: true)
