@@ -182,12 +182,21 @@ UI must coach it, and the 2-signal degrade path must stay.
     behind 852); entrainment tones keep the detuned pad + delay (pulse masks it).
     Solfeggio tones are labeled tradition-only (subtitles like "natural tuning"), not
     claimed as proven — matches the SCIENCE.md honesty line.
-  - **NEXT (tomorrow): ElevenLabs hybrid.** AI music (ElevenLabs Music v2, commercial
-    license included) can't produce an exact frequency — so the plan is: Aziz makes
-    lush ambient **beds** on ElevenLabs; the `ToneEngine` tones become the **exact
-    frequency layer mixed underneath**. Keeps the pro sound AND the honest frequency
-    claim. Then wire live-session playback (phone plays, stops on timer/Watch-end) +
-    persist which track played.
+  - **ElevenLabs hybrid — STARTED, first bed wired.** AI music (ElevenLabs Music v2,
+    commercial license on paid tiers) can't produce an exact frequency, so: Aziz makes
+    lush ambient **beds** on ElevenLabs; the `ToneEngine` tones are the **exact frequency
+    layer mixed underneath**. Pro sound + honest frequency claim. `FrequencyPreset.bedResource`
+    names a bundled bed; `ToneEngine` loops it via `AVAudioPlayer` (streams, low memory)
+    alongside the synth engine and mixes at the hardware output — **bed 0.85, tone 0.6**
+    (bed leads, tone stays perceptible = still entrains). Deep Meditation has its bed
+    (`Coherence/Audio/Beds/bed-deep-meditation.m4a`, E-minor drone to match the E carrier).
+    - **Bed import pipeline (per bed):** ElevenLabs WAV → trim the quiet intro → afconvert
+      to **AAC m4a** (~6 MB vs ~53 MB WAV — don't commit raw WAV). xcodegen auto-bundles
+      files under `Coherence/`. TODO: **loudness-normalize each bed on import** so the one
+      bed/tone ratio holds across all beds (ElevenLabs outputs vary in level).
+    - **Still TODO:** beds for the other tones; wire live-session playback (phone plays,
+      stops on timer / Watch-end); persist which track played; maybe a loop crossfade
+      (bed loops every ~5 min).
 - **Phase 6 (in progress) — the biometric-evidence graphs + logged history.**
   - **Post-session results screen DONE** (`Coherence/Session/SessionResultsView.swift`):
     HR-settling / stillness / belly-breathing curves + summary tiles, read from

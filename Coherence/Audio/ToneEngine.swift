@@ -11,6 +11,7 @@ struct FrequencyPreset: Identifiable, Equatable {
     let subtitle: String
     let carrierHz: Double
     let beatHz: Double?          // nil = pure tone; the Speaker/Headphones method only matters when set
+    var bedResource: String? = nil   // bundled ambient bed (ElevenLabs) mixed UNDER the exact tone
 
     /// The Speaker (isochronic) vs Headphones (binaural) choice only changes a beat preset.
     var hasBeat: Bool { beatHz != nil }
@@ -21,7 +22,7 @@ enum FrequencyCatalog {
     static let all: [FrequencyPreset] = [
         // Entrainment presets — beatHz is the pulse rate (must sit in the target
         // band); carrierHz is the audible pitch and is purely aesthetic.
-        FrequencyPreset(id: "theta", title: "Deep Meditation", subtitle: "Theta · ~6 Hz", carrierHz: 329.63, beatHz: 6),
+        FrequencyPreset(id: "theta", title: "Deep Meditation", subtitle: "Theta · ~6 Hz", carrierHz: 329.63, beatHz: 6, bedResource: "bed-deep-meditation"),
         FrequencyPreset(id: "alpha", title: "Calm",            subtitle: "Alpha · ~8 Hz", carrierHz: 369.99, beatHz: 8),
         FrequencyPreset(id: "delta", title: "Deep Rest",       subtitle: "Delta · ~2.5 Hz", carrierHz: 277.18, beatHz: 2.5),
         // Pure "frequency" tones — the carrier IS the point. Traditional/cultural
@@ -56,6 +57,14 @@ final class ToneEngine: ObservableObject {
 
     private let engine = AVAudioEngine()
     private var nodes: [AVAudioNode] = []
+    /// The ambient bed (pre-produced audio) looping under the synthesized tone.
+    /// Played via AVAudioPlayer (streams from disk, low memory) alongside the engine;
+    /// both mix at the hardware output.
+    private var bedPlayer: AVAudioPlayer?
+    // Mix balance when a bed is present (tune by ear): bed up, tone down so the
+    // ambient bed leads and the entrainment tone sits softly underneath.
+    private static let bedVolume: Float = 0.85
+    private static let toneVolumeWithBed: Float = 0.6
 
     // MARK: Audio-thread oscillator bank (a plain reference type captured by the
     // render block, so nothing touches the main-actor object on the audio thread).
@@ -220,17 +229,40 @@ final class ToneEngine: ObservableObject {
         }
         engine.connect(chain.last!, to: engine.mainMixerNode, format: format)
 
+        // Soften the synthesized tone when it's riding under a bed (the bed leads).
+        engine.mainMixerNode.outputVolume = preset.bedResource != nil ? Self.toneVolumeWithBed : 1.0
+
         do {
             try engine.start()
             nodes = chain
             playingID = preset.id
+            startBed(for: preset)
         } catch {
             chain.forEach { engine.detach($0) }
         }
     }
 
-    /// Stops any tone and tears the graph down.
+    /// Loads and loops the preset's ambient bed under the tone, if it has one.
+    private func startBed(for preset: FrequencyPreset) {
+        guard let name = preset.bedResource,
+              let url = Bundle.main.url(forResource: name, withExtension: "m4a")
+                    ?? Bundle.main.url(forResource: name, withExtension: "wav") else { return }
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = -1          // loop forever (any session length)
+            player.volume = Self.bedVolume
+            player.prepareToPlay()
+            player.play()
+            bedPlayer = player
+        } catch {
+            // No bed is fine — the tone plays on its own.
+        }
+    }
+
+    /// Stops any tone + bed and tears the graph down.
     func stop() {
+        bedPlayer?.stop()
+        bedPlayer = nil
         nodes.forEach { engine.detach($0) }
         nodes = []
         if engine.isRunning { engine.stop() }
