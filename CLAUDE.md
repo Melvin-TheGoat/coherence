@@ -155,10 +155,17 @@ UI must coach it, and the 2-signal degrade path must stay.
     screen must coach posture. **TODO (product): a dedicated seated belly mode** —
     Aziz wants an option for people who sit up to breathe; needs its own approach
     (tighter stillness gating / calibration), not just the current path.
-- **Phase 5 STARTED, then DEFERRED.** Track seeding is done (`TrackSeeder`,
-  `Shared/Session/`, 3 tests). The rest of Phase 5 — setup hierarchy, **audio**,
-  haptics, mid-session screen — is **deferred** (resequenced 2026-07-19): nail the
-  biometric data first. See the RESEQUENCED notes in `App_ROADMAP_v2.md`.
+- **Phase 5 (partial) — setup hierarchy STARTED; audio/haptics/mid-session still
+  deferred.** Track seeding was done earlier (`TrackSeeder`, `Shared/Session/`, 3
+  tests). Now the **pre-session setup screen is built** (`Coherence/Session/
+  SessionSetupView.swift`): pick Regular vs Belly, pick a length (2/5/10/15/Open +
+  a **typed Custom** field, number-pad, capped 600 min), and — for belly — inline
+  **posture coaching** (lie back, watch flat on belly, ~6/min, stay still) grounded
+  in Hughes et al. 2020 (supine ≫ seated). Begin triggers the Watch via the
+  coordinator (`effectiveMinutes` → `plannedDurationSec`). The home screen's two
+  temp Begin buttons are replaced by one **"Begin session"** → this sheet; the
+  belly diagnostic box + Calendar/History buttons stay. Still deferred (resequenced
+  2026-07-19): **audio**, haptics, the mid-session screen. See `App_ROADMAP_v2.md`.
 - **Phase 6 (in progress) — the biometric-evidence graphs + logged history.**
   - **Post-session results screen DONE** (`Coherence/Session/SessionResultsView.swift`):
     HR-settling / stillness / belly-breathing curves + summary tiles, read from
@@ -173,8 +180,8 @@ UI must coach it, and the 2-signal degrade path must stay.
     - **History** (`AllSessionsView`) — the full session log, newest first.
     Both lists share `SessionRow` and navigate to `SessionResultsView` by ID; all
     read storage independently via `@Query` (refresh live when a payload lands).
-  - Temp "Begin Regular/Belly" buttons + Calendar/History buttons are the current
-    home screen; the real setup hierarchy replaces them later.
+  - Home screen is now: **Begin session** (→ `SessionSetupView`), Calendar, History,
+    plus the temp belly-diagnostic box. Full setup hierarchy still fills in later.
 - **Recent fixes.** Belly payload was silently dropped (a non-finite Double made
   `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
   the Watch send logs encode errors). Stale application context replayed a finished
