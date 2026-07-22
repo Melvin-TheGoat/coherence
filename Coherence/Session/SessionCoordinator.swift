@@ -26,6 +26,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
     private let healthStore = HKHealthStore()
     private let log = Logger(subsystem: "com.lockout.coherence", category: "SessionCoordinator")
 
+    /// Live-session audio (phone-side): plays the chosen tone + bed during the
+    /// meditation and stops on the timer / when the Watch payload lands.
+    private let tone = ToneEngine()
+    private var audioStopTask: Task<Void, Never>?
+
     init(container: ModelContainer) {
         self.container = container
         super.init()
@@ -46,8 +51,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         try? await healthStore.requestAuthorization(toShare: [workout], read: [workout])
     }
 
-    /// Begins a session: sends params to the Watch and launches its workout.
-    func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?, bellyBreathing: Bool, hapticsEnabled: Bool) {
+    /// Begins a session: sends params to the Watch and launches its workout. If a
+    /// `frequencyID` is given, the phone plays that tone + bed during the session.
+    func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?, bellyBreathing: Bool,
+               hapticsEnabled: Bool, frequencyID: String? = nil, headphones: Bool = false) {
         Task {
             await requestWorkoutAuthorization()
 
@@ -84,6 +91,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
                     guard let self else { return }
                     if success {
                         self.status = "Watch launched — meditate, then End on the Watch"
+                        // Play the chosen sound on the phone while the Watch measures.
+                        self.startAudio(frequencyID: frequencyID, headphones: headphones,
+                                        plannedDurationSec: plannedDurationSec)
                     } else {
                         self.status = "startWatchApp failed: \(error?.localizedDescription ?? "unknown")"
                         self.log.error("startWatchApp failed: \(String(describing: error))")
@@ -94,7 +104,34 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
     }
 
+    /// Starts the selected tone + bed, and (for timed sessions) schedules a phone-side
+    /// stop — the Watch fires the authoritative end-haptic; this timer only stops audio.
+    private func startAudio(frequencyID: String?, headphones: Bool, plannedDurationSec: Int?) {
+        audioStopTask?.cancel()
+        tone.stop()
+        guard let id = frequencyID, let preset = FrequencyCatalog.preset(id: id) else { return }
+        tone.play(preset, method: headphones ? .binaural : .isochronic)
+        if let planned = plannedDurationSec {
+            audioStopTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(planned))
+                self?.tone.stop()
+            }
+        }
+    }
+
+    /// Stops live-session audio (called when the session ends).
+    private func stopAudio() {
+        audioStopTask?.cancel()
+        audioStopTask = nil
+        tone.stop()
+    }
+
     private func persist(_ payload: SessionPayload) {
+        // Session ended (Watch End for open-ended, or the Watch's own timer) — stop
+        // the phone audio now. For timed sessions the parallel timer may have already
+        // stopped it; stopAudio() is idempotent.
+        stopAudio()
+
         // The session is complete — clear the "start" command from the persistent
         // application context so a cold-launching Watch can't replay a finished
         // session (application context lingers until overwritten).

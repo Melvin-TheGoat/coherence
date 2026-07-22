@@ -294,10 +294,11 @@ struct SessionSetupView: View {
 
     private var beginButton: some View {
         Button {
-            tone.stop()   // preview only for now — live-session playback is the next increment
-            coordinator.begin(mode: "silence", trackID: nil,
+            tone.stop()   // stop the preview; the coordinator plays it during the session
+            coordinator.begin(mode: soundID != nil ? "frequency" : "silence", trackID: nil,
                               plannedDurationSec: effectiveMinutes.map { $0 * 60 },
-                              bellyBreathing: belly, hapticsEnabled: true)
+                              bellyBreathing: belly, hapticsEnabled: true,
+                              frequencyID: soundID, headphones: headphones)
             dismiss()
         } label: {
             Text("Begin on Apple Watch")

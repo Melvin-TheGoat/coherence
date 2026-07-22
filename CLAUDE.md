@@ -182,30 +182,45 @@ UI must coach it, and the 2-signal degrade path must stay.
     behind 852); entrainment tones keep the detuned pad + delay (pulse masks it).
     Solfeggio tones are labeled tradition-only (subtitles like "natural tuning"), not
     claimed as proven — matches the SCIENCE.md honesty line.
-  - **ElevenLabs hybrid — WORKING, 2 beds in.** AI music (ElevenLabs Music v2,
+  - **ElevenLabs hybrid — WORKING, all 7 beds in.** AI music (ElevenLabs Music v2,
     commercial license on paid tiers) can't produce an exact frequency, so: Aziz makes
     lush ambient **beds** on ElevenLabs; the `ToneEngine` tones are the **exact frequency
     layer mixed underneath**. Pro sound + honest frequency claim. `FrequencyPreset.bedResource`
     names a bundled bed; `ToneEngine` loops it via `AVAudioPlayer` (streams, low memory)
-    alongside the synth engine and mixes at the hardware output. Beds so far:
-    **Deep Meditation** (`bed-deep-meditation.m4a`, E-minor drone → E carrier) and
-    **Calm** (`bed-calm.m4a`, F#-minor → F# carrier). **Each bed is keyed to its tone**
-    so it doesn't clash.
-    - **Mix levels:** bed 0.85. Tone sits UNDER it, and the level is method-aware because
-      the binaural chain is drier (louder): **isochronic tone 0.6, binaural tone 0.3**
-      (`toneVolumeWithBed` / `…Binaural`, set via `mainMixerNode.outputVolume`).
-    - **Binaural (headphones) uses a cleaner chain than isochronic:** headphones expose
-      every artifact and heavy delay/reverb muddies the two-ear beat, so binaural =
-      NO delay, light reverb (28%), + a low-pass just above the carrier (kills the
-      metallic ring). Isochronic (speaker) keeps the delay + big hall (pulse masks it).
-    - **Bed import pipeline (per bed), DONE as a repeatable recipe:** ElevenLabs WAV →
-      Python `wave` trim first ~6 s (quiet intro) → **loudness-normalize to the Deep
-      Meditation bed's RMS** (audioop, `ref_rms≈5869` @ int16, with peak safety) so one
-      bed/tone ratio holds across all beds → `afconvert` to **AAC m4a** (~6 MB vs ~53 MB
-      WAV — never commit raw WAV). xcodegen auto-bundles files under `Coherence/`.
-    - **Still TODO:** beds for the remaining tones (Deep Rest + the 4 pure tones); wire
-      **live-session playback** (still preview-only — phone plays, stops on timer /
-      Watch-end); persist which track played; maybe a loop crossfade (bed loops ~5 min).
+    alongside the synth engine and mixes at the hardware output. **Every tone has a bed,
+    each keyed to its tone** so it doesn't clash (`Coherence/Audio/Beds/*.m4a`):
+    Deep Meditation (E), Calm (F#), Deep Rest (C — the *tone* was retuned C#→C to match),
+    Manifest (C/528), Harmony (A/432), Visualize (G#/852), Awaken (B/963).
+    - **Mix levels** (`mainMixerNode.outputVolume`, bed via `AVAudioPlayer.volume` 0.85):
+      isochronic tone 0.6, binaural 0.3 (drier→louder), pure tone 0.4, **high pure tone
+      (852/963) 0.22** — the high solfeggio tones ring, so they also lead with the warm
+      sub-octave (fundamental gain 0.55 < sub 0.85) and use a drier chain (reverb 20%).
+    - **Binaural (headphones) is nearly DRY:** reverb mixes L+R back together, which
+      reintroduces a *physical* amplitude throb (Melvin's "annoying back-and-forth") —
+      but a real binaural beat is *perceptual*, not physical, so minimal reverb (8%) =
+      subtler pulse AND a truer effect; the bed supplies the ambience. Binaural also has
+      NO delay. Isochronic (speaker) keeps the delay + big hall (pulse masks it). Pure
+      tones: reverb + a low-pass just above the carrier, no delay. (Binaural tone level
+      0.22.) **Don't relitigate:** binaural need not be loud/noticeable to work.
+    - **Bed import recipe (per bed), scripted with Python:** ElevenLabs WAV → `wave`
+      trim first ~6 s (quiet intro) → (for off-standard tones **pitch-align via
+      `audioop.ratecv`**: 432 −32¢, 852 +44¢, 963 −44¢, so the bed matches the exact Hz)
+      → **loudness-normalize to the Deep Meditation bed's RMS** (`ref_rms≈5869` @ int16,
+      peak-safe) → `afconvert` to **AAC m4a** (~6 MB vs ~53 MB WAV — never commit raw WAV).
+      xcodegen auto-bundles files under `Coherence/`. NOTE: two peaky beds (Manifest,
+      Awaken) hit the peak limit before full loudness → ~2 dB quieter than the rest
+      (accepted; a compression pass could match them).
+    - **Live-session playback DONE.** `SessionCoordinator` owns a `ToneEngine`; on Begin
+      (after `startWatchApp` succeeds) it plays the chosen tone+bed on the phone while the
+      Watch measures. Stops on the parallel timer (timed) or when the payload lands (open;
+      `stopAudio()` in `persist`, idempotent). Selecting a sound sets `Session.mode =
+      "frequency"`. **Background audio:** iOS Info.plist gains the `audio` UIBackgroundMode
+      and the session category is `.playback` (no `mixWithOthers`) so it keeps playing when
+      the screen locks mid-meditation. `ToneEngine.stop()` stops the engine before detaching
+      nodes (guards a rapid-teardown race).
+    - **Still TODO:** persist *which* track played (needs an optional `Session.frequencyID`
+      field — mode is recorded but not the specific preset); maybe a loop crossfade (bed
+      loops ~5 min); compression pass for the two ~2 dB-quiet beds (Manifest, Awaken).
 - **Phase 6 (in progress) — the biometric-evidence graphs + logged history.**
   - **Post-session results screen DONE** (`Coherence/Session/SessionResultsView.swift`):
     HR-settling / stillness / belly-breathing curves + summary tiles, read from

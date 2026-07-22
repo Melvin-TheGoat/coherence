@@ -24,13 +24,13 @@ enum FrequencyCatalog {
         // band); carrierHz is the audible pitch and is purely aesthetic.
         FrequencyPreset(id: "theta", title: "Deep Meditation", subtitle: "Theta · ~6 Hz", carrierHz: 329.63, beatHz: 6, bedResource: "bed-deep-meditation"),
         FrequencyPreset(id: "alpha", title: "Calm",            subtitle: "Alpha · ~8 Hz", carrierHz: 369.99, beatHz: 8, bedResource: "bed-calm"),
-        FrequencyPreset(id: "delta", title: "Deep Rest",       subtitle: "Delta · ~2.5 Hz", carrierHz: 277.18, beatHz: 2.5),
+        FrequencyPreset(id: "delta", title: "Deep Rest",       subtitle: "Delta · ~2.5 Hz", carrierHz: 261.63, beatHz: 2.5, bedResource: "bed-deep-rest"),
         // Pure "frequency" tones — the carrier IS the point. Traditional/cultural
         // associations (not lab-proven — the real, consistent effect is relaxation).
-        FrequencyPreset(id: "harmony",   title: "Harmony",   subtitle: "432 Hz · natural tuning", carrierHz: 432, beatHz: nil),
-        FrequencyPreset(id: "manifest",  title: "Manifest",  subtitle: "528 Hz · transformation", carrierHz: 528, beatHz: nil),
-        FrequencyPreset(id: "visualize", title: "Visualize", subtitle: "852 Hz · intuition", carrierHz: 852, beatHz: nil),
-        FrequencyPreset(id: "awaken",    title: "Awaken",    subtitle: "963 Hz · higher self", carrierHz: 963, beatHz: nil),
+        FrequencyPreset(id: "harmony",   title: "Harmony",   subtitle: "432 Hz · natural tuning", carrierHz: 432, beatHz: nil, bedResource: "bed-harmony"),
+        FrequencyPreset(id: "manifest",  title: "Manifest",  subtitle: "528 Hz · transformation", carrierHz: 528, beatHz: nil, bedResource: "bed-manifest"),
+        FrequencyPreset(id: "visualize", title: "Visualize", subtitle: "852 Hz · intuition", carrierHz: 852, beatHz: nil, bedResource: "bed-visualize"),
+        FrequencyPreset(id: "awaken",    title: "Awaken",    subtitle: "963 Hz · higher self", carrierHz: 963, beatHz: nil, bedResource: "bed-awaken"),
     ]
 
     static func preset(id: String?) -> FrequencyPreset? {
@@ -65,7 +65,9 @@ final class ToneEngine: ObservableObject {
     // ambient bed leads and the entrainment tone sits softly underneath.
     private static let bedVolume: Float = 0.85
     private static let toneVolumeWithBed: Float = 0.6          // isochronic (speaker), washed in reverb
-    private static let toneVolumeWithBedBinaural: Float = 0.3  // binaural is drier/louder → sits lower
+    private static let toneVolumeWithBedBinaural: Float = 0.22 // binaural sits low; the beat is perceptual, not loud
+    private static let toneVolumeWithBedPure: Float = 0.4      // pure "frequency" tones sit softer under the bed
+    private static let toneVolumeWithBedPureHigh: Float = 0.22 // high pure tones (852/963) are ringy → softer still
 
     // MARK: Audio-thread oscillator bank (a plain reference type captured by the
     // render block, so nothing touches the main-actor object on the audio thread).
@@ -115,10 +117,16 @@ final class ToneEngine: ObservableObject {
                 // chain also drops the delay for pure tones — see play() — because a
                 // feedback delay rings on whichever fundamental aligns with its comb.
                 let high = f >= 600
-                add(f,     f,     1.00, 1.00, 0, 0, 0)                              // fundamental
-                add(f / 2, f / 2, high ? 0.55 : 0.40, high ? 0.55 : 0.40, 0, 0, 0)  // sub — warmth/body
                 if high {
-                    add(f / 4, f / 4, 0.30, 0.30, 0, 0, 0)                          // deep anchor for high tones
+                    // High solfeggio tones ring easily. Lead with the warm lower octaves
+                    // and keep the piercing fundamental SOFTER than the sub — the 852/963
+                    // is still present, just no longer the dominant, ringing layer.
+                    add(f,     f,     0.55, 0.55, 0, 0, 0)   // fundamental — softened
+                    add(f / 2, f / 2, 0.85, 0.85, 0, 0, 0)   // sub leads — warmth/body
+                    add(f / 4, f / 4, 0.50, 0.50, 0, 0, 0)   // deep anchor
+                } else {
+                    add(f,     f,     1.00, 1.00, 0, 0, 0)   // fundamental
+                    add(f / 2, f / 2, 0.40, 0.40, 0, 0, 0)   // sub — warmth/body
                 }
             } else {
                 // Isochronic entrainment pad — a detuned chorus is fine here: the beat
@@ -195,21 +203,22 @@ final class ToneEngine: ObservableObject {
             // content above its fundamental, so this is safe.
             let verb = AVAudioUnitReverb()
             verb.loadFactoryPreset(.largeHall2)
-            verb.wetDryMix = 40
+            verb.wetDryMix = preset.carrierHz >= 600 ? 20 : 32   // high pure tones drier → less ring
 
             let postLP = AVAudioUnitEQ(numberOfBands: 1)
             postLP.bands[0].filterType = .lowPass
-            postLP.bands[0].frequency = Float(max(600, preset.carrierHz * 1.2))
+            postLP.bands[0].frequency = Float(max(600, preset.carrierHz * 1.1))
             postLP.bands[0].bypass = false
 
             chain += [verb, postLP]
         } else if method == .binaural {
-            // Binaural (headphones): headphones expose every artifact, and heavy
-            // delay/reverb also muddies the two-ear beat. So keep it clean — NO delay,
-            // light reverb, and a low-pass just above the tone to kill the metallic ring.
+            // Binaural (headphones): keep it nearly DRY. Reverb mixes L+R back together,
+            // which reintroduces a physical amplitude throb — the "annoying back-and-forth."
+            // A clean binaural beat is perceptual, not physical, so minimal reverb = subtler
+            // pulse AND a truer effect. The lush bed supplies the ambience.
             let verb = AVAudioUnitReverb()
             verb.loadFactoryPreset(.largeHall2)
-            verb.wetDryMix = 28
+            verb.wetDryMix = 8
 
             let postLP = AVAudioUnitEQ(numberOfBands: 1)
             postLP.bands[0].filterType = .lowPass
@@ -247,11 +256,15 @@ final class ToneEngine: ObservableObject {
         // Soften the synthesized tone when it's riding under a bed (the bed leads).
         // Binaural is drier (less reverb → louder/more direct), so it needs a lower level
         // than the reverb-washed isochronic tone to sit at the same spot under the bed.
-        if preset.bedResource != nil {
-            engine.mainMixerNode.outputVolume = (method == .binaural)
-                ? Self.toneVolumeWithBedBinaural : Self.toneVolumeWithBed
-        } else {
+        if preset.bedResource == nil {
             engine.mainMixerNode.outputVolume = 1.0
+        } else if !preset.hasBeat {
+            engine.mainMixerNode.outputVolume = preset.carrierHz >= 600           // pure tone under bed
+                ? Self.toneVolumeWithBedPureHigh : Self.toneVolumeWithBedPure
+        } else if method == .binaural {
+            engine.mainMixerNode.outputVolume = Self.toneVolumeWithBedBinaural
+        } else {
+            engine.mainMixerNode.outputVolume = Self.toneVolumeWithBed
         }
 
         do {
@@ -285,15 +298,19 @@ final class ToneEngine: ObservableObject {
     func stop() {
         bedPlayer?.stop()
         bedPlayer = nil
+        // Stop the engine BEFORE detaching — halts the render thread first so a rapid
+        // Preview toggle can't tear down nodes while the source is still rendering.
+        if engine.isRunning { engine.stop() }
         nodes.forEach { engine.detach($0) }
         nodes = []
-        if engine.isRunning { engine.stop() }
         playingID = nil
     }
 
     private func configureSession() {
+        // .playback (no mixWithOthers) → our audio is primary and keeps playing when
+        // the screen locks mid-meditation (paired with the "audio" UIBackgroundMode).
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try? session.setCategory(.playback, mode: .default)
         try? session.setActive(true)
     }
 }
