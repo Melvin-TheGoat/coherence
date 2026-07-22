@@ -3,13 +3,13 @@ import SwiftData
 
 @main
 struct CoherenceApp: App {
-    // Phase 0–6: local store, CloudKit OFF. Phase 7 flips this to
-    // `Persistence.cloudKit()`.
+    // Phase 7: CloudKit sync ON (private database, per-user). Falls back to a
+    // local store when CloudKit can't provision.
     let modelContainer: ModelContainer
     @StateObject private var coordinator: SessionCoordinator
 
     init() {
-        let container = Persistence.local()
+        let container = Persistence.cloudKit()
         modelContainer = container
         let setup = ModelContext(container)
         TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks

@@ -3,11 +3,13 @@ import SwiftData
 
 /// ModelContainer factories.
 ///
-/// Phase 0–6 use `local()` — a persistent on-device store with CloudKit OFF, so
-/// the app runs under free provisioning with no iCloud entitlement. The models
-/// are already shaped CloudKit-safe (all properties optional/defaulted, no
-/// `.unique`, no relationships), so Phase 7 flips to `cloudKit()` as a one-line
-/// change in CoherenceApp.
+/// Phase 7 uses `cloudKit()` — a persistent store that mirrors each user's rows
+/// to their PRIVATE iCloud database (personal cross-device sync + backup; nothing
+/// shared between users). The models were shaped CloudKit-safe from day one (all
+/// properties optional/defaulted, no `.unique`, no relationships), so the flip is
+/// a one-line change in CoherenceApp. `cloudKit()` falls back to `local()` if the
+/// CloudKit container can't init (no iCloud account, simulator, or a dev whose
+/// capability isn't provisioned yet) — the app still runs, just without sync.
 ///
 /// The Watch never builds a container — all persistence happens on the phone.
 enum Persistence {
@@ -35,9 +37,9 @@ enum Persistence {
         }
     }
 
-    /// Persistent store with CloudKit sync. Written now, NOT called until Phase 7
-    /// (needs the paid program + iCloud entitlement). Flipping CoherenceApp from
-    /// `local()` to `cloudKit()` is the only change required to enable sync.
+    /// Persistent store with CloudKit sync (Phase 7). Falls back to the local
+    /// store if the CloudKit container can't be created — so the app never
+    /// crashes on a device/simulator without a provisioned iCloud account.
     static func cloudKit() -> ModelContainer {
         let config = ModelConfiguration(
             schema: schema,
@@ -47,7 +49,8 @@ enum Persistence {
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            fatalError("Failed to create CloudKit ModelContainer: \(error)")
+            print("CloudKit ModelContainer unavailable, falling back to local store: \(error)")
+            return local()
         }
     }
 
