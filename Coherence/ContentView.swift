@@ -8,6 +8,7 @@ struct ContentView: View {
     @State private var showResults = false
     @State private var showCalendar = false
     @State private var showHistory = false
+    @State private var showSettings = false
 
     var body: some View {
         ZStack {
@@ -42,6 +43,7 @@ struct ContentView: View {
                     }
                     Button("Calendar") { showCalendar = true }
                     Button("History") { showHistory = true }
+                    Button("Settings") { showSettings = true }
                 }
                 .buttonStyle(.bordered)
                 .tint(AppColor.accentGold)
@@ -71,6 +73,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showHistory) {
             NavigationStack { AllSessionsView() }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView()
         }
     }
 }

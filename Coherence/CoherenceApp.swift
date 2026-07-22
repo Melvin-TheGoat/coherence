@@ -11,7 +11,9 @@ struct CoherenceApp: App {
     init() {
         let container = Persistence.local()
         modelContainer = container
-        TrackSeeder.seedIfNeeded(in: ModelContext(container))   // Phase 5: built-in tracks
+        let setup = ModelContext(container)
+        TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks
+        SessionStore.purgeExpired(in: setup)                    // Phase 7: 30-day account purge
         _coordinator = StateObject(wrappedValue: SessionCoordinator(container: container))
     }
 

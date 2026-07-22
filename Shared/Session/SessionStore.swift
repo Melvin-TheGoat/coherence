@@ -44,9 +44,11 @@ enum SessionStore {
     /// while a bootstrap exists. Returns the signed-in User.
     @discardableResult
     static func signIn(appleUserID: String, email: String?, displayName: String?, in context: ModelContext) -> User {
-        // a. Returning user?
+        // a. Returning user? (Clear any pending soft-delete — signing back in
+        // reactivates the account.)
         let byApple = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == appleUserID })
         if let user = try? context.fetch(byApple).first {
+            user.deletedAt = nil
             markOnboardingComplete(userID: user.id, in: context)
             try? context.save()
             return user
@@ -59,6 +61,7 @@ enum SessionStore {
             user.appleUserID = appleUserID
             if let email { user.email = email }
             if let displayName { user.displayName = displayName }
+            user.deletedAt = nil
             user.updatedAt = Date()
             markOnboardingComplete(userID: user.id, in: context)
             try? context.save()
@@ -77,6 +80,52 @@ enum SessionStore {
     static func completeOnboardingWithoutSignIn(in context: ModelContext) {
         let user = currentUser(in: context)
         markOnboardingComplete(userID: user.id, in: context)
+        try? context.save()
+    }
+
+    /// Signs out — re-gates to onboarding, preserving all data. Next sign-in
+    /// re-adopts by appleUserID.
+    static func signOut(in context: ModelContext) {
+        for prefs in (try? context.fetch(FetchDescriptor<Preferences>())) ?? [] {
+            prefs.onboardingComplete = false
+            prefs.updatedAt = Date()
+        }
+        try? context.save()
+    }
+
+    /// Soft-deletes the signed-in account (Apple requirement): stamps `deletedAt`
+    /// and signs out. The launch-time `purgeExpired` hard-deletes after 30 days.
+    static func softDeleteCurrentUser(now: Date = Date(), in context: ModelContext) {
+        let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
+        let target = users.first { $0.appleUserID != "" && $0.deletedAt == nil } ?? users.first
+        target?.deletedAt = now
+        target?.updatedAt = now
+        signOut(in: context)
+    }
+
+    /// Hard-deletes Users soft-deleted more than `days` ago and every row FK'd to
+    /// them (Preferences, Sessions, MeditationStats). Run on app launch. We store
+    /// no raw biometrics, so nothing to delete from HealthKit.
+    static func purgeExpired(olderThanDays days: Int = 30, now: Date = Date(), in context: ModelContext) {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: now) ?? now
+        let expired = ((try? context.fetch(FetchDescriptor<User>())) ?? [])
+            .filter { ($0.deletedAt ?? .distantFuture) <= cutoff }
+        guard !expired.isEmpty else { return }
+
+        let allStats = (try? context.fetch(FetchDescriptor<MeditationStats>())) ?? []
+        for user in expired {
+            let uid = user.id
+            let sessions = (try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.userID == uid }))) ?? []
+            let sessionIDs = Set(sessions.map(\.id))
+            for stats in allStats {
+                if let sid = stats.sessionID, sessionIDs.contains(sid) { context.delete(stats) }
+            }
+            for session in sessions { context.delete(session) }
+            for prefs in (try? context.fetch(FetchDescriptor<Preferences>(predicate: #Predicate { $0.userID == uid }))) ?? [] {
+                context.delete(prefs)
+            }
+            context.delete(user)
+        }
         try? context.save()
     }
 
