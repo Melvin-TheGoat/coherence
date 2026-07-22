@@ -202,14 +202,17 @@ UI must coach it, and the 2-signal degrade path must stay.
       NO delay. Isochronic (speaker) keeps the delay + big hall (pulse masks it). Pure
       tones: reverb + a low-pass just above the carrier, no delay. (Binaural tone level
       0.22.) **Don't relitigate:** binaural need not be loud/noticeable to work.
-    - **Bed import recipe (per bed), scripted with Python:** ElevenLabs WAV → `wave`
-      trim first ~6 s (quiet intro) → (for off-standard tones **pitch-align via
-      `audioop.ratecv`**: 432 −32¢, 852 +44¢, 963 −44¢, so the bed matches the exact Hz)
-      → **loudness-normalize to the Deep Meditation bed's RMS** (`ref_rms≈5869` @ int16,
-      peak-safe) → `afconvert` to **AAC m4a** (~6 MB vs ~53 MB WAV — never commit raw WAV).
-      xcodegen auto-bundles files under `Coherence/`. NOTE: two peaky beds (Manifest,
-      Awaken) hit the peak limit before full loudness → ~2 dB quieter than the rest
-      (accepted; a compression pass could match them).
+    - **Bed import recipe (per bed), scripted:** `scratchpad/process_bed.py` (pure Python,
+      `wave`+`audioop`) does: trim first ~6 s (quiet intro) → **pitch-align via
+      `ratecv`** to the exact Hz (432 −32¢, 528 +16¢, 852 +44¢, 963 −44¢; entrainment
+      beds already on-note) → **gentle block compressor** (reduces crest factor so wavy
+      beds reach full loudness without peak-clipping) → **normalize to the Deep Meditation
+      bed's RMS** (`ref_rms≈5869` @ int16, peak-safe) → `afconvert` to **AAC m4a** (~6 MB
+      vs ~53 MB WAV — never commit raw WAV). xcodegen auto-bundles files under `Coherence/`.
+      The 4 pure-tone beds are now the "wavy" versions (gentle undulating pads, still no
+      melody/rhythm); the compressor is what lets them match the others' loudness. Prompt
+      generations with **"continuous / always present, never dropping to silence"** — a
+      too-dynamic take (long silent gaps) can't reach full loudness even compressed.
     - **Live-session playback DONE.** `SessionCoordinator` owns a `ToneEngine`; on Begin
       (after `startWatchApp` succeeds) it plays the chosen tone+bed on the phone while the
       Watch measures. Stops on the parallel timer (timed) or when the payload lands (open;
