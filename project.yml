@@ -28,6 +28,10 @@ targets:
     sources:
       - Coherence
       - Shared
+      - path: PURPOSE.md
+        buildPhase: resources
+      - path: SCIENCE.md
+        buildPhase: resources
     dependencies:
       - target: CoherenceWatch
         embed: true
