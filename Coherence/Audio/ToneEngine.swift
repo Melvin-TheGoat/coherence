@@ -65,7 +65,7 @@ final class ToneEngine: ObservableObject {
     // ambient bed leads and the entrainment tone sits softly underneath.
     private static let bedVolume: Float = 0.85
     private static let toneVolumeWithBed: Float = 0.6          // isochronic (speaker), washed in reverb
-    private static let toneVolumeWithBedBinaural: Float = 0.3  // binaural is drier/louder → sits lower
+    private static let toneVolumeWithBedBinaural: Float = 0.22 // binaural sits low; the beat is perceptual, not loud
     private static let toneVolumeWithBedPure: Float = 0.4      // pure "frequency" tones sit softer under the bed
     private static let toneVolumeWithBedPureHigh: Float = 0.22 // high pure tones (852/963) are ringy → softer still
 
@@ -212,12 +212,13 @@ final class ToneEngine: ObservableObject {
 
             chain += [verb, postLP]
         } else if method == .binaural {
-            // Binaural (headphones): headphones expose every artifact, and heavy
-            // delay/reverb also muddies the two-ear beat. So keep it clean — NO delay,
-            // light reverb, and a low-pass just above the tone to kill the metallic ring.
+            // Binaural (headphones): keep it nearly DRY. Reverb mixes L+R back together,
+            // which reintroduces a physical amplitude throb — the "annoying back-and-forth."
+            // A clean binaural beat is perceptual, not physical, so minimal reverb = subtler
+            // pulse AND a truer effect. The lush bed supplies the ambience.
             let verb = AVAudioUnitReverb()
             verb.loadFactoryPreset(.largeHall2)
-            verb.wetDryMix = 28
+            verb.wetDryMix = 8
 
             let postLP = AVAudioUnitEQ(numberOfBands: 1)
             postLP.bands[0].filterType = .lowPass
@@ -306,8 +307,10 @@ final class ToneEngine: ObservableObject {
     }
 
     private func configureSession() {
+        // .playback (no mixWithOthers) → our audio is primary and keeps playing when
+        // the screen locks mid-meditation (paired with the "audio" UIBackgroundMode).
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default, options: [.mixWithOthers])
+        try? session.setCategory(.playback, mode: .default)
         try? session.setActive(true)
     }
 }
