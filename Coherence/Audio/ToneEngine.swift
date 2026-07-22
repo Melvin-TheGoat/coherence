@@ -39,6 +39,27 @@ enum FrequencyCatalog {
     }
 }
 
+/// A nature soundscape — a looping ambient recording (bundled m4a), played on its own
+/// (no synthesized tone). Nature sounds have real evidence for relaxation (parasympathetic
+/// shift / lower cortisol), unlike the tradition-only solfeggio tones.
+struct NaturePreset: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let resource: String        // bundled audio file (without extension)
+}
+
+enum NatureCatalog {
+    static let all: [NaturePreset] = [
+        NaturePreset(id: "rain", title: "Rain", subtitle: "Gentle rainfall", resource: "nature-rain"),
+    ]
+
+    static func preset(id: String?) -> NaturePreset? {
+        guard let id else { return nil }
+        return all.first { $0.id == id }
+    }
+}
+
 /// Real-time tone synthesizer (phone-side — audio is a phone concern; the Watch only
 /// measures). Builds a warm detuned pad (fundamental + sub-octave + octave + unison
 /// chorus voices, each drifting on its own slow LFO), then runs it through a
@@ -64,6 +85,7 @@ final class ToneEngine: ObservableObject {
     // Mix balance when a bed is present (tune by ear): bed up, tone down so the
     // ambient bed leads and the entrainment tone sits softly underneath.
     private static let bedVolume: Float = 0.85
+    private static let natureVolume: Float = 0.22  // nature plays on its own (no tone) — soft background
     private static let toneVolumeWithBed: Float = 0.6          // isochronic (speaker), washed in reverb
     private static let toneVolumeWithBedBinaural: Float = 0.22 // binaural sits low; the beat is perceptual, not loud
     private static let toneVolumeWithBedPure: Float = 0.4      // pure "frequency" tones sit softer under the bed
@@ -274,6 +296,25 @@ final class ToneEngine: ObservableObject {
             startBed(for: preset)
         } catch {
             chain.forEach { engine.detach($0) }
+        }
+    }
+
+    /// Plays a nature soundscape on its own (looping recording, no synthesized tone).
+    func playNature(_ preset: NaturePreset) {
+        stop()
+        configureSession()
+        guard let url = Bundle.main.url(forResource: preset.resource, withExtension: "m4a")
+                    ?? Bundle.main.url(forResource: preset.resource, withExtension: "wav") else { return }
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = -1
+            player.volume = Self.natureVolume
+            player.prepareToPlay()
+            player.play()
+            bedPlayer = player
+            playingID = preset.id
+        } catch {
+            // No file / decode failure — nothing plays; UI just shows nothing selected.
         }
     }
 
