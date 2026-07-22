@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!--
-  Phase 1 (paid program): HealthKit enabled. iOS carries the entitlement ONLY to
-  issue HKHealthStore.startWatchApp(with:) in Phase 4 — it reads zero biometric
-  data. All heartbeat logic stays on the Watch.
-
-  Added later:
-    Phase 7: com.apple.developer.applesignin = ["Default"]
-             com.apple.developer.icloud-container-identifiers = ["iCloud.com.lockout.coherence"]
-             com.apple.developer.icloud-services = ["CloudKit"]
-             aps-environment = "development"
--->
 <plist version="1.0">
 <dict>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
 	<key>com.apple.developer.healthkit</key>
 	<true/>
 </dict>

@@ -36,6 +36,62 @@ enum SessionStore {
         return user
     }
 
+    /// Signs in with an Apple credential and marks onboarding complete. Account
+    /// matching, in order (Phase-7 rule): (a) an existing User with this
+    /// `appleUserID` → sign in as them; (b) else ADOPT the bootstrap User
+    /// (`appleUserID == ""`) — fill in its identity so pre-account sessions +
+    /// streak survive; (c) else create a new User. Never creates a second User
+    /// while a bootstrap exists. Returns the signed-in User.
+    @discardableResult
+    static func signIn(appleUserID: String, email: String?, displayName: String?, in context: ModelContext) -> User {
+        // a. Returning user?
+        let byApple = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == appleUserID })
+        if let user = try? context.fetch(byApple).first {
+            markOnboardingComplete(userID: user.id, in: context)
+            try? context.save()
+            return user
+        }
+        // b. Adopt the bootstrap row (Apple gives name/email only on first sign-in,
+        // so only overwrite when provided).
+        let bootstrapID = ""
+        let byBootstrap = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == bootstrapID })
+        if let user = try? context.fetch(byBootstrap).first {
+            user.appleUserID = appleUserID
+            if let email { user.email = email }
+            if let displayName { user.displayName = displayName }
+            user.updatedAt = Date()
+            markOnboardingComplete(userID: user.id, in: context)
+            try? context.save()
+            return user
+        }
+        // c. Fresh account.
+        let user = User(appleUserID: appleUserID, email: email, displayName: displayName)
+        context.insert(user)
+        context.insert(Preferences(userID: user.id, onboardingComplete: true))
+        try? context.save()
+        return user
+    }
+
+    /// Dev/local-only path to leave onboarding without a real account (keeps the
+    /// bootstrap User). Release builds gate on real sign-in.
+    static func completeOnboardingWithoutSignIn(in context: ModelContext) {
+        let user = currentUser(in: context)
+        markOnboardingComplete(userID: user.id, in: context)
+        try? context.save()
+    }
+
+    /// Sets `onboardingComplete` on the user's Preferences (creating the row if the
+    /// bootstrap flow somehow hasn't yet).
+    private static func markOnboardingComplete(userID: UUID, in context: ModelContext) {
+        let d = FetchDescriptor<Preferences>(predicate: #Predicate { $0.userID == userID })
+        if let prefs = try? context.fetch(d).first {
+            prefs.onboardingComplete = true
+            prefs.updatedAt = Date()
+        } else {
+            context.insert(Preferences(userID: userID, onboardingComplete: true))
+        }
+    }
+
     /// Persists a finished session + its stats in ONE save. Idempotent: never
     /// writes a second `MeditationStats`/`Session` for a `sessionID`; skips
     /// discarded, too-short, or result-less payloads. Returns the written

@@ -17,7 +17,7 @@ struct CoherenceApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            RootView()
                 .environmentObject(coordinator)
         }
         .modelContainer(modelContainer)
