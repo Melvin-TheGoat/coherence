@@ -261,6 +261,29 @@ UI must coach it, and the 2-signal degrade path must stay.
   `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
   the Watch send logs encode errors). Stale application context replayed a finished
   session on cold Watch launch (the phone now clears it on payload receipt).
+- **Phase 7 DONE — accounts, settings, CloudKit (v1 feature-complete).**
+  - **Onboarding + Sign in with Apple** (`Coherence/Onboarding/`): full Purpose →
+    Science → SIWA. The Purpose/Science pages render the **real bundled
+    `PURPOSE.md` / `SCIENCE.md`** via a small `MarkdownView` (single source of
+    truth). `RootView` gates the app on `Preferences.onboardingComplete`.
+  - **Bootstrap-User adopt** (`SessionStore.signIn`): match existing appleUserID →
+    else adopt the bootstrap row (pre-account sessions + streak survive) → else
+    create. Reactivates a soft-deleted user on re-sign-in. 4 `AuthAdoptTests`.
+  - **Settings** (`Coherence/Settings/SettingsView.swift`): profile (display name,
+    product-emails), theme (applied app-wide via `RootView.preferredColorScheme`),
+    haptics, default length, daily reminder (`NotificationScheduler`), re-read
+    Purpose/Science, sign out, delete account.
+  - **Account deletion + purge**: `softDeleteCurrentUser` stamps `deletedAt`;
+    `purgeExpired` (run on launch) hard-deletes users soft-deleted >30 days ago +
+    all FK'd rows. 5 `AccountLifecycleTests`.
+  - **CloudKit ON**: `CoherenceApp` uses `Persistence.cloudKit()` (per-user PRIVATE
+    DB sync of User/Preferences/Session/MeditationStats). `cloudKit()` falls back to
+    `local()` if the container can't init (simulator / unprovisioned) so it never
+    crashes. Entitlements: `icloud-container-identifiers = [iCloud.$(CFBundleIdentifier)]`
+    (per-dev, matches the local bundle-ID override), `icloud-services = CloudKit`,
+    `aps-environment = development`. **NOT yet verified cross-device** (no second
+    device on hand). Marketing-list export still stubbed. 47 tests green.
+- **Next: Phase 8 — UI/brand polish + App Store launch.** See `App_ROADMAP_v2.md`.
 
 ## Toolchain notes (this machine)
 

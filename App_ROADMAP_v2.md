@@ -427,6 +427,8 @@ Build accounts, sync, and settings (iOS). Apple-only auth — no passwords, no G
 ### ROLLBACK
 Tag `phase7-v1-feature-complete`.
 
+**STATUS: BUILT (v1 feature-complete).** Onboarding + Sign in with Apple, bootstrap-User adopt, Settings (profile/theme/haptics/reminders/re-read Purpose+Science), account deletion + 30-day purge, and CloudKit sync are all in and unit-tested (47 tests). CloudKit is NOT yet verified cross-device (no second device on hand); marketing-list export still stubbed. See CLAUDE.md "Phase 7 DONE."
+
 ---
 
 ## After Phase 7 — before TestFlight
@@ -434,6 +436,57 @@ Tag `phase7-v1-feature-complete`.
 - Confirm `aps-environment` is `production` for release and CloudKit is deployed to the production environment in the CloudKit dashboard.
 - Privacy nutrition labels: declare Health data usage; you store references, not raw biometrics — say so accurately.
 - Deferred, don't reopen now: **multi-user sharing** (share a session/feed with other users — needs an infra decision: CloudKit public DB / `CKShare` vs. a real backend, plus public identity fields on User and per-session visibility); **external BLE HRV sensor "Pro" tier** (true HRV + coherence via Polar/HeartMath-class sensor over CoreBluetooth — the only path to real coherence); subscriptions/paywall (`is_premium`/`premium_expires_at`); Google + email/password auth; streak freezes; track artwork; nature-sound mixing; richer calendar day-detail. All clean additive upgrades.
+
+---
+
+# Phase 8 — Design polish, brand, and App Store launch (ROUGH)
+
+**GOAL:** Turn the working-but-utilitarian app into something that looks and feels like a shippable product, give it a brand (name lockup, logo, app icon), and get it live on the App Store. The app is feature-complete (Phases 0–7); this phase is design + go-to-market, not new capability.
+
+> This is a rough plan — it firms up as we go. Three streams; **8a and 8b can run in parallel** with each other and with any remaining engineering.
+
+## 8a — UI / UX design polish
+
+The current screens are functional debug UI (bordered buttons, monospace dumps). Redesign the real user-facing flow into a cohesive, calm, premium experience — dark-first (gold-on-near-black is the current palette; finalize it).
+
+Screens to design (all already exist functionally): **Onboarding** (Purpose/Science/sign-in), **Home**, **Session setup** (mode/length/posture/sound), **Mid-session** (calm, no live biometrics — product stance), **Post-session evidence** (the payoff — stillness / HR-decline / breathing graphs + overall), **Calendar / History**, **Settings**.
+
+- Establish a small **design system**: typography scale, spacing, corner radii, the existing `AppColor` palette (keep everything routed through it — no hardcoded hex), reusable components (cards, stat tiles, buttons, graph styling via Swift Charts).
+- Motion/transitions, empty states, loading/`analyzing…` states, and **accessibility** (Dynamic Type, VoiceOver labels, contrast).
+- Remove all TEMP debug UI (belly-diagnostic box, the console/summary dumps, dev "Skip" — keep dev skip behind `#if DEBUG`).
+- Light + dark both look right (theme switch already wired).
+
+## 8b — Brand & assets
+
+- **Name lockup + logo** for **808**; finalize the palette.
+- **App icon** (1024×1024, plus the generated sizes) — no transparency, no rounded corners (Apple rounds it).
+- **App Store screenshots** for required device sizes (6.7"/6.9" iPhone at minimum; Apple Watch screenshots if we surface the watch), plus optional preview video.
+- Marketing copy: subtitle, promo text, description, keywords, category (Health & Fitness).
+
+## 8c — App Store go-live (research done — see below)
+
+**Legal / hosting (do first; reviewers check the URLs):**
+- **Privacy policy** — REQUIRED (hard requirement for HealthKit/health apps), publicly hosted HTTPS URL, and also reachable in-app. Must describe our health/motion data use. Our story is clean: **we store no raw biometrics** (only computed stats), the phone reads zero biometrics, and we don't use health data for ads — say all of this accurately.
+- **Support URL** — REQUIRED and must actually work (reviewers visit it).
+- **Terms of Service / EULA** — Apple's standard EULA covers the basics; add a **wellness disclaimer** ("808 is not a medical device; not medical advice") given the health framing. Keep all claims **wellness, not medical** (SCIENCE.md already does — no "detects theta," no medical claims).
+- **A simple website/landing page** to host the above (privacy + support + ToS). A one-pager is enough to start.
+
+**Account decision (Melvin + Aziz):**
+- **Individual** account → your personal legal name shows as the App Store seller; no D-U-N-S; simplest/cheapest; fine to launch and convert later.
+- **Organization** (LLC/Corp) → company name as seller, requires a **legal entity + D-U-N-S number**, lets you add teammates and share ownership. If you form an LLC you *must* enroll as an organization. Given two co-founders + a planned social product, an LLC + org account is the "real company" path — but not required to ship v1.
+
+**App Store Connect setup:**
+- Enable every capability the app uses on the App ID: **HealthKit, Sign in with Apple, CloudKit/iCloud, Push (aps)** — and flip `aps-environment` to `production` and **deploy the CloudKit schema to the production environment** before release.
+- Fill the **App Privacy "nutrition labels"** carefully: declare Health & Fitness data, plus email/name from Sign in with Apple, and whether each is linked to the user. (Apple's 2026 review is stricter on data transparency.)
+- Age rating questionnaire, export-compliance (standard — no non-exempt encryption), category, pricing (free to start).
+- Replace any placeholder audio with licensed/owned tracks; set `algorithmVersion` intentionally.
+
+**Ship:**
+- Internal + external **TestFlight** beta first (this is also where cross-device CloudKit sync finally gets verified on real hardware).
+- Then submit for review. **Top rejection causes to pre-empt:** crashes/bugs (>40% of rejections — test thoroughly), missing/incomplete privacy disclosures, and metadata inaccuracies. We're in good shape on the Apple-specific gotchas: account deletion is built (required), Sign in with Apple is the only auth (compliant), HealthKit usage strings are present and honest.
+
+### Research sources
+[App Store submission checklist 2026](https://appbuilder.academy/blog/app-store-submission-checklist) · [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) · [Health-app privacy guidelines](https://www.termsfeed.com/blog/privacy-guidelines-health-apps/) · [Individual vs Organization enrollment](https://developer.apple.com/help/account/membership/program-enrollment/) · [D-U-N-S requirement](https://developer.apple.com/support/D-U-N-S/index.html)
 
 ## Global conventions (enforced every phase)
 - Never hardcode a hex value — every color routes through the asset catalog / `AppColor`.
