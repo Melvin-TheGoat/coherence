@@ -221,9 +221,22 @@ UI must coach it, and the 2-signal degrade path must stay.
       and the session category is `.playback` (no `mixWithOthers`) so it keeps playing when
       the screen locks mid-meditation. `ToneEngine.stop()` stops the engine before detaching
       nodes (guards a rapid-teardown race).
-    - **Still TODO:** persist *which* track played (needs an optional `Session.frequencyID`
-      field — mode is recorded but not the specific preset); maybe a loop crossfade (bed
-      loops ~5 min); compression pass for the two ~2 dB-quiet beds (Manifest, Awaken).
+    - **NATURE section STARTED.** Second sound category alongside Frequency: looping
+      ambient recordings played on their own (no tone). `NaturePreset` / `NatureCatalog`
+      (Coherence/Audio/Nature/`*.m4a`); `ToneEngine.playNature` loops via `AVAudioPlayer`
+      at `natureVolume` (0.22 — nature reads loud, keep it soft). **Rain** in so far
+      (`nature-rain.m4a`); ocean / forest-birds / campfire planned (the target 4). Nature
+      sets `Session.mode = "nature"`. The setup Sound picker is now **tabbed: Silence /
+      Frequency / Nature** — the lit tab shows its options; switching tabs auto-selects the
+      first item. `SessionCoordinator.begin(soundID:)` looks up FrequencyCatalog first,
+      then NatureCatalog.
+    - **Nature import recipe:** `scratchpad/loop_nature.py` — pick the most UNIFORM window
+      (min per-second RMS variance → dodges swells/events the SFX generator inserts) →
+      **equal-power crossfade the tail into the head** → gapless loop (any clip loops,
+      any cut point) → normalize → m4a. Prompt SFX for **steady, uniform, no events**.
+    - **Still TODO:** the other 3 nature sounds; persist *which* track played (needs an
+      optional `Session.frequencyID` — mode is recorded but not the specific preset);
+      compression pass for the two ~2 dB-quiet beds (Manifest, Awaken).
 - **Phase 6 (in progress) — the biometric-evidence graphs + logged history.**
   - **Post-session results screen DONE** (`Coherence/Session/SessionResultsView.swift`):
     HR-settling / stillness / belly-breathing curves + summary tiles, read from

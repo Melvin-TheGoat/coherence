@@ -52,9 +52,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
     }
 
     /// Begins a session: sends params to the Watch and launches its workout. If a
-    /// `frequencyID` is given, the phone plays that tone + bed during the session.
+    /// `soundID` is given, the phone plays that frequency tone+bed OR nature sound
+    /// during the session.
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?, bellyBreathing: Bool,
-               hapticsEnabled: Bool, frequencyID: String? = nil, headphones: Bool = false) {
+               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
         Task {
             await requestWorkoutAuthorization()
 
@@ -92,7 +93,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
                     if success {
                         self.status = "Watch launched — meditate, then End on the Watch"
                         // Play the chosen sound on the phone while the Watch measures.
-                        self.startAudio(frequencyID: frequencyID, headphones: headphones,
+                        self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
                     } else {
                         self.status = "startWatchApp failed: \(error?.localizedDescription ?? "unknown")"
@@ -106,11 +107,17 @@ final class SessionCoordinator: NSObject, ObservableObject {
 
     /// Starts the selected tone + bed, and (for timed sessions) schedules a phone-side
     /// stop — the Watch fires the authoritative end-haptic; this timer only stops audio.
-    private func startAudio(frequencyID: String?, headphones: Bool, plannedDurationSec: Int?) {
+    private func startAudio(soundID: String?, headphones: Bool, plannedDurationSec: Int?) {
         audioStopTask?.cancel()
         tone.stop()
-        guard let id = frequencyID, let preset = FrequencyCatalog.preset(id: id) else { return }
-        tone.play(preset, method: headphones ? .binaural : .isochronic)
+        guard let id = soundID else { return }
+        if let fp = FrequencyCatalog.preset(id: id) {
+            tone.play(fp, method: headphones ? .binaural : .isochronic)
+        } else if let np = NatureCatalog.preset(id: id) {
+            tone.playNature(np)
+        } else {
+            return
+        }
         if let planned = plannedDurationSec {
             audioStopTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(planned))

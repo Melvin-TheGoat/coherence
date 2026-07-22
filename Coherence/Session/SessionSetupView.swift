@@ -12,7 +12,10 @@ struct SessionSetupView: View {
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var tone = ToneEngine()
-    /// Selected sound preset id; nil = Silence.
+    private enum SoundCategory { case silence, frequency, nature }
+    /// Which sound tab is lit.
+    @State private var soundCategory: SoundCategory = .silence
+    /// Selected preset id within the frequency/nature tab (nil = none/silence).
     @State private var soundID: String? = nil
     /// Delivery for beat presets: false = Speaker (isochronic), true = Headphones (binaural).
     @State private var headphones = false
@@ -186,36 +189,86 @@ struct SessionSetupView: View {
     // MARK: Sound (preview)
 
     private var selectedPreset: FrequencyPreset? { FrequencyCatalog.preset(id: soundID) }
+    private var selectedNature: NaturePreset? { NatureCatalog.preset(id: soundID) }
 
     private var soundSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text("Sound")
                 .font(.headline)
                 .foregroundStyle(AppColor.textPrimary)
-            soundRow(title: "Silence", subtitle: "No audio", id: nil)
-            ForEach(FrequencyCatalog.all) { p in
-                soundRow(title: p.title, subtitle: p.subtitle, id: p.id)
+
+            // Category tabs — the lit one shows its options below.
+            HStack(spacing: 8) {
+                categoryTab("Silence", .silence)
+                categoryTab("Frequency", .frequency)
+                categoryTab("Nature", .nature)
             }
-            if let p = selectedPreset {
-                if p.hasBeat {
+
+            switch soundCategory {
+            case .silence:
+                Text("No audio during the session.")
+                    .font(.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            case .frequency:
+                ForEach(FrequencyCatalog.all) { p in
+                    soundRow(title: p.title, subtitle: p.subtitle, id: p.id)
+                }
+                if let p = selectedPreset, p.hasBeat {
                     Picker("Delivery", selection: $headphones) {
                         Text("Speaker").tag(false)
                         Text("Headphones").tag(true)
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: headphones) { _, _ in restartPreviewIfPlaying(p) }
+                    .onChange(of: headphones) { _, _ in restartPreviewIfPlaying() }
                     Text(headphones ? "Binaural — put headphones in." : "Isochronic — plays on the speaker.")
                         .font(.caption2)
                         .foregroundStyle(AppColor.textSecondary)
                 }
-                Button { previewToggle(p) } label: {
-                    Label(tone.playingID == p.id ? "Stop preview" : "Preview",
-                          systemImage: tone.playingID == p.id ? "stop.fill" : "play.fill")
-                        .font(.subheadline.weight(.medium))
+                previewButton
+            case .nature:
+                ForEach(NatureCatalog.all) { p in
+                    soundRow(title: p.title, subtitle: p.subtitle, id: p.id)
                 }
-                .buttonStyle(.bordered)
-                .tint(AppColor.accentGold)
+                previewButton
             }
+        }
+    }
+
+    private func categoryTab(_ title: String, _ category: SoundCategory) -> some View {
+        let selected = soundCategory == category
+        return Button { selectCategory(category) } label: {
+            Text(title)
+                .font(.subheadline.weight(.medium))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(selected ? AppColor.accentGold : AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: 10))
+                .foregroundStyle(selected ? AppColor.backgroundPrimary : AppColor.textPrimary)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Switches tab: stops any preview and picks a sensible default within the category.
+    private func selectCategory(_ category: SoundCategory) {
+        tone.stop()
+        soundCategory = category
+        switch category {
+        case .silence:   soundID = nil
+        case .frequency: soundID = FrequencyCatalog.all.first?.id
+        case .nature:    soundID = NatureCatalog.all.first?.id
+        }
+    }
+
+    @ViewBuilder
+    private var previewButton: some View {
+        if soundID != nil {
+            Button { previewToggle() } label: {
+                Label(tone.playingID == soundID ? "Stop preview" : "Preview",
+                      systemImage: tone.playingID == soundID ? "stop.fill" : "play.fill")
+                    .font(.subheadline.weight(.medium))
+            }
+            .buttonStyle(.bordered)
+            .tint(AppColor.accentGold)
         }
     }
 
@@ -247,18 +300,24 @@ struct SessionSetupView: View {
         .buttonStyle(.plain)
     }
 
-    private func previewToggle(_ p: FrequencyPreset) {
-        if tone.playingID == p.id {
+    private func previewToggle() {
+        if tone.playingID == soundID {
             tone.stop()
         } else {
-            tone.play(p, method: headphones ? .binaural : .isochronic)
+            startPreview()
         }
     }
 
-    private func restartPreviewIfPlaying(_ p: FrequencyPreset) {
-        if tone.playingID == p.id {
+    private func startPreview() {
+        if let p = selectedPreset {
             tone.play(p, method: headphones ? .binaural : .isochronic)
+        } else if let np = selectedNature {
+            tone.playNature(np)
         }
+    }
+
+    private func restartPreviewIfPlaying() {
+        if tone.playingID == soundID { startPreview() }
     }
 
     // MARK: Posture coaching (belly only)
@@ -295,10 +354,16 @@ struct SessionSetupView: View {
     private var beginButton: some View {
         Button {
             tone.stop()   // stop the preview; the coordinator plays it during the session
-            coordinator.begin(mode: soundID != nil ? "frequency" : "silence", trackID: nil,
+            let mode: String
+            switch soundCategory {
+            case .silence:   mode = "silence"
+            case .frequency: mode = "frequency"
+            case .nature:    mode = "nature"
+            }
+            coordinator.begin(mode: mode, trackID: nil,
                               plannedDurationSec: effectiveMinutes.map { $0 * 60 },
                               bellyBreathing: belly, hapticsEnabled: true,
-                              frequencyID: soundID, headphones: headphones)
+                              soundID: soundID, headphones: headphones)
             dismiss()
         } label: {
             Text("Begin on Apple Watch")
