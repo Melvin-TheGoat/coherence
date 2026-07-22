@@ -23,7 +23,7 @@ enum FrequencyCatalog {
         // Entrainment presets — beatHz is the pulse rate (must sit in the target
         // band); carrierHz is the audible pitch and is purely aesthetic.
         FrequencyPreset(id: "theta", title: "Deep Meditation", subtitle: "Theta · ~6 Hz", carrierHz: 329.63, beatHz: 6, bedResource: "bed-deep-meditation"),
-        FrequencyPreset(id: "alpha", title: "Calm",            subtitle: "Alpha · ~8 Hz", carrierHz: 369.99, beatHz: 8),
+        FrequencyPreset(id: "alpha", title: "Calm",            subtitle: "Alpha · ~8 Hz", carrierHz: 369.99, beatHz: 8, bedResource: "bed-calm"),
         FrequencyPreset(id: "delta", title: "Deep Rest",       subtitle: "Delta · ~2.5 Hz", carrierHz: 277.18, beatHz: 2.5),
         // Pure "frequency" tones — the carrier IS the point. Traditional/cultural
         // associations (not lab-proven — the real, consistent effect is relaxation).
@@ -64,7 +64,8 @@ final class ToneEngine: ObservableObject {
     // Mix balance when a bed is present (tune by ear): bed up, tone down so the
     // ambient bed leads and the entrainment tone sits softly underneath.
     private static let bedVolume: Float = 0.85
-    private static let toneVolumeWithBed: Float = 0.6
+    private static let toneVolumeWithBed: Float = 0.6          // isochronic (speaker), washed in reverb
+    private static let toneVolumeWithBedBinaural: Float = 0.3  // binaural is drier/louder → sits lower
 
     // MARK: Audio-thread oscillator bank (a plain reference type captured by the
     // render block, so nothing touches the main-actor object on the audio thread).
@@ -187,9 +188,38 @@ final class ToneEngine: ObservableObject {
 
         var chain: [AVAudioNode] = [source]
 
-        if preset.hasBeat {
-            // Entrainment: soften top → delay tail → lush hall. (The pulse masks any
-            // delay/reverb coloration, and the floating tail sounds good here.)
+        if !preset.hasBeat {
+            // Pure tone: a lighter hall, then a low-pass tuned JUST above the tone to
+            // strip the reverb's metallic high shimmer (the "ringing behind 852") while
+            // leaving the fundamental untouched. A sustained pure tone has no legitimate
+            // content above its fundamental, so this is safe.
+            let verb = AVAudioUnitReverb()
+            verb.loadFactoryPreset(.largeHall2)
+            verb.wetDryMix = 40
+
+            let postLP = AVAudioUnitEQ(numberOfBands: 1)
+            postLP.bands[0].filterType = .lowPass
+            postLP.bands[0].frequency = Float(max(600, preset.carrierHz * 1.2))
+            postLP.bands[0].bypass = false
+
+            chain += [verb, postLP]
+        } else if method == .binaural {
+            // Binaural (headphones): headphones expose every artifact, and heavy
+            // delay/reverb also muddies the two-ear beat. So keep it clean — NO delay,
+            // light reverb, and a low-pass just above the tone to kill the metallic ring.
+            let verb = AVAudioUnitReverb()
+            verb.loadFactoryPreset(.largeHall2)
+            verb.wetDryMix = 28
+
+            let postLP = AVAudioUnitEQ(numberOfBands: 1)
+            postLP.bands[0].filterType = .lowPass
+            postLP.bands[0].frequency = Float(max(650, preset.carrierHz * 1.6))
+            postLP.bands[0].bypass = false
+
+            chain += [verb, postLP]
+        } else {
+            // Isochronic (speaker): soften top → delay tail → lush hall. The pulse masks
+            // the coloration and the floating tail sounds good through a speaker.
             let eq = AVAudioUnitEQ(numberOfBands: 1)
             eq.bands[0].filterType = .lowPass
             eq.bands[0].frequency = 1600
@@ -206,21 +236,6 @@ final class ToneEngine: ObservableObject {
             verb.wetDryMix = 60
 
             chain += [eq, delay, verb]
-        } else {
-            // Pure tone: a lighter hall, then a low-pass tuned JUST above the tone to
-            // strip the reverb's metallic high shimmer (the "ringing behind 852") while
-            // leaving the fundamental untouched. A sustained pure tone has no legitimate
-            // content above its fundamental, so this is safe.
-            let verb = AVAudioUnitReverb()
-            verb.loadFactoryPreset(.largeHall2)
-            verb.wetDryMix = 40
-
-            let postLP = AVAudioUnitEQ(numberOfBands: 1)
-            postLP.bands[0].filterType = .lowPass
-            postLP.bands[0].frequency = Float(max(600, preset.carrierHz * 1.2))
-            postLP.bands[0].bypass = false
-
-            chain += [verb, postLP]
         }
 
         chain.forEach { engine.attach($0) }
@@ -230,7 +245,14 @@ final class ToneEngine: ObservableObject {
         engine.connect(chain.last!, to: engine.mainMixerNode, format: format)
 
         // Soften the synthesized tone when it's riding under a bed (the bed leads).
-        engine.mainMixerNode.outputVolume = preset.bedResource != nil ? Self.toneVolumeWithBed : 1.0
+        // Binaural is drier (less reverb → louder/more direct), so it needs a lower level
+        // than the reverb-washed isochronic tone to sit at the same spot under the bed.
+        if preset.bedResource != nil {
+            engine.mainMixerNode.outputVolume = (method == .binaural)
+                ? Self.toneVolumeWithBedBinaural : Self.toneVolumeWithBed
+        } else {
+            engine.mainMixerNode.outputVolume = 1.0
+        }
 
         do {
             try engine.start()
