@@ -52,6 +52,9 @@ struct NaturePreset: Identifiable, Equatable {
 enum NatureCatalog {
     static let all: [NaturePreset] = [
         NaturePreset(id: "rain", title: "Rain", subtitle: "Gentle rainfall", resource: "nature-rain"),
+        NaturePreset(id: "ocean", title: "Ocean", subtitle: "Rolling waves", resource: "nature-ocean"),
+        NaturePreset(id: "forest", title: "Forest", subtitle: "Morning birds", resource: "nature-forest"),
+        NaturePreset(id: "campfire", title: "Campfire", subtitle: "Crackling fire", resource: "nature-campfire"),
     ]
 
     static func preset(id: String?) -> NaturePreset? {
@@ -85,7 +88,7 @@ final class ToneEngine: ObservableObject {
     // Mix balance when a bed is present (tune by ear): bed up, tone down so the
     // ambient bed leads and the entrainment tone sits softly underneath.
     private static let bedVolume: Float = 0.85
-    private static let natureVolume: Float = 0.22  // nature plays on its own (no tone) — soft background
+    private static let natureVolume: Float = 0.15  // nature plays on its own (no tone) — soft background
     private static let toneVolumeWithBed: Float = 0.6          // isochronic (speaker), washed in reverb
     private static let toneVolumeWithBedBinaural: Float = 0.22 // binaural sits low; the beat is perceptual, not loud
     private static let toneVolumeWithBedPure: Float = 0.4      // pure "frequency" tones sit softer under the bed
