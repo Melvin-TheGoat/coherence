@@ -471,6 +471,8 @@ Screens to design (all already exist functionally): **Onboarding** (Purpose/Scie
 - **Terms of Service / EULA** — Apple's standard EULA covers the basics; add a **wellness disclaimer** ("808 is not a medical device; not medical advice") given the health framing. Keep all claims **wellness, not medical** (SCIENCE.md already does — no "detects theta," no medical claims).
 - **A simple website/landing page** to host the above (privacy + support + ToS). A one-pager is enough to start.
 
+**Founders' agreement + IP assignment — DEFERRED (do before/around launch).** Two equal founders (Melvin NYC, Aziz Detroit). Agreed to handle the founders'/operating agreement + IP assignment later; it's the highest-value legal doc but not a launch blocker (v1 can ship on Melvin's individual Apple account). LLC structure discussed: multi-member, **Michigan domestic + New York foreign-qualification with an Albany-county registered agent** (NY publication is county-priced, ~$230 Albany vs ~$2k Manhattan; foreign LLCs must publish too); skip Delaware unless raising VC. See the LLC-formation notes.
+
 **Account decision (Melvin + Aziz):**
 - **Individual** account → your personal legal name shows as the App Store seller; no D-U-N-S; simplest/cheapest; fine to launch and convert later.
 - **Organization** (LLC/Corp) → company name as seller, requires a **legal entity + D-U-N-S number**, lets you add teammates and share ownership. If you form an LLC you *must* enroll as an organization. Given two co-founders + a planned social product, an LLC + org account is the "real company" path — but not required to ship v1.
