@@ -65,12 +65,10 @@ struct OnboardingView: View {
         switch step {
         case .purpose:
             Button("Continue") { step = .science }
-                .buttonStyle(.borderedProminent)
-                .tint(AppColor.accentGold)
+                .buttonStyle(PrimaryButtonStyle())
         case .science:
             Button("Continue") { step = .signIn }
-                .buttonStyle(.borderedProminent)
-                .tint(AppColor.accentGold)
+                .buttonStyle(PrimaryButtonStyle())
         case .signIn:
             VStack(spacing: 12) {
                 SignInWithAppleButton(.signIn) { request in

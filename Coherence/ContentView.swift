@@ -6,6 +6,7 @@ import SwiftData
 /// calendar, history, and settings.
 struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
+    @Environment(\.modelContext) private var context
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
 
     @State private var showSetup = false
@@ -42,6 +43,11 @@ struct ContentView: View {
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(bellyBreathing: true) { showBreathingPreview = false }
+        }
+        .onAppear {
+            if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", openSession == nil {
+                openSession = SessionRef(id: DemoData.seedResults(in: context))
+            }
         }
         #endif
         .sheet(isPresented: $showSetup) { SessionSetupView() }

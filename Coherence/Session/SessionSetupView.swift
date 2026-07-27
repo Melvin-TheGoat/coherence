@@ -367,13 +367,10 @@ struct SessionSetupView: View {
             dismiss()
         } label: {
             Text("Begin on Apple Watch")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
         }
-        .buttonStyle(.borderedProminent)
-        .tint(AppColor.accentGold)
+        .buttonStyle(PrimaryButtonStyle())
         .disabled(!canBegin)
+        .opacity(canBegin ? 1 : 0.5)
         .padding(.top, 4)
     }
 }
