@@ -9,6 +9,7 @@ struct ContentView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var users: [User]
+    @Query private var reflections: [SessionReflection]
 
     @State private var showSetup = false
     @State private var showCalendar = false
@@ -177,9 +178,14 @@ struct ContentView: View {
                     .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
             }
             Spacer()
+            if let rating = ratingBySession[session.id] { RatingChip(rating: rating) }
             Image(systemName: "chevron.right").font(.caption).foregroundStyle(AppColor.textSecondary)
         }
         .card(padding: 14)
+    }
+
+    private var ratingBySession: [UUID: Int] {
+        SessionListSupport.ratingMap(reflections)
     }
 
     // MARK: - Calendar widget

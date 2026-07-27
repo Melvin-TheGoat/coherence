@@ -156,6 +156,7 @@ struct SessionHistoryView: View {
 struct AllSessionsView: View {
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var allStats: [MeditationStats]
+    @Query private var reflections: [SessionReflection]
 
     var body: some View {
         ScrollView {
@@ -167,11 +168,12 @@ struct AllSessionsView: View {
                         .padding(.vertical, 8)
                 } else {
                     let scores = SessionListSupport.scoreMap(allStats)
+                    let ratings = SessionListSupport.ratingMap(reflections)
                     ForEach(sessions) { session in
                         NavigationLink {
                             SessionResultsView(sessionID: session.id)
                         } label: {
-                            SessionRow(session: session, score: scores[session.id])
+                            SessionRow(session: session, score: scores[session.id], rating: ratings[session.id])
                         }
                         .buttonStyle(.plain)
                     }
@@ -193,6 +195,7 @@ struct DaySessionsView: View {
     let day: Date
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var allStats: [MeditationStats]
+    @Query private var reflections: [SessionReflection]
 
     private let calendar = Calendar.current
 
@@ -204,11 +207,12 @@ struct DaySessionsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 let scores = SessionListSupport.scoreMap(allStats)
+                let ratings = SessionListSupport.ratingMap(reflections)
                 ForEach(daySessions) { session in
                     NavigationLink {
                         SessionResultsView(sessionID: session.id)
                     } label: {
-                        SessionRow(session: session, score: scores[session.id])
+                        SessionRow(session: session, score: scores[session.id], rating: ratings[session.id])
                     }
                     .buttonStyle(.plain)
                 }
@@ -227,6 +231,7 @@ struct DaySessionsView: View {
 struct SessionRow: View {
     let session: Session
     let score: Double?
+    var rating: Int? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -239,6 +244,7 @@ struct SessionRow: View {
                     .foregroundStyle(AppColor.textSecondary)
             }
             Spacer()
+            if let rating { RatingChip(rating: rating) }
             if let score {
                 Text("\(Int((score * 100).rounded()))%")
                     .font(.system(.headline, design: .rounded))
@@ -253,6 +259,20 @@ struct SessionRow: View {
     }
 }
 
+/// The user's subjective rating, shown at a glance in list rows.
+struct RatingChip: View {
+    let rating: Int
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "star.fill").font(.system(size: 9))
+            Text("\(rating)").font(.caption.weight(.semibold)).monospacedDigit()
+        }
+        .foregroundStyle(AppColor.textSecondary)
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(AppColor.backgroundPrimary, in: Capsule())
+    }
+}
+
 /// Small formatting/lookup helpers shared by the list views.
 enum SessionListSupport {
     /// overallScore keyed by sessionID (for the row's at-a-glance %).
@@ -260,6 +280,15 @@ enum SessionListSupport {
         var out: [UUID: Double] = [:]
         for s in stats {
             if let sid = s.sessionID, let score = s.overallScore { out[sid] = score }
+        }
+        return out
+    }
+
+    /// User rating (0–10) keyed by sessionID (for the row's at-a-glance chip).
+    static func ratingMap(_ reflections: [SessionReflection]) -> [UUID: Int] {
+        var out: [UUID: Int] = [:]
+        for r in reflections {
+            if let sid = r.sessionID, let rating = r.rating { out[sid] = rating }
         }
         return out
     }
