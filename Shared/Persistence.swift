@@ -21,6 +21,7 @@ enum Persistence {
         MeditationTrack.self,
         Session.self,
         MeditationStats.self,
+        SessionReflection.self,
     ])
 
     /// Persistent local store, CloudKit disabled. Used now (Phase 0 onward).

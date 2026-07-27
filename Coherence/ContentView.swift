@@ -69,8 +69,8 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center) {
                 Text("808")
-                    .font(.system(size: 24, weight: .black, design: .serif))
-                    .tracking(3)
+                    .font(.system(size: 32, weight: .black, design: .rounded))
+                    .tracking(-1)
                     .foregroundStyle(AppColor.accentGold)
                 Spacer()
                 HStack(spacing: 18) {
@@ -80,6 +80,7 @@ struct ContentView: View {
             }
             Text(greeting)
                 .font(AppFont.title)
+                .italic()
                 .foregroundStyle(AppColor.textPrimary)
         }
     }

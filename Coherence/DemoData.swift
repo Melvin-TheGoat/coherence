@@ -25,6 +25,8 @@ enum DemoData {
         )
         context.insert(session)
         context.insert(stats)
+        context.insert(SessionReflection(sessionID: session.id, rating: 8,
+                                         note: "Felt genuinely settled by the end."))
         try? context.save()
         return session.id
     }

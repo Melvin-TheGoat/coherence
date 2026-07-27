@@ -13,6 +13,9 @@ struct SessionResultsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var session: Session?
     @State private var stats: MeditationStats?
+    @State private var rating: Double = 5
+    @State private var note: String = ""
+    @State private var reflectionSaved = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +26,7 @@ struct SessionResultsView: View {
                         if let overall = stats.overallScore { overallHero(overall) }
                         tiles(stats)
                         ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
+                        reflectionCard
                     } else {
                         Text("No results for this session.")
                             .font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
@@ -129,6 +133,45 @@ struct SessionResultsView: View {
         .card()
     }
 
+    // MARK: Reflection
+
+    private var reflectionCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("How did it feel?")
+                .font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text("\(Int(rating))")
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.accentGold).monospacedDigit()
+                Text("/ 10").font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
+                Spacer()
+            }
+            Slider(value: $rating, in: 0...10, step: 1)
+                .tint(AppColor.accentGold)
+                .onChange(of: rating) { _, _ in reflectionSaved = false }
+
+            TextField("Add a note…", text: $note, axis: .vertical)
+                .lineLimit(2...4)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(12)
+                .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 12))
+                .onChange(of: note) { _, _ in reflectionSaved = false }
+
+            Button(reflectionSaved ? "Saved ✓" : "Save reflection") { save() }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(reflectionSaved)
+                .opacity(reflectionSaved ? 0.6 : 1)
+        }
+        .card()
+    }
+
+    private func save() {
+        SessionStore.saveReflection(sessionID: sessionID, rating: Int(rating), note: note, in: context)
+        reflectionSaved = true
+    }
+
     // MARK: Data
 
     private func durationText(_ sec: Int) -> String {
@@ -139,5 +182,10 @@ struct SessionResultsView: View {
         let sid = sessionID
         session = try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == sid })).first
         stats = try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == sid })).first
+        if let reflection = SessionStore.reflection(for: sid, in: context) {
+            rating = Double(reflection.rating ?? 5)
+            note = reflection.note
+            reflectionSaved = true
+        }
     }
 }

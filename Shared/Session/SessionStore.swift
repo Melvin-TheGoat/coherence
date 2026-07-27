@@ -113,12 +113,16 @@ enum SessionStore {
         guard !expired.isEmpty else { return }
 
         let allStats = (try? context.fetch(FetchDescriptor<MeditationStats>())) ?? []
+        let allReflections = (try? context.fetch(FetchDescriptor<SessionReflection>())) ?? []
         for user in expired {
             let uid = user.id
             let sessions = (try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.userID == uid }))) ?? []
             let sessionIDs = Set(sessions.map(\.id))
             for stats in allStats {
                 if let sid = stats.sessionID, sessionIDs.contains(sid) { context.delete(stats) }
+            }
+            for r in allReflections {
+                if let sid = r.sessionID, sessionIDs.contains(sid) { context.delete(r) }
             }
             for session in sessions { context.delete(session) }
             for prefs in (try? context.fetch(FetchDescriptor<Preferences>(predicate: #Predicate { $0.userID == uid }))) ?? [] {
@@ -195,6 +199,29 @@ enum SessionStore {
         context.insert(stats)
         try? context.save()
         return session
+    }
+
+    /// The user's reflection for a session, if any.
+    static func reflection(for sessionID: UUID, in context: ModelContext) -> SessionReflection? {
+        try? context.fetch(FetchDescriptor<SessionReflection>(
+            predicate: #Predicate { $0.sessionID == sessionID })).first
+    }
+
+    /// Saves (or updates) the reflection for a session — one row per session.
+    @discardableResult
+    static func saveReflection(sessionID: UUID, rating: Int?, note: String, in context: ModelContext) -> SessionReflection {
+        let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let existing = reflection(for: sessionID, in: context) {
+            existing.rating = rating
+            existing.note = trimmed
+            existing.updatedAt = Date()
+            try? context.save()
+            return existing
+        }
+        let reflection = SessionReflection(sessionID: sessionID, rating: rating, note: trimmed)
+        context.insert(reflection)
+        try? context.save()
+        return reflection
     }
 
     /// All session start dates for the store (feeds `StreakCalculator`).
