@@ -32,6 +32,10 @@ targets:
         buildPhase: resources
       - path: SCIENCE.md
         buildPhase: resources
+      - path: PRIVACY_POLICY.md
+        buildPhase: resources
+      - path: TERMS_OF_SERVICE.md
+        buildPhase: resources
     dependencies:
       - target: CoherenceWatch
         embed: true

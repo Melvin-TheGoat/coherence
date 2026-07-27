@@ -455,13 +455,19 @@ Screens to design (all already exist functionally): **Onboarding** (Purpose/Scie
 - Motion/transitions, empty states, loading/`analyzing…` states, and **accessibility** (Dynamic Type, VoiceOver labels, contrast).
 - Remove all TEMP debug UI (belly-diagnostic box, the console/summary dumps, dev "Skip" — keep dev skip behind `#if DEBUG`).
 - Light + dark both look right (theme switch already wired).
+- **Design inspiration:** Strava + Myla (clean, data-as-story, satisfying logging), grounded in psychology; brush up the Purpose/Science copy as the design firms up.
+
+### 8a.1 — Near-term feature adds (before or alongside the redesign)
+- **Post-session logging:** after each meditation, let the user add a **free-text comment** and a **subjective 0–10 rating** ("how did that feel?"). Store on the `Session` (or a small linked note record) — a couple new optional fields + a simple entry screen after the evidence graphs. Feeds the history/journal and, later, correlations ("your rating vs. stillness over time").
 
 ## 8b — Brand & assets
 
-- **Name lockup + logo** for **808**; finalize the palette.
+- **Name lockup + logo** for **808** — a logo is already sketched (Melvin has it; ask him for it when doing this); finalize the palette.
 - **App icon** (1024×1024, plus the generated sizes) — no transparency, no rounded corners (Apple rounds it).
 - **App Store screenshots** for required device sizes (6.7"/6.9" iPhone at minimum; Apple Watch screenshots if we surface the watch), plus optional preview video.
 - Marketing copy: subtitle, promo text, description, keywords, category (Health & Fitness).
+
+**POSITIONING — lean into "meditation for manifestation" (Melvin, 2026-07):** we've been describing it this way the whole time, so make it explicit — in the App Store subtitle/description, in ads, possibly as the **slogan**. Pair it with the definition **"manifestation is implanting intentions into your subconscious."** This aligns with the existing Purpose framing (rewriting the subconscious identity so who-you-are and who-you're-becoming point the same way). The landing page hero already uses "Meditation for manifestation." as a trial tagline.
 
 ## 8c — App Store go-live (research done — see below)
 
@@ -469,7 +475,7 @@ Screens to design (all already exist functionally): **Onboarding** (Purpose/Scie
 - **Privacy policy** — REQUIRED (hard requirement for HealthKit/health apps), publicly hosted HTTPS URL, and also reachable in-app. Must describe our health/motion data use. Our story is clean: **we store no raw biometrics** (only computed stats), the phone reads zero biometrics, and we don't use health data for ads — say all of this accurately.
 - **Support URL** — REQUIRED and must actually work (reviewers visit it).
 - **Terms of Service / EULA** — Apple's standard EULA covers the basics; add a **wellness disclaimer** ("808 is not a medical device; not medical advice") given the health framing. Keep all claims **wellness, not medical** (SCIENCE.md already does — no "detects theta," no medical claims).
-- **A simple website/landing page** to host the above (privacy + support + ToS). A one-pager is enough to start.
+- **A simple website/landing page** to host the above (privacy + support + ToS). A one-pager is enough to start. **DRAFTED:** `PRIVACY_POLICY.md` + `TERMS_OF_SERVICE.md` (repo root, also bundled + linked in Settings → About) and a static site in `website/` (`index.html`/`privacy.html`/`terms.html`). All marked DRAFT with `[BRACKET]` placeholders — fill entity/email/date/state, remove DRAFT banners, get a legal review, then host (GitHub Pages/Netlify) and paste the URLs into App Store Connect.
 
 **Founders' agreement + IP assignment — DEFERRED (do before/around launch).** Two equal founders (Melvin NYC, Aziz Detroit). Agreed to handle the founders'/operating agreement + IP assignment later; it's the highest-value legal doc but not a launch blocker (v1 can ship on Melvin's individual Apple account). LLC structure discussed: multi-member, **Michigan domestic + New York foreign-qualification with an Albany-county registered agent** (NY publication is county-priced, ~$230 Albany vs ~$2k Manhattan; foreign LLCs must publish too); skip Delaware unless raising VC. See the LLC-formation notes.
 

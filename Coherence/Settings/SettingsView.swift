@@ -108,6 +108,8 @@ private struct SettingsForm: View {
             Section("About") {
                 NavigationLink("Our Purpose") { docPage("PURPOSE") }
                 NavigationLink("The Science") { docPage("SCIENCE") }
+                NavigationLink("Privacy Policy") { docPage("PRIVACY_POLICY") }
+                NavigationLink("Terms of Service") { docPage("TERMS_OF_SERVICE") }
             }
 
             Section {

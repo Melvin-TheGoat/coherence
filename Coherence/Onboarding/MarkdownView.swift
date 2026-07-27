@@ -58,6 +58,14 @@ struct MarkdownView: View {
                 Text("\(n).").font(.caption2.monospacedDigit()).foregroundStyle(AppColor.textSecondary)
                 Text(inline(s)).font(.caption2).foregroundStyle(AppColor.textSecondary)
             }
+        case .note(let s):
+            Text(inline(s))
+                .font(.caption)
+                .italic()
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 8))
         case .divider:
             Rectangle()
                 .fill(AppColor.textSecondary.opacity(0.25))
@@ -80,6 +88,7 @@ enum MarkdownParser {
         case paragraph(String)
         case bullet(String)
         case numbered(Int, String)
+        case note(String)
         case divider
     }
 
@@ -102,6 +111,8 @@ enum MarkdownParser {
                 blocks.append(.title(String(first.dropFirst(2))))
             } else if first == "---" {
                 blocks.append(.divider)
+            } else if lines.allSatisfy({ $0.hasPrefix(">") }) {
+                blocks.append(.note(lines.map { $0.drop(while: { $0 == ">" || $0 == " " }) }.joined(separator: " ")))
             } else if first.range(of: #"^\d+\.\s"#, options: .regularExpression) != nil {
                 blocks.append(contentsOf: numberedItems(lines))
             } else if lines.allSatisfy({ $0.hasPrefix("- ") }) {
