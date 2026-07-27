@@ -10,4 +10,9 @@ enum AppColor {
     static let accentGold = Color("AccentGold")
     static let textPrimary = Color("TextPrimary")
     static let textSecondary = Color("TextSecondary")
+    /// Muted teal-sage for the calming moments (session / breathing surfaces).
+    /// Research-backed calm/trust hue; used sparingly, never competing with gold.
+    static let calmAccent = Color("CalmAccent")
+    /// Dark text for placing on top of the gold accent (fixed in both light + dark).
+    static let textOnAccent = Color("TextOnAccent")
 }
