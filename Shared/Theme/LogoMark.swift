@@ -8,7 +8,7 @@ struct LogoMark: View {
     var color: Color = AppColor.accentGold
     /// Stroke width as a fraction of the mark's size (keeps the weight consistent
     /// across sizes).
-    var lineWidthRatio: CGFloat = 0.045
+    var lineWidthRatio: CGFloat = 0.026
 
     var body: some View {
         GeometryReader { geo in

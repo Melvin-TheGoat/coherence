@@ -10,6 +10,7 @@
 //      swift tools/logo_lab.swift                          # current values
 //      swift tools/logo_lab.swift offset=0.19,0.20,0.21    # sweep one param
 //      swift tools/logo_lab.swift h=0.20 r0=0.09,0.10,0.11 # sweep + override
+//      swift tools/logo_lab.swift --sizes                  # render at real pixel sizes
 //      swift tools/logo_lab.swift --icon                   # 1024 app-icon PNG
 //
 //  Parameters (all are fractions of the mark's size, so they scale):
@@ -43,14 +44,16 @@ var params: [String: [Double]] = [
     "h": [0.205],
     "offset": [0.215],
     "r0": [0.150],
-    "lw": [0.020],
+    "lw": [0.026],
 ]
 
 // MARK: - Args
 
 var iconMode = false
+var realSizeMode = false
 for arg in CommandLine.arguments.dropFirst() {
     if arg == "--icon" { iconMode = true; continue }
+    if arg == "--sizes" { realSizeMode = true; continue }
     let parts = arg.split(separator: "=", maxSplits: 1)
     guard parts.count == 2, params[String(parts[0])] != nil else {
         FileHandle.standardError.write("unknown argument: \(arg)\n".data(using: .utf8)!)
@@ -152,6 +155,37 @@ if iconMode {
     let repoRoot = URL(fileURLWithPath: CommandLine.arguments[0])
         .deletingLastPathComponent().deletingLastPathComponent().path
     write(ctx, to: "\(repoRoot)/Shared/Assets.xcassets/AppIcon.appiconset/AppIcon1024.png")
+    exit(0)
+}
+
+// MARK: - Real-size mode
+
+/// Draws each variant at the pixel sizes the mark is actually used at, so you
+/// can catch strokes merging at small sizes (the header mark is 48pt, which is
+/// 96px @2x / 144px @3x). Big renders lie about legibility.
+if realSizeMode {
+    let sizes: [Double] = [48, 96, 144, 240]
+    let all = variants()
+    let rowHeight = 300.0
+    let labelBand = 46.0
+    let width = 1180.0
+    let ctx = makeContext(Int(width), Int(Double(all.count) * (rowHeight + labelBand)))
+    for (i, v) in all.enumerated() {
+        let top = Double(all.count - i) * (rowHeight + labelBand)
+        var x = 90.0
+        for s in sizes {
+            drawMark(ctx, cx: x + s / 2, cy: top - labelBand - rowHeight / 2, size: s, v)
+            drawLabel(ctx, "\(Int(s))px", cx: x + s / 2, y: top - labelBand - rowHeight + 40)
+            x += s + 110
+        }
+        drawLabel(ctx, "lw \(String(format: "%.3f", v.lw))  (48pt header = 96px @2x, 144px @3x)",
+                  cx: width / 2, y: top - labelBand + 14)
+    }
+    write(ctx, to: "/tmp/logo_lab.png")
+    let open = Process()
+    open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+    open.arguments = ["/tmp/logo_lab.png"]
+    try? open.run()
     exit(0)
 }
 
