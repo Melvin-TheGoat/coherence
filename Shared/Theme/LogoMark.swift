@@ -21,27 +21,26 @@ struct LogoMark: View {
         }
     }
 
-    /// Two crossing figure-8s (Gerono lemniscates) + the center O, in the given
-    /// square rect. Shared with the app-icon generator so they match exactly.
+    /// Four round-ended petals (a vertical pair + a horizontal pair) overlapping
+    /// through the center, plus the center O — the vertical "8", horizontal "8",
+    /// and "O". Shared with the app-icon generator so they match exactly.
     static func path(in rect: CGRect) -> Path {
         let s = min(rect.width, rect.height)
         let c = CGPoint(x: rect.midX, y: rect.midY)
-        let a = s * 0.33          // half the length of each 8
-        let k: CGFloat = 1.05     // lobe fatness
-        let r0 = s * 0.085        // center O radius
+        let w = s * 0.135         // petal half-width (narrow → each pair reads as an "8")
+        let h = s * 0.205         // petal half-height (round-ended oval)
+        let offset = s * 0.215    // petal center from middle; the pairs pinch at the waist
+        let r0 = s * 0.150        // center O radius
+
+        // Tune these with `swift tools/logo_lab.swift` — it renders the same
+        // geometry to a PNG so you can sweep values without building the app.
 
         var p = Path()
-        for vertical in [true, false] {
-            let steps = 240
-            for i in 0...steps {
-                let t = 2 * CGFloat.pi * CGFloat(i) / CGFloat(steps)
-                let along = a * cos(t)
-                let across = a * k * sin(t) * cos(t)
-                let pt = vertical
-                    ? CGPoint(x: c.x + across, y: c.y + along)
-                    : CGPoint(x: c.x + along, y: c.y + across)
-                if i == 0 { p.move(to: pt) } else { p.addLine(to: pt) }
-            }
+        for dy in [-offset, offset] {   // top + bottom petals (tall ovals)
+            p.addEllipse(in: CGRect(x: c.x - w, y: c.y + dy - h, width: 2 * w, height: 2 * h))
+        }
+        for dx in [-offset, offset] {   // left + right petals (wide ovals)
+            p.addEllipse(in: CGRect(x: c.x + dx - h, y: c.y - w, width: 2 * h, height: 2 * w))
         }
         p.addEllipse(in: CGRect(x: c.x - r0, y: c.y - r0, width: 2 * r0, height: 2 * r0))
         return p
