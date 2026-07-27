@@ -8,6 +8,7 @@ struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @Environment(\.modelContext) private var context
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
+    @Query private var users: [User]
 
     @State private var showSetup = false
     @State private var showCalendar = false
@@ -32,6 +33,7 @@ struct ContentView: View {
                     lastSessionCard
                 }
                 recent
+                calendarCard
                 #if DEBUG
                 Button("Preview breathing screen") { showBreathingPreview = true }
                     .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
@@ -45,6 +47,10 @@ struct ContentView: View {
             SessionActiveView(bellyBreathing: true) { showBreathingPreview = false }
         }
         .onAppear {
+            if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
+                let u = SessionStore.currentUser(in: context)
+                if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
+            }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", openSession == nil {
                 openSession = SessionRef(id: DemoData.seedResults(in: context))
             }
@@ -60,16 +66,21 @@ struct ContentView: View {
     // MARK: - Header
 
     private var header: some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("808").font(AppFont.hero).foregroundStyle(AppColor.accentGold)
-                Text(greeting).font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .center) {
+                Text("808")
+                    .font(.system(size: 24, weight: .black, design: .serif))
+                    .tracking(3)
+                    .foregroundStyle(AppColor.accentGold)
+                Spacer()
+                HStack(spacing: 18) {
+                    iconButton("calendar") { showCalendar = true }
+                    iconButton("gearshape") { showSettings = true }
+                }
             }
-            Spacer()
-            HStack(spacing: 18) {
-                iconButton("calendar") { showCalendar = true }
-                iconButton("gearshape") { showSettings = true }
-            }
+            Text(greeting)
+                .font(AppFont.title)
+                .foregroundStyle(AppColor.textPrimary)
         }
     }
 
@@ -170,15 +181,86 @@ struct ContentView: View {
         .card(padding: 14)
     }
 
+    // MARK: - Calendar widget
+
+    private var calendarCard: some View {
+        let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
+        let today = Date()
+        let grid = SessionCalendar.monthGrid(containing: today)
+        let cal = Calendar.current
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                SectionHeader(title: today.formatted(.dateTime.month(.wide).year()))
+                Spacer()
+                Button("Open") { showCalendar = true }
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.accentGold)
+            }
+            HStack(spacing: 0) {
+                ForEach(weekdayInitials, id: \.self) { d in
+                    Text(d).font(.caption2).foregroundStyle(AppColor.textSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            VStack(spacing: 5) {
+                ForEach(Array(grid.enumerated()), id: \.offset) { _, row in
+                    HStack(spacing: 0) {
+                        ForEach(row, id: \.self) { day in
+                            dayCell(day,
+                                    practiced: practiced.contains(cal.startOfDay(for: day)),
+                                    inMonth: SessionCalendar.isSameMonth(day, as: today),
+                                    isToday: cal.isDateInToday(day))
+                        }
+                    }
+                }
+            }
+        }
+        .card()
+        .contentShape(Rectangle())
+        .onTapGesture { showCalendar = true }
+    }
+
+    private func dayCell(_ day: Date, practiced: Bool, inMonth: Bool, isToday: Bool) -> some View {
+        let n = Calendar.current.component(.day, from: day)
+        return ZStack {
+            if practiced {
+                Circle().fill(AppColor.accentGold).frame(width: 30, height: 30)
+            } else if isToday {
+                Circle().stroke(AppColor.accentGold.opacity(0.6), lineWidth: 1).frame(width: 30, height: 30)
+            }
+            Text("\(n)")
+                .font(.caption2.weight(practiced ? .bold : .regular))
+                .foregroundStyle(practiced ? AppColor.textOnAccent
+                                 : (inMonth ? AppColor.textPrimary : AppColor.textSecondary.opacity(0.35)))
+        }
+        .frame(maxWidth: .infinity, minHeight: 34)
+    }
+
+    private var weekdayInitials: [String] {
+        let cal = Calendar.current
+        let symbols = cal.veryShortWeekdaySymbols                 // ["S","M",...] Sunday-first
+        let first = cal.firstWeekday - 1
+        return Array(symbols[first...] + symbols[..<first])
+    }
+
     // MARK: - Helpers
 
     private var greeting: String {
+        let base: String
         switch Calendar.current.component(.hour, from: Date()) {
-        case 5..<12: return "Good morning"
-        case 12..<17: return "Good afternoon"
-        case 17..<22: return "Good evening"
-        default: return "Rest well"
+        case 5..<12: base = "Good morning"
+        case 12..<17: base = "Good afternoon"
+        case 17..<22: base = "Good evening"
+        default: base = "Good night"
         }
+        return firstName.map { "\(base), \($0)" } ?? base
+    }
+
+    private var firstName: String? {
+        let name = users.first { $0.appleUserID != "" && $0.deletedAt == nil }?.displayName
+            ?? users.first?.displayName
+        guard let name, !name.isEmpty else { return nil }
+        return name.split(separator: " ").first.map(String.init)
     }
 
     private func durationText(_ sec: Int) -> String {
