@@ -69,7 +69,7 @@ struct ContentView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .center) {
-                LogoMark(lineWidth: 2.5)
+                LogoMark()
                     .frame(width: 48, height: 48)
                 Spacer()
                 HStack(spacing: 18) {
