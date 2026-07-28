@@ -21,6 +21,10 @@ struct OnboardingView: View {
             AppColor.backgroundPrimary.ignoresSafeArea()
             VStack(spacing: 16) {
                 content
+                    .id(step)   // fresh identity per page so transitions fire
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .leading).combined(with: .opacity)))
 
                 if let errorText {
                     Text(errorText)
@@ -39,14 +43,20 @@ struct OnboardingView: View {
     private var content: some View {
         switch step {
         case .purpose:
-            ScrollView { MarkdownView(markdown: DocLoader.load("PURPOSE")).padding(.vertical, 8) }
+            docPage("PURPOSE", animated: true)   // the very first thing a user sees
         case .science:
-            ScrollView { MarkdownView(markdown: DocLoader.load("SCIENCE")).padding(.vertical, 8) }
+            docPage("SCIENCE", animated: false)
         case .signIn:
             VStack(spacing: 16) {
                 Spacer(minLength: 0)
+                ZStack {
+                    BreathingGlow()
+                        .frame(width: 150, height: 150)
+                    LogoMark()
+                        .frame(width: 72, height: 72)
+                }
                 Text("808")
-                    .font(.largeTitle.weight(.bold))
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.accentGold)
                 Text("Sign in to begin.")
                     .font(.title3.weight(.semibold))
@@ -60,14 +70,32 @@ struct OnboardingView: View {
         }
     }
 
+    /// A Purpose/Science page: the styled doc with a soft fade at the bottom edge
+    /// so long copy visibly continues under the Continue button.
+    private func docPage(_ name: String, animated: Bool) -> some View {
+        ScrollView {
+            MarkdownView(markdown: DocLoader.load(name), animated: animated)
+                .padding(.vertical, 8)
+        }
+        .scrollIndicators(.hidden)
+        .mask(
+            VStack(spacing: 0) {
+                Rectangle()
+                LinearGradient(colors: [.black, .clear],
+                               startPoint: .top, endPoint: .bottom)
+                    .frame(height: 28)
+            }
+        )
+    }
+
     @ViewBuilder
     private var footer: some View {
         switch step {
         case .purpose:
-            Button("Continue") { step = .science }
+            Button("Continue") { withAnimation(.easeInOut(duration: 0.4)) { step = .science } }
                 .buttonStyle(PrimaryButtonStyle())
         case .science:
-            Button("Continue") { step = .signIn }
+            Button("Continue") { withAnimation(.easeInOut(duration: 0.4)) { step = .signIn } }
                 .buttonStyle(PrimaryButtonStyle())
         case .signIn:
             VStack(spacing: 12) {
