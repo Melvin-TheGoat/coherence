@@ -9,8 +9,12 @@ struct CoherenceApp: App {
     @StateObject private var coordinator: SessionCoordinator
 
     init() {
+        // One-time rescue of pre-split health stats — the extract MUST run
+        // before the split container first opens the main store.
+        let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()
         let container = Persistence.cloudKit()
         modelContainer = container
+        Persistence.completeRescue(rescued, into: container)
         let setup = ModelContext(container)
         TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks
         SessionStore.purgeExpired(in: setup)                    // Phase 7: 30-day account purge
