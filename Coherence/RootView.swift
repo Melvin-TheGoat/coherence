@@ -6,6 +6,7 @@ import SwiftData
 /// applies the user's theme app-wide. Reads Preferences reactively via `@Query`.
 struct RootView: View {
     @Query private var preferences: [Preferences]
+    @Environment(\.modelContext) private var context
 
     var body: some View {
         Group {
@@ -16,6 +17,15 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(colorScheme)
+        #if DEBUG
+        // Headless previews (simulator automation): jump straight past onboarding.
+        .onAppear {
+            if ProcessInfo.processInfo.environment["SKIP_ONBOARDING"] == "1",
+               !preferences.contains(where: { $0.onboardingComplete }) {
+                SessionStore.completeOnboardingWithoutSignIn(in: context)
+            }
+        }
+        #endif
     }
 
     private var colorScheme: ColorScheme? {

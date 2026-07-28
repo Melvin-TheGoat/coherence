@@ -16,16 +16,23 @@ struct SessionResultsView: View {
     @State private var rating: Double = 5
     @State private var note: String = ""
     @State private var reflectionSaved = false
+    @State private var streakDays = 0
+    @State private var showShareSheet = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    if let session, let stats {
+                    if let session {
                         header(session)
-                        if let overall = stats.overallScore { overallHero(overall) }
-                        tiles(stats)
-                        ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
+                        if let stats {
+                            if let overall = stats.overallScore { overallHero(overall) }
+                            tiles(stats)
+                            ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
+                            shareButton
+                        } else {
+                            missingStatsCard
+                        }
                         reflectionCard
                     } else {
                         Text("No results for this session.")
@@ -36,9 +43,20 @@ struct SessionResultsView: View {
             }
             .screenBackground()
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    if session != nil, stats != nil {
+                        Button { showShareSheet = true } label: {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                        .tint(AppColor.accentGold)
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }.tint(AppColor.accentGold)
                 }
+            }
+            .sheet(isPresented: $showShareSheet) {
+                if let data = shareData { ShareSessionSheet(data: data) }
             }
             .onAppear(perform: load)
         }
@@ -133,6 +151,50 @@ struct SessionResultsView: View {
         .card()
     }
 
+    // MARK: Missing measurements
+
+    /// Shown when the session row exists (it syncs) but its measurements don't
+    /// live on this device — results stay on the device that recorded them
+    /// (they are never uploaded, by design).
+    private var missingStatsCard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "iphone.slash")
+                .font(.title3)
+                .foregroundStyle(AppColor.textSecondary)
+            Text("This session's measurements aren't on this device. Results are kept only on the device that recorded them — they're never uploaded.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .card()
+    }
+
+    // MARK: Share
+
+    private var shareButton: some View {
+        Button { showShareSheet = true } label: {
+            Label("Share your practice", systemImage: "square.and.arrow.up")
+        }
+        .buttonStyle(SecondaryButtonStyle())
+    }
+
+    /// Value snapshot for the share card — built from the rows already loaded,
+    /// so the sheet never touches storage.
+    private var shareData: ShareCardData? {
+        guard let session, let stats else { return nil }
+        let hero = SessionEvidence.series(from: stats).first
+        return ShareCardData(
+            date: session.startedAt,
+            durationSec: session.durationSec,
+            bellyBreathing: session.bellyBreathing,
+            overallScore: stats.overallScore,
+            stillnessScore: stats.stillnessScore,
+            hrDecline: stats.hrDecline,
+            meanBreathingRate: stats.meanBreathingRate,
+            curve: hero?.points.map(\.value) ?? [],
+            curveTitle: hero?.title ?? "",
+            streakDays: streakDays)
+    }
+
     // MARK: Reflection
 
     private var reflectionCard: some View {
@@ -187,5 +249,11 @@ struct SessionResultsView: View {
             note = reflection.note
             reflectionSaved = true
         }
+        // Streak for the share card, derived the same way the calendar does.
+        let allSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
+        streakDays = StreakCalculator.streak(from: allSessions.map(\.startedAt)).current
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { showShareSheet = true }
+        #endif
     }
 }
