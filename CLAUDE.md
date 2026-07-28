@@ -281,13 +281,62 @@ UI must coach it, and the 2-signal degrade path must stay.
     `purgeExpired` (run on launch) hard-deletes users soft-deleted >30 days ago +
     all FK'd rows. 5 `AccountLifecycleTests`.
   - **CloudKit ON**: `CoherenceApp` uses `Persistence.cloudKit()` (per-user PRIVATE
-    DB sync of User/Preferences/Session/MeditationStats). `cloudKit()` falls back to
+    DB sync — since the 5.1.3 split below, of User/Preferences/Track/Session/
+    Reflection only, NOT MeditationStats). `cloudKit()` falls back to
     `local()` if the container can't init (simulator / unprovisioned) so it never
     crashes. Entitlements: `icloud-container-identifiers = [iCloud.$(CFBundleIdentifier)]`
     (per-dev, matches the local bundle-ID override), `icloud-services = CloudKit`,
     `aps-environment = development`. **NOT yet verified cross-device** (no second
-    device on hand). Marketing-list export still stubbed. 47 tests green.
-- **Next: Phase 8 — UI/brand polish + App Store launch.** See `App_ROADMAP_v2.md`.
+    device on hand). Marketing-list export still stubbed.
+- **Phase 8 (in progress) — polish + launch prep.**
+  - **Guided meditation SHIPPED.** Script (`Meditations/NarratorScript.md`, v3,
+    ~25 min identity-shift arc) narrated by Donny Baarns (Fiverr, commercial
+    license, music included); master at `Coherence/Audio/Guided/guided-identity.m4a`
+    (AAC, 25:30). `GuidedPreset`/`GuidedCatalog` in `ToneEngine.swift`; setup sheet
+    has a Guided tab (4 sound tabs: Silence/Guided/Frequency/Nature); guided
+    selection fixes the session length to the track. `Meditations/` (54 MB: the
+    dormant ElevenLabs TTS pipeline + working audio) stays UNTRACKED — don't commit.
+    The AI-narration route is retired for guided tracks; don't re-propose it.
+  - **Legal drafted (attorney review later, Aziz's call).** ToS: AAA individual
+    arbitration + class/jury waiver + 30-day opt-out (§14); anti-recording/ripping
+    of app audio (§5/§7). Privacy: WA-MHMDA-style consumer-health-data section.
+    Both mirrored in `website/`. OPEN: `[CONTACT EMAIL]`/`[GOVERNING STATE]`
+    placeholders, DRAFT banners, hosting.
+  - **App Review 5.1.3(ii) store split.** `MeditationStats` lives in a separate
+    device-local store (named config `"HealthLocal"`, never CloudKit); everything
+    else syncs. Trade-off: health results do NOT roam devices — a synced session
+    without local stats shows an explanation card on the results screen.
+    Onboarding gained an explicit health-data consent step before sign-in.
+  - **Health-stats rescue (the split's aftermath).** The split orphaned pre-split
+    stats in `default.store` → every old session read "no results". One-time
+    launch rescue (`Persistence.rescueOrphanedHealthStatsIfNeeded` +
+    `completeRescue`): copy `default.store` (+WAL sidecars), mount the COPY as the
+    HealthLocal side of a production-shaped temp container, pull detached copies,
+    dedupe-insert by sessionID; flag `healthStatsRescueDone.v1` set only on
+    success. Verified: the split-open does NOT destroy orphaned rows.
+    **HARD-WON SWIFTDATA FACT (don't relitigate): entity→store binding is
+    process-global.** Every container in a process must use the SAME store
+    shape/names for shared entities — a single-config "old layout" container
+    throws "store does not contain the object's entity" (this is also why
+    `inMemory()` mirrors the split). 4 `HealthRescueTests`.
+  - **Session sharing (Strava-style) DONE** (`Coherence/Session/ShareCard.swift`).
+    9:16 branded card (360×640 pt, `ImageRenderer` ×3 = 1080×1920, forced dark
+    palette), score ring + stat tiles + hero curve + streak flame; share icon +
+    button on the results screen → preview sheet. Instagram: NO account
+    connection exists or is needed (Strava works the same way). Two paths:
+    direct Stories pasteboard handoff (`instagram-stories://share`) — REQUIRES a
+    Meta app ID in `InstagramShare.metaAppID`, verified on-device that Instagram
+    refuses without one — and the current fallback, save-to-Photos (add-only
+    permission) + `instagram://story-camera`, user picks the card from the
+    gallery. System `ShareLink` always offered. The button auto-upgrades to the
+    direct handoff once `metaAppID` is set. Meta dev registration was
+    geo-blocked for Aziz (2026-07-28); plan: Melvin (or a friend) creates the
+    Meta app + adds both as admins, then paste the ID.
+  - **DEBUG env hooks** (simctl automation: prefix `SIMCTL_CHILD_`):
+    `SKIP_ONBOARDING=1`, `PREVIEW_RESULTS=1` (seed + open demo results),
+    `PREVIEW_SHARE=1` (auto-open the share sheet), `DEMO_NAME`.
+  - 53 tests green.
+- **Next: rest of Phase 8 — App Store launch checklist.** See `App_ROADMAP_v2.md`.
 
 ## Toolchain notes (this machine)
 
