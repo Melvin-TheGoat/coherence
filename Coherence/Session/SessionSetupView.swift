@@ -12,7 +12,7 @@ struct SessionSetupView: View {
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var tone = ToneEngine()
-    private enum SoundCategory { case silence, frequency, nature }
+    private enum SoundCategory { case silence, guided, frequency, nature }
     /// Which sound tab is lit.
     @State private var soundCategory: SoundCategory = .silence
     /// Selected preset id within the frequency/nature tab (nil = none/silence).
@@ -41,8 +41,15 @@ struct SessionSetupView: View {
     /// The length actually used to start the session (nil = open-ended).
     private var effectiveMinutes: Int? { isCustom ? customValue : durationMinutes }
 
-    /// Whether the current selection can start a session (a valid custom value, if custom).
-    private var canBegin: Bool { !isCustom || customValue != nil }
+    /// The guided track in charge of this session, if the Guided tab has one
+    /// selected. A guided meditation sets its own length.
+    private var activeGuided: GuidedPreset? {
+        soundCategory == .guided ? GuidedCatalog.preset(id: soundID) : nil
+    }
+
+    /// Whether the current selection can start a session (a valid custom value, if
+    /// custom — unless a guided track is driving the length).
+    private var canBegin: Bool { activeGuided != nil || !isCustom || customValue != nil }
 
     private let postureSteps = [
         "Lie down or recline — flat on your back works best.",
@@ -56,7 +63,7 @@ struct SessionSetupView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     modeSection
-                    durationSection
+                    if activeGuided == nil { durationSection } else { guidedLengthNote }
                     soundSection
                     if belly { postureCoaching }
                     beginButton
@@ -166,6 +173,23 @@ struct SessionSetupView: View {
         }
     }
 
+    /// Shown in place of the Length section when a guided track sets the pace.
+    private var guidedLengthNote: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Length")
+                .font(.headline)
+                .foregroundStyle(AppColor.textPrimary)
+            Label {
+                Text("Set by the meditation — about \((activeGuided?.durationSec ?? 0) / 60) minutes. Your Watch ends the session with the narration.")
+                    .font(.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            } icon: {
+                Image(systemName: "clock")
+                    .foregroundStyle(AppColor.accentGold)
+            }
+        }
+    }
+
     private var helpText: String {
         if isCustom && customValue == nil { return "Type how many minutes you want." }
         return effectiveMinutes == nil
@@ -190,6 +214,7 @@ struct SessionSetupView: View {
 
     private var selectedPreset: FrequencyPreset? { FrequencyCatalog.preset(id: soundID) }
     private var selectedNature: NaturePreset? { NatureCatalog.preset(id: soundID) }
+    private var selectedGuided: GuidedPreset? { GuidedCatalog.preset(id: soundID) }
 
     private var soundSection: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -200,6 +225,7 @@ struct SessionSetupView: View {
             // Category tabs — the lit one shows its options below.
             HStack(spacing: 8) {
                 categoryTab("Silence", .silence)
+                categoryTab("Guided", .guided)
                 categoryTab("Frequency", .frequency)
                 categoryTab("Nature", .nature)
             }
@@ -209,6 +235,11 @@ struct SessionSetupView: View {
                 Text("No audio during the session.")
                     .font(.caption)
                     .foregroundStyle(AppColor.textSecondary)
+            case .guided:
+                ForEach(GuidedCatalog.all) { p in
+                    soundRow(title: p.title, subtitle: p.subtitle, id: p.id)
+                }
+                previewButton
             case .frequency:
                 ForEach(FrequencyCatalog.all) { p in
                     soundRow(title: p.title, subtitle: p.subtitle, id: p.id)
@@ -238,7 +269,9 @@ struct SessionSetupView: View {
         let selected = soundCategory == category
         return Button { selectCategory(category) } label: {
             Text(title)
-                .font(.subheadline.weight(.medium))
+                .font(.footnote.weight(.medium))
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 10)
                 .background(selected ? AppColor.accentGold : AppColor.backgroundSecondary,
@@ -254,10 +287,12 @@ struct SessionSetupView: View {
         soundCategory = category
         switch category {
         case .silence:   soundID = nil
+        case .guided:    soundID = GuidedCatalog.all.first?.id
         case .frequency: soundID = FrequencyCatalog.all.first?.id
         case .nature:    soundID = NatureCatalog.all.first?.id
         }
     }
+
 
     @ViewBuilder
     private var previewButton: some View {
@@ -313,6 +348,8 @@ struct SessionSetupView: View {
             tone.play(p, method: headphones ? .binaural : .isochronic)
         } else if let np = selectedNature {
             tone.playNature(np)
+        } else if let gp = selectedGuided {
+            tone.playGuided(gp)
         }
     }
 
@@ -357,11 +394,14 @@ struct SessionSetupView: View {
             let mode: String
             switch soundCategory {
             case .silence:   mode = "silence"
+            case .guided:    mode = "guided"
             case .frequency: mode = "frequency"
             case .nature:    mode = "nature"
             }
+            // A guided track owns the session length; otherwise the picked length rules.
+            let planned = activeGuided.map { $0.durationSec } ?? effectiveMinutes.map { $0 * 60 }
             coordinator.begin(mode: mode, trackID: nil,
-                              plannedDurationSec: effectiveMinutes.map { $0 * 60 },
+                              plannedDurationSec: planned,
                               bellyBreathing: belly, hapticsEnabled: true,
                               soundID: soundID, headphones: headphones)
             dismiss()

@@ -115,6 +115,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
             tone.play(fp, method: headphones ? .binaural : .isochronic)
         } else if let np = NatureCatalog.preset(id: id) {
             tone.playNature(np)
+        } else if let gp = GuidedCatalog.preset(id: id) {
+            tone.playGuided(gp)
         } else {
             return
         }

@@ -21,10 +21,10 @@ enum TrackSeeder {
         let defaults: [MeditationTrack] = [
             MeditationTrack(
                 type: TrackType.guided.rawValue,
-                title: "Grounding Body Scan",
-                trackDescription: "A gentle guided settling into the body.",
-                audioURL: "guided_grounding.m4a",
-                durationSec: 600,               // guided tracks carry their own length
+                title: "The One Who Follows Through",
+                trackDescription: "An identity-shift journey: descend, open, and rehearse the person you're becoming.",
+                audioURL: "guided-identity.m4a",
+                durationSec: 1530,              // guided tracks carry their own length
                 sortOrder: 0
             ),
             MeditationTrack(
