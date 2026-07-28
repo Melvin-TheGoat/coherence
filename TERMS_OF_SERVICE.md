@@ -51,21 +51,29 @@ non-commercial use, subject to these Terms and the Apple App Store terms.
 ## 5. Acceptable use
 
 You agree not to: reverse engineer, decompile, or attempt to extract source code
-except as permitted by law; interfere with or disrupt the App; use the App
-unlawfully; or resell, redistribute, or provide the App as a service to others.
+except as permitted by law; **record, capture, rip, extract, download, or
+redistribute any audio content from the App — including guided meditations,
+music, and soundscapes — or make any of it available outside the App**;
+interfere with or disrupt the App; use the App unlawfully; or resell,
+redistribute, or provide the App as a service to others.
 
 ## 6. Your content and data
 
 You own your data. Our handling of your information is described in our
-[Privacy Policy](PRIVACY_POLICY.md). In short, your data lives on your device and
-in your own private iCloud; we operate no servers that store it, and you can delete
-everything from Settings → Delete Account.
+[Privacy Policy](PRIVACY_POLICY.md). In short: your health results stay only on
+your device; your account and session log sync through your own private iCloud;
+we operate no servers that store your data; and you can delete everything from
+Settings → Delete Account.
 
 ## 7. Intellectual property
 
-The App, its design, text, graphics, audio, logos, and the "808" name are owned by
-us or our licensors and protected by law. These Terms grant you no rights in them
-except the license above.
+The App, its design, text, graphics, and audio — **including the guided
+meditations, their scripts and narration, and all music and soundscapes** — the
+logos, and the "808" name are owned by us or our licensors and protected by
+copyright and other intellectual-property law. Recording, extracting, copying,
+or redistributing any of the App's audio content, in whole or in part, is
+prohibited. These Terms grant you no rights in any of the foregoing except the
+license above.
 
 ## 8. Third-party services
 
@@ -106,13 +114,48 @@ survive termination (e.g., disclaimers, limitation of liability) survive.
 We may update these Terms; we'll revise the "Last updated" date and, for material
 changes, provide notice in the App. Continued use means you accept the changes.
 
-## 14. Governing law
+## 14. Dispute resolution — binding arbitration and class-action waiver
+
+**Please read this section carefully. It affects your legal rights.**
+
+**Informal resolution first.** Before filing any claim, you agree to contact us
+at **[CONTACT EMAIL]** with a written description of the dispute and give us
+**60 days** to resolve it informally. Most concerns can be resolved this way.
+
+**Binding arbitration.** If we cannot resolve a dispute informally, you and we
+agree that any dispute, claim, or controversy arising out of or relating to
+these Terms or the App will be resolved by **binding individual arbitration**
+administered by the **American Arbitration Association (AAA)** under its
+Consumer Arbitration Rules, rather than in court. The Federal Arbitration Act
+governs this section. The arbitrator may award the same individual relief a
+court could, and judgment on the award may be entered in any court of competent
+jurisdiction. Arbitration will be conducted by videoconference or, if required,
+in the county where you reside; AAA consumer fee schedules apply.
+
+**Exceptions.** Either party may (a) bring an individual claim in **small-claims
+court**, and (b) seek injunctive or equitable relief in court for actual or
+threatened infringement or misuse of intellectual property (including the
+recording or redistribution of the App's audio content).
+
+**CLASS-ACTION AND JURY WAIVER.** YOU AND WE EACH WAIVE THE RIGHT TO A JURY
+TRIAL AND THE RIGHT TO PARTICIPATE IN A CLASS, COLLECTIVE, CONSOLIDATED, OR
+REPRESENTATIVE ACTION. CLAIMS MAY BE BROUGHT ONLY IN AN INDIVIDUAL CAPACITY. If
+this class-action waiver is found unenforceable as to a particular claim, that
+claim (and only that claim) shall proceed in court, and the waiver shall remain
+in effect for all other claims.
+
+**30-day opt-out.** You may opt out of this arbitration agreement by emailing
+**[CONTACT EMAIL]** within **30 days** of first accepting these Terms, stating
+your name and that you opt out of arbitration. Opting out does not affect any
+other part of these Terms.
+
+## 15. Governing law
 
 These Terms are governed by the laws of the State of **[GOVERNING STATE]**, without
 regard to conflict-of-laws rules. *(Set this once the entity's home state is
 decided.)*
 
-## 15. Apple App Store — additional terms (EULA)
+## 16. Apple App Store — additional terms (EULA)
 
 These Terms are between you and us only, **not** with Apple; Apple is not
 responsible for the App or its content. To the extent these Terms serve as the
@@ -136,6 +179,6 @@ licensed-application end user license agreement for the App:
 - **Apple and its subsidiaries are third-party beneficiaries** of these Terms and,
   upon your acceptance, have the right to enforce them against you.
 
-## 16. Contact
+## 17. Contact
 
 Questions about these Terms: **[CONTACT EMAIL]**.
