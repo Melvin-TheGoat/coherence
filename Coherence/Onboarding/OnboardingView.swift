@@ -45,26 +45,24 @@ struct OnboardingView: View {
         case .purpose:
             docPage("PURPOSE", animated: true)   // the very first thing a user sees
         case .science:
-            docPage("SCIENCE", animated: false)
+            docPage("SCIENCE", animated: true)
         case .signIn:
             VStack(spacing: 16) {
                 Spacer(minLength: 0)
-                ZStack {
-                    BreathingGlow()
-                        .frame(width: 150, height: 150)
-                    LogoMark()
-                        .frame(width: 72, height: 72)
-                }
+                DrawnLogo()
                 Text("808")
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.accentGold)
+                    .fadeInUp(delay: 0.8)
                 Text("Sign in to begin.")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(AppColor.textPrimary)
+                    .fadeInUp(delay: 1.0)
                 Text("Your sessions and streak stay yours. Apple handles sign-in — no password to create.")
                     .font(.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
+                    .fadeInUp(delay: 1.2)
                 Spacer(minLength: 0)
             }
         }
@@ -116,6 +114,7 @@ struct OnboardingView: View {
                 .foregroundStyle(AppColor.textSecondary)
                 #endif
             }
+            .fadeInUp(delay: 1.4)
         }
     }
 

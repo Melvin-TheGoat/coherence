@@ -188,6 +188,55 @@ struct BreathingGlow: View {
     }
 }
 
+/// The 808 mark drawing itself in over the breathing glow — the shared entrance
+/// moment. Self-contained so any screen can drop it in.
+struct DrawnLogo: View {
+    var markSize: CGFloat = 72
+    var glowSize: CGFloat = 150
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var progress: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            BreathingGlow()
+                .frame(width: glowSize, height: glowSize)
+                .opacity(progress >= 1 ? 1 : 0)
+            LogoShape()
+                .trim(from: 0, to: progress)
+                .stroke(AppColor.accentGold,
+                        style: StrokeStyle(lineWidth: markSize * 0.042,
+                                           lineCap: .round, lineJoin: .round))
+                .frame(width: markSize, height: markSize)
+        }
+        .onAppear {
+            if reduceMotion { progress = 1; return }
+            withAnimation(.easeInOut(duration: 1.4)) { progress = 1 }
+        }
+    }
+}
+
+/// Fade-up entrance for any view, with a per-element delay — used to stagger a
+/// screen's pieces in after the logo. Respects Reduce Motion.
+struct FadeInUp: ViewModifier {
+    let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 12)
+            .onAppear {
+                if reduceMotion { shown = true; return }
+                withAnimation(.easeOut(duration: 0.6).delay(delay)) { shown = true }
+            }
+    }
+}
+
+extension View {
+    func fadeInUp(delay: Double) -> some View { modifier(FadeInUp(delay: delay)) }
+}
+
 enum MarkdownParser {
     enum Block {
         case title(String)
