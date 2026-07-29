@@ -15,12 +15,15 @@ handles information in the **808** app for iPhone and Apple Watch.
 808 is built to be private by design:
 
 - **We don't run a server and we can't see your data.** Your account, sessions,
-  and results live **on your device** and sync through **your own private iCloud
-  account** (Apple's CloudKit). We have no backend that receives or stores your
-  personal or health information.
+  live **on your device**; your account, preferences, and session log sync
+  through **your own private iCloud account** (Apple's CloudKit). Your **health
+  results** (heart-rate trend, stillness, breathing) are stored **only on the
+  device that recorded them** — the app never uploads them anywhere, not even
+  to iCloud. We have no backend that receives or stores your personal or health
+  information.
 - **We don't sell your data, run ads, or track you.** There are no advertising
   identifiers, no third-party analytics, and no cross-app tracking.
-- **Your health data never leaves your control.** It's measured on your Apple
+- **Your health data never leaves your devices.** It's measured on your Apple
   Watch and turned into your session results; we never use it for advertising and
   never share it.
 - **You can delete everything** at any time from Settings → Delete Account.
@@ -55,10 +58,18 @@ tracking SDKs, and no cross-app/website tracking.
 
 ## Where your information lives and who can access it
 
-Your data is stored **locally on your device** and, if iCloud is enabled, synced
-to **your personal private iCloud database** using Apple's CloudKit. This keeps
-your data available across your own devices and lets it survive reinstalling the
-app. **We do not operate servers that store your data, and we cannot access the
+Your information lives in two places, by design:
+
+- **Health results stay on your device.** Your session measurements — the
+  heart-rate trend, stillness, and breathing results — are stored **only in the
+  app's local storage on the device that recorded them**. The app never syncs
+  them to iCloud or anywhere else.
+- **Account and session log sync privately.** Your account info, preferences,
+  and the log of your sessions (dates, durations, types, ratings) sync to
+  **your personal private iCloud database** using Apple's CloudKit, so they
+  survive reinstalls and follow your own devices.
+
+**We do not operate servers that store your data, and we cannot access the
 contents of your private iCloud database.** Apple processes this data under
 [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
 
@@ -105,6 +116,29 @@ your iCloud settings.
   information, and to not be discriminated against for exercising them. Because we
   hold no copy of your data on our own servers, most requests are fulfilled
   directly through the app's deletion controls. Contact us with any questions.
+
+## Consumer health data
+
+This section supplements the rest of this policy for laws that specifically
+protect **consumer health data** (such as the Washington My Health My Data Act)
+and applies to all users.
+
+- **Categories we process:** heart rate measured during a session you start;
+  motion-derived measurements (stillness, and — in belly-breathing sessions —
+  breathing rate, depth, and regularity); and the session results computed from
+  them.
+- **Source:** the sensors of your own Apple Watch, via Apple HealthKit and
+  CoreMotion, only while a session you started is running.
+- **Purpose:** solely to compute and show you your own session results. No
+  other use.
+- **Consent:** the app asks for your consent in-app before any measurement, and
+  Apple's HealthKit permission prompt independently controls heart-rate access.
+- **Sharing and sale:** we do **not** sell consumer health data, and we do not
+  share it with anyone. It is processed on your devices; we never receive it.
+- **Your rights:** view your results in the app at any time; delete them by
+  deleting individual data via **Settings → Delete Account** (which removes all
+  app data) or by deleting the app from the device holding the results. For
+  questions or requests, contact us at **[CONTACT EMAIL]**.
 
 ## Children
 

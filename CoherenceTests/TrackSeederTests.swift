@@ -23,8 +23,9 @@ final class TrackSeederTests: XCTestCase {
         XCTAssertEqual(TrackSeeder.tracks(ofType: .frequency, in: ctx).count, 1)
         XCTAssertEqual(TrackSeeder.tracks(ofType: .nature, in: ctx).count, 1)
 
-        // Guided carries its own duration; frequency/nature defer to the setup picker.
-        XCTAssertEqual(TrackSeeder.tracks(ofType: .guided, in: ctx).first?.durationSec, 600)
+        // Guided carries its own duration (the real track runs 25:30);
+        // frequency/nature defer to the setup picker.
+        XCTAssertEqual(TrackSeeder.tracks(ofType: .guided, in: ctx).first?.durationSec, 1530)
         XCTAssertNil(TrackSeeder.tracks(ofType: .frequency, in: ctx).first?.durationSec)
     }
 

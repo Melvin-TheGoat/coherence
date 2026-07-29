@@ -63,6 +63,32 @@ enum NatureCatalog {
     }
 }
 
+/// A guided meditation — a fully produced narrated track (voice + music mastered
+/// together), played once at full level. The track's own length sets the session
+/// length, so the Watch ends when the narration does.
+struct GuidedPreset: Identifiable, Equatable {
+    let id: String
+    let title: String
+    let subtitle: String
+    let resource: String        // bundled audio file (without extension)
+    let durationSec: Int        // the track's real length — drives the session timer
+}
+
+enum GuidedCatalog {
+    static let all: [GuidedPreset] = [
+        GuidedPreset(id: "guided.identity",
+                     title: "The One Who Follows Through",
+                     subtitle: "Identity-shift journey · 25 min",
+                     resource: "guided-identity",
+                     durationSec: 1530),
+    ]
+
+    static func preset(id: String?) -> GuidedPreset? {
+        guard let id else { return nil }
+        return all.first { $0.id == id }
+    }
+}
+
 /// Real-time tone synthesizer (phone-side — audio is a phone concern; the Watch only
 /// measures). Builds a warm detuned pad (fundamental + sub-octave + octave + unison
 /// chorus voices, each drifting on its own slow LFO), then runs it through a
@@ -312,6 +338,26 @@ final class ToneEngine: ObservableObject {
             let player = try AVAudioPlayer(contentsOf: url)
             player.numberOfLoops = -1
             player.volume = Self.natureVolume
+            player.prepareToPlay()
+            player.play()
+            bedPlayer = player
+            playingID = preset.id
+        } catch {
+            // No file / decode failure — nothing plays; UI just shows nothing selected.
+        }
+    }
+
+    /// Plays a guided meditation track — a finished master, once through, full level.
+    /// No loop (the journey has an ending) and no synthesized tone (music is baked in).
+    func playGuided(_ preset: GuidedPreset) {
+        stop()
+        configureSession()
+        guard let url = Bundle.main.url(forResource: preset.resource, withExtension: "m4a")
+                    ?? Bundle.main.url(forResource: preset.resource, withExtension: "wav") else { return }
+        do {
+            let player = try AVAudioPlayer(contentsOf: url)
+            player.numberOfLoops = 0           // play once — it ends when the narration ends
+            player.volume = 1.0                // mastered track; play as delivered
             player.prepareToPlay()
             player.play()
             bedPlayer = player

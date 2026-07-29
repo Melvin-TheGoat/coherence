@@ -14,63 +14,146 @@ enum DocLoader {
 /// headings, paragraphs (with inline **bold**/*italic*), bullet + numbered lists,
 /// and dividers. Strips HTML comments and `<sup>` citation tags. Not a general
 /// markdown engine — just enough for these docs.
+/// `LogoMark`'s geometry as a `Shape`, so it can be trim-animated (the mark
+/// "draws itself" during onboarding).
+struct LogoShape: Shape {
+    func path(in rect: CGRect) -> Path { LogoMark.path(in: rect) }
+}
+
 struct MarkdownView: View {
     let markdown: String
+    /// When true (onboarding), the hero draws itself in and the copy staggers
+    /// up after it. Settings and re-reads render instantly.
+    var animated = false
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// 0 = nothing, 1 = logo drawing, 2 = title+rule, 3 = body copy.
+    @State private var stage = 0
+
+    private var revealed: Bool { !animated || stage >= 3 }
+    private var logoProgress: CGFloat { !animated || stage >= 1 ? 1 : 0 }
+    private var titleShown: Bool { !animated || stage >= 2 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            ForEach(Array(MarkdownParser.parse(markdown).enumerated()), id: \.offset) { _, block in
-                view(for: block)
+            ForEach(Array(MarkdownParser.parse(markdown).enumerated()), id: \.offset) { i, block in
+                if case .title = block {
+                    view(for: block)
+                } else {
+                    view(for: block)
+                        .opacity(revealed ? 1 : 0)
+                        .offset(y: revealed ? 0 : 14)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear(perform: runEntrance)
+    }
+
+    private func runEntrance() {
+        guard animated, stage == 0 else { return }
+        if reduceMotion { stage = 3; return }
+        withAnimation(.easeInOut(duration: 1.5)) { stage = 1 }
+        withAnimation(.easeOut(duration: 0.6).delay(0.9)) { stage = 2 }
+        withAnimation(.easeOut(duration: 0.7).delay(1.3)) { stage = 3 }
     }
 
     @ViewBuilder
     private func view(for block: MarkdownParser.Block) -> some View {
         switch block {
         case .title(let s):
-            Text(s)
-                .font(.largeTitle.weight(.bold))
-                .foregroundStyle(AppColor.accentGold)
-                .padding(.bottom, 2)
+            // Hero: the 808 mark draws itself in (trim animation) over a soft
+            // breathing glow, then the title and gold rule follow.
+            VStack(alignment: .leading, spacing: 14) {
+                ZStack {
+                    BreathingGlow()
+                        .frame(width: 96, height: 96)
+                        .opacity(logoProgress == 1 ? 1 : 0)
+                    LogoShape()
+                        .trim(from: 0, to: logoProgress)
+                        .stroke(AppColor.accentGold,
+                                style: StrokeStyle(lineWidth: 2.1, lineCap: .round, lineJoin: .round))
+                        .frame(width: 48, height: 48)
+                }
+                .frame(width: 56, height: 56, alignment: .center)
+                Text(s)
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .opacity(titleShown ? 1 : 0)
+                    .offset(y: titleShown ? 0 : 10)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(AppColor.accentGold)
+                    .frame(width: titleShown ? 44 : 0, height: 3)
+            }
+            .padding(.top, 6)
+            .padding(.bottom, 8)
         case .heading(let s):
-            Text(s)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: 6) {
+                Text(s)
+                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(AppColor.accentGold.opacity(0.55))
+                    .frame(width: 26, height: 2)
+            }
+            .padding(.top, 12)
         case .subheading(let s):
             Text(s)
-                .font(.headline)
+                .font(.system(.headline, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
-                .padding(.top, 4)
+                .padding(.top, 6)
         case .paragraph(let s):
             Text(inline(s))
                 .font(.callout)
-                .foregroundStyle(AppColor.textSecondary)
+                .lineSpacing(5)
+                .foregroundStyle(AppColor.textPrimary.opacity(0.88))
         case .bullet(let s):
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("•").foregroundStyle(AppColor.accentGold)
-                Text(inline(s)).font(.callout).foregroundStyle(AppColor.textSecondary)
+            HStack(alignment: .firstTextBaseline, spacing: 10) {
+                Circle()
+                    .fill(AppColor.accentGold)
+                    .frame(width: 5, height: 5)
+                    .alignmentGuide(.firstTextBaseline) { d in d[VerticalAlignment.center] + 4 }
+                Text(inline(s))
+                    .font(.callout)
+                    .lineSpacing(4)
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.88))
             }
         case .numbered(let n, let s):
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text("\(n).").font(.caption2.monospacedDigit()).foregroundStyle(AppColor.textSecondary)
-                Text(inline(s)).font(.caption2).foregroundStyle(AppColor.textSecondary)
+                Text("\(n)")
+                    .font(.caption2.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(AppColor.accentGold)
+                    .frame(width: 16, alignment: .trailing)
+                Text(inline(s))
+                    .font(.caption2)
+                    .lineSpacing(2)
+                    .foregroundStyle(AppColor.textSecondary)
             }
         case .note(let s):
-            Text(inline(s))
-                .font(.caption)
-                .italic()
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(10)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 8))
+            // Pull-quote style: gold stripe, roomy card.
+            HStack(alignment: .top, spacing: 12) {
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(AppColor.accentGold)
+                    .frame(width: 3)
+                Text(inline(s))
+                    .font(.footnote)
+                    .italic()
+                    .lineSpacing(4)
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColor.backgroundSecondary,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         case .divider:
-            Rectangle()
-                .fill(AppColor.textSecondary.opacity(0.25))
-                .frame(height: 1)
-                .padding(.vertical, 4)
+            HStack {
+                Spacer()
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(AppColor.accentGold.opacity(0.35))
+                    .frame(width: 56, height: 2)
+                Spacer()
+            }
+            .padding(.vertical, 8)
         }
     }
 
@@ -78,6 +161,80 @@ struct MarkdownView: View {
         (try? AttributedString(markdown: s, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(s)
     }
+}
+
+/// A slow, soft gold halo that "breathes" behind the logo — calm-app ambience,
+/// deliberately near-subliminal. Respects Reduce Motion (renders static).
+struct BreathingGlow: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var inhale = false
+
+    var body: some View {
+        Circle()
+            .fill(
+                RadialGradient(colors: [AppColor.accentGold.opacity(0.28), .clear],
+                               center: .center, startRadius: 2, endRadius: 48)
+            )
+            .scaleEffect(inhale ? 1.12 : 0.9)
+            .opacity(inhale ? 0.85 : 0.55)
+            .blur(radius: 6)
+            .onAppear {
+                guard !reduceMotion else { return }
+                withAnimation(.easeInOut(duration: 4.2).repeatForever(autoreverses: true)) {
+                    inhale = true
+                }
+            }
+            .allowsHitTesting(false)
+    }
+}
+
+/// The 808 mark drawing itself in over the breathing glow — the shared entrance
+/// moment. Self-contained so any screen can drop it in.
+struct DrawnLogo: View {
+    var markSize: CGFloat = 72
+    var glowSize: CGFloat = 150
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var progress: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            BreathingGlow()
+                .frame(width: glowSize, height: glowSize)
+                .opacity(progress >= 1 ? 1 : 0)
+            LogoShape()
+                .trim(from: 0, to: progress)
+                .stroke(AppColor.accentGold,
+                        style: StrokeStyle(lineWidth: markSize * 0.042,
+                                           lineCap: .round, lineJoin: .round))
+                .frame(width: markSize, height: markSize)
+        }
+        .onAppear {
+            if reduceMotion { progress = 1; return }
+            withAnimation(.easeInOut(duration: 1.4)) { progress = 1 }
+        }
+    }
+}
+
+/// Fade-up entrance for any view, with a per-element delay — used to stagger a
+/// screen's pieces in after the logo. Respects Reduce Motion.
+struct FadeInUp: ViewModifier {
+    let delay: Double
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+
+    func body(content: Content) -> some View {
+        content
+            .opacity(shown ? 1 : 0)
+            .offset(y: shown ? 0 : 12)
+            .onAppear {
+                if reduceMotion { shown = true; return }
+                withAnimation(.easeOut(duration: 0.6).delay(delay)) { shown = true }
+            }
+    }
+}
+
+extension View {
+    func fadeInUp(delay: Double) -> some View { modifier(FadeInUp(delay: delay)) }
 }
 
 enum MarkdownParser {

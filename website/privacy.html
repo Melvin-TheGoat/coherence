@@ -36,8 +36,10 @@
   <h2>The short version</h2>
   <ul>
     <li><b>We don't run a server and can't see your data.</b> Your account, sessions, and
-      results live on your device and sync through your own private iCloud account (Apple's
-      CloudKit). We have no backend that receives or stores your personal or health information.</li>
+      results live on your device; your account, preferences, and session log sync through your
+      own private iCloud account (Apple's CloudKit). Your health results are stored only on the
+      device that recorded them — never uploaded anywhere, not even iCloud. We have no backend
+      that receives or stores your personal or health information.</li>
     <li><b>We don't sell your data, run ads, or track you.</b> No advertising identifiers, no
       third-party analytics, no cross-app tracking.</li>
     <li><b>Your health data never leaves your control.</b> It's measured on your Apple Watch and
@@ -63,9 +65,13 @@
     advertising identifiers; no third-party analytics or tracking.</p>
 
   <h2>Where your information lives</h2>
-  <p>Your data is stored locally on your device and, if iCloud is enabled, synced to your
-    personal private iCloud database via Apple's CloudKit. <b>We do not operate servers that store
-    your data and cannot access your private iCloud database.</b> Apple processes this data under
+  <p>Your information lives in two places, by design. <b>Health results stay on your device:</b>
+    session measurements (heart-rate trend, stillness, breathing) are stored only in the app's
+    local storage on the device that recorded them — never synced to iCloud or anywhere else.
+    <b>Account and session log sync privately:</b> your account info, preferences, and session log
+    (dates, durations, types, ratings) sync to your personal private iCloud database via Apple's
+    CloudKit. <b>We do not operate servers that store your data and cannot access your private
+    iCloud database.</b> Apple processes this data under
     <a href="https://www.apple.com/legal/privacy/">Apple's Privacy Policy</a>.</p>
 
   <h2>How the information is used</h2>
@@ -95,6 +101,20 @@
     Settings; control HealthKit permissions in iOS/watchOS settings. Depending on where you live
     (EU/UK GDPR, California CCPA/CPRA), you may have additional rights; because we hold no copy of
     your data on our servers, most requests are fulfilled through the app's deletion controls.</p>
+
+  <h2>Consumer health data</h2>
+  <p>This section supplements this policy for laws that specifically protect consumer health data
+    (such as the Washington My Health My Data Act) and applies to all users.
+    <b>Categories:</b> heart rate measured during a session you start; motion-derived measurements
+    (stillness and, in belly-breathing sessions, breathing rate, depth, and regularity); and the
+    session results computed from them. <b>Source:</b> your own Apple Watch's sensors, via Apple
+    HealthKit and CoreMotion, only during a session you started. <b>Purpose:</b> solely to compute
+    and show your own results. <b>Consent:</b> the app asks for your consent in-app before any
+    measurement; Apple's HealthKit prompt independently controls heart-rate access.
+    <b>Sharing and sale:</b> we do not sell consumer health data and do not share it — it is
+    processed on your devices and we never receive it. <b>Your rights:</b> view results in the
+    app; delete everything via Settings → Delete Account or by deleting the app from the device
+    holding the results; contact [CONTACT EMAIL] with questions or requests.</p>
 
   <h2>Children</h2>
   <p class="muted">808 is not directed to children under 13, and we do not knowingly collect their
