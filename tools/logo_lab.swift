@@ -51,9 +51,15 @@ var params: [String: [Double]] = [
 
 var iconMode = false
 var realSizeMode = false
+/// How much of the 1024 icon canvas the mark fills. Only affects `--icon` — the
+/// in-app mark sizes itself to its SwiftUI frame, so it is unchanged by this.
+var iconScale = 0.86
 for arg in CommandLine.arguments.dropFirst() {
     if arg == "--icon" { iconMode = true; continue }
     if arg == "--sizes" { realSizeMode = true; continue }
+    if arg.hasPrefix("iconScale="), let v = Double(arg.dropFirst("iconScale=".count)) {
+        iconScale = v; continue
+    }
     let parts = arg.split(separator: "=", maxSplits: 1)
     guard parts.count == 2, params[String(parts[0])] != nil else {
         FileHandle.standardError.write("unknown argument: \(arg)\n".data(using: .utf8)!)
@@ -151,7 +157,7 @@ if iconMode {
     }
     let size = 1024.0
     let ctx = makeContext(Int(size), Int(size))
-    drawMark(ctx, cx: size / 2, cy: size / 2, size: size, all[0])
+    drawMark(ctx, cx: size / 2, cy: size / 2, size: size * iconScale, all[0])
     let repoRoot = URL(fileURLWithPath: CommandLine.arguments[0])
         .deletingLastPathComponent().deletingLastPathComponent().path
     write(ctx, to: "\(repoRoot)/Shared/Assets.xcassets/AppIcon.appiconset/AppIcon1024.png")
