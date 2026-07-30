@@ -5,19 +5,31 @@
  *
  * SETUP
  *  1. Create a blank Google Sheet (sheets.new). Name it e.g. "808 questionnaire".
- *  2. Extensions → Apps Script. Delete the placeholder code, paste this file.
- *  3. Save, then Deploy → New deployment → type "Web app".
+ *  2. Put its ID in SHEET_ID below. The ID is the long string in the sheet's URL:
+ *       docs.google.com/spreadsheets/d/<THIS_PART>/edit
+ *  3. Paste this file into the Apps Script editor, replacing EVERYTHING (make sure
+ *     the placeholder `function myFunction() {}` is gone — if this code ends up
+ *     nested inside it, Google reports "Script function not found").
+ *  4. Save (⌘S), then Deploy → New deployment → type "Web app".
  *       Execute as:      Me
  *       Who has access:  Anyone           ← required; the page posts anonymously
- *  4. Authorize when prompted (it's your own script writing to your own sheet;
+ *  5. Authorize when prompted (it's your own script writing to your own sheet;
  *     Google shows an "unverified app" warning → Advanced → Go to ... ).
- *  5. Copy the deployment's /exec URL into SHEET_ENDPOINT in survey.html.
+ *  6. Copy the deployment's /exec URL into SHEET_ENDPOINT in survey.html.
  *
  * Re-deploying after an edit: Deploy → Manage deployments → edit (pencil) →
- * Version: New version → Deploy. The URL stays the same.
+ * Version: New version → Deploy. The URL stays the same. Editing the code alone
+ * does NOT change what's live.
  *
  * The header row is created on the first response, so a blank sheet is fine.
  */
+
+/**
+ * The spreadsheet to write to. Required when this is a standalone script (one
+ * created at script.new rather than from a sheet's Extensions → Apps Script);
+ * leave it empty only if the project is bound to a sheet.
+ */
+var SHEET_ID = '';
 
 var HEADERS = [
   'timestamp',
@@ -43,7 +55,7 @@ function doPost(e) {
 
   try {
     var data = JSON.parse(e.postData.contents);
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+    var sheet = targetSheet();
 
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(HEADERS);
@@ -64,9 +76,36 @@ function doPost(e) {
   }
 }
 
-/** Visiting the URL in a browser should say something, not error. */
+/**
+ * The first tab of the target spreadsheet. Uses SHEET_ID when set; otherwise
+ * falls back to the bound spreadsheet, and fails loudly if there is neither.
+ */
+function targetSheet() {
+  var ss = SHEET_ID
+    ? SpreadsheetApp.openById(SHEET_ID)
+    : SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error('No spreadsheet: set SHEET_ID (this script is not bound to a sheet).');
+  }
+  return ss.getSheets()[0];
+}
+
+/**
+ * Visiting the URL in a browser reports whether the sheet is reachable, so a
+ * misconfiguration shows up before any real responses are sent.
+ */
 function doGet() {
-  return json({ ok: true, note: '808 questionnaire endpoint is live' });
+  try {
+    var sheet = targetSheet();
+    return json({
+      ok: true,
+      note: '808 questionnaire endpoint is live',
+      spreadsheet: sheet.getParent().getName(),
+      rows: Math.max(0, sheet.getLastRow() - 1)
+    });
+  } catch (err) {
+    return json({ ok: false, error: String(err) });
+  }
 }
 
 function json(obj) {
