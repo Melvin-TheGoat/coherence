@@ -52,6 +52,9 @@ struct ContentView: View {
                 let u = SessionStore.currentUser(in: context)
                 if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
             }
+            if ProcessInfo.processInfo.environment["PREVIEW_HISTORY"] == "1" {
+                DemoData.seedHistory(in: context)
+            }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", openSession == nil {
                 openSession = SessionRef(id: DemoData.seedResults(in: context))
             }
