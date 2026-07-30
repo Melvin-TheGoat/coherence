@@ -187,10 +187,13 @@
 </div>
 
 <script>
-  // Responses are emailed via FormSubmit (no account needed). The very first
-  // submission triggers a one-time confirmation email to this address — click
-  // the link in it or nothing else arrives.
-  var ENDPOINT = "https://formsubmit.co/ajax/azizmahmud2003@outlook.com";
+  // Where responses go. Primary is a Google Sheet (one row per response, so the
+  // answers can be counted and exported); see survey-sheet.gs for the script and
+  // setup. EMAIL_FALLBACK catches anything the sheet rejects, so a response is
+  // never silently lost — FormSubmit needs a one-time activation click on its
+  // first delivery.
+  var SHEET_ENDPOINT  = "";   // ← paste the Apps Script /exec URL here
+  var EMAIL_FALLBACK  = "https://formsubmit.co/ajax/azizmahmud2003@outlook.com";
 
   var form = document.getElementById('survey');
   var done = document.getElementById('done');
@@ -227,22 +230,44 @@
     btn.disabled = true;
     btn.textContent = 'Sending…';
 
-    fetch(ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
-      .then(function () {
-        form.style.display = 'none';
-        done.style.display = 'block';
-      })
-      .catch(function () {
-        btn.disabled = false;
-        btn.textContent = 'Send';
-        err.textContent = 'Something went wrong — mind trying once more?';
-        err.style.display = 'block';
+    function succeed() {
+      form.style.display = 'none';
+      done.style.display = 'block';
+    }
+    function fail() {
+      btn.disabled = false;
+      btn.textContent = 'Send';
+      err.textContent = "That didn't go through. Try once more?";
+      err.style.display = 'block';
+    }
+
+    // Apps Script doesn't answer CORS preflights, so send the JSON as
+    // text/plain — that keeps it a "simple" request with no OPTIONS round-trip.
+    function toSheet() {
+      return fetch(SHEET_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        if (!r.ok) throw new Error('sheet status ' + r.status);
       });
+    }
+
+    function toEmail() {
+      return fetch(EMAIL_FALLBACK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (r) {
+        if (!r.ok) throw new Error('email status ' + r.status);
+      });
+    }
+
+    // Sheet first; if it's not configured or errors, fall back to email so a
+    // response is never lost.
+    (SHEET_ENDPOINT ? toSheet() : Promise.reject(new Error('no sheet')))
+      .then(succeed)
+      .catch(function () { return toEmail().then(succeed).catch(fail); });
   });
 </script>
 </body>

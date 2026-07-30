@@ -13,10 +13,30 @@ Static one-pager + legal pages for the App Store (Apple requires a public
 
 ## The questionnaire
 
-Responses POST to `https://formsubmit.co/ajax/<email>` (set in `survey.html`) and
-arrive as a formatted email. **FormSubmit requires a one-time activation:** submit
-the form once yourself, then click the confirmation link it emails. Until that's
-done, nothing is delivered.
+Responses go to a **Google Sheet** (one row each, so answers can be counted and
+exported to CSV), with **email as a fallback** so nothing is lost if the script
+breaks. Two constants at the bottom of `survey.html`:
+
+```js
+var SHEET_ENDPOINT = "";   // Apps Script /exec URL — see survey-sheet.gs
+var EMAIL_FALLBACK = "https://formsubmit.co/ajax/<email>";
+```
+
+Behaviour: sheet first; on any failure (or while `SHEET_ENDPOINT` is empty) it
+posts to the email fallback instead. A response is only ever delivered once.
+
+- **Sheet setup:** follow the header comment in `survey-sheet.gs` (create sheet →
+  paste script → deploy as Web app, "Execute as: Me", "Who has access: Anyone" →
+  copy the `/exec` URL into `SHEET_ENDPOINT`). The header row is written on the
+  first response, so start with a blank sheet.
+- **Email fallback:** FormSubmit needs a one-time activation — the first delivery
+  triggers a confirmation email that must be clicked, or nothing arrives.
+
+The JSON is posted as `text/plain` on purpose: Apps Script doesn't answer CORS
+preflight requests, and that content type keeps it a "simple" request.
+
+After wiring, submit once for real and confirm a row lands in the sheet, then
+delete the test row.
 
 Questions were chosen so each one changes a decision: Apple Watch ownership (the
 gating constraint), current app (converting non-meditators vs. taking share),
