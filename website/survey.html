@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help shape 808</title>
+<meta name="description" content="A one-minute questionnaire to help shape 808 — meditation for manifestation.">
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg:#0d0d0f; --bg2:#17171b; --line:#24242a;
+    --text:#e8e6e0; --muted:#9a968c; --gold:#d9b25f; --gold-dim:#8a6f39;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--text);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a { color:var(--gold); }
+  .wrap { max-width:600px; margin:0 auto; padding:0 22px 64px; }
+
+  header { text-align:center; padding:56px 0 34px; }
+  .mark { width:72px; height:72px; margin:0 auto 18px; display:block; }
+  .mark ellipse, .mark circle { fill:none; stroke:var(--gold); stroke-width:13.3; }
+  h1 { font-size:27px; font-weight:700; margin:0 0 12px; letter-spacing:-0.4px; }
+  .sub { color:var(--muted); font-size:16px; margin:0; }
+  .sub b { color:var(--text); font-weight:600; }
+
+  .q {
+    background:var(--bg2); border:1px solid var(--line); border-radius:16px;
+    padding:20px; margin-bottom:14px;
+  }
+  .q > label.qt, .qt {
+    display:block; font-size:16px; font-weight:600; margin:0 0 4px;
+  }
+  .hint { display:block; font-size:13.5px; color:#6f6b63; margin:0 0 14px; }
+
+  input[type=text], input[type=email], textarea {
+    width:100%; padding:13px 14px; font-size:16px; font-family:inherit;
+    color:var(--text); background:var(--bg);
+    border:1px solid var(--line); border-radius:10px;
+  }
+  input::placeholder, textarea::placeholder { color:#5e5a53; }
+  input:focus, textarea:focus { outline:none; border-color:var(--gold-dim); }
+  textarea { resize:vertical; min-height:96px; line-height:1.5; }
+
+  .opts { display:grid; gap:9px; }
+  .opt {
+    display:flex; align-items:flex-start; gap:11px;
+    padding:11px 13px; border:1px solid var(--line); border-radius:10px;
+    cursor:pointer; font-size:15.5px; background:var(--bg);
+    transition:border-color .12s ease;
+  }
+  .opt:hover { border-color:#3a3a42; }
+  .opt input { margin:2px 0 0; accent-color:var(--gold); flex:none; }
+  .opt input:checked ~ span { color:var(--gold); }
+  .inline { margin-top:10px; }
+
+  button {
+    width:100%; margin-top:8px; padding:16px; font-size:16.5px; font-weight:700;
+    cursor:pointer; color:#1a1408; background:var(--gold);
+    border:0; border-radius:13px; transition:opacity .15s ease;
+  }
+  button:hover { opacity:.9; }
+  button:disabled { opacity:.55; cursor:default; }
+  .err { color:#d98b6f; font-size:14px; text-align:center; margin:12px 0 0; display:none; }
+  .privacy { text-align:center; font-size:13px; color:#6f6b63; margin:16px 0 0; }
+
+  .done {
+    display:none; text-align:center; padding:40px 24px;
+    background:var(--bg2); border:1px solid var(--gold-dim); border-radius:18px;
+  }
+  .done h2 { color:var(--gold); font-size:22px; margin:0 0 10px; }
+  .done p { color:var(--muted); margin:0; }
+
+  /* Bot trap — humans never see or fill this. */
+  .honey { position:absolute; left:-9999px; opacity:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <svg class="mark" viewBox="0 0 512 512" aria-label="808" role="img">
+      <ellipse cx="256" cy="190" rx="63" ry="125"/>
+      <ellipse cx="256" cy="322" rx="63" ry="125"/>
+      <ellipse cx="190" cy="256" rx="125" ry="63"/>
+      <ellipse cx="322" cy="256" rx="125" ry="63"/>
+      <circle cx="256" cy="256" r="67"/>
+    </svg>
+    <h1>Help shape 808</h1>
+    <p class="sub">You asked about the app — this is how you get a say in it.
+      <b>About a minute. Every question is optional.</b></p>
+  </header>
+
+  <form id="survey" novalidate>
+    <input type="text" name="_honey" class="honey" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+    <!-- 1 -->
+    <div class="q">
+      <label class="qt" for="email">Your email</label>
+      <span class="hint">So we can send you early access. Nothing else.</span>
+      <input type="email" id="email" name="email" autocomplete="email" placeholder="you@email.com">
+    </div>
+
+    <!-- 2 -->
+    <div class="q">
+      <span class="qt">Do you have an Apple Watch?</span>
+      <span class="hint">808 measures your session on the Watch.</span>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="apple_watch" value="Yes"><span>Yes</span></label>
+        <label class="opt"><input type="radio" name="apple_watch" value="No"><span>No</span></label>
+      </div>
+    </div>
+
+    <!-- 3 -->
+    <div class="q">
+      <span class="qt">What do you use to meditate now?</span>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="current_app" value="Nothing"><span>Nothing</span></label>
+        <label class="opt"><input type="radio" name="current_app" value="Calm"><span>Calm</span></label>
+        <label class="opt"><input type="radio" name="current_app" value="Headspace"><span>Headspace</span></label>
+        <label class="opt"><input type="radio" name="current_app" value="YouTube"><span>YouTube</span></label>
+        <label class="opt"><input type="radio" name="current_app" value="Insight Timer"><span>Insight Timer</span></label>
+        <label class="opt"><input type="radio" name="current_app" value="Other"><span>Something else</span></label>
+      </div>
+      <input class="inline" type="text" name="current_app_other" placeholder="If something else — what?">
+    </div>
+
+    <!-- 4 -->
+    <div class="q">
+      <span class="qt">Do you currently pay for a meditation app?</span>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="pays" value="Yes"><span>Yes</span></label>
+        <label class="opt"><input type="radio" name="pays" value="No"><span>No</span></label>
+        <label class="opt"><input type="radio" name="pays" value="Used to"><span>I used to</span></label>
+      </div>
+      <input class="inline" type="text" name="pays_amount" placeholder="If yes — roughly how much a month?">
+    </div>
+
+    <!-- 5 -->
+    <div class="q">
+      <span class="qt">What usually gets in the way of meditating regularly?</span>
+      <span class="hint">Check anything that sounds like you.</span>
+      <div class="opts">
+        <label class="opt"><input type="checkbox" name="blockers" value="Can't tell if it's doing anything"><span>I can't tell if it's doing anything</span></label>
+        <label class="opt"><input type="checkbox" name="blockers" value="Fall out of the habit"><span>I start, then fall out of the habit</span></label>
+        <label class="opt"><input type="checkbox" name="blockers" value="No time"><span>I don't have the time</span></label>
+        <label class="opt"><input type="checkbox" name="blockers" value="Boring"><span>It feels boring</span></label>
+        <label class="opt"><input type="checkbox" name="blockers" value="Unsure doing it right"><span>I'm not sure I'm doing it right</span></label>
+        <label class="opt"><input type="checkbox" name="blockers" value="Never really started"><span>I've never really started</span></label>
+        <label class="opt"><input type="checkbox" name="blockers" value="Already consistent"><span>Nothing — I'm already consistent</span></label>
+      </div>
+    </div>
+
+    <!-- 6 -->
+    <div class="q">
+      <span class="qt">Want early access?</span>
+      <span class="hint">A free test version before it hits the App Store.</span>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="early_access" value="Yes"><span>Yes, count me in</span></label>
+        <label class="opt"><input type="radio" name="early_access" value="No"><span>No, I'll wait for launch</span></label>
+      </div>
+    </div>
+
+    <!-- 7 -->
+    <div class="q">
+      <label class="qt" for="hoping">What are you hoping 808 does for you?</label>
+      <span class="hint">In your own words — this genuinely shapes what we build.</span>
+      <textarea id="hoping" name="hoping" placeholder="Anything at all…"></textarea>
+    </div>
+
+    <button type="submit" id="submit">Send</button>
+    <p class="err" id="err">Something went wrong — mind trying once more?</p>
+    <p class="privacy">We'll only use this to build 808 and tell you when it's ready.
+      See our <a href="privacy.html">Privacy Policy</a>.</p>
+  </form>
+
+  <div class="done" id="done">
+    <h2>Thank you — genuinely.</h2>
+    <p>This is the stuff that actually changes what we build.<br>
+      If you left your email, you'll hear from us before launch.</p>
+  </div>
+
+</div>
+
+<script>
+  // Responses are emailed via FormSubmit (no account needed). The very first
+  // submission triggers a one-time confirmation email to this address — click
+  // the link in it or nothing else arrives.
+  var ENDPOINT = "https://formsubmit.co/ajax/azizmahmud2003@outlook.com";
+
+  var form = document.getElementById('survey');
+  var done = document.getElementById('done');
+  var btn  = document.getElementById('submit');
+  var err  = document.getElementById('err');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    err.style.display = 'none';
+
+    var data = new FormData(form);
+
+    // Every field is optional, but an entirely blank form helps nobody.
+    var filled = false;
+    data.forEach(function (v, k) {
+      if (k !== '_honey' && String(v).trim() !== '') filled = true;
+    });
+    if (!filled) {
+      err.textContent = 'Fill in at least one answer and we\'re good.';
+      err.style.display = 'block';
+      return;
+    }
+
+    // Collapse the multi-select into one readable line, and label the email.
+    var payload = { _subject: '808 questionnaire response', _template: 'table' };
+    var blockers = data.getAll('blockers');
+    data.forEach(function (v, k) {
+      if (k === 'blockers' || k === '_honey') return;
+      if (String(v).trim() !== '') payload[k] = v;
+    });
+    if (blockers.length) payload.blockers = blockers.join(', ');
+    if (data.get('_honey')) return;                     // bot — silently drop
+
+    btn.disabled = true;
+    btn.textContent = 'Sending…';
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+      .then(function (r) { if (!r.ok) throw new Error('bad status'); return r.json(); })
+      .then(function () {
+        form.style.display = 'none';
+        done.style.display = 'block';
+      })
+      .catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Send';
+        err.textContent = 'Something went wrong — mind trying once more?';
+        err.style.display = 'block';
+      });
+  });
+</script>
+</body>
+</html>

@@ -5,8 +5,28 @@ Static one-pager + legal pages for the App Store (Apple requires a public
 
 - `index.html` — landing page + **launch waitlist** (hero, email capture, what-it-is,
   support, footer links)
+- `survey.html` — **the questionnaire** for the warm audience (link this in bio/DMs).
+  Every question optional; responses are emailed via FormSubmit, no account needed.
+  `noindex` — it's a link you hand out, not a page to be found.
 - `privacy.html` — Privacy Policy
 - `terms.html` — Terms of Service
+
+## The questionnaire
+
+Responses POST to `https://formsubmit.co/ajax/<email>` (set in `survey.html`) and
+arrive as a formatted email. **FormSubmit requires a one-time activation:** submit
+the form once yourself, then click the confirmation link it emails. Until that's
+done, nothing is delivered.
+
+Questions were chosen so each one changes a decision: Apple Watch ownership (the
+gating constraint), current app (converting non-meditators vs. taking share),
+whether they *already pay* (factual, unlike hypothetical willingness-to-pay),
+what blocks their practice (tests the "can't tell if it's working" thesis),
+early-access interest (recruits TestFlight testers), and one open-ended question
+whose answers become marketing copy.
+
+To change where responses go, edit `ENDPOINT` in `survey.html` — a new address
+needs its own activation submit.
 
 ## Wiring up the waitlist
 
