@@ -4,72 +4,241 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>808 — Meditation for manifestation</title>
-<meta name="description" content="808 is a guided-meditation app for iPhone and Apple Watch that shows you biometric evidence your practice landed.">
+<meta name="description" content="808 is a meditation app for iPhone and Apple Watch that shows you biometric evidence your practice landed. Join the waitlist.">
+
+<!-- Social preview (fill the absolute URL once hosted) -->
+<meta property="og:title" content="808 — Meditation for manifestation">
+<meta property="og:description" content="Evidence your practice landed. Measured on your wrist, shown after every session.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://meditate808.com">
+<meta name="twitter:card" content="summary_large_image">
+
 <style>
-  :root { --bg:#0d0d0f; --bg2:#17171b; --text:#e8e6e0; --muted:#9a968c; --gold:#d9b25f; }
+  :root {
+    --bg:#0d0d0f; --bg2:#17171b; --line:#24242a;
+    --text:#e8e6e0; --muted:#9a968c; --gold:#d9b25f; --gold-dim:#8a6f39;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--text);
-    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--text);
+    font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
   a { color:var(--gold); text-decoration:none; }
   a:hover { text-decoration:underline; }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header { text-align:center; padding:96px 0 64px; }
-  .logo { font-size:64px; font-weight:800; letter-spacing:-2px; color:var(--gold); }
-  .tagline { font-size:24px; font-weight:600; margin:18px 0 8px; }
-  .sub { color:var(--muted); font-size:17px; max-width:520px; margin:0 auto; }
-  section { padding:40px 0; border-top:1px solid #24242a; }
-  h2 { font-size:20px; margin:0 0 14px; }
-  .signals { list-style:none; padding:0; margin:0; display:grid; gap:14px; }
-  .signals li { background:var(--bg2); border-radius:12px; padding:16px 18px; }
-  .signals b { color:var(--gold); }
+  .wrap { max-width:720px; margin:0 auto; padding:0 24px; }
+
+  /* ---------- Hero ---------- */
+  header { text-align:center; padding:80px 0 56px; }
+  .mark { width:96px; height:96px; margin:0 auto 20px; display:block; }
+  /* stroke-width 13.3 = 0.026 × 512, matching LogoMark's ratio in the app */
+  .mark ellipse, .mark circle { fill:none; stroke:var(--gold); stroke-width:13.3; }
+  .wordmark {
+    font-size:56px; font-weight:800; letter-spacing:-1.5px; color:var(--gold);
+    line-height:1; margin:0 0 18px;
+  }
+  h1 {
+    font-size:30px; font-weight:700; line-height:1.25; margin:0 0 14px;
+    letter-spacing:-0.4px;
+  }
+  .sub { color:var(--muted); font-size:17px; max-width:500px; margin:0 auto; }
+
+  /* ---------- Waitlist form ---------- */
+  .signup { margin:34px auto 0; max-width:440px; }
+  .row { display:flex; gap:10px; }
+  input[type=email] {
+    flex:1; min-width:0; padding:15px 16px; font-size:16px;
+    color:var(--text); background:var(--bg2);
+    border:1px solid var(--line); border-radius:12px;
+  }
+  input[type=email]::placeholder { color:#6f6b63; }
+  input[type=email]:focus { outline:none; border-color:var(--gold-dim); }
+  button {
+    padding:15px 22px; font-size:16px; font-weight:700; cursor:pointer;
+    color:#1a1408; background:var(--gold);
+    border:0; border-radius:12px; white-space:nowrap;
+    transition:opacity .15s ease;
+  }
+  button:hover { opacity:.9; }
+  button:disabled { opacity:.55; cursor:default; }
+  .check {
+    display:flex; align-items:flex-start; gap:9px;
+    margin-top:14px; font-size:14px; color:var(--muted); text-align:left;
+  }
+  .check input { margin:3px 0 0; accent-color:var(--gold); flex:none; }
+  .fineprint { margin-top:12px; font-size:13px; color:#6f6b63; }
+  .done {
+    display:none; padding:20px; text-align:center;
+    background:var(--bg2); border:1px solid var(--gold-dim); border-radius:14px;
+  }
+  .done b { color:var(--gold); }
+
+  /* ---------- Sections ---------- */
+  section { padding:44px 0; border-top:1px solid var(--line); }
+  h2 { font-size:21px; margin:0 0 14px; letter-spacing:-0.2px; }
   .muted { color:var(--muted); }
-  footer { text-align:center; color:var(--muted); font-size:14px; padding:48px 0; border-top:1px solid #24242a; }
+  .signals { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+  .signals li {
+    background:var(--bg2); border-radius:14px; padding:16px 18px;
+    border:1px solid var(--line);
+  }
+  .signals b { color:var(--gold); }
+  .note { font-size:14px; color:#6f6b63; margin-top:18px; }
+  .req {
+    display:inline-block; margin-top:20px; padding:10px 14px;
+    font-size:14px; color:var(--muted);
+    background:var(--bg2); border:1px solid var(--line); border-radius:10px;
+  }
+
+  footer {
+    text-align:center; color:var(--muted); font-size:14px;
+    padding:44px 0; border-top:1px solid var(--line);
+  }
   footer a { margin:0 10px; }
+  footer p { margin:16px 0 0; font-size:13px; color:#6f6b63; }
+
+  @media (max-width:520px) {
+    header { padding:56px 0 40px; }
+    .wordmark { font-size:46px; }
+    h1 { font-size:25px; }
+    .row { flex-direction:column; }
+    button { width:100%; }
+  }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="logo">808</div>
-      <div class="tagline">Meditation for manifestation.</div>
-      <p class="sub">A guided-meditation app for iPhone &amp; Apple Watch that shows you
-        real biometric evidence your practice landed — measured on your wrist, shown after.</p>
-    </header>
+<div class="wrap">
 
-    <section>
-      <h2>Most people meditate blind.</h2>
-      <p class="muted">You close your eyes, follow your breath, and afterward wonder the same
-        thing every time: <em>was that working?</em> 808 makes the invisible visible. While you
-        meditate, your Apple Watch measures how your body responds — and afterward shows you the
-        evidence, tracked session after session.</p>
-    </section>
+  <header>
+    <!-- The 808 mark: four round lobes crossing a center ring (matches the app icon). -->
+    <svg class="mark" viewBox="0 0 512 512" aria-label="808" role="img">
+      <ellipse cx="256" cy="190" rx="63" ry="125"/>
+      <ellipse cx="256" cy="322" rx="63" ry="125"/>
+      <ellipse cx="190" cy="256" rx="125" ry="63"/>
+      <ellipse cx="322" cy="256" rx="125" ry="63"/>
+      <circle cx="256" cy="256" r="67"/>
+    </svg>
 
-    <section>
-      <h2>Three signals, measured on your wrist</h2>
-      <ul class="signals">
-        <li><b>Stillness</b> — how deeply your body settled.</li>
-        <li><b>Heart rate</b> — the downward drift as you relax.</li>
-        <li><b>Belly breathing</b> — your breath slowing toward resonance (~6/min), recovered
-          directly from motion.</li>
-      </ul>
-      <p class="muted" style="margin-top:16px;font-size:14px;">808 is a wellness tool, not a
-        medical device, and doesn't provide medical advice.</p>
-    </section>
+    <div class="wordmark">808</div>
+    <h1>Meditation for manifestation.</h1>
+    <p class="sub">
+      Most people meditate blind. 808 uses your Apple Watch to show you
+      real evidence your practice landed — after the session, never during.
+    </p>
 
-    <section>
-      <h2>Support</h2>
-      <p class="muted">Questions, feedback, or trouble? Email
-        <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a> and we'll get back to you.</p>
-    </section>
-
-    <footer>
-      <div>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="mailto:[CONTACT EMAIL]">Support</a>
+    <!-- ============================================================
+         WAITLIST FORM
+         Set FORM_ENDPOINT below to the URL from your email provider.
+         Until then the form shows the success state without sending.
+         ============================================================ -->
+    <form class="signup" id="waitlist" novalidate>
+      <div class="row">
+        <input type="email" id="email" name="email" required
+               autocomplete="email" placeholder="you@email.com" aria-label="Email address">
+        <button type="submit" id="submit">Join the waitlist</button>
       </div>
-      <p>© [YEAR] [LEGAL ENTITY NAME]. All rights reserved.</p>
-    </footer>
-  </div>
+      <label class="check">
+        <input type="checkbox" id="watch" name="has_watch" value="yes">
+        <span>I have an Apple Watch (808 measures your session on the Watch)</span>
+      </label>
+      <p class="fineprint">Early access when we launch. No spam, unsubscribe anytime.</p>
+    </form>
+
+    <div class="done" id="done">
+      <b>You're on the list.</b>
+      <p class="muted" style="margin:8px 0 0;font-size:15px;">
+        We'll email you the moment 808 goes live.
+      </p>
+    </div>
+  </header>
+
+  <section>
+    <h2>Was that even working?</h2>
+    <p class="muted">
+      It's the question every meditation ends with — and the reason most people quit.
+      With no way to see what happened inside, practice becomes an act of faith, and
+      faith is easy to lose. So we made the invisible visible: while you meditate,
+      your Watch quietly measures how your body responds, and afterward 808 shows you
+      exactly what changed.
+    </p>
+  </section>
+
+  <section>
+    <h2>Three signals, measured on your wrist</h2>
+    <ul class="signals">
+      <li><b>Stillness</b> — how deeply your body settled.</li>
+      <li><b>Heart rate</b> — the downward drift as you relax.</li>
+      <li><b>Belly breathing</b> — your breath slowing toward resonance (~6/min),
+        recovered directly from the rise and fall of your wrist.</li>
+    </ul>
+    <span class="req">Requires iPhone + Apple Watch</span>
+    <p class="note">
+      808 is a wellness tool, not a medical device, and doesn't diagnose, treat, or
+      provide medical advice. Your session results are computed on your devices and
+      stay there.
+    </p>
+  </section>
+
+  <section id="support">
+    <h2>Support</h2>
+    <p class="muted">
+      Questions, feedback, or trouble? Email
+      <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a> and we'll get back to you.
+    </p>
+  </section>
+
+  <footer>
+    <div>
+      <a href="privacy.html">Privacy Policy</a>
+      <a href="terms.html">Terms of Service</a>
+      <a href="mailto:[CONTACT EMAIL]">Support</a>
+    </div>
+    <p>© [YEAR] LockOut LLC. All rights reserved.</p>
+  </footer>
+
+</div>
+
+<script>
+  // Paste the POST endpoint from your email provider here (beehiiv / Mailchimp /
+  // Tally). Leave empty to preview the flow without sending anywhere.
+  var FORM_ENDPOINT = "";
+
+  var form = document.getElementById('waitlist');
+  var done = document.getElementById('done');
+  var btn  = document.getElementById('submit');
+  var emailField = document.getElementById('email');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = emailField.value.trim();
+    if (!email || email.indexOf('@') < 1 || email.lastIndexOf('.') < email.indexOf('@')) {
+      emailField.focus();
+      emailField.style.borderColor = '#b4553f';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Joining…';
+
+    function succeed() {
+      form.style.display = 'none';
+      done.style.display = 'block';
+    }
+
+    if (!FORM_ENDPOINT) { succeed(); return; }
+
+    var body = new FormData();
+    body.append('email', email);
+    body.append('has_watch', document.getElementById('watch').checked ? 'yes' : 'no');
+
+    fetch(FORM_ENDPOINT, { method: 'POST', body: body, mode: 'no-cors' })
+      .then(succeed)
+      .catch(function () {
+        // Requests can appear to fail under no-cors even when they land;
+        // treat it as success rather than telling the user to retry.
+        succeed();
+      });
+  });
+</script>
 </body>
 </html>
