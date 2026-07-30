@@ -1,13 +1,8 @@
 # Privacy Policy
 
-> **DRAFT — review with legal counsel before publishing.** Bracketed `[…]`
-> fields must be filled in (legal entity name, contact email, effective date,
-> governing state, hosted URL). This draft reflects 808's actual data practices
-> as built; keep it accurate if those practices change.
+**Last updated: July 30, 2026**
 
-**Last updated: [DATE]**
-
-This Privacy Policy explains how **[LEGAL ENTITY NAME] ("we," "us," "808")**
+This Privacy Policy explains how **LockOut LLC ("we," "us," "808")**
 handles information in the **808** app for iPhone and Apple Watch.
 
 ## The short version
@@ -149,7 +144,7 @@ and applies to all users.
 - **Your rights:** view your results in the app at any time; delete them by
   deleting individual data via **Settings → Delete Account** (which removes all
   app data) or by deleting the app from the device holding the results. For
-  questions or requests, contact us at **[CONTACT EMAIL]**.
+  questions or requests, contact us at **support@meditate808.com**.
 
 ## Children
 
@@ -171,4 +166,4 @@ the revised policy.
 
 ## Contact
 
-Questions about this policy or your data: **[CONTACT EMAIL]**.
+Questions about this policy or your data: **support@meditate808.com**.

@@ -1,14 +1,9 @@
 # Terms of Service
 
-> **DRAFT — review with legal counsel before publishing.** Bracketed `[…]` fields
-> must be filled in (legal entity name, contact email, effective date, governing
-> state). These terms double as the End User License Agreement (EULA) for the App
-> Store, so the Apple-required section at the end must stay.
-
-**Last updated: [DATE]**
+**Last updated: July 30, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
-**[LEGAL ENTITY NAME] ("we," "us," "808")** governing your use of the **808** app
+**LockOut LLC ("we," "us," "808")** governing your use of the **808** app
 for iPhone and Apple Watch (the "App"). By downloading or using the App, you agree
 to these Terms. If you don't agree, don't use the App.
 
@@ -119,7 +114,7 @@ changes, provide notice in the App. Continued use means you accept the changes.
 **Please read this section carefully. It affects your legal rights.**
 
 **Informal resolution first.** Before filing any claim, you agree to contact us
-at **[CONTACT EMAIL]** with a written description of the dispute and give us
+at **support@meditate808.com** with a written description of the dispute and give us
 **60 days** to resolve it informally. Most concerns can be resolved this way.
 
 **Binding arbitration.** If we cannot resolve a dispute informally, you and we
@@ -145,13 +140,13 @@ claim (and only that claim) shall proceed in court, and the waiver shall remain
 in effect for all other claims.
 
 **30-day opt-out.** You may opt out of this arbitration agreement by emailing
-**[CONTACT EMAIL]** within **30 days** of first accepting these Terms, stating
+**support@meditate808.com** within **30 days** of first accepting these Terms, stating
 your name and that you opt out of arbitration. Opting out does not affect any
 other part of these Terms.
 
 ## 15. Governing law
 
-These Terms are governed by the laws of the State of **[GOVERNING STATE]**, without
+These Terms are governed by the laws of the State of **Michigan**, without
 regard to conflict-of-laws rules. *(Set this once the entity's home state is
 decided.)*
 
@@ -181,4 +176,4 @@ licensed-application end user license agreement for the App:
 
 ## 17. Contact
 
-Questions about these Terms: **[CONTACT EMAIL]**.
+Questions about these Terms: **support@meditate808.com**.
