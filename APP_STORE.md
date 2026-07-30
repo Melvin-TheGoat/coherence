@@ -76,11 +76,13 @@ Primary: **Health & Fitness** · Secondary: **Lifestyle**
 
 *(98 chars)*
 
-## URLs
+## URLs (live — Cloudflare Pages on meditate808.com)
 
-- Support URL: `[https://…/support — REQUIRED, reviewers visit it]`
-- Marketing URL: `[https://… — the landing page]`
-- Privacy Policy URL: `[https://…/privacy — REQUIRED for HealthKit apps]`
+- Support URL: `https://meditate808.com/#support`
+- Marketing URL: `https://meditate808.com`
+- Privacy Policy URL: `https://meditate808.com/privacy`
+- Terms: `https://meditate808.com/terms` · Waitlist survey: `https://meditate808.com/survey`
+- Contact: `support@meditate808.com` (Cloudflare Email Routing → Aziz's inbox)
 
 ## Age rating
 
