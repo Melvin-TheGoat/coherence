@@ -62,7 +62,7 @@ function doPost(e) {
 
     sheet.appendRow(HEADERS.map(function (key) {
       if (key === 'timestamp') return new Date();
-      return data[key] != null ? String(data[key]) : '';
+      return data[key] != null ? clean(data[key]) : '';
     }));
 
     return json({ ok: true });
@@ -108,20 +108,28 @@ function targetSheet() {
 }
 
 /**
- * Visiting the URL in a browser sets everything up and reports where the
- * responses live, so the whole path is verified before any are collected.
+ * Defense against spreadsheet formula injection: a submitted value starting
+ * with =, +, -, or @ would otherwise be executed by Sheets as a live formula
+ * on append (e.g. IMPORTXML exfiltrating sheet contents). A leading apostrophe
+ * forces Sheets to store it as plain text. Also caps length so a hostile
+ * client can't dump megabytes into a cell.
+ */
+function clean(v) {
+  var s = String(v).slice(0, 2000);
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return s;
+}
+
+/**
+ * Health check only. Deliberately reveals nothing: this URL is public in the
+ * page source, so the sheet's URL/name and the running response count don't
+ * belong in the reply. (During setup it printed the sheet URL once — find the
+ * sheet in Google Drive as "808 questionnaire".)
  */
 function doGet() {
   try {
-    var sheet = targetSheet();
-    var ss = sheet.getParent();
-    return json({
-      ok: true,
-      note: '808 questionnaire endpoint is live',
-      spreadsheet: ss.getName(),
-      url: ss.getUrl(),
-      responses: Math.max(0, sheet.getLastRow() - 1)
-    });
+    targetSheet();                     // still exercises the whole path
+    return json({ ok: true });
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }

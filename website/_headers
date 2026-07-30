@@ -1,0 +1,7 @@
+# Security headers for Cloudflare Pages (nosniff and referrer-policy are
+# already set by Pages defaults; these add what's missing).
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
