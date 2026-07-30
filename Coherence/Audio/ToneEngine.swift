@@ -89,6 +89,17 @@ enum GuidedCatalog {
     }
 }
 
+/// Resolves a stored `Session.frequencyID` (any preset family) to its human
+/// title, for history/results display.
+enum SoundCatalog {
+    static func title(for id: String?) -> String? {
+        guard let id else { return nil }
+        return FrequencyCatalog.preset(id: id)?.title
+            ?? NatureCatalog.preset(id: id)?.title
+            ?? GuidedCatalog.preset(id: id)?.title
+    }
+}
+
 /// Real-time tone synthesizer (phone-side — audio is a phone concern; the Watch only
 /// measures). Builds a warm detuned pad (fundamental + sub-octave + octave + unison
 /// chorus voices, each drifting on its own slow LFO), then runs it through a

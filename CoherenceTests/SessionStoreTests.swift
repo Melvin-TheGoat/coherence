@@ -70,6 +70,15 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertEqual(stats.stillnessMethod, "breathingExcluded")
     }
 
+    /// The chosen sound preset is stored on the Session (nil = silence).
+    func test_persistStoresFrequencyID() {
+        let ctx = freshContext()
+        let withSound = SessionStore.persist(payload(), frequencyID: "guided.identity", in: ctx)
+        XCTAssertEqual(withSound?.frequencyID, "guided.identity")
+        let silent = SessionStore.persist(payload(), in: ctx)
+        XCTAssertNil(silent?.frequencyID)
+    }
+
     /// Persisting the same payload twice never creates a duplicate.
     func test_persistIsIdempotent() {
         let ctx = freshContext()

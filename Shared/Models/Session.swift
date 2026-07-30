@@ -12,6 +12,10 @@ final class Session {
     /// Opt-in belly-breathing posture (lie down, wrist on belly). Authoritative
     /// for which signals a reader expects and which stillness method was used.
     var bellyBreathing: Bool = false
+    /// Which sound preset played (a `FrequencyCatalog`/`NatureCatalog`/
+    /// `GuidedCatalog` id, e.g. "guided.identity"). nil = silence. `mode`
+    /// records the family; this records the specific preset.
+    var frequencyID: String?
     var startedAt: Date = Date()
     var durationSec: Int = 0
     var createdAt: Date = Date()
@@ -29,6 +33,7 @@ final class Session {
         trackID: UUID? = nil,
         mode: String = "silence",
         bellyBreathing: Bool = false,
+        frequencyID: String? = nil,
         startedAt: Date = Date(),
         durationSec: Int = 0,
         createdAt: Date = Date()
@@ -38,6 +43,7 @@ final class Session {
         self.trackID = trackID
         self.mode = mode
         self.bellyBreathing = bellyBreathing
+        self.frequencyID = frequencyID
         self.startedAt = startedAt
         self.durationSec = durationSec
         self.createdAt = createdAt
