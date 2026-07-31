@@ -11,4 +11,21 @@ enum WCKeys {
     /// button). Value is the session's UUID string, so a stale end can't stop a
     /// later session. The Watch still owns the authoritative finish + haptic.
     static let end = "end"
+    /// Watch → Phone: the session could not start. Value is a `StartFailure`
+    /// raw value, so the phone can show the right recovery screen instead of
+    /// leaving the user on a mid-session screen for a session that never began.
+    static let startFailure = "startFailure"
+}
+
+/// Why a session refused to start on the Watch. Sent to the phone so it can
+/// take down the mid-session screen and explain what to fix.
+enum StartFailure: String, Codable, Identifiable {
+    var id: String { rawValue }
+
+    /// Heart rate isn't readable — permission denied, or the Watch isn't worn.
+    /// HR is the signal we can't do without, so we stop rather than record a
+    /// session with a hole in it.
+    case heartRateUnavailable
+    /// The `.mindAndBody` workout couldn't be recorded (workout SHARE denied).
+    case workoutNotAuthorized
 }

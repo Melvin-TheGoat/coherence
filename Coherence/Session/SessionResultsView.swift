@@ -16,6 +16,9 @@ struct SessionResultsView: View {
     @State private var rating: Double = 5
     @State private var note: String = ""
     @State private var reflectionSaved = false
+    /// True while the note is being written. A saved note renders as read-only
+    /// flowing text until tapped.
+    @State private var isEditingNote = false
     @State private var streakDays = 0
     @State private var showShareSheet = false
 
@@ -213,13 +216,7 @@ struct SessionResultsView: View {
                 .tint(AppColor.accentGold)
                 .onChange(of: rating) { _, _ in reflectionSaved = false }
 
-            TextField("Add a note…", text: $note, axis: .vertical)
-                .lineLimit(2...4)
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(12)
-                .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 12))
-                .onChange(of: note) { _, _ in reflectionSaved = false }
+            noteSection
 
             Button(reflectionSaved ? "Saved ✓" : "Save reflection") { save() }
                 .buttonStyle(PrimaryButtonStyle())
@@ -229,9 +226,46 @@ struct SessionResultsView: View {
         .card()
     }
 
+    /// The note. Once written it reads as flowing full-width text — a post
+    /// caption, not a form field — so a long reflection is pleasant to read
+    /// rather than something you scroll through four lines at a time. Tapping
+    /// it returns to editing, where the field grows without limit.
+    @ViewBuilder
+    private var noteSection: some View {
+        if isEditingNote || note.isEmpty {
+            TextField("Add a note…", text: $note, axis: .vertical)
+                // Open-ended upper bound: the field grows with the note instead
+                // of capping and scrolling inside itself.
+                .lineLimit(3...)
+                .font(AppFont.note)
+                .foregroundStyle(AppColor.textPrimary)
+                .textInputAutocapitalization(.sentences)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 14))
+                .onChange(of: note) { _, _ in reflectionSaved = false }
+        } else {
+            Button {
+                isEditingNote = true
+            } label: {
+                Text(note)
+                    .font(AppFont.note)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .lineSpacing(3)
+                    .multilineTextAlignment(.leading)
+                    // No line cap and no inner scroll view — the whole note is
+                    // laid out, and the results screen scrolls as one page.
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     private func save() {
         SessionStore.saveReflection(sessionID: sessionID, rating: Int(rating), note: note, in: context)
         reflectionSaved = true
+        isEditingNote = false
     }
 
     // MARK: Data

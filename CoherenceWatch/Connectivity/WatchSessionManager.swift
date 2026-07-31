@@ -58,16 +58,41 @@ final class WatchSessionManager: NSObject, ObservableObject {
         params = p
         elapsed = 0
         statusMessage = "Params received — starting…"   // TEMP: prove params arrived
+
+        // Heart rate is the one signal every session depends on. If we can't
+        // read it, refuse now — a session that records stillness but no heart
+        // rate is a broken result, and the user should fix permissions instead
+        // of meditating for 25 minutes to find that out afterwards.
+        guard await HealthKitAuth.canReadHeartRate() else {
+            statusMessage = "Heart rate unavailable — check 808's Health permissions on iPhone."
+            report(.heartRateUnavailable)
+            params = nil
+            return
+        }
+
         let started = await workout.start(bellyBreathing: p.bellyBreathing)
         guard started else {
             // workout.start() sets its own failure message; surface it on Ready.
             statusMessage = workout.statusMessage ?? "Couldn't start (unknown)."
+            report(.workoutNotAuthorized)
             params = nil
             return
         }
         statusMessage = nil
         phase = .running
         startTimer(planned: p.plannedDurationSec)
+    }
+
+    /// Tells the phone the session never started, so it can drop its
+    /// mid-session screen and explain the fix. Sent over both channels — a
+    /// message if reachable now, queued user-info regardless.
+    private func report(_ failure: StartFailure) {
+        let wc = WCSession.default
+        let msg = [WCKeys.startFailure: failure.rawValue]
+        if wc.isReachable {
+            wc.sendMessage(msg, replyHandler: nil, errorHandler: nil)
+        }
+        wc.transferUserInfo(msg)
     }
 
     /// Ends the current session (Watch End button, or the timed countdown).

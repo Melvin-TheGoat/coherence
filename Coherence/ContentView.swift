@@ -52,6 +52,9 @@ struct ContentView: View {
                 let u = SessionStore.currentUser(in: context)
                 if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
             }
+            if ProcessInfo.processInfo.environment["PREVIEW_BLOCKED"] == "1" {
+                coordinator.startFailure = .heartRateUnavailable
+            }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", openSession == nil {
                 openSession = SessionRef(id: DemoData.seedResults(in: context))
             }
@@ -64,6 +67,10 @@ struct ContentView: View {
                               plannedDurationSec: session.plannedDurationSec) {
                 coordinator.endActiveSession()
             }
+        }
+        // The Watch refused to start — explain what to fix before anything else.
+        .fullScreenCover(item: $coordinator.startFailure) { failure in
+            PermissionBlockedView(failure: failure) { coordinator.startFailure = nil }
         }
         .sheet(isPresented: $showSetup) { SessionSetupView() }
         .sheet(isPresented: $showCalendar) { SessionHistoryView() }

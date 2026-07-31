@@ -44,10 +44,9 @@ struct SessionShareCard: View {
                 Spacer(minLength: 44)
 
                 // Brand
-                // Finer than the app's 0.026 default: the card renders at 3×
-                // (1080×1920), so the mark carries a hairline cleanly here where
-                // the 48pt header could not.
-                LogoMark(lineWidthRatio: 0.020)
+                // Default weight — the mark reads the same here as in the header
+                // and the app icon. Don't re-specify a ratio; it drifts.
+                LogoMark()
                     .frame(width: 54, height: 54)
                 Text("808")
                     .font(.system(size: 30, weight: .bold, design: .rounded))

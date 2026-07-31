@@ -26,7 +26,7 @@ enum DemoData {
         context.insert(session)
         context.insert(stats)
         context.insert(SessionReflection(sessionID: session.id, rating: 8,
-                                         note: "Felt genuinely settled by the end."))
+                                         note: "Felt genuinely settled by the end. The first ten minutes my mind was everywhere — kept planning tomorrow instead of being here. Then somewhere around the halfway mark it went quiet on its own, and I stopped noticing the timer. Getting up afterwards felt like surfacing."))
         try? context.save()
         return session.id
     }

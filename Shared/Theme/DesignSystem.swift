@@ -17,6 +17,9 @@ enum AppFont {
     static let headline = Font.system(.headline, design: .rounded)
     static let body = Font.system(.body)
     static let callout = Font.system(.callout)
+    /// Reading size for user-written text (session notes, and later, comments) —
+    /// a step down from callout so a long note stays comfortable at full width.
+    static let note = Font.system(.subheadline)
     static let caption = Font.system(.caption)
     static let statNumber = Font.system(size: 40, weight: .bold, design: .rounded)
 }

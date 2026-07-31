@@ -55,7 +55,7 @@ final class WorkoutManager: NSObject, ObservableObject {
 
         guard isWorkoutAuthorized else {
             log.error("workoutType share not authorized")
-            statusMessage = "Enable Workouts for Coherence: iPhone Health app → Sharing → Apps → Coherence."
+            statusMessage = "Enable Workouts for 808: iPhone Health app → Sharing → Apps → 808."
             return false
         }
 

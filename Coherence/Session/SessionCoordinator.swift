@@ -26,6 +26,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// payload lands. Every mode gets one, belly or not, guided or silent.
     @Published private(set) var active: ActiveSession?
 
+    /// Set when the Watch refuses to start a session — drives the blocking
+    /// explanation screen. Cleared when the user dismisses it.
+    @Published var startFailure: StartFailure?
+
     /// What the phone needs to render the mid-session screen.
     struct ActiveSession: Identifiable, Equatable {
         let id: UUID
@@ -165,6 +169,16 @@ final class SessionCoordinator: NSObject, ObservableObject {
         status = "Ending on your Watch…"
     }
 
+    /// The Watch refused to start. Tear down the mid-session screen and audio —
+    /// there is no session — and surface what to fix.
+    private func sessionFailedToStart(_ failure: StartFailure) {
+        stopAudio()
+        active = nil
+        startFailure = failure
+        status = "Couldn't start: \(failure.rawValue)"
+        log.error("session refused to start: \(failure.rawValue)")
+    }
+
     /// Stops live-session audio (called when the session ends).
     private func stopAudio() {
         audioStopTask?.cancel()
@@ -227,8 +241,24 @@ extension SessionCoordinator: WCSessionDelegate {
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
-        guard let data = userInfo[WCKeys.payload] as? Data,
-              let payload = try? JSONDecoder().decode(SessionPayload.self, from: data) else { return }
-        Task { @MainActor in self.persist(payload) }
+        handle(userInfo)
+    }
+
+    nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
+        handle(message)
+    }
+
+    /// Both delivery channels carry the same payloads — a finished session, or
+    /// a refusal to start.
+    private nonisolated func handle(_ dict: [String: Any]) {
+        if let data = dict[WCKeys.payload] as? Data,
+           let payload = try? JSONDecoder().decode(SessionPayload.self, from: data) {
+            Task { @MainActor in self.persist(payload) }
+            return
+        }
+        if let raw = dict[WCKeys.startFailure] as? String,
+           let failure = StartFailure(rawValue: raw) {
+            Task { @MainActor in self.sessionFailedToStart(failure) }
+        }
     }
 }
