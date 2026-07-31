@@ -3,73 +3,362 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>808 — Meditation for manifestation</title>
-<meta name="description" content="808 is a guided-meditation app for iPhone and Apple Watch that shows you biometric evidence your practice landed.">
+<title>808 — Meditation for identity change</title>
+<meta name="description" content="808 is a meditation app for identity change: a guided journey to become the person who brings your goals to life, with your Apple Watch showing you it landed.">
+
+<meta property="og:title" content="808">
+<meta property="og:description" content="Meditation for identity change. Become the one who follows through, and let your Apple Watch show you it landed.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://meditate808.com">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,450..600;1,9..144,450..600&display=swap" rel="stylesheet">
+
 <style>
-  :root { --bg:#0d0d0f; --bg2:#17171b; --text:#e8e6e0; --muted:#9a968c; --gold:#d9b25f; }
+  :root {
+    --bg:#0d0d0f; --bg2:#17171b; --line:#26262c;
+    --text:#e8e6e0; --muted:#9a968c; --dim:#6f6b63;
+    --gold:#d9b25f; --gold-dim:#8a6f39;
+  }
   * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--text);
-    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+  html { -webkit-text-size-adjust:100%; }
+  body {
+    margin:0; background:var(--bg); color:var(--text);
+    font:17px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
   a { color:var(--gold); text-decoration:none; }
   a:hover { text-decoration:underline; }
-  .wrap { max-width:760px; margin:0 auto; padding:0 24px; }
-  header { text-align:center; padding:96px 0 64px; }
-  .logo { font-size:64px; font-weight:800; letter-spacing:-2px; color:var(--gold); }
-  .tagline { font-size:24px; font-weight:600; margin:18px 0 8px; }
-  .sub { color:var(--muted); font-size:17px; max-width:520px; margin:0 auto; }
-  section { padding:40px 0; border-top:1px solid #24242a; }
-  h2 { font-size:20px; margin:0 0 14px; }
-  .signals { list-style:none; padding:0; margin:0; display:grid; gap:14px; }
-  .signals li { background:var(--bg2); border-radius:12px; padding:16px 18px; }
-  .signals b { color:var(--gold); }
+  .wrap { max-width:620px; margin:0 auto; padding:0 24px; }
+
+  /* nav */
+  nav { display:flex; align-items:center; gap:10px; padding:28px 0 0; }
+  .mark { width:30px; height:30px; }
+  .mark ellipse, .mark circle { fill:none; stroke:var(--gold); stroke-width:22; }
+  nav b { color:var(--gold); font-size:19px; letter-spacing:0.5px; }
+
+  /* hero */
+  header { padding:76px 0 8px; position:relative; }
+  .glow {
+    position:absolute; top:-40px; left:-120px; width:420px; height:420px;
+    background:radial-gradient(circle, rgba(217,178,95,0.13), transparent 65%);
+    pointer-events:none;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .glow { animation:breathe 4.2s ease-in-out infinite alternate; }
+    @keyframes breathe {
+      from { transform:scale(0.92); opacity:.7; }
+      to   { transform:scale(1.08); opacity:1; }
+    }
+    .rise { opacity:0; transform:translateY(10px);
+      animation:rise .7s ease-out forwards; }
+    .rise.d1 { animation-delay:.08s; } .rise.d2 { animation-delay:.2s; }
+    .rise.d3 { animation-delay:.34s; }
+    @keyframes rise { to { opacity:1; transform:none; } }
+  }
+  h1 {
+    font-family:"Fraunces", ui-serif, Georgia, serif;
+    font-size:46px; line-height:1.1; font-weight:550; letter-spacing:-0.4px;
+    margin:0 0 20px; text-wrap:balance; position:relative;
+  }
+  h1 em { color:var(--gold); font-style:italic; font-weight:500; }
+  .lede { font-size:19px; color:var(--muted); margin:0 0 34px; max-width:56ch;
+    position:relative; }
+  .lede b { color:var(--text); font-weight:600; }
+
+  /* waitlist */
+  .signup { max-width:460px; }
+  .row { display:flex; gap:10px; }
+  input[type=email] {
+    flex:1; min-width:0; padding:14px 15px; font-size:16px;
+    color:var(--text); background:var(--bg2);
+    border:1px solid var(--line); border-radius:10px;
+  }
+  input[type=email]::placeholder { color:var(--dim); }
+  input[type=email]:focus { outline:none; border-color:var(--gold-dim); }
+  button {
+    padding:14px 20px; font-size:16px; font-weight:700; cursor:pointer;
+    color:#1a1408; background:var(--gold); border:0; border-radius:10px;
+    white-space:nowrap;
+  }
+  button:hover { opacity:.92; }
+  button:disabled { opacity:.55; cursor:default; }
+  button:focus-visible, a:focus-visible, input:focus-visible, .check input:focus-visible {
+    outline:2px solid var(--gold); outline-offset:2px;
+  }
+  .check {
+    display:flex; align-items:flex-start; gap:9px;
+    margin-top:13px; font-size:14.5px; color:var(--muted);
+  }
+  .check input { margin:3px 0 0; accent-color:var(--gold); flex:none; }
+  .fineprint { margin-top:10px; font-size:13px; color:var(--dim); }
+  .done {
+    display:none; max-width:460px; padding:18px;
+    background:var(--bg2); border:1px solid var(--gold-dim); border-radius:12px;
+  }
+  .done b { color:var(--gold); }
+  .done p { margin:6px 0 0; color:var(--muted); font-size:15px; }
+
+  /* sections */
+  section { padding:56px 0 0; }
+  h2 {
+    font-family:"Fraunces", ui-serif, Georgia, serif;
+    font-size:27px; font-weight:550; letter-spacing:-0.2px; margin:0 0 14px;
+    text-wrap:balance;
+  }
+  p { margin:0 0 18px; }
   .muted { color:var(--muted); }
-  footer { text-align:center; color:var(--muted); font-size:14px; padding:48px 0; border-top:1px solid #24242a; }
-  footer a { margin:0 10px; }
+
+  /* the results mock */
+  .evidence {
+    display:flex; gap:26px; align-items:center;
+    background:var(--bg2); border:1px solid var(--line); border-radius:18px;
+    padding:26px; margin:30px 0 10px; max-width:520px;
+  }
+  .ring { flex:none; width:110px; height:110px; position:relative; }
+  .ring svg { width:110px; height:110px; transform:rotate(-90deg); }
+  .ring .track { fill:none; stroke:#26262c; stroke-width:9; }
+  .ring .arc { fill:none; stroke:var(--gold); stroke-width:9; stroke-linecap:round;
+    stroke-dasharray:264; stroke-dashoffset:50; }
+  .ring .num {
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+  }
+  .ring .num b { font-size:30px; line-height:1; }
+  .ring .num span { font-size:7.5px; letter-spacing:0.6px; color:var(--muted); margin-top:3px; }
+  .stats { display:grid; gap:10px; font-size:15px; font-variant-numeric:tabular-nums; }
+  .stats div { display:flex; gap:8px; align-items:baseline; }
+  .stats b { color:var(--gold); font-weight:600; min-width:104px; }
+  .cap { font-size:13px; color:var(--dim); margin:8px 0 0; }
+
+  .req {
+    display:inline-block; margin:14px 0 0; padding:8px 13px;
+    font-size:14px; color:var(--muted);
+    border:1px solid var(--line); border-radius:9px;
+  }
+  .note { font-size:13.5px; color:var(--dim); margin-top:16px; }
+
+  /* founders note */
+  .letter {
+    border-left:3px solid var(--gold); padding:4px 0 4px 22px; margin-top:8px;
+  }
+  .letter p { color:var(--muted); }
+  .sign { font-family:ui-serif, Georgia, serif; font-style:italic; font-size:18px;
+    color:var(--text); }
+
+  footer {
+    margin-top:72px; padding:30px 0 44px; border-top:1px solid var(--line);
+    font-size:14px; color:var(--muted);
+    display:flex; flex-wrap:wrap; gap:8px 18px; align-items:baseline;
+  }
+  footer .spacer { flex:1; }
+  footer small { color:var(--dim); font-size:13px; }
+
+  @media (max-width:540px) {
+    header { padding:52px 0 6px; }
+    h1 { font-size:34px; }
+    .row { flex-direction:column; }
+    button { width:100%; }
+    .evidence { flex-direction:column; align-items:flex-start; gap:18px; }
+  }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div class="logo">808</div>
-      <div class="tagline">Meditation for manifestation.</div>
-      <p class="sub">A guided-meditation app for iPhone &amp; Apple Watch that shows you
-        real biometric evidence your practice landed — measured on your wrist, shown after.</p>
-    </header>
+<div class="wrap">
 
-    <section>
-      <h2>Most people meditate blind.</h2>
-      <p class="muted">You close your eyes, follow your breath, and afterward wonder the same
-        thing every time: <em>was that working?</em> 808 makes the invisible visible. While you
-        meditate, your Apple Watch measures how your body responds — and afterward shows you the
-        evidence, tracked session after session.</p>
-    </section>
+  <nav>
+    <svg class="mark" viewBox="0 0 512 512" aria-label="808 mark" role="img">
+      <ellipse cx="256" cy="190" rx="63" ry="125"/>
+      <ellipse cx="256" cy="322" rx="63" ry="125"/>
+      <ellipse cx="190" cy="256" rx="125" ry="63"/>
+      <ellipse cx="322" cy="256" rx="125" ry="63"/>
+      <circle cx="256" cy="256" r="67"/>
+    </svg>
+    <b>808</b>
+  </nav>
 
-    <section>
-      <h2>Three signals, measured on your wrist</h2>
-      <ul class="signals">
-        <li><b>Stillness</b> — how deeply your body settled.</li>
-        <li><b>Heart rate</b> — the downward drift as you relax.</li>
-        <li><b>Belly breathing</b> — your breath slowing toward resonance (~6/min), recovered
-          directly from motion.</li>
-      </ul>
-      <p class="muted" style="margin-top:16px;font-size:14px;">808 is a wellness tool, not a
-        medical device, and doesn't provide medical advice.</p>
-    </section>
+  <header>
+    <div class="glow" aria-hidden="true"></div>
+    <h1 class="rise">Become the one who <em>follows through</em>.</h1>
+    <p class="lede rise d1">
+      You don't miss your goals because you're lazy. You miss them because
+      underneath, you're still the person who misses them. <b>808 is a meditation
+      app for changing that.</b> It rehearses you as the version of yourself who
+      actually does the thing, and your Apple Watch measures each session so
+      you're not just hoping it works.
+    </p>
 
-    <section>
-      <h2>Support</h2>
-      <p class="muted">Questions, feedback, or trouble? Email
-        <a href="mailto:[CONTACT EMAIL]">[CONTACT EMAIL]</a> and we'll get back to you.</p>
-    </section>
-
-    <footer>
-      <div>
-        <a href="privacy.html">Privacy Policy</a>
-        <a href="terms.html">Terms of Service</a>
-        <a href="mailto:[CONTACT EMAIL]">Support</a>
+    <form class="signup rise d2" id="waitlist" novalidate>
+      <div class="row">
+        <input type="email" id="email" name="email" required
+               autocomplete="email" placeholder="you@email.com" aria-label="Email address">
+        <button type="submit" id="submit">Join the waitlist</button>
       </div>
-      <p>© [YEAR] [LEGAL ENTITY NAME]. All rights reserved.</p>
-    </footer>
-  </div>
+      <label class="check">
+        <input type="checkbox" id="watch" name="has_watch" value="yes">
+        <span>I have an Apple Watch (it does the measuring)</span>
+      </label>
+      <p class="fineprint">We'll email you at launch. Maybe once before that. That's it.</p>
+    </form>
+
+    <div class="done" id="done">
+      <b>You're in.</b>
+      <p>We'll email you when 808 is ready.</p>
+    </div>
+  </header>
+
+  <section>
+    <h2>The meditation</h2>
+    <p class="muted">
+      The main event is a 25 minute guided session called
+      <b style="color:var(--text)">The One Who Follows Through</b>. It spends the
+      first stretch bringing you into deep relaxation, the state where your brain
+      shifts toward slower theta waves and the subconscious becomes directly
+      reachable. That's the door. Once you're through it, the meditation has you
+      live as the version of yourself who brings your goals to life, so the new
+      identity embeds while your mind is actually open to it. Not picturing that
+      person from the outside. Being them.
+    </p>
+    <p class="muted">
+      There are also frequency tones, nature sounds, and plain silence, if guided
+      isn't your thing that day.
+    </p>
+  </section>
+
+  <section>
+    <h2>The proof</h2>
+    <p class="muted">
+      Most meditation apps ask you to take their word that anything happened.
+      This one doesn't. During a session the Watch tracks how still you got and
+      how your heart rate drifted. Lie down with the Watch resting on your belly
+      and it reads your actual breathing too. Nothing is shown while you meditate.
+      When you open your eyes, you get this:
+    </p>
+
+    <div class="evidence" aria-label="Example of a session result">
+      <div class="ring">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle class="track" cx="50" cy="50" r="42"/>
+          <circle class="arc" cx="50" cy="50" r="42"/>
+        </svg>
+        <div class="num"><b>81</b><span>PRACTICE SCORE</span></div>
+      </div>
+      <div class="stats">
+        <div><b>Heart rate</b><span class="muted">drifted down 9 bpm</span></div>
+        <div><b>Stillness</b><span class="muted">86%, your best this week</span></div>
+        <div><b>Breathing</b><span class="muted">5.8 per minute, near resonance</span></div>
+      </div>
+    </div>
+    <p class="cap">A session from testing. The breathing number comes from lying
+      down with the Watch resting on your belly, and it's optional.</p>
+    <p class="muted" style="margin-top:18px">
+      Why these three numbers? Because they're the body's side of a theta state.
+      In the deep meditative states where EEG studies find elevated theta
+      activity, the body goes still, heart rate drifts down, and breathing
+      settles toward six breaths a minute. We can't see brain waves from a
+      wrist, so we measure everything your body does on the way there.
+    </p>
+
+    <span class="req">Works with iPhone + Apple Watch</span>
+    <p class="note">
+      808 is a wellness tool, not a medical device. It doesn't diagnose or treat
+      anything, and your measurements never leave your own devices.
+    </p>
+  </section>
+
+  <section>
+    <h2>Who's making this</h2>
+    <div class="letter">
+      <p>
+        We're Aziz and Melvin, two friends who got into meditation to change how
+        we operate. Honestly, most sessions we couldn't tell if anything
+        happened. Then we realized the watch we were already wearing could
+        answer that.
+      </p>
+      <p>
+        Since then it's been months of building and testing on ourselves,
+        including an embarrassing amount of time lying on the floor teaching the
+        app to read a breath through the Watch.
+      </p>
+      <p>
+        No ads, and your health measurements stay on your phone. If you want a
+        say in what we build first, the <a href="survey.html">questionnaire</a>
+        takes about a minute.
+      </p>
+      <p class="sign">Aziz &amp; Melvin</p>
+    </div>
+  </section>
+
+  <section id="support">
+    <h2>Questions</h2>
+    <p class="muted">
+      Email <a href="mailto:support@meditate808.com">support@meditate808.com</a>.
+      It goes straight to our inboxes.
+    </p>
+  </section>
+
+  <footer>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+    <a href="survey.html">Questionnaire</a>
+    <span class="spacer"></span>
+    <small>© 2026 LockOut LLC</small>
+  </footer>
+
+</div>
+
+<script>
+  // Waitlist entries go into the same private Google Sheet as the questionnaire
+  // (see survey-sheet.gs). The row is marked so it's easy to tell apart.
+  var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbyqBI-CJsINEeeTyQe3Ys6ARIzc0FXlVNHDZnt9-2HeKJBzzn_kYLpMVdJ6DJPbXZ0/exec";
+  var EMAIL_FALLBACK = "https://formsubmit.co/ajax/support@meditate808.com";
+
+  var form = document.getElementById('waitlist');
+  var done = document.getElementById('done');
+  var btn  = document.getElementById('submit');
+  var emailField = document.getElementById('email');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var email = emailField.value.trim();
+    if (!email || email.indexOf('@') < 1 || email.lastIndexOf('.') < email.indexOf('@')) {
+      emailField.focus();
+      emailField.style.borderColor = '#b4553f';
+      return;
+    }
+    btn.disabled = true;
+    btn.textContent = 'Joining…';
+
+    var payload = {
+      email: email,
+      apple_watch: document.getElementById('watch').checked ? 'Yes' : '',
+      hoping: '(homepage waitlist signup)'
+    };
+
+    function succeed() { form.style.display = 'none'; done.style.display = 'block'; }
+    function fail() {
+      btn.disabled = false;
+      btn.textContent = 'Join the waitlist';
+    }
+
+    // Same delivery logic as the survey: the sheet endpoint's redirect can look
+    // like an error even when the row lands, so a settled response counts as
+    // delivered; only a network-level rejection falls through to email.
+    fetch(SHEET_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    })
+      .then(succeed)
+      .catch(function () {
+        fetch(EMAIL_FALLBACK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        }).then(succeed).catch(fail);
+      });
+  });
+</script>
 </body>
 </html>

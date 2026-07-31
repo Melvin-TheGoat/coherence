@@ -68,10 +68,13 @@ struct SessionResultsView: View {
     // MARK: Header
 
     private func header(_ session: Session) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        var line = "\(session.startedAt.formatted(date: .abbreviated, time: .shortened)) · \(durationText(session.durationSec))"
+        if session.bellyBreathing { line += " · Belly breathing" }
+        if let sound = SoundCatalog.title(for: session.frequencyID) { line += " · \(sound)" }
+        return VStack(alignment: .leading, spacing: 4) {
             Text("Your practice landed")
                 .font(AppFont.title).foregroundStyle(AppColor.accentGold)
-            Text("\(session.startedAt.formatted(date: .abbreviated, time: .shortened)) · \(durationText(session.durationSec))\(session.bellyBreathing ? " · Belly breathing" : "")")
+            Text(line)
                 .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
         }
     }

@@ -148,9 +148,11 @@ enum SessionStore {
     /// Persists a finished session + its stats in ONE save. Idempotent: never
     /// writes a second `MeditationStats`/`Session` for a `sessionID`; skips
     /// discarded, too-short, or result-less payloads. Returns the written
-    /// `Session`, or `nil` if nothing was written.
+    /// `Session`, or `nil` if nothing was written. `frequencyID` is the sound
+    /// preset that played (phone-side knowledge — the Watch never carries it).
     @discardableResult
-    static func persist(_ payload: SessionPayload, in context: ModelContext) -> Session? {
+    static func persist(_ payload: SessionPayload, frequencyID: String? = nil,
+                        in context: ModelContext) -> Session? {
         guard !payload.discard,
               payload.durationSec >= minDurationSec,
               let result = payload.result else { return nil }
@@ -172,6 +174,7 @@ enum SessionStore {
             trackID: payload.trackID,
             mode: payload.mode,
             bellyBreathing: payload.bellyBreathing,
+            frequencyID: frequencyID,
             startedAt: payload.startedAt,
             durationSec: payload.durationSec
         )

@@ -336,7 +336,20 @@ UI must coach it, and the 2-signal degrade path must stay.
     `SKIP_ONBOARDING=1`, `PREVIEW_RESULTS=1` (seed + open demo results),
     `PREVIEW_SHARE=1` (auto-open the share sheet), `DEMO_NAME`.
   - 53 tests green.
-- **Next: rest of Phase 8 — App Store launch checklist.** See `App_ROADMAP_v2.md`.
+- **Phase 9 STARTED — camera coherence, the no-Watch path.** Before/after
+  finger-on-camera PPG snapshots (60–120 s, torch on) scored for heart-rhythm
+  coherence; the differential is the evidence for iPhone-only users. This does
+  NOT relitigate the "no coherence" verdict above — that was about *continuous
+  in-session* measurement; short snapshots are validated territory (Plews 2017).
+  **9a engine DONE:** `Shared/Engine/CoherenceAnalyzer.swift` (pure Foundation:
+  detrend → peak detect w/ parabolic timing → RR artifact rejection + quality
+  gate → 4 Hz tachogram → Hann + DFT scan → peak/total power ratio, meanHR,
+  RMSSD; nil over invention). 6 synthetic tests; 60 tests green. Next: 9b
+  capture (AVCaptureSession + torch — FIRST phone-side sensor code, deliberate
+  architecture exception; needs real-device testing), 9c phone-only session
+  path + schema fields, 9d copy/privacy updates. See `App_ROADMAP_v2.md`.
+- **Next: Phase 9 build-out + rest of Phase 8 launch checklist (LLC/DUNS/lawyer
+  in flight).** See `App_ROADMAP_v2.md`.
 
 ## Toolchain notes (this machine)
 

@@ -19,6 +19,7 @@ struct ContentView: View {
     #if DEBUG
     @State private var showBreathingPreview =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
+    @State private var showCoherenceTest = false
     #endif
 
     private struct SessionRef: Identifiable { let id: UUID }
@@ -38,6 +39,8 @@ struct ContentView: View {
                 #if DEBUG
                 Button("Preview breathing screen") { showBreathingPreview = true }
                     .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                Button("Test coherence measurement") { showCoherenceTest = true }
+                    .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
                 #endif
             }
             .padding(AppMetrics.screenPadding)
@@ -47,6 +50,7 @@ struct ContentView: View {
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(bellyBreathing: true) { showBreathingPreview = false }
         }
+        .sheet(isPresented: $showCoherenceTest) { CoherenceMeasureView() }
         .onAppear {
             if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
                 let u = SessionStore.currentUser(in: context)
@@ -54,6 +58,9 @@ struct ContentView: View {
             }
             if ProcessInfo.processInfo.environment["PREVIEW_BLOCKED"] == "1" {
                 coordinator.startFailure = .heartRateUnavailable
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_HISTORY"] == "1" {
+                DemoData.seedHistory(in: context)
             }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", openSession == nil {
                 openSession = SessionRef(id: DemoData.seedResults(in: context))

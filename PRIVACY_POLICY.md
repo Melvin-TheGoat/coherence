@@ -1,13 +1,8 @@
 # Privacy Policy
 
-> **DRAFT — review with legal counsel before publishing.** Bracketed `[…]`
-> fields must be filled in (legal entity name, contact email, effective date,
-> governing state, hosted URL). This draft reflects 808's actual data practices
-> as built; keep it accurate if those practices change.
+**Last updated: July 30, 2026**
 
-**Last updated: [DATE]**
-
-This Privacy Policy explains how **[LEGAL ENTITY NAME] ("we," "us," "808")**
+This Privacy Policy explains how **LockOut LLC ("we," "us," "808")**
 handles information in the **808** app for iPhone and Apple Watch.
 
 ## The short version
@@ -85,12 +80,23 @@ contents of your private iCloud database.** Apple processes this data under
 
 We never use your health or motion data for advertising, and we never sell it.
 
+## Our website and waitlist
+
+If you enter your email address on our website to join the launch waitlist, we
+collect **only** that email address and, if you check the box, whether you own an
+Apple Watch. We use it for one purpose: to tell you when 808 is available, plus
+occasional product updates. We do not sell or share it, and every email includes
+an unsubscribe link — or you can email us and we will remove you. The waitlist is
+separate from the app: joining it does not create an account, and it involves no
+health data of any kind.
+
 ## Third parties
 
 - **Apple** — Sign in with Apple, HealthKit, CloudKit/iCloud sync, and App Store
   distribution, governed by Apple's terms.
 - **Email delivery provider** — only your email address, and only if you opt into
-  product emails. *(Not enabled unless/until you turn on product emails.)*
+  product emails or join the website waitlist. The provider stores the address in
+  order to send those emails and does not receive any health data.
 - Audio in the app is bundled with the app; playing it sends no data about you.
 
 We otherwise do not share your information with third parties, and we do not use
@@ -138,7 +144,7 @@ and applies to all users.
 - **Your rights:** view your results in the app at any time; delete them by
   deleting individual data via **Settings → Delete Account** (which removes all
   app data) or by deleting the app from the device holding the results. For
-  questions or requests, contact us at **[CONTACT EMAIL]**.
+  questions or requests, contact us at **support@meditate808.com**.
 
 ## Children
 
@@ -160,4 +166,4 @@ the revised policy.
 
 ## Contact
 
-Questions about this policy or your data: **[CONTACT EMAIL]**.
+Questions about this policy or your data: **support@meditate808.com**.

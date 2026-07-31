@@ -13,14 +13,10 @@ import os
 @MainActor
 final class SessionCoordinator: NSObject, ObservableObject {
 
-    /// One-line status of the current attempt (Phase-4 debug UI).
+    /// One-line status of the current attempt (logged; surfaced if needed).
     @Published var status: String = "Idle"
-    /// Summary of the most recently persisted session (Phase-4 debug UI).
-    @Published var lastSummary: String?
     /// ID of the most recently persisted session — opens the results graphs.
     @Published var lastSessionID: UUID?
-    /// TEMP belly readability diagnostic from the last session (nil for regular).
-    @Published var lastBellyDiag: String?
     /// The session currently running on the Watch — drives the phone's
     /// mid-session screen. Non-nil from a successful `startWatchApp` until the
     /// payload lands. Every mode gets one, belly or not, guided or silent.
@@ -38,6 +34,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         /// nil for open-ended sessions (ended from the Watch or the phone).
         let plannedDurationSec: Int?
     }
+
+    /// Sound preset chosen at Begin, keyed by sessionID — the Watch never
+    /// carries it, so the phone holds it until the payload lands.
+    private var pendingSoundIDs: [UUID: String] = [:]
 
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
@@ -84,6 +84,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 bellyBreathing: bellyBreathing,
                 hapticsEnabled: hapticsEnabled
             )
+            if let soundID { pendingSoundIDs[params.sessionID] = soundID }
 
             // Deliver params over every available channel: queued user-info
             // always; a message if reachable now; and application-context so a
@@ -199,37 +200,15 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // session (application context lingers until overwritten).
         try? WCSession.default.updateApplicationContext([:])
 
-        // Capture the belly diagnostic before any early return, so even a discarded
-        // or breathing-nil session still surfaces its readability numbers.
-        lastBellyDiag = payload.bellyDiag
+        let soundID = pendingSoundIDs.removeValue(forKey: payload.sessionID)
 
         let context = container.mainContext
-        guard let session = SessionStore.persist(payload, in: context) else {
+        guard let session = SessionStore.persist(payload, frequencyID: soundID, in: context) else {
             status = "Session discarded (too short / unreadable)"
             return
         }
-        let stats = statsFor(session.id, in: context)
-        let streak = StreakCalculator.streak(from: SessionStore.sessionStartDates(in: context))
-        lastSummary = summaryLine(session: session, stats: stats, currentStreak: streak.current)
         lastSessionID = session.id
         status = "Saved ✓"
-    }
-
-    private func statsFor(_ sessionID: UUID, in context: ModelContext) -> MeditationStats? {
-        let d = FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == sessionID })
-        return try? context.fetch(d).first
-    }
-
-    private func summaryLine(session: Session, stats: MeditationStats?, currentStreak: Int) -> String {
-        func f(_ v: Double?) -> String { v.map { String(format: "%.2f", $0) } ?? "nil" }
-        let breaths = stats?.meanBreathingRate.map { String(format: "%.1f", $0) } ?? "nil"
-        return """
-        dur \(session.durationSec)s · belly \(session.bellyBreathing)
-        stillness \(f(stats?.stillnessScore)) (\(stats?.stillnessMethod ?? "?"))
-        hrDecline \(f(stats?.hrDecline)) · breaths \(breaths)
-        overall \(f(stats?.overallScore)) · streak \(currentStreak)
-        HR pts \(stats?.heartRateTimeseries.count ?? 0)
-        """
     }
 }
 
