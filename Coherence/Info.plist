@@ -32,6 +32,8 @@
 	<string>808 uses heart data recorded on your Apple Watch to measure how your body settled after a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>808 records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>808 reads your pulse from your fingertip using the camera and flash, before and after a session. Frames are processed on your device and never stored or uploaded.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>808 saves your share card to your photo library so you can post it to your Instagram story.</string>
 	<key>LSApplicationQueriesSchemes</key>
