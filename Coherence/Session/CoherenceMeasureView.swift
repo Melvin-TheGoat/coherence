@@ -2,23 +2,13 @@ import SwiftUI
 import AVFoundation
 
 /// Small live view of what the camera sees — with a finger properly on the
-/// lens it glows solid red, which is itself placement feedback.
+/// lens it glows solid red, which is itself placement feedback. Wraps the
+/// capture object's single shared preview view, so screens can swap without
+/// re-attaching the layer (re-attachment glitches a running session).
 private struct CameraPreviewCircle: UIViewRepresentable {
-    let session: AVCaptureSession
-
-    final class PreviewView: UIView {
-        override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
-        var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
-    }
-
-    func makeUIView(context: Context) -> PreviewView {
-        let view = PreviewView()
-        view.previewLayer.session = session
-        view.previewLayer.videoGravity = .resizeAspectFill
-        return view
-    }
-
-    func updateUIView(_ uiView: PreviewView, context: Context) {}
+    let view: PPGPreviewView
+    func makeUIView(context: Context) -> PPGPreviewView { view }
+    func updateUIView(_ uiView: PPGPreviewView, context: Context) {}
 }
 
 /// The finger-on-camera coherence snapshot: instructions → 90 s live capture
@@ -101,7 +91,7 @@ struct CoherenceMeasureView: View {
     private var waiting: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            CameraPreviewCircle(session: capture.previewSession)
+            CameraPreviewCircle(view: capture.previewView)
                 .frame(width: 130, height: 130)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(
@@ -165,7 +155,7 @@ struct CoherenceMeasureView: View {
             .padding(.bottom, 28)
 
             // What the camera sees: solid red glow = finger placed right.
-            CameraPreviewCircle(session: capture.previewSession)
+            CameraPreviewCircle(view: capture.previewView)
                 .frame(width: 76, height: 76)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(

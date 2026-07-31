@@ -9,6 +9,14 @@ import UIKit
 /// This is the FIRST sensor code on the phone side — a deliberate exception
 /// to "all sensing lives on the Watch" (documented in the roadmap, Phase 9).
 /// Frames are reduced to one number each on the fly and never stored.
+/// The live preview view. One shared instance lives on the capture object so
+/// screens can swap without re-attaching the layer to a running session
+/// (re-attachment causes a visible glitch).
+final class PPGPreviewView: UIView {
+    override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+    var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+}
+
 final class CoherenceCapture: NSObject, ObservableObject {
 
     enum Phase: Equatable {
@@ -34,8 +42,9 @@ final class CoherenceCapture: NSObject, ObservableObject {
     let targetDuration: Double = 45
 
     /// For the live preview circle in the UI (PeaceMind-style: you can see
-    /// what the camera sees while placing your finger).
-    var previewSession: AVCaptureSession { session }
+    /// what the camera sees while placing your finger). Shared instance —
+    /// see PPGPreviewView.
+    let previewView = PPGPreviewView()
 
     private let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "com.lockout.coherence.ppg")
@@ -49,8 +58,15 @@ final class CoherenceCapture: NSObject, ObservableObject {
     /// Queue-side state machine (the @Published phase mirrors it for the UI).
     private enum QState { case waiting, measuring, finished }
     private var qState: QState = .waiting
-    private var coveredStreak = 0
+    /// Hysteresis state of the finger detector (enter strict, exit strict the
+    /// other way) — kills the flicker of a borderline per-frame detector.
+    private var isCovered = false
+    /// Rolling last-second of covered decisions; arming needs "mostly on",
+    /// not "perfectly on" (20-consecutive never triggered on real sensors).
+    private var recentCovered: [Bool] = []
     private var uncoveredStreak = 0
+    private var lastPublishedFinger: Bool?
+    private var frameCounter = 0
 
     // MARK: - Lifecycle
 
@@ -58,6 +74,12 @@ final class CoherenceCapture: NSObject, ObservableObject {
         guard phase != .measuring, phase != .waiting else { return }
         snapshot = nil
         progress = 0
+        // Attach the preview BEFORE the session runs — attaching to a running
+        // session forces a reconfiguration and a visible stutter.
+        if previewView.previewLayer.session == nil {
+            previewView.previewLayer.session = session
+            previewView.previewLayer.videoGravity = .resizeAspectFill
+        }
         queue.async {
             self.resetWindow()
             self.qState = .waiting
@@ -134,7 +156,28 @@ final class CoherenceCapture: NSObject, ObservableObject {
         samples = []; timestamps = []
         startTime = nil
         coveredFrames = 0; totalFrames = 0
-        coveredStreak = 0; uncoveredStreak = 0
+        recentCovered = []; uncoveredStreak = 0
+        lockExposure(false)
+    }
+
+    /// PPG needs a locked exposure: with the torch through a fingertip the
+    /// auto-exposure keeps "correcting", and those swings dwarf the pulse.
+    /// Locked when a read arms, released when it ends or resets.
+    private func lockExposure(_ lock: Bool) {
+        guard let cam = device else { return }
+        try? cam.lockForConfiguration()
+        if lock {
+            if cam.isExposureModeSupported(.locked) { cam.exposureMode = .locked }
+            if cam.isWhiteBalanceModeSupported(.locked) { cam.whiteBalanceMode = .locked }
+        } else {
+            if cam.isExposureModeSupported(.continuousAutoExposure) {
+                cam.exposureMode = .continuousAutoExposure
+            }
+            if cam.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                cam.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+        }
+        cam.unlockForConfiguration()
     }
 
     private func setTorch(on: Bool) {
@@ -237,12 +280,28 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
         let g = Double(gSum) / Double(count) / 255.0
         let b = Double(bSum) / Double(count) / 255.0
 
-        // A torch-lit fingertip floods the sensor with red. Deliberately loose
-        // (a saturated frame lifts green too): red merely has to be high and
-        // clearly the biggest channel.
-        let covered = r > 0.35 && r > 1.15 * g && r > 1.3 * b
-        if covered { coveredStreak += 1; uncoveredStreak = 0 }
-        else       { uncoveredStreak += 1; coveredStreak = 0 }
+        // Finger detection with HYSTERESIS: strict to enter, strict the other
+        // way to exit. A borderline per-frame detector flickered 30×/s, which
+        // both glitched the UI and made the old 20-consecutive arming gate
+        // unreachable.
+        if isCovered {
+            if r < 0.3 || r < 0.95 * g { isCovered = false }
+        } else {
+            if r > 0.4 && r > 1.05 * g && r > 1.15 * b { isCovered = true }
+        }
+        let covered = isCovered
+
+        recentCovered.append(covered)
+        if recentCovered.count > 30 { recentCovered.removeFirst() }
+        if covered { uncoveredStreak = 0 } else { uncoveredStreak += 1 }
+
+        frameCounter += 1
+        #if DEBUG
+        if frameCounter % 30 == 0 {
+            print(String(format: "[ppg] r=%.2f g=%.2f b=%.2f covered=%d state=%@",
+                         r, g, b, covered ? 1 : 0, String(describing: qState)))
+        }
+        #endif
 
         // Live pulse hint: deviation of the newest sample from the recent mean.
         recentForLevel.append(r)
@@ -250,33 +309,40 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
         let mean = recentForLevel.reduce(0, +) / Double(recentForLevel.count)
         let level = min(1, abs(r - mean) * 40)
 
+        // Publish only on change / at ~10 Hz — 30 publishes a second re-rendered
+        // the screen constantly.
+        if covered != lastPublishedFinger {
+            lastPublishedFinger = covered
+            DispatchQueue.main.async { self.fingerDetected = covered }
+        }
+        if frameCounter % 3 == 0 {
+            DispatchQueue.main.async { self.pulseLevel = level }
+        }
+
         let now = CACurrentMediaTime()
 
         switch qState {
         case .waiting:
-            // The window arms itself: ~0.7 s of steady finger starts the read.
-            if coveredStreak >= 20 {
+            // Arm when the last second was MOSTLY covered (≥80%) — tolerant of
+            // a noisy detector, impossible for an uncovered lens.
+            let coveredRecently = recentCovered.lazy.filter { $0 }.count
+            if recentCovered.count >= 30, coveredRecently >= 24 {
                 resetWindow()
+                lockExposure(true)
                 startTime = now
                 qState = .measuring
                 DispatchQueue.main.async { self.phase = .measuring; self.progress = 0 }
-            } else {
-                DispatchQueue.main.async {
-                    self.fingerDetected = covered
-                    self.pulseLevel = level
-                }
             }
 
         case .measuring:
-            // Finger off for ~2 s → the read is compromised; start over
-            // instead of letting a doomed timer run to a failure.
-            if uncoveredStreak >= 60 {
+            // Finger clearly off for ~1.5 s → restart rather than run a doomed
+            // timer to a guaranteed failure.
+            if uncoveredStreak >= 45 {
                 resetWindow()
                 qState = .waiting
                 DispatchQueue.main.async {
                     self.phase = .waiting
                     self.progress = 0
-                    self.fingerDetected = false
                 }
                 return
             }
@@ -291,11 +357,9 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
             totalFrames += 1
             if covered { coveredFrames += 1 }
 
-            let progressNow = min(1, t / targetDuration)
-            DispatchQueue.main.async {
-                self.fingerDetected = covered
-                self.pulseLevel = level
-                self.progress = progressNow
+            if frameCounter % 3 == 0 {
+                let progressNow = min(1, t / targetDuration)
+                DispatchQueue.main.async { self.progress = progressNow }
             }
 
             if t >= targetDuration {
