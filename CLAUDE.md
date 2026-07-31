@@ -336,18 +336,60 @@ UI must coach it, and the 2-signal degrade path must stay.
     `SKIP_ONBOARDING=1`, `PREVIEW_RESULTS=1` (seed + open demo results),
     `PREVIEW_SHARE=1` (auto-open the share sheet), `DEMO_NAME`.
   - 53 tests green.
-- **Phase 9 STARTED — camera coherence, the no-Watch path.** Before/after
-  finger-on-camera PPG snapshots (60–120 s, torch on) scored for heart-rhythm
-  coherence; the differential is the evidence for iPhone-only users. This does
-  NOT relitigate the "no coherence" verdict above — that was about *continuous
-  in-session* measurement; short snapshots are validated territory (Plews 2017).
-  **9a engine DONE:** `Shared/Engine/CoherenceAnalyzer.swift` (pure Foundation:
-  detrend → peak detect w/ parabolic timing → RR artifact rejection + quality
-  gate → 4 Hz tachogram → Hann + DFT scan → peak/total power ratio, meanHR,
-  RMSSD; nil over invention). 6 synthetic tests; 60 tests green. Next: 9b
-  capture (AVCaptureSession + torch — FIRST phone-side sensor code, deliberate
-  architecture exception; needs real-device testing), 9c phone-only session
-  path + schema fields, 9d copy/privacy updates. See `App_ROADMAP_v2.md`.
+- **Phase 9 — camera coherence, the no-Watch path (9a/9b/9c DONE, verified
+  on-device).** Before/after finger-on-camera PPG snapshots (45 s, torch on)
+  scored for heart-rhythm coherence; the differential is the evidence. Does
+  NOT relitigate the "no coherence" verdict above — that was *continuous
+  in-session*; short snapshots are validated territory (Plews 2017).
+  - **9a engine** — `Shared/Engine/CoherenceAnalyzer.swift`, pure Foundation:
+    detrend → light smoothing (0.1 s) → **autocorrelation period estimate with
+    octave-error (subharmonic) guard** setting the peak-detector refractory to
+    0.7×period → parabolic peak timing → intervals filtered vs a **rolling
+    5-interval median (±30%)**, NOT vs neighbor → 4 Hz tachogram → Hann + DFT
+    scan → coherence = peak/total power (0.04–0.26 Hz band), meanHR, RMSSD,
+    validBeatFraction; nil over invention. `diagnose()` returns a per-gate
+    verdict string (shown on-screen in DEBUG when a read is refused).
+  - **FIELD-CALIBRATED via 4 on-device failure rounds (each is now a
+    regression test — don't weaken these):** (1) dicrotic notch double-fired
+    the detector → autocorrelation refractory; (2) alternating pulse amplitude
+    made the 2-beat lag win the scan (~37 bpm from a 74 bpm heart) →
+    subharmonic guard; (3) 30 fps peak-timing jitter shredded intervals under
+    neighbor-comparison → rolling-median rule; (4) auto-exposure hunting
+    dwarfed the pulse → exposure/WB LOCK during the read. The analyzer is
+    testable OFFLINE: `swiftc CoherenceAnalyzer.swift + harness` (pure
+    Foundation) — iterate there, not on-device. **First real read on Aziz's
+    phone: coherence 35, HR 71, RMSSD 108 ms (sane resting values).** Note:
+    camera RMSSD reads high vs chest straps (frame-timing jitter) — fine for
+    self-comparison, don't present as absolute.
+  - **9b capture** — `Coherence/Session/CoherenceCapture.swift` +
+    `CoherenceMeasureView`. FIRST phone-side sensor code (deliberate
+    exception). Camera+torch(0.6) live on open (placement mode: live preview
+    circle glows red when placed), explicit Start gated on finger detection
+    (hysteresis: strict enter/exit — per-frame detection flickers), every
+    frame kept for uniform sampling (coverage judged at end), signal NEGATED
+    (transillumination: systole = dip), finger-off ~1.5 s → restart to
+    placement, exposure locked during read. DEBUG: live r/g/b line + diagnose
+    verdict on failure — device debugging without Xcode.
+  - **9c flow** — opt-in "Coherence check" toggle in setup (AppStorage);
+    Begin → BEFORE read (never blocks: session starts even if read
+    fails/cancelled) → coordinator carries snapshot keyed by sessionID →
+    persisted with stats; payload lands → AFTER read prompt → results show a
+    Heart coherence card (BEFORE → AFTER + gold delta chip). Stats fields
+    pre/postCoherence{Score,HR,RMSSD} — device-local; post attach is the one
+    sanctioned amendment to the immutable row (write-once, tested).
+  - **Watch-timer fixes that came out of testing:** Watch sends a started-ack
+    (`WCKeys.started`, "<id>|<epoch>") when the workout truly begins — the
+    phone re-anchors its countdown + audio-stop to it (startWatchApp's
+    callback fires seconds early; timed sessions used to freeze at 0:00);
+    at 0:00 the phone shows "Finishing on your Watch…"; silent startWatchApp
+    failure now raises `StartFailure.watchUnreachable` (blocking screen w/
+    steps — was invisible); Watch `.sent` no longer swallows new params.
+  - **NOT yet done:** 9d (privacy policy camera wording, SCIENCE.md PPG
+    citations), true phone-only sessions (no-Watch timer path), paired-device
+    end-to-end pass (Aziz's watch install pending). **Melvin's roadmap has a
+    duplicate "Phase 9 (PARKED)" section written the same day unaware Aziz
+    green-lit it — reconcile after they talk; his beat-to-beat/HRV point and
+    skin-tone-validation open question are good and should fold in.**
 - **Next: Phase 9 build-out + rest of Phase 8 launch checklist (LLC/DUNS/lawyer
   in flight).** See `App_ROADMAP_v2.md`.
 
