@@ -15,6 +15,12 @@ enum WCKeys {
     /// raw value, so the phone can show the right recovery screen instead of
     /// leaving the user on a mid-session screen for a session that never began.
     static let startFailure = "startFailure"
+    /// Watch → Phone: the workout actually began. Value is
+    /// "<sessionID>|<epochSeconds>" — the phone re-anchors its mid-session
+    /// clock and audio timer to the Watch's real start, instead of guessing
+    /// from `startWatchApp` (which fires seconds earlier and made timed
+    /// sessions hit 0:00 on the phone while the Watch still had time left).
+    static let started = "started"
 }
 
 /// Why a session refused to start on the Watch. Sent to the phone so it can
@@ -28,4 +34,8 @@ enum StartFailure: String, Codable, Identifiable {
     case heartRateUnavailable
     /// The `.mindAndBody` workout couldn't be recorded (workout SHARE denied).
     case workoutNotAuthorized
+    /// `startWatchApp` itself failed — watch app not installed, watch not
+    /// paired/reachable. Raised by the PHONE (not the Watch); previously this
+    /// failed silently and the session just never happened.
+    case watchUnreachable
 }

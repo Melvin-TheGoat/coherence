@@ -32,6 +32,9 @@ struct SessionActiveView: View {
         return max(0, planned - elapsed)
     }
 
+    /// Timed session's countdown has run out; the Watch is wrapping up.
+    private var finishing: Bool { plannedDurationSec != nil && displaySeconds == 0 }
+
     var body: some View {
         ZStack {
             AppColor.backgroundPrimary.ignoresSafeArea()
@@ -54,9 +57,14 @@ struct SessionActiveView: View {
                     .monospacedDigit()
                     .foregroundStyle(AppColor.textSecondary)
 
-                Text(bellyBreathing
-                     ? "Lie back with your wrist flat on your belly"
-                     : "Your Watch is measuring — let it settle")
+                // A timed session ends on the WATCH's clock, which started a
+                // beat after the phone's — so at 0:00 say what's happening
+                // instead of sitting on a frozen countdown.
+                Text(finishing
+                     ? "Finishing on your Watch…"
+                     : (bellyBreathing
+                        ? "Lie back with your wrist flat on your belly"
+                        : "Your Watch is measuring — let it settle"))
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)

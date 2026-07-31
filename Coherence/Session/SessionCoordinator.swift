@@ -133,8 +133,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
                         self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
                     } else {
-                        self.status = "startWatchApp failed: \(error?.localizedDescription ?? "unknown")"
+                        // Previously silent — the user tapped Begin and nothing
+                        // visibly happened. Now it's a first-class refusal.
                         self.log.error("startWatchApp failed: \(String(describing: error))")
+                        self.sessionFailedToStart(.watchUnreachable)
                     }
                 }
             }
@@ -160,6 +162,27 @@ final class SessionCoordinator: NSObject, ObservableObject {
         if let planned = plannedDurationSec {
             audioStopTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(planned))
+                self?.tone.stop()
+            }
+        }
+    }
+
+    /// The Watch reported its ACTUAL workout start. Re-anchor the mid-session
+    /// clock and the audio-stop timer to it — `startWatchApp`'s callback fires
+    /// seconds before the Watch really begins (params delivery + HealthKit
+    /// check + workout spin-up), which made the phone's countdown reach 0:00
+    /// while the Watch still had time left.
+    private func watchStarted(sessionID: UUID, at startedAt: Date) {
+        guard let current = active, current.id == sessionID else { return }
+        active = ActiveSession(id: current.id,
+                               startedAt: startedAt,
+                               bellyBreathing: current.bellyBreathing,
+                               plannedDurationSec: current.plannedDurationSec)
+        if let planned = current.plannedDurationSec {
+            let remaining = Double(planned) - Date().timeIntervalSince(startedAt)
+            audioStopTask?.cancel()
+            audioStopTask = Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .seconds(max(0, remaining)))
                 self?.tone.stop()
             }
         }
@@ -260,6 +283,16 @@ extension SessionCoordinator: WCSessionDelegate {
         if let raw = dict[WCKeys.startFailure] as? String,
            let failure = StartFailure(rawValue: raw) {
             Task { @MainActor in self.sessionFailedToStart(failure) }
+            return
+        }
+        if let raw = dict[WCKeys.started] as? String {
+            let parts = raw.split(separator: "|")
+            if parts.count == 2, let id = UUID(uuidString: String(parts[0])),
+               let epoch = Double(parts[1]) {
+                Task { @MainActor in
+                    self.watchStarted(sessionID: id, at: Date(timeIntervalSince1970: epoch))
+                }
+            }
         }
     }
 }

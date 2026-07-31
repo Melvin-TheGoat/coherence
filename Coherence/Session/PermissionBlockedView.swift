@@ -61,6 +61,7 @@ struct PermissionBlockedView: View {
         switch failure {
         case .heartRateUnavailable: "heart.slash"
         case .workoutNotAuthorized: "figure.mind.and.body"
+        case .watchUnreachable: "applewatch.slash"
         }
     }
 
@@ -68,6 +69,7 @@ struct PermissionBlockedView: View {
         switch failure {
         case .heartRateUnavailable: "We can't read your heart rate"
         case .workoutNotAuthorized: "We can't record your session"
+        case .watchUnreachable: "Your Watch didn't answer"
         }
     }
 
@@ -77,6 +79,8 @@ struct PermissionBlockedView: View {
             "Your settling heart rate is one of the signals 808 measures — without it there's no evidence your practice landed, so we won't start a session that can't be read.\n\nMake sure your Watch is on your wrist, then check the permission:"
         case .workoutNotAuthorized:
             "808 records a mindful workout on your Watch — that's what keeps it measuring for the whole session. Without it we can't capture anything."
+        case .watchUnreachable:
+            "808 measures your session on your Apple Watch, and the Watch couldn't be launched just now."
         }
     }
 
@@ -91,6 +95,10 @@ struct PermissionBlockedView: View {
             ["On iPhone, open the Health app",
              "Go to Sharing → Apps → 808",
              "Turn on Workouts"]
+        case .watchUnreachable:
+            ["Make sure your Watch is on your wrist and unlocked",
+             "Check that 808 is installed on the Watch (iPhone Watch app → 808)",
+             "Bring the Watch near your phone and try again"]
         }
     }
 }

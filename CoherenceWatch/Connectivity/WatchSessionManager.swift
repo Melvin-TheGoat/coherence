@@ -53,6 +53,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
     /// Starts a session from received params (no-op if already running or if this
     /// session was already handled via another delivery channel).
     private func begin(_ p: SessionParams) async {
+        // .sent is a 3-second cosmetic state; a user starting the next session
+        // that fast shouldn't have it silently swallowed.
+        if phase == .sent { phase = .idle }
         guard phase == .idle, !handledSessionIDs.contains(p.sessionID) else { return }
         handledSessionIDs.insert(p.sessionID)
         params = p
@@ -81,6 +84,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
         statusMessage = nil
         phase = .running
         startTimer(planned: p.plannedDurationSec)
+
+        // Tell the phone when the workout REALLY began so its mid-session
+        // clock and audio timer track this moment, not startWatchApp's
+        // (seconds-earlier) callback.
+        let ack = [WCKeys.started: "\(p.sessionID.uuidString)|\(Date().timeIntervalSince1970)"]
+        let wc = WCSession.default
+        if wc.isReachable {
+            wc.sendMessage(ack, replyHandler: nil, errorHandler: nil)
+        }
+        wc.transferUserInfo(ack)
     }
 
     /// Tells the phone the session never started, so it can drop its
