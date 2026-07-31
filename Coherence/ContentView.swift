@@ -79,6 +79,14 @@ struct ContentView: View {
         .fullScreenCover(item: $coordinator.startFailure) { failure in
             PermissionBlockedView(failure: failure) { coordinator.startFailure = nil }
         }
+        // Session over + coherence check opted in → the AFTER read, then results.
+        .sheet(item: $coordinator.postMeasure, onDismiss: {
+            if let id = coordinator.lastSessionID { openSession = SessionRef(id: id) }
+        }) { post in
+            CoherenceMeasureView(label: "After") { snap in
+                SessionStore.attachPostCoherence(sessionID: post.id, snapshot: snap, in: context)
+            }
+        }
         .sheet(isPresented: $showSetup) { SessionSetupView() }
         .sheet(isPresented: $showCalendar) { SessionHistoryView() }
         .sheet(isPresented: $showHistory) { NavigationStack { AllSessionsView() } }

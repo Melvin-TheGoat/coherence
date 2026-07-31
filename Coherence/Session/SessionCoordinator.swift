@@ -39,6 +39,16 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// carries it, so the phone holds it until the payload lands.
     private var pendingSoundIDs: [UUID: String] = [:]
 
+    /// Coherence-check state per session (Phase 9): the BEFORE snapshot taken
+    /// at Begin, and whether the user opted into the check at all (drives the
+    /// AFTER prompt even if the before read failed or was skipped).
+    private var pendingCoherence: [UUID: (pre: CoherenceAnalyzer.Snapshot?, optIn: Bool)] = [:]
+
+    /// Set when a finished session should prompt the AFTER coherence read.
+    /// The home screen presents the measurement sheet off this.
+    struct PostMeasure: Identifiable { let id: UUID }
+    @Published var postMeasure: PostMeasure?
+
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
     private let log = Logger(subsystem: "com.lockout.coherence", category: "SessionCoordinator")
@@ -72,6 +82,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// `soundID` is given, the phone plays that frequency tone+bed OR nature sound
     /// during the session.
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?, bellyBreathing: Bool,
+               preCoherence: CoherenceAnalyzer.Snapshot? = nil, coherenceCheck: Bool = false,
                hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
         Task {
             await requestWorkoutAuthorization()
@@ -85,6 +96,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 hapticsEnabled: hapticsEnabled
             )
             if let soundID { pendingSoundIDs[params.sessionID] = soundID }
+            if coherenceCheck || preCoherence != nil {
+                pendingCoherence[params.sessionID] = (pre: preCoherence, optIn: coherenceCheck)
+            }
 
             // Deliver params over every available channel: queued user-info
             // always; a message if reachable now; and application-context so a
@@ -201,14 +215,22 @@ final class SessionCoordinator: NSObject, ObservableObject {
         try? WCSession.default.updateApplicationContext([:])
 
         let soundID = pendingSoundIDs.removeValue(forKey: payload.sessionID)
+        let coherence = pendingCoherence.removeValue(forKey: payload.sessionID)
 
         let context = container.mainContext
-        guard let session = SessionStore.persist(payload, frequencyID: soundID, in: context) else {
+        guard let session = SessionStore.persist(payload, frequencyID: soundID,
+                                                 preCoherence: coherence?.pre,
+                                                 in: context) else {
             status = "Session discarded (too short / unreadable)"
             return
         }
         lastSessionID = session.id
         status = "Saved ✓"
+        // The user opted into the coherence check — prompt the AFTER read now,
+        // while the session's afterglow is still the thing being measured.
+        if coherence?.optIn == true {
+            postMeasure = PostMeasure(id: session.id)
+        }
     }
 }
 

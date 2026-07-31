@@ -21,6 +21,13 @@ struct SessionSetupView: View {
     @State private var headphones = false
 
     @State private var belly = false
+    /// Opt-in camera coherence check (Phase 9): a ~45 s finger-on-camera pulse
+    /// read before and after the session, shown as a differential. Remembered
+    /// across sessions.
+    @AppStorage("coherenceCheckEnabled") private var coherenceCheck = false
+    /// Presenting the BEFORE read; Begin continues when it closes.
+    @State private var showPreMeasure = false
+    @State private var preSnapshot: CoherenceAnalyzer.Snapshot?
     /// Selected preset length in minutes; nil = open-ended (end from the Watch).
     /// Ignored while `isCustom` is on.
     @State private var durationMinutes: Int? = nil
@@ -65,6 +72,7 @@ struct SessionSetupView: View {
                     modeSection
                     if activeGuided == nil { durationSection } else { guidedLengthNote }
                     soundSection
+                    coherenceSection
                     if belly { postureCoaching }
                     beginButton
                 }
@@ -83,6 +91,15 @@ struct SessionSetupView: View {
                 }
             }
             .onDisappear { tone.stop() }
+            .fullScreenCover(isPresented: $showPreMeasure, onDismiss: {
+                // Whether the read succeeded, failed, or was cancelled, the
+                // meditation goes ahead — the check never blocks the session.
+                startSession(pre: preSnapshot)
+            }) {
+                CoherenceMeasureView(label: "Before") { snap in
+                    preSnapshot = snap
+                }
+            }
         }
     }
 
@@ -386,31 +403,73 @@ struct SessionSetupView: View {
         .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12))
     }
 
+    // MARK: Coherence check
+
+    private var coherenceSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Coherence check")
+                .font(.headline)
+                .foregroundStyle(AppColor.textPrimary)
+            Button { coherenceCheck.toggle() } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: coherenceCheck ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(AppColor.accentGold)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Measure before & after")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text("A 45-second pulse read on the camera, before and after — see how the session changed your heart's rhythm. No Watch needed.")
+                            .font(.caption2)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(RoundedRectangle(cornerRadius: 12)
+                    .stroke(coherenceCheck ? AppColor.accentGold : .clear, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: Begin
 
     private var beginButton: some View {
         Button {
             tone.stop()   // stop the preview; the coordinator plays it during the session
-            let mode: String
-            switch soundCategory {
-            case .silence:   mode = "silence"
-            case .guided:    mode = "guided"
-            case .frequency: mode = "frequency"
-            case .nature:    mode = "nature"
+            preSnapshot = nil
+            if coherenceCheck {
+                showPreMeasure = true      // Begin continues when the read closes
+            } else {
+                startSession(pre: nil)
             }
-            // A guided track owns the session length; otherwise the picked length rules.
-            let planned = activeGuided.map { $0.durationSec } ?? effectiveMinutes.map { $0 * 60 }
-            coordinator.begin(mode: mode, trackID: nil,
-                              plannedDurationSec: planned,
-                              bellyBreathing: belly, hapticsEnabled: true,
-                              soundID: soundID, headphones: headphones)
-            dismiss()
         } label: {
-            Text("Begin on Apple Watch")
+            Text(coherenceCheck ? "Measure, then begin" : "Begin on Apple Watch")
         }
         .buttonStyle(PrimaryButtonStyle())
         .disabled(!canBegin)
         .opacity(canBegin ? 1 : 0.5)
         .padding(.top, 4)
+    }
+
+    private func startSession(pre: CoherenceAnalyzer.Snapshot?) {
+        let mode: String
+        switch soundCategory {
+        case .silence:   mode = "silence"
+        case .guided:    mode = "guided"
+        case .frequency: mode = "frequency"
+        case .nature:    mode = "nature"
+        }
+        // A guided track owns the session length; otherwise the picked length rules.
+        let planned = activeGuided.map { $0.durationSec } ?? effectiveMinutes.map { $0 * 60 }
+        coordinator.begin(mode: mode, trackID: nil,
+                          plannedDurationSec: planned,
+                          bellyBreathing: belly,
+                          preCoherence: pre, coherenceCheck: coherenceCheck,
+                          hapticsEnabled: true,
+                          soundID: soundID, headphones: headphones)
+        dismiss()
     }
 }

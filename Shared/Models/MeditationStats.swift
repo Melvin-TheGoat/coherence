@@ -41,6 +41,18 @@ final class MeditationStats {
     // Combined "practice landed" summary
     var overallScore: Double?
 
+    // Optional camera-coherence snapshots (finger-on-camera PPG, ~45 s each,
+    // taken before/after the session when the user opts in — Phase 9). The
+    // post fields are attached once, right after the session ends; both stay
+    // nil when the user skipped or a read failed. Device-local like the rest
+    // of this row.
+    var preCoherenceScore: Double?
+    var preCoherenceHR: Double?
+    var preCoherenceRMSSD: Double?
+    var postCoherenceScore: Double?
+    var postCoherenceHR: Double?
+    var postCoherenceRMSSD: Double?
+
     var windowSec: Int = 30
     var hopSec: Int = 5
     var algorithmVersion: String = "2.0.0"

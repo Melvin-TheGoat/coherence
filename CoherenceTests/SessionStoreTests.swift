@@ -79,6 +79,31 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertNil(silent?.frequencyID)
     }
 
+    /// The opt-in camera coherence check: the BEFORE snapshot rides in with
+    /// persist; the AFTER is attached once and never overwritten.
+    func test_coherenceSnapshotsPersistAndAttachOnce() throws {
+        let ctx = freshContext()
+        let pre = CoherenceAnalyzer.Snapshot(coherenceScore: 0.34, meanHR: 74,
+                                             rmssdMs: 96, validBeatFraction: 0.95)
+        let session = try XCTUnwrap(SessionStore.persist(payload(), preCoherence: pre, in: ctx))
+
+        let fetch = { try? ctx.fetch(FetchDescriptor<MeditationStats>()).first }
+        XCTAssertEqual(fetch()?.preCoherenceScore, 0.34)
+        XCTAssertNil(fetch()?.postCoherenceScore)
+
+        let post = CoherenceAnalyzer.Snapshot(coherenceScore: 0.78, meanHR: 63,
+                                              rmssdMs: 118, validBeatFraction: 0.98)
+        SessionStore.attachPostCoherence(sessionID: session.id, snapshot: post, in: ctx)
+        XCTAssertEqual(fetch()?.postCoherenceScore, 0.78)
+        XCTAssertEqual(fetch()?.postCoherenceHR, 63)
+
+        // Write-once: a second attach must not clobber the first.
+        let bogus = CoherenceAnalyzer.Snapshot(coherenceScore: 0.10, meanHR: 90,
+                                               rmssdMs: 20, validBeatFraction: 0.9)
+        SessionStore.attachPostCoherence(sessionID: session.id, snapshot: bogus, in: ctx)
+        XCTAssertEqual(fetch()?.postCoherenceScore, 0.78)
+    }
+
     /// Persisting the same payload twice never creates a duplicate.
     func test_persistIsIdempotent() {
         let ctx = freshContext()

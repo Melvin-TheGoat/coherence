@@ -24,6 +24,8 @@ enum DemoData {
             meanBreathingRate: 5.6, breathingRegularity: 0.82, resonanceMatchScore: 0.9,
             overallScore: 0.81, windowSec: 30, hopSec: 5
         )
+        stats.preCoherenceScore = 0.34; stats.preCoherenceHR = 74; stats.preCoherenceRMSSD = 96
+        stats.postCoherenceScore = 0.78; stats.postCoherenceHR = 63; stats.postCoherenceRMSSD = 118
         context.insert(session)
         context.insert(stats)
         context.insert(SessionReflection(sessionID: session.id, rating: 8,

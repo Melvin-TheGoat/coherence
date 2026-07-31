@@ -31,6 +31,9 @@ struct SessionResultsView: View {
                         if let stats {
                             if let overall = stats.overallScore { overallHero(overall) }
                             tiles(stats)
+                            if stats.preCoherenceScore != nil || stats.postCoherenceScore != nil {
+                                coherenceCard(stats)
+                            }
                             ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
                             shareButton
                         } else {
@@ -155,6 +158,56 @@ struct SessionResultsView: View {
             .frame(height: 150)
         }
         .card()
+    }
+
+    // MARK: Coherence differential (camera check)
+
+    /// Before/after heart-rhythm coherence from the opt-in camera reads —
+    /// the no-Watch evidence. Shows whichever half exists; the delta needs both.
+    private func coherenceCard(_ stats: MeditationStats) -> some View {
+        let pre = stats.preCoherenceScore
+        let post = stats.postCoherenceScore
+        let delta = (pre != nil && post != nil) ? Int(((post! - pre!) * 100).rounded()) : nil
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("Heart coherence")
+                    .font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                if let delta {
+                    Text(delta >= 0 ? "+\(delta)" : "\(delta)")
+                        .font(.callout.weight(.bold)).monospacedDigit()
+                        .foregroundStyle(delta >= 0 ? AppColor.accentGold : AppColor.textSecondary)
+                        .padding(.horizontal, 10).padding(.vertical, 4)
+                        .background(AppColor.accentGold.opacity(delta >= 0 ? 0.15 : 0.07),
+                                    in: Capsule())
+                }
+            }
+            HStack(spacing: 12) {
+                coherenceHalf("BEFORE", pre)
+                Image(systemName: "arrow.right")
+                    .foregroundStyle(AppColor.textSecondary)
+                coherenceHalf("AFTER", post)
+            }
+            Text("Pulse read from your fingertip on the camera, \(Int(45)) seconds each side.")
+                .font(.caption2).foregroundStyle(AppColor.textSecondary)
+        }
+        .card()
+    }
+
+    private func coherenceHalf(_ label: String, _ score: Double?) -> some View {
+        VStack(spacing: 4) {
+            Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
+                .font(.system(.title, design: .rounded).weight(.bold))
+                .foregroundStyle(score != nil ? AppColor.textPrimary : AppColor.textSecondary)
+                .monospacedDigit()
+            Text(label)
+                .font(.caption2.weight(.semibold)).tracking(0.8)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(AppColor.backgroundPrimary,
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: Missing measurements
