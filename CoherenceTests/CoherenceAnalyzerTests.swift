@@ -115,6 +115,21 @@ final class CoherenceAnalyzerTests: XCTestCase {
         XCTAssertGreaterThan(snap.validBeatFraction, 0.85)
     }
 
+    /// Regression for the third on-device failure: heavy sensor noise jitters
+    /// peak timing, which under neighbor-comparison rejected 37% of intervals
+    /// (one wobbly peak poisons two intervals). The rolling-median rule must
+    /// keep them.
+    func test_timingJitterDoesNotShredIntervals() throws {
+        var ppg = syntheticPPG(durationSec: 45, rrForBeat: { t in
+            0.87 + 0.05 * sin(2 * .pi * 0.09 * t)              // ~69 bpm
+        }, dicrotic: true)
+        var noise = LCG(state: 77)
+        for i in 0..<ppg.count { ppg[i] += 0.35 * (noise.next() - 0.5) }
+        let snap = try XCTUnwrap(CoherenceAnalyzer.analyze(ppg: ppg, sampleRate: fs))
+        XCTAssertEqual(snap.meanHR, 69, accuracy: 4)
+        XCTAssertGreaterThan(snap.validBeatFraction, 0.85)
+    }
+
     /// Faster heart rate is read correctly too (80 bpm).
     func test_readsFasterHeartRate() throws {
         let ppg = syntheticPPG(durationSec: 90, rrForBeat: { t in

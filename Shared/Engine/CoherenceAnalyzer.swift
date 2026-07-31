@@ -65,20 +65,15 @@ enum CoherenceAnalyzer {
         let beats = beatTimes(ppg: ppg, sampleRate: sampleRate)
         guard beats.count >= minValidBeats + 1 else { return nil }
 
-        // Beat-to-beat intervals with artifact rejection.
-        var rr: [(t: Double, v: Double)] = []
-        var rejected = 0
-        var prevKept: Double?
-        for i in 1..<beats.count {
-            let interval = beats[i] - beats[i - 1]
-            guard rrBounds.contains(interval) else { rejected += 1; prevKept = nil; continue }
-            // A jump >25% vs the previous kept interval is an artifact
-            // (missed/false beat), not physiology.
-            if let p = prevKept, abs(interval - p) > 0.25 * p { rejected += 1; prevKept = nil; continue }
-            rr.append((t: beats[i], v: interval))
-            prevKept = interval
-        }
-        let validFraction = Double(rr.count) / Double(rr.count + rejected)
+        // Beat-to-beat intervals with artifact rejection. Each interval is
+        // judged against a ROLLING MEDIAN, not its neighbor: at 30 fps one
+        // slightly mis-timed peak makes one interval long and the next short,
+        // and neighbor-comparison rejected both (field: 63% kept at a correct
+        // beat count). Against the median, timing wobble passes while real
+        // artifacts (missed beat ≈ 2×, split beat ≈ ½×) still fail loudly.
+        let (rr, rejected) = filteredIntervals(beats: beats)
+        let validFraction = rr.count + rejected > 0
+            ? Double(rr.count) / Double(rr.count + rejected) : 0
         guard rr.count >= minValidBeats, validFraction >= minValidFraction else { return nil }
 
         let meanRR = rr.reduce(0) { $0 + $1.v } / Double(rr.count)
@@ -99,6 +94,34 @@ enum CoherenceAnalyzer {
         guard snap.coherenceScore.isFinite, snap.meanHR.isFinite,
               snap.rmssdMs.isFinite else { return nil }
         return snap
+    }
+
+    /// Shared by analyze() and diagnose(): physiologic-bounds check, then
+    /// deviation-from-rolling-median (±30%) artifact rejection.
+    static func filteredIntervals(beats: [Double]) -> (kept: [(t: Double, v: Double)], rejected: Int) {
+        guard beats.count > 1 else { return ([], 0) }
+        var raw: [(t: Double, v: Double)] = []
+        var rejected = 0
+        for i in 1..<beats.count {
+            let v = beats[i] - beats[i - 1]
+            if rrBounds.contains(v) { raw.append((beats[i], v)) } else { rejected += 1 }
+        }
+        guard !raw.isEmpty else { return ([], rejected) }
+        let globalMedian = raw.map(\.v).sorted()[raw.count / 2]
+
+        var kept: [(t: Double, v: Double)] = []
+        var window: [Double] = []
+        for (t, v) in raw {
+            let median = window.isEmpty ? globalMedian : window.sorted()[window.count / 2]
+            if abs(v - median) <= 0.3 * median {
+                kept.append((t, v))
+                window.append(v)
+                if window.count > 5 { window.removeFirst() }
+            } else {
+                rejected += 1
+            }
+        }
+        return (kept, rejected)
     }
 
     // MARK: - Beat detection
@@ -123,12 +146,10 @@ enum CoherenceAnalyzer {
         var resid = [Double](repeating: 0, count: n)
         for i in 0..<n { resid[i] = detrended(i) }
 
-        // Short smoothing pass (~0.15 s): merges the dicrotic notch — the
-        // secondary bump ~0.35 s after systole that real pulses have — into
-        // the main wave so it can't fire the detector, and knocks down frame
-        // noise. (Field-found on device: beat count correct, but ~40% of
-        // intervals rejected because the notch split beats in two.)
-        let smoothWin = max(1, Int(0.15 * sampleRate))
+        // Light smoothing (~0.1 s) to knock down frame noise. Kept narrow so
+        // the systolic peak stays sharp for timing — the dicrotic notch is
+        // handled by the autocorrelation refractory below, not by smoothing.
+        let smoothWin = max(1, Int(0.1 * sampleRate))
         if smoothWin > 1 {
             var sPrefix = [0.0]; sPrefix.reserveCapacity(n + 1)
             for v in resid { sPrefix.append(sPrefix[sPrefix.count - 1] + v) }
@@ -267,17 +288,10 @@ enum CoherenceAnalyzer {
             return String(format: "too short: %.0fs < %.0fs", dur, minDurationSec)
         }
         let beats = beatTimes(ppg: ppg, sampleRate: sampleRate)
-        var kept = 0, rejected = 0
-        var prevKept: Double?
-        var rrSum = 0.0
-        for i in 1..<max(1, beats.count) {
-            let rr = beats[i] - beats[i - 1]
-            if !rrBounds.contains(rr) { rejected += 1; prevKept = nil; continue }
-            if let p = prevKept, abs(rr - p) > 0.25 * p { rejected += 1; prevKept = nil; continue }
-            kept += 1; rrSum += rr; prevKept = rr
-        }
+        let (rr, rejected) = filteredIntervals(beats: beats)
+        let kept = rr.count
         let frac = kept + rejected > 0 ? Double(kept) / Double(kept + rejected) : 0
-        let hr = kept > 0 ? 60.0 / (rrSum / Double(kept)) : 0
+        let hr = kept > 0 ? 60.0 / (rr.reduce(0) { $0 + $1.v } / Double(kept)) : 0
         let base = String(format: "%.0fs @ %.1ffps · beats %d · kept %d (%.0f%%) · ~%.0f bpm",
                           dur, sampleRate, beats.count, kept, frac * 100, hr)
         if beats.count < minValidBeats + 1 { return base + " → too few beats" }
