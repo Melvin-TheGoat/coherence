@@ -36,6 +36,10 @@ final class CoherenceCapture: NSObject, ObservableObject {
     @Published var fingerDetected = false
     @Published var pulseLevel: Double = 0        // live waveform hint for the UI
     @Published var snapshot: CoherenceAnalyzer.Snapshot?
+    /// On-screen diagnostics (DEBUG builds surface these in the UI so device
+    /// testing doesn't need Xcode's console).
+    @Published var debugLive = ""                // live camera channel readout
+    @Published var debugResult = ""              // per-gate verdict after a read
 
     /// Capture window. 45 s is the floor for resolving the ~0.1 Hz coherence
     /// rhythm (≈4.5 cycles); the analyzer needs ~30 s of usable beats inside it.
@@ -61,9 +65,6 @@ final class CoherenceCapture: NSObject, ObservableObject {
     /// Hysteresis state of the finger detector (enter strict, exit strict the
     /// other way) — kills the flicker of a borderline per-frame detector.
     private var isCovered = false
-    /// Rolling last-second of covered decisions; arming needs "mostly on",
-    /// not "perfectly on" (20-consecutive never triggered on real sensors).
-    private var recentCovered: [Bool] = []
     private var uncoveredStreak = 0
     private var lastPublishedFinger: Bool?
     private var frameCounter = 0
@@ -97,6 +98,19 @@ final class CoherenceCapture: NSObject, ObservableObject {
             }
         default:
             fail("Camera access is off. Enable it in Settings to measure.")
+        }
+    }
+
+    /// Explicitly begins the 45 s read (the Start button). The camera and
+    /// torch are already live from `start()`; this locks exposure and opens
+    /// the window. No-op unless we're in waiting.
+    func beginMeasurement() {
+        queue.async {
+            guard self.qState == .waiting else { return }
+            self.resetWindow()
+            self.lockExposure(true)
+            self.qState = .measuring
+            DispatchQueue.main.async { self.phase = .measuring; self.progress = 0 }
         }
     }
 
@@ -156,8 +170,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
         samples = []; timestamps = []
         startTime = nil
         coveredFrames = 0; totalFrames = 0
-        recentCovered = []; uncoveredStreak = 0
-        lockExposure(false)
+        uncoveredStreak = 0
     }
 
     /// PPG needs a locked exposure: with the torch through a fingertip the
@@ -193,6 +206,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
     }
 
     private func teardown() {
+        lockExposure(false)
         setTorch(on: false)
         if session.isRunning { session.stopRunning() }
     }
@@ -222,10 +236,11 @@ final class CoherenceCapture: NSObject, ObservableObject {
         let effectiveRate = Double(samples.count - 1) / duration
         let result = CoherenceAnalyzer.analyze(ppg: samples, sampleRate: effectiveRate)
         #if DEBUG
-        let beats = CoherenceAnalyzer.beatTimes(ppg: samples, sampleRate: effectiveRate)
-        print("[coherence] frames=\(samples.count) fps=\(String(format: "%.1f", effectiveRate)) "
-              + "coverage=\(String(format: "%.2f", coverage)) beats=\(beats.count) "
-              + "result=\(result.map { String(format: "score %.2f hr %.0f", $0.coherenceScore, $0.meanHR) } ?? "nil")")
+        let verdict = CoherenceAnalyzer.diagnose(ppg: samples, sampleRate: effectiveRate)
+            + String(format: " · coverage %.0f%%", coverage * 100)
+            + (result.map { String(format: " · score %.2f", $0.coherenceScore) } ?? " · REFUSED")
+        print("[coherence] " + verdict)
+        DispatchQueue.main.async { self.debugResult = verdict }
         #endif
 
         DispatchQueue.main.async {
@@ -291,15 +306,15 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
         let covered = isCovered
 
-        recentCovered.append(covered)
-        if recentCovered.count > 30 { recentCovered.removeFirst() }
         if covered { uncoveredStreak = 0 } else { uncoveredStreak += 1 }
 
         frameCounter += 1
         #if DEBUG
         if frameCounter % 30 == 0 {
-            print(String(format: "[ppg] r=%.2f g=%.2f b=%.2f covered=%d state=%@",
-                         r, g, b, covered ? 1 : 0, String(describing: qState)))
+            let line = String(format: "r %.2f · g %.2f · b %.2f · %@",
+                              r, g, b, covered ? "finger ✓" : "no finger")
+            print("[ppg] " + line + " state=\(qState)")
+            DispatchQueue.main.async { self.debugLive = line }
         }
         #endif
 
@@ -323,22 +338,16 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
 
         switch qState {
         case .waiting:
-            // Arm when the last second was MOSTLY covered (≥80%) — tolerant of
-            // a noisy detector, impossible for an uncovered lens.
-            let coveredRecently = recentCovered.lazy.filter { $0 }.count
-            if recentCovered.count >= 30, coveredRecently >= 24 {
-                resetWindow()
-                lockExposure(true)
-                startTime = now
-                qState = .measuring
-                DispatchQueue.main.async { self.phase = .measuring; self.progress = 0 }
-            }
+            // Camera + torch live for placement; the read begins only when the
+            // user taps Start (beginMeasurement).
+            break
 
         case .measuring:
-            // Finger clearly off for ~1.5 s → restart rather than run a doomed
-            // timer to a guaranteed failure.
+            // Finger clearly off for ~1.5 s → back to placement rather than
+            // running a doomed timer to a guaranteed failure.
             if uncoveredStreak >= 45 {
                 resetWindow()
+                lockExposure(false)
                 qState = .waiting
                 DispatchQueue.main.async {
                     self.phase = .waiting
@@ -347,6 +356,7 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
                 return
             }
 
+            if startTime == nil { startTime = now }
             let t = now - (startTime ?? now)
             // NEGATED: with the torch shining through the fingertip, each
             // heartbeat pushes MORE blood in, absorbing more light — the pulse

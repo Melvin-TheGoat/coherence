@@ -28,7 +28,9 @@ struct CoherenceMeasureView: View {
             VStack(spacing: 24) {
                 switch capture.phase {
                 case .idle:
-                    instructions
+                    ProgressView("Starting the camera…")
+                        .tint(AppColor.accentGold)
+                        .frame(maxHeight: .infinity)
                 case .waiting:
                     waiting
                 case .measuring:
@@ -53,41 +55,18 @@ struct CoherenceMeasureView: View {
                         .tint(AppColor.textSecondary)
                 }
             }
+            .onAppear { capture.start() }        // camera + torch up immediately
             .onDisappear { capture.cancel() }
         }
         .interactiveDismissDisabled(capture.phase == .measuring)
     }
 
-    // MARK: - Idle / instructions
+    // MARK: - Waiting / placement
 
-    private var instructions: some View {
-        VStack(spacing: 18) {
-            Spacer(minLength: 0)
-            Image(systemName: "camera.macro")
-                .font(.system(size: 44))
-                .foregroundStyle(AppColor.accentGold)
-            Text("Read your heart's rhythm")
-                .font(AppFont.title)
-                .foregroundStyle(AppColor.textPrimary)
-            VStack(alignment: .leading, spacing: 12) {
-                coachRow("hand.point.up.left", "Cup your hand over the top of the phone and lay your fingertip flat across the back camera and the flash together, so the light glows through your finger.")
-                coachRow("hand.raised", "Light touch. Pressing hard squeezes the blood out of the fingertip.")
-                coachRow("timer", "It starts by itself once it sees your finger, and takes 45 seconds. Breathe however you naturally do.")
-                coachRow("flashlight.on.fill", "The flash stays on and may feel warm. That's normal.")
-            }
-            .padding(18)
-            .background(AppColor.backgroundSecondary,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            Spacer(minLength: 0)
-            Button("I'm ready") { capture.start() }
-                .buttonStyle(PrimaryButtonStyle())
-        }
-    }
-
-    // MARK: - Waiting for finger
-
-    /// Torch is on, camera is live; the read arms itself when a steady finger
-    /// is seen. Also where a mid-read finger-off lands (the window restarts).
+    /// Camera + torch are live from the moment the sheet opens. The user
+    /// places their finger (the circle goes solid red), then taps Start — the
+    /// button stays dim until the finger is detected. A mid-read finger-off
+    /// also lands back here.
     private var waiting: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
@@ -97,31 +76,56 @@ struct CoherenceMeasureView: View {
                 .overlay(Circle().stroke(
                     capture.fingerDetected ? AppColor.accentGold : AppColor.backgroundSecondary,
                     lineWidth: 3))
-                .padding(.bottom, 24)
+                .padding(.bottom, 22)
+
             Text("Cover the camera and flash\nwith your fingertip")
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
-                .padding(.bottom, 10)
+                .padding(.bottom, 12)
+
+            VStack(alignment: .leading, spacing: 8) {
+                coachRow("hand.point.up.left", "Cup your hand over the top of the phone, fingertip flat across camera and flash together.")
+                coachRow("hand.raised", "Light touch — pressing hard squeezes the blood out.")
+                coachRow("timer", "45 seconds. Sit still, breathe naturally.")
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(AppColor.backgroundSecondary,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.bottom, 12)
+
             Text(capture.fingerDetected
-                 ? "There it is. Hold still…"
-                 : "The circle turns solid red when you've got it. The read starts on its own.")
-                .font(AppFont.callout)
+                 ? "Got it — the circle is red. Hit Start."
+                 : "The circle turns solid red when your finger is placed right.")
+                .font(AppFont.caption)
                 .foregroundStyle(capture.fingerDetected ? AppColor.accentGold : AppColor.textSecondary)
                 .multilineTextAlignment(.center)
-                .frame(height: 48)
+                .frame(height: 32)
+
+            #if DEBUG
+            Text(capture.debugLive)
+                .font(.caption2.monospaced())
+                .foregroundStyle(AppColor.textSecondary.opacity(0.6))
+                .frame(height: 14)
+            #endif
+
             Spacer(minLength: 0)
+            Button("Start") { capture.beginMeasurement() }
+                .buttonStyle(PrimaryButtonStyle())
+                .disabled(!capture.fingerDetected)
+                .opacity(capture.fingerDetected ? 1 : 0.45)
         }
         .frame(maxWidth: .infinity)
     }
 
     private func coachRow(_ icon: String, _ text: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .frame(width: 26)
+                .frame(width: 22)
                 .foregroundStyle(AppColor.accentGold)
             Text(text)
-                .font(AppFont.callout)
+                .font(AppFont.caption)
                 .foregroundStyle(AppColor.textPrimary.opacity(0.88))
         }
     }
@@ -227,6 +231,17 @@ struct CoherenceMeasureView: View {
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textPrimary.opacity(0.9))
                 .multilineTextAlignment(.center)
+            #if DEBUG
+            if !capture.debugResult.isEmpty {
+                Text(capture.debugResult)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(10)
+                    .background(AppColor.backgroundSecondary,
+                                in: RoundedRectangle(cornerRadius: 10))
+            }
+            #endif
             Spacer(minLength: 0)
             Button("Try again") { capture.start() }
                 .buttonStyle(PrimaryButtonStyle())

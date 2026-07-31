@@ -208,6 +208,35 @@ enum CoherenceAnalyzer {
         return max(0, min(1, peakPower / total))
     }
 
+    /// Walks the same pipeline as `analyze` and reports what each gate saw —
+    /// so a failed read on a device can say WHY without a debugger attached.
+    static func diagnose(ppg: [Double], sampleRate: Double) -> String {
+        guard sampleRate > 10 else { return "fps too low (\(String(format: "%.1f", sampleRate)))" }
+        guard ppg.allSatisfy({ $0.isFinite }) else { return "non-finite samples" }
+        let dur = Double(ppg.count) / sampleRate
+        guard dur >= minDurationSec else {
+            return String(format: "too short: %.0fs < %.0fs", dur, minDurationSec)
+        }
+        let beats = beatTimes(ppg: ppg, sampleRate: sampleRate)
+        var kept = 0, rejected = 0
+        var prevKept: Double?
+        var rrSum = 0.0
+        for i in 1..<max(1, beats.count) {
+            let rr = beats[i] - beats[i - 1]
+            if !rrBounds.contains(rr) { rejected += 1; prevKept = nil; continue }
+            if let p = prevKept, abs(rr - p) > 0.25 * p { rejected += 1; prevKept = nil; continue }
+            kept += 1; rrSum += rr; prevKept = rr
+        }
+        let frac = kept + rejected > 0 ? Double(kept) / Double(kept + rejected) : 0
+        let hr = kept > 0 ? 60.0 / (rrSum / Double(kept)) : 0
+        let base = String(format: "%.0fs @ %.1ffps · beats %d · kept %d (%.0f%%) · ~%.0f bpm",
+                          dur, sampleRate, beats.count, kept, frac * 100, hr)
+        if beats.count < minValidBeats + 1 { return base + " → too few beats" }
+        if kept < minValidBeats { return base + " → too few clean intervals" }
+        if frac < minValidFraction { return base + " → intervals too irregular (artifacts)" }
+        return base + " → spectral stage"
+    }
+
     private static func standardDeviation(_ x: [Double]) -> Double {
         guard x.count > 1 else { return 0 }
         let mean = x.reduce(0, +) / Double(x.count)
