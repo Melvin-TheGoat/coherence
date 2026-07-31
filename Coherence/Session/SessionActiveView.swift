@@ -1,19 +1,36 @@
 import SwiftUI
 
-/// The mid-session screen — the calm-stakes moment. Deliberately minimal and
-/// biometric-free (evidence comes after, not during): a slow breathing pacer orb
-/// (~6 breaths/min) in the muted calm accent, elapsed time, and a quiet end
-/// control. The Watch measures + owns the authoritative end; this guides + soothes.
+/// The mid-session screen — the calm-stakes moment, shown on the phone for
+/// **every** session type (guided, frequency, nature, silence; belly or not)
+/// while the Watch measures. Deliberately minimal and biometric-free: evidence
+/// comes after, not during. A slow breathing pacer orb (~6 breaths/min) in the
+/// muted calm accent, the session clock, and a quiet end control.
+///
+/// The pacer is a suggestion, not a requirement — the resonance pace is the
+/// fastest way into the state we're looking for regardless of what's playing.
 struct SessionActiveView: View {
     let bellyBreathing: Bool
+    /// When the session actually started, so the clock survives the view being
+    /// rebuilt and matches the Watch rather than drifting from its own count.
+    var startedAt: Date = Date()
+    /// nil for open-ended sessions — those count up instead of down.
+    var plannedDurationSec: Int?
     var onEnd: () -> Void
 
     @State private var inhaling = false
-    @State private var elapsed = 0
+    @State private var now = Date()
 
     // ~6 breaths/min: 5 s inhale, 5 s exhale.
     private let breathPhase = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private var elapsed: Int { max(0, Int(now.timeIntervalSince(startedAt))) }
+
+    /// Counts down for timed sessions, up for open-ended ones.
+    private var displaySeconds: Int {
+        guard let planned = plannedDurationSec else { return elapsed }
+        return max(0, planned - elapsed)
+    }
 
     var body: some View {
         ZStack {
@@ -32,17 +49,18 @@ struct SessionActiveView: View {
 
                 Spacer()
 
-                Text(timeString(elapsed))
+                Text(timeString(displaySeconds))
                     .font(.system(size: 22, weight: .medium, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(AppColor.textSecondary)
 
-                if bellyBreathing {
-                    Text("Rest your wrist flat on your belly")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .padding(.top, 4)
-                }
+                Text(bellyBreathing
+                     ? "Lie back with your wrist flat on your belly"
+                     : "Your Watch is measuring — let it settle")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, 4)
 
                 Button("End session", action: onEnd)
                     .font(AppFont.callout.weight(.medium))
@@ -54,7 +72,7 @@ struct SessionActiveView: View {
         }
         .onAppear { inhaling = true }
         .onReceive(breathPhase) { _ in inhaling.toggle() }
-        .onReceive(clock) { _ in elapsed += 1 }
+        .onReceive(clock) { now = $0 }
     }
 
     private var orb: some View {
@@ -82,5 +100,5 @@ struct SessionActiveView: View {
 }
 
 #Preview {
-    SessionActiveView(bellyBreathing: true, onEnd: {})
+    SessionActiveView(bellyBreathing: true, plannedDurationSec: 600, onEnd: {})
 }

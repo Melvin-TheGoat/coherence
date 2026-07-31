@@ -21,6 +21,19 @@ final class SessionCoordinator: NSObject, ObservableObject {
     @Published var lastSessionID: UUID?
     /// TEMP belly readability diagnostic from the last session (nil for regular).
     @Published var lastBellyDiag: String?
+    /// The session currently running on the Watch — drives the phone's
+    /// mid-session screen. Non-nil from a successful `startWatchApp` until the
+    /// payload lands. Every mode gets one, belly or not, guided or silent.
+    @Published private(set) var active: ActiveSession?
+
+    /// What the phone needs to render the mid-session screen.
+    struct ActiveSession: Identifiable, Equatable {
+        let id: UUID
+        let startedAt: Date
+        let bellyBreathing: Bool
+        /// nil for open-ended sessions (ended from the Watch or the phone).
+        let plannedDurationSec: Int?
+    }
 
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
@@ -92,6 +105,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
                     guard let self else { return }
                     if success {
                         self.status = "Watch launched — meditate, then End on the Watch"
+                        // The session is live: show the phone's mid-session screen.
+                        self.active = ActiveSession(id: params.sessionID,
+                                                    startedAt: Date(),
+                                                    bellyBreathing: bellyBreathing,
+                                                    plannedDurationSec: plannedDurationSec)
                         // Play the chosen sound on the phone while the Watch measures.
                         self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
@@ -128,6 +146,25 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
     }
 
+    /// Ends the running session from the phone. The Watch still performs the
+    /// authoritative finish (analysis + haptic) and ships the payload back —
+    /// this only asks it to stop now. The mid-session screen stays up until that
+    /// payload lands, so we never claim a result we don't have yet.
+    func endActiveSession() {
+        guard let active else { return }
+        stopAudio()
+        let wc = WCSession.default
+        let msg = [WCKeys.end: active.id.uuidString]
+        if wc.isReachable {
+            wc.sendMessage(msg, replyHandler: nil, errorHandler: { [weak self] error in
+                self?.log.error("end sendMessage failed: \(error.localizedDescription)")
+            })
+        }
+        // Queued delivery too, in case the Watch isn't reachable this instant.
+        wc.transferUserInfo(msg)
+        status = "Ending on your Watch…"
+    }
+
     /// Stops live-session audio (called when the session ends).
     private func stopAudio() {
         audioStopTask?.cancel()
@@ -140,6 +177,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // the phone audio now. For timed sessions the parallel timer may have already
         // stopped it; stopAudio() is idempotent.
         stopAudio()
+        // The session is over — take down the mid-session screen.
+        active = nil
 
         // The session is complete — clear the "start" command from the persistent
         // application context so a cold-launching Watch can't replay a finished

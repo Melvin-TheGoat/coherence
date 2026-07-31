@@ -57,6 +57,14 @@ struct ContentView: View {
             }
         }
         #endif
+        // A session is running on the Watch — take over the phone for every mode.
+        .fullScreenCover(item: Binding(get: { coordinator.active }, set: { _ in })) { session in
+            SessionActiveView(bellyBreathing: session.bellyBreathing,
+                              startedAt: session.startedAt,
+                              plannedDurationSec: session.plannedDurationSec) {
+                coordinator.endActiveSession()
+            }
+        }
         .sheet(isPresented: $showSetup) { SessionSetupView() }
         .sheet(isPresented: $showCalendar) { SessionHistoryView() }
         .sheet(isPresented: $showHistory) { NavigationStack { AllSessionsView() } }

@@ -143,6 +143,17 @@ final class WatchSessionManager: NSObject, ObservableObject {
               let p = try? JSONDecoder().decode(SessionParams.self, from: data) else { return }
         Task { @MainActor in await self.begin(p) }
     }
+
+    /// Phone → Watch "end now" (the phone's mid-session End button). Ignored
+    /// unless the id matches the running session, so a stale end from a previous
+    /// session can't cut a later one short.
+    private nonisolated func handleEnd(_ dict: [String: Any]) {
+        guard let raw = dict[WCKeys.end] as? String, let id = UUID(uuidString: raw) else { return }
+        Task { @MainActor in
+            guard self.params?.sessionID == id else { return }
+            await self.endSession()
+        }
+    }
 }
 
 extension WatchSessionManager: WCSessionDelegate {
@@ -156,10 +167,12 @@ extension WatchSessionManager: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         handleParams(message)
+        handleEnd(message)
     }
 
     nonisolated func session(_ session: WCSession, didReceiveUserInfo userInfo: [String: Any]) {
         handleParams(userInfo)
+        handleEnd(userInfo)
     }
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
