@@ -299,17 +299,29 @@ enum CoherenceAnalyzer {
         let maxLag = min(n - 1, Int(rrBounds.upperBound * sampleRate))
         guard maxLag > minLag else { return nil }
 
+        var rs = [Double](repeating: 0, count: maxLag - minLag + 1)
         var bestLag = 0, bestR = 0.0
         for lag in minLag...maxLag {
             var s = 0.0
             var i = 0
             while i < n - lag { s += x[i] * x[i + lag]; i += 1 }
             let r = s / energy
+            rs[lag - minLag] = r
             if r > bestR { bestR = r; bestLag = lag }
         }
         // A real pulse autocorrelates strongly at its own period; noise doesn't.
         guard bestR > 0.15, bestLag > 0 else { return nil }
-        return Double(bestLag) / sampleRate
+
+        // Octave-error guard (field-found: a period of TWO beats won the scan,
+        // halving the detected heart rate to ~37 bpm). If half the winning
+        // period also correlates well, the half is the true beat period —
+        // repeat until it no longer does.
+        var lag = bestLag
+        while lag / 2 >= minLag {
+            let rHalf = rs[lag / 2 - minLag]
+            if rHalf >= 0.6 * bestR { lag = lag / 2 } else { break }
+        }
+        return Double(lag) / sampleRate
     }
 
     private static func standardDeviation(_ x: [Double]) -> Double {

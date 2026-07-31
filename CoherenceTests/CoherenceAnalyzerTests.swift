@@ -25,7 +25,8 @@ final class CoherenceAnalyzerTests: XCTestCase {
         rrForBeat: (Double) -> Double,
         noiseAmp: Double = 0.05,
         wanderAmp: Double = 0.4,
-        dicrotic: Bool = false
+        dicrotic: Bool = false,
+        alternatingAmplitude: Bool = false
     ) -> [Double] {
         var beatTimes: [Double] = []
         var t = 0.3
@@ -39,15 +40,16 @@ final class CoherenceAnalyzerTests: XCTestCase {
         for i in 0..<n {
             let ti = Double(i) / fs
             var v = 0.0
-            for b in beatTimes where abs(b - ti) < 0.7 {
+            for (k, b) in beatTimes.enumerated() where abs(b - ti) < 0.7 {
+                let amp = alternatingAmplitude && k % 2 == 1 ? 0.65 : 1.0
                 let d = (ti - b) / 0.06
-                v += exp(-d * d)
+                v += amp * exp(-d * d)
                 if dicrotic {
                     // Secondary bump ~0.35 s after systole at 40% amplitude —
                     // the real-pulse feature that double-fired the detector on
                     // device before the smoothing + merge fix.
                     let d2 = (ti - (b + 0.35)) / 0.07
-                    v += 0.4 * exp(-d2 * d2)
+                    v += amp * 0.4 * exp(-d2 * d2)
                 }
             }
             v += wanderAmp * sin(2 * .pi * 0.05 * ti)          // finger-pressure drift
@@ -94,6 +96,22 @@ final class CoherenceAnalyzerTests: XCTestCase {
         }, dicrotic: true)
         let snap = try XCTUnwrap(CoherenceAnalyzer.analyze(ppg: ppg, sampleRate: fs))
         XCTAssertEqual(snap.meanHR, 63, accuracy: 4)
+        XCTAssertGreaterThan(snap.validBeatFraction, 0.85)
+    }
+
+    /// Regression for the second on-device failure: alternating pulse
+    /// amplitude (odd/even beats differ) made the TWO-beat lag win the
+    /// autocorrelation scan — an octave error that halved the detected rate
+    /// to ~37 bpm. The subharmonic check must recover the true period.
+    func test_alternatingAmplitudeDoesNotHalveRate() throws {
+        var rrNoise = LCG(state: 5)
+        var beatIndex = 0
+        let ppg = syntheticPPG(durationSec: 60, rrForBeat: { t in
+            beatIndex += 1
+            return 0.81 + 0.04 * sin(2 * .pi * 0.1 * t) + 0.02 * (rrNoise.next() - 0.5)
+        }, dicrotic: true, alternatingAmplitude: true)
+        let snap = try XCTUnwrap(CoherenceAnalyzer.analyze(ppg: ppg, sampleRate: fs))
+        XCTAssertEqual(snap.meanHR, 74, accuracy: 5)
         XCTAssertGreaterThan(snap.validBeatFraction, 0.85)
     }
 
