@@ -40,15 +40,18 @@ enum CoherenceAnalyzer {
     }
 
     // Tunables (one place, so tests and capture agree).
-    static let minDurationSec = 40.0
-    static let minValidBeats = 30
-    static let minValidFraction = 0.75
+    // Sized for a 45 s capture: enough for ~4.5 cycles of the 0.1 Hz rhythm.
+    // Shorter than ~30 s of usable beats and the LF band can't be resolved.
+    static let minDurationSec = 28.0
+    static let minValidBeats = 20
+    static let minValidFraction = 0.7
     /// Physiologic beat-interval bounds (33–180 bpm).
     static let rrBounds = 0.33...1.8
     /// LF window searched for the dominant peak.
     static let peakBand = 0.04...0.26
-    /// Integration half-width around the found peak.
-    static let peakHalfWidth = 0.015
+    /// Integration half-width around the found peak. Matched to the spectral
+    /// resolution of a ~45 s Hann-windowed snapshot (mainlobe ~0.045 Hz).
+    static let peakHalfWidth = 0.025
     /// Total band the peak power is compared against.
     static let totalBand = 0.0033...0.4
 
@@ -149,7 +152,7 @@ enum CoherenceAnalyzer {
     /// SignalEngine's fractional-rate scan), and return peak-band power over
     /// total-band power.
     private static func coherenceRatio(rr: [(t: Double, v: Double)]) -> Double? {
-        guard let first = rr.first?.t, let last = rr.last?.t, last - first > 30 else { return nil }
+        guard let first = rr.first?.t, let last = rr.last?.t, last - first > 20 else { return nil }
         let fs = 4.0
         let count = Int((last - first) * fs)
         guard count > 64 else { return nil }

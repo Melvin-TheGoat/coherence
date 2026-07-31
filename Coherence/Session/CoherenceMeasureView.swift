@@ -1,4 +1,25 @@
 import SwiftUI
+import AVFoundation
+
+/// Small live view of what the camera sees — with a finger properly on the
+/// lens it glows solid red, which is itself placement feedback.
+private struct CameraPreviewCircle: UIViewRepresentable {
+    let session: AVCaptureSession
+
+    final class PreviewView: UIView {
+        override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
+        var previewLayer: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
+    }
+
+    func makeUIView(context: Context) -> PreviewView {
+        let view = PreviewView()
+        view.previewLayer.session = session
+        view.previewLayer.videoGravity = .resizeAspectFill
+        return view
+    }
+
+    func updateUIView(_ uiView: PreviewView, context: Context) {}
+}
 
 /// The finger-on-camera coherence snapshot: instructions → 90 s live capture
 /// with coaching → score. Presented before and after a session (Phase 9c wires
@@ -85,7 +106,7 @@ struct CoherenceMeasureView: View {
     // MARK: - Measuring
 
     private var measuring: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 0) {
             Spacer(minLength: 0)
             ZStack {
                 Circle().stroke(AppColor.backgroundSecondary, lineWidth: 12)
@@ -108,7 +129,18 @@ struct CoherenceMeasureView: View {
                 }
             }
             .frame(width: 180, height: 180)
+            .padding(.bottom, 28)
 
+            // What the camera sees: solid red glow = finger placed right.
+            CameraPreviewCircle(session: capture.previewSession)
+                .frame(width: 76, height: 76)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(
+                    capture.fingerDetected ? AppColor.accentGold : AppColor.backgroundSecondary,
+                    lineWidth: 2))
+                .padding(.bottom, 18)
+
+            // Fixed-height slot so the layout never jumps when the text swaps.
             Text(capture.fingerDetected
                  ? "Reading. Stay still."
                  : "Cover the camera and flash with your fingertip.")
@@ -116,9 +148,10 @@ struct CoherenceMeasureView: View {
                 .foregroundStyle(capture.fingerDetected
                                  ? AppColor.textSecondary : AppColor.accentGold)
                 .multilineTextAlignment(.center)
-                .animation(.easeInOut(duration: 0.2), value: capture.fingerDetected)
+                .frame(height: 48)
             Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Done

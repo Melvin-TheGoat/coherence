@@ -95,6 +95,22 @@ final class CoherenceAnalyzerTests: XCTestCase {
         XCTAssertNil(CoherenceAnalyzer.analyze(ppg: junk, sampleRate: fs))
     }
 
+    /// The capture window the phone actually uses (45 s) must still resolve
+    /// the differential: coherent clearly above scattered.
+    func test_fortyFiveSecondWindowStillDiscriminates() throws {
+        var jitter = LCG(state: 7)
+        let coherent = try XCTUnwrap(CoherenceAnalyzer.analyze(
+            ppg: syntheticPPG(durationSec: 45, rrForBeat: { t in
+                1.0 + 0.08 * sin(2 * .pi * 0.1 * t)
+            }), sampleRate: fs))
+        let scattered = try XCTUnwrap(CoherenceAnalyzer.analyze(
+            ppg: syntheticPPG(durationSec: 45, rrForBeat: { _ in
+                0.9 + 0.2 * jitter.next()
+            }), sampleRate: fs))
+        XCTAssertGreaterThan(coherent.coherenceScore, 0.4)
+        XCTAssertGreaterThan(coherent.coherenceScore, scattered.coherenceScore + 0.1)
+    }
+
     /// Too short to resolve the low-frequency band → nil.
     func test_shortSignalRefused() {
         let ppg = syntheticPPG(durationSec: 20, rrForBeat: { _ in 1.0 })

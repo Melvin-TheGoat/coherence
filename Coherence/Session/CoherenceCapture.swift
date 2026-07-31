@@ -25,9 +25,13 @@ final class CoherenceCapture: NSObject, ObservableObject {
     @Published var pulseLevel: Double = 0        // live waveform hint for the UI
     @Published var snapshot: CoherenceAnalyzer.Snapshot?
 
-    /// Capture window. 90 s resolves the low-frequency band comfortably
-    /// (analyzer requires ≥ 40 s of usable beats).
-    let targetDuration: Double = 90
+    /// Capture window. 45 s is the floor for resolving the ~0.1 Hz coherence
+    /// rhythm (≈4.5 cycles); the analyzer needs ~30 s of usable beats inside it.
+    let targetDuration: Double = 45
+
+    /// For the live preview circle in the UI (PeaceMind-style: you can see
+    /// what the camera sees while placing your finger).
+    var previewSession: AVCaptureSession { session }
 
     private let session = AVCaptureSession()
     private let queue = DispatchQueue(label: "com.lockout.coherence.ppg")
@@ -36,6 +40,8 @@ final class CoherenceCapture: NSObject, ObservableObject {
     private var timestamps: [Double] = []
     private var startTime: CFTimeInterval?
     private var recentForLevel: [Double] = []
+    private var coveredFrames = 0
+    private var totalFrames = 0
     /// Set on the capture queue when the window completes; frames that arrive
     /// while the session is still spinning down are ignored.
     private var finished = false
@@ -49,6 +55,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
         queue.async {
             self.samples = []; self.timestamps = []
             self.startTime = nil; self.finished = false
+            self.coveredFrames = 0; self.totalFrames = 0
         }
 
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -148,8 +155,20 @@ final class CoherenceCapture: NSObject, ObservableObject {
             fail("Too little signal. Keep your finger flat on the camera and try again.")
             return
         }
+        let coverage = totalFrames > 0 ? Double(coveredFrames) / Double(totalFrames) : 0
+        guard coverage >= 0.7 else {
+            fail("Your finger came off the camera during the read. Cover the "
+                 + "camera and flash completely and try again.")
+            return
+        }
         let effectiveRate = Double(samples.count - 1) / duration
         let result = CoherenceAnalyzer.analyze(ppg: samples, sampleRate: effectiveRate)
+        #if DEBUG
+        let beats = CoherenceAnalyzer.beatTimes(ppg: samples, sampleRate: effectiveRate)
+        print("[coherence] frames=\(samples.count) fps=\(String(format: "%.1f", effectiveRate)) "
+              + "coverage=\(String(format: "%.2f", coverage)) beats=\(beats.count) "
+              + "result=\(result.map { String(format: "score %.2f hr %.0f", $0.coherenceScore, $0.meanHR) } ?? "nil")")
+        #endif
 
         DispatchQueue.main.async {
             if let result {
@@ -203,18 +222,22 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
         let g = Double(gSum) / Double(count) / 255.0
         let b = Double(bSum) / Double(count) / 255.0
 
-        // A torch-lit fingertip floods the sensor with red: red high AND
-        // dominant. Anything else = finger not (fully) on.
-        let covered = r > 0.35 && r > 1.8 * g && r > 1.8 * b
+        // A torch-lit fingertip floods the sensor with red. Deliberately loose
+        // (a saturated frame lifts green too): red merely has to be high and
+        // clearly the biggest channel. Drives coaching, not sample-keeping.
+        let covered = r > 0.35 && r > 1.15 * g && r > 1.3 * b
 
         let now = CACurrentMediaTime()
         if startTime == nil { startTime = now }
         let t = now - (startTime ?? now)
 
-        if covered {
-            samples.append(r)
-            timestamps.append(t)
-        }
+        // Keep EVERY frame so the waveform stays uniformly sampled — gaps from
+        // a flickery finger-detector were shredding the beat series. Coverage
+        // is judged once, at the end.
+        samples.append(r)
+        timestamps.append(t)
+        totalFrames += 1
+        if covered { coveredFrames += 1 }
 
         // Live pulse hint: deviation of the newest sample from the recent mean.
         recentForLevel.append(r)
