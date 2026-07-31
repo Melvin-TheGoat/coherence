@@ -13,6 +13,10 @@ final class CoherenceCapture: NSObject, ObservableObject {
 
     enum Phase: Equatable {
         case idle
+        /// Camera + torch running, waiting for a steady finger. The 45 s
+        /// window starts itself when the finger is detected, and RESTARTS
+        /// from here if the finger comes off mid-read.
+        case waiting
         case measuring
         case analyzing
         case done
@@ -42,20 +46,21 @@ final class CoherenceCapture: NSObject, ObservableObject {
     private var recentForLevel: [Double] = []
     private var coveredFrames = 0
     private var totalFrames = 0
-    /// Set on the capture queue when the window completes; frames that arrive
-    /// while the session is still spinning down are ignored.
-    private var finished = false
+    /// Queue-side state machine (the @Published phase mirrors it for the UI).
+    private enum QState { case waiting, measuring, finished }
+    private var qState: QState = .waiting
+    private var coveredStreak = 0
+    private var uncoveredStreak = 0
 
     // MARK: - Lifecycle
 
     func start() {
-        guard phase != .measuring else { return }
+        guard phase != .measuring, phase != .waiting else { return }
         snapshot = nil
         progress = 0
         queue.async {
-            self.samples = []; self.timestamps = []
-            self.startTime = nil; self.finished = false
-            self.coveredFrames = 0; self.totalFrames = 0
+            self.resetWindow()
+            self.qState = .waiting
         }
 
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -75,6 +80,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
 
     func cancel() {
         queue.async {
+            self.qState = .finished          // stop any in-flight frames
             self.teardown()
             DispatchQueue.main.async { self.phase = .idle }
         }
@@ -119,7 +125,16 @@ final class CoherenceCapture: NSObject, ObservableObject {
 
         session.startRunning()
         setTorch(on: true)
-        DispatchQueue.main.async { self.phase = .measuring }
+        DispatchQueue.main.async { self.phase = .waiting }
+    }
+
+    /// Clears the capture window (used on start and when the finger comes off
+    /// mid-read — the measurement restarts rather than silently degrading).
+    private func resetWindow() {
+        samples = []; timestamps = []
+        startTime = nil
+        coveredFrames = 0; totalFrames = 0
+        coveredStreak = 0; uncoveredStreak = 0
     }
 
     private func setTorch(on: Bool) {
@@ -190,7 +205,7 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
     func captureOutput(_ output: AVCaptureOutput,
                        didOutput sampleBuffer: CMSampleBuffer,
                        from connection: AVCaptureConnection) {
-        guard !finished,
+        guard qState != .finished,
               let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
 
         CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
@@ -224,20 +239,10 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
 
         // A torch-lit fingertip floods the sensor with red. Deliberately loose
         // (a saturated frame lifts green too): red merely has to be high and
-        // clearly the biggest channel. Drives coaching, not sample-keeping.
+        // clearly the biggest channel.
         let covered = r > 0.35 && r > 1.15 * g && r > 1.3 * b
-
-        let now = CACurrentMediaTime()
-        if startTime == nil { startTime = now }
-        let t = now - (startTime ?? now)
-
-        // Keep EVERY frame so the waveform stays uniformly sampled — gaps from
-        // a flickery finger-detector were shredding the beat series. Coverage
-        // is judged once, at the end.
-        samples.append(r)
-        timestamps.append(t)
-        totalFrames += 1
-        if covered { coveredFrames += 1 }
+        if covered { coveredStreak += 1; uncoveredStreak = 0 }
+        else       { uncoveredStreak += 1; coveredStreak = 0 }
 
         // Live pulse hint: deviation of the newest sample from the recent mean.
         recentForLevel.append(r)
@@ -245,16 +250,61 @@ extension CoherenceCapture: AVCaptureVideoDataOutputSampleBufferDelegate {
         let mean = recentForLevel.reduce(0, +) / Double(recentForLevel.count)
         let level = min(1, abs(r - mean) * 40)
 
-        let progressNow = min(1, t / targetDuration)
-        DispatchQueue.main.async {
-            self.fingerDetected = covered
-            self.pulseLevel = level
-            self.progress = progressNow
-        }
+        let now = CACurrentMediaTime()
 
-        if t >= targetDuration {
-            finished = true
-            finishAndAnalyze()
+        switch qState {
+        case .waiting:
+            // The window arms itself: ~0.7 s of steady finger starts the read.
+            if coveredStreak >= 20 {
+                resetWindow()
+                startTime = now
+                qState = .measuring
+                DispatchQueue.main.async { self.phase = .measuring; self.progress = 0 }
+            } else {
+                DispatchQueue.main.async {
+                    self.fingerDetected = covered
+                    self.pulseLevel = level
+                }
+            }
+
+        case .measuring:
+            // Finger off for ~2 s → the read is compromised; start over
+            // instead of letting a doomed timer run to a failure.
+            if uncoveredStreak >= 60 {
+                resetWindow()
+                qState = .waiting
+                DispatchQueue.main.async {
+                    self.phase = .waiting
+                    self.progress = 0
+                    self.fingerDetected = false
+                }
+                return
+            }
+
+            let t = now - (startTime ?? now)
+            // NEGATED: with the torch shining through the fingertip, each
+            // heartbeat pushes MORE blood in, absorbing more light — the pulse
+            // is a dip in red, not a peak. Inverting makes the systolic dip
+            // the sharp positive feature the analyzer's peak detector expects.
+            samples.append(-r)
+            timestamps.append(t)
+            totalFrames += 1
+            if covered { coveredFrames += 1 }
+
+            let progressNow = min(1, t / targetDuration)
+            DispatchQueue.main.async {
+                self.fingerDetected = covered
+                self.pulseLevel = level
+                self.progress = progressNow
+            }
+
+            if t >= targetDuration {
+                qState = .finished
+                finishAndAnalyze()
+            }
+
+        case .finished:
+            break
         }
     }
 }

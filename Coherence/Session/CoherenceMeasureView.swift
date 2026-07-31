@@ -39,6 +39,8 @@ struct CoherenceMeasureView: View {
                 switch capture.phase {
                 case .idle:
                     instructions
+                case .waiting:
+                    waiting
                 case .measuring:
                     measuring
                 case .analyzing:
@@ -78,18 +80,49 @@ struct CoherenceMeasureView: View {
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.textPrimary)
             VStack(alignment: .leading, spacing: 12) {
-                coachRow("hand.point.up.left", "Rest your fingertip flat over the back camera and the flash together.")
+                coachRow("hand.point.up.left", "Cup your hand over the top of the phone and lay your fingertip flat across the back camera and the flash together, so the light glows through your finger.")
                 coachRow("hand.raised", "Light touch. Pressing hard squeezes the blood out of the fingertip.")
-                coachRow("figure.seated.side", "Sit still for a minute and a half. Breathe however you naturally do.")
+                coachRow("timer", "It starts by itself once it sees your finger, and takes 45 seconds. Breathe however you naturally do.")
                 coachRow("flashlight.on.fill", "The flash stays on and may feel warm. That's normal.")
             }
             .padding(18)
             .background(AppColor.backgroundSecondary,
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             Spacer(minLength: 0)
-            Button("Start") { capture.start() }
+            Button("I'm ready") { capture.start() }
                 .buttonStyle(PrimaryButtonStyle())
         }
+    }
+
+    // MARK: - Waiting for finger
+
+    /// Torch is on, camera is live; the read arms itself when a steady finger
+    /// is seen. Also where a mid-read finger-off lands (the window restarts).
+    private var waiting: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            CameraPreviewCircle(session: capture.previewSession)
+                .frame(width: 130, height: 130)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(
+                    capture.fingerDetected ? AppColor.accentGold : AppColor.backgroundSecondary,
+                    lineWidth: 3))
+                .padding(.bottom, 24)
+            Text("Cover the camera and flash\nwith your fingertip")
+                .font(AppFont.title)
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .padding(.bottom, 10)
+            Text(capture.fingerDetected
+                 ? "There it is. Hold still…"
+                 : "The circle turns solid red when you've got it. The read starts on its own.")
+                .font(AppFont.callout)
+                .foregroundStyle(capture.fingerDetected ? AppColor.accentGold : AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(height: 48)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     private func coachRow(_ icon: String, _ text: String) -> some View {
