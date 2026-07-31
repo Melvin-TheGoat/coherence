@@ -493,6 +493,48 @@ Screens to design (all already exist functionally): **Onboarding** (Purpose/Scie
 - Internal + external **TestFlight** beta first (this is also where cross-device CloudKit sync finally gets verified on real hardware).
 - Then submit for review. **Top rejection causes to pre-empt:** crashes/bugs (>40% of rejections — test thoroughly), missing/incomplete privacy disclosures, and metadata inaccuracies. We're in good shape on the Apple-specific gotchas: account deletion is built (required), Sign in with Apple is the only auth (compliant), HealthKit usage strings are present and honest.
 
+# Phase 9 — Camera coherence: the no-Watch evidence path (IN PROGRESS)
+
+**GOAL:** open 808 to iPhone-only users (the Watch requirement is the market
+ceiling; people are already DMing "I don't have a Watch"). Before and after a
+session the user puts a finger on the camera (torch on, 60–120 s); the app
+recovers beat-to-beat intervals from the PPG waveform and scores heart-rhythm
+**coherence** (spectral power concentration in 0.04–0.26 Hz). The product is
+the **differential**: walked in at 42, walked out at 78 — each user is their
+own baseline, minutes apart.
+
+**Why this doesn't contradict the "no coherence" decision (see CLAUDE.md):**
+that verdict was about *continuous in-session* measurement (no Watch RR
+stream; camera can't run 25 min). Short snapshots have neither problem —
+short-window finger PPG is validated against ECG in the literature (e.g.
+Plews et al. 2017, HRV4Training camera vs ECG/Polar).
+
+- **9a — Engine (DONE).** `Shared/Engine/CoherenceAnalyzer.swift`, pure
+  Foundation: moving-average detrend → thresholded peak detection with
+  parabolic sub-frame timing → RR series with physiologic + jump artifact
+  rejection and a quality gate (nil over invention, same as belly fallback) →
+  4 Hz tachogram → Hann + direct DFT scan → coherence ratio (peak-band /
+  total-band power), meanHR, RMSSD, validBeatFraction. 6 synthetic tests
+  (coherent-high, scattered-low, 80 bpm accuracy, pulseless/short/non-finite
+  refused).
+- **9b — Capture.** `AVCaptureSession` + torch on the iPhone (FIRST sensor
+  code on the phone — a deliberate exception to "sensors live on the Watch";
+  camera permission + usage string, no HealthKit involvement). Red-channel
+  mean per frame → waveform. Live quality feedback (finger coverage, motion),
+  coach-and-retry UI. Needs REAL DEVICE testing (simulator has no camera).
+- **9c — Flow + storage.** Pre/post snapshot screens around a session;
+  phone-only session path (no Watch: phone runs the timer/audio and persists
+  the Session itself — today a Session only exists when a Watch payload
+  lands). New optional fields on MeditationStats (device-local HealthLocal
+  store, CloudKit-safe): pre/post coherence, pre/post HR, RMSSD, method
+  version. Results screen shows the differential; works alongside Watch
+  metrics when both exist.
+- **9d — Copy + compliance.** Frame as heart-rhythm regularity/settling
+  (SCIENCE.md honesty line; never medical, never "detects theta"). Update
+  privacy policy ("measured on your Apple Watch" → camera path too, frames
+  processed on device and never stored), nutrition labels if needed, camera
+  usage string, SCIENCE.md section with the PPG-validation citations.
+
 ### Research sources
 [App Store submission checklist 2026](https://appbuilder.academy/blog/app-store-submission-checklist) · [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) · [Health-app privacy guidelines](https://www.termsfeed.com/blog/privacy-guidelines-health-apps/) · [Individual vs Organization enrollment](https://developer.apple.com/help/account/membership/program-enrollment/) · [D-U-N-S requirement](https://developer.apple.com/support/D-U-N-S/index.html)
 
