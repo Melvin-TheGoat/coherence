@@ -24,7 +24,8 @@ final class CoherenceAnalyzerTests: XCTestCase {
         durationSec: Double,
         rrForBeat: (Double) -> Double,
         noiseAmp: Double = 0.05,
-        wanderAmp: Double = 0.4
+        wanderAmp: Double = 0.4,
+        dicrotic: Bool = false
     ) -> [Double] {
         var beatTimes: [Double] = []
         var t = 0.3
@@ -38,9 +39,16 @@ final class CoherenceAnalyzerTests: XCTestCase {
         for i in 0..<n {
             let ti = Double(i) / fs
             var v = 0.0
-            for b in beatTimes where abs(b - ti) < 0.3 {
+            for b in beatTimes where abs(b - ti) < 0.7 {
                 let d = (ti - b) / 0.06
                 v += exp(-d * d)
+                if dicrotic {
+                    // Secondary bump ~0.35 s after systole at 40% amplitude —
+                    // the real-pulse feature that double-fired the detector on
+                    // device before the smoothing + merge fix.
+                    let d2 = (ti - (b + 0.35)) / 0.07
+                    v += 0.4 * exp(-d2 * d2)
+                }
             }
             v += wanderAmp * sin(2 * .pi * 0.05 * ti)          // finger-pressure drift
             v += noiseAmp * (noise.next() - 0.5)               // sensor noise
@@ -74,6 +82,19 @@ final class CoherenceAnalyzerTests: XCTestCase {
                 0.9 + 0.2 * jitter.next()                      // broadband variability
             }), sampleRate: fs))
         XCTAssertLessThan(scattered.coherenceScore, coherent.coherenceScore - 0.15)
+    }
+
+    /// Regression for the on-device failure of 2026-07-31: a realistic pulse
+    /// with a dicrotic notch (secondary bump after each systole) must not be
+    /// double-counted — beat count right but 40% of intervals rejected was
+    /// the exact field signature.
+    func test_dicroticNotchDoesNotDoubleCount() throws {
+        let ppg = syntheticPPG(durationSec: 60, rrForBeat: { t in
+            0.95 + 0.05 * sin(2 * .pi * 0.1 * t)               // ~63 bpm
+        }, dicrotic: true)
+        let snap = try XCTUnwrap(CoherenceAnalyzer.analyze(ppg: ppg, sampleRate: fs))
+        XCTAssertEqual(snap.meanHR, 63, accuracy: 4)
+        XCTAssertGreaterThan(snap.validBeatFraction, 0.85)
     }
 
     /// Faster heart rate is read correctly too (80 bpm).

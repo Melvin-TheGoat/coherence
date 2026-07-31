@@ -122,11 +122,38 @@ enum CoherenceAnalyzer {
 
         var resid = [Double](repeating: 0, count: n)
         for i in 0..<n { resid[i] = detrended(i) }
+
+        // Short smoothing pass (~0.15 s): merges the dicrotic notch — the
+        // secondary bump ~0.35 s after systole that real pulses have — into
+        // the main wave so it can't fire the detector, and knocks down frame
+        // noise. (Field-found on device: beat count correct, but ~40% of
+        // intervals rejected because the notch split beats in two.)
+        let smoothWin = max(1, Int(0.15 * sampleRate))
+        if smoothWin > 1 {
+            var sPrefix = [0.0]; sPrefix.reserveCapacity(n + 1)
+            for v in resid { sPrefix.append(sPrefix[sPrefix.count - 1] + v) }
+            for i in 0..<n {
+                let lo = max(0, i - smoothWin / 2), hi = min(n - 1, i + smoothWin / 2)
+                resid[i] = (sPrefix[hi + 1] - sPrefix[lo]) / Double(hi - lo + 1)
+            }
+        }
+
         let sd = standardDeviation(resid)
         guard sd > 0 else { return [] }
         let threshold = 0.3 * sd
 
-        let minGap = Int(0.33 * sampleRate)          // refractory: ≤180 bpm
+        // Refractory from the signal's own periodicity. The dicrotic notch
+        // repeats with every beat, so a fixed 0.33 s refractory can't beat it —
+        // but autocorrelation sees the TRUE beat period regardless (the whole
+        // waveform repeats at the heart period, echoes included). 70% of that
+        // period as dead time swallows any within-beat echo no matter its
+        // amplitude. Falls back to 0.33 s (≤180 bpm) when no clear period.
+        let minGap: Int
+        if let period = dominantPeriod(resid, sampleRate: sampleRate) {
+            minGap = Int(min(1.3, max(0.33, 0.7 * period)) * sampleRate)
+        } else {
+            minGap = Int(0.33 * sampleRate)
+        }
         var times: [Double] = []
         var lastPeak = -minGap
         var i = 1
@@ -141,6 +168,28 @@ enum CoherenceAnalyzer {
                 lastPeak = i
             }
             i += 1
+        }
+
+        // False-peak merge: an interval far shorter than the local rhythm
+        // whose neighbor sums back to one normal interval is a single beat
+        // split by a spurious detection — remove the intruding peak instead
+        // of letting the artifact filter discard both halves downstream.
+        if times.count >= 4 {
+            let rrs = zip(times.dropFirst(), times).map { $0 - $1 }
+            let median = rrs.sorted()[rrs.count / 2]
+            if median > 0 {
+                var k = 0
+                while k < times.count - 2 {
+                    let a = times[k + 1] - times[k]
+                    let b = times[k + 2] - times[k + 1]
+                    if (a < 0.6 * median || b < 0.6 * median),
+                       abs((a + b) - median) < 0.35 * median {
+                        times.remove(at: k + 1)
+                    } else {
+                        k += 1
+                    }
+                }
+            }
         }
         return times
     }
@@ -235,6 +284,32 @@ enum CoherenceAnalyzer {
         if kept < minValidBeats { return base + " → too few clean intervals" }
         if frac < minValidFraction { return base + " → intervals too irregular (artifacts)" }
         return base + " → spectral stage"
+    }
+
+    /// Dominant periodicity of the detrended waveform within physiologic
+    /// heart-rate bounds, via normalized autocorrelation. Nil when nothing in
+    /// the band correlates convincingly (e.g. torch noise with no pulse).
+    private static func dominantPeriod(_ x: [Double], sampleRate: Double) -> Double? {
+        let n = x.count
+        var energy = 0.0
+        for v in x { energy += v * v }
+        guard energy > 0 else { return nil }
+
+        let minLag = Int(rrBounds.lowerBound * sampleRate)
+        let maxLag = min(n - 1, Int(rrBounds.upperBound * sampleRate))
+        guard maxLag > minLag else { return nil }
+
+        var bestLag = 0, bestR = 0.0
+        for lag in minLag...maxLag {
+            var s = 0.0
+            var i = 0
+            while i < n - lag { s += x[i] * x[i + lag]; i += 1 }
+            let r = s / energy
+            if r > bestR { bestR = r; bestLag = lag }
+        }
+        // A real pulse autocorrelates strongly at its own period; noise doesn't.
+        guard bestR > 0.15, bestLag > 0 else { return nil }
+        return Double(bestLag) / sampleRate
     }
 
     private static func standardDeviation(_ x: [Double]) -> Double {
