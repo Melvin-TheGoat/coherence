@@ -410,6 +410,52 @@ UI must coach it, and the 2-signal degrade path must stay.
     duplicate "Phase 9 (PARKED)" section written the same day unaware Aziz
     green-lit it — reconcile after they talk; his beat-to-beat/HRV point and
     skin-tone-validation open question are good and should fold in.**
+- **UI REDESIGN — every screen rebuilt (2026-08-03, `67b9854`).** Design review
+  with Aziz produced one visual language; same wiring, same stores, new face.
+  Screens: Home, Begin sheet, Evidence, Journey, Settings, mid-session,
+  coherence read. 73 tests green. Verified on simulator (light + dark) and
+  installed on-device.
+  - **COLOR GRAMMAR (hold this everywhere): gold = chosen / achieved, teal
+    (`calmAccent`) = the body's signals + guidance.** So: HR curve teal, the
+    breathing resonance band teal, stillness + scores + deltas gold; belly
+    posture coaching teal, selection states gold. Never both loud in one
+    element. Every section shows exactly ONE gold thing, so a screen can be
+    audited in a vertical sweep.
+  - **`Coherence/DesignKit.swift`** — the shared vocabulary: `ScoreRing`,
+    `EvidenceRow` (THE session row, identical on Home and Journey),
+    `MetaChip`, `MonthCalendar`, plus `SessionListSupport` (relative day
+    titles, metric lines). One way to show a score, one way to show a session.
+  - **Home = proof + practice hybrid.** Streak headline → gold sparkline of
+    recent overall scores ("Practice score · last N sessions") → live month
+    calendar → evidence rows → Begin pinned via `safeAreaInset`. The
+    "streak's on the line" nudge shows only on days with no session yet.
+  - **Calendar + History merged into `JourneyView`** (same file as the old
+    `SessionHistoryView`): stats row incl. total hours, browsable month,
+    full log; tapping a dotted day filters the log. `AllSessionsView` /
+    `DaySessionsView` / the old `SessionRow` are GONE — don't reintroduce.
+  - **Begin sheet, v4**: practice cards state the science ("2 signals" vs
+    "3 signals · + breath wave"), length = one chip row (⋯ = custom pad),
+    the four sound worlds live in an always-visible 2×2 grid, and the chosen
+    category's tracks fill a flex box between the grid and the PINNED
+    coherence row + CTA, scrolling internally when they overflow. Belly
+    posture is a one-line teal reminder above Begin (full steps behind ⓘ).
+  - **`Shared/Engine/VerdictEngine.swift` — the spoken verdict is RULES, not
+    AI.** Thresholds over the measured metrics pick true claims from a phrase
+    bank ("heart settled 11 beats, breath found the resonance zone…") plus
+    per-curve readings ("74 → 63 bpm", "settled by min 3"). Deliberate: it's
+    instant, offline, free, App-Review-safe, and can never hallucinate a
+    claim the numbers below it don't support. **Rules to keep:** never
+    mention breath on a non-belly session; weak sessions get honest coaching,
+    never shame. 8 `VerdictEngineTests` lock both.
+  - **Charts:** every curve carries real X (session minutes) and Y axes.
+    **Never let an `AreaMark` fill from zero on heart rate** — it flattens a
+    74→63 settle into a straight line; each signal gets a padded `yDomain`
+    (stillness keeps 0–1, breath always includes the 4.5–7 resonance band).
+  - **SWIFTUI GOTCHA (cost a QA cycle): stacking several `.sheet` modifiers on
+    ONE view is fragile — only one presents.** Home now routes every modal
+    through a single `.sheet(item:)` over a `HomeSheet` enum; the AFTER
+    coherence read chains into results via `onDismiss`. Do the same anywhere
+    a screen needs more than one modal.
 - **Next: Phase 9 build-out + rest of Phase 8 launch checklist (LLC/DUNS/lawyer
   in flight).** See `App_ROADMAP_v2.md`.
 
@@ -583,14 +629,19 @@ SessionMode case — a Guided or Silence session can each be belly or regular.
 
 ## Targets & layout
 
-- `Coherence/` — iOS app sources (bundle `com.lockout.coherence`, embeds the Watch)
+- `Coherence/` — iOS app sources (bundle `com.lockout.coherence`, embeds the Watch).
+  `DesignKit.swift` holds the shared UI vocabulary (ScoreRing / EvidenceRow /
+  MetaChip / MonthCalendar) — reach for it before writing a new card or row.
 - `CoherenceWatch/` — watchOS app sources (no ModelContainer)
 - `Shared/` — compiled into both apps + the test target: `Models/`, `Engine/`
-  (`SignalEngine.swift` — breathing/stillness/HR analysis — plus `StreakCalculator`),
-  `Connectivity/` (`SessionPayload.swift` — the Codable Watch↔phone transfer
-  contract), `Session/` (`SessionStore.swift` — iOS persistence helpers),
+  (`SignalEngine.swift` — breathing/stillness/HR analysis — plus `StreakCalculator`
+  and `VerdictEngine.swift`, the rule-based spoken verdict), `Connectivity/`
+  (`SessionPayload.swift` — the Codable Watch↔phone transfer contract),
+  `Session/` (`SessionStore.swift` — iOS persistence helpers),
   `Theme/AppColor.swift`, `Persistence.swift`, `Assets.xcassets`
 - `CoherenceTests/` — iOS unit tests (host app Coherence)
+- `Meditations/` — guided-narration working files (54 MB). **Gitignored on
+  purpose**; the shipped track lives in `Coherence/Audio/Guided/`.
 
 ## Build
 
