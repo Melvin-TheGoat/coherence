@@ -1,4 +1,4 @@
-# Operating Agreement — [COMPANY NAME], LLC
+# Operating Agreement — LockOut LLC
 
 > **DRAFT — FOR ATTORNEY REVIEW.** Prepared for signature by both members
 > once the Michigan Articles of Organization are approved. Fill every
@@ -6,7 +6,7 @@
 > members between themselves and should be reviewed by counsel together with
 > the planned IP and launch documents.
 
-**Operating Agreement of [COMPANY NAME], LLC**, a Michigan limited liability
+**Operating Agreement of LockOut LLC**, a Michigan limited liability
 company (the "**Company**"), effective as of [DATE] (the "**Effective
 Date**"), by and between:
 
@@ -20,7 +20,7 @@ Date**"), by and between:
 ## 1. Formation and purpose
 
 1.1 The Company was formed under the Michigan Limited Liability Company Act
-(the "**Act**") by Articles of Organization filed with LARA on [FILING DATE].
+(the "**Act**") by Articles of Organization filed with LARA on July 29, 2026.
 
 1.2 The Company's purpose is any lawful business, including developing,
 publishing, and commercializing software products — initially the meditation
