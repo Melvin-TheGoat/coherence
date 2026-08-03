@@ -28,7 +28,25 @@ final class CoherenceCapture: NSObject, ObservableObject {
         case measuring
         case analyzing
         case done
-        case failed(String)
+        case failed(ReadFailure)
+    }
+
+    /// Why a read didn't produce a number. Typed, not a string, so the UI can
+    /// coach the ACTUAL cause — "your finger slipped" and "no camera access"
+    /// need completely different advice. A refused read is normal and common
+    /// (see the field-calibration notes in CLAUDE.md); the screen that shows
+    /// this should read as a nudge, never an error.
+    enum ReadFailure: Equatable {
+        /// Analyzer refused: pulse present but too noisy to trust.
+        case unreadable
+        /// Finger left the lens during the window.
+        case fingerMoved
+        /// Almost no usable frames — usually a finger that never covered the lens.
+        case tooLittleSignal
+        /// Camera permission denied or turned off.
+        case noCameraAccess
+        /// No usable camera hardware / capture couldn't start.
+        case cameraUnavailable
     }
 
     @Published var phase: Phase = .idle
@@ -93,11 +111,11 @@ final class CoherenceCapture: NSObject, ObservableObject {
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 self.queue.async {
                     granted ? self.configureAndRun()
-                            : self.fail("Camera access is needed to read your pulse.")
+                            : self.fail(.noCameraAccess)
                 }
             }
         default:
-            fail("Camera access is off. Enable it in Settings to measure.")
+            fail(.noCameraAccess)
         }
     }
 
@@ -128,7 +146,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
         guard let cam = AVCaptureDevice.default(.builtInWideAngleCamera,
                                                 for: .video, position: .back),
               let input = try? AVCaptureDeviceInput(device: cam) else {
-            fail("No usable camera on this device.")
+            fail(.cameraUnavailable)
             return
         }
         device = cam
@@ -138,7 +156,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
         session.outputs.forEach(session.removeOutput)
         session.sessionPreset = .low                       // tiny frames, we only average them
 
-        guard session.canAddInput(input) else { fail("Camera unavailable."); return }
+        guard session.canAddInput(input) else { fail(.cameraUnavailable); return }
         session.addInput(input)
 
         let output = AVCaptureVideoDataOutput()
@@ -146,7 +164,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
             [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: queue)
-        guard session.canAddOutput(output) else { fail("Camera unavailable."); return }
+        guard session.canAddOutput(output) else { fail(.cameraUnavailable); return }
         session.addOutput(output)
         session.commitConfiguration()
 
@@ -211,9 +229,14 @@ final class CoherenceCapture: NSObject, ObservableObject {
         if session.isRunning { session.stopRunning() }
     }
 
-    private func fail(_ message: String) {
+    #if DEBUG
+    /// Jumps straight to a failure page (simctl: PREVIEW_READ_FAILURE=unreadable).
+    func previewFailure(_ reason: ReadFailure) { phase = .failed(reason) }
+    #endif
+
+    private func fail(_ reason: ReadFailure) {
         teardown()
-        DispatchQueue.main.async { self.phase = .failed(message) }
+        DispatchQueue.main.async { self.phase = .failed(reason) }
     }
 
     // MARK: - Finish
@@ -224,13 +247,12 @@ final class CoherenceCapture: NSObject, ObservableObject {
 
         let duration = (timestamps.last ?? 0) - (timestamps.first ?? 0)
         guard duration > 0, samples.count > 10 else {
-            fail("Too little signal. Keep your finger flat on the camera and try again.")
+            fail(.tooLittleSignal)
             return
         }
         let coverage = totalFrames > 0 ? Double(coveredFrames) / Double(totalFrames) : 0
         guard coverage >= 0.7 else {
-            fail("Your finger came off the camera during the read. Cover the "
-                 + "camera and flash completely and try again.")
+            fail(.fingerMoved)
             return
         }
         let effectiveRate = Double(samples.count - 1) / duration
@@ -248,9 +270,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
                 self.snapshot = result
                 self.phase = .done
             } else {
-                self.phase = .failed(
-                    "Couldn't get a clean read. Rest your fingertip flat over the "
-                    + "camera and flash, press lightly, and hold still.")
+                self.phase = .failed(.unreadable)
             }
         }
     }

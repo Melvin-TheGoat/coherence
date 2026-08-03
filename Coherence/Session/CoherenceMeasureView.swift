@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import UIKit
 
 /// Small live view of what the camera sees — with a finger properly on the
 /// lens it glows solid red, which is itself placement feedback. Wraps the
@@ -41,8 +42,8 @@ struct CoherenceMeasureView: View {
                         .frame(maxHeight: .infinity)
                 case .done:
                     if let snap = capture.snapshot { result(snap) }
-                case .failed(let message):
-                    failed(message)
+                case .failed(let reason):
+                    failed(reason)
                 }
             }
             .padding(AppMetrics.screenPadding)
@@ -56,7 +57,19 @@ struct CoherenceMeasureView: View {
                         .tint(AppColor.textSecondary)
                 }
             }
-            .onAppear { capture.start() }        // camera + torch up immediately
+            .onAppear {
+                #if DEBUG
+                if let raw = ProcessInfo.processInfo.environment["PREVIEW_READ_FAILURE"] {
+                    // Renders the failure page without needing a real bad read.
+                    let map: [String: CoherenceCapture.ReadFailure] = [
+                        "unreadable": .unreadable, "moved": .fingerMoved,
+                        "little": .tooLittleSignal, "access": .noCameraAccess,
+                        "unavailable": .cameraUnavailable]
+                    if let reason = map[raw] { capture.previewFailure(reason); return }
+                }
+                #endif
+                capture.start()
+            }        // camera + torch up immediately
             .onDisappear { capture.cancel() }
         }
         .interactiveDismissDisabled(capture.phase == .measuring)
@@ -231,30 +244,147 @@ struct CoherenceMeasureView: View {
 
     // MARK: - Failed
 
-    private func failed(_ message: String) -> some View {
-        VStack(spacing: 18) {
+    /// A refused read is normal — a fingertip pulse is a faint signal and the
+    /// analyzer is built to say "I don't know" rather than invent a number
+    /// (that honesty IS the feature). So this page reads as a nudge with a fix
+    /// to try, never as an error, and always offers a way onward: the
+    /// meditation must never feel held hostage by the check.
+    private func failed(_ reason: CoherenceCapture.ReadFailure) -> some View {
+        VStack(spacing: 0) {
             Spacer(minLength: 0)
-            Image(systemName: "hand.point.up.left.and.text")
-                .font(.system(size: 40))
-                .foregroundStyle(AppColor.textSecondary)
-            Text(message)
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textPrimary.opacity(0.9))
+
+            Image(systemName: copy(reason).icon)
+                .font(.system(size: 34, weight: .light))
+                .foregroundStyle(AppColor.calmAccent)
+                .frame(width: 74, height: 74)
+                .background(AppColor.calmAccent.opacity(0.12), in: Circle())
+                .padding(.bottom, 20)
+
+            Text(copy(reason).headline)
+                .font(AppFont.title)
+                .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
+                .padding(.bottom, 6)
+
+            Text(copy(reason).body)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.bottom, 20)
+
+            if !copy(reason).tips.isEmpty {
+                VStack(alignment: .leading, spacing: 9) {
+                    ForEach(copy(reason).tips, id: \.text) { tip in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: tip.icon)
+                                .font(.system(size: 13))
+                                .foregroundStyle(AppColor.calmAccent)
+                                .frame(width: 20)
+                            Text(tip.text)
+                                .font(AppFont.caption)
+                                .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+                                .fixedSize(horizontal: false, vertical: true)
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+
             #if DEBUG
             if !capture.debugResult.isEmpty {
                 Text(capture.debugResult)
                     .font(.caption2.monospaced())
-                    .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.6))
                     .multilineTextAlignment(.center)
-                    .padding(10)
-                    .background(AppColor.backgroundSecondary,
-                                in: RoundedRectangle(cornerRadius: 10))
+                    .padding(.top, 10)
             }
             #endif
+
             Spacer(minLength: 0)
-            Button("Try again") { capture.start() }
+
+            if reason == .noCameraAccess {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
                 .buttonStyle(PrimaryButtonStyle())
+            } else if reason != .cameraUnavailable {
+                Button("Try again") { capture.start() }
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+
+            // Always a way onward. Skipping costs nothing: the session runs
+            // either way, and one missing read just means no delta this time.
+            Button(onComplete != nil ? "Skip — continue without it" : "Close") {
+                capture.cancel()
+                dismiss()
+            }
+            .font(AppFont.callout.weight(.medium))
+            .foregroundStyle(AppColor.textSecondary)
+            .padding(.top, 14)
+            .padding(.bottom, 4)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private struct Tip { let icon: String; let text: String }
+    private struct FailureCopy {
+        let icon: String
+        let headline: String
+        let body: String
+        var tips: [Tip] = []
+    }
+
+    private func copy(_ reason: CoherenceCapture.ReadFailure) -> FailureCopy {
+        switch reason {
+        case .unreadable:
+            return FailureCopy(
+                icon: "waveform.path",
+                headline: "Your pulse was too faint to read",
+                body: "This happens — a fingertip signal is delicate, and we'd rather tell you than guess at a number.",
+                tips: [
+                    Tip(icon: "hand.point.up.left", text: "Cover the camera AND the flash with one fingertip, flat."),
+                    Tip(icon: "hand.raised", text: "Press lightly — pressing hard squeezes the blood out."),
+                    Tip(icon: "figure.stand", text: "Rest your hand on something so it doesn't drift."),
+                    Tip(icon: "thermometer.low", text: "Cold hands read poorly. Warm them up and try again."),
+                ])
+        case .fingerMoved:
+            return FailureCopy(
+                icon: "hand.draw",
+                headline: "Your finger slipped mid-read",
+                body: "The camera lost your fingertip partway through, so there wasn't enough of a run to measure.",
+                tips: [
+                    Tip(icon: "iphone", text: "Cup your hand over the top of the phone and let it settle."),
+                    Tip(icon: "timer", text: "It only takes 45 seconds — get comfortable first."),
+                ])
+        case .tooLittleSignal:
+            return FailureCopy(
+                icon: "camera.metering.none",
+                headline: "We couldn't see your pulse",
+                body: "Almost nothing came through the lens. Usually the fingertip isn't quite covering the camera.",
+                tips: [
+                    Tip(icon: "hand.point.up.left", text: "Find the camera and flash on the back, and lay one fingertip flat across both."),
+                    Tip(icon: "sun.max", text: "The screen glowing red means it's placed right."),
+                ])
+        case .noCameraAccess:
+            return FailureCopy(
+                icon: "lock.shield",
+                headline: "808 needs the camera for this",
+                body: "The pulse read works by looking at your fingertip. Nothing is recorded or saved — the frames are measured and thrown away.",
+                tips: [
+                    Tip(icon: "gear", text: "Settings → 808 → Camera, then come back."),
+                ])
+        case .cameraUnavailable:
+            return FailureCopy(
+                icon: "camera.badge.ellipsis",
+                headline: "The camera isn't available",
+                body: "Another app may be using it. Close anything that might have the camera open, then try the check again.")
         }
     }
 }

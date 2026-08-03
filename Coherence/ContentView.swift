@@ -94,6 +94,11 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
+            // Opens the pulse-read sheet directly; pair with
+            // PREVIEW_READ_FAILURE=<reason> to land on a failure page.
+            if ProcessInfo.processInfo.environment["PREVIEW_COHERENCE"] == "1", sheet == nil {
+                sheet = .coherenceTest
+            }
         }
         #endif
         // A session is running on the Watch — take over the phone for every mode.
