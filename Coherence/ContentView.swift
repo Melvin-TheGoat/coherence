@@ -169,7 +169,10 @@ struct ContentView: View {
             Image(systemName: name)
                 .font(.system(size: 19, weight: .medium))
                 .foregroundStyle(AppColor.textSecondary)
+                // A 19pt glyph is well under the 44pt minimum target.
+                .frame(width: 44, height: 44)
         }
+        .buttonStyle(CardButtonStyle())
     }
 
     // MARK: - Streak headline + proof curve
@@ -294,9 +297,13 @@ struct ContentView: View {
                 SectionHeader(title: "The proof")
                 Spacer()
                 if !sessions.isEmpty {
-                    Button("See all") { sheet = .journey }
-                        .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.accentGold)
+                    Button { sheet = .journey } label: {
+                        Text("See all")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGold)
+                            .padding(.horizontal, 8).padding(.vertical, 6)
+                    }
+                    .buttonStyle(CardButtonStyle())
                 }
             }
             if sessions.isEmpty {
@@ -318,7 +325,7 @@ struct ContentView: View {
                                         subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
                                         rating: ratings[session.id])
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(CardButtonStyle())
                     }
                 }
                 .padding(.horizontal, 14)

@@ -163,10 +163,15 @@ struct SessionSetupView: View {
                         .foregroundStyle(selected ? AppColor.accentGold : AppColor.textSecondary)
                     Spacer()
                     if info {
-                        Image(systemName: "info.circle")
-                            .font(.caption)
-                            .foregroundStyle(AppColor.textSecondary)
-                            .onTapGesture { showPostureSheet = true }
+                        // A tap gesture nested in a Button gets swallowed —
+                        // it needs to be its own button with a real target.
+                        Button { showPostureSheet = true } label: {
+                            Image(systemName: "info.circle")
+                                .font(.caption)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .frame(width: 30, height: 24, alignment: .trailing)
+                        }
+                        .buttonStyle(CardButtonStyle())
                     }
                 }
                 Text(title)
@@ -186,7 +191,7 @@ struct SessionSetupView: View {
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(selected ? AppColor.accentGold : .clear, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CardButtonStyle())
     }
 
     private var postureSheet: some View {
@@ -281,7 +286,7 @@ struct SessionSetupView: View {
                             in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 .foregroundStyle(selected ? AppColor.textOnAccent : AppColor.textSecondary)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CardButtonStyle())
     }
 
     // MARK: - Sound: 2×2 category grid
@@ -337,7 +342,7 @@ struct SessionSetupView: View {
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(selected ? AppColor.accentGold : .clear, lineWidth: 1.5))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CardButtonStyle())
     }
 
     private func selectCategory(_ category: SoundCategory) {
@@ -415,7 +420,7 @@ struct SessionSetupView: View {
                             previewing || selected ? AppColor.accentGold : AppColor.textSecondary.opacity(0.35),
                             lineWidth: 1.5))
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(CardButtonStyle())
                 VStack(alignment: .leading, spacing: 1) {
                     Text(title)
                         .font(.footnote.weight(.semibold))
@@ -433,7 +438,7 @@ struct SessionSetupView: View {
             }
             .padding(.vertical, 9)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CardButtonStyle())
     }
 
     private var deliveryPicker: some View {
@@ -478,6 +483,11 @@ struct SessionSetupView: View {
     // MARK: - Coherence check (pinned above Begin)
 
     private var coherenceRow: some View {
+        Button { coherenceCheck.toggle() } label: { coherenceRowBody }
+            .buttonStyle(CardButtonStyle())
+    }
+
+    private var coherenceRowBody: some View {
         HStack(spacing: 11) {
             Image(systemName: "heart.fill")
                 .font(.system(size: 13))
@@ -497,6 +507,8 @@ struct SessionSetupView: View {
             Toggle("", isOn: $coherenceCheck)
                 .labelsHidden()
                 .tint(AppColor.calmAccent)
+                // The row itself toggles; the switch is a visual affordance.
+                .allowsHitTesting(false)
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)

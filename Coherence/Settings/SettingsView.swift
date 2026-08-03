@@ -166,9 +166,13 @@ private struct SettingsForm: View {
                         .foregroundStyle(AppColor.textSecondary)
                 }
                 Spacer()
-                Button(editingName ? "Done" : "Edit") { editingName.toggle() }
-                    .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(AppColor.accentGold)
+                Button { editingName.toggle() } label: {
+                    Text(editingName ? "Done" : "Edit")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.accentGold)
+                        .padding(.horizontal, 8).padding(.vertical, 6)
+                }
+                .buttonStyle(CardButtonStyle())
             }
             if editingName {
                 TextField("Display name", text: Binding(
@@ -238,7 +242,7 @@ private struct SettingsForm: View {
                     .foregroundStyle(AppColor.textSecondary)
             }
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CardButtonStyle())
     }
 
     private var accountFooter: some View {

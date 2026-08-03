@@ -74,13 +74,19 @@ struct JourneyView: View {
         let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt), calendar: calendar)
         return VStack(spacing: 10) {
             HStack {
-                Button { shiftMonth(-1) } label: { Image(systemName: "chevron.left") }
+                Button { shiftMonth(-1) } label: {
+                    Image(systemName: "chevron.left").frame(width: 44, height: 34)
+                }
+                .buttonStyle(CardButtonStyle())
                 Spacer()
                 Text(monthTitle(monthAnchor))
                     .font(AppFont.headline)
                     .foregroundStyle(AppColor.textPrimary)
                 Spacer()
-                Button { shiftMonth(1) } label: { Image(systemName: "chevron.right") }
+                Button { shiftMonth(1) } label: {
+                    Image(systemName: "chevron.right").frame(width: 44, height: 34)
+                }
+                .buttonStyle(CardButtonStyle())
             }
             .tint(AppColor.accentGold)
 
@@ -107,9 +113,13 @@ struct JourneyView: View {
                 SectionHeader(title: selectedDay.map { SessionListSupport.dayTitle($0) } ?? "All sessions")
                 Spacer()
                 if selectedDay != nil {
-                    Button("Clear") { selectedDay = nil }
-                        .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.accentGold)
+                    Button { selectedDay = nil } label: {
+                        Text("Clear")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGold)
+                            .padding(.horizontal, 8).padding(.vertical, 6)
+                    }
+                    .buttonStyle(CardButtonStyle())
                 }
             }
             if visible.isEmpty {
@@ -131,7 +141,7 @@ struct JourneyView: View {
                                         subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
                                         rating: ratings[session.id])
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(CardButtonStyle())
                     }
                 }
                 .padding(.horizontal, 14)

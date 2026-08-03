@@ -7,6 +7,29 @@ import SwiftData
 /// Color grammar (design review, 2026-08): gold = chosen/achieved, teal = the
 /// body's signals + guidance. Never both loud in the same element.
 
+// MARK: - Button style
+
+/// What `.buttonStyle(.plain)` should have been: the WHOLE frame is tappable,
+/// not just the drawn glyphs and text. Without `contentShape`, the gaps in a
+/// card row (between the ring and the title, the empty space before the
+/// chevron) fall through and the row feels broken. Also adds the press
+/// feedback plain buttons don't give.
+struct CardButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.55 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+    }
+}
+
+extension View {
+    /// Makes a tappable row/card hit-test across its whole frame. Use on the
+    /// label of a NavigationLink (which can't take a custom ButtonStyle's
+    /// content shape reliably) or anywhere a bare tap gesture is attached.
+    func fullyTappable() -> some View { contentShape(Rectangle()) }
+}
+
 // MARK: - Score ring
 
 /// Small conic progress ring with the score in the middle (0–1 → 0–100).
