@@ -47,11 +47,12 @@ struct CoherenceMeasureView: View {
             }
             .padding(AppMetrics.screenPadding)
             .screenBackground()
-            .navigationTitle("\(label) · Coherence")
+            .navigationTitle("Coherence check · \(label)")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { capture.cancel(); dismiss() }
+                    // The session must never feel hostage to the read.
+                    Button(onComplete != nil ? "Skip" : "Cancel") { capture.cancel(); dismiss() }
                         .tint(AppColor.textSecondary)
                 }
             }
@@ -133,50 +134,59 @@ struct CoherenceMeasureView: View {
     // MARK: - Measuring
 
     private var measuring: some View {
-        VStack(spacing: 0) {
+        let remaining = max(0, Int((capture.targetDuration * (1 - capture.progress)).rounded()))
+        return VStack(spacing: 0) {
+            Text("Reading your pulse…")
+                .font(AppFont.title)
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(.top, 6)
             Spacer(minLength: 0)
+
+            // The camera circle IS the interface: red glow = placed, the gold
+            // arc around it is the 45-s progress. No second progress bar.
             ZStack {
-                Circle().stroke(AppColor.backgroundSecondary, lineWidth: 12)
+                Circle().stroke(AppColor.backgroundSecondary, lineWidth: 10)
                 Circle()
                     .trim(from: 0, to: max(0.003, capture.progress))
                     .stroke(AppColor.accentGold,
-                            style: StrokeStyle(lineWidth: 12, lineCap: .round))
+                            style: StrokeStyle(lineWidth: 10, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 0.25), value: capture.progress)
-                VStack(spacing: 6) {
-                    Image(systemName: "heart.fill")
-                        .font(.system(size: 30))
-                        .foregroundStyle(AppColor.accentGold)
-                        .scaleEffect(1 + 0.35 * capture.pulseLevel)
-                        .animation(.easeOut(duration: 0.12), value: capture.pulseLevel)
-                    Text("\(Int((capture.progress * capture.targetDuration).rounded()))s / \(Int(capture.targetDuration))s")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .monospacedDigit()
-                }
+                CameraPreviewCircle(view: capture.previewView)
+                    .frame(width: 138, height: 138)
+                    .clipShape(Circle())
+                    .opacity(capture.fingerDetected ? 1 : 0.45)
             }
-            .frame(width: 180, height: 180)
-            .padding(.bottom, 28)
-
-            // What the camera sees: solid red glow = finger placed right.
-            CameraPreviewCircle(view: capture.previewView)
-                .frame(width: 76, height: 76)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(
-                    capture.fingerDetected ? AppColor.accentGold : AppColor.backgroundSecondary,
-                    lineWidth: 2))
-                .padding(.bottom, 18)
+            .frame(width: 184, height: 184)
+            .padding(.bottom, 22)
 
             // Fixed-height slot so the layout never jumps when the text swaps.
-            Text(capture.fingerDetected
-                 ? "Reading. Stay still."
-                 : "Cover the camera and flash with your fingertip.")
-                .font(AppFont.callout)
-                .foregroundStyle(capture.fingerDetected
-                                 ? AppColor.textSecondary : AppColor.accentGold)
-                .multilineTextAlignment(.center)
-                .frame(height: 48)
+            HStack(spacing: 8) {
+                Image(systemName: "heart.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(AppColor.accentGold)
+                    .scaleEffect(1 + 0.35 * capture.pulseLevel)
+                    .animation(.easeOut(duration: 0.12), value: capture.pulseLevel)
+                Text(capture.fingerDetected
+                     ? "pulse found · \(remaining)s left"
+                     : "place your fingertip back over the camera")
+                    .font(AppFont.callout)
+                    .foregroundStyle(capture.fingerDetected
+                                     ? AppColor.textSecondary : AppColor.accentGold)
+                    .monospacedDigit()
+            }
+            .frame(height: 40)
+
             Spacer(minLength: 0)
+
+            Text("Cup your hand over the top of the phone.\nStay still — jitter blurs the read.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 12)
+                .background(AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .frame(maxWidth: .infinity)
     }

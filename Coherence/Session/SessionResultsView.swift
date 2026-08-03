@@ -2,11 +2,11 @@ import SwiftUI
 import SwiftData
 import Charts
 
-/// Post-session evidence — the payoff. A hero "practice score" ring, signal tiles,
-/// and the two/three curves (HR settling, stillness, and — for belly — breathing),
-/// read from the persisted `MeditationStats`. Passed only a sessionID (conventions).
-/// Gold carries the achievement/abundance moments; the breathing curve uses the
-/// calm accent to tie back to the breathing screen.
+/// Post-session evidence — the payoff, told as an argument (design review
+/// 2026-08): verdict → numbers → proof → witness. The verdict is SPOKEN
+/// (rule-based `VerdictEngine`, no AI), every curve carries its own reading
+/// and real axes, and the color grammar holds: teal = the body's signals,
+/// gold = achievement. Passed only a sessionID (conventions).
 struct SessionResultsView: View {
     let sessionID: UUID
     @Environment(\.modelContext) private var context
@@ -25,16 +25,16 @@ struct SessionResultsView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
+                VStack(alignment: .leading, spacing: 16) {
                     if let session {
                         header(session)
                         if let stats {
-                            if let overall = stats.overallScore { overallHero(overall) }
+                            hero(stats)
                             tiles(stats)
+                            ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
                             if stats.preCoherenceScore != nil || stats.postCoherenceScore != nil {
                                 coherenceCard(stats)
                             }
-                            ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
                             shareButton
                         } else {
                             missingStatsCard
@@ -71,93 +71,201 @@ struct SessionResultsView: View {
     // MARK: Header
 
     private func header(_ session: Session) -> some View {
-        var line = "\(session.startedAt.formatted(date: .abbreviated, time: .shortened)) · \(durationText(session.durationSec))"
-        if session.bellyBreathing { line += " · Belly breathing" }
-        if let sound = SoundCatalog.title(for: session.frequencyID) { line += " · \(sound)" }
-        return VStack(alignment: .leading, spacing: 4) {
-            Text("Your practice landed")
-                .font(AppFont.title).foregroundStyle(AppColor.accentGold)
-            Text(line)
-                .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(headerWhen(session))
+                    .font(AppFont.headline)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("\(SessionListSupport.duration(session.durationSec))\(session.bellyBreathing ? " · watch on belly" : "")")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            Spacer()
+            HStack(spacing: 6) {
+                if session.bellyBreathing { MetaChip(text: "Belly", teal: true) }
+                if let sound = SoundCatalog.title(for: session.frequencyID) {
+                    MetaChip(text: sound)
+                }
+            }
         }
     }
 
-    // MARK: Overall hero ring
+    private func headerWhen(_ session: Session) -> String {
+        let day = SessionListSupport.relativeDay(session.startedAt)
+        let time = session.startedAt.formatted(date: .omitted, time: .shortened)
+        return "\(day), \(time)"
+    }
 
-    private func overallHero(_ score: Double) -> some View {
-        HStack {
-            Spacer()
-            ZStack {
-                Circle().stroke(AppColor.backgroundSecondary, lineWidth: 14)
-                Circle()
-                    .trim(from: 0, to: max(0.001, min(score, 1)))
-                    .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: 14, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: 2) {
-                    Text("\(Int((score * 100).rounded()))")
-                        .font(.system(size: 54, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary).monospacedDigit()
-                    Text("PRACTICE SCORE")
-                        .font(.caption2.weight(.semibold)).tracking(1)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
+    // MARK: Hero — the spoken verdict
+
+    private func hero(_ stats: MeditationStats) -> some View {
+        let verdict = VerdictEngine.verdict(for: .init(
+            overallScore: stats.overallScore,
+            stillnessScore: stats.stillnessScore,
+            hrDecline: stats.hrDecline,
+            meanBreathingRate: stats.meanBreathingRate,
+            resonanceMatchScore: stats.resonanceMatchScore,
+            bellyBreathing: session?.bellyBreathing ?? false))
+        return HStack(spacing: 16) {
+            ScoreRing(score: stats.overallScore, size: 92, lineWidth: 9)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(verdict.headline)
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text(verdict.sentence)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(width: 190, height: 190)
-            Spacer()
+            Spacer(minLength: 0)
         }
-        .padding(.vertical, 6)
+        .padding(.vertical, 2)
     }
 
     // MARK: Signal tiles
 
     private func tiles(_ stats: MeditationStats) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+        HStack(spacing: 8) {
             ForEach(tileData(stats), id: \.label) { tile in
-                VStack(spacing: 4) {
+                VStack(spacing: 2) {
                     Text(tile.value)
-                        .font(.system(.title2, design: .rounded).weight(.semibold))
-                        .foregroundStyle(AppColor.textPrimary)
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(tile.teal ? AppColor.calmAccent : AppColor.accentGold)
+                        .monospacedDigit()
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
                     Text(tile.label.uppercased())
-                        .font(.caption2.weight(.semibold)).tracking(0.6)
+                        .font(.system(size: 8, weight: .bold))
+                        .tracking(0.6)
                         .foregroundStyle(AppColor.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.vertical, 10)
+                .background(AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: 13, style: .continuous))
             }
         }
     }
 
-    private func tileData(_ stats: MeditationStats) -> [(label: String, value: String)] {
-        func pct(_ v: Double?) -> String { v.map { "\(Int(($0 * 100).rounded()))%" } ?? "—" }
-        var t: [(String, String)] = [("Stillness", pct(stats.stillnessScore))]
-        if let d = stats.hrDecline { t.append(("HR settled", String(format: "%+.0f bpm", -d))) }
-        if let r = stats.meanBreathingRate { t.append(("Breathing", String(format: "%.1f/min", r))) }
-        if let res = stats.resonanceMatchScore { t.append(("Resonance", pct(res))) }
+    private func tileData(_ stats: MeditationStats) -> [(label: String, value: String, teal: Bool)] {
+        var t: [(String, String, Bool)] = []
+        if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", -d), false)) }
+        if let s = stats.stillnessScore { t.append(("Stillness", String(format: "%.2f", s), false)) }
+        if let r = stats.meanBreathingRate { t.append(("Breaths/min", String(format: "%.1f", r), true)) }
+        if let res = stats.resonanceMatchScore {
+            t.append(("Resonance", "\(Int((res * 100).rounded()))%", true))
+        }
         return t
     }
 
-    // MARK: Graph
+    // MARK: Graphs — real axes, self-explaining readings
+
+    private enum GraphKind { case heart, breath, stillness, other }
+
+    private func kind(of series: EvidenceSeries) -> GraphKind {
+        let t = series.title.lowercased()
+        if t.contains("heart") || t.contains("hr") { return .heart }
+        if t.contains("breath") { return .breath }
+        if t.contains("still") { return .stillness }
+        return .other
+    }
+
+    /// Y domain per signal. Heart rate must NOT include zero — an area filled
+    /// from 0 flattens a 74→63 settle into a straight line. Stillness keeps its
+    /// natural 0–1 scale; breath always shows the resonance band.
+    private func yDomain(_ series: EvidenceSeries, _ kind: GraphKind) -> ClosedRange<Double> {
+        let values = series.points.map(\.value)
+        guard let lo = values.min(), let hi = values.max() else { return 0...1 }
+        switch kind {
+        case .stillness:
+            return 0...1
+        case .breath:
+            let pad = max(1.0, (hi - lo) * 0.25)
+            return Swift.min(lo - pad, 3.5)...Swift.max(hi + pad, 8.0)
+        case .heart, .other:
+            let pad = Swift.max(2.0, (hi - lo) * 0.35)
+            return (lo - pad)...(hi + pad)
+        }
+    }
 
     private func graphCard(_ series: EvidenceSeries) -> some View {
-        let color = series.title.localizedCaseInsensitiveContains("breath")
-            ? AppColor.calmAccent : AppColor.accentGold
-        return VStack(alignment: .leading, spacing: 10) {
-            Text(series.title).font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
-            Chart(series.points) { point in
-                AreaMark(x: .value("min", point.t / 60), y: .value(series.title, point.value))
-                    .foregroundStyle(LinearGradient(colors: [color.opacity(0.28), color.opacity(0.02)],
-                                                    startPoint: .top, endPoint: .bottom))
-                    .interpolationMethod(.catmullRom)
-                LineMark(x: .value("min", point.t / 60), y: .value(series.title, point.value))
-                    .foregroundStyle(color)
-                    .lineStyle(StrokeStyle(lineWidth: 2))
-                    .interpolationMethod(.catmullRom)
+        let kind = kind(of: series)
+        let domain = yDomain(series, kind)
+        // Color grammar: physiology (heart, breath's resonance band) reads teal;
+        // achievement curves (stillness) read gold. The breath LINE stays gold
+        // against its teal band so "in the zone" is visible at a glance.
+        let lineColor: Color = (kind == .heart) ? AppColor.calmAccent : AppColor.accentGold
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(series.title).font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                if let reading = reading(for: kind) {
+                    Text(reading)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
             }
-            .chartXAxisLabel("minutes")
-            .frame(height: 150)
+            Chart {
+                if kind == .breath, let first = series.points.first, let last = series.points.last {
+                    // The claim and the evidence in one picture: the resonance zone.
+                    RectangleMark(xStart: .value("min", first.t / 60),
+                                  xEnd: .value("min", last.t / 60),
+                                  yStart: .value("zone", 4.5), yEnd: .value("zone", 7.0))
+                        .foregroundStyle(AppColor.calmAccent.opacity(0.12))
+                }
+                ForEach(series.points) { point in
+                    // Fill down to the domain floor, not to zero.
+                    AreaMark(x: .value("min", point.t / 60),
+                             yStart: .value(series.title, domain.lowerBound),
+                             yEnd: .value(series.title, point.value))
+                        .foregroundStyle(LinearGradient(colors: [lineColor.opacity(0.22),
+                                                                 lineColor.opacity(0.02)],
+                                                        startPoint: .top, endPoint: .bottom))
+                        .interpolationMethod(.catmullRom)
+                    LineMark(x: .value("min", point.t / 60), y: .value(series.title, point.value))
+                        .foregroundStyle(lineColor)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .interpolationMethod(.catmullRom)
+                }
+                if let last = series.points.last {
+                    PointMark(x: .value("min", last.t / 60), y: .value(series.title, last.value))
+                        .foregroundStyle(lineColor)
+                        .symbolSize(36)
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
+                }
+            }
+            .chartYScale(domain: domain)
+            .chartXAxisLabel("minutes", alignment: .trailing)
+            .frame(height: 130)
         }
-        .card()
+        .card(padding: 14)
+    }
+
+    private func reading(for kind: GraphKind) -> String? {
+        guard let stats else { return nil }
+        switch kind {
+        case .heart:
+            return VerdictEngine.hrReading(start: stats.startHR, end: stats.endHR)
+        case .breath:
+            return VerdictEngine.breathReading(meanRate: stats.meanBreathingRate,
+                                               resonance: stats.resonanceMatchScore)
+        case .stillness:
+            return VerdictEngine.stillnessReading(points: stats.stillnessTimeseries,
+                                                  hopSec: Double(stats.hopSec))
+        case .other:
+            return nil
+        }
     }
 
     // MARK: Coherence differential (camera check)
@@ -168,10 +276,12 @@ struct SessionResultsView: View {
         let pre = stats.preCoherenceScore
         let post = stats.postCoherenceScore
         let delta = (pre != nil && post != nil) ? Int(((post! - pre!) * 100).rounded()) : nil
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Heart coherence")
                     .font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+                Text("before → after")
+                    .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
                 Spacer()
                 if let delta {
                     Text(delta >= 0 ? "+\(delta)" : "\(delta)")
@@ -183,22 +293,32 @@ struct SessionResultsView: View {
                 }
             }
             HStack(spacing: 12) {
-                coherenceHalf("BEFORE", pre)
+                coherenceHalf("BEFORE", pre, dim: true)
                 Image(systemName: "arrow.right")
                     .foregroundStyle(AppColor.textSecondary)
-                coherenceHalf("AFTER", post)
+                coherenceHalf("AFTER", post, dim: false)
             }
-            Text("Pulse read from your fingertip on the camera, \(Int(45)) seconds each side.")
+            Text(coherenceCaption(pre: pre, post: post))
                 .font(.caption2).foregroundStyle(AppColor.textSecondary)
         }
-        .card()
+        .card(padding: 14)
     }
 
-    private func coherenceHalf(_ label: String, _ score: Double?) -> some View {
+    private func coherenceCaption(pre: Double?, post: Double?) -> String {
+        if let pre, let post {
+            if post - pre >= 0.05 { return "Your rhythm smoothed out during the session." }
+            if pre - post >= 0.05 { return "Rhythm read lower after — reads vary; the trend over weeks is what counts." }
+            return "Rhythm held steady through the session."
+        }
+        return "Pulse read from your fingertip on the camera, 45 seconds each side."
+    }
+
+    private func coherenceHalf(_ label: String, _ score: Double?, dim: Bool) -> some View {
         VStack(spacing: 4) {
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
                 .font(.system(.title, design: .rounded).weight(.bold))
-                .foregroundStyle(score != nil ? AppColor.textPrimary : AppColor.textSecondary)
+                .foregroundStyle(score == nil ? AppColor.textSecondary
+                                 : dim ? AppColor.textSecondary : AppColor.accentGold)
                 .monospacedDigit()
             Text(label)
                 .font(.caption2.weight(.semibold)).tracking(0.8)
@@ -231,9 +351,9 @@ struct SessionResultsView: View {
 
     private var shareButton: some View {
         Button { showShareSheet = true } label: {
-            Label("Share your practice", systemImage: "square.and.arrow.up")
+            Label("Share the proof", systemImage: "square.and.arrow.up")
         }
-        .buttonStyle(SecondaryButtonStyle())
+        .buttonStyle(PrimaryButtonStyle())
     }
 
     /// Value snapshot for the share card — built from the rows already loaded,
@@ -275,7 +395,7 @@ struct SessionResultsView: View {
             noteSection
 
             Button(reflectionSaved ? "Saved ✓" : "Save reflection") { save() }
-                .buttonStyle(PrimaryButtonStyle())
+                .buttonStyle(SecondaryButtonStyle())
                 .disabled(reflectionSaved)
                 .opacity(reflectionSaved ? 0.6 : 1)
         }
@@ -325,10 +445,6 @@ struct SessionResultsView: View {
     }
 
     // MARK: Data
-
-    private func durationText(_ sec: Int) -> String {
-        sec >= 60 ? "\(sec / 60)m \(sec % 60)s" : "\(sec)s"
-    }
 
     private func load() {
         let sid = sessionID

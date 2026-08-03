@@ -15,6 +15,8 @@ struct SessionActiveView: View {
     var startedAt: Date = Date()
     /// nil for open-ended sessions — those count up instead of down.
     var plannedDurationSec: Int?
+    /// "Belly · 10 min · Deep Meditation" — so you always know what's running.
+    var planChip: String? = nil
     var onEnd: () -> Void
 
     @State private var inhaling = false
@@ -40,6 +42,11 @@ struct SessionActiveView: View {
             AppColor.backgroundPrimary.ignoresSafeArea()
 
             VStack {
+                if let planChip {
+                    MetaChip(text: planChip)
+                        .padding(.top, 6)
+                }
+
                 Spacer()
 
                 ZStack {
@@ -53,7 +60,7 @@ struct SessionActiveView: View {
                 Spacer()
 
                 Text(timeString(displaySeconds))
-                    .font(.system(size: 22, weight: .medium, design: .rounded))
+                    .font(.system(size: 30, weight: .light, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(AppColor.textSecondary)
 
@@ -108,5 +115,6 @@ struct SessionActiveView: View {
 }
 
 #Preview {
-    SessionActiveView(bellyBreathing: true, plannedDurationSec: 600, onEnd: {})
+    SessionActiveView(bellyBreathing: true, plannedDurationSec: 600,
+                      planChip: "Belly · 10 min · Deep Meditation", onEnd: {})
 }

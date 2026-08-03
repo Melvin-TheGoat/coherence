@@ -1,9 +1,10 @@
 import SwiftUI
 import SwiftData
 
-/// Phase-7 Settings/Profile. Reads + writes the signed-in User and its
-/// Preferences, re-exposes the Purpose/Science pages, and offers sign-out +
-/// account deletion. CloudKit sync is a separate (deferred) step.
+/// Settings, grouped by question (design review 2026-08): who you are, how you
+/// practice, how the app looks, what we stand on. Destructive actions are
+/// quarantined at the bottom — sign-out quiet, delete small and behind a
+/// confirm. Reads + writes the signed-in User and its Preferences.
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
@@ -25,7 +26,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+                    Button("Done") { dismiss() }.tint(AppColor.accentGold)
                 }
             }
         }
@@ -43,81 +44,101 @@ private struct SettingsForm: View {
     let onDelete: () -> Void
 
     @State private var confirmDelete = false
+    @State private var editingName = false
+    /// Mirrors the setup sheet's toggle — they're the same switch.
+    @AppStorage("coherenceCheckEnabled") private var coherenceCheck = false
 
     private let durationOptions: [(String, Int?)] = [
-        ("Open-ended", nil), ("2 min", 120), ("5 min", 300), ("10 min", 600), ("15 min", 900)
+        ("Open", nil), ("2 min", 120), ("5 min", 300), ("10 min", 600), ("15 min", 900)
     ]
 
     var body: some View {
-        Form {
-            Section("Profile") {
-                TextField("Display name", text: Binding(
-                    get: { user.displayName ?? "" },
-                    set: { user.displayName = $0.isEmpty ? nil : $0 }
-                ))
-                if let email = user.email, !email.isEmpty {
-                    LabeledContent("Apple ID", value: email)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                Toggle("Product emails", isOn: $user.marketingOptIn)
-            }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                profileCard
 
-            Section("Appearance") {
-                Picker("Theme", selection: Binding(
-                    get: { prefs.themeValue },
-                    set: { prefs.themeValue = $0 }
-                )) {
-                    Text("System").tag(Theme.system)
-                    Text("Light").tag(Theme.light)
-                    Text("Dark").tag(Theme.dark)
-                }
-            }
-
-            Section("Session") {
-                Toggle("Haptics", isOn: $prefs.hapticsEnabled)
-                Picker("Default length", selection: Binding(
-                    get: { prefs.defaultDurationSec },
-                    set: { prefs.defaultDurationSec = $0 }
-                )) {
-                    ForEach(durationOptions, id: \.0) { label, value in
-                        Text(label).tag(value)
-                    }
-                }
-            }
-
-            Section("Reminders") {
-                Toggle("Daily reminder", isOn: Binding(
-                    get: { prefs.remindersEnabled },
-                    set: { on in
-                        prefs.remindersEnabled = on
-                        if on && prefs.reminderTime == nil {
-                            prefs.reminderTime = defaultReminderTime()
+                SectionHeader(title: "Practice")
+                settingsCard {
+                    row(icon: "timer", title: "Default length") {
+                        Picker("", selection: Binding(
+                            get: { prefs.defaultDurationSec },
+                            set: { prefs.defaultDurationSec = $0 }
+                        )) {
+                            ForEach(durationOptions, id: \.0) { label, value in
+                                Text(label).tag(value)
+                            }
                         }
-                        NotificationScheduler.apply(enabled: on, at: prefs.reminderTime)
+                        .tint(AppColor.textSecondary)
                     }
-                ))
-                if prefs.remindersEnabled {
-                    DatePicker("Time", selection: Binding(
-                        get: { prefs.reminderTime ?? defaultReminderTime() },
-                        set: { prefs.reminderTime = $0
-                               NotificationScheduler.apply(enabled: true, at: $0) }
-                    ), displayedComponents: .hourAndMinute)
+                    divider
+                    row(icon: "bell", title: "Daily reminder",
+                        subtitle: prefs.remindersEnabled ? timeString(prefs.reminderTime) : nil) {
+                        Toggle("", isOn: Binding(
+                            get: { prefs.remindersEnabled },
+                            set: { on in
+                                prefs.remindersEnabled = on
+                                if on && prefs.reminderTime == nil {
+                                    prefs.reminderTime = defaultReminderTime()
+                                }
+                                NotificationScheduler.apply(enabled: on, at: prefs.reminderTime)
+                            }
+                        )).labelsHidden().tint(AppColor.calmAccent)
+                    }
+                    if prefs.remindersEnabled {
+                        DatePicker("Time", selection: Binding(
+                            get: { prefs.reminderTime ?? defaultReminderTime() },
+                            set: { prefs.reminderTime = $0
+                                   NotificationScheduler.apply(enabled: true, at: $0) }
+                        ), displayedComponents: .hourAndMinute)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .padding(.leading, 41)
+                        .tint(AppColor.accentGold)
+                    }
+                    divider
+                    row(icon: "hand.tap", title: "Haptics") {
+                        Toggle("", isOn: $prefs.hapticsEnabled)
+                            .labelsHidden().tint(AppColor.calmAccent)
+                    }
+                    divider
+                    row(icon: "heart.fill", title: "Coherence check",
+                        subtitle: "before & after sessions", teal: true) {
+                        Toggle("", isOn: $coherenceCheck)
+                            .labelsHidden().tint(AppColor.calmAccent)
+                    }
                 }
-            }
 
-            Section("About") {
-                NavigationLink("Our Purpose") { docPage("PURPOSE") }
-                NavigationLink("The Science") { docPage("SCIENCE") }
-                NavigationLink("Privacy Policy") { docPage("PRIVACY_POLICY") }
-                NavigationLink("Terms of Service") { docPage("TERMS_OF_SERVICE") }
-            }
+                SectionHeader(title: "Appearance")
+                settingsCard {
+                    row(icon: "circle.lefthalf.filled", title: "Theme") {
+                        Picker("", selection: Binding(
+                            get: { prefs.themeValue },
+                            set: { prefs.themeValue = $0 }
+                        )) {
+                            Text("System").tag(Theme.system)
+                            Text("Light").tag(Theme.light)
+                            Text("Dark").tag(Theme.dark)
+                        }
+                        .tint(AppColor.textSecondary)
+                    }
+                }
 
-            Section {
-                Button("Sign out", action: onSignOut)
-                Button("Delete account", role: .destructive) { confirmDelete = true }
+                SectionHeader(title: "The foundation")
+                settingsCard {
+                    navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }
+                    divider
+                    navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }
+                    divider
+                    navRow(icon: "lock.shield", title: "Privacy policy") { docPage("PRIVACY_POLICY") }
+                    divider
+                    navRow(icon: "doc.text", title: "Terms of service") { docPage("TERMS_OF_SERVICE") }
+                }
+
+                accountFooter
             }
+            .padding(AppMetrics.screenPadding)
         }
-        .tint(AppColor.accentGold)
+        .screenBackground()
         .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete account", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
@@ -126,9 +147,120 @@ private struct SettingsForm: View {
         }
     }
 
+    // MARK: Profile
+
+    private var profileCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Text(initial)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.accentGold)
+                    .frame(width: 42, height: 42)
+                    .background(AppColor.accentGold.opacity(0.15), in: Circle())
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(user.displayName?.isEmpty == false ? user.displayName! : "Add your name")
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text(user.email?.isEmpty == false ? user.email! : "Signed in with Apple")
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer()
+                Button(editingName ? "Done" : "Edit") { editingName.toggle() }
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.accentGold)
+            }
+            if editingName {
+                TextField("Display name", text: Binding(
+                    get: { user.displayName ?? "" },
+                    set: { user.displayName = $0.isEmpty ? nil : $0 }
+                ))
+                .font(AppFont.callout)
+                .padding(10)
+                .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 10))
+                Toggle("Product emails", isOn: $user.marketingOptIn)
+                    .font(AppFont.caption)
+                    .tint(AppColor.calmAccent)
+            }
+        }
+        .card(padding: 14)
+    }
+
+    private var initial: String {
+        String((user.displayName ?? "•").prefix(1)).uppercased()
+    }
+
+    // MARK: Building blocks
+
+    private func settingsCard(@ViewBuilder _ content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 0) { content() }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 4)
+            .background(AppColor.backgroundSecondary,
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var divider: some View {
+        Divider().overlay(AppColor.textSecondary.opacity(0.1))
+    }
+
+    private func row(icon: String, title: String, subtitle: String? = nil, teal: Bool = false,
+                     @ViewBuilder trailing: () -> some View) -> some View {
+        HStack(spacing: 11) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(teal ? AppColor.calmAccent : AppColor.accentGold)
+                .frame(width: 30, height: 30)
+                .background((teal ? AppColor.calmAccent : AppColor.accentGold).opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            Spacer()
+            trailing()
+        }
+        .padding(.vertical, 7)
+    }
+
+    private func navRow(icon: String, title: String, teal: Bool = false,
+                        @ViewBuilder destination: @escaping () -> some View) -> some View {
+        NavigationLink { destination() } label: {
+            row(icon: icon, title: title, teal: teal) {
+                Image(systemName: "chevron.right")
+                    .font(.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var accountFooter: some View {
+        VStack(spacing: 6) {
+            Button("Sign out", action: onSignOut)
+                .font(AppFont.callout.weight(.medium))
+                .foregroundStyle(AppColor.textSecondary)
+            Button("Delete account") { confirmDelete = true }
+                .font(AppFont.caption)
+                .foregroundStyle(.red.opacity(0.75))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.top, 12)
+    }
+
     private func docPage(_ name: String) -> some View {
         ScrollView { MarkdownView(markdown: DocLoader.load(name)).padding() }
             .background(AppColor.backgroundPrimary)
+    }
+
+    private func timeString(_ date: Date?) -> String? {
+        date?.formatted(date: .omitted, time: .shortened)
     }
 
     private func defaultReminderTime() -> Date {

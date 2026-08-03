@@ -33,6 +33,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let bellyBreathing: Bool
         /// nil for open-ended sessions (ended from the Watch or the phone).
         let plannedDurationSec: Int?
+        /// Human title of the sound playing, for the plan chip ("Deep Meditation").
+        var soundTitle: String? = nil
     }
 
     /// Sound preset chosen at Begin, keyed by sessionID — the Watch never
@@ -137,7 +139,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
                         self.active = ActiveSession(id: params.sessionID,
                                                     startedAt: Date(),
                                                     bellyBreathing: bellyBreathing,
-                                                    plannedDurationSec: plannedDurationSec)
+                                                    plannedDurationSec: plannedDurationSec,
+                                                    soundTitle: SoundCatalog.title(for: soundID))
                         // Play the chosen sound on the phone while the Watch measures.
                         self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
@@ -192,7 +195,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
         active = ActiveSession(id: current.id,
                                startedAt: startedAt,
                                bellyBreathing: current.bellyBreathing,
-                               plannedDurationSec: current.plannedDurationSec)
+                               plannedDurationSec: current.plannedDurationSec,
+                               soundTitle: current.soundTitle)
         if let planned = current.plannedDurationSec {
             let remaining = Double(planned) - Date().timeIntervalSince(startedAt)
             audioStopTask?.cancel()
