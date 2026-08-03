@@ -36,3 +36,7 @@ Carthage/Build/
 .DS_Store
 *.swp
 Logo drawing.heic
+
+# Guided-meditation working files (54 MB: TTS pipeline + masters).
+# The shipped track lives in Coherence/Audio/Guided/ — this stays local.
+Meditations/
