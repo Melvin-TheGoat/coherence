@@ -44,6 +44,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// AFTER prompt even if the before read failed or was skipped).
     private var pendingCoherence: [UUID: (pre: CoherenceAnalyzer.Snapshot?, optIn: Bool)] = [:]
 
+    /// The session the user most recently began (set at Begin, before the Watch
+    /// answers — `active` is still nil in that window). Launching the watch app
+    /// flushes its queued transferUserInfo backlog, so STALE payloads/failures
+    /// from old sessions can land seconds into a new one; everything that stops
+    /// audio or tears down the live screen must match against this first.
+    private var currentAttemptID: UUID?
+
     /// Set when a finished session should prompt the AFTER coherence read.
     /// The home screen presents the measurement sheet off this.
     struct PostMeasure: Identifiable { let id: UUID }
@@ -57,6 +64,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// meditation and stops on the timer / when the Watch payload lands.
     private let tone = ToneEngine()
     private var audioStopTask: Task<Void, Never>?
+
 
     init(container: ModelContainer) {
         self.container = container
@@ -95,6 +103,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 bellyBreathing: bellyBreathing,
                 hapticsEnabled: hapticsEnabled
             )
+            currentAttemptID = params.sessionID
             if let soundID { pendingSoundIDs[params.sessionID] = soundID }
             if coherenceCheck || preCoherence != nil {
                 pendingCoherence[params.sessionID] = (pre: preCoherence, optIn: coherenceCheck)
@@ -148,7 +157,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// stop — the Watch fires the authoritative end-haptic; this timer only stops audio.
     private func startAudio(soundID: String?, headphones: Bool, plannedDurationSec: Int?) {
         audioStopTask?.cancel()
-        tone.stop()
+        tone.stop(reason: "new session start")
         guard let id = soundID else { return }
         if let fp = FrequencyCatalog.preset(id: id) {
             tone.play(fp, method: headphones ? .binaural : .isochronic)
@@ -157,12 +166,18 @@ final class SessionCoordinator: NSObject, ObservableObject {
         } else if let gp = GuidedCatalog.preset(id: id) {
             tone.playGuided(gp)
         } else {
+            log.error("startAudio: unknown sound id \(id)")
             return
         }
         if let planned = plannedDurationSec {
             audioStopTask = Task { @MainActor [weak self] in
+                // A cancelled sleep THROWS, and `try?` swallows it — without this
+                // guard, cancelling the task (the watch-ack re-anchor does) would
+                // fire the stop immediately instead of never. That was the
+                // "guided track cuts out after one word" bug.
                 try? await Task.sleep(for: .seconds(planned))
-                self?.tone.stop()
+                guard !Task.isCancelled else { return }
+                self?.tone.stop(reason: "planned timer")
             }
         }
     }
@@ -183,7 +198,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
             audioStopTask?.cancel()
             audioStopTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(max(0, remaining)))
-                self?.tone.stop()
+                guard !Task.isCancelled else { return }
+                self?.tone.stop(reason: "planned timer (re-anchored, \(Int(remaining))s left)")
             }
         }
     }
@@ -194,7 +210,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// payload lands, so we never claim a result we don't have yet.
     func endActiveSession() {
         guard let active else { return }
-        stopAudio()
+        stopAudio(reason: "user ended on phone")
         let wc = WCSession.default
         let msg = [WCKeys.end: active.id.uuidString]
         if wc.isReachable {
@@ -208,34 +224,55 @@ final class SessionCoordinator: NSObject, ObservableObject {
     }
 
     /// The Watch refused to start. Tear down the mid-session screen and audio —
-    /// there is no session — and surface what to fix.
-    private func sessionFailedToStart(_ failure: StartFailure) {
-        stopAudio()
+    /// there is no session — and surface what to fix. `sessionID` is nil for
+    /// phone-local failures (startWatchApp itself failed); Watch-sent reports
+    /// carry the id so a STALE refusal flushed from the Watch's queue can't
+    /// kill a newer, healthy session.
+    private func sessionFailedToStart(_ failure: StartFailure, sessionID: UUID? = nil) {
+        if let sessionID, sessionID != currentAttemptID {
+            log.info("Stale start-failure for \(sessionID) ignored")
+            return
+        }
+        stopAudio(reason: "start failure: \(failure.rawValue)")
         active = nil
+        currentAttemptID = nil
         startFailure = failure
         status = "Couldn't start: \(failure.rawValue)"
         log.error("session refused to start: \(failure.rawValue)")
     }
 
     /// Stops live-session audio (called when the session ends).
-    private func stopAudio() {
+    private func stopAudio(reason: String = "session end") {
         audioStopTask?.cancel()
         audioStopTask = nil
-        tone.stop()
+        tone.stop(reason: reason)
     }
 
     private func persist(_ payload: SessionPayload) {
-        // Session ended (Watch End for open-ended, or the Watch's own timer) — stop
-        // the phone audio now. For timed sessions the parallel timer may have already
-        // stopped it; stopAudio() is idempotent.
-        stopAudio()
-        // The session is over — take down the mid-session screen.
-        active = nil
+        // A payload is "ours" if it matches the session the user just began, or
+        // if no attempt is in flight (e.g. the app relaunched mid-session and the
+        // payload finally landed). A STALE payload — flushed from the Watch's
+        // transferUserInfo queue when the watch app launches for a NEW session —
+        // still gets persisted below (it's a real finished session), but it must
+        // not stop the new session's audio or tear down its screen.
+        let isCurrent = currentAttemptID == nil || payload.sessionID == currentAttemptID
 
-        // The session is complete — clear the "start" command from the persistent
-        // application context so a cold-launching Watch can't replay a finished
-        // session (application context lingers until overwritten).
-        try? WCSession.default.updateApplicationContext([:])
+        if isCurrent {
+            // Session ended (Watch End for open-ended, or the Watch's own timer) —
+            // stop the phone audio now. For timed sessions the parallel timer may
+            // have already stopped it; stopAudio() is idempotent.
+            stopAudio(reason: "payload landed")
+            // The session is over — take down the mid-session screen.
+            active = nil
+            currentAttemptID = nil
+
+            // The session is complete — clear the "start" command from the persistent
+            // application context so a cold-launching Watch can't replay a finished
+            // session (application context lingers until overwritten).
+            try? WCSession.default.updateApplicationContext([:])
+        } else {
+            log.info("Stale payload \(payload.sessionID) persisted without touching the live session")
+        }
 
         let soundID = pendingSoundIDs.removeValue(forKey: payload.sessionID)
         let coherence = pendingCoherence.removeValue(forKey: payload.sessionID)
@@ -244,9 +281,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         guard let session = SessionStore.persist(payload, frequencyID: soundID,
                                                  preCoherence: coherence?.pre,
                                                  in: context) else {
-            status = "Session discarded (too short / unreadable)"
+            if isCurrent { status = "Session discarded (too short / unreadable)" }
             return
         }
+        guard isCurrent else { return }
         lastSessionID = session.id
         status = "Saved ✓"
         // The user opted into the coherence check — prompt the AFTER read now,
@@ -280,9 +318,14 @@ extension SessionCoordinator: WCSessionDelegate {
             Task { @MainActor in self.persist(payload) }
             return
         }
-        if let raw = dict[WCKeys.startFailure] as? String,
-           let failure = StartFailure(rawValue: raw) {
-            Task { @MainActor in self.sessionFailedToStart(failure) }
+        if let raw = dict[WCKeys.startFailure] as? String {
+            // New format "<sessionID>|<failure>" (so stale refusals are matchable);
+            // bare "<failure>" accepted from older Watch builds.
+            let parts = raw.split(separator: "|")
+            let id = parts.count == 2 ? UUID(uuidString: String(parts[0])) : nil
+            if let failure = StartFailure(rawValue: String(parts.last ?? "")) {
+                Task { @MainActor in self.sessionFailedToStart(failure, sessionID: id) }
+            }
             return
         }
         if let raw = dict[WCKeys.started] as? String {

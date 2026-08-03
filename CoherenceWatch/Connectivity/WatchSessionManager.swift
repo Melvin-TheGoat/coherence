@@ -68,7 +68,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // of meditating for 25 minutes to find that out afterwards.
         guard await HealthKitAuth.canReadHeartRate() else {
             statusMessage = "Heart rate unavailable — check 808's Health permissions on iPhone."
-            report(.heartRateUnavailable)
+            report(.heartRateUnavailable, sessionID: p.sessionID)
             params = nil
             return
         }
@@ -77,7 +77,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         guard started else {
             // workout.start() sets its own failure message; surface it on Ready.
             statusMessage = workout.statusMessage ?? "Couldn't start (unknown)."
-            report(.workoutNotAuthorized)
+            report(.workoutNotAuthorized, sessionID: p.sessionID)
             params = nil
             return
         }
@@ -98,10 +98,12 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     /// Tells the phone the session never started, so it can drop its
     /// mid-session screen and explain the fix. Sent over both channels — a
-    /// message if reachable now, queued user-info regardless.
-    private func report(_ failure: StartFailure) {
+    /// message if reachable now, queued user-info regardless. Carries the
+    /// sessionID so the phone can ignore a STALE refusal that flushes from
+    /// this queue seconds into a later, healthy session.
+    private func report(_ failure: StartFailure, sessionID: UUID) {
         let wc = WCSession.default
-        let msg = [WCKeys.startFailure: failure.rawValue]
+        let msg = [WCKeys.startFailure: "\(sessionID.uuidString)|\(failure.rawValue)"]
         if wc.isReachable {
             wc.sendMessage(msg, replyHandler: nil, errorHandler: nil)
         }

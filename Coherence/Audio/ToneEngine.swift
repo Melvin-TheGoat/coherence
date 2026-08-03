@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import os
 
 /// A synthesized meditation tone. Entrainment presets carry a `beatHz` (the target
 /// brainwave rate); a pure tone (e.g. 528 Hz) leaves it nil. `carrierHz` is the
@@ -115,6 +116,14 @@ final class ToneEngine: ObservableObject {
 
     /// ID of the preset currently sounding (nil = stopped) — drives Preview UI.
     @Published private(set) var playingID: String?
+    /// Last audio-path outcome, for debugging silent failures (every failure in
+    /// this engine is otherwise inaudible by definition). Shown in DEBUG UI.
+    @Published private(set) var lastEvent: String?
+    /// Audio-session activation error from the most recent configureSession().
+    private var sessionError: String?
+    private let audioLog = Logger(subsystem: "com.lockout.coherence", category: "ToneEngine")
+
+    init() { observeSessionEvents() }
 
     private let engine = AVAudioEngine()
     private var nodes: [AVAudioNode] = []
@@ -122,6 +131,45 @@ final class ToneEngine: ObservableObject {
     /// Played via AVAudioPlayer (streams from disk, low memory) alongside the engine;
     /// both mix at the hardware output.
     private var bedPlayer: AVAudioPlayer?
+
+    /// DEBUG probe: where the file-based player's playhead is, and whether it
+    /// still reports playing. nil when no file player exists (synth-only).
+    var playbackProbe: String? {
+        guard let p = bedPlayer else { return nil }
+        return "t=\(Int(p.currentTime))s playing=\(p.isPlaying) vol=\(p.volume) sysVol=\(String(format: "%.2f", AVAudioSession.sharedInstance().outputVolume))"
+            + (interruptionNote.map { " ⚠️\($0)" } ?? "")
+    }
+
+    /// Set when the system interrupts or reroutes our audio session — the one
+    /// stop that comes from BELOW our code and would otherwise be invisible.
+    private var interruptionNote: String?
+
+    private func observeSessionEvents() {
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.interruptionNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self else { return }
+            let typeRaw = (note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt) ?? 99
+            let type = AVAudioSession.InterruptionType(rawValue: typeRaw)
+            let reasonRaw = (note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt).map(String.init) ?? "?"
+            let desc = "interruption \(type == .began ? "BEGAN" : type == .ended ? "ended" : "?\(typeRaw)") reason=\(reasonRaw)"
+            self.interruptionNote = desc
+            self.audioLog.error("audio session \(desc)")
+            // If the interruption ended and the system says we may resume, do so —
+            // a meditation track should survive a notification blip.
+            if type == .ended, let p = self.bedPlayer, !p.isPlaying {
+                let ok = p.play()
+                self.audioLog.info("resume after interruption: \(ok)")
+            }
+        }
+        NotificationCenter.default.addObserver(
+            forName: AVAudioSession.routeChangeNotification, object: nil, queue: .main
+        ) { [weak self] note in
+            guard let self else { return }
+            let reason = (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt) ?? 99
+            self.audioLog.info("route change reason=\(reason) now=\(self.currentRoute())")
+        }
+    }
     // Mix balance when a bed is present (tune by ear): bed up, tone down so the
     // ambient bed leads and the entrainment tone sits softly underneath.
     private static let bedVolume: Float = 0.85
@@ -334,7 +382,9 @@ final class ToneEngine: ObservableObject {
             nodes = chain
             playingID = preset.id
             startBed(for: preset)
+            lastEvent = "tone: engine started route: \(currentRoute())"
         } catch {
+            lastEvent = "tone: engine failed: \(error.localizedDescription)"
             chain.forEach { engine.detach($0) }
         }
     }
@@ -344,17 +394,21 @@ final class ToneEngine: ObservableObject {
         stop()
         configureSession()
         guard let url = Bundle.main.url(forResource: preset.resource, withExtension: "m4a")
-                    ?? Bundle.main.url(forResource: preset.resource, withExtension: "wav") else { return }
+                    ?? Bundle.main.url(forResource: preset.resource, withExtension: "wav") else {
+            lastEvent = "nature: '\(preset.resource)' missing from bundle"
+            return
+        }
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             player.numberOfLoops = -1
             player.volume = Self.natureVolume
             player.prepareToPlay()
-            player.play()
+            let ok = player.play()
             bedPlayer = player
             playingID = preset.id
+            lastEvent = "nature: play=\(ok) route: \(currentRoute())"
         } catch {
-            // No file / decode failure — nothing plays; UI just shows nothing selected.
+            lastEvent = "nature: player init failed: \(error.localizedDescription)"
         }
     }
 
@@ -364,17 +418,26 @@ final class ToneEngine: ObservableObject {
         stop()
         configureSession()
         guard let url = Bundle.main.url(forResource: preset.resource, withExtension: "m4a")
-                    ?? Bundle.main.url(forResource: preset.resource, withExtension: "wav") else { return }
+                    ?? Bundle.main.url(forResource: preset.resource, withExtension: "wav") else {
+            lastEvent = "guided: '\(preset.resource)' missing from bundle"
+            audioLog.error("guided: resource missing: \(preset.resource)")
+            return
+        }
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             player.numberOfLoops = 0           // play once — it ends when the narration ends
             player.volume = 1.0                // mastered track; play as delivered
             player.prepareToPlay()
-            player.play()
+            let ok = player.play()
             bedPlayer = player
             playingID = preset.id
+            lastEvent = "guided: play=\(ok)"
+                + (sessionError.map { " session: \($0)" } ?? "")
+                + " route: \(currentRoute())"
+            audioLog.info("guided: play=\(ok) route=\(self.currentRoute())")
         } catch {
-            // No file / decode failure — nothing plays; UI just shows nothing selected.
+            lastEvent = "guided: player init failed: \(error.localizedDescription)"
+            audioLog.error("guided: player init failed: \(String(describing: error))")
         }
     }
 
@@ -395,8 +458,12 @@ final class ToneEngine: ObservableObject {
         }
     }
 
-    /// Stops any tone + bed and tears the graph down.
-    func stop() {
+    /// Stops any tone + bed and tears the graph down. `reason` names the caller
+    /// in the log — "audio cut out" debugging is impossible without knowing WHO stopped it.
+    func stop(reason: String = "unspecified") {
+        if playingID != nil {
+            audioLog.info("stop(\(reason)) while playing \(self.playingID ?? "?")")
+        }
         bedPlayer?.stop()
         bedPlayer = nil
         // Stop the engine BEFORE detaching — halts the render thread first so a rapid
@@ -411,7 +478,21 @@ final class ToneEngine: ObservableObject {
         // .playback (no mixWithOthers) → our audio is primary and keeps playing when
         // the screen locks mid-meditation (paired with the "audio" UIBackgroundMode).
         let session = AVAudioSession.sharedInstance()
-        try? session.setCategory(.playback, mode: .default)
-        try? session.setActive(true)
+        sessionError = nil
+        interruptionNote = nil
+        do {
+            try session.setCategory(.playback, mode: .default)
+            try session.setActive(true)
+        } catch {
+            sessionError = error.localizedDescription
+            audioLog.error("audio session activation failed: \(String(describing: error))")
+        }
+    }
+
+    /// Where the system is routing our audio right now (speaker vs AirPods etc.) —
+    /// "nothing audible" is often just "playing into Bluetooth in another room."
+    private func currentRoute() -> String {
+        let outs = AVAudioSession.sharedInstance().currentRoute.outputs
+        return outs.map { $0.portType.rawValue }.joined(separator: "+")
     }
 }

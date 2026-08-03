@@ -384,6 +384,26 @@ UI must coach it, and the 2-signal degrade path must stay.
     at 0:00 the phone shows "Finishing on your Watch…"; silent startWatchApp
     failure now raises `StartFailure.watchUnreachable` (blocking screen w/
     steps — was invisible); Watch `.sent` no longer swallows new params.
+  - **Two session-pipeline bugs found via live device-log debugging (guided
+    audio cut out after one word; both verified fixed on-device 2026-08-03):**
+    (1) **Cancelled `Task.sleep` fell through to its action.** The audio-stop
+    timer was `try? await Task.sleep(...); tone.stop()` — cancelling it (which
+    the started-ack re-anchor does ~1 s in) makes the sleep THROW, `try?`
+    swallows it, and the stop RUNS immediately. Every `try? await Task.sleep`
+    followed by an action needs `guard !Task.isCancelled else { return }`.
+    (2) **Stale WC queue flushes sabotaged new sessions.** Launching the watch
+    app flushes its queued `transferUserInfo` backlog, so payloads/failures
+    from OLD sessions land seconds into a NEW one; `persist`/failure handling
+    stopped audio + tore down the live screen unconditionally. Now everything
+    destructive matches `currentAttemptID` first (stale payloads still persist,
+    silently; startFailure carries "<id>|<failure>"). Same family as the stale
+    application-context bug — treat EVERY WC arrival as possibly stale.
+    Debugging pattern that cracked it (reusable): `ToneEngine.lastEvent` +
+    `stop(reason:)` naming every caller in os_log, an AVAudioSession
+    interruption observer (with auto-resume — kept as a feature), and
+    `xcrun devicectl device process launch --console` streaming the phone's
+    logs to the Mac — the log showed `stop(planned timer)` 0.7 s after
+    `play=true`, which named the killer. No Xcode needed.
   - **NOT yet done:** 9d (privacy policy camera wording, SCIENCE.md PPG
     citations), true phone-only sessions (no-Watch timer path), paired-device
     end-to-end pass (Aziz's watch install pending). **Melvin's roadmap has a
