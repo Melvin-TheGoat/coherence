@@ -75,6 +75,41 @@ public enum VerdictEngine {
         return Verdict(headline: headline, sentence: sentence)
     }
 
+    // MARK: - Standing (this session vs the user's own history)
+
+    /// How this session sits against the user's own recent practice.
+    ///
+    /// **Why relative and not absolute:** the Watch and the camera are different
+    /// instruments measuring different things, so a cross-user number silently
+    /// compares a wrist accelerometer to a phone lens. Scoring each user against
+    /// themselves sidesteps that entirely — and it's the honest version of "did
+    /// I get there?", which an invented probability would not be. See
+    /// `STAGE2_ROADMAP.md` Phase 1 and the citation-integrity note in SCIENCE.md:
+    /// nothing here may imply we measured a brain state.
+    ///
+    /// - Parameters:
+    ///   - score: this session's overall score.
+    ///   - history: previous sessions' overall scores, most recent first,
+    ///     EXCLUDING this one.
+    /// - Returns: a phrase like "calmer than 8 of your last 10", or nil when
+    ///   there isn't enough history to say anything true.
+    public static func standing(score: Double?, history: [Double]) -> String? {
+        guard let score else { return nil }
+        // Cold start: with almost no history, any comparison is noise dressed as
+        // insight. Say nothing rather than something shaky.
+        guard history.count >= minimumHistory else { return nil }
+
+        let window = Array(history.prefix(10))
+        let beaten = window.filter { score > $0 }.count
+
+        if beaten == window.count { return "your stillest session yet" }
+        if beaten == 0 { return "a quieter showing than usual" }
+        return "calmer than \(beaten) of your last \(window.count)"
+    }
+
+    /// Below this many previous sessions we make no relative claim at all.
+    public static let minimumHistory = 5
+
     /// One-line reading for the HR curve ("74 → 63 bpm").
     public static func hrReading(start: Double?, end: Double?) -> String? {
         guard let s = start, let e = end else { return nil }

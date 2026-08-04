@@ -53,6 +53,14 @@ final class MeditationStats {
     var postCoherenceHR: Double?
     var postCoherenceRMSSD: Double?
 
+    /// Which instrument produced this row's signals — `"watch"` (accelerometer
+    /// + averaged HR) or `"camera"` (finger PPG). Recorded because the two are
+    /// NOT comparable: a wrist accelerometer and a phone lens measure different
+    /// things at different fidelities, so a score only means something next to
+    /// the instrument that produced it. Defaulted for every pre-existing row,
+    /// which was necessarily the Watch.
+    var measurementSource: String = "watch"
+
     var windowSec: Int = 30
     var hopSec: Int = 5
     var algorithmVersion: String = "2.0.0"
@@ -75,6 +83,7 @@ final class MeditationStats {
         breathingRegularity: Double? = nil,
         resonanceMatchScore: Double? = nil,
         overallScore: Double? = nil,
+        measurementSource: String = "watch",
         windowSec: Int = 30,
         hopSec: Int = 5,
         algorithmVersion: String = "2.0.0",
@@ -96,6 +105,7 @@ final class MeditationStats {
         self.breathingRegularity = breathingRegularity
         self.resonanceMatchScore = resonanceMatchScore
         self.overallScore = overallScore
+        self.measurementSource = measurementSource
         self.windowSec = windowSec
         self.hopSec = hopSec
         self.algorithmVersion = algorithmVersion

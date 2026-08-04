@@ -64,4 +64,64 @@ final class VerdictEngineTests: XCTestCase {
         XCTAssertEqual(VerdictEngine.breathReading(meanRate: 11.2, resonance: 0.1), "averaged 11.2/min")
         XCTAssertNil(VerdictEngine.breathReading(meanRate: nil, resonance: 0.7))
     }
+
+    // MARK: - Standing (this session vs the user's own history)
+
+    /// The whole point of relative scoring: with too little history, any
+    /// comparison is noise. Say nothing rather than something shaky.
+    func test_standing_saysNothingBeforeEnoughHistory() {
+        for count in 0..<VerdictEngine.minimumHistory {
+            let history = Array(repeating: 0.5, count: count)
+            XCTAssertNil(VerdictEngine.standing(score: 0.9, history: history),
+                         "claimed a standing with only \(count) prior sessions")
+        }
+    }
+
+    func test_standing_countsHowManyItBeat() {
+        // 6 priors, this session beats 4 of them.
+        let history = [0.9, 0.85, 0.4, 0.3, 0.2, 0.1]
+        XCTAssertEqual(VerdictEngine.standing(score: 0.5, history: history),
+                       "calmer than 4 of your last 6")
+    }
+
+    func test_standing_recognisesABest() {
+        let history = [0.5, 0.4, 0.6, 0.3, 0.2]
+        XCTAssertEqual(VerdictEngine.standing(score: 0.95, history: history),
+                       "your stillest session yet")
+    }
+
+    /// A bad session is described plainly, never with a score-shaped insult.
+    func test_standing_worstIsHonestNotHarsh() {
+        let history = [0.5, 0.4, 0.6, 0.3, 0.2]
+        let s = VerdictEngine.standing(score: 0.05, history: history)
+        XCTAssertEqual(s, "a quieter showing than usual")
+        XCTAssertFalse(s!.contains("worst"))
+    }
+
+    /// Only the last 10 count, so an old run of great sessions can't make every
+    /// later one read as a failure.
+    func test_standing_windowsToTen() {
+        let history = Array(repeating: 0.99, count: 30)
+        XCTAssertEqual(VerdictEngine.standing(score: 0.5, history: history),
+                       "a quieter showing than usual")
+        XCTAssertNil(VerdictEngine.standing(score: nil, history: history))
+    }
+
+    /// Nothing the engine can say may imply we measured a brain state.
+    func test_noVerdictClaimsABrainState() {
+        let inputs: [VerdictEngine.Inputs] = [
+            .init(overallScore: 0.95, stillnessScore: 0.95, hrDecline: 20,
+                  meanBreathingRate: 6, resonanceMatchScore: 0.9, bellyBreathing: true),
+            .init(overallScore: 0.1, stillnessScore: 0.1, hrDecline: -10),
+            .init(overallScore: 0.5),
+        ]
+        let banned = ["theta", "brain", "subconscious", "probability", "likely"]
+        for i in inputs {
+            let v = VerdictEngine.verdict(for: i)
+            let text = (v.headline + " " + v.sentence).lowercased()
+            for word in banned {
+                XCTAssertFalse(text.contains(word), "verdict said '\(word)': \(text)")
+            }
+        }
+    }
 }

@@ -20,6 +20,9 @@ struct SessionResultsView: View {
     /// flowing text until tapped.
     @State private var isEditingNote = false
     @State private var streakDays = 0
+    /// Overall scores of this user's EARLIER sessions, newest first —
+    /// the baseline the standing line is measured against.
+    @State private var priorScores: [Double] = []
     @State private var showShareSheet = false
 
     var body: some View {
@@ -86,6 +89,9 @@ struct SessionResultsView: View {
                 if let sound = SoundCatalog.title(for: session.frequencyID) {
                     MetaChip(text: sound)
                 }
+                // Which instrument measured this. Quiet, but always present —
+                // a Watch score and a camera score aren't the same currency.
+                if let source = instrumentLabel { MetaChip(text: source) }
             }
         }
     }
@@ -106,20 +112,46 @@ struct SessionResultsView: View {
             meanBreathingRate: stats.meanBreathingRate,
             resonanceMatchScore: stats.resonanceMatchScore,
             bellyBreathing: session?.bellyBreathing ?? false))
-        return HStack(spacing: 16) {
-            ScoreRing(score: stats.overallScore, size: 92, lineWidth: 9)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(verdict.headline)
-                    .font(.system(size: 19, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                Text(verdict.sentence)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+        // The words lead; the number supports. A score means little on its own
+        // once the Watch and the camera both produce one — what's true and
+        // comparable is how this session sits against THIS user's own history.
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(verdict.headline)
+                .font(.system(size: 25, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(verdict.sentence)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 10) {
+                if let standing {
+                    Text(standing)
+                        .font(AppFont.caption.weight(.medium))
+                        .foregroundStyle(AppColor.accentGold)
+                }
+                Spacer(minLength: 0)
+                ScoreRing(score: stats.overallScore, size: 52, lineWidth: 6)
             }
-            Spacer(minLength: 0)
+            .padding(.top, 2)
         }
         .padding(.vertical, 2)
+    }
+
+    /// "calmer than 8 of your last 10" — nil until there's enough history for
+    /// the claim to be true (see `VerdictEngine.minimumHistory`).
+    private var standing: String? {
+        VerdictEngine.standing(score: stats?.overallScore, history: priorScores)
+    }
+
+    /// Human name for the instrument behind this row.
+    private var instrumentLabel: String? {
+        switch stats?.measurementSource {
+        case "camera": "Camera"
+        case "watch": "Apple Watch"
+        default: nil
+        }
     }
 
     // MARK: Signal tiles
@@ -458,6 +490,21 @@ struct SessionResultsView: View {
         // Streak for the share card, derived the same way the calendar does.
         let allSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
         streakDays = StreakCalculator.streak(from: allSessions.map(\.startedAt)).current
+
+        // Scores of the user's EARLIER sessions, newest first — the baseline the
+        // standing line compares against. Ordered by session start, not by stats
+        // row, so a late-attached row can't jump the queue.
+        let startedAt = allSessions.reduce(into: [UUID: Date]()) { $0[$1.id] = $1.startedAt }
+        let thisStart = session?.startedAt ?? Date()
+        priorScores = ((try? context.fetch(FetchDescriptor<MeditationStats>())) ?? [])
+            .compactMap { row -> (Date, Double)? in
+                guard let sid = row.sessionID, sid != sessionID,
+                      let score = row.overallScore, let when = startedAt[sid],
+                      when < thisStart else { return nil }
+                return (when, score)
+            }
+            .sorted { $0.0 > $1.0 }
+            .map(\.1)
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { showShareSheet = true }
         #endif
