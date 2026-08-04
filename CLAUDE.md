@@ -404,12 +404,24 @@ UI must coach it, and the 2-signal degrade path must stay.
     `xcrun devicectl device process launch --console` streaming the phone's
     logs to the Mac — the log showed `stop(planned timer)` 0.7 s after
     `play=true`, which named the killer. No Xcode needed.
+  - **The camera is not merely a fallback.** A still finger on a lens resolves
+    **true beat-to-beat intervals**, so HRV is reachable on this path — which
+    the third-party Watch workout stream cannot do at all (see "Why not heart
+    coherence"). It is also the only RR source we have short of an external BLE
+    strap. Different instrument, better in one respect; don't present it as the
+    consolation prize.
+  - **OPEN — skin tone + lighting validation. NOT DONE.** PPG is optical and
+    melanin absorbs green/red light; published pulse-oximetry work shows worse
+    performance on darker skin. Our read is validated on two people. Until it's
+    tested across a real range of skin tones we don't know that 808 works
+    equally well for everyone — a correctness *and* equity problem. **Blocks
+    external TestFlight.**
   - **NOT yet done:** 9d (privacy policy camera wording, SCIENCE.md PPG
     citations), true phone-only sessions (no-Watch timer path), paired-device
-    end-to-end pass (Aziz's watch install pending). **Melvin's roadmap has a
-    duplicate "Phase 9 (PARKED)" section written the same day unaware Aziz
-    green-lit it — reconcile after they talk; his beat-to-beat/HRV point and
-    skin-tone-validation open question are good and should fold in.**
+    end-to-end pass (Aziz's watch install pending), skin-tone validation.
+    *(The duplicate "Phase 9 (PARKED)" section in `App_ROADMAP_v2.md` was
+    reconciled 2026-08-03 — one Phase 9 record now, and camera PPG SHIPS in v1.
+    Stage 2 work lives in `STAGE2_ROADMAP.md`.)*
 - **UI REDESIGN — every screen rebuilt (2026-08-03, `67b9854`).** Design review
   with Aziz produced one visual language; same wiring, same stores, new face.
   Screens: Home, Begin sheet, Evidence, Journey, Settings, mid-session,

@@ -535,75 +535,25 @@ Plews et al. 2017, HRV4Training camera vs ECG/Polar).
   processed on device and never stored), nutrition labels if needed, camera
   usage string, SCIENCE.md section with the PPG-validation citations.
 
+**Two things this path gives us that the Watch never will — and one it owes:**
+
+- **True beat-to-beat intervals.** A still finger on a lens resolves individual
+  beats, so **HRV is genuinely reachable here** — which the third-party Watch
+  workout stream cannot do at any price (see "Why not heart coherence"). Treat
+  the camera as a *different and in one respect better* instrument, not a
+  consolation prize for people without a Watch. It is also the only route we
+  have to the RR data an eventual coherence claim would need, short of the
+  external BLE strap.
+- **OPEN QUESTION — skin tone and lighting. Not yet tested.** PPG is optical:
+  melanin absorbs green/red light, and published pulse-oximetry work shows
+  systematically worse performance on darker skin. Our read has been validated
+  on two people. Until it is tested across a real range of skin tones, we do not
+  know whether 808 works equally well for everyone, and that is both a
+  correctness problem and an equity one. **This blocks external TestFlight**
+  (see `STAGE2_ROADMAP.md` Phase 4).
+
 ### Research sources
 [App Store submission checklist 2026](https://appbuilder.academy/blog/app-store-submission-checklist) · [App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) · [Health-app privacy guidelines](https://www.termsfeed.com/blog/privacy-guidelines-health-apps/) · [Individual vs Organization enrollment](https://developer.apple.com/help/account/membership/program-enrollment/) · [D-U-N-S requirement](https://developer.apple.com/support/D-U-N-S/index.html)
-
-## Phase 9 (PARKED — not started) — measuring without an Apple Watch
-
-Captured 2026-07-31 from Melvin. **Not scheduled. Do not start without an
-explicit go-ahead.** The driver: most people don't own an Apple Watch, and today
-the Watch is a hard requirement for any evidence at all.
-
-### 9a. Camera PPG — heart rate + HRV before and after
-
-Take a **pre** and **post** reading with the phone camera (finger on the lens,
-torch on) and show the change across the session, instead of a continuous curve.
-Photoplethysmography — the same optical principle as the Watch sensor.
-
-Why before/after rather than continuous: torch heat, battery drain, and a finger
-pinned to the lens make long capture impractical (this is already recorded in
-CLAUDE.md as the reason camera PPG was rejected for v1). A 60–90 s reading at
-each end sidesteps all three.
-
-**Worth noting this could beat the Watch on one axis:** a still finger on a lens
-can yield true **beat-to-beat intervals**, so HRV is genuinely reachable here —
-which the third-party Watch workout stream cannot do (see "Why not heart
-coherence"). That makes this a real signal, not just a fallback.
-
-Open questions: accuracy across skin tones and lighting (must be validated, not
-assumed); motion artifacts; whether to require a fixed posture for
-comparability; App Review treatment of camera-derived health metrics.
-
-### 9b. Computer-vision stillness
-
-Phone propped facing the user, on-device vision estimating movement as a
-stillness substitute for the Watch accelerometer.
-
-**Privacy is the whole ballgame.** Melvin's stance: process on device, store no
-frames, and say so loudly. To hold up, that must be architectural, not just a
-policy sentence — no frame ever written to disk, no upload path in the code, and
-the privacy policy and App Privacy labels stating it plainly. Camera-on-user in
-a meditation app invites scrutiny; the honest version is the only shippable one.
-
-### 9c. Rescoring — and a claim we must not make
-
-Melvin's reasoning is sound: once signals come from different hardware (Watch
-accelerometer vs camera, averaged HR vs PPG), a single "practice score" is no
-longer comparable between users, so a raw score becomes misleading.
-
-**But the proposed replacement — "probability you entered theta state to edit
-your subconscious" — cannot ship as worded.** Flagged here so it isn't
-rediscovered late:
-
-- `SCIENCE.md`'s citation-integrity note explicitly forbids this upgrade. Refs
-  1–3 show *meditation raises theta*; **none** show our motion/HR signals
-  *measure* theta. The page deliberately calls them correlates.
-- A **probability** is a stronger claim than the current score, not a softer
-  one. It implies a calibrated model validated against EEG ground truth. We have
-  no EEG data, so any percentage would be invented.
-- "Edit your subconscious" states a mechanism as fact. That's PURPOSE.md's
-  aim/belief, not a cited finding, and putting it on a *number* turns a belief
-  into a measurement.
-- Health-claim exposure: a quantified brain-state readout is a different App
-  Review conversation than "here's how still you were."
-
-**What solves the real problem honestly:** the comparability issue is fixed by
-scoring **relative to the user's own history** (this session vs your baseline)
-rather than an absolute cross-user number, and by labelling which hardware
-produced it. If a theta-linked framing is wanted, it has to stay qualitative and
-hedged — describing the bodily state theta rides on, never a probability of
-being in it. Revisit only with real EEG validation, which is a research project,
-not a feature.
 
 ## Global conventions (enforced every phase)
 - Never hardcode a hex value — every color routes through the asset catalog / `AppColor`.

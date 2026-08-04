@@ -16,25 +16,29 @@ rather than quietly routed around.
 
 ---
 
-## Phase 0 — Reconcile before anything (BLOCKING, ~1 hour, Melvin + Aziz)
+## Phase 0 — Reconcile before anything ✅ DONE 2026-08-03
 
-CLAUDE.md line ~410 records the problem: **`App_ROADMAP_v2.md` has a "Phase 9
-(PARKED — not started)" section written the same day Aziz shipped 9a/9b/9c.**
-Two documents disagree about whether the flagship feature exists. Nothing below
-should start on top of that.
+Two documents disagreed about whether the flagship feature existed:
+`App_ROADMAP_v2.md` carried a "Phase 9 (PARKED — not started)" section written
+the same day Aziz shipped 9a/9b/9c.
 
-1. Delete the PARKED Phase 9 section from `App_ROADMAP_v2.md`.
-2. Fold its two surviving contributions into the real Phase 9 record:
-   - **Camera PPG can yield true beat-to-beat intervals** — so HRV is reachable
-     on the no-Watch path in a way the Watch workout stream can never be. That's
-     a genuine advantage, not a fallback, and it should be said out loud.
-   - **Skin-tone and lighting validation is an open question.** PPG is optical.
-     Accuracy across skin tones must be measured, not assumed. This is a real
-     equity and correctness risk and it is currently untested.
-3. Carry over the scoring caution verbatim — it becomes Phase 1 below.
+1. ✅ Deleted the duplicate PARKED section (67 lines). One Phase 9 record now,
+   the real one: **camera PPG SHIPS in v1.**
+2. ✅ Folded its two surviving contributions into both `App_ROADMAP_v2.md` and
+   `CLAUDE.md`:
+   - **Camera PPG yields true beat-to-beat intervals** — HRV is reachable on
+     this path in a way the Watch workout stream never can be. A different and
+     in one respect better instrument, not a consolation prize. It's also the
+     only RR source we have short of an external BLE strap, which links it to
+     Phase 6.
+   - **Skin tone + lighting is an untested open question.** PPG is optical;
+     melanin absorbs green/red light and published pulse-oximetry work shows
+     worse performance on darker skin. Validated on two people so far.
+     Correctness *and* equity risk. **Blocks external TestFlight (Phase 4).**
+3. ✅ The scoring caution became Phase 1 below.
 
-> **Checkpoint 0:** One Phase 9 section exists. Both of you can state, without
-> checking, whether camera PPG ships in v1.
+> **Checkpoint 0 — met.** `grep "^## Phase 9" App_ROADMAP_v2.md` returns one
+> section, headed *IN PROGRESS*, not *PARKED*.
 
 ---
 
