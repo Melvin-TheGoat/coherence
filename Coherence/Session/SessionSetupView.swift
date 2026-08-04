@@ -24,6 +24,7 @@ struct SessionSetupView: View {
 
     @State private var belly = false
     @State private var showPostureSheet = false
+    @State private var showFieldGuide = false
     /// Opt-in camera coherence check (Phase 9): a ~45 s finger-on-camera pulse
     /// read before and after the session, shown as a differential.
     @AppStorage("coherenceCheckEnabled") private var coherenceCheck = false
@@ -90,6 +91,7 @@ struct SessionSetupView: View {
         }
         .onDisappear { tone.stop(reason: "setup closed") }
         .sheet(isPresented: $showPostureSheet) { postureSheet }
+        .sheet(isPresented: $showFieldGuide) { FieldGuideView() }
         .fullScreenCover(isPresented: $showPreMeasure, onDismiss: {
             // Whether the read succeeded, failed, or was cancelled, the
             // meditation goes ahead — the check never blocks the session.
@@ -509,6 +511,15 @@ struct SessionSetupView: View {
                     .foregroundStyle(AppColor.textSecondary)
             }
             Spacer()
+            // Read the whole method before you start — the science and the
+            // technique behind each of the five steps.
+            Button { showFieldGuide = true } label: {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 15))
+                    .foregroundStyle(AppColor.calmAccent)
+                    .frame(width: 34, height: 34)
+            }
+            .buttonStyle(.plain)
             Toggle("", isOn: $structured)
                 .labelsHidden()
                 .tint(AppColor.calmAccent)

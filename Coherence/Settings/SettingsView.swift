@@ -125,6 +125,8 @@ private struct SettingsForm: View {
 
                 SectionHeader(title: "The foundation")
                 settingsCard {
+                    navRow(icon: "book.closed", title: "Field Guide", teal: true) { FieldGuideContent() }
+                    divider
                     navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }
                     divider
                     navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }
