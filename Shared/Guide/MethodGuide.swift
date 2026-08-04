@@ -1,6 +1,6 @@
 import Foundation
 
-/// The **Field Guide** — the practice explained, one step at a time, with the
+/// **The Method** — the practice explained, one step at a time, with the
 /// evidence and the lineage kept visibly apart.
 ///
 /// **The rule this file exists to enforce:** every step separates
@@ -16,7 +16,7 @@ import Foundation
 /// integrity note at the bottom of `SCIENCE.md`.
 ///
 /// Pure Foundation so it's testable and shared with the Watch if ever needed.
-public enum FieldGuide {
+public enum MethodGuide {
 
     /// A peer-reviewed finding. Every one of these carries a real DOI.
     public struct Citation: Identifiable, Hashable {

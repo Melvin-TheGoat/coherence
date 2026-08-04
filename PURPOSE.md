@@ -1,5 +1,8 @@
 # Our Purpose
 
+
+
+
 Beneath every goal you're chasing sits a subconscious identity — the quiet set of beliefs
 about who you are and what you're capable of. When that identity and your goals disagree, you
 feel it as friction: procrastination, self-doubt, the sense of pushing against yourself.

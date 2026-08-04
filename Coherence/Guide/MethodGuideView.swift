@@ -1,16 +1,16 @@
 import SwiftUI
 
-/// The Field Guide: the practice explained, reachable before a session and from
+/// The The Method: the practice explained, reachable before a session and from
 /// Settings. Overview lists the five steps; each opens its own page.
 ///
 /// Colour grammar holds — teal is guidance, gold is what you achieved. Nothing
 /// on these screens is gold, because none of it is an achievement.
-struct FieldGuideView: View {
+struct MethodGuideView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            FieldGuideContent()
+            MethodGuideContent()
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
                         Button("Done") { dismiss() }.tint(AppColor.accentGold)
@@ -24,7 +24,7 @@ struct FieldGuideView: View {
 /// existing stack (Settings) as well as **presented** as a sheet (setup).
 /// Wrapping it in its own NavigationStack in both places would nest stacks and
 /// leave a stray Done button on the pushed copy.
-struct FieldGuideContent: View {
+struct MethodGuideContent: View {
 
     var body: some View {
         ScrollView {
@@ -37,29 +37,29 @@ struct FieldGuideContent: View {
             .padding(.bottom, 24)
         }
         .screenBackground()
-        .navigationTitle("Field Guide")
+        .navigationTitle("The Method")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var intro: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(FieldGuide.introTitle)
+            Text(MethodGuide.introTitle)
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            MarkdownProse(FieldGuide.intro)
+            MarkdownProse(MethodGuide.intro)
         }
     }
 
     private var stepList: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "The five steps")
-            ForEach(FieldGuide.steps) { step in
+            ForEach(MethodGuide.steps) { step in
                 // Destination-based rather than value-based: this view gets
                 // PUSHED into Settings' stack as well as presented as a sheet,
                 // and a destination link works in both without the parent
                 // needing a matching navigationDestination registration.
-                NavigationLink { FieldGuideStepView(step: step) } label: {
+                NavigationLink { MethodStepView(step: step) } label: {
                     HStack(alignment: .top, spacing: 13) {
                         Text("\(step.id)")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
@@ -92,14 +92,14 @@ struct FieldGuideContent: View {
     private var referenceList: some View {
         VStack(alignment: .leading, spacing: 8) {
             SectionHeader(title: "References")
-            ForEach(FieldGuide.allCitations) { CitationRow(citation: $0) }
+            ForEach(MethodGuide.allCitations) { CitationRow(citation: $0) }
         }
     }
 }
 
 /// One step in full: how to do it, what's been measured, where it comes from.
-struct FieldGuideStepView: View {
-    let step: FieldGuide.Step
+struct MethodStepView: View {
+    let step: MethodGuide.Step
 
     var body: some View {
         ScrollView {
@@ -187,7 +187,7 @@ struct FieldGuideStepView: View {
 
 /// A citation, rendered so the DOI is obviously a real, checkable thing.
 struct CitationRow: View {
-    let citation: FieldGuide.Citation
+    let citation: MethodGuide.Citation
 
     var body: some View {
         Link(destination: URL(string: "https://doi.org/\(citation.doi)")!) {
@@ -238,4 +238,4 @@ struct MarkdownProse: View {
     }
 }
 
-#Preview { FieldGuideView() }
+#Preview { MethodGuideView() }
