@@ -134,7 +134,10 @@ struct MonthCalendar: View {
         let today = calendar.startOfDay(for: Date())
         VStack(spacing: 6) {
             HStack(spacing: 0) {
-                ForEach(weekdayInitials, id: \.self) { d in
+                // Keyed by position, not by the letter: S and T each appear
+                // twice in a week, and duplicate ForEach IDs are undefined
+                // behaviour (SwiftUI logs it and may reuse the wrong view).
+                ForEach(Array(weekdayInitials.enumerated()), id: \.offset) { _, d in
                     Text(d).font(.caption2.weight(.semibold))
                         .foregroundStyle(AppColor.textSecondary)
                         .frame(maxWidth: .infinity)
