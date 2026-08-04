@@ -87,39 +87,41 @@ public enum MethodGuide {
         venue: "Frontiers in Human Neuroscience, 12:353",
         doi: "10.3389/fnhum.2018.00353")
 
-    static let lomas = Citation(
-        authors: "Lomas T, Ivtzan I, Fu CHY", year: 2015,
-        title: "A systematic review of the neurophysiology of mindfulness on EEG oscillations",
-        venue: "Neuroscience & Biobehavioral Reviews, 57:401–410",
-        doi: "10.1016/j.neubiorev.2015.09.018")
+    /// A book. Kept distinct from `Citation` because it has no DOI and hasn't
+    /// been peer reviewed — rendered in the same author-year shape so the page
+    /// reads consistently, without implying it's the same kind of evidence.
+    public struct Book: Identifiable, Hashable {
+        public var id: String { "\(authors)-\(year)" }
+        public let authors: String
+        public let year: Int
+        public let title: String
+        public let publisher: String
+    }
 
     // MARK: - The opening
+    //
+    // Deliberately short. The page's job is "here is the step-by-step guide" —
+    // a definition, then the steps. The evidence lives inside each step for
+    // anyone who taps, rather than as an essay nobody asked for up front.
 
-    public static let introTitle = "What the practice is doing"
+    public static let introTitle = "Meditation for manifestation"
 
-    public static let intro = """
-    Three things have actually been measured in people who meditate, and they're \
-    the reason this app exists.
+    public static let definitionTerm = "Manifestation"
+    public static let definitionBody = "Embedding intentions into your subconscious identity."
 
-    **Gray matter.** Eight weeks of mindfulness practice produced measurable \
-    increases in gray matter density — in a controlled study, in ordinary people, \
-    in two months.
+    /// Doty is a Stanford neurosurgeon and directs CCARE; *Mind Magic* is his
+    /// book on the neuroscience of manifestation. Trade non-fiction, not a
+    /// study — which is why it's a `Book` and not a `Citation`.
+    public static let definitionSource = Book(
+        authors: "Doty JR", year: 2024,
+        title: "Mind Magic: The Neuroscience of Manifestation and How It Changes Everything",
+        publisher: "Avery")
 
-    **Neuroplasticity.** The brain keeps rewiring in response to what you \
-    repeatedly do with your attention. That's the mechanism behind every claim \
-    below: repetition changes structure.
+    /// One quiet line under the steps, so the credibility is visible without
+    /// being shouted.
+    public static let depthHint =
+        "Tap any step for what's been measured and where the technique comes from."
 
-    **The Default Mode Network.** The DMN is the self-referential chatter \
-    network — the running commentary about you. In experienced meditators its \
-    main nodes, the medial prefrontal and posterior cingulate cortices, go \
-    relatively quiet. That quiet is the opening the rest of this practice works in.
-
-    None of this is something 808 measures in your brain. We measure your body — \
-    stillness, heart rate, breath — which is what a wrist and a camera can \
-    honestly read.
-    """
-
-    public static let introCitations: [Citation] = [holzel, tang, brewer]
 
     // MARK: - The five steps
 
@@ -168,12 +170,14 @@ public enum MethodGuide {
                 "This is the step that takes the longest. Let it.",
              ],
              measured: """
-             The body scan is a core component of the eight-week mindfulness \
-             programme in which the gray-matter changes were recorded. Slow, \
-             settled breathing is independently well studied: reviews find \
-             increased parasympathetic activity and measurable reductions in \
-             stress and anxiety. This is also the part 808 can see — your \
-             stillness curve is this step, drawn.
+             The body scan is a core part of the eight-week mindfulness course \
+             that produced measurable increases in gray matter density — a \
+             controlled study, in ordinary people, in two months. Slow settled \
+             breathing is separately well studied: reviews find increased \
+             parasympathetic activity and real reductions in stress and anxiety.
+
+             This is also the step 808 can see. Your stillness curve is this \
+             step, drawn.
              """,
              citations: [holzel, zaccaro],
              technique: """
@@ -292,6 +296,6 @@ public enum MethodGuide {
     /// list at the foot of the overview.
     public static var allCitations: [Citation] {
         var seen = Set<String>()
-        return (introCitations + steps.flatMap(\.citations)).filter { seen.insert($0.id).inserted }
+        return steps.flatMap(\.citations).filter { seen.insert($0.id).inserted }
     }
 }

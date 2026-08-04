@@ -58,21 +58,44 @@ final class MethodGuideTests: XCTestCase {
     func test_guideNeverClaimsWeMeasureTheBrain() {
         let banned = ["we measure your brain", "detects theta", "measures theta",
                       "probability you entered"]
-        var corpus = MethodGuide.intro
+        var parts: [String] = [MethodGuide.definitionBody]
         for step in MethodGuide.steps {
-            corpus += step.measured + step.technique + step.oneLine + step.doThis.joined()
+            parts.append(step.measured)
+            parts.append(step.technique)
+            parts.append(step.oneLine)
+            parts.append(step.doThis.joined(separator: " "))
         }
-        let text = corpus.lowercased()
+        let text = parts.joined(separator: " ").lowercased()
         for phrase in banned {
             XCTAssertFalse(text.contains(phrase), "guide claims: \(phrase)")
         }
     }
 
-    /// The three headline findings Melvin asked for are actually present.
-    func test_introNamesTheThreeFindings() {
-        let intro = MethodGuide.intro.lowercased()
+    /// The opening is a definition and nothing more — the steps are the point.
+    func test_openingIsADefinitionNotAnEssay() {
+        XCTAssertEqual(MethodGuide.introTitle, "Meditation for manifestation")
+        XCTAssertFalse(MethodGuide.definitionBody.isEmpty)
+        // Short enough to read at a glance. An essay is what this replaced.
+        XCTAssertLessThan(MethodGuide.definitionBody.count, 120)
+    }
+
+    /// Doty's Mind Magic is a trade book, not a study. It must never be typed
+    /// as a peer-reviewed citation, and the year must be right — the first
+    /// draft of this said 2000, which is wrong by 24 years.
+    func test_theDefinitionSourceIsABookNotACitation() {
+        let book = MethodGuide.definitionSource
+        XCTAssertEqual(book.year, 2024)
+        XCTAssertTrue(book.authors.contains("Doty"))
+        XCTAssertEqual(book.publisher, "Avery")
+        XCTAssertFalse(MethodGuide.allCitations.contains { $0.authors.contains("Doty") })
+    }
+
+    /// The buzzwords still appear — but inside the steps, where they're earned
+    /// by a citation, rather than as an unsupported opener.
+    func test_theHeadlineTermsSurviveInsideTheSteps() {
+        let corpus = MethodGuide.steps.map(\.measured).joined().lowercased()
         for term in ["gray matter", "neuroplasticity", "default mode network"] {
-            XCTAssertTrue(intro.contains(term), "intro never mentions \(term)")
+            XCTAssertTrue(corpus.contains(term), "no step mentions \(term)")
         }
     }
 

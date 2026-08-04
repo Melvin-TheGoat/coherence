@@ -41,13 +41,31 @@ struct MethodGuideContent: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
+    /// Title, then the definition. That's the whole opening — the steps are the
+    /// point of this screen, not a preamble about neuroscience.
     private var intro: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             Text(MethodGuide.introTitle)
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            MarkdownProse(MethodGuide.intro)
+
+            VStack(alignment: .leading, spacing: 8) {
+                Group {
+                    Text(MethodGuide.definitionTerm)
+                        .foregroundStyle(AppColor.calmAccent)
+                        .fontWeight(.semibold)
+                    + Text(": ")
+                        .foregroundStyle(AppColor.textSecondary)
+                    + Text(MethodGuide.definitionBody)
+                        .foregroundStyle(AppColor.textPrimary)
+                }
+                .font(AppFont.callout)
+                .fixedSize(horizontal: false, vertical: true)
+
+                BookRow(book: MethodGuide.definitionSource)
+            }
+            .card()
         }
     }
 
@@ -86,6 +104,11 @@ struct MethodGuideContent: View {
                 }
                 .buttonStyle(CardButtonStyle())
             }
+
+            Text(MethodGuide.depthHint)
+                .font(.caption2)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 2)
         }
     }
 
@@ -182,6 +205,23 @@ struct MethodStepView: View {
             SectionHeader(title: title)
             content()
         }
+    }
+}
+
+/// A book, in the same author-year shape as a citation but without a DOI —
+/// because it isn't peer-reviewed and shouldn't look like it is.
+struct BookRow: View {
+    let book: MethodGuide.Book
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("\(book.authors) (\(String(book.year))). \(book.title). \(book.publisher).")
+                .font(.caption2)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.leading)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
