@@ -78,7 +78,14 @@ struct ContentView: View {
         .screenBackground()
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
-            SessionActiveView(bellyBreathing: true) { showBreathingPreview = false }
+            SessionActiveView(bellyBreathing: true,
+                              // Start 90 s in so a cue is already on screen.
+                              startedAt: Date().addingTimeInterval(-90),
+                              plannedDurationSec: 600,
+                              planChip: "Belly · 10 min",
+                              cues: StructuredScript.cues(forDurationSec: 600)) {
+                showBreathingPreview = false
+            }
         }
         .onAppear {
             if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
@@ -106,7 +113,8 @@ struct ContentView: View {
             SessionActiveView(bellyBreathing: session.bellyBreathing,
                               startedAt: session.startedAt,
                               plannedDurationSec: session.plannedDurationSec,
-                              planChip: planChip(session)) {
+                              planChip: planChip(session),
+                              cues: session.cues) {
                 coordinator.endActiveSession()
             }
         }

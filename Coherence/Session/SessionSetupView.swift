@@ -27,6 +27,8 @@ struct SessionSetupView: View {
     /// Opt-in camera coherence check (Phase 9): a ~45 s finger-on-camera pulse
     /// read before and after the session, shown as a differential.
     @AppStorage("coherenceCheckEnabled") private var coherenceCheck = false
+    /// Walk the user through the practice with timed on-screen steps.
+    @AppStorage("structuredGuidanceEnabled") private var structured = true
     /// Presenting the BEFORE read; Begin continues when it closes.
     @State private var showPreMeasure = false
     @State private var preSnapshot: CoherenceAnalyzer.Snapshot?
@@ -66,6 +68,7 @@ struct SessionSetupView: View {
             if activeGuided == nil { lengthSection } else { guidedLengthNote }
             soundGridSection
             trackBox
+            if activeGuided == nil { structuredRow }
             coherenceRow
             if belly {
                 Text("Lie back · watch wrist flat on your belly · ~6 breaths/min")
@@ -480,6 +483,43 @@ struct SessionSetupView: View {
         tone.play(p, method: headphones ? .binaural : .isochronic)
     }
 
+    // MARK: - Structured guidance (pinned above Begin)
+
+    /// Offered for every non-narrated session. A Guided track already talks you
+    /// through it, so the row is hidden there rather than shown and ignored.
+    private var structuredRow: some View {
+        Button { structured.toggle() } label: { structuredRowBody }
+            .buttonStyle(CardButtonStyle())
+    }
+
+    private var structuredRowBody: some View {
+        HStack(spacing: 11) {
+            Image(systemName: "list.bullet")
+                .font(.system(size: 13))
+                .foregroundStyle(AppColor.calmAccent)
+                .frame(width: 30, height: 30)
+                .background(AppColor.calmAccent.opacity(0.14),
+                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Guide me through it")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("Relax · envision · feel it · let go")
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            Spacer()
+            Toggle("", isOn: $structured)
+                .labelsHidden()
+                .tint(AppColor.calmAccent)
+                .allowsHitTesting(false)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(AppColor.backgroundSecondary,
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
     // MARK: - Coherence check (pinned above Begin)
 
     private var coherenceRow: some View {
@@ -550,7 +590,8 @@ struct SessionSetupView: View {
                           bellyBreathing: belly,
                           preCoherence: pre, coherenceCheck: coherenceCheck,
                           hapticsEnabled: true,
-                          soundID: soundID, headphones: headphones)
+                          soundID: soundID, headphones: headphones,
+                          structured: structured && activeGuided == nil)
         dismiss()
     }
 }

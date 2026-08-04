@@ -35,6 +35,17 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let plannedDurationSec: Int?
         /// Human title of the sound playing, for the plan chip ("Deep Meditation").
         var soundTitle: String? = nil
+        /// Step-by-step cues when the user asked to be guided through a
+        /// non-narrated session. Empty otherwise.
+        var cues: [StructuredScript.Cue] = []
+    }
+
+    /// Cue timeline for a structured session. An open-ended session has no
+    /// planned length to scale against, so it falls back to a 10-minute arc —
+    /// the cues still run in order, they just stop before the user does.
+    static func cues(structured: Bool, plannedDurationSec: Int?) -> [StructuredScript.Cue] {
+        guard structured else { return [] }
+        return StructuredScript.cues(forDurationSec: Double(plannedDurationSec ?? 600))
     }
 
     /// Sound preset chosen at Begin, keyed by sessionID — the Watch never
@@ -93,7 +104,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// during the session.
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?, bellyBreathing: Bool,
                preCoherence: CoherenceAnalyzer.Snapshot? = nil, coherenceCheck: Bool = false,
-               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
+               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false,
+               structured: Bool = false) {
         Task {
             await requestWorkoutAuthorization()
 
@@ -140,7 +152,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
                                                     startedAt: Date(),
                                                     bellyBreathing: bellyBreathing,
                                                     plannedDurationSec: plannedDurationSec,
-                                                    soundTitle: SoundCatalog.title(for: soundID))
+                                                    soundTitle: SoundCatalog.title(for: soundID),
+                                                    cues: Self.cues(structured: structured,
+                                                                    plannedDurationSec: plannedDurationSec))
                         // Play the chosen sound on the phone while the Watch measures.
                         self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
