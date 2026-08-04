@@ -299,7 +299,7 @@ struct ContentView: View {
     private var proofSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                SectionHeader(title: "The proof")
+                SectionHeader(title: "History")
                 Spacer()
                 if !sessions.isEmpty {
                     Button { sheet = .journey } label: {
