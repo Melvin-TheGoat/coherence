@@ -9,7 +9,6 @@ import SwiftUI
 /// The pacer is a suggestion, not a requirement — the resonance pace is the
 /// fastest way into the state we're looking for regardless of what's playing.
 struct SessionActiveView: View {
-    let bellyBreathing: Bool
     /// When the session actually started, so the clock survives the view being
     /// rebuilt and matches the Watch rather than drifting from its own count.
     var startedAt: Date = Date()
@@ -17,9 +16,6 @@ struct SessionActiveView: View {
     var plannedDurationSec: Int?
     /// "Belly · 10 min · Deep Meditation" — so you always know what's running.
     var planChip: String? = nil
-    /// Step-by-step cues for a non-narrated session. Empty = unguided silence,
-    /// which stays exactly as it was.
-    var cues: [StructuredScript.Cue] = []
     var onEnd: () -> Void
 
     @State private var inhaling = false
@@ -39,12 +35,6 @@ struct SessionActiveView: View {
 
     /// Timed session's countdown has run out; the Watch is wrapping up.
     private var finishing: Bool { plannedDurationSec != nil && displaySeconds == 0 }
-
-    /// The instruction due right now, if this session is a structured one.
-    private var currentCue: StructuredScript.Cue? {
-        guard !cues.isEmpty else { return nil }
-        return StructuredScript.cue(at: Double(elapsed), in: cues)
-    }
 
     var body: some View {
         ZStack {
@@ -66,21 +56,6 @@ struct SessionActiveView: View {
                         .animation(.easeInOut(duration: 0.6), value: inhaling)
                 }
 
-                // The step you're on. Teal, because it's guidance — the colour
-                // grammar reserves gold for what you achieved.
-                if let cue = currentCue {
-                    Text(cue.text)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.calmAccent)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 12)
-                        .padding(.top, 26)
-                        .id(cue.id)                       // re-run the fade per cue
-                        .transition(.opacity)
-                        .animation(.easeInOut(duration: 0.8), value: cue.id)
-                }
-
                 Spacer()
 
                 Text(timeString(displaySeconds))
@@ -93,9 +68,7 @@ struct SessionActiveView: View {
                 // instead of sitting on a frozen countdown.
                 Text(finishing
                      ? "Finishing on your Watch…"
-                     : (bellyBreathing
-                        ? "Lie back with your wrist flat on your belly"
-                        : "Your Watch is measuring — let it settle"))
+                     : "Your Watch is measuring — let it settle")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -139,6 +112,6 @@ struct SessionActiveView: View {
 }
 
 #Preview {
-    SessionActiveView(bellyBreathing: true, plannedDurationSec: 600,
-                      planChip: "Belly · 10 min · Deep Meditation", onEnd: {})
+    SessionActiveView(plannedDurationSec: 600,
+                      planChip: "10 min · Deep Meditation", onEnd: {})
 }

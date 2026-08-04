@@ -19,8 +19,6 @@ struct ContentView: View {
     /// them (verified on-device: only Begin opened) — so every modal routes
     /// through this enum instead.
     @State private var sheet: HomeSheet?
-    /// Set while the AFTER coherence read is up, so dismissing it opens results.
-    @State private var resultsAfterMeasure: UUID?
     #if DEBUG
     @State private var showBreathingPreview =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
@@ -29,10 +27,6 @@ struct ContentView: View {
     private enum HomeSheet: Identifiable {
         case setup, journey, settings
         case results(UUID)
-        case postMeasure(UUID)
-        #if DEBUG
-        case coherenceTest
-        #endif
 
         var id: String {
             switch self {
@@ -40,10 +34,6 @@ struct ContentView: View {
             case .journey: return "journey"
             case .settings: return "settings"
             case .results(let id): return "results-\(id)"
-            case .postMeasure(let id): return "post-\(id)"
-            #if DEBUG
-            case .coherenceTest: return "coherence-test"
-            #endif
             }
         }
     }
@@ -78,14 +68,9 @@ struct ContentView: View {
         .screenBackground()
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
-            SessionActiveView(bellyBreathing: true,
-                              // Start 90 s in so a cue is already on screen.
-                              startedAt: Date().addingTimeInterval(-90),
+            SessionActiveView(startedAt: Date().addingTimeInterval(-90),
                               plannedDurationSec: 600,
-                              planChip: "Belly · 10 min",
-                              cues: StructuredScript.cues(forDurationSec: 600)) {
-                showBreathingPreview = false
-            }
+                              planChip: "10 min") { showBreathingPreview = false }
         }
         .onAppear {
             if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
@@ -101,20 +86,13 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
-            // Opens the pulse-read sheet directly; pair with
-            // PREVIEW_READ_FAILURE=<reason> to land on a failure page.
-            if ProcessInfo.processInfo.environment["PREVIEW_COHERENCE"] == "1", sheet == nil {
-                sheet = .coherenceTest
-            }
         }
         #endif
         // A session is running on the Watch — take over the phone for every mode.
         .fullScreenCover(item: Binding(get: { coordinator.active }, set: { _ in })) { session in
-            SessionActiveView(bellyBreathing: session.bellyBreathing,
-                              startedAt: session.startedAt,
+            SessionActiveView(startedAt: session.startedAt,
                               plannedDurationSec: session.plannedDurationSec,
-                              planChip: planChip(session),
-                              cues: session.cues) {
+                              planChip: planChip(session)) {
                 coordinator.endActiveSession()
             }
         }
@@ -122,20 +100,7 @@ struct ContentView: View {
         .fullScreenCover(item: $coordinator.startFailure) { failure in
             PermissionBlockedView(failure: failure) { coordinator.startFailure = nil }
         }
-        // Session over + coherence check opted in → the AFTER read, then results.
-        .onChange(of: coordinator.postMeasure?.id) { _, id in
-            guard let id else { return }
-            resultsAfterMeasure = id
-            sheet = .postMeasure(id)
-            coordinator.postMeasure = nil     // consumed; the sheet owns it now
-        }
-        .sheet(item: $sheet, onDismiss: {
-            // The AFTER read just closed (completed or skipped) — show the evidence.
-            if let id = resultsAfterMeasure {
-                resultsAfterMeasure = nil
-                sheet = .results(id)
-            }
-        }) { which in
+        .sheet(item: $sheet) { which in
             switch which {
             case .setup:
                 SessionSetupView()
@@ -145,14 +110,6 @@ struct ContentView: View {
                 SettingsView()
             case .results(let id):
                 SessionResultsView(sessionID: id)
-            case .postMeasure(let id):
-                CoherenceMeasureView(label: "After") { snap in
-                    SessionStore.attachPostCoherence(sessionID: id, snapshot: snap, in: context)
-                }
-            #if DEBUG
-            case .coherenceTest:
-                CoherenceMeasureView()
-            #endif
             }
         }
     }
@@ -355,8 +312,6 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             Button("Preview breathing screen") { showBreathingPreview = true }
                 .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
-            Button("Test coherence measurement") { sheet = .coherenceTest }
-                .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
         }
     }
     #endif
@@ -366,7 +321,6 @@ struct ContentView: View {
     /// "Belly · 10 min · Deep Meditation" for the mid-session plan chip.
     private func planChip(_ session: SessionCoordinator.ActiveSession) -> String {
         var parts: [String] = []
-        if session.bellyBreathing { parts.append("Belly") }
         if let planned = session.plannedDurationSec { parts.append("\(planned / 60) min") }
         else { parts.append("Open") }
         if let title = session.soundTitle { parts.append(title) }

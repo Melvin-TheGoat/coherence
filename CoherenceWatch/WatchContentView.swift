@@ -53,11 +53,6 @@ struct WatchContentView: View {
                         .font(.system(size: 40, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .foregroundStyle(AppColor.accentGold)
-                    if manager.params?.bellyBreathing == true {
-                        Text("belly breathing")
-                            .font(.caption2)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
                     Button("End") { manager.endByUser() }
                         .tint(AppColor.accentGold)
                 }

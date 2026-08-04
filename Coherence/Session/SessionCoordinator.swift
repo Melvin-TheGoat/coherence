@@ -19,7 +19,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
     @Published var lastSessionID: UUID?
     /// The session currently running on the Watch — drives the phone's
     /// mid-session screen. Non-nil from a successful `startWatchApp` until the
-    /// payload lands. Every mode gets one, belly or not, guided or silent.
+    /// payload lands.
     @Published private(set) var active: ActiveSession?
 
     /// Set when the Watch refuses to start a session — drives the blocking
@@ -30,32 +30,15 @@ final class SessionCoordinator: NSObject, ObservableObject {
     struct ActiveSession: Identifiable, Equatable {
         let id: UUID
         let startedAt: Date
-        let bellyBreathing: Bool
         /// nil for open-ended sessions (ended from the Watch or the phone).
         let plannedDurationSec: Int?
         /// Human title of the sound playing, for the plan chip ("Deep Meditation").
         var soundTitle: String? = nil
-        /// Step-by-step cues when the user asked to be guided through a
-        /// non-narrated session. Empty otherwise.
-        var cues: [StructuredScript.Cue] = []
-    }
-
-    /// Cue timeline for a structured session. An open-ended session has no
-    /// planned length to scale against, so it falls back to a 10-minute arc —
-    /// the cues still run in order, they just stop before the user does.
-    static func cues(structured: Bool, plannedDurationSec: Int?) -> [StructuredScript.Cue] {
-        guard structured else { return [] }
-        return StructuredScript.cues(forDurationSec: Double(plannedDurationSec ?? 600))
     }
 
     /// Sound preset chosen at Begin, keyed by sessionID — the Watch never
     /// carries it, so the phone holds it until the payload lands.
     private var pendingSoundIDs: [UUID: String] = [:]
-
-    /// Coherence-check state per session (Phase 9): the BEFORE snapshot taken
-    /// at Begin, and whether the user opted into the check at all (drives the
-    /// AFTER prompt even if the before read failed or was skipped).
-    private var pendingCoherence: [UUID: (pre: CoherenceAnalyzer.Snapshot?, optIn: Bool)] = [:]
 
     /// The session the user most recently began (set at Begin, before the Watch
     /// answers — `active` is still nil in that window). Launching the watch app
@@ -63,11 +46,6 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// from old sessions can land seconds into a new one; everything that stops
     /// audio or tears down the live screen must match against this first.
     private var currentAttemptID: UUID?
-
-    /// Set when a finished session should prompt the AFTER coherence read.
-    /// The home screen presents the measurement sheet off this.
-    struct PostMeasure: Identifiable { let id: UUID }
-    @Published var postMeasure: PostMeasure?
 
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
@@ -102,10 +80,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// Begins a session: sends params to the Watch and launches its workout. If a
     /// `soundID` is given, the phone plays that frequency tone+bed OR nature sound
     /// during the session.
-    func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?, bellyBreathing: Bool,
-               preCoherence: CoherenceAnalyzer.Snapshot? = nil, coherenceCheck: Bool = false,
-               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false,
-               structured: Bool = false) {
+    func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?,
+               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
         Task {
             await requestWorkoutAuthorization()
 
@@ -114,14 +90,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 mode: mode,
                 trackID: trackID,
                 plannedDurationSec: plannedDurationSec,
-                bellyBreathing: bellyBreathing,
+                bellyBreathing: false,
                 hapticsEnabled: hapticsEnabled
             )
             currentAttemptID = params.sessionID
             if let soundID { pendingSoundIDs[params.sessionID] = soundID }
-            if coherenceCheck || preCoherence != nil {
-                pendingCoherence[params.sessionID] = (pre: preCoherence, optIn: coherenceCheck)
-            }
 
             // Deliver params over every available channel: queued user-info
             // always; a message if reachable now; and application-context so a
@@ -150,11 +123,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
                         // The session is live: show the phone's mid-session screen.
                         self.active = ActiveSession(id: params.sessionID,
                                                     startedAt: Date(),
-                                                    bellyBreathing: bellyBreathing,
                                                     plannedDurationSec: plannedDurationSec,
-                                                    soundTitle: SoundCatalog.title(for: soundID),
-                                                    cues: Self.cues(structured: structured,
-                                                                    plannedDurationSec: plannedDurationSec))
+                                                    soundTitle: SoundCatalog.title(for: soundID))
                         // Play the chosen sound on the phone while the Watch measures.
                         self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
@@ -208,7 +178,6 @@ final class SessionCoordinator: NSObject, ObservableObject {
         guard let current = active, current.id == sessionID else { return }
         active = ActiveSession(id: current.id,
                                startedAt: startedAt,
-                               bellyBreathing: current.bellyBreathing,
                                plannedDurationSec: current.plannedDurationSec,
                                soundTitle: current.soundTitle)
         if let planned = current.plannedDurationSec {
@@ -293,11 +262,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
 
         let soundID = pendingSoundIDs.removeValue(forKey: payload.sessionID)
-        let coherence = pendingCoherence.removeValue(forKey: payload.sessionID)
 
         let context = container.mainContext
         guard let session = SessionStore.persist(payload, frequencyID: soundID,
-                                                 preCoherence: coherence?.pre,
                                                  in: context) else {
             if isCurrent { status = "Session discarded (too short / unreadable)" }
             return
@@ -305,11 +272,6 @@ final class SessionCoordinator: NSObject, ObservableObject {
         guard isCurrent else { return }
         lastSessionID = session.id
         status = "Saved ✓"
-        // The user opted into the coherence check — prompt the AFTER read now,
-        // while the session's afterglow is still the thing being measured.
-        if coherence?.optIn == true {
-            postMeasure = PostMeasure(id: session.id)
-        }
     }
 }
 

@@ -74,7 +74,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // OR "watch not worn" OR "asked too early" — indistinguishable. Blocking
         // on it refused sessions for users whose permissions were fully granted.
         // The gate is the watchdog below: real HR arriving once the workout runs.
-        let started = await workout.start(bellyBreathing: p.bellyBreathing)
+        let started = await workout.start()
         guard started else {
             // workout.start() sets its own failure message; surface it on Ready.
             statusMessage = workout.statusMessage ?? "Couldn't start (unknown)."
@@ -168,11 +168,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
             startedAt: finished.startedAt,
             mode: p.mode,
             trackID: p.trackID,
-            bellyBreathing: p.bellyBreathing,
+            bellyBreathing: false,
             durationSec: finished.durationSec,
             discard: discard,
-            result: discard ? nil : finished.result,
-            bellyDiag: finished.bellyDiag
+            result: discard ? nil : finished.result
         )
         send(payload)
         phase = .sent

@@ -45,8 +45,6 @@ private struct SettingsForm: View {
 
     @State private var confirmDelete = false
     @State private var editingName = false
-    /// Mirrors the setup sheet's toggle — they're the same switch.
-    @AppStorage("coherenceCheckEnabled") private var coherenceCheck = false
 
     private let durationOptions: [(String, Int?)] = [
         ("Open", nil), ("2 min", 120), ("5 min", 300), ("10 min", 600), ("15 min", 900)
@@ -100,12 +98,6 @@ private struct SettingsForm: View {
                         Toggle("", isOn: $prefs.hapticsEnabled)
                             .labelsHidden().tint(AppColor.calmAccent)
                     }
-                    divider
-                    row(icon: "heart.fill", title: "Coherence check",
-                        subtitle: "before & after sessions", teal: true) {
-                        Toggle("", isOn: $coherenceCheck)
-                            .labelsHidden().tint(AppColor.calmAccent)
-                    }
                 }
 
                 SectionHeader(title: "Appearance")
@@ -125,8 +117,6 @@ private struct SettingsForm: View {
 
                 SectionHeader(title: "The foundation")
                 settingsCard {
-                    navRow(icon: "book.closed", title: "The Method", teal: true) { MethodGuideContent() }
-                    divider
                     navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }
                     divider
                     navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }

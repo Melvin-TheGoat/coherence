@@ -152,7 +152,6 @@ enum SessionStore {
     /// preset that played (phone-side knowledge — the Watch never carries it).
     @discardableResult
     static func persist(_ payload: SessionPayload, frequencyID: String? = nil,
-                        preCoherence: CoherenceAnalyzer.Snapshot? = nil,
                         in context: ModelContext) -> Session? {
         guard !payload.discard,
               payload.durationSec >= minDurationSec,
@@ -199,33 +198,12 @@ enum SessionStore {
             hopSec: result.hopSec,
             algorithmVersion: result.algorithmVersion
         )
-        if let pre = preCoherence {
-            stats.preCoherenceScore = pre.coherenceScore
-            stats.preCoherenceHR = pre.meanHR
-            stats.preCoherenceRMSSD = pre.rmssdMs
-        }
         context.insert(session)
         context.insert(stats)
         try? context.save()
         return session
     }
 
-    /// Attaches the AFTER coherence snapshot to a session's stats row. The
-    /// post read finishes moments after the row is created, so this is the
-    /// one sanctioned amendment to an otherwise immutable row — write-once:
-    /// an existing post value is never overwritten.
-    static func attachPostCoherence(sessionID: UUID,
-                                    snapshot: CoherenceAnalyzer.Snapshot,
-                                    in context: ModelContext) {
-        let d = FetchDescriptor<MeditationStats>(
-            predicate: #Predicate { $0.sessionID == sessionID })
-        guard let stats = try? context.fetch(d).first,
-              stats.postCoherenceScore == nil else { return }
-        stats.postCoherenceScore = snapshot.coherenceScore
-        stats.postCoherenceHR = snapshot.meanHR
-        stats.postCoherenceRMSSD = snapshot.rmssdMs
-        try? context.save()
-    }
 
     /// The user's reflection for a session, if any.
     static func reflection(for sessionID: UUID, in context: ModelContext) -> SessionReflection? {

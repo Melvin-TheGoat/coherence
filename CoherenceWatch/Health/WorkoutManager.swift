@@ -7,12 +7,9 @@ struct FinishedSession {
     let startedAt: Date
     let durationSec: Int
     let result: SignalResult
-    /// TEMP diagnostic (belly only): amp/concentration/bestF per axis, surfaced to
-    /// the phone to calibrate the readability gate. Remove once belly is dialed in.
-    let bellyDiag: String?
 }
 
-/// Runs the on-wrist workout and captures CoreMotion (stillness + belly breathing)
+/// Runs the on-wrist workout and captures CoreMotion (stillness)
 /// alongside it, then on finish trims transients, rebases the clock, and runs the
 /// signal engine. Watch-only.
 ///
@@ -32,7 +29,6 @@ final class WorkoutManager: NSObject, ObservableObject {
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
 
-    private var bellyBreathing = false
     private var sessionStart: Date?
     private var hrSamples: [HRSample] = []
 
@@ -51,9 +47,8 @@ final class WorkoutManager: NSObject, ObservableObject {
     /// Starts a mind-and-body workout + motion capture. Returns true once
     /// collection has actually begun.
     @discardableResult
-    func start(bellyBreathing: Bool) async -> Bool {
+    func start() async -> Bool {
         guard !isRunning else { return false }
-        self.bellyBreathing = bellyBreathing
         statusMessage = nil
         hrSamples = []
         sessionStart = nil
@@ -130,18 +125,14 @@ final class WorkoutManager: NSObject, ObservableObject {
             .filter { $0.t >= lo && $0.t <= hi }
             .map { HRSample(t: $0.t - lo, bpm: $0.bpm) }
 
-        let result = SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: bellyBreathing)
+        // MVP: stillness + heart rate only. The engine still supports the
+        // breathing path (see tag v1-full-feature-set); we just don't ask for it.
+        let result = SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: false)
         log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
 
-        // TEMP: compute the belly diagnostic and ship it to the phone (below), so the
-        // amp/concentration/bestF numbers are readable without the flaky Watch console.
-        let bellyDiag = bellyBreathing ? SignalEngine.bellyDiagnostics(motion: motionTrim) : nil
-        #if DEBUG
-        if let bellyDiag { print("=== BELLY DIAG (dur \(durationSec)s) ===\n\(bellyDiag)") }
-        #endif
 
         teardown()
-        return FinishedSession(startedAt: startedAt, durationSec: durationSec, result: result, bellyDiag: bellyDiag)
+        return FinishedSession(startedAt: startedAt, durationSec: durationSec, result: result)
     }
 
     /// Drops references and marks the manager idle so a fresh `start()` can run.
