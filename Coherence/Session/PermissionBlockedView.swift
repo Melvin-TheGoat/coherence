@@ -87,10 +87,11 @@ struct PermissionBlockedView: View {
     private var steps: [String] {
         switch failure {
         case .heartRateUnavailable:
-            ["On iPhone, open Settings → Health → Data Access & Devices",
-             "Tap 808",
-             "Turn on Heart Rate",
-             "On your Watch you can also check Settings → Privacy & Security → Health → 808"]
+            // Per-app Health permissions are managed from the iPhone only —
+            // there is no 808 entry under the Watch's own Health settings.
+            ["Make sure your Watch is on your wrist and snug",
+             "On iPhone, open Settings → Health → Data Access & Devices",
+             "Tap 808 and turn on Heart Rate"]
         case .workoutNotAuthorized:
             ["On iPhone, open the Health app",
              "Go to Sharing → Apps → 808",

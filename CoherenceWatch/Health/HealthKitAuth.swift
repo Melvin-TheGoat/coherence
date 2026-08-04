@@ -41,23 +41,28 @@ enum HealthKitAuth {
         }
     }
 
-    /// Whether we can actually read heart rate.
+    /// Whether recent heart-rate data is readable — a **fast-path hint, not a
+    /// gate.**
     ///
-    /// **HealthKit will not tell us this.** `authorizationStatus(for:)` reports
-    /// *share* status only — read grants are hidden on purpose so an app can't
-    /// learn what a user declined. A denied read query doesn't error either; it
-    /// just returns nothing.
+    /// **HealthKit will not tell us whether a read was granted.**
+    /// `authorizationStatus(for:)` reports *share* status only, and a denied
+    /// read returns an empty result rather than an error, deliberately, so an
+    /// app can't learn what a user declined.
     ///
-    /// So we probe: ask for the single most recent heart-rate sample from the
-    /// last day. An Apple Watch that's being worn records HR constantly, so a
-    /// sample coming back proves the grant. Nothing coming back means either a
-    /// denied read or a watch that hasn't been worn — both are cases where a
-    /// session can't produce the HR evidence, so both should stop the session
-    /// with the same explanation.
-    static func canReadHeartRate() async -> Bool {
+    /// So this can only ever be a hint: `true` proves we can read, but `false`
+    /// proves nothing — it's equally "permission denied", "watch not worn
+    /// today", or "asked before authorization finished". **It must never block a
+    /// session on its own.** An earlier version did exactly that and refused to
+    /// start sessions for a user whose permissions were fully granted. The real
+    /// gate is live HR arriving once the workout runs; see
+    /// `WatchSessionManager`'s heart-rate watchdog.
+    static func hasRecentHeartRateData() async -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else { return false }
         let hrType = HKQuantityType(.heartRate)
-        let since = Date().addingTimeInterval(-24 * 60 * 60)
+        // A week, not a day: someone who left the Watch off the charger
+        // overnight still has readable history, and a narrow window turned that
+        // into a false "no permission".
+        let since = Date().addingTimeInterval(-7 * 24 * 60 * 60)
         let predicate = HKQuery.predicateForSamples(withStart: since, end: Date())
         return await withCheckedContinuation { cont in
             let q = HKSampleQuery(

@@ -26,6 +26,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     let workout = WorkoutManager()
     private var timer: Task<Void, Never>?
+    /// Aborts the session if no heart rate ever arrives; see armHeartRateWatchdog.
+    private var hrWatchdog: Task<Void, Never>?
     /// Sessions already started, so the three delivery channels (message,
     /// user-info, application-context) don't double-trigger and a stale context
     /// doesn't re-launch an old session.
@@ -62,17 +64,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
         elapsed = 0
         statusMessage = "Params received — starting…"   // TEMP: prove params arrived
 
-        // Heart rate is the one signal every session depends on. If we can't
-        // read it, refuse now — a session that records stillness but no heart
-        // rate is a broken result, and the user should fix permissions instead
-        // of meditating for 25 minutes to find that out afterwards.
-        guard await HealthKitAuth.canReadHeartRate() else {
-            statusMessage = "Heart rate unavailable — check 808's Health permissions on iPhone."
-            report(.heartRateUnavailable, sessionID: p.sessionID)
-            params = nil
-            return
-        }
+        // Make sure authorization has actually been requested before anything
+        // reads HealthKit — on a cold launch from `startWatchApp` this used to
+        // race, and the read came back empty simply because we hadn't asked yet.
+        await authorize()
 
+        // NOTE: we deliberately do NOT block on a permission probe here.
+        // HealthKit hides read authorization, so an empty probe means "denied"
+        // OR "watch not worn" OR "asked too early" — indistinguishable. Blocking
+        // on it refused sessions for users whose permissions were fully granted.
+        // The gate is the watchdog below: real HR arriving once the workout runs.
         let started = await workout.start(bellyBreathing: p.bellyBreathing)
         guard started else {
             // workout.start() sets its own failure message; surface it on Ready.
@@ -84,6 +85,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         statusMessage = nil
         phase = .running
         startTimer(planned: p.plannedDurationSec)
+        armHeartRateWatchdog(sessionID: p.sessionID)
 
         // Tell the phone when the workout REALLY began so its mid-session
         // clock and audio timer track this moment, not startWatchApp's
@@ -110,6 +112,37 @@ final class WatchSessionManager: NSObject, ObservableObject {
         wc.transferUserInfo(msg)
     }
 
+    /// Seconds of a running workout with zero heart-rate samples before we call
+    /// it unreadable. The workout streams averaged HR roughly every 5 s, so
+    /// this is many times the expected gap — long enough that a slow first
+    /// reading can't trip it, short enough that nobody meditates for 25 minutes
+    /// to find out it wasn't recording.
+    private static let hrWatchdogSec = 30
+
+    /// The honest heart-rate gate: not "does HealthKit say we're allowed"
+    /// (it won't say), but "did any heart rate actually arrive". Catches denied
+    /// permission, a watch that isn't on a wrist, and sensor failure alike.
+    private func armHeartRateWatchdog(sessionID: UUID) {
+        hrWatchdog?.cancel()
+        hrWatchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.hrWatchdogSec))
+            // A cancelled sleep THROWS and `try?` swallows it — without this the
+            // action runs immediately on cancel (see CLAUDE.md, the guided-audio bug).
+            guard !Task.isCancelled else { return }
+            guard let self, self.phase == .running,
+                  self.params?.sessionID == sessionID,
+                  self.workout.hrSampleCount == 0 else { return }
+
+            self.log.error("no heart rate after \(Self.hrWatchdogSec)s — aborting session")
+            self.statusMessage = "No heart rate — check 808 in the iPhone Health app."
+            _ = await self.workout.finish()      // stop the workout, discard the result
+            self.timer?.cancel(); self.timer = nil
+            self.phase = .idle
+            self.report(.heartRateUnavailable, sessionID: sessionID)
+            self.params = nil
+        }
+    }
+
     /// Ends the current session (Watch End button, or the timed countdown).
     func endByUser() {
         Task { await endSession() }
@@ -119,6 +152,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
         guard phase == .running, let p = params else { return }
         timer?.cancel()
         timer = nil
+        hrWatchdog?.cancel()
+        hrWatchdog = nil
         phase = .sending
 
         guard let finished = await workout.finish() else {

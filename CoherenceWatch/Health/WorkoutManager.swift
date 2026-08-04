@@ -43,6 +43,11 @@ final class WorkoutManager: NSObject, ObservableObject {
         store.authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized
     }
 
+    /// How many heart-rate samples have arrived this session. This is the only
+    /// trustworthy signal that HR is actually readable: HealthKit hides read
+    /// authorization, so nothing else can distinguish "denied" from "quiet".
+    var hrSampleCount: Int { hrSamples.count }
+
     /// Starts a mind-and-body workout + motion capture. Returns true once
     /// collection has actually begun.
     @discardableResult

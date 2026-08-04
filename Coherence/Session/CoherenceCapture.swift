@@ -1,6 +1,7 @@
 import AVFoundation
 import Combine
 import UIKit
+import os
 
 /// Camera-PPG capture for the coherence snapshot: back camera + torch, finger
 /// over the lens, ~30 fps. Each frame is reduced to its mean red level; the
@@ -86,6 +87,9 @@ final class CoherenceCapture: NSObject, ObservableObject {
     private var uncoveredStreak = 0
     private var lastPublishedFinger: Bool?
     private var frameCounter = 0
+    /// Teardown runs once per read; see `teardown()`.
+    private var didTeardown = false
+    private let log = Logger(subsystem: "com.lockout.coherence", category: "PPG")
 
     // MARK: - Lifecycle
 
@@ -102,6 +106,7 @@ final class CoherenceCapture: NSObject, ObservableObject {
         queue.async {
             self.resetWindow()
             self.qState = .waiting
+            self.didTeardown = false
         }
 
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -156,7 +161,11 @@ final class CoherenceCapture: NSObject, ObservableObject {
         session.outputs.forEach(session.removeOutput)
         session.sessionPreset = .low                       // tiny frames, we only average them
 
-        guard session.canAddInput(input) else { fail(.cameraUnavailable); return }
+        // Every bail-out below must still commit — leaving a configuration open
+        // puts the session in an inconsistent state that later calls trip over.
+        guard session.canAddInput(input) else {
+            session.commitConfiguration(); fail(.cameraUnavailable); return
+        }
         session.addInput(input)
 
         let output = AVCaptureVideoDataOutput()
@@ -164,17 +173,19 @@ final class CoherenceCapture: NSObject, ObservableObject {
             [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         output.alwaysDiscardsLateVideoFrames = true
         output.setSampleBufferDelegate(self, queue: queue)
-        guard session.canAddOutput(output) else { fail(.cameraUnavailable); return }
+        guard session.canAddOutput(output) else {
+            session.commitConfiguration(); fail(.cameraUnavailable); return
+        }
         session.addOutput(output)
         session.commitConfiguration()
 
         // Pin ~30 fps so the waveform is (near-)uniformly sampled.
         if let range = cam.activeFormat.videoSupportedFrameRateRanges.first {
             let fps = min(30, range.maxFrameRate)
-            try? cam.lockForConfiguration()
-            cam.activeVideoMinFrameDuration = CMTime(value: 1, timescale: Int32(fps))
-            cam.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: Int32(fps))
-            cam.unlockForConfiguration()
+            withCameraLocked { cam in
+                cam.activeVideoMinFrameDuration = CMTime(value: 1, timescale: Int32(fps))
+                cam.activeVideoMaxFrameDuration = CMTime(value: 1, timescale: Int32(fps))
+            }
         }
 
         session.startRunning()
@@ -191,42 +202,75 @@ final class CoherenceCapture: NSObject, ObservableObject {
         uncoveredStreak = 0
     }
 
+    /// Runs `body` with the camera held for configuration, and unlocks only if
+    /// the lock was actually taken.
+    ///
+    /// **Why this exists:** the previous form was `try? cam.lockForConfiguration()`
+    /// followed by an unconditional `cam.unlockForConfiguration()`. When the lock
+    /// fails — the device is busy, which happens during teardown — `try?`
+    /// swallows it and the code goes on to mutate the device and unlock a lock it
+    /// never held. Both raise an exception and kill the app. Same family as the
+    /// cancelled-`Task.sleep` bug in CLAUDE.md: `try?` hiding a failure while the
+    /// next line runs anyway.
+    private func withCameraLocked(_ body: (AVCaptureDevice) -> Void) {
+        guard let cam = device else { return }
+        do {
+            try cam.lockForConfiguration()
+        } catch {
+            log.error("camera lockForConfiguration failed: \(error.localizedDescription)")
+            return
+        }
+        defer { cam.unlockForConfiguration() }
+        body(cam)
+    }
+
     /// PPG needs a locked exposure: with the torch through a fingertip the
     /// auto-exposure keeps "correcting", and those swings dwarf the pulse.
     /// Locked when a read arms, released when it ends or resets.
     private func lockExposure(_ lock: Bool) {
-        guard let cam = device else { return }
-        try? cam.lockForConfiguration()
-        if lock {
-            if cam.isExposureModeSupported(.locked) { cam.exposureMode = .locked }
-            if cam.isWhiteBalanceModeSupported(.locked) { cam.whiteBalanceMode = .locked }
-        } else {
-            if cam.isExposureModeSupported(.continuousAutoExposure) {
-                cam.exposureMode = .continuousAutoExposure
-            }
-            if cam.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
-                cam.whiteBalanceMode = .continuousAutoWhiteBalance
+        withCameraLocked { cam in
+            if lock {
+                if cam.isExposureModeSupported(.locked) { cam.exposureMode = .locked }
+                if cam.isWhiteBalanceModeSupported(.locked) { cam.whiteBalanceMode = .locked }
+            } else {
+                if cam.isExposureModeSupported(.continuousAutoExposure) {
+                    cam.exposureMode = .continuousAutoExposure
+                }
+                if cam.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                    cam.whiteBalanceMode = .continuousAutoWhiteBalance
+                }
             }
         }
-        cam.unlockForConfiguration()
     }
 
     private func setTorch(on: Bool) {
-        guard let cam = device, cam.hasTorch else { return }
-        try? cam.lockForConfiguration()
-        if on, cam.isTorchModeSupported(.on) {
-            // Modest level: enough to transilluminate the fingertip, less heat.
-            try? cam.setTorchModeOn(level: 0.6)
-        } else {
-            cam.torchMode = .off
+        withCameraLocked { cam in
+            guard cam.hasTorch else { return }
+            if on, cam.isTorchModeSupported(.on) {
+                // Modest level: enough to transilluminate the fingertip, less heat.
+                try? cam.setTorchModeOn(level: 0.6)
+            } else {
+                cam.torchMode = .off
+            }
         }
-        cam.unlockForConfiguration()
     }
 
+    /// Idempotent: `finishAndAnalyze()` tears down and may then call `fail()`,
+    /// which tears down again, and the view's `onDisappear → cancel()` can add a
+    /// third. Re-running the device configuration during a teardown is exactly
+    /// when `lockForConfiguration` fails.
     private func teardown() {
+        guard !didTeardown else { return }
+        didTeardown = true
         lockExposure(false)
         setTorch(on: false)
-        if session.isRunning { session.stopRunning() }
+        // `stopRunning()` is synchronous, and every caller of teardown() is on
+        // the sample-buffer delegate queue — stopping a session from inside its
+        // own delegate callback can deadlock. Hop off the queue to stop.
+        let session = self.session
+        DispatchQueue.global(qos: .userInitiated).async {
+            if session.isRunning { session.stopRunning() }
+        }
     }
 
     #if DEBUG
