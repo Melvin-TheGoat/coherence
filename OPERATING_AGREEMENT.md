@@ -1,17 +1,23 @@
 # Operating Agreement — LockOut LLC
 
-> **DRAFT — FOR ATTORNEY REVIEW.** Prepared for signature by both members
-> once the Michigan Articles of Organization are approved. Fill every
-> `[BRACKET]`. This document is not filed with the state — it governs the
-> members between themselves and should be reviewed by counsel together with
-> the planned IP and launch documents.
+> **DRAFT — FOR ATTORNEY REVIEW.** The Michigan Articles of Organization were
+> filed July 31, 2026 (Entity # 900256000); this agreement is ready for both
+> members to sign once counsel has reviewed it. It is not filed with the state —
+> it governs the members between themselves.
+>
+> Company details are filled in. The remaining `[BRACKETS]` are **deliberate
+> open decisions for counsel**, not omissions: the effective date (set at
+> signing), the dollar thresholds in §§3–4, the tax rate in §6.2, the
+> partnership representative in §5, the vesting period in §11.1, and the
+> arbitration venue in §14. The most important open question is the departure
+> model in **§11.1** — see the review notes at the end.
 
 **Operating Agreement of LockOut LLC**, a Michigan limited liability
 company (the "**Company**"), effective as of [DATE] (the "**Effective
 Date**"), by and between:
 
-- **Aziz Mahmud**, of [CITY], Michigan ("**Member A**"), and
-- **[MELVIN'S FULL LEGAL NAME]**, of [CITY], New York ("**Member B**")
+- **Aziz Mahmud**, of Troy, Michigan ("**Member A**"), and
+- **Melvin Alirio Van Cleave**, of New York, New York ("**Member B**")
 
 (each a "**Member**," together the "**Members**").
 
@@ -20,14 +26,16 @@ Date**"), by and between:
 ## 1. Formation and purpose
 
 1.1 The Company was formed under the Michigan Limited Liability Company Act
-(the "**Act**") by Articles of Organization filed with LARA on July 29, 2026.
+(the "**Act**") by Articles of Organization filed with LARA on July 31, 2026.
 
 1.2 The Company's purpose is any lawful business, including developing,
 publishing, and commercializing software products — initially the meditation
-application marketed as "**808**" (the "**App**") — and any related content,
-services, and brands.
+application marketed as "**808**" (the "**App**"), which measures a user's heart
+rate and stillness on an Apple Watch during a meditation session and reports the
+results afterward — and any related content, services, and brands.
 
-1.3 The Company's principal place of business is [ADDRESS], or wherever the
+1.3 The Company's principal place of business is 79 Crossroads Ln, Apt 2308,
+Troy, Michigan 48083, or wherever the
 Members designate. The registered agent is as stated in the Articles.
 
 ## 2. Membership interests
@@ -219,7 +227,7 @@ bears its own costs unless the arbitrator awards otherwise.
 |---|---|
 | Aziz Mahmud — Member (50%) | Date |
 | | |
-| [MELVIN'S FULL LEGAL NAME] — Member (50%) | Date |
+| Melvin Alirio Van Cleave — Member (50%) | Date |
 
 ---
 
