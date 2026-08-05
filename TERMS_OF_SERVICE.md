@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: July 30, 2026**
+**Last updated: August 5, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
 **LockOut LLC ("we," "us," "808")** governing your use of the **808** app
@@ -10,26 +10,40 @@ to these Terms. If you don't agree, don't use the App.
 ## 1. Health and wellness disclaimer — please read
 
 **808 is a wellness and self-reflection tool. It is not a medical device and does
-not provide medical advice, diagnosis, or treatment.** The heart-rate, stillness,
-and breathing measurements and scores the App shows are **estimates for general
+not provide medical advice, diagnosis, or treatment.** The heart-rate and
+stillness measurements and scores the App shows are **estimates for general
 wellness and informational purposes only**, and are not intended to detect,
 diagnose, treat, cure, or prevent any disease or health condition.
 
 - Do not rely on the App for any medical purpose or in any emergency.
 - Always consult a qualified healthcare professional with questions about your
-  health, before starting any breathing, meditation, or wellness practice, and
-  before acting on anything the App shows you.
+  health, before starting any meditation or wellness practice, and before acting
+  on anything the App shows you.
 - If you think you may have a medical emergency, call your doctor or emergency
   services immediately.
 
-Breathing exercises are not appropriate for everyone. Stop and seek medical advice
-if you feel dizzy, faint, short of breath, or otherwise unwell.
+Meditation and relaxation practices are not appropriate for everyone. Stop and
+seek medical advice if you feel dizzy, faint, short of breath, or otherwise
+unwell.
 
 ## 2. The service
 
-The App guides meditation/breathing sessions and, using your Apple Watch, shows
-you biometric-derived evidence of how your body responded (measured after the
-session, not as a live score). Features may change over time.
+The App runs meditation sessions and, using your Apple Watch, shows you
+evidence of how your body responded — a heart-rate trend and a measure of how
+still you were — **after** the session, not as a live score. Features may change
+over time.
+
+**Sessions run in the background.** So that you can listen to whatever you like
+while you practice, a session continues measuring on your Apple Watch after you
+leave the App on your phone. Measurement runs only during a session you start and
+stops when it ends.
+
+**You choose what you listen to.** The App includes its own guided meditations,
+frequency tones, and nature sounds, and you may instead play audio or video from
+any other app or service while the App measures. We do not provide, host, endorse,
+control, or have any affiliation with third-party services or the content you play
+on them, and we are not responsible for it. Your use of those services is governed
+by their terms, not ours.
 
 ## 3. Eligibility and your account
 
@@ -48,7 +62,7 @@ non-commercial use, subject to these Terms and the Apple App Store terms.
 You agree not to: reverse engineer, decompile, or attempt to extract source code
 except as permitted by law; **record, capture, rip, extract, download, or
 redistribute any audio content from the App — including guided meditations,
-music, and soundscapes — or make any of it available outside the App**;
+music, tones, and soundscapes — or make any of it available outside the App**;
 interfere with or disrupt the App; use the App unlawfully; or resell,
 redistribute, or provide the App as a service to others.
 
@@ -63,8 +77,8 @@ Settings → Delete Account.
 ## 7. Intellectual property
 
 The App, its design, text, graphics, and audio — **including the guided
-meditations, their scripts and narration, and all music and soundscapes** — the
-logos, and the "808" name are owned by us or our licensors and protected by
+meditations, their scripts and narration, and all music, tones, and soundscapes**
+— the logos, and the "808" name are owned by us or our licensors and protected by
 copyright and other intellectual-property law. Recording, extracting, copying,
 or redistributing any of the App's audio content, in whole or in part, is
 prohibited. These Terms grant you no rights in any of the foregoing except the
@@ -73,8 +87,10 @@ license above.
 ## 8. Third-party services
 
 The App relies on Apple services (Sign in with Apple, HealthKit, iCloud/CloudKit,
-the App Store), which are governed by Apple's own terms. We're not responsible for
-third-party services.
+the App Store), which are governed by Apple's own terms. As described in Section
+2, you may also play media from other apps or services while the App measures;
+those services are independent of us. We're not responsible for third-party
+services or their content.
 
 ## 9. Disclaimers
 
@@ -147,8 +163,7 @@ other part of these Terms.
 ## 15. Governing law
 
 These Terms are governed by the laws of the State of **Michigan**, without
-regard to conflict-of-laws rules. *(Set this once the entity's home state is
-decided.)*
+regard to conflict-of-laws rules.
 
 ## 16. Apple App Store — additional terms (EULA)
 

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: July 30, 2026**
+**Last updated: August 5, 2026**
 
 This Privacy Policy explains how **LockOut LLC ("we," "us," "808")**
 handles information in the **808** app for iPhone and Apple Watch.
@@ -9,18 +9,20 @@ handles information in the **808** app for iPhone and Apple Watch.
 
 808 is built to be private by design:
 
-- **We don't run a server and we can't see your data.** Your account, sessions,
-  live **on your device**; your account, preferences, and session log sync
-  through **your own private iCloud account** (Apple's CloudKit). Your **health
-  results** (heart-rate trend, stillness, breathing) are stored **only on the
-  device that recorded them** — the app never uploads them anywhere, not even
-  to iCloud. We have no backend that receives or stores your personal or health
-  information.
+- **We don't run a server and we can't see your data.** Your account,
+  preferences, and session log sync through **your own private iCloud account**
+  (Apple's CloudKit). Your **health results** (heart-rate trend and stillness)
+  are stored **only on the device that recorded them** — the app never uploads
+  them anywhere, not even to iCloud. We have no backend that receives or stores
+  your personal or health information.
 - **We don't sell your data, run ads, or track you.** There are no advertising
   identifiers, no third-party analytics, and no cross-app tracking.
 - **Your health data never leaves your devices.** It's measured on your Apple
   Watch and turned into your session results; we never use it for advertising and
   never share it.
+- **We don't know what you listen to.** 808 measures in the background so you can
+  play a meditation from YouTube or any other app. We receive no information about
+  what you play, and we have no connection to those services.
 - **You can delete everything** at any time from Settings → Delete Account.
 
 ## Information the app handles
@@ -34,31 +36,40 @@ to receive product emails.
 **Health and motion data.** During a session, your **Apple Watch** measures your
 **heart rate** (via Apple HealthKit) and **movement** (via the motion sensors).
 The Watch processes these into your **session results** — a heart-rate trend
-(averaged, not beat-to-beat), a stillness measure, breathing metrics (for belly-
-breathing sessions), and a summary score. Important details:
+(averaged, not beat-to-beat), a stillness measure, and a summary score.
+Important details:
 
 - The app requests HealthKit permission only for **heart rate** and **workouts**,
   and only reads your heart rate **live during a session** — it does not read your
   broader Health history.
 - We store the **computed results**, not raw biometric samples. The iPhone reads
   **no** biometric data directly.
+- **Measurement runs only during a session you start**, and stops when the session
+  ends. It does not run in the background at other times.
+
+**Sessions run in the background.** So that you can listen to whatever you like
+while you practice, a session keeps measuring on your Apple Watch after you leave
+the 808 app on your phone. This does not change what we collect: the same heart
+rate and movement, only during the session, only on your own devices.
 
 **Session and app data.** Session dates, durations, the type of session, your
 results and streak, and your **preferences** (theme, haptics, reminder time,
 default length).
 
-**What we do NOT collect.** We do not collect your location, contacts, photos, or
-browsing activity; we use no advertising identifiers, no third-party analytics or
-tracking SDKs, and no cross-app/website tracking.
+**What we do NOT collect.** We do not collect your location, contacts, photos,
+camera or microphone data, or browsing activity. We do not access, monitor, or
+receive any information about other apps you use or the audio, video, or media you
+play while a session runs. We use no advertising identifiers, no third-party
+analytics or tracking SDKs, and no cross-app or cross-website tracking.
 
 ## Where your information lives and who can access it
 
 Your information lives in two places, by design:
 
 - **Health results stay on your device.** Your session measurements — the
-  heart-rate trend, stillness, and breathing results — are stored **only in the
-  app's local storage on the device that recorded them**. The app never syncs
-  them to iCloud or anywhere else.
+  heart-rate trend and stillness results — are stored **only in the app's local
+  storage on the device that recorded them**. The app never syncs them to iCloud
+  or anywhere else.
 - **Account and session log sync privately.** Your account info, preferences,
   and the log of your sessions (dates, durations, types, ratings) sync to
   **your personal private iCloud database** using Apple's CloudKit, so they
@@ -80,15 +91,24 @@ contents of your private iCloud database.** Apple processes this data under
 
 We never use your health or motion data for advertising, and we never sell it.
 
+## Third-party apps and media you choose
+
+808 is designed so that you can play a meditation, music, or a video from any
+other app or website while it measures. Those services are **not affiliated with
+us, not integrated with 808, and not under our control**. We do not embed them,
+communicate with them, or receive any data from them, and your use of them is
+governed by their own terms and privacy policies, not ours.
+
 ## Our website and waitlist
 
 If you enter your email address on our website to join the launch waitlist, we
 collect **only** that email address and, if you check the box, whether you own an
-Apple Watch. We use it for one purpose: to tell you when 808 is available, plus
-occasional product updates. We do not sell or share it, and every email includes
-an unsubscribe link — or you can email us and we will remove you. The waitlist is
-separate from the app: joining it does not create an account, and it involves no
-health data of any kind.
+Apple Watch. If you fill out our optional questionnaire, we collect only the
+answers you choose to give about your meditation habits and interest in the app.
+We use this to tell you when 808 is available and to shape the product. We do not
+sell or share it, and every email includes an unsubscribe link — or you can email
+us and we will remove you. The website is separate from the app: using it does not
+create an account, and it involves no health data of any kind.
 
 ## Third parties
 
@@ -97,6 +117,8 @@ health data of any kind.
 - **Email delivery provider** — only your email address, and only if you opt into
   product emails or join the website waitlist. The provider stores the address in
   order to send those emails and does not receive any health data.
+- **Website form processing** — waitlist and questionnaire responses are stored in
+  a spreadsheet hosted by Google. No health data is collected there.
 - Audio in the app is bundled with the app; playing it sends no data about you.
 
 We otherwise do not share your information with third parties, and we do not use
@@ -130,9 +152,8 @@ protect **consumer health data** (such as the Washington My Health My Data Act)
 and applies to all users.
 
 - **Categories we process:** heart rate measured during a session you start;
-  motion-derived measurements (stillness, and — in belly-breathing sessions —
-  breathing rate, depth, and regularity); and the session results computed from
-  them.
+  motion-derived measurement of how still your body was; and the session results
+  computed from them.
 - **Source:** the sensors of your own Apple Watch, via Apple HealthKit and
   CoreMotion, only while a session you started is running.
 - **Purpose:** solely to compute and show you your own session results. No
@@ -141,10 +162,10 @@ and applies to all users.
   Apple's HealthKit permission prompt independently controls heart-rate access.
 - **Sharing and sale:** we do **not** sell consumer health data, and we do not
   share it with anyone. It is processed on your devices; we never receive it.
-- **Your rights:** view your results in the app at any time; delete them by
-  deleting individual data via **Settings → Delete Account** (which removes all
-  app data) or by deleting the app from the device holding the results. For
-  questions or requests, contact us at **support@meditate808.com**.
+- **Your rights:** view your results in the app at any time; delete them via
+  **Settings → Delete Account** (which removes all app data) or by deleting the
+  app from the device holding the results. For questions or requests, contact us
+  at **support@meditate808.com**.
 
 ## Children
 
