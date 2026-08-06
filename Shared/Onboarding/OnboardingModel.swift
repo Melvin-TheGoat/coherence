@@ -274,6 +274,78 @@ public enum ReferralSource: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// What the inconsistency is costing them, ticked across three lenses.
+///
+/// **Self-report only.** We never assign a condition. The reference flow pairs
+/// its symptom list with an invented "64% suited to this product" score; we
+/// dropped the score and kept the list, because those are separable. The score
+/// was fiction. This is the user telling us about their own life, which is the
+/// only kind of claim about someone's inner state we're entitled to repeat.
+///
+/// Written in the first person on purpose: "My thoughts won't switch off" is
+/// harder to hold at arm's length than "trouble switching off".
+public enum CostSymptom: String, CaseIterable, Identifiable, Codable {
+    case thoughtsWontStop, cantFocus, wakeBehind          // Mind
+    case dontFinish, knowButDont, gapFromIntent           // Discipline
+    case daysPassBy, elsewhere, driftedFromPractice       // Spirit
+
+    public var id: String { rawValue }
+
+    public enum Lens: String, CaseIterable, Identifiable {
+        case mind, discipline, spirit
+        public var id: String { rawValue }
+        public var label: String {
+            switch self {
+            case .mind:       return "Mind"
+            case .discipline: return "Discipline"
+            case .spirit:     return "Spirit"
+            }
+        }
+    }
+
+    public var lens: Lens {
+        switch self {
+        case .thoughtsWontStop, .cantFocus, .wakeBehind: return .mind
+        case .dontFinish, .knowButDont, .gapFromIntent:  return .discipline
+        case .daysPassBy, .elsewhere, .driftedFromPractice: return .spirit
+        }
+    }
+
+    public var label: String {
+        switch self {
+        case .thoughtsWontStop:    return "My thoughts won't switch off"
+        case .cantFocus:           return "I can't focus when it matters"
+        case .wakeBehind:          return "I wake up already behind"
+        case .dontFinish:          return "I start things and don't finish them"
+        case .knowButDont:         return "I know what to do, I just don't do it"
+        case .gapFromIntent:       return "The gap between who I am and who I meant to be"
+        case .daysPassBy:          return "Days go by without me really in them"
+        case .elsewhere:           return "I'm somewhere else even when I'm here"
+        case .driftedFromPractice: return "I've drifted from a practice that mattered"
+        }
+    }
+
+    /// Short form for echoing back on the commitment screen, where it has to
+    /// finish the sentence "so that…".
+    public var echo: String {
+        switch self {
+        case .thoughtsWontStop:    return "your thoughts might switch off"
+        case .cantFocus:           return "you can focus when it matters"
+        case .wakeBehind:          return "you stop waking up behind"
+        case .dontFinish:          return "you finish what you start"
+        case .knowButDont:         return "you do the thing you already know to do"
+        case .gapFromIntent:       return "the gap closes"
+        case .daysPassBy:          return "your days stop passing you by"
+        case .elsewhere:           return "you're here when you're here"
+        case .driftedFromPractice: return "you find your way back to the practice"
+        }
+    }
+
+    public static func inLens(_ lens: Lens) -> [CostSymptom] {
+        allCases.filter { $0.lens == lens }
+    }
+}
+
 // MARK: - The answers
 
 /// Everything the interview collects. Codable so an interrupted onboarding can
@@ -288,6 +360,7 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var restarts: RestartCount?
     public var intendedFor: IntendedFor?
     public var causes: Set<DropoutCause> = []
+    public var costs: Set<CostSymptom> = []
     public var hasWatch: Bool?
     public var anchor: Anchor?
     public var firstName: String = ""
@@ -314,6 +387,16 @@ public struct OnboardingAnswers: Codable, Equatable {
 
     /// "Fried" end of the slider. Used to choose which pain we reflect back.
     public var isHighStress: Bool { stress >= 0.6 }
+
+    /// The cost we echo back on the commitment screen. Ordered by how directly
+    /// a measured, consistent practice speaks to it, so the promise they make
+    /// answers the cost they named rather than a random one they ticked.
+    public var primaryCost: CostSymptom? {
+        let priority: [CostSymptom] = [.dontFinish, .knowButDont, .gapFromIntent,
+                                       .thoughtsWontStop, .daysPassBy, .elsewhere,
+                                       .cantFocus, .wakeBehind, .driftedFromPractice]
+        return priority.first { costs.contains($0) }
+    }
 }
 
 // MARK: - What we compute

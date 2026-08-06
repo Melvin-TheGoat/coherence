@@ -94,6 +94,36 @@ final class OnboardingModelTests: XCTestCase {
         }
     }
 
+    // MARK: - The cost, and the promise that answers it
+
+    func test_primaryCost_prefersTheOneAConsistentPracticeSpeaksTo() {
+        var a = OnboardingAnswers()
+        a.costs = [.driftedFromPractice, .cantFocus]
+        XCTAssertEqual(a.primaryCost, .cantFocus)
+        a.costs.insert(.dontFinish)
+        XCTAssertEqual(a.primaryCost, .dontFinish)
+    }
+
+    func test_primaryCost_isNilWhenNothingTicked() {
+        // Nothing is required on that screen, so the commitment line has to
+        // cope with an empty set rather than printing "So that ."
+        XCTAssertNil(OnboardingAnswers().primaryCost)
+    }
+
+    func test_everyCostSymptomHasALabelAnEchoAndALens() {
+        // The echo has to finish the sentence "So that ..." on the commitment
+        // screen. A missing one would ship as a broken sentence, not a crash.
+        for symptom in CostSymptom.allCases {
+            XCTAssertFalse(symptom.label.isEmpty, "\(symptom) has no label")
+            XCTAssertFalse(symptom.echo.isEmpty, "\(symptom) has no echo")
+            XCTAssertFalse(symptom.echo.hasSuffix("."), "\(symptom) echo double-punctuates")
+        }
+        for lens in CostSymptom.Lens.allCases {
+            XCTAssertFalse(CostSymptom.inLens(lens).isEmpty, "\(lens) has no symptoms")
+        }
+        XCTAssertEqual(CostSymptom.allCases.count, 9)
+    }
+
     func test_primaryCause_prefersTheOneWeAnswerBest() {
         var a = OnboardingAnswers()
         a.causes = [.noTime, .gotBoring]

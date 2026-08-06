@@ -140,7 +140,7 @@ struct OnboardingView: View {
             ResultScreen(answers: answers) { go(.cost) }
 
         case .cost:
-            CostScreen { go(.proofBody) }
+            CostScreen(costs: $answers.costs) { go(.proofBody) }
 
         case .proofBody:
             ProofScreen(beat: .body) { go(.proofNumber) }
@@ -161,7 +161,8 @@ struct OnboardingView: View {
         // from the days-per-week they commit to, so we can't draw it first.
         case .commitment:
             CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
-                             anchor: answers.anchor) { go(.projection) }
+                             anchor: answers.anchor,
+                             cost: answers.primaryCost) { go(.projection) }
 
         case .projection:
             ProjectionScreen(daysPerWeek: answers.daysPerWeek) { go(.how) }

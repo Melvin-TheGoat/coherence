@@ -197,43 +197,81 @@ struct ResultScreen: View {
 // MARK: - 12 · The cost
 
 /// Self-report only. We ask what it's costing; we never assign a condition.
+///
+/// Interactive rather than a page you read past: ticking nine boxes about your
+/// own life is an admission you performed, where reading three cards is not.
+/// The reference flow pairs its symptom list with an invented "64% suited"
+/// score; we kept the list and refused the score, because the score was fiction
+/// and this is the user telling us about themselves.
+///
+/// **Nothing is required.** Forcing an admission to proceed is the coercion the
+/// rest of this flow refuses, so the CTA stays live at zero selections.
 struct CostScreen: View {
+    @Binding var costs: Set<CostSymptom>
     let onContinue: () -> Void
 
-    private let areas = [("brain.head.profile", "Mind", "Thoughts that won't settle. Decisions that take longer than they should."),
-                         ("flame", "Discipline", "Things you meant to do, still undone. The gap between intention and follow-through."),
-                         ("hands.and.sparkles", "Spirit", "The sense that you're moving through days without being in them.")]
+    private var countLine: String {
+        switch costs.count {
+        case 0: return "Tick whatever's true."
+        case 1: return "One thing."
+        case 2: return "Two things."
+        case 3: return "Three things."
+        default: return "\(costs.count) things."
+        }
+    }
 
     var body: some View {
         OnboardingScreen(section: .cost,
                          title: "What's it costing you?",
-                         subtitle: "Only you can answer this one.",
-                         ctaTitle: "I know",
+                         subtitle: "Tick whatever's true. Only you can answer this.",
+                         ctaTitle: costs.isEmpty ? "Continue" : "That's the cost",
                          onContinue: onContinue) {
-            VStack(spacing: 12) {
-                ForEach(areas, id: \.1) { icon, title, body in
-                    HStack(alignment: .top, spacing: 14) {
-                        Image(systemName: icon)
-                            .font(.system(size: 17))
-                            .foregroundStyle(AppColor.accentGold)
-                            .frame(width: 28)
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(title)
-                                .font(.system(size: 16, weight: .bold, design: .rounded))
-                                .foregroundStyle(AppColor.textPrimary)
-                            Text(body)
-                                .font(.footnote)
-                                .foregroundStyle(AppColor.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 17) {
+                ForEach(CostSymptom.Lens.allCases) { lens in
+                    VStack(alignment: .leading, spacing: 7) {
+                        SectionHeader(title: lens.label)
+                        ForEach(CostSymptom.inLens(lens)) { symptom in
+                            symptomRow(symptom)
                         }
-                        Spacer(minLength: 0)
                     }
-                    .padding(16)
-                    .background(AppColor.backgroundSecondary.opacity(0.7),
-                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
+
+                Text(countLine)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 2)
             }
+            .sensoryFeedback(.selection, trigger: costs)
         }
+    }
+
+    private func symptomRow(_ symptom: CostSymptom) -> some View {
+        let selected = costs.contains(symptom)
+        return Button {
+            if selected { costs.remove(symptom) } else { costs.insert(symptom) }
+        } label: {
+            HStack(spacing: 11) {
+                Image(systemName: selected ? "checkmark.square.fill" : "square")
+                    .font(.system(size: 16))
+                    .foregroundStyle(selected ? AppColor.accentGold
+                                              : AppColor.textSecondary.opacity(0.35))
+                Text(symptom.label)
+                    .font(.system(size: 14.5))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+            .background(selected ? AppColor.accentGold.opacity(0.10)
+                                 : AppColor.backgroundSecondary.opacity(0.72),
+                        in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .stroke(selected ? AppColor.accentGold : .clear, lineWidth: 1.5))
+        }
+        .buttonStyle(CardButtonStyle())
     }
 }
 
@@ -668,6 +706,10 @@ struct HowScreen: View {
 struct CommitmentScreen: View {
     @Binding var daysPerWeek: Int
     let anchor: Anchor?
+    /// The strongest thing they said it was costing them. Echoed here so the
+    /// promise answers the cost they named, and so the cost screen's nine
+    /// selections aren't collected and then never mentioned again.
+    let cost: CostSymptom?
     let onContinue: () -> Void
 
     var body: some View {
@@ -687,6 +729,15 @@ struct CommitmentScreen: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.vertical, 10)
+
+                if let cost {
+                    Text("So that \(cost.echo).")
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.accentGold)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.bottom, 4)
+                }
 
                 HStack(spacing: 8) {
                     ForEach(1...7, id: \.self) { d in
