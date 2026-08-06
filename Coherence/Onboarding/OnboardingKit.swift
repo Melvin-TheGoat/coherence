@@ -131,9 +131,9 @@ struct OnboardingOption: View {
             HStack(spacing: 13) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 15))
+                        .font(.system(size: 13))
                         .foregroundStyle(selected ? AppColor.accentGold : AppColor.textSecondary)
-                        .frame(width: 26)
+                        .frame(width: 22)
                 }
                 Text(label)
                     .font(OnboardingType.option)
@@ -142,7 +142,7 @@ struct OnboardingOption: View {
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
                 Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 19))
+                    .font(.system(size: 16))
                     .foregroundStyle(selected ? AppColor.accentGold
                                               : AppColor.textSecondary.opacity(0.35))
             }
@@ -158,6 +158,16 @@ struct OnboardingOption: View {
     }
 }
 
+// MARK: - Auto-advance timing
+
+enum OnboardingFlowTiming {
+    /// How long the chosen answer stays on screen before the flow moves on.
+    /// Long enough to see the tick land and feel the haptic, short enough that
+    /// it never feels like waiting. Tuned by hand — below ~0.2 s the selection
+    /// reads as a flicker, above ~0.5 s it reads as lag.
+    static let selectionDwell: Duration = .milliseconds(320)
+}
+
 // MARK: - Screen scaffold
 
 /// Every interview screen has the same bones: progress, a question, content,
@@ -170,6 +180,13 @@ struct OnboardingScreen<Content: View>: View {
     var ctaTitle: String = "Continue"
     var ctaFootnote: String? = nil
     var ctaEnabled: Bool = true
+    /// Single-select questions advance on the answer tap, so the CTA is only
+    /// there as a visible affordance until something is chosen. The reference
+    /// flow's tap-to-advance is most of why it reads as a game rather than a
+    /// form; the spec lists it under "worth copying wholesale". Multi-select
+    /// and free-text screens keep a real Continue, because there the user
+    /// decides when they're done.
+    var autoAdvances: Bool = false
     var onSkip: (() -> Void)? = nil
     let onContinue: () -> Void
     @ViewBuilder var content: Content
@@ -199,9 +216,13 @@ struct OnboardingScreen<Content: View>: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
+            // On auto-advancing screens the button never becomes the thing you
+            // press — it stays dimmed as a hint that an answer is expected, and
+            // the selection itself moves on.
             OnboardingCTA(title: ctaTitle, footnote: ctaFootnote,
                           enabled: ctaEnabled, action: onContinue)
                 .padding(.top, 10)
+                .opacity(autoAdvances && !ctaEnabled ? 0.4 : 1)
 
             if let onSkip {
                 Button("Skip", action: onSkip)

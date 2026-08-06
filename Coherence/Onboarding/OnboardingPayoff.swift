@@ -16,57 +16,118 @@ import Charts
 
 // MARK: - 10 · Calculating
 
-/// The loading screen treated as a feature. Every subtitle names something the
-/// app genuinely does — nothing here is theatre for its own sake.
+/// The loading screen treated as a feature, which is the one piece of theatre
+/// from the reference flow worth taking wholesale.
+///
+/// **No ring and no percentage here, deliberately.** A gold ring with a number
+/// in it is our SCORE — it's what the results screen shows after a session and
+/// what every history row carries. Using the same object for a progress bar
+/// teaches people to read one as the other, and then the real number arrives
+/// looking like something they've already learned means nothing. The checklist
+/// is the progress instead.
+///
+/// **Every line names something the code actually does.** An earlier draft said
+/// "matched them to what makes people quit", which implied we'd run the answers
+/// against dropout research; we hadn't. We map their stated reasons to the
+/// features that answer them, so the line says that. This screen's honesty is
+/// what buys the NEXT screen its credibility.
 struct CalculatingScreen: View {
+    let firstName: String
+    let answerCount: Int
     let onDone: () -> Void
-    @State private var step = 0
 
-    private let lines = ["Reading your answers…",
-                         "Matching them to what makes people quit…",
-                         "Setting your anchor…",
-                         "Building your profile…"]
+    @State private var completed = 0
+    @State private var showHandoff = false
+    @State private var typed = ""
+
+    private var steps: [(running: String, done: String)] {
+        [("Reading your \(answerCount) answers", "Read your \(answerCount) answers"),
+         ("Matching your reasons to what 808 does about them",
+          "Matched your reasons to what 808 does about them"),
+         ("Setting your anchor", "Set your anchor"),
+         ("Building your profile", "Built your profile")]
+    }
+
+    private var handoffText: String {
+        let name = firstName.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "Here's what you told us."
+                            : "Alright, \(name).\nHere's what you told us."
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            ZStack {
-                Circle()
-                    .stroke(AppColor.textSecondary.opacity(0.15), lineWidth: 5)
-                Circle()
-                    .trim(from: 0, to: Double(step + 1) / Double(lines.count))
-                    .stroke(AppColor.accentGold,
-                            style: StrokeStyle(lineWidth: 5, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeInOut(duration: 0.8), value: step)
-                Text("\(Int(Double(step + 1) / Double(lines.count) * 100))%")
-                    .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-            }
-            .frame(width: 150, height: 150)
-
-            Text(lines[min(step, lines.count - 1)])
+        VStack(alignment: .leading, spacing: 0) {
+            Text("One moment.")
                 .font(OnboardingType.sub)
                 .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 30)
-                .id(step)
-                .transition(.opacity)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.cost)
-        .task {
-            for i in 0..<lines.count {
-                try? await Task.sleep(for: .seconds(1))
-                guard !Task.isCancelled else { return }
-                withAnimation { step = i }
+                .padding(.bottom, 26)
+
+            ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
+                stepRow(index: i, step: step)
             }
-            try? await Task.sleep(for: .seconds(0.7))
-            guard !Task.isCancelled else { return }
-            onDone()
+
+            Spacer(minLength: 0)
+
+            if showHandoff {
+                // Typed out rather than faded in: the handoff should read as a
+                // person speaking, not a form submitting.
+                (Text(typed) + Text(typed.count < handoffText.count ? "▌" : "")
+                    .foregroundStyle(AppColor.accentGold))
+                    .font(.system(size: 21, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 8)
+            }
         }
+        .padding(.horizontal, 26)
+        .padding(.top, 56)
+        .padding(.bottom, 17)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .onboardingGround(.cost)
+        .task { await run() }
+    }
+
+    private func stepRow(index: Int, step: (running: String, done: String)) -> some View {
+        let isDone = index < completed
+        let isNow = index == completed
+        return HStack(alignment: .top, spacing: 11) {
+            Image(systemName: isDone ? "checkmark" : (isNow ? "circle.fill" : "circle"))
+                .font(.system(size: isNow && !isDone ? 9 : 13, weight: .bold))
+                .foregroundStyle(isDone ? AppColor.accentGold
+                                 : (isNow ? AppColor.accentGold.opacity(0.55)
+                                          : AppColor.textSecondary.opacity(0.22)))
+                .frame(width: 17)
+                .padding(.top, 3)
+            // The tense flips on completion: a list of promises becomes a list
+            // of finished work.
+            Text(isDone ? step.done : step.running)
+                .font(.system(size: 16))
+                .foregroundStyle(index <= completed ? AppColor.textPrimary
+                                                    : AppColor.textSecondary.opacity(0.3))
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.bottom, 17)
+        .animation(.easeOut(duration: 0.3), value: completed)
+    }
+
+    private func run() async {
+        for i in 0..<steps.count {
+            try? await Task.sleep(for: .seconds(i == 0 ? 0.7 : 0.9))
+            guard !Task.isCancelled else { return }
+            withAnimation { completed = i + 1 }
+        }
+        try? await Task.sleep(for: .seconds(0.4))
+        guard !Task.isCancelled else { return }
+        withAnimation { showHandoff = true }
+
+        for ch in handoffText {
+            try? await Task.sleep(for: .milliseconds(38))
+            guard !Task.isCancelled else { return }
+            typed.append(ch)
+        }
+        try? await Task.sleep(for: .seconds(1.1))
+        guard !Task.isCancelled else { return }
+        onDone()
     }
 }
 

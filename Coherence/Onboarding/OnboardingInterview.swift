@@ -7,6 +7,18 @@ import SwiftUI
 /// someone who typed "quit porn" into the App Store. Meditation buyers arrive
 /// aspirational, so ours opens by taking blame off.
 
+/// Holds the chosen answer on screen briefly, then moves on. Without the pause
+/// the tick never registers and the flow feels like it jumped; with it, the
+/// selection is acknowledged and the advance reads as a response.
+@MainActor
+func advance(_ action: @escaping () -> Void) {
+    Task {
+        try? await Task.sleep(for: OnboardingFlowTiming.selectionDwell)
+        guard !Task.isCancelled else { return }
+        action()
+    }
+}
+
 // MARK: - 1 · Relief
 
 struct ReliefScreen: View {
@@ -17,14 +29,14 @@ struct ReliefScreen: View {
         VStack(alignment: .leading, spacing: 0) {
             Spacer()
 
-            Text("You're not\nbad at this.")
+            Text("You're not\nbad at meditation.")
                 .font(OnboardingType.headline)
                 .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
 
-            Text("You just never got told whether it worked.")
+            Text("You just never got told whether it was working.")
                 .font(.system(size: 18))
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -106,6 +118,41 @@ struct BreathScreen: View {
     }
 }
 
+// MARK: - Q0 · The baseline
+
+/// The first question, and the one everything later is measured against.
+/// Their version asks how often you use porn; the job is identical — plant a
+/// BEFORE so the app's work has something to move. The two answers most people
+/// pick ("I've tried, it never stuck", "a few times a month") ARE the
+/// inconsistency the product exists to fix, so they convict themselves gently
+/// and nothing has to be asserted at them later.
+struct BaselineScreen: View {
+    @Binding var frequency: CurrentFrequency?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .body, progress: progress,
+                         title: "How often do you\nmeditate right now?",
+                         subtitle: "Honestly. This is the number we're going to move.",
+                         ctaEnabled: frequency != nil,
+                         autoAdvances: true,
+                         onContinue: onContinue) {
+            VStack(spacing: 10) {
+                ForEach(CurrentFrequency.allCases) { f in
+                    OnboardingOption(label: f.label, selected: frequency == f) { pick(f) }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: frequency)
+        }
+    }
+
+    private func pick(_ f: CurrentFrequency) {
+        frequency = f
+        advance(onContinue)
+    }
+}
+
 // MARK: - 3 · Q1 Why (multi-select)
 
 struct MotivationScreen: View {
@@ -115,7 +162,7 @@ struct MotivationScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
-                         title: "What are you actually after?",
+                         title: "What are you hoping\nmeditation gives you?",
                          subtitle: "Pick as many as are true.",
                          ctaEnabled: !selected.isEmpty,
                          onContinue: onContinue) {
@@ -182,6 +229,82 @@ struct StressScreen: View {
     }
 }
 
+// MARK: - The escalation
+
+/// Turns a static problem into a worsening one, which is where urgency comes
+/// from — the only question in the reference flow that creates any.
+///
+/// The word **"still"** carries it: it presupposes you once could, so the
+/// deterioration is inside the question rather than asserted at the user. That
+/// distinction is the point. We may ask whether their attention has slipped; we
+/// may never tell them it has, because that's a claim about their brain we
+/// cannot measure. Same line the theta copy respects.
+///
+/// The ground turns red here — this is now the first pain question.
+struct AloneWithThoughtsScreen: View {
+    @Binding var answer: AloneWithThoughts?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .cost, progress: progress,
+                         title: "Can you still be alone\nwith your own thoughts?",
+                         subtitle: "Compared with a few years ago.",
+                         ctaEnabled: answer != nil,
+                         autoAdvances: true,
+                         onContinue: onContinue) {
+            VStack(spacing: 10) {
+                ForEach(AloneWithThoughts.allCases) { a in
+                    OnboardingOption(label: a.label, selected: answer == a) { pick(a) }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: answer)
+        }
+    }
+
+    private func pick(_ a: AloneWithThoughts) {
+        answer = a
+        advance(onContinue)
+    }
+}
+
+// MARK: - The concrete cost
+
+/// Sits immediately after the escalation question: that one asks whether it's
+/// getting worse, this one asks for the proof in their own behaviour. The
+/// subtitle names a real moment ("Standing in a queue. Waiting for a lift.")
+/// so they recall something rather than estimate something.
+///
+/// It also aims at exactly what meditation treats — tolerance for being
+/// unstimulated — which makes the product the answer to the question without
+/// the question ever pitching.
+struct DoingNothingScreen: View {
+    @Binding var answer: DoingNothing?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .cost, progress: progress,
+                         title: "How long can you do\nnothing before you reach\nfor your phone?",
+                         subtitle: "Standing in a queue. Waiting for a lift.",
+                         ctaEnabled: answer != nil,
+                         autoAdvances: true,
+                         onContinue: onContinue) {
+            VStack(spacing: 10) {
+                ForEach(DoingNothing.allCases) { d in
+                    OnboardingOption(label: d.label, selected: answer == d) { pick(d) }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: answer)
+        }
+    }
+
+    private func pick(_ d: DoingNothing) {
+        answer = d
+        advance(onContinue)
+    }
+}
+
 // MARK: - 5 · Q3 The admission
 
 /// Where the ground turns red. The heavier haptic is deliberate: this is the
@@ -193,19 +316,55 @@ struct RestartScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .cost, progress: progress,
-                         title: "How many times have you\nstarted and stopped?",
-                         subtitle: "No judgement. This is the most common thing there is.",
+                         title: "How many times have you\ntried to make meditation stick?",
+                         subtitle: "No judgement — this is the single most common thing there is.",
                          ctaEnabled: restarts != nil,
+                         autoAdvances: true,
                          onContinue: onContinue) {
             VStack(spacing: 10) {
                 ForEach(RestartCount.allCases) { r in
-                    OnboardingOption(label: r.label, selected: restarts == r) {
-                        restarts = r
-                    }
+                    OnboardingOption(label: r.label, selected: restarts == r) { pick(r) }
                 }
             }
             .sensoryFeedback(.impact(weight: .heavy), trigger: restarts)
         }
+    }
+
+    private func pick(_ r: RestartCount) {
+        restarts = r
+        advance(onContinue)
+    }
+}
+
+// MARK: - How long it's been
+
+/// Restarts gives the pattern a count; this gives it a length. Together they
+/// say "this has been going on a long time and you've been losing to it" —
+/// without us ever writing that sentence.
+struct IntendedForScreen: View {
+    @Binding var intended: IntendedFor?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .cost, progress: progress,
+                         title: "How long have you been\nmeaning to start?",
+                         subtitle: "Not trying. Meaning to.",
+                         ctaEnabled: intended != nil,
+                         autoAdvances: true,
+                         onContinue: onContinue) {
+            VStack(spacing: 10) {
+                ForEach(IntendedFor.allCases) { i in
+                    OnboardingOption(label: i.label, selected: intended == i) { pick(i) }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: intended)
+        }
+    }
+
+    private func pick(_ i: IntendedFor) {
+        intended = i
+        advance(onContinue)
     }
 }
 
@@ -218,7 +377,7 @@ struct CauseScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .cost, progress: progress,
-                         title: "What made you stop?",
+                         title: "What made you stop\nmeditating?",
                          subtitle: "Pick whatever rings true.",
                          ctaEnabled: !causes.isEmpty,
                          onContinue: onContinue) {
@@ -303,17 +462,23 @@ struct AnchorScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
-                         title: "When will you\nactually do it?",
+                         title: "When will you\nactually meditate?",
                          subtitle: "Pick something you already do every day. Attaching it to an existing habit is the single biggest predictor of sticking with it.",
                          ctaEnabled: anchor != nil,
+                         autoAdvances: true,
                          onContinue: onContinue) {
             VStack(spacing: 10) {
                 ForEach(Anchor.allCases) { a in
-                    OnboardingOption(label: a.label, selected: anchor == a) { anchor = a }
+                    OnboardingOption(label: a.label, selected: anchor == a) { pick(a) }
                 }
             }
             .sensoryFeedback(.selection, trigger: anchor)
         }
+    }
+
+    private func pick(_ a: Anchor) {
+        anchor = a
+        advance(onContinue)
     }
 }
 
@@ -353,5 +518,40 @@ struct NameScreen: View {
             }
             .sensoryFeedback(.selection, trigger: ageBracket)
         }
+    }
+}
+
+// MARK: - Attribution (last interview question)
+
+/// Dead last on purpose: it's the least interesting thing we ask, so a
+/// drop-off here costs the least — and by now they've answered ten questions
+/// and won't bail on the eleventh. Watch the "a friend told me" row; when it
+/// climbs, word of mouth is working.
+struct ReferralScreen: View {
+    @Binding var referral: ReferralSource?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .body, progress: progress,
+                         title: "One last thing —\nhow did you find us?",
+                         subtitle: "It's the only way we know where to show up.",
+                         ctaEnabled: referral != nil,
+                         autoAdvances: true,
+                         onSkip: onContinue,
+                         onContinue: onContinue) {
+            VStack(spacing: 9) {
+                ForEach(ReferralSource.allCases) { r in
+                    OnboardingOption(label: r.label, icon: r.icon,
+                                     selected: referral == r) { pick(r) }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: referral)
+        }
+    }
+
+    private func pick(_ r: ReferralSource) {
+        referral = r
+        advance(onContinue)
     }
 }

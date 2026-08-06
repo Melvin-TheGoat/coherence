@@ -27,9 +27,12 @@ struct OnboardingView: View {
 
     enum Step: Int, CaseIterable {
         case relief, breath                                    // 1–2
-        case motivation, stress, restarts, causes              // 3–6
+        case baseline                                          // where they are today
+        case motivation, stress                                // 3–4
+        case aloneWithThoughts, doingNothing                   // escalation, then the evidence
+        case restarts, intendedFor, causes                     // 5–6
         case watchGate, waitlist                               // 7, 7b
-        case anchor, you                                       // 8–9
+        case anchor, you, referral                             // 8–9, then attribution
         case calculating, result, cost                         // 10–12
         case proofBody, proofNumber, proofYourWay              // 13–15
         case wall, profile, commitment, projection, how        // 16–16d, 20
@@ -41,8 +44,9 @@ struct OnboardingView: View {
         /// back and selling, a progress bar just tells them how much sales
         /// copy is left.
         var interviewProgress: Double? {
-            let interview: [Step] = [.motivation, .stress, .restarts, .causes,
-                                     .watchGate, .anchor, .you]
+            let interview: [Step] = [.baseline, .motivation, .stress, .aloneWithThoughts,
+                                     .doingNothing, .restarts, .intendedFor, .causes,
+                                     .watchGate, .anchor, .you, .referral]
             guard let i = interview.firstIndex(of: self) else { return nil }
             return Double(i + 1) / Double(interview.count)
         }
@@ -65,7 +69,11 @@ struct OnboardingView: View {
             ReliefScreen { go(.breath) }
 
         case .breath:
-            BreathScreen { go(.motivation) }
+            BreathScreen { go(.baseline) }
+
+        case .baseline:
+            BaselineScreen(frequency: $answers.currentFrequency,
+                           progress: step.interviewProgress ?? 0) { go(.motivation) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
@@ -73,11 +81,23 @@ struct OnboardingView: View {
 
         case .stress:
             StressScreen(stress: $answers.stress,
-                         progress: step.interviewProgress ?? 0) { go(.restarts) }
+                         progress: step.interviewProgress ?? 0) { go(.aloneWithThoughts) }
+
+        case .aloneWithThoughts:
+            AloneWithThoughtsScreen(answer: $answers.aloneWithThoughts,
+                                    progress: step.interviewProgress ?? 0) { go(.doingNothing) }
+
+        case .doingNothing:
+            DoingNothingScreen(answer: $answers.doingNothing,
+                               progress: step.interviewProgress ?? 0) { go(.restarts) }
 
         case .restarts:
             RestartScreen(restarts: $answers.restarts,
-                          progress: step.interviewProgress ?? 0) { go(.causes) }
+                          progress: step.interviewProgress ?? 0) { go(.intendedFor) }
+
+        case .intendedFor:
+            IntendedForScreen(intended: $answers.intendedFor,
+                              progress: step.interviewProgress ?? 0) { go(.causes) }
 
         case .causes:
             CauseScreen(causes: $answers.causes,
@@ -106,10 +126,15 @@ struct OnboardingView: View {
         case .you:
             NameScreen(firstName: $answers.firstName,
                        ageBracket: $answers.ageBracket,
-                       progress: step.interviewProgress ?? 0) { go(.calculating) }
+                       progress: step.interviewProgress ?? 0) { go(.referral) }
+
+        case .referral:
+            ReferralScreen(referral: $answers.referral,
+                           progress: step.interviewProgress ?? 0) { go(.calculating) }
 
         case .calculating:
-            CalculatingScreen { go(.result) }
+            CalculatingScreen(firstName: answers.firstName,
+                              answerCount: answeredCount) { go(.result) }
 
         case .result:
             ResultScreen(answers: answers) { go(.cost) }
@@ -169,6 +194,26 @@ struct OnboardingView: View {
         case .signIn:
             SignInScreen(onSignedIn: handleSignIn, onSkip: finish)
         }
+    }
+
+    /// How many interview questions they actually answered — spoken aloud on
+    /// the calculating screen, so it has to be the real count rather than a
+    /// hardcoded number that a skipped question would make a lie.
+    private var answeredCount: Int {
+        var n = 0
+        if answers.currentFrequency != nil { n += 1 }
+        if !answers.motivations.isEmpty { n += 1 }
+        n += 1                                        // stress slider always has a value
+        if answers.aloneWithThoughts != nil { n += 1 }
+        if answers.doingNothing != nil { n += 1 }
+        if answers.restarts != nil { n += 1 }
+        if answers.intendedFor != nil { n += 1 }
+        if !answers.causes.isEmpty { n += 1 }
+        if answers.hasWatch != nil { n += 1 }
+        if answers.anchor != nil { n += 1 }
+        if !answers.firstName.trimmingCharacters(in: .whitespaces).isEmpty { n += 1 }
+        if answers.referral != nil { n += 1 }
+        return n
     }
 
     // MARK: - Navigation

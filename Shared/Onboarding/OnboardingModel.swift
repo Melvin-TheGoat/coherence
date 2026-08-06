@@ -40,6 +40,81 @@ public enum Motivation: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// Where they are today. The baseline: a "before" so everything the app does
+/// later has something to be measured against. Every honest answer here IS the
+/// inconsistency the product exists to fix, so nothing has to be asserted at
+/// them afterwards.
+public enum CurrentFrequency: String, CaseIterable, Identifiable, Codable {
+    case never, triedNeverStuck, fewTimesMonth, mostWeeks, almostDaily
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .never:           return "Never — this would be the start"
+        case .triedNeverStuck: return "I've tried, it never stuck"
+        case .fewTimesMonth:   return "A few times a month"
+        case .mostWeeks:       return "Most weeks"
+        case .almostDaily:     return "Almost every day"
+        }
+    }
+}
+
+/// The escalation question. Its job is to turn a static problem into a
+/// worsening one — that's where urgency comes from. **We ask; we never tell.**
+/// Asserting that someone's attention has degraded would be a claim about their
+/// brain we cannot measure, the same line the theta copy has to respect.
+/// "Better" is a real option: without an out the question is leading, and
+/// people can feel when they're being handled.
+public enum AloneWithThoughts: String, CaseIterable, Identifiable, Codable {
+    case notLikeIUsedTo, harder, same, better
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .notLikeIUsedTo: return "No — not like I used to"
+        case .harder:         return "It's got harder"
+        case .same:           return "About the same"
+        case .better:         return "Actually better now"
+        }
+    }
+
+    /// True when they told us it's slipping — used to choose which pain the
+    /// reflection screen speaks to.
+    public var isSlipping: Bool { self == .notLikeIUsedTo || self == .harder }
+}
+
+/// The concrete cost, and the counterpart to `AloneWithThoughts`: that one asks
+/// for the trend, this one asks for the evidence in their own behaviour.
+///
+/// Answered instantly — you already know your answer, which is the property
+/// that makes their arousal question work. An earlier draft asked how many of
+/// the last seven days they were "present" for; it was cut because nobody
+/// tracks that, so it asks for data the user never collected.
+///
+/// The scale is deliberately a ladder from seconds to comfortable, so the
+/// answer lands somewhere on a spectrum rather than in a yes/no.
+public enum DoingNothing: String, CaseIterable, Identifiable, Codable {
+    case seconds, aMinute, fewMinutes, anHour, comfortable
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .seconds:     return "A few seconds"
+        case .aMinute:     return "About a minute"
+        case .fewMinutes:  return "A few minutes"
+        case .anHour:      return "An hour"
+        case .comfortable: return "I'm fine doing nothing"
+        }
+    }
+
+    /// True when stillness is already hard for them — feeds which pain the
+    /// reflection screen speaks to.
+    public var isRestless: Bool { self == .seconds || self == .aMinute }
+}
+
 /// How many times they've started a practice and stopped. The admission.
 public enum RestartCount: String, CaseIterable, Identifiable, Codable {
     case never, once, few, many, lostCount
@@ -53,6 +128,41 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
         case .few:       return "Two or three times"
         case .many:      return "More than I'd like to admit"
         case .lostCount: return "I've lost count"
+        }
+    }
+}
+
+/// How long they've been *meaning* to start. Their version asks what age you
+/// first saw explicit content — the cleverest question in that flow, because it
+/// makes the problem feel lifelong while quietly removing blame ("you were a
+/// kid"). The literal translation is dead for meditation, but the job carries:
+/// give the pattern a LENGTH to sit alongside the count from `RestartCount`.
+///
+/// The blame removal lives in the subtitle — "Not trying. Meaning to." Nobody
+/// feels judged for having intended something.
+public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
+    case weeks, months, aYear, years, forever
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .weeks:   return "A few weeks"
+        case .months:  return "Months"
+        case .aYear:   return "A year or so"
+        case .years:   return "Years"
+        case .forever: return "As long as I can remember"
+        }
+    }
+
+    /// Phrase for reflecting the answer back ("you've been meaning to for years").
+    public var phrase: String {
+        switch self {
+        case .weeks:   return "a few weeks"
+        case .months:  return "months"
+        case .aYear:   return "about a year"
+        case .years:   return "years"
+        case .forever: return "as long as you can remember"
         }
     }
 }
@@ -134,20 +244,55 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// Attribution — the one question in the flow that isn't persuasion. It tells
+/// us which channel actually produces installs, which is the difference between
+/// spending on what works and what merely feels busy. Skippable by design:
+/// every other screen gives the user something back, this one serves us.
+public enum ReferralSource: String, CaseIterable, Identifiable, Codable {
+    case instagram, tiktok, friend, appStore, other
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .instagram: return "Instagram"
+        case .tiktok:    return "TikTok"
+        case .friend:    return "A friend told me"
+        case .appStore:  return "Searching the App Store"
+        case .other:     return "Somewhere else"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .instagram: return "camera"
+        case .tiktok:    return "music.note"
+        case .friend:    return "person.2"
+        case .appStore:  return "magnifyingglass"
+        case .other:     return "ellipsis"
+        }
+    }
+}
+
 // MARK: - The answers
 
 /// Everything the interview collects. Codable so an interrupted onboarding can
 /// be resumed rather than restarted.
 public struct OnboardingAnswers: Codable, Equatable {
+    public var currentFrequency: CurrentFrequency?
     public var motivations: Set<Motivation> = []
     /// 0 = "Fine", 1 = "Fried".
     public var stress: Double = 0.5
+    public var aloneWithThoughts: AloneWithThoughts?
+    public var doingNothing: DoingNothing?
     public var restarts: RestartCount?
+    public var intendedFor: IntendedFor?
     public var causes: Set<DropoutCause> = []
     public var hasWatch: Bool?
     public var anchor: Anchor?
     public var firstName: String = ""
     public var ageBracket: String?
+    public var referral: ReferralSource?
     /// Days per week they commit to.
     public var daysPerWeek: Int = 5
 
