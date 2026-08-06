@@ -258,7 +258,7 @@ struct ProofScreen: View {
 
     private var title: String {
         switch beat {
-        case .body:    return "Your body already\nkeeps score."
+        case .body:    return "Deep meditation runs\non theta."
         case .number:  return "So you get a number."
         case .yourWay: return "Meditate however\nyou like."
         }
@@ -267,7 +267,7 @@ struct ProofScreen: View {
     private var subtitle: String {
         switch beat {
         case .body:
-            return "When a session lands, your heart rate drifts down and your body goes still. Your Watch can see both. You just never got shown it."
+            return "It's the slow brainwave state that shows up when someone really drops in. Measured in labs for decades."
         case .number:
             return "One score, after the session. Never during: watching a number climb would raise your heart rate and wreck the very thing it measures."
         case .yourWay:
@@ -279,9 +279,17 @@ struct ProofScreen: View {
     private var illustration: some View {
         switch beat {
         case .body:
-            HStack(spacing: 26) {
-                signalTile("heart.fill", "Heart rate", "drifts down", AppColor.calmAccent)
-                signalTile("figure.stand", "Stillness", "settles", AppColor.calmAccent)
+            VStack(spacing: 16) {
+                ThetaWaveCard()
+                Text("But the body that goes with it **is** visible. When someone drops into that state, two things happen, and your Watch reads both.")
+                    .font(OnboardingType.sub)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                HStack(spacing: 10) {
+                    signalTile("heart.fill", "Heart rate", "drifts down", AppColor.calmAccent)
+                    signalTile("figure.mind.and.body", "Your body", "goes still", AppColor.calmAccent)
+                }
             }
         case .number:
             ZStack {
@@ -338,6 +346,87 @@ struct ProofScreen: View {
         .padding(.vertical, 22)
         .background(AppColor.backgroundSecondary.opacity(0.7),
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+/// The theta illustration, and the sentence that keeps it honest.
+///
+/// **These two must never be separated.** A moving wave beside the word "theta"
+/// in a health app is close to looking like a measurement, and we measure heart
+/// rate and movement, not brain activity. The disclaimer is load-bearing: it is
+/// what makes the animation an illustration rather than a claim.
+///
+/// The wave therefore has no leading edge, no cursor and no scrolling data. It
+/// drifts by exactly one period on a loop, which reads as decoration rather than
+/// a live trace, and it holds still under Reduce Motion.
+///
+/// Never write "your theta", "reach theta" or "theta score". Theta exists in the
+/// research; it is not something we hand the user. Teal, never gold: it is
+/// physiology, not an achievement.
+private struct ThetaWaveCard: View {
+    @State private var drift = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One period of the wave, in points. The path repeats every `period`, so
+    /// translating by exactly this much loops seamlessly.
+    private let period: CGFloat = 84
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Theta")
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.calmAccent)
+                Spacer()
+                Text("4 to 8 Hz")
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+
+            ThetaWave(period: period)
+                .stroke(AppColor.calmAccent, style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
+                .frame(height: 46)
+                .offset(x: drift ? -period : 0)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .clipped()
+                .onAppear {
+                    guard !reduceMotion else { return }
+                    withAnimation(.linear(duration: 1.9).repeatForever(autoreverses: false)) {
+                        drift = true
+                    }
+                }
+
+            Divider().overlay(AppColor.textSecondary.opacity(0.12))
+
+            Text("We can't see that from a wrist.")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppColor.textPrimary)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+/// A plain sine, drawn wide enough that drifting one period never exposes an end.
+private struct ThetaWave: Shape {
+    let period: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let mid = rect.midY
+        let amp = rect.height * 0.38
+        // Twice the visible width plus one period of overrun.
+        let end = rect.width * 2 + period
+        p.move(to: CGPoint(x: 0, y: mid))
+        var x: CGFloat = 0
+        while x <= end {
+            let y = mid - sin(x / period * 2 * .pi) * amp
+            p.addLine(to: CGPoint(x: x, y: y))
+            x += 1
+        }
+        return p
     }
 }
 

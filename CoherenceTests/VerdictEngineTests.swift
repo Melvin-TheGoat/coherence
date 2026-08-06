@@ -20,7 +20,7 @@ final class VerdictEngineTests: XCTestCase {
         let v = VerdictEngine.verdict(for: .init(
             overallScore: 0.2, stillnessScore: 0.3, hrDecline: -8, bellyBreathing: false)
         )
-        XCTAssertEqual(v.headline, "A restless one — that happens.")
+        XCTAssertEqual(v.headline, "A restless one. That happens.")
         XCTAssertTrue(v.sentence.contains("restless"), v.sentence)
         // No shame words, and never a claim the numbers don't support.
         XCTAssertFalse(v.sentence.lowercased().contains("fail"))
