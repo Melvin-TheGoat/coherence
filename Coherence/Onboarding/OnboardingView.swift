@@ -2,113 +2,263 @@ import SwiftUI
 import SwiftData
 import AuthenticationServices
 
-/// First-run onboarding: the full Purpose page → the full Science page → Sign in
-/// with Apple. Gated by `Preferences.onboardingComplete` (see `RootView`). On
-/// successful sign-in the bootstrap User is adopted so any pre-account sessions +
-/// streak survive.
+/// The onboarding flow — the interview, the reflection, the proof, the offer.
+/// Spec and copy decisions live in `ONBOARDING.md`; the arithmetic behind the
+/// projection and profile lives in `OnboardingModel.swift` (tested).
 ///
-/// The Purpose/Science copy is the real, full `PURPOSE.md` / `SCIENCE.md`,
-/// bundled and rendered (single source of truth — edits to the docs flow through).
+/// Gated by `Preferences.onboardingComplete` (see `RootView`). Answers are held
+/// in memory and written once at the end: first name to the User, the anchor's
+/// hour to the reminder time, so nothing is asked twice.
 struct OnboardingView: View {
-    private enum Step { case purpose, science, health, signIn }
+    @Environment(\.modelContext) private var context
+    @Query private var preferences: [Preferences]
 
-    @Environment(\.modelContext) private var modelContext
-    @State private var step: Step = .purpose
-    @State private var errorText: String?
-    @State private var showPrivacyPolicy = false
+    @State private var step: Step = .relief
+    @State private var answers = OnboardingAnswers()
+    @State private var plan: SubscriptionPlan = .yearly
+    @State private var waitlistEmail = ""
+    @State private var didJoinWaitlist = false
+
+    /// Where the paywall sits. The spec's flow places it inside onboarding
+    /// (screen 23), while its open-questions section argues for after the first
+    /// session. Kept as one switch so moving it is a one-line change, not a
+    /// re-plumb — see ONBOARDING.md "Open — needs a decision before building".
+    private static let paywallInsideOnboarding = true
+
+    enum Step: Int, CaseIterable {
+        case relief, breath                                    // 1–2
+        case motivation, stress, restarts, causes              // 3–6
+        case watchGate, waitlist                               // 7, 7b
+        case anchor, you                                       // 8–9
+        case calculating, result, cost                         // 10–12
+        case proofBody, proofNumber, proofYourWay              // 13–15
+        case wall, profile, commitment, projection, how        // 16–16d, 20
+        case permission, week                                  // 21–22
+        case health                                            // consent, kept from the old flow
+        case paywall, exitOffer, signIn                        // 23–25
+
+        /// Progress rail: only the interview shows one. Once we're reflecting
+        /// back and selling, a progress bar just tells them how much sales
+        /// copy is left.
+        var interviewProgress: Double? {
+            let interview: [Step] = [.motivation, .stress, .restarts, .causes,
+                                     .watchGate, .anchor, .you]
+            guard let i = interview.firstIndex(of: self) else { return nil }
+            return Double(i + 1) / Double(interview.count)
+        }
+    }
 
     var body: some View {
-        ZStack {
-            AppColor.backgroundPrimary.ignoresSafeArea()
-            VStack(spacing: 16) {
-                content
-                    .id(step)   // fresh identity per page so transitions fire
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .trailing).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)))
-
-                if let errorText {
-                    Text(errorText)
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-
-                footer
-            }
-            .padding(24)
-        }
+        content
+            .id(step)
+            .transition(.asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)))
+            .animation(.easeInOut(duration: 0.32), value: step)
+            .sensoryFeedback(.impact(weight: .light), trigger: step)
     }
 
     @ViewBuilder
     private var content: some View {
         switch step {
-        case .purpose:
-            docPage("PURPOSE", animated: true)   // the very first thing a user sees
-        case .science:
-            docPage("SCIENCE", animated: true)
+        case .relief:
+            ReliefScreen { go(.breath) }
+
+        case .breath:
+            BreathScreen { go(.motivation) }
+
+        case .motivation:
+            MotivationScreen(selected: $answers.motivations,
+                             progress: step.interviewProgress ?? 0) { go(.stress) }
+
+        case .stress:
+            StressScreen(stress: $answers.stress,
+                         progress: step.interviewProgress ?? 0) { go(.restarts) }
+
+        case .restarts:
+            RestartScreen(restarts: $answers.restarts,
+                          progress: step.interviewProgress ?? 0) { go(.causes) }
+
+        case .causes:
+            CauseScreen(causes: $answers.causes,
+                        progress: step.interviewProgress ?? 0) { go(.watchGate) }
+
+        case .watchGate:
+            WatchGateScreen(hasWatch: $answers.hasWatch,
+                            progress: step.interviewProgress ?? 0,
+                            onYes: { go(.anchor) },
+                            onNo: { go(.waitlist) })
+
+        case .waitlist:
+            WaitlistScreen(email: $waitlistEmail,
+                           onSubmit: {
+                               didJoinWaitlist = true
+                               // They can still look around; we just never sell
+                               // them something that can't work for them yet.
+                               go(.anchor)
+                           },
+                           onBack: { go(.watchGate) })
+
+        case .anchor:
+            AnchorScreen(anchor: $answers.anchor,
+                         progress: step.interviewProgress ?? 0) { go(.you) }
+
+        case .you:
+            NameScreen(firstName: $answers.firstName,
+                       ageBracket: $answers.ageBracket,
+                       progress: step.interviewProgress ?? 0) { go(.calculating) }
+
+        case .calculating:
+            CalculatingScreen { go(.result) }
+
+        case .result:
+            ResultScreen(answers: answers) { go(.cost) }
+
+        case .cost:
+            CostScreen { go(.proofBody) }
+
+        case .proofBody:
+            ProofScreen(beat: .body) { go(.proofNumber) }
+
+        case .proofNumber:
+            ProofScreen(beat: .number) { go(.proofYourWay) }
+
+        case .proofYourWay:
+            ProofScreen(beat: .yourWay) { go(.wall) }
+
+        case .wall:
+            WallScreen { go(.profile) }
+
+        case .profile:
+            ProfileScreen(answers: answers) { go(.commitment) }
+
+        // Commitment comes BEFORE the projection: the projection is arithmetic
+        // from the days-per-week they commit to, so we can't draw it first.
+        case .commitment:
+            CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
+                             anchor: answers.anchor) { go(.projection) }
+
+        case .projection:
+            ProjectionScreen(daysPerWeek: answers.daysPerWeek) { go(.how) }
+
+        case .how:
+            HowScreen(answers: answers) { go(.permission) }
+
+        case .permission:
+            PermissionScreen(anchor: answers.anchor,
+                             onAllow: { Task { await requestNotifications(); go(.week) } },
+                             onSkip: { go(.week) })
+
+        case .week:
+            WeekPreviewScreen { go(.health) }
+
         case .health:
-            healthConsentPage
-        case .signIn:
-            VStack(spacing: 16) {
-                Spacer(minLength: 0)
-                DrawnLogo()
-                Text("808")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGold)
-                    .fadeInUp(delay: 0.8)
-                Text("Sign in to begin.")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .fadeInUp(delay: 1.0)
-                Text("Your sessions and streak stay yours. Apple handles sign-in — no password to create.")
-                    .font(.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fadeInUp(delay: 1.2)
-                Spacer(minLength: 0)
+            HealthConsentScreen {
+                go(Self.paywallInsideOnboarding && !didJoinWaitlist ? .paywall : .signIn)
             }
+
+        case .paywall:
+            PaywallScreen(plan: $plan,
+                          onStartTrial: { go(.signIn) },
+                          onDecline: { go(.exitOffer) })
+
+        case .exitOffer:
+            ExitOfferScreen(onAccept: { go(.signIn) },
+                            onDecline: { go(.signIn) })
+
+        case .signIn:
+            SignInScreen(onSignedIn: handleSignIn, onSkip: finish)
         }
     }
 
-    /// Health-data consent — shown before sign-in and before any measurement.
-    /// Affirmative consent for consumer-health-data laws (e.g. WA MHMDA); the
-    /// full policy is one tap away, and the footer button is the consent act.
-    private var healthConsentPage: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                DrawnLogo(markSize: 48, glowSize: 104)
-                    .frame(maxWidth: .infinity)
-                Text("Your health data")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .fadeInUp(delay: 0.7)
+    // MARK: - Navigation
+
+    private func go(_ next: Step) {
+        withAnimation { step = next }
+    }
+
+    // MARK: - Side effects
+
+    private func requestNotifications() async {
+        _ = try? await UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .sound, .badge])
+    }
+
+    private func handleSignIn(_ credential: ASAuthorizationAppleIDCredential) {
+        let name = [credential.fullName?.givenName, credential.fullName?.familyName]
+            .compactMap { $0 }.joined(separator: " ")
+        _ = SessionStore.signIn(appleUserID: credential.user,
+                                email: credential.email,
+                                displayName: name.isEmpty ? typedName : name,
+                                in: context)
+        persistAnswers()
+    }
+
+    private var typedName: String? {
+        let n = answers.firstName.trimmingCharacters(in: .whitespaces)
+        return n.isEmpty ? nil : n
+    }
+
+    private func finish() {
+        persistAnswers()
+    }
+
+    /// Written once, at the end. The anchor becomes the reminder time so we
+    /// never ask twice for a fact they already gave us.
+    private func persistAnswers() {
+        let user = SessionStore.currentUser(in: context)
+        if let typedName, (user.displayName ?? "").isEmpty {
+            user.displayName = typedName
+        }
+        if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
+            prefs.onboardingComplete = true
+            if let anchor = answers.anchor {
+                prefs.reminderTime = Calendar.current.date(
+                    bySettingHour: anchor.defaultHour, minute: 0, second: 0, of: Date())
+                prefs.remindersEnabled = true
+                NotificationScheduler.apply(enabled: true, at: prefs.reminderTime)
+            }
+        }
+        try? context.save()
+    }
+}
+
+// MARK: - Health consent (kept from the pre-MVP flow)
+
+/// Affirmative consent for consumer-health-data laws (e.g. WA MHMDA), shown
+/// before any measurement. The continue button is the consent act, and the
+/// full policy is one tap away.
+struct HealthConsentScreen: View {
+    let onContinue: () -> Void
+    @State private var showPrivacyPolicy = false
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "Your health data.",
+                         subtitle: "Before anything gets measured, here's exactly what happens to it.",
+                         ctaTitle: "I understand",
+                         onContinue: onContinue) {
+            VStack(spacing: 12) {
                 consentRow("applewatch", "Measured only during sessions",
-                           "Your Apple Watch reads heart rate and movement only while a session you started is running.")
-                    .fadeInUp(delay: 0.9)
+                           "Your Watch reads heart rate and movement only while a session you started is running.")
                 consentRow("iphone.and.arrow.forward", "Results stay on your device",
                            "Session results are computed on your devices and never uploaded — not to us, not to iCloud.")
-                    .fadeInUp(delay: 1.05)
                 consentRow("icloud", "Only your account syncs",
                            "Your account, preferences, and session log sync through your own private iCloud database.")
-                    .fadeInUp(delay: 1.2)
                 consentRow("hand.raised", "Never ads. Never sold.",
-                           "Your health data is never used for advertising, never shared, never sold. Delete everything anytime in Settings.")
-                    .fadeInUp(delay: 1.35)
+                           "Your health data is never used for advertising, never shared, never sold. Delete everything any time in Settings.")
+
                 Button("Read the full Privacy Policy") { showPrivacyPolicy = true }
                     .font(.footnote.weight(.medium))
                     .foregroundStyle(AppColor.accentGold)
                     .frame(maxWidth: .infinity)
-                    .fadeInUp(delay: 1.5)
+                    .padding(.top, 4)
             }
-            .padding(.vertical, 8)
         }
-        .scrollIndicators(.hidden)
         .sheet(isPresented: $showPrivacyPolicy) {
             NavigationStack {
                 ScrollView {
-                    MarkdownView(markdown: DocLoader.load("PRIVACY_POLICY"))
-                        .padding()
+                    MarkdownView(markdown: DocLoader.load("PRIVACY_POLICY")).padding()
                 }
                 .background(AppColor.backgroundPrimary.ignoresSafeArea())
                 .navigationTitle("Privacy Policy")
@@ -135,91 +285,12 @@ struct OnboardingView: View {
                 Text(text)
                     .font(.footnote)
                     .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            Spacer(minLength: 0)
         }
         .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColor.backgroundSecondary,
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-    }
-
-    /// A Purpose/Science page: the styled doc with a soft fade at the bottom edge
-    /// so long copy visibly continues under the Continue button.
-    private func docPage(_ name: String, animated: Bool) -> some View {
-        ScrollView {
-            MarkdownView(markdown: DocLoader.load(name), animated: animated)
-                .padding(.vertical, 8)
-        }
-        .scrollIndicators(.hidden)
-        .mask(
-            VStack(spacing: 0) {
-                Rectangle()
-                LinearGradient(colors: [.black, .clear],
-                               startPoint: .top, endPoint: .bottom)
-                    .frame(height: 28)
-            }
-        )
-    }
-
-    @ViewBuilder
-    private var footer: some View {
-        switch step {
-        case .purpose:
-            Button("Continue") { withAnimation(.easeInOut(duration: 0.4)) { step = .science } }
-                .buttonStyle(PrimaryButtonStyle())
-        case .science:
-            Button("Continue") { withAnimation(.easeInOut(duration: 0.4)) { step = .health } }
-                .buttonStyle(PrimaryButtonStyle())
-        case .health:
-            Button("I consent — continue") { withAnimation(.easeInOut(duration: 0.4)) { step = .signIn } }
-                .buttonStyle(PrimaryButtonStyle())
-        case .signIn:
-            VStack(spacing: 12) {
-                SignInWithAppleButton(.signIn) { request in
-                    request.requestedScopes = [.fullName, .email]
-                } onCompletion: { result in
-                    handle(result)
-                }
-                .signInWithAppleButtonStyle(.white)
-                .frame(height: 50)
-                .frame(maxWidth: 320)
-
-                #if DEBUG
-                Button("Skip for now (dev)") {
-                    SessionStore.completeOnboardingWithoutSignIn(in: modelContext)
-                }
-                .font(.caption2)
-                .foregroundStyle(AppColor.textSecondary)
-                #endif
-            }
-            .fadeInUp(delay: 1.4)
-        }
-    }
-
-    private func handle(_ result: Result<ASAuthorization, Error>) {
-        switch result {
-        case .success(let auth):
-            guard let cred = auth.credential as? ASAuthorizationAppleIDCredential else {
-                errorText = "Unexpected credential."
-                return
-            }
-            SessionStore.signIn(
-                appleUserID: cred.user,
-                email: cred.email,
-                displayName: cred.fullName.flatMap(formattedName),
-                in: modelContext
-            )
-            // RootView's @Query on Preferences re-renders into the app.
-        case .failure(let error):
-            // User-cancelled is not an error worth surfacing.
-            if (error as? ASAuthorizationError)?.code == .canceled { return }
-            errorText = error.localizedDescription
-        }
-    }
-
-    private func formattedName(_ comps: PersonNameComponents) -> String? {
-        let formatter = PersonNameComponentsFormatter()
-        let s = formatter.string(from: comps)
-        return s.isEmpty ? nil : s
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 }

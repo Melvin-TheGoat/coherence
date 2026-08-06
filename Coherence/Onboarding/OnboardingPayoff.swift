@@ -1,0 +1,651 @@
+import SwiftUI
+import Charts
+
+/// Screens 10–25: the calculation, what they told us reflected back, the proof
+/// of mechanism, the wall, their profile and projection, the commitment, and
+/// the offer.
+///
+/// **Integrity rules held throughout, from ONBOARDING.md:**
+/// - No invented goal date. The projection is arithmetic from their own
+///   committed days-per-week, and says so in a footnote.
+/// - No fabricated scarcity, no countdown, no "94% off".
+/// - No social proof we don't have. We have zero users and no press, so those
+///   slots stay empty rather than filled with invention.
+/// - Tier-1 names are quoted verbatim; Tier-2 are described as practising,
+///   never quoted, and rendered visibly quieter.
+
+// MARK: - 10 · Calculating
+
+/// The loading screen treated as a feature. Every subtitle names something the
+/// app genuinely does — nothing here is theatre for its own sake.
+struct CalculatingScreen: View {
+    let onDone: () -> Void
+    @State private var step = 0
+
+    private let lines = ["Reading your answers…",
+                         "Matching them to what makes people quit…",
+                         "Setting your anchor…",
+                         "Building your profile…"]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer()
+            ZStack {
+                Circle()
+                    .stroke(AppColor.textSecondary.opacity(0.15), lineWidth: 5)
+                Circle()
+                    .trim(from: 0, to: Double(step + 1) / Double(lines.count))
+                    .stroke(AppColor.accentGold,
+                            style: StrokeStyle(lineWidth: 5, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 0.8), value: step)
+                Text("\(Int(Double(step + 1) / Double(lines.count) * 100))%")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
+            .frame(width: 150, height: 150)
+
+            Text(lines[min(step, lines.count - 1)])
+                .font(OnboardingType.sub)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 30)
+                .id(step)
+                .transition(.opacity)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onboardingGround(.cost)
+        .task {
+            for i in 0..<lines.count {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                withAnimation { step = i }
+            }
+            try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { return }
+            onDone()
+        }
+    }
+}
+
+// MARK: - 11 · The result
+
+/// Their own answers, connected. The footnote is not decoration: it's the line
+/// that keeps this a reflection rather than a diagnosis.
+struct ResultScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    private var restartLine: String {
+        switch answers.restarts {
+        case .never: return "You're starting fresh."
+        case .once:  return "You've stopped once before."
+        case .few:   return "You've started and stopped a few times."
+        case .many, .some(.lostCount): return "You've started and stopped more times than you'd like."
+        case .none:  return "You're building the habit."
+        }
+    }
+
+    var body: some View {
+        OnboardingScreen(section: .cost,
+                         title: "Here's what you\njust told us.",
+                         ctaTitle: "That's about right",
+                         onContinue: onContinue) {
+            VStack(alignment: .leading, spacing: 14) {
+                reflection(restartLine,
+                           "That's the single most common thing in meditation — dropout is 21–54% in clinical trials, and it peaks in the first two weeks.")
+
+                if let cause = answers.primaryCause {
+                    reflection("You stop because: \(cause.label.lowercased()).",
+                               "That's not a character flaw. It's a missing feedback loop.")
+                }
+
+                if answers.isHighStress, let m = answers.primaryMotivation {
+                    reflection("You're carrying a lot, and you want \(m.label.lowercased()).",
+                               "Those two pull against each other. The stress is exactly what makes practice hardest to keep.")
+                }
+
+                Text("Your own answers, alongside published research on meditation-app dropout. Not a diagnosis.")
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.8))
+                    .padding(.top, 6)
+            }
+        }
+    }
+
+    private func reflection(_ headline: String, _ body: String) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(headline)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(body)
+                .font(.footnote)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+// MARK: - 12 · The cost
+
+/// Self-report only. We ask what it's costing; we never assign a condition.
+struct CostScreen: View {
+    let onContinue: () -> Void
+
+    private let areas = [("brain.head.profile", "Mind", "Thoughts that won't settle. Decisions that take longer than they should."),
+                         ("flame", "Discipline", "Things you meant to do, still undone. The gap between intention and follow-through."),
+                         ("hands.and.sparkles", "Spirit", "The sense that you're moving through days without being in them.")]
+
+    var body: some View {
+        OnboardingScreen(section: .cost,
+                         title: "What's it costing you?",
+                         subtitle: "Only you can answer this one.",
+                         ctaTitle: "I know",
+                         onContinue: onContinue) {
+            VStack(spacing: 12) {
+                ForEach(areas, id: \.1) { icon, title, body in
+                    HStack(alignment: .top, spacing: 14) {
+                        Image(systemName: icon)
+                            .font(.system(size: 17))
+                            .foregroundStyle(AppColor.accentGold)
+                            .frame(width: 28)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(title)
+                                .font(.system(size: 16, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppColor.textPrimary)
+                            Text(body)
+                                .font(.footnote)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(16)
+                    .background(AppColor.backgroundSecondary.opacity(0.7),
+                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 13–15 · Proof
+
+/// The mechanism, in three beats: your body already keeps score → so you get a
+/// number → and you can meditate however you like. Order matters: the number
+/// only reads as honest *after* the mechanism that makes it honest.
+struct ProofScreen: View {
+    enum Beat { case body, number, yourWay }
+
+    let beat: Beat
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .win, title: title, subtitle: subtitle,
+                         ctaTitle: beat == .yourWay ? "That's what I want" : "Go on",
+                         onContinue: onContinue) {
+            illustration.frame(maxWidth: .infinity).padding(.vertical, 10)
+        }
+    }
+
+    private var title: String {
+        switch beat {
+        case .body:    return "Your body already\nkeeps score."
+        case .number:  return "So you get a number."
+        case .yourWay: return "Meditate however\nyou like."
+        }
+    }
+
+    private var subtitle: String {
+        switch beat {
+        case .body:
+            return "When a session lands, your heart rate drifts down and your body goes still. Your Watch can see both. You just never got shown it."
+        case .number:
+            return "One score, after the session — never during. Watching a number climb would raise your heart rate and wreck the very thing it measures."
+        case .yourWay:
+            return "YouTube, Spotify, a podcast, prayer, or silence. Start the session, leave the app, put on whatever you actually meditate to. The Watch keeps measuring."
+        }
+    }
+
+    @ViewBuilder
+    private var illustration: some View {
+        switch beat {
+        case .body:
+            HStack(spacing: 26) {
+                signalTile("heart.fill", "Heart rate", "drifts down", AppColor.calmAccent)
+                signalTile("figure.stand", "Stillness", "settles", AppColor.calmAccent)
+            }
+        case .number:
+            ZStack {
+                Circle()
+                    .stroke(AppColor.textSecondary.opacity(0.15), lineWidth: 9)
+                Circle()
+                    .trim(from: 0, to: 0.81)
+                    .stroke(AppColor.accentGold,
+                            style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                VStack(spacing: 0) {
+                    Text("81")
+                        .font(.system(size: 40, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text("AFTER, NOT DURING")
+                        .font(.system(size: 8, weight: .heavy))
+                        .tracking(0.9)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            .frame(width: 150, height: 150)
+        case .yourWay:
+            VStack(spacing: 10) {
+                ForEach(["Your favourite teacher on YouTube",
+                         "That one Spotify playlist",
+                         "Prayer, in your own tradition",
+                         "Nothing at all"], id: \.self) { line in
+                    HStack(spacing: 11) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(AppColor.accentGold)
+                        Text(line)
+                            .font(.subheadline)
+                            .foregroundStyle(AppColor.textPrimary)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+        }
+    }
+
+    private func signalTile(_ icon: String, _ name: String, _ verb: String, _ tint: Color) -> some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 26))
+                .foregroundStyle(tint)
+            Text(name)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(verb)
+                .font(.caption2)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 22)
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+// MARK: - 16 · The wall
+
+/// Tier 1 is quoted verbatim. Tier 2 is described, never quoted, and rendered
+/// quieter so the difference is visible rather than just documented. The teams
+/// lead, because a pattern among people whose job is measurable performance
+/// reads as evidence rather than endorsement.
+struct WallScreen: View {
+    let onContinue: () -> Void
+
+    private struct Quote: Identifiable {
+        let id = UUID()
+        let who: String
+        let text: String
+        let verbatim: Bool
+    }
+
+    private let quotes: [Quote] = [
+        .init(who: "Phil Jackson's Bulls and Lakers",
+              text: "Ran mindfulness training through Michael Jordan's and Kobe Bryant's championship years.", verbatim: false),
+        .init(who: "The Seattle Seahawks",
+              text: "Have practised mindfulness as a team since 2011.", verbatim: false),
+        .init(who: "Ray Dalio",
+              text: "Transcendental Meditation has probably been the single most important reason for whatever success I've had.", verbatim: true),
+        .init(who: "Kobe Bryant",
+              text: "It's like having an anchor. If I don't do it, it feels like I'm constantly chasing the day.", verbatim: true),
+        .init(who: "Oprah Winfrey",
+              text: "Meditation reorders the natural flow of life… Decisions come easily, things fall into place, and there's no conflict.", verbatim: true),
+        .init(who: "Ray Dalio",
+              text: "It helps slow things down so that I can act calmly, even in the face of chaos, like a ninja in a street fight.", verbatim: true),
+        .init(who: "LeBron James, Novak Djokovic, Derek Jeter",
+              text: "All credit a meditation practice.", verbatim: false),
+        .init(who: "Jerry Seinfeld",
+              text: "Has practised Transcendental Meditation for roughly forty years.", verbatim: false),
+        .init(who: "Bill Gates, Jeff Bezos, Marc Benioff",
+              text: "Each have described a regular practice.", verbatim: false),
+    ]
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "You'd be in\nreasonable company.",
+                         subtitle: "People whose job is measurable performance keep arriving at the same habit.",
+                         ctaTitle: "Continue",
+                         onContinue: onContinue) {
+            VStack(spacing: 11) {
+                ForEach(quotes) { q in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(q.verbatim ? "“\(q.text)”" : q.text)
+                            .font(.system(size: 14, weight: q.verbatim ? .medium : .regular))
+                            .foregroundStyle(q.verbatim ? AppColor.textPrimary
+                                                        : AppColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(q.who)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGold)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(15)
+                    .background(AppColor.backgroundSecondary.opacity(q.verbatim ? 0.8 : 0.45),
+                                in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+                }
+
+                Text("Quoted lines are verbatim and on the record. The rest describe a documented practice without putting words in anyone's mouth.")
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.75))
+                    .padding(.top, 4)
+            }
+        }
+    }
+}
+
+// MARK: - 16b · Practice profile
+
+struct ProfileScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    var body: some View {
+        let p = PracticeProfile(from: answers)
+        return OnboardingScreen(section: .win,
+                                title: firstNameTitle,
+                                subtitle: "Four things you told us. We'll hold you to them.",
+                                onContinue: onContinue) {
+            VStack(spacing: 12) {
+                card("target", "What you're chasing", p.chasing)
+                card("arrow.trianglehead.2.clockwise", "Your pattern", p.pattern)
+                card("alarm", "Your anchor", p.anchorLine)
+                card("eye.trianglebadge.exclamationmark", "Your blind spot", p.blindSpot)
+            }
+        }
+    }
+
+    private var firstNameTitle: String {
+        let name = answers.firstName.trimmingCharacters(in: .whitespaces)
+        return name.isEmpty ? "Your practice profile" : "\(name)'s\npractice profile"
+    }
+
+    private func card(_ icon: String, _ label: String, _ value: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 16))
+                .foregroundStyle(AppColor.accentGold)
+                .frame(width: 30, height: 30)
+                .background(AppColor.accentGold.opacity(0.14),
+                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label.uppercased())
+                    .font(.system(size: 9, weight: .heavy))
+                    .tracking(0.9)
+                    .foregroundStyle(AppColor.textSecondary)
+                Text(value)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(15)
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+// MARK: - 16c · Projection
+
+/// The one number in onboarding that isn't simply repeated back — so it is
+/// real arithmetic from their committed days-per-week, and the footnote says
+/// exactly that. See `OnboardingProjection` and its tests.
+struct ProjectionScreen: View {
+    let daysPerWeek: Int
+    let onContinue: () -> Void
+
+    private var landing: Date? {
+        OnboardingProjection.streakDate(daysPerWeek: daysPerWeek, from: Date())
+    }
+
+    var body: some View {
+        let series = OnboardingProjection.weeklyCumulativeDays(daysPerWeek: daysPerWeek)
+        return OnboardingScreen(section: .win,
+                                title: headline,
+                                subtitle: "At \(daysPerWeek) sessions a week, this is what the next month looks like.",
+                                onContinue: onContinue) {
+            VStack(alignment: .leading, spacing: 14) {
+                Chart(Array(series.enumerated()), id: \.offset) { i, days in
+                    AreaMark(x: .value("Week", i + 1), y: .value("Sessions", days))
+                        .foregroundStyle(LinearGradient(colors: [AppColor.accentGold.opacity(0.28),
+                                                                 AppColor.accentGold.opacity(0.02)],
+                                                        startPoint: .top, endPoint: .bottom))
+                        .interpolationMethod(.catmullRom)
+                    LineMark(x: .value("Week", i + 1), y: .value("Sessions", days))
+                        .foregroundStyle(AppColor.accentGold)
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+                        .interpolationMethod(.catmullRom)
+                }
+                .chartXAxis {
+                    AxisMarks(values: Array(1...max(series.count, 1))) { v in
+                        AxisValueLabel { Text("Wk \(v.index + 1)").font(.caption2) }
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks { _ in
+                        AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                        AxisValueLabel().font(.caption2).foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+                .frame(height: 170)
+
+                Text("Simple arithmetic from the schedule you just chose — not a prediction about how you'll feel.")
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.8))
+            }
+        }
+    }
+
+    private var headline: String {
+        guard let landing else { return "Your first month" }
+        let f = DateFormatter()
+        f.dateFormat = "MMM d"
+        return "Your 30-day streak\nlands \(f.string(from: landing))."
+    }
+}
+
+// MARK: - 16d · How you'll get there
+
+/// Features mapped to the user's own words. Every row's left side is a phrase
+/// they selected — never a problem we invented for them.
+struct HowScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    private var rows: [(said: String, answer: String)] {
+        let chosen = DropoutCause.allCases.filter { answers.causes.contains($0) }
+        let source = chosen.isEmpty ? [DropoutCause.couldntTell] : chosen
+        // De-duplicate: two causes can share one answering feature.
+        var seen = Set<String>()
+        return source.compactMap { c in
+            guard !seen.contains(c.answer) else { return nil }
+            seen.insert(c.answer)
+            return (said: c.label, answer: c.answer)
+        }
+    }
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "How you'll\nget there.",
+                         subtitle: "Each one answers something you just told us.",
+                         onContinue: onContinue) {
+            VStack(spacing: 12) {
+                ForEach(rows, id: \.said) { row in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("“\(row.said)”")
+                            .font(.footnote.italic())
+                            .foregroundStyle(AppColor.textSecondary)
+                        HStack(spacing: 9) {
+                            Image(systemName: "arrow.turn.down.right")
+                                .font(.caption)
+                                .foregroundStyle(AppColor.accentGold)
+                            Text(row.answer)
+                                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                .foregroundStyle(AppColor.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(15)
+                    .background(AppColor.backgroundSecondary.opacity(0.7),
+                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - 20 · Commitment
+
+struct CommitmentScreen: View {
+    @Binding var daysPerWeek: Int
+    let anchor: Anchor?
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "Make it a promise.",
+                         ctaTitle: "I commit",
+                         onContinue: onContinue) {
+            VStack(spacing: 22) {
+                // Their own sentence, assembled from their own answers.
+                (Text("I'll practise ")
+                 + Text("\(daysPerWeek) days a week").foregroundStyle(AppColor.accentGold).bold()
+                 + Text(anchor.map { ", \($0.phrase)" } ?? "")
+                     .foregroundStyle(AppColor.accentGold).bold()
+                 + Text("."))
+                    .font(.system(size: 21, weight: .medium, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.vertical, 10)
+
+                HStack(spacing: 8) {
+                    ForEach(1...7, id: \.self) { d in
+                        Button { daysPerWeek = d } label: {
+                            Text("\(d)")
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .foregroundStyle(d == daysPerWeek ? AppColor.textOnAccent
+                                                                  : AppColor.textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 13)
+                                .background(d == daysPerWeek ? AppColor.accentGold
+                                                             : AppColor.backgroundSecondary.opacity(0.7),
+                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        }
+                        .buttonStyle(CardButtonStyle())
+                    }
+                }
+                .sensoryFeedback(.selection, trigger: daysPerWeek)
+
+                Text("Days per week")
+                    .font(.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+        }
+    }
+}
+
+// MARK: - 21 · Permission pre-prompt
+
+/// Asked after the commitment and phrased in their anchor, so a "no" doesn't
+/// burn the one system dialog iOS gives us.
+struct PermissionScreen: View {
+    let anchor: Anchor?
+    let onAllow: () -> Void
+    let onSkip: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "One nudge,\nat your time.",
+                         subtitle: anchor.map { "We'll remind you \($0.phrase) — the moment you just chose. Nothing else, ever." }
+                            ?? "One reminder a day at the time you choose. Nothing else, ever.",
+                         ctaTitle: "Turn on my reminder",
+                         onSkip: onSkip,
+                         onContinue: onAllow) {
+            HStack(spacing: 13) {
+                Image(systemName: "bell.badge")
+                    .font(.system(size: 17))
+                    .foregroundStyle(AppColor.accentGold)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("808")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text("Two minutes. Your Watch is ready.")
+                        .font(.footnote)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(15)
+            .background(AppColor.backgroundSecondary.opacity(0.8),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+}
+
+// MARK: - 22 · Your week
+
+struct WeekPreviewScreen: View {
+    let onContinue: () -> Void
+
+    private let days = [("Day 1", "Your first measured session. You'll see a number that means something."),
+                        ("Day 2", "A second point. Two points make a line."),
+                        ("Day 3", "The streak starts to feel like something you don't want to break."),
+                        ("Day 7", "A week of evidence, and the first honest answer to \"is this working?\"")]
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "Your first week.",
+                         onContinue: onContinue) {
+            VStack(spacing: 0) {
+                ForEach(Array(days.enumerated()), id: \.offset) { i, day in
+                    HStack(alignment: .top, spacing: 15) {
+                        VStack(spacing: 0) {
+                            Circle()
+                                .fill(AppColor.accentGold)
+                                .frame(width: 9, height: 9)
+                            if i < days.count - 1 {
+                                Rectangle()
+                                    .fill(AppColor.accentGold.opacity(0.3))
+                                    .frame(width: 1.5)
+                                    .frame(maxHeight: .infinity)
+                            }
+                        }
+                        .frame(width: 10)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(day.0)
+                                .font(.system(size: 15, weight: .bold, design: .rounded))
+                                .foregroundStyle(AppColor.accentGold)
+                            Text(day.1)
+                                .font(.footnote)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(.bottom, 20)
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+        }
+    }
+}
