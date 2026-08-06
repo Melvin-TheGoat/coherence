@@ -468,8 +468,99 @@ UI must coach it, and the 2-signal degrade path must stay.
     through a single `.sheet(item:)` over a `HomeSheet` enum; the AFTER
     coherence read chains into results via `onDismiss`. Do the same anywhere
     a screen needs more than one modal.
-- **Next: Phase 9 build-out + rest of Phase 8 launch checklist (LLC/DUNS/lawyer
-  in flight).** See `App_ROADMAP_v2.md`.
+- **MVP CUT + ONBOARDING (2026-08-05/06). Work is on the `mvp` branch.**
+  `full-feature-set` and tag `v1-full-feature-set` preserve everything removed.
+  - **The MVP is one promise: your Watch tracks your meditation and scores it.**
+    Melvin cut ~3,000 lines — belly breathing, camera PPG (`CoherenceAnalyzer` /
+    `CoherenceCapture` / `CoherenceMeasureView` all deleted), The Method and its
+    in-session cues, and the length picker. Every session is open-ended. New
+    session is one screen: "Ready when you are", one Begin, and `Open · Silence`
+    as a tappable line.
+  - **SwiftData properties were deliberately NOT removed.** `Session.bellyBreathing`
+    and the breathing/coherence fields on `MeditationStats` stay in the schema and
+    still render — dropping stored properties is a migration hazard and old history
+    must keep displaying. We just stopped writing them. `SignalEngine`'s breathing
+    path and its tests are intact; the Watch always passes `bellyBreathing: false`.
+  - **VERIFIED ON HARDWARE (Aziz, 2026-08-05) — the core promise works.** A full
+    session ran end to end, and mid-session he left 808 entirely and played a Joe
+    Dispenza meditation in another app. It kept tracking; results landed. That's
+    "bring your own audio, we measure it" proven on real devices. Melvin's new
+    30-second HR watchdog did not false-fire.
+  - **Sound SURVIVES, and the sheet was redesigned.** The guided journey leads
+    with its own card (art, kicker, runtime) — it's the only original content we
+    own. Silence sits under it badged DEFAULT, outside the scroll, subtitled
+    "or your own audio". Then three groups, each stating its own ordering:
+    nature by familiarity, brainwave **deepest-first** (delta 2.5 → theta 6 →
+    alpha 8), tones **low-to-high** (432 → 963). Sorting is derived from
+    `beatHz`/`carrierHz`, so a new preset lands correctly with no UI change.
+    Every row previews, and previewing selects.
+  - **Silent data bug fixed:** `begin()` hardcoded `mode: "frequency"` for
+    anything non-silent, filing nature and guided sessions under the wrong mode.
+    `SoundCatalog.mode(for:)` now derives it from the owning catalog.
+  - **ONBOARDING BUILT — the full flow from `ONBOARDING.md`.**
+    - `Shared/Onboarding/OnboardingModel.swift` — questions, answers, and the
+      arithmetic. Pure Foundation, 10 tests. Projection dates are hand-checked in
+      the tests (30 days at 5/week lands Sept 16) so a rounding change can't
+      quietly move the date we print at someone.
+    - `OnboardingKit.swift` — the **colour arc as a modifier**. Screens declare a
+      SECTION, never a colour: amber (relief) → teal (the body enters) → red
+      (cost) → gold (the win). No screen hand-rolls a background.
+    - Interview is now **12 questions**: baseline · why · stress · alone-with-
+      thoughts · doing-nothing · restarts · how-long · causes · watch gate ·
+      anchor · you · attribution.
+    - **Departures from the spec, deliberate:** commitment moved BEFORE the
+      projection (the projection is arithmetic *from* the committed days/week);
+      the progress rail shows during the interview only; paywall position is one
+      constant, `paywallInsideOnboarding`.
+  - **COPY RULES THAT COST US A CYCLE EACH — hold them:**
+    - **Name the subject.** Four headlines assumed context the user hadn't been
+      given ("You're not bad at this" — at what?). Screens are met in isolation;
+      each one must stand alone. Same applies to App Store screenshot captions.
+    - **THE GOLD RING MEANS A MEASURED SCORE, NOWHERE ELSE.** Calculating
+      originally used a ring with a percentage. That's the results screen's exact
+      object — reusing it for progress teaches people to read one as the other,
+      and then the real score arrives looking like something that means nothing.
+    - **We ask, we never tell.** We may ask whether someone's attention has
+      slipped; asserting it is a claim about their brain we cannot measure. Same
+      line the theta copy must respect.
+    - **Don't ask for data the user never collected.** A "how many of the last
+      seven days were you present for" question was cut for this: people don't
+      track it, so they guess or feel tested.
+    - **No invented number about the user.** The reference flow assigns a "64%
+      suited" score. We refuse: our only score is measured off a wrist, and a
+      fabricated one here would cost us the right to be believed later.
+    - **Tap-to-advance** on single-select (7 screens), with a **320 ms dwell** —
+      without it the tick never registers and it feels like the app jumped past
+      your answer. Multi-select and the slider keep Continue; so does the Watch
+      gate, because it branches and its button label warns you where it goes.
+  - **NOT wired: StoreKit.** No products configured. The trial button advances
+    the flow; nothing claims a charge occurred.
+  - **Workflow Aziz set (2026-08-06): design first, always.** Every screen gets an
+    HTML mockup for review *before* any Swift — including revisions to already-
+    approved screens.
+- **STILL TO DO (picked up 2026-08-06):**
+  - **Onboarding gaps:** the cost screen is passive where the reference flow has
+    the user *select* symptoms across four lenses (we dropped the selection along
+    with the fake score — they're separable); **theta on Proof 1**; the App Store
+    **rating prompt** (Aziz approved; `SKStoreReviewController`, no setup needed).
+  - **Paywall placement — needs Melvin + Aziz.** The spec's flow puts it at screen
+    23; its own open-questions section argues for after the first session. One
+    constant either way.
+  - **Onboarding answers barely change the app.** Only the anchor does (it sets the
+    reminder time). Motivation, stress, restarts and causes are used once for the
+    reflection screens then dropped — which is the documented "decorative
+    questions" failure. Cheap fix: home screen and verdict reference what they
+    said they were chasing.
+  - **`PURPOSE.md` and `SCIENCE.md` still describe the pre-MVP feature set**, as
+    does the website copy. Blocking TestFlight.
+  - Paired-device test of the **Watch app install** is done; a **timed** belly
+    session no longer exists, so that old test is moot.
+  - Business: **Delaware C-corp** question from the lawyer (he advised a DE
+    corporation over the MI LLC for hiring/investors/exit — this would ADD an
+    entity, not fix a mistake; the LLC, EIN and in-flight D-U-N-S all stay valid).
+    **D-U-N-S case 10747633** with D&B — documents sent, awaiting the number.
+    Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
+    Meta app ID still needed for zero-tap Instagram Stories.
 
 ## Toolchain notes (this machine)
 
@@ -644,10 +735,16 @@ SessionMode case — a Guided or Silence session can each be belly or regular.
 - `Coherence/` — iOS app sources (bundle `com.lockout.coherence`, embeds the Watch).
   `DesignKit.swift` holds the shared UI vocabulary (ScoreRing / EvidenceRow /
   MetaChip / MonthCalendar) — reach for it before writing a new card or row.
+  `Onboarding/` is the 26-screen flow: `OnboardingKit` (colour arc, CTA, option
+  rows, the screen scaffold), `OnboardingInterview` (the 12 questions),
+  `OnboardingPayoff` (calculating → projection), `OnboardingOffer` (paywall,
+  exit offer, sign-in), `OnboardingView` (routing + persistence).
 - `CoherenceWatch/` — watchOS app sources (no ModelContainer)
 - `Shared/` — compiled into both apps + the test target: `Models/`, `Engine/`
   (`SignalEngine.swift` — breathing/stillness/HR analysis — plus `StreakCalculator`
-  and `VerdictEngine.swift`, the rule-based spoken verdict), `Connectivity/`
+  and `VerdictEngine.swift`, the rule-based spoken verdict), `Onboarding/`
+  (`OnboardingModel.swift` — the interview's questions and its arithmetic, pure
+  and tested), `Connectivity/`
   (`SessionPayload.swift` — the Codable Watch↔phone transfer contract),
   `Session/` (`SessionStore.swift` — iOS persistence helpers),
   `Theme/AppColor.swift`, `Persistence.swift`, `Assets.xcassets`
