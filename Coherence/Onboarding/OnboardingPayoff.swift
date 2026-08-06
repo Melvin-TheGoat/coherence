@@ -156,7 +156,7 @@ struct ResultScreen: View {
                          onContinue: onContinue) {
             VStack(alignment: .leading, spacing: 14) {
                 reflection(restartLine,
-                           "That's the single most common thing in meditation — dropout is 21–54% in clinical trials, and it peaks in the first two weeks.")
+                           "That's the single most common thing in meditation. Dropout runs 21 to 54% in clinical trials, and it peaks in the first two weeks.")
 
                 if let cause = answers.primaryCause {
                     reflection("You stop because: \(cause.label.lowercased()).",
@@ -269,7 +269,7 @@ struct ProofScreen: View {
         case .body:
             return "When a session lands, your heart rate drifts down and your body goes still. Your Watch can see both. You just never got shown it."
         case .number:
-            return "One score, after the session — never during. Watching a number climb would raise your heart rate and wreck the very thing it measures."
+            return "One score, after the session. Never during: watching a number climb would raise your heart rate and wreck the very thing it measures."
         case .yourWay:
             return "YouTube, Spotify, a podcast, prayer, or silence. Start the session, leave the app, put on whatever you actually meditate to. The Watch keeps measuring."
         }
@@ -508,7 +508,7 @@ struct ProjectionScreen: View {
                 }
                 .frame(height: 170)
 
-                Text("Simple arithmetic from the schedule you just chose — not a prediction about how you'll feel.")
+                Text("Simple arithmetic from the schedule you just chose. Not a prediction about how you'll feel.")
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary.opacity(0.8))
             }
@@ -637,7 +637,7 @@ struct PermissionScreen: View {
     var body: some View {
         OnboardingScreen(section: .win,
                          title: "One nudge,\nat your time.",
-                         subtitle: anchor.map { "We'll remind you \($0.phrase) — the moment you just chose. Nothing else, ever." }
+                         subtitle: anchor.map { "We'll remind you \($0.phrase), the moment you just chose. Nothing else, ever." }
                             ?? "One reminder a day at the time you choose. Nothing else, ever.",
                          ctaTitle: "Turn on my reminder",
                          onSkip: onSkip,

@@ -119,7 +119,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 Task { @MainActor in
                     guard let self else { return }
                     if success {
-                        self.status = "Watch launched — meditate, then End on the Watch"
+                        self.status = "Watch launched. Meditate, then End on the Watch."
                         // The session is live: show the phone's mid-session screen.
                         self.active = ActiveSession(id: params.sessionID,
                                                     startedAt: Date(),

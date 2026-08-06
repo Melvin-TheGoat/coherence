@@ -310,7 +310,7 @@ struct ShareSessionSheet: View {
                                 storyHint = ok
                                     ? (InstagramShare.hasDirectHandoff
                                         ? nil
-                                        : "Card saved to Photos — tap the gallery in Instagram to add it.")
+                                        : "Card saved to Photos. Tap the gallery in Instagram to add it.")
                                     : "Allow 808 to add to Photos in Settings to share your story."
                             }
                         } label: {

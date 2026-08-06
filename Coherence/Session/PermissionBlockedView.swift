@@ -76,9 +76,9 @@ struct PermissionBlockedView: View {
     private var explanation: String {
         switch failure {
         case .heartRateUnavailable:
-            "Your settling heart rate is one of the signals 808 measures — without it there's no evidence your practice landed, so we won't start a session that can't be read.\n\nMake sure your Watch is on your wrist, then check the permission:"
+            "Your settling heart rate is one of the two signals 808 measures. Without it there's no evidence your practice landed, so we won't start a session that can't be read.\n\nMake sure your Watch is on your wrist, then check the permission:"
         case .workoutNotAuthorized:
-            "808 records a mindful workout on your Watch — that's what keeps it measuring for the whole session. Without it we can't capture anything."
+            "808 records a mindful workout on your Watch. That's what keeps it measuring for the whole session, and without it we can't capture anything."
         case .watchUnreachable:
             "808 measures your session on your Apple Watch, and the Watch couldn't be launched just now."
         }

@@ -113,7 +113,7 @@ struct SessionOptionsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Sessions run open-ended — end yours from the Watch whenever you're done. Anything you play in another app keeps playing.")
+                    Text("Sessions run open-ended. End yours from the Watch whenever you're done, and anything you play in another app keeps playing.")
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -211,7 +211,7 @@ struct SessionOptionsView: View {
                     Text("Silence")
                         .font(AppFont.callout.weight(.bold))
                         .foregroundStyle(AppColor.textPrimary)
-                    Text("Just the measurement — or your own audio")
+                    Text("Just the measurement, or your own audio")
                         .font(.caption2)
                         .foregroundStyle(AppColor.textSecondary)
                 }

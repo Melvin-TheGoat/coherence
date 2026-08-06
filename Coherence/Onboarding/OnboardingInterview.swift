@@ -317,7 +317,7 @@ struct RestartScreen: View {
     var body: some View {
         OnboardingScreen(section: .cost, progress: progress,
                          title: "How many times have you\ntried to make meditation stick?",
-                         subtitle: "No judgement — this is the single most common thing there is.",
+                         subtitle: "No judgement. This is the single most common thing there is.",
                          ctaEnabled: restarts != nil,
                          autoAdvances: true,
                          onContinue: onContinue) {
@@ -534,7 +534,7 @@ struct ReferralScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
-                         title: "One last thing —\nhow did you find us?",
+                         title: "One last thing.\nHow did you find us?",
                          subtitle: "It's the only way we know where to show up.",
                          ctaEnabled: referral != nil,
                          autoAdvances: true,

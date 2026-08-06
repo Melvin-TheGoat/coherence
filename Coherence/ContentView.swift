@@ -205,7 +205,7 @@ struct ContentView: View {
         guard !practicedToday else { return nil }
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         if streak.current > 1 {
-            return "Nothing measured today — a \(streak.current)-day streak is on the line"
+            return "Nothing measured today. Your \(streak.current)-day streak is on the line."
         }
         return sessions.isEmpty ? nil : "Nothing measured today"
     }
@@ -277,7 +277,7 @@ struct ContentView: View {
                 }
             }
             if sessions.isEmpty {
-                Text("No sessions yet — your evidence starts with the first one.")
+                Text("No sessions yet. Your evidence starts with the first one.")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)

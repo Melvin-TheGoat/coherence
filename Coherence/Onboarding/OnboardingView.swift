@@ -287,7 +287,7 @@ struct HealthConsentScreen: View {
                 consentRow("applewatch", "Measured only during sessions",
                            "Your Watch reads heart rate and movement only while a session you started is running.")
                 consentRow("iphone.and.arrow.forward", "Results stay on your device",
-                           "Session results are computed on your devices and never uploaded — not to us, not to iCloud.")
+                           "Session results are computed on your devices and never uploaded. Not to us, not to iCloud.")
                 consentRow("icloud", "Only your account syncs",
                            "Your account, preferences, and session log sync through your own private iCloud database.")
                 consentRow("hand.raised", "Never ads. Never sold.",

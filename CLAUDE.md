@@ -512,6 +512,16 @@ UI must coach it, and the 2-signal degrade path must stay.
       projection (the projection is arithmetic *from* the committed days/week);
       the progress rail shows during the interview only; paywall position is one
       constant, `paywallInsideOnboarding`.
+  - **NO EM DASHES IN USER-FACING COPY. EVER.** (Aziz, 2026-08-06, third time
+    he has raised it: website, DM scripts, now permanently.) The em dash is the
+    clearest tell that text was machine-written, and for a product whose pitch is
+    honesty about what it measures, prose that reads as generated undercuts the
+    claim before anyone reaches the substance. **Restructure the sentence rather
+    than swapping in another mark** — most em dashes hide a decision the writer
+    avoided making. Usually two sentences, sometimes a colon, often just delete
+    it. 27 were swept out of the app's strings on 2026-08-06; the count in
+    user-facing `"..."` literals should stay at zero. Code comments are exempt
+    (not user-visible). Same rule applies to anything written to Aziz directly.
   - **COPY RULES THAT COST US A CYCLE EACH — hold them:**
     - **Name the subject.** Four headlines assumed context the user hadn't been
       given ("You're not bad at this" — at what?). Screens are met in isolation;

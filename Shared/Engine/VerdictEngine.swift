@@ -58,16 +58,16 @@ public enum VerdictEngine {
         let headline: String
         switch overall {
         case 0.75...:      headline = "Your practice landed."
-        case 0.55..<0.75:  headline = "It landed — gently."
+        case 0.55..<0.75:  headline = "It landed, gently."
         case 0.35..<0.55:  headline = "A mixed one."
-        default:           headline = "A restless one — that happens."
+        default:           headline = "A restless one. That happens."
         }
 
         let sentence: String
         if claims.isEmpty {
             sentence = overall >= 0.55
                 ? "The signals agree: you settled."
-                : "The signals were faint this time. Showing up still counts — the streak holds."
+                : "The signals were faint this time. Showing up still counts, and the streak holds."
         } else {
             sentence = claims.prefix(3).joined(separator: ", ")
                 .replacingFirstLetterCapitalized() + "."

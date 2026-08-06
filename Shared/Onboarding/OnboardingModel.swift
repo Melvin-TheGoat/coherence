@@ -51,7 +51,7 @@ public enum CurrentFrequency: String, CaseIterable, Identifiable, Codable {
 
     public var label: String {
         switch self {
-        case .never:           return "Never — this would be the start"
+        case .never:           return "Never. This would be the start"
         case .triedNeverStuck: return "I've tried, it never stuck"
         case .fewTimesMonth:   return "A few times a month"
         case .mostWeeks:       return "Most weeks"
@@ -73,7 +73,7 @@ public enum AloneWithThoughts: String, CaseIterable, Identifiable, Codable {
 
     public var label: String {
         switch self {
-        case .notLikeIUsedTo: return "No — not like I used to"
+        case .notLikeIUsedTo: return "No, not like I used to"
         case .harder:         return "It's got harder"
         case .same:           return "About the same"
         case .better:         return "Actually better now"
@@ -192,7 +192,7 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         case .tooManyChoices: return "One tap. No length to pick, nothing to choose"
         case .forgot:         return "A nudge at the time you chose"
         case .feltWrong:      return "Your own audio, still measured"
-        case .noTime:         return "Sessions end when you end them — two minutes counts"
+        case .noTime:         return "Sessions end when you end them, so two minutes counts"
         case .gotBoring:      return "Your own audio, still measured"
         }
     }

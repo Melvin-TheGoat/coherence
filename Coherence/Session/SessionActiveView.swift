@@ -68,7 +68,7 @@ struct SessionActiveView: View {
                 // instead of sitting on a frozen countdown.
                 Text(finishing
                      ? "Finishing on your Watch…"
-                     : "Your Watch is measuring — let it settle")
+                     : "Your Watch is measuring. Let it settle.")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.center)

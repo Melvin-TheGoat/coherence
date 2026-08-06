@@ -172,7 +172,7 @@ struct SignInScreen: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 22)
 
-            Text("Sign in so your sessions and your streak survive a new phone. Apple handles it — there's no password to make.")
+            Text("Sign in so your sessions and your streak survive a new phone. Apple handles it, so there's no password to make.")
                 .font(OnboardingType.sub)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)

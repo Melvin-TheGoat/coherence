@@ -302,7 +302,7 @@ struct SessionResultsView: View {
     private func coherenceCaption(pre: Double?, post: Double?) -> String {
         if let pre, let post {
             if post - pre >= 0.05 { return "Your rhythm smoothed out during the session." }
-            if pre - post >= 0.05 { return "Rhythm read lower after — reads vary; the trend over weeks is what counts." }
+            if pre - post >= 0.05 { return "Rhythm read lower after. Single reads vary; the trend over weeks is what counts." }
             return "Rhythm held steady through the session."
         }
         return "Pulse read from your fingertip on the camera, 45 seconds each side."
@@ -335,7 +335,7 @@ struct SessionResultsView: View {
             Image(systemName: "iphone.slash")
                 .font(.title3)
                 .foregroundStyle(AppColor.textSecondary)
-            Text("This session's measurements aren't on this device. Results are kept only on the device that recorded them — they're never uploaded.")
+            Text("This session's measurements aren't on this device. Results are kept only on the device that recorded them, and they're never uploaded.")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
         }
