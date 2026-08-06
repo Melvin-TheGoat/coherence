@@ -99,6 +99,17 @@ enum SoundCatalog {
             ?? NatureCatalog.preset(id: id)?.title
             ?? GuidedCatalog.preset(id: id)?.title
     }
+
+    /// The `Session.mode` an id belongs to. Callers used to hardcode
+    /// "frequency" for anything non-silent, which filed nature and guided
+    /// sessions under the wrong mode in stored history.
+    static func mode(for id: String?) -> String {
+        guard let id, !id.isEmpty else { return "silence" }
+        if GuidedCatalog.preset(id: id) != nil { return "guided" }
+        if NatureCatalog.preset(id: id) != nil { return "nature" }
+        if FrequencyCatalog.preset(id: id) != nil { return "frequency" }
+        return "silence"
+    }
 }
 
 /// Real-time tone synthesizer (phone-side — audio is a phone concern; the Watch only
