@@ -349,7 +349,7 @@ struct ProofScreen: View {
                 }
             }
         case .yourWay:
-            VStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(["Your favourite teacher on YouTube",
                          "That one Spotify playlist",
                          "Prayer, in your own tradition",
@@ -363,7 +363,35 @@ struct ProofScreen: View {
                         Spacer(minLength: 0)
                     }
                 }
+
+                // The built-in half. Every claim is shipped product: 4 nature
+                // loops, 7 frequency presets, and the guided identity track
+                // narrated professionally (Donny Baarns, commercial license).
+                Text("Not sure what to practice? Ours are built in.")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.top, 14)
+
+                builtInRow("leaf.fill", "Nature sounds, rain to campfire")
+                builtInRow("waveform", "Frequency tones and brainwave beds")
+                builtInRow("mic.fill", "A guided identity meditation, recorded by a professional")
             }
+        }
+    }
+
+    /// One built-in offering row. Teal, not gold: these are things we provide,
+    /// not things the user chose or achieved.
+    private func builtInRow(_ icon: String, _ text: String) -> some View {
+        HStack(spacing: 11) {
+            Image(systemName: icon)
+                .font(.system(size: 13))
+                .foregroundStyle(AppColor.calmAccent)
+                .frame(width: 20)
+            Text(text)
+                .font(.subheadline)
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
         }
     }
 
