@@ -35,7 +35,7 @@ struct OnboardingView: View {
         case watchGate, waitlist                               // 7, 7b
         case anchor, you, referral                             // 8–9, then attribution
         case calculating, result, cost                         // 10–12
-        case proofBody, proofNumber, proofYourWay              // 13–15
+        case proofBody, sampleStart, sampleBuild, proofYourWay // 13–15 (the pair replaced "so you get a number")
         case wall, profile, commitment, projection, how        // 16–16d, 20
         case permission, week, rating                          // 21–22, 22b
         case health                                            // consent, kept from the old flow
@@ -163,10 +163,15 @@ struct OnboardingView: View {
             CostScreen(costs: $answers.costs) { go(.proofBody) }
 
         case .proofBody:
-            ProofScreen(beat: .body) { go(.proofNumber) }
+            ProofScreen(beat: .body) { go(.sampleStart) }
 
-        case .proofNumber:
-            ProofScreen(beat: .number) { go(.proofYourWay) }
+        // The start/build pair: the last beat of the cost arc asks "so what's
+        // possible?", and the first beat of the win answers it.
+        case .sampleStart:
+            SampleSessionScreen(phase: .start) { go(.sampleBuild) }
+
+        case .sampleBuild:
+            SampleSessionScreen(phase: .build) { go(.proofYourWay) }
 
         case .proofYourWay:
             ProofScreen(beat: .yourWay) { go(.wall) }

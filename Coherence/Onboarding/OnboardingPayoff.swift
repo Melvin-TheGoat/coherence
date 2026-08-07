@@ -285,11 +285,12 @@ struct CostScreen: View {
 
 // MARK: - 13–15 · Proof
 
-/// The mechanism, in three beats: your body already keeps score → so you get a
-/// number → and you can meditate however you like. Order matters: the number
-/// only reads as honest *after* the mechanism that makes it honest.
+/// The mechanism: your body already keeps score (theta), then — after the two
+/// sample-session screens — you can meditate however you like. The old middle
+/// beat ("So you get a number", a static ring) was replaced by the start/build
+/// pair below, which shows the number discriminating instead of asserting it.
 struct ProofScreen: View {
-    enum Beat { case body, number, yourWay }
+    enum Beat { case body, yourWay }
 
     let beat: Beat
     let onContinue: () -> Void
@@ -310,7 +311,6 @@ struct ProofScreen: View {
     private var title: String {
         switch beat {
         case .body:    return "Deep meditation runs\non theta."
-        case .number:  return "So you get a number."
         case .yourWay: return "Meditate however\nyou like."
         }
     }
@@ -319,8 +319,6 @@ struct ProofScreen: View {
         switch beat {
         case .body:
             return "It's the slow brainwave state that shows up when someone really drops in. Measured in labs for decades."
-        case .number:
-            return "One score, after the session. Never during: watching a number climb would raise your heart rate and wreck the very thing it measures."
         case .yourWay:
             return "YouTube, Spotify, a podcast, prayer, or silence. Start the session, leave the app, put on whatever you actually meditate to. The Watch keeps measuring."
         }
@@ -342,26 +340,6 @@ struct ProofScreen: View {
                     signalTile("figure.mind.and.body", "Your body", "goes still", AppColor.calmAccent)
                 }
             }
-        case .number:
-            ZStack {
-                Circle()
-                    .stroke(AppColor.textSecondary.opacity(0.15), lineWidth: 9)
-                Circle()
-                    .trim(from: 0, to: 0.81)
-                    .stroke(AppColor.accentGold,
-                            style: StrokeStyle(lineWidth: 9, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                VStack(spacing: 0) {
-                    Text("81")
-                        .font(.system(size: 40, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text("AFTER, NOT DURING")
-                        .font(.system(size: 8, weight: .heavy))
-                        .tracking(0.9)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-            }
-            .frame(width: 150, height: 150)
         case .yourWay:
             VStack(spacing: 10) {
                 ForEach(["Your favourite teacher on YouTube",
@@ -478,6 +456,180 @@ private struct ThetaWave: Shape {
             x += 1
         }
         return p
+    }
+}
+
+// MARK: - 14a/14b · The start and the build (sample sessions)
+
+/// Two sample sessions bracketing the practice arc: an honest restless one
+/// ("where most people start") and a settled one ("where you can build to").
+/// This is the flow's incomplete-value beat, and it replaced both the static
+/// "So you get a number" ring AND the reference apps' invented fit-score —
+/// density without fabrication.
+///
+/// **The numbers are the documented Phase-4 test pair**, measured on a real
+/// wrist: a still session at ~0.86 stillness with HR settling, a fidgety one
+/// at ~0.22 with HR climbing. Both screens carry a SAMPLE badge because the
+/// "same person, days later" framing is a dramatization; every value on them
+/// is something the engine has actually emitted.
+///
+/// Copy rules (deliberate, don't soften):
+/// - "Where most PEOPLE start", never "where YOU will start" — a claim about
+///   people is defensible; a prediction about their brain is a failure prime.
+/// - The bad session is coached, never shamed: its verdict is the phrase
+///   bank's real line, and the subtitle says restless is normal.
+/// - The bad breath is fast-and-shallow ABOVE the resonance band, not an
+///   erratic scribble: incoherent tracks get refused by the engine outright,
+///   so a jagged rate curve would depict an output 808 can never produce.
+struct SampleSessionScreen: View {
+    enum Phase { case start, build }
+    let phase: Phase
+    let onContinue: () -> Void
+
+    /// The warm "wrong direction" tint used by curves moving against the user
+    /// (climbing HR, fast breath). Deliberately NOT a saturated alarm red —
+    /// the bad session is information, not a siren.
+    private let warn = Color(red: 0.78, green: 0.48, blue: 0.43)
+
+    var body: some View {
+        OnboardingScreen(section: phase == .start ? .cost : .win,
+                         title: phase == .start ? "Where most\npeople start."
+                                                : "Where you can\nbuild to.",
+                         subtitle: phase == .start
+                            ? "A real first week looks like this. Restless is normal; now it's measured."
+                            : "The same person, days later. Slow breath, settled heart, still body.",
+                         ctaTitle: phase == .start ? "So what's possible?" : "Show me how",
+                         onContinue: onContinue) {
+            VStack(alignment: .leading, spacing: 11) {
+                sampleBadge
+
+                HStack(spacing: 13) {
+                    ScoreRing(score: phase == .start ? 0.22 : 0.81, size: 58, lineWidth: 5)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(phase == .start ? "A restless one. That happens."
+                                             : "Your practice landed.")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(phase == .start ? "Evidence, not judgment. Every day counts."
+                                             : "Heart settled 11 beats. Breath found the resonance zone.")
+                            .font(.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                if phase == .start {
+                    panel(name: "Heart rate", tint: AppColor.calmAccent,
+                          value: "72 → 84 bpm · climbing",
+                          points: [72, 72.4, 73.2, 73, 74.6, 76, 77.2, 78.6, 80.2, 82, 84],
+                          domain: 70...85, lineTint: warn)
+                    // Irregular on purpose, and dense enough that catmull-rom
+                    // can't smooth it into a serene wave: fidgety must LOOK
+                    // fidgety next to the build screen's clean rise.
+                    panel(name: "Stillness", tint: AppColor.accentGold,
+                          value: "0.31 · fidgety",
+                          points: [0.38, 0.15, 0.42, 0.3, 0.12, 0.5, 0.22, 0.44, 0.1, 0.36,
+                                   0.52, 0.18, 0.4, 0.14, 0.46, 0.25, 0.35, 0.12, 0.44, 0.2, 0.33],
+                          domain: 0...1, lineTint: AppColor.accentGold.opacity(0.55))
+                    panel(name: "Breath", tint: AppColor.calmAccent,
+                          value: "13.8/min · quick, shallow",
+                          points: [14.5, 13.2, 14.8, 13.5, 14.2, 13.0, 14.4, 13.6, 14.6, 13.2, 14.0],
+                          domain: 4...16, lineTint: warn, resonanceBand: true)
+                } else {
+                    panel(name: "Heart rate", tint: AppColor.calmAccent,
+                          value: "74 → 63 bpm · settling",
+                          points: [74, 73.6, 73, 72, 70.6, 69, 67.6, 66, 65, 63.8, 63],
+                          domain: 60...75, lineTint: AppColor.calmAccent)
+                    panel(name: "Stillness", tint: AppColor.accentGold,
+                          value: "0.86 · nearly still",
+                          points: [0.55, 0.66, 0.74, 0.8, 0.84, 0.87, 0.88, 0.89, 0.9, 0.9, 0.91],
+                          domain: 0...1, lineTint: AppColor.accentGold)
+                    panel(name: "Breath", tint: AppColor.calmAccent,
+                          value: "5.9/min · resonance",
+                          points: [6.6, 6.3, 6.1, 6.0, 5.9, 5.85, 5.9, 5.85, 5.8, 5.85, 5.9],
+                          domain: 4...8, lineTint: AppColor.calmAccent, resonanceBand: true)
+                }
+            }
+        }
+    }
+
+    private var sampleBadge: some View {
+        Text("SAMPLE SESSION")
+            .font(.system(size: 9, weight: .black))
+            .tracking(1.2)
+            .foregroundStyle(AppColor.calmAccent)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 3)
+            .overlay(Capsule().stroke(AppColor.calmAccent.opacity(0.4), lineWidth: 1))
+    }
+
+    /// One labeled mini-graph: signal name, headline value, curve with real
+    /// axes (same chart grammar as the results screen, so this teaches the
+    /// reading before it matters). `resonanceBand` shades 4.5–7 breaths/min in
+    /// teal — the bad breath rides above it, the good one inside it, and the
+    /// band placement tells that story without a word.
+    private func panel(name: String, tint: Color, value: String,
+                       points: [Double], domain: ClosedRange<Double>,
+                       lineTint: Color, resonanceBand: Bool = false) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(name.uppercased())
+                    .font(.system(size: 10, weight: .heavy))
+                    .tracking(0.7)
+                    .foregroundStyle(tint)
+                Spacer()
+                Text(value)
+                    .font(.system(size: 11))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            // X is normalized to 0–10 minutes regardless of how many points a
+            // curve carries, so denser (jagged) series and sparse ones share
+            // one time axis.
+            let xStep = 10.0 / Double(max(points.count - 1, 1))
+            Chart {
+                if resonanceBand {
+                    RectangleMark(xStart: .value("t", 0.0), xEnd: .value("t", 10.0),
+                                  yStart: .value("v", 4.5), yEnd: .value("v", 7.0))
+                        .foregroundStyle(AppColor.calmAccent.opacity(0.18))
+                }
+                ForEach(Array(points.enumerated()), id: \.offset) { i, v in
+                    LineMark(x: .value("t", Double(i) * xStep), y: .value("v", v))
+                        .foregroundStyle(lineTint)
+                        .lineStyle(StrokeStyle(lineWidth: 2, lineCap: .round))
+                        .interpolationMethod(.catmullRom)
+                }
+            }
+            .chartYScale(domain: domain)
+            .chartXScale(domain: 0...10)
+            .chartXAxis(.hidden)
+            .chartYAxis {
+                // Leading, like the mockup — trailing collided with the
+                // "10 min" x-label at the right edge.
+                AxisMarks(position: .leading,
+                          values: [domain.lowerBound, domain.upperBound]) { _ in
+                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    AxisValueLabel()
+                        .font(.system(size: 8))
+                        .foregroundStyle(AppColor.textSecondary.opacity(0.85))
+                }
+            }
+            .frame(height: 56)
+
+            // Plain row rather than chart axis marks: the "10 min" label sat
+            // on the chart's right edge and got clipped.
+            HStack {
+                Text("0")
+                Spacer()
+                Text("10 min")
+            }
+            .font(.system(size: 8))
+            .foregroundStyle(AppColor.textSecondary.opacity(0.85))
+            .padding(.leading, 20)   // clear the y-axis gutter
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 11)
+        .background(AppColor.backgroundSecondary.opacity(0.72),
+                    in: RoundedRectangle(cornerRadius: 15, style: .continuous))
     }
 }
 
