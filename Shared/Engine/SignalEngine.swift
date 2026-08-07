@@ -155,6 +155,11 @@ enum SignalEngine {
         // the pilot; quiet automatic breathing ~55–68%. The floor keeps a
         // flickering half-curve from shipping: either the session's breath was
         // readable, or 808 says nothing — never a guess.
+    private static let wristMinRate = 3.5      // breaths/min. Settling drift
+        // leaks spectral power right at the band's bottom edge, so a window
+        // whose "breath" sits at the boundary bin is indistinguishable from
+        // drift by construction and must read as nothing. Real deliberate
+        // breathing runs 4–8/min; nothing legitimate lives at 3.0–3.4.
     private static let hrDeclineFull = 15.0    // bpm drop that maps to 1.0
     private static let stillnessGain = 5.0     // activity → stillness sharpness
     private static let attitudeWeight = 1.0    // radians vs g weighting in activity
@@ -276,13 +281,15 @@ enum SignalEngine {
             let rollW = bandPass(motion.map(\.roll), times: times, slowSec: 12)
             let axis = selectBreathingAxis(pitchBP: pitchW, rollBP: rollW, times: times,
                                            floor: wristAmpFloor, fMin: wristBandLo)
-            let amp = stddev(axis)
-            let (bestF, bestP, totalP) = dominantFrequency(times: times, values: axis,
-                                                            fMin: wristBandLo, fMax: breathBandHi)
-            let concentration = (totalP > 0 && !axis.isEmpty)
-                ? 2 * bestP / (totalP * Double(axis.count)) : 0
 
-            if amp >= wristAmpFloor && concentration >= concentrationMin && bestF > 0 {
+            // NO whole-file concentration gate here, deliberately — that gate
+            // assumes a stationary rate. A real breath that drifts (the first
+            // live session read 6.6 → 9.5/min across one minute) smears the
+            // whole-file peak below the clarity floor and got rejected even
+            // though every individual window was clean. Per-window gates below
+            // (amplitude, clarity, movement, readable fraction) are the real
+            // guards; the whole-file check only ever added this failure mode.
+            if stddev(axis) >= wristAmpFloor {
                 // Movement gate, relative to this session's own baseline: a slow
                 // arm reposition sits at only ~1.6× the median window accel and
                 // masquerades as a clean slow breath, so gated windows read 0
@@ -299,10 +306,15 @@ enum SignalEngine {
                     if idx.count >= 8 && windowAccel[i] <= gate {
                         let wt = idx.map { times[$0] }
                         let wp = idx.map { axis[$0] }
+                        // Per-window amplitude floor: with the whole-file gate
+                        // gone this is what keeps a near-flat window's noise
+                        // from showing a spuriously clean peak.
                         let (f, p, tot) = dominantFrequency(times: wt, values: wp,
                                                             fMin: wristBandLo, fMax: breathBandHi)
                         let conc = (tot > 0) ? 2 * p / (tot * Double(wp.count)) : 0
-                        rates.append((conc >= concentrationMin && f > 0) ? f * 60 : 0)
+                        let readable = stddev(wp) >= wristAmpFloor && conc >= concentrationMin
+                            && f * 60 >= wristMinRate
+                        rates.append(readable ? f * 60 : 0)
                         depths.append((wp.max() ?? 0) - (wp.min() ?? 0))
                     } else {
                         rates.append(0)

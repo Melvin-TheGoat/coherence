@@ -208,6 +208,23 @@ final class SignalEngineTests: XCTestCase {
                        "the shift must be excluded, not averaged into the rate")
     }
 
+    /// A breath whose rate DRIFTS must still read. Regression for the first
+    /// live session after the pilot: a real user's slow breathing sped from
+    /// ~6.5 to ~9.5/min across one minute, every window read cleanly, and the
+    /// whole-file concentration gate — which assumes a stationary rate — threw
+    /// the session away because the drifting peak was smeared. That gate is
+    /// gone; this pins its absence.
+    func test_wristSession_driftingRateStillReads() {
+        // Linear chirp 0.1 → 0.16 Hz (6 → 9.6/min): phase = 2π(f0·t + k/2·t²).
+        let f0 = 0.1, k = (0.16 - 0.1) / 120.0
+        let m = motion(dur: 120, pitch: { t in 0.006 * sin(2 * .pi * (f0 * t + k / 2 * t * t)) })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate, "a drifting breath must not be rejected wholesale")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 7.8, accuracy: 1.2,
+                       "mean should land mid-drift")
+    }
+
     /// Breath readable in under half the windows (quiet automatic breathing in
     /// the pilot: 55–68% at best, often less) → the whole signal is dropped
     /// rather than shipping a flickering half-curve. Here: a breath that simply
