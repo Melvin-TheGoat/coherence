@@ -5,19 +5,30 @@ import HealthKit
 /// target — the iOS target only calls `startWatchApp` (Phase 4) and reads no
 /// biometric data.
 ///
-/// Minimal scope for the motion-based model: heart-rate READ (the deceleration
-/// signal) + workout SHARE (to run the `.mindAndBody` session that keeps the app
-/// active and streams HR). No HRV / heartbeat-series — those were for the dropped
-/// coherence path.
+/// Scope: heart-rate READ (the deceleration signal), **HRV SDNN READ**, and
+/// workout SHARE (to run the `.mindAndBody` session that keeps the app active
+/// and streams HR).
+///
+/// **HRV and heart coherence are not the same thing, and only one of them is
+/// out of reach.** This file used to say "no HRV / heartbeat-series, those were
+/// for the dropped coherence path", which conflated them and cost us a signal.
+/// Coherence needs the beat-to-beat interval *series*, which a third-party
+/// workout genuinely cannot get (verified on device, Phase 2, and still true).
+/// `heartRateVariabilitySDNN` is a single number the Watch computes itself and
+/// hands to any app with permission. It was dropped as collateral of a decision
+/// about something else.
+///
+/// Still NOT requested: `heartbeatSeries`. That one really is unavailable to us.
 enum HealthKitAuth {
 
     /// The single store instance the Watch uses for auth and workouts.
     static let store = HKHealthStore()
 
-    /// Types we READ: live heart rate and workouts.
+    /// Types we READ: live heart rate, HRV, and workouts.
     private static var readTypes: Set<HKObjectType> {
         [
             HKQuantityType(.heartRate),
+            HKQuantityType(.heartRateVariabilitySDNN),
             HKObjectType.workoutType(),
         ]
     }

@@ -46,6 +46,9 @@ struct SessionPayload: Codable, Equatable {
     /// TEMP diagnostic (belly only): the readability numbers, for calibrating the
     /// gate from the phone. Optional → backward-compatible; remove once dialed in.
     let bellyDiag: String?
+    /// Apple's SDNN for this session against the user's baseline. Optional so a
+    /// Watch running an older build still decodes.
+    let hrv: HRVSnapshot?
 
     init(
         sessionID: UUID,
@@ -56,7 +59,8 @@ struct SessionPayload: Codable, Equatable {
         durationSec: Int,
         discard: Bool,
         result: SignalResult?,
-        bellyDiag: String? = nil
+        bellyDiag: String? = nil,
+        hrv: HRVSnapshot? = nil
     ) {
         self.sessionID = sessionID
         self.startedAt = startedAt
@@ -67,5 +71,6 @@ struct SessionPayload: Codable, Equatable {
         self.discard = discard
         self.result = result
         self.bellyDiag = bellyDiag
+        self.hrv = hrv
     }
 }

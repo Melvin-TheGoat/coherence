@@ -38,6 +38,18 @@ final class MeditationStats {
     var breathingRegularity: Double?
     var resonanceMatchScore: Double?
 
+    // HRV (SDNN), read from HealthKit — Apple computes it, we don't.
+    //
+    // NOT heart coherence, and not the RMSSD the camera path produced. Values
+    // are milliseconds. Empty/nil is a normal outcome: the Watch generates
+    // these opportunistically, so a short session may produce none. The
+    // baseline is the user's own mean over the preceding 30 days, which is
+    // what makes a single sample worth anything.
+    var hrvSDNNSamples: [Double] = []
+    var hrvMeanSDNN: Double?
+    var hrvBaselineSDNN: Double?
+    var hrvBaselineSampleCount: Int = 0
+
     // Combined "practice landed" summary
     var overallScore: Double?
 
@@ -82,6 +94,10 @@ final class MeditationStats {
         meanBreathingRate: Double? = nil,
         breathingRegularity: Double? = nil,
         resonanceMatchScore: Double? = nil,
+        hrvSDNNSamples: [Double] = [],
+        hrvMeanSDNN: Double? = nil,
+        hrvBaselineSDNN: Double? = nil,
+        hrvBaselineSampleCount: Int = 0,
         overallScore: Double? = nil,
         measurementSource: String = "watch",
         windowSec: Int = 30,
@@ -104,6 +120,10 @@ final class MeditationStats {
         self.meanBreathingRate = meanBreathingRate
         self.breathingRegularity = breathingRegularity
         self.resonanceMatchScore = resonanceMatchScore
+        self.hrvSDNNSamples = hrvSDNNSamples
+        self.hrvMeanSDNN = hrvMeanSDNN
+        self.hrvBaselineSDNN = hrvBaselineSDNN
+        self.hrvBaselineSampleCount = hrvBaselineSampleCount
         self.overallScore = overallScore
         self.measurementSource = measurementSource
         self.windowSec = windowSec

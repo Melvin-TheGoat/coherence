@@ -7,6 +7,9 @@ struct FinishedSession {
     let startedAt: Date
     let durationSec: Int
     let result: SignalResult
+    /// Apple's SDNN for the session, against the user's own baseline. Always
+    /// present; an empty reading inside it is a real answer, not a failure.
+    let hrv: HRVSnapshot
 }
 
 /// Runs the on-wrist workout and captures CoreMotion (stillness)
@@ -26,6 +29,7 @@ final class WorkoutManager: NSObject, ObservableObject {
 
     private let store = HealthKitAuth.store
     private let motion = MotionRecorder()
+    private let hrv = HRVRecorder()
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
 
@@ -88,6 +92,7 @@ final class WorkoutManager: NSObject, ObservableObject {
             sessionStart = startDate
             isRunning = true
             motion.start(reference: startDate)   // share the HR clock
+            hrv.start(reference: startDate)
             return true
         } catch {
             log.error("Failed to create workout session: \(error.localizedDescription)")
@@ -130,14 +135,20 @@ final class WorkoutManager: NSObject, ObservableObject {
         let result = SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: false)
         log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
 
+        // Deliberately after the analysis: this waits a few seconds for the
+        // system to flush the session's SDNN sample, and there's no reason to
+        // make the engine wait behind it.
+        let hrvSnapshot = await hrv.snapshot(end: startedAt.addingTimeInterval(Double(durationSec)))
 
         teardown()
-        return FinishedSession(startedAt: startedAt, durationSec: durationSec, result: result)
+        return FinishedSession(startedAt: startedAt, durationSec: durationSec,
+                               result: result, hrv: hrvSnapshot)
     }
 
     /// Drops references and marks the manager idle so a fresh `start()` can run.
     private func teardown() {
         isRunning = false
+        hrv.stop()
         session = nil
         builder = nil
     }

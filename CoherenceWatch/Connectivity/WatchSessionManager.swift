@@ -171,7 +171,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
             bellyBreathing: false,
             durationSec: finished.durationSec,
             discard: discard,
-            result: discard ? nil : finished.result
+            result: discard ? nil : finished.result,
+            hrv: discard ? nil : finished.hrv
         )
         send(payload)
         phase = .sent
