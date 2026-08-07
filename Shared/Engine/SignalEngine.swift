@@ -160,13 +160,21 @@ enum SignalEngine {
         // captures; the worst junk session managed 0.51 by scattered luck.
         // Either the session's breath was readable, or 808 says nothing —
         // never a flickering half-curve, never a guess.
-    private static let wristStrongConc = 0.65  // a window whose best axis is
-        // this clean speaks for itself (true reclined breathing ran 0.91–0.97).
-        // Below it, down to concentrationMin, a window is believed only when
-        // BOTH attitude axes agree on the rate (within 25%): a torso-driven
-        // breath rocks the whole arm together, so pitch and roll agreeing is
-        // physics, while junk drift produced *different* rhythms per axis in
-        // every observed case. Mediocre-and-disagreeing is how junk looks.
+    private static let wristSoloConc = 0.40    // the winning axis alone is
+        // believed at this clarity. A 9/min breath measured at 0.4–0.9 mrad
+        // (live session 5 — faster breathing is SHALLOWER breathing) ran conc
+        // 0.41–0.58 on the correct axis while the other axis carried junk, so
+        // demanding pristine-or-agreement refused a session whose pitch track
+        // averaged 9.0 against a counted 9. Between concentrationMin and this,
+        // a window is believed only when both axes agree on the rate (within
+        // 25%): a torso-driven breath rocks the whole arm together.
+    private static let wristMaxRateIQR = 2.0   // breaths/min, across the final
+        // readable curve. The junk-vs-truth tiebreak the per-window gates can't
+        // make: a true breath is ONE coherent track (drifting 6.6→9.5 still
+        // gave IQR 1.3–1.6), while junk assembles scattered plateaus at
+        // different rates (4.8 here, 8.2 there → IQR 2.5). A session whose
+        // readable rates spread wider than this is not one rhythm and ships
+        // as nothing.
     private static let wristMinRate = 3.5      // breaths/min. Settling drift
         // leaks spectral power right at the band's bottom edge, so a window
         // whose "breath" sits at the boundary bin is indistinguishable from
@@ -335,7 +343,7 @@ enum SignalEngine {
                         let amp = max(stddev(wpP), stddev(wpR))
                         let agree = fP > 0 && fR > 0 && abs(fP - fR) <= 0.25 * max(fP, fR)
                         let readable = amp >= wristAmpFloor && f * 60 >= wristMinRate
-                            && (conc >= wristStrongConc || (conc >= concentrationMin && agree))
+                            && (conc >= wristSoloConc || (conc >= concentrationMin && agree))
                         rates.append(readable ? f * 60 : 0)
                         depths.append((wp.max() ?? 0) - (wp.min() ?? 0))
                     } else {
@@ -347,7 +355,11 @@ enum SignalEngine {
 
                 let readable = rates.filter { $0 > 0 }
                 let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
-                if fraction >= wristMinReadableFraction {
+                // Track coherence: one rhythm or nothing (see wristMaxRateIQR).
+                let sortedR = readable.sorted()
+                let iqr = sortedR.isEmpty ? 0
+                    : sortedR[(sortedR.count * 3) / 4] - sortedR[sortedR.count / 4]
+                if fraction >= wristMinReadableFraction && iqr <= wristMaxRateIQR {
                     breathingReadable = true
                     breathingRateTimeseries = rates
                     breathDepthTimeseries = depths

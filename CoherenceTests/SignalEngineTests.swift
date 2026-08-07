@@ -239,6 +239,32 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertTrue(r.breathingRateTimeseries.isEmpty)
     }
 
+    /// A session carrying two different rhythms in different stretches is not a
+    /// breath track, it's junk assembling plateaus — the signature of the one
+    /// live session that misread (counted 11/min, would have displayed 6.8).
+    /// The rate-IQR gate must refuse it even though every window reads cleanly.
+    func test_wristSession_incoherentPlateausRefused() {
+        let m = motion(dur: 180, pitch: { t in
+            let hz = t < 60 ? 0.075 : (t < 120 ? 0.145 : 0.075)   // 4.5 vs 8.7/min
+            return 0.004 * sin(2 * .pi * hz * t)
+        })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.meanBreathingRate,
+                     "two disjoint rhythms must not average into one fake rate")
+    }
+
+    /// The 9/min case (live session 5): faster deliberate breathing is
+    /// shallower, so sub-millirad amplitude with only-moderate clarity on one
+    /// axis must still read — the counted rate was dead on the pitch track.
+    func test_wristSession_nineAMinuteShallowReads() {
+        let m = motion(dur: 120, pitch: sine(0.15, amp: 0.0009))   // 9/min, ~0.6 mrad sd
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate, "shallow 9/min must clear the floor")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 9.0, accuracy: 1.0)
+    }
+
     /// The score must be identical with and without a readable wrist breath —
     /// an unasked-for signal can never move the number. (Belly kept its opt-in
     /// 4-signal weighting; that path is unchanged.)
