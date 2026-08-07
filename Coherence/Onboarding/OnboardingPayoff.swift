@@ -337,14 +337,15 @@ struct ProofScreen: View {
         case .body:
             VStack(spacing: 16) {
                 ThetaWaveCard()
-                Text("But the body that goes with it **is** visible. When someone drops into that state, two things happen, and your Watch reads both.")
+                Text("But the body that goes with it **is** visible. When someone drops into that state, three things happen, and your Watch reads all three.")
                     .font(OnboardingType.sub)
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     signalTile("heart.fill", "Heart rate", "drifts down", AppColor.calmAccent)
                     signalTile("figure.mind.and.body", "Your body", "goes still", AppColor.calmAccent)
+                    signalTile("lungs.fill", "Your breath", "slows", AppColor.calmAccent)
                 }
             }
         case .yourWay:
