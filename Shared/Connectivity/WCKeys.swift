@@ -21,6 +21,14 @@ enum WCKeys {
     /// from `startWatchApp` (which fires seconds earlier and made timed
     /// sessions hit 0:00 on the phone while the Watch still had time left).
     static let started = "started"
+    /// Watch → Phone: a session the WATCH initiated has begun. Value is
+    /// "<sessionID>|<epochSeconds>|<soundID or empty>" — the phone joins it:
+    /// shows its mid-session screen and plays the chosen sound. Sent over
+    /// sendMessage ONLY, never the queued channels: a queued join replaying
+    /// hours later would resurrect a dead session's live screen, and if the
+    /// phone isn't reachable right now there is nothing for it to do anyway
+    /// (the session runs in silence and the payload still arrives).
+    static let watchBegin = "watchBegin"
 }
 
 /// Why a session refused to start on the Watch. Sent to the phone so it can

@@ -332,6 +332,37 @@ extension SessionCoordinator: WCSessionDelegate {
                     self.watchStarted(sessionID: id, at: Date(timeIntervalSince1970: epoch))
                 }
             }
+            return
         }
+        if let raw = dict[WCKeys.watchBegin] as? String {
+            // "<sessionID>|<epoch>|<soundID or empty>". Arrives over
+            // sendMessage only (never queued), so it can't replay stale.
+            let parts = raw.split(separator: "|", omittingEmptySubsequences: false)
+            if parts.count == 3, let id = UUID(uuidString: String(parts[0])),
+               let epoch = Double(parts[1]) {
+                let soundID = parts[2].isEmpty ? nil : String(parts[2])
+                Task { @MainActor in
+                    self.joinWatchSession(sessionID: id,
+                                          at: Date(timeIntervalSince1970: epoch),
+                                          soundID: soundID)
+                }
+            }
+        }
+    }
+
+    /// A session the Watch initiated: the phone joins it — mid-session screen
+    /// up, chosen sound playing — instead of orchestrating it. Everything
+    /// downstream (started re-anchor, payload, persist) is the existing path.
+    @MainActor
+    private func joinWatchSession(sessionID: UUID, at startedAt: Date, soundID: String?) {
+        guard currentAttemptID != sessionID else { return }   // double delivery
+        currentAttemptID = sessionID
+        if let soundID { pendingSoundIDs[sessionID] = soundID }
+        active = ActiveSession(id: sessionID,
+                               startedAt: startedAt,
+                               plannedDurationSec: nil,
+                               soundTitle: SoundCatalog.title(for: soundID))
+        startAudio(soundID: soundID, headphones: false, plannedDurationSec: nil)
+        status = "Started from your Watch. Meditate, then End on the Watch."
     }
 }

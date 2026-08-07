@@ -24,6 +24,26 @@ final class WatchSessionManager: NSObject, ObservableObject {
     @Published var params: SessionParams?
     @Published var statusMessage: String?
 
+    /// The sound chosen on the Watch for watch-initiated sessions. Persisted
+    /// between sessions; nil/empty = Silence. Audio always plays on the PHONE
+    /// (the Watch bundles none), so this is a request, not a player.
+    @Published var soundID: String? = UserDefaults.standard.string(forKey: soundKey) {
+        didSet { UserDefaults.standard.set(soundID, forKey: Self.soundKey) }
+    }
+    private static let soundKey = "watchSoundID"
+
+    /// Whether the phone acknowledged this watch-initiated session (reachable
+    /// at Begin). False + a chosen sound = the live screen's honest note that
+    /// today is silent.
+    @Published var phoneLinked = true
+    /// Whether the finished payload went over the immediate channel, so the
+    /// Sent screen can say "Delivered" vs "Saved, syncing when in range"
+    /// without guessing.
+    @Published var deliveredImmediately = false
+    /// True when this session began on the Watch (drives the silence note —
+    /// phone-initiated sessions manage their own audio).
+    @Published var startedOnWatch = false
+
     let workout = WorkoutManager()
     private var timer: Task<Void, Never>?
     /// Aborts the session if no heart rate ever arrives; see armHeartRateWatchdog.
@@ -52,9 +72,27 @@ final class WatchSessionManager: NSObject, ObservableObject {
         authorized = workout.isWorkoutAuthorized
     }
 
+    /// Begin from the wrist: the Watch composes its own params instead of
+    /// waiting for the phone's. Same pipeline from here on — workout, motion,
+    /// engine, payload — and the phone persists idempotently as always. The
+    /// one extra step is telling a reachable phone to join (live screen +
+    /// audio); an unreachable phone costs only the sound.
+    func beginFromWatch() {
+        let chosen = (soundID?.isEmpty == false) ? soundID : nil
+        let p = SessionParams(
+            sessionID: UUID(),
+            mode: SoundMenu.mode(for: chosen),
+            trackID: nil,
+            plannedDurationSec: nil,      // wrist sessions are open-ended
+            bellyBreathing: false,
+            hapticsEnabled: true
+        )
+        Task { await begin(p, watchInitiated: true) }
+    }
+
     /// Starts a session from received params (no-op if already running or if this
     /// session was already handled via another delivery channel).
-    private func begin(_ p: SessionParams) async {
+    private func begin(_ p: SessionParams, watchInitiated: Bool = false) async {
         // .sent is a 3-second cosmetic state; a user starting the next session
         // that fast shouldn't have it silently swallowed.
         if phase == .sent { phase = .idle }
@@ -84,18 +122,37 @@ final class WatchSessionManager: NSObject, ObservableObject {
         }
         statusMessage = nil
         phase = .running
+        startedOnWatch = watchInitiated
         startTimer(planned: p.plannedDurationSec)
         armHeartRateWatchdog(sessionID: p.sessionID)
 
-        // Tell the phone when the workout REALLY began so its mid-session
-        // clock and audio timer track this moment, not startWatchApp's
-        // (seconds-earlier) callback.
-        let ack = [WCKeys.started: "\(p.sessionID.uuidString)|\(Date().timeIntervalSince1970)"]
         let wc = WCSession.default
-        if wc.isReachable {
-            wc.sendMessage(ack, replyHandler: nil, errorHandler: nil)
+        if watchInitiated {
+            // Invite a reachable phone to join: live screen + the chosen sound.
+            // sendMessage ONLY — a queued join replaying later would resurrect
+            // a dead session's live screen, and an unreachable phone has
+            // nothing to do now anyway (the session runs; sound is the only
+            // loss, and the live screen says so).
+            let join = [WCKeys.watchBegin:
+                "\(p.sessionID.uuidString)|\(Date().timeIntervalSince1970)|\(soundID ?? "")"]
+            if wc.isReachable {
+                phoneLinked = true
+                wc.sendMessage(join, replyHandler: nil) { [weak self] _ in
+                    Task { @MainActor in self?.phoneLinked = false }
+                }
+            } else {
+                phoneLinked = false
+            }
+        } else {
+            // Tell the phone when the workout REALLY began so its mid-session
+            // clock and audio timer track this moment, not startWatchApp's
+            // (seconds-earlier) callback.
+            let ack = [WCKeys.started: "\(p.sessionID.uuidString)|\(Date().timeIntervalSince1970)"]
+            if wc.isReachable {
+                wc.sendMessage(ack, replyHandler: nil, errorHandler: nil)
+            }
+            wc.transferUserInfo(ack)
         }
-        wc.transferUserInfo(ack)
     }
 
     /// Tells the phone the session never started, so it can drop its
@@ -226,9 +283,13 @@ final class WatchSessionManager: NSObject, ObservableObject {
             // The phone dedupes by sessionID (idempotent persist), so hearing
             // it twice is harmless; hearing it late was the bug.
             if WCSession.default.isReachable {
+                deliveredImmediately = true
                 WCSession.default.sendMessage(dict, replyHandler: nil) { error in
                     self.log.error("sendMessage failed (userInfo backstop stands): \(error.localizedDescription)")
+                    Task { @MainActor in self.deliveredImmediately = false }
                 }
+            } else {
+                deliveredImmediately = false
             }
             WCSession.default.transferUserInfo(dict)
             log.debug("Sent payload for session \(payload.sessionID) (reachable=\(WCSession.default.isReachable))")

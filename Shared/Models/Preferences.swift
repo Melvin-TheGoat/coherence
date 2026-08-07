@@ -11,7 +11,11 @@ final class Preferences {
     var defaultDurationSec: Int?          // nil = open-ended
     var remindersEnabled: Bool = false
     var reminderTime: Date?
-    var theme: String = "system"
+    /// Dark by default (Aziz, 2026-08-08): every screen was designed
+    /// dark-first, so first impressions match the design intent. Light and
+    /// system stay available in Settings; existing users keep whatever they
+    /// had stored.
+    var theme: String = "dark"
     var hapticsEnabled: Bool = true
     var createdAt: Date = Date()
     var updatedAt: Date = Date()

@@ -1,79 +1,331 @@
 import SwiftUI
 
-/// Phase-4 Watch session UI: authorize once, then wait for the phone to start a
-/// session. During a session it shows only elapsed time + an End control — no
-/// live biometrics (evidence comes after, not during).
+/// The Watch app's four screens: a real start screen (Begin + sound choice),
+/// the live session, sending, and delivered. Sessions can begin from the wrist
+/// or from the phone; either way the pipeline is identical.
+///
+/// **No live biometrics anywhere** — evidence after, not during. The only
+/// "status" the live screen shows is a teal measuring dot.
 struct WatchContentView: View {
     @EnvironmentObject private var manager: WatchSessionManager
+    @State private var showSoundPicker = false
 
     var body: some View {
         ZStack {
-            AppColor.backgroundPrimary.ignoresSafeArea()
+            Color.black.ignoresSafeArea()
             content
-                .padding()
+        }
+        .sheet(isPresented: $showSoundPicker) {
+            NavigationStack {
+                SoundPickerView(selectedID: $manager.soundID)
+            }
         }
     }
 
     @ViewBuilder
     private var content: some View {
         if !manager.authorized {
-            VStack(spacing: 10) {
-                Text("808")
-                    .font(.headline)
-                    .foregroundStyle(AppColor.accentGold)
-                Button("Authorize") { Task { await manager.authorize() } }
-                    .tint(AppColor.accentGold)
-                if let msg = manager.statusMessage {
-                    Text(msg).font(.caption2).foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                }
-            }
+            authorizeScreen
         } else {
             switch manager.phase {
-            case .idle:
-                VStack(spacing: 8) {
-                    Text("Ready")
-                        .font(.headline)
-                        .foregroundStyle(AppColor.accentGold)
-                    Text("Start a session from your phone")
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                    // TEMP: surface why a launch didn't turn into a running session.
-                    if let msg = manager.statusMessage {
-                        Text(msg)
-                            .font(.caption2)
-                            .foregroundStyle(AppColor.accentGold)
-                            .multilineTextAlignment(.center)
-                    }
-                }
-            case .running:
-                VStack(spacing: 12) {
-                    Text(timeString(manager.elapsed))
-                        .font(.system(size: 40, weight: .semibold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundStyle(AppColor.accentGold)
-                    Button("End") { manager.endByUser() }
-                        .tint(AppColor.accentGold)
-                }
-            case .sending:
-                Text("Saving…")
-                    .font(.headline)
+            case .idle:    startScreen
+            case .running: liveScreen
+            case .sending: sendingScreen
+            case .sent:    sentScreen
+            }
+        }
+    }
+
+    // MARK: - First run
+
+    private var authorizeScreen: some View {
+        VStack(spacing: 10) {
+            markRow
+            Spacer()
+            Text("808 measures with your heart rate and motion.")
+                .font(.system(size: 13))
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+            Button("Allow") { Task { await manager.authorize() } }
+                .buttonStyle(.borderedProminent)
+                .tint(AppColor.accentGold)
+                .foregroundStyle(.black)
+            if let msg = manager.statusMessage {
+                Text(msg).font(.system(size: 11))
                     .foregroundStyle(AppColor.textSecondary)
-            case .sent:
-                VStack(spacing: 6) {
-                    Text("Done")
-                        .font(.headline)
-                        .foregroundStyle(AppColor.accentGold)
-                    Text("Sent to your phone")
-                        .font(.caption2)
+                    .multilineTextAlignment(.center)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 6)
+    }
+
+    // MARK: - Start
+
+    private var startScreen: some View {
+        VStack(spacing: 6) {
+            markRow
+
+            Spacer(minLength: 2)
+
+            Button(action: { manager.beginFromWatch() }) {
+                ZStack {
+                    Circle()
+                        .fill(RadialGradient(
+                            colors: [Color(red: 0.91, green: 0.77, blue: 0.35),
+                                     Color(red: 0.79, green: 0.60, blue: 0.17),
+                                     Color(red: 0.66, green: 0.49, blue: 0.11)],
+                            center: .init(x: 0.34, y: 0.30),
+                            startRadius: 4, endRadius: 90))
+                        .shadow(color: AppColor.accentGold.opacity(0.45), radius: 14, y: 6)
+                    Text("Begin")
+                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .foregroundStyle(Color(red: 0.09, green: 0.07, blue: 0.03))
+                }
+                .frame(width: 108, height: 108)
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 2)
+
+            Button(action: { showSoundPicker = true }) {
+                HStack(spacing: 6) {
+                    Image(systemName: "music.note")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppColor.calmAccent)
+                    Text(SoundMenu.title(for: manager.soundID))
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .lineLimit(1)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .bold))
                         .foregroundStyle(AppColor.textSecondary)
                 }
+                .padding(.horizontal, 13)
+                .padding(.vertical, 8)
+                .background(Color(white: 0.10), in: Capsule())
+            }
+            .buttonStyle(.plain)
+
+            // Surfaces a start refusal (no HR, not authorized) on the screen
+            // the user is actually looking at.
+            if let msg = manager.statusMessage {
+                Text(msg)
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppColor.accentGold)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
+    }
+
+    private var markRow: some View {
+        HStack(spacing: 6) {
+            LogoMark(lineWidthRatio: 0.09)   // heavier stroke at watch sizes
+                .frame(width: 17, height: 17)
+            Text("808")
+                .font(.system(size: 12, weight: .black, design: .rounded))
+                .tracking(2.4)
+                .foregroundStyle(AppColor.accentGold)
+        }
+    }
+
+    // MARK: - Live
+
+    private var liveScreen: some View {
+        ZStack {
+            BreathingOrb(elapsed: manager.elapsed)
+
+            VStack {
+                HStack(spacing: 5) {
+                    Circle().fill(AppColor.calmAccent).frame(width: 5, height: 5)
+                    Text(silentNote ?? "measuring")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer()
+                Button(action: { manager.endByUser() }) {
+                    Text("End")
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.78, green: 0.48, blue: 0.43))
+                        .padding(.horizontal, 38)
+                        .padding(.vertical, 10)
+                        .background(Color(white: 0.10), in: Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.bottom, 2)
+        }
+    }
+
+    /// The honest one-liner when a wrist-started session wanted sound but the
+    /// phone wasn't reachable: measurement is running, audio is not.
+    private var silentNote: String? {
+        guard manager.startedOnWatch, !manager.phoneLinked,
+              manager.soundID?.isEmpty == false else { return nil }
+        return "iPhone out of reach · silent"
+    }
+
+    // MARK: - Sending / sent
+
+    private var sendingScreen: some View {
+        VStack(spacing: 12) {
+            PhoneStream()
+            Text("Scoring your session")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            Text("Your evidence is on its way\nto your iPhone.")
+                .font(.system(size: 11))
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+    }
+
+    private var sentScreen: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.system(size: 30))
+                .foregroundStyle(AppColor.accentGold)
+            Text(manager.deliveredImmediately ? "Delivered" : "Saved")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(manager.deliveredImmediately
+                 ? "Open 808 to see it."
+                 : "It'll reach your iPhone\nwhen it's back in range.")
+                .font(.system(size: 11))
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+        }
+    }
+}
+
+// MARK: - The breathing orb
+
+/// Elapsed time inside a teal orb that breathes at 6/min (5 s in, 5 s out) —
+/// the resonance pace, so a glance at the wrist is itself a pacing cue.
+/// Holds still under Reduce Motion.
+private struct BreathingOrb: View {
+    let elapsed: Int
+    @State private var inhale = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(RadialGradient(colors: [AppColor.calmAccent.opacity(0.40),
+                                              AppColor.calmAccent.opacity(0.05),
+                                              .clear],
+                                     center: .center, startRadius: 4, endRadius: 74))
+            Circle()
+                .stroke(AppColor.calmAccent.opacity(0.35), lineWidth: 1.5)
+                .padding(14)
+            Text(timeString(elapsed))
+                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(AppColor.textPrimary)
+        }
+        .frame(width: 148, height: 148)
+        .scaleEffect(reduceMotion ? 1 : (inhale ? 1.05 : 0.86))
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
+                inhale = true
             }
         }
     }
 
     private func timeString(_ seconds: Int) -> String {
         String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+}
+
+// MARK: - Sending animation
+
+/// Gold dots streaming from the wrist up into a phone outline.
+private struct PhoneStream: View {
+    @State private var animate = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(spacing: 8) {
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .stroke(AppColor.textSecondary.opacity(0.6), lineWidth: 2)
+                .frame(width: 30, height: 50)
+            ZStack {
+                ForEach(0..<3, id: \.self) { i in
+                    Circle()
+                        .fill(AppColor.accentGold)
+                        .frame(width: 5, height: 5)
+                        .offset(y: animate ? -30 : 12)
+                        .opacity(animate ? 0 : 1)
+                        .animation(reduceMotion ? nil :
+                            .linear(duration: 1.4)
+                            .repeatForever(autoreverses: false)
+                            .delay(Double(i) * 0.45),
+                            value: animate)
+                }
+            }
+            .frame(height: 26)
+        }
+        .onAppear { animate = true }
+    }
+}
+
+// MARK: - Sound picker
+
+/// The full catalog, one crown-scrollable list in the sound sheet's shipped
+/// order. Selection is remembered between sessions; audio plays from the phone.
+private struct SoundPickerView: View {
+    @Binding var selectedID: String?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        List {
+            Section {
+                row(id: nil, title: "Silence", detail: nil)
+            } footer: {
+                Text("Plays from your iPhone")
+                    .font(.system(size: 10))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            ForEach(SoundMenu.groups) { group in
+                Section(group.name) {
+                    ForEach(group.entries) { entry in
+                        row(id: entry.id, title: entry.title, detail: entry.detail)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Sound")
+    }
+
+    private func row(id: String?, title: String, detail: String?) -> some View {
+        let isSelected = (selectedID ?? "").isEmpty ? id == nil : selectedID == id
+        return Button {
+            selectedID = id
+            dismiss()
+        } label: {
+            HStack(spacing: 8) {
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer(minLength: 0)
+                if let detail {
+                    Text(detail)
+                        .font(.system(size: 10))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 11, weight: .heavy))
+                        .foregroundStyle(AppColor.accentGold)
+                }
+            }
+        }
+        .listRowBackground(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(isSelected ? AppColor.accentGold.opacity(0.16) : Color(white: 0.10)))
     }
 }
