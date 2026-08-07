@@ -290,6 +290,22 @@ extension SessionCoordinator: WCSessionDelegate {
         handle(message)
     }
 
+    /// Raw motion captures from DEBUG Watch builds (the posture-free-breathing
+    /// and tremor experiments). Saved into Documents/MotionCaptures so they're
+    /// visible in the Files app (AirDrop to the Mac) and reachable by devicectl.
+    ///
+    /// The file at `file.fileURL` is deleted by the system when this returns,
+    /// so the copy must happen synchronously, not in a Task.
+    nonisolated func session(_ session: WCSession, didReceive file: WCSessionFile) {
+        let fm = FileManager.default
+        guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let dir = docs.appendingPathComponent("MotionCaptures", isDirectory: true)
+        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
+        let dest = dir.appendingPathComponent(file.fileURL.lastPathComponent)
+        try? fm.removeItem(at: dest)
+        try? fm.copyItem(at: file.fileURL, to: dest)
+    }
+
     /// Both delivery channels carry the same payloads — a finished session, or
     /// a refusal to start.
     private nonisolated func handle(_ dict: [String: Any]) {

@@ -23,7 +23,7 @@
 	<key>WKApplication</key>
 	<true/>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.lockout.coherence</string>
+	<string>com.azizmahmud.808</string>
 	<key>WKBackgroundModes</key>
 	<array>
 		<string>workout-processing</string>

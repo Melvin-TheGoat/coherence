@@ -145,6 +145,14 @@ final class WorkoutManager: NSObject, ObservableObject {
                                result: result, hrv: hrvSnapshot)
     }
 
+    #if DEBUG
+    /// The raw 100 Hz motion capture from the last session, as a CSV on disk.
+    /// Valid after `finish()` until the next `start()`. Experiment plumbing.
+    func rawMotionCaptureURL(sessionID: UUID) -> URL? {
+        motion.writeRawCapture(sessionID: sessionID)
+    }
+    #endif
+
     /// Drops references and marks the manager idle so a fresh `start()` can run.
     private func teardown() {
         isRunning = false

@@ -17,31 +17,70 @@ final class MotionRecorder {
     private var startTime: Date?
     private var buffer: [MotionSample] = []
 
+    #if DEBUG
+    /// Raw 100 Hz capture for the posture-free-breathing and tremor
+    /// experiments. DEBUG builds run CoreMotion at 100 Hz and keep the full
+    /// stream (attitude + userAccel vector) here, while the engine buffer is
+    /// decimated back to ~20 Hz so nothing downstream changes behavior — the
+    /// engine's numbers must stay comparable to release builds.
+    ///
+    /// 100 Hz because tremor lives at 8–12 Hz (needs >24 Hz by Nyquist, and
+    /// several× that to characterize), and because a wrist-BCG heartbeat, the
+    /// long shot, needs everything the sensor will give. Breathing alone would
+    /// be fine at 20.
+    ///
+    /// Memory: a 15-min session is ~90k rows × 7 doubles ≈ 5 MB. Fine in RAM.
+    private var rawBuffer: [RawMotionSample] = []
+    private var rawIndex = 0
+    #endif
+
     var isAvailable: Bool { manager.isDeviceMotionAvailable }
 
-    /// Begins device-motion updates at ~20 Hz. Clears any prior buffer.
-    /// Pass `reference` (the workout start) so motion timestamps share the HR
-    /// clock; defaults to now.
+    /// Begins device-motion updates (~20 Hz for the engine; 100 Hz raw in
+    /// DEBUG). Clears any prior buffer. Pass `reference` (the workout start) so
+    /// motion timestamps share the HR clock; defaults to now.
     func start(reference: Date? = nil) {
         guard manager.isDeviceMotionAvailable else { return }
         lock.lock()
         buffer.removeAll(keepingCapacity: true)
+        #if DEBUG
+        rawBuffer.removeAll(keepingCapacity: true)
+        rawIndex = 0
+        #endif
         startTime = reference ?? Date()
         lock.unlock()
 
         queue.maxConcurrentOperationCount = 1
+        #if DEBUG
+        manager.deviceMotionUpdateInterval = 1.0 / 100.0
+        #else
         manager.deviceMotionUpdateInterval = 1.0 / 20.0
+        #endif
         manager.startDeviceMotionUpdates(to: queue) { [weak self] motion, _ in
             guard let self, let motion, let start = self.startTime else { return }
             let a = motion.userAcceleration
+            let t = Date().timeIntervalSince(start)
             let sample = MotionSample(
-                t: Date().timeIntervalSince(start),
+                t: t,
                 pitch: motion.attitude.pitch,
                 roll: motion.attitude.roll,
                 userAccel: (a.x * a.x + a.y * a.y + a.z * a.z).squareRoot()
             )
             self.lock.lock()
+            #if DEBUG
+            self.rawBuffer.append(RawMotionSample(
+                t: t,
+                pitch: motion.attitude.pitch,
+                roll: motion.attitude.roll,
+                yaw: motion.attitude.yaw,
+                ax: a.x, ay: a.y, az: a.z
+            ))
+            // Every 5th raw sample feeds the engine: 100 / 5 = the usual 20 Hz.
+            if self.rawIndex % 5 == 0 { self.buffer.append(sample) }
+            self.rawIndex += 1
+            #else
             self.buffer.append(sample)
+            #endif
             self.lock.unlock()
         }
     }
@@ -56,7 +95,48 @@ final class MotionRecorder {
         defer { lock.unlock() }
         return buffer
     }
+
+    #if DEBUG
+    /// Writes the raw 100 Hz capture as CSV and returns the file URL, or nil if
+    /// nothing was captured. The caller owns shipping and deleting it.
+    func writeRawCapture(sessionID: UUID) -> URL? {
+        lock.lock()
+        let rows = rawBuffer
+        lock.unlock()
+        guard !rows.isEmpty else { return nil }
+
+        var csv = "t,pitch,roll,yaw,ax,ay,az\n"
+        csv.reserveCapacity(rows.count * 70)
+        for r in rows {
+            csv += String(format: "%.3f,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
+                          r.t, r.pitch, r.roll, r.yaw, r.ax, r.ay, r.az)
+        }
+        let url = FileManager.default.temporaryDirectory
+            .appendingPathComponent("motion-\(sessionID.uuidString).csv")
+        do {
+            try csv.write(to: url, atomically: true, encoding: .utf8)
+            return url
+        } catch {
+            return nil
+        }
+    }
+    #endif
 }
+
+#if DEBUG
+/// One raw 100 Hz motion sample: full attitude + the userAcceleration vector.
+/// The acceleration components stay separate (not the magnitude) because the
+/// tremor and BCG analyses need direction, not just size.
+struct RawMotionSample {
+    let t: Double
+    let pitch: Double
+    let roll: Double
+    let yaw: Double
+    let ax: Double
+    let ay: Double
+    let az: Double
+}
+#endif
 
 /// Lightweight breathing-rate estimate from the pitch signal — a Phase-2 debug
 /// aid to prove the wrist-on-belly motion is real. The rigorous Accelerate-based

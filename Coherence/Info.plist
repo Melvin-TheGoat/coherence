@@ -12,6 +12,14 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>808</string>
+	<!-- Documents visible in the Files app: motion-capture CSVs from the
+	     posture-free breathing / tremor experiments land in Documents and get
+	     pulled off the phone by AirDrop or devicectl. Harmless in release:
+	     Documents only ever holds these captures. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 	<key>CFBundleDisplayName</key>
 	<string>808</string>
 	<key>CFBundlePackageType</key>

@@ -175,6 +175,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
             hrv: discard ? nil : finished.hrv
         )
         send(payload)
+
+        #if DEBUG
+        // Ship the raw 100 Hz motion capture to the phone for the offline
+        // posture-free-breathing / tremor analysis. transferFile queues and
+        // survives the app backgrounding; the phone saves it into Documents.
+        if let url = workout.rawMotionCaptureURL(sessionID: p.sessionID) {
+            WCSession.default.transferFile(url, metadata: ["sessionID": p.sessionID.uuidString])
+        }
+        #endif
+
         phase = .sent
         params = nil
 
@@ -205,8 +215,23 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // throw, which previously dropped the whole transfer silently (belly-nil bug).
         do {
             let data = try JSONEncoder().encode(payload)
-            WCSession.default.transferUserInfo([WCKeys.payload: data])
-            log.debug("Sent payload for session \(payload.sessionID)")
+            let dict: [String: Any] = [WCKeys.payload: data]
+
+            // Both channels, deliberately — the same treatment params get in
+            // the other direction, and for the same reason. transferUserInfo
+            // is guaranteed but QUEUED: even with both apps live it can sit
+            // for tens of seconds, which read on the phone as "End on the
+            // Watch does nothing" while the finished session idled in the
+            // queue. sendMessage is immediate whenever the phone is reachable.
+            // The phone dedupes by sessionID (idempotent persist), so hearing
+            // it twice is harmless; hearing it late was the bug.
+            if WCSession.default.isReachable {
+                WCSession.default.sendMessage(dict, replyHandler: nil) { error in
+                    self.log.error("sendMessage failed (userInfo backstop stands): \(error.localizedDescription)")
+                }
+            }
+            WCSession.default.transferUserInfo(dict)
+            log.debug("Sent payload for session \(payload.sessionID) (reachable=\(WCSession.default.isReachable))")
         } catch {
             log.error("Payload encode FAILED — session NOT sent: \(String(describing: error))")
             statusMessage = "Send failed (encode)."
