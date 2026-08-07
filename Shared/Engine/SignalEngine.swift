@@ -137,9 +137,14 @@ enum SignalEngine {
     // breath; deliberate slow breathing came back at the paced rate in every
     // posture tried (6.0 seated conc .53, 5.9 reclined conc .86). All three
     // constants are measurements, not guesses:
-    private static let wristAmpFloor = 0.0015  // rad. Wrist waves are millirads —
-        // the cleanest session of the pilot (reclined) was 2.6 mrad sd, which the
-        // belly floor above would REJECT. Floor sits under that with margin.
+    private static let wristAmpFloor = 0.0005  // rad. Wrist waves are millirads —
+        // the pilot's cleanest session was 2.6 mrad sd, but a genuinely still
+        // user breathing gently measured 1.1–1.5 mrad (live session 3), which a
+        // 1.5 mrad floor rejected: the stiller the body, the SMALLER the wave.
+        // 0.5 mrad sits 2–3× above attitude sensor noise, so a watch on a table
+        // still reads nothing, while the quietest real breath observed clears
+        // it with double margin. The junk this floor doesn't catch (drift) is
+        // caught by the rate floor and concentration gates, not amplitude.
     private static let wristBandLo = 0.05      // Hz (3/min). The wrist's enemy is
         // settling drift, which showed up at ~2.1/min in every pilot capture and
         // out-powers the breath 6–15×. The belly band's 0.033 floor (held
@@ -150,11 +155,18 @@ enum SignalEngine {
         // clean fake ~2/min wave at only ~1.6× median accel (measured), far
         // under any absolute threshold that survives normal fidgeting. Relative
         // to the session's own median catches exactly the shift windows.
-    private static let wristMinReadableFraction = 0.5  // of windows, or breathing
-        // is dropped entirely. Deliberate breathing hit 85–100% of windows in
-        // the pilot; quiet automatic breathing ~55–68%. The floor keeps a
-        // flickering half-curve from shipping: either the session's breath was
-        // readable, or 808 says nothing — never a guess.
+    private static let wristMinReadableFraction = 0.6  // of windows, or breathing
+        // is dropped entirely. True sessions ran 0.85–1.00 across six live
+        // captures; the worst junk session managed 0.51 by scattered luck.
+        // Either the session's breath was readable, or 808 says nothing —
+        // never a flickering half-curve, never a guess.
+    private static let wristStrongConc = 0.65  // a window whose best axis is
+        // this clean speaks for itself (true reclined breathing ran 0.91–0.97).
+        // Below it, down to concentrationMin, a window is believed only when
+        // BOTH attitude axes agree on the rate (within 25%): a torso-driven
+        // breath rocks the whole arm together, so pitch and roll agreeing is
+        // physics, while junk drift produced *different* rhythms per axis in
+        // every observed case. Mediocre-and-disagreeing is how junk looks.
     private static let wristMinRate = 3.5      // breaths/min. Settling drift
         // leaks spectral power right at the band's bottom edge, so a window
         // whose "breath" sits at the boundary bin is indistinguishable from
@@ -304,16 +316,26 @@ enum SignalEngine {
                 for (i, win) in windows.enumerated() {
                     let idx = indices(times, in: win)
                     if idx.count >= 8 && windowAccel[i] <= gate {
+                        // Both axes, per window. The best axis by clarity gives
+                        // the rate; whether we BELIEVE it is the clean-or-agree
+                        // rule on wristStrongConc above. The amplitude floor
+                        // keeps a near-flat window's noise from showing a
+                        // spuriously clean peak; the rate floor keeps settling
+                        // drift's band-edge leakage from reading as breath.
                         let wt = idx.map { times[$0] }
-                        let wp = idx.map { axis[$0] }
-                        // Per-window amplitude floor: with the whole-file gate
-                        // gone this is what keeps a near-flat window's noise
-                        // from showing a spuriously clean peak.
-                        let (f, p, tot) = dominantFrequency(times: wt, values: wp,
-                                                            fMin: wristBandLo, fMax: breathBandHi)
-                        let conc = (tot > 0) ? 2 * p / (tot * Double(wp.count)) : 0
-                        let readable = stddev(wp) >= wristAmpFloor && conc >= concentrationMin
-                            && f * 60 >= wristMinRate
+                        let wpP = idx.map { pitchW[$0] }
+                        let wpR = idx.map { rollW[$0] }
+                        let (fP, pP, totP) = dominantFrequency(times: wt, values: wpP,
+                                                               fMin: wristBandLo, fMax: breathBandHi)
+                        let (fR, pR, totR) = dominantFrequency(times: wt, values: wpR,
+                                                               fMin: wristBandLo, fMax: breathBandHi)
+                        let cP = totP > 0 ? 2 * pP / (totP * Double(wpP.count)) : 0
+                        let cR = totR > 0 ? 2 * pR / (totR * Double(wpR.count)) : 0
+                        let (f, conc, wp) = cP >= cR ? (fP, cP, wpP) : (fR, cR, wpR)
+                        let amp = max(stddev(wpP), stddev(wpR))
+                        let agree = fP > 0 && fR > 0 && abs(fP - fR) <= 0.25 * max(fP, fR)
+                        let readable = amp >= wristAmpFloor && f * 60 >= wristMinRate
+                            && (conc >= wristStrongConc || (conc >= concentrationMin && agree))
                         rates.append(readable ? f * 60 : 0)
                         depths.append((wp.max() ?? 0) - (wp.min() ?? 0))
                     } else {

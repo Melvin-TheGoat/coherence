@@ -168,14 +168,15 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.stillnessMethod, "total")
     }
 
-    /// Wrist amplitudes are millirads — the pilot's cleanest session was a
-    /// 2.6 mrad sd wave the belly floor (4 mrad) would reject. The wrist floor
-    /// must read it.
+    /// Wrist amplitudes are millirads and shrink WITH stillness: the pilot's
+    /// cleanest wave was 2.6 mrad sd, but a genuinely settled user breathing
+    /// gently measured ~1.2 mrad (live session 3) and a 1.5 mrad floor threw
+    /// the session away. The floor must read the quietest real breath observed.
     func test_wristSession_readsMilliradAmplitude() {
-        let m = motion(dur: 120, pitch: { _ in 0 }, roll: sine(0.1, amp: 0.0035))
+        let m = motion(dur: 120, pitch: { _ in 0 }, roll: sine(0.1, amp: 0.0017))  // ≈1.2 mrad sd
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNotNil(r.meanBreathingRate, "millirad wrist wave must clear the wrist floor")
+        XCTAssertNotNil(r.meanBreathingRate, "the quietest observed real breath must clear the floor")
         XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.8)
     }
 
