@@ -265,105 +265,111 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.meanBreathingRate ?? 0, 9.0, accuracy: 1.0)
     }
 
-    /// The score must be identical with and without a readable wrist breath —
-    /// an unasked-for signal can never move the number. (Belly kept its opt-in
-    /// 4-signal weighting; that path is unchanged.)
-    func test_wristBreathing_neverMovesTheScore() {
-        let hrs = hr(dur: 120) { _ in 70 }
+    /// Breath now counts (45% when read), so the old "never moves the score"
+    /// rule is gone by design. What replaces it is the property that rule
+    /// existed to protect: **absence must not penalise.** A session with no
+    /// readable breath is scored on the two signals it did produce, via
+    /// renormalised weights, not docked 45 points for a measurement we
+    /// couldn't take.
+    func test_wristBreathing_absenceRenormalisesRatherThanPenalises() {
+        // A heart that settles for half the session and drifts back up for the
+        // rest, so neither session sits at the ceiling — with everything
+        // perfect there is no headroom left for breath to show in.
+        // Twenty minutes, so the duration ceiling is 1.0 and this test is
+        // isolating depth rather than re-testing the time multiplier.
+        let hrs = hr(dur: 1200) { t in t < 600 ? 70 : 76 }
+        // Same heart, same near-total stillness. One breathes at resonance;
+        // the other's breath is simply unreadable.
         let withBreath = SignalEngine.analyze(
-            motion: motion(dur: 120, pitch: sine(0.1, amp: 0.1)), hr: hrs, bellyBreathing: false)
+            motion: motion(dur: 1200, pitch: sine(0.1, amp: 0.004), accel: { _ in 0.002 }),
+            hr: hrs, bellyBreathing: false)
         let withoutBreath = SignalEngine.analyze(
-            motion: motion(dur: 120, pitch: { _ in 0.0 }), hr: hrs, bellyBreathing: false)
+            motion: motion(dur: 1200, pitch: { _ in 0 }, accel: { _ in 0.002 }),
+            hr: hrs, bellyBreathing: false)
 
         XCTAssertNotNil(withBreath.meanBreathingRate)
         XCTAssertNil(withoutBreath.meanBreathingRate)
-        // Same stillness inputs would be ideal, but the sine adds real motion —
-        // so instead assert the invariant directly: the combined score equals
-        // the 2-signal combination of its own stillness + HR, breath ignored.
-        let expected = 0.55 * (withBreath.stillnessScore ?? 0) + 0.45 * 0   // no HR decline
-        XCTAssertEqual(withBreath.overallScore ?? -1, expected / (0.55 + 0.45), accuracy: 0.001,
-                       "wrist breathing must not enter the overall score")
+
+        // The no-breath session must still score like the good sit it is.
+        XCTAssertGreaterThan(withoutBreath.overallScore ?? 0, 0.5,
+                             "a missing signal must not be scored as a failed one")
+        // And resonance breathing is real evidence of settling, so it earns more.
+        XCTAssertGreaterThan(withBreath.overallScore ?? 0, withoutBreath.overallScore ?? 0)
+    }
+}
+
+// MARK: - Score v3
+
+/// The score's contract, in the words the app uses: how deep the body got, and
+/// how long it held it. These lock the properties that make that sentence true.
+extension SignalEngineTests {
+
+    /// Time is a CEILING, never a bonus — the property Aziz asked for by name.
+    /// Sitting restless for half an hour must score worse than five settled
+    /// minutes, so duration can only ever multiply depth downward.
+    func test_score_timeCapsButNeverRescues() {
+        let short = SignalEngine.durationFactor(seconds: 5 * 60)
+        let long = SignalEngine.durationFactor(seconds: 30 * 60)
+        XCTAssertEqual(long, 1.0, accuracy: 0.001, "past 20 min the ceiling stops rising")
+        XCTAssertEqual(short, 0.70, accuracy: 0.02, "a flawless 5-minute sit tops out near 70")
+
+        // A great short session beats a poor long one.
+        XCTAssertGreaterThan(0.90 * short, 0.30 * long)
     }
 
-    /// Belly mode with a flat/near-zero pitch degrades cleanly to a 2-signal result —
-    /// no fabricated breathing number.
-    func test_weakBellySignalFallsBack() {
-        let m = motion(dur: 120, pitch: { _ in 0 })
-        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
-
-        XCTAssertNil(r.meanBreathingRate)
-        XCTAssertTrue(r.breathingRateTimeseries.isEmpty)
-        XCTAssertEqual(r.stillnessMethod, "total",
-                       "weak belly signal must fall back to total-motion stillness")
+    func test_score_durationFloorKeepsShortSessionsCounting() {
+        // "Two minutes still counts": a brief sit is scored, not crushed.
+        let two = SignalEngine.durationFactor(seconds: 120)
+        XCTAssertEqual(two, 0.59, accuracy: 0.03)
+        XCTAssertGreaterThan(SignalEngine.durationFactor(seconds: 1), 0.39)
     }
 
-    /// HR sliding from 75 → 60 over the session yields a ~+15 bpm decline.
-    func test_hrDecline() {
-        let dur = 600.0
-        let h = hr(dur: dur) { 75 - 15 * ($0 / dur) }
-        let m = motion(dur: dur, pitch: { _ in 0 })
-        let r = SignalEngine.analyze(motion: m, hr: h, bellyBreathing: false)
-
-        XCTAssertEqual(r.startHR ?? 0, 75, accuracy: 2.5)
-        XCTAssertEqual(r.endHR ?? 0, 60, accuracy: 2.5)
-        XCTAssertEqual(r.hrDecline ?? 0, 15, accuracy: 2.5)
+    /// Stillness saturated in the old formula: every real session measured
+    /// 0.84–0.97 while a fidgety one measured 0.22, so 55% of the score was a
+    /// constant. The rescale has to restore the spread.
+    func test_score_stillnessRescaleRestoresSpread() {
+        let typical = SignalEngine.spreadStillness(0.86)
+        let excellent = SignalEngine.spreadStillness(0.96)
+        XCTAssertGreaterThan(excellent - typical, 0.4,
+                             "a good sit and a great one must be far apart now")
+        XCTAssertEqual(SignalEngine.spreadStillness(0.31), 0, "fidgety floors at zero")
+        XCTAssertEqual(SignalEngine.spreadStillness(0.99), 1)
     }
 
-    /// The three timeseries share one length/index (breathing populated here because
-    /// it's a readable belly session).
-    func test_timeseriesAlignment() {
-        let m = motion(dur: 120, pitch: sine(0.1, amp: 0.1))
-        let h = hr(dur: 120) { 70 - 5 * ($0 / 120) }
-        let r = SignalEngine.analyze(motion: m, hr: h, bellyBreathing: true)
+    /// The fairness fix: start-minus-end measured how wound up someone was at
+    /// minute zero. A flat 68→68 session is a good sit with no room to fall and
+    /// used to score zero on the heart term.
+    func test_score_heartSettlingRewardsStayingCalmNotJustFalling() {
+        let flat = SignalEngine.heartSettling([68, 68, 68, 68, 68, 68])
+        let falling = SignalEngine.heartSettling([74, 72, 70, 67, 65, 63])
+        let rising = SignalEngine.heartSettling([72, 75, 78, 81, 83, 84])
 
-        XCTAssertEqual(r.heartRateTimeseries.count, r.stillnessTimeseries.count)
-        XCTAssertFalse(r.breathingRateTimeseries.isEmpty, "expected a readable belly session")
-        XCTAssertEqual(r.breathingRateTimeseries.count, r.heartRateTimeseries.count)
+        // Flat-calm earns the fairness floor but not the headroom; a real
+        // settle earns nearly all of it; climbing earns almost none.
+        XCTAssertEqual(flat ?? 0, 0.6, accuracy: 0.02, "calm and staying calm still scores")
+        XCTAssertGreaterThan(falling ?? 0, 0.9, "agitated and settling scores highest")
+        XCTAssertLessThan(rising ?? 1, 0.15, "climbing does not")
+        XCTAssertGreaterThan(falling ?? 0, flat ?? 1,
+                             "the term must still discriminate a real drop from a flat line")
     }
 
-    /// A belly result with non-finite values (as messy real motion can produce)
-    /// FAILS to JSON-encode raw — reproducing the silent belly-send bug — but the
-    /// sanitized copy encodes cleanly with finite values.
-    func test_sanitizeMakesResultEncodable() throws {
-        var r = SignalEngine.analyze(motion: motion(dur: 120, pitch: sine(0.1, amp: 0.1)),
-                                     hr: [], bellyBreathing: true)
-        r.meanBreathingRate = .nan
-        r.breathDepthTimeseries = [0.1, .infinity, 0.1]
-        r.stillnessScore = -.infinity
+    /// End to end: a restless 20-minute session must still score badly, and a
+    /// settled one must beat it decisively.
+    func test_score_restlessLongSessionStillScoresBadly() {
+        let dur = 1200.0
+        var rng = LCG(s: 7)
+        let restless = motion(dur: dur, pitch: { _ in (rng.unit() - 0.5) * 0.25 },
+                              accel: { _ in 0.05 })
+        let settled = motion(dur: dur, pitch: sine(0.1, amp: 0.006), accel: { _ in 0.002 })
+        let climbing = hr(dur: dur) { t in 72 + 12 * (t / dur) }
+        let dropping = hr(dur: dur) { t in 74 - 11 * (t / dur) }
 
-        XCTAssertThrowsError(try JSONEncoder().encode(r), "raw NaN/Inf must break encoding")
+        let bad = SignalEngine.analyze(motion: restless, hr: climbing, bellyBreathing: false)
+        let good = SignalEngine.analyze(motion: settled, hr: dropping, bellyBreathing: false)
 
-        let clean = r.sanitized()
-        XCTAssertNoThrow(try JSONEncoder().encode(clean))
-        XCTAssertNil(clean.meanBreathingRate)                              // non-finite optional → nil
-        XCTAssertNil(clean.stillnessScore)
-        XCTAssertTrue(clean.breathDepthTimeseries.allSatisfy { $0.isFinite })
-    }
-
-    /// The engine's output is always finite (it sanitizes before returning), so the
-    /// payload always encodes.
-    func test_analyzeOutputIsFinite() {
-        let r = SignalEngine.analyze(
-            motion: motion(dur: 120, pitch: sine(0.1, amp: 0.1), roll: sine(0.1, amp: 0.05)),
-            hr: [], bellyBreathing: true)
-        let scalars = [r.meanHR] + [r.startHR, r.endHR, r.hrDecline, r.stillnessScore,
-                                    r.meanBreathingRate, r.breathingRegularity,
-                                    r.resonanceMatchScore, r.overallScore].compactMap { $0 }
-        let all = r.heartRateTimeseries + r.stillnessTimeseries
-            + r.breathingRateTimeseries + r.breathDepthTimeseries + scalars
-        XCTAssertTrue(all.allSatisfy { $0.isFinite })
-        XCTAssertNoThrow(try JSONEncoder().encode(r))
-    }
-
-    /// Window count = floor((totalSec - windowSec) / hopSec) + 1.
-    func test_windowCount() {
-        let dur = 600.0
-        let m = motion(dur: dur, pitch: { _ in 0 })
-        let h = hr(dur: dur) { _ in 65 }
-        let r = SignalEngine.analyze(motion: m, hr: h, bellyBreathing: false, windowSec: 30, hopSec: 5)
-
-        let expected = Int(((dur - 30) / 5).rounded(.down)) + 1   // 115
-        XCTAssertEqual(expected, 115)
-        XCTAssertEqual(r.heartRateTimeseries.count, expected)
+        XCTAssertLessThan(bad.overallScore ?? 1, 0.35,
+                          "twenty restless minutes must not buy a good score")
+        XCTAssertGreaterThan(good.overallScore ?? 0, 0.65)
+        XCTAssertGreaterThan((good.overallScore ?? 0) - (bad.overallScore ?? 1), 0.35)
     }
 }

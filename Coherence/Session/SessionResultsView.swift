@@ -24,6 +24,7 @@ struct SessionResultsView: View {
     /// the baseline the standing line is measured against.
     @State private var priorScores: [Double] = []
     @State private var showShareSheet = false
+    @State private var showScoreMeaning = false
 
     var body: some View {
         NavigationStack {
@@ -63,6 +64,10 @@ struct SessionResultsView: View {
             }
             .sheet(isPresented: $showShareSheet) {
                 if let data = shareData { ShareSessionSheet(data: data) }
+            }
+            .sheet(isPresented: $showScoreMeaning) {
+                ScoreMeaningSheet(score: stats?.overallScore)
+                    .presentationDetents([.medium, .large])
             }
             .onAppear(perform: load)
         }
@@ -128,7 +133,21 @@ struct SessionResultsView: View {
                         .foregroundStyle(AppColor.accentGold)
                 }
                 Spacer(minLength: 0)
-                ScoreRing(score: stats.overallScore, size: 52, lineWidth: 6)
+                // The ring carries a quiet "?" — the only entry point to the
+                // explainer. Anyone who doesn't care never reads a word.
+                Button { showScoreMeaning = true } label: {
+                    ZStack(alignment: .topTrailing) {
+                        ScoreRing(score: stats.overallScore, size: 52, lineWidth: 6)
+                        Text("?")
+                            .font(.system(size: 10, weight: .heavy))
+                            .foregroundStyle(AppColor.textSecondary)
+                            .frame(width: 17, height: 17)
+                            .background(AppColor.backgroundSecondary, in: Circle())
+                            .overlay(Circle().stroke(AppColor.textSecondary.opacity(0.18), lineWidth: 1))
+                            .offset(x: 4, y: -3)
+                    }
+                }
+                .buttonStyle(CardButtonStyle())
             }
             .padding(.top, 2)
         }

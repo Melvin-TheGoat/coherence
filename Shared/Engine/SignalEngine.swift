@@ -116,13 +116,12 @@ extension SignalResult {
 //
 // BREATHING BAND: 0.033–0.5 Hz (~2–30 breaths/min). Resonance target: ~0.1 Hz (6/min).
 //
-// OVERALL SCORE WEIGHTING (documented, renormalized over whichever signals exist):
-//   belly + readable breathing → stillness .30, hrDecline .25, resonance .25, regularity .20
-//   otherwise (2-signal)       → stillness .55, hrDecline .45
-// `hrDecline` is normalized as `clamp(decline / 15 bpm, 0, 1)` before weighting.
+// OVERALL SCORE: see the "Score v3" block below. Depth (breath .45 / heart .35 /
+// stillness .20, renormalised when a signal is missing) multiplied by a duration
+// ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "2.0.0"
+    static let version = "3.0.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -180,7 +179,6 @@ enum SignalEngine {
         // whose "breath" sits at the boundary bin is indistinguishable from
         // drift by construction and must read as nothing. Real deliberate
         // breathing runs 4–8/min; nothing legitimate lives at 3.0–3.4.
-    private static let hrDeclineFull = 15.0    // bpm drop that maps to 1.0
     private static let stillnessGain = 5.0     // activity → stillness sharpness
     private static let attitudeWeight = 1.0    // radians vs g weighting in activity
 
@@ -393,20 +391,23 @@ enum SignalEngine {
         let stillnessScore = stillnessTimeseries.isEmpty
             ? nil : stillnessTimeseries.reduce(0, +) / Double(stillnessTimeseries.count)
 
-        // MARK: Overall score
+        // MARK: Overall score (v3 — see the Score v3 block below)
         //
-        // Wrist breathing is EVIDENCE, not a grade: it shows on the results
-        // screen but never moves the score. Belly was opt-in — a user who chose
-        // resonance breathing asked to be scored on it. The wrist path runs on
-        // every session unasked, so folding resonance in would quietly punish
-        // anyone breathing naturally at 11/min for not breathing at 6, and
-        // would make new scores incomparable with every session before it.
-        let overallScore = combine(
-            stillness: stillnessScore,
-            hrDecline: hrDecline,
-            resonance: bellyBreathing ? resonanceMatchScore : nil,
-            regularity: bellyBreathing ? breathingRegularity : nil
+        // Breath now counts toward the score on every session, not just belly
+        // ones. The earlier evidence-only rule existed to avoid punishing
+        // natural breathers, and the renormalising weights handle that better:
+        // a session with no readable breath is scored on the two signals it
+        // did produce, never penalised for the one it didn't. And breath turns
+        // out to be the best-evidenced signal we can capture, so excluding it
+        // was leaving the strongest measurement out of the number.
+        let depthScore = depth(
+            stillness: stillnessScore.map(spreadStillness),
+            hrSettling: heartSettling(heartRateTimeseries),
+            resonance: resonanceMatchScore
         )
+        // Time is a ceiling, not a bonus: it can cap a good session, never
+        // rescue a bad one.
+        let overallScore = depthScore.map { $0 * durationFactor(seconds: Int(totalSec.rounded())) }
 
         return SignalResult(
             heartRateTimeseries: heartRateTimeseries, meanHR: meanHR,
@@ -597,23 +598,105 @@ enum SignalEngine {
 
     // MARK: - Score combination
 
-    private static func combine(
-        stillness: Double?, hrDecline: Double?, resonance: Double?, regularity: Double?
-    ) -> Double? {
-        var terms: [(value: Double, weight: Double)] = []
-        let breathing = resonance != nil || regularity != nil
-        let wStill = breathing ? 0.30 : 0.55
-        let wHR = breathing ? 0.25 : 0.45
+    // MARK: - Score v3 · how deep you got, and how long you held it
+    //
+    // WHAT THE NUMBER MEANS, in the words the app uses: how far the body moved
+    // out of stress and into recovery, and how long it stayed there. Three
+    // signals index the same parasympathetic shift; time multiplies the result.
+    //
+    // WEIGHTS follow the evidence, not intuition (researched 2026-08-08):
+    //   • Breath 45% — the strongest evidence we can capture. Resonance
+    //     breathing IS the intervention in HRV-biofeedback trials, which carry
+    //     the largest effects in this literature (Hedges g ≈ 0.8, Goessl 2017),
+    //     and RSA/HRV is maximised at ~6/min via the baroreflex (Russo 2017).
+    //     We measure the driver directly instead of inferring it from HRV we
+    //     cannot read on this hardware.
+    //   • Heart 35% — replicated but modest (g ≈ 0.24–0.37) and confounded by
+    //     how wound up the user was at minute zero.
+    //   • Stillness 20% — NO literature grades meditation depth by motion. It
+    //     is an excellent validity check and a poor depth measure, which is
+    //     exactly how it is used here.
+    //   • No breath read → 60/40 heart/stillness.
+    //
+    // Superseded v2, which spent 55% on stillness. Measured across eight real
+    // sessions, stillness ran 0.84–0.97 for every genuine sit (and 0.22 for a
+    // deliberately fidgety one), so over half the old score was a constant
+    // saying "yes, you sat down".
+    //
+    // `algorithmVersion` records which formula produced a row, so historical
+    // sessions stay interpretable instead of being silently re-scored.
 
-        if let s = stillness { terms.append((s, wStill)) }
-        if let d = hrDecline { terms.append((min(max(d / hrDeclineFull, 0), 1), wHR)) }
-        if let r = resonance { terms.append((r, 0.25)) }
-        if let g = regularity { terms.append((g, 0.20)) }
+    /// Session length past which the ceiling stops rising. Settling happens
+    /// early; past ~20 minutes you are maintaining a state, not reaching one.
+    private static let durationFullMinutes = 20.0
+    /// What a session of zero length would keep of its depth. The floor is why
+    /// "two minutes still counts": a short sit is scored, not crushed.
+    private static let durationFloor = 0.40
 
-        let totalWeight = terms.reduce(0) { $0 + $1.weight }
-        guard totalWeight > 0 else { return nil }
-        return terms.reduce(0) { $0 + $1.value * $1.weight } / totalWeight
+    /// Time as a CEILING, never a bonus. It multiplies depth, so length can cap
+    /// a good session but can never rescue a bad one — thirty restless minutes
+    /// still score worse than five settled ones. The square root is deliberate:
+    /// the first ten minutes buy more than the second ten.
+    ///
+    ///     2 min → 0.59   5 min → 0.70   10 min → 0.82   20 min+ → 1.00
+    static func durationFactor(seconds: Int) -> Double {
+        let minutes = max(0, Double(seconds)) / 60
+        let reach = (minutes / durationFullMinutes).squareRoot()
+        return durationFloor + (1 - durationFloor) * min(1, reach)
     }
+
+    /// Weighted depth (0–1) across whichever signals were actually read.
+    private static func depth(stillness: Double?, hrSettling: Double?, resonance: Double?) -> Double? {
+        var terms: [(value: Double, weight: Double)] = []
+        let hasBreath = resonance != nil
+        if let r = resonance                { terms.append((r, 0.45)) }
+        if let h = hrSettling               { terms.append((h, hasBreath ? 0.35 : 0.60)) }
+        if let s = stillness                { terms.append((s, hasBreath ? 0.20 : 0.40)) }
+
+        let total = terms.reduce(0) { $0 + $1.weight }
+        guard total > 0 else { return nil }
+        return terms.reduce(0) { $0 + $1.value * $1.weight } / total
+    }
+
+    /// Stillness rescaled so real sessions actually spread out.
+    ///
+    /// The raw curve saturates: every genuine sit measured 0.84–0.97. Mapping
+    /// [0.80, 0.98] onto [0, 1] restores the resolution — a typical good sit
+    /// lands mid-scale and near-perfect stillness has to be earned — while
+    /// anything below 0.80 (the fidgety session's territory) floors at 0.
+    static func spreadStillness(_ raw: Double) -> Double {
+        let lo = 0.80, hi = 0.98
+        return min(1, max(0, (raw - lo) / (hi - lo)))
+    }
+
+    /// The heart term: mostly "did you stay at or below where you started",
+    /// with a minority credit for how far you actually fell.
+    ///
+    /// Start-minus-end alone measured how wound up someone was at minute zero
+    /// rather than how they settled — a 68→68 session is a good sit with no
+    /// room to fall and used to score zero. But *only* counting time-below-open
+    /// saturates: every session that doesn't climb scores a flat 1.0, and the
+    /// term stops discriminating.
+    ///
+    /// So: 60% for holding at or under your opening (the fairness floor, which
+    /// a naturally calm person can always earn), 40% for the size of the drop
+    /// (the headroom, which only an agitated body can fully claim). A flat calm
+    /// sit lands at 0.6; a real 12-beat settle approaches 1.0; climbing lands
+    /// near zero.
+    static func heartSettling(_ series: [Double]) -> Double? {
+        guard series.count >= 3, let opening = series.first, let closing = series.last
+        else { return nil }
+        // A small tolerance so ordinary wobble at the opening level still counts
+        // as "not climbing".
+        let atOrBelow = series.dropFirst().filter { $0 <= opening + 1.0 }.count
+        let held = Double(atOrBelow) / Double(series.count - 1)
+        let dropped = min(max((opening - closing) / hrDropFull, 0), 1)
+        return 0.6 * held + 0.4 * dropped
+    }
+
+    /// Beats of decline that earn full credit for the drop half of the heart
+    /// term. Twelve is a big settle: the verified Phase-4 pair sat around 9–11.
+    private static let hrDropFull = 12.0
 
     // MARK: - Diagnostics (temporary Phase-4 belly debugging)
 

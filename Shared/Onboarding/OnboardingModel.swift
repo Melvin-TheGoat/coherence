@@ -284,7 +284,7 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         // from heart rate settling and the body going still, so no posture
         // gets graded and there's no breath count to hit.
         case .feltWrong:      return "Nothing to get wrong. We read your body, not your technique"
-        case .noTime:         return "Sessions end when you end them, so two minutes counts"
+        case .noTime:         return "Sessions end when you end them, so two minutes still counts"
         case .gotBoring:      return "Your own audio, still measured"
         }
     }
