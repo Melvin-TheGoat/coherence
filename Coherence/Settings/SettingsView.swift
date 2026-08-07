@@ -44,6 +44,7 @@ private struct SettingsForm: View {
     let onDelete: () -> Void
 
     @State private var confirmDelete = false
+    @State private var confirmSignOut = false
     @State private var editingName = false
 
     private let durationOptions: [(String, Int?)] = [
@@ -239,9 +240,20 @@ private struct SettingsForm: View {
 
     private var accountFooter: some View {
         VStack(spacing: 6) {
-            Button("Sign out", action: onSignOut)
+            Button("Sign out") { confirmSignOut = true }
                 .font(AppFont.callout.weight(.medium))
                 .foregroundStyle(AppColor.textSecondary)
+                // Signing out is allowed (paid or not), but it has to say what
+                // it costs: the local data stays, the roaming stops. Without
+                // this line a paid user could sign out, lose the phone, and
+                // discover the streak they were paying to protect died with it.
+                .confirmationDialog("Sign out?", isPresented: $confirmSignOut,
+                                    titleVisibility: .visible) {
+                    Button("Sign out", role: .destructive, action: onSignOut)
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("Your sessions and streak stay on this phone, but they stop syncing to iCloud until you sign back in. A lost phone would mean losing them.")
+                }
             Button("Delete account") { confirmDelete = true }
                 .font(AppFont.caption)
                 .foregroundStyle(.red.opacity(0.75))
