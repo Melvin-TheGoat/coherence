@@ -250,12 +250,23 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     }
 
     /// The feature that answers this objection, in the user's own framing.
+    ///
+    /// **Each one must be unique and must stand alone.** Screen 16d lists the
+    /// answers to causes the user did NOT pick, with no quote above them to
+    /// explain what they're for, so a line that only makes sense underneath its
+    /// objection will read as a non-sequitur there. Two causes sharing one
+    /// answer would also print the same row twice. Locked by a test.
     public var answer: String {
         switch self {
         case .couldntTell:    return "A score after every session"
         case .tooManyChoices: return "One tap. No length to pick, nothing to choose"
         case .forgot:         return "A nudge at the time you chose"
-        case .feltWrong:      return "Your own audio, still measured"
+        // Was pointed at "your own audio, still measured", which answers a
+        // completely different objection. Feeling like you're doing it wrong
+        // is answered by there being nothing to do wrong: the score comes
+        // from heart rate settling and the body going still, so no posture
+        // gets graded and there's no breath count to hit.
+        case .feltWrong:      return "Nothing to get wrong. We read your body, not your technique"
         case .noTime:         return "Sessions end when you end them, so two minutes counts"
         case .gotBoring:      return "Your own audio, still measured"
         }

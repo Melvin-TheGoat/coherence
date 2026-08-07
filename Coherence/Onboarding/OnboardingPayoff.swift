@@ -665,52 +665,109 @@ struct ProjectionScreen: View {
 
 // MARK: - 16d · How you'll get there
 
-/// Features mapped to the user's own words. Every row's left side is a phrase
-/// they selected — never a problem we invented for them.
+/// Features mapped to the user's own words, then everything else underneath.
+///
+/// It used to render only the causes they ticked, which made the whole screen's
+/// size depend on how many boxes someone happened to check: one selection gave
+/// a headline, a single row, and half a screen of nothing. Showing all six
+/// fixes that, and a person who named one problem still gets told about the
+/// other five answers.
+///
+/// **Gold stays on their lines only.** That's what keeps this a reply to them
+/// rather than a feature list, and the unpicked rows are deliberately quieter
+/// than their own words.
 struct HowScreen: View {
     let answers: OnboardingAnswers
     let onContinue: () -> Void
 
-    private var rows: [(said: String, answer: String)] {
+    /// In enum order, not selection order, so the screen is stable between
+    /// two people who ticked the same things in a different sequence.
+    private var named: [DropoutCause] {
         let chosen = DropoutCause.allCases.filter { answers.causes.contains($0) }
-        let source = chosen.isEmpty ? [DropoutCause.couldntTell] : chosen
-        // De-duplicate: two causes can share one answering feature.
-        var seen = Set<String>()
-        return source.compactMap { c in
-            guard !seen.contains(c.answer) else { return nil }
-            seen.insert(c.answer)
-            return (said: c.label, answer: c.answer)
-        }
+        // The cause screen requires a selection, but a future edit might not.
+        return chosen.isEmpty ? [.couldntTell] : chosen
+    }
+
+    private var rest: [DropoutCause] {
+        DropoutCause.allCases.filter { !named.contains($0) }
     }
 
     var body: some View {
         OnboardingScreen(section: .win,
                          title: "How you'll\nget there.",
-                         subtitle: "Each one answers something you just told us.",
+                         // The old line, "each one answers something you just
+                         // told us", stopped being true the moment the screen
+                         // also shows things they didn't say.
+                         subtitle: "What you named, and what 808 does about it.",
                          onContinue: onContinue) {
-            VStack(spacing: 12) {
-                ForEach(rows, id: \.said) { row in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("“\(row.said)”")
-                            .font(.footnote.italic())
-                            .foregroundStyle(AppColor.textSecondary)
-                        HStack(spacing: 9) {
-                            Image(systemName: "arrow.turn.down.right")
-                                .font(.caption)
-                                .foregroundStyle(AppColor.accentGold)
-                            Text(row.answer)
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundStyle(AppColor.textPrimary)
-                                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: 0) {
+                SectionHeader(title: "You said")
+                    .foregroundStyle(AppColor.accentGold)
+                    .padding(.bottom, 9)
+
+                VStack(spacing: 9) {
+                    ForEach(named) { cause in
+                        namedRow(cause)
+                    }
+                }
+
+                // Hidden rather than printed empty when they ticked all six.
+                if !rest.isEmpty {
+                    SectionHeader(title: "Everything else")
+                        .padding(.top, 18)
+                        .padding(.bottom, 9)
+
+                    VStack(spacing: 7) {
+                        ForEach(rest) { cause in
+                            restRow(cause)
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(15)
-                    .background(AppColor.backgroundSecondary.opacity(0.7),
-                                in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
         }
+    }
+
+    private func namedRow(_ cause: DropoutCause) -> some View {
+        VStack(alignment: .leading, spacing: 7) {
+            Text("“\(cause.label)”")
+                .font(.footnote.italic())
+                .foregroundStyle(AppColor.textSecondary)
+            HStack(alignment: .top, spacing: 9) {
+                Image(systemName: "arrow.turn.down.right")
+                    .font(.caption)
+                    .foregroundStyle(AppColor.accentGold)
+                Text(cause.answer)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(AppColor.accentGold.opacity(0.09),
+                    in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
+            .stroke(AppColor.accentGold.opacity(0.30), lineWidth: 1))
+    }
+
+    /// No quote above these, which is why every `answer` has to read as a
+    /// standalone sentence.
+    private func restRow(_ cause: DropoutCause) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Circle()
+                .fill(AppColor.textSecondary.opacity(0.30))
+                .frame(width: 5, height: 5)
+                .padding(.top, 7)
+            Text(cause.answer)
+                .font(.footnote)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 13)
+        .padding(.vertical, 10)
+        .background(AppColor.backgroundSecondary.opacity(0.55),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

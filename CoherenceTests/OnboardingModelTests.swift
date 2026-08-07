@@ -87,6 +87,31 @@ final class OnboardingModelTests: XCTestCase {
         }
     }
 
+    func test_dropoutCauseAnswersAreDistinct() {
+        // Screen 16d lists the answers to causes the user did NOT pick, so two
+        // causes sharing one answer prints the same row twice.
+        //
+        // This is a real regression, not a hypothetical: "I felt like I was
+        // doing it wrong" and "it got boring" both pointed at "your own audio,
+        // still measured", which is the answer to the second and a
+        // non-sequitur under the first.
+        let answers = DropoutCause.allCases.map(\.answer)
+        XCTAssertEqual(Set(answers).count, answers.count,
+                       "two dropout causes share an answering feature")
+    }
+
+    func test_dropoutCauseAnswersStandAloneWithoutTheirQuote() {
+        // The "everything else" list shows answers with no objection above
+        // them, so each has to read as a sentence on its own. A bare feature
+        // fragment would be the same bug in a new form.
+        for cause in DropoutCause.allCases {
+            XCTAssertGreaterThan(cause.answer.count, 12,
+                                 "\(cause) answer is too terse to stand alone")
+            XCTAssertFalse(cause.answer.hasPrefix("and "),
+                           "\(cause) answer only makes sense as a continuation")
+        }
+    }
+
     func test_everyAnchorHasAPhraseAndAPlausibleHour() {
         for anchor in Anchor.allCases {
             XCTAssertFalse(anchor.phrase.isEmpty)
