@@ -157,8 +157,15 @@ struct ResultScreen: View {
                          ctaTitle: "That's about right",
                          onContinue: onContinue) {
             VStack(alignment: .leading, spacing: 14) {
-                reflection(restartLine,
-                           "That's the single most common thing in meditation. Dropout runs 21 to 54% in clinical trials, and it peaks in the first two weeks.")
+                // The existing meditator's pain isn't quitting, it's practicing
+                // blind, so the dropout reflection would talk past them.
+                if answers.intendedFor == .alreadyPractice {
+                    reflection("You already have a practice. What you've never had is proof it's working.",
+                               "808 measures every session off your wrist, so \u{201C}is this working\u{201D} finally gets an answer.")
+                } else {
+                    reflection(restartLine,
+                               "That's the single most common thing in meditation. Dropout runs 21 to 54% in clinical trials, and it peaks in the first two weeks.")
+                }
 
                 if let cause = answers.primaryCause {
                     reflection("You stop because: \u{201C}\(cause.label).\u{201D}",

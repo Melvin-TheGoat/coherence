@@ -185,6 +185,13 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
 /// feels judged for having intended something.
 public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
     case weeks, months, aYear, years, forever
+    /// The identity out. The question presumes the user hasn't started, but
+    /// the baseline screen literally offers "Almost every day" — someone who
+    /// picked it reaches this screen with no true answer. Their pain isn't
+    /// quitting, it's practicing blind, so this selection reframes the Result
+    /// reflection and the profile's pattern card (an answer that changes
+    /// nothing is the documented "decorative questions" failure).
+    case alreadyPractice
 
     public var id: String { rawValue }
 
@@ -195,6 +202,7 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
         case .aYear:   return "A year or so"
         case .years:   return "Years"
         case .forever: return "As long as I can remember"
+        case .alreadyPractice: return "I already meditate. I'm here for the stats"
         }
     }
 
@@ -205,6 +213,7 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
         case .aYear:   return "clock.arrow.circlepath"
         case .years:   return "hourglass"
         case .forever: return "infinity"
+        case .alreadyPractice: return "chart.xyaxis.line"
         }
     }
 
@@ -216,6 +225,7 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
         case .aYear:   return "about a year"
         case .years:   return "years"
         case .forever: return "as long as you can remember"
+        case .alreadyPractice: return "already, in your own practice"
         }
     }
 }
@@ -528,12 +538,19 @@ public struct PracticeProfile: Equatable {
     public init(from a: OnboardingAnswers) {
         chasing = a.primaryMotivation?.label ?? "A steadier mind"
 
-        switch a.restarts {
-        case .never:      pattern = "Starting fresh"
-        case .once:       pattern = "Stopped once before"
-        case .few:        pattern = "Started and stopped a few times"
-        case .many, .some(.lostCount): pattern = "Started and stopped more times than you'd like"
-        case .none:       pattern = "Building the habit"
+        // The identity answer outranks the restart count: someone who told us
+        // they already meditate shouldn't be profiled by how often they've
+        // stopped. Their card names what they came for.
+        if a.intendedFor == .alreadyPractice {
+            pattern = "Already practicing. Now it gets measured"
+        } else {
+            switch a.restarts {
+            case .never:      pattern = "Starting fresh"
+            case .once:       pattern = "Stopped once before"
+            case .few:        pattern = "Started and stopped a few times"
+            case .many, .some(.lostCount): pattern = "Started and stopped more times than you'd like"
+            case .none:       pattern = "Building the habit"
+            }
         }
 
         anchorLine = a.anchor.map { "You practise \($0.phrase)" }

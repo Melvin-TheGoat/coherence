@@ -67,6 +67,18 @@ final class OnboardingModelTests: XCTestCase {
         XCTAssertEqual(p.blindSpot, "I couldn't tell it was working")
     }
 
+    func test_profile_alreadyPracticingOutranksRestartCount() {
+        // "I already meditate. I'm here for the stats" reframes the pattern
+        // card: profiling an existing meditator by their stop count talks past
+        // them, and an answer that changes nothing is the documented
+        // "decorative questions" failure.
+        var a = OnboardingAnswers()
+        a.restarts = .lostCount
+        a.intendedFor = .alreadyPractice
+        let p = PracticeProfile(from: a)
+        XCTAssertEqual(p.pattern, "Already practicing. Now it gets measured")
+    }
+
     func test_profile_emptyAnswersStillProducesSayableCards() {
         // A user who skips everything must not get blank cards or a crash.
         let p = PracticeProfile(from: OnboardingAnswers())
