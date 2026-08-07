@@ -133,21 +133,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
         let wc = WCSession.default
         if watchInitiated {
-            // Invite a reachable phone to join: live screen + the chosen sound.
-            // sendMessage ONLY — a queued join replaying later would resurrect
-            // a dead session's live screen, and an unreachable phone has
-            // nothing to do now anyway (the session runs; sound is the only
-            // loss, and the live screen says so).
-            let join = [WCKeys.watchBegin:
-                "\(p.sessionID.uuidString)|\(Date().timeIntervalSince1970)|\(soundID ?? "")"]
-            if wc.isReachable {
-                phoneLinked = true
-                wc.sendMessage(join, replyHandler: nil) { [weak self] _ in
-                    Task { @MainActor in self?.phoneLinked = false }
-                }
-            } else {
-                phoneLinked = false
-            }
+            invitePhone(sessionID: p.sessionID, startedAt: Date())
         } else {
             // Tell the phone when the workout REALLY began so its mid-session
             // clock and audio timer track this moment, not startWatchApp's
@@ -157,6 +143,44 @@ final class WatchSessionManager: NSObject, ObservableObject {
                 wc.sendMessage(ack, replyHandler: nil, errorHandler: nil)
             }
             wc.transferUserInfo(ack)
+        }
+    }
+
+    /// Invites the phone to join a wrist-started session: live screen + the
+    /// chosen sound.
+    ///
+    /// **Retries, because reachability is not ready when Begin is tapped.**
+    /// `WCSession` activation and the reachability handshake settle
+    /// asynchronously, so on the FIRST Begin after the watch app launches
+    /// `isReachable` is routinely still false — the invite was dropped and the
+    /// phone showed nothing, while the second attempt of the same session
+    /// worked. Now it polls for roughly fourteen seconds, sending the instant
+    /// the link comes up, and gives up quietly if the session ends first.
+    ///
+    /// Still `sendMessage` only. A queued invite replaying hours later would
+    /// resurrect a dead session's live screen — the stale-WC-queue family of
+    /// bugs this codebase has been bitten by twice.
+    private func invitePhone(sessionID: UUID, startedAt: Date) {
+        let value = "\(sessionID.uuidString)|\(startedAt.timeIntervalSince1970)|\(soundID ?? "")"
+        phoneLinked = false
+        Task { @MainActor [weak self] in
+            for attempt in 0..<12 {
+                guard let self, self.phase == .running,
+                      self.params?.sessionID == sessionID else { return }
+                if WCSession.default.isReachable {
+                    WCSession.default.sendMessage([WCKeys.watchBegin: value],
+                                                  replyHandler: nil) { [weak self] error in
+                        self?.log.error("join failed: \(error.localizedDescription)")
+                        Task { @MainActor in self?.phoneLinked = false }
+                    }
+                    self.phoneLinked = true
+                    return
+                }
+                // Tight at first (the handshake usually lands in under a
+                // second), then patient.
+                try? await Task.sleep(for: .milliseconds(attempt < 4 ? 400 : 1500))
+                guard !Task.isCancelled else { return }
+            }
         }
     }
 

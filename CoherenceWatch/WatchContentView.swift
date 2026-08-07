@@ -44,15 +44,15 @@ struct WatchContentView: View {
             Spacer()
             Text("808 measures with your heart rate and motion.")
                 .font(.system(size: 13))
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(WatchPalette.inkMuted)
                 .multilineTextAlignment(.center)
             Button("Allow") { Task { await manager.authorize() } }
                 .buttonStyle(.borderedProminent)
-                .tint(AppColor.accentGold)
+                .tint(WatchPalette.gold)
                 .foregroundStyle(.black)
             if let msg = manager.statusMessage {
                 Text(msg).font(.system(size: 11))
-                    .foregroundStyle(AppColor.textSecondary)
+                    .foregroundStyle(WatchPalette.inkMuted)
                     .multilineTextAlignment(.center)
             }
             Spacer()
@@ -77,10 +77,10 @@ struct WatchContentView: View {
                                      Color(red: 0.66, green: 0.49, blue: 0.11)],
                             center: .init(x: 0.34, y: 0.30),
                             startRadius: 4, endRadius: 90))
-                        .shadow(color: AppColor.accentGold.opacity(0.45), radius: 14, y: 6)
+                        .shadow(color: WatchPalette.gold.opacity(0.45), radius: 14, y: 6)
                     Text("Begin")
                         .font(.system(size: 19, weight: .heavy, design: .rounded))
-                        .foregroundStyle(Color(red: 0.09, green: 0.07, blue: 0.03))
+                        .foregroundStyle(WatchPalette.onGold)
                 }
                 .frame(width: 108, height: 108)
             }
@@ -92,18 +92,18 @@ struct WatchContentView: View {
                 HStack(spacing: 6) {
                     Image(systemName: "music.note")
                         .font(.system(size: 11))
-                        .foregroundStyle(AppColor.calmAccent)
+                        .foregroundStyle(WatchPalette.calm)
                     Text(SoundMenu.title(for: manager.soundID))
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
+                        .foregroundStyle(WatchPalette.ink)
                         .lineLimit(1)
                     Image(systemName: "chevron.right")
                         .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(WatchPalette.inkMuted)
                 }
                 .padding(.horizontal, 13)
                 .padding(.vertical, 8)
-                .background(Color(white: 0.10), in: Capsule())
+                .background(WatchPalette.surface, in: Capsule())
             }
             .buttonStyle(.plain)
 
@@ -112,7 +112,7 @@ struct WatchContentView: View {
             if let msg = manager.statusMessage {
                 Text(msg)
                     .font(.system(size: 10))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(WatchPalette.gold)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
             }
@@ -123,12 +123,12 @@ struct WatchContentView: View {
 
     private var markRow: some View {
         HStack(spacing: 6) {
-            LogoMark(lineWidthRatio: 0.09)   // heavier stroke at watch sizes
+            LogoMark(color: WatchPalette.gold, lineWidthRatio: 0.09)   // heavier stroke at watch sizes
                 .frame(width: 17, height: 17)
             Text("808")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .tracking(2.4)
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(WatchPalette.gold)
         }
     }
 
@@ -140,19 +140,19 @@ struct WatchContentView: View {
 
             VStack {
                 HStack(spacing: 5) {
-                    Circle().fill(AppColor.calmAccent).frame(width: 5, height: 5)
+                    Circle().fill(WatchPalette.calm).frame(width: 5, height: 5)
                     Text(silentNote ?? "measuring")
                         .font(.system(size: 11))
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(WatchPalette.inkMuted)
                 }
                 Spacer()
                 Button(action: { manager.endByUser() }) {
                     Text("End")
                         .font(.system(size: 15, weight: .bold, design: .rounded))
-                        .foregroundStyle(Color(red: 0.78, green: 0.48, blue: 0.43))
+                        .foregroundStyle(WatchPalette.warn)
                         .padding(.horizontal, 38)
                         .padding(.vertical, 10)
-                        .background(Color(white: 0.10), in: Capsule())
+                        .background(WatchPalette.surface, in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
@@ -175,10 +175,10 @@ struct WatchContentView: View {
             PhoneStream()
             Text("Scoring your session")
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(WatchPalette.ink)
             Text("Your evidence is on its way\nto your iPhone.")
                 .font(.system(size: 11))
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(WatchPalette.inkMuted)
                 .multilineTextAlignment(.center)
         }
     }
@@ -187,15 +187,15 @@ struct WatchContentView: View {
         VStack(spacing: 8) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 30))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(WatchPalette.gold)
             Text(manager.deliveredImmediately ? "Delivered" : "Saved")
                 .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(WatchPalette.ink)
             Text(manager.deliveredImmediately
                  ? "Open 808 to see it."
                  : "It'll reach your iPhone\nwhen it's back in range.")
                 .font(.system(size: 11))
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(WatchPalette.inkMuted)
                 .multilineTextAlignment(.center)
         }
     }
@@ -213,20 +213,27 @@ private struct BreathingOrb: View {
 
     var body: some View {
         ZStack {
+            // Same three layers as the phone's pacer orb, at watch scale: a
+            // soft outer bloom, a solid inner glow, then the defining ring.
+            // The single thin gradient this replaced read as a bare outline.
             Circle()
-                .fill(RadialGradient(colors: [AppColor.calmAccent.opacity(0.40),
-                                              AppColor.calmAccent.opacity(0.05),
-                                              .clear],
-                                     center: .center, startRadius: 4, endRadius: 74))
+                .fill(WatchPalette.calm.opacity(0.18))
+                .frame(width: 150, height: 150)
+                .blur(radius: 16)
             Circle()
-                .stroke(AppColor.calmAccent.opacity(0.35), lineWidth: 1.5)
-                .padding(14)
+                .fill(RadialGradient(
+                    colors: [WatchPalette.calm.opacity(0.60), WatchPalette.calm.opacity(0.10)],
+                    center: .center, startRadius: 4, endRadius: 66))
+                .frame(width: 124, height: 124)
+            Circle()
+                .stroke(WatchPalette.calm.opacity(0.55), lineWidth: 1.5)
+                .frame(width: 124, height: 124)
             Text(timeString(elapsed))
                 .font(.system(size: 32, weight: .bold, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(WatchPalette.ink)
         }
-        .frame(width: 148, height: 148)
+        .frame(width: 150, height: 150)
         .scaleEffect(reduceMotion ? 1 : (inhale ? 1.05 : 0.86))
         .onAppear {
             guard !reduceMotion else { return }
@@ -251,12 +258,12 @@ private struct PhoneStream: View {
     var body: some View {
         VStack(spacing: 8) {
             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .stroke(AppColor.textSecondary.opacity(0.6), lineWidth: 2)
+                .stroke(WatchPalette.inkMuted.opacity(0.6), lineWidth: 2)
                 .frame(width: 30, height: 50)
             ZStack {
                 ForEach(0..<3, id: \.self) { i in
                     Circle()
-                        .fill(AppColor.accentGold)
+                        .fill(WatchPalette.gold)
                         .frame(width: 5, height: 5)
                         .offset(y: animate ? -30 : 12)
                         .opacity(animate ? 0 : 1)
@@ -288,13 +295,18 @@ private struct SoundPickerView: View {
             } footer: {
                 Text("Plays from your iPhone")
                     .font(.system(size: 10))
-                    .foregroundStyle(Color(white: 0.62))
+                    .foregroundStyle(WatchPalette.inkMuted)
             }
             ForEach(SoundMenu.groups) { group in
-                Section(group.name) {
+                Section {
                     ForEach(group.entries) { entry in
                         row(id: entry.id, title: entry.title, detail: entry.detail)
                     }
+                } header: {
+                    Text(group.name.uppercased())
+                        .font(.system(size: 10, weight: .heavy))
+                        .tracking(0.8)
+                        .foregroundStyle(WatchPalette.inkMuted)
                 }
             }
         }
@@ -313,22 +325,22 @@ private struct SoundPickerView: View {
                 // black screen (the rows were unreadable on-device).
                 Text(title)
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color(white: 0.96))
+                    .foregroundStyle(WatchPalette.ink)
                 Spacer(minLength: 0)
                 if let detail {
                     Text(detail)
                         .font(.system(size: 10))
-                        .foregroundStyle(Color(white: 0.62))
+                        .foregroundStyle(WatchPalette.inkMuted)
                 }
                 if isSelected {
                     Image(systemName: "checkmark")
                         .font(.system(size: 11, weight: .heavy))
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(WatchPalette.gold)
                 }
             }
         }
         .listRowBackground(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(isSelected ? AppColor.accentGold.opacity(0.16) : Color(white: 0.10)))
+                .fill(isSelected ? WatchPalette.gold.opacity(0.16) : WatchPalette.surface))
     }
 }
