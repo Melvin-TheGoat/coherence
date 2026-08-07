@@ -18,6 +18,7 @@ struct CoherenceApp: App {
         let setup = ModelContext(container)
         TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks
         SessionStore.purgeExpired(in: setup)                    // Phase 7: 30-day account purge
+        ScoreMigration.backfillIfNeeded(in: setup)              // v3 score across all history
         _coordinator = StateObject(wrappedValue: SessionCoordinator(container: container))
     }
 

@@ -400,14 +400,12 @@ enum SignalEngine {
         // did produce, never penalised for the one it didn't. And breath turns
         // out to be the best-evidenced signal we can capture, so excluding it
         // was leaving the strongest measurement out of the number.
-        let depthScore = depth(
-            stillness: stillnessScore.map(spreadStillness),
-            hrSettling: heartSettling(heartRateTimeseries),
-            resonance: resonanceMatchScore
-        )
         // Time is a ceiling, not a bonus: it can cap a good session, never
-        // rescue a bad one.
-        let overallScore = depthScore.map { $0 * durationFactor(seconds: Int(totalSec.rounded())) }
+        // rescue a bad one. Shared with the v3 back-fill — see `score`.
+        let overallScore = score(stillnessScore: stillnessScore,
+                                 heartRateTimeseries: heartRateTimeseries,
+                                 resonanceMatchScore: resonanceMatchScore,
+                                 durationSec: Int(totalSec.rounded()))
 
         return SignalResult(
             heartRateTimeseries: heartRateTimeseries, meanHR: meanHR,
@@ -643,6 +641,22 @@ enum SignalEngine {
         let minutes = max(0, Double(seconds)) / 60
         let reach = (minutes / durationFullMinutes).squareRoot()
         return durationFloor + (1 - durationFloor) * min(1, reach)
+    }
+
+    /// THE score, from the same stored components a persisted row carries.
+    ///
+    /// `analyze` and the v3 back-fill both go through here on purpose: every
+    /// input is a value `MeditationStats` already stores, so rescoring an old
+    /// session is exactly equivalent to computing it fresh rather than an
+    /// approximation of it. One code path means the two can never drift.
+    static func score(stillnessScore: Double?,
+                      heartRateTimeseries: [Double],
+                      resonanceMatchScore: Double?,
+                      durationSec: Int) -> Double? {
+        let d = depth(stillness: stillnessScore.map(spreadStillness),
+                      hrSettling: heartSettling(heartRateTimeseries),
+                      resonance: resonanceMatchScore)
+        return d.map { $0 * durationFactor(seconds: durationSec) }
     }
 
     /// Weighted depth (0–1) across whichever signals were actually read.
