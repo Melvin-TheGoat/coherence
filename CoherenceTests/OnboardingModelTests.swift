@@ -77,6 +77,13 @@ final class OnboardingModelTests: XCTestCase {
         a.intendedFor = .alreadyPractice
         let p = PracticeProfile(from: a)
         XCTAssertEqual(p.pattern, "Already practicing. Now it gets measured")
+
+        // The restarts screen's own identity out ("It sticks. I'm here for
+        // the stats") must land on the same card by itself.
+        var b = OnboardingAnswers()
+        b.restarts = .sticks
+        XCTAssertEqual(PracticeProfile(from: b).pattern,
+                       "Already practicing. Now it gets measured")
     }
 
     func test_profile_emptyAnswersStillProducesSayableCards() {

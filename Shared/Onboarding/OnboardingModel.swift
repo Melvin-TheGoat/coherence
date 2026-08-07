@@ -151,6 +151,11 @@ public enum DoingNothing: String, CaseIterable, Identifiable, Codable {
 /// How many times they've started a practice and stopped. The admission.
 public enum RestartCount: String, CaseIterable, Identifiable, Codable {
     case never, once, few, many, lostCount
+    /// The identity out, same as IntendedFor.alreadyPractice one screen later:
+    /// the question presumes the practice never stuck, and for some arrivals
+    /// it did. Picking it reroutes the Result reflection and the profile's
+    /// pattern card exactly like alreadyPractice does.
+    case sticks
 
     public var id: String { rawValue }
 
@@ -161,6 +166,7 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
         case .few:       return "Two or three times"
         case .many:      return "More than I'd like to admit"
         case .lostCount: return "I've lost count"
+        case .sticks:    return "It sticks. I'm here for the stats"
         }
     }
 
@@ -171,6 +177,7 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
         case .few:       return "3.circle"
         case .many:      return "arrow.trianglehead.2.clockwise"
         case .lostCount: return "questionmark.circle"
+        case .sticks:    return "chart.xyaxis.line"
         }
     }
 }
@@ -541,7 +548,7 @@ public struct PracticeProfile: Equatable {
         // The identity answer outranks the restart count: someone who told us
         // they already meditate shouldn't be profiled by how often they've
         // stopped. Their card names what they came for.
-        if a.intendedFor == .alreadyPractice {
+        if a.intendedFor == .alreadyPractice || a.restarts == .sticks {
             pattern = "Already practicing. Now it gets measured"
         } else {
             switch a.restarts {
@@ -549,6 +556,8 @@ public struct PracticeProfile: Equatable {
             case .once:       pattern = "Stopped once before"
             case .few:        pattern = "Started and stopped a few times"
             case .many, .some(.lostCount): pattern = "Started and stopped more times than you'd like"
+            // Unreachable (handled above), but the switch must stay exhaustive.
+            case .sticks:     pattern = "Already practicing. Now it gets measured"
             case .none:       pattern = "Building the habit"
             }
         }

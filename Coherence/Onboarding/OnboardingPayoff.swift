@@ -145,6 +145,9 @@ struct ResultScreen: View {
         case .once:  return "You've stopped once before."
         case .few:   return "You've started and stopped a few times."
         case .many, .some(.lostCount): return "You've started and stopped more times than you'd like."
+        // Unreachable — the identity reflection intercepts .sticks below —
+        // but the switch must stay exhaustive.
+        case .sticks: return "Your practice already sticks."
         case .none:  return "You're building the habit."
         }
     }
@@ -159,7 +162,7 @@ struct ResultScreen: View {
             VStack(alignment: .leading, spacing: 14) {
                 // The existing meditator's pain isn't quitting, it's practicing
                 // blind, so the dropout reflection would talk past them.
-                if answers.intendedFor == .alreadyPractice {
+                if answers.intendedFor == .alreadyPractice || answers.restarts == .sticks {
                     reflection("You already have a practice. What you've never had is proof it's working.",
                                "808 measures every session off your wrist, so \u{201C}is this working\u{201D} finally gets an answer.")
                 } else {
