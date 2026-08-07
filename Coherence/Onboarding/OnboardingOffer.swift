@@ -209,7 +209,11 @@ struct PaywallScreen: View {
 /// reason to have an account at all.
 struct SignInScreen: View {
     let onSignedIn: (ASAuthorizationAppleIDCredential) -> Void
-    let onSkip: () -> Void
+    /// Nil once someone has paid: a paying customer's sessions and streak
+    /// must survive a new phone, so the account stops being optional at the
+    /// exact moment there's something worth protecting. The waitlist path
+    /// (no Watch, nothing measured yet) keeps its way past.
+    let onSkip: (() -> Void)?
     @State private var errorText: String?
 
     var body: some View {
@@ -264,10 +268,12 @@ struct SignInScreen: View {
             .frame(height: 52)
             .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
 
-            Button("Not now", action: onSkip)
-                .font(.footnote)
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 14)
+            if let onSkip {
+                Button("Not now", action: onSkip)
+                    .font(.footnote)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.top, 14)
+            }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)

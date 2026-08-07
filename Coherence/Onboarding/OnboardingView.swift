@@ -19,6 +19,10 @@ struct OnboardingView: View {
     @State private var waitlistEmail = ""
     @State private var planRating: Int?
     @State private var didJoinWaitlist = false
+    /// True once they tapped Start-my-free-week or Restore on the paywall.
+    /// Gates the sign-in screen's "Not now": paid users must make the account
+    /// that keeps their evidence safe.
+    @State private var didPurchase = false
 
     /// Where the paywall sits. The spec's flow places it inside onboarding
     /// (screen 23), while its open-questions section argues for after the first
@@ -213,11 +217,12 @@ struct OnboardingView: View {
 
         case .paywall:
             PaywallScreen(plan: $plan,
-                          onStartTrial: { go(.signIn) },
-                          onRestore: { go(.signIn) })
+                          onStartTrial: { didPurchase = true; go(.signIn) },
+                          onRestore: { didPurchase = true; go(.signIn) })
 
         case .signIn:
-            SignInScreen(onSignedIn: handleSignIn, onSkip: finish)
+            SignInScreen(onSignedIn: handleSignIn,
+                         onSkip: didPurchase ? nil : finish)
         }
     }
 
