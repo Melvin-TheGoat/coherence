@@ -161,7 +161,7 @@ struct ResultScreen: View {
                            "That's the single most common thing in meditation. Dropout runs 21 to 54% in clinical trials, and it peaks in the first two weeks.")
 
                 if let cause = answers.primaryCause {
-                    reflection("You stop because: \(cause.label.lowercased()).",
+                    reflection("You stop because: \u{201C}\(cause.label).\u{201D}",
                                "That's not a character flaw. It's a missing feedback loop.")
                 }
 
@@ -214,9 +214,11 @@ struct CostScreen: View {
     @Binding var costs: Set<CostSymptom>
     let onContinue: () -> Void
 
-    private var countLine: String {
+    /// Nil at zero: the subtitle already says "tick whatever's true", and
+    /// repeating it under the list read as a stutter.
+    private var countLine: String? {
         switch costs.count {
-        case 0: return "Tick whatever's true."
+        case 0: return nil
         case 1: return "One thing."
         case 2: return "Two things."
         case 3: return "Three things."
@@ -240,11 +242,13 @@ struct CostScreen: View {
                     }
                 }
 
-                Text(countLine)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 2)
+                if let countLine {
+                    Text(countLine)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 2)
+                }
             }
             .sensoryFeedback(.selection, trigger: costs)
         }
