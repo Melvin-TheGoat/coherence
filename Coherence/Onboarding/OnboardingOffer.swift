@@ -1,5 +1,6 @@
 import SwiftUI
 import AuthenticationServices
+import StoreKit
 
 /// Screens 23–25: the offer, the exit offer, and sign-in.
 ///
@@ -52,9 +53,76 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - 22b · Rating
+
+/// Two steps on purpose, and the second one is conditional.
+///
+/// Apple gives each user a very small number of review prompts a year and
+/// **spends one whether they rate you or not**, so firing `requestReview` at
+/// everybody burns that budget on the people most likely to leave two stars.
+/// We ask our own question first and only surface Apple's sheet to people who
+/// answered 4 or 5.
+///
+/// The honesty lives in the question: "does this sound like it'd work for you"
+/// is answerable before anyone has used the app, where "enjoying 808?" is not.
+/// Anyone who taps 1 to 3 simply moves on. No apology screen, no "help us
+/// improve" detour, no attempt to talk them round.
+struct RatingScreen: View {
+    @Binding var rating: Int?
+    let onContinue: () -> Void
+    @Environment(\.requestReview) private var requestReview
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "Does this sound like\nit'd work for you?",
+                         subtitle: "Every part of it came out of your own answers. Tell us how it lands.",
+                         onSkip: onContinue,
+                         onContinue: { finish() }) {
+            VStack(spacing: 6) {
+                HStack(spacing: 9) {
+                    ForEach(1...5, id: \.self) { star in
+                        Button { rating = star } label: {
+                            Image(systemName: (rating ?? 0) >= star ? "star.fill" : "star")
+                                .font(.system(size: 30))
+                                .foregroundStyle(AppColor.accentGold)
+                                .opacity((rating ?? 0) >= star ? 1 : 0.35)
+                        }
+                        .buttonStyle(CardButtonStyle())
+                    }
+                }
+                .padding(.top, 22)
+                .sensoryFeedback(.selection, trigger: rating)
+
+                Text(rating == nil ? "Tap to answer" : "Thank you.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.top, 4)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    private func finish() {
+        // Only spend Apple's prompt on someone who just told us it lands.
+        if let rating, rating >= 4 {
+            requestReview()
+            // The sheet is presented by the system over this screen; give it a
+            // beat before we navigate out from under it.
+            Task {
+                try? await Task.sleep(for: .milliseconds(700))
+                guard !Task.isCancelled else { return }
+                onContinue()
+            }
+        } else {
+            onContinue()
+        }
+    }
+}
+
 // MARK: - 23 · Paywall
 
 struct PaywallScreen: View {
+    @State private var started = false
     @Binding var plan: SubscriptionPlan
     let onStartTrial: () -> Void
     let onDecline: () -> Void
@@ -66,7 +134,7 @@ struct PaywallScreen: View {
                          ctaTitle: "Start my free week",
                          ctaFootnote: "7 days free, then \(plan.price) \(plan.cadence). Cancel any time in Settings.",
                          onSkip: onDecline,
-                         onContinue: onStartTrial) {
+                         onContinue: { started = true; onStartTrial() }) {
             VStack(spacing: 11) {
                 ForEach(SubscriptionPlan.allCases) { p in
                     Button { plan = p } label: {
@@ -105,6 +173,7 @@ struct PaywallScreen: View {
                     .buttonStyle(CardButtonStyle())
                 }
                 .sensoryFeedback(.selection, trigger: plan)
+                .sensoryFeedback(.success, trigger: started)
 
                 Text("No charge today. We'll remind you before the trial ends.")
                     .font(.caption2)

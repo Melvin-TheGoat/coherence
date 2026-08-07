@@ -326,7 +326,7 @@ struct RestartScreen: View {
                     OnboardingOption(label: r.label, selected: restarts == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy), trigger: restarts)
+            .sensoryFeedback(.impact(flexibility: .rigid), trigger: restarts)
         }
     }
 

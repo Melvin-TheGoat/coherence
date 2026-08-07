@@ -149,6 +149,8 @@ struct ResultScreen: View {
         }
     }
 
+    @State private var revealed = false
+
     var body: some View {
         OnboardingScreen(section: .cost,
                          title: "Here's what you\njust told us.",
@@ -173,6 +175,8 @@ struct ResultScreen: View {
                     .foregroundStyle(AppColor.textSecondary.opacity(0.8))
                     .padding(.top, 6)
             }
+            .sensoryFeedback(.success, trigger: revealed)
+            .onAppear { revealed = true }
         }
     }
 
@@ -704,6 +708,7 @@ struct HowScreen: View {
 // MARK: - 20 · Commitment
 
 struct CommitmentScreen: View {
+    @State private var committed = false
     @Binding var daysPerWeek: Int
     let anchor: Anchor?
     /// The strongest thing they said it was costing them. Echoed here so the
@@ -716,7 +721,7 @@ struct CommitmentScreen: View {
         OnboardingScreen(section: .win,
                          title: "Make it a promise.",
                          ctaTitle: "I commit",
-                         onContinue: onContinue) {
+                         onContinue: { committed = true; onContinue() }) {
             VStack(spacing: 22) {
                 // Their own sentence, assembled from their own answers.
                 (Text("I'll practise ")
@@ -756,6 +761,7 @@ struct CommitmentScreen: View {
                     }
                 }
                 .sensoryFeedback(.selection, trigger: daysPerWeek)
+                .sensoryFeedback(.success, trigger: committed)
 
                 Text("Days per week")
                     .font(.caption)

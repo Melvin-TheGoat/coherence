@@ -17,6 +17,7 @@ struct OnboardingView: View {
     @State private var answers = OnboardingAnswers()
     @State private var plan: SubscriptionPlan = .yearly
     @State private var waitlistEmail = ""
+    @State private var planRating: Int?
     @State private var didJoinWaitlist = false
 
     /// Where the paywall sits. The spec's flow places it inside onboarding
@@ -36,7 +37,7 @@ struct OnboardingView: View {
         case calculating, result, cost                         // 10–12
         case proofBody, proofNumber, proofYourWay              // 13–15
         case wall, profile, commitment, projection, how        // 16–16d, 20
-        case permission, week                                  // 21–22
+        case permission, week, rating                          // 21–22, 22b
         case health                                            // consent, kept from the old flow
         case paywall, exitOffer, signIn                        // 23–25
 
@@ -59,7 +60,7 @@ struct OnboardingView: View {
                 insertion: .move(edge: .trailing).combined(with: .opacity),
                 removal: .move(edge: .leading).combined(with: .opacity)))
             .animation(.easeInOut(duration: 0.32), value: step)
-            .sensoryFeedback(.impact(weight: .light), trigger: step)
+            .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
     }
 
     @ViewBuilder
@@ -176,7 +177,10 @@ struct OnboardingView: View {
                              onSkip: { go(.week) })
 
         case .week:
-            WeekPreviewScreen { go(.health) }
+            WeekPreviewScreen { go(.rating) }
+
+        case .rating:
+            RatingScreen(rating: $planRating) { go(.health) }
 
         case .health:
             HealthConsentScreen {
