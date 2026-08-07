@@ -129,6 +129,32 @@ enum SignalEngine {
     private static let resonanceHz = 0.1      // ~6 breaths/min
     private static let concentrationMin = 0.30 // band power concentration for "clear"
     private static let ampFloor = 0.004        // rad; below this the pitch is flat
+
+    // MARK: Wrist-breathing calibration (pilot: 4 on-device sessions, 2026-08-07)
+    //
+    // Breathing read from the wrist resting anywhere (knee, lap, bed) — no
+    // placement, no posture. The torso rocks the arm a fraction of a degree per
+    // breath; deliberate slow breathing came back at the paced rate in every
+    // posture tried (6.0 seated conc .53, 5.9 reclined conc .86). All three
+    // constants are measurements, not guesses:
+    private static let wristAmpFloor = 0.0015  // rad. Wrist waves are millirads —
+        // the cleanest session of the pilot (reclined) was 2.6 mrad sd, which the
+        // belly floor above would REJECT. Floor sits under that with margin.
+    private static let wristBandLo = 0.05      // Hz (3/min). The wrist's enemy is
+        // settling drift, which showed up at ~2.1/min in every pilot capture and
+        // out-powers the breath 6–15×. The belly band's 0.033 floor (held
+        // breaths) would hand the drift the peak; 0.05 excludes what we
+        // observed while keeping 4/min breathing readable.
+    private static let wristAccelGateRatio = 1.5  // × the session's own median
+        // window accel → window unreadable. A slow arm reposition reads as a
+        // clean fake ~2/min wave at only ~1.6× median accel (measured), far
+        // under any absolute threshold that survives normal fidgeting. Relative
+        // to the session's own median catches exactly the shift windows.
+    private static let wristMinReadableFraction = 0.5  // of windows, or breathing
+        // is dropped entirely. Deliberate breathing hit 85–100% of windows in
+        // the pilot; quiet automatic breathing ~55–68%. The floor keeps a
+        // flickering half-curve from shipping: either the session's breath was
+        // readable, or 808 says nothing — never a guess.
     private static let hrDeclineFull = 15.0    // bpm drop that maps to 1.0
     private static let stillnessGain = 5.0     // activity → stillness sharpness
     private static let attitudeWeight = 1.0    // radians vs g weighting in activity
@@ -237,6 +263,65 @@ enum SignalEngine {
                     breathingRegularity = regularity(signal: breathBP, times: times)
                 }
             }
+        } else {
+            // MARK: Wrist breathing — opportunistic, posture-free, evidence-only.
+            //
+            // Every non-belly session gets a breathing attempt with the wrist
+            // calibration (tighter band, millirad floor, movement gating). The
+            // user does nothing: no mode, no placement, no coaching. Deliberate
+            // slow breathing reads; quiet automatic breathing usually won't
+            // clear the readable-fraction floor, and then these fields stay
+            // empty — the same honest degrade the belly path had.
+            let pitchW = bandPass(motion.map(\.pitch), times: times, slowSec: 12)
+            let rollW = bandPass(motion.map(\.roll), times: times, slowSec: 12)
+            let axis = selectBreathingAxis(pitchBP: pitchW, rollBP: rollW, times: times,
+                                           floor: wristAmpFloor, fMin: wristBandLo)
+            let amp = stddev(axis)
+            let (bestF, bestP, totalP) = dominantFrequency(times: times, values: axis,
+                                                            fMin: wristBandLo, fMax: breathBandHi)
+            let concentration = (totalP > 0 && !axis.isEmpty)
+                ? 2 * bestP / (totalP * Double(axis.count)) : 0
+
+            if amp >= wristAmpFloor && concentration >= concentrationMin && bestF > 0 {
+                // Movement gate, relative to this session's own baseline: a slow
+                // arm reposition sits at only ~1.6× the median window accel and
+                // masquerades as a clean slow breath, so gated windows read 0
+                // rather than a fake rate.
+                let windowAccel = windows.map { win in
+                    rms(indices(times, in: win).map { motion[$0].userAccel })
+                }
+                let gate = median(windowAccel) * wristAccelGateRatio
+
+                var rates: [Double] = []
+                var depths: [Double] = []
+                for (i, win) in windows.enumerated() {
+                    let idx = indices(times, in: win)
+                    if idx.count >= 8 && windowAccel[i] <= gate {
+                        let wt = idx.map { times[$0] }
+                        let wp = idx.map { axis[$0] }
+                        let (f, p, tot) = dominantFrequency(times: wt, values: wp,
+                                                            fMin: wristBandLo, fMax: breathBandHi)
+                        let conc = (tot > 0) ? 2 * p / (tot * Double(wp.count)) : 0
+                        rates.append((conc >= concentrationMin && f > 0) ? f * 60 : 0)
+                        depths.append((wp.max() ?? 0) - (wp.min() ?? 0))
+                    } else {
+                        rates.append(0)
+                        depths.append(0)
+                    }
+                }
+                rates = medianFiltered5(rates)
+
+                let readable = rates.filter { $0 > 0 }
+                let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
+                if fraction >= wristMinReadableFraction {
+                    breathingReadable = true
+                    breathingRateTimeseries = rates
+                    breathDepthTimeseries = depths
+                    meanBreathingRate = readable.reduce(0, +) / Double(readable.count)
+                    resonanceMatchScore = resonanceMatch(meanBreathingRate!)
+                    breathingRegularity = regularity(signal: axis, times: times)
+                }
+            }
         }
 
         // MARK: Stillness (always). Belly + readable → exclude the breathing band so
@@ -263,11 +348,18 @@ enum SignalEngine {
             ? nil : stillnessTimeseries.reduce(0, +) / Double(stillnessTimeseries.count)
 
         // MARK: Overall score
+        //
+        // Wrist breathing is EVIDENCE, not a grade: it shows on the results
+        // screen but never moves the score. Belly was opt-in — a user who chose
+        // resonance breathing asked to be scored on it. The wrist path runs on
+        // every session unasked, so folding resonance in would quietly punish
+        // anyone breathing naturally at 11/min for not breathing at 6, and
+        // would make new scores incomparable with every session before it.
         let overallScore = combine(
             stillness: stillnessScore,
             hrDecline: hrDecline,
-            resonance: resonanceMatchScore,
-            regularity: breathingRegularity
+            resonance: bellyBreathing ? resonanceMatchScore : nil,
+            regularity: bellyBreathing ? breathingRegularity : nil
         )
 
         return SignalResult(
@@ -336,19 +428,23 @@ enum SignalEngine {
 
     /// Fraction of a band-passed axis's power sitting in its single dominant peak
     /// (0..1-ish) — the "how clean is the breathing" measure the readability gate uses.
-    private static func bandConcentration(_ bp: [Double], times: [Double]) -> Double {
-        let (_, p, tot) = dominantFrequency(times: times, values: bp, fMin: breathBandLo, fMax: breathBandHi)
+    private static func bandConcentration(_ bp: [Double], times: [Double],
+                                          fMin: Double = breathBandLo) -> Double {
+        let (_, p, tot) = dominantFrequency(times: times, values: bp, fMin: fMin, fMax: breathBandHi)
         return (tot > 0 && !bp.isEmpty) ? 2 * p / (tot * Double(bp.count)) : 0
     }
 
     /// Picks the cleanest breathing axis: the highest-concentration candidate among
     /// those clearing the amplitude floor (a near-flat axis can show a spuriously
     /// high concentration, so gate on amplitude first). See the call site for why
-    /// concentration beats PCA's variance criterion.
-    private static func selectBreathingAxis(pitchBP: [Double], rollBP: [Double], times: [Double]) -> [Double] {
+    /// concentration beats PCA's variance criterion. The floor and band default to
+    /// the belly calibration; the wrist path passes its own.
+    private static func selectBreathingAxis(pitchBP: [Double], rollBP: [Double], times: [Double],
+                                            floor: Double = ampFloor,
+                                            fMin: Double = breathBandLo) -> [Double] {
         let cands = breathingCandidates(pitchBP: pitchBP, rollBP: rollBP)
         let ranked = cands.map { (bp: $0.bp,
-                                  rank: stddev($0.bp) >= ampFloor ? bandConcentration($0.bp, times: times) : -1) }
+                                  rank: stddev($0.bp) >= floor ? bandConcentration($0.bp, times: times, fMin: fMin) : -1) }
         return ranked.max(by: { $0.rank < $1.rank })!.bp
     }
 
@@ -381,16 +477,41 @@ enum SignalEngine {
 
     // MARK: - Filtering / stats
 
-    /// Band-pass ~[0.05, 0.5] Hz via difference of two centered moving averages
-    /// (fast low-pass minus slow low-pass). Zero-phase, adequate for this band.
-    private static func bandPass(_ y: [Double], times: [Double]) -> [Double] {
+    /// Band-pass via difference of two centered moving averages (fast low-pass
+    /// minus slow low-pass). Zero-phase, adequate for this band. `slowSec`
+    /// sets the low cutoff: 20 s passes ~2/min held breaths (belly); the wrist
+    /// path uses ~12 s so settling drift falls out of the band instead of
+    /// winning it.
+    private static func bandPass(_ y: [Double], times: [Double], slowSec: Double = 20) -> [Double] {
         guard y.count > 2 else { return y.map { _ in 0 } }
         let fs = sampleRate(times)
         let fastWin = max(1, Int((fs * 1.0).rounded()))    // ~1 s  → LP ~0.5 Hz
-        let slowWin = max(1, Int((fs * 20.0).rounded()))   // ~20 s → LP ~0.025 Hz (passes ~2/min)
+        let slowWin = max(1, Int((fs * slowSec).rounded()))
         let fast = movingAverage(y, fastWin)
         let slow = movingAverage(y, slowWin)
         return zip(fast, slow).map { $0 - $1 }
+    }
+
+    private static func median(_ y: [Double]) -> Double {
+        guard !y.isEmpty else { return 0 }
+        let s = y.sorted()
+        return s[s.count / 2]
+    }
+
+    /// Median-of-5 over the per-window rate curve. A single corrupted window
+    /// flanked by agreement can't survive it; a genuinely gated stretch of
+    /// three-plus zeros still reads as zero. Pilot-motivated: the one artifact
+    /// window in the seated paced session (a 4.0 amid forty 6.0s) disappears
+    /// under this filter, while the arm-shift stretch stays visible for the
+    /// accel gate to handle.
+    private static func medianFiltered5(_ y: [Double]) -> [Double] {
+        guard y.count >= 5 else { return y }
+        var out = y
+        for i in y.indices {
+            let lo = max(0, i - 2), hi = min(y.count - 1, i + 2)
+            out[i] = median(Array(y[lo...hi]))
+        }
+        return out
     }
 
     private static func sampleRate(_ times: [Double]) -> Double {

@@ -152,14 +152,93 @@ final class SignalEngineTests: XCTestCase {
     }
 
     /// A regular session has no breathing output and scores stillness the total way.
-    func test_regularSessionHasNoBreathing() {
+    // MARK: - Wrist breathing (posture-free, calibrated from the 2026-08-07 pilot)
+
+    /// The behavior this replaces: `test_regularSessionHasNoBreathing` asserted
+    /// that a clean 6/min wave in a non-belly session was IGNORED. Since the
+    /// wrist path, the same session reads it — no mode, no placement. Stillness
+    /// stays "total" and the score stays 2-signal: wrist breath is evidence,
+    /// never a grade.
+    func test_wristSession_readsCleanSlowBreathing() {
         let m = motion(dur: 120, pitch: sine(0.1, amp: 0.1))
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertTrue(r.breathingRateTimeseries.isEmpty)
-        XCTAssertTrue(r.breathDepthTimeseries.isEmpty)
-        XCTAssertNil(r.meanBreathingRate)
+        XCTAssertNotNil(r.meanBreathingRate)
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.8)
         XCTAssertEqual(r.stillnessMethod, "total")
+    }
+
+    /// Wrist amplitudes are millirads — the pilot's cleanest session was a
+    /// 2.6 mrad sd wave the belly floor (4 mrad) would reject. The wrist floor
+    /// must read it.
+    func test_wristSession_readsMilliradAmplitude() {
+        let m = motion(dur: 120, pitch: { _ in 0 }, roll: sine(0.1, amp: 0.0035))
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate, "millirad wrist wave must clear the wrist floor")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.8)
+    }
+
+    /// Settling drift (~2/min) was the dominant slow signal in every pilot
+    /// capture. The wrist band's 0.05 Hz floor excludes it: drift alone must
+    /// produce NO breathing, not a fake slow rate.
+    func test_wristSession_settlingDriftReadsNothing() {
+        let m = motion(dur: 120, pitch: sine(0.035, amp: 0.02))   // 2.1/min "drift"
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.meanBreathingRate, "settling drift must not read as breath")
+        XCTAssertTrue(r.breathingRateTimeseries.isEmpty)
+    }
+
+    /// A slow arm reposition mid-session: elevated (but not spiky) accel with a
+    /// big slow tilt excursion. Measured in the pilot at only ~1.6× the median
+    /// window accel — the relative gate must zero those windows while the
+    /// surrounding breath keeps its rate.
+    func test_wristSession_armShiftIsGatedNotMisread() {
+        let shift: (Double) -> Bool = { (60...80).contains($0) }
+        let m = motion(
+            dur: 180,
+            pitch: { t in sine(0.1, amp: 0.006)(t) + (shift(t) ? 0.08 * sin((t - 60) / 20 * .pi) : 0) },
+            accel: { t in shift(t) ? 0.012 : 0.004 }
+        )
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate)
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.9,
+                       "the shift must be excluded, not averaged into the rate")
+    }
+
+    /// Breath readable in under half the windows (quiet automatic breathing in
+    /// the pilot: 55–68% at best, often less) → the whole signal is dropped
+    /// rather than shipping a flickering half-curve. Here: a breath that simply
+    /// stops a third of the way in.
+    func test_wristSession_sparseReadabilityDropsOut() {
+        let m = motion(dur: 180, pitch: { t in t < 60 ? sine(0.1, amp: 0.006)(t) : 0 })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.meanBreathingRate,
+                     "a breath readable in a minority of windows must say nothing")
+        XCTAssertTrue(r.breathingRateTimeseries.isEmpty)
+    }
+
+    /// The score must be identical with and without a readable wrist breath —
+    /// an unasked-for signal can never move the number. (Belly kept its opt-in
+    /// 4-signal weighting; that path is unchanged.)
+    func test_wristBreathing_neverMovesTheScore() {
+        let hrs = hr(dur: 120) { _ in 70 }
+        let withBreath = SignalEngine.analyze(
+            motion: motion(dur: 120, pitch: sine(0.1, amp: 0.1)), hr: hrs, bellyBreathing: false)
+        let withoutBreath = SignalEngine.analyze(
+            motion: motion(dur: 120, pitch: { _ in 0.0 }), hr: hrs, bellyBreathing: false)
+
+        XCTAssertNotNil(withBreath.meanBreathingRate)
+        XCTAssertNil(withoutBreath.meanBreathingRate)
+        // Same stillness inputs would be ideal, but the sine adds real motion —
+        // so instead assert the invariant directly: the combined score equals
+        // the 2-signal combination of its own stillness + HR, breath ignored.
+        let expected = 0.55 * (withBreath.stillnessScore ?? 0) + 0.45 * 0   // no HR decline
+        XCTAssertEqual(withBreath.overallScore ?? -1, expected / (0.55 + 0.45), accuracy: 0.001,
+                       "wrist breathing must not enter the overall score")
     }
 
     /// Belly mode with a flat/near-zero pitch degrades cleanly to a 2-signal result —

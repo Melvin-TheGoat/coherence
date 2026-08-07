@@ -33,14 +33,26 @@ final class VerdictEngineTests: XCTestCase {
         XCTAssertTrue(v.sentence.contains("streak") || v.sentence.contains("faint"), v.sentence)
     }
 
-    /// A Regular session has no breath signal — the verdict must not mention one
-    /// even if stale rate values were somehow present.
-    func test_regularSession_neverClaimsBreath() {
+    /// No breathing data → no breath claim. The rule used to be "never mention
+    /// breath on a non-belly session"; since the wrist path (2026-08-07) any
+    /// session may carry a real breath reading, so the gate moved from the
+    /// mode flag to data presence. The engine only populates breathing when it
+    /// genuinely read one, so nil stays an absolute silence.
+    func test_sessionWithoutBreathingData_neverClaimsBreath() {
         let v = VerdictEngine.verdict(for: .init(
             overallScore: 0.7, stillnessScore: 0.9, hrDecline: 6,
-            meanBreathingRate: 5.5, resonanceMatchScore: 0.9, bellyBreathing: false))
+            meanBreathingRate: nil, resonanceMatchScore: nil, bellyBreathing: false))
         XCTAssertFalse(v.sentence.contains("resonance"), v.sentence)
         XCTAssertFalse(v.sentence.contains("breath"), v.sentence)
+    }
+
+    /// The other direction: a wrist session that DID read a breath is allowed
+    /// to say so, belly flag or no belly flag.
+    func test_wristSessionWithBreathingData_mayClaimBreath() {
+        let v = VerdictEngine.verdict(for: .init(
+            overallScore: 0.8, stillnessScore: 0.9, hrDecline: 2,
+            meanBreathingRate: 5.8, resonanceMatchScore: 0.9, bellyBreathing: false))
+        XCTAssertTrue(v.sentence.contains("resonance"), v.sentence)
     }
 
     func test_hrReading_readsStartToEnd() {

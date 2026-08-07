@@ -18,8 +18,13 @@ public enum VerdictEngine {
         public var overallScore: Double?        // 0–1
         public var stillnessScore: Double?      // 0–1
         public var hrDecline: Double?           // positive = HR fell (bpm)
-        public var meanBreathingRate: Double?   // breaths/min (belly only)
-        public var resonanceMatchScore: Double? // 0–1 (belly only)
+        /// Breaths/min. Populated by the belly path (historic sessions) or the
+        /// wrist path (posture-free, 2026-08-07) — the engine only fills these
+        /// when a breath was genuinely readable, so presence IS the license to
+        /// speak about it. `bellyBreathing` no longer gates breath claims; it
+        /// stays for callers that still pass it.
+        public var meanBreathingRate: Double?
+        public var resonanceMatchScore: Double? // 0–1
         public var bellyBreathing: Bool
 
         public init(overallScore: Double? = nil, stillnessScore: Double? = nil,
@@ -45,7 +50,9 @@ public enum VerdictEngine {
             else if d >= 4 { claims.append("heart eased down \(Int(d.rounded())) beats") }
             else if d <= -5 { claims.append("heart stayed lively") }
         }
-        if m.bellyBreathing, let res = m.resonanceMatchScore, let rate = m.meanBreathingRate {
+        // Gated on data, not on mode: the engine only populates breathing when
+        // it truly read one, so nil here means "say nothing", exactly as before.
+        if let res = m.resonanceMatchScore, let rate = m.meanBreathingRate {
             if res >= 0.6 { claims.append("breath found the resonance zone") }
             else if rate <= 8 { claims.append(String(format: "breath slowed to %.1f a minute", rate)) }
         }
