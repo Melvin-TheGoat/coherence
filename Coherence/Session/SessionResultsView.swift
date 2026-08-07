@@ -35,9 +35,6 @@ struct SessionResultsView: View {
                             hero(stats)
                             tiles(stats)
                             ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
-                            #if DEBUG
-                            hrvProbe(stats)
-                            #endif
                             shareButton
                         } else {
                             missingStatsCard
@@ -70,63 +67,6 @@ struct SessionResultsView: View {
             .onAppear(perform: load)
         }
     }
-
-    // MARK: HRV probe (DEBUG)
-
-    #if DEBUG
-    /// Temporary instrument, not a designed surface. It exists to answer one
-    /// question on real hardware: does the Watch actually produce SDNN samples
-    /// inside a session of ours, and do they move?
-    ///
-    /// Deliberately shows the raw values rather than a verdict. A verdict built
-    /// on a number nobody has looked at is how a signal gets shipped that
-    /// doesn't mean anything. This comes out once the real presentation lands.
-    private func hrvProbe(_ stats: MeditationStats) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("HRV PROBE · DEBUG")
-                .font(.system(size: 9, weight: .heavy))
-                .tracking(1)
-                .foregroundStyle(.orange)
-
-            if stats.hrvSDNNSamples.isEmpty {
-                Text("No SDNN samples in this session.")
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(AppColor.textPrimary)
-            } else {
-                Text("session: " + stats.hrvSDNNSamples
-                        .map { String(format: "%.0f", $0) }.joined(separator: ", ") + " ms")
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(AppColor.textPrimary)
-                if let mean = stats.hrvMeanSDNN {
-                    Text(String(format: "mean: %.1f ms", mean))
-                        .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(AppColor.textPrimary)
-                }
-            }
-
-            if let base = stats.hrvBaselineSDNN {
-                Text(String(format: "baseline: %.1f ms (n=%d)", base, stats.hrvBaselineSampleCount))
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(AppColor.textSecondary)
-                if let mean = stats.hrvMeanSDNN {
-                    Text(String(format: "delta: %+.1f ms", mean - base))
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
-                        .foregroundStyle(mean >= base ? AppColor.accentGold : AppColor.textSecondary)
-                }
-            } else {
-                Text("baseline: none (no history in the last 30 days)")
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(Color.orange.opacity(0.10),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-            .stroke(Color.orange.opacity(0.35), lineWidth: 1))
-    }
-    #endif
 
     // MARK: Header
 
