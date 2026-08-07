@@ -32,10 +32,14 @@ enum OnboardingSection {
 }
 
 /// The ground every onboarding screen sits on: near-black with a slow radial
-/// wash in the section's colour. One modifier so no screen hand-rolls a
-/// background and drifts.
+/// wash in the section's colour, and a signal drifting across the lower third.
+/// One modifier so no screen hand-rolls a background and drifts.
 struct OnboardingBackground: ViewModifier {
     let section: OnboardingSection
+    /// Off for the theta screen only. A second moving line next to the word
+    /// "theta" in a health app starts to look like a live reading, and that
+    /// screen's entire job is admitting we cannot take one.
+    var ambient: Bool = true
     @State private var breathe = false
 
     func body(content: Content) -> some View {
@@ -49,6 +53,13 @@ struct OnboardingBackground: ViewModifier {
                                    startRadius: 8,
                                    endRadius: breathe ? 520 : 430)
                     .blur(radius: 42)
+                    if ambient {
+                        AmbientSignal(tint: near)
+                            .frame(height: 150)
+                            .frame(maxHeight: .infinity, alignment: .bottom)
+                            .padding(.bottom, 64)
+                            .allowsHitTesting(false)
+                    }
                 }
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 1.1), value: section)
@@ -63,8 +74,69 @@ struct OnboardingBackground: ViewModifier {
 }
 
 extension View {
-    func onboardingGround(_ section: OnboardingSection) -> some View {
-        modifier(OnboardingBackground(section: section))
+    func onboardingGround(_ section: OnboardingSection, ambient: Bool = true) -> some View {
+        modifier(OnboardingBackground(section: section, ambient: ambient))
+    }
+}
+
+/// Two slow waves travelling across the bottom of the screen, in the section's
+/// colour at very low opacity.
+///
+/// This is decoration, and it is the only decoration in onboarding. It earns
+/// its place by filling the dead band under short questions — five options
+/// leave roughly 280 pt of black, and centring the block only halves that.
+///
+/// **It must never read as data.** No axis, no labels, no leading edge, no
+/// cursor: it travels by exactly one period on a loop, which the eye reads as
+/// pattern rather than a trace. It holds completely still under Reduce Motion.
+struct AmbientSignal: View {
+    let tint: Color
+    @State private var drift = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One period in points. Translating by exactly this much loops seamlessly.
+    private let period: CGFloat = 150
+
+    var body: some View {
+        ZStack {
+            DriftWave(period: period, amplitude: 0.30, phase: 0)
+                .stroke(tint.opacity(0.26), lineWidth: 2)
+            DriftWave(period: period * 1.5, amplitude: 0.20, phase: .pi / 3)
+                .stroke(tint.opacity(0.14), lineWidth: 1.5)
+                .offset(y: 22)
+        }
+        .offset(x: drift ? -period * 3 : 0)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .clipped()
+        .onAppear {
+            guard !reduceMotion else { return }
+            withAnimation(.linear(duration: 26).repeatForever(autoreverses: false)) {
+                drift = true
+            }
+        }
+    }
+}
+
+/// A sine drawn far wider than the screen, so drifting never exposes an end.
+private struct DriftWave: Shape {
+    let period: CGFloat
+    /// Fraction of the rect's height, peak to centre.
+    let amplitude: CGFloat
+    let phase: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var p = Path()
+        let mid = rect.midY
+        let amp = rect.height * amplitude
+        let end = rect.width + period * 3
+        p.move(to: CGPoint(x: 0, y: mid - sin(phase) * amp))
+        var x: CGFloat = 2
+        while x <= end {
+            let y = mid - sin(x / period * 2 * .pi + phase) * amp
+            p.addLine(to: CGPoint(x: x, y: y))
+            x += 2
+        }
+        return p
     }
 }
 
@@ -147,7 +219,9 @@ struct OnboardingOption: View {
                                               : AppColor.textSecondary.opacity(0.35))
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 15)
+            // 18, not 15: the taller row is half of why a five-option screen
+            // stopped looking like a list floating in a void.
+            .padding(.vertical, 18)
             .background(selected ? AppColor.accentGold.opacity(0.10)
                                  : AppColor.backgroundSecondary.opacity(0.75),
                         in: RoundedRectangle(cornerRadius: 15, style: .continuous))
@@ -180,6 +254,8 @@ struct OnboardingScreen<Content: View>: View {
     var ctaTitle: String = "Continue"
     var ctaFootnote: String? = nil
     var ctaEnabled: Bool = true
+    /// See `OnboardingBackground.ambient`. Off for the theta screen only.
+    var ambient: Bool = true
     /// Single-select questions advance on the answer tap and therefore show NO
     /// Continue button at all. Keeping a button next to tap-to-advance was
     /// worse than either choice alone: Aziz met it as a user and read the
@@ -213,10 +289,42 @@ struct OnboardingScreen<Content: View>: View {
                     .padding(.top, 8)
             }
 
-            ScrollView {
-                content.padding(.top, 22).padding(.bottom, 8)
+            // Content shorter than the band centres itself; longer content
+            // still scrolls from the top exactly as before.
+            //
+            // This is the single fix for the flow's biggest visual problem.
+            // The scaffold used to pin the question to the ceiling and the CTA
+            // to the floor, so every screen's unused height fell out as one
+            // black band directly above the button: 280 pt on a five-option
+            // question, over 400 on the Watch gate. Splitting it above and
+            // below turns absence into margin, and costs nothing.
+            GeometryReader { geo in
+                ScrollView {
+                    VStack(spacing: 0) {
+                        // Deliberately NOT centred. True centring on a tall
+                        // band just moves the void from under the content to
+                        // above it, and divorces the answers from the question
+                        // they belong to.
+                        //
+                        // A fixed cap, not a proportion. A proportional share
+                        // reads well on a five-option list and badly on a thin
+                        // screen, where a third of a very large slack strands
+                        // the content in the middle with a gulf under the
+                        // question. 60 pt is enough for the block to look
+                        // placed; everything else falls to the bottom, where
+                        // the ambient signal lives.
+                        Spacer(minLength: 0)
+                            .frame(maxHeight: 60)
+                        content
+                            .padding(.top, 22)
+                            .padding(.bottom, 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(minHeight: geo.size.height)
+                }
+                .scrollBounceBehavior(.basedOnSize)
             }
-            .scrollBounceBehavior(.basedOnSize)
 
             if autoAdvances {
                 // No button: the answer IS the action. A quiet line keeps the
@@ -245,7 +353,7 @@ struct OnboardingScreen<Content: View>: View {
         .padding(.top, 12)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .onboardingGround(section)
+        .onboardingGround(section, ambient: ambient)
     }
 }
 

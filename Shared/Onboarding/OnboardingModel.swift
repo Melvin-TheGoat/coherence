@@ -58,6 +58,20 @@ public enum CurrentFrequency: String, CaseIterable, Identifiable, Codable {
         case .almostDaily:     return "Almost every day"
         }
     }
+
+    /// Every option list carries icons. Without them a five-row list is five
+    /// floating sentences, and the screen reads as unfinished no matter how it
+    /// is spaced. The symbol also gives the selected state somewhere to tint
+    /// besides the tick.
+    public var icon: String {
+        switch self {
+        case .never:           return "circle.dotted"
+        case .triedNeverStuck: return "arrow.trianglehead.counterclockwise"
+        case .fewTimesMonth:   return "calendar"
+        case .mostWeeks:       return "calendar.badge.checkmark"
+        case .almostDaily:     return "flame"
+        }
+    }
 }
 
 /// The escalation question. Its job is to turn a static problem into a
@@ -77,6 +91,15 @@ public enum AloneWithThoughts: String, CaseIterable, Identifiable, Codable {
         case .harder:         return "It's got harder"
         case .same:           return "About the same"
         case .better:         return "Actually better now"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .notLikeIUsedTo: return "waveform.path.ecg"
+        case .harder:         return "arrow.down.right"
+        case .same:           return "equal"
+        case .better:         return "arrow.up.right"
         }
     }
 
@@ -110,6 +133,16 @@ public enum DoingNothing: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    public var icon: String {
+        switch self {
+        case .seconds:     return "bolt"
+        case .aMinute:     return "timer"
+        case .fewMinutes:  return "clock"
+        case .anHour:      return "hourglass"
+        case .comfortable: return "leaf"
+        }
+    }
+
     /// True when stillness is already hard for them — feeds which pain the
     /// reflection screen speaks to.
     public var isRestless: Bool { self == .seconds || self == .aMinute }
@@ -128,6 +161,16 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
         case .few:       return "Two or three times"
         case .many:      return "More than I'd like to admit"
         case .lostCount: return "I've lost count"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .never:     return "sparkles"
+        case .once:      return "1.circle"
+        case .few:       return "3.circle"
+        case .many:      return "arrow.trianglehead.2.clockwise"
+        case .lostCount: return "questionmark.circle"
         }
     }
 }
@@ -152,6 +195,16 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
         case .aYear:   return "A year or so"
         case .years:   return "Years"
         case .forever: return "As long as I can remember"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .weeks:   return "calendar"
+        case .months:  return "calendar.badge.clock"
+        case .aYear:   return "clock.arrow.circlepath"
+        case .years:   return "hourglass"
+        case .forever: return "infinity"
         }
     }
 
@@ -185,6 +238,17 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    public var icon: String {
+        switch self {
+        case .couldntTell:    return "eye.slash"
+        case .tooManyChoices: return "square.grid.3x3"
+        case .forgot:         return "bell.slash"
+        case .feltWrong:      return "questionmark.circle"
+        case .noTime:         return "clock.badge.exclamationmark"
+        case .gotBoring:      return "zzz"
+        }
+    }
+
     /// The feature that answers this objection, in the user's own framing.
     public var answer: String {
         switch self {
@@ -214,6 +278,17 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         case .lunch:     return "Around lunch"
         case .afterWork: return "When I get home from work"
         case .beforeBed: return "Before bed"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .wake:      return "sunrise"
+        case .coffee:    return "cup.and.saucer"
+        case .commute:   return "car"
+        case .lunch:     return "fork.knife"
+        case .afterWork: return "house"
+        case .beforeBed: return "moon.stars"
         }
     }
 

@@ -92,7 +92,9 @@ struct ReliefScreen: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.relief)
+        // No ambient wave: this is a title card, and the space around the mark
+        // is what makes it read as one.
+        .onboardingGround(.relief, ambient: false)
         .onAppear { withAnimation(.easeOut(duration: 0.7)) { appeared = true } }
     }
 }
@@ -175,7 +177,9 @@ struct BreathScreen: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.relief)
+        // Emptiness is this screen's whole point. A drifting line behind the
+        // orb would compete with the one thing the user is meant to follow.
+        .onboardingGround(.relief, ambient: false)
         .task { await breathe() }
     }
 
@@ -219,7 +223,8 @@ struct BaselineScreen: View {
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(CurrentFrequency.allCases) { f in
-                    OnboardingOption(label: f.label, selected: frequency == f) { pick(f) }
+                    OnboardingOption(label: f.label, icon: f.icon,
+                                     selected: frequency == f) { pick(f) }
                 }
             }
             .sensoryFeedback(.selection, trigger: frequency)
@@ -262,6 +267,16 @@ struct MotivationScreen: View {
 
 /// The input type changes here on purpose: six tap-lists in a row is where
 /// drop-off lives.
+///
+/// The waveform is driven by the slider, so the answer is drawn as well as
+/// named: slow and even at Fine, fast and ragged at Fried. It replaced roughly
+/// 420 pt of black, the emptiest screen in the flow.
+///
+/// **Teal to red, never gold.** Gold means a chosen or achieved thing, and it
+/// is what the results screen spends on the one number this whole product is
+/// selling. Spending it here on someone's stress level would both misuse the
+/// grammar and blunt the payoff. Watching your own line go red is the better
+/// argument anyway.
 struct StressScreen: View {
     @Binding var stress: Double
     let progress: Double
@@ -279,21 +294,49 @@ struct StressScreen: View {
         }
     }
 
+    /// Calm teal, through the relief section's amber, to the cost section's
+    /// red. Three stops rather than two: interpolating teal straight to red in
+    /// RGB passes through a washed-out pink, which looked like a mistake at
+    /// exactly the midpoint most people leave the slider on.
+    private var tint: Color {
+        let t = min(max(stress, 0), 1)
+        let calm  = (r: 0.45, g: 0.66, b: 0.63)   // AppColor.calmAccent
+        // A warm orange, pushed deliberately off the gold. The obvious midpoint
+        // sits so close to AccentGold that the wave and the Continue button
+        // below it read as the same colour, which is both flat to look at and
+        // the exact borrowing of gold this screen is avoiding.
+        let amber = (r: 0.88, g: 0.50, b: 0.18)
+        let hot   = (r: 0.78, g: 0.26, b: 0.22)   // .cost
+        let (from, to, k) = t < 0.5 ? (calm, amber, t * 2) : (amber, hot, (t - 0.5) * 2)
+        return Color(red:   from.r + (to.r - from.r) * k,
+                     green: from.g + (to.g - from.g) * k,
+                     blue:  from.b + (to.b - from.b) * k)
+    }
+
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
                          title: "How stressed have you\nbeen lately?",
                          onContinue: onContinue) {
-            VStack(spacing: 26) {
+            VStack(spacing: 22) {
+                StressWave(level: stress, closed: true)
+                    .fill(LinearGradient(colors: [tint.opacity(0.22), tint.opacity(0.0)],
+                                         startPoint: .top, endPoint: .bottom))
+                    .overlay {
+                        StressWave(level: stress, closed: false)
+                            .stroke(tint, style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                    }
+                    .frame(height: 150)
+                    .animation(.easeOut(duration: 0.18), value: stress)
+
                 Text(readout)
                     .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(tint)
                     .animation(.easeOut(duration: 0.2), value: readout)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 20)
 
                 VStack(spacing: 8) {
                     Slider(value: $stress, in: 0...1)
-                        .tint(AppColor.accentGold)
+                        .tint(tint)
                     HStack {
                         Text("Fine")
                         Spacer()
@@ -305,6 +348,48 @@ struct StressScreen: View {
             }
             .sensoryFeedback(.selection, trigger: notch)
         }
+    }
+}
+
+/// The stress line. Frequency and amplitude both climb with `level`, and a
+/// deterministic wobble is added on top that only becomes visible near the
+/// upper end — so "Fried" is genuinely ragged while "Fine" is a clean sine.
+///
+/// The wobble is a fixed function of x rather than random, so the line stays
+/// still while the user drags instead of shimmering under their thumb.
+private struct StressWave: Shape {
+    /// 0 calm, 1 fried.
+    let level: Double
+    /// Closed down to the baseline for the gradient fill; open for the stroke,
+    /// so the fill's bottom edge never gets drawn as part of the line.
+    let closed: Bool
+
+    func path(in rect: CGRect) -> Path {
+        let t = min(max(level, 0), 1)
+        let mid = rect.midY
+        let cycles = 1.6 + t * 5.5
+        let amp = rect.height * (0.08 + t * 0.23)
+        let jag = t * t * rect.height * 0.16
+
+        var p = Path()
+        var x: CGFloat = 0
+        while x <= rect.width {
+            let phase = (x / rect.width) * cycles * 2 * .pi
+            // Low frequency on purpose. A fast wobble renders as static, which
+            // reads as a broken graphic; a slow one reads as an uneven beat,
+            // which is what being wound up actually looks like.
+            let wobble = jag * sin(x * 0.31) * cos(x * 0.11)
+            let y = mid - sin(phase) * amp - wobble
+            if x == 0 { p.move(to: CGPoint(x: x, y: y)) }
+            else { p.addLine(to: CGPoint(x: x, y: y)) }
+            x += 2
+        }
+        if closed {
+            p.addLine(to: CGPoint(x: rect.width, y: rect.maxY))
+            p.addLine(to: CGPoint(x: 0, y: rect.maxY))
+            p.closeSubpath()
+        }
+        return p
     }
 }
 
@@ -335,7 +420,8 @@ struct AloneWithThoughtsScreen: View {
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(AloneWithThoughts.allCases) { a in
-                    OnboardingOption(label: a.label, selected: answer == a) { pick(a) }
+                    OnboardingOption(label: a.label, icon: a.icon,
+                                     selected: answer == a) { pick(a) }
                 }
             }
             .sensoryFeedback(.selection, trigger: answer)
@@ -373,7 +459,8 @@ struct DoingNothingScreen: View {
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(DoingNothing.allCases) { d in
-                    OnboardingOption(label: d.label, selected: answer == d) { pick(d) }
+                    OnboardingOption(label: d.label, icon: d.icon,
+                                     selected: answer == d) { pick(d) }
                 }
             }
             .sensoryFeedback(.selection, trigger: answer)
@@ -405,7 +492,8 @@ struct RestartScreen: View {
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(RestartCount.allCases) { r in
-                    OnboardingOption(label: r.label, selected: restarts == r) { pick(r) }
+                    OnboardingOption(label: r.label, icon: r.icon,
+                                     selected: restarts == r) { pick(r) }
                 }
             }
             .sensoryFeedback(.impact(flexibility: .rigid), trigger: restarts)
@@ -438,7 +526,8 @@ struct IntendedForScreen: View {
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(IntendedFor.allCases) { i in
-                    OnboardingOption(label: i.label, selected: intended == i) { pick(i) }
+                    OnboardingOption(label: i.label, icon: i.icon,
+                                     selected: intended == i) { pick(i) }
                 }
             }
             .sensoryFeedback(.selection, trigger: intended)
@@ -466,7 +555,8 @@ struct CauseScreen: View {
                          onContinue: onContinue) {
             VStack(spacing: 10) {
                 ForEach(DropoutCause.allCases) { c in
-                    OnboardingOption(label: c.label, selected: causes.contains(c)) {
+                    OnboardingOption(label: c.label, icon: c.icon,
+                                     selected: causes.contains(c)) {
                         if causes.contains(c) { causes.remove(c) } else { causes.insert(c) }
                     }
                 }
@@ -493,14 +583,138 @@ struct WatchGateScreen: View {
                          ctaTitle: hasWatch == false ? "Join the waitlist" : "Continue",
                          ctaEnabled: hasWatch != nil,
                          onContinue: { hasWatch == false ? onNo() : onYes() }) {
-            VStack(spacing: 10) {
-                OnboardingOption(label: "Yes", icon: "applewatch",
-                                 selected: hasWatch == true) { hasWatch = true }
-                OnboardingOption(label: "No, not yet", icon: "applewatch.slash",
-                                 selected: hasWatch == false) { hasWatch = false }
+            VStack(spacing: 22) {
+                // Two options left over 400 pt of black on the one screen that
+                // decides whether the product can work for this person at all.
+                // Showing the instrument turns "yes" into "yes, I own that"
+                // rather than a form field.
+                VStack(spacing: 8) {
+                    WatchIllustration()
+                        .frame(width: 150, height: 200)
+                    Text("Heart rate and stillness, read from the wrist.")
+                        .font(.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 10) {
+                    OnboardingOption(label: "Yes", icon: "applewatch",
+                                     selected: hasWatch == true) { hasWatch = true }
+                    OnboardingOption(label: "No, not yet", icon: "applewatch.slash",
+                                     selected: hasWatch == false) { hasWatch = false }
+                }
             }
             .sensoryFeedback(.selection, trigger: hasWatch)
         }
+    }
+}
+
+/// A Watch with a pulse trace crossing its face, drawn rather than
+/// screenshotted so it inherits the app's colours and needs no asset.
+///
+/// The numbers on the face are illustrative. That's defensible here because it
+/// reads unmistakably as a drawing; it would not be on any screen that reports
+/// a reading. Teal for the trace: it's a body signal, not an achievement.
+private struct WatchIllustration: View {
+    @State private var sweep = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        ZStack {
+            // Band
+            VStack(spacing: 0) {
+                bandSegment
+                Spacer(minLength: 0)
+                bandSegment
+            }
+            .frame(width: 46)
+
+            // Case. Opaque, or the band shows straight through it.
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color.black)
+                .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    .stroke(AppColor.textSecondary.opacity(0.28), lineWidth: 1.5))
+                .frame(width: 70, height: 132)
+
+            // Digital crown
+            Capsule()
+                .fill(AppColor.textSecondary.opacity(0.32))
+                .frame(width: 5, height: 20)
+                .offset(x: 37, y: -18)
+
+            // Face
+            RoundedRectangle(cornerRadius: 17, style: .continuous)
+                .fill(Color.black.opacity(0.85))
+                .frame(width: 56, height: 118)
+                .overlay {
+                    VStack(spacing: 0) {
+                        Text("62")
+                            .font(.system(size: 21, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text("BPM")
+                            .font(.system(size: 8, weight: .heavy))
+                            .tracking(1)
+                            .foregroundStyle(AppColor.textSecondary)
+
+                        // The trace is always fully drawn underneath, with a
+                        // bright head sweeping across it like a monitor. An
+                        // earlier version trimmed the only copy of the line,
+                        // so for half of every cycle the face was empty and
+                        // the illustration looked broken rather than alive.
+                        ZStack {
+                            PulseTrace()
+                                .stroke(AppColor.calmAccent.opacity(0.3),
+                                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                            PulseTrace()
+                                .trim(from: 0, to: sweep ? 1 : 0)
+                                .stroke(AppColor.calmAccent,
+                                        style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+                        }
+                        .frame(height: 34)
+                        .padding(.top, 10)
+
+                        Text("STILL")
+                            .font(.system(size: 8.5, weight: .heavy))
+                            .tracking(0.8)
+                            .foregroundStyle(AppColor.accentGold)
+                            .padding(.top, 8)
+                    }
+                    .padding(.horizontal, 6)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+        }
+        .onAppear {
+            guard !reduceMotion else { sweep = true; return }
+            // No autoreverse: the head sweeps left to right and restarts, which
+            // is how a monitor behaves. Reversing would draw it backwards.
+            withAnimation(.linear(duration: 1.7).repeatForever(autoreverses: false)) {
+                sweep = true
+            }
+        }
+    }
+
+    private var bandSegment: some View {
+        Rectangle()
+            .fill(AppColor.textSecondary.opacity(0.14))
+            .frame(width: 42, height: 40)
+    }
+}
+
+/// One heartbeat, in the shape everyone recognises.
+private struct PulseTrace: Shape {
+    func path(in rect: CGRect) -> Path {
+        let mid = rect.midY
+        let w = rect.width
+        var p = Path()
+        p.move(to: CGPoint(x: 0, y: mid))
+        p.addLine(to: CGPoint(x: w * 0.26, y: mid))
+        p.addLine(to: CGPoint(x: w * 0.34, y: mid - rect.height * 0.28))
+        p.addLine(to: CGPoint(x: w * 0.44, y: mid + rect.height * 0.42))
+        p.addLine(to: CGPoint(x: w * 0.54, y: mid - rect.height * 0.48))
+        p.addLine(to: CGPoint(x: w * 0.64, y: mid + rect.height * 0.12))
+        p.addLine(to: CGPoint(x: w * 0.72, y: mid))
+        p.addLine(to: CGPoint(x: w, y: mid))
+        return p
     }
 }
 
@@ -553,7 +767,8 @@ struct AnchorScreen: View {
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(Anchor.allCases) { a in
-                    OnboardingOption(label: a.label, selected: anchor == a) { pick(a) }
+                    OnboardingOption(label: a.label, icon: a.icon,
+                                     selected: anchor == a) { pick(a) }
                 }
             }
             .sensoryFeedback(.selection, trigger: anchor)

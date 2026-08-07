@@ -297,6 +297,11 @@ struct ProofScreen: View {
     var body: some View {
         OnboardingScreen(section: .win, title: title, subtitle: subtitle,
                          ctaTitle: beat == .yourWay ? "That's what I want" : "Go on",
+                         // The theta beat is the one screen with no ambient
+                         // wave: a second moving line beside that word starts
+                         // to look like a reading, and this screen exists to
+                         // admit we can't take one.
+                         ambient: beat != .body,
                          onContinue: onContinue) {
             illustration.frame(maxWidth: .infinity).padding(.vertical, 10)
         }
@@ -792,23 +797,101 @@ struct PermissionScreen: View {
                          ctaTitle: "Turn on my reminder",
                          onSkip: onSkip,
                          onContinue: onAllow) {
-            HStack(spacing: 13) {
-                Image(systemName: "bell.badge")
-                    .font(.system(size: 17))
-                    .foregroundStyle(AppColor.accentGold)
-                VStack(alignment: .leading, spacing: 3) {
+            VStack(spacing: 14) {
+                // We're asking permission for something they've never seen, so
+                // show it arriving, on a lock screen, at the hour their own
+                // anchor implies. Demonstrated beats described, and it replaced
+                // a flat card floating in 440 pt of dark.
+                LockScreenBanner(hour: anchor?.defaultHour ?? 8)
+                Text("One a day. Nothing else, ever.")
+                    .font(.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+}
+
+/// A miniature lock screen with the 808 notification dropping in and easing
+/// back out on a loop. Holds still, banner already shown, under Reduce Motion.
+private struct LockScreenBanner: View {
+    let hour: Int
+    @State private var shown = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private var timeText: String {
+        var comps = DateComponents()
+        comps.hour = hour
+        comps.minute = 0
+        let date = Calendar.current.date(from: comps) ?? Date()
+        let f = DateFormatter()
+        f.timeStyle = .short
+        return f.string(from: date)
+    }
+
+    private var dateText: String {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, d MMMM"
+        return f.string(from: Date())
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(timeText)
+                .font(.system(size: 38, weight: .ultraLight, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+            Text(dateText)
+                .font(.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 4)
+
+            HStack(spacing: 12) {
+                Text("808")
+                    .font(.system(size: 11, weight: .black, design: .rounded))
+                    .tracking(0.6)
+                    .foregroundStyle(AppColor.textOnAccent)
+                    .frame(width: 30, height: 30)
+                    .background(LinearGradient(colors: [AppColor.accentGold,
+                                                        AppColor.accentGold.opacity(0.7)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                                in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
                     Text("808")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(AppColor.textPrimary)
                     Text("Two minutes. Your Watch is ready.")
-                        .font(.footnote)
+                        .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
                 }
                 Spacer(minLength: 0)
+                Text("now")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(AppColor.textSecondary)
             }
-            .padding(15)
-            .background(AppColor.backgroundSecondary.opacity(0.8),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 13)
+            .background(AppColor.backgroundSecondary.opacity(0.96),
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.45), radius: 14, y: 8)
+            .padding(.top, 14)
+            .offset(y: shown ? 0 : -70)
+            .opacity(shown ? 1 : 0)
+        }
+        .padding(14)
+        .background(AppColor.backgroundPrimary.opacity(0.55),
+                    in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .task { await loop() }
+    }
+
+    private func loop() async {
+        guard !reduceMotion else { shown = true; return }
+        while !Task.isCancelled {
+            withAnimation(.spring(response: 0.55, dampingFraction: 0.78)) { shown = true }
+            try? await Task.sleep(for: .seconds(4))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeIn(duration: 0.45)) { shown = false }
+            try? await Task.sleep(for: .seconds(1.2))
+            guard !Task.isCancelled else { return }
         }
     }
 }
