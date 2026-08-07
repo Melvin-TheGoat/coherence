@@ -118,7 +118,20 @@ struct BreathScreen: View {
     @State private var breath: Breath = .ready
     @State private var canContinue = false
 
+    /// The label is state, faded by hand, NOT derived from `breath` and
+    /// cross-dissolved.
+    ///
+    /// Both earlier attempts let two strings share the screen. `.id` plus
+    /// `.transition` rendered them as two views at once ("Breatheout"), and
+    /// `.contentTransition(.opacity)` cross-dissolves, which means the glyphs
+    /// of both are on screen together for the length of the fade ("aGood.t").
+    /// The only way two strings can never overlap is if the first one is gone
+    /// before the second arrives, so: fade to nothing, swap, fade back.
+    @State private var labelText = "Breathe in"
+    @State private var labelOpacity: Double = 1
+
     private static let halfBreath: TimeInterval = 3
+    private static let labelFade: TimeInterval = 0.25
 
     private var scale: CGFloat {
         switch breath {
@@ -126,14 +139,6 @@ struct BreathScreen: View {
         case .inhale:  return 1.0
         case .exhale:  return 0.55
         case .settled: return 0.62
-        }
-    }
-
-    private var label: String {
-        switch breath {
-        case .ready, .inhale: return "Breathe in"
-        case .exhale:         return "and out"
-        case .settled:        return "Good."
         }
     }
 
@@ -153,15 +158,11 @@ struct BreathScreen: View {
             }
             .scaleEffect(scale)
 
-            Text(label)
+            Text(labelText)
                 .font(.system(size: 20, weight: .medium, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.top, 36)
-                // contentTransition, NOT .id + .transition: an id-swap renders
-                // both strings at once mid-crossfade, so "Breathe in" and
-                // "and out" briefly overlap into "Breatheout".
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.45), value: label)
+                .opacity(labelOpacity)
 
             Text("Before we ask you anything.")
                 .font(OnboardingType.sub)
@@ -191,12 +192,28 @@ struct BreathScreen: View {
         try? await Task.sleep(for: .seconds(Self.halfBreath))
         guard !Task.isCancelled else { return }
 
+        // The label swap runs inside the exhale rather than before it, so the
+        // orb's rhythm stays exactly one breath either way.
         withAnimation(.easeInOut(duration: Self.halfBreath)) { breath = .exhale }
-        try? await Task.sleep(for: .seconds(Self.halfBreath))
+        await swapLabel(to: "and out")
+        try? await Task.sleep(for: .seconds(Self.halfBreath - Self.labelFade * 2))
         guard !Task.isCancelled else { return }
 
         withAnimation(.easeInOut(duration: 0.8)) { breath = .settled }
+        await swapLabel(to: "Good.")
+        guard !Task.isCancelled else { return }
         withAnimation { canContinue = true }
+    }
+
+    /// Out, swap, in. Never both.
+    private func swapLabel(to next: String) async {
+        guard next != labelText else { return }
+        withAnimation(.easeOut(duration: Self.labelFade)) { labelOpacity = 0 }
+        try? await Task.sleep(for: .seconds(Self.labelFade))
+        guard !Task.isCancelled else { return }
+        labelText = next
+        withAnimation(.easeIn(duration: Self.labelFade)) { labelOpacity = 1 }
+        try? await Task.sleep(for: .seconds(Self.labelFade))
     }
 }
 
@@ -571,6 +588,7 @@ struct CauseScreen: View {
 /// Plain language, no spin. A "no" here goes to the waitlist, never to a
 /// paywall — we will not take money for an app that can't do its one job.
 struct WatchGateScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var hasWatch: Bool?
     let progress: Double
     let onYes: () -> Void
@@ -580,9 +598,13 @@ struct WatchGateScreen: View {
         OnboardingScreen(section: .body, progress: progress,
                          title: "Do you have an\nApple Watch?",
                          subtitle: "808 measures from the Watch. Without one there's nothing to measure, so we'd rather tell you now.",
-                         ctaTitle: hasWatch == false ? "Join the waitlist" : "Continue",
                          ctaEnabled: hasWatch != nil,
-                         onContinue: { hasWatch == false ? onNo() : onYes() }) {
+                         // Single select, so it advances on the tap like the
+                         // rest. A "no" lands on the waitlist without a warning
+                         // label, which is fine: that screen explains itself in
+                         // its first line and the chevron comes straight back.
+                         autoAdvances: true,
+                         onContinue: { gate.now { hasWatch == false ? onNo() : onYes() } }) {
             VStack(spacing: 22) {
                 // Two options left over 400 pt of black on the one screen that
                 // decides whether the product can work for this person at all.
@@ -590,7 +612,7 @@ struct WatchGateScreen: View {
                 // rather than a form field.
                 VStack(spacing: 8) {
                     WatchIllustration()
-                        .frame(width: 150, height: 200)
+                        .frame(width: 150, height: 190)
                     Text("Heart rate and stillness, read from the wrist.")
                         .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
@@ -599,18 +621,29 @@ struct WatchGateScreen: View {
 
                 VStack(spacing: 10) {
                     OnboardingOption(label: "Yes", icon: "applewatch",
-                                     selected: hasWatch == true) { hasWatch = true }
+                                     selected: hasWatch == true) { pick(true) }
                     OnboardingOption(label: "No, not yet", icon: "applewatch.slash",
-                                     selected: hasWatch == false) { hasWatch = false }
+                                     selected: hasWatch == false) { pick(false) }
                 }
             }
             .sensoryFeedback(.selection, trigger: hasWatch)
         }
     }
+
+    private func pick(_ yes: Bool) {
+        hasWatch = yes
+        gate.advance { yes ? onYes() : onNo() }
+    }
 }
 
 /// A Watch with a pulse trace crossing its face, drawn rather than
 /// screenshotted so it inherits the app's colours and needs no asset.
+///
+/// **The proportions are the real ones.** The first draft made the case 70 by
+/// 132, nearly twice as tall as it is wide, which reads as a fitness band
+/// rather than an Apple Watch. A 46 mm case is 46 by 39 mm, so the case is
+/// about 1.2 tall per unit wide and the strap is roughly two thirds the case
+/// width. Everything here is derived from `caseWidth` to keep that true.
 ///
 /// The numbers on the face are illustrative. That's defensible here because it
 /// reads unmistakably as a drawing; it would not be on any screen that reports
@@ -618,6 +651,11 @@ struct WatchGateScreen: View {
 private struct WatchIllustration: View {
     @State private var sweep = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private let caseWidth: CGFloat = 96
+    private var caseHeight: CGFloat { caseWidth * 1.18 }
+    private var bandWidth: CGFloat { caseWidth * 0.62 }
+    private var faceInset: CGFloat { 7 }
 
     var body: some View {
         ZStack {
@@ -627,29 +665,28 @@ private struct WatchIllustration: View {
                 Spacer(minLength: 0)
                 bandSegment
             }
-            .frame(width: 46)
 
             // Case. Opaque, or the band shows straight through it.
-            RoundedRectangle(cornerRadius: 22, style: .continuous)
+            RoundedRectangle(cornerRadius: caseWidth * 0.30, style: .continuous)
                 .fill(Color.black)
-                .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .overlay(RoundedRectangle(cornerRadius: caseWidth * 0.30, style: .continuous)
                     .stroke(AppColor.textSecondary.opacity(0.28), lineWidth: 1.5))
-                .frame(width: 70, height: 132)
+                .frame(width: caseWidth, height: caseHeight)
 
             // Digital crown
             Capsule()
                 .fill(AppColor.textSecondary.opacity(0.32))
-                .frame(width: 5, height: 20)
-                .offset(x: 37, y: -18)
+                .frame(width: 5, height: 22)
+                .offset(x: caseWidth / 2 + 1, y: -caseHeight * 0.14)
 
             // Face
-            RoundedRectangle(cornerRadius: 17, style: .continuous)
+            RoundedRectangle(cornerRadius: caseWidth * 0.24, style: .continuous)
                 .fill(Color.black.opacity(0.85))
-                .frame(width: 56, height: 118)
+                .frame(width: caseWidth - faceInset * 2, height: caseHeight - faceInset * 2)
                 .overlay {
                     VStack(spacing: 0) {
                         Text("62")
-                            .font(.system(size: 21, weight: .bold, design: .rounded))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundStyle(AppColor.textPrimary)
                         Text("BPM")
                             .font(.system(size: 8, weight: .heavy))
@@ -670,18 +707,18 @@ private struct WatchIllustration: View {
                                 .stroke(AppColor.calmAccent,
                                         style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                         }
-                        .frame(height: 34)
-                        .padding(.top, 10)
+                        .frame(height: 26)
+                        .padding(.top, 7)
 
                         Text("STILL")
                             .font(.system(size: 8.5, weight: .heavy))
                             .tracking(0.8)
                             .foregroundStyle(AppColor.accentGold)
-                            .padding(.top, 8)
+                            .padding(.top, 7)
                     }
-                    .padding(.horizontal, 6)
+                    .padding(.horizontal, 8)
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: caseWidth * 0.24, style: .continuous))
         }
         .onAppear {
             guard !reduceMotion else { sweep = true; return }
@@ -693,10 +730,12 @@ private struct WatchIllustration: View {
         }
     }
 
+    /// Rounded on all four corners: the inner ends tuck under the case, so only
+    /// the outer ones are ever seen and both segments can share one shape.
     private var bandSegment: some View {
-        Rectangle()
+        RoundedRectangle(cornerRadius: 7, style: .continuous)
             .fill(AppColor.textSecondary.opacity(0.14))
-            .frame(width: 42, height: 40)
+            .frame(width: bandWidth, height: 46)
     }
 }
 
@@ -723,7 +762,6 @@ private struct PulseTrace: Shape {
 struct WaitlistScreen: View {
     @Binding var email: String
     let onSubmit: () -> Void
-    let onBack: () -> Void
 
     var body: some View {
         OnboardingScreen(section: .body,
@@ -731,7 +769,6 @@ struct WaitlistScreen: View {
                          subtitle: "We're not going to take your money for an app that can't do its one job. Leave your email and we'll write when there's a version that doesn't need a Watch.",
                          ctaTitle: "Join the waitlist",
                          ctaEnabled: email.contains("@") && email.contains("."),
-                         onSkip: onBack,
                          onContinue: onSubmit) {
             TextField("you@example.com", text: $email)
                 .textContentType(.emailAddress)
@@ -783,7 +820,13 @@ struct AnchorScreen: View {
 
 // MARK: - 9 · You
 
+/// The only screen where tap-to-advance has a precondition. Age is the last
+/// thing touched, so tapping a bracket moves on — but only once a name has been
+/// typed, since the whole point of the screen is having something to call them.
+/// Until then the age tap just selects, and the hint says what's missing rather
+/// than putting back a button that would then disappear.
 struct NameScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var firstName: String
     @Binding var ageBracket: String?
     let progress: Double
@@ -791,12 +834,18 @@ struct NameScreen: View {
 
     private let brackets = ["Under 25", "25–34", "35–44", "45–54", "55+"]
 
+    private var hasName: Bool {
+        !firstName.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
                          title: "Last thing.",
                          subtitle: "So the app can talk to you like a person.",
-                         ctaEnabled: !firstName.trimmingCharacters(in: .whitespaces).isEmpty,
-                         onContinue: onContinue) {
+                         ctaEnabled: hasName,
+                         autoAdvances: true,
+                         autoAdvanceHint: hasName ? "Tap your age" : "Type your first name",
+                         onContinue: { gate.now(onContinue) }) {
             VStack(alignment: .leading, spacing: 20) {
                 TextField("First name", text: $firstName)
                     .textContentType(.givenName)
@@ -811,12 +860,18 @@ struct NameScreen: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppColor.textSecondary)
                     ForEach(brackets, id: \.self) { b in
-                        OnboardingOption(label: b, selected: ageBracket == b) { ageBracket = b }
+                        OnboardingOption(label: b, selected: ageBracket == b) { pick(b) }
                     }
                 }
             }
             .sensoryFeedback(.selection, trigger: ageBracket)
         }
+    }
+
+    private func pick(_ bracket: String) {
+        ageBracket = bracket
+        guard hasName else { return }
+        gate.advance(onContinue)
     }
 }
 

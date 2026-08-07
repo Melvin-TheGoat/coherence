@@ -232,6 +232,42 @@ struct OnboardingOption: View {
     }
 }
 
+// MARK: - Back
+
+/// Going back, published through the environment rather than threaded as a
+/// parameter. Twenty screens sit inside `OnboardingScreen`, and passing a
+/// closure down twenty initialisers to draw one chevron would guarantee that
+/// the twenty-first forgets it. `OnboardingView` sets this once; nil means
+/// there is nowhere to go back to, and the chevron does not render.
+private struct OnboardingBackKey: EnvironmentKey {
+    static let defaultValue: (() -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    var onboardingBack: (() -> Void)? {
+        get { self[OnboardingBackKey.self] }
+        set { self[OnboardingBackKey.self] = newValue }
+    }
+}
+
+/// The top-left chevron. Sized to a 40 pt target rather than the glyph, since a
+/// 17 pt arrow is well under the minimum anyone can reliably hit.
+struct OnboardingBackButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 40, height: 40, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(CardButtonStyle())
+        .accessibilityLabel("Back")
+    }
+}
+
 // MARK: - Auto-advance timing
 
 enum OnboardingFlowTiming {
@@ -265,15 +301,31 @@ struct OnboardingScreen<Content: View>: View {
     /// Multi-select and free-text screens keep a real Continue, because there
     /// the user decides when they're done.
     var autoAdvances: Bool = false
+    /// The line shown in place of the CTA on auto-advancing screens. Overridable
+    /// because one screen needs to say what is still missing.
+    var autoAdvanceHint: String = "Tap an answer"
     var onSkip: (() -> Void)? = nil
     let onContinue: () -> Void
     @ViewBuilder var content: Content
 
+    @Environment(\.onboardingBack) private var back
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let progress {
-                OnboardingProgress(value: progress)
-                    .padding(.bottom, 26)
+            // The chevron and the rail share one row, the way every flow with
+            // both does it. The rail shifting right by the width of the arrow
+            // is what stops the arrow looking like it was dropped on top.
+            if back != nil || progress != nil {
+                HStack(spacing: 10) {
+                    if let back {
+                        OnboardingBackButton(action: back)
+                    }
+                    if let progress {
+                        OnboardingProgress(value: progress)
+                    }
+                }
+                .frame(height: 40)
+                .padding(.bottom, progress == nil ? 6 : 20)
             }
 
             Text(title)
@@ -329,7 +381,7 @@ struct OnboardingScreen<Content: View>: View {
             if autoAdvances {
                 // No button: the answer IS the action. A quiet line keeps the
                 // bottom from reading as unfinished and teaches the model once.
-                Text("Tap an answer")
+                Text(autoAdvanceHint)
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary.opacity(0.55))
                     .frame(maxWidth: .infinity)

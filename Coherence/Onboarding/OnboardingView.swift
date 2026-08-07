@@ -53,6 +53,11 @@ struct OnboardingView: View {
         }
     }
 
+    /// Where they've been, so the chevron can undo a wrong tap. A stack rather
+    /// than `Step.allCases` order, because the flow branches: the Watch gate
+    /// sends people to the waitlist, and back from there has to mean the gate.
+    @State private var history: [Step] = []
+
     var body: some View {
         content
             .id(step)
@@ -61,6 +66,7 @@ struct OnboardingView: View {
                 removal: .move(edge: .leading).combined(with: .opacity)))
             .animation(.easeInOut(duration: 0.32), value: step)
             .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
+            .environment(\.onboardingBack, history.isEmpty ? nil : goBack)
     }
 
     @ViewBuilder
@@ -111,14 +117,15 @@ struct OnboardingView: View {
                             onNo: { go(.waitlist) })
 
         case .waitlist:
-            WaitlistScreen(email: $waitlistEmail,
-                           onSubmit: {
-                               didJoinWaitlist = true
-                               // They can still look around; we just never sell
-                               // them something that can't work for them yet.
-                               go(.anchor)
-                           },
-                           onBack: { go(.watchGate) })
+            // No "Skip" here any more: it sat under the CTA reading like it
+            // skipped the waitlist when it actually went back to the gate. The
+            // chevron does that now, and says so.
+            WaitlistScreen(email: $waitlistEmail) {
+                didJoinWaitlist = true
+                // They can still look around; we just never sell them
+                // something that can't work for them yet.
+                go(.anchor)
+            }
 
         case .anchor:
             AnchorScreen(anchor: $answers.anchor,
@@ -224,7 +231,13 @@ struct OnboardingView: View {
     // MARK: - Navigation
 
     private func go(_ next: Step) {
+        history.append(step)
         withAnimation { step = next }
+    }
+
+    private func goBack() {
+        guard let previous = history.popLast() else { return }
+        withAnimation { step = previous }
     }
 
     // MARK: - Side effects
