@@ -548,6 +548,61 @@ UI must coach it, and the 2-signal degrade path must stay.
   - **Workflow Aziz set (2026-08-06): design first, always.** Every screen gets an
     HTML mockup for review *before* any Swift — including revisions to already-
     approved screens.
+- **HRV (SDNN) — INVESTIGATED 2026-08-07, parked with precision (don't re-park it
+  wrong).** The old note "no HRV / heartbeat-series — those were for the dropped
+  coherence path" CONFLATED two different things and cost us this investigation:
+  - **SDNN is readable by third parties.** It's a single number Apple computes
+    on-watch; it needs none of the beat-to-beat access coherence needed. Now in
+    the Watch read scope; full pipeline exists (`HRVRecorder`, `HRVSnapshot`,
+    4 fields on MeditationStats) — committed, tested, dormant. `heartbeatSeries`
+    remains genuinely unavailable; that part of the old note was right.
+  - **Verified on Aziz's hardware:** the Watch does NOT generate an SDNN sample
+    during our sessions (samples come ~every 2 h at rest + during Apple's own
+    Breathe sessions; no API can trigger the sensor). Per-session HRV on Apple
+    Watch is not buildable by ANYONE — competitor apps (Core, HRV Tracker) chart
+    Apple's passive samples phone-side; their timestamps show the 2 h cadence.
+  - **The Watch's local HealthKit store only holds a few days** (n=4 over a
+    30-day query). Real baselines require PHONE-side HealthKit reads — an
+    architecture + privacy-policy + App-Review decision (today the phone reads
+    zero biometric data), not a refactor.
+  - Per-session paths that DO exist, ranked: camera PPG (built, cut, in
+    `full-feature-set`), BLE strap (Pro tier), user-run Breathe minute,
+    SensorKit research entitlement. Aziz's constraint: free + frictionless →
+    all rejected for v1. HRV *trend* correlation with practice is scientifically
+    weak per-person (few-ms effect inside ±15 ms daily noise) — don't ship a
+    causal claim.
+- **MOTION EXPERIMENTS — pilot VERIFIED on-device 2026-08-07 (4 sessions,
+  Aziz).** DEBUG builds capture raw 100 Hz CMDeviceMotion (attitude + accel
+  vector) and ship CSV to the phone (`Documents/MotionCaptures`, Files-visible;
+  pull via `devicectl device copy from --domain-type appDataContainer`).
+  Engine buffer stays decimated to 20 Hz so shipped analysis is unchanged.
+  Analysis: `tools/analyze_motion.py` (numpy). Findings:
+  - **Posture-free breathing WORKS for deliberate slow breathing.** Paced 6/min
+    recovered as 6.0 seated (roll conc 0.53, 85% of engine-shaped windows) and
+    5.9 reclined-on-bed (conc 0.86 — cleanest of the night). Posture didn't
+    matter; hands resting on legs is enough. This is the belly-breathing
+    headline WITHOUT the belly placement/posture failure modes that got it cut.
+  - **Calibration required before it ships:** wrist amplitudes are millirads
+    (reclined: 2.6 mrad sd), 4–13× smaller than belly — the engine's amplitude
+    floor (~10 mrad) would reject clean signals. A slow arm shift reads as a
+    fake clean ~2/min (accel only ~1.6× session median — under the coarse
+    gate); fix = relative per-window accel gate (~1.5× median) + median-filter
+    the rate curve. Natural quiet breathing (counted 11/min, found ~10/min) is
+    present but 6–15× below drift power → needs drift suppression; found in
+    ~2/3 of windows on pitch. Deliberate slow breathing is the feature.
+  - **Wrist BCG (heartbeat from 100 Hz accel) is a live lead:** cardiac-band
+    peak matched actual HR in BOTH still natural sessions (72 vs ~74; 73 vs
+    ~73) and missed in all three paced/movement sessions — paced 6/min
+    breathing throws harmonics into the cardiac band (10th harmonic ≈ 1 Hz), so
+    BCG needs quiet natural breathing. If it holds, that's beat-to-beat (real
+    HRV) with no camera, no strap, no Apple cooperation. Next: dedicated ~3-min
+    maximum-stillness session, then beat-segmentation offline.
+  - Also fixed en route: Watch→phone payload now dual-channel (sendMessage when
+    reachable + transferUserInfo backstop) — End on Watch used to leave the
+    phone's live screen up for tens of seconds while the payload sat in the
+    userInfo queue. Persist is idempotent by sessionID so double delivery is
+    safe. Same family as the stale-WC-queue bugs: the queued channel is never
+    prompt.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
