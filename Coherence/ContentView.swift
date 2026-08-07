@@ -53,17 +53,34 @@ struct ContentView: View {
             .padding(.bottom, 8)
         }
         .safeAreaInset(edge: .bottom) {
-            Button("Begin session") { sheet = .setup }
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.top, 6)
-                .padding(.bottom, 4)
-                .background(
-                    LinearGradient(colors: [AppColor.backgroundPrimary.opacity(0),
-                                            AppColor.backgroundPrimary],
-                                   startPoint: .top, endPoint: .center)
-                    .ignoresSafeArea()
-                )
+            VStack(spacing: 8) {
+                // The Watch announced End; the payload is seconds behind. The
+                // live screen is already down — this is the handoff's face.
+                if coordinator.receivingFromWatch {
+                    HStack(spacing: 9) {
+                        ProgressView().controlSize(.small).tint(AppColor.calmAccent)
+                        Text("Receiving from your Watch…")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    .padding(.horizontal, 15)
+                    .padding(.vertical, 9)
+                    .background(AppColor.backgroundSecondary.opacity(0.92), in: Capsule())
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+                Button("Begin session") { sheet = .setup }
+                    .buttonStyle(PrimaryButtonStyle())
+            }
+            .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.top, 6)
+            .padding(.bottom, 4)
+            .background(
+                LinearGradient(colors: [AppColor.backgroundPrimary.opacity(0),
+                                        AppColor.backgroundPrimary],
+                               startPoint: .top, endPoint: .center)
+                .ignoresSafeArea()
+            )
         }
         .screenBackground()
         #if DEBUG

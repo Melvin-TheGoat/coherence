@@ -288,7 +288,7 @@ private struct SoundPickerView: View {
             } footer: {
                 Text("Plays from your iPhone")
                     .font(.system(size: 10))
-                    .foregroundStyle(AppColor.textSecondary)
+                    .foregroundStyle(Color(white: 0.62))
             }
             ForEach(SoundMenu.groups) { group in
                 Section(group.name) {
@@ -308,14 +308,17 @@ private struct SoundPickerView: View {
             dismiss()
         } label: {
             HStack(spacing: 8) {
+                // Explicit light ink, not the asset colors: inside the
+                // sheet's List the catalog ink resolved near-black on the
+                // black screen (the rows were unreadable on-device).
                 Text(title)
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
+                    .foregroundStyle(Color(white: 0.96))
                 Spacer(minLength: 0)
                 if let detail {
                     Text(detail)
                         .font(.system(size: 10))
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(Color(white: 0.62))
                 }
                 if isSelected {
                     Image(systemName: "checkmark")

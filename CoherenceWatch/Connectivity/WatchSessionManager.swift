@@ -46,6 +46,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     let workout = WorkoutManager()
     private var timer: Task<Void, Never>?
+    /// Wall-clock anchor for `elapsed`. A sleep-loop counter drifts a few
+    /// seconds behind over a long session; deriving from the clock keeps the
+    /// Watch and the phone (which also derives from the clock) in agreement.
+    private var sessionStartedAt: Date?
     /// Aborts the session if no heart rate ever arrives; see armHeartRateWatchdog.
     private var hrWatchdog: Task<Void, Never>?
     /// Sessions already started, so the three delivery channels (message,
@@ -123,6 +127,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         statusMessage = nil
         phase = .running
         startedOnWatch = watchInitiated
+        sessionStartedAt = Date()
         startTimer(planned: p.plannedDurationSec)
         armHeartRateWatchdog(sessionID: p.sessionID)
 
@@ -213,6 +218,14 @@ final class WatchSessionManager: NSObject, ObservableObject {
         hrWatchdog = nil
         phase = .sending
 
+        // Tell the phone NOW, before the seconds of workout teardown + HRV
+        // settle: it drops the live screen immediately and shows "receiving"
+        // instead of looking frozen until the payload lands.
+        if WCSession.default.isReachable {
+            WCSession.default.sendMessage([WCKeys.ending: p.sessionID.uuidString],
+                                          replyHandler: nil, errorHandler: nil)
+        }
+
         guard let finished = await workout.finish() else {
             phase = .idle
             params = nil
@@ -254,15 +267,14 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     private func startTimer(planned: Int?) {
         timer = Task { @MainActor [weak self] in
-            var e = 0
             while let self, self.phase == .running {
+                let e = self.sessionStartedAt.map { Int(Date().timeIntervalSince($0)) } ?? 0
                 self.elapsed = e
                 if let planned, e >= planned {
                     await self.endSession()
                     return
                 }
                 try? await Task.sleep(for: .seconds(1))
-                e += 1
             }
         }
     }

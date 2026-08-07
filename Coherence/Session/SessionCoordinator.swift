@@ -47,6 +47,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// audio or tears down the live screen must match against this first.
     private var currentAttemptID: UUID?
 
+    /// True between the Watch's "ending" announcement and the payload landing:
+    /// the live screen is already down, and the home screen shows a small
+    /// receiving banner so the handoff never looks frozen.
+    @Published var receivingFromWatch = false
+
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
     private let log = Logger(subsystem: "com.lockout.coherence", category: "SessionCoordinator")
@@ -245,6 +250,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let isCurrent = currentAttemptID == nil || payload.sessionID == currentAttemptID
 
         if isCurrent {
+            receivingFromWatch = false
             // Session ended (Watch End for open-ended, or the Watch's own timer) —
             // stop the phone audio now. For timed sessions the parallel timer may
             // have already stopped it; stopAudio() is idempotent.
@@ -334,6 +340,10 @@ extension SessionCoordinator: WCSessionDelegate {
             }
             return
         }
+        if let raw = dict[WCKeys.ending] as? String, let id = UUID(uuidString: raw) {
+            Task { @MainActor in self.watchEnding(sessionID: id) }
+            return
+        }
         if let raw = dict[WCKeys.watchBegin] as? String {
             // "<sessionID>|<epoch>|<soundID or empty>". Arrives over
             // sendMessage only (never queued), so it can't replay stale.
@@ -347,6 +357,27 @@ extension SessionCoordinator: WCSessionDelegate {
                                           soundID: soundID)
                 }
             }
+        }
+    }
+
+    /// End was tapped on the Watch: drop the live screen and stop audio NOW,
+    /// then show the small "receiving" note until the payload lands. Without
+    /// this the phone sat frozen mid-session for the seconds the Watch spends
+    /// finishing the workout, waiting out the HRV settle, and shipping.
+    @MainActor
+    private func watchEnding(sessionID: UUID) {
+        guard sessionID == currentAttemptID else { return }   // stale-safe
+        stopAudio(reason: "watch ending")
+        active = nil
+        receivingFromWatch = true
+        status = "Receiving from your Watch…"
+        // Safety valve: if the payload somehow never arrives on the immediate
+        // channel (it queues instead), don't pin a banner forever — history
+        // updates live via @Query whenever it lands.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled else { return }
+            self.receivingFromWatch = false
         }
     }
 

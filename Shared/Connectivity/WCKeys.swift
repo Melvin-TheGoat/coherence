@@ -29,6 +29,14 @@ enum WCKeys {
     /// phone isn't reachable right now there is nothing for it to do anyway
     /// (the session runs in silence and the payload still arrives).
     static let watchBegin = "watchBegin"
+    /// Watch → Phone: the user tapped End; the engine is now scoring and the
+    /// payload follows in a few seconds. Value is the session's UUID string.
+    /// Lets the phone drop its live screen IMMEDIATELY and show a small
+    /// "receiving" note instead of appearing frozen while the Watch finishes
+    /// the workout, waits out the HRV settle, and ships. sendMessage only —
+    /// a queued replay of an old "ending" must not touch a live session, and
+    /// an unreachable phone has no live screen to drop anyway.
+    static let ending = "ending"
 }
 
 /// Why a session refused to start on the Watch. Sent to the phone so it can
