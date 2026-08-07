@@ -39,7 +39,7 @@ struct OnboardingView: View {
         case wall, profile, commitment, projection, how        // 16–16d, 20
         case permission, week, rating                          // 21–22, 22b
         case health                                            // consent, kept from the old flow
-        case paywall, exitOffer, signIn                        // 23–25
+        case paywall, signIn                                   // 23, 25
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -50,6 +50,17 @@ struct OnboardingView: View {
                                      .watchGate, .anchor, .you, .referral]
             guard let i = interview.firstIndex(of: self) else { return nil }
             return Double(i + 1) / Double(interview.count)
+        }
+
+        /// The offer is one way. Once someone reaches the paywall there is no
+        /// chevron: reversing out of a price into the interview turns a
+        /// decision into something to be negotiated around, which is the same
+        /// reason the thirty-day exit offer is gone.
+        var allowsBack: Bool {
+            switch self {
+            case .paywall, .signIn: return false
+            default: return true
+            }
         }
     }
 
@@ -66,7 +77,8 @@ struct OnboardingView: View {
                 removal: .move(edge: .leading).combined(with: .opacity)))
             .animation(.easeInOut(duration: 0.32), value: step)
             .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
-            .environment(\.onboardingBack, history.isEmpty ? nil : goBack)
+            .environment(\.onboardingBack,
+                         history.isEmpty || !step.allowsBack ? nil : goBack)
     }
 
     @ViewBuilder
@@ -197,11 +209,7 @@ struct OnboardingView: View {
         case .paywall:
             PaywallScreen(plan: $plan,
                           onStartTrial: { go(.signIn) },
-                          onDecline: { go(.exitOffer) })
-
-        case .exitOffer:
-            ExitOfferScreen(onAccept: { go(.signIn) },
-                            onDecline: { go(.signIn) })
+                          onRestore: { go(.signIn) })
 
         case .signIn:
             SignInScreen(onSignedIn: handleSignIn, onSkip: finish)

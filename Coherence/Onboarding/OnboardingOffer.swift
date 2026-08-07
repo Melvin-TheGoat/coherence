@@ -123,11 +123,20 @@ struct RatingScreen: View {
 
 // MARK: - 23 · Paywall
 
+/// The end of the road, not a negotiation. Seven days free or nothing: no
+/// decline, no second offer, and no chevron back into the interview. A larger
+/// offer one tap behind a "no" teaches people the first price was never real.
+///
+/// **Restore is not optional.** Apple requires a restore mechanism on any
+/// screen selling an auto-renewable subscription (3.1.1), and with no decline
+/// it is also the only honest way through for someone who already subscribed
+/// and is reinstalling. It is wired to nothing today because StoreKit is not
+/// wired to anything today; it must do real work before submission.
 struct PaywallScreen: View {
     @State private var started = false
     @Binding var plan: SubscriptionPlan
     let onStartTrial: () -> Void
-    let onDecline: () -> Void
+    let onRestore: () -> Void
 
     var body: some View {
         OnboardingScreen(section: .win,
@@ -135,12 +144,8 @@ struct PaywallScreen: View {
                          subtitle: "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing.",
                          ctaTitle: "Start my free week",
                          ctaFootnote: "7 days free, then \(plan.price) \(plan.cadence). Cancel any time in Settings.",
-                         // Not a skip. It's the only door off this screen, and
-                         // it leads to the exit offer, which nothing else
-                         // routes to. Remove it and onboarding cannot be
-                         // finished by anyone unwilling to start a trial.
-                         skipTitle: "Maybe later",
-                         onSkip: onDecline,
+                         skipTitle: "Restore purchase",
+                         onSkip: onRestore,
                          onContinue: { started = true; onStartTrial() }) {
             VStack(spacing: 11) {
                 ForEach(SubscriptionPlan.allCases) { p in
@@ -191,39 +196,12 @@ struct PaywallScreen: View {
     }
 }
 
-// MARK: - 24 · Exit offer
+// MARK: - 24 · (removed)
 
-/// A real, larger offer — not a fake discount and not a countdown. If seven
-/// days isn't enough to prove it, thirty is a fair thing to give.
-struct ExitOfferScreen: View {
-    let onAccept: () -> Void
-    let onDecline: () -> Void
-
-    var body: some View {
-        OnboardingScreen(section: .win,
-                         title: "Take a month\ninstead.",
-                         subtitle: "No catch and no discount theatre. Meditation takes longer than a week to show up in the numbers, so have thirty days on us. Cancel whenever.",
-                         ctaTitle: "Start my 30 days",
-                         ctaFootnote: "30 days free. Cancel any time in Settings.",
-                         skipTitle: "No thanks",
-                         onSkip: onDecline,
-                         onContinue: onAccept) {
-            HStack(spacing: 13) {
-                Image(systemName: "calendar")
-                    .font(.system(size: 17))
-                    .foregroundStyle(AppColor.accentGold)
-                Text("Long enough to see a trend, not just a session.")
-                    .font(.footnote)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-            }
-            .padding(15)
-            .background(AppColor.backgroundSecondary.opacity(0.7),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-    }
-}
+// The thirty-day exit offer is gone, along with the paywall's decline. The
+// offer is seven days free or nothing, and the paywall is the end of the
+// road rather than a negotiation. Anything that reads as a second, better
+// price teaches people that the first one was never the real one.
 
 // MARK: - 25 · Sign in
 
