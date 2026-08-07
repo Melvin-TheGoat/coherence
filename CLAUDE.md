@@ -603,6 +603,45 @@ UI must coach it, and the 2-signal degrade path must stay.
     userInfo queue. Persist is idempotent by sessionID so double delivery is
     safe. Same family as the stale-WC-queue bugs: the queued channel is never
     prompt.
+- **WRIST BREATHING SHIPPED — posture-free, VERIFIED on-device across 8 live
+  sessions (2026-08-07, field-calibrated in 5 rounds like the camera was).**
+  Every non-belly session gets a breathing attempt automatically: no mode, no
+  placement, no coaching — sit or lie anyhow, hands anywhere. Deliberate slow
+  breathing (~4–9/min) reads; quiet automatic breathing degrades to silence.
+  Engine: the wrist path in `SignalEngine.analyze` (belly path untouched).
+  Verdict/tile/graph/share-card all key on data presence (VerdictEngine's
+  breath gate moved off the belly flag — nil is still absolute silence).
+  - **Wrist breath is EVIDENCE, never a grade.** Belly was opt-in, so scoring
+    resonance was the user's own ask; the wrist path runs unasked, so it never
+    moves `overallScore` (locked by test). Scores stay comparable with all
+    prior sessions.
+  - **The gate stack, each constant a measurement (don't retune by feel):**
+    band 0.05–0.5 Hz (settling drift lives at ~2.1/min and out-powers breath
+    6–15×); amp floor 0.5 mrad (the STILLER the body the SMALLER the wave —
+    a settled user's real breath measured 1.1–1.5 mrad, session 3, and 9/min
+    shallow breathing 0.4–0.9 mrad, session 5); per-window accel gate 1.5×
+    session median (a slow arm shift is only ~1.6× and fakes a clean slow
+    breath); rate floor 3.5/min (drift leaks power at the band edge); believe
+    the CLEANEST axis at conc ≥0.40, or 0.30 with pitch/roll agreeing ±25%;
+    median-of-5 the curve; require ≥60% windows readable AND rate-IQR ≤2.0
+    (a true breath is ONE coherent track — even drifting 6.6→9.5 held IQR
+    ≤1.6; junk assembles plateaus at different rates, IQR 2.5).
+  - **Two selection principles that beat their alternatives on data:** clarity
+    picks the true axis, amplitude picks drift (the belly-era PCA-by-variance
+    mistake in new clothes — "biggest movement = breath" was tried and refuted
+    on session 5, where the correct axis was the QUIETER one). And a
+    whole-file concentration gate assumes a stationary rate — a real breath
+    that drifts smears it; window-level gates only.
+  - Validation: 8/8 live captures correct through the real engine (9/min reads
+    9.3, four 6/min sessions read 5.9–6.1, drift reads 7.9, the known-junk
+    session refuses, deep-stillness reads a tight 5.5). Offline harness:
+    `swiftc -parse-as-library SignalEngine.swift + harness` on the captured
+    CSVs — iterate there, not on-device. 100 tests green.
+  - **Product framing:** the breath section is the reward for SLOW breathing
+    practice (~4–7/min, the resonance zone) — at 9/min resonance ≈0.27, so the
+    verdict reports the rate without the resonance claim, which is correct.
+    Copy should say "breathe slow and 808 reads it", not promise a rate-meter
+    for all breathing.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
