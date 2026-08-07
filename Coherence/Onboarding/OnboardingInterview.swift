@@ -881,6 +881,9 @@ struct NameScreen: View {
 /// drop-off here costs the least — and by now they've answered ten questions
 /// and won't bail on the eleventh. Watch the "a friend told me" row; when it
 /// climbs, word of mouth is working.
+///
+/// No longer skippable. "Somewhere else" is the honest out for anyone who
+/// can't remember, which is what a skip was really being used for.
 struct ReferralScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var referral: ReferralSource?
@@ -893,7 +896,6 @@ struct ReferralScreen: View {
                          subtitle: "It's the only way we know where to show up.",
                          ctaEnabled: referral != nil,
                          autoAdvances: true,
-                         onSkip: { gate.now(onContinue) },
                          onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 9) {
                 ForEach(ReferralSource.allCases) { r in

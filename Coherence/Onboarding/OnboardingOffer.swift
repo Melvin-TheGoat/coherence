@@ -76,7 +76,9 @@ struct RatingScreen: View {
         OnboardingScreen(section: .win,
                          title: "Does this sound like\nit'd work for you?",
                          subtitle: "Every part of it came out of your own answers. Tell us how it lands.",
-                         onSkip: onContinue,
+                         // No skip: Continue already works with no stars
+                         // tapped, so a second way to say nothing was just
+                         // two buttons doing one job.
                          onContinue: { finish() }) {
             VStack(spacing: 6) {
                 HStack(spacing: 9) {
@@ -133,6 +135,11 @@ struct PaywallScreen: View {
                          subtitle: "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing.",
                          ctaTitle: "Start my free week",
                          ctaFootnote: "7 days free, then \(plan.price) \(plan.cadence). Cancel any time in Settings.",
+                         // Not a skip. It's the only door off this screen, and
+                         // it leads to the exit offer, which nothing else
+                         // routes to. Remove it and onboarding cannot be
+                         // finished by anyone unwilling to start a trial.
+                         skipTitle: "Maybe later",
                          onSkip: onDecline,
                          onContinue: { started = true; onStartTrial() }) {
             VStack(spacing: 11) {
@@ -198,6 +205,7 @@ struct ExitOfferScreen: View {
                          subtitle: "No catch and no discount theatre. Meditation takes longer than a week to show up in the numbers, so have thirty days on us. Cancel whenever.",
                          ctaTitle: "Start my 30 days",
                          ctaFootnote: "30 days free. Cancel any time in Settings.",
+                         skipTitle: "No thanks",
                          onSkip: onDecline,
                          onContinue: onAccept) {
             HStack(spacing: 13) {

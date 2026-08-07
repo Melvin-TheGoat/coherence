@@ -795,6 +795,15 @@ struct PermissionScreen: View {
                          subtitle: anchor.map { "We'll remind you \($0.phrase), the moment you just chose. Nothing else, ever." }
                             ?? "One reminder a day at the time you choose. Nothing else, ever.",
                          ctaTitle: "Turn on my reminder",
+                         // Not a skip either: both buttons continue the flow.
+                         // This one declines the iOS permission, and iOS gives
+                         // an app exactly ONE chance at that dialog, ever.
+                         // Firing it at someone who doesn't want reminders
+                         // spends the only shot we have and they can never be
+                         // asked again in-app. Preserving it for the moment
+                         // they turn reminders on in Settings is the entire
+                         // reason this pre-prompt screen exists.
+                         skipTitle: "Not right now",
                          onSkip: onSkip,
                          onContinue: onAllow) {
             VStack(spacing: 14) {

@@ -304,6 +304,12 @@ struct OnboardingScreen<Content: View>: View {
     /// The line shown in place of the CTA on auto-advancing screens. Overridable
     /// because one screen needs to say what is still missing.
     var autoAdvanceHint: String = "Tap an answer"
+    /// Declining an ask, which is not the same as skipping a question and must
+    /// never be labelled as though it were. No onboarding screen says "Skip"
+    /// any more: a question you can skip shouldn't be asked, and the three
+    /// screens that keep a second action are declining a system permission or
+    /// money, not walking out of the flow. Each says what it actually declines.
+    var skipTitle: String = "Not now"
     var onSkip: (() -> Void)? = nil
     let onContinue: () -> Void
     @ViewBuilder var content: Content
@@ -394,7 +400,7 @@ struct OnboardingScreen<Content: View>: View {
             }
 
             if let onSkip {
-                Button("Skip", action: onSkip)
+                Button(skipTitle, action: onSkip)
                     .font(.footnote)
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity)
