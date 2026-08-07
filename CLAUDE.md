@@ -642,6 +642,92 @@ UI must coach it, and the 2-signal degrade path must stay.
     verdict reports the rate without the resonance claim, which is correct.
     Copy should say "breathe slow and 808 reads it", not promise a rate-meter
     for all breathing.
+- **WATCH APP REBUILT + WATCH-INITIATED SESSIONS (2026-08-08).** Sessions can
+  now start on the wrist: the Watch composes its own `SessionParams` (open-ended,
+  mode from the shared `SoundMenu`) and runs the identical pipeline; the phone
+  persists idempotently as always. `WCKeys.watchBegin` invites a reachable phone
+  to join (live screen + chosen sound); `WCKeys.ending` fires the moment End is
+  tapped so the phone drops its live screen BEFORE the seconds of scoring, HRV
+  settle and shipping. **Both are sendMessage-ONLY** — a queued join or ending
+  replaying later would resurrect a dead session's screen (the stale-WC-queue
+  family, now bitten three times). Phone unreachable = session still runs, live
+  screen says "iPhone out of reach · silent".
+  - **`SoundMenu` (Shared) is the catalog as the Watch sees it** — names and ids
+    only, because every bed/track lives in the iOS bundle (~50 MB) and audio
+    always plays phone-side. `SoundMenuTests` locks it against the phone
+    catalogs BOTH directions plus mode agreement, so a preset added phone-side
+    can't vanish from the wrist or file wrist sessions under the wrong mode.
+  - **`WatchPalette` — do NOT use `AppColor` in the Watch target.** The shared
+    colorsets carry light+dark variants and **watchOS resolves the LIGHT one**:
+    `TextSecondary` resolved to 0.42 grey (invisible on black) and `CalmAccent`
+    washed the breathing orb out to a bare outline. The Watch has one
+    appearance, so it gets one set of literal values.
+  - Screens: start (mark, gold Begin, sound row) → live (elapsed inside a teal
+    orb breathing at 6/min, the resonance pace, so a glance is a pacing cue) →
+    sending (dots into a phone outline) → sent ("Delivered" only when the
+    payload went over the immediate channel; else "Saved… back in range" —
+    tracked via `deliveredImmediately`, not guessed).
+  - **First-Begin race:** `WCSession` activation/reachability settle async, so
+    on the first Begin after launch `isReachable` is routinely false and the
+    invite was silently dropped (second attempt worked). `invitePhone` now polls
+    ~14 s and sends the instant the link comes up.
+  - Watch elapsed derives from the wall clock (a sleep-loop counter drifted
+    seconds behind); both sides now compute from the same clock.
+  - **Dark is the default theme** for new installs (`Preferences.theme`).
+  - Cosmetic, not a bug: a one-second flash of the previous build's screen at
+    launch is watchOS replaying the old install's snapshot.
+- **SCORE v3 — evidence-weighted, time-capped, back-filled (2026-08-08).**
+  Meaning, in the app's own words: **"How deep you got, and how long you held
+  it."** Explained in-app by a quiet "?" on the results ring →
+  `ScoreMeaningSheet` (two modes: stress vs recovery, the subconscious only
+  opens in the second; then Breath / Heart / Stillness / Time). **Never says
+  brainwaves, theta, HRV, or health outcomes.**
+  - **Weights follow researched evidence, not intuition** (full citations in
+    the 2026-08-08 research pass): breath **.45** / heart **.35** / stillness
+    **.20**, renormalising to **.60/.40** when no breath is read.
+    - *Breath leads* because resonance breathing IS the intervention in
+      HRV-biofeedback trials, which carry the largest effects in this
+      literature (Hedges g ≈ 0.8, Goessl 2017), and RSA/HRV peaks at ~6/min via
+      the baroreflex (Russo 2017). **We measure the driver directly** rather
+      than inferring it from HRV this hardware won't give us.
+    - *Heart* is replicated but modest (g ≈ 0.24–0.37) and confounded by how
+      wound up the user was at minute zero.
+    - *Stillness* has **NO literature grading meditation depth by motion** — it
+      is a superb VALIDITY check and a poor depth measure. v2 spent 55% of the
+      score on it, and across eight real sessions it ran 0.84–0.97 (0.22 for a
+      fidgety one), i.e. over half the score was a constant saying "you sat".
+  - **THETA AS A SCORE IS REFUSED, on scientific grounds not just policy.** The
+    literature contradicts itself on direction: a 2021 depth-graded study found
+    theta *inversely* related to depth (positive with hindrances). Combined with
+    the onboarding screen that admits "we can't see that from a wrist", a theta
+    probability would be picking a side in an unresolved argument and selling it
+    as fact. Don't relitigate.
+  - **Time is a CEILING, never a bonus:**
+    `score = depth × (0.4 + 0.6 · √(min(1, minutes/20)))`. Thirty restless
+    minutes still lose to five settled ones. The 0.4 floor is why "two minutes
+    still counts" (onboarding copy updated); the √ is why the first ten minutes
+    buy more than the second ten. 2 min → .59, 5 → .70, 10 → .82, 20+ → 1.0.
+  - **Two component fixes the weights alone wouldn't have solved:** stillness is
+    rescaled from [0.80, 0.98] so real sessions spread again; and the heart term
+    stopped being start−end (which measured how agitated you were at minute
+    zero — a 68→68 sit is *good* with no room to fall and scored zero). It's now
+    **60% holding at/below your opening** (the fairness floor a calm person can
+    always earn) **+ 40% the size of the drop** (headroom only an agitated body
+    can claim).
+  - Validated against the eight real captures: 22–52 for the 1–4 min sessions,
+    30/40/77–86 at the same quality run 20 min. The two genuinely poor sessions
+    sit at the bottom.
+  - **All history is back-filled** (`ScoreMigration`, one-time, UserDefaults
+    flag, health-rescue pattern). `SignalEngine.score()` is the SINGLE entry
+    point `analyze` and the migration share, so the back-fill is exactly
+    equivalent to a fresh computation. Rewriting an "immutable" stats row is
+    defensible because no MEASUREMENT is touched — only a number derived from
+    them by an older formula (locked by test). Rationale: a history graph is a
+    comparison, and a comparison across two formulas is a lie told with a line
+    chart.
+  - **OPEN: `VerdictEngine` thresholds (0.75/0.55/0.35) are stale** — they were
+    tuned to the v2 distribution and will fire "Your practice landed" far less
+    often. Retune once a few real v3 sessions exist.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
