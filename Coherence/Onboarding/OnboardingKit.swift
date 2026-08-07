@@ -180,12 +180,14 @@ struct OnboardingScreen<Content: View>: View {
     var ctaTitle: String = "Continue"
     var ctaFootnote: String? = nil
     var ctaEnabled: Bool = true
-    /// Single-select questions advance on the answer tap, so the CTA is only
-    /// there as a visible affordance until something is chosen. The reference
-    /// flow's tap-to-advance is most of why it reads as a game rather than a
-    /// form; the spec lists it under "worth copying wholesale". Multi-select
-    /// and free-text screens keep a real Continue, because there the user
-    /// decides when they're done.
+    /// Single-select questions advance on the answer tap and therefore show NO
+    /// Continue button at all. Keeping a button next to tap-to-advance was
+    /// worse than either choice alone: Aziz met it as a user and read the
+    /// auto-advance as a bug, because a visible Continue implies the tap
+    /// shouldn't have been enough. One interaction, one affordance.
+    ///
+    /// Multi-select and free-text screens keep a real Continue, because there
+    /// the user decides when they're done.
     var autoAdvances: Bool = false
     var onSkip: (() -> Void)? = nil
     let onContinue: () -> Void
@@ -216,13 +218,20 @@ struct OnboardingScreen<Content: View>: View {
             }
             .scrollBounceBehavior(.basedOnSize)
 
-            // On auto-advancing screens the button never becomes the thing you
-            // press — it stays dimmed as a hint that an answer is expected, and
-            // the selection itself moves on.
-            OnboardingCTA(title: ctaTitle, footnote: ctaFootnote,
-                          enabled: ctaEnabled, action: onContinue)
-                .padding(.top, 10)
-                .opacity(autoAdvances && !ctaEnabled ? 0.4 : 1)
+            if autoAdvances {
+                // No button: the answer IS the action. A quiet line keeps the
+                // bottom from reading as unfinished and teaches the model once.
+                Text("Tap an answer")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.55))
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 14)
+                    .padding(.bottom, 6)
+            } else {
+                OnboardingCTA(title: ctaTitle, footnote: ctaFootnote,
+                              enabled: ctaEnabled, action: onContinue)
+                    .padding(.top, 10)
+            }
 
             if let onSkip {
                 Button("Skip", action: onSkip)

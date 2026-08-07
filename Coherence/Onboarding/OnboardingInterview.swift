@@ -10,11 +10,28 @@ import SwiftUI
 /// Holds the chosen answer on screen briefly, then moves on. Without the pause
 /// the tick never registers and the flow feels like it jumped; with it, the
 /// selection is acknowledged and the advance reads as a response.
+///
+/// **One shot per screen.** During the dwell the Continue button is still live,
+/// so tapping an option and then Continue fired `onContinue` twice and skipped
+/// a screen. `AdvanceGate` makes the second call a no-op.
 @MainActor
-func advance(_ action: @escaping () -> Void) {
-    Task {
-        try? await Task.sleep(for: OnboardingFlowTiming.selectionDwell)
-        guard !Task.isCancelled else { return }
+final class AdvanceGate: ObservableObject {
+    private var fired = false
+
+    func advance(_ action: @escaping () -> Void) {
+        guard !fired else { return }
+        fired = true
+        Task {
+            try? await Task.sleep(for: OnboardingFlowTiming.selectionDwell)
+            guard !Task.isCancelled else { return }
+            action()
+        }
+    }
+
+    /// Continue tapped directly, with no selection dwell to wait out.
+    func now(_ action: @escaping () -> Void) {
+        guard !fired else { return }
+        fired = true
         action()
     }
 }
@@ -26,34 +43,55 @@ struct ReliefScreen: View {
     @State private var appeared = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 0) {
             Spacer()
+
+            // The first thing anyone ever sees of 808. Centred mark over one
+            // sentence reads as a title card rather than a form, and the mark
+            // is the real LogoMark geometry so it matches the icon exactly.
+            VStack(spacing: 9) {
+                LogoMark()
+                    .frame(width: 68, height: 68)
+                Text("808")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                    .tracking(3.3)
+                    .foregroundStyle(AppColor.accentGold)
+            }
+            .padding(.bottom, 34)
+            .opacity(appeared ? 1 : 0)
+            .offset(y: appeared ? 0 : 10)
 
             Text("You're not\nbad at meditation.")
-                .font(OnboardingType.headline)
+                .font(.system(size: 29, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
+                .animation(.easeOut(duration: 0.7).delay(0.35), value: appeared)
 
             Text("You just never got told whether it was working.")
-                .font(.system(size: 18))
+                .font(.system(size: 16))
                 .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 14)
+                .padding(.top, 12)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
-                .animation(.easeOut(duration: 0.7).delay(0.5), value: appeared)
+                .animation(.easeOut(duration: 0.7).delay(0.75), value: appeared)
 
             Spacer()
 
-            OnboardingCTA(title: "Show me my number", action: onContinue)
+            // "Show me my number" promised a number this screen hasn't earned:
+            // the first real score is a whole session away. An invitation also
+            // suits a page whose job is taking blame off.
+            OnboardingCTA(title: "Let's find out", action: onContinue)
                 .opacity(appeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.6).delay(1.1), value: appeared)
+                .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onboardingGround(.relief)
         .onAppear { withAnimation(.easeOut(duration: 0.7)) { appeared = true } }
     }
@@ -66,8 +104,36 @@ struct ReliefScreen: View {
 /// opens by actually doing the thing it sells.
 struct BreathScreen: View {
     let onContinue: () -> Void
-    @State private var inhaled = false
+
+    /// A real breath has two halves, and the copy has to track the orb rather
+    /// than run ahead of it. The first build set the phase in `onAppear`, so
+    /// the label flipped to "and out" instantly while the orb was still
+    /// growing: "Breathe in" was never once on screen and no exhale happened.
+    /// `.ready` exists so the very first frame is already small AND already
+    /// says "Breathe in". Starting at `.exhale` would flash "and out" for a
+    /// frame before the inhale began, which is the same bug in miniature.
+    private enum Breath { case ready, inhale, exhale, settled }
+    @State private var breath: Breath = .ready
     @State private var canContinue = false
+
+    private static let halfBreath: TimeInterval = 3
+
+    private var scale: CGFloat {
+        switch breath {
+        case .ready:   return 0.55
+        case .inhale:  return 1.0
+        case .exhale:  return 0.55
+        case .settled: return 0.62
+        }
+    }
+
+    private var label: String {
+        switch breath {
+        case .ready, .inhale: return "Breathe in"
+        case .exhale:         return "and out"
+        case .settled:        return "Good."
+        }
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -83,14 +149,17 @@ struct BreathScreen: View {
                     .stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1.5)
                     .frame(width: 230, height: 230)
             }
-            .scaleEffect(inhaled ? 1.0 : 0.55)
-            .animation(.easeInOut(duration: 3.5), value: inhaled)
+            .scaleEffect(scale)
 
-            Text(inhaled ? "and out" : "Breathe in")
+            Text(label)
                 .font(.system(size: 20, weight: .medium, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.top, 36)
-                .animation(.easeInOut(duration: 0.5), value: inhaled)
+                // contentTransition, NOT .id + .transition: an id-swap renders
+                // both strings at once mid-crossfade, so "Breathe in" and
+                // "and out" briefly overlap into "Breatheout".
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.45), value: label)
 
             Text("Before we ask you anything.")
                 .font(OnboardingType.sub)
@@ -107,14 +176,23 @@ struct BreathScreen: View {
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onboardingGround(.relief)
-        .onAppear {
-            withAnimation { inhaled = true }
-            Task {
-                try? await Task.sleep(for: .seconds(3.5))
-                guard !Task.isCancelled else { return }
-                withAnimation { canContinue = true }
-            }
-        }
+        .task { await breathe() }
+    }
+
+    /// One full breath, driven in sequence so the orb and the words can't
+    /// disagree. No haptics anywhere in here: silence is the point of the
+    /// screen, and this is the only place in onboarding with none.
+    private func breathe() async {
+        withAnimation(.easeInOut(duration: Self.halfBreath)) { breath = .inhale }
+        try? await Task.sleep(for: .seconds(Self.halfBreath))
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.easeInOut(duration: Self.halfBreath)) { breath = .exhale }
+        try? await Task.sleep(for: .seconds(Self.halfBreath))
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.easeInOut(duration: 0.8)) { breath = .settled }
+        withAnimation { canContinue = true }
     }
 }
 
@@ -127,6 +205,7 @@ struct BreathScreen: View {
 /// inconsistency the product exists to fix, so they convict themselves gently
 /// and nothing has to be asserted at them later.
 struct BaselineScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var frequency: CurrentFrequency?
     let progress: Double
     let onContinue: () -> Void
@@ -137,7 +216,7 @@ struct BaselineScreen: View {
                          subtitle: "Honestly. This is the number we're going to move.",
                          ctaEnabled: frequency != nil,
                          autoAdvances: true,
-                         onContinue: onContinue) {
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(CurrentFrequency.allCases) { f in
                     OnboardingOption(label: f.label, selected: frequency == f) { pick(f) }
@@ -149,7 +228,7 @@ struct BaselineScreen: View {
 
     private func pick(_ f: CurrentFrequency) {
         frequency = f
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
 
@@ -242,6 +321,7 @@ struct StressScreen: View {
 ///
 /// The ground turns red here — this is now the first pain question.
 struct AloneWithThoughtsScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var answer: AloneWithThoughts?
     let progress: Double
     let onContinue: () -> Void
@@ -252,7 +332,7 @@ struct AloneWithThoughtsScreen: View {
                          subtitle: "Compared with a few years ago.",
                          ctaEnabled: answer != nil,
                          autoAdvances: true,
-                         onContinue: onContinue) {
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(AloneWithThoughts.allCases) { a in
                     OnboardingOption(label: a.label, selected: answer == a) { pick(a) }
@@ -264,7 +344,7 @@ struct AloneWithThoughtsScreen: View {
 
     private func pick(_ a: AloneWithThoughts) {
         answer = a
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
 
@@ -279,6 +359,7 @@ struct AloneWithThoughtsScreen: View {
 /// unstimulated — which makes the product the answer to the question without
 /// the question ever pitching.
 struct DoingNothingScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var answer: DoingNothing?
     let progress: Double
     let onContinue: () -> Void
@@ -289,7 +370,7 @@ struct DoingNothingScreen: View {
                          subtitle: "Standing in a queue. Waiting for a lift.",
                          ctaEnabled: answer != nil,
                          autoAdvances: true,
-                         onContinue: onContinue) {
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(DoingNothing.allCases) { d in
                     OnboardingOption(label: d.label, selected: answer == d) { pick(d) }
@@ -301,7 +382,7 @@ struct DoingNothingScreen: View {
 
     private func pick(_ d: DoingNothing) {
         answer = d
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
 
@@ -310,6 +391,7 @@ struct DoingNothingScreen: View {
 /// Where the ground turns red. The heavier haptic is deliberate: this is the
 /// screen where the user admits the pattern to themselves.
 struct RestartScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var restarts: RestartCount?
     let progress: Double
     let onContinue: () -> Void
@@ -320,7 +402,7 @@ struct RestartScreen: View {
                          subtitle: "No judgement. This is the single most common thing there is.",
                          ctaEnabled: restarts != nil,
                          autoAdvances: true,
-                         onContinue: onContinue) {
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(RestartCount.allCases) { r in
                     OnboardingOption(label: r.label, selected: restarts == r) { pick(r) }
@@ -332,7 +414,7 @@ struct RestartScreen: View {
 
     private func pick(_ r: RestartCount) {
         restarts = r
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
 
@@ -342,6 +424,7 @@ struct RestartScreen: View {
 /// say "this has been going on a long time and you've been losing to it" —
 /// without us ever writing that sentence.
 struct IntendedForScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var intended: IntendedFor?
     let progress: Double
     let onContinue: () -> Void
@@ -352,7 +435,7 @@ struct IntendedForScreen: View {
                          subtitle: "Not trying. Meaning to.",
                          ctaEnabled: intended != nil,
                          autoAdvances: true,
-                         onContinue: onContinue) {
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(IntendedFor.allCases) { i in
                     OnboardingOption(label: i.label, selected: intended == i) { pick(i) }
@@ -364,7 +447,7 @@ struct IntendedForScreen: View {
 
     private func pick(_ i: IntendedFor) {
         intended = i
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
 
@@ -456,6 +539,7 @@ struct WaitlistScreen: View {
 /// abandonment (Mindfulness, 2023). This answer also becomes the reminder time,
 /// so we never ask twice for the same fact.
 struct AnchorScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var anchor: Anchor?
     let progress: Double
     let onContinue: () -> Void
@@ -466,7 +550,7 @@ struct AnchorScreen: View {
                          subtitle: "Pick something you already do every day. Attaching it to an existing habit is the single biggest predictor of sticking with it.",
                          ctaEnabled: anchor != nil,
                          autoAdvances: true,
-                         onContinue: onContinue) {
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 10) {
                 ForEach(Anchor.allCases) { a in
                     OnboardingOption(label: a.label, selected: anchor == a) { pick(a) }
@@ -478,7 +562,7 @@ struct AnchorScreen: View {
 
     private func pick(_ a: Anchor) {
         anchor = a
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
 
@@ -528,6 +612,7 @@ struct NameScreen: View {
 /// and won't bail on the eleventh. Watch the "a friend told me" row; when it
 /// climbs, word of mouth is working.
 struct ReferralScreen: View {
+    @StateObject private var gate = AdvanceGate()
     @Binding var referral: ReferralSource?
     let progress: Double
     let onContinue: () -> Void
@@ -538,8 +623,8 @@ struct ReferralScreen: View {
                          subtitle: "It's the only way we know where to show up.",
                          ctaEnabled: referral != nil,
                          autoAdvances: true,
-                         onSkip: onContinue,
-                         onContinue: onContinue) {
+                         onSkip: { gate.now(onContinue) },
+                         onContinue: { gate.now(onContinue) }) {
             VStack(spacing: 9) {
                 ForEach(ReferralSource.allCases) { r in
                     OnboardingOption(label: r.label, icon: r.icon,
@@ -552,6 +637,6 @@ struct ReferralScreen: View {
 
     private func pick(_ r: ReferralSource) {
         referral = r
-        advance(onContinue)
+        gate.advance(onContinue)
     }
 }
