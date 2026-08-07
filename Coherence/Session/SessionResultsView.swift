@@ -355,7 +355,19 @@ struct SessionResultsView: View {
     /// so the sheet never touches storage.
     private var shareData: ShareCardData? {
         guard let session, let stats else { return nil }
-        let hero = SessionEvidence.series(from: stats).first
+        // Every signal the session measured, not just the hero — the card's
+        // whole argument is the body behind the number, and a session with no
+        // readable breath simply contributes two curves.
+        let curves: [ShareCardData.Curve] = SessionEvidence.series(from: stats).map { s in
+            ShareCardData.Curve(
+                title: s.title,
+                reading: shareReading(for: s, stats: stats),
+                values: s.points.map(\.value),
+                // Gold is the achieved signal; the body's signals are teal.
+                isAchievement: s.kind == .stillness,
+                resonanceBand: s.kind == .breathing,
+                domain: shareDomain(for: s))
+        }
         return ShareCardData(
             date: session.startedAt,
             durationSec: session.durationSec,
@@ -364,9 +376,40 @@ struct SessionResultsView: View {
             stillnessScore: stats.stillnessScore,
             hrDecline: stats.hrDecline,
             meanBreathingRate: stats.meanBreathingRate,
-            curve: hero?.points.map(\.value) ?? [],
-            curveTitle: hero?.title ?? "",
+            curves: curves,
             streakDays: streakDays)
+    }
+
+    /// Fixed y-ranges, matching the results screen's chart rules: stillness is
+    /// always 0–1, breath always contains the 4.5–7 resonance band (a steady
+    /// breath scaled to its own range would push the band off-view), and heart
+    /// rate scales to itself with padding — never from zero, which flattens a
+    /// real settle into a straight line.
+    private func shareDomain(for series: EvidenceSeries) -> ClosedRange<Double>? {
+        let values = series.points.map(\.value)
+        guard let lo = values.min(), let hi = values.max() else { return nil }
+        switch series.kind {
+        case .stillness:
+            return 0...1
+        case .breathing:
+            return Swift.min(lo - 0.5, 4.0)...Swift.max(hi + 0.5, 7.5)
+        case .heartRate:
+            let pad = Swift.max((hi - lo) * 0.25, 2)
+            return (lo - pad)...(hi + pad)
+        }
+    }
+
+    /// The one-line reading beside each curve's name on the card — the same
+    /// numbers the results screen shows above the same graph.
+    private func shareReading(for series: EvidenceSeries, stats: MeditationStats) -> String {
+        switch series.kind {
+        case .heartRate:
+            return VerdictEngine.hrReading(start: stats.startHR, end: stats.endHR) ?? "bpm"
+        case .stillness:
+            return stats.stillnessScore.map { String(format: "%.2f", $0) } ?? ""
+        case .breathing:
+            return stats.meanBreathingRate.map { String(format: "%.1f/min", $0) } ?? "br/min"
+        }
     }
 
     // MARK: Reflection

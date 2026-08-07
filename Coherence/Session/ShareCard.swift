@@ -14,6 +14,24 @@ import Photos
 // MARK: - Card data
 
 struct ShareCardData {
+    /// One signal's curve as the card draws it: values in time order, the name,
+    /// the headline reading, and whether it's a body signal (teal) or an
+    /// achieved one (gold).
+    struct Curve {
+        let title: String
+        let reading: String
+        let values: [Double]
+        let isAchievement: Bool
+        /// Breathing draws the 4.5–7 resonance band behind it, same as the
+        /// results screen, so the shared image teaches the same reading.
+        var resonanceBand: Bool = false
+        /// Fixed y-range. Breath needs one that always contains the resonance
+        /// band: normalized to its own min/max a steady 5.4–5.8 curve pushes
+        /// the band entirely off-view, where it clamps and fills the panel as
+        /// a solid block. nil = scale to the values.
+        var domain: ClosedRange<Double>? = nil
+    }
+
     let date: Date
     let durationSec: Int
     let bellyBreathing: Bool
@@ -21,9 +39,9 @@ struct ShareCardData {
     let stillnessScore: Double?
     let hrDecline: Double?
     let meanBreathingRate: Double?
-    /// Values of the hero curve (already ordered in time), plus its label.
-    let curve: [Double]
-    let curveTitle: String
+    /// Every signal the session actually measured, in evidence order. Sessions
+    /// without a readable breath carry two — never a placeholder.
+    let curves: [Curve]
     let streakDays: Int
 }
 
@@ -47,9 +65,9 @@ struct SessionShareCard: View {
                 // Default weight — the mark reads the same here as in the header
                 // and the app icon. Don't re-specify a ratio; it drifts.
                 LogoMark()
-                    .frame(width: 54, height: 54)
+                    .frame(width: 42, height: 42)
                 Text("808")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.accentGold)
                     .padding(.top, 8)
                 Text(data.date.formatted(date: .abbreviated, time: .shortened))
@@ -63,16 +81,20 @@ struct SessionShareCard: View {
                     scoreRing(score)
                 }
 
-                Spacer(minLength: 24)
+                Spacer(minLength: 18)
 
                 statRow
 
-                if data.curve.count >= 3 {
-                    curveCard
-                        .padding(.top, 22)
+                if !drawableCurves.isEmpty {
+                    VStack(spacing: 7) {
+                        ForEach(Array(drawableCurves.enumerated()), id: \.offset) { _, c in
+                            curveCard(c)
+                        }
+                    }
+                    .padding(.top, 11)
                 }
 
-                Spacer(minLength: 26)
+                Spacer(minLength: 18)
 
                 if data.streakDays > 1 {
                     HStack(spacing: 6) {
@@ -99,22 +121,28 @@ struct SessionShareCard: View {
 
     private func scoreRing(_ score: Double) -> some View {
         ZStack {
-            Circle().stroke(AppColor.backgroundSecondary, lineWidth: 13)
+            Circle().stroke(AppColor.backgroundSecondary, lineWidth: 10)
             Circle()
                 .trim(from: 0, to: max(0.001, min(score, 1)))
-                .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: 13, lineCap: .round))
+                .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 2) {
                 Text("\(Int((score * 100).rounded()))")
-                    .font(.system(size: 58, weight: .bold, design: .rounded))
+                    .font(.system(size: 39, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary).monospacedDigit()
                 Text("PRACTICE SCORE")
-                    .font(.system(size: 10, weight: .semibold))
-                    .tracking(1.2)
+                    .font(.system(size: 7.5, weight: .semibold))
+                    .tracking(1)
                     .foregroundStyle(AppColor.textSecondary)
             }
         }
-        .frame(width: 176, height: 176)
+        .frame(width: 118, height: 118)
+    }
+
+    /// Curves with enough points to draw. A session that couldn't read a
+    /// breath shows two graphs and gives the room back — never an empty slot.
+    private var drawableCurves: [ShareCardData.Curve] {
+        data.curves.filter { $0.values.count >= 3 }
     }
 
     private var statRow: some View {
@@ -152,25 +180,60 @@ struct SessionShareCard: View {
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
-    private var curveCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(data.curveTitle)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColor.textSecondary)
-            ZStack {
-                CurveShape(values: data.curve, closed: true)
-                    .fill(LinearGradient(
-                        colors: [AppColor.accentGold.opacity(0.30), AppColor.accentGold.opacity(0.02)],
-                        startPoint: .top, endPoint: .bottom))
-                CurveShape(values: data.curve, closed: false)
-                    .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+    /// One signal's mini-graph. Colour follows the app's grammar: teal for the
+    /// body's signals (heart, breath), gold for the achieved one (stillness).
+    /// Today's card drew every hero curve gold, including heart rate.
+    private func curveCard(_ c: ShareCardData.Curve) -> some View {
+        let tint = c.isAchievement ? AppColor.accentGold : AppColor.calmAccent
+        return VStack(alignment: .leading, spacing: 2) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(c.title.uppercased())
+                    .font(.system(size: 8.5, weight: .heavy))
+                    .tracking(0.8)
+                    .foregroundStyle(tint)
+                Spacer(minLength: 4)
+                Text(c.reading)
+                    .font(.system(size: 8.5, weight: .medium, design: .rounded))
+                    .foregroundStyle(AppColor.textSecondary)
             }
-            .frame(height: 74)
+            ZStack {
+                if c.resonanceBand, let d = c.domain {
+                    ResonanceBand(lo: d.lowerBound, hi: d.upperBound)
+                        .fill(AppColor.calmAccent.opacity(0.16))
+                }
+                CurveShape(values: c.values, domain: c.domain, closed: true)
+                    .fill(LinearGradient(colors: [tint.opacity(0.24), tint.opacity(0.02)],
+                                         startPoint: .top, endPoint: .bottom))
+                CurveShape(values: c.values, domain: c.domain, closed: false)
+                    .stroke(tint, style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
+            }
+            .frame(height: 34)
         }
-        .padding(16)
+        .padding(.horizontal, 11)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColor.backgroundSecondary.opacity(0.7),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary.opacity(0.72),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+}
+
+/// The 4.5–7 breaths/min resonance zone, mapped into the same normalized space
+/// `CurveShape` uses so the band and the line agree.
+struct ResonanceBand: Shape {
+    let lo: Double
+    let hi: Double
+
+    func path(in rect: CGRect) -> Path {
+        let span = max(hi - lo, 1e-9)
+        let inset = rect.height * 0.08
+        func y(_ v: Double) -> CGFloat {
+            rect.maxY - inset - (rect.height - 2 * inset) * CGFloat((v - lo) / span)
+        }
+        let top = min(max(y(7.0), rect.minY), rect.maxY)
+        let bottom = min(max(y(4.5), rect.minY), rect.maxY)
+        guard bottom > top else { return Path() }
+        return Path(CGRect(x: rect.minX, y: top, width: rect.width, height: bottom - top))
     }
 }
 
@@ -179,11 +242,15 @@ struct SessionShareCard: View {
 /// output is fully deterministic.
 struct CurveShape: Shape {
     let values: [Double]
+    /// Fixed y-range; nil scales to the values themselves.
+    var domain: ClosedRange<Double>? = nil
     let closed: Bool
 
     func path(in rect: CGRect) -> Path {
         guard values.count >= 2,
-              let lo = values.min(), let hi = values.max() else { return Path() }
+              let vLo = values.min(), let vHi = values.max() else { return Path() }
+        let lo = domain?.lowerBound ?? vLo
+        let hi = domain?.upperBound ?? vHi
         let span = max(hi - lo, 1e-9)
         let inset = rect.height * 0.08
         let pts = values.enumerated().map { i, v -> CGPoint in
