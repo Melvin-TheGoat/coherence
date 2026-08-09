@@ -912,3 +912,40 @@ struct ReferralScreen: View {
         gate.advance(onContinue)
     }
 }
+
+// MARK: - The regular practitioner's question
+
+/// Shown only to someone who already meditates most weeks. The consistency
+/// questions (restarts, causes, how long you've meant to start) all presume a
+/// practice that isn't happening; this presumes one that is, and asks the only
+/// thing 808 can actually fix for them.
+///
+/// DRAFT COPY — written to unblock the branching, not signed off.
+struct BlindSpotScreen: View {
+    @StateObject private var gate = AdvanceGate()
+    @Binding var blindSpot: BlindSpot?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .cost, progress: progress,
+                         title: "What can't you tell\nabout your practice?",
+                         subtitle: "You already sit. This is the part nobody can see.",
+                         ctaEnabled: blindSpot != nil,
+                         autoAdvances: true,
+                         onContinue: { gate.now(onContinue) }) {
+            VStack(spacing: 10) {
+                ForEach(BlindSpot.allCases) { b in
+                    OnboardingOption(label: b.label, icon: b.icon,
+                                     selected: blindSpot == b) { pick(b) }
+                }
+            }
+            .sensoryFeedback(.impact(flexibility: .rigid), trigger: blindSpot)
+        }
+    }
+
+    private func pick(_ b: BlindSpot) {
+        blindSpot = b
+        gate.advance(onContinue)
+    }
+}
