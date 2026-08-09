@@ -446,7 +446,11 @@ enum SignalEngine {
     /// Per-window mean BPM, gaps filled by nearest-known window so the series has no
     /// holes (length == window count).
     private static func resampleHR(_ hr: [HRSample], windows: [(lo: Double, hi: Double)]) -> [Double] {
-        guard !hr.isEmpty else { return windows.map { _ in 0 } }
+        // No heart data at all means no series, NOT a series of zeros. Zeros
+        // would draw a flat line pinned to the axis and a domain of -2...2,
+        // which reads as "your heart rate was zero" rather than "the Watch did
+        // not report one".
+        guard !hr.isEmpty else { return [] }
         var raw: [Double?] = windows.map { win in
             let vals = hr.filter { $0.t >= win.lo && $0.t < win.hi }.map(\.bpm)
             return vals.isEmpty ? nil : vals.reduce(0, +) / Double(vals.count)
