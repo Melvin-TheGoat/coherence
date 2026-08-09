@@ -38,11 +38,15 @@ var HEADERS = [
   'timestamp',
   'email',
   'apple_watch',
+  'frequency',
   'current_app',
   'current_app_other',
+  'quit_before',
+  'quit_why',
+  'session_feedback',
+  'want_to_see',
   'pays',
   'pays_amount',
-  'blockers',
   'early_access',
   'hoping'
 ];
@@ -59,8 +63,9 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     var sheet = targetSheet();      // creates the sheet + header row if needed
+    var columns = reconcileHeaders(sheet);
 
-    sheet.appendRow(HEADERS.map(function (key) {
+    sheet.appendRow(columns.map(function (key) {
       if (key === 'timestamp') return new Date();
       return data[key] != null ? clean(data[key]) : '';
     }));
@@ -105,6 +110,38 @@ function targetSheet() {
     sheet.setFrozenRows(1);
   }
   return sheet;
+}
+
+/**
+ * Returns the sheet's ACTUAL column order, adding any header in HEADERS that
+ * isn't there yet on the right hand end.
+ *
+ * Why not just write HEADERS: the questions changed after responses had
+ * already been collected. Appending by this file's order against a sheet whose
+ * first row is the old order silently files every answer under the wrong
+ * column, and you don't notice until you read the data. Writing by the sheet's
+ * own header row keeps old rows intact and old columns (blockers) readable,
+ * while new questions get new columns.
+ */
+function reconcileHeaders(sheet) {
+  var lastCol = sheet.getLastColumn();
+  if (lastCol === 0) {
+    sheet.appendRow(HEADERS);
+    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
+    sheet.setFrozenRows(1);
+    return HEADERS.slice();
+  }
+
+  var existing = sheet.getRange(1, 1, 1, lastCol).getValues()[0]
+    .map(function (v) { return String(v).trim(); });
+
+  var missing = HEADERS.filter(function (h) { return existing.indexOf(h) < 0; });
+  if (missing.length) {
+    sheet.getRange(1, lastCol + 1, 1, missing.length).setValues([missing]);
+    sheet.getRange(1, 1, 1, lastCol + missing.length).setFontWeight('bold');
+    existing = existing.concat(missing);
+  }
+  return existing;
 }
 
 /**

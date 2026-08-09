@@ -3,277 +3,427 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>You asked about 808</title>
-<meta name="description" content="A few quick questions from the two of us building 808.">
+<title>808 · Questionnaire</title>
+<meta name="description" content="Eleven questions from the two of us building 808.">
 <meta name="robots" content="noindex">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
 <style>
   :root {
-    --bg:#0d0d0f; --bg2:#17171b; --line:#24242a;
-    --text:#e8e6e0; --muted:#9a968c; --gold:#d9b25f; --gold-dim:#8a6f39;
+    --bg:oklch(14.5% .006 260);
+    --surface:oklch(18.5% .007 260);
+    --border:oklch(28% .008 260);
+    --input:oklch(30% .008 260);
+    --fg:oklch(94% .004 260);
+    --muted:oklch(68% .006 260);
+    --gold:oklch(83% .132 84);
+    --gold-dim:oklch(55% .09 84);
+    --teal:oklch(79% .11 189);
+    --ember:oklch(62% .10 32);
+    --display:"Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+    --body:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   * { box-sizing:border-box; }
   html { -webkit-text-size-adjust:100%; }
   body {
-    margin:0; background:var(--bg); color:var(--text);
-    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;
+    margin:0; background:var(--bg); color:var(--fg);
+    font:16px/1.6 var(--body); -webkit-font-smoothing:antialiased;
   }
   a { color:var(--gold); }
-  .wrap { max-width:600px; margin:0 auto; padding:0 22px 64px; }
+  .shell { max-width:900px; margin:0 auto; padding:0 40px; }
 
-  header { text-align:center; padding:56px 0 34px; }
-  .mark { width:72px; height:72px; margin:0 auto 18px; display:block; }
-  .mark ellipse, .mark circle { fill:none; stroke:var(--gold); stroke-width:13.3; }
-  h1 { font-size:27px; font-weight:700; margin:0 0 12px; letter-spacing:-0.4px; }
-  .sub { color:var(--muted); font-size:16px; margin:0; }
-  .sub b { color:var(--text); font-weight:600; }
+  .lab { font-family:var(--mono); font-size:12px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--muted); margin:0; }
 
-  .q {
-    background:var(--bg2); border:1px solid var(--line); border-radius:16px;
-    padding:20px; margin-bottom:14px;
-  }
-  .q > label.qt, .qt {
-    display:block; font-size:16px; font-weight:600; margin:0 0 4px;
-  }
-  .hint { display:block; font-size:13.5px; color:#6f6b63; margin:0 0 14px; }
+  .masthead { display:flex; align-items:baseline; gap:18px; padding:26px 0 0; }
+  .wordmark { font-family:var(--display); font-weight:700; font-size:26px;
+    color:var(--gold); letter-spacing:-0.5px; line-height:1; text-decoration:none; }
+  .masthead .spacer { flex:1; }
+  .masthead a.back { font-family:var(--mono); font-size:12px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--muted); text-decoration:none; }
+  .masthead a.back:hover { color:var(--fg); }
 
-  input[type=text], input[type=email], textarea {
-    width:100%; padding:13px 14px; font-size:16px; font-family:inherit;
-    color:var(--text); background:var(--bg);
-    border:1px solid var(--line); border-radius:10px;
+  header { padding:72px 0 56px; border-bottom:1px solid var(--border); }
+  h1 { font-family:var(--display); font-weight:700;
+    font-size:clamp(38px, 5.4vw, 62px); line-height:0.98; letter-spacing:-0.03em;
+    margin:0 0 22px; max-width:16ch; }
+  header p { font-size:18px; color:var(--muted); max-width:52ch; margin:0; }
+  header .note { font-family:var(--mono); font-size:11.5px; letter-spacing:0.06em;
+    color:var(--muted); margin:22px 0 0; }
+
+  /* ---------- questions ---------- */
+  .q { display:grid; grid-template-columns:56px minmax(0,1fr); gap:0 32px;
+    padding:40px 0; border-bottom:1px solid var(--border); }
+  .q .n { font-family:var(--mono); font-size:12px; letter-spacing:0.1em;
+    color:var(--gold); padding-top:6px; }
+  .q h2 { font-family:var(--body); font-weight:600; font-size:20px;
+    margin:0 0 6px; color:var(--fg); }
+  .q .help { font-size:15px; color:var(--muted); margin:0 0 20px; }
+  .q h2 + .opts, .q h2 + .field { margin-top:20px; }
+
+  .opts { display:grid; gap:8px; max-width:520px; }
+  .opts.two { grid-template-columns:repeat(2, minmax(0,1fr)); }
+  label.opt {
+    display:flex; align-items:center; gap:12px; cursor:pointer;
+    border:1px solid var(--border); padding:13px 16px;
+    font-size:15.5px; color:var(--fg); transition:border-color .12s ease;
   }
-  input::placeholder, textarea::placeholder { color:#5e5a53; }
+  label.opt:hover { border-color:var(--input); }
+  label.opt input { position:absolute; opacity:0; width:0; height:0; }
+  label.opt .box {
+    width:15px; height:15px; flex:none; border:1px solid var(--input);
+    position:relative;
+  }
+  label.opt input[type=radio] + .box { border-radius:50%; }
+  label.opt input:checked + .box { border-color:var(--gold); background:var(--gold); }
+  label.opt input:checked + .box::after {
+    content:""; position:absolute; inset:3px; background:oklch(17% .02 80);
+  }
+  label.opt input[type=radio]:checked + .box::after { border-radius:50%; }
+  label.opt:has(input:checked) { border-color:var(--gold); }
+  label.opt input:focus-visible + .box { outline:2px solid var(--gold); outline-offset:2px; }
+
+  .field { max-width:520px; }
+  input[type=email], input[type=text], textarea {
+    width:100%; padding:14px 16px; font-family:var(--mono); font-size:14px;
+    color:var(--fg); background:transparent; border:1px solid var(--input);
+    border-radius:0;
+  }
+  textarea { font-family:var(--body); font-size:16px; min-height:120px; resize:vertical; }
+  input::placeholder, textarea::placeholder { color:oklch(52% .006 260); }
   input:focus, textarea:focus { outline:none; border-color:var(--gold-dim); }
-  textarea { resize:vertical; min-height:96px; line-height:1.5; }
+  .sub { margin-top:8px; }
 
-  .opts { display:grid; gap:9px; }
-  .opt {
-    display:flex; align-items:flex-start; gap:11px;
-    padding:11px 13px; border:1px solid var(--line); border-radius:10px;
-    cursor:pointer; font-size:15.5px; background:var(--bg);
-    transition:border-color .12s ease;
-  }
-  .opt:hover { border-color:#3a3a42; }
-  .opt input { margin:2px 0 0; accent-color:var(--gold); flex:none; }
-  .opt input:checked ~ span { color:var(--gold); }
-  .inline { margin-top:10px; }
-
+  /* ---------- submit ---------- */
+  .end { padding:48px 0 100px; }
   button {
-    width:100%; margin-top:8px; padding:16px; font-size:16.5px; font-weight:700;
-    cursor:pointer; color:#1a1408; background:var(--gold);
-    border:0; border-radius:13px; transition:opacity .15s ease;
+    padding:16px 30px; border:0; border-radius:0; cursor:pointer;
+    font-family:var(--mono); font-size:13px; font-weight:600; letter-spacing:0.1em;
+    text-transform:uppercase; color:oklch(17% .02 80); background:var(--gold);
+    transition:background .15s ease;
   }
-  button:hover { opacity:.9; }
-  button:disabled { opacity:.55; cursor:default; }
-  .err { color:#d98b6f; font-size:14px; text-align:center; margin:12px 0 0; display:none; }
-  .privacy { text-align:center; font-size:13px; color:#6f6b63; margin:16px 0 0; }
+  button:hover { background:oklch(88% .13 84); }
+  button:disabled { opacity:.5; cursor:default; }
+  button:focus-visible, a:focus-visible { outline:2px solid var(--gold); outline-offset:3px; }
+  .err { display:none; font-family:var(--mono); font-size:12px; letter-spacing:0.06em;
+    color:var(--ember); margin:16px 0 0; }
+  .done { display:none; padding:26px 28px; border-left:3px solid var(--gold);
+    background:var(--surface); max-width:520px; }
+  .done b { font-family:var(--mono); font-size:13px; letter-spacing:0.1em;
+    text-transform:uppercase; color:var(--gold); }
+  .done p { margin:10px 0 0; color:var(--muted); }
 
-  .done {
-    display:none; text-align:center; padding:40px 24px;
-    background:var(--bg2); border:1px solid var(--gold-dim); border-radius:18px;
+  /* the honeypot: a real field, invisible to people, catnip to bots */
+  .honey { position:absolute; left:-9999px; width:1px; height:1px;
+    overflow:hidden; opacity:0; }
+
+  footer { border-top:1px solid var(--border); padding:26px 0 44px;
+    display:flex; gap:10px 24px; flex-wrap:wrap; align-items:baseline;
+    font-family:var(--mono); font-size:11.5px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--muted); }
+  footer a { color:var(--muted); text-decoration:none; }
+  footer a:hover { color:var(--fg); }
+  footer .spacer { flex:1; }
+
+  @media (max-width:700px) {
+    .shell { padding:0 20px; }
+    header { padding:52px 0 40px; }
+    .q { grid-template-columns:1fr; gap:0; padding:34px 0; }
+    .q .n { padding:0 0 12px; }
+    .opts.two { grid-template-columns:1fr; }
+    button { width:100%; }
   }
-  .done h2 { color:var(--gold); font-size:22px; margin:0 0 10px; }
-  .done p { color:var(--muted); margin:0; }
-
-  /* Bot trap — humans never see or fill this. */
-  .honey { position:absolute; left:-9999px; opacity:0; }
 </style>
 </head>
 <body>
-<div class="wrap">
+
+<div class="shell">
+  <div class="masthead">
+    <a class="wordmark" href="index.html">808</a>
+    <span class="lab">Questionnaire</span>
+    <span class="spacer"></span>
+    <a class="back" href="index.html">Back to the site</a>
+  </div>
 
   <header>
-    <svg class="mark" viewBox="0 0 512 512" aria-label="808" role="img">
-      <ellipse cx="256" cy="190" rx="63" ry="125"/>
-      <ellipse cx="256" cy="322" rx="63" ry="125"/>
-      <ellipse cx="190" cy="256" rx="125" ry="63"/>
-      <ellipse cx="322" cy="256" rx="125" ry="63"/>
-      <circle cx="256" cy="256" r="67"/>
-    </svg>
-    <h1>You asked about 808</h1>
-    <p class="sub">It's two of us building it, and what you put here decides what we
-      work on next. <b>Takes a minute. Skip anything you want.</b></p>
+    <h1>Eleven questions. Two minutes.</h1>
+    <p>
+      We are two people building this. Your answers decide what we build first,
+      and we read every one of them.
+    </p>
+    <p class="note">Every question is optional.</p>
   </header>
 
   <form id="survey" novalidate>
-    <input type="text" name="_honey" class="honey" tabindex="-1" autocomplete="off" aria-hidden="true">
-
-    <!-- 1 -->
-    <div class="q">
-      <label class="qt" for="email">Your email</label>
-      <span class="hint">Only so we can tell you when it's ready.</span>
-      <input type="email" id="email" name="email" autocomplete="email" placeholder="you@email.com">
+    <div class="honey" aria-hidden="true">
+      <label>Leave this empty
+        <input type="text" name="_honey" tabindex="-1" autocomplete="off">
+      </label>
     </div>
 
-    <!-- 2 -->
     <div class="q">
-      <span class="qt">Do you have an Apple Watch?</span>
-      <span class="hint">The Watch is what does the measuring.</span>
-      <div class="opts">
-        <label class="opt"><input type="radio" name="apple_watch" value="Yes"><span>Yes</span></label>
-        <label class="opt"><input type="radio" name="apple_watch" value="No"><span>No</span></label>
+      <span class="n">01</span>
+      <div>
+        <h2>Your email</h2>
+        <p class="help">Only so we can tell you when it's ready.</p>
+        <div class="field">
+          <input type="email" name="email" autocomplete="email" placeholder="you@email.com">
+        </div>
       </div>
     </div>
 
-    <!-- 3 -->
     <div class="q">
-      <span class="qt">What do you use to meditate right now?</span>
-      <div class="opts">
-        <label class="opt"><input type="radio" name="current_app" value="Nothing"><span>Nothing</span></label>
-        <label class="opt"><input type="radio" name="current_app" value="Calm"><span>Calm</span></label>
-        <label class="opt"><input type="radio" name="current_app" value="Headspace"><span>Headspace</span></label>
-        <label class="opt"><input type="radio" name="current_app" value="YouTube"><span>YouTube</span></label>
-        <label class="opt"><input type="radio" name="current_app" value="Insight Timer"><span>Insight Timer</span></label>
-        <label class="opt"><input type="radio" name="current_app" value="Other"><span>Something else</span></label>
-      </div>
-      <input class="inline" type="text" name="current_app_other" placeholder="Something else? Name it">
-    </div>
-
-    <!-- 4 -->
-    <div class="q">
-      <span class="qt">Do you pay for a meditation app?</span>
-      <div class="opts">
-        <label class="opt"><input type="radio" name="pays" value="Yes"><span>Yes</span></label>
-        <label class="opt"><input type="radio" name="pays" value="No"><span>No</span></label>
-        <label class="opt"><input type="radio" name="pays" value="Used to"><span>I used to</span></label>
-      </div>
-      <input class="inline" type="text" name="pays_amount" placeholder="If yes, how much a month?">
-    </div>
-
-    <!-- 5 -->
-    <div class="q">
-      <span class="qt">What gets in the way of meditating?</span>
-      <span class="hint">Pick whatever fits.</span>
-      <div class="opts">
-        <label class="opt"><input type="checkbox" name="blockers" value="Can't tell if it's doing anything"><span>I can't tell if it's doing anything</span></label>
-        <label class="opt"><input type="checkbox" name="blockers" value="Start and stop"><span>I start and then stop</span></label>
-        <label class="opt"><input type="checkbox" name="blockers" value="No time"><span>No time</span></label>
-        <label class="opt"><input type="checkbox" name="blockers" value="Boring"><span>It's boring</span></label>
-        <label class="opt"><input type="checkbox" name="blockers" value="Unsure doing it right"><span>I don't know if I'm doing it right</span></label>
-        <label class="opt"><input type="checkbox" name="blockers" value="Never really started"><span>I've never really started</span></label>
-        <label class="opt"><input type="checkbox" name="blockers" value="Already consistent"><span>Nothing, I'm consistent</span></label>
+      <span class="n">02</span>
+      <div>
+        <h2>Do you have an Apple Watch?</h2>
+        <p class="help">The Watch is what does the measuring.</p>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="apple_watch" value="Yes"><span class="box"></span> Yes</label>
+          <label class="opt"><input type="radio" name="apple_watch" value="No"><span class="box"></span> No</label>
+          <label class="opt"><input type="radio" name="apple_watch" value="Thinking about one"><span class="box"></span> Thinking about one</label>
+        </div>
       </div>
     </div>
 
-    <!-- 6 -->
     <div class="q">
-      <span class="qt">Want it early?</span>
-      <span class="hint">Free test version before it's on the App Store.</span>
-      <div class="opts">
-        <label class="opt"><input type="radio" name="early_access" value="Yes"><span>Yeah, send it</span></label>
-        <label class="opt"><input type="radio" name="early_access" value="No"><span>I'll wait</span></label>
+      <span class="n">03</span>
+      <div>
+        <h2>How often do you meditate right now?</h2>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="frequency" value="Most days"><span class="box"></span> Most days</label>
+          <label class="opt"><input type="radio" name="frequency" value="A few times a week"><span class="box"></span> A few times a week</label>
+          <label class="opt"><input type="radio" name="frequency" value="Now and then"><span class="box"></span> Now and then</label>
+          <label class="opt"><input type="radio" name="frequency" value="I've stopped"><span class="box"></span> I've stopped</label>
+          <label class="opt"><input type="radio" name="frequency" value="Never started"><span class="box"></span> Never started</label>
+        </div>
       </div>
     </div>
 
-    <!-- 7 -->
     <div class="q">
-      <label class="qt" for="hoping">What do you want out of this?</label>
-      <span class="hint">However you want to say it. This is the one we read closest.</span>
-      <textarea id="hoping" name="hoping" placeholder="Type whatever…"></textarea>
+      <span class="n">04</span>
+      <div>
+        <h2>What do you use?</h2>
+        <div class="opts two">
+          <label class="opt"><input type="radio" name="current_app" value="Nothing"><span class="box"></span> Nothing</label>
+          <label class="opt"><input type="radio" name="current_app" value="Calm"><span class="box"></span> Calm</label>
+          <label class="opt"><input type="radio" name="current_app" value="Headspace"><span class="box"></span> Headspace</label>
+          <label class="opt"><input type="radio" name="current_app" value="YouTube"><span class="box"></span> YouTube</label>
+          <label class="opt"><input type="radio" name="current_app" value="Insight Timer"><span class="box"></span> Insight Timer</label>
+          <label class="opt"><input type="radio" name="current_app" value="Something else"><span class="box"></span> Something else</label>
+        </div>
+        <div class="field sub">
+          <input type="text" name="current_app_other" placeholder="Something else? Name it">
+        </div>
+      </div>
     </div>
 
-    <button type="submit" id="submit">Send</button>
-    <p class="err" id="err">That didn't go through. Try once more?</p>
-    <p class="privacy">We only use this to build the app and tell you when it's out.
-      <a href="privacy.html">Privacy Policy</a>.</p>
+    <div class="q">
+      <span class="n">05</span>
+      <div>
+        <h2>Have you quit a meditation app before?</h2>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="quit_before" value="Yes"><span class="box"></span> Yes</label>
+          <label class="opt"><input type="radio" name="quit_before" value="No"><span class="box"></span> No</label>
+          <label class="opt"><input type="radio" name="quit_before" value="Still using one"><span class="box"></span> Still using one</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="n">06</span>
+      <div>
+        <h2>Why did you stop?</h2>
+        <p class="help">Pick whatever fits.</p>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" name="quit_why" value="Couldn't tell if it was working"><span class="box"></span> Couldn't tell if it was working</label>
+          <label class="opt"><input type="checkbox" name="quit_why" value="Lost the habit"><span class="box"></span> Lost the habit</label>
+          <label class="opt"><input type="checkbox" name="quit_why" value="No time"><span class="box"></span> No time</label>
+          <label class="opt"><input type="checkbox" name="quit_why" value="Boring"><span class="box"></span> Boring</label>
+          <label class="opt"><input type="checkbox" name="quit_why" value="Wasn't sure I was doing it right"><span class="box"></span> Wasn't sure I was doing it right</label>
+          <label class="opt"><input type="checkbox" name="quit_why" value="Too expensive"><span class="box"></span> Too expensive</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="n">07</span>
+      <div>
+        <h2>After a session, how do you know whether it went well?</h2>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="session_feedback" value="I can feel it"><span class="box"></span> I can feel it</label>
+          <label class="opt"><input type="radio" name="session_feedback" value="I can't really tell"><span class="box"></span> I can't really tell</label>
+          <label class="opt"><input type="radio" name="session_feedback" value="I don't think about it"><span class="box"></span> I don't think about it</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="n">08</span>
+      <div>
+        <h2>What would you want to see afterwards?</h2>
+        <p class="help">Pick whatever fits.</p>
+        <div class="opts">
+          <label class="opt"><input type="checkbox" name="want_to_see" value="Heart rate"><span class="box"></span> Heart rate</label>
+          <label class="opt"><input type="checkbox" name="want_to_see" value="Breathing"><span class="box"></span> Breathing</label>
+          <label class="opt"><input type="checkbox" name="want_to_see" value="Stillness"><span class="box"></span> Stillness</label>
+          <label class="opt"><input type="checkbox" name="want_to_see" value="One overall score"><span class="box"></span> One overall score</label>
+          <label class="opt"><input type="checkbox" name="want_to_see" value="Nothing, just let me sit"><span class="box"></span> Nothing, just let me sit</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="n">09</span>
+      <div>
+        <h2>Do you pay for a meditation app?</h2>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="pays" value="Yes"><span class="box"></span> Yes</label>
+          <label class="opt"><input type="radio" name="pays" value="No"><span class="box"></span> No</label>
+          <label class="opt"><input type="radio" name="pays" value="I used to"><span class="box"></span> I used to</label>
+        </div>
+        <div class="field sub">
+          <input type="text" name="pays_amount" placeholder="If yes, how much a month?">
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="n">10</span>
+      <div>
+        <h2>Want it early?</h2>
+        <p class="help">Free test version before it's on the App Store.</p>
+        <div class="opts">
+          <label class="opt"><input type="radio" name="early_access" value="Yes, send it"><span class="box"></span> Yes, send it</label>
+          <label class="opt"><input type="radio" name="early_access" value="I'll wait"><span class="box"></span> I'll wait</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="q">
+      <span class="n">11</span>
+      <div>
+        <h2>Anything else?</h2>
+        <p class="help">This is the one we read closest.</p>
+        <div class="field">
+          <textarea name="hoping" placeholder="Type whatever"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="end">
+      <button type="submit" id="submit">Send</button>
+      <p class="err" id="err" role="alert"></p>
+    </div>
   </form>
 
   <div class="done" id="done">
-    <h2>Got it. Thank you.</h2>
-    <p>This is the stuff that changes what we build.<br>
-      If you left your email we'll message you before launch.</p>
+    <b>Got it. Thank you.</b>
+    <p>We read every one of these. <a href="index.html">Back to the site</a>.</p>
   </div>
 
+  <footer>
+    <span>808 / Pre-launch</span>
+    <a href="privacy.html">Privacy</a>
+    <a href="terms.html">Terms</a>
+    <a href="mailto:support@meditate808.com">support@meditate808.com</a>
+    <span class="spacer"></span>
+    <span>&copy; 2026 LockOut LLC</span>
+  </footer>
 </div>
 
 <script>
-  // Where responses go. Primary is a Google Sheet (one row per response, so the
-  // answers can be counted and exported); see survey-sheet.gs for the script and
-  // setup. EMAIL_FALLBACK catches anything the sheet rejects, so a response is
-  // never silently lost — FormSubmit needs a one-time activation click on its
-  // first delivery.
-  var SHEET_ENDPOINT  = "https://script.google.com/macros/s/AKfycbyqBI-CJsINEeeTyQe3Ys6ARIzc0FXlVNHDZnt9-2HeKJBzzn_kYLpMVdJ6DJPbXZ0/exec";
-  var EMAIL_FALLBACK  = "https://formsubmit.co/ajax/support@meditate808.com";
+  var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbyqBI-CJsINEeeTyQe3Ys6ARIzc0FXlVNHDZnt9-2HeKJBzzn_kYLpMVdJ6DJPbXZ0/exec";
+  var EMAIL_FALLBACK = "https://formsubmit.co/ajax/support@meditate808.com";
+  var TIMEOUT_MS = 8000;
 
   var form = document.getElementById('survey');
   var done = document.getElementById('done');
-  var btn  = document.getElementById('submit');
-  var err  = document.getElementById('err');
+  var btn = document.getElementById('submit');
+  var err = document.getElementById('err');
+
+  // Deadline enforced by a race, not by AbortController alone. Aborting only
+  // works if fetch honours the signal and the browser has AbortController;
+  // racing a rejecting timer always settles. The waitlist form hung forever on
+  // its first real submission for exactly this reason.
+  function post(url, body, type) {
+    if (!url) return Promise.reject(new Error('no endpoint'));
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer;
+    var deadline = new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        if (ctl) ctl.abort();
+        reject(new Error('timeout'));
+      }, TIMEOUT_MS);
+    });
+    var call = fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': type },
+      body: JSON.stringify(body),
+      signal: ctl ? ctl.signal : undefined
+    });
+    return Promise.race([call, deadline]).then(
+      function (r) { clearTimeout(timer); return r; },
+      function (e) { clearTimeout(timer); throw e; }
+    );
+  }
 
   form.addEventListener('submit', function (e) {
     e.preventDefault();
     err.style.display = 'none';
 
     var data = new FormData(form);
+    if (data.get('_honey')) return;                 // bot, drop it silently
 
-    // Every field is optional, but an entirely blank form helps nobody.
+    // Every field is optional, but a blank form helps nobody.
     var filled = false;
     data.forEach(function (v, k) {
       if (k !== '_honey' && String(v).trim() !== '') filled = true;
     });
     if (!filled) {
-      err.textContent = 'Fill in at least one answer and we\'re good.';
+      err.textContent = 'Fill in at least one answer and we are good.';
       err.style.display = 'block';
       return;
     }
 
-    // Collapse the multi-select into one readable line, and label the email.
+    // Multi-selects collapse to one readable cell.
     var payload = { _subject: '808 questionnaire response', _template: 'table' };
-    var blockers = data.getAll('blockers');
+    var multi = { quit_why: data.getAll('quit_why'), want_to_see: data.getAll('want_to_see') };
     data.forEach(function (v, k) {
-      if (k === 'blockers' || k === '_honey') return;
+      if (k === '_honey' || k === 'quit_why' || k === 'want_to_see') return;
       if (String(v).trim() !== '') payload[k] = v;
     });
-    if (blockers.length) payload.blockers = blockers.join(', ');
-    if (data.get('_honey')) return;                     // bot — silently drop
+    Object.keys(multi).forEach(function (k) {
+      if (multi[k].length) payload[k] = multi[k].join(', ');
+    });
 
     btn.disabled = true;
-    btn.textContent = 'Sending…';
+    btn.textContent = 'Sending';
 
-    function succeed() {
-      form.style.display = 'none';
-      done.style.display = 'block';
-    }
+    function succeed() { form.style.display = 'none'; done.style.display = 'block'; }
     function fail() {
       btn.disabled = false;
       btn.textContent = 'Send';
-      err.textContent = "That didn't go through. Try once more?";
+      err.textContent = 'That did not go through. Try once more, or email us.';
       err.style.display = 'block';
     }
 
-    // Apps Script doesn't answer CORS preflights, so send the JSON as
-    // text/plain — that keeps it a "simple" request with no OPTIONS round-trip.
-    //
-    // Deliberately NOT checking response.ok: Apps Script answers a POST with a
-    // 302 to googleusercontent.com, and the hop can surface as an opaque
-    // response (or a Drive error page) even though the row was appended —
-    // verified against the live endpoint. Treating that as failure would fire
-    // the email fallback too and deliver the response twice. Any settled
-    // response means the request reached Google; only a network-level
-    // rejection falls through.
-    function toSheet() {
-      return fetch(SHEET_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      }).then(function () { /* delivered */ });
-    }
-
-    function toEmail() {
-      return fetch(EMAIL_FALLBACK, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload)
-      }).then(function (r) {
-        if (!r.ok) throw new Error('email status ' + r.status);
-      });
-    }
-
-    // Sheet first; if it's not configured or errors, fall back to email so a
-    // response is never lost.
-    (SHEET_ENDPOINT ? toSheet() : Promise.reject(new Error('no sheet')))
+    // Apps Script answers a POST with a redirect, and the hop can surface as an
+    // opaque response even though the row landed. Any settled response counts
+    // as delivered; only a rejection or the deadline falls through to email, so
+    // a response is never lost and never delivered twice.
+    post(SHEET_ENDPOINT, payload, 'text/plain;charset=utf-8')
       .then(succeed)
-      .catch(function () { return toEmail().then(succeed).catch(fail); });
+      .catch(function () {
+        return post(EMAIL_FALLBACK, payload, 'application/json').then(function (r) {
+          if (!r.ok) throw new Error('email status ' + r.status);
+          succeed();
+        });
+      })
+      .catch(fail);
   });
 </script>
 </body>
