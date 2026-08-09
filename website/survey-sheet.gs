@@ -1,5 +1,5 @@
 /**
- * 808 questionnaire → Google Sheet
+ * 808 survey (questionnaire) → Google Sheet
  * ---------------------------------------------------------------------------
  * Receives POSTs from website/survey.html and appends one row per response.
  *
@@ -31,7 +31,7 @@
  */
 var SHEET_ID = '';
 
-var SHEET_NAME = '808 questionnaire';
+var SHEET_NAME = '808 survey';
 var PROP_KEY = 'questionnaireSheetId';
 
 var HEADERS = [
@@ -123,8 +123,9 @@ function clean(v) {
 /**
  * Health check only. Deliberately reveals nothing: this URL is public in the
  * page source, so the sheet's URL/name and the running response count don't
- * belong in the reply. (During setup it printed the sheet URL once — find the
- * sheet in Google Drive as "808 questionnaire".)
+ * belong in the reply. (Find the sheet in Google Drive as "808 survey"; it was
+ * created as "808 questionnaire" and renamed, which is safe because this script
+ * opens it by id from Script Properties and never by name.)
  */
 function doGet() {
   try {
