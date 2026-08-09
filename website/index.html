@@ -848,9 +848,9 @@
   // questionnaire script has the survey's columns, so signups posted there
   // land as mostly-empty survey rows.
   //
-  // PASTE THE /exec URL FROM waitlist-sheet.gs HERE. While it is empty the form
-  // falls straight through to email, so signups are still captured.
-  var WAITLIST_ENDPOINT = "";
+  // Deployed from waitlist-sheet.gs. If this ever 404s or the deployment is
+  // replaced, the form falls through to email rather than losing the signup.
+  var WAITLIST_ENDPOINT = "https://script.google.com/macros/s/AKfycbzNics71jnMMei_jzYCBJEKw0mp8UQWFeXE9SeaEHtxPf1hMhOdsImpkipTWUoU_6oylg/exec";
   var EMAIL_FALLBACK = "https://formsubmit.co/ajax/support@meditate808.com";
   var TIMEOUT_MS = 8000;
 
