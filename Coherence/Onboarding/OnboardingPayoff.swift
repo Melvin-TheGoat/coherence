@@ -139,16 +139,29 @@ struct ResultScreen: View {
     let answers: OnboardingAnswers
     let onContinue: () -> Void
 
-    private var restartLine: String {
+    /// The opening card, chosen by persona rather than by reading an answer
+    /// this person was never asked. A regular meditator has no restart count
+    /// and no `intendedFor`, so the old nil-fallback told them they were
+    /// "building the habit" and then quoted a clinical dropout rate at them.
+    private var opening: (String, String) {
+        if answers.alreadyPracticing {
+            return ("You already have a practice. What you've never had is proof it's working.",
+                    "808 measures every session off your wrist, so \u{201C}is this working\u{201D} finally gets an answer.")
+        }
+        let dropout = "That's the single most common thing in meditation. Dropout runs 21 to 54% in clinical trials, and it peaks in the first two weeks."
+        if answers.persona == .newcomer {
+            return ("You haven't started yet.",
+                    "Getting past the first two weeks is the whole problem. Dropout runs 21 to 54% in clinical trials, and that's where it peaks.")
+        }
         switch answers.restarts {
-        case .never: return "You're starting fresh."
-        case .once:  return "You've stopped once before."
-        case .few:   return "You've started and stopped a few times."
-        case .many, .some(.lostCount): return "You've started and stopped more times than you'd like."
-        // Unreachable — the identity reflection intercepts .sticks below —
-        // but the switch must stay exhaustive.
-        case .sticks: return "Your practice already sticks."
-        case .none:  return "You're building the habit."
+        case .never: return ("You're starting fresh.", dropout)
+        case .once:  return ("You've stopped once before.", dropout)
+        case .few:   return ("You've started and stopped a few times.", dropout)
+        case .many, .some(.lostCount):
+            return ("You've started and stopped more times than you'd like.", dropout)
+        // Unreachable: `alreadyPracticing` intercepts .sticks above.
+        case .sticks: return ("Your practice already sticks.", dropout)
+        case .none:  return ("You're building the habit.", dropout)
         }
     }
 
@@ -160,19 +173,18 @@ struct ResultScreen: View {
                          ctaTitle: "That's about right",
                          onContinue: onContinue) {
             VStack(alignment: .leading, spacing: 14) {
-                // The existing meditator's pain isn't quitting, it's practicing
-                // blind, so the dropout reflection would talk past them.
-                if answers.intendedFor == .alreadyPractice || answers.restarts == .sticks {
-                    reflection("You already have a practice. What you've never had is proof it's working.",
-                               "808 measures every session off your wrist, so \u{201C}is this working\u{201D} finally gets an answer.")
-                } else {
-                    reflection(restartLine,
-                               "That's the single most common thing in meditation. Dropout runs 21 to 54% in clinical trials, and it peaks in the first two weeks.")
-                }
+                reflection(opening.0, opening.1)
 
                 if let cause = answers.primaryCause {
                     reflection("You stop because: \u{201C}\(cause.label).\u{201D}",
                                "That's not a character flaw. It's a missing feedback loop.")
+                }
+
+                // The regular's one question, answered. It used to be collected
+                // and then never read anywhere in the app.
+                if let blindSpot = answers.blindSpot {
+                    reflection("What you can't see: \u{201C}\(blindSpot.label).\u{201D}",
+                               "That's the gap 808 exists to close. \(blindSpot.answer).")
                 }
 
                 if answers.isHighStress, let m = answers.primaryMotivation {
@@ -871,17 +883,13 @@ struct HowScreen: View {
     let answers: OnboardingAnswers
     let onContinue: () -> Void
 
-    /// In enum order, not selection order, so the screen is stable between
-    /// two people who ticked the same things in a different sequence.
-    private var named: [DropoutCause] {
-        let chosen = DropoutCause.allCases.filter { answers.causes.contains($0) }
-        // The cause screen requires a selection, but a future edit might not.
-        return chosen.isEmpty ? [.couldntTell] : chosen
-    }
+    /// Only what they actually said. This used to fall back to `[.couldntTell]`
+    /// when nothing was selected, which printed a sentence in quotation marks
+    /// under a "You said" header at a newcomer who was never asked the
+    /// question. A regular's named concern is their blind spot instead.
+    private var named: [NamedConcern] { answers.namedConcerns }
 
-    private var rest: [DropoutCause] {
-        DropoutCause.allCases.filter { !named.contains($0) }
-    }
+    private var rest: [DropoutCause] { answers.unnamedCauses }
 
     var body: some View {
         OnboardingScreen(section: .win,
@@ -889,23 +897,29 @@ struct HowScreen: View {
                          // The old line, "each one answers something you just
                          // told us", stopped being true the moment the screen
                          // also shows things they didn't say.
-                         subtitle: "What you named, and what 808 does about it.",
+                         subtitle: named.isEmpty
+                            ? "What 808 does, and why."
+                            : "What you named, and what 808 does about it.",
                          onContinue: onContinue) {
             VStack(alignment: .leading, spacing: 0) {
-                SectionHeader(title: "You said")
-                    .foregroundStyle(AppColor.accentGold)
-                    .padding(.bottom, 9)
+                // Skipped entirely when they named nothing, rather than quoting
+                // them on a question they were never asked.
+                if !named.isEmpty {
+                    SectionHeader(title: "You said")
+                        .foregroundStyle(AppColor.accentGold)
+                        .padding(.bottom, 9)
 
-                VStack(spacing: 9) {
-                    ForEach(named) { cause in
-                        namedRow(cause)
+                    VStack(spacing: 9) {
+                        ForEach(named) { concern in
+                            namedRow(concern)
+                        }
                     }
                 }
 
                 // Hidden rather than printed empty when they ticked all six.
                 if !rest.isEmpty {
-                    SectionHeader(title: "Everything else")
-                        .padding(.top, 18)
+                    SectionHeader(title: named.isEmpty ? "How it works" : "Everything else")
+                        .padding(.top, named.isEmpty ? 0 : 18)
                         .padding(.bottom, 9)
 
                     VStack(spacing: 7) {
@@ -918,16 +932,16 @@ struct HowScreen: View {
         }
     }
 
-    private func namedRow(_ cause: DropoutCause) -> some View {
+    private func namedRow(_ concern: NamedConcern) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            Text("“\(cause.label)”")
+            Text("“\(concern.quote)”")
                 .font(.footnote.italic())
                 .foregroundStyle(AppColor.textSecondary)
             HStack(alignment: .top, spacing: 9) {
                 Image(systemName: "arrow.turn.down.right")
                     .font(.caption)
                     .foregroundStyle(AppColor.accentGold)
-                Text(cause.answer)
+                Text(concern.answer)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)

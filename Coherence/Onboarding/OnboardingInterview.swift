@@ -101,6 +101,22 @@ struct ReliefScreen: View {
 
 // MARK: - 2 · Regulate
 
+/// Widths reported up from the intro line and from the screen itself, so the
+/// opening scale can be derived rather than guessed. See `titlePeakScale`.
+private struct TitleWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+private struct AvailableWidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 /// A three-second breath before any personal question. No haptics here —
 /// silence is the point, and it's the only onboarding in the category that
 /// opens by actually doing the thing it sells.
@@ -128,7 +144,51 @@ struct BreathScreen: View {
     /// The only way two strings can never overlap is if the first one is gone
     /// before the second arrives, so: fade to nothing, swap, fade back.
     @State private var labelText = "Breathe in"
-    @State private var labelOpacity: Double = 1
+    @State private var labelOpacity: Double = 0
+
+    /// The intro. The screen used to open mid-inhale, so the orb was already
+    /// growing before anyone had worked out what they were looking at. Now the
+    /// line arrives first and alone, large, then shrinks into its slot and
+    /// hands over to the orb. Roughly two seconds before the first breath.
+    private enum TitleStage { case arriving, big, settled }
+    @State private var titleStage: TitleStage = .arriving
+    @State private var titleOpacity: Double = 0
+    @State private var titleColor = AppColor.textPrimary
+    @State private var orbOpacity: Double = 0
+
+    /// Both measured, because `scaleEffect` ignores layout: it neither wraps
+    /// nor truncates, so an oversized line is simply drawn off the edge of the
+    /// screen. A hardcoded 2.1x lost the last word on a 393pt phone and would
+    /// have lost more on an SE. The peak is derived instead, so the line is
+    /// always as large as it can be while still fitting.
+    @State private var titleWidth: CGFloat = 0
+    @State private var availableWidth: CGFloat = 0
+
+    /// The screen's own horizontal inset. Named because `titlePeakScale`
+    /// subtracts it: the width is measured outside the padding, and scaling to
+    /// the raw screen width put the line hard against both bezels.
+    private static let hPadding: CGFloat = 24
+
+    private var titlePeakScale: CGFloat {
+        let usable = availableWidth - Self.hPadding * 2
+        guard titleWidth > 0, usable > 0 else { return 1.4 }
+        return max(1, min(2.2, usable / titleWidth))
+    }
+
+    private var titleScale: CGFloat {
+        switch titleStage {
+        // Slightly under the peak so it springs up into place.
+        case .arriving: return titlePeakScale * 0.86
+        case .big:      return titlePeakScale
+        case .settled:  return 1
+        }
+    }
+
+    /// The orb's frame is a fixed 230pt whatever it's scaled to, so the lift
+    /// that puts this line in the middle of the screen is a constant.
+    private var titleOffset: CGFloat {
+        titleStage == .settled ? 0 : -152
+    }
 
     private static let halfBreath: TimeInterval = 3
     private static let labelFade: TimeInterval = 0.25
@@ -157,6 +217,7 @@ struct BreathScreen: View {
                     .frame(width: 230, height: 230)
             }
             .scaleEffect(scale)
+            .opacity(orbOpacity)
 
             Text(labelText)
                 .font(.system(size: 20, weight: .medium, design: .rounded))
@@ -164,10 +225,18 @@ struct BreathScreen: View {
                 .padding(.top, 36)
                 .opacity(labelOpacity)
 
+            // Opens large and centred, then shrinks down into this slot.
             Text("Before we ask you anything.")
                 .font(OnboardingType.sub)
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(titleColor)
+                .fixedSize()
+                .background(GeometryReader { geo in
+                    Color.clear.preference(key: TitleWidthKey.self, value: geo.size.width)
+                })
                 .padding(.top, 8)
+                .scaleEffect(titleScale)
+                .offset(y: titleOffset)
+                .opacity(titleOpacity)
 
             Spacer()
 
@@ -175,9 +244,14 @@ struct BreathScreen: View {
                 .opacity(canContinue ? 1 : 0)
                 .animation(.easeOut(duration: 0.6), value: canContinue)
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, Self.hPadding)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(GeometryReader { geo in
+            Color.clear.preference(key: AvailableWidthKey.self, value: geo.size.width)
+        })
+        .onPreferenceChange(TitleWidthKey.self) { titleWidth = $0 }
+        .onPreferenceChange(AvailableWidthKey.self) { availableWidth = $0 }
         // Emptiness is this screen's whole point. A drifting line behind the
         // orb would compete with the one thing the user is meant to follow.
         .onboardingGround(.relief, ambient: false)
@@ -188,6 +262,9 @@ struct BreathScreen: View {
     /// disagree. No haptics anywhere in here: silence is the point of the
     /// screen, and this is the only place in onboarding with none.
     private func breathe() async {
+        await intro()
+        guard !Task.isCancelled else { return }
+
         withAnimation(.easeInOut(duration: Self.halfBreath)) { breath = .inhale }
         try? await Task.sleep(for: .seconds(Self.halfBreath))
         guard !Task.isCancelled else { return }
@@ -203,6 +280,41 @@ struct BreathScreen: View {
         await swapLabel(to: "Good.")
         guard !Task.isCancelled else { return }
         withAnimation { canContinue = true }
+    }
+
+    /// Line, then orb, then breath. About two seconds, and the orb sits still
+    /// for the last half of it so the inhale reads as something starting
+    /// rather than something already underway.
+    ///
+    /// Every sleep is followed by a cancellation check. A cancelled
+    /// `Task.sleep` throws, `try?` swallows it, and the next line runs
+    /// immediately: without the guards, backing out of this screen fires the
+    /// whole sequence at once.
+    private func intro() async {
+        // One frame for the width measurements to land, so the first thing
+        // drawn is already at the right size rather than snapping to it.
+        try? await Task.sleep(for: .milliseconds(40))
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.78)) {
+            titleOpacity = 1
+            titleStage = .big
+        }
+        try? await Task.sleep(for: .seconds(0.85))
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.easeInOut(duration: 0.6)) {
+            titleStage = .settled
+            titleColor = AppColor.textSecondary
+        }
+        try? await Task.sleep(for: .seconds(0.6))
+        guard !Task.isCancelled else { return }
+
+        withAnimation(.easeOut(duration: 0.4)) {
+            orbOpacity = 1
+            labelOpacity = 1
+        }
+        try? await Task.sleep(for: .seconds(0.5))
     }
 
     /// Out, swap, in. Never both.

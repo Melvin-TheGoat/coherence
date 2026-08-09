@@ -112,13 +112,26 @@ struct OnboardingView: View {
     @State private var history: [Step] = []
 
     var body: some View {
-        content
-            .id(step)
-            .transition(.asymmetric(
-                insertion: .move(edge: .trailing).combined(with: .opacity),
-                removal: .move(edge: .leading).combined(with: .opacity)))
-            .animation(.easeInOut(duration: 0.32), value: step)
-            .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
+        // The step haptic hangs off the ZStack, NOT off `content`.
+        //
+        // `.id(step)` gives the screen a new identity on every advance, and a
+        // `.sensoryFeedback` inside that identity is rebuilt along with it: the
+        // new modifier has no previous trigger value to compare against, so it
+        // treats the current step as its initial one and stays silent. It was
+        // written directly under `.id(step)` and never fired once. The ZStack's
+        // identity is structural and survives, so the comparison survives too.
+        //
+        // Note for testing: the Simulator plays no haptics at all. Judging any
+        // of this needs a device.
+        ZStack {
+            content
+                .id(step)
+                .transition(.asymmetric(
+                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)))
+                .animation(.easeInOut(duration: 0.32), value: step)
+        }
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
         #if DEBUG

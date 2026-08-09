@@ -514,6 +514,48 @@ public struct OnboardingAnswers: Codable, Equatable {
     /// "Fried" end of the slider. Used to choose which pain we reflect back.
     public var isHighStress: Bool { stress >= 0.6 }
 
+    /// They told us they already have a practice, whether that came from the
+    /// baseline question or from one of the two escape-hatch answers.
+    ///
+    /// **Every payoff screen must ask this rather than testing the escape
+    /// hatches itself.** The old checks read `intendedFor == .alreadyPractice
+    /// || restarts == .sticks`, and a regular meditator is asked neither
+    /// question, so both were nil and they fell through to the dropout copy:
+    /// "You're building the habit", under a clinical dropout statistic, shown
+    /// to someone who meditates almost daily.
+    public var alreadyPracticing: Bool {
+        persona == .regular || intendedFor == .alreadyPractice || restarts == .sticks
+    }
+
+    /// What they named as their own problem, paired with what 808 does about
+    /// it. A restarter names dropout causes, a regular names a blind spot, and
+    /// a newcomer has named neither.
+    ///
+    /// **Empty is a real answer.** The screen that renders these puts them
+    /// under a "You said" header, so inventing a fallback would quote a
+    /// sentence back at someone who never said it.
+    public var namedConcerns: [NamedConcern] {
+        // Enum order, not selection order, so two people who ticked the same
+        // things in a different sequence see the same screen.
+        let named = DropoutCause.allCases.filter { causes.contains($0) }
+        if !named.isEmpty {
+            return named.map { NamedConcern(id: $0.rawValue, quote: $0.label, answer: $0.answer) }
+        }
+        if let blindSpot {
+            return [NamedConcern(id: blindSpot.rawValue,
+                                 quote: blindSpot.label,
+                                 answer: blindSpot.answer)]
+        }
+        return []
+    }
+
+    /// The answers to problems they did not name. Always the dropout answers,
+    /// because those are what the product replies to whether or not this
+    /// particular person has quit before.
+    public var unnamedCauses: [DropoutCause] {
+        DropoutCause.allCases.filter { !causes.contains($0) }
+    }
+
     /// The cost we echo back on the commitment screen. Ordered by how directly
     /// a measured, consistent practice speaks to it, so the promise they make
     /// answers the cost they named rather than a random one they ticked.
@@ -568,11 +610,14 @@ public struct PracticeProfile: Equatable {
     public init(from a: OnboardingAnswers) {
         chasing = a.primaryMotivation?.label ?? "A steadier mind"
 
-        // The identity answer outranks the restart count: someone who told us
-        // they already meditate shouldn't be profiled by how often they've
-        // stopped. Their card names what they came for.
-        if a.intendedFor == .alreadyPractice || a.restarts == .sticks {
+        // Persona first: someone who told us they already meditate shouldn't be
+        // profiled by how often they've stopped, and only a restarter was ever
+        // asked the restart count. Reading `restarts` for anyone else meant
+        // reading nil and printing "Building the habit" at a daily meditator.
+        if a.alreadyPracticing {
             pattern = "Already practicing. Now it gets measured"
+        } else if a.persona == .newcomer {
+            pattern = "Starting fresh"
         } else {
             switch a.restarts {
             case .never:      pattern = "Starting fresh"
@@ -588,7 +633,17 @@ public struct PracticeProfile: Equatable {
         anchorLine = a.anchor.map { "You practise \($0.phrase)" }
             ?? "You'll find your time"
 
-        blindSpot = a.primaryCause?.label ?? "Not knowing whether it worked"
+        // Their own words where we have them. The regular answered this
+        // directly and that answer used to be discarded here; the restarter
+        // named it as a dropout cause. A newcomer named neither, so the card
+        // looks forward instead of asserting a blind spot they can't have yet.
+        if let named = a.blindSpot?.label ?? a.primaryCause?.label {
+            blindSpot = named
+        } else if a.persona == .newcomer {
+            blindSpot = "Whether it's working, once you start"
+        } else {
+            blindSpot = "Not knowing whether it worked"
+        }
     }
 }
 
@@ -716,5 +771,36 @@ public enum BlindSpot: String, CaseIterable, Identifiable, Codable {
         case .whichWorks:       return "slider.horizontal.3"
         case .justTheData:      return "square.grid.2x2"
         }
+    }
+
+    /// What 808 does about it, in the same shape as `DropoutCause.answer`, so
+    /// a regular meditator's one question gets a reply on screen 16d instead
+    /// of being collected and dropped.
+    ///
+    /// Every line here must describe something the app actually shows. None of
+    /// them may imply we read a brain state.
+    public var answer: String {
+        switch self {
+        case .gettingCalmer:    return "A stillness and heart-rate reading from every session"
+        case .todayVsYesterday: return "Every session scored the same way, so two days compare"
+        case .improving:        return "Your scores as a line, across every session you've done"
+        case .whichWorks:       return "Each session logged on its own, so the good ones stand out"
+        case .justTheData:      return "The raw curves, not only the number on top of them"
+        }
+    }
+}
+
+/// One thing the user named about their own practice, next to what 808 does
+/// about it. Flattens two different questions (dropout causes, blind spot)
+/// into one shape so the screen isn't switching on which persona it drew.
+public struct NamedConcern: Identifiable, Equatable {
+    public let id: String
+    public let quote: String
+    public let answer: String
+
+    public init(id: String, quote: String, answer: String) {
+        self.id = id
+        self.quote = quote
+        self.answer = answer
     }
 }
