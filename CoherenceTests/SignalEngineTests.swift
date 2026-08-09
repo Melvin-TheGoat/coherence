@@ -180,6 +180,71 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.8)
     }
 
+    // MARK: Natural-breathing second pass (provisional tuning, 2026-08-08)
+
+    /// The case that prompted this: quiet breathing at 14/min buried under a
+    /// 2.1/min drift ten times its amplitude. The first pass declines because
+    /// the drift owns the peak; the second must recover the rate.
+    func test_naturalBreathing_underDrift_isRecovered() {
+        let breath = sine(14.0 / 60, amp: 0.0012)      // 14/min, ~0.85 mrad sd
+        let drift  = sine(0.035, amp: 0.012)           // 2.1/min, 10x larger
+        let m = motion(dur: 180, pitch: { breath($0) + drift($0) })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate, "natural breathing under drift must be read")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 14.0, accuracy: 2.0)
+    }
+
+    /// Reading a normal rate must not cost the user their score. Resonance is
+    /// 45% of it and a bell curve on 6/min, so crediting 14/min would score
+    /// near zero on the largest component and punish ordinary breathing. The
+    /// rate is reported; the score renormalises to heart and stillness.
+    func test_naturalBreathing_reportsRateButEarnsNoResonance() {
+        let breath = sine(14.0 / 60, amp: 0.0012)
+        let drift  = sine(0.035, amp: 0.012)
+        let m = motion(dur: 180, pitch: { breath($0) + drift($0) })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate, "the rate is evidence and is shown")
+        XCTAssertNil(r.resonanceMatchScore,
+                     "a rate above the credit cutoff must not score near zero on 45% of the total")
+    }
+
+    /// Deliberate slow breathing still earns resonance exactly as before. The
+    /// second pass must only ever add readings the first one refused.
+    func test_slowBreathing_stillEarnsResonance() {
+        let m = motion(dur: 120, pitch: sine(0.1, amp: 0.1))       // 6/min
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.8)
+        XCTAssertNotNil(r.resonanceMatchScore)
+        XCTAssertGreaterThan(r.resonanceMatchScore ?? 0, 0.8)
+    }
+
+    /// The guard that matters most. Drift with NO breath in it must still read
+    /// as nothing after the second pass, or this change has traded honesty for
+    /// coverage. Detrending removes the ramp; it must not manufacture a rhythm.
+    func test_driftWithNoBreath_stillReadsNothing() {
+        let m = motion(dur: 180, pitch: sine(0.035, amp: 0.02))    // drift only
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.meanBreathingRate,
+                     "the natural pass must not invent a rate out of pure drift")
+    }
+
+    /// Sensor noise alone is not breathing at any tuning.
+    func test_noiseAlone_readsNothing() {
+        var seed = 20260808
+        func noise() -> Double {
+            seed = (seed &* 1103515245 &+ 12345) & 0x7fffffff
+            return (Double(seed) / Double(0x7fffffff) - 0.5) * 0.0004
+        }
+        let m = motion(dur: 180, pitch: { _ in noise() })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.meanBreathingRate, "noise must never read as a breath")
+    }
+
     /// Settling drift (~2/min) was the dominant slow signal in every pilot
     /// capture. The wrist band's 0.05 Hz floor excludes it: drift alone must
     /// produce NO breathing, not a fake slow rate.

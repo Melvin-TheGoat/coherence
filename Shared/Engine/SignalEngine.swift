@@ -121,7 +121,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "3.0.0"
+    static let version = "3.1.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -179,6 +179,50 @@ enum SignalEngine {
         // whose "breath" sits at the boundary bin is indistinguishable from
         // drift by construction and must read as nothing. Real deliberate
         // breathing runs 4–8/min; nothing legitimate lives at 3.0–3.4.
+    // MARK: Natural-breathing second pass (PROVISIONAL, awaiting calibration)
+    //
+    // The wrist constants above are tuned for DELIBERATE slow breathing, which
+    // is a large slow wave. Quiet automatic breathing is present in the same
+    // signal but sits 6–15× below the postural drift on top of it, so the drift
+    // wins the peak and the window reads as nothing. The pilot recovered a
+    // counted 11/min as ~10/min in about two thirds of windows on pitch, so the
+    // information is there; it needs the drift removed, not the gates loosened.
+    //
+    // Loosening gates is how you get invented numbers, so this pass instead
+    // suppresses drift two ways (a tighter band-pass and a per-window linear
+    // detrend) and then applies the SAME clarity and coherence rules.
+    //
+    // EVERY CONSTANT BELOW IS A STARTING POINT, NOT A MEASUREMENT. They must be
+    // fitted against real captures with counted breath rates before this ships,
+    // exactly as the belly, camera and slow-wrist paths were. Until then the
+    // pass can only ever add readings the first pass already refused, and it
+    // still has to clear readable-fraction and IQR to say anything at all.
+    private static let naturalSlowSec = 8.0     // band-pass low edge ≈ 0.125 Hz
+        // (7.5/min) versus the slow path's 12 s (≈5/min). Drift at ~2.1/min is
+        // attenuated far harder, at the cost of rates below ~8/min, which the
+        // first pass already covers.
+    private static let naturalBandLo = 0.13     // Hz (7.8/min) for the DFT scan,
+        // above the band edge so drift's leakage cannot win the peak.
+    private static let naturalMinRate = 8.0     // breaths/min. Below this belongs
+        // to the first pass; overlapping the two would let a drift artefact be
+        // reported twice under different tuning.
+    private static let naturalAmpFloor = wristAmpFloor  // unchanged on purpose:
+        // 0.5 mrad already sits only 2–3× above attitude sensor noise, and
+        // faster breathing is SHALLOWER, so this is the constant most likely to
+        // need real data. Lowering it without captures would read sensor noise.
+
+    /// Above this rate a reading is reported but earns no resonance credit, and
+    /// the score renormalises to heart/stillness exactly as an unread breath
+    /// does.
+    ///
+    /// Without this, detecting normal breathing would PUNISH people for it:
+    /// resonance is a bell curve on 6/min taking 45% of the score, so a session
+    /// read at 14/min scores 0 on its largest component. Modelled on a real
+    /// session (heart .8, stillness .6, 20 min) that is 72 today against 40 if
+    /// the breath were simply read. 9/min is the documented boundary between
+    /// deliberately slowing down and just breathing.
+    static let resonanceCreditMaxRate = 9.0    // breaths/min
+
     private static let stillnessGain = 5.0     // activity → stillness sharpness
     private static let attitudeWeight = 1.0    // radians vs g weighting in activity
 
@@ -295,76 +339,39 @@ enum SignalEngine {
             // slow breathing reads; quiet automatic breathing usually won't
             // clear the readable-fraction floor, and then these fields stay
             // empty — the same honest degrade the belly path had.
-            let pitchW = bandPass(motion.map(\.pitch), times: times, slowSec: 12)
-            let rollW = bandPass(motion.map(\.roll), times: times, slowSec: 12)
-            let axis = selectBreathingAxis(pitchBP: pitchW, rollBP: rollW, times: times,
-                                           floor: wristAmpFloor, fMin: wristBandLo)
+            // Two passes. The first is the shipped slow-breathing read, exactly
+            // as calibrated. Only if it declines does the second try again with
+            // the drift suppressed, so nothing that reads today can change.
+            let windowAccel = windows.map { win in
+                rms(indices(times, in: win).map { motion[$0].userAccel })
+            }
+            let gate = median(windowAccel) * wristAccelGateRatio
 
-            // NO whole-file concentration gate here, deliberately — that gate
-            // assumes a stationary rate. A real breath that drifts (the first
-            // live session read 6.6 → 9.5/min across one minute) smears the
-            // whole-file peak below the clarity floor and got rejected even
-            // though every individual window was clean. Per-window gates below
-            // (amplitude, clarity, movement, readable fraction) are the real
-            // guards; the whole-file check only ever added this failure mode.
-            if stddev(axis) >= wristAmpFloor {
-                // Movement gate, relative to this session's own baseline: a slow
-                // arm reposition sits at only ~1.6× the median window accel and
-                // masquerades as a clean slow breath, so gated windows read 0
-                // rather than a fake rate.
-                let windowAccel = windows.map { win in
-                    rms(indices(times, in: win).map { motion[$0].userAccel })
-                }
-                let gate = median(windowAccel) * wristAccelGateRatio
+            var read = readWrist(motion: motion, times: times, windows: windows,
+                                 windowAccel: windowAccel, gate: gate,
+                                 slowSec: 12, bandLo: wristBandLo,
+                                 minRate: wristMinRate, ampFloor: wristAmpFloor,
+                                 detrendWindows: false)
+            if read == nil {
+                read = readWrist(motion: motion, times: times, windows: windows,
+                                 windowAccel: windowAccel, gate: gate,
+                                 slowSec: naturalSlowSec, bandLo: naturalBandLo,
+                                 minRate: naturalMinRate, ampFloor: naturalAmpFloor,
+                                 detrendWindows: true)
+            }
 
-                var rates: [Double] = []
-                var depths: [Double] = []
-                for (i, win) in windows.enumerated() {
-                    let idx = indices(times, in: win)
-                    if idx.count >= 8 && windowAccel[i] <= gate {
-                        // Both axes, per window. The best axis by clarity gives
-                        // the rate; whether we BELIEVE it is the clean-or-agree
-                        // rule on wristStrongConc above. The amplitude floor
-                        // keeps a near-flat window's noise from showing a
-                        // spuriously clean peak; the rate floor keeps settling
-                        // drift's band-edge leakage from reading as breath.
-                        let wt = idx.map { times[$0] }
-                        let wpP = idx.map { pitchW[$0] }
-                        let wpR = idx.map { rollW[$0] }
-                        let (fP, pP, totP) = dominantFrequency(times: wt, values: wpP,
-                                                               fMin: wristBandLo, fMax: breathBandHi)
-                        let (fR, pR, totR) = dominantFrequency(times: wt, values: wpR,
-                                                               fMin: wristBandLo, fMax: breathBandHi)
-                        let cP = totP > 0 ? 2 * pP / (totP * Double(wpP.count)) : 0
-                        let cR = totR > 0 ? 2 * pR / (totR * Double(wpR.count)) : 0
-                        let (f, conc, wp) = cP >= cR ? (fP, cP, wpP) : (fR, cR, wpR)
-                        let amp = max(stddev(wpP), stddev(wpR))
-                        let agree = fP > 0 && fR > 0 && abs(fP - fR) <= 0.25 * max(fP, fR)
-                        let readable = amp >= wristAmpFloor && f * 60 >= wristMinRate
-                            && (conc >= wristSoloConc || (conc >= concentrationMin && agree))
-                        rates.append(readable ? f * 60 : 0)
-                        depths.append((wp.max() ?? 0) - (wp.min() ?? 0))
-                    } else {
-                        rates.append(0)
-                        depths.append(0)
-                    }
-                }
-                rates = medianFiltered5(rates)
-
-                let readable = rates.filter { $0 > 0 }
-                let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
-                // Track coherence: one rhythm or nothing (see wristMaxRateIQR).
-                let sortedR = readable.sorted()
-                let iqr = sortedR.isEmpty ? 0
-                    : sortedR[(sortedR.count * 3) / 4] - sortedR[sortedR.count / 4]
-                if fraction >= wristMinReadableFraction && iqr <= wristMaxRateIQR {
-                    breathingReadable = true
-                    breathingRateTimeseries = rates
-                    breathDepthTimeseries = depths
-                    meanBreathingRate = readable.reduce(0, +) / Double(readable.count)
-                    resonanceMatchScore = resonanceMatch(meanBreathingRate!)
-                    breathingRegularity = regularity(signal: axis, times: times)
-                }
+            if let r = read {
+                breathingReadable = true
+                breathingRateTimeseries = r.rates
+                breathDepthTimeseries = r.depths
+                meanBreathingRate = r.meanRate
+                breathingRegularity = regularity(signal: r.axis, times: times)
+                // Resonance credit only for a rate you had to slow down to
+                // reach. A reading above the cutoff is still shown; it simply
+                // leaves the score to heart and stillness rather than scoring
+                // near zero on 45% of it. See resonanceCreditMaxRate.
+                resonanceMatchScore = r.meanRate <= resonanceCreditMaxRate
+                    ? resonanceMatch(r.meanRate) : nil
             }
         }
 
@@ -484,6 +491,99 @@ enum SignalEngine {
     /// high concentration, so gate on amplitude first). See the call site for why
     /// concentration beats PCA's variance criterion. The floor and band default to
     /// the belly calibration; the wrist path passes its own.
+    private struct WristRead {
+        let rates: [Double]
+        let depths: [Double]
+        let meanRate: Double
+        let axis: [Double]
+    }
+
+    /// One wrist-breathing attempt at a given tuning. Returns nil unless the
+    /// session clears BOTH the readable-fraction floor and the rate-IQR
+    /// coherence check, which are the guards that keep this from inventing a
+    /// number. Factored out so the natural-breathing pass reuses the identical
+    /// decision rules and only the drift handling differs.
+    private static func readWrist(
+        motion: [MotionSample], times: [Double],
+        windows: [(lo: Double, hi: Double)],
+        windowAccel: [Double], gate: Double,
+        slowSec: Double, bandLo: Double, minRate: Double, ampFloor: Double,
+        detrendWindows: Bool
+    ) -> WristRead? {
+        let pitchW = bandPass(motion.map(\.pitch), times: times, slowSec: slowSec)
+        let rollW = bandPass(motion.map(\.roll), times: times, slowSec: slowSec)
+        let axis = selectBreathingAxis(pitchBP: pitchW, rollBP: rollW, times: times,
+                                       floor: ampFloor, fMin: bandLo)
+
+        // NO whole-file concentration gate, deliberately — it assumes a
+        // stationary rate, and a real breath that drifts (6.6 → 9.5/min in one
+        // live minute) smears the whole-file peak below the clarity floor even
+        // though every window was clean. Per-window gates are the real guards.
+        guard stddev(axis) >= ampFloor else { return nil }
+
+        var rates: [Double] = []
+        var depths: [Double] = []
+        for (i, win) in windows.enumerated() {
+            let idx = indices(times, in: win)
+            guard idx.count >= 8 && windowAccel[i] <= gate else {
+                rates.append(0); depths.append(0); continue
+            }
+            let wt = idx.map { times[$0] }
+            var wpP = idx.map { pitchW[$0] }
+            var wpR = idx.map { rollW[$0] }
+            // A straight-line fit removed per window takes out the slow ramp a
+            // band-pass alone leaves behind. Cheap, and it is the difference
+            // between a breath peak and a drift peak at these amplitudes.
+            if detrendWindows {
+                wpP = linearDetrended(wpP, times: wt)
+                wpR = linearDetrended(wpR, times: wt)
+            }
+            let (fP, pP, totP) = dominantFrequency(times: wt, values: wpP,
+                                                   fMin: bandLo, fMax: breathBandHi)
+            let (fR, pR, totR) = dominantFrequency(times: wt, values: wpR,
+                                                   fMin: bandLo, fMax: breathBandHi)
+            let cP = totP > 0 ? 2 * pP / (totP * Double(wpP.count)) : 0
+            let cR = totR > 0 ? 2 * pR / (totR * Double(wpR.count)) : 0
+            let (f, conc, wp) = cP >= cR ? (fP, cP, wpP) : (fR, cR, wpR)
+            let amp = max(stddev(wpP), stddev(wpR))
+            let agree = fP > 0 && fR > 0 && abs(fP - fR) <= 0.25 * max(fP, fR)
+            let readable = amp >= ampFloor && f * 60 >= minRate
+                && (conc >= wristSoloConc || (conc >= concentrationMin && agree))
+            rates.append(readable ? f * 60 : 0)
+            depths.append((wp.max() ?? 0) - (wp.min() ?? 0))
+        }
+        rates = medianFiltered5(rates)
+
+        let readable = rates.filter { $0 > 0 }
+        let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
+        // Track coherence: one rhythm or nothing (see wristMaxRateIQR).
+        let sorted = readable.sorted()
+        let iqr = sorted.isEmpty ? 0
+            : sorted[(sorted.count * 3) / 4] - sorted[sorted.count / 4]
+        guard fraction >= wristMinReadableFraction && iqr <= wristMaxRateIQR else { return nil }
+
+        return WristRead(rates: rates, depths: depths,
+                         meanRate: readable.reduce(0, +) / Double(readable.count),
+                         axis: axis)
+    }
+
+    /// Removes the best-fit straight line. Ordinary least squares on (t, y).
+    private static func linearDetrended(_ y: [Double], times t: [Double]) -> [Double] {
+        guard y.count >= 3, y.count == t.count else { return y }
+        let n = Double(y.count)
+        let mt = t.reduce(0, +) / n
+        let my = y.reduce(0, +) / n
+        var num = 0.0, den = 0.0
+        for i in 0..<y.count {
+            let dt = t[i] - mt
+            num += dt * (y[i] - my)
+            den += dt * dt
+        }
+        guard den > 0 else { return y }
+        let slope = num / den
+        return (0..<y.count).map { y[$0] - (my + slope * (t[$0] - mt)) }
+    }
+
     private static func selectBreathingAxis(pitchBP: [Double], rollBP: [Double], times: [Double],
                                             floor: Double = ampFloor,
                                             fMin: Double = breathBandLo) -> [Double] {
