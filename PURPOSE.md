@@ -23,6 +23,14 @@ over weeks and months, on evidence rather than on how you happen to feel that da
 It works with our guided track, with our sound library, or with nothing at all. Start a session
 and play a meditation from any other app you like. The Watch keeps measuring either way.
 
+We are not asking you to take the practice itself on faith either. The American Heart
+Association reviewed the evidence and calls meditation a reasonable addition to standard care
+for cardiovascular risk, and the longest trial of it, in adults who already had heart disease,
+recorded 48% fewer deaths, heart attacks and strokes over five years. There are real caveats
+and we list them ourselves in *The Science Behind 808*. The point is narrower than the
+headline: this is a practice with a serious literature behind it. What has been missing is any
+way to know whether *you* are doing it.
+
 808 is where the two meet: **a practice that reshapes who you are, and hard evidence that it's
 happening.**
 

@@ -229,6 +229,10 @@
     color:var(--teal); }
   .fig.gold { color:var(--gold); }
   .fig.ember { color:var(--ember); }
+  /* The three-up rule above is two classes deeper than .fig.ember, so without
+     these the cost figures rendered teal, the body-signal colour. */
+  .figs.three .fig.gold { color:var(--gold); }
+  .figs.three .fig.ember { color:var(--ember); }
   .figs p { margin:0; font-size:15.5px; color:var(--muted); }
   .kicker { font-size:20px; color:var(--fg); margin:52px 0 0; max-width:34ch;
     font-weight:500; }
@@ -422,7 +426,7 @@
       <h2>Meditation itself has the evidence.</h2>
     </div>
 
-    <div class="figs two">
+    <div class="figs three">
       <div>
         <span class="fig gold">+16</span>
         <p>Percentile points on GRE reading comprehension after two weeks of
@@ -433,6 +437,14 @@
         <span class="fig gold">47</span>
         <p>Meditation trials showing real reductions in anxiety and
           depression.<sup><a href="#sources">3</a></sup></p>
+      </div>
+      <div>
+        <span class="fig gold">AHA</span>
+        <p>Calls meditation a reasonable addition to standard care for
+          cardiovascular risk.<sup><a href="#sources">4</a></sup> One five-year
+          trial in heart patients found 48% fewer deaths, heart attacks and
+          strokes, though the group that teaches the technique ran
+          it.<sup><a href="#sources">5</a></sup></p>
       </div>
     </div>
   </section>
@@ -450,18 +462,18 @@
       <div>
         <span class="fig ember">39%</span>
         <p>Dropped out across 70 trials of meditation apps, and researchers were
-          often paying them to continue.<sup><a href="#sources">4</a></sup></p>
+          often paying them to continue.<sup><a href="#sources">6</a></sup></p>
       </div>
       <div>
         <span class="fig ember">~half</span>
         <p>Of paying Calm subscribers stopped using the app, out of 3,275 tracked
-          in the real world.<sup><a href="#sources">5</a></sup></p>
+          in the real world.<sup><a href="#sources">7</a></sup></p>
       </div>
       <div>
         <span class="fig ember">280,000</span>
         <p>Meditation sessions analysed. How often you meditate predicted
           improvement. How long each one lasted showed no significant
-          effect.<sup><a href="#sources">6</a></sup></p>
+          effect.<sup><a href="#sources">8</a></sup></p>
       </div>
     </div>
 
@@ -693,6 +705,27 @@
           <a href="https://doi.org/10.1001/jamainternmed.2013.13018">doi:10.1001/jamainternmed.2013.13018</a>.
           47 trials with active controls, 3,515 participants. Moderate evidence,
           effect sizes around 0.3.</li>
+        <li>Levine, G. N., et al. (2017). Meditation and cardiovascular risk
+          reduction: a scientific statement from the American Heart Association.
+          <i>Journal of the American Heart Association</i>, 6(10), e002218.
+          <a href="https://doi.org/10.1161/JAHA.117.002218">doi:10.1161/JAHA.117.002218</a>.
+          A systematic review by the AHA's own councils. Its verdict is
+          deliberately modest: meditation may be considered as an adjunct to
+          guideline-directed care, never as a replacement for it, and the
+          overall quality and quantity of the data are described as modest.</li>
+        <li>Schneider, R. H., et al. (2012). Stress reduction in the secondary
+          prevention of cardiovascular disease. <i>Circulation: Cardiovascular
+          Quality and Outcomes</i>, 5(6), 750&ndash;758.
+          <a href="https://doi.org/10.1161/CIRCOUTCOMES.112.967406">doi:10.1161/CIRCOUTCOMES.112.967406</a>.
+          201 Black adults with existing coronary heart disease, randomized to
+          Transcendental Meditation or health education, followed a median 5.4
+          years. 48% relative reduction in the composite of death, myocardial
+          infarction and stroke. Two things you should know: the trial was run
+          by the Maharishi University institute that teaches the technique, and
+          an earlier version of the paper was withdrawn by <i>Archives of
+          Internal Medicine</i> in 2011, then reanalyzed and published here.
+          It studied one technique in one population that was already ill, so
+          it says nothing about what meditation does for a healthy person.</li>
         <li>Linardon, J., et al. (2023). Rates of attrition and engagement in
           randomized controlled trials of mindfulness apps.
           <i>Behaviour Research and Therapy</i>, 170, 104421.
@@ -716,7 +749,8 @@
         What these do and do not show. The research above establishes that mind
         wandering is costly, that meditation training helps, that consistency
         beats session length, and that people quit apps. It does not show that
-        808 specifically will do any of this for you. Nobody has run that trial
+        808 specifically will do any of this for you, and nothing here is
+        medical advice or a reason to change anything your doctor told you. Nobody has run that trial
         yet, and we won't pretend otherwise.
       </p>
     </details>
