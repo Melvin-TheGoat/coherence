@@ -252,17 +252,10 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.meanBreathingRate ?? 0, 9.0, accuracy: 2.5)
     }
 
-    /// The other half of that rule. Widening the gate for real trends must not
-    /// let scatter through.
-    ///
-    /// Junk is not "many tones at once", which is three steady rhythms and
-    /// reasonably reads as the clearest one. Junk is a rate that JUMPS with no
-    /// trajectory, which is what the two refused captures actually looked like:
-    /// spread as wide as the real sessions, but fitting a line at R² 0.05
-    /// against their 0.57.
-    func test_ratesThatJumpWithNoTrend_areRefused() {
-        // Frequency reassigned every 30 s in a non-monotonic order, phase kept
-        // continuous so the jumps are in the rate, not in the waveform.
+    /// Aziz's call: show the user a rate even when it is only roughly right,
+    /// because an empty tile is worse than an approximate number. A jumpy curve
+    /// that the strict gate would have thrown away is now displayed.
+    func test_jumpyCurve_isShownToTheUser() {
         let plan: [Double] = [12, 5, 14, 6, 13, 4, 15, 5, 12, 6]   // per 30 s, /min
         var phase = 0.0, last = 0.0
         func value(_ t: Double) -> Double {
@@ -271,11 +264,44 @@ final class SignalEngineTests: XCTestCase {
             last = t
             return 0.004 * sin(phase)
         }
-        let m = motion(dur: 300, pitch: value)
-        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+        let r = SignalEngine.analyze(motion: motion(dur: 300, pitch: value),
+                                     hr: [], bellyBreathing: false)
 
-        XCTAssertNil(r.meanBreathingRate,
-                     "a rate with no trajectory must read as nothing, however wide its spread")
+        XCTAssertNotNil(r.meanBreathingRate, "a rough reading is still shown")
+    }
+
+    /// And the guard that makes being lax survivable. A reading the engine is
+    /// not confident in must never move the score.
+    ///
+    /// Measured on a counted session: at minute 2 the engine reported 3.9/min
+    /// at clarity 0.76 while Aziz counted 10, because a 4/min postural sway
+    /// carried 14x the power of his breath. Clean sway looks exactly like clean
+    /// breath. Showing it costs little; scoring it would corrupt the number the
+    /// product exists to sell.
+    func test_lowConfidenceReading_neverMovesTheScore() {
+        let plan: [Double] = [12, 5, 14, 6, 13, 4, 15, 5, 12, 6]
+        var phase = 0.0, last = 0.0
+        func value(_ t: Double) -> Double {
+            let f = plan[min(plan.count - 1, Int(t / 30))] / 60
+            phase += 2 * Double.pi * f * (t - last)
+            last = t
+            return 0.004 * sin(phase)
+        }
+        let r = SignalEngine.analyze(motion: motion(dur: 300, pitch: value),
+                                     hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate)
+        XCTAssertNil(r.resonanceMatchScore,
+                     "an unconfident rate must leave the score to heart and stillness")
+    }
+
+    /// A clean, coherent, deliberately slow breath still earns its resonance.
+    func test_confidentSlowBreathing_stillScores() {
+        let r = SignalEngine.analyze(motion: motion(dur: 180, pitch: sine(0.1, amp: 0.1)),
+                                     hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.8)
+        XCTAssertNotNil(r.resonanceMatchScore, "a confident slow read must still score")
     }
 
     /// Sensor noise alone is not breathing at any tuning.
@@ -337,32 +363,37 @@ final class SignalEngineTests: XCTestCase {
                        "mean should land mid-drift")
     }
 
-    /// Breath readable in under half the windows (quiet automatic breathing in
-    /// the pilot: 55–68% at best, often less) → the whole signal is dropped
-    /// rather than shipping a flickering half-curve. Here: a breath that simply
-    /// stops a third of the way in.
-    func test_wristSession_sparseReadabilityDropsOut() {
+    /// Breath readable in only part of the session used to be dropped entirely.
+    /// Aziz changed that call: show the curve, because seeing it is what lets
+    /// us tune the engine, and an empty tile teaches nobody anything. What must
+    /// still hold is that a partial read does not reach the score.
+    func test_wristSession_sparseReadability_showsButDoesNotScore() {
         let m = motion(dur: 180, pitch: { t in t < 60 ? sine(0.1, amp: 0.006)(t) : 0 })
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNil(r.meanBreathingRate,
-                     "a breath readable in a minority of windows must say nothing")
-        XCTAssertTrue(r.breathingRateTimeseries.isEmpty)
+        XCTAssertNotNil(r.meanBreathingRate, "the curve is shown even when partial")
+        XCTAssertNil(r.resonanceMatchScore,
+                     "a partial read must leave the score to heart and stillness")
     }
 
-    /// A session carrying two different rhythms in different stretches is not a
-    /// breath track, it's junk assembling plateaus — the signature of the one
-    /// live session that misread (counted 11/min, would have displayed 6.8).
-    /// The rate-IQR gate must refuse it even though every window reads cleanly.
-    func test_wristSession_incoherentPlateausRefused() {
+    /// Disjoint plateaus are the signature of a misread: a live session counted
+    /// at 11/min would have displayed 6.8, and a later counted session showed
+    /// the same shape (counted 10, engine 6.9, because a 4/min postural sway
+    /// carried 14x the power of the breath).
+    ///
+    /// This now DISPLAYS, by decision: the curve is what makes the misread
+    /// visible and tunable, and hiding it hid the problem. The score is where
+    /// the old refusal moved to, and that is the assertion that matters.
+    func test_wristSession_incoherentPlateaus_showButDoNotScore() {
         let m = motion(dur: 180, pitch: { t in
             let hz = t < 60 ? 0.075 : (t < 120 ? 0.145 : 0.075)   // 4.5 vs 8.7/min
             return 0.004 * sin(2 * .pi * hz * t)
         })
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNil(r.meanBreathingRate,
-                     "two disjoint rhythms must not average into one fake rate")
+        XCTAssertNotNil(r.meanBreathingRate, "the curve is shown so the misread is visible")
+        XCTAssertNil(r.resonanceMatchScore,
+                     "two disjoint rhythms must never average into a scored rate")
     }
 
     /// The 9/min case (live session 5): faster deliberate breathing is

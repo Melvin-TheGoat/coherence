@@ -154,6 +154,12 @@ enum SignalEngine {
         // clean fake ~2/min wave at only ~1.6× median accel (measured), far
         // under any absolute threshold that survives normal fidgeting. Relative
         // to the session's own median catches exactly the shift windows.
+    /// Enough windows to SHOW a rate. Deliberately lax: a number on screen that
+    /// is roughly right beats an empty tile, and the user can see the curve and
+    /// judge it. What this must never do is feed the score, which is gated
+    /// separately and strictly (see wristConfidentFraction).
+    private static let wristDisplayFraction = 0.35
+
     private static let wristMinReadableFraction = 0.6  // of windows, or breathing
         // is dropped entirely. True sessions ran 0.85–1.00 across six live
         // captures; the worst junk session managed 0.51 by scattered luck.
@@ -222,6 +228,17 @@ enum SignalEngine {
     /// the breath were simply read. 9/min is the documented boundary between
     /// deliberately slowing down and just breathing.
     static let resonanceCreditMaxRate = 9.0    // breaths/min
+
+    /// Confidence tier. A reading only reaches the SCORE when the session is
+    /// this readable AND coherent AND slow enough to be deliberate.
+    ///
+    /// The split exists because of a measured failure: at minute 2 of a counted
+    /// session the engine reported 3.9/min at clarity 0.76 while Aziz counted
+    /// 10. It was not confused. A 4/min postural sway genuinely carried 14x the
+    /// power of his breath, and clean sway is indistinguishable from clean
+    /// breath by shape alone. Showing that number costs little. Letting it move
+    /// the score would corrupt the only measurement this product sells.
+    private static let wristConfidentFraction = 0.6
 
     private static let wristMinTrendFit = 0.30  // R². A curve whose spread is too
         // wide to be one steady rate may still be one breath that changed. Real
@@ -362,11 +379,12 @@ enum SignalEngine {
                 breathDepthTimeseries = r.depths
                 meanBreathingRate = r.meanRate
                 breathingRegularity = regularity(signal: r.axis, times: times)
-                // Resonance credit only for a rate you had to slow down to
-                // reach. A faster reading is still shown; it simply leaves the
-                // score to heart and stillness rather than scoring near zero on
-                // 45% of it. See resonanceCreditMaxRate.
-                resonanceMatchScore = r.meanRate <= resonanceCreditMaxRate
+                // The rate above is shown whatever happens. Resonance is what
+                // reaches the SCORE, and it needs both a confident read and a
+                // rate slow enough to be deliberate. Everything else leaves the
+                // score to heart and stillness, exactly as an unread breath
+                // does, so a shaky reading can never cost you points.
+                resonanceMatchScore = (r.confident && r.meanRate <= resonanceCreditMaxRate)
                     ? resonanceMatch(r.meanRate) : nil
             }
         }
@@ -491,6 +509,8 @@ enum SignalEngine {
         let rates: [Double]
         let depths: [Double]
         let meanRate: Double
+        /// Good enough to move the score, not merely to display.
+        let confident: Bool
         let axis: [Double]
     }
 
@@ -575,10 +595,11 @@ enum SignalEngine {
 
         let readable = rates.filter { $0 > 0 }
         let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
-        guard fraction >= wristMinReadableFraction, coherent(rates) else { return nil }
+        guard fraction >= wristDisplayFraction else { return nil }
 
         return WristRead(rates: rates, depths: depths,
                          meanRate: readable.reduce(0, +) / Double(readable.count),
+                         confident: fraction >= wristConfidentFraction && coherent(rates),
                          axis: axis)
     }
 
