@@ -232,6 +232,52 @@ final class SignalEngineTests: XCTestCase {
                      "the natural pass must not invent a rate out of pure drift")
     }
 
+    /// A real session that SLOWS DOWN must still be read. Verified against a
+    /// capture where Aziz counted 12, 8 and 6.5 breaths a minute at minutes 1,
+    /// 3 and 5: the per-window curve tracked it (12.2 → 10.4 → 8.0 → 6.6) but
+    /// the old spread-only gate threw the whole session away, because a spread
+    /// of 3.7 looks identical to junk if you only measure spread.
+    func test_breathingThatSlowsDown_isStillRead() {
+        // A chirp from 12/min down to 6/min, the shape of a real settle.
+        let f0 = 12.0 / 60, f1 = 6.0 / 60, dur = 300.0
+        let m = motion(dur: dur, pitch: { t in
+            let k = (f1 - f0) / dur
+            let phase = 2 * Double.pi * (f0 * t + 0.5 * k * t * t)
+            return 0.004 * sin(phase)
+        })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate,
+                        "a breath that slows from 12 to 6 is one rhythm, not scatter")
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 9.0, accuracy: 2.5)
+    }
+
+    /// The other half of that rule. Widening the gate for real trends must not
+    /// let scatter through.
+    ///
+    /// Junk is not "many tones at once", which is three steady rhythms and
+    /// reasonably reads as the clearest one. Junk is a rate that JUMPS with no
+    /// trajectory, which is what the two refused captures actually looked like:
+    /// spread as wide as the real sessions, but fitting a line at R² 0.05
+    /// against their 0.57.
+    func test_ratesThatJumpWithNoTrend_areRefused() {
+        // Frequency reassigned every 30 s in a non-monotonic order, phase kept
+        // continuous so the jumps are in the rate, not in the waveform.
+        let plan: [Double] = [12, 5, 14, 6, 13, 4, 15, 5, 12, 6]   // per 30 s, /min
+        var phase = 0.0, last = 0.0
+        func value(_ t: Double) -> Double {
+            let f = plan[min(plan.count - 1, Int(t / 30))] / 60
+            phase += 2 * Double.pi * f * (t - last)
+            last = t
+            return 0.004 * sin(phase)
+        }
+        let m = motion(dur: 300, pitch: value)
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.meanBreathingRate,
+                     "a rate with no trajectory must read as nothing, however wide its spread")
+    }
+
     /// Sensor noise alone is not breathing at any tuning.
     func test_noiseAlone_readsNothing() {
         var seed = 20260808
