@@ -121,6 +121,8 @@
     width:14px; height:14px; }
   .microcopy { font-family:var(--mono); font-size:11.5px; letter-spacing:0.06em;
     color:var(--muted); margin:12px 0 0; }
+  .formerr { display:none; font-family:var(--mono); font-size:11.5px;
+    letter-spacing:0.06em; color:var(--ember); margin:12px 0 0; }
   .done {
     display:none; max-width:440px; padding:18px 20px;
     border:1px solid var(--gold-dim); background:var(--surface);
@@ -342,7 +344,8 @@
           <input type="checkbox" name="has_watch" value="yes">
           <span>I have an Apple Watch</span>
         </label>
-        <p class="microcopy">Pre-launch. iPhone + Apple Watch.</p>
+        <p class="formerr" role="alert"></p>
+      <p class="microcopy">Pre-launch. iPhone + Apple Watch.</p>
       </form>
       <div class="done">
         <b>You're in</b>
@@ -591,7 +594,8 @@
           <input type="checkbox" name="has_watch" value="yes">
           <span>I have an Apple Watch</span>
         </label>
-        <p class="microcopy">Pre-launch. iPhone + Apple Watch.</p>
+        <p class="formerr" role="alert"></p>
+      <p class="microcopy">Pre-launch. iPhone + Apple Watch.</p>
       </form>
       <div class="done">
         <b>You're in</b>
@@ -733,6 +737,7 @@
         <input type="checkbox" name="has_watch" value="yes">
         <span>I have an Apple Watch</span>
       </label>
+      <p class="formerr" role="alert"></p>
       <p class="microcopy">Pre-launch. iPhone + Apple Watch.</p>
     </form>
     <div class="done">
@@ -839,23 +844,65 @@
   }
 
   // ---- waitlist ---------------------------------------------------------
-  // Entries go into the same private Google Sheet as the questionnaire
-  // (see survey-sheet.gs). Three forms on the page, so this binds by class.
-  var SHEET_ENDPOINT = "https://script.google.com/macros/s/AKfycbyqBI-CJsINEeeTyQe3Ys6ARIzc0FXlVNHDZnt9-2HeKJBzzn_kYLpMVdJ6DJPbXZ0/exec";
+  // Its own endpoint and its own sheet (see waitlist-sheet.gs). The
+  // questionnaire script has the survey's columns, so signups posted there
+  // land as mostly-empty survey rows.
+  //
+  // PASTE THE /exec URL FROM waitlist-sheet.gs HERE. While it is empty the form
+  // falls straight through to email, so signups are still captured.
+  var WAITLIST_ENDPOINT = "";
   var EMAIL_FALLBACK = "https://formsubmit.co/ajax/support@meditate808.com";
+  var TIMEOUT_MS = 8000;
 
-  function initForm(form) {
+  // Every request gets a deadline, enforced by a race rather than by
+  // AbortController alone. Aborting only works if fetch cooperates and if the
+  // browser has AbortController at all; racing a rejecting timer is guaranteed
+  // to settle no matter what the network does. Without this the button reads
+  // "Joining" forever with no way back, which is what happened on the first
+  // live signup.
+  function post(url, body, type) {
+    if (!url) return Promise.reject(new Error('no endpoint'));
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer;
+    var deadline = new Promise(function (_, reject) {
+      timer = setTimeout(function () {
+        if (ctl) ctl.abort();               // free the socket where supported
+        reject(new Error('timeout'));       // but never depend on it
+      }, TIMEOUT_MS);
+    });
+    var call = fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': type },
+      body: JSON.stringify(body),
+      signal: ctl ? ctl.signal : undefined
+    });
+    return Promise.race([call, deadline]).then(function (r) {
+      clearTimeout(timer);
+      return r;
+    }, function (e) {
+      clearTimeout(timer);
+      throw e;
+    });
+  }
+
+  function initForm(form, source) {
     var done = form.parentNode.querySelector('.done');
     var btn = form.querySelector('button.cta');
     var emailField = form.querySelector('input[type=email]');
+    var watchField = form.querySelector('input[type=checkbox]');
     var label = btn.textContent;
+    var err = form.querySelector('.formerr');
+
+    function show(message) { err.textContent = message; err.style.display = 'block'; }
+    function hide() { err.style.display = 'none'; }
 
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      hide();
       var email = emailField.value.trim();
       if (!email || email.indexOf('@') < 1 || email.lastIndexOf('.') < email.indexOf('@')) {
         emailField.focus();
-        emailField.style.borderColor = 'oklch(62% .10 32)';
+        show('That email does not look right.');
         return;
       }
       btn.disabled = true;
@@ -863,32 +910,41 @@
 
       var payload = {
         email: email,
-        apple_watch: watchField.checked ? 'Yes' : '',
-        hoping: '(homepage waitlist signup)'
+        apple_watch: watchField && watchField.checked ? 'Yes' : '',
+        source: source,
+        referrer: document.referrer || ''
       };
 
       function succeed() { form.style.display = 'none'; done.style.display = 'block'; }
-      function fail() { btn.disabled = false; btn.textContent = label; }
+      function fail() {
+        btn.disabled = false;
+        btn.textContent = label;
+        show('That did not go through. Try once more, or email us.');
+      }
 
-      // Same delivery logic as the survey: the sheet endpoint's redirect can
-      // look like an error even when the row lands, so a settled response
-      // counts as delivered; only a network rejection falls through to email.
-      fetch(SHEET_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(payload)
-      })
+      // Apps Script answers a POST with a redirect, and the hop can surface as
+      // an opaque response even though the row landed. Any settled response
+      // counts as delivered; only a rejection or the timeout falls through to
+      // email, so a signup is never lost and never delivered twice.
+      post(WAITLIST_ENDPOINT, payload, 'text/plain;charset=utf-8')
         .then(succeed)
         .catch(function () {
-          fetch(EMAIL_FALLBACK, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify(payload)
-          }).then(succeed).catch(fail);
-        });
+          return post(EMAIL_FALLBACK,
+                      { email: email, apple_watch: payload.apple_watch,
+                        _subject: '808 waitlist signup', source: source },
+                      'application/json')
+            .then(function (r) {
+              if (!r.ok) throw new Error('email status ' + r.status);
+              succeed();
+            });
+        })
+        .catch(fail);
     });
   }
-  Array.prototype.forEach.call(document.querySelectorAll('form.signup'), initForm);
+  var FORM_SOURCES = ['hero', 'charts', 'closer'];
+  Array.prototype.forEach.call(document.querySelectorAll('form.signup'), function (f, i) {
+    initForm(f, FORM_SOURCES[i] || ('form' + i));
+  });
 
   Array.prototype.forEach.call(document.querySelectorAll('a[href="#join"]'), function (a) {
     a.addEventListener('click', function (e) {
