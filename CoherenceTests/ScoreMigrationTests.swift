@@ -21,6 +21,7 @@ final class ScoreMigrationTests: XCTestCase {
             sessionID: id,
             heartRateTimeseries: [74, 72, 70, 68, 66, 64],
             stillnessScore: 0.90,
+            meanBreathingRate: 6.2,
             resonanceMatchScore: 0.95,
             overallScore: 0.42,                 // whatever v2 said
             algorithmVersion: "2.0.0")
@@ -30,7 +31,7 @@ final class ScoreMigrationTests: XCTestCase {
 
         let expected = SignalEngine.score(stillnessScore: 0.90,
                                           heartRateTimeseries: [74, 72, 70, 68, 66, 64],
-                                          resonanceMatchScore: 0.95,
+                                          meanBreathingRate: 6.2,
                                           durationSec: 1200)
         XCTAssertEqual(stats.overallScore ?? -1, expected ?? -2, accuracy: 0.0001)
         XCTAssertEqual(stats.algorithmVersion, SignalEngine.version)

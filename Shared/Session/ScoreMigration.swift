@@ -1,7 +1,13 @@
 import Foundation
 import SwiftData
 
-/// One-time back-fill of the v3 score across every historical session.
+/// One-time back-fill of the current score across every historical session.
+///
+/// Re-run for v3.2, which changed what a breathing rate is worth: breath now
+/// counts at any rate on a wide curve instead of a narrow resonance bell. Same
+/// reasoning as v3 itself, so the key is bumped to .v2: a history graph is a
+/// comparison, and a comparison across two formulas is a lie told with a line
+/// chart.
 ///
 /// **Why it's safe to rewrite an "immutable" row here.** Stats rows are
 /// immutable by convention because a session's *measurements* must never
@@ -22,7 +28,7 @@ import SwiftData
 /// successful save, so a crash mid-migration just retries next launch.
 enum ScoreMigration {
 
-    static let doneKey = "scoreV3BackfillDone.v1"
+    static let doneKey = "scoreBackfillDone.v2"
 
     /// Rewrites `overallScore` on every row not already at the current
     /// algorithm version. Idempotent, and a no-op once the flag is set.
@@ -61,7 +67,7 @@ enum ScoreMigration {
             row.overallScore = SignalEngine.score(
                 stillnessScore: row.stillnessScore,
                 heartRateTimeseries: row.heartRateTimeseries,
-                resonanceMatchScore: row.resonanceMatchScore,
+                meanBreathingRate: row.meanBreathingRate,
                 durationSec: seconds)
             row.algorithmVersion = version
             updated += 1

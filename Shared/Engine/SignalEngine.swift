@@ -121,7 +121,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "3.1.0"
+    static let version = "3.2.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -227,7 +227,9 @@ enum SignalEngine {
     /// session (heart .8, stillness .6, 20 min) that is 72 today against 40 if
     /// the breath were simply read. 9/min is the documented boundary between
     /// deliberately slowing down and just breathing.
-    static let resonanceCreditMaxRate = 9.0    // breaths/min
+    /// Half-width of the score's breathing curve, in breaths/min. Wide on
+    /// purpose: see breathCredit.
+    private static let breathCreditWidth = 5.5
 
     /// Confidence tier. A reading only reaches the SCORE when the session is
     /// this readable AND coherent AND slow enough to be deliberate.
@@ -289,6 +291,7 @@ enum SignalEngine {
         var breathingRateTimeseries: [Double] = []
         var breathDepthTimeseries: [Double] = []
         var meanBreathingRate: Double?
+        var scoredBreathingRate: Double?      // nil unless the read is trustworthy
         var breathingRegularity: Double?
         var resonanceMatchScore: Double?
         var breathingReadable = false
@@ -379,13 +382,15 @@ enum SignalEngine {
                 breathDepthTimeseries = r.depths
                 meanBreathingRate = r.meanRate
                 breathingRegularity = regularity(signal: r.axis, times: times)
-                // The rate above is shown whatever happens. Resonance is what
-                // reaches the SCORE, and it needs both a confident read and a
-                // rate slow enough to be deliberate. Everything else leaves the
-                // score to heart and stillness, exactly as an unread breath
-                // does, so a shaky reading can never cost you points.
-                resonanceMatchScore = (r.confident && r.meanRate <= resonanceCreditMaxRate)
-                    ? resonanceMatch(r.meanRate) : nil
+                // Resonance is the honest measurement of how close to 6/min you
+                // were, shown as its own tile whatever the rate. It no longer
+                // decides the score; breathCredit does, from the rate itself.
+                resonanceMatchScore = resonanceMatch(r.meanRate)
+                // Breath counts at ANY rate now. The one thing still withheld
+                // is an unconfident read, which is about whether the number is
+                // real, not about how fast it is: a 4/min postural sway once
+                // read at clarity 0.76 while Aziz counted 10.
+                scoredBreathingRate = r.confident ? r.meanRate : nil
             }
         }
 
@@ -425,7 +430,7 @@ enum SignalEngine {
         // rescue a bad one. Shared with the v3 back-fill — see `score`.
         let overallScore = score(stillnessScore: stillnessScore,
                                  heartRateTimeseries: heartRateTimeseries,
-                                 resonanceMatchScore: resonanceMatchScore,
+                                 meanBreathingRate: scoredBreathingRate,
                                  durationSec: Int(totalSec.rounded()))
 
         return SignalResult(
@@ -467,6 +472,29 @@ enum SignalEngine {
     // MARK: - Breathing helpers
 
     /// Closeness of a rate (breaths/min) to the ~6/min resonance target, 0..1.
+    /// What a breathing rate is WORTH in the score, as distinct from how close
+    /// it is to resonance.
+    ///
+    /// The two were the same thing until Aziz asked for breath to count at any
+    /// rate. Resonance is a narrow bell on 6/min, which is correct as a
+    /// measurement and brutal as a score: at 14/min it is essentially zero, so
+    /// reading a normal breath would cost 45% of the total and someone
+    /// breathing normally would score worse than someone whose breath was never
+    /// read at all.
+    ///
+    /// This is the same idea with a heavy tail (Lorentzian, half-width 5.5/min).
+    /// Slower always scores better and 6/min still tops it out, but nobody is
+    /// zeroed for breathing the way people breathe:
+    ///
+    ///     6/min 1.00   8/min 0.88   10/min 0.65   14/min 0.32   20/min 0.13
+    ///
+    /// Modelled on a real session (heart .8, stillness .6, 20 min) that is
+    /// 85 / 79 / 68 / 55 out of 100, against 72 for a breath never read.
+    static func breathCredit(rate: Double) -> Double {
+        let x = (rate - resonanceHz * 60) / breathCreditWidth
+        return 1 / (1 + x * x)
+    }
+
     private static func resonanceMatch(_ rate: Double) -> Double {
         let target = resonanceHz * 60          // 6
         return exp(-0.5 * pow((rate - target) / 2.0, 2))   // rate 6 → 1.0
@@ -836,19 +864,19 @@ enum SignalEngine {
     /// approximation of it. One code path means the two can never drift.
     static func score(stillnessScore: Double?,
                       heartRateTimeseries: [Double],
-                      resonanceMatchScore: Double?,
+                      meanBreathingRate: Double?,
                       durationSec: Int) -> Double? {
         let d = depth(stillness: stillnessScore.map(spreadStillness),
                       hrSettling: heartSettling(heartRateTimeseries),
-                      resonance: resonanceMatchScore)
+                      breath: meanBreathingRate.map(breathCredit))
         return d.map { $0 * durationFactor(seconds: durationSec) }
     }
 
     /// Weighted depth (0–1) across whichever signals were actually read.
-    private static func depth(stillness: Double?, hrSettling: Double?, resonance: Double?) -> Double? {
+    private static func depth(stillness: Double?, hrSettling: Double?, breath: Double?) -> Double? {
         var terms: [(value: Double, weight: Double)] = []
-        let hasBreath = resonance != nil
-        if let r = resonance                { terms.append((r, 0.45)) }
+        let hasBreath = breath != nil
+        if let r = breath                   { terms.append((r, 0.45)) }
         if let h = hrSettling               { terms.append((h, hasBreath ? 0.35 : 0.60)) }
         if let s = stillness                { terms.append((s, hasBreath ? 0.20 : 0.40)) }
 
