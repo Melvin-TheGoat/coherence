@@ -728,6 +728,98 @@ UI must coach it, and the 2-signal degrade path must stay.
   - **OPEN: `VerdictEngine` thresholds (0.75/0.55/0.35) are stale** — they were
     tuned to the v2 distribution and will fire "Your practice landed" far less
     often. Retune once a few real v3 sessions exist.
+- **WEBSITE REBUILT (2026-08-08/09) — live on meditate808.com.** Four pages,
+  one design language, deployed by MANUAL UPLOAD to Cloudflare Pages.
+  - **Cloudflare Pages is a DIRECT-UPLOAD project, not connected to git.**
+    Pushing to GitHub does nothing to the live site. Deploy = drag the
+    `website` folder into Workers & Pages → meditate808 → Create deployment.
+    This cost an hour of confusion: the live privacy page was older than every
+    branch in the repo, which is only possible if git was never the source.
+  - **Design came from Lovable, ported by hand** (Aziz preferred it to both our
+    version and Figma's). Extracted off the live page rather than eyeballed:
+    Bricolage Grotesque 700 at -0.03em display, IBM Plex Sans body, IBM Plex
+    Mono for every label at 0.1em uppercase, `--radius: 0` almost everywhere,
+    background `oklch(14.5% .006 260)`. Their React build became our single
+    static file; we kept the citations, the wellness disclaimer and the real
+    chart geometry, none of which their version had.
+  - **Alarm red retired for terracotta** `oklch(62% .10 32)`: same hue so it
+    still reads as cost, chroma roughly halved so 114 lit cells stop reading as
+    an error state. Gold and teal unchanged.
+  - **The argument is pain-first**: 46.9% of waking hours elsewhere
+    (Killingsworth & Gilbert 2010) turned into the reader's own number via a
+    slider, drawn as 365 cells. Then meditation works, then almost nobody keeps
+    doing it, then the four charts. The turn is Cearns & Clark 2023: across
+    280,000 sessions consistency predicted improvement and session length did
+    not. Seven sources with DOIs, plus a note stating plainly that none of it
+    shows 808 works for you.
+  - **DON'T USE THE 23-MINUTE REFOCUS STAT.** It is the most-quoted focus
+    statistic on the internet and it has NO paper behind it: it traces to a
+    2006 Gallup interview, and the Mark et al. paper everyone cites found the
+    opposite (interrupted work finished *faster*, just more stressed).
+  - **The "first app to..." claim was left out three times**, deliberately.
+    Apple's own Mindfulness app already logs heart rate during sessions, so
+    it's unverifiable. Aziz can add it if he and Melvin confirm no competitor
+    scores a meditation from body signals.
+  - **Two Google Sheets, two Apps Script deployments**, both verified end to
+    end. `waitlist-sheet.gs` (new, its own sheet, dedupes by email) and
+    `survey-sheet.gs` (renamed to "808 survey"). The questionnaire is rebuilt
+    around 11 questions aimed at churn rather than general friction.
+  - **`survey-sheet.gs` now writes by the SHEET'S header row, not the file's.**
+    Changing HEADERS against a sheet with existing responses silently files
+    every answer under the wrong column. It reconciles instead, appending
+    unknown columns on the right, so old rows and the old `blockers` column
+    survive.
+  - **Every form races a rejecting timer** (8 s). The first live signup stuck on
+    "Joining" forever. AbortController alone is NOT enough: tested against a
+    fetch stub that never settles, the abort version still hung after 18 s.
+  - **The 365 year-cells are static HTML, not JS-generated.** A JS-built grid
+    renders as nothing wherever scripts are blocked, which is exactly what Aziz
+    saw. Same principle as the counter always writing its final value from a
+    timer.
+- **BREATHING v2 — reads natural breathing, shows everything, scores little
+  (2026-08-09). NOT FINE-TUNED. Aziz wants another pass.**
+  - Calibrated against five live captures, four with counted rates (`tools/
+    breath_probe.py` replicates the engine offline against a raw CSV; iterate
+    there, never on-device). Captures live in `~/Desktop/captures`.
+  - **Two tunings, chosen PER WINDOW.** The shipped slow-breathing calibration
+    plus a natural-breathing one (band-pass low edge 8 s not 12 s, per-window
+    least-squares detrend) that suppresses postural drift so quiet breathing
+    can win its own peak. One tuning per session is wrong: a verified capture
+    halved its rate (counted 12 → 8 → 6.5) in five minutes. Per-window reads
+    78% of it against 64% and 44% for either alone.
+  - **Coherence is judged by TRAJECTORY, not spread.** The old gate rejected
+    anything wider than 2.0, which threw away a session that was right in every
+    window. A curve now qualifies if it is tight OR coherent once a straight
+    line is removed. Measured: real sessions fit a line at R² ≈ 0.57, the two
+    junk ones at 0.05.
+  - **Display is lax, scoring is strict (Aziz's call).** A rate shows whenever
+    a third of windows read it; it reaches the score only at 60% readable AND
+    coherent AND ≤ 9/min. **Reason it must stay split:** at minute 2 of a
+    counted session the engine reported 3.9/min at clarity 0.76 while Aziz
+    counted 10, because a 4/min postural sway carried 14× the power of his
+    breath. Clean sway and clean breath are the same shape and no gate can
+    separate them. Showing it costs a wrong number; scoring it corrupts the
+    product.
+  - **Resonance credit stops at 9/min.** Reading a normal rate without this
+    would PUNISH normal breathing: resonance is 45% of the score and a bell
+    curve on 6/min, so a session read at 14/min scores zero on its largest
+    component (72 → 40 modelled on a real session).
+  - **Zero in the breathing series means UNREADABLE, not zero breaths.** It is
+    no longer plotted: it drew a collapse that never happened and dragged the
+    y-domain to the floor, squashing the real curve. Empty HR likewise yields
+    no series rather than a flat line on the axis.
+  - **Two hypotheses died; do not retry them.** Local smoothness does not
+    separate real from junk (the session that read nothing had the SMOOTHEST
+    median step). And the 6-vs-12 pattern is NOT octave error, unlike the
+    camera path: power at double the detected frequency is only 5–22% of peak.
+  - **BREATHING HISTORY CANNOT BE BACK-FILLED.** When the old gate refused, the
+    curve was never assigned, so past rows hold nothing to rescore. Unlike the
+    v3 score back-fill, whose inputs were all already on the row. Only DEBUG
+    sessions could be recovered, from the raw CSVs keyed by sessionID.
+  - **OPEN, and Aziz knows:** accuracy is roughly ±1/min at best (counted 7/7/6
+    read 6.9/6.0/4.6) with a consistent slight undershoot, and one outright
+    miss when sway dominated. Needs more counted sessions, especially a
+    Dispenza one, which still refuses and is unexplained.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
