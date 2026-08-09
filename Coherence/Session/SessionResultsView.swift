@@ -19,6 +19,9 @@ struct SessionResultsView: View {
     /// True while the note is being written. A saved note renders as read-only
     /// flowing text until tapped.
     @State private var isEditingNote = false
+    /// A MeditationMethod id, MeditationMethod.ownID, or nil = unreported.
+    @State private var technique: String?
+    @State private var techniqueNote: String = ""
     @State private var streakDays = 0
     /// Overall scores of this user's EARLIER sessions, newest first —
     /// the baseline the standing line is measured against.
@@ -449,6 +452,8 @@ struct SessionResultsView: View {
                 .tint(AppColor.accentGold)
                 .onChange(of: rating) { _, _ in reflectionSaved = false }
 
+            techniqueSection
+
             noteSection
 
             Button(reflectionSaved ? "Saved ✓" : "Save reflection") { save() }
@@ -457,6 +462,59 @@ struct SessionResultsView: View {
                 .opacity(reflectionSaved ? 0.6 : 1)
         }
         .card()
+    }
+
+    /// Which method they practised. Unreported is the default and stays a
+    /// legitimate answer — a session nobody labelled is still a good session,
+    /// and forcing the tag would poison the very data it exists to collect.
+    @ViewBuilder
+    private var techniqueSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("What did you practise?")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(AppColor.textSecondary)
+
+            Menu {
+                Button("Unreported") { setTechnique(nil) }
+                Divider()
+                ForEach(MeditationMethod.loggable, id: \.id) { item in
+                    Button(item.label) { setTechnique(item.id) }
+                }
+                Divider()
+                Button("Something else") { setTechnique(MeditationMethod.ownID) }
+            } label: {
+                HStack {
+                    Text(MeditationMethod.label(for: technique) ?? "Unreported")
+                        .font(AppFont.note)
+                        .foregroundStyle(technique == nil ? AppColor.textSecondary
+                                                          : AppColor.textPrimary)
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .padding(12)
+                .background(AppColor.backgroundPrimary,
+                            in: RoundedRectangle(cornerRadius: 12))
+            }
+
+            if technique == MeditationMethod.ownID {
+                TextField("What did you do?", text: $techniqueNote, axis: .vertical)
+                    .lineLimit(2...)
+                    .font(AppFont.note)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .padding(12)
+                    .background(AppColor.backgroundPrimary,
+                                in: RoundedRectangle(cornerRadius: 12))
+                    .onChange(of: techniqueNote) { _, _ in reflectionSaved = false }
+            }
+        }
+    }
+
+    private func setTechnique(_ id: String?) {
+        technique = id
+        if id != MeditationMethod.ownID { techniqueNote = "" }
+        reflectionSaved = false
     }
 
     /// The note. Once written it reads as flowing full-width text — a post
@@ -496,7 +554,9 @@ struct SessionResultsView: View {
     }
 
     private func save() {
-        SessionStore.saveReflection(sessionID: sessionID, rating: Int(rating), note: note, in: context)
+        SessionStore.saveReflection(sessionID: sessionID, rating: Int(rating), note: note,
+                                    technique: technique, techniqueNote: techniqueNote,
+                                    in: context)
         reflectionSaved = true
         isEditingNote = false
     }
@@ -510,6 +570,8 @@ struct SessionResultsView: View {
         if let reflection = SessionStore.reflection(for: sid, in: context) {
             rating = Double(reflection.rating ?? 5)
             note = reflection.note
+            technique = reflection.technique
+            techniqueNote = reflection.techniqueNote
             reflectionSaved = true
         }
         // Streak for the share card, derived the same way the calendar does.

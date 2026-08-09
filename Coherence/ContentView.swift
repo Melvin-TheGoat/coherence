@@ -19,13 +19,16 @@ struct ContentView: View {
     /// them (verified on-device: only Begin opened) — so every modal routes
     /// through this enum instead.
     @State private var sheet: HomeSheet?
+    /// Presented once the current sheet is down. Setting `sheet` while one is
+    /// already up drops the new one on the floor.
+    @State private var pendingSheet: HomeSheet?
     #if DEBUG
     @State private var showBreathingPreview =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
     #endif
 
     private enum HomeSheet: Identifiable {
-        case setup, journey, settings
+        case setup, journey, settings, guide
         case results(UUID)
 
         var id: String {
@@ -33,6 +36,7 @@ struct ContentView: View {
             case .setup: return "setup"
             case .journey: return "journey"
             case .settings: return "settings"
+            case .guide: return "guide"
             case .results(let id): return "results-\(id)"
             }
         }
@@ -44,6 +48,7 @@ struct ContentView: View {
                 header
                 streakBlock
                 calendarCard
+                guideCard
                 proofSection
                 #if DEBUG
                 debugButtons
@@ -117,7 +122,9 @@ struct ContentView: View {
         .fullScreenCover(item: $coordinator.startFailure) { failure in
             PermissionBlockedView(failure: failure) { coordinator.startFailure = nil }
         }
-        .sheet(item: $sheet) { which in
+        .sheet(item: $sheet, onDismiss: {
+            if let next = pendingSheet { pendingSheet = nil; sheet = next }
+        }) { which in
             switch which {
             case .setup:
                 SessionSetupView()
@@ -125,6 +132,8 @@ struct ContentView: View {
                 JourneyView()
             case .settings:
                 SettingsView()
+            case .guide:
+                GuideView { pendingSheet = .setup }
             case .results(let id):
                 SessionResultsView(sessionID: id)
             }
@@ -277,6 +286,34 @@ struct ContentView: View {
     }
 
     // MARK: - The proof
+
+    /// The most common question anyone asks about meditating is what to
+    /// actually do, and until now the app had no answer. Above History because
+    /// the person who needs it has no history to look at.
+    private var guideCard: some View {
+        Button { sheet = .guide } label: {
+            HStack(spacing: 14) {
+                Image(systemName: "list.bullet.rectangle.portrait")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(AppColor.calmAccent)
+                    .frame(width: 26)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("How to meditate")
+                        .font(AppFont.headline)
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text("Ways to practise, easiest first")
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .card()
+        }
+        .buttonStyle(CardButtonStyle())
+    }
 
     private var proofSection: some View {
         VStack(alignment: .leading, spacing: 6) {

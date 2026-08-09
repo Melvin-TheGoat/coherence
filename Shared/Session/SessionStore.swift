@@ -217,16 +217,22 @@ enum SessionStore {
 
     /// Saves (or updates) the reflection for a session — one row per session.
     @discardableResult
-    static func saveReflection(sessionID: UUID, rating: Int?, note: String, in context: ModelContext) -> SessionReflection {
+    static func saveReflection(sessionID: UUID, rating: Int?, note: String,
+                               technique: String? = nil, techniqueNote: String = "",
+                               in context: ModelContext) -> SessionReflection {
         let trimmed = note.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedTechnique = techniqueNote.trimmingCharacters(in: .whitespacesAndNewlines)
         if let existing = reflection(for: sessionID, in: context) {
             existing.rating = rating
             existing.note = trimmed
+            existing.technique = technique
+            existing.techniqueNote = trimmedTechnique
             existing.updatedAt = Date()
             try? context.save()
             return existing
         }
-        let reflection = SessionReflection(sessionID: sessionID, rating: rating, note: trimmed)
+        let reflection = SessionReflection(sessionID: sessionID, rating: rating, note: trimmed,
+                                           technique: technique, techniqueNote: trimmedTechnique)
         context.insert(reflection)
         try? context.save()
         return reflection

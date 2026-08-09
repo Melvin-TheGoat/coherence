@@ -19,6 +19,10 @@ when he talks about meditation.
 
 Presented as a path you work through, not a menu. Each method gets its own page.
 
+**This is a running list.** Methods get appended as we find ones worth teaching.
+The catalog is data, not hardcoded screens, so adding one is a few lines and no
+UI work.
+
 ### 1. Blue Sky — *beginner, start here*
 
 You're lying on a field of grass, looking up at the sky. Thoughts will come —
@@ -91,6 +95,25 @@ Count down from ten. With each number, imagine yourself sinking deeper. And
 deeper. A simple way into a relaxed state, and a good on-ramp before any of the
 others.
 
+### 6. Reconditioning the Body to a New Mind — *intermediate*
+
+Also from Joe Dispenza.
+
+1. **Shift focus to the heart.** Eyes closed, attention off the external world
+   and onto the space of your chest.
+2. **Slow, conscious breathing.** Breathe slower and deeper.
+3. **Evoke the emotion.** Bring something to mind, real or imagined, to jumpstart
+   the feeling. If a big future vision feels too distant, start small — being
+   thankful for a simple comfort, a glass of water — and let it expand.
+4. **Embody the future now.** Radiate appreciation continuously and let the body
+   accept that it is already living in that reality.
+5. **Sustain it.** Carry the momentum into your day rather than letting it drop
+   the moment you open your eyes.
+
+*What it's for:* the emotion comes first here, and the vision follows it — the
+reverse of method 3, where you build the picture and then feel it. Worth having
+both, because people find one easier than the other.
+
 ---
 
 ## ⚠️ Honesty tiering — read before writing final copy
@@ -105,6 +128,8 @@ survive as stated:
 | "it's proven that counting down from ten relaxes you" | This is a hypnotic induction. There's clinical hypnosis literature, but "proven" overstates it. | "A standard induction — it works for a lot of people." Technique, not evidence. |
 | Chakras / energy centers | Not a scientific framework. | Label as practice tradition, Dispenza attribution, exactly like the solfeggio tones. |
 | "Manifestation = embedding intentions into your subconscious" | Doty's framing from a **trade book**, not a paper. | Quote it and attribute it. Never present as a research finding. |
+| "moving from high-stress beta states down into relaxed alpha states" (method 6) | Brainwave states are EEG. We can't measure them and SCIENCE.md forbids implying we can. | "Slow breathing shifts you toward the parasympathetic side" — real, and citable to Zaccaro 2018. Drop the beta/alpha naming. |
+| "as discussed by a consensus of practitioners on Reddit" (method 6) | Not a source. Citing a forum next to peer-reviewed work is exactly the blurring the tiering exists to prevent. | Drop the attribution. The instruction stands on its own as practice advice. |
 | Body scan → "closer to theta" | We can't measure theta and SCIENCE.md forbids implying we do. | Body scan is a core component of the 8-week programme where gray-matter change was recorded (Hölzel 2011). That's real and enough. |
 
 **The methods themselves need no defending.** Describe them faithfully as
