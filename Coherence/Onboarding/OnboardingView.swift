@@ -36,6 +36,7 @@ struct OnboardingView: View {
         case motivation, stress                                // 3–4
         case aloneWithThoughts, doingNothing                   // escalation, then the evidence
         case restarts, intendedFor, causes                     // 5–6
+        case blindSpot                                         // the regular's question
         case watchGate, waitlist                               // 7, 7b
         case anchor, you, referral                             // 8–9, then attribution
         case calculating, result, cost                         // 10–12
@@ -48,12 +49,12 @@ struct OnboardingView: View {
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
         /// copy is left.
-        var interviewProgress: Double? {
-            let interview: [Step] = [.baseline, .motivation, .stress, .aloneWithThoughts,
-                                     .doingNothing, .restarts, .intendedFor, .causes,
-                                     .watchGate, .anchor, .you, .referral]
-            guard let i = interview.firstIndex(of: self) else { return nil }
-            return Double(i + 1) / Double(interview.count)
+        /// Nil outside the interview. The denominator is filled in by the view
+        /// from the persona's ACTUAL question list — a rail that counts twelve
+        /// when this person will only be asked eight is a lie that gets more
+        /// obvious the closer it gets to the end.
+        var isInterview: Bool {
+            OnboardingView.interviewPairs.contains { $0.0 == self }
         }
 
         /// The offer is one way. Once someone reaches the paywall there is no
@@ -66,6 +67,42 @@ struct OnboardingView: View {
             default: return true
             }
         }
+    }
+
+    /// How far through THIS person's interview we are.
+    private var interviewProgress: Double {
+        guard let here = Self.interviewPairs.first(where: { $0.0 == step })?.1,
+              let i = answers.interview.firstIndex(of: here) else { return 0 }
+        return Double(i + 1) / Double(answers.interview.count)
+    }
+
+    /// The interview screens, paired with their pure-Foundation counterpart in
+    /// `InterviewStep`. The branching lives in the model (and is exhaustively
+    /// tested there); this is only the translation.
+    static let interviewPairs: [(Step, InterviewStep)] = [
+        (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
+        (.aloneWithThoughts, .aloneWithThoughts), (.doingNothing, .doingNothing),
+        (.restarts, .restarts), (.intendedFor, .intendedFor), (.causes, .causes),
+        (.blindSpot, .blindSpot), (.watchGate, .watchGate),
+        (.anchor, .anchor), (.you, .you), (.referral, .referral),
+    ]
+
+    /// The next screen after `current`, skipping every question whose premise
+    /// this user's answers contradict.
+    ///
+    /// This is the fix for the flow asking "What made you stop meditating?"
+    /// immediately after someone answered "Never. This would be the start".
+    /// Nothing downstream hardcodes an ordering any more.
+    private func nextAfter(_ current: Step) -> Step {
+        guard let here = Self.interviewPairs.first(where: { $0.0 == current })?.1 else {
+            return .calculating
+        }
+        let remaining = answers.interview.drop { $0 != here }.dropFirst()
+        guard let next = remaining.first,
+              let step = Self.interviewPairs.first(where: { $0.1 == next })?.0 else {
+            return .calculating     // interview over
+        }
+        return step
     }
 
     /// Where they've been, so the chevron can undo a wrong tap. A stack rather
@@ -83,6 +120,19 @@ struct OnboardingView: View {
             .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
+        #if DEBUG
+            // Jump straight to one screen, with plausible answers already filled
+            // in, so copy can be reviewed without tapping through the interview:
+            //   SIMCTL_CHILD_ONBOARDING_STEP=14 xcrun simctl launch ...
+            // Screens that reflect answers back (result, profile, projection)
+            // need those answers to render, hence the sample set.
+            .onAppear {
+                guard let raw = ProcessInfo.processInfo.environment["ONBOARDING_STEP"],
+                      let index = Int(raw), let target = Step(rawValue: index) else { return }
+                answers = .sample
+                step = target
+            }
+        #endif
     }
 
     @ViewBuilder
@@ -96,40 +146,44 @@ struct OnboardingView: View {
 
         case .baseline:
             BaselineScreen(frequency: $answers.currentFrequency,
-                           progress: step.interviewProgress ?? 0) { go(.motivation) }
+                           progress: interviewProgress) { go(nextAfter(.baseline)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
-                             progress: step.interviewProgress ?? 0) { go(.stress) }
+                             progress: interviewProgress) { go(nextAfter(.motivation)) }
 
         case .stress:
             StressScreen(stress: $answers.stress,
-                         progress: step.interviewProgress ?? 0) { go(.aloneWithThoughts) }
+                         progress: interviewProgress) { go(nextAfter(.stress)) }
 
         case .aloneWithThoughts:
             AloneWithThoughtsScreen(answer: $answers.aloneWithThoughts,
-                                    progress: step.interviewProgress ?? 0) { go(.doingNothing) }
+                                    progress: interviewProgress) { go(nextAfter(.aloneWithThoughts)) }
 
         case .doingNothing:
             DoingNothingScreen(answer: $answers.doingNothing,
-                               progress: step.interviewProgress ?? 0) { go(.restarts) }
+                               progress: interviewProgress) { go(nextAfter(.doingNothing)) }
 
         case .restarts:
             RestartScreen(restarts: $answers.restarts,
-                          progress: step.interviewProgress ?? 0) { go(.intendedFor) }
+                          progress: interviewProgress) { go(nextAfter(.restarts)) }
 
         case .intendedFor:
             IntendedForScreen(intended: $answers.intendedFor,
-                              progress: step.interviewProgress ?? 0) { go(.causes) }
+                              progress: interviewProgress) { go(nextAfter(.intendedFor)) }
 
         case .causes:
             CauseScreen(causes: $answers.causes,
-                        progress: step.interviewProgress ?? 0) { go(.watchGate) }
+                        progress: interviewProgress) { go(nextAfter(.causes)) }
+
+        case .blindSpot:
+            BlindSpotScreen(blindSpot: $answers.blindSpot,
+                            progress: interviewProgress) { go(nextAfter(.blindSpot)) }
 
         case .watchGate:
             WatchGateScreen(hasWatch: $answers.hasWatch,
-                            progress: step.interviewProgress ?? 0,
-                            onYes: { go(.anchor) },
+                            progress: interviewProgress,
+                            onYes: { go(nextAfter(.watchGate)) },
                             onNo: { go(.waitlist) })
 
         case .waitlist:
@@ -145,16 +199,16 @@ struct OnboardingView: View {
 
         case .anchor:
             AnchorScreen(anchor: $answers.anchor,
-                         progress: step.interviewProgress ?? 0) { go(.you) }
+                         progress: interviewProgress) { go(nextAfter(.anchor)) }
 
         case .you:
             NameScreen(firstName: $answers.firstName,
                        ageBracket: $answers.ageBracket,
-                       progress: step.interviewProgress ?? 0) { go(.referral) }
+                       progress: interviewProgress) { go(nextAfter(.you)) }
 
         case .referral:
             ReferralScreen(referral: $answers.referral,
-                           progress: step.interviewProgress ?? 0) { go(.calculating) }
+                           progress: interviewProgress) { go(nextAfter(.referral)) }
 
         case .calculating:
             CalculatingScreen(firstName: answers.firstName,

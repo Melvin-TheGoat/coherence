@@ -469,10 +469,33 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var firstName: String = ""
     public var ageBracket: String?
     public var referral: ReferralSource?
+    /// What a regular practitioner can't see (regular persona only).
+    public var blindSpot: BlindSpot?
     /// Days per week they commit to.
     public var daysPerWeek: Int = 5
 
     public init() {}
+
+    #if DEBUG
+    /// A fully answered set, for opening any onboarding screen directly while
+    /// reviewing copy (see `ONBOARDING_STEP`). Screens that quote the user back
+    /// to themselves render blank without it.
+    public static var sample: OnboardingAnswers {
+        var a = OnboardingAnswers()
+        a.currentFrequency = .triedNeverStuck
+        a.motivations = [.lessStressed, .moreDiscipline]
+        a.stress = 0.72
+        a.restarts = .few
+        a.causes = [.couldntTell, .tooManyChoices]
+        a.costs = [.cantFocus, .knowButDont]
+        a.hasWatch = true
+        a.anchor = .coffee
+        a.firstName = "Melvin"
+        a.ageBracket = "25-34"
+        a.daysPerWeek = 5
+        return a
+    }
+    #endif
 
     /// The single cause we speak to when we can only name one. Ordered by how
     /// directly 808 answers it, not by the enum's declaration order.
@@ -566,5 +589,132 @@ public struct PracticeProfile: Equatable {
             ?? "You'll find your time"
 
         blindSpot = a.primaryCause?.label ?? "Not knowing whether it worked"
+    }
+}
+
+// MARK: - Who we're talking to
+
+/// Which kind of arrival this is, derived from the very first question.
+///
+/// **Why this exists.** The interview used to run the same twelve screens for
+/// everyone, which meant someone who answered "Never. This would be the start"
+/// was still asked *"What made you stop meditating?"* two screens later. The
+/// first wrong question destroys the personalisation the whole flow is selling
+/// — and the escape-hatch options bolted onto `RestartCount.sticks` and
+/// `IntendedFor.alreadyPractice` are the scar tissue from patching that with
+/// extra answers instead of fewer questions.
+///
+/// Deriving a persona lets us *not ask* rather than ask and forgive.
+public enum OnboardingPersona: String, CaseIterable, Codable {
+    /// Has never really practised. Their pain is starting.
+    case newcomer
+    /// Has practised and it didn't hold. Their pain is consistency.
+    case restarter
+    /// Practises regularly already. Their pain is flying blind.
+    case regular
+
+    public var summary: String {
+        switch self {
+        case .newcomer:  return "hasn't started yet"
+        case .restarter: return "starts and stops"
+        case .regular:   return "already practises"
+        }
+    }
+}
+
+extension OnboardingAnswers {
+
+    /// The persona, from the baseline answer alone. Nil until they've answered
+    /// the first question — callers should treat nil as `.restarter`, the
+    /// broadest path, rather than branching on an unanswered question.
+    public var persona: OnboardingPersona {
+        switch currentFrequency {
+        case .never:                        return .newcomer
+        case .triedNeverStuck, .fewTimesMonth: return .restarter
+        case .mostWeeks, .almostDaily:      return .regular
+        case nil:                           return .restarter
+        }
+    }
+
+    /// Whether a given interview question is worth asking this person.
+    ///
+    /// The rule: **never ask a question whose premise the user has already
+    /// contradicted.** A newcomer has nothing to have stopped; a regular
+    /// practitioner isn't "meaning to start".
+    public func asks(_ step: InterviewStep) -> Bool {
+        switch step {
+        // Everyone. These work regardless of history.
+        case .baseline, .motivation, .stress, .watchGate, .anchor, .you, .referral:
+            return true
+
+        // "Can you be alone with your thoughts?" / "How long can you do
+        // nothing?" are framed as diagnostics of a restless mind. Asking
+        // someone who meditates most days is faintly insulting.
+        case .aloneWithThoughts, .doingNothing:
+            return persona != .regular
+
+        // Presumes previous attempts.
+        case .restarts:
+            return persona == .restarter
+
+        // Presumes they haven't started.
+        case .intendedFor:
+            return persona == .newcomer
+
+        // Presumes they stopped.
+        case .causes:
+            return persona == .restarter
+
+        // Only meaningful for someone with a practice to be blind about.
+        case .blindSpot:
+            return persona == .regular
+        }
+    }
+
+    /// The interview this person will actually be shown, in order.
+    public var interview: [InterviewStep] {
+        InterviewStep.allCases.filter(asks)
+    }
+}
+
+/// The question screens, in canonical order. Separate from the view's `Step`
+/// enum so the branching is pure Foundation and can be exhaustively tested
+/// without a running app.
+public enum InterviewStep: String, CaseIterable, Codable {
+    case baseline, motivation, stress
+    case aloneWithThoughts, doingNothing
+    case restarts, intendedFor, causes
+    case blindSpot
+    case watchGate, anchor, you, referral
+}
+
+/// What a regular practitioner can't tell about their own practice.
+///
+/// The consistency questions don't apply to someone who already sits most days
+/// — their pain isn't stopping, it's having no idea whether any of it is
+/// working. This is the one question that's theirs.
+public enum BlindSpot: String, CaseIterable, Identifiable, Codable {
+    case gettingCalmer, todayVsYesterday, improving, whichWorks, justTheData
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .gettingCalmer:    return "Whether I actually settle"
+        case .todayVsYesterday: return "If today went better than yesterday"
+        case .improving:        return "Whether I'm improving at all"
+        case .whichWorks:       return "Which sessions work and which don't"
+        case .justTheData:      return "Nothing. I just want the data"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .gettingCalmer:    return "waveform.path.ecg"
+        case .todayVsYesterday: return "calendar.badge.clock"
+        case .improving:        return "chart.line.uptrend.xyaxis"
+        case .whichWorks:       return "slider.horizontal.3"
+        case .justTheData:      return "square.grid.2x2"
+        }
     }
 }
