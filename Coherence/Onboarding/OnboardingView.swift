@@ -139,7 +139,9 @@ struct OnboardingView: View {
             // in, so copy can be reviewed without tapping through the interview:
             //   SIMCTL_CHILD_ONBOARDING_STEP=14 xcrun simctl launch ...
             // Screens that reflect answers back (result, profile, projection)
-            // need those answers to render, hence the sample set.
+            // need those answers to render, hence the sample set. Add
+            // ONBOARDING_PERSONA=newcomer|restarter|regular to review the same
+            // screen on each path, since they are answered differently.
             .onAppear {
                 guard let raw = ProcessInfo.processInfo.environment["ONBOARDING_STEP"],
                       let index = Int(raw), let target = Step(rawValue: index) else { return }

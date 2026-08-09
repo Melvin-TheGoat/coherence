@@ -480,19 +480,41 @@ public struct OnboardingAnswers: Codable, Equatable {
     /// A fully answered set, for opening any onboarding screen directly while
     /// reviewing copy (see `ONBOARDING_STEP`). Screens that quote the user back
     /// to themselves render blank without it.
+    /// Plausible answers for reviewing a screen without tapping through the
+    /// interview. `ONBOARDING_PERSONA=newcomer|restarter|regular` picks the
+    /// path, because each persona answers a different set of questions and the
+    /// payoff screens read them back. Defaults to the restarter, the broadest.
     public static var sample: OnboardingAnswers {
+        sample(ProcessInfo.processInfo.environment["ONBOARDING_PERSONA"]
+                 .flatMap(OnboardingPersona.init(rawValue:)) ?? .restarter)
+    }
+
+    public static func sample(_ persona: OnboardingPersona) -> OnboardingAnswers {
         var a = OnboardingAnswers()
-        a.currentFrequency = .triedNeverStuck
         a.motivations = [.lessStressed, .moreDiscipline]
         a.stress = 0.72
-        a.restarts = .few
-        a.causes = [.couldntTell, .tooManyChoices]
         a.costs = [.cantFocus, .knowButDont]
         a.hasWatch = true
         a.anchor = .coffee
         a.firstName = "Melvin"
         a.ageBracket = "25-34"
         a.daysPerWeek = 5
+
+        // Only ever fill what this persona is actually asked. Leaving a field
+        // set that the interview never collects is precisely the bug the
+        // payoff screens had.
+        switch persona {
+        case .newcomer:
+            a.currentFrequency = .never
+            a.intendedFor = .months
+        case .restarter:
+            a.currentFrequency = .triedNeverStuck
+            a.restarts = .few
+            a.causes = [.couldntTell, .tooManyChoices]
+        case .regular:
+            a.currentFrequency = .mostWeeks
+            a.blindSpot = .whichWorks
+        }
         return a
     }
     #endif

@@ -94,6 +94,29 @@ final class OnboardingBranchTests: XCTestCase {
         }
     }
 
+    /// The review hook has to show each path honestly. A sample that fills a
+    /// field the persona is never asked would hide the exact bug the payoff
+    /// screens had: reading an answer nobody gave.
+    func test_sampleAnswersOnlyFillWhatThePersonaIsAsked() {
+        for persona in OnboardingPersona.allCases {
+            let a = OnboardingAnswers.sample(persona)
+            XCTAssertEqual(a.persona, persona, "sample(\(persona)) resolves elsewhere")
+
+            let asked = Set(a.interview)
+            if !asked.contains(.restarts) { XCTAssertNil(a.restarts, "\(persona)") }
+            if !asked.contains(.intendedFor) { XCTAssertNil(a.intendedFor, "\(persona)") }
+            if !asked.contains(.causes) { XCTAssertTrue(a.causes.isEmpty, "\(persona)") }
+            if !asked.contains(.blindSpot) { XCTAssertNil(a.blindSpot, "\(persona)") }
+
+            // And it must fill what they ARE asked, or the screens under review
+            // render their empty state instead of the copy being reviewed.
+            if asked.contains(.restarts) { XCTAssertNotNil(a.restarts, "\(persona)") }
+            if asked.contains(.intendedFor) { XCTAssertNotNil(a.intendedFor, "\(persona)") }
+            if asked.contains(.causes) { XCTAssertFalse(a.causes.isEmpty, "\(persona)") }
+            if asked.contains(.blindSpot) { XCTAssertNotNil(a.blindSpot, "\(persona)") }
+        }
+    }
+
     /// Exhaustive: every combination of baseline × restarts × intendedFor.
     /// No combination may produce a question the answers contradict.
     func test_everyPermutationIsCoherent() {
