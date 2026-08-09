@@ -47,7 +47,17 @@ enum SessionEvidence {
             out.append(EvidenceSeries(kind: .stillness, title: "Stillness", unit: "", points: points(stillness)))
         }
         if !breathing.isEmpty {
-            out.append(EvidenceSeries(kind: .breathing, title: "Breathing", unit: "br/min", points: points(breathing)))
+            // Zero in the breathing series means "this window could not be
+            // read", not "zero breaths a minute". Plotting it drops the line to
+            // the floor and invents a collapse that never happened. Dropping
+            // those points instead keeps each remaining point at its true
+            // timestamp and lets the chart join the last real reading to the
+            // next one across the gap.
+            let readable = points(breathing).filter { $0.value > 0 }
+            if !readable.isEmpty {
+                out.append(EvidenceSeries(kind: .breathing, title: "Breathing",
+                                          unit: "br/min", points: readable))
+            }
         }
         return out
     }

@@ -32,6 +32,36 @@ final class SessionEvidenceTests: XCTestCase {
     }
 
     /// No data → no series (nothing to plot).
+    /// A zero in the breathing series means the window could not be read, not
+    /// that breathing stopped. Plotting it drew the line down to the floor and
+    /// invented a collapse, and it dragged the chart's y-axis down with it so
+    /// the real curve was squashed into the top. Unreadable windows are simply
+    /// not plotted, and the surviving points keep their true timestamps so the
+    /// chart joins across the gap.
+    func test_unreadableBreathingWindowsAreNotPlottedAsZero() {
+        let breathing = [6.0, 6.2, 0, 0, 0, 6.4, 6.1]      // a gap in the middle
+        let series = SessionEvidence.series(heartRate: [], stillness: [],
+                                            breathing: breathing,
+                                            windowSec: 30, hopSec: 5)
+        let breath = series.first { $0.kind == .breathing }
+        XCTAssertNotNil(breath)
+        XCTAssertEqual(breath?.points.count, 4, "only the readable windows are plotted")
+        XCTAssertFalse(breath?.points.contains { $0.value == 0 } ?? true)
+
+        // timestamps must still be the original window centres, so the line
+        // spans the gap rather than closing it up
+        XCTAssertEqual(breath?.points.map(\.t), [15, 20, 40, 45])
+    }
+
+    /// A session where nothing was readable produces no breathing series at
+    /// all, rather than an empty chart frame.
+    func test_allZeroBreathingProducesNoSeries() {
+        let series = SessionEvidence.series(heartRate: [], stillness: [],
+                                            breathing: [0, 0, 0],
+                                            windowSec: 30, hopSec: 5)
+        XCTAssertNil(series.first { $0.kind == .breathing })
+    }
+
     func test_emptyProducesNoSeries() {
         let s = SessionEvidence.series(
             heartRate: [], stillness: [], breathing: [], windowSec: 30, hopSec: 5)
