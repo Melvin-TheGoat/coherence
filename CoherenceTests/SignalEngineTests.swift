@@ -416,6 +416,48 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertEqual(r.meanBreathingRate ?? 0, 9.0, accuracy: 1.0)
     }
 
+    /// A steady breath under an intermittent louder intruder.
+    ///
+    /// This is the failure the tracker exists for. A 6/min breath runs the whole
+    /// session; a stronger 11/min oscillation cuts in and out. Window by window
+    /// the intruder is the clearest peak wherever it is present, so an argmax
+    /// read hops onto it and the curve reports two rhythms. Reading the sequence
+    /// as a whole, the breath is the only candidate that is there every window,
+    /// and continuity is what makes that count as evidence.
+    func test_wristSession_steadyBreathBeatsAnIntermittentLouderRhythm() {
+        let m = motion(dur: 240, pitch: { t in
+            let breath = 0.003 * sin(2 * .pi * 0.1 * t)
+            let bursts = (t > 40 && t < 80) || (t > 130 && t < 170)
+            return breath + (bursts ? 0.006 * sin(2 * .pi * 0.183 * t) : 0)
+        })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 1.0,
+                       "the rhythm present throughout is the breath, "
+                       + "even where a louder one is briefly clearer")
+    }
+
+    /// Continuity must not invent continuity.
+    ///
+    /// The tracker minimises exactly the spread `coherent` reads to decide
+    /// whether a rate may touch the score, so the score gate is judged on the
+    /// untracked curve instead. Otherwise the gate grades its own homework and
+    /// a session passes for having been smoothed rather than for being clear.
+    /// Note the sibling case at 180 s: this one runs longer, which gives a
+    /// tracker more room to draw a tidy path, and it must change nothing.
+    func test_wristSession_trackingDoesNotSmoothItsWayIntoTheScore() {
+        let m = motion(dur: 240, pitch: { t in
+            let hz = t < 80 ? 0.075 : (t < 160 ? 0.145 : 0.075)   // 4.5, 8.7, 4.5/min
+            return 0.004 * sin(2 * .pi * hz * t)
+        })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNotNil(r.meanBreathingRate, "the curve is still shown")
+        XCTAssertEqual(r.overallScore ?? -1,
+                       scoreWithoutBreath(r, durationSec: 240) ?? -2, accuracy: 0.0001,
+                       "a smoothed curve must not buy its way past the score gate")
+    }
+
     /// Breath now counts (45% when read), so the old "never moves the score"
     /// rule is gone by design. What replaces it is the property that rule
     /// existed to protect: **absence must not penalise.** A session with no

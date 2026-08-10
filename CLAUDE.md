@@ -820,6 +820,77 @@ UI must coach it, and the 2-signal degrade path must stay.
     read 6.9/6.0/4.6) with a consistent slight undershoot, and one outright
     miss when sway dominated. Needs more counted sessions, especially a
     Dispenza one, which still refuses and is unexplained.
+- **BREATHING v3 — the curve is now chosen as a whole, not window by window
+  (2026-08-10).** Nine variants were built and measured against the counted
+  captures. One shipped. **Accuracy did not improve and could not be improved
+  from this data; read that as a finding, not a to-do.**
+  - **The diagnosis: selection, not filtering.** `tools/breath_why.py` ranks
+    every candidate the engine considers against the counted rate. A candidate
+    sits at the counted rate in **~95% of windows** (52/55, 53/55, 50/51) but is
+    the single clearest peak in only about **half**. The answer was usually
+    present and usually discarded. Everything else follows from that.
+  - **SHIPPED: continuity tracking** (`trackRates`, `SignalEngine` 3.3.0).
+    Viterbi over the top three spectral peaks per channel, scoring clarity minus
+    `wristTrackJumpCost` (0.45) per breath/min of jump. Windows advance 5 s and
+    span 30, so consecutive windows share 25 s: a real rhythm is nearly forced
+    to repeat and a spurious peak is not. Reading each window alone spends none
+    of that redundancy. Standard pitch-tracking practice, for the same reason.
+    Measured over eleven captures: displayed spread falls hard on five (one from
+    4.55 to 1.25/min), the three verified paced sessions come back identical
+    (6.1, 6.1, 5.2), readable fraction moves nowhere.
+  - **Two design rules inside it, both of which cost a wrong first attempt:**
+    - **Gated tracking.** A tuning offers candidates only for windows it would
+      already have read. Ungated, coverage rose 75→79% (and 76→93% on the
+      no-breath session), which quietly loosens the display AND score gates as
+      a side effect of choosing better. Never let an estimator move a gate.
+    - **The score gate is judged on the UNTRACKED curve.** `coherent` grades a
+      curve by how little its rate moves, and the tracker's whole job is to move
+      it as little as the evidence allows. Judge the tracked curve with it and
+      the gate grades its own homework: one capture flipped to "confident"
+      purely from being smoothed. Displayed curve = tracked; scored decision =
+      raw. Locked by `test_wristSession_trackingDoesNotSmoothItsWayIntoTheScore`.
+  - **REFUSED, all measured, do not retry** (baseline mean error 1.90/min over
+    9 counted points): Hann taper (coverage 75%→36%, error 2.35); parabolic peak
+    interpolation (error unchanged, and the 121-point scan is already finer than
+    a 30 s window's resolution, so there is nothing to refine); 45 s and 60 s
+    analysis spans (coverage collapses to 12–49% for at best 0.3/min); harmonic
+    and subharmonic preference (error 2.09 — unlike the camera path, wrist
+    breathing has no octave problem, already established); detrending the slow
+    tuning (no change); averaging the two axes' spectra instead of racing them
+    (error unchanged AND it corrupts verified paced reads, 7.6→9.4).
+  - **The filter is NOT the problem, and the earlier suspicion that it was came
+    from a bad plot.** A spectrogram without the band-pass paints a 2–4/min
+    drift ridge across every capture. Measured after the shipped 12 s
+    moving-average band-pass, drift-to-breath power is **0.07**; a 4th-order
+    Butterworth at 0.06 Hz gets 0.04 and reads no better (error 1.94). The
+    moving average is a poor filter that is nonetheless good enough here.
+    `tools/breath_spectrogram.py` now band-passes before plotting.
+  - **The continuity penalty sits in a flat region, not on a cliff.** Swept
+    0–0.55: 0.35 through 0.50 behave identically; at 0.55 a verified 6.9/min
+    capture drags to 5.3. Accuracy across the sweep is non-monotonic (1.90 →
+    2.29 → 1.58), which is the tell that the accuracy differences between
+    variants are noise at n=9. Do not pick a constant off that column.
+  - **LEAD, not yet acted on: mean clarity along the tracked path separates
+    deliberate slow breathing from natural breathing.** The verified paced
+    captures score 0.66–0.94; every natural-breathing capture, good read or bad,
+    scores 0.37–0.55. It does NOT separate a good natural read from a bad one.
+    That makes it a candidate confidence signal, but adopting it would stop
+    breath scoring on most natural sessions, which contradicts Aziz's explicit
+    "breath always influences the score". His call, not the engine's.
+  - **Still wrong, and now measured: 39F2003D**, the session Aziz said had no
+    breath in it, reads 8.5/min and passes the confidence gate. It did before
+    this change too. Nothing tried distinguishes it from a real read.
+  - **Tools.** `tools/breath_lab.py` runs every variant over every capture
+    against the counted rates in one pass (`--only NAME`). `tools/breath_why.py`
+    dumps per-window candidate rankings. `tools/breath_conf.py` scores candidate
+    confidence properties. `tools/breath_harness.swift` compiles the REAL engine
+    against a CSV (`swiftc -parse-as-library -O -o /tmp/breath
+    Shared/Engine/SignalEngine.swift tools/breath_harness.swift`) — the Python
+    is a replica and replicas drift, so confirm there before installing.
+  - **What would actually move accuracy: better ground truth.** Nine
+    self-counted points across four sessions cannot distinguish 1.6/min from
+    1.9/min error. A metronome-paced session at a known rate, or a chest strap,
+    would be worth more than another month of tuning.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

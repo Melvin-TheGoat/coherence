@@ -121,7 +121,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "3.2.0"
+    static let version = "3.3.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -242,6 +242,22 @@ enum SignalEngine {
     /// the score would corrupt the only measurement this product sells.
     private static let wristConfidentFraction = 0.6
 
+    // MARK: Continuity tracking (calibrated 2026-08-10 on eleven captures)
+    //
+    // These govern how the rate curve is chosen as a whole. See trackRates.
+    private static let wristTrackJumpCost = 0.45  // score paid per breath/min of
+        // jump between consecutive windows. Swept against the counted captures
+        // and the verified paced ones: below 0.35 the tracker barely holds a
+        // line, and at 0.55 it starts dragging a verified 6.9/min session to
+        // 5.3. Everything from 0.35 to 0.50 behaves identically, so this sits in
+        // the middle of a flat region rather than on the edge of a cliff.
+    private static let wristTrackPeaks = 3      // candidates kept per channel.
+        // The true rate is the clearest peak in about half of windows and the
+        // second or third in most of the rest; past three it is noise.
+    private static let wristTrackFloor = 0.10   // clarity below which a peak is
+        // not worth a state in the trellis.
+    private static let wristCandidateMerge = 0.35  // breaths/min. Closer than
+        // this and two candidates are one peak seen through two tunings.
     private static let wristMinTrendFit = 0.30  // R². A curve whose spread is too
         // wide to be one steady rate may still be one breath that changed. Real
         // sessions that moved fit a line at R² ≈ 0.57; the two that read as junk
@@ -584,13 +600,15 @@ enum SignalEngine {
 
         var rates: [Double] = []
         var depths: [Double] = []
+        var pool: [[(rate: Double, clarity: Double)]] = []
         for (i, win) in windows.enumerated() {
             let idx = indices(times, in: win)
             guard idx.count >= 8 && windowAccel[i] <= gate else {
-                rates.append(0); depths.append(0); continue
+                rates.append(0); depths.append(0); pool.append([]); continue
             }
             let wt = idx.map { times[$0] }
             var bestRate = 0.0, bestConc = 0.0, bestDepth = 0.0
+            var candidates: [(rate: Double, clarity: Double)] = []
 
             for (t, band) in zip(tunings, banded) {
                 var wp = idx.map { band.pitch[$0] }
@@ -603,12 +621,11 @@ enum SignalEngine {
                     wp = linearDetrended(wp, times: wt)
                     wr = linearDetrended(wr, times: wt)
                 }
-                let (fP, pP, totP) = dominantFrequency(times: wt, values: wp,
-                                                       fMin: t.bandLo, fMax: breathBandHi)
-                let (fR, pR, totR) = dominantFrequency(times: wt, values: wr,
-                                                       fMin: t.bandLo, fMax: breathBandHi)
-                let cP = totP > 0 ? 2 * pP / (totP * Double(wp.count)) : 0
-                let cR = totR > 0 ? 2 * pR / (totR * Double(wr.count)) : 0
+                let sP = scanSpectrum(times: wt, values: wp, fMin: t.bandLo, fMax: breathBandHi)
+                let sR = scanSpectrum(times: wt, values: wr, fMin: t.bandLo, fMax: breathBandHi)
+                let (fP, pP) = peakOf(sP), (fR, pR) = peakOf(sR)
+                let cP = sP.total > 0 ? 2 * pP / (sP.total * Double(wp.count)) : 0
+                let cR = sR.total > 0 ? 2 * pR / (sR.total * Double(wr.count)) : 0
                 let (f, conc, chosen) = cP >= cR ? (fP, cP, wp) : (fR, cR, wr)
                 let amp = max(stddev(wp), stddev(wr))
                 let agree = fP > 0 && fR > 0 && abs(fP - fR) <= 0.25 * max(fP, fR)
@@ -619,11 +636,41 @@ enum SignalEngine {
                     bestRate = f * 60
                     bestDepth = (chosen.max() ?? 0) - (chosen.min() ?? 0)
                 }
+                // Everything below feeds the tracker, and only for a window
+                // this tuning would already have read. Offering candidates from
+                // rejected windows raises the readable fraction, which is what
+                // the display and score gates are made of: the tracker would be
+                // loosening two thresholds as a side effect of choosing better.
+                guard readable else { continue }
+                for (scan, n) in [(sP, wp.count), (sR, wr.count)] where scan.total > 0 {
+                    for (pf, pp) in topPeaks(scan, count: wristTrackPeaks) {
+                        let clarity = 2 * pp / (scan.total * Double(n))
+                        if pf * 60 >= t.minRate && clarity >= wristTrackFloor {
+                            candidates.append((pf * 60, clarity))
+                        }
+                    }
+                }
             }
+            // Candidates a third of a breath apart are one peak seen twice,
+            // through two tunings or two axes. Keep the clearer sighting.
+            candidates.sort { $0.clarity > $1.clarity }
+            var merged: [(rate: Double, clarity: Double)] = []
+            for c in candidates where merged.allSatisfy({ abs($0.rate - c.rate) > wristCandidateMerge }) {
+                merged.append(c)
+            }
+            pool.append(merged)
             rates.append(bestRate)
             depths.append(bestDepth)
         }
-        rates = medianFiltered5(rates)
+
+        // The curve shown is the tracked one; the decision to score it is made
+        // on the untracked one. Keeping them apart is not fussiness: `coherent`
+        // judges a curve by how little its rate moves, and the tracker's whole
+        // job is to move it as little as the evidence allows. Judge the tracked
+        // curve with it and the gate is grading its own homework, so a session
+        // would pass because it was smoothed rather than because it was clear.
+        let raw = medianFiltered5(rates)
+        rates = medianFiltered5(trackRates(pool, fallback: rates))
 
         let readable = rates.filter { $0 > 0 }
         let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
@@ -631,8 +678,64 @@ enum SignalEngine {
 
         return WristRead(rates: rates, depths: depths,
                          meanRate: readable.reduce(0, +) / Double(readable.count),
-                         confident: fraction >= wristConfidentFraction && coherent(rates),
+                         confident: fraction >= wristConfidentFraction && coherent(raw),
                          axis: axis)
+    }
+
+    /// Picks the rate curve as a whole instead of one window at a time.
+    ///
+    /// Windows advance by 5 s and span 30, so consecutive windows share 25 s of
+    /// signal: a real rhythm is nearly forced to give the same answer twice, and
+    /// a spurious peak is not. Reading each window alone spends none of that
+    /// redundancy, and it shows. Across the counted captures a candidate sits at
+    /// the counted rate in about 95% of windows but is the single clearest peak
+    /// in only about half, so the answer was usually present and usually
+    /// discarded.
+    ///
+    /// Viterbi over the per-window candidates, scoring clarity minus a cost per
+    /// breath/min of jump. This is what pitch trackers do, for the same reason:
+    /// winner-takes-all on a single frame produces exactly this kind of error.
+    ///
+    /// Measured on the eleven captures: the displayed curve's spread falls
+    /// sharply on five of them (one from 4.55 to 1.25 breaths/min), the three
+    /// verified paced sessions come back bit-identical (6.1, 6.1, 5.2), and the
+    /// readable fraction does not move anywhere. It does NOT improve accuracy
+    /// against the counted rates, and nothing else tried did either.
+    private static func trackRates(
+        _ windows: [[(rate: Double, clarity: Double)]], fallback: [Double]
+    ) -> [Double] {
+        var dp: [[Double]] = [], back: [[(Int, Int)?]] = []
+        for (i, cands) in windows.enumerated() {
+            guard !cands.isEmpty else { dp.append([]); back.append([]); continue }
+            let prev = (0..<i).reversed().first { !dp[$0].isEmpty }
+            var row: [Double] = [], ptr: [(Int, Int)?] = []
+            for c in cands {
+                guard let p = prev else { row.append(c.clarity); ptr.append(nil); continue }
+                // A gated stretch costs one hop, not one per window skipped:
+                // missing evidence is not evidence of a jump.
+                var best = -Double.greatestFiniteMagnitude, arg = 0
+                for (k, q) in windows[p].enumerated() {
+                    let v = dp[p][k] - wristTrackJumpCost * abs(c.rate - q.rate)
+                    if v > best { best = v; arg = k }
+                }
+                row.append(c.clarity + best)
+                ptr.append((p, arg))
+            }
+            dp.append(row); back.append(ptr)
+        }
+
+        guard let last = dp.indices.reversed().first(where: { !dp[$0].isEmpty })
+        else { return fallback }
+
+        var out = [Double](repeating: 0, count: windows.count)
+        var i = last
+        var j = dp[last].indices.max(by: { dp[last][$0] < dp[last][$1] }) ?? 0
+        while true {
+            out[i] = windows[i][j].rate
+            guard let step = back[i][j] else { break }
+            (i, j) = step
+        }
+        return out
     }
 
     /// Is this one rhythm, or scattered junk?
@@ -712,13 +815,34 @@ enum SignalEngine {
     private static func dominantFrequency(
         times: [Double], values: [Double], fMin: Double, fMax: Double
     ) -> (freq: Double, power: Double, total: Double) {
-        guard values.count >= 8 else { return (0, 0, 0) }
+        let s = scanSpectrum(times: times, values: values, fMin: fMin, fMax: fMax)
+        guard s.total > 0 else { return (0, 0, 0) }
+        let (f, p) = peakOf(s)
+        return (f, p, s.total)
+    }
+
+    private struct Spectrum {
+        let freqs: [Double]
+        let power: [Double]
+        let total: Double
+    }
+
+    /// The band-limited DFT scan, kept whole rather than reduced to its peak.
+    ///
+    /// The wrist reader needs the runners-up as well as the winner, so it can
+    /// track a rhythm across windows instead of re-electing one each time. The
+    /// scan itself is unchanged and runs exactly once per channel per window.
+    private static func scanSpectrum(
+        times: [Double], values: [Double], fMin: Double, fMax: Double
+    ) -> Spectrum {
+        guard values.count >= 8 else { return Spectrum(freqs: [], power: [], total: 0) }
         let mean = values.reduce(0, +) / Double(values.count)
         let x = values.map { $0 - mean }
         let total = x.reduce(0) { $0 + $1 * $1 }
-        guard total > 0 else { return (0, 0, 0) }
+        guard total > 0 else { return Spectrum(freqs: [], power: [], total: 0) }
         let steps = 120
-        var bestF = 0.0, bestP = -1.0
+        var freqs = [Double](repeating: 0, count: steps + 1)
+        var power = [Double](repeating: 0, count: steps + 1)
         for k in 0...steps {
             let f = fMin + (fMax - fMin) * Double(k) / Double(steps)
             var re = 0.0, im = 0.0
@@ -727,10 +851,30 @@ enum SignalEngine {
                 re += x[i] * cos(ang)
                 im -= x[i] * sin(ang)
             }
-            let p = re * re + im * im
-            if p > bestP { bestP = p; bestF = f }
+            freqs[k] = f
+            power[k] = re * re + im * im
         }
-        return (bestF, bestP, total)
+        return Spectrum(freqs: freqs, power: power, total: total)
+    }
+
+    private static func peakOf(_ s: Spectrum) -> (freq: Double, power: Double) {
+        guard let k = s.power.indices.max(by: { s.power[$0] < s.power[$1] })
+        else { return (0, 0) }
+        return (s.freqs[k], s.power[k])
+    }
+
+    /// The strongest local maxima, strongest first. Local maxima rather than the
+    /// top N bins, which would return one peak's shoulders N times over.
+    private static func topPeaks(_ s: Spectrum, count: Int) -> [(Double, Double)] {
+        guard s.power.count >= 3 else { return [] }
+        var peaks: [(Double, Double)] = []
+        for k in 1..<(s.power.count - 1)
+        where s.power[k] >= s.power[k - 1] && s.power[k] > s.power[k + 1] {
+            peaks.append((s.freqs[k], s.power[k]))
+        }
+        if peaks.isEmpty { peaks = [peakOf(s)] }
+        peaks.sort { $0.1 > $1.1 }
+        return Array(peaks.prefix(count))
     }
 
     // MARK: - Filtering / stats
