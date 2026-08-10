@@ -908,6 +908,23 @@ UI must coach it, and the 2-signal degrade path must stay.
     describe different signals. **The engine still has no harmonic rule** —
     continuity resolves it, because only the fundamental is present in every
     window. Locked by `test_wristSession_deepBreathIsReadAtItsFundamentalNotItsHarmonic`.
+  - **Three counted sessions on the new build, 2026-08-10, all out of sample.**
+    `6FE7FF9B` counted 4.5 then 5, read 4.6. `8F85AEA4` counted 6 then 6, read
+    5.7 (6.1 across minute 1, 5.3 across minute 2, resonance 0.99, 100%
+    readable). `6B0D92D1` uncounted, read 6.9 on a curve settling 9 → 5. Mean
+    absolute error over the four counted points: **~0.3/min**, against 1.9/min
+    on the older captures.
+  - **That gap is the regime, not the fix.** Everything today ran at 4.5–6/min,
+    which is what the engine is built for; the older captures were natural
+    breathing at 7–12/min. Do not quote 0.3/min as the engine's accuracy. Quote
+    it as its accuracy on slow breathing, which is the only thing the product
+    claims. Tracking changed nothing on the two clean captures (identical to
+    v3.2) because there was no competing peak to lose to, which is what a
+    selection fix should do.
+  - **Worth knowing about the operator: Aziz's "breathing normally" is ~6/min.**
+    He is a meditator and his resting rate sits at resonance. The older sessions
+    where he counted 10–12 were a different state, not his baseline. Any future
+    ground truth needs the state named alongside the count.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
