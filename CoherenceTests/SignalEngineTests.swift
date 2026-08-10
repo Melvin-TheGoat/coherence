@@ -437,6 +437,29 @@ final class SignalEngineTests: XCTestCase {
                        + "even where a louder one is briefly clearer")
     }
 
+    /// Deep slow breathing is not a sine wave, and its second harmonic is loud.
+    ///
+    /// Measured on a counted 2-minute session at 4.5/min: the harmonic reached
+    /// 0.74 of the fundamental's power in the first half, and the per-window
+    /// argmax hopped onto it for five straight windows, reporting 5.7/min
+    /// against a counted 4.5 then 5. The tracker reads 4.6, because only the
+    /// fundamental is there in every window. Note there is no harmonic rule in
+    /// the engine: continuity alone resolves it, which is why this is not the
+    /// camera path's explicit octave guard.
+    func test_wristSession_deepBreathIsReadAtItsFundamentalNotItsHarmonic() {
+        // Asymmetric breath: quick in, slow out. The shape that puts energy at
+        // 2f, with the harmonic deliberately louder than the fundamental.
+        let f = 0.075                                     // 4.5/min
+        let m = motion(dur: 180,
+                       pitch: { t in 0.003 * sin(2 * .pi * f * t) },
+                       roll: { t in 0.003 * sin(2 * .pi * f * t)
+                                  + 0.005 * sin(4 * .pi * f * t) })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 4.5, accuracy: 1.0,
+                       "a loud second harmonic must not be mistaken for the rate")
+    }
+
     /// Continuity must not invent continuity.
     ///
     /// The tracker minimises exactly the spread `coherent` reads to decide

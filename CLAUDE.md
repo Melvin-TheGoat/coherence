@@ -891,6 +891,23 @@ UI must coach it, and the 2-signal degrade path must stay.
     self-counted points across four sessions cannot distinguish 1.6/min from
     1.9/min error. A metronome-paced session at a known rate, or a chest strap,
     would be worth more than another month of tuning.
+  - **VALIDATED OUT OF SAMPLE, on-device, same day (capture `6FE7FF9B`).** Aziz
+    ran 2 min of deliberate slow breathing on the new build and counted **4.5
+    then 5**. The old engine read **5.7/min, spread 3.82**; the new one reads
+    **4.6/min, spread 0.22**, and its curve rises 4.4 → 5.5 across the second
+    minute, matching the direction of his count. This capture was not in the
+    calibration set, so it is the first honest out-of-sample test of the change.
+  - **Why the old engine missed, and a correction to an earlier note.** Deep
+    slow breathing is asymmetric (quick in, slow out), so it puts real energy at
+    **twice** the rate: measured here the second harmonic carried **0.74 of the
+    fundamental's power**, on roll, whose amplitude was 3× pitch's. The
+    per-window argmax hopped onto it for five straight windows. So the
+    BREATHING v2 note "the 6-vs-12 pattern is NOT octave error, power at double
+    the detected frequency is only 5–22% of peak" is **true of natural
+    breathing and false of deliberate deep breathing.** Both stand; they
+    describe different signals. **The engine still has no harmonic rule** —
+    continuity resolves it, because only the fundamental is present in every
+    window. Locked by `test_wristSession_deepBreathIsReadAtItsFundamentalNotItsHarmonic`.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
