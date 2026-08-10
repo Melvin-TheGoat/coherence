@@ -870,16 +870,50 @@ UI must coach it, and the 2-signal degrade path must stay.
     capture drags to 5.3. Accuracy across the sweep is non-monotonic (1.90 →
     2.29 → 1.58), which is the tell that the accuracy differences between
     variants are noise at n=9. Do not pick a constant off that column.
-  - **LEAD, not yet acted on: mean clarity along the tracked path separates
-    deliberate slow breathing from natural breathing.** The verified paced
-    captures score 0.66–0.94; every natural-breathing capture, good read or bad,
-    scores 0.37–0.55. It does NOT separate a good natural read from a bad one.
-    That makes it a candidate confidence signal, but adopting it would stop
-    breath scoring on most natural sessions, which contradicts Aziz's explicit
-    "breath always influences the score". His call, not the engine's.
-  - **Still wrong, and now measured: 39F2003D**, the session Aziz said had no
-    breath in it, reads 8.5/min and passes the confidence gate. It did before
-    this change too. Nothing tried distinguishes it from a real read.
+  - **SCORE GATE REPLACED — clarity, not smoothness (Aziz approved 2026-08-10).**
+    Breath reaches the score when the readable fraction ≥ 0.6 **and mean clarity
+    along the tracked path ≥ 0.60** (`wristMinPathClarity`). The old test, curve
+    spread with a straight-line-trend fallback (`coherent`, `wristMaxRateIQR`,
+    `wristMinTrendFit`), is DELETED. Do not reintroduce it.
+    - **Measured over fourteen captures, ten with a known answer: every read
+      that was right scores 0.65–0.94, every read that was wrong or off scores
+      0.37–0.55.** 0.60 sits in the empty gap. The old gate got two of the ten
+      wrong: it refused the counted 4.5/min session the engine had read
+      correctly at 4.6, and it passed 39F2003D, which Aziz confirmed had no
+      breathing in it. The new gate gets all ten right. 6 of 14 now score,
+      against 9 of 14 before, so it is stricter overall.
+    - **Why spread was the wrong thing to measure: the tracker minimises it.**
+      Gating on it means the gate reads the estimator's own output. Clarity runs
+      the opposite way — picking each window's clearest peak maximises mean
+      clarity by construction, so the tracker can only ever spend clarity to buy
+      continuity. **A measure an estimator can only push DOWN is safe to gate
+      on. Apply that test before gating on anything else.**
+    - Demonstrated synthetically, and it is worse than it sounds: a leaky random
+      walk with **no breathing in it at all** produces a tidy curve (one seed
+      holds 7/min then 4/min, another sits on 8/min throughout) and the v3.2
+      gate **scored both**. Locked by `test_driftWithNoBreathIsShownButNeverScored`
+      and `test_smoothnessAloneDoesNotReachTheScore`, with
+      `test_breathUnderHeavyDriftStillScores` as the counterpart so the gate
+      can't be "fixed" by refusing everything.
+    - **Deliberate reversal:** a clearly-read rate that CHANGES now scores. The
+      old rule treated disjoint plateaus as a misread, but a verified capture
+      ran 12 → 6.5/min in five minutes, so "the rate moved" was never evidence
+      of anything. `test_wristSession_clearlyChangingRateStillScores`.
+    - **FITTED, not validated.** Ten sessions, five of them slow deliberate
+      breathing where clarity is naturally highest. Revisit as counted
+      natural-breathing captures accumulate.
+    - **Synthetic junk must be a random walk, not white noise.** White noise
+      sits above the breathing band and the filter removes it, so a "noisy" test
+      built from it reads exactly as clean as a silent one. Postural drift is
+      in-band and wandering. The `wander` helper in SignalEngineTests builds it.
+    - **NOT back-fillable, and this is the second time.** `ScoreMigration`
+      recomputes from stored fields and passes `row.meanBreathingRate`
+      ungated, so every back-filled row already scores breath unconditionally.
+      Clarity is not stored on `MeditationStats`, so no migration can apply the
+      new gate to old rows. History therefore steps slightly at 2026-08-10.
+      Accepted because the app is pre-launch and every real user's history will
+      begin after this. Same family as "BREATHING HISTORY CANNOT BE
+      BACK-FILLED" above: a gate whose inputs aren't persisted can't be redone.
   - **Tools.** `tools/breath_lab.py` runs every variant over every capture
     against the counted rates in one pass (`--only NAME`). `tools/breath_why.py`
     dumps per-window candidate rankings. `tools/breath_conf.py` scores candidate

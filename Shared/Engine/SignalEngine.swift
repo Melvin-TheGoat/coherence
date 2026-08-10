@@ -173,13 +173,6 @@ enum SignalEngine {
         // averaged 9.0 against a counted 9. Between concentrationMin and this,
         // a window is believed only when both axes agree on the rate (within
         // 25%): a torso-driven breath rocks the whole arm together.
-    private static let wristMaxRateIQR = 2.0   // breaths/min, across the final
-        // readable curve. The junk-vs-truth tiebreak the per-window gates can't
-        // make: a true breath is ONE coherent track (drifting 6.6→9.5 still
-        // gave IQR 1.3–1.6), while junk assembles scattered plateaus at
-        // different rates (4.8 here, 8.2 there → IQR 2.5). A session whose
-        // readable rates spread wider than this is not one rhythm and ships
-        // as nothing.
     private static let wristMinRate = 3.5      // breaths/min. Settling drift
         // leaks spectral power right at the band's bottom edge, so a window
         // whose "breath" sits at the boundary bin is indistinguishable from
@@ -258,10 +251,17 @@ enum SignalEngine {
         // not worth a state in the trellis.
     private static let wristCandidateMerge = 0.35  // breaths/min. Closer than
         // this and two candidates are one peak seen through two tunings.
-    private static let wristMinTrendFit = 0.30  // R². A curve whose spread is too
-        // wide to be one steady rate may still be one breath that changed. Real
-        // sessions that moved fit a line at R² ≈ 0.57; the two that read as junk
-        // fit at 0.05. 0.30 sits in the empty middle of that gap.
+    private static let wristMinPathClarity = 0.60  // mean clarity along the
+        // tracked path, below which the rate is shown but not scored. Measured
+        // over fourteen captures, ten of them with a known answer: **every read
+        // that was right scored 0.65 to 0.94, and every read that was wrong or
+        // off scored 0.37 to 0.55.** 0.60 sits in that empty gap. This replaced
+        // a spread-based gate that got two of the ten wrong.
+        //
+        // FITTED, not validated: the ten include five slow deliberate sessions,
+        // which is where clarity is naturally highest. Expect to revisit it as
+        // natural-breathing captures with counts accumulate, and do not treat
+        // the gap as wider than ten sessions can show.
 
     private static let stillnessGain = 5.0     // activity → stillness sharpness
     private static let attitudeWeight = 1.0    // radians vs g weighting in activity
@@ -663,22 +663,19 @@ enum SignalEngine {
             depths.append(bestDepth)
         }
 
-        // The curve shown is the tracked one; the decision to score it is made
-        // on the untracked one. Keeping them apart is not fussiness: `coherent`
-        // judges a curve by how little its rate moves, and the tracker's whole
-        // job is to move it as little as the evidence allows. Judge the tracked
-        // curve with it and the gate is grading its own homework, so a session
-        // would pass because it was smoothed rather than because it was clear.
-        let raw = medianFiltered5(rates)
-        rates = medianFiltered5(trackRates(pool, fallback: rates))
+        let (tracked, clarity) = trackRates(pool, fallback: rates)
+        rates = medianFiltered5(tracked)
 
         let readable = rates.filter { $0 > 0 }
         let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
         guard fraction >= wristDisplayFraction else { return nil }
 
+        // Two questions, and they are not the same one. Was the rhythm read
+        // often enough, and was it clear when it was read.
         return WristRead(rates: rates, depths: depths,
                          meanRate: readable.reduce(0, +) / Double(readable.count),
-                         confident: fraction >= wristConfidentFraction && coherent(raw),
+                         confident: fraction >= wristConfidentFraction
+                             && clarity >= wristMinPathClarity,
                          axis: axis)
     }
 
@@ -701,9 +698,17 @@ enum SignalEngine {
     /// verified paced sessions come back bit-identical (6.1, 6.1, 5.2), and the
     /// readable fraction does not move anywhere. It does NOT improve accuracy
     /// against the counted rates, and nothing else tried did either.
+    ///
+    /// Returns the curve and the mean clarity along it, which is what decides
+    /// whether the read may touch the score. **The tracker cannot inflate that
+    /// number.** Picking each window's clearest peak maximises mean clarity by
+    /// construction, so every other path scores lower: the tracker only ever
+    /// spends clarity to buy continuity. A measure an estimator can only push
+    /// down is safe to gate on, which is exactly what the curve's spread was
+    /// not.
     private static func trackRates(
         _ windows: [[(rate: Double, clarity: Double)]], fallback: [Double]
-    ) -> [Double] {
+    ) -> (rates: [Double], clarity: Double) {
         var dp: [[Double]] = [], back: [[(Int, Int)?]] = []
         for (i, cands) in windows.enumerated() {
             guard !cands.isEmpty else { dp.append([]); back.append([]); continue }
@@ -725,64 +730,37 @@ enum SignalEngine {
         }
 
         guard let last = dp.indices.reversed().first(where: { !dp[$0].isEmpty })
-        else { return fallback }
+        else { return (fallback, 0) }
 
         var out = [Double](repeating: 0, count: windows.count)
+        var clarities: [Double] = []
         var i = last
         var j = dp[last].indices.max(by: { dp[last][$0] < dp[last][$1] }) ?? 0
         while true {
             out[i] = windows[i][j].rate
+            clarities.append(windows[i][j].clarity)
             guard let step = back[i][j] else { break }
             (i, j) = step
         }
-        return out
+        let clarity = clarities.isEmpty
+            ? 0 : clarities.reduce(0, +) / Double(clarities.count)
+        return (out, clarity)
     }
 
-    /// Is this one rhythm, or scattered junk?
-    ///
-    /// Spread alone is the wrong question. A verified session that genuinely
-    /// slowed from 12 to 6.5 breaths/min has a spread of 3.7, well past the old
-    /// limit, yet every window is right. So a curve qualifies two ways: it is
-    /// tight, OR it is a coherent trajectory once a straight-line trend is
-    /// removed.
-    ///
-    /// Measured across four captures, the separation is not marginal:
-    ///
-    ///     verified 12→6.5   spread 3.67   residual 1.28   R² 0.56   accept
-    ///     counted 12 (end)  spread 3.83   residual 2.05   R² 0.58   refuse
-    ///     read nothing      spread 3.85   residual 2.98   R² 0.05   refuse
-    ///     Dispenza          spread 4.10   residual 3.62   R² 0.05   refuse
-    ///
-    /// Real breathing that moves is a trajectory (R² ≈ 0.57); junk is scatter
-    /// with nothing to fit (R² ≈ 0.05).
-    private static func coherent(_ rates: [Double]) -> Bool {
-        var xs: [Double] = [], ys: [Double] = []
-        for (i, r) in rates.enumerated() where r > 0 { xs.append(Double(i)); ys.append(r) }
-        guard ys.count >= 6 else { return !ys.isEmpty }
-
-        if iqr(ys) <= wristMaxRateIQR { return true }        // tight: unchanged
-
-        let residuals = zip(ys, linearFit(xs, ys)).map(-)
-        let explained = 1 - sumSquares(residuals) / sumSquares(ys.map { $0 - mean(ys) })
-        return iqr(residuals) <= wristMaxRateIQR && explained >= wristMinTrendFit
-    }
-
-    private static func linearFit(_ x: [Double], _ y: [Double]) -> [Double] {
-        let mx = mean(x), my = mean(y)
-        var num = 0.0, den = 0.0
-        for i in 0..<x.count { num += (x[i] - mx) * (y[i] - my); den += (x[i] - mx) * (x[i] - mx) }
-        let slope = den > 0 ? num / den : 0
-        return x.map { my + slope * ($0 - mx) }
-    }
+    // The score gate used to ask whether the rate curve was one rhythm, by its
+    // spread and, failing that, by how well a straight line fit it. That is
+    // gone. It carried two documented errors: it refused a counted 4.5/min
+    // session the engine had read correctly at 4.6, and it passed a session
+    // Aziz confirmed had no breathing in it at all. Mean clarity along the
+    // tracked path separates the same fourteen captures without either error.
+    //
+    // The deeper reason is that spread is the wrong thing to measure once a
+    // tracker exists: the tracker minimises spread, so the gate was reading its
+    // own output. Clarity runs the other way, since the tracker can only spend
+    // it. Keep that asymmetry in mind before gating on anything else.
 
     private static func mean(_ y: [Double]) -> Double {
         y.isEmpty ? 0 : y.reduce(0, +) / Double(y.count)
-    }
-    private static func sumSquares(_ y: [Double]) -> Double { y.reduce(0) { $0 + $1 * $1 } }
-    private static func iqr(_ y: [Double]) -> Double {
-        guard !y.isEmpty else { return 0 }
-        let s = y.sorted()
-        return s[(s.count * 3) / 4] - s[s.count / 4]
     }
 
     /// Removes the best-fit straight line. Ordinary least squares on (t, y).

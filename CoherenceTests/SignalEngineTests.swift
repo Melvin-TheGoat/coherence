@@ -49,6 +49,31 @@ final class SignalEngineTests: XCTestCase {
         { amp * sin(2 * Double.pi * hz * $0) }
     }
 
+    /// A body that drifts but never breathes, optionally with a breath on top.
+    ///
+    /// A leaky random walk, which is what postural sway actually is: in-band,
+    /// wandering, no stable rhythm. White noise is the wrong model, because its
+    /// power sits above the breathing band and the filter removes it, so a
+    /// "noisy" test built from white noise reads exactly as clean as a silent
+    /// one. This is the signal that produces a plausible rate out of nothing.
+    private func wander(dur: Double, step: Double, seed: UInt64,
+                        breath: Double = 0, hz: Double = 0.1) -> [MotionSample] {
+        var g = LCG(s: seed)
+        var out: [MotionSample] = []
+        var wp = 0.0, wr = 0.0, t = 0.0
+        while t <= dur + 1e-9 {
+            wp += (g.unit() - 0.5) * step
+            wr += (g.unit() - 0.5) * step
+            wp *= 0.999                    // a leak, so it cannot wander away
+            wr *= 0.999
+            out.append(MotionSample(t: t,
+                                    pitch: breath * sin(2 * Double.pi * hz * t) + wp,
+                                    roll: wr, userAccel: 0))
+            t += 0.05
+        }
+        return out
+    }
+
     /// The score this session would have had if breath had never been read.
     /// Comparing against it is how we assert "breath did not count", now that
     /// resonance is always reported as its own honest measurement and can no
@@ -287,25 +312,37 @@ final class SignalEngineTests: XCTestCase {
     /// guard that survives: a reading the engine does not trust must leave the
     /// score exactly where an unread breath would.
     ///
-    /// It exists because of a measured failure. At minute 2 of a counted
-    /// session the engine reported 3.9/min at clarity 0.76 while Aziz counted
-    /// 10, because a 4/min postural sway carried 14x the power of his breath.
-    func test_lowConfidenceReading_neverMovesTheScore() {
-        let plan: [Double] = [12, 5, 14, 6, 13, 4, 15, 5, 12, 6]
-        var phase = 0.0, last = 0.0
-        func value(_ t: Double) -> Double {
-            let f = plan[min(plan.count - 1, Int(t / 30))] / 60
-            phase += 2 * Double.pi * f * (t - last)
-            last = t
-            return 0.004 * sin(phase)
-        }
-        let r = SignalEngine.analyze(motion: motion(dur: 300, pitch: value),
-                                     hr: [], bellyBreathing: false)
+    /// The input is a body that drifts and never breathes. It still produces a
+    /// number, because a wandering signal always has a strongest frequency
+    /// somewhere, and this is not hypothetical: a real session Aziz confirmed
+    /// had no breathing in it reads 8.5/min. Two seeds, because one lucky draw
+    /// proves nothing about a random walk.
+    func test_driftWithNoBreathIsShownButNeverScored() {
+        for seed in [UInt64(7), 3] {
+            let m = wander(dur: 240, step: 0.0005, seed: seed)
+            let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNotNil(r.meanBreathingRate, "the rate is still shown")
-        XCTAssertEqual(r.overallScore ?? -1,
-                       scoreWithoutBreath(r, durationSec: 300) ?? -2, accuracy: 0.0001,
-                       "an untrusted rate must not move the score in either direction")
+            XCTAssertNotNil(r.meanBreathingRate,
+                            "the curve is still shown, so a bad read stays visible")
+            XCTAssertEqual(r.overallScore ?? -1,
+                           scoreWithoutBreath(r, durationSec: 240) ?? -2, accuracy: 0.0001,
+                           "seed \(seed): a rhythm read out of drift must not move the score")
+        }
+    }
+
+    /// The same drift, with a real breath in it, must still score.
+    ///
+    /// Together with the test above this is the whole claim: the gate rejects
+    /// the absence of breathing, not the presence of movement. A gate that
+    /// refused both would be safe and useless.
+    func test_breathUnderHeavyDriftStillScores() {
+        let m = wander(dur: 240, step: 0.0005, seed: 7, breath: 0.004)
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.meanBreathingRate ?? 0, 6.0, accuracy: 0.5)
+        XCTAssertNotEqual(r.overallScore ?? -1,
+                          scoreWithoutBreath(r, durationSec: 240) ?? -1,
+                          "a real breath under drift must reach the score")
     }
 
     /// A clean, coherent, deliberately slow breath still earns its resonance.
@@ -388,21 +425,27 @@ final class SignalEngineTests: XCTestCase {
                        "a partial read must leave the score to heart and stillness")
     }
 
-    /// Disjoint plateaus are the signature of a misread: a live session counted
-    /// at 11/min would have displayed 6.8, and a later counted session showed
-    /// the same shape. The curve is displayed, because hiding it hid the
-    /// problem, but it must not reach the score.
-    func test_wristSession_incoherentPlateaus_showButDoNotScore() {
+    /// A rate that genuinely changes, read clearly throughout, now DOES score.
+    ///
+    /// This reverses an earlier rule and the reversal is deliberate. Disjoint
+    /// plateaus were treated as the signature of a misread, and the score gate
+    /// refused any curve too spread out to be one steady rate. But a verified
+    /// capture ran 12 to 6.5 breaths/min inside five minutes, so "the rate
+    /// moved" is not evidence of anything, and the rule was refusing real
+    /// sessions to catch bad ones. What actually separates them is clarity, so
+    /// that is what the gate reads now. A misread is unclear, whatever shape it
+    /// draws: see test_driftWithNoBreathIsShownButNeverScored.
+    func test_wristSession_clearlyChangingRateStillScores() {
         let m = motion(dur: 180, pitch: { t in
             let hz = t < 60 ? 0.075 : (t < 120 ? 0.145 : 0.075)   // 4.5 vs 8.7/min
             return 0.004 * sin(2 * .pi * hz * t)
         })
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNotNil(r.meanBreathingRate, "the curve is shown so the misread is visible")
-        XCTAssertEqual(r.overallScore ?? -1,
-                       scoreWithoutBreath(r, durationSec: 180) ?? -2, accuracy: 0.0001,
-                       "two disjoint rhythms must never reach the score")
+        XCTAssertNotNil(r.meanBreathingRate)
+        XCTAssertNotEqual(r.overallScore ?? -1,
+                          scoreWithoutBreath(r, durationSec: 180) ?? -1,
+                          "a clear read is a read, whether or not the rate held still")
     }
 
     /// The 9/min case (live session 5): faster deliberate breathing is
@@ -460,25 +503,29 @@ final class SignalEngineTests: XCTestCase {
                        "a loud second harmonic must not be mistaken for the rate")
     }
 
-    /// Continuity must not invent continuity.
+    /// A smooth curve is not evidence, and the gate must not treat it as any.
     ///
-    /// The tracker minimises exactly the spread `coherent` reads to decide
-    /// whether a rate may touch the score, so the score gate is judged on the
-    /// untracked curve instead. Otherwise the gate grades its own homework and
-    /// a session passes for having been smoothed rather than for being clear.
-    /// Note the sibling case at 180 s: this one runs longer, which gives a
-    /// tracker more room to draw a tidy path, and it must change nothing.
-    func test_wristSession_trackingDoesNotSmoothItsWayIntoTheScore() {
-        let m = motion(dur: 240, pitch: { t in
-            let hz = t < 80 ? 0.075 : (t < 160 ? 0.145 : 0.075)   // 4.5, 8.7, 4.5/min
-            return 0.004 * sin(2 * .pi * hz * t)
-        })
+    /// The drift-only signals produce tidy curves: one holds 7/min for fifteen
+    /// windows then 4/min for twenty, the other sits on 8/min almost
+    /// throughout. Under a gate that asked how little the rate moved, both
+    /// scored, and so did a real session with no breathing in it. They cannot
+    /// now, and the reason they cannot is worth stating: the tracker's own job
+    /// is to make the curve as smooth as the evidence allows, so smoothness is
+    /// partly its output and gating on it would be circular. Clarity runs the
+    /// other way. Choosing each window's clearest peak maximises mean clarity
+    /// by construction, so the tracker can only ever spend it.
+    func test_smoothnessAloneDoesNotReachTheScore() {
+        let m = wander(dur: 240, step: 0.001, seed: 3)
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNotNil(r.meanBreathingRate, "the curve is still shown")
+        let live = r.breathingRateTimeseries.filter { $0 > 0 }.sorted()
+        XCTAssertFalse(live.isEmpty, "this input does produce a curve")
+        let spread = live[(live.count * 3) / 4] - live[live.count / 4]
+        XCTAssertLessThan(spread, 2.0, "and the curve really is tidy")
+
         XCTAssertEqual(r.overallScore ?? -1,
                        scoreWithoutBreath(r, durationSec: 240) ?? -2, accuracy: 0.0001,
-                       "a smoothed curve must not buy its way past the score gate")
+                       "tidy is not the same as true")
     }
 
     /// Breath now counts (45% when read), so the old "never moves the score"
