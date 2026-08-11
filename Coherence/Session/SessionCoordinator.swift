@@ -54,7 +54,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
 
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
-    private let log = Logger(subsystem: "com.lockout.coherence", category: "SessionCoordinator")
+    private let log = Logger(subsystem: "com.lockout.meditate808", category: "SessionCoordinator")
 
     /// Live-session audio (phone-side): plays the chosen tone + bed during the
     /// meditation and stops on the timer / when the Watch payload lands.

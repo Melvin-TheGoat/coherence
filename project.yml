@@ -41,7 +41,7 @@ targets:
         embed: true
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.coherence
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808
         INFOPLIST_FILE: Coherence/Info.plist
         CODE_SIGN_ENTITLEMENTS: Coherence/Coherence.entitlements
         GENERATE_INFOPLIST_FILE: NO
@@ -56,8 +56,8 @@ targets:
       - Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.coherence.watchkitapp
-        WKCompanionAppBundleIdentifier: com.lockout.coherence
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.watchkitapp
+        WKCompanionAppBundleIdentifier: com.lockout.meditate808
         INFOPLIST_FILE: CoherenceWatch/Info.plist
         CODE_SIGN_ENTITLEMENTS: CoherenceWatch/CoherenceWatch.entitlements
         GENERATE_INFOPLIST_FILE: NO
@@ -74,7 +74,7 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.coherence.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.tests
 
 schemes:
   Coherence:

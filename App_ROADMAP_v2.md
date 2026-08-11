@@ -23,9 +23,9 @@ Execution model: instructions pasted into **Claude Code in a terminal** (no IDE 
 **HARD GATE:** Phase 0 runs on a free Apple ID with a **local** (non-CloudKit) store. **Phase 1 onward requires the paid Apple Developer Program ($99/yr)** — HealthKit on device, CloudKit, and Sign in with Apple are unavailable under free provisioning. Buy it before starting Phase 1.
 
 **Bundle IDs used throughout (change the prefix once, here, if you want):**
-- iOS app: `com.lockout.coherence`
-- Watch app: `com.lockout.coherence.watchkitapp`
-- iCloud container: `iCloud.com.lockout.coherence`
+- iOS app: `com.lockout.meditate808`
+- Watch app: `com.lockout.meditate808.watchkitapp`
+- iCloud container: `iCloud.com.lockout.meditate808`
 
 ---
 
@@ -48,8 +48,8 @@ We are building "Coherence," a heart-coherence meditation app for iPhone + Apple
    CoherenceTests/       (unit tests)
 
 3. Write `project.yml` defining three targets:
-   - "Coherence": iOS application, deploymentTarget iOS 17.0, sources [Coherence, Shared]. It EMBEDS the watch app (dependency on CoherenceWatch, embed: true). PRODUCT_BUNDLE_IDENTIFIER com.lockout.coherence. INFOPLIST_FILE Coherence/Info.plist, CODE_SIGN_ENTITLEMENTS Coherence/Coherence.entitlements, GENERATE_INFOPLIST_FILE NO, SWIFT_VERSION 5.10.
-   - "CoherenceWatch": watchOS application, deploymentTarget watchOS 10.0, sources [CoherenceWatch, Shared]. PRODUCT_BUNDLE_IDENTIFIER com.lockout.coherence.watchkitapp, WKCompanionAppBundleIdentifier com.lockout.coherence, INFOPLIST_FILE CoherenceWatch/Info.plist, CODE_SIGN_ENTITLEMENTS CoherenceWatch/CoherenceWatch.entitlements, GENERATE_INFOPLIST_FILE NO.
+   - "Coherence": iOS application, deploymentTarget iOS 17.0, sources [Coherence, Shared]. It EMBEDS the watch app (dependency on CoherenceWatch, embed: true). PRODUCT_BUNDLE_IDENTIFIER com.lockout.meditate808. INFOPLIST_FILE Coherence/Info.plist, CODE_SIGN_ENTITLEMENTS Coherence/Coherence.entitlements, GENERATE_INFOPLIST_FILE NO, SWIFT_VERSION 5.10.
+   - "CoherenceWatch": watchOS application, deploymentTarget watchOS 10.0, sources [CoherenceWatch, Shared]. PRODUCT_BUNDLE_IDENTIFIER com.lockout.meditate808.watchkitapp, WKCompanionAppBundleIdentifier com.lockout.meditate808, INFOPLIST_FILE CoherenceWatch/Info.plist, CODE_SIGN_ENTITLEMENTS CoherenceWatch/CoherenceWatch.entitlements, GENERATE_INFOPLIST_FILE NO.
    - "CoherenceTests": iOS unit-test bundle, host application Coherence, sources [CoherenceTests, Shared].
    Set options.bundleIdPrefix com.lockout, createIntermediateGroups true. Leave DEVELOPMENT_TEAM empty (I set it in Xcode).
 
@@ -79,7 +79,7 @@ We are building "Coherence," a heart-coherence meditation app for iPhone + Apple
 8. Entitlements files:
    Coherence/Coherence.entitlements — LEAVE EMPTY (an empty plist dict) for Phase 0. Free provisioning cannot sign iCloud, Sign in with Apple, or HealthKit entitlements; we add them in Phase 1 and Phase 7. Add a comment file or CLAUDE.md note recording exactly what gets added later:
      Phase 1: com.apple.developer.healthkit true (BOTH targets)
-     Phase 7: com.apple.developer.applesignin ["Default"]; com.apple.developer.icloud-container-identifiers ["iCloud.com.lockout.coherence"]; com.apple.developer.icloud-services ["CloudKit"]; aps-environment "development"
+     Phase 7: com.apple.developer.applesignin ["Default"]; com.apple.developer.icloud-container-identifiers ["iCloud.com.lockout.meditate808"]; com.apple.developer.icloud-services ["CloudKit"]; aps-environment "development"
    CoherenceWatch/CoherenceWatch.entitlements — also empty for Phase 0.
 
 9. Info.plist files:
@@ -392,7 +392,7 @@ Tag `phase6-readers-done`.
 ```
 Build accounts, sync, and settings (iOS). Apple-only auth — no passwords, no Google, no email/password in v1.
 
-0. Entitlements: add com.apple.developer.applesignin ["Default"]; com.apple.developer.icloud-container-identifiers ["iCloud.com.lockout.coherence"]; com.apple.developer.icloud-services ["CloudKit"]; aps-environment "development" to Coherence.entitlements. Regenerate with xcodegen. Switch CoherenceApp.swift from Persistence.local() to Persistence.cloudKit(). Run once and confirm the app still launches — a CloudKit ModelContainer crash here means a model property is non-optional or carries .unique.
+0. Entitlements: add com.apple.developer.applesignin ["Default"]; com.apple.developer.icloud-container-identifiers ["iCloud.com.lockout.meditate808"]; com.apple.developer.icloud-services ["CloudKit"]; aps-environment "development" to Coherence.entitlements. Regenerate with xcodegen. Switch CoherenceApp.swift from Persistence.local() to Persistence.cloudKit(). Run once and confirm the app still launches — a CloudKit ModelContainer crash here means a model property is non-optional or carries .unique.
 
 1. Onboarding: Purpose Description -> Science Description (both static, re-readable later from Settings) -> Sign in with Apple -> land in the app. Gate on Preferences.onboardingComplete; set it true after first successful sign-in. Note the bootstrap Preferences row from Phase 4 already exists with onboardingComplete=false, so the gate reads a real row, not an absent one.
 

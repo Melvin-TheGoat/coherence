@@ -23,7 +23,7 @@ final class HRVRecorder {
     private let store = HealthKitAuth.store
     private let type = HKQuantityType(.heartRateVariabilitySDNN)
     private let unit = HKUnit.secondUnit(with: .milli)
-    private let log = Logger(subsystem: "com.lockout.coherence.watchkitapp", category: "HRV")
+    private let log = Logger(subsystem: "com.lockout.meditate808.watchkitapp", category: "HRV")
 
     /// Keyed by sample UUID so the live and catch-up routes can be merged
     /// without double-counting the samples both of them see.

@@ -33,9 +33,9 @@ final class Store: ObservableObject {
     /// personal developer account to "try it out": create them once, under the
     /// account that will actually sell the app.
     enum ProductID {
-        static let monthly  = "com.lockout.coherence.monthly"
-        static let yearly   = "com.lockout.coherence.yearly"
-        static let lifetime = "com.lockout.coherence.lifetime"
+        static let monthly  = "com.lockout.meditate808.monthly"
+        static let yearly   = "com.lockout.meditate808.yearly"
+        static let lifetime = "com.lockout.meditate808.lifetime"
 
         static let all = [monthly, yearly, lifetime]
 

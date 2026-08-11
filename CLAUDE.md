@@ -36,7 +36,7 @@ Development is done by pasting phase instructions into Claude Code in a terminal
 **Product name is `808`** (Aziz + Melvin's rebrand, 2026-07-20) — the user-facing
 name only: `CFBundleDisplayName`, the in-app titles (iPhone + Watch), and the
 Health permission prompts all read **808**. The **internal Xcode targets, folders,
-module, and bundle IDs stay `Coherence` / `com.lockout.coherence`** — Swift forbids
+module, and bundle IDs stay `Coherence` / `com.lockout.meditate808`** — Swift forbids
 a module/type name starting with a digit, and renaming the targets would be
 invisible to users while creating a large merge for Melvin, so it was deliberately
 NOT done. "Rename the app" = change the display name, not the project.
@@ -1021,7 +1021,7 @@ UI must coach it, and the 2-signal degrade path must stay.
 - **Close Xcode before `xcodegen generate`** (or reopen the project after) — regen
   while it's open yields "the active scheme has no targets."
 - **Signing is per-developer and LOCAL (never committed).** The repo commits
-  `DEVELOPMENT_TEAM: ""` and `com.lockout.coherence`. But the two cofounders have
+  `DEVELOPMENT_TEAM: ""` and `com.lockout.meditate808`. But the two cofounders have
   **separate individual Apple Developer accounts**, and one bundle ID can't be
   registered to both once HealthKit (an explicit App-ID capability) is enabled — so
   each dev sets their own `DEVELOPMENT_TEAM` **and** a unique bundle-ID prefix in
@@ -1078,9 +1078,23 @@ CloudKit, and Sign in with Apple are unavailable under free provisioning.
 
 ## Bundle IDs
 
-- iOS app: `com.lockout.coherence`
-- Watch app: `com.lockout.coherence.watchkitapp`
-- iCloud container (Phase 7): `iCloud.com.lockout.coherence`
+- iOS app: `com.lockout.meditate808`
+- Watch app: `com.lockout.meditate808.watchkitapp`
+- iCloud container (Phase 7): `iCloud.com.lockout.meditate808`
+- StoreKit products: `com.lockout.meditate808.{monthly,yearly,lifetime}`
+
+**Renamed from `com.lockout.coherence` on 2026-08-11, before anything was
+registered.** Chosen over `com.lockout.808` because Apple documents the
+identifier's character set as letters, dot and hyphen only; digits are
+everywhere in practice but an all-numeric component is not worth gambling a
+permanent identifier on. `meditate808` also matches the domain.
+
+**These are permanent. Both the bundle IDs and the product IDs.** A bundle ID
+consumed by an App Store Connect record can never be reused, even after the
+app is deleted, and App IDs are unique across all developer teams. Do NOT
+register these under either cofounder's personal account to try something out;
+they belong to the Organization account when it exists. The pre-Org internal
+TestFlight uses a personal identifier instead (Aziz: `com.azizmahmud.808`).
 
 ## Entitlements timeline
 
@@ -1088,7 +1102,7 @@ Phase 0 entitlements files are empty (`<dict/>`). Add later:
 
 - **Phase 1** (both targets): `com.apple.developer.healthkit` = true
 - **Phase 7** (iOS): `com.apple.developer.applesignin` = ["Default"];
-  `com.apple.developer.icloud-container-identifiers` = ["iCloud.com.lockout.coherence"];
+  `com.apple.developer.icloud-container-identifiers` = ["iCloud.com.lockout.meditate808"];
   `com.apple.developer.icloud-services` = ["CloudKit"]; `aps-environment` = "development"
 
 **Info.plist usage strings:** the Watch needs `NSMotionUsageDescription`
@@ -1177,7 +1191,7 @@ SessionMode case — a Guided or Silence session can each be belly or regular.
 
 ## Targets & layout
 
-- `Coherence/` — iOS app sources (bundle `com.lockout.coherence`, embeds the Watch).
+- `Coherence/` — iOS app sources (bundle `com.lockout.meditate808`, embeds the Watch).
   `DesignKit.swift` holds the shared UI vocabulary (ScoreRing / EvidenceRow /
   MetaChip / MonthCalendar) — reach for it before writing a new card or row.
   `Onboarding/` is the 26-screen flow: `OnboardingKit` (colour arc, CTA, option

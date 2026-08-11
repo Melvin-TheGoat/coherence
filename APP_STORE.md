@@ -141,6 +141,6 @@ screenshot frames or a simple template later.
 
 - Flip `aps-environment` → `production`; deploy CloudKit schema to Production.
 - Enable HealthKit / SiwA / CloudKit / Push on the App ID in the developer
-  portal for the SHIPPING bundle ID (`com.lockout.coherence` on Melvin's
+  portal for the SHIPPING bundle ID (`com.lockout.meditate808` on Melvin's
   account).
 - TestFlight first: internal → external; verify CloudKit sync cross-device.

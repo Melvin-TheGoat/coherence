@@ -132,7 +132,7 @@ final class ToneEngine: ObservableObject {
     @Published private(set) var lastEvent: String?
     /// Audio-session activation error from the most recent configureSession().
     private var sessionError: String?
-    private let audioLog = Logger(subsystem: "com.lockout.coherence", category: "ToneEngine")
+    private let audioLog = Logger(subsystem: "com.lockout.meditate808", category: "ToneEngine")
 
     init() { observeSessionEvents() }
 

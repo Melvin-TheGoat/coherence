@@ -36,7 +36,7 @@ final class WorkoutManager: NSObject, ObservableObject {
     private var sessionStart: Date?
     private var hrSamples: [HRSample] = []
 
-    private let log = Logger(subsystem: "com.lockout.coherence.watchkitapp", category: "Workout")
+    private let log = Logger(subsystem: "com.lockout.meditate808.watchkitapp", category: "Workout")
 
     /// True once the workout type is shareable — the real gate for starting.
     var isWorkoutAuthorized: Bool {

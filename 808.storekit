@@ -14,7 +14,7 @@
           "locale" : "en_US"
         }
       ],
-      "productID" : "com.lockout.coherence.lifetime",
+      "productID" : "com.lockout.meditate808.lifetime",
       "referenceName" : "Lifetime",
       "type" : "NonConsumable"
     }
@@ -52,7 +52,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.lockout.coherence.monthly",
+          "productID" : "com.lockout.meditate808.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Monthly",
           "subscriptionGroupID" : "808100001",
@@ -79,7 +79,7 @@
               "locale" : "en_US"
             }
           ],
-          "productID" : "com.lockout.coherence.yearly",
+          "productID" : "com.lockout.meditate808.yearly",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Yearly",
           "subscriptionGroupID" : "808100001",

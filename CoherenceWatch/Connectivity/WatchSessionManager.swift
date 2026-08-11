@@ -56,7 +56,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
     /// user-info, application-context) don't double-trigger and a stale context
     /// doesn't re-launch an old session.
     private var handledSessionIDs: Set<UUID> = []
-    private let log = Logger(subsystem: "com.lockout.coherence.watchkitapp", category: "WatchSession")
+    private let log = Logger(subsystem: "com.lockout.meditate808.watchkitapp", category: "WatchSession")
 
     override init() {
         super.init()
