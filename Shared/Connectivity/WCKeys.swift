@@ -54,4 +54,11 @@ enum StartFailure: String, Codable, Identifiable {
     /// paired/reachable. Raised by the PHONE (not the Watch); previously this
     /// failed silently and the session just never happened.
     case watchUnreachable
+    /// No Apple Watch is paired with this iPhone. Checked before launching, so
+    /// the user is told the actual reason instead of watching a launch fail.
+    case watchNotPaired
+    /// A Watch is paired but 808 is not installed on it. This is the one the
+    /// phone used to report as "didn't answer", which sent people to re-check
+    /// permissions for a problem that was never about permissions.
+    case watchAppNotInstalled
 }

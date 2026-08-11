@@ -62,6 +62,8 @@ struct PermissionBlockedView: View {
         case .heartRateUnavailable: "heart.slash"
         case .workoutNotAuthorized: "figure.mind.and.body"
         case .watchUnreachable: "applewatch.slash"
+        case .watchNotPaired: "applewatch.slash"
+        case .watchAppNotInstalled: "arrow.down.app"
         }
     }
 
@@ -70,6 +72,8 @@ struct PermissionBlockedView: View {
         case .heartRateUnavailable: "We can't read your heart rate"
         case .workoutNotAuthorized: "We can't record your session"
         case .watchUnreachable: "Your Watch didn't answer"
+        case .watchNotPaired: "No Watch is paired"
+        case .watchAppNotInstalled: "808 isn't on your Watch yet"
         }
     }
 
@@ -81,6 +85,10 @@ struct PermissionBlockedView: View {
             "808 records a mindful workout on your Watch. That's what keeps it measuring for the whole session, and without it we can't capture anything."
         case .watchUnreachable:
             "808 measures your session on your Apple Watch, and the Watch couldn't be launched just now."
+        case .watchNotPaired:
+            "808 measures your session on your Apple Watch. There's no Watch paired with this iPhone, so there's nothing to measure with yet."
+        case .watchAppNotInstalled:
+            "Your Watch is paired, but the 808 app hasn't been installed on it. That's where the measuring happens, so a session can't start without it."
         }
     }
 
@@ -100,6 +108,14 @@ struct PermissionBlockedView: View {
             ["Make sure your Watch is on your wrist and unlocked",
              "Check that 808 is installed on the Watch (iPhone Watch app → 808)",
              "Bring the Watch near your phone and try again"]
+        case .watchNotPaired:
+            ["Open the Watch app on your iPhone",
+             "Pair your Apple Watch",
+             "Come back and start a session"]
+        case .watchAppNotInstalled:
+            ["Open the Watch app on your iPhone",
+             "Scroll to 808 under Available Apps",
+             "Tap Install, then start a session"]
         }
     }
 }

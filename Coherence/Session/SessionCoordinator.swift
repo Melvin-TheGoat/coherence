@@ -88,6 +88,26 @@ final class SessionCoordinator: NSObject, ObservableObject {
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?,
                hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
         Task {
+            // Ask WatchConnectivity what it knows before asking HealthKit to
+            // launch anything. `startWatchApp` fails the same way whether no
+            // Watch is paired, the app was never installed on it, or it is
+            // simply out of range, and the one message we had covered all
+            // three by sending people to check permissions. These two cases
+            // are knowable up front, so name them.
+            if WCSession.isSupported() {
+                let wc = WCSession.default
+                if wc.activationState == .activated {
+                    if !wc.isPaired {
+                        await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
+                        return
+                    }
+                    if !wc.isWatchAppInstalled {
+                        await MainActor.run { self.sessionFailedToStart(.watchAppNotInstalled) }
+                        return
+                    }
+                }
+            }
+
             await requestWorkoutAuthorization()
 
             let params = SessionParams(
@@ -133,6 +153,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
                         // Play the chosen sound on the phone while the Watch measures.
                         self.startAudio(soundID: soundID, headphones: headphones,
                                         plannedDurationSec: plannedDurationSec)
+                        self.armStartWatchdog(for: params.sessionID)
                     } else {
                         // Previously silent — the user tapped Begin and nothing
                         // visibly happened. Now it's a first-class refusal.
@@ -174,12 +195,49 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
     }
 
+    /// How long to wait for the Watch to confirm it really started.
+    ///
+    /// Generous on purpose. It has to cold-launch the app, clear HealthKit, and
+    /// spin up a workout, and on a fresh install the user may be tapping an
+    /// Allow prompt on their wrist while this runs. Firing early costs a wrong
+    /// error message; firing late costs someone a whole meditation. Neither
+    /// costs data: the Watch keeps recording either way and `persist` is
+    /// idempotent, so a session that started slowly still lands.
+    private static let startAckTimeoutSec = 45.0
+
+    /// Cancelled the instant the Watch confirms it began. See armStartWatchdog.
+    private var startWatchdog: Task<Void, Never>?
+
+    /// `startWatchApp` reporting success means iOS accepted the launch request,
+    /// not that anything is measuring.
+    ///
+    /// The phone treated it as proof: it raised the mid-session screen and
+    /// started the track, so a launch that never actually reached the Watch
+    /// looked exactly like a running session, for as long as the user sat
+    /// there. The Watch announces a genuine start with `WCKeys.started` over
+    /// both channels, so the absence of that ack is the thing to watch for.
+    private func armStartWatchdog(for sessionID: UUID) {
+        startWatchdog?.cancel()
+        startWatchdog = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(Self.startAckTimeoutSec))
+            // A cancelled sleep throws and `try?` swallows it, which would run
+            // the failure path immediately on the ack we were waiting for.
+            guard !Task.isCancelled, let self else { return }
+            guard self.currentAttemptID == sessionID else { return }
+            self.log.error("no start ack from the Watch after \(Self.startAckTimeoutSec)s")
+            self.sessionFailedToStart(.watchUnreachable, sessionID: sessionID)
+        }
+    }
+
     /// The Watch reported its ACTUAL workout start. Re-anchor the mid-session
     /// clock and the audio-stop timer to it — `startWatchApp`'s callback fires
     /// seconds before the Watch really begins (params delivery + HealthKit
     /// check + workout spin-up), which made the phone's countdown reach 0:00
     /// while the Watch still had time left.
     private func watchStarted(sessionID: UUID, at startedAt: Date) {
+        // Cancel before the guard: this ack is the proof the watchdog waits
+        // for, and it counts even if `active` has already moved on.
+        if sessionID == currentAttemptID { startWatchdog?.cancel() }
         guard let current = active, current.id == sessionID else { return }
         active = ActiveSession(id: current.id,
                                startedAt: startedAt,
@@ -367,6 +425,10 @@ extension SessionCoordinator: WCSessionDelegate {
     @MainActor
     private func watchEnding(sessionID: UUID) {
         guard sessionID == currentAttemptID else { return }   // stale-safe
+        // A session that is ending obviously started. Unlike the other terminal
+        // paths this one keeps `currentAttemptID` (the payload is still coming),
+        // so the watchdog's own guard would not stop it firing mid-handover.
+        startWatchdog?.cancel()
         stopAudio(reason: "watch ending")
         active = nil
         receivingFromWatch = true
