@@ -36,7 +36,8 @@ to receive product emails.
 **Health and motion data.** During a session, your **Apple Watch** measures your
 **heart rate** (via Apple HealthKit) and **movement** (via the motion sensors).
 The Watch processes these into your **session results** — a heart-rate trend
-(averaged, not beat-to-beat), a stillness measure, and a summary score.
+(averaged, not beat-to-beat), a stillness measure, a breathing rate, and a
+summary score.
 Important details:
 
 - The app requests HealthKit permission only for **heart rate** and **workouts**,
