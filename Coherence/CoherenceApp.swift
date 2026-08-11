@@ -7,6 +7,7 @@ struct CoherenceApp: App {
     // local store when CloudKit can't provision.
     let modelContainer: ModelContainer
     @StateObject private var coordinator: SessionCoordinator
+    @StateObject private var store = Store()
 
     init() {
         // One-time rescue of pre-split health stats — the extract MUST run
@@ -26,6 +27,13 @@ struct CoherenceApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(coordinator)
+                .environmentObject(store)
+                // Products are fetched from Apple, so this is a network call
+                // and the paywall has to survive it not having finished. Until
+                // it does, `store.state` is .loading and the screen shows the
+                // beta copy, which is also the correct answer if it never
+                // finishes.
+                .task { await store.load() }
         }
         .modelContainer(modelContainer)
     }

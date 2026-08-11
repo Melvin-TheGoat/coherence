@@ -134,18 +134,40 @@ struct RatingScreen: View {
 /// wired to anything today; it must do real work before submission.
 struct PaywallScreen: View {
     @State private var started = false
+    @EnvironmentObject private var store: Store
     @Binding var plan: SubscriptionPlan
     let onStartTrial: () -> Void
     let onRestore: () -> Void
 
+    /// Can this build actually sell anything?
+    ///
+    /// Not a build flag, deliberately. Before the Paid Applications agreement
+    /// is signed there are no products to fetch, so the app can simply ask,
+    /// and the answer flips by itself the day billing is switched on. A flag
+    /// would need remembering, and the failure mode of forgetting is a beta
+    /// screen shipped to paying customers.
+    private var selling: Bool { store.state == .ready }
+
+    /// Apple's price string when there is a real product, ours otherwise.
+    /// A hardcoded dollar amount beside a live purchase button is wrong in
+    /// every country but one.
+    private var priceLine: String {
+        store.displayPrice(for: plan).map { "\($0) \(plan.cadence)" }
+            ?? "\(plan.price) \(plan.cadence)"
+    }
+
     var body: some View {
         OnboardingScreen(section: .win,
-                         title: "Seven days free.",
-                         subtitle: "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing.",
-                         ctaTitle: "Start my free week",
-                         ctaFootnote: "7 days free, then \(plan.price) \(plan.cadence). Cancel any time in Settings.",
+                         title: selling ? "Seven days free." : "Free while we're testing.",
+                         subtitle: selling
+                            ? "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing."
+                            : "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it.",
+                         ctaTitle: selling ? "Start my free week" : "Continue",
+                         ctaFootnote: selling
+                            ? "7 days free, then \(priceLine). Cancel any time in Settings."
+                            : "Nothing is charged. There is no payment set up on this build.",
                          skipTitle: "Restore purchase",
-                         onSkip: onRestore,
+                         onSkip: selling ? onRestore : nil,
                          onContinue: { started = true; onStartTrial() }) {
             VStack(spacing: 11) {
                 ForEach(SubscriptionPlan.allCases) { p in
@@ -167,7 +189,7 @@ struct PaywallScreen: View {
                             }
                             Spacer(minLength: 0)
                             VStack(alignment: .trailing, spacing: 1) {
-                                Text(p.price)
+                                Text(store.displayPrice(for: p) ?? p.price)
                                     .font(.system(size: 18, weight: .bold, design: .rounded))
                                     .foregroundStyle(AppColor.textPrimary)
                                 Text(p.cadence)
@@ -187,7 +209,8 @@ struct PaywallScreen: View {
                 .sensoryFeedback(.selection, trigger: plan)
                 .sensoryFeedback(.success, trigger: started)
 
-                Text("No charge today. We'll remind you before the trial ends.")
+                Text(selling ? "No charge today. We'll remind you before the trial ends."
+                            : "Planned pricing. Nothing here can be bought yet.")
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.top, 4)

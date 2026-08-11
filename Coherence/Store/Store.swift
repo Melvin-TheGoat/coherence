@@ -1,0 +1,161 @@
+import Foundation
+import StoreKit
+
+/// Everything 808 knows about being paid for.
+///
+/// StoreKit 2. One object owns product loading, purchase, restore, and the
+/// answer to "is this person entitled", so there is exactly one place that
+/// decides and exactly one place to look when it goes wrong.
+///
+/// **Read this before wiring anything to a screen.** The environment decides
+/// whether money moves, not this code:
+///
+/// - Running from Xcode with a `.storekit` configuration selected: purchases
+///   are local and fake. Nothing reaches Apple. This is how to develop.
+/// - **TestFlight: purchases run against Apple's SANDBOX and no tester is ever
+///   charged.** They are still real transactions though: entitlements are
+///   granted, and subscriptions renew on an accelerated clock where a month
+///   passes in minutes. "Nothing happens" is wrong; "no money moves" is right.
+/// - App Store: identical code, real money.
+///
+/// Until the Paid Applications agreement is signed (which needs the entity's
+/// bank and tax details) no products can exist in App Store Connect, so
+/// `state` will settle on `.unavailable` everywhere. That is a supported
+/// state, not a failure: the paywall shows honest beta copy instead of
+/// pretending to sell something. See `PaywallScreen`.
+@MainActor
+final class Store: ObservableObject {
+
+    /// Product identifiers, in one place because they are permanent.
+    ///
+    /// A product ID, once created in App Store Connect, can never be reused or
+    /// renamed, the same way a bundle ID cannot. Do not create these under a
+    /// personal developer account to "try it out": create them once, under the
+    /// account that will actually sell the app.
+    enum ProductID {
+        static let monthly  = "com.lockout.coherence.monthly"
+        static let yearly   = "com.lockout.coherence.yearly"
+        static let lifetime = "com.lockout.coherence.lifetime"
+
+        static let all = [monthly, yearly, lifetime]
+
+        static func of(_ plan: SubscriptionPlan) -> String {
+            switch plan {
+            case .monthly:  return monthly
+            case .yearly:   return yearly
+            case .lifetime: return lifetime
+            }
+        }
+    }
+
+    enum State: Equatable {
+        case loading
+        /// Products came back. The paywall can sell.
+        case ready
+        /// No products exist for this build, so there is nothing to sell.
+        /// Expected before the Paid Apps agreement is signed, and also when
+        /// the device is offline at the wrong moment.
+        case unavailable
+    }
+
+    @Published private(set) var state: State = .loading
+    @Published private(set) var products: [Product] = []
+    /// Does this person have an active subscription or the lifetime unlock?
+    @Published private(set) var entitled = false
+
+    private var updates: Task<Void, Never>?
+
+    init() {
+        // Start listening BEFORE loading products. A purchase approved out of
+        // band, by Ask to Buy or an interrupted transaction finishing later,
+        // arrives on this stream and nowhere else. Miss it and someone pays
+        // and stays locked out.
+        updates = Task { [weak self] in
+            for await result in Transaction.updates {
+                guard let self else { return }
+                if case .verified(let transaction) = result {
+                    await transaction.finish()
+                    await self.refreshEntitlement()
+                }
+            }
+        }
+    }
+
+    deinit { updates?.cancel() }
+
+    func load() async {
+        do {
+            let found = try await Product.products(for: ProductID.all)
+            products = found.sorted { $0.price < $1.price }
+            state = found.isEmpty ? .unavailable : .ready
+        } catch {
+            state = .unavailable
+        }
+        await refreshEntitlement()
+    }
+
+    func product(for plan: SubscriptionPlan) -> Product? {
+        products.first { $0.id == ProductID.of(plan) }
+    }
+
+    /// The price as the App Store would display it, in the user's own currency,
+    /// or nil when there is no product to ask.
+    ///
+    /// Never hardcode a price next to a real purchase button. `SubscriptionPlan`
+    /// carries dollar strings for the pre-billing beta and for design work; the
+    /// moment a tap can charge someone, the number beside it has to be Apple's,
+    /// or it will be wrong in every country but one.
+    func displayPrice(for plan: SubscriptionPlan) -> String? {
+        product(for: plan)?.displayPrice
+    }
+
+    enum PurchaseOutcome { case bought, cancelled, pending, unavailable }
+
+    @discardableResult
+    func purchase(_ plan: SubscriptionPlan) async -> PurchaseOutcome {
+        guard let product = product(for: plan) else { return .unavailable }
+        do {
+            switch try await product.purchase() {
+            case .success(let verification):
+                if case .verified(let transaction) = verification {
+                    await transaction.finish()
+                    await refreshEntitlement()
+                    return .bought
+                }
+                // Failed verification is not a purchase. Apple checks the
+                // signature for us; distrusting it here is the whole point.
+                return .unavailable
+            case .userCancelled:
+                return .cancelled
+            case .pending:
+                // Ask to Buy, or a payment method needing action. The
+                // Transaction.updates stream above delivers the result later.
+                return .pending
+            @unknown default:
+                return .unavailable
+            }
+        } catch {
+            return .unavailable
+        }
+    }
+
+    /// Apple requires a restore path on any screen selling a subscription
+    /// (guideline 3.1.1), and it is the only honest way through for someone
+    /// who already paid and is reinstalling.
+    func restore() async {
+        try? await AppStore.sync()
+        await refreshEntitlement()
+    }
+
+    private func refreshEntitlement() async {
+        var active = false
+        for await result in Transaction.currentEntitlements {
+            guard case .verified(let transaction) = result else { continue }
+            guard ProductID.all.contains(transaction.productID) else { continue }
+            if transaction.revocationDate != nil { continue }
+            if let expiry = transaction.expirationDate, expiry < Date() { continue }
+            active = true
+        }
+        entitled = active
+    }
+}
