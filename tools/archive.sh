@@ -41,8 +41,12 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 BUILD="$(date -u +%Y%m%d%H%M)"
-ARCHIVE="build/808-${BUILD}.xcarchive"
+# Archive into Xcode's own folder, not into build/. Organizer only lists what
+# lives here, and an archive it cannot see is an archive you cannot upload
+# through the GUI, which is how the first one nearly got missed.
+ARCHIVE="$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/808-${BUILD}.xcarchive"
 EXPORT="build/808-${BUILD}"
+mkdir -p "$(dirname "$ARCHIVE")"
 
 # The team is per-developer and lives in an uncommitted project.yml, so read it
 # from the project rather than hardcoding anyone's here.
