@@ -54,5 +54,12 @@
 		<string>remote-notification</string>
 		<string>audio</string>
 	</array>
+	<!-- Export compliance, answered once here instead of on every upload.
+	     US export rules make App Store Connect ask whether the app uses
+	     encryption. 808 uses only HTTPS through the system frameworks, which is
+	     exempt, and ships no cryptography of its own. Revisit if that ever
+	     stops being true. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
