@@ -1,31 +1,30 @@
 # Our Purpose
 
+Beneath every goal you're chasing sits a subconscious identity: the quiet set of beliefs about
+who you are and what you're capable of. When that identity and your goals disagree, you feel it
+as friction. Procrastination. Self-doubt. The sense of pushing against yourself.
 
-
-
-Beneath every goal you're chasing sits a subconscious identity — the quiet set of beliefs
-about who you are and what you're capable of. When that identity and your goals disagree, you
-feel it as friction: procrastination, self-doubt, the sense of pushing against yourself.
-
-We built 808 around a simple conviction: meditation isn't just an escape from that
-friction — it's the tool to dissolve it. A daily practice for rewriting the identity
-underneath, so that who you are and who you're becoming finally point in the same direction.
+We built 808 around a simple conviction. Meditation is not just an escape from that friction.
+It is the tool for dissolving it, a daily practice for rewriting the identity underneath, so
+that who you are and who you're becoming finally point the same way.
 
 But there's a problem with meditation, and it's why most people quit.
 
-**Most people meditate blind.** They close their eyes, follow their breath, and afterward
-wonder the same thing every time: *Was I doing that right? Is this even working?* With no way
-to see what's happening inside, the practice becomes an act of faith — and faith is easy to
-lose.
+**Most people meditate blind.** They close their eyes, follow their breath, and afterward wonder
+the same thing every time. Was I doing that right? Is this even working? With no way to see
+what's happening inside, the practice becomes an act of faith, and faith is easy to lose.
 
-So we made the invisible visible. While you meditate, your Apple Watch quietly measures how
-your body responds — how still you become, how your heart rate eases, and, when you breathe
-with the Watch resting on your belly, the rhythm of your breath. Afterward, 808 shows you the
-evidence of how deeply you settled — and tracks it session after session. You can *watch
-yourself improve*: not a vague feeling, but evidence, plotted over weeks and months.
+So we made the invisible visible. While you meditate, your Apple Watch measures how your body
+responds: how still you become, how your heart rate settles, and if you're breathing slowly,
+the rhythm of your breath. Nothing is shown while you sit. When you open your eyes, 808 shows
+you what your body did, and keeps it, session after session. You can watch yourself improve
+over weeks and months, on evidence rather than on how you happen to feel that day.
 
-808 is where the two meet: **a practice that reshapes who you are, backed by hard evidence
-that it's real.**
+It works with our guided track, with our sound library, or with nothing at all. Start a session
+and play a meditation from any other app you like. The Watch keeps measuring either way.
 
-That's why we made this. Not to give you one more thing to be good at — but to hand you proof
-that you're changing, from the inside out.
+808 is where the two meet: **a practice that reshapes who you are, and hard evidence that it's
+happening.**
+
+That's why we made this. Not to give you one more thing to be good at, but to hand you proof
+that you're changing.

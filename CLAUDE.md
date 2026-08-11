@@ -972,8 +972,21 @@ UI must coach it, and the 2-signal degrade path must stay.
     reflection screens then dropped — which is the documented "decorative
     questions" failure. Cheap fix: home screen and verdict reference what they
     said they were chasing.
-  - **`PURPOSE.md` and `SCIENCE.md` still describe the pre-MVP feature set**, as
-    does the website copy. Blocking TestFlight.
+  - **`PURPOSE.md` and `SCIENCE.md` rewritten for the MVP (2026-08-11).** Both
+    are bundled and rendered inside onboarding, so they were telling first-time
+    testers to lie back with the Watch on their belly. Now: wrist breathing with
+    no posture, an explicit statement of what it reads well (slow deliberate
+    breathing) and what it often can't (quiet natural breathing, where it says
+    so instead of guessing), the bring-your-own-audio promise, a closing note
+    that none of the cited research is about 808, and the wellness disclaimer.
+    Hughes 2020 dropped: it justified supine belly placement only. 18 em dashes
+    swept. **The website copy is still pre-MVP** and still blocks external
+    TestFlight.
+  - **Do not add a "the theta literature disagrees on direction" caveat to
+    `SCIENCE.md`.** A draft carried one; Aziz cut it 2026-08-11. We have no
+    verified citation for the depth-graded study, and an uncited claim is the
+    one thing that page cannot carry. The reason 808 refuses to SCORE theta is
+    recorded above and does not need arguing in front of the user.
   - Paired-device test of the **Watch app install** is done; a **timed** belly
     session no longer exists, so that old test is moot.
   - Business: **Delaware C-corp** question from the lawyer (he advised a DE
