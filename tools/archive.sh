@@ -1,33 +1,40 @@
 #!/bin/bash
-# Builds a TestFlight-ready archive of 808.
-#
-# Two things differ from a normal Xcode build, and both of them are silent
-# failures if you forget:
-#
-#   Build number. App Store Connect rejects a build whose number it has seen
-#   before, and project.yml hardcodes 1. This stamps a UTC timestamp instead,
-#   which is monotonic by construction and needs no state to be kept anywhere.
-#
-#   Push environment. The committed entitlements say aps-environment
-#   development, which is right for the builds you install over a cable and
-#   wrong for a distribution build. Rather than keep a second entitlements file
-#   that drifts out of sync with the first, this derives one at build time.
-#   CloudKit is the only thing 808 uses push for.
-#
-# Both are passed as build-setting overrides, so nothing tracked is edited and
-# nothing local is committed. project.yml carries per-developer signing under
-# skip-worktree; leave it that way.
+# Builds a TestFlight-ready .ipa of 808.
 #
 #   ./tools/archive.sh
 #
-# Then open Xcode → Window → Organizer, pick the archive, Distribute App →
-# App Store Connect. Uploading is left to Xcode on purpose: it holds the
-# credentials and it is the part worth having a human watch the first time.
+# Then upload it: Xcode → Window → Organizer → Distribute App, or drag the
+# .ipa into Transporter. Uploading is left to a human on purpose, because it
+# is the step that needs the App Store Connect record to exist and is worth
+# watching the first time.
 #
-# NOTE the ONE thing this cannot check for you: CloudKit in TestFlight talks to
-# the PRODUCTION container, and the schema only exists in Development until you
-# promote it in the CloudKit Dashboard. Sync will silently do nothing until you
-# do. Deploy the schema before you wonder why nothing roams.
+# WHAT THIS ADDS over Product → Archive in Xcode:
+#
+#   Build number. App Store Connect rejects a build number it has seen before,
+#   and project.yml hardcodes 1, so the second upload would bounce. This stamps
+#   a UTC timestamp: monotonic by construction, no state to keep anywhere.
+#
+#   The export. Archiving alone leaves you a development-signed archive; the
+#   distribution signature is applied on export, which is also where
+#   aps-environment becomes production and get-task-allow becomes false. Doing
+#   both here means the thing you upload is the thing this script tested.
+#
+# WHAT IT DELIBERATELY DOES NOT DO, learned by trying it:
+#
+#   An earlier version overrode CODE_SIGN_ENTITLEMENTS to force
+#   aps-environment=production, on the theory that the committed entitlements
+#   say development. Two things were wrong with that. A setting passed on the
+#   xcodebuild command line applies to EVERY target, so it forced the iPhone's
+#   entitlements onto the Watch and the build died on a Watch profile that
+#   quite rightly has no push, no iCloud and no Sign in with Apple. And it was
+#   unnecessary anyway: export rewrites aps-environment to production by
+#   itself. Verified on a real export, 2026-08-11.
+#
+# NOTE the one thing this cannot check for you: TestFlight talks to the
+# PRODUCTION CloudKit container (the exported build asks for exactly that, in
+# com.apple.developer.icloud-container-environment). Your schema only exists in
+# Development until you promote it in the CloudKit Dashboard, and until you do,
+# sync will silently do nothing.
 
 set -euo pipefail
 
@@ -35,14 +42,18 @@ cd "$(dirname "$0")/.."
 
 BUILD="$(date -u +%Y%m%d%H%M)"
 ARCHIVE="build/808-${BUILD}.xcarchive"
-ENTITLEMENTS="$(mktemp -d)/Coherence-release.entitlements"
+EXPORT="build/808-${BUILD}"
 
-cp Coherence/Coherence.entitlements "$ENTITLEMENTS"
-/usr/libexec/PlistBuddy -c "Set :aps-environment production" "$ENTITLEMENTS"
+# The team is per-developer and lives in an uncommitted project.yml, so read it
+# from the project rather than hardcoding anyone's here.
+TEAM="$(xcodebuild -scheme Coherence -showBuildSettings 2>/dev/null \
+        | awk -F' = ' '/ DEVELOPMENT_TEAM = /{print $2; exit}' | tr -d ' ')"
+if [ -z "$TEAM" ]; then
+  echo "No DEVELOPMENT_TEAM in the project. Set it in project.yml and re-run."
+  exit 1
+fi
 
-echo "Archiving 808, build ${BUILD}"
-echo "  entitlements: aps-environment = production"
-echo
+echo "Archiving 808, build ${BUILD}, team ${TEAM}"
 
 xcodebuild archive \
   -scheme Coherence \
@@ -50,16 +61,66 @@ xcodebuild archive \
   -destination 'generic/platform=iOS' \
   -archivePath "$ARCHIVE" \
   CURRENT_PROJECT_VERSION="$BUILD" \
-  CODE_SIGN_ENTITLEMENTS="$ENTITLEMENTS" \
-  | grep -E 'error:|warning: .*(sign|entitle)|ARCHIVE SUCCEEDED|ARCHIVE FAILED' || true
+  | grep -E 'error:|ARCHIVE SUCCEEDED|ARCHIVE FAILED' || true
 
-if [ -d "$ARCHIVE" ]; then
+[ -d "$ARCHIVE" ] || { echo "No archive produced. See the errors above."; exit 1; }
+
+OPTIONS="$(mktemp -d)/ExportOptions.plist"
+cat > "$OPTIONS" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>teamID</key><string>${TEAM}</string>
+  <key>signingStyle</key><string>automatic</string>
+  <key>uploadSymbols</key><true/>
+  <key>destination</key><string>export</string>
+</dict>
+</plist>
+PLIST
+
+echo "Exporting for App Store Connect"
+xcodebuild -exportArchive \
+  -archivePath "$ARCHIVE" \
+  -exportPath "$EXPORT" \
+  -exportOptionsPlist "$OPTIONS" \
+  -allowProvisioningUpdates \
+  | grep -E 'error:|EXPORT SUCCEEDED|EXPORT FAILED' || true
+
+IPA="$(find "$EXPORT" -name '*.ipa' -maxdepth 1 2>/dev/null | head -1)"
+[ -n "$IPA" ] || { echo "No .ipa produced. See the errors above."; exit 1; }
+
+echo
+echo "Build ${BUILD}, version $(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$ARCHIVE/Info.plist" 2>/dev/null || echo '?')"
+echo "  ${IPA}"
+
+# Look inside the thing before uploading it. A development signature is the
+# one failure that gets all the way to App Store Connect before anyone
+# notices, and it costs a round trip through processing to find out.
+UNPACKED="$(mktemp -d)"
+if unzip -q "$IPA" -d "$UNPACKED" 2>/dev/null; then
+  APP="$(find "$UNPACKED/Payload" -maxdepth 1 -name '*.app' | head -1)"
+  ENTS="$(codesign -d --entitlements :- "$APP" 2>/dev/null | plutil -p - 2>/dev/null || true)"
   echo
-  echo "Archive at ${ARCHIVE}"
-  echo "Marketing version $(/usr/libexec/PlistBuddy -c 'Print :ApplicationProperties:CFBundleShortVersionString' "$ARCHIVE/Info.plist" 2>/dev/null || echo '?'), build ${BUILD}"
-  echo "Open Organizer to upload:  open -a Xcode; xed ."
-else
-  echo "No archive produced. The signing errors above are the place to look:"
-  echo "distribution needs an App Store profile, not the development one."
-  exit 1
+  for check in "get-task-allow.*(false|0):distribution signature" \
+               "aps-environment.*production:push set to production" \
+               "icloud-container-environment.*Production:CloudKit pointed at production"; do
+    pattern="${check%%:*}"; label="${check##*:}"
+    if echo "$ENTS" | grep -qE "$pattern"; then
+      echo "  ok    ${label}"
+    else
+      echo "  WRONG ${label}"
+    fi
+  done
+  if [ -d "$APP/Watch" ]; then
+    echo "  ok    Watch app embedded ($(basename "$APP/Watch"/*.app))"
+  else
+    echo "  WRONG no Watch app embedded, so testers get no measuring"
+  fi
+  rm -rf "$UNPACKED"
 fi
+
+echo
+echo "Upload: Xcode → Window → Organizer → Distribute App, or drop the .ipa"
+echo "into Transporter. Both want the App Store Connect record to exist first."
