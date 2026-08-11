@@ -975,13 +975,24 @@ UI must coach it, and the 2-signal degrade path must stay.
   - **`PURPOSE.md` and `SCIENCE.md` rewritten for the MVP (2026-08-11).** Both
     are bundled and rendered inside onboarding, so they were telling first-time
     testers to lie back with the Watch on their belly. Now: wrist breathing with
-    no posture, an explicit statement of what it reads well (slow deliberate
-    breathing) and what it often can't (quiet natural breathing, where it says
-    so instead of guessing), the bring-your-own-audio promise, a closing note
-    that none of the cited research is about 808, and the wellness disclaimer.
-    Hughes 2020 dropped: it justified supine belly placement only. 18 em dashes
-    swept. **The website copy is still pre-MVP** and still blocks external
-    TestFlight.
+    no posture, a positive statement that slow breathing (4–7/min) is what it
+    reads best, the bring-your-own-audio promise, a closing note that none of
+    the cited research is about 808, and the wellness disclaimer. Hughes 2020
+    dropped: it justified supine belly placement only. 18 em dashes swept.
+  - **Do NOT state the breathing failure mode in user-facing copy** (that quiet
+    natural breathing often can't be separated from postural sway, and the app
+    then says nothing). A draft of `SCIENCE.md` carried it and a line was
+    proposed for the website's breathing chart; Aziz cut both, 2026-08-11. The
+    engineering constraint is real and documented above — this is a decision
+    about what the product SAYS, not about what it does. Copy states what it
+    reads best; it must still never claim breathing always works.
+  - **The website was NOT stale after all.** Checked 2026-08-11: `index.html`
+    contains no belly or camera copy, the sound-library counts match the app
+    (4 nature / 3 brainwave / 4 pure tones / silence), the guided track's 25
+    minutes is right, and the privacy claim matches `PRIVACY_POLICY.md`. An
+    earlier note here claimed otherwise; it was wrong. Melvin's how-to guide
+    and persona-branched onboarding are deliberately NOT on the pre-launch
+    landing page (Aziz: the argument is tight, features dilute it).
   - **Do not add a "the theta literature disagrees on direction" caveat to
     `SCIENCE.md`.** A draft carried one; Aziz cut it 2026-08-11. We have no
     verified citation for the depth-graded study, and an uncited claim is the

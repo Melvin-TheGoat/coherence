@@ -30,12 +30,9 @@ validated for this in the research literature.<sup>[4]</sup>
 There is no posture to hold and no placement to get right. Sit or lie however you like, hands
 wherever they fall.
 
-**What it reads well, and what it doesn't.** Slow deliberate breathing, roughly four to seven
-breaths a minute, comes back clearly and accurately. Quiet automatic breathing is much smaller,
-and it often can't be separated from the ordinary sway of a body sitting upright. When that
-happens 808 tells you it couldn't read your breath, and it leaves that part of your score out
-rather than guessing at a number. So the breath section is the reward for actually breathing
-slowly, not a meter that works on everyone all the time.
+Slow breathing is what it reads best. Around four to seven breaths a minute, the movement is
+large enough and regular enough to come back clearly, which is also the pace worth practising
+for its own sake. See below.
 
 ## Why about six breaths a minute
 

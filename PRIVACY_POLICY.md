@@ -11,7 +11,7 @@ handles information in the **808** app for iPhone and Apple Watch.
 
 - **We don't run a server and we can't see your data.** Your account,
   preferences, and session log sync through **your own private iCloud account**
-  (Apple's CloudKit). Your **health results** (heart-rate trend and stillness)
+  (Apple's CloudKit). Your **health results** (heart-rate trend, stillness and breathing rate)
   are stored **only on the device that recorded them** — the app never uploads
   them anywhere, not even to iCloud. We have no backend that receives or stores
   your personal or health information.
@@ -67,7 +67,7 @@ analytics or tracking SDKs, and no cross-app or cross-website tracking.
 Your information lives in two places, by design:
 
 - **Health results stay on your device.** Your session measurements — the
-  heart-rate trend and stillness results — are stored **only in the app's local
+  heart-rate trend, stillness and breathing-rate results — are stored **only in the app's local
   storage on the device that recorded them**. The app never syncs them to iCloud
   or anywhere else.
 - **Account and session log sync privately.** Your account info, preferences,
