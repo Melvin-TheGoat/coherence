@@ -1192,7 +1192,13 @@ let the waitlist copy handle it. Also noted: Accessibility Nutrition
 Labels exist in App Store Connect and are OPTIONAL — declare only features
 actually verified (VoiceOver etc.), never aspirationally; and "808" as a name
 is fine for App Review but Roland's TR-808 mark is worth one question to the
-lawyer already reviewing the four documents. Other items owed at submission: App Privacy labels
+lawyer already reviewing the four documents. Other items owed at submission: **the legal-entity swap** — the policy, ToS
+and website footer all name LockOut LLC, which is correct TODAY (the LLC
+exists and operates 808; the DE corp is pending and cannot be named until it
+exists). Swap every entity mention to the corporation's exact legal name in
+one pass the day the Organization account goes live, and ask the attorney
+about the LLC→corp assignment of the app and user data (ToS assignment
+clause + the policy's material-change notice). Also: App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
 paywall absent — "Free while we're testing" copy must never reach an App
