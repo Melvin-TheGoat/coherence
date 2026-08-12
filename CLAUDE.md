@@ -1153,6 +1153,17 @@ Audited against the current App Store Review Guidelines. Fixed:
   everything. Fix CloudKit before external TestFlight or soften the promise;
   internal testers are told sync doesn't work in the What to Test notes.
 
+- **Ninth pass: the support URL's anchor didn't exist.** The App Store
+  support URL is `meditate808.com/#support` and nothing on the page carried
+  that id, so it silently landed on the top of the page instead of the
+  contact address. The footer (which holds `support@meditate808.com`) now has
+  `id="support"`. And on an iPad running the app in compatibility mode, where
+  `WCSession.isSupported()` is false, Begin used to skip the preflight and
+  end in "Your Watch didn't answer" with advice to bring the Watch closer;
+  it now shows the honest "No Watch is paired" screen. Also audited clean:
+  the ToS makes no product-behavior claims that could contradict the paywall
+  (its "trial" is the jury kind), and every user-facing Watch string.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the

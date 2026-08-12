@@ -94,17 +94,25 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // simply out of range, and the one message we had covered all
             // three by sending people to check permissions. These two cases
             // are knowable up front, so name them.
-            if WCSession.isSupported() {
-                let wc = WCSession.default
-                if wc.activationState == .activated {
-                    if !wc.isPaired {
-                        await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
-                        return
-                    }
-                    if !wc.isWatchAppInstalled {
-                        await MainActor.run { self.sessionFailedToStart(.watchAppNotInstalled) }
-                        return
-                    }
+            guard WCSession.isSupported() else {
+                // No WatchConnectivity on this device at all — an iPad running
+                // the iPhone app in compatibility mode, which is a real way
+                // reviewers test. Falling through used to reach startWatchApp,
+                // fail, and show "Your Watch didn't answer" with advice to
+                // bring the Watch closer, on hardware that can never pair one.
+                // "No Watch is paired" is the honest screen we have.
+                await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
+                return
+            }
+            let wc = WCSession.default
+            if wc.activationState == .activated {
+                if !wc.isPaired {
+                    await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
+                    return
+                }
+                if !wc.isWatchAppInstalled {
+                    await MainActor.run { self.sessionFailedToStart(.watchAppNotInstalled) }
+                    return
                 }
             }
 
