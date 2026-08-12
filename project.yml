@@ -44,6 +44,12 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808
         INFOPLIST_FILE: Coherence/Info.plist
         CODE_SIGN_ENTITLEMENTS: Coherence/Coherence.entitlements
+        # iPhone only. 808 is an iPhone and Apple Watch product: there is no
+        # iPad layout, nobody has tested one, and claiming iPad support made
+        # App Store Connect reject the upload (90474), because an iPad app
+        # must offer all four orientations for multitasking and this one is
+        # portrait. Anchored to the iOS target only; watchOS is family 4.
+        TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_VERSION: "5.10"
 
