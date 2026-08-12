@@ -759,9 +759,15 @@ private struct PulseTrace: Shape {
 
 // MARK: - 7b · No Watch → waitlist
 
+/// The email is an OFFER, never a toll. An earlier version had no way past
+/// this screen except typing a valid address (or backing up and claiming to
+/// own a Watch), which is the same 5.1.1 data-minimization violation the name
+/// screen had: personal information required to proceed. The decline action
+/// names what it declines, per the scaffold's own rule.
 struct WaitlistScreen: View {
     @Binding var email: String
-    let onSubmit: () -> Void
+    let onJoin: () -> Void
+    let onDecline: () -> Void
 
     var body: some View {
         OnboardingScreen(section: .body,
@@ -769,7 +775,9 @@ struct WaitlistScreen: View {
                          subtitle: "We're not going to take your money for an app that can't do its one job. Leave your email and we'll write when there's a version that doesn't need a Watch.",
                          ctaTitle: "Join the waitlist",
                          ctaEnabled: email.contains("@") && email.contains("."),
-                         onContinue: onSubmit) {
+                         skipTitle: "Continue without joining",
+                         onSkip: onDecline,
+                         onContinue: onJoin) {
             TextField("you@example.com", text: $email)
                 .textContentType(.emailAddress)
                 .keyboardType(.emailAddress)

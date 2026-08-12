@@ -18,7 +18,6 @@ struct OnboardingView: View {
     @State private var plan: SubscriptionPlan = .yearly
     @State private var waitlistEmail = ""
     @State private var planRating: Int?
-    @State private var didJoinWaitlist = false
     /// True once they tapped Start-my-free-week or Restore on the paywall.
     /// Gates the sign-in screen's "Not now": paid users must make the account
     /// that keeps their evidence safe.
@@ -187,15 +186,11 @@ struct OnboardingView: View {
                             onNo: { go(.waitlist) })
 
         case .waitlist:
-            // No "Skip" here any more: it sat under the CTA reading like it
-            // skipped the waitlist when it actually went back to the gate. The
-            // chevron does that now, and says so.
-            WaitlistScreen(email: $waitlistEmail) {
-                didJoinWaitlist = true
-                // They can still look around; we just never sell them
-                // something that can't work for them yet.
-                go(.anchor)
-            }
+            // Joining is optional either way: declining clears the email so
+            // nothing half-typed gets stored at finish.
+            WaitlistScreen(email: $waitlistEmail,
+                           onJoin: { go(.anchor) },
+                           onDecline: { waitlistEmail = ""; go(.anchor) })
 
         case .anchor:
             AnchorScreen(anchor: $answers.anchor,
@@ -266,7 +261,10 @@ struct OnboardingView: View {
 
         case .health:
             HealthConsentScreen {
-                go(Self.paywallInsideOnboarding && !didJoinWaitlist ? .paywall : .signIn)
+                // No-Watch users never see the paywall, whether or not they
+                // joined the waitlist: we don't sell a subscription to someone
+                // the app cannot yet work for.
+                go(Self.paywallInsideOnboarding && answers.hasWatch != false ? .paywall : .signIn)
             }
 
         case .paywall:
@@ -349,6 +347,16 @@ struct OnboardingView: View {
         let user = SessionStore.currentUser(in: context)
         if let typedName, (user.displayName ?? "").isEmpty {
             user.displayName = typedName
+        }
+        // The no-Watch waitlist. Until now the typed email was bound into a
+        // @State and then dropped on the floor, which made the screen's
+        // promise unkeepable. It lands on the local user row, where the
+        // marketing export (stubbed, Phase 7) will read from, and it flips
+        // the same product-emails opt-in Settings can undo.
+        let joined = waitlistEmail.contains("@") && waitlistEmail.contains(".")
+        if joined {
+            if (user.email ?? "").isEmpty { user.email = waitlistEmail }
+            user.marketingOptIn = true
         }
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
             prefs.onboardingComplete = true

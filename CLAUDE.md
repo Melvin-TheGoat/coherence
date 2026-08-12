@@ -1057,6 +1057,16 @@ Audited against the current App Store Review Guidelines. Fixed:
   to create an account for a purchase that never happened (5.1.1(v) exposure).
   `PaywallScreen`'s single exit `onDone(purchased:)` reports what StoreKit
   confirmed; beta users can now skip sign-in.
+- **The no-Watch waitlist no longer holds onboarding hostage for an email**
+  (second pass, same day). ctaEnabled demanded a valid address; the only other
+  way forward was backing up and claiming to own a Watch. Same 5.1.1 pattern
+  as the name screen. "Continue without joining" added; declining clears the
+  field. Two more finds while in there: the typed email was NEVER PERSISTED
+  (bound to a @State and dropped — it now lands on the local user row +
+  `marketingOptIn`, where the stubbed Phase-7 export will read), and the
+  paywall gate keyed on `didJoinWaitlist` where it meant "has no Watch" — now
+  keyed on `answers.hasWatch`, so no-Watch users never see the paywall whether
+  or not they joined.
 - **Watch `NSMotionUsageDescription` rewritten** — still described belly
   breathing (cut). Same class as the removed camera string: a permission
   prompt describing a feature that doesn't exist. Committed via the index

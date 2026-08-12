@@ -104,7 +104,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         handledSessionIDs.insert(p.sessionID)
         params = p
         elapsed = 0
-        statusMessage = "Params received — starting…"   // TEMP: prove params arrived
+        statusMessage = "Starting…"
 
         // Make sure authorization has actually been requested before anything
         // reads HealthKit — on a cold launch from `startWatchApp` this used to
@@ -220,7 +220,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
                   self.workout.hrSampleCount == 0 else { return }
 
             self.log.error("no heart rate after \(Self.hrWatchdogSec)s — aborting session")
-            self.statusMessage = "No heart rate — check 808 in the iPhone Health app."
+            self.statusMessage = "No heart rate. Check 808 in the iPhone Health app."
             _ = await self.workout.finish()      // stop the workout, discard the result
             self.timer?.cancel(); self.timer = nil
             self.phase = .idle
