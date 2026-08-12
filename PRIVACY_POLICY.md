@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: August 5, 2026**
+**Last updated: August 11, 2026**
 
 This Privacy Policy explains how **LockOut LLC ("we," "us," "808")**
 handles information in the **808** app for iPhone and Apple Watch.
@@ -47,6 +47,10 @@ Important details:
   **no** biometric data directly.
 - **Measurement runs only during a session you start**, and stops when the session
   ends. It does not run in the background at other times.
+- **Saving a session card is the only time we touch Photos.** If you tap Share on
+  a result, 808 can save that card as an image to your photo library. It uses
+  **add-only** access, which means it can add that one image and cannot see,
+  read, or browse anything already there.
 
 **Sessions run in the background.** So that you can listen to whatever you like
 while you practice, a session keeps measuring on your Apple Watch after you leave

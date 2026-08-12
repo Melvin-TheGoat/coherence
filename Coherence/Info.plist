@@ -40,8 +40,13 @@
 	<string>808 uses heart data recorded on your Apple Watch to measure how your body settled after a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>808 records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
-	<key>NSCameraUsageDescription</key>
-	<string>808 reads your pulse from your fingertip using the camera and flash, before and after a session. Frames are processed on your device and never stored or uploaded.</string>
+	<!-- NSCameraUsageDescription removed 2026-08-11. It described the
+	     fingertip-PPG coherence check, which was cut in the MVP; no camera code
+	     remains anywhere in the app. Declaring a permission for a feature that
+	     does not exist makes a false statement to the user, forces a camera
+	     answer in the App Privacy labels, and contradicts the privacy policy's
+	     "we do not collect camera data". If the camera path ever returns (it
+	     lives on the full-feature-set branch), put the string back with it. -->
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>808 saves your share card to your photo library so you can post it to your Instagram story.</string>
 	<key>LSApplicationQueriesSchemes</key>
