@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AuthenticationServices
 
 /// Gates the app on onboarding: until a User has completed onboarding (real
 /// sign-in, or the dev skip), show `OnboardingView`; otherwise the app. Also
@@ -17,6 +18,23 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(colorScheme)
+        .task {
+            // A Sign in with Apple credential can be revoked from iOS Settings
+            // at any moment, and Apple's SIWA rules require apps to verify the
+            // credential at launch and treat a revoked one as signed out.
+            // Without this, someone who cut 808 off in Settings would stay
+            // signed in here forever on a dead identity. Only an explicit
+            // .revoked signs out: .notFound fires transiently on simulators
+            // and fresh installs, and signing out on it would be a trap.
+            let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
+            guard let signedIn = users.first(where: { $0.appleUserID != "" && $0.deletedAt == nil })
+            else { return }
+            let state = try? await ASAuthorizationAppleIDProvider()
+                .credentialState(forUserID: signedIn.appleUserID)
+            if state == .revoked {
+                SessionStore.signOut(in: context)
+            }
+        }
         #if DEBUG
         // Headless previews (simulator automation): jump straight past onboarding.
         .onAppear {

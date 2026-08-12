@@ -154,7 +154,11 @@ private struct SettingsForm: View {
                     Text(user.displayName?.isEmpty == false ? user.displayName! : "Add your name")
                         .font(AppFont.callout.weight(.semibold))
                         .foregroundStyle(AppColor.textPrimary)
-                    Text(user.email?.isEmpty == false ? user.email! : "Signed in with Apple")
+                    // The bootstrap user (skipped sign-in) is not "Signed in
+                    // with Apple", and a reviewer who skipped sign-in reads
+                    // this line thirty seconds later. Say what is true.
+                    Text(user.email?.isEmpty == false ? user.email!
+                         : (user.appleUserID.isEmpty ? "Not signed in" : "Signed in with Apple"))
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                 }

@@ -1102,6 +1102,19 @@ Audited against the current App Store Review Guidelines. Fixed:
   if we ever add analytics or a backend, manifest and labels change together.
   `tools/archive.sh` now checks the manifest is in the ipa.
 
+- **SIWA credential revocation handled (fifth pass).** Apple's Sign in with
+  Apple rules require verifying the credential at launch; nothing did, so a
+  user who revoked 808 in iOS Settings stayed signed in forever. RootView now
+  checks at launch and signs out on an explicit `.revoked` only — `.notFound`
+  fires transiently on simulators and fresh installs and must never sign
+  anyone out. Also fixed: Settings showed "Signed in with Apple" for the
+  bootstrap user; it now says "Not signed in".
+- Verified this pass: built with Xcode 26.6 / iOS 26.5 SDK, past the April
+  28 2026 minimum (why the upload validated); no UIRequiredDeviceCapabilities
+  over-restriction. **The updated age-rating questionnaire (in-app controls,
+  capabilities, medical/wellness topics) is an App Store Connect action at
+  submission** — the banner on the Apps page is that questionnaire waiting.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
