@@ -1007,7 +1007,8 @@ UI must coach it, and the 2-signal degrade path must stay.
     Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
     Meta app ID still needed for zero-tap Instagram Stories.
 
-## TestFlight (first build shipped 2026-08-11, build 202608112356)
+## TestFlight (first build 2026-08-11; external Beta App Review submitted
+## 2026-08-12, build 202608120358 — the one with all eleven compliance passes)
 
 - **Never side-load the Watch app with `devicectl`.** It puts the app on the
   wrist but does NOT register it as the iOS app's companion, so
