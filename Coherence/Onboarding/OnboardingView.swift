@@ -18,6 +18,12 @@ struct OnboardingView: View {
     @State private var plan: SubscriptionPlan = .yearly
     @State private var waitlistEmail = ""
     @State private var planRating: Int?
+    /// Whether the user actually turned the daily reminder on: tapped "Turn on
+    /// my reminder" AND granted the OS dialog. The privacy policy says a
+    /// reminder is sent "only if you enable it", and an earlier version set
+    /// remindersEnabled from the anchor alone, which flipped it on for people
+    /// who had just tapped "Not right now".
+    @State private var reminderAllowed = false
 
     /// Where the paywall sits. The spec's flow places it inside onboarding
     /// (screen 23), while its open-questions section argues for after the first
@@ -246,8 +252,8 @@ struct OnboardingView: View {
 
         case .permission:
             PermissionScreen(anchor: answers.anchor,
-                             onAllow: { Task { await requestNotifications(); go(.week) } },
-                             onSkip: { go(.week) })
+                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(.week) } },
+                             onSkip: { reminderAllowed = false; go(.week) })
 
         case .week:
             WeekPreviewScreen { go(.rating) }
@@ -311,9 +317,11 @@ struct OnboardingView: View {
 
     // MARK: - Side effects
 
-    private func requestNotifications() async {
-        _ = try? await UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .sound, .badge])
+    /// True only if the user granted the OS dialog — declining there declines
+    /// the reminder too, whatever button brought the dialog up.
+    private func requestNotifications() async -> Bool {
+        (try? await UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
     private func handleSignIn(_ credential: ASAuthorizationAppleIDCredential) {
@@ -355,10 +363,15 @@ struct OnboardingView: View {
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
             prefs.onboardingComplete = true
             if let anchor = answers.anchor {
+                // The time is stored either way: it is their stated anchor and
+                // the default Settings offers if they enable reminders later.
+                // Whether the reminder is ON is the permission screen's answer,
+                // never the anchor's: picking a time of day is not consent to
+                // be notified at it.
                 prefs.reminderTime = Calendar.current.date(
                     bySettingHour: anchor.defaultHour, minute: 0, second: 0, of: Date())
-                prefs.remindersEnabled = true
-                NotificationScheduler.apply(enabled: true, at: prefs.reminderTime)
+                prefs.remindersEnabled = reminderAllowed
+                NotificationScheduler.apply(enabled: reminderAllowed, at: prefs.reminderTime)
             }
         }
         try? context.save()

@@ -4,10 +4,11 @@ import StoreKit
 
 /// Screens 23–25: the offer, the exit offer, and sign-in.
 ///
-/// **Not wired to StoreKit.** There are no products configured yet, so the
-/// trial button advances the flow and records intent locally. Nothing here
-/// claims a charge has happened, and nothing pretends to be a receipt —
-/// wiring real products is a separate, deliberate step.
+/// **Wired to StoreKit, dormant until products exist.** The paywall asks the
+/// Store whether anything is on sale: when it is, Continue purchases and only
+/// a verified transaction advances; until then the screen says plainly that
+/// billing is off and nothing can be charged. No flag to flip, no beta copy
+/// to remember to remove.
 ///
 /// What we refuse to copy from the reference flow, and why it matters here
 /// specifically: no countdown, no "94% off", no "9 spots remaining", no "you
@@ -161,9 +162,22 @@ struct PaywallScreen: View {
                          subtitle: selling
                             ? "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing."
                             : "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it.",
-                         ctaTitle: selling ? "Start my free week" : "Continue",
+                         // The free week is the subscriptions' introductory
+                         // offer. Lifetime has none: it is one charge, today,
+                         // and both the button and the footnote must say so
+                         // rather than promising a trial that won't happen.
+                         ctaTitle: selling
+                            ? (plan == .lifetime ? "Buy Lifetime" : "Start my free week")
+                            : "Continue",
+                         // 3.1.2 wants auto-renewal SAID, not implied: "cancel
+                         // any time" hints at it and reviewers reject paywalls
+                         // that only hint. Lifetime is the exception, it is a
+                         // one-time purchase and claiming it renews would be
+                         // its own lie.
                          ctaFootnote: selling
-                            ? "7 days free, then \(priceLine). Cancel any time in Settings."
+                            ? (plan == .lifetime
+                               ? "\(priceLine), charged today. Nothing renews."
+                               : "7 days free, then \(priceLine). Renews automatically until you cancel in Settings.")
                             : "Nothing is charged. There is no payment set up on this build.",
                          skipTitle: "Restore purchase",
                          onSkip: selling ? { restore() } : nil,

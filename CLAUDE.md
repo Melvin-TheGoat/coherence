@@ -1129,6 +1129,30 @@ Audited against the current App Store Review Guidelines. Fixed:
   Worth repeating after future onboarding edits: five screens were changed
   blind across these passes before anyone looked.
 
+- **Reminder consent now follows the ANSWER (eighth pass, policy-vs-app
+  audit).** The policy says a daily reminder is sent "only if you enable it",
+  but `persistAnswers` enabled it from the anchor alone: tap "Not right now"
+  on the permission screen and reminders flipped on anyway (undelivered while
+  unauthorized, but Settings showed ON, and a later OS-level grant would start
+  firing them). `remindersEnabled` now requires the permission screen's yes
+  AND the OS dialog's grant. Picking a time of day is not consent to be
+  notified at it.
+- **Paywall says "renews automatically" in words (3.1.2)** — "cancel any
+  time" only implied it and paywalls get rejected for implying. And the
+  Lifetime plan no longer promises a free week: it is a one-time
+  nonconsumable with no introductory offer, so its CTA is "Buy Lifetime" and
+  its footnote "charged today, nothing renews". Both strings only render once
+  something is on sale.
+- **Policy-vs-app audit verified TRUE at code level:** zero networking code of
+  ours in any target (Apple frameworks only), zero ad/tracking APIs, zero
+  now-playing reads (the "we don't know what you listen to" claim), health
+  store split intact, account deletion present.
+- **OPEN AND SHARP: the policy and the sign-in screen both promise sessions
+  "survive a new phone" via private-iCloud sync, and CloudKit has never
+  synced once.** A user who trusts that promise and wipes their phone loses
+  everything. Fix CloudKit before external TestFlight or soften the promise;
+  internal testers are told sync doesn't work in the What to Test notes.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
