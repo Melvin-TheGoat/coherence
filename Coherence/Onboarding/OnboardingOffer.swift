@@ -280,12 +280,17 @@ private enum LegalDoc: String, Identifiable {
 
 /// Framed as saving the streak they just committed to, which is the honest
 /// reason to have an account at all.
+///
+/// **The skip must exist for buyers too.** An earlier version hid it once
+/// someone paid, on the theory that a purchase needs an account to attach to.
+/// It doesn't: StoreKit entitlements ride the Apple ID and survive a new
+/// phone with no account of ours, and 5.1.1(v) is explicit that registration
+/// after a purchase that isn't account-based must be optional — apps get
+/// rejected for exactly this. Sessions recorded before sign-in are safe
+/// besides: the bootstrap-User adopt flow folds them into whichever account
+/// is created later.
 struct SignInScreen: View {
     let onSignedIn: (ASAuthorizationAppleIDCredential) -> Void
-    /// Nil once someone has paid: a paying customer's sessions and streak
-    /// must survive a new phone, so the account stops being optional at the
-    /// exact moment there's something worth protecting. The waitlist path
-    /// (no Watch, nothing measured yet) keeps its way past.
     let onSkip: (() -> Void)?
     @State private var errorText: String?
 

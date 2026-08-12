@@ -1072,6 +1072,24 @@ Audited against the current App Store Review Guidelines. Fixed:
   prompt describing a feature that doesn't exist. Committed via the index
   (file is skip-worktree).
 
+- **Sign-in is optional for BUYERS too (third pass, same day).** The skip was
+  hidden once someone purchased, on the theory that a purchase needs an
+  account to attach to. False: StoreKit entitlements ride the Apple ID and
+  survive a new phone with no account of ours, and 5.1.1(v) is explicit that
+  registration after a non-account-based purchase must be optional — a
+  documented rejection. The bootstrap-adopt flow already folds pre-account
+  sessions into whatever account is made later, so nothing is lost by
+  skipping. `didPurchase` is gone from OnboardingView entirely; do not
+  reintroduce a forced-sign-in path.
+- Verified clean in the same pass: no silent-audio background abuse (Silence
+  sessions play nothing, the `audio` mode is only active while a chosen track
+  plays); Instagram share degrades to save-to-Photos when Instagram is absent
+  (canOpenURL-gated); METHODS.md has no breath-retention or safety-adjacent
+  content; no TEMP/diagnostic UI reachable in release; `808.storekit` is not
+  bundled into the app; Watch requirement disclosed in both the beta
+  description and the review notes, which is what the hardware-requirement
+  rule asks for.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the

@@ -18,10 +18,6 @@ struct OnboardingView: View {
     @State private var plan: SubscriptionPlan = .yearly
     @State private var waitlistEmail = ""
     @State private var planRating: Int?
-    /// True once they tapped Start-my-free-week or Restore on the paywall.
-    /// Gates the sign-in screen's "Not now": paid users must make the account
-    /// that keeps their evidence safe.
-    @State private var didPurchase = false
 
     /// Where the paywall sits. The spec's flow places it inside onboarding
     /// (screen 23), while its open-questions section argues for after the first
@@ -268,18 +264,16 @@ struct OnboardingView: View {
             }
 
         case .paywall:
-            // didPurchase now reflects what actually happened, which is what
-            // restores the sign-in skip for everyone who didn't buy: in the
-            // beta that is everyone, and requiring an account for a purchase
-            // that never occurred was both wrong and a 5.1.1(v) exposure.
-            PaywallScreen(plan: $plan) { purchased in
-                didPurchase = purchased
-                go(.signIn)
-            }
+            // Whether they bought or not, sign-in stays optional: a purchase
+            // rides the Apple ID via StoreKit and needs no account of ours,
+            // and 5.1.1(v) forbids requiring registration after a purchase
+            // that isn't account-based. Sessions made before signing in are
+            // folded into the account later by the bootstrap-adopt flow.
+            PaywallScreen(plan: $plan) { _ in go(.signIn) }
 
         case .signIn:
             SignInScreen(onSignedIn: handleSignIn,
-                         onSkip: didPurchase ? nil : finish)
+                         onSkip: finish)
         }
     }
 
