@@ -1171,7 +1171,17 @@ Audited against the current App Store Review Guidelines. Fixed:
   honestly on a fresh install (screenshot-verified). Ten passes total, finds
   in nine of them; the reading-based scan is at the bottom of the well.
 
-Still owed at App Store submission (not TestFlight): App Privacy labels
+Still owed at App Store submission (not TestFlight), eleventh-pass audit of
+every guideline section (1.1 through 5.6) found ONE structural gap beyond the
+list below: **the subscription gates nothing.** `store.entitled` is consumed
+by one line (restore) and no feature checks it, so a live product would
+charge money and unlock nothing — a 3.1.2 "ongoing value" rejection and worse.
+Deciding WHAT paying unlocks is a product decision (Aziz + Melvin), and it
+must precede creating the products. Also noted: Accessibility Nutrition
+Labels exist in App Store Connect and are OPTIONAL — declare only features
+actually verified (VoiceOver etc.), never aspirationally; and "808" as a name
+is fine for App Review but Roland's TR-808 mark is worth one question to the
+lawyer already reviewing the four documents. Other items owed at submission: App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
 paywall absent — "Free while we're testing" copy must never reach an App
