@@ -69,7 +69,7 @@ redistribute, or provide the App as a service to others.
 ## 6. Your content and data
 
 You own your data. Our handling of your information is described in our
-[Privacy Policy](PRIVACY_POLICY.md). In short: your health results stay only on
+[Privacy Policy](https://meditate808.com/privacy). In short: your health results stay only on
 your device; your account and session log sync through your own private iCloud;
 we operate no servers that store your data; and you can delete everything from
 Settings → Delete Account.
