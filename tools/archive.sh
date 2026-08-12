@@ -122,6 +122,11 @@ if unzip -q "$IPA" -d "$UNPACKED" 2>/dev/null; then
   else
     echo "  WRONG no Watch app embedded, so testers get no measuring"
   fi
+  if [ -f "$APP/PrivacyInfo.xcprivacy" ]; then
+    echo "  ok    privacy manifest present"
+  else
+    echo "  WRONG no privacy manifest (ITMS-91053 territory at upload)"
+  fi
   rm -rf "$UNPACKED"
 fi
 

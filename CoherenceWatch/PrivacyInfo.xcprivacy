@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest (required since 2024 for required-reason APIs).
+
+  Accessed APIs: UserDefaults only, reason CA92.1 (the app reading its own
+  preferences: migration flags on shared code compiled into this target, plus session state). Nothing else
+  on Apple's required-reason list is used: no file-timestamp reads, no disk
+  space, no boot time, no keyboard APIs.
+
+  Collected data is EMPTY on purpose, and the App Privacy labels at submission
+  must say the same thing ("Data Not Collected"). Apple defines "collect" as
+  transmitting data off device in a way the developer or a third party can
+  read. 808 transmits nothing we can read: health results never leave the
+  device at all, and the account/session log syncs to the user's own PRIVATE
+  CloudKit database, which we cannot access. No analytics, no ads, no
+  tracking, no server of ours. If any of that ever changes, this file and the
+  submission labels change together.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

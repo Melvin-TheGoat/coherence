@@ -1090,6 +1090,18 @@ Audited against the current App Store Review Guidelines. Fixed:
   description and the review notes, which is what the hardware-requirement
   rule asks for.
 
+- **Privacy manifests ADDED (fourth pass): `PrivacyInfo.xcprivacy` in both
+  targets.** Neither existed, and both binaries use `UserDefaults`, a
+  required-reason API Apple has enforced declarations for since 2024
+  (ITMS-91053). Declared: UserDefaults/CA92.1 only; tracking false;
+  **collected data EMPTY, deliberately** — Apple's "collect" means transmitted
+  off device where the developer can read it, and 808 transmits nothing we can
+  read (health stays on device; account/session log goes to the user's
+  PRIVATE CloudKit DB we cannot access; no analytics, no server). The App
+  Privacy labels at submission must therefore say "Data Not Collected", and
+  if we ever add analytics or a backend, manifest and labels change together.
+  `tools/archive.sh` now checks the manifest is in the ipa.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
