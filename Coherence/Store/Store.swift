@@ -61,7 +61,18 @@ final class Store: ObservableObject {
     @Published private(set) var state: State = .loading
     @Published private(set) var products: [Product] = []
     /// Does this person have an active subscription or the lifetime unlock?
+    ///
+    /// **This is the key to the whole app** (Aziz, 2026-08-11: "paying unlocks
+    /// the entire app"). RootView locks to the paywall when the store is
+    /// selling and this is false. StoreKit caches entitlements on device, so
+    /// it stays correct offline, and it goes false by itself when a lapsed
+    /// subscription expires, which is what re-locks the app.
     @Published private(set) var entitled = false
+    /// Whether this person can still claim the 7-day introductory offer.
+    /// The paywall must not promise a free week to someone StoreKit will
+    /// charge immediately: that is the difference between an offer and a lie,
+    /// and reviewers check the claim against the purchase sheet.
+    @Published private(set) var trialEligible = true
 
     private var updates: Task<Void, Never>?
 
@@ -92,6 +103,10 @@ final class Store: ObservableObject {
             state = .unavailable
         }
         await refreshEntitlement()
+        // Both subscriptions share one group, so either answers for both.
+        if let sub = products.first(where: { $0.subscription != nil })?.subscription {
+            trialEligible = await sub.isEligibleForIntroOffer
+        }
     }
 
     func product(for plan: SubscriptionPlan) -> Product? {

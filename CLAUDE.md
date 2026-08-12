@@ -1171,13 +1171,23 @@ Audited against the current App Store Review Guidelines. Fixed:
   honestly on a fresh install (screenshot-verified). Ten passes total, finds
   in nine of them; the reading-based scan is at the bottom of the well.
 
-Still owed at App Store submission (not TestFlight), eleventh-pass audit of
-every guideline section (1.1 through 5.6) found ONE structural gap beyond the
-list below: **the subscription gates nothing.** `store.entitled` is consumed
-by one line (restore) and no feature checks it, so a live product would
-charge money and unlock nothing — a 3.1.2 "ongoing value" rejection and worse.
-Deciding WHAT paying unlocks is a product decision (Aziz + Melvin), and it
-must precede creating the products. Also noted: Accessibility Nutrition
+**DECIDED (Aziz, 2026-08-11): paying unlocks the ENTIRE app — hard paywall.**
+Implemented at the ROOT, not in onboarding: `RootView` locks to `PaywallScreen`
+whenever `store.state == .ready && !store.entitled`, so a lapsed subscription
+re-locks by itself (StoreKit's cached entitlements flip `entitled` offline).
+While products can't load (beta, network) the app stays OPEN — that keeps
+every pre-billing tester in with no flag, and a network hiccup can never lock
+out a payer. The paywall is also trial-eligibility-aware (`store.trialEligible`
+via `isEligibleForIntroOffer`): someone who already used the free week sees
+"Welcome back." / "Subscribe" and a footnote without the trial promise, never
+a free-week claim the purchase sheet would contradict. VERIFY with
+`808.storekit` in Xcode (Edit Scheme → Run → StoreKit Configuration) before
+products go live: buy → unlock, refund/expire → re-lock.
+**Open tension, Aziz's call later:** the onboarding deliberately never sells
+to no-Watch users (waitlist path skips the paywall), but the root gate locks
+them like everyone else once billing is live — selling to someone the app
+cannot measure for. Options when it matters: exempt `hasWatch == false`, or
+let the waitlist copy handle it. Also noted: Accessibility Nutrition
 Labels exist in App Store Connect and are OPTIONAL — declare only features
 actually verified (VoiceOver etc.), never aspirationally; and "808" as a name
 is fine for App Review but Roland's TR-808 mark is worth one question to the

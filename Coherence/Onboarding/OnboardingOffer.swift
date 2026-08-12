@@ -156,18 +156,27 @@ struct PaywallScreen: View {
             ?? "\(plan.price) \(plan.cadence)"
     }
 
+    /// Whether the free week may be promised. StoreKit knows if this person
+    /// already used the introductory offer; promising it anyway would put a
+    /// claim on screen that the purchase sheet contradicts one tap later.
+    private var offerTrial: Bool { store.trialEligible }
+
     var body: some View {
         OnboardingScreen(section: .win,
-                         title: selling ? "Seven days free." : "Free while we're testing.",
+                         title: selling ? (offerTrial ? "Seven days free." : "Welcome back.")
+                                        : "Free while we're testing.",
                          subtitle: selling
-                            ? "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing."
+                            ? (offerTrial
+                               ? "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing."
+                               : "Pick a plan to keep going. Every plan unlocks everything.")
                             : "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it.",
                          // The free week is the subscriptions' introductory
                          // offer. Lifetime has none: it is one charge, today,
                          // and both the button and the footnote must say so
                          // rather than promising a trial that won't happen.
                          ctaTitle: selling
-                            ? (plan == .lifetime ? "Buy Lifetime" : "Start my free week")
+                            ? (plan == .lifetime ? "Buy Lifetime"
+                               : offerTrial ? "Start my free week" : "Subscribe")
                             : "Continue",
                          // 3.1.2 wants auto-renewal SAID, not implied: "cancel
                          // any time" hints at it and reviewers reject paywalls
@@ -177,7 +186,9 @@ struct PaywallScreen: View {
                          ctaFootnote: selling
                             ? (plan == .lifetime
                                ? "\(priceLine), charged today. Nothing renews."
-                               : "7 days free, then \(priceLine). Renews automatically until you cancel in Settings.")
+                               : offerTrial
+                               ? "7 days free, then \(priceLine). Renews automatically until you cancel in Settings."
+                               : "\(priceLine). Renews automatically until you cancel in Settings.")
                             : "Nothing is charged. There is no payment set up on this build.",
                          skipTitle: "Restore purchase",
                          onSkip: selling ? { restore() } : nil,
