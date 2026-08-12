@@ -33,6 +33,6 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>808 records a mindful workout on your Apple Watch so it can measure your session.</string>
 	<key>NSMotionUsageDescription</key>
-	<string>808 reads Apple Watch motion to measure your stillness and, during belly breathing, your breath from the rise and fall of your belly.</string>
+	<string>808 reads Apple Watch motion to measure how still you were and, when you breathe slowly, your breathing rate from the movement of your wrist.</string>
 </dict>
 </plist>

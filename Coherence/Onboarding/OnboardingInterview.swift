@@ -820,11 +820,14 @@ struct AnchorScreen: View {
 
 // MARK: - 9 · You
 
-/// The only screen where tap-to-advance has a precondition. Age is the last
-/// thing touched, so tapping a bracket moves on — but only once a name has been
-/// typed, since the whole point of the screen is having something to call them.
-/// Until then the age tap just selects, and the hint says what's missing rather
-/// than putting back a button that would then disappear.
+/// Both answers here are OPTIONAL, and that is a review requirement, not a
+/// courtesy. Guideline 5.1.1 forbids requiring personal information the core
+/// function doesn't need, and 808 measures a meditation identically whether or
+/// not it knows what to call you. An earlier version gated Continue on a typed
+/// name; that was the textbook data-minimization rejection. The field asks
+/// "What should we call you?" rather than demanding a legal first name for the
+/// same reason: we want a form of address, not an identity. Every downstream
+/// screen already handles the empty case ("Your practice profile").
 struct NameScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var firstName: String
@@ -834,21 +837,14 @@ struct NameScreen: View {
 
     private let brackets = ["Under 25", "25–34", "35–44", "45–54", "55+"]
 
-    private var hasName: Bool {
-        !firstName.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
                          title: "Last thing.",
-                         subtitle: "So the app can talk to you like a person.",
-                         ctaEnabled: hasName,
-                         autoAdvances: true,
-                         autoAdvanceHint: hasName ? "Tap your age" : "Type your first name",
+                         subtitle: "So the app can talk to you like a person. Answer either, both, or neither.",
                          onContinue: { gate.now(onContinue) }) {
             VStack(alignment: .leading, spacing: 20) {
-                TextField("First name", text: $firstName)
-                    .textContentType(.givenName)
+                TextField("What should we call you?", text: $firstName)
+                    .textContentType(.nickname)
                     .font(OnboardingType.option)
                     .foregroundStyle(AppColor.textPrimary)
                     .padding(16)
@@ -869,9 +865,9 @@ struct NameScreen: View {
     }
 
     private func pick(_ bracket: String) {
-        ageBracket = bracket
-        guard hasName else { return }
-        gate.advance(onContinue)
+        // Selects, never advances: with every answer optional, the only thing
+        // that moves the screen forward is the Continue the user chooses.
+        ageBracket = ageBracket == bracket ? nil : bracket
     }
 }
 

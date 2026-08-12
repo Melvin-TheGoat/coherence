@@ -270,9 +270,14 @@ struct OnboardingView: View {
             }
 
         case .paywall:
-            PaywallScreen(plan: $plan,
-                          onStartTrial: { didPurchase = true; go(.signIn) },
-                          onRestore: { didPurchase = true; go(.signIn) })
+            // didPurchase now reflects what actually happened, which is what
+            // restores the sign-in skip for everyone who didn't buy: in the
+            // beta that is everyone, and requiring an account for a purchase
+            // that never occurred was both wrong and a 5.1.1(v) exposure.
+            PaywallScreen(plan: $plan) { purchased in
+                didPurchase = purchased
+                go(.signIn)
+            }
 
         case .signIn:
             SignInScreen(onSignedIn: handleSignIn,

@@ -1031,6 +1031,43 @@ UI must coach it, and the 2-signal degrade path must stay.
   is compiled out.** Breathing-engine work needs a development build over the
   cable; TestFlight sessions produce no captures.
 
+## App Review compliance pass (2026-08-11, before the second TestFlight build)
+
+Audited against the current App Store Review Guidelines. Fixed:
+
+- **5.1.1 data minimization: the name screen no longer requires anything.**
+  It asked for a required "First name" (typed name gated Continue) plus age.
+  Apps may not require personal information the core function doesn't need,
+  and 808 measures a session identically either way. Now: "What should we call
+  you?" (`.nickname`, not `.givenName`), age tap selects instead of advancing,
+  Continue always enabled, subtitle says both are optional. Downstream copy
+  already handled empty ("Your practice profile").
+- **Review gating REMOVED, do not reintroduce.** RatingScreen called
+  `requestReview` only for 4–5 star answers — routing happy users to Apple's
+  sheet is ratings manipulation and a live rejection reason. The sentiment
+  question stays (internal signal only). If the store prompt returns it must
+  be unconditional where it fires, and after a completed session, not inside
+  onboarding.
+- **3.1.2: the paywall now carries functional Privacy Policy and Terms of Use
+  links** (sheets over the bundled docs), required on the purchase screen
+  itself. Purchase/restore are actually wired to `Store` now: Continue calls
+  `store.purchase(plan)` when selling and only advances on `.bought`.
+- **`didPurchase` reflects reality.** The beta paywall's Continue used to set
+  it unconditionally, which removed the sign-in skip and forced every tester
+  to create an account for a purchase that never happened (5.1.1(v) exposure).
+  `PaywallScreen`'s single exit `onDone(purchased:)` reports what StoreKit
+  confirmed; beta users can now skip sign-in.
+- **Watch `NSMotionUsageDescription` rewritten** — still described belly
+  breathing (cut). Same class as the removed camera string: a permission
+  prompt describing a feature that doesn't exist. Committed via the index
+  (file is skip-worktree).
+
+Still owed at App Store submission (not TestFlight): App Privacy labels
+matching the policy; the new age-rating questionnaire; EULA placement in App
+Store Connect metadata (attorney question); StoreKit must be live or the
+paywall absent — "Free while we're testing" copy must never reach an App
+Store build (it flips itself once products exist, but verify).
+
 ## Toolchain notes (this machine)
 
 - XcodeGen location differs per machine — resolve it with `which xcodegen`

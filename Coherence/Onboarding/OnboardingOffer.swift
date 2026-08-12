@@ -55,13 +55,19 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
 
 // MARK: - 22b · Rating
 
-/// Two steps on purpose, and the second one is conditional.
+/// An internal question, and ONLY an internal question.
 ///
-/// Apple gives each user a very small number of review prompts a year and
-/// **spends one whether they rate you or not**, so firing `requestReview` at
-/// everybody burns that budget on the people most likely to leave two stars.
-/// We ask our own question first and only surface Apple's sheet to people who
-/// answered 4 or 5.
+/// An earlier version called `requestReview` here for anyone who answered 4 or
+/// 5. That is review gating: routing happy users to Apple's rating sheet and
+/// quietly not asking anyone else, which App Review treats as manipulating
+/// ratings, and which reviewers have been rejecting for. The sentiment
+/// question itself is fine, because it feeds our own signal and nothing else.
+/// So the stars stay and Apple's prompt is gone from onboarding entirely.
+///
+/// When the store prompt returns it must be UNCONDITIONAL where it fires, and
+/// it belongs after a completed session, not before the first one: Apple's own
+/// guidance is to ask once someone has demonstrated engagement, and a person
+/// mid-onboarding has not used the app yet.
 ///
 /// The honesty lives in the question: "does this sound like it'd work for you"
 /// is answerable before anyone has used the app, where "enjoying 808?" is not.
@@ -70,7 +76,6 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
 struct RatingScreen: View {
     @Binding var rating: Int?
     let onContinue: () -> Void
-    @Environment(\.requestReview) private var requestReview
 
     var body: some View {
         OnboardingScreen(section: .win,
@@ -105,19 +110,7 @@ struct RatingScreen: View {
     }
 
     private func finish() {
-        // Only spend Apple's prompt on someone who just told us it lands.
-        if let rating, rating >= 4 {
-            requestReview()
-            // The sheet is presented by the system over this screen; give it a
-            // beat before we navigate out from under it.
-            Task {
-                try? await Task.sleep(for: .milliseconds(700))
-                guard !Task.isCancelled else { return }
-                onContinue()
-            }
-        } else {
-            onContinue()
-        }
+        onContinue()
     }
 }
 
@@ -134,10 +127,16 @@ struct RatingScreen: View {
 /// wired to anything today; it must do real work before submission.
 struct PaywallScreen: View {
     @State private var started = false
+    @State private var legalDoc: LegalDoc?
     @EnvironmentObject private var store: Store
     @Binding var plan: SubscriptionPlan
-    let onStartTrial: () -> Void
-    let onRestore: () -> Void
+    /// The one exit. `true` means a VERIFIED purchase or restore completed;
+    /// `false` means the user moved on without buying anything, which today is
+    /// every user, since nothing is on sale. The parent uses this to decide
+    /// whether sign-in may be skipped, so it must never report a sale that
+    /// didn't happen: an earlier version hardcoded it and forced every beta
+    /// tester to sign in for a purchase that did not exist.
+    let onDone: (Bool) -> Void
 
     /// Can this build actually sell anything?
     ///
@@ -167,8 +166,8 @@ struct PaywallScreen: View {
                             ? "7 days free, then \(priceLine). Cancel any time in Settings."
                             : "Nothing is charged. There is no payment set up on this build.",
                          skipTitle: "Restore purchase",
-                         onSkip: selling ? onRestore : nil,
-                         onContinue: { started = true; onStartTrial() }) {
+                         onSkip: selling ? { restore() } : nil,
+                         onContinue: { advance() }) {
             VStack(spacing: 11) {
                 ForEach(SubscriptionPlan.allCases) { p in
                     Button { plan = p } label: {
@@ -214,9 +213,60 @@ struct PaywallScreen: View {
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.top, 4)
+
+                // Guideline 3.1.2: any screen selling an auto-renewable
+                // subscription must carry FUNCTIONAL links to the privacy
+                // policy and Terms of Use, on the purchase screen itself, not
+                // just in App Store Connect metadata. Kept visible in the beta
+                // too: the documents are true regardless of whether billing is
+                // on, and a link that appears only when money is involved is a
+                // link someone forgot to test.
+                HStack(spacing: 22) {
+                    Button("Privacy Policy") { legalDoc = .privacy }
+                    Button("Terms of Use") { legalDoc = .terms }
+                }
+                .font(.caption2.weight(.medium))
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 2)
+            }
+            .sheet(item: $legalDoc) { doc in
+                NavigationStack {
+                    ScrollView { MarkdownView(markdown: DocLoader.load(doc.file)).padding() }
+                        .navigationTitle(doc.title)
+                        .navigationBarTitleDisplayMode(.inline)
+                }
             }
         }
     }
+
+    /// Continue. When nothing is on sale this is navigation; when something
+    /// is, it is a purchase, and the screen only moves once StoreKit confirms.
+    /// A cancelled or failed purchase stays put without comment, because the
+    /// system sheet the user just dismissed IS the comment.
+    private func advance() {
+        guard selling else { onDone(false); return }
+        Task { @MainActor in
+            if await store.purchase(plan) == .bought {
+                started = true
+                onDone(true)
+            }
+        }
+    }
+
+    private func restore() {
+        Task { @MainActor in
+            await store.restore()
+            if store.entitled { onDone(true) }
+        }
+    }
+}
+
+/// The two documents the purchase screen must link to (guideline 3.1.2).
+private enum LegalDoc: String, Identifiable {
+    case privacy, terms
+    var id: String { rawValue }
+    var file: String { self == .privacy ? "PRIVACY_POLICY" : "TERMS_OF_SERVICE" }
+    var title: String { self == .privacy ? "Privacy Policy" : "Terms of Use" }
 }
 
 // MARK: - 24 · (removed)
