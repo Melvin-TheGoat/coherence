@@ -1115,6 +1115,20 @@ Audited against the current App Store Review Guidelines. Fixed:
   capabilities, medical/wellness topics) is an App Store Connect action at
   submission** — the banner on the Apps page is that questionnaire waiting.
 
+- **HRV named in the privacy policy (seventh pass).** The Watch requests HRV
+  (SDNN) read permission — it is on the permission sheet a reviewer sees —
+  and `HRVRecorder` + `SessionStore` persist four HRV fields, but all three
+  of the policy's health-results enumerations omitted it. Fixed in both
+  copies (bundled + website), all three enumerations. The pipeline itself is
+  the deliberate parked investigation; if review ever objects to the unused
+  permission, the fallback is dropping the read type in `HealthKitAuth`, one
+  line.
+- **The changed onboarding screens were verified VISUALLY on the simulator**
+  (name, waitlist, paywall, sign-in; `SIMCTL_CHILD_ONBOARDING_STEP=<n>`
+  jumps straight to a screen). Every compliance edit rendered as intended.
+  Worth repeating after future onboarding edits: five screens were changed
+  blind across these passes before anyone looked.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the

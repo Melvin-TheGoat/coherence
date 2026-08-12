@@ -96,7 +96,7 @@
   <h2>The short version</h2>
   <p>808 is built to be private by design:</p>
   <ul>
-    <li><b>We don't run a server and we can't see your data.</b> Your account, preferences, and session log sync through <b>your own private iCloud account</b> (Apple's CloudKit). Your <b>health results</b> (heart-rate trend, stillness and breathing rate) are stored <b>only on the device that recorded them</b> — the app never uploads them anywhere, not even to iCloud. We have no backend that receives or stores your personal or health information.</li>
+    <li><b>We don't run a server and we can't see your data.</b> Your account, preferences, and session log sync through <b>your own private iCloud account</b> (Apple's CloudKit). Your <b>health results</b> (heart-rate trend, stillness, breathing rate, and Apple's heart-rate-variability readings when your Watch produces them) are stored <b>only on the device that recorded them</b> — the app never uploads them anywhere, not even to iCloud. We have no backend that receives or stores your personal or health information.</li>
     <li><b>We don't sell your data, run ads, or track you.</b> There are no advertising identifiers, no third-party analytics, and no cross-app tracking.</li>
     <li><b>Your health data never leaves your devices.</b> It's measured on your Apple Watch and turned into your session results; we never use it for advertising and never share it.</li>
     <li><b>We don't know what you listen to.</b> 808 measures in the background so you can play a meditation from YouTube or any other app. We receive no information about what you play, and we have no connection to those services.</li>
@@ -104,7 +104,7 @@
   </ul>
   <h2>Information the app handles</h2>
   <p><b>Account information.</b> When you sign in with <b>Sign in with Apple</b>, the app receives and stores a unique Apple user identifier, and — only if you choose to share them — your <b>name</b> and <b>email address</b> (which may be an Apple private "Hide My Email" relay address). You may also set a display name and choose whether to receive product emails.</p>
-  <p><b>Health and motion data.</b> During a session, your <b>Apple Watch</b> measures your <b>heart rate</b> (via Apple HealthKit) and <b>movement</b> (via the motion sensors). The Watch processes these into your <b>session results</b> — a heart-rate trend (averaged, not beat-to-beat), a stillness measure, a breathing rate, and a summary score. Important details:</p>
+  <p><b>Health and motion data.</b> During a session, your <b>Apple Watch</b> measures your <b>heart rate</b> (via Apple HealthKit) and <b>movement</b> (via the motion sensors). The Watch processes these into your <b>session results</b> — a heart-rate trend (averaged, not beat-to-beat), a stillness measure, a breathing rate, Apple's heart-rate-variability (SDNN) readings when your Watch happens to produce them, and a summary score. Important details:</p>
   <ul>
     <li>The app requests HealthKit permission only for <b>heart rate</b> and <b>workouts</b>, and only reads your heart rate <b>live during a session</b> — it does not read your broader Health history.</li>
     <li>We store the <b>computed results</b>, not raw biometric samples. The iPhone reads <b>no</b> biometric data directly.</li>
@@ -117,7 +117,7 @@
   <h2>Where your information lives and who can access it</h2>
   <p>Your information lives in two places, by design:</p>
   <ul>
-    <li><b>Health results stay on your device.</b> Your session measurements — the heart-rate trend, stillness and breathing-rate results — are stored <b>only in the app's local storage on the device that recorded them</b>. The app never syncs them to iCloud or anywhere else.</li>
+    <li><b>Health results stay on your device.</b> Your session measurements — the heart-rate trend, stillness, breathing-rate and heart-rate-variability results — are stored <b>only in the app's local storage on the device that recorded them</b>. The app never syncs them to iCloud or anywhere else.</li>
     <li><b>Account and session log sync privately.</b> Your account info, preferences, and the log of your sessions (dates, durations, types, ratings) sync to <b>your personal private iCloud database</b> using Apple's CloudKit, so they survive reinstalls and follow your own devices.</li>
   </ul>
   <p><b>We do not operate servers that store your data, and we cannot access the contents of your private iCloud database.</b> Apple processes this data under <a href="https://www.apple.com/legal/privacy/">Apple's Privacy Policy</a>.</p>
