@@ -1164,6 +1164,13 @@ Audited against the current App Store Review Guidelines. Fixed:
   the ToS makes no product-behavior claims that could contradict the paywall
   (its "trial" is the jury kind), and every user-facing Watch string.
 
+- **Tenth pass found NOTHING to fix — the first clean one.** Verified: the
+  health-consent screen's four claims are each true of the code; the daily
+  reminder's notification copy is plain and guilt-free; no "first app to"
+  claims anywhere; no ATS exceptions; and the zero-data home screen renders
+  honestly on a fresh install (screenshot-verified). Ten passes total, finds
+  in nine of them; the reading-based scan is at the bottom of the well.
+
 Still owed at App Store submission (not TestFlight): App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
