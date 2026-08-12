@@ -1007,6 +1007,30 @@ UI must coach it, and the 2-signal degrade path must stay.
     Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
     Meta app ID still needed for zero-tap Instagram Stories.
 
+## TestFlight (first build shipped 2026-08-11, build 202608112356)
+
+- **Never side-load the Watch app with `devicectl`.** It puts the app on the
+  wrist but does NOT register it as the iOS app's companion, so
+  `startWatchApp` fails and the phone reports "808 isn't on your Watch yet".
+  Reinstalling the phone app then orphans it, and the iPhone Watch app refuses
+  with "could not install at this time" while the stale copy is there. Cost
+  most of an afternoon. **TestFlight installs the Watch app correctly and
+  automatically** — verified on Aziz's hardware. So does the iPhone Watch app.
+- **The beta ships under a PERSONAL bundle ID** (`com.azizmahmud.808`), not
+  `com.lockout.meditate808`. A bundle ID consumed by an App Store Connect
+  record can never be reused, so the production one stays untouched until the
+  Organization account exists. Same for the StoreKit product IDs.
+- **`./tools/archive.sh` archives, exports and checks the ipa** (distribution
+  signature, push environment, CloudKit environment, Watch app present) before
+  you upload. Archives land in Xcode's Organizer folder. Upload by hand from
+  Organizer.
+- Rejections hit so far, each visible only at upload: **90474**, the bundle
+  claimed iPad support with portrait only. Fixed by `TARGETED_DEVICE_FAMILY: "1"`,
+  since 808 is iPhone + Watch and no iPad layout exists.
+- **A TestFlight build is a Release build, so the DEBUG raw-motion CSV capture
+  is compiled out.** Breathing-engine work needs a development build over the
+  cable; TestFlight sessions produce no captures.
+
 ## Toolchain notes (this machine)
 
 - XcodeGen location differs per machine — resolve it with `which xcodegen`
