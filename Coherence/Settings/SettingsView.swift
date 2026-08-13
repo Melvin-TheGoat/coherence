@@ -46,6 +46,11 @@ private struct SettingsForm: View {
     @State private var confirmDelete = false
     @State private var confirmSignOut = false
     @State private var editingName = false
+    #if DEBUG
+    @Environment(\.modelContext) private var context
+    @State private var primerRows = 0
+    @State private var primerMessage = ""
+    #endif
 
     private let durationOptions: [(String, Int?)] = [
         ("Open", nil), ("2 min", 120), ("5 min", 300), ("10 min", 600), ("15 min", 900)
@@ -127,6 +132,10 @@ private struct SettingsForm: View {
                     navRow(icon: "doc.text", title: "Terms of service") { docPage("TERMS_OF_SERVICE") }
                 }
 
+                #if DEBUG
+                cloudKitDebugSection
+                #endif
+
                 accountFooter
             }
             .padding(AppMetrics.screenPadding)
@@ -139,6 +148,68 @@ private struct SettingsForm: View {
             Text("Your account and sessions are removed after 30 days. Sign back in before then to restore them.")
         }
     }
+
+    #if DEBUG
+    // MARK: CloudKit schema (developer only, compiled out of Release)
+
+    /// Creates every field of every synced model so the Development schema is
+    /// complete before it gets promoted. See `CloudSchemaPrimer` for why this
+    /// is not optional busywork.
+    @ViewBuilder
+    private var cloudKitDebugSection: some View {
+        SectionHeader(title: "CloudKit (debug)")
+        settingsCard {
+            Button {
+                CloudSchemaPrimer.prime(in: context)
+                primerRows = CloudSchemaPrimer.primedRowCount(in: context)
+                primerMessage = "Primed. Wait for sync, then check CloudKit Console."
+            } label: {
+                debugRow(icon: "arrow.up.circle", title: "Prime CloudKit schema")
+            }
+            divider
+            Button {
+                let n = CloudSchemaPrimer.removePrimedRows(in: context)
+                primerRows = CloudSchemaPrimer.primedRowCount(in: context)
+                primerMessage = n == 0 ? "Nothing to remove." : "Removed \(n) primer rows."
+            } label: {
+                debugRow(icon: "trash", title: "Remove primer rows")
+            }
+            if primerRows > 0 || !primerMessage.isEmpty {
+                divider
+                VStack(alignment: .leading, spacing: 4) {
+                    if primerRows > 0 {
+                        Text("\(primerRows) primer rows present")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.accentGold)
+                    }
+                    if !primerMessage.isEmpty {
+                        Text(primerMessage)
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 10)
+            }
+        }
+        .onAppear { primerRows = CloudSchemaPrimer.primedRowCount(in: context) }
+    }
+
+    private func debugRow(icon: String, title: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundStyle(AppColor.calmAccent)
+                .frame(width: 24)
+            Text(title)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textPrimary)
+            Spacer()
+        }
+        .padding(.vertical, 12)
+        .contentShape(Rectangle())
+    }
+    #endif
 
     // MARK: Profile
 
