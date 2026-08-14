@@ -78,6 +78,27 @@ final class SignalEngineTests: XCTestCase {
     /// Comparing against it is how we assert "breath did not count", now that
     /// resonance is always reported as its own honest measurement and can no
     /// longer stand in for "was it scored".
+    /// A little steady motion, so stillness lands mid-scale instead of a
+    /// perfect 1.0.
+    ///
+    /// Fixtures used to pass `accel: 0`, which scores a flawless stillness, and
+    /// **a binary breath term worth 1.0 cannot raise a session already at 1.0
+    /// on everything else.** Three "breath reaches the score" tests were
+    /// therefore comparing a number to itself and passing only because breath
+    /// used to be a continuous 0.77–1.00. Any test asserting that a signal
+    /// moved the score has to leave the score room to move.
+    private let restingAccel: (Double) -> Double = { _ in 0.022 }   // → stillness ≈ 0.90
+
+    /// Guards the above: fails loudly if a fixture drifts back to a perfect
+    /// score, where "breath counted" is unprovable rather than false.
+    private func assertNotAlreadyPerfect(_ r: SignalResult,
+                                         file: StaticString = #filePath,
+                                         line: UInt = #line) {
+        XCTAssertLessThan(SignalEngine.spreadStillness(r.stillnessScore ?? 1), 0.999,
+                          "fixture has nothing left to gain; the assertion below is vacuous",
+                          file: file, line: line)
+    }
+
     private func scoreWithoutBreath(_ r: SignalResult, durationSec: Int) -> Double? {
         SignalEngine.score(stillnessScore: r.stillnessScore,
                            heartRateTimeseries: r.heartRateTimeseries,
@@ -420,14 +441,16 @@ final class SignalEngineTests: XCTestCase {
     /// old 60% bar, so this used to score nothing at all — the app punished
     /// someone for doing exactly what it asks.
     func test_slowOpeningThenSilence_scoresTheDoorway() {
-        let m = motion(dur: 300, pitch: { t in t < 180 ? sine(0.1, amp: 0.006)(t) : 0 })
+        let m = motion(dur: 300, pitch: { t in t < 180 ? sine(0.1, amp: 0.006)(t) : 0 },
+                       accel: restingAccel)
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
         XCTAssertEqual(r.breathDoorwayRate ?? 0, 6.0, accuracy: 1.0,
                        "the opening is the doorway")
-        XCTAssertNotEqual(r.overallScore ?? -1,
-                          scoreWithoutBreath(r, durationSec: 300) ?? -1,
-                          "a real slow opening must reach the score")
+        assertNotAlreadyPerfect(r)
+        XCTAssertGreaterThan(r.overallScore ?? -1,
+                             scoreWithoutBreath(r, durationSec: 300) ?? 2,
+                             "a real slow opening must reach the score")
     }
 
     /// Too brief to be a rhythm.
@@ -472,9 +495,19 @@ final class SignalEngineTests: XCTestCase {
         let a = SignalEngine.analyze(motion: opening, hr: [], bellyBreathing: false)
         let b = SignalEngine.analyze(motion: both, hr: [], bellyBreathing: false)
 
-        XCTAssertEqual(SignalEngine.breathCredit(rate: a.breathDoorwayRate ?? 0),
-                       SignalEngine.breathCredit(rate: b.breathDoorwayRate ?? 0),
-                       accuracy: 0.05,
+        XCTAssertNotNil(a.breathDoorwayRate)
+        XCTAssertNotNil(b.breathDoorwayRate)
+        XCTAssertEqual(SignalEngine.score(stillnessScore: 0.9, heartRateTimeseries: [],
+                                          breathDoorway: a.breathDoorwayRate.map { _ in
+                                              SignalEngine.BreathDoorway(rate: a.breathDoorwayRate!,
+                                                                         heldSec: 120, startSec: 0) },
+                                          durationSec: 600) ?? -1,
+                       SignalEngine.score(stillnessScore: 0.9, heartRateTimeseries: [],
+                                          breathDoorway: b.breathDoorwayRate.map { _ in
+                                              SignalEngine.BreathDoorway(rate: b.breathDoorwayRate!,
+                                                                         heldSec: 120, startSec: 0) },
+                                          durationSec: 600) ?? -2,
+                       accuracy: 0.0001,
                        "the doorway's worth cannot depend on what followed it")
     }
 
@@ -520,13 +553,101 @@ final class SignalEngineTests: XCTestCase {
     /// scored rate at all, so opting into the mode silently cost 45% of the
     /// score.
     func test_bellySession_doorwayReachesTheScore() {
-        let m = motion(dur: 240, pitch: sine(0.1, amp: 0.1))
+        let m = motion(dur: 240, pitch: sine(0.1, amp: 0.1), accel: restingAccel)
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
 
         XCTAssertEqual(r.breathDoorwayRate ?? 0, 6.0, accuracy: 1.0)
-        XCTAssertNotEqual(r.overallScore ?? -1,
-                          scoreWithoutBreath(r, durationSec: 240) ?? -1,
-                          "belly breathing must reach the score like wrist does")
+        assertNotAlreadyPerfect(r)
+        XCTAssertGreaterThan(r.overallScore ?? -1,
+                             scoreWithoutBreath(r, durationSec: 240) ?? 2,
+                             "belly breathing must reach the score like wrist does")
+    }
+
+    /// Slow breathing late in a long session earns nothing.
+    ///
+    /// **No capture can test this** — every one we own is under five minutes,
+    /// so the constraint is a design decision rather than a measured one, and
+    /// this is the only thing pinning it. The reasoning: slow breathing is an
+    /// entry technique, so pacing at minute fourteen is someone managing a
+    /// number rather than meditating, and the effort of doing it costs them
+    /// the state being scored.
+    func test_lateSlowBreathingIsNotADoorway() {
+        let m = motion(dur: 1200, pitch: { t in
+            t > 720 && t < 900 ? sine(0.1, amp: 0.006)(t) : 0
+        }, accel: restingAccel)
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.breathDoorwayRate,
+                     "a stretch beginning at minute 12 is not an opening")
+        XCTAssertEqual(r.overallScore ?? -1,
+                       scoreWithoutBreath(r, durationSec: 1200) ?? -2, accuracy: 0.0001,
+                       "late pacing must not reach the score")
+    }
+
+    /// The identical breathing, moved to the start, must score. Without this
+    /// the test above could pass because the fixture never reads at all.
+    func test_theSameStretchAtTheStartIsADoorway() {
+        let m = motion(dur: 1200, pitch: { t in
+            t < 180 ? sine(0.1, amp: 0.006)(t) : 0
+        }, accel: restingAccel)
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.breathDoorwayRate ?? 0, 6.0, accuracy: 1.0)
+        assertNotAlreadyPerfect(r)
+        XCTAssertGreaterThan(r.overallScore ?? -1,
+                             scoreWithoutBreath(r, durationSec: 1200) ?? 2)
+    }
+
+    /// Breath is BINARY: a doorway is worth the same whatever its rate.
+    ///
+    /// A doorway can only exist between 3.5 and 9 breaths/min, and across that
+    /// whole reachable slice the old curve spanned 0.77 to 1.00 — under two
+    /// points of a 20-minute score for any realistic rate. Meanwhile the binary
+    /// "did they deliberately slow down" was right on 14 of 14 captures while
+    /// the rate itself carries ±0.3/min at best. Score what the instrument
+    /// measures well.
+    func test_doorwayRateDoesNotChangeWhatItIsWorth() {
+        let hr = (0..<20).map { 78.0 - Double($0) * 0.4 }
+        let scores = [4.0, 5.0, 6.0, 7.5, 8.9].map {
+            SignalEngine.score(stillnessScore: 0.9, heartRateTimeseries: hr,
+                               breathDoorway: .init(rate: $0, heldSec: 90, startSec: 10),
+                               durationSec: 1200) ?? -1
+        }
+        for v in scores {
+            XCTAssertEqual(v, scores[0], accuracy: 0.0001,
+                           "every legal doorway rate is worth the same")
+        }
+        XCTAssertGreaterThan(scores[0],
+                             SignalEngine.score(stillnessScore: 0.9, heartRateTimeseries: hr,
+                                                breathDoorway: nil,
+                                                durationSec: 1200) ?? 2)
+    }
+
+    /// Breath is the SMALLEST term, and absent breath is unchanged.
+    ///
+    /// Two properties, both deliberate. A session with a doorway but a climbing
+    /// heart and poor stillness must still read as the poor session it was: at
+    /// the old .45 it scored 51, which looks mediocre rather than bad. And a
+    /// silent session must score EXACTLY what it scored before breath was
+    /// demoted, so that demoting it moves nothing in an existing history except
+    /// the sessions that actually found a doorway.
+    func test_breathCannotCarryASessionTheOtherSignalsRefuse() {
+        let climbing = (0..<20).map { 70.0 + Double($0) * 0.26 }
+        let withDoorway = SignalEngine.score(
+            stillnessScore: 0.82, heartRateTimeseries: climbing,
+            breathDoorway: .init(rate: 6, heldSec: 90, startSec: 5),
+            durationSec: 1200) ?? -1
+        XCTAssertLessThan(withDoorway, 0.35,
+                          "a restless sit with a rising heart stays a bad session")
+
+        // Absent breath: 0.60 heart / 0.40 stillness, the split it always had.
+        let calm = (0..<20).map { 74.0 - Double($0) * 0.5 }
+        let silent = SignalEngine.score(stillnessScore: 0.9, heartRateTimeseries: calm,
+                                        breathDoorway: nil, durationSec: 1200) ?? -1
+        let expected = 0.60 * (SignalEngine.heartSettling(calm) ?? 0)
+                     + 0.40 * SignalEngine.spreadStillness(0.9)
+        XCTAssertEqual(silent, expected, accuracy: 0.0001,
+                       "silent sessions must not move when breath is demoted")
     }
 
     /// The score must be recomputable from what a stats row stores, or no
@@ -557,13 +678,14 @@ final class SignalEngineTests: XCTestCase {
         let m = motion(dur: 180, pitch: { t in
             let hz = t < 60 ? 0.075 : (t < 120 ? 0.145 : 0.075)   // 4.5 vs 8.7/min
             return 0.004 * sin(2 * .pi * hz * t)
-        })
+        }, accel: restingAccel)
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
         XCTAssertNotNil(r.meanBreathingRate)
-        XCTAssertNotEqual(r.overallScore ?? -1,
-                          scoreWithoutBreath(r, durationSec: 180) ?? -1,
-                          "a clear read is a read, whether or not the rate held still")
+        assertNotAlreadyPerfect(r)
+        XCTAssertGreaterThan(r.overallScore ?? -1,
+                             scoreWithoutBreath(r, durationSec: 180) ?? 2,
+                             "a clear read is a read, whether or not the rate held still")
     }
 
     /// The 9/min case (live session 5): faster deliberate breathing is

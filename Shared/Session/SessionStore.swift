@@ -195,6 +195,7 @@ enum SessionStore {
             resonanceMatchScore: result.resonanceMatchScore,
             breathDoorwayRate: result.breathDoorwayRate,
             breathDoorwayHeldSec: result.breathDoorwayHeldSec,
+            breathDoorwayStartSec: result.breathDoorwayStartSec,
             breathClarityTimeseries: result.breathClarityTimeseries,
             hrvSDNNSamples: payload.hrv?.sessionValuesMs ?? [],
             hrvMeanSDNN: payload.hrv?.meanMs,

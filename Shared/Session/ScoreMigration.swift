@@ -3,11 +3,20 @@ import SwiftData
 
 /// One-time back-fill of the current score across every historical session.
 ///
-/// Re-run for v4, which changed WHICH breathing number is worth anything:
-/// breath now scores the DOORWAY, the slow opening of a session, instead of
-/// the session mean. Same reasoning as every re-run before it: a history graph
-/// is a comparison, and a comparison across two formulas is a lie told with a
-/// line chart.
+/// Re-run for v5, which demoted breath to the SMALLEST term and made it
+/// binary: a doorway either exists or it does not, worth .20 against heart .50
+/// and stillness .30. It must also now BEGIN within the first five minutes,
+/// because slow breathing is an entry technique and pacing late is someone
+/// managing a number. Same reasoning as every re-run before it: a history
+/// graph is a comparison, and a comparison across two formulas is a lie told
+/// with a line chart.
+///
+/// v4 (superseded) moved breath from the session mean to the doorway.
+///
+/// **Most rows will not move.** Absent breath keeps the same 0.60/0.40
+/// heart/stillness split it had before, so every session that never slowed its
+/// breath rescores to exactly what it showed. Only sessions with a doorway
+/// change, and they come down.
 ///
 /// **What this back-fill can and cannot reproduce.** The doorway itself
 /// recomputes exactly, because `breathingRateTimeseries`, `windowSec` and
@@ -39,7 +48,7 @@ import SwiftData
 /// successful save, so a crash mid-migration just retries next launch.
 enum ScoreMigration {
 
-    static let doneKey = "scoreBackfillDone.v3"
+    static let doneKey = "scoreBackfillDone.v4"
 
     /// Rewrites `overallScore` on every row not already at the current
     /// algorithm version. Idempotent, and a no-op once the flag is set.
@@ -86,6 +95,7 @@ enum ScoreMigration {
                 hopSec: row.hopSec)
             row.breathDoorwayRate = doorway?.rate
             row.breathDoorwayHeldSec = doorway?.heldSec
+            row.breathDoorwayStartSec = doorway?.startSec
 
             row.overallScore = SignalEngine.score(
                 stillnessScore: row.stillnessScore,

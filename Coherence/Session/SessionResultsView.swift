@@ -249,7 +249,7 @@ struct SessionResultsView: View {
 
     /// Y domain per signal. Heart rate must NOT include zero — an area filled
     /// from 0 flattens a 74→63 settle into a straight line. Stillness keeps its
-    /// natural 0–1 scale; breath always shows the slow-breathing band.
+    /// natural 0–1 scale; breath pads around whatever was actually read.
     private func yDomain(_ series: EvidenceSeries, _ kind: GraphKind) -> ClosedRange<Double> {
         let values = series.points.map(\.value)
         guard let lo = values.min(), let hi = values.max() else { return 0...1 }
@@ -257,12 +257,41 @@ struct SessionResultsView: View {
         case .stillness:
             return 0...1
         case .breath:
-            let pad = max(1.0, (hi - lo) * 0.25)
-            return Swift.min(lo - pad, 3.5)...Swift.max(hi + pad, 8.0)
+            // No longer forced to contain 3.5–8: that existed to keep the old
+            // fixed band on screen. A minimum span still applies so a nearly
+            // flat curve isn't magnified into drama it doesn't contain.
+            let pad = Swift.max(1.0, (hi - lo) * 0.25)
+            return (lo - pad)...(hi + pad)
         case .heart, .other:
             let pad = Swift.max(2.0, (hi - lo) * 0.35)
             return (lo - pad)...(hi + pad)
         }
+    }
+
+    /// The doorway as a fraction of a curve's width, for the share card, whose
+    /// sparkline has no axes to position against.
+    private func doorwayFraction(_ series: EvidenceSeries) -> ClosedRange<Double>? {
+        guard let span = doorwaySpan(series),
+              let first = series.points.first?.t,
+              let last = series.points.last?.t, last > first else { return nil }
+        let lo = (span.lowerBound - first) / (last - first)
+        let hi = (span.upperBound - first) / (last - first)
+        return hi > lo ? lo...hi : nil
+    }
+
+    /// Seconds spanned by the doorway, clamped to what the curve actually
+    /// plots so the highlight can never stretch the x-axis past the session.
+    /// Nil when the session had no doorway, which is most of them.
+    private func doorwaySpan(_ series: EvidenceSeries) -> ClosedRange<Double>? {
+        guard let stats,
+              let start = stats.breathDoorwayStartSec,
+              let held = stats.breathDoorwayHeldSec, held > 0,
+              let first = series.points.first?.t,
+              let last = series.points.last?.t, last > first
+        else { return nil }
+        let lo = Swift.max(first, Swift.min(start, last))
+        let hi = Swift.min(last, Swift.max(start + held, first))
+        return hi > lo ? lo...hi : nil
     }
 
     private func graphCard(_ series: EvidenceSeries) -> some View {
@@ -283,13 +312,23 @@ struct SessionResultsView: View {
                 }
             }
             Chart {
-                if kind == .breath, let first = series.points.first, let last = series.points.last {
-                    // The claim and the evidence in one picture: the slow-breathing
-                    // zone, which is exactly what earns breath credit.
-                    RectangleMark(xStart: .value("min", first.t / 60),
-                                  xEnd: .value("min", last.t / 60),
-                                  yStart: .value("zone", 4.5), yEnd: .value("zone", 7.0))
-                        .foregroundStyle(AppColor.calmAccent.opacity(0.12))
+                if kind == .breath, let span = doorwaySpan(series) {
+                    // The stretch that earned the credit, and nothing else.
+                    //
+                    // This replaced a teal band running the full width at a
+                    // fixed 4.5–7. That band marked a target the score stopped
+                    // grading against: breath is binary now, so every rate a
+                    // doorway can legally hold is worth the same, and drawing a
+                    // narrow "good" zone under a score that ignores it taught
+                    // people to read one as the other.
+                    //
+                    // Floor to ceiling rather than clipped to a rate range,
+                    // deliberately: a session's breath rises out of any such box
+                    // while the doorway is still running, which reads as failing
+                    // during the very thing being credited.
+                    RectangleMark(xStart: .value("min", span.lowerBound / 60),
+                                  xEnd: .value("min", span.upperBound / 60))
+                        .foregroundStyle(AppColor.calmAccent.opacity(0.14))
                 }
                 ForEach(series.points) { point in
                     // Fill down to the domain floor, not to zero.
@@ -416,7 +455,7 @@ struct SessionResultsView: View {
                 values: s.points.map(\.value),
                 // Gold is the achieved signal; the body's signals are teal.
                 isAchievement: s.kind == .stillness,
-                resonanceBand: s.kind == .breathing,
+                highlight: s.kind == .breathing ? doorwayFraction(s) : nil,
                 domain: shareDomain(for: s))
         }
         return ShareCardData(

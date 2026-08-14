@@ -8,10 +8,21 @@ import SwiftData
 enum DemoData {
     /// Inserts one belly session with realistic settling curves and returns its id.
     static func seedResults(in context: ModelContext) -> UUID {
-        let n = 18
-        let hr = (0..<n).map { 75.0 - 13.0 * (Double($0) / Double(n - 1)) }        // 75 → 62
-        let still = (0..<n).map { 0.60 + 0.30 * (Double($0) / Double(n - 1)) }      // 0.60 → 0.90
-        let breaths = (0..<n).map { 5.6 + 0.5 * sin(Double($0) / 2.2) }            // ~5–6/min
+        // Window count for a 600 s session at the real grid: point i sits at
+        // i*hop + window/2, so n = (dur - window)/hop + 1. It used to be a flat
+        // 18, which drew ninety seconds of curve under a "10 min" header.
+        let n = (600 - 30) / 5 + 1
+        let f = { (i: Int) in Double(i) / Double(n - 1) }
+        let hr = (0..<n).map { 75.0 - 13.0 * f($0) }                               // 75 → 62
+        let still = (0..<n).map { 0.60 + 0.30 * f($0) }                            // 0.60 → 0.90
+        // A slow opening, then natural breathing — the shape the score is built
+        // for, and the reason the graph highlights a stretch rather than a band.
+        let breaths = (0..<n).map { i -> Double in
+            let t = Double(i) * 5 + 15                        // window centre
+            if t < 165 { return 5.6 + 0.25 * sin(Double(i) / 2.2) }
+            if t < 210 { return 5.6 + (t - 165) / 45 * 4.6 }  // letting it go
+            return 10.4 + 0.7 * sin(Double(i) / 4.0)
+        }
         let depth = (0..<n).map { _ in 0.08 }
 
         let session = Session(mode: "nature", bellyBreathing: true,
@@ -21,7 +32,8 @@ enum DemoData {
             heartRateTimeseries: hr, meanHR: 68, startHR: 75, endHR: 62, hrDecline: 13,
             stillnessTimeseries: still, stillnessScore: 0.86, stillnessMethod: "breathingExcluded",
             breathingRateTimeseries: breaths, breathDepthTimeseries: depth,
-            meanBreathingRate: 5.6, breathingRegularity: 0.82, resonanceMatchScore: 0.9,
+            meanBreathingRate: 8.9, breathingRegularity: 0.82, resonanceMatchScore: 0.9,
+            breathDoorwayRate: 5.6, breathDoorwayHeldSec: 145, breathDoorwayStartSec: 10,
             overallScore: 0.81, windowSec: 30, hopSec: 5
         )
         stats.preCoherenceScore = 0.34; stats.preCoherenceHR = 74; stats.preCoherenceRMSSD = 96

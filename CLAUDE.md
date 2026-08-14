@@ -1018,6 +1018,88 @@ UI must coach it, and the 2-signal degrade path must stay.
     though its reads were clear: historical breath credit is more permissive
     than live, and that decays as sessions accumulate. Now persisted as
     `breathClarityTimeseries` so this cannot recur.
+- **BREATH IS BINARY, WEIGHTED LEAST, AND MUST OPEN THE SESSION (v5.0.0,
+  2026-08-14).** Weights are now **breath .20 / heart .50 / stillness .30**,
+  down from .45/.35/.20, and the breath term is 1.0 whenever a doorway exists
+  rather than a curve on how close it sat to 6/min.
+  - **The rate curve was doing almost nothing, measured.** A doorway can only
+    exist between 3.5 and 9/min, and across that whole reachable slice
+    `breathCredit` spans 0.77–1.00 — under **two points** of a 20-minute score
+    for any realistic doorway of 5 to 7.5. The gate had already made the
+    decision; the bell was decoration on top of it. Meanwhile "did they
+    deliberately slow their breath" is right **14 of 14** captures while the
+    rate carries ±0.3/min on slow breathing and ±1.9/min on natural. **Score
+    what the instrument measures well.**
+  - **`breathCredit` survives as SELECTION ONLY.** It still decides which
+    qualifying stretch becomes the doorway, so a 4/min sway loses to a real
+    6/min breath. Do not delete it; do not let it back into the score.
+  - **Why the demotion.** Breath is the least reliable of the three signals and
+    covers the smallest part of the session. At .45 a restless sit with a
+    CLIMBING heart rate scored 51 for a minute of pacing; it now scores 28.
+    Researched 2026-08-14: slow breathing at the outset is standard practice
+    and its immediate parasympathetic effect is measured, but **no study
+    establishes how long the shift persists after you stop pacing** (studies
+    measure during, plus 5–10 min recovery windows). So paying breath for the
+    whole session was never supportable. Heart and stillness run the whole
+    session, so if the doorway really did open the state, they already measure
+    the carryover. Also: resonance frequency is individual and not even stable
+    within a person over time (Sci Rep 2021, s41598-021-87867-8), so a fixed
+    6.0 target was an approximation twice over.
+  - **Absence can never subtract, and this is the load-bearing rule.** A silent
+    breath signal is ambiguous between "very settled" (quiet shallow breathing
+    below the motion floor) and "we missed it". You cannot punish a state you
+    cannot distinguish from the best one. Absent breath therefore keeps the
+    hardcoded **0.60/0.40** heart/stillness split rather than renormalising
+    0.50/0.30, so **silent sessions rescore to exactly what they already
+    showed** and only doorway sessions move.
+  - **A doorway must BEGIN within the first 5 minutes** (`breathDoorwayMaxStartSec`).
+    Aziz's reasoning: pacing late means thinking about your breathing to move a
+    number, which raises heart rate and costs the state you are being scored
+    on. Fixed minutes, not a fraction, because opening the state does not take
+    longer in a 25-minute sit. **NO capture can test this** — every one is under
+    5.1 minutes and the latest real doorway starts at 65 s — so it is a design
+    decision pinned only by `test_lateSlowBreathingIsNotADoorway`.
+  - **A refused doorway is no longer persisted at all.** It used to be stored
+    ungated for display while `scoredDoorway` was gated. The graph now
+    highlights the doorway as the thing that earned credit, so a displayed one
+    that earned none would be the graph contradicting the score. `39F2003D`
+    (confirmed no breathing) computes a tidy 6.1 and must show nothing.
+  - **Validated through the real engine** (`tools/breath_harness`, now printing
+    doorway rate, start and held): all six verified slow sessions keep their
+    doorway — 5E0FF154 6.0@35s, FEFAD3C6 6.1@5s, 45D06F9F 5.9@5s, 6FE7FF9B
+    4.8@65s, 8F85AEA4 6.0@5s, 6B0D92D1 6.0@35s — and 39F2003D, E1711EEE and
+    the six natural-breathing captures are all refused. 163 tests green.
+  - **A fixture trap that hid three vacuous tests.** `motion(accel: 0)` scores a
+    perfect 1.0 stillness, and **a binary term worth 1.0 cannot raise a session
+    already at 1.0**, so three "breath reaches the score" assertions compared a
+    number to itself. They only ever passed because breath used to be
+    continuous. Fixtures now pass `restingAccel` (stillness ≈ 0.90) and
+    `assertNotAlreadyPerfect` fails loudly if one drifts back. **Any test
+    asserting a signal moved the score must leave the score room to move.**
+  - Migration `scoreBackfillDone.v4`. Most rows will not move, by construction.
+  - **GRAPH: the full-width 4.5–7 teal band is GONE**, on both the results
+    screen and the share card. It marked a rate range the score no longer
+    grades against, and a narrow "good" zone under a score that ignores it
+    teaches people to read one as the other. Replaced by a floor-to-ceiling
+    teal band over exactly the doorway's time span (`breathDoorwayStartSec`,
+    new persisted field). Floor-to-ceiling rather than clipped to a rate range
+    because the curve climbs out of any such box while the doorway is still
+    running, which reads as failing during the thing being credited. No label
+    on the band (Aziz). `ResonanceBand` in ShareCard.swift is deleted; the
+    share card takes a normalised `highlight` fraction instead.
+  - **There is no "resonance zone" anymore.** The only threshold left is the
+    9/min doorway ceiling, and inside it every rate is worth the same. Copy
+    must not reintroduce a target band.
+  - **`DemoData` drew 90 seconds of curve under a "10 min" header** (`n` was a
+    flat 18). Now derived from the real window grid, and shaped as a slow
+    opening into natural breathing so the screenshot shows what the score is
+    built for.
+  - **OPEN, unchanged by this pass:** held time is still worth nothing — a
+    60-second doorway and a 15-minute one score identically. That is the one
+    thing genuinely worth adding, and it still cannot be fitted, because every
+    capture is 2–5 minutes. Needs long counted sessions first. Do not guess a
+    dwell curve; the last attempt drove three verified paced sessions to
+    0.11/0.67/0.78.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

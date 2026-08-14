@@ -23,11 +23,10 @@ struct BreathHarness {
             FileHandle.standardError.write(Data("usage: breath <capture.csv>...\n".utf8))
             exit(2)
         }
-        print(String(format: "%-10s %6s %8s %8s %6s %6s  %@",
-                     ("capture" as NSString).utf8String!, ("dur" as NSString).utf8String!,
-                     ("breaths" as NSString).utf8String!, ("still" as NSString).utf8String!,
-                     ("IQR" as NSString).utf8String!, ("read" as NSString).utf8String!,
-                     "curve"))
+        print(String(format: "%-10@ %6@ %8@ %6@ %5@ %6@ %16@ %6@",
+                     "capture" as NSString, "dur" as NSString, "breaths" as NSString,
+                     "IQR" as NSString, "read" as NSString, "clar" as NSString,
+                     "doorway@start/held" as NSString, "score" as NSString))
         for path in paths { run(path) }
     }
 
@@ -58,12 +57,17 @@ struct BreathHarness {
 
         let tag = (path as NSString).lastPathComponent
             .replacingOccurrences(of: "motion-", with: "").prefix(8)
-        let curve = stride(from: 0, to: r.breathingRateTimeseries.count, by: 3)
-            .map { String(format: "%.0f", r.breathingRateTimeseries[$0]) }
-            .joined(separator: " ")
-        print(String(format: "%-10@ %6.0f %8@ %8.2f %6.2f %5.0f%%  %@",
+        let clarity = zip(r.breathingRateTimeseries, r.breathClarityTimeseries)
+            .filter { $0.0 > 0 }.map(\.1)
+        let meanClarity = clarity.isEmpty ? 0 : clarity.reduce(0, +) / Double(clarity.count)
+        let door = r.breathDoorwayRate.map {
+            String(format: "%.1f@%.0fs/%.0fs", $0,
+                   r.breathDoorwayStartSec ?? -1, r.breathDoorwayHeldSec ?? 0)
+        } ?? "-"
+        print(String(format: "%-10@ %6.0f %8@ %6.2f %5.0f%% %6.2f %16@ %6@",
                      String(tag) as NSString, last.t,
                      r.meanBreathingRate.map { String(format: "%.1f", $0) } as NSString? ?? "-",
-                     r.stillnessScore ?? 0, spread, frac * 100, curve))
+                     spread, frac * 100, meanClarity, door as NSString,
+                     r.overallScore.map { String(format: "%.0f", $0 * 100) } as NSString? ?? "-"))
     }
 }

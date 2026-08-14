@@ -195,6 +195,7 @@ enum Persistence {
             resonanceMatchScore: s.resonanceMatchScore,
             breathDoorwayRate: s.breathDoorwayRate,
             breathDoorwayHeldSec: s.breathDoorwayHeldSec,
+            breathDoorwayStartSec: s.breathDoorwayStartSec,
             breathClarityTimeseries: s.breathClarityTimeseries,
             overallScore: s.overallScore,
             windowSec: s.windowSec,

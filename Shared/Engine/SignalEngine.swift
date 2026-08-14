@@ -76,6 +76,9 @@ struct SignalResult: Codable, Equatable {
     // SignalEngine.breathDoorway. Nil when the session never slowed down.
     var breathDoorwayRate: Double?
     var breathDoorwayHeldSec: Double?
+    /// Seconds from session start to the beginning of the doorway. Drives the
+    /// results graph's highlight of exactly the stretch that earned credit.
+    var breathDoorwayStartSec: Double?
     /// Per-window path clarity, same index as breathingRateTimeseries.
     /// Persisted because `score` now needs it: without it a migration cannot
     /// recompute a score from stored fields, which is an invariant this engine
@@ -110,6 +113,7 @@ extension SignalResult {
             meanBreathingRate: o(meanBreathingRate), breathingRegularity: o(breathingRegularity),
             resonanceMatchScore: o(resonanceMatchScore),
             breathDoorwayRate: o(breathDoorwayRate), breathDoorwayHeldSec: o(breathDoorwayHeldSec),
+            breathDoorwayStartSec: o(breathDoorwayStartSec),
             breathClarityTimeseries: a(breathClarityTimeseries),
             overallScore: o(overallScore),
             windowSec: windowSec, hopSec: hopSec, algorithmVersion: algorithmVersion
@@ -134,7 +138,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "4.0.0"
+    static let version = "5.0.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -191,6 +195,22 @@ enum SignalEngine {
         // nobody is deliberately slowing down, so there is no doorway and
         // breath simply leaves the score. Already this codebase's documented
         // line between slowing on purpose and just breathing.
+    private static let breathDoorwayMaxStartSec = 300.0  // the stretch must
+        // BEGIN within the first five minutes. Slow breathing is an entry
+        // technique: you use it to open the state and then leave it alone.
+        // Pacing late is someone managing a number rather than meditating, and
+        // the effort of doing it costs them the state they are being scored on
+        // (Aziz, 2026-08-14) — the same reason the app shows no live
+        // biometrics at all.
+        //
+        // Fixed minutes, NOT a fraction of the session: opening the state does
+        // not take longer in a 25-minute sit than a 10-minute one. The side
+        // effect is that short sessions are effectively unconstrained, since a
+        // four-minute sit is all beginning, which is correct.
+        //
+        // Late slow breathing earns nothing. It is never penalised — breath can
+        // only ever add, because a silent breath signal is ambiguous between
+        // "very settled" and "we missed it".
     private static let breathStretchFloorClarity = 0.45  // PROVISIONAL, not
         // measured. A per-window floor so one weak window BREAKS a run rather
         // than diluting its mean. It also stops `medianFiltered5`, which runs
@@ -325,7 +345,8 @@ enum SignalEngine {
                 stillnessTimeseries: [], stillnessScore: nil, stillnessMethod: "total",
                 breathingRateTimeseries: [], breathDepthTimeseries: [],
                 meanBreathingRate: nil, breathingRegularity: nil, resonanceMatchScore: nil,
-                breathDoorwayRate: nil, breathDoorwayHeldSec: nil, breathClarityTimeseries: [],
+                breathDoorwayRate: nil, breathDoorwayHeldSec: nil,
+                breathDoorwayStartSec: nil, breathClarityTimeseries: [],
                 overallScore: nil, windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
             )
         }
@@ -350,6 +371,7 @@ enum SignalEngine {
         var breathClarityTimeseries: [Double] = []
         var breathDoorwayRate: Double?
         var breathDoorwayHeldSec: Double?
+        var breathDoorwayStartSec: Double?
         var breathingRegularity: Double?
         var resonanceMatchScore: Double?
         var breathingReadable = false
@@ -429,6 +451,7 @@ enum SignalEngine {
                                                 clarityFloor: concentrationMin)
                     breathDoorwayRate = doorway?.rate
                     breathDoorwayHeldSec = doorway?.heldSec
+                    breathDoorwayStartSec = doorway?.startSec
                     resonanceMatchScore = (doorway?.rate).map(resonanceMatch)
                         ?? resonanceMatch(meanBreathingRate!)
                     scoredDoorway = doorway
@@ -462,19 +485,27 @@ enum SignalEngine {
                 breathDepthTimeseries = r.depths
                 meanBreathingRate = r.meanRate
                 breathClarityTimeseries = r.clarity
-                breathDoorwayRate = r.doorway?.rate
-                breathDoorwayHeldSec = r.doorway?.heldSec
                 breathingRegularity = regularity(signal: r.axis, times: times)
-                // Rebased on the DOORWAY, not the session mean. A session that
-                // held 5.5/min for three minutes and then breathed 12 used to
-                // report "resonance 2%", which described neither the practice
-                // nor the score built from it.
-                resonanceMatchScore = (r.doorway?.rate).map(resonanceMatch)
                 // What reaches the score is the opening, and only when the
                 // session as a whole was clearly read. Clarity is the entire
                 // gate now: a 4/min postural sway once read at clarity 0.76 in
                 // a single window, but junk cannot hold a clear SESSION mean.
                 scoredDoorway = r.confident ? r.doorway : nil
+                // The PERSISTED doorway is the scored one, not the computed
+                // one. A doorway the gate refused is a claim we declined to
+                // back, and the results graph highlights this stretch as the
+                // thing that earned credit — showing one that earned none would
+                // be the graph contradicting the score above it. The confirmed
+                // no-breathing capture computes a tidy 6.1/min doorway and must
+                // display nothing at all.
+                breathDoorwayRate = scoredDoorway?.rate
+                breathDoorwayHeldSec = scoredDoorway?.heldSec
+                breathDoorwayStartSec = scoredDoorway?.startSec
+                // Rebased on the DOORWAY, not the session mean. A session that
+                // held 5.5/min for three minutes and then breathed 12 used to
+                // report "resonance 2%", which described neither the practice
+                // nor the score built from it.
+                resonanceMatchScore = (scoredDoorway?.rate).map(resonanceMatch)
             }
         }
 
@@ -526,6 +557,7 @@ enum SignalEngine {
             meanBreathingRate: meanBreathingRate, breathingRegularity: breathingRegularity,
             resonanceMatchScore: resonanceMatchScore,
             breathDoorwayRate: breathDoorwayRate, breathDoorwayHeldSec: breathDoorwayHeldSec,
+            breathDoorwayStartSec: breathDoorwayStartSec,
             breathClarityTimeseries: breathClarityTimeseries,
             overallScore: overallScore,
             windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
@@ -558,8 +590,14 @@ enum SignalEngine {
     // MARK: - Breathing helpers
 
     /// Closeness of a rate (breaths/min) to the ~6/min resonance target, 0..1.
-    /// What a breathing rate is WORTH in the score, as distinct from how close
-    /// it is to resonance.
+    ///
+    /// **SELECTION ONLY as of 5.0.0. This no longer scores anything.** The
+    /// score's breath term is binary: a doorway exists or it does not (see
+    /// `depth`). This still decides WHICH qualifying stretch becomes the
+    /// doorway, and that job matters — "closest to 6 wins" means a 4/min
+    /// postural sway loses to a real 6/min breath on the same session, which is
+    /// free anti-artefact defence. Keep it for that even though the winner is
+    /// now worth the same 1.0 whatever its rate.
     ///
     /// The two were the same thing until Aziz asked for breath to count at any
     /// rate. Resonance is a narrow bell on 6/min, which is correct as a
@@ -863,6 +901,10 @@ enum SignalEngine {
         let rate: Double
         /// How long it was held, in seconds.
         let heldSec: Double
+        /// Seconds from the start of the session to the start of the stretch.
+        /// Drives the results graph's highlight, and is what the opening
+        /// constraint is applied to.
+        let startSec: Double
     }
 
     /// Finds the clearest case that this person deliberately slowed their breath.
@@ -896,7 +938,7 @@ enum SignalEngine {
         let minWindows = max(2, Int(((breathDwellMinSec - Double(windowSec))
                                      / Double(hopSec)).rounded(.up)) + 1)
 
-        var best: (credit: Double, rate: Double, held: Double)?
+        var best: (credit: Double, rate: Double, held: Double, start: Double)?
         var i = 0
         while i < rates.count {
             guard rates[i] > 0, clarities[i] >= floor else {
@@ -911,19 +953,25 @@ enum SignalEngine {
             var prefix = [0.0]
             for k in i...j { prefix.append(prefix[prefix.count - 1] + rates[k]) }
             for a in i...j where a + minWindows - 1 <= j {
+                // A window is centred on its span, so window `a` begins
+                // windowSec/2 before its centre.
+                let startSec = max(0, Double(a) * Double(hopSec))
+                guard startSec <= breathDoorwayMaxStartSec else { break }
                 for b in (a + minWindows - 1)...j {
                     let n = b - a + 1
                     let mean = (prefix[b - i + 1] - prefix[a - i]) / Double(n)
                     guard mean <= breathDoorwayMaxRate else { continue }
                     let credit = breathCredit(rate: mean)
                     if best == nil || credit > best!.credit {
-                        best = (credit, mean, Double(b - a) * Double(hopSec) + Double(windowSec))
+                        best = (credit, mean,
+                                Double(b - a) * Double(hopSec) + Double(windowSec),
+                                startSec)
                     }
                 }
             }
             i = j + 1
         }
-        return best.map { BreathDoorway(rate: $0.rate, heldSec: $0.held) }
+        return best.map { BreathDoorway(rate: $0.rate, heldSec: $0.held, startSec: $0.start) }
     }
 
     // The score gate used to ask whether the rate curve was one rhythm, by its
@@ -1169,17 +1217,46 @@ enum SignalEngine {
                       durationSec: Int) -> Double? {
         let d = depth(stillness: stillnessScore.map(spreadStillness),
                       hrSettling: heartSettling(heartRateTimeseries),
-                      breath: breathDoorway.map { breathCredit(rate: $0.rate) })
+                      breath: breathDoorway.map { _ in 1.0 })
         return d.map { $0 * durationFactor(seconds: durationSec) }
     }
 
     /// Weighted depth (0–1) across whichever signals were actually read.
+    ///
+    /// **Breath is binary and weighted least (2026-08-14).** It was .45, the
+    /// largest term, scored on how close the doorway rate sat to 6/min. Two
+    /// measurements killed that:
+    ///
+    /// 1. **The rate curve was doing almost nothing.** A doorway can only exist
+    ///    between 3.5 and 9 breaths/min, and across that whole reachable slice
+    ///    `breathCredit` spans 0.77 to 1.00. For any realistic doorway of 5 to
+    ///    7.5 it moved a 20-minute score by under two points. The gate had
+    ///    already made the decision; the bell was decoration on top of it.
+    /// 2. **We grade the binary far better than the rate.** Across all fourteen
+    ///    calibration captures "did they deliberately slow their breath" was
+    ///    right 14 out of 14. The rate itself carries about ±0.3/min on slow
+    ///    breathing and ±1.9/min on natural. Score what the instrument
+    ///    measures well.
+    ///
+    /// The weight moved because breath is also the least reliable of the three
+    /// and covers the smallest part of the session. At .45 a restless sit with
+    /// a CLIMBING heart rate scored 51 for a minute of pacing; at .20 it scores
+    /// 28, which reads as the poor session it was. And there is no literature
+    /// establishing how long the parasympathetic shift persists after you stop
+    /// pacing, so paying breath for the whole session was never supportable.
+    /// Heart settling and stillness run the whole session, so if the doorway
+    /// really did open the state, those two already measure it.
+    ///
+    /// Absent breath keeps the hardcoded 0.60/0.40 rather than renormalising
+    /// 0.50/0.30, deliberately: silent sessions then score EXACTLY what they
+    /// scored before this change, so nothing in an existing history moves
+    /// except the sessions that actually found a doorway.
     private static func depth(stillness: Double?, hrSettling: Double?, breath: Double?) -> Double? {
         var terms: [(value: Double, weight: Double)] = []
         let hasBreath = breath != nil
-        if let r = breath                   { terms.append((r, 0.45)) }
-        if let h = hrSettling               { terms.append((h, hasBreath ? 0.35 : 0.60)) }
-        if let s = stillness                { terms.append((s, hasBreath ? 0.20 : 0.40)) }
+        if let r = breath                   { terms.append((r, 0.20)) }
+        if let h = hrSettling               { terms.append((h, hasBreath ? 0.50 : 0.60)) }
+        if let s = stillness                { terms.append((s, hasBreath ? 0.30 : 0.40)) }
 
         let total = terms.reduce(0) { $0 + $1.weight }
         guard total > 0 else { return nil }

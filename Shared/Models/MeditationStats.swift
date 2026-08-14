@@ -42,6 +42,9 @@ final class MeditationStats {
     // CloudKit lightweight migration applies and old rows read back as nil.
     var breathDoorwayRate: Double?
     var breathDoorwayHeldSec: Double?
+    /// Seconds from session start to the beginning of the doorway. The results
+    /// graph highlights exactly this stretch.
+    var breathDoorwayStartSec: Double?
     /// Per-window path clarity, same index as `breathingRateTimeseries`.
     /// Stored because the score now needs it: without it no migration can
     /// recompute a score from this row alone.
@@ -105,6 +108,7 @@ final class MeditationStats {
         resonanceMatchScore: Double? = nil,
         breathDoorwayRate: Double? = nil,
         breathDoorwayHeldSec: Double? = nil,
+        breathDoorwayStartSec: Double? = nil,
         breathClarityTimeseries: [Double] = [],
         hrvSDNNSamples: [Double] = [],
         hrvMeanSDNN: Double? = nil,
@@ -134,6 +138,7 @@ final class MeditationStats {
         self.resonanceMatchScore = resonanceMatchScore
         self.breathDoorwayRate = breathDoorwayRate
         self.breathDoorwayHeldSec = breathDoorwayHeldSec
+        self.breathDoorwayStartSec = breathDoorwayStartSec
         self.breathClarityTimeseries = breathClarityTimeseries
         self.hrvSDNNSamples = hrvSDNNSamples
         self.hrvMeanSDNN = hrvMeanSDNN

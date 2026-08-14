@@ -22,13 +22,14 @@ struct ShareCardData {
         let reading: String
         let values: [Double]
         let isAchievement: Bool
-        /// Breathing draws the 4.5–7 resonance band behind it, same as the
-        /// results screen, so the shared image teaches the same reading.
-        var resonanceBand: Bool = false
-        /// Fixed y-range. Breath needs one that always contains the resonance
-        /// band: normalized to its own min/max a steady 5.4–5.8 curve pushes
-        /// the band entirely off-view, where it clamps and fills the panel as
-        /// a solid block. nil = scale to the values.
+        /// The doorway, as a fraction of the curve's width (0–1). Drawn as a
+        /// vertical band behind the breath curve, the same mark the results
+        /// screen uses, so the shared image teaches the same reading. It
+        /// replaced a fixed horizontal 4.5–7 band, which marked a rate range
+        /// the score no longer grades against. Nil for every other curve and
+        /// for sessions with no doorway.
+        var highlight: ClosedRange<Double>? = nil
+        /// Fixed y-range. nil = scale to the values.
         var domain: ClosedRange<Double>? = nil
     }
 
@@ -197,9 +198,14 @@ struct SessionShareCard: View {
                     .foregroundStyle(AppColor.textSecondary)
             }
             ZStack {
-                if c.resonanceBand, let d = c.domain {
-                    ResonanceBand(lo: d.lowerBound, hi: d.upperBound)
-                        .fill(AppColor.calmAccent.opacity(0.16))
+                if let h = c.highlight {
+                    GeometryReader { geo in
+                        let x = geo.size.width * h.lowerBound
+                        let w = geo.size.width * (h.upperBound - h.lowerBound)
+                        AppColor.calmAccent.opacity(0.16)
+                            .frame(width: max(w, 1))
+                            .offset(x: x)
+                    }
                 }
                 CurveShape(values: c.values, domain: c.domain, closed: true)
                     .fill(LinearGradient(colors: [tint.opacity(0.24), tint.opacity(0.02)],
@@ -220,23 +226,6 @@ struct SessionShareCard: View {
 
 /// The 4.5–7 breaths/min resonance zone, mapped into the same normalized space
 /// `CurveShape` uses so the band and the line agree.
-struct ResonanceBand: Shape {
-    let lo: Double
-    let hi: Double
-
-    func path(in rect: CGRect) -> Path {
-        let span = max(hi - lo, 1e-9)
-        let inset = rect.height * 0.08
-        func y(_ v: Double) -> CGFloat {
-            rect.maxY - inset - (rect.height - 2 * inset) * CGFloat((v - lo) / span)
-        }
-        let top = min(max(y(7.0), rect.minY), rect.maxY)
-        let bottom = min(max(y(4.5), rect.minY), rect.maxY)
-        guard bottom > top else { return Path() }
-        return Path(CGRect(x: rect.minX, y: top, width: rect.width, height: bottom - top))
-    }
-}
-
 /// A smoothed sparkline of raw values, normalized to fit its rect (with a small
 /// vertical margin so the stroke never clips). Chart-free so `ImageRenderer`
 /// output is fully deterministic.
