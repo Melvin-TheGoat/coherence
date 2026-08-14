@@ -138,7 +138,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "5.1.0"
+    static let version = "5.2.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -1249,23 +1249,44 @@ enum SignalEngine {
     // `algorithmVersion` records which formula produced a row, so historical
     // sessions stay interpretable instead of being silently re-scored.
 
-    /// Session length past which the ceiling stops rising. Settling happens
-    /// early; past ~20 minutes you are maintaining a state, not reaching one.
-    private static let durationFullMinutes = 20.0
-    /// What a session of zero length would keep of its depth. The floor is why
-    /// "two minutes still counts": a short sit is scored, not crushed.
-    private static let durationFloor = 0.40
+    /// Minutes over which the linear ceiling rises from 50 to 100.
+    private static let durationLinearFullMinutes = 10.0
+    /// Minutes at which the long-sit bonus plateaus; past this, more time
+    /// buys nothing.
+    private static let durationBonusFullMinutes = 40.0
+    /// The plateau of the long-sit bonus: +15% (Aziz, 2026-08-14).
+    private static let durationMaxBonus = 0.15
 
-    /// Time as a CEILING, never a bonus. It multiplies depth, so length can cap
-    /// a good session but can never rescue a bad one — thirty restless minutes
-    /// still score worse than five settled ones. The square root is deliberate:
-    /// the first ten minutes buy more than the second ten.
+    /// Time's shape, redesigned by Aziz (2026-08-14, replacing the v3 sqrt
+    /// ceiling): a linear CEILING to ten minutes, then a small S-shaped BONUS.
     ///
-    ///     2 min → 0.59   5 min → 0.70   10 min → 0.82   20 min+ → 1.00
+    /// Under ten minutes: cap = 50 + 5·minutes, so a two-minute sit can reach
+    /// 60 and an excellent ten-minute sit can reach 100. (The old curve capped
+    /// 10 min at 82 and needed 20+ for 100 — this deliberately moves value
+    /// toward shorter sessions.)
+    ///
+    /// Past ten minutes: 1 + 0.15·smoothstep, flat leaving 10 (the two arms
+    /// join with matching slope-zero, no kink), accelerating through the
+    /// inflection at 25, plateaued at +15% from 40 on.
+    ///
+    ///     2 min → 0.60   5 → 0.75   10 → 1.00   15 → 1.01   20 → 1.04
+    ///     25 → 1.075   30 → 1.11   40+ → 1.15
+    ///
+    /// The bonus MULTIPLIES depth rather than adding points, which preserves
+    /// the principle this factor has carried since v3: thirty restless minutes
+    /// still lose to five settled ones. A restless 40-minute sit gains ~2
+    /// points from the bonus; a settled one gains ~12. `score` clamps the
+    /// product at 1.0, so a near-perfect long sit pins to 100 rather than
+    /// overflowing.
     static func durationFactor(seconds: Int) -> Double {
         let minutes = max(0, Double(seconds)) / 60
-        let reach = (minutes / durationFullMinutes).squareRoot()
-        return durationFloor + (1 - durationFloor) * min(1, reach)
+        if minutes <= durationLinearFullMinutes {
+            return 0.5 + 0.05 * minutes
+        }
+        let u = min(1, (minutes - durationLinearFullMinutes)
+                       / (durationBonusFullMinutes - durationLinearFullMinutes))
+        let s = u * u * (3 - 2 * u)              // smoothstep — the S shape
+        return 1 + durationMaxBonus * s
     }
 
     /// THE score, from the same stored components a persisted row carries.
@@ -1281,7 +1302,7 @@ enum SignalEngine {
         let d = depth(stillness: stillnessScore.map(spreadStillness),
                       hrSettling: heartSettling(heartRateTimeseries),
                       breath: breathDoorway.map { _ in 1.0 })
-        return d.map { $0 * durationFactor(seconds: durationSec) }
+        return d.map { min(1, $0 * durationFactor(seconds: durationSec)) }
     }
 
     /// Weighted depth (0–1) across whichever signals were actually read.

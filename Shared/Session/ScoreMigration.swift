@@ -48,7 +48,7 @@ import SwiftData
 /// successful save, so a crash mid-migration just retries next launch.
 enum ScoreMigration {
 
-    static let doneKey = "scoreBackfillDone.v5"
+    static let doneKey = "scoreBackfillDone.v6"
 
     /// Rewrites `overallScore` on every row not already at the current
     /// algorithm version. Idempotent, and a no-op once the flag is set.

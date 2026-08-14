@@ -1161,6 +1161,18 @@ UI must coach it, and the 2-signal degrade path must stay.
   **display only** — stored data, scores and the doorway all read the raw
   points. Share card uses the identical rules so the shared image teaches the
   same reading.
+- **TIME RESHAPED — linear ceiling to 10 min, S-shaped bonus to 40 (v5.2.0,
+  2026-08-14, Aziz's design).** Replaces the v3 sqrt ceiling (which capped
+  10 min at 82 and needed 20+ for 100). Under ten minutes the cap is
+  **50 + 5·minutes**, so an excellent 10-minute sit reaches 100. Past ten,
+  a smoothstep bonus (flat at 10, inflection 25, plateau 40) multiplies depth
+  by up to **+15%**; `score` clamps at 1.0. Factors: 2 min → .60, 5 → .75,
+  10 → 1.00, 20 → 1.04, 25 → 1.075, 40+ → 1.15.
+  - **The bonus multiplies depth, never adds points** — the v3 principle
+    (thirty restless minutes lose to five settled ones) survives the
+    redesign: a restless 40-minute sit gains ~2 points, a settled one ~12.
+  - Boundary values pinned exactly in `test_score_durationShape`. Migration
+    key `scoreBackfillDone.v6` rescores all history to 5.2.0 on next launch.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

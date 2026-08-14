@@ -689,10 +689,11 @@ final class SignalEngineTests: XCTestCase {
         let calm = (0..<20).map { 74.0 - Double($0) * 0.5 }
         let silent = SignalEngine.score(stillnessScore: 0.9, heartRateTimeseries: calm,
                                         breathDoorway: nil, durationSec: 1200) ?? -1
-        let expected = 0.60 * (SignalEngine.heartSettling(calm) ?? 0)
-                     + 0.40 * SignalEngine.spreadStillness(0.9)
+        let depth = 0.60 * (SignalEngine.heartSettling(calm) ?? 0)
+                  + 0.40 * SignalEngine.spreadStillness(0.9)
+        let expected = min(1, depth * SignalEngine.durationFactor(seconds: 1200))
         XCTAssertEqual(silent, expected, accuracy: 0.0001,
-                       "silent sessions must not move when breath is demoted")
+                       "absent breath is the same 0.60/0.40 split it always was")
     }
 
     /// The score must be recomputable from what a stats row stores, or no
@@ -852,24 +853,36 @@ final class SignalEngineTests: XCTestCase {
 /// how long it held it. These lock the properties that make that sentence true.
 extension SignalEngineTests {
 
-    /// Time is a CEILING, never a bonus — the property Aziz asked for by name.
-    /// Sitting restless for half an hour must score worse than five settled
-    /// minutes, so duration can only ever multiply depth downward.
-    func test_score_timeCapsButNeverRescues() {
-        let short = SignalEngine.durationFactor(seconds: 5 * 60)
-        let long = SignalEngine.durationFactor(seconds: 30 * 60)
-        XCTAssertEqual(long, 1.0, accuracy: 0.001, "past 20 min the ceiling stops rising")
-        XCTAssertEqual(short, 0.70, accuracy: 0.02, "a flawless 5-minute sit tops out near 70")
-
-        // A great short session beats a poor long one.
-        XCTAssertGreaterThan(0.90 * short, 0.30 * long)
+    /// The 2026-08-14 shape: linear ceiling to 10 minutes, S-shaped bonus
+    /// plateauing at +15% by 40. Boundary values pinned exactly so a rounding
+    /// change cannot quietly move the numbers the app prints at people.
+    func test_score_durationShape() {
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 0), 0.50, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 120), 0.60, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 300), 0.75, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 600), 1.00, accuracy: 0.001,
+                       "an excellent ten-minute sit can reach 100")
+        // The arms join without a kink: just past 10 is barely above 1.
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 630), 1.00, accuracy: 0.005)
+        // Inflection at 25 sits exactly halfway up the bonus.
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 1500), 1.075, accuracy: 0.001)
+        // Plateau: 40 minutes and two hours are worth the same.
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 2400), 1.15, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 7200), 1.15, accuracy: 0.001)
     }
 
-    func test_score_durationFloorKeepsShortSessionsCounting() {
-        // "Two minutes still counts": a brief sit is scored, not crushed.
-        let two = SignalEngine.durationFactor(seconds: 120)
-        XCTAssertEqual(two, 0.59, accuracy: 0.03)
-        XCTAssertGreaterThan(SignalEngine.durationFactor(seconds: 1), 0.39)
+    /// The bonus multiplies depth, so time still cannot rescue a bad session —
+    /// the principle carried over from v3. And the score clamps at 1.0.
+    func test_score_timeBonusCannotRescueARestlessSit() {
+        // A great short session beats a poor long one, bonus and all.
+        XCTAssertGreaterThan(0.90 * SignalEngine.durationFactor(seconds: 300),
+                             0.30 * SignalEngine.durationFactor(seconds: 2400))
+        // Clamp: near-perfect depth on a long sit pins to 100, not 109.
+        let hr = (0..<20).map { 85.0 - Double($0) }
+        let s = SignalEngine.score(stillnessScore: 0.98, heartRateTimeseries: hr,
+                                   breathDoorway: .init(rate: 6, heldSec: 90, startSec: 5),
+                                   durationSec: 2400)
+        XCTAssertEqual(s ?? 0, 1.0, accuracy: 0.0001)
     }
 
     /// Stillness saturated in the old formula: every real session measured
