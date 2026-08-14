@@ -50,6 +50,7 @@ private struct SettingsForm: View {
     @Environment(\.modelContext) private var context
     @State private var primerRows = 0
     @State private var primerMessage = ""
+    @State private var cloudStatus = CloudStatus.unknown
     #endif
 
     private let durationOptions: [(String, Int?)] = [
@@ -159,6 +160,27 @@ private struct SettingsForm: View {
     private var cloudKitDebugSection: some View {
         SectionHeader(title: "CloudKit (debug)")
         settingsCard {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(Persistence.mode.label)
+                    .font(AppFont.callout.weight(.semibold))
+                    .foregroundStyle(Persistence.mode == .cloudKit
+                                     ? AppColor.calmAccent : AppColor.accentGold)
+                Text("Container: \(cloudStatus.container)")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                Text("iCloud account: \(cloudStatus.account)")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                if let why = Persistence.mode.reason {
+                    Text(why)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 12)
+            divider
             Button {
                 CloudSchemaPrimer.prime(in: context)
                 primerRows = CloudSchemaPrimer.primedRowCount(in: context)
@@ -192,7 +214,10 @@ private struct SettingsForm: View {
                 .padding(.vertical, 10)
             }
         }
-        .onAppear { primerRows = CloudSchemaPrimer.primedRowCount(in: context) }
+        .onAppear {
+            primerRows = CloudSchemaPrimer.primedRowCount(in: context)
+            Task { cloudStatus = await CloudStatus.read() }
+        }
     }
 
     private func debugRow(icon: String, title: String) -> some View {

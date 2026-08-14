@@ -14,6 +14,31 @@ import SwiftData
 /// The Watch never builds a container — all persistence happens on the phone.
 enum Persistence {
 
+    /// Which store the app actually ended up with. `cloudKit()` falls back to a
+    /// local store when the container can't init, and that fallback used to be
+    /// invisible: a `print` nobody sees on a device. A silently non-syncing app
+    /// looks identical to a working one until a user wipes their phone, so the
+    /// outcome is recorded here and surfaced in Settings under DEBUG.
+    enum Mode: Equatable {
+        case cloudKit
+        case localFallback(String)
+        case localByDesign
+
+        var label: String {
+            switch self {
+            case .cloudKit:            return "CloudKit sync active"
+            case .localByDesign:       return "Local store (by design)"
+            case .localFallback:       return "NOT SYNCING (fell back to local)"
+            }
+        }
+        var reason: String? {
+            if case .localFallback(let why) = self { return why }
+            return nil
+        }
+    }
+
+    private(set) static var mode: Mode = .localByDesign
+
     /// Every @Model type in the app. Keep this in sync when a model is added.
     static let schema = Schema([
         User.self,
@@ -60,7 +85,9 @@ enum Persistence {
             cloudKitDatabase: .none
         )
         do {
-            return try ModelContainer(for: schema, configurations: [main, healthConfig()])
+            let container = try ModelContainer(for: schema, configurations: [main, healthConfig()])
+            if mode == .localByDesign { mode = .localByDesign }
+            return container
         } catch {
             fatalError("Failed to create local ModelContainer: \(error)")
         }
@@ -77,10 +104,17 @@ enum Persistence {
             cloudKitDatabase: .automatic
         )
         do {
-            return try ModelContainer(for: schema, configurations: [synced, healthConfig()])
+            let container = try ModelContainer(for: schema, configurations: [synced, healthConfig()])
+            mode = .cloudKit
+            return container
         } catch {
+            // Deliberately not fatal: a dev machine or an unprovisioned build
+            // should still run. But it must never again be silent.
+            mode = .localFallback(String(describing: error))
             print("CloudKit ModelContainer unavailable, falling back to local store: \(error)")
-            return local()
+            let fallback = local()
+            mode = .localFallback(String(describing: error))
+            return fallback
         }
     }
 
