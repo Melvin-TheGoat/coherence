@@ -28,6 +28,7 @@ struct SessionResultsView: View {
     @State private var priorScores: [Double] = []
     @State private var showShareSheet = false
     @State private var showScoreMeaning = false
+    @State private var showResonanceMeaning = false
 
     var body: some View {
         NavigationStack {
@@ -38,6 +39,7 @@ struct SessionResultsView: View {
                         if let stats {
                             hero(stats)
                             tiles(stats)
+                            if stats.breathDoorwayRate != nil { resonanceChip }
                             ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
                             shareButton
                         } else {
@@ -220,24 +222,43 @@ struct SessionResultsView: View {
         // shows the whole session, so a headline naming only the slow opening
         // would contradict its own picture.
         if let r = stats.meanBreathingRate { t.append(("Breaths/min", String(format: "%.1f", r), true)) }
-        // The doorway, in plain words rather than a "resonance" percentage.
-        // That tile reported the session mean against 6/min, so a sit that held
-        // 5.5 for three minutes and then breathed normally displayed 2%, which
-        // described neither the practice nor the score built from it.
-        if let rate = stats.breathDoorwayRate, let held = stats.breathDoorwayHeldSec {
-            t.append(("Slowed to", String(format: "%.1f for %@", rate, mmss(held)), true))
-        }
         return t
     }
 
-    private func mmss(_ seconds: Double) -> String {
-        let s = Int(seconds.rounded())
-        return s < 60 ? "\(s)s" : String(format: "%d:%02d", s / 60, s % 60)
+    // Replaces the "Slowed to" tile (Aziz, 2026-08-14): the claim in three
+    // words, the mechanics behind the "?", and nothing at all when there was
+    // no doorway — absence is never mentioned.
+    private var resonanceChip: some View {
+        HStack {
+            Spacer()
+            Button { showResonanceMeaning = true } label: {
+                HStack(spacing: 7) {
+                    Text("Resonance reached")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.calmAccent)
+                    Text("?")
+                        .font(.system(size: 10, weight: .heavy))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(width: 17, height: 17)
+                        .background(AppColor.backgroundSecondary, in: Circle())
+                        .overlay(Circle().stroke(AppColor.textSecondary.opacity(0.18), lineWidth: 1))
+                }
+                .padding(.horizontal, 13)
+                .padding(.vertical, 6)
+                .background(AppColor.calmAccent.opacity(0.10), in: Capsule())
+                .overlay(Capsule().stroke(AppColor.calmAccent.opacity(0.30), lineWidth: 1))
+            }
+            // Attached to the button, not stacked on the NavigationStack with
+            // the other two sheets — several .sheet modifiers on one view is
+            // the documented only-one-presents trap.
+            .sheet(isPresented: $showResonanceMeaning) {
+                ResonanceMeaningSheet().presentationDetents([.medium])
+            }
+            Spacer()
+        }
     }
 
     // MARK: Graphs — real axes, self-explaining readings
-
-    private enum GraphKind { case heart, breath, stillness, other }
 
     private func kind(of series: EvidenceSeries) -> GraphKind {
         let t = series.title.lowercased()
@@ -308,78 +329,11 @@ struct SessionResultsView: View {
     }
 
     private func graphCard(_ series: EvidenceSeries) -> some View {
-        let kind = kind(of: series)
-        let domain = yDomain(series, kind)
-        // Color grammar: physiology (heart, breath's slow-breathing band) reads teal;
-        // achievement curves (stillness) read gold. The breath LINE stays gold
-        // against its teal band so "in the zone" is visible at a glance.
-        let lineColor: Color = (kind == .heart) ? AppColor.calmAccent : AppColor.accentGold
-        return VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(series.title).font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
-                Spacer()
-                if let reading = reading(for: kind) {
-                    Text(reading)
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-            }
-            Chart {
-                if kind == .breath, let span = doorwaySpan(series) {
-                    // The stretch that earned the credit, and nothing else.
-                    //
-                    // This replaced a teal band running the full width at a
-                    // fixed 4.5–7. That band marked a target the score stopped
-                    // grading against: breath is binary now, so every rate a
-                    // doorway can legally hold is worth the same, and drawing a
-                    // narrow "good" zone under a score that ignores it taught
-                    // people to read one as the other.
-                    //
-                    // Floor to ceiling rather than clipped to a rate range,
-                    // deliberately: a session's breath rises out of any such box
-                    // while the doorway is still running, which reads as failing
-                    // during the very thing being credited.
-                    RectangleMark(xStart: .value("min", span.lowerBound / 60),
-                                  xEnd: .value("min", span.upperBound / 60))
-                        .foregroundStyle(AppColor.calmAccent.opacity(0.14))
-                }
-                ForEach(series.smoothedPoints) { point in
-                    // Fill down to the domain floor, not to zero.
-                    AreaMark(x: .value("min", point.t / 60),
-                             yStart: .value(series.title, domain.lowerBound),
-                             yEnd: .value(series.title, point.value))
-                        .foregroundStyle(LinearGradient(colors: [lineColor.opacity(0.22),
-                                                                 lineColor.opacity(0.02)],
-                                                        startPoint: .top, endPoint: .bottom))
-                        .interpolationMethod(.catmullRom)
-                    LineMark(x: .value("min", point.t / 60), y: .value(series.title, point.value))
-                        .foregroundStyle(lineColor)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.catmullRom)
-                }
-                if let last = series.smoothedPoints.last {
-                    PointMark(x: .value("min", last.t / 60), y: .value(series.title, last.value))
-                        .foregroundStyle(lineColor)
-                        .symbolSize(36)
-                }
-            }
-            .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
-                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
-                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
-                }
-            }
-            .chartYAxis {
-                AxisMarks(values: .automatic(desiredCount: 3)) { _ in
-                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
-                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
-                }
-            }
-            .chartYScale(domain: domain)
-            .chartXAxisLabel("minutes", alignment: .trailing)
-            .frame(height: 130)
-        }
-        .card(padding: 14)
+        let k = kind(of: series)
+        return EvidenceGraphCard(series: series, kind: k,
+                                 domain: yDomain(series, k),
+                                 doorwaySpan: k == .breath ? doorwaySpan(series) : nil,
+                                 reading: reading(for: k))
     }
 
     private func reading(for kind: GraphKind) -> String? {
@@ -388,9 +342,9 @@ struct SessionResultsView: View {
         case .heart:
             return VerdictEngine.hrReading(start: stats.startHR, end: stats.endHR)
         case .breath:
-            return VerdictEngine.breathReading(meanRate: stats.meanBreathingRate,
-                                               doorwayRate: stats.breathDoorwayRate,
-                                               doorwayHeldSec: stats.breathDoorwayHeldSec)
+            // The session average. The doorway's claim lives on the Resonance
+            // chip now, so "slowed to" no longer appears twice on one screen.
+            return stats.meanBreathingRate.map { String(format: "%.1f/min avg", $0) }
         case .stillness:
             return VerdictEngine.stillnessReading(points: stats.stillnessTimeseries,
                                                   hopSec: Double(stats.hopSec))
@@ -672,5 +626,168 @@ struct SessionResultsView: View {
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { showShareSheet = true }
         #endif
+    }
+}
+
+// MARK: - Graph support
+
+fileprivate enum GraphKind { case heart, breath, stillness, other }
+
+private func mmss(_ seconds: Double) -> String {
+    let s = Int(seconds.rounded())
+    return s < 60 ? "\(s)s" : String(format: "%d:%02d", s / 60, s % 60)
+}
+
+/// One evidence chart: doorway band, smoothed curve, and finger scrubbing.
+/// A separate view so each graph owns its own selection state.
+private struct EvidenceGraphCard: View {
+    let series: EvidenceSeries
+    let kind: GraphKind
+    let domain: ClosedRange<Double>
+    let doorwaySpan: ClosedRange<Double>?
+    let reading: String?
+
+    /// Where the finger is, in minutes — `chartXSelection`'s unit. The system
+    /// gesture arbitrates against the surrounding ScrollView, which is why
+    /// this is not a hand-rolled DragGesture: a plain drag with distance 0
+    /// steals vertical scrolling from the whole chart area.
+    @State private var selectedMinutes: Double?
+
+    // Color grammar: physiology (heart, the doorway band) reads teal;
+    // achievement curves (stillness, breath line) read gold.
+    private var lineColor: Color { kind == .heart ? AppColor.calmAccent : AppColor.accentGold }
+
+    private var scrubPoint: EvidencePoint? {
+        guard let m = selectedMinutes else { return nil }
+        return series.smoothedPoints.min { abs($0.t / 60 - m) < abs($1.t / 60 - m) }
+    }
+
+    /// The value in this graph's own unit — the whole point of scrubbing.
+    private func valueLabel(_ v: Double) -> String {
+        switch kind {
+        case .heart: String(format: "%.0f bpm", v)
+        case .breath: String(format: "%.1f br/min", v)
+        case .stillness: String(format: "%.2f", v)
+        case .other: String(format: "%.1f", v)
+        }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(series.title).font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                if let reading {
+                    Text(reading)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            Chart {
+                if let span = doorwaySpan {
+                    // The stretch that earned the credit, and nothing else.
+                    // Floor to ceiling rather than clipped to a rate range:
+                    // a session's breath rises out of any such box while the
+                    // doorway is still running, which reads as failing during
+                    // the very thing being credited. Explained by the
+                    // Resonance chip's "?" above the graphs.
+                    RectangleMark(xStart: .value("min", span.lowerBound / 60),
+                                  xEnd: .value("min", span.upperBound / 60))
+                        .foregroundStyle(AppColor.calmAccent.opacity(0.14))
+                }
+                ForEach(series.smoothedPoints) { point in
+                    // Fill down to the domain floor, not to zero.
+                    AreaMark(x: .value("min", point.t / 60),
+                             yStart: .value(series.title, domain.lowerBound),
+                             yEnd: .value(series.title, point.value))
+                        .foregroundStyle(LinearGradient(colors: [lineColor.opacity(0.22),
+                                                                 lineColor.opacity(0.02)],
+                                                        startPoint: .top, endPoint: .bottom))
+                        .interpolationMethod(.catmullRom)
+                    LineMark(x: .value("min", point.t / 60), y: .value(series.title, point.value))
+                        .foregroundStyle(lineColor)
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .interpolationMethod(.catmullRom)
+                }
+                if let last = series.smoothedPoints.last {
+                    PointMark(x: .value("min", last.t / 60), y: .value(series.title, last.value))
+                        .foregroundStyle(lineColor)
+                        .symbolSize(36)
+                }
+                if let s = scrubPoint {
+                    RuleMark(x: .value("min", s.t / 60))
+                        .foregroundStyle(AppColor.textPrimary.opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 1))
+                    PointMark(x: .value("min", s.t / 60), y: .value(series.title, s.value))
+                        .foregroundStyle(lineColor)
+                        .symbolSize(60)
+                        .annotation(position: .top, spacing: 6,
+                                    overflowResolution: .init(x: .fit(to: .chart),
+                                                              y: .fit(to: .chart))) {
+                            VStack(spacing: 1) {
+                                Text(valueLabel(s.value))
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(AppColor.textPrimary)
+                                    .monospacedDigit()
+                                Text("min \(mmss(s.t))")
+                                    .font(.system(size: 9))
+                                    .foregroundStyle(AppColor.textSecondary)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 5)
+                            .background(AppColor.backgroundSecondary,
+                                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .stroke(AppColor.textSecondary.opacity(0.2), lineWidth: 1))
+                        }
+                }
+            }
+            .chartXSelection(value: $selectedMinutes)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
+                }
+            }
+            .chartYAxis {
+                AxisMarks(values: .automatic(desiredCount: 3)) { _ in
+                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
+                }
+            }
+            .chartYScale(domain: domain)
+            .chartXAxisLabel("minutes", alignment: .trailing)
+            .frame(height: 130)
+        }
+        .card(padding: 14)
+    }
+}
+
+/// Why the teal band earns credit, behind the chip's quiet "?" — the same
+/// pattern as the score ring's ScoreMeaningSheet. Says what was measured and
+/// what it means; makes no claim about sessions that lack it.
+private struct ResonanceMeaningSheet: View {
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Resonance")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("THE TEAL BAND ON YOUR BREATHING GRAPH")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(0.8)
+                    .foregroundStyle(AppColor.calmAccent)
+                Group {
+                    Text("In the opening minutes of this session you slowed your breathing to around six breaths a minute and held it there. That pace is special: breath, heart and blood pressure fall into step, and the nervous system settles toward its rest state. Researchers call it resonance breathing.")
+                    Text("The band marks the stretch that did it. It is the entry technique working: a few slow minutes to open the door, then your breath returns to normal while the calm carries on.")
+                }
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .screenBackground()
     }
 }
