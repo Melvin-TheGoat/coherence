@@ -9,10 +9,11 @@ final class VerdictEngineTests: XCTestCase {
     func test_strongSession_namesEverySignal() {
         let v = VerdictEngine.verdict(for: .init(
             overallScore: 0.81, stillnessScore: 0.88, hrDecline: 11,
-            meanBreathingRate: 5.8, resonanceMatchScore: 0.72, bellyBreathing: true))
+            meanBreathingRate: 5.8, resonanceMatchScore: 0.72,
+            breathDoorwayRate: 5.8, breathDoorwayHeldSec: 180, bellyBreathing: true))
         XCTAssertEqual(v.headline, "Your practice landed.")
         XCTAssertTrue(v.sentence.contains("11 beats"), v.sentence)
-        XCTAssertTrue(v.sentence.contains("resonance"), v.sentence)
+        XCTAssertTrue(v.sentence.contains("breath slowed"), v.sentence)
         XCTAssertTrue(v.sentence.contains("still"), v.sentence)
     }
 
@@ -51,8 +52,33 @@ final class VerdictEngineTests: XCTestCase {
     func test_wristSessionWithBreathingData_mayClaimBreath() {
         let v = VerdictEngine.verdict(for: .init(
             overallScore: 0.8, stillnessScore: 0.9, hrDecline: 2,
-            meanBreathingRate: 5.8, resonanceMatchScore: 0.9, bellyBreathing: false))
-        XCTAssertTrue(v.sentence.contains("resonance"), v.sentence)
+            meanBreathingRate: 5.8, resonanceMatchScore: 0.9,
+            breathDoorwayRate: 5.8, breathDoorwayHeldSec: 200, bellyBreathing: false))
+        // Lowercased: this claim leads the sentence here, so it is capitalised.
+        XCTAssertTrue(v.sentence.lowercased().contains("breath slowed"), v.sentence)
+    }
+
+    /// A session read at natural pace has no doorway, so the score's breath
+    /// term is absent — and the verdict must SAY so rather than fall silent on
+    /// its largest component, which is what it used to do above 8/min.
+    func test_readAtNaturalPace_saysSoRatherThanNothing() {
+        let v = VerdictEngine.verdict(for: .init(
+            overallScore: 0.6, stillnessScore: 0.9, hrDecline: 5,
+            meanBreathingRate: 12.4, resonanceMatchScore: 0.02,
+            breathDoorwayRate: nil, breathDoorwayHeldSec: nil))
+        XCTAssertTrue(v.sentence.contains("own pace"), v.sentence)
+        XCTAssertFalse(v.sentence.contains("slowed"), v.sentence)
+    }
+
+    /// Breath is the intervention, a settling heart is the evidence. Said only
+    /// when both happened, and never negated when they didn't: people reach
+    /// the same state without slowing their breath at all.
+    func test_couplingIsShownOnlyWhenBothHappened() {
+        XCTAssertNotNil(VerdictEngine.doorwayCoupling(doorwayRate: 5.4, hrDecline: 9))
+        XCTAssertNil(VerdictEngine.doorwayCoupling(doorwayRate: 5.4, hrDecline: 0),
+                     "no heart change, no claim")
+        XCTAssertNil(VerdictEngine.doorwayCoupling(doorwayRate: nil, hrDecline: 9),
+                     "no doorway, no claim")
     }
 
     func test_hrReading_readsStartToEnd() {
@@ -71,10 +97,15 @@ final class VerdictEngineTests: XCTestCase {
         XCTAssertEqual(VerdictEngine.stillnessReading(points: points, hopSec: 5), "restless throughout")
     }
 
-    func test_breathReading_callsOutResonance() {
-        XCTAssertEqual(VerdictEngine.breathReading(meanRate: 5.8, resonance: 0.7), "held near 6/min")
-        XCTAssertEqual(VerdictEngine.breathReading(meanRate: 11.2, resonance: 0.1), "averaged 11.2/min")
-        XCTAssertNil(VerdictEngine.breathReading(meanRate: nil, resonance: 0.7))
+    func test_breathReading_namesTheDoorwayWhenThereWasOne() {
+        XCTAssertEqual(VerdictEngine.breathReading(meanRate: 9.1, doorwayRate: 5.8,
+                                                   doorwayHeldSec: 190),
+                       "slowed to 5.8/min for 3:10")
+        XCTAssertEqual(VerdictEngine.breathReading(meanRate: 11.2, doorwayRate: nil,
+                                                   doorwayHeldSec: nil),
+                       "averaged 11.2/min")
+        XCTAssertNil(VerdictEngine.breathReading(meanRate: nil, doorwayRate: nil,
+                                                 doorwayHeldSec: nil))
     }
 
     // MARK: - Standing (this session vs the user's own history)
@@ -123,7 +154,8 @@ final class VerdictEngineTests: XCTestCase {
     func test_noVerdictClaimsABrainState() {
         let inputs: [VerdictEngine.Inputs] = [
             .init(overallScore: 0.95, stillnessScore: 0.95, hrDecline: 20,
-                  meanBreathingRate: 6, resonanceMatchScore: 0.9, bellyBreathing: true),
+                  meanBreathingRate: 6, resonanceMatchScore: 0.9,
+                  breathDoorwayRate: 6, breathDoorwayHeldSec: 240, bellyBreathing: true),
             .init(overallScore: 0.1, stillnessScore: 0.1, hrDecline: -10),
             .init(overallScore: 0.5),
         ]

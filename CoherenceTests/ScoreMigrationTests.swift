@@ -13,7 +13,44 @@ final class ScoreMigrationTests: XCTestCase {
 
     /// A row scored by an older formula is rewritten to exactly what the
     /// engine would compute today — the whole point of sharing one code path.
+    ///
+    /// The curve, not the mean, is what the score is built from now, so the
+    /// fixture carries one: twenty windows at 6/min, long enough to be a
+    /// doorway (`(20-1)*5 + 30 = 125 s`).
     func test_backfill_matchesAFreshComputation() {
+        let ctx = makeContext()
+        let id = UUID()
+        let curve = [Double](repeating: 6.0, count: 20)
+        ctx.insert(Session(id: id, startedAt: Date(), durationSec: 1200))
+        let stats = MeditationStats(
+            sessionID: id,
+            heartRateTimeseries: [74, 72, 70, 68, 66, 64],
+            stillnessScore: 0.90,
+            breathingRateTimeseries: curve,
+            meanBreathingRate: 6.0,
+            resonanceMatchScore: 0.95,
+            overallScore: 0.42,                 // whatever the old formula said
+            algorithmVersion: "2.0.0")
+        ctx.insert(stats)
+
+        ScoreMigration.backfill(in: ctx)
+
+        let doorway = SignalEngine.breathDoorway(
+            rates: curve, clarities: [Double](repeating: 1.0, count: curve.count),
+            windowSec: 30, hopSec: 5)
+        XCTAssertNotNil(doorway, "a steady 6/min curve is a doorway")
+        let expected = SignalEngine.score(stillnessScore: 0.90,
+                                          heartRateTimeseries: [74, 72, 70, 68, 66, 64],
+                                          breathDoorway: doorway,
+                                          durationSec: 1200)
+        XCTAssertEqual(stats.overallScore ?? -1, expected ?? -2, accuracy: 0.0001)
+        XCTAssertEqual(stats.algorithmVersion, SignalEngine.version)
+    }
+
+    /// A row with a stored mean but NO curve gets no doorway, so breath cannot
+    /// reach its back-filled score. A real behaviour change from the doorway
+    /// rework: the old back-fill scored breath off the mean alone.
+    func test_backfill_rowWithoutACurveScoresNoBreath() {
         let ctx = makeContext()
         let id = UUID()
         ctx.insert(Session(id: id, startedAt: Date(), durationSec: 1200))
@@ -21,20 +58,18 @@ final class ScoreMigrationTests: XCTestCase {
             sessionID: id,
             heartRateTimeseries: [74, 72, 70, 68, 66, 64],
             stillnessScore: 0.90,
-            meanBreathingRate: 6.2,
-            resonanceMatchScore: 0.95,
-            overallScore: 0.42,                 // whatever v2 said
+            meanBreathingRate: 6.2,             // stored, but no curve behind it
             algorithmVersion: "2.0.0")
         ctx.insert(stats)
 
         ScoreMigration.backfill(in: ctx)
 
-        let expected = SignalEngine.score(stillnessScore: 0.90,
+        let noBreath = SignalEngine.score(stillnessScore: 0.90,
                                           heartRateTimeseries: [74, 72, 70, 68, 66, 64],
-                                          meanBreathingRate: 6.2,
+                                          breathDoorway: nil,
                                           durationSec: 1200)
-        XCTAssertEqual(stats.overallScore ?? -1, expected ?? -2, accuracy: 0.0001)
-        XCTAssertEqual(stats.algorithmVersion, SignalEngine.version)
+        XCTAssertEqual(stats.overallScore ?? -1, noBreath ?? -2, accuracy: 0.0001)
+        XCTAssertNil(stats.breathDoorwayRate)
     }
 
     /// It rewrites a derived number and nothing else. Every measurement the

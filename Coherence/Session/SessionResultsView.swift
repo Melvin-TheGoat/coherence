@@ -115,6 +115,8 @@ struct SessionResultsView: View {
             hrDecline: stats.hrDecline,
             meanBreathingRate: stats.meanBreathingRate,
             resonanceMatchScore: stats.resonanceMatchScore,
+            breathDoorwayRate: stats.breathDoorwayRate,
+            breathDoorwayHeldSec: stats.breathDoorwayHeldSec,
             bellyBreathing: session?.bellyBreathing ?? false))
         // The words lead; the number supports. A score means little on its own
         // once the Watch and the camera both produce one — what's true and
@@ -128,6 +130,19 @@ struct SessionResultsView: View {
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // Breath is the intervention; a settling heart is the evidence it
+            // landed. Shown only when both actually happened, and never negated
+            // when they didn't: plenty of people reach the same state without
+            // ever slowing their breath.
+            if let coupling = VerdictEngine.doorwayCoupling(
+                doorwayRate: stats.breathDoorwayRate, hrDecline: stats.hrDecline) {
+                Text(coupling)
+                    .font(AppFont.caption.weight(.medium))
+                    .foregroundStyle(AppColor.calmAccent)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
+            }
 
             HStack(spacing: 10) {
                 if let standing {
@@ -201,11 +216,23 @@ struct SessionResultsView: View {
         var t: [(String, String, Bool)] = []
         if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", -d), false)) }
         if let s = stats.stillnessScore { t.append(("Stillness", String(format: "%.2f", s), false)) }
+        // The session average, deliberately: the curve right below this tile
+        // shows the whole session, so a headline naming only the slow opening
+        // would contradict its own picture.
         if let r = stats.meanBreathingRate { t.append(("Breaths/min", String(format: "%.1f", r), true)) }
-        if let res = stats.resonanceMatchScore {
-            t.append(("Resonance", "\(Int((res * 100).rounded()))%", true))
+        // The doorway, in plain words rather than a "resonance" percentage.
+        // That tile reported the session mean against 6/min, so a sit that held
+        // 5.5 for three minutes and then breathed normally displayed 2%, which
+        // described neither the practice nor the score built from it.
+        if let rate = stats.breathDoorwayRate, let held = stats.breathDoorwayHeldSec {
+            t.append(("Slowed to", String(format: "%.1f for %@", rate, mmss(held)), true))
         }
         return t
+    }
+
+    private func mmss(_ seconds: Double) -> String {
+        let s = Int(seconds.rounded())
+        return s < 60 ? "\(s)s" : String(format: "%d:%02d", s / 60, s % 60)
     }
 
     // MARK: Graphs — real axes, self-explaining readings
@@ -222,7 +249,7 @@ struct SessionResultsView: View {
 
     /// Y domain per signal. Heart rate must NOT include zero — an area filled
     /// from 0 flattens a 74→63 settle into a straight line. Stillness keeps its
-    /// natural 0–1 scale; breath always shows the resonance band.
+    /// natural 0–1 scale; breath always shows the slow-breathing band.
     private func yDomain(_ series: EvidenceSeries, _ kind: GraphKind) -> ClosedRange<Double> {
         let values = series.points.map(\.value)
         guard let lo = values.min(), let hi = values.max() else { return 0...1 }
@@ -241,7 +268,7 @@ struct SessionResultsView: View {
     private func graphCard(_ series: EvidenceSeries) -> some View {
         let kind = kind(of: series)
         let domain = yDomain(series, kind)
-        // Color grammar: physiology (heart, breath's resonance band) reads teal;
+        // Color grammar: physiology (heart, breath's slow-breathing band) reads teal;
         // achievement curves (stillness) read gold. The breath LINE stays gold
         // against its teal band so "in the zone" is visible at a glance.
         let lineColor: Color = (kind == .heart) ? AppColor.calmAccent : AppColor.accentGold
@@ -257,7 +284,8 @@ struct SessionResultsView: View {
             }
             Chart {
                 if kind == .breath, let first = series.points.first, let last = series.points.last {
-                    // The claim and the evidence in one picture: the resonance zone.
+                    // The claim and the evidence in one picture: the slow-breathing
+                    // zone, which is exactly what earns breath credit.
                     RectangleMark(xStart: .value("min", first.t / 60),
                                   xEnd: .value("min", last.t / 60),
                                   yStart: .value("zone", 4.5), yEnd: .value("zone", 7.0))
@@ -309,7 +337,8 @@ struct SessionResultsView: View {
             return VerdictEngine.hrReading(start: stats.startHR, end: stats.endHR)
         case .breath:
             return VerdictEngine.breathReading(meanRate: stats.meanBreathingRate,
-                                               resonance: stats.resonanceMatchScore)
+                                               doorwayRate: stats.breathDoorwayRate,
+                                               doorwayHeldSec: stats.breathDoorwayHeldSec)
         case .stillness:
             return VerdictEngine.stillnessReading(points: stats.stillnessTimeseries,
                                                   hopSec: Double(stats.hopSec))
@@ -403,7 +432,7 @@ struct SessionResultsView: View {
     }
 
     /// Fixed y-ranges, matching the results screen's chart rules: stillness is
-    /// always 0–1, breath always contains the 4.5–7 resonance band (a steady
+    /// always 0–1, breath always contains the 4.5–7 slow-breathing band (a steady
     /// breath scaled to its own range would push the band off-view), and heart
     /// rate scales to itself with padding — never from zero, which flattens a
     /// real settle into a straight line.

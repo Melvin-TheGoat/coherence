@@ -3,18 +3,29 @@ import SwiftData
 
 /// One-time back-fill of the current score across every historical session.
 ///
-/// Re-run for v3.2, which changed what a breathing rate is worth: breath now
-/// counts at any rate on a wide curve instead of a narrow resonance bell. Same
-/// reasoning as v3 itself, so the key is bumped to .v2: a history graph is a
-/// comparison, and a comparison across two formulas is a lie told with a line
-/// chart.
+/// Re-run for v4, which changed WHICH breathing number is worth anything:
+/// breath now scores the DOORWAY, the slow opening of a session, instead of
+/// the session mean. Same reasoning as every re-run before it: a history graph
+/// is a comparison, and a comparison across two formulas is a lie told with a
+/// line chart.
+///
+/// **What this back-fill can and cannot reproduce.** The doorway itself
+/// recomputes exactly, because `breathingRateTimeseries`, `windowSec` and
+/// `hopSec` are all stored. The CLARITY gate cannot: per-window clarity was
+/// never persisted before v4, so historical rows are scored as though their
+/// reads were clear. Historical breath credit is therefore more permissive
+/// than live scoring, and that gap decays as new sessions accumulate.
+///
+/// Worth naming plainly, since the paragraph below used to claim otherwise:
+/// the previous back-fill passed the DISPLAYED mean, which live `analyze`
+/// gated and this did not. History was already scored on reads the engine
+/// refused. This is not a new compromise, it is the same one, now measured.
 ///
 /// **Why it's safe to rewrite an "immutable" row here.** Stats rows are
 /// immutable by convention because a session's *measurements* must never
-/// change after the fact. This doesn't touch a measurement: every input the v3
-/// formula needs (stillness score, the heart-rate series, resonance, duration)
-/// is already stored on the row, so the back-fill runs the identical code path
-/// `analyze` runs and simply replaces a number that was derived from those
+/// change after the fact. This doesn't touch a measurement: every input the
+/// formula needs is already stored on the row, so the back-fill runs the same
+/// code path `analyze` runs and replaces a number that was derived from those
 /// inputs by an older formula. Nothing measured is edited, invented, or lost.
 ///
 /// **Why back-fill at all**, when `algorithmVersion` exists precisely so old
@@ -28,7 +39,7 @@ import SwiftData
 /// successful save, so a crash mid-migration just retries next launch.
 enum ScoreMigration {
 
-    static let doneKey = "scoreBackfillDone.v2"
+    static let doneKey = "scoreBackfillDone.v3"
 
     /// Rewrites `overallScore` on every row not already at the current
     /// algorithm version. Idempotent, and a no-op once the flag is set.
@@ -64,10 +75,22 @@ enum ScoreMigration {
                 : (row.heartRateTimeseries.count - 1) * row.hopSec + row.windowSec
             let seconds = durations[row.sessionID ?? UUID()] ?? spanned
 
+            // Clarity is treated as passing: it was never stored, so there is
+            // nothing to gate on. See the note at the top of this file.
+            let doorway = SignalEngine.breathDoorway(
+                rates: row.breathingRateTimeseries,
+                clarities: row.breathClarityTimeseries.count == row.breathingRateTimeseries.count
+                    ? row.breathClarityTimeseries
+                    : [Double](repeating: 1.0, count: row.breathingRateTimeseries.count),
+                windowSec: row.windowSec,
+                hopSec: row.hopSec)
+            row.breathDoorwayRate = doorway?.rate
+            row.breathDoorwayHeldSec = doorway?.heldSec
+
             row.overallScore = SignalEngine.score(
                 stillnessScore: row.stillnessScore,
                 heartRateTimeseries: row.heartRateTimeseries,
-                meanBreathingRate: row.meanBreathingRate,
+                breathDoorway: doorway,
                 durationSec: seconds)
             row.algorithmVersion = version
             updated += 1

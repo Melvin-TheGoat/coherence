@@ -959,6 +959,65 @@ UI must coach it, and the 2-signal degrade path must stay.
     He is a meditator and his resting rate sits at resonance. The older sessions
     where he counted 10–12 were a different state, not his baseline. Any future
     ground truth needs the state named alongside the count.
+- **BREATH SCORES THE DOORWAY, NOT THE SESSION (v4.0.0, 2026-08-14).** Aziz's
+  insight: slow breathing is an ENTRY technique, a few minutes at ~6/min to
+  shift into parasympathetic dominance, after which attention moves elsewhere
+  and breathing returns to natural. Nobody paces 6/min for twenty minutes;
+  that is HRV biofeedback, not meditation. Scoring the session MEAN punished
+  correct practice twice: if the natural phase was readable the mean dragged
+  5 → 11 and credit collapsed; if it wasn't, whole-session coverage failed and
+  breath left the score entirely.
+  - **`breathDoorway`** finds the contiguous stretch (≥60 s, ≤9/min) whose mean
+    rate maximises `breathCredit`. `breathCredit` is UNCHANGED, and note it is
+    **not "slowest wins" but "closest to 6 wins"** — a 4/min sway scores 0.88
+    against a real 6/min doorway's 1.00, which is free anti-sway defence.
+  - **The first design FAILED validation and was thrown away.** Gating on the
+    STRETCH's own clarity produced a 6.5/min "doorway" at clarity 0.65 held
+    90 s inside `39F2003D`, the session Aziz confirmed has no breathing in it.
+    Selecting by max clarity instead gave the same false positive. No threshold
+    separates it: real reads span 0.61–0.96, straddling 0.65. **Searching
+    sub-runs for the best-looking stretch finds a good-looking one in junk.**
+  - **The fix was smaller than the first design.** The SESSION clarity mean
+    works precisely BECAUSE it cannot be searched: junk carries many
+    readable-but-unclear windows that drag it down, so `39F2003D` sits at 0.49
+    against the 0.60 bar. **Clarity was never the bug. COVERAGE was.** So:
+    `wristConfidentFraction` deleted, `wristMinPathClarity` untouched, and the
+    doorway rate scored in place of the mean.
+  - **`wristDisplayFraction = 0.35` also blocked it** — `readWrist` returned nil
+    before anything else ran, and a 3-min doorway in a 20-min sit is 0.15
+    coverage. Now `fraction >= wristDisplayFraction || doorway != nil`.
+  - **NO dwell ramp.** The first design scaled credit from 60 s to 150 s held.
+    Every capture is 2–5 min so none can validate that curve, and applying it
+    drove three VERIFIED paced sessions to 0.11 / 0.67 / 0.78. Revisit only
+    when counted sessions longer than the ramp exist.
+  - **Validated across all 14 captures, real engine** (`tools/breath_harness`):
+    5E0FF154 6.0, FEFAD3C6 6.1, 45D06F9F 5.9, 6FE7FF9B 4.8, 8F85AEA4 6.0,
+    6B0D92D1 6.0 all SCORE (truths 6, 6, 5, 4.5–5, 6, ~6.9). **39F2003D
+    computes a 6.1 doorway and is REFUSED by the clarity gate** (0.83 → 0.00).
+    The eight natural-breathing captures score no breath, which is the intended
+    consequence: **if you never slow your breath, your score is heart and
+    stillness.**
+  - **Window bleed, learned from a failing test:** a 30 s window centred on a
+    burst still contains it, so a stretch reads across ~`windowSec` more than
+    it lasted. 45 s of breath legitimately yields the seven windows the floor
+    asks for. Synthetic "too short" tests must go well under that.
+  - **Do NOT score natural-breathing regularity** (Aziz asked; answer is no).
+    The engine cannot reliably read quiet breathing, and postural sway — the
+    artefact it confuses for breath — is MORE regular than breath. That metric
+    would reward the enemy. `breathingRegularity` stays computed, unscored.
+  - **Belly asymmetry fixed:** `scoredBreathingRate` was only ever assigned in
+    the wrist branch, so opting into belly mode silently cost 45% of the score.
+    The belly loop's per-window `conc` is now kept and fed to the same doorway.
+  - **The coupling line** (Aziz's idea): when a doorway exists AND heart rate
+    fell, results say "Breath slowed to 5.4, and your heart followed, down 9."
+    Descriptive on purpose — we read motion and averaged HR, not vagal tone.
+    **Presence is evidence; absence means nothing**, since people reach the
+    same state without slowing their breath, so the line is never negated.
+  - Migration `scoreBackfillDone.v3` recomputes doorways from the stored curve.
+    Per-window clarity was never persisted before v4, so history is scored as
+    though its reads were clear: historical breath credit is more permissive
+    than live, and that decays as sessions accumulate. Now persisted as
+    `breathClarityTimeseries` so this cannot recur.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

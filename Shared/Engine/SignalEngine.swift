@@ -72,6 +72,16 @@ struct SignalResult: Codable, Equatable {
     var breathingRegularity: Double?
     var resonanceMatchScore: Double?
 
+    // The doorway: the slow opening the score is built from. See
+    // SignalEngine.breathDoorway. Nil when the session never slowed down.
+    var breathDoorwayRate: Double?
+    var breathDoorwayHeldSec: Double?
+    /// Per-window path clarity, same index as breathingRateTimeseries.
+    /// Persisted because `score` now needs it: without it a migration cannot
+    /// recompute a score from stored fields, which is an invariant this engine
+    /// relies on.
+    var breathClarityTimeseries: [Double]
+
     // Combined "practice landed" summary
     var overallScore: Double?
 
@@ -98,7 +108,10 @@ extension SignalResult {
             breathingRateTimeseries: a(breathingRateTimeseries),
             breathDepthTimeseries: a(breathDepthTimeseries),
             meanBreathingRate: o(meanBreathingRate), breathingRegularity: o(breathingRegularity),
-            resonanceMatchScore: o(resonanceMatchScore), overallScore: o(overallScore),
+            resonanceMatchScore: o(resonanceMatchScore),
+            breathDoorwayRate: o(breathDoorwayRate), breathDoorwayHeldSec: o(breathDoorwayHeldSec),
+            breathClarityTimeseries: a(breathClarityTimeseries),
+            overallScore: o(overallScore),
             windowSec: windowSec, hopSec: hopSec, algorithmVersion: algorithmVersion
         )
     }
@@ -121,7 +134,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "3.3.0"
+    static let version = "4.0.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -160,11 +173,28 @@ enum SignalEngine {
     /// separately and strictly (see wristConfidentFraction).
     private static let wristDisplayFraction = 0.35
 
-    private static let wristMinReadableFraction = 0.6  // of windows, or breathing
-        // is dropped entirely. True sessions ran 0.85–1.00 across six live
-        // captures; the worst junk session managed 0.51 by scattered luck.
-        // Either the session's breath was readable, or 808 says nothing —
-        // never a flickering half-curve, never a guess.
+    // MARK: The doorway (calibrated 2026-08-14 on fourteen captures)
+    //
+    // Breath scores the opening of a session, not its average. See
+    // `breathDoorway` for why the gate is NOT applied at this level.
+    private static let breathDwellMinSec = 60.0   // a stretch shorter than this
+        // is one observation smeared across overlapping windows, not a held
+        // rhythm. Windows overlap by 25 s, so two fully disjoint 30 s
+        // observations are six windows apart: (7-1)*5 + 30 = 60.
+        //
+        // There is deliberately NO ramp above this floor. The first design
+        // scaled credit from 60 s to 150 s, and no capture can validate that
+        // curve because every one of them is under five minutes — applying it
+        // drove three VERIFIED paced sessions down to 0.11, 0.67 and 0.78.
+        // Revisit only when counted sessions longer than the ramp exist.
+    private static let breathDoorwayMaxRate = 9.0  // breaths/min. Above this
+        // nobody is deliberately slowing down, so there is no doorway and
+        // breath simply leaves the score. Already this codebase's documented
+        // line between slowing on purpose and just breathing.
+    private static let breathStretchFloorClarity = 0.45  // PROVISIONAL, not
+        // measured. A per-window floor so one weak window BREAKS a run rather
+        // than diluting its mean. It also stops `medianFiltered5`, which runs
+        // after tracking, from bridging a gap into a fake contiguous stretch.
     private static let wristSoloConc = 0.40    // the winning axis alone is
         // believed at this clarity. A 9/min breath measured at 0.4–0.9 mrad
         // (live session 5 — faster breathing is SHALLOWER breathing) ran conc
@@ -224,16 +254,24 @@ enum SignalEngine {
     /// purpose: see breathCredit.
     private static let breathCreditWidth = 5.5
 
-    /// Confidence tier. A reading only reaches the SCORE when the session is
-    /// this readable AND coherent AND slow enough to be deliberate.
-    ///
-    /// The split exists because of a measured failure: at minute 2 of a counted
-    /// session the engine reported 3.9/min at clarity 0.76 while Aziz counted
-    /// 10. It was not confused. A 4/min postural sway genuinely carried 14x the
-    /// power of his breath, and clean sway is indistinguishable from clean
-    /// breath by shape alone. Showing that number costs little. Letting it move
-    /// the score would corrupt the only measurement this product sells.
-    private static let wristConfidentFraction = 0.6
+    // COVERAGE IS NO LONGER A SCORE GATE, and reintroducing one would undo the
+    // whole doorway model. `wristConfidentFraction = 0.6` used to demand that
+    // most of the session be readable breathing, which is exactly what a
+    // three-minute opening inside a twenty-minute sit cannot satisfy. It was
+    // never the thing catching junk either: measured across fourteen captures,
+    // the session clarity mean is what rejects the confirmed no-breath session,
+    // and coverage was only punishing correct practice. What replaces it is the
+    // doorway's own contiguity requirement (see `breathDwellMinSec`), which is
+    // a floor on held time rather than on session share.
+    //
+    // The split it protected still stands, and for the reason it was written:
+    // at minute 2 of a counted session the engine reported 3.9/min at clarity
+    // 0.76 while Aziz counted 10. It was not confused. A 4/min postural sway
+    // genuinely carried 14x the power of his breath, and clean sway is
+    // indistinguishable from clean breath by shape alone. Showing that number
+    // costs little; letting it move the score would corrupt the only
+    // measurement this product sells. `wristMinPathClarity` is now the whole
+    // of that defence.
 
     // MARK: Continuity tracking (calibrated 2026-08-10 on eleven captures)
     //
@@ -287,6 +325,7 @@ enum SignalEngine {
                 stillnessTimeseries: [], stillnessScore: nil, stillnessMethod: "total",
                 breathingRateTimeseries: [], breathDepthTimeseries: [],
                 meanBreathingRate: nil, breathingRegularity: nil, resonanceMatchScore: nil,
+                breathDoorwayRate: nil, breathDoorwayHeldSec: nil, breathClarityTimeseries: [],
                 overallScore: nil, windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
             )
         }
@@ -307,7 +346,10 @@ enum SignalEngine {
         var breathingRateTimeseries: [Double] = []
         var breathDepthTimeseries: [Double] = []
         var meanBreathingRate: Double?
-        var scoredBreathingRate: Double?      // nil unless the read is trustworthy
+        var scoredDoorway: BreathDoorway?     // nil unless the read is trustworthy
+        var breathClarityTimeseries: [Double] = []
+        var breathDoorwayRate: Double?
+        var breathDoorwayHeldSec: Double?
         var breathingRegularity: Double?
         var resonanceMatchScore: Double?
         var breathingReadable = false
@@ -341,6 +383,12 @@ enum SignalEngine {
 
                 // Per-window rate (dominant band frequency) + depth (peak-to-trough).
                 var rates: [Double] = []
+                // Per-window concentration, kept rather than discarded: it is
+                // the belly path's own clarity measure and the doorway needs
+                // one. Without it a belly user who paced 6/min for three
+                // minutes scored ZERO breath while a passive wrist user doing
+                // exactly the same earned the full 45%.
+                var concs: [Double] = []
                 for win in windows {
                     let idx = indices(times, in: win)
                     if idx.count >= 8 {
@@ -351,10 +399,12 @@ enum SignalEngine {
                         let conc = (tot > 0) ? 2 * p / (tot * Double(wp.count)) : 0
                         let rate = (conc >= concentrationMin && f > 0) ? f * 60 : 0
                         rates.append(rate)
+                        concs.append(conc)
                         let depth = (wp.max() ?? 0) - (wp.min() ?? 0)
                         breathDepthTimeseries.append(depth)
                     } else {
                         rates.append(0)
+                        concs.append(0)
                         breathDepthTimeseries.append(0)
                     }
                 }
@@ -367,8 +417,21 @@ enum SignalEngine {
                     breathDepthTimeseries = []
                 } else {
                     meanBreathingRate = readable.reduce(0, +) / Double(readable.count)
-                    resonanceMatchScore = resonanceMatch(meanBreathingRate!)
                     breathingRegularity = regularity(signal: breathBP, times: times)
+                    breathClarityTimeseries = concs
+                    // The belly path uses concentrationMin as its floor, its
+                    // own long-validated readability threshold, rather than the
+                    // wrist's clarity scale. The whole-session gate above
+                    // (amp + concentration) already ran, so this is the same
+                    // two-tier shape the wrist path has.
+                    let doorway = breathDoorway(rates: rates, clarities: concs,
+                                                windowSec: windowSec, hopSec: hopSec,
+                                                clarityFloor: concentrationMin)
+                    breathDoorwayRate = doorway?.rate
+                    breathDoorwayHeldSec = doorway?.heldSec
+                    resonanceMatchScore = (doorway?.rate).map(resonanceMatch)
+                        ?? resonanceMatch(meanBreathingRate!)
+                    scoredDoorway = doorway
                 }
             }
         } else {
@@ -392,21 +455,26 @@ enum SignalEngine {
             let gate = median(windowAccel) * wristAccelGateRatio
 
             if let r = readWrist(motion: motion, times: times, windows: windows,
-                                 windowAccel: windowAccel, gate: gate) {
+                                 windowAccel: windowAccel, gate: gate,
+                                 windowSec: windowSec, hopSec: hopSec) {
                 breathingReadable = true
                 breathingRateTimeseries = r.rates
                 breathDepthTimeseries = r.depths
                 meanBreathingRate = r.meanRate
+                breathClarityTimeseries = r.clarity
+                breathDoorwayRate = r.doorway?.rate
+                breathDoorwayHeldSec = r.doorway?.heldSec
                 breathingRegularity = regularity(signal: r.axis, times: times)
-                // Resonance is the honest measurement of how close to 6/min you
-                // were, shown as its own tile whatever the rate. It no longer
-                // decides the score; breathCredit does, from the rate itself.
-                resonanceMatchScore = resonanceMatch(r.meanRate)
-                // Breath counts at ANY rate now. The one thing still withheld
-                // is an unconfident read, which is about whether the number is
-                // real, not about how fast it is: a 4/min postural sway once
-                // read at clarity 0.76 while Aziz counted 10.
-                scoredBreathingRate = r.confident ? r.meanRate : nil
+                // Rebased on the DOORWAY, not the session mean. A session that
+                // held 5.5/min for three minutes and then breathed 12 used to
+                // report "resonance 2%", which described neither the practice
+                // nor the score built from it.
+                resonanceMatchScore = (r.doorway?.rate).map(resonanceMatch)
+                // What reaches the score is the opening, and only when the
+                // session as a whole was clearly read. Clarity is the entire
+                // gate now: a 4/min postural sway once read at clarity 0.76 in
+                // a single window, but junk cannot hold a clear SESSION mean.
+                scoredDoorway = r.confident ? r.doorway : nil
             }
         }
 
@@ -446,7 +514,7 @@ enum SignalEngine {
         // rescue a bad one. Shared with the v3 back-fill — see `score`.
         let overallScore = score(stillnessScore: stillnessScore,
                                  heartRateTimeseries: heartRateTimeseries,
-                                 meanBreathingRate: scoredBreathingRate,
+                                 breathDoorway: scoredDoorway,
                                  durationSec: Int(totalSec.rounded()))
 
         return SignalResult(
@@ -457,6 +525,8 @@ enum SignalEngine {
             breathingRateTimeseries: breathingRateTimeseries, breathDepthTimeseries: breathDepthTimeseries,
             meanBreathingRate: meanBreathingRate, breathingRegularity: breathingRegularity,
             resonanceMatchScore: resonanceMatchScore,
+            breathDoorwayRate: breathDoorwayRate, breathDoorwayHeldSec: breathDoorwayHeldSec,
+            breathClarityTimeseries: breathClarityTimeseries,
             overallScore: overallScore,
             windowSec: windowSec, hopSec: hopSec, algorithmVersion: version
         ).sanitized()   // guarantee finite values — JSONEncoder throws on NaN/Inf
@@ -556,7 +626,16 @@ enum SignalEngine {
     private struct WristRead {
         let rates: [Double]
         let depths: [Double]
+        /// Session mean over readable windows. DISPLAYED, never scored: the
+        /// curve beneath it shows 5 then 11, so a headline claiming 5.2 would
+        /// contradict its own picture.
         let meanRate: Double
+        /// Per-window path clarity, aligned with `rates`. Persisted so a
+        /// migration can recompute the score from stored fields alone.
+        let clarity: [Double]
+        /// The slow opening, if the session had one. This is what reaches the
+        /// score.
+        let doorway: BreathDoorway?
         /// Good enough to move the score, not merely to display.
         let confident: Bool
         let axis: [Double]
@@ -585,7 +664,8 @@ enum SignalEngine {
     private static func readWrist(
         motion: [MotionSample], times: [Double],
         windows: [(lo: Double, hi: Double)],
-        windowAccel: [Double], gate: Double
+        windowAccel: [Double], gate: Double,
+        windowSec: Int, hopSec: Int
     ) -> WristRead? {
         let tunings = [slowTuning, naturalTuning]
         // Band-pass once per tuning, not once per window.
@@ -663,19 +743,28 @@ enum SignalEngine {
             depths.append(bestDepth)
         }
 
-        let (tracked, clarity) = trackRates(pool, fallback: rates)
+        let (tracked, clarity, perWindowClarity) = trackRates(pool, fallback: rates)
         rates = medianFiltered5(tracked)
 
         let readable = rates.filter { $0 > 0 }
         let fraction = rates.isEmpty ? 0 : Double(readable.count) / Double(rates.count)
-        guard fraction >= wristDisplayFraction else { return nil }
+        let doorway = breathDoorway(rates: rates, clarities: perWindowClarity,
+                                    windowSec: windowSec, hopSec: hopSec)
 
-        // Two questions, and they are not the same one. Was the rhythm read
-        // often enough, and was it clear when it was read.
+        // A doorway is its own grounds to return a read. Coverage alone used to
+        // decide this, and a three-minute opening inside a twenty-minute sit is
+        // 0.15 coverage — every session the doorway model exists to rescue
+        // exited here before anything else could run.
+        guard fraction >= wristDisplayFraction || doorway != nil else { return nil }
+
         return WristRead(rates: rates, depths: depths,
-                         meanRate: readable.reduce(0, +) / Double(readable.count),
-                         confident: fraction >= wristConfidentFraction
-                             && clarity >= wristMinPathClarity,
+                         meanRate: readable.isEmpty
+                             ? 0 : readable.reduce(0, +) / Double(readable.count),
+                         clarity: perWindowClarity,
+                         doorway: doorway,
+                         // Clarity alone. See the note where
+                         // wristConfidentFraction used to be.
+                         confident: clarity >= wristMinPathClarity,
                          axis: axis)
     }
 
@@ -706,9 +795,13 @@ enum SignalEngine {
     /// spends clarity to buy continuity. A measure an estimator can only push
     /// down is safe to gate on, which is exactly what the curve's spread was
     /// not.
+    ///
+    /// `pathClarity` reports the same number per window rather than averaged,
+    /// which is what `breathDoorway` needs to decide where a clear stretch
+    /// starts and stops. Off-path windows are 0.
     private static func trackRates(
         _ windows: [[(rate: Double, clarity: Double)]], fallback: [Double]
-    ) -> (rates: [Double], clarity: Double) {
+    ) -> (rates: [Double], clarity: Double, pathClarity: [Double]) {
         var dp: [[Double]] = [], back: [[(Int, Int)?]] = []
         for (i, cands) in windows.enumerated() {
             guard !cands.isEmpty else { dp.append([]); back.append([]); continue }
@@ -730,21 +823,107 @@ enum SignalEngine {
         }
 
         guard let last = dp.indices.reversed().first(where: { !dp[$0].isEmpty })
-        else { return (fallback, 0) }
+        else { return (fallback, 0, [Double](repeating: 0, count: windows.count)) }
 
         var out = [Double](repeating: 0, count: windows.count)
+        var perWindow = [Double](repeating: 0, count: windows.count)
         var clarities: [Double] = []
         var i = last
         var j = dp[last].indices.max(by: { dp[last][$0] < dp[last][$1] }) ?? 0
         while true {
             out[i] = windows[i][j].rate
+            perWindow[i] = windows[i][j].clarity
             clarities.append(windows[i][j].clarity)
             guard let step = back[i][j] else { break }
             (i, j) = step
         }
         let clarity = clarities.isEmpty
             ? 0 : clarities.reduce(0, +) / Double(clarities.count)
-        return (out, clarity)
+        return (out, clarity, perWindow)
+    }
+
+    // MARK: - The doorway
+    //
+    // Deliberate slow breathing is an ENTRY technique: a few minutes at ~6/min
+    // to shift into parasympathetic dominance, after which attention moves
+    // elsewhere and the breath returns to its own pace. Nobody paces 6/min for
+    // twenty minutes; that is HRV biofeedback, not meditation.
+    //
+    // So the session mean was the wrong statistic, and it punished correct
+    // practice twice over: if the natural phase was readable the mean dragged
+    // from 5 to ~11 and credit collapsed, and if it wasn't, whole-session
+    // coverage failed and breath left the score entirely.
+    //
+    // Breath now scores the DOORWAY. What came through it is already measured,
+    // for the whole session, by heart settling and stillness.
+
+    /// The stretch of slow breathing a session was opened with, if there was one.
+    struct BreathDoorway: Equatable {
+        /// Breaths per minute, averaged over the stretch.
+        let rate: Double
+        /// How long it was held, in seconds.
+        let heldSec: Double
+    }
+
+    /// Finds the clearest case that this person deliberately slowed their breath.
+    ///
+    /// Every contiguous run of eligible windows is searched for the sub-run that
+    /// best answers "how slow did you get", subject to being held long enough to
+    /// be two independent observations rather than one smeared across indices.
+    ///
+    /// **This is not "slowest wins", it is "closest to 6 wins."** `breathCredit`
+    /// peaks at 6 and falls away on both sides, so a 4/min postural sway scores
+    /// 0.88 against a real 6/min doorway's 1.00. That asymmetry is free defence
+    /// and the reason the search is safe to run at all.
+    ///
+    /// **Deliberately NOT gated on this stretch's own clarity.** Measured across
+    /// all fourteen captures: gating here produces a 6.5/min "doorway" at
+    /// clarity 0.65, held 90 s, inside `39F2003D` — the session confirmed to
+    /// contain no breathing at all — and no threshold separates it, because real
+    /// reads span 0.61 to 0.96 straddling that value. Searching sub-runs for the
+    /// best-looking stretch finds a good-looking one in junk. The gate that
+    /// works is the SESSION-level clarity mean, which cannot be searched: junk
+    /// carries many readable-but-unclear windows that drag it down, so
+    /// `39F2003D` sits at 0.49 against a 0.60 bar. Keep the gate outside this
+    /// function.
+    static func breathDoorway(rates: [Double], clarities: [Double],
+                              windowSec: Int, hopSec: Int,
+                              clarityFloor: Double? = nil) -> BreathDoorway? {
+        guard rates.count == clarities.count, hopSec > 0 else { return nil }
+        let floor = clarityFloor ?? breathStretchFloorClarity
+        // Two windows are fully disjoint observations only when they are far
+        // enough apart not to share signal: (n-1)*hop + window >= dwellMin.
+        let minWindows = max(2, Int(((breathDwellMinSec - Double(windowSec))
+                                     / Double(hopSec)).rounded(.up)) + 1)
+
+        var best: (credit: Double, rate: Double, held: Double)?
+        var i = 0
+        while i < rates.count {
+            guard rates[i] > 0, clarities[i] >= floor else {
+                i += 1; continue
+            }
+            var j = i
+            while j + 1 < rates.count,
+                  rates[j + 1] > 0, clarities[j + 1] >= floor {
+                j += 1
+            }
+            // Prefix sums so every sub-run's mean is O(1).
+            var prefix = [0.0]
+            for k in i...j { prefix.append(prefix[prefix.count - 1] + rates[k]) }
+            for a in i...j where a + minWindows - 1 <= j {
+                for b in (a + minWindows - 1)...j {
+                    let n = b - a + 1
+                    let mean = (prefix[b - i + 1] - prefix[a - i]) / Double(n)
+                    guard mean <= breathDoorwayMaxRate else { continue }
+                    let credit = breathCredit(rate: mean)
+                    if best == nil || credit > best!.credit {
+                        best = (credit, mean, Double(b - a) * Double(hopSec) + Double(windowSec))
+                    }
+                }
+            }
+            i = j + 1
+        }
+        return best.map { BreathDoorway(rate: $0.rate, heldSec: $0.held) }
     }
 
     // The score gate used to ask whether the rate curve was one rhythm, by its
@@ -986,11 +1165,11 @@ enum SignalEngine {
     /// approximation of it. One code path means the two can never drift.
     static func score(stillnessScore: Double?,
                       heartRateTimeseries: [Double],
-                      meanBreathingRate: Double?,
+                      breathDoorway: BreathDoorway?,
                       durationSec: Int) -> Double? {
         let d = depth(stillness: stillnessScore.map(spreadStillness),
                       hrSettling: heartSettling(heartRateTimeseries),
-                      breath: meanBreathingRate.map(breathCredit))
+                      breath: breathDoorway.map { breathCredit(rate: $0.rate) })
         return d.map { $0 * durationFactor(seconds: durationSec) }
     }
 

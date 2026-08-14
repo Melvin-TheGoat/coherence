@@ -81,7 +81,7 @@ final class SignalEngineTests: XCTestCase {
     private func scoreWithoutBreath(_ r: SignalResult, durationSec: Int) -> Double? {
         SignalEngine.score(stillnessScore: r.stillnessScore,
                            heartRateTimeseries: r.heartRateTimeseries,
-                           meanBreathingRate: nil,
+                           breathDoorway: nil,
                            durationSec: durationSec)
     }
 
@@ -415,14 +415,132 @@ final class SignalEngineTests: XCTestCase {
 
     /// Breath readable in only part of the session is shown, because seeing the
     /// curve is what lets us tune the engine. It does not reach the score.
-    func test_wristSession_sparseReadability_showsButDoesNotScore() {
-        let m = motion(dur: 180, pitch: { t in t < 60 ? sine(0.1, amp: 0.006)(t) : 0 })
+    /// THE POINT OF THE DOORWAY MODEL. Three minutes of slow breathing at the
+    /// start of a five-minute sit, silence after. Coverage is well under the
+    /// old 60% bar, so this used to score nothing at all — the app punished
+    /// someone for doing exactly what it asks.
+    func test_slowOpeningThenSilence_scoresTheDoorway() {
+        let m = motion(dur: 300, pitch: { t in t < 180 ? sine(0.1, amp: 0.006)(t) : 0 })
         let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
-        XCTAssertNotNil(r.meanBreathingRate, "the curve is shown even when partial")
+        XCTAssertEqual(r.breathDoorwayRate ?? 0, 6.0, accuracy: 1.0,
+                       "the opening is the doorway")
+        XCTAssertNotEqual(r.overallScore ?? -1,
+                          scoreWithoutBreath(r, durationSec: 300) ?? -1,
+                          "a real slow opening must reach the score")
+    }
+
+    /// Too brief to be a rhythm.
+    ///
+    /// Note the bleed: a 30 s window centred on a burst still contains it, so
+    /// a stretch of breathing reads across roughly `windowSec` more than it
+    /// lasted. 45 s of breath therefore yields the seven windows the floor
+    /// asks for, quite legitimately — two disjoint 30 s observations really do
+    /// exist inside it. Twenty seconds cannot reach that however it is sliced.
+    func test_briefSlowStretch_isShownButTooShortToScore() {
+        let m = motion(dur: 180, pitch: { t in t < 20 ? sine(0.1, amp: 0.006)(t) : 0 })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.breathDoorwayRate, "20 s is not a held rhythm")
         XCTAssertEqual(r.overallScore ?? -1,
-                       scoreWithoutBreath(r, durationSec: 180) ?? -2, accuracy: 0.0001,
-                       "a partial read must leave the score to heart and stillness")
+                       scoreWithoutBreath(r, durationSec: 180) ?? -2, accuracy: 0.0001)
+    }
+
+    /// The founder's insight, as an assertion: a session that opens slow and
+    /// then breathes naturally is scored on the opening, not on the average of
+    /// the two. The mean here is ~9; the doorway is ~6.
+    func test_doorwayIsTheSlowStretchNotTheSessionMean() {
+        let m = motion(dur: 420, pitch: { t in
+            t < 180 ? sine(0.1, amp: 0.006)(t)      // 6/min doorway
+                    : sine(0.2, amp: 0.006)(t)      // 12/min natural
+        })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(r.breathDoorwayRate ?? 0, 6.0, accuracy: 1.2)
+        XCTAssertGreaterThan(r.meanBreathingRate ?? 0, r.breathDoorwayRate ?? 99,
+                             "the session mean must sit above the doorway here")
+    }
+
+    /// Breathing normally after the doorway must never cost anything. If it
+    /// could, the app would be asking people to pace themselves for the whole
+    /// session, which is biofeedback rather than meditation.
+    func test_naturalPhaseAfterTheDoorwayNeverLowersTheScore() {
+        let opening = motion(dur: 240, pitch: sine(0.1, amp: 0.006))
+        let both = motion(dur: 600, pitch: { t in
+            t < 240 ? sine(0.1, amp: 0.006)(t) : sine(0.2, amp: 0.006)(t)
+        })
+        let a = SignalEngine.analyze(motion: opening, hr: [], bellyBreathing: false)
+        let b = SignalEngine.analyze(motion: both, hr: [], bellyBreathing: false)
+
+        XCTAssertEqual(SignalEngine.breathCredit(rate: a.breathDoorwayRate ?? 0),
+                       SignalEngine.breathCredit(rate: b.breathDoorwayRate ?? 0),
+                       accuracy: 0.05,
+                       "the doorway's worth cannot depend on what followed it")
+    }
+
+    /// Above 9/min nobody is deliberately slowing down, so there is no doorway
+    /// and breath simply leaves the score. Crucially it must not LOWER it:
+    /// detecting someone's ordinary breathing is not a fault of theirs.
+    func test_naturalBreathingOnlyEarnsNothingAndCostsNothing() {
+        let m = motion(dur: 300, pitch: sine(0.2, amp: 0.006))   // 12/min throughout
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        XCTAssertNil(r.breathDoorwayRate, "12/min is not a doorway")
+        XCTAssertEqual(r.overallScore ?? -1,
+                       scoreWithoutBreath(r, durationSec: 300) ?? -2, accuracy: 0.0001)
+    }
+
+    /// Not "slowest wins" but "closest to 6 wins". A postural sway is slower
+    /// than a real doorway, and `breathCredit` peaking at 6 is what stops the
+    /// search rewarding it.
+    func test_swayAtFourAMinuteDoesNotOutscoreBreathAtSix() {
+        XCTAssertLessThan(SignalEngine.breathCredit(rate: 4.0),
+                          SignalEngine.breathCredit(rate: 6.0))
+        XCTAssertLessThan(SignalEngine.breathCredit(rate: 2.0),
+                          SignalEngine.breathCredit(rate: 4.0))
+    }
+
+    /// Held, not accumulated. Four twenty-second touches of 6/min total eighty
+    /// seconds of breathing and are still not a doorway.
+    ///
+    /// The gaps have to exceed one window or the bleed described above merges
+    /// the bursts into a single continuous read — which would be the honest
+    /// answer anyway, since a window straddling two bursts genuinely contains
+    /// breathing throughout.
+    func test_doorwayRequiresContiguityNotTotalReadableTime() {
+        let m = motion(dur: 480, pitch: { t in
+            t.truncatingRemainder(dividingBy: 120) < 20 ? sine(0.1, amp: 0.006)(t) : 0
+        })
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+        XCTAssertNil(r.breathDoorwayRate, "scattered bursts are not a held rhythm")
+    }
+
+    /// A belly user who paces 6/min must earn what a wrist user earns for the
+    /// same practice. Until the doorway rework the belly path never assigned a
+    /// scored rate at all, so opting into the mode silently cost 45% of the
+    /// score.
+    func test_bellySession_doorwayReachesTheScore() {
+        let m = motion(dur: 240, pitch: sine(0.1, amp: 0.1))
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: true)
+
+        XCTAssertEqual(r.breathDoorwayRate ?? 0, 6.0, accuracy: 1.0)
+        XCTAssertNotEqual(r.overallScore ?? -1,
+                          scoreWithoutBreath(r, durationSec: 240) ?? -1,
+                          "belly breathing must reach the score like wrist does")
+    }
+
+    /// The score must be recomputable from what a stats row stores, or no
+    /// migration can ever reproduce it. This is why per-window clarity is
+    /// persisted rather than recomputed.
+    func test_scoreIsRecomputableFromStoredFields() {
+        let m = motion(dur: 300, pitch: sine(0.1, amp: 0.006))
+        let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
+
+        let rebuilt = SignalEngine.breathDoorway(rates: r.breathingRateTimeseries,
+                                                 clarities: r.breathClarityTimeseries,
+                                                 windowSec: r.windowSec, hopSec: r.hopSec)
+        XCTAssertEqual(rebuilt?.rate ?? -1, r.breathDoorwayRate ?? -2, accuracy: 0.0001,
+                       "stored fields must rebuild the doorway exactly")
     }
 
     /// A rate that genuinely changes, read clearly throughout, now DOES score.

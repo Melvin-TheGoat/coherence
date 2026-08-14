@@ -38,6 +38,15 @@ final class MeditationStats {
     var breathingRegularity: Double?
     var resonanceMatchScore: Double?
 
+    // The doorway: the slow opening the score is built from. All optional, so
+    // CloudKit lightweight migration applies and old rows read back as nil.
+    var breathDoorwayRate: Double?
+    var breathDoorwayHeldSec: Double?
+    /// Per-window path clarity, same index as `breathingRateTimeseries`.
+    /// Stored because the score now needs it: without it no migration can
+    /// recompute a score from this row alone.
+    var breathClarityTimeseries: [Double] = []
+
     // HRV (SDNN), read from HealthKit — Apple computes it, we don't.
     //
     // NOT heart coherence, and not the RMSSD the camera path produced. Values
@@ -94,6 +103,9 @@ final class MeditationStats {
         meanBreathingRate: Double? = nil,
         breathingRegularity: Double? = nil,
         resonanceMatchScore: Double? = nil,
+        breathDoorwayRate: Double? = nil,
+        breathDoorwayHeldSec: Double? = nil,
+        breathClarityTimeseries: [Double] = [],
         hrvSDNNSamples: [Double] = [],
         hrvMeanSDNN: Double? = nil,
         hrvBaselineSDNN: Double? = nil,
@@ -120,6 +132,9 @@ final class MeditationStats {
         self.meanBreathingRate = meanBreathingRate
         self.breathingRegularity = breathingRegularity
         self.resonanceMatchScore = resonanceMatchScore
+        self.breathDoorwayRate = breathDoorwayRate
+        self.breathDoorwayHeldSec = breathDoorwayHeldSec
+        self.breathClarityTimeseries = breathClarityTimeseries
         self.hrvSDNNSamples = hrvSDNNSamples
         self.hrvMeanSDNN = hrvMeanSDNN
         self.hrvBaselineSDNN = hrvBaselineSDNN

@@ -25,16 +25,24 @@ public enum VerdictEngine {
         /// stays for callers that still pass it.
         public var meanBreathingRate: Double?
         public var resonanceMatchScore: Double? // 0–1
+        /// The slow opening, when there was one. This is what the score is
+        /// built from, so this is what the verdict speaks about.
+        public var breathDoorwayRate: Double?
+        public var breathDoorwayHeldSec: Double?
         public var bellyBreathing: Bool
 
         public init(overallScore: Double? = nil, stillnessScore: Double? = nil,
                     hrDecline: Double? = nil, meanBreathingRate: Double? = nil,
-                    resonanceMatchScore: Double? = nil, bellyBreathing: Bool = false) {
+                    resonanceMatchScore: Double? = nil,
+                    breathDoorwayRate: Double? = nil, breathDoorwayHeldSec: Double? = nil,
+                    bellyBreathing: Bool = false) {
             self.overallScore = overallScore
             self.stillnessScore = stillnessScore
             self.hrDecline = hrDecline
             self.meanBreathingRate = meanBreathingRate
             self.resonanceMatchScore = resonanceMatchScore
+            self.breathDoorwayRate = breathDoorwayRate
+            self.breathDoorwayHeldSec = breathDoorwayHeldSec
             self.bellyBreathing = bellyBreathing
         }
     }
@@ -50,11 +58,16 @@ public enum VerdictEngine {
             else if d >= 4 { claims.append("heart eased down \(Int(d.rounded())) beats") }
             else if d <= -5 { claims.append("heart stayed lively") }
         }
-        // Gated on data, not on mode: the engine only populates breathing when
-        // it truly read one, so nil here means "say nothing", exactly as before.
-        if let res = m.resonanceMatchScore, let rate = m.meanBreathingRate {
-            if res >= 0.6 { claims.append("breath found the resonance zone") }
-            else if rate <= 8 { claims.append(String(format: "breath slowed to %.1f a minute", rate)) }
+        // The doorway, never the session mean: the mean is what the score
+        // stopped being built from. Silence above 8/min used to leave a score's
+        // largest component unexplained, so the last branch exists to say the
+        // true thing rather than nothing.
+        if let rate = m.breathDoorwayRate {
+            let held = m.breathDoorwayHeldSec.map { " for \(Int(($0 / 60).rounded(.down)))" }
+            let minutes = (m.breathDoorwayHeldSec ?? 0) >= 90 ? (held.map { "\($0) minutes" } ?? "") : ""
+            claims.append(String(format: "breath slowed to %.1f a minute%@", rate, minutes))
+        } else if m.meanBreathingRate != nil {
+            claims.append("breath stayed at its own pace")
         }
         if let s = m.stillnessScore {
             if s >= 0.85 { claims.append("body went almost fully still") }
@@ -137,10 +150,31 @@ public enum VerdictEngine {
     }
 
     /// One-line reading for the breathing-rate curve.
-    public static func breathReading(meanRate: Double?, resonance: Double?) -> String? {
+    public static func breathReading(meanRate: Double?, doorwayRate: Double?,
+                                     doorwayHeldSec: Double?) -> String? {
+        if let rate = doorwayRate, let held = doorwayHeldSec {
+            let s = Int(held.rounded())
+            let span = s < 60 ? "\(s)s" : String(format: "%d:%02d", s / 60, s % 60)
+            return String(format: "slowed to %.1f/min for %@", rate, span)
+        }
         guard let rate = meanRate else { return nil }
-        if let res = resonance, res >= 0.6 { return "held near 6/min" }
         return String(format: "averaged %.1f/min", rate)
+    }
+
+    /// The doorway and the heart, said together when both actually happened.
+    ///
+    /// Slow breathing is the intervention and a settling heart is the evidence
+    /// it landed, so their co-occurrence is worth naming. Deliberately
+    /// DESCRIPTIVE: 808 reads motion and an averaged heart rate, not vagal
+    /// tone, so this reports what was seen and lets the meaning follow.
+    ///
+    /// **Its absence means nothing.** People reach the same state without ever
+    /// slowing their breath, so this line appears when the pattern is seen and
+    /// is never negated when it isn't.
+    public static func doorwayCoupling(doorwayRate: Double?, hrDecline: Double?) -> String? {
+        guard let rate = doorwayRate, let drop = hrDecline, drop >= 3 else { return nil }
+        return String(format: "Breath slowed to %.1f, and your heart followed, down %d.",
+                      rate, Int(drop.rounded()))
     }
 }
 

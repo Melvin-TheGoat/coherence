@@ -20,6 +20,9 @@ final class SessionStoreTests: XCTestCase {
             meanBreathingRate: belly ? 6 : nil,
             breathingRegularity: belly ? 0.9 : nil,
             resonanceMatchScore: belly ? 0.95 : nil,
+            breathDoorwayRate: belly ? 6 : nil,
+            breathDoorwayHeldSec: belly ? 90 : nil,
+            breathClarityTimeseries: belly ? [0.8, 0.8, 0.8] : [],
             overallScore: 0.8, windowSec: 30, hopSec: 5, algorithmVersion: "2.0.0"
         )
     }
