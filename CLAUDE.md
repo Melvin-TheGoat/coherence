@@ -1007,9 +1007,14 @@ UI must coach it, and the 2-signal degrade path must stay.
     Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
     Meta app ID still needed for zero-tap Instagram Stories.
 
-## TestFlight (first build 2026-08-11; external Beta App Review submitted
-## 2026-08-12, build 202608120358 — the one with all eleven compliance passes)
+## TestFlight (first build 2026-08-11; build 202608120358 — all eleven
+## compliance passes — APPROVED for external testing 2026-08-13)
 
+- **Beta App Review took ~1–2 days and approved on the first attempt.** No
+  rejection, no queries. Apple sends no reliable email for beta approval: the
+  build's STATUS field in App Store Connect is the only source of truth.
+  Subsequent builds of the same version skip review unless entitlements,
+  privacy strings or marketing copy change.
 - **Never side-load the Watch app with `devicectl`.** It puts the app on the
   wrist but does NOT register it as the iOS app's companion, so
   `startWatchApp` fails and the phone reports "808 isn't on your Watch yet".
