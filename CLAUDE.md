@@ -1100,6 +1100,53 @@ UI must coach it, and the 2-signal degrade path must stay.
     capture is 2–5 minutes. Needs long counted sessions first. Do not guess a
     dwell curve; the last attempt drove three verified paced sessions to
     0.11/0.67/0.78.
+- **THE SESSION-CLARITY GATE IS DEAD — start time is the gate (v5.1.0,
+  2026-08-14, hours after v5.0.0).** Aziz's first long session on the new
+  build exposed it: a 6.6-minute sit opening with NINE consecutive windows at
+  4.8–5.5/min and clarity 0.91–1.00 — the cleanest doorway in the capture
+  library — was REFUSED, because 5.5 minutes of natural breathing after it
+  dragged the session clarity mean to 0.51 against the 0.60 bar. **Any
+  whole-session statistic punishes a short opening inside a long sit, and a
+  short opening inside a long sit is the practice.** Same disease as the
+  deleted coverage gate, different axis. `wristMinPathClarity` deleted;
+  `WristRead.confident` deleted; the doorway function is now the entire gate.
+  - **Clarity cannot REFUSE, measured.** Two same-day 2-minute sessions Aziz
+    confirmed were slow breathing read stretch clarity 0.58 and 0.70; the
+    confirmed no-breathing capture reads 0.65. Real doorways span 0.58–0.96,
+    sway's span 0.57–0.79, interleaved. One real session sits BELOW the
+    no-breathing one on every clarity measure. No bar separates them.
+  - **Clarity CAN ADMIT: sway has never reached 0.85.** 227 Monte-Carlo drift
+    sessions (leaky random-walk wrist motion, no breathing): forged-doorway
+    stretch clarity median 0.61, max 0.79. Real paced breathing reads
+    0.85–0.96.
+  - **The shipped hybrid:** a doorway starting ≤90 s scores on start time
+    alone (all nine confirmed real doorways start ≤65 s — people who slow
+    their breath do it when they sit down); starting 90 s–5 min it must
+    average stretch clarity ≥0.85, the bar sway cannot forge, so a
+    fidget-then-pace user still scores when the read is unmistakable; after
+    5 min nothing scores however clear (Aziz: late pacing is chasing a
+    number, and chasing raises heart rate). Locked by pure-function boundary
+    tests on `breathDoorway`.
+  - **Known residual, accepted with eyes open: 62% of pure-drift sits forge
+    an early doorway**, independent of length (only the first 90 s matter
+    now). The synthetic walk is the adversarial worst case, and the two
+    confirmed 45-second starters — CC436767 (real) and 39F2003D (no
+    breathing) — are indistinguishable on everything measured, so any gate
+    refusing the fake refuses the real. Accepted because breath is .20 and
+    binary: a forged doorway buys ~3 points. At the old .45 it bought 18 and
+    this trade would have been wrong. Do NOT re-tune clarity to fix this; it
+    does not carry the information.
+  - `maxStartSec` on `breathDoorway` is a diagnostics-only override (bypasses
+    every start rule) for tools sweeping the constants. Never pass it from
+    product code.
+  - Migration key `scoreBackfillDone.v5`. Pre-v4 rows store no clarity and
+    are treated as clarity 1.0, so their late starts up to 5 min are
+    admitted: history stays more permissive than live, the same documented
+    stance as before.
+  - Validation, real engine: all 9 confirmed slow sessions score (starts 5,
+    5, 5, 5, 30, 35, 35, 45, 65 s); the three mid-session spurious captures
+    (starts 115, 135, 235 s) are refused; late drift doorways in the
+    Monte-Carlo runs all blocked.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

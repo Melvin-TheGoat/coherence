@@ -23,10 +23,10 @@ struct BreathHarness {
             FileHandle.standardError.write(Data("usage: breath <capture.csv>...\n".utf8))
             exit(2)
         }
-        print(String(format: "%-10@ %6@ %8@ %6@ %5@ %6@ %16@ %6@",
+        print(String(format: "%-10@ %6@ %8@ %6@ %5@ %6@ %34@ %6@",
                      "capture" as NSString, "dur" as NSString, "breaths" as NSString,
                      "IQR" as NSString, "read" as NSString, "clar" as NSString,
-                     "doorway@start/held" as NSString, "score" as NSString))
+                     "raw -> scored" as NSString, "score" as NSString))
         for path in paths { run(path) }
     }
 
@@ -60,14 +60,21 @@ struct BreathHarness {
         let clarity = zip(r.breathingRateTimeseries, r.breathClarityTimeseries)
             .filter { $0.0 > 0 }.map(\.1)
         let meanClarity = clarity.isEmpty ? 0 : clarity.reduce(0, +) / Double(clarity.count)
+        // The doorway BEFORE the session-clarity gate, rebuilt the way the
+        // migration does. Printing both is how you tell "no slow stretch
+        // existed" apart from "one existed and the gate refused it".
+        let raw = SignalEngine.breathDoorway(rates: r.breathingRateTimeseries,
+                                             clarities: r.breathClarityTimeseries,
+                                             windowSec: r.windowSec, hopSec: r.hopSec)
+        let rawStr = raw.map { String(format: "%.1f@%.0fs/%.0fs", $0.rate, $0.startSec, $0.heldSec) } ?? "-"
         let door = r.breathDoorwayRate.map {
             String(format: "%.1f@%.0fs/%.0fs", $0,
                    r.breathDoorwayStartSec ?? -1, r.breathDoorwayHeldSec ?? 0)
         } ?? "-"
-        print(String(format: "%-10@ %6.0f %8@ %6.2f %5.0f%% %6.2f %16@ %6@",
+        print(String(format: "%-10@ %6.0f %8@ %6.2f %5.0f%% %6.2f %34@ %6@",
                      String(tag) as NSString, last.t,
                      r.meanBreathingRate.map { String(format: "%.1f", $0) } as NSString? ?? "-",
-                     spread, frac * 100, meanClarity, door as NSString,
+                     spread, frac * 100, meanClarity, (rawStr + " -> " + door) as NSString,
                      r.overallScore.map { String(format: "%.0f", $0 * 100) } as NSString? ?? "-"))
     }
 }

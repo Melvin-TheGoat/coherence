@@ -598,6 +598,51 @@ final class SignalEngineTests: XCTestCase {
                              scoreWithoutBreath(r, durationSec: 1200) ?? 2)
     }
 
+    /// The start rules, on the pure function so every boundary is exact.
+    ///
+    /// Stretch clarity is one-sided evidence: measured real doorways span
+    /// 0.58–0.96 and sway's forged ones 0.57–0.79 (227 drift runs, max 0.79),
+    /// so no bar can REFUSE on it, but 0.85 can ADMIT on it. A doorway
+    /// starting after the trusted 90 s must clear that bar; one starting
+    /// early never needs to; and after five minutes nothing scores at all.
+    func test_lateDoorwayNeedsUnmistakableClarity() {
+        let n = 120
+        var rates = [Double](repeating: 0, count: n)
+        var clar = [Double](repeating: 0, count: n)
+        for k in 30..<50 { rates[k] = 6.0; clar[k] = 0.65 }    // begins 150 s in
+        XCTAssertNil(SignalEngine.breathDoorway(rates: rates, clarities: clar,
+                                                windowSec: 30, hopSec: 5),
+                     "0.65 is inside sway's measured range; a late start cannot ride on it")
+
+        for k in 30..<50 { clar[k] = 0.90 }
+        let d = SignalEngine.breathDoorway(rates: rates, clarities: clar,
+                                           windowSec: 30, hopSec: 5)
+        XCTAssertEqual(d?.rate ?? 0, 6.0, accuracy: 0.001,
+                       "0.90 has never been produced by sway, so a late start may score")
+        XCTAssertEqual(d?.startSec ?? -1, 150, accuracy: 0.001)
+    }
+
+    func test_earlyDoorwayNeedsNoClarityProof() {
+        var rates = [Double](repeating: 0, count: 60)
+        var clar = [Double](repeating: 0, count: 60)
+        for k in 0..<16 { rates[k] = 6.0; clar[k] = 0.50 }
+        XCTAssertNotNil(SignalEngine.breathDoorway(rates: rates, clarities: clar,
+                                                   windowSec: 30, hopSec: 5),
+                        "an early start is its own evidence")
+    }
+
+    /// Even unmistakable clarity after five minutes earns nothing: late
+    /// pacing is chasing a number, and the hard ceiling is what makes
+    /// chasing it pointless.
+    func test_perfectClarityAfterFiveMinutesStillRefused() {
+        let n = 200
+        var rates = [Double](repeating: 0, count: n)
+        var clar = [Double](repeating: 0, count: n)
+        for k in 80..<110 { rates[k] = 6.0; clar[k] = 0.95 }   // begins 400 s in
+        XCTAssertNil(SignalEngine.breathDoorway(rates: rates, clarities: clar,
+                                                windowSec: 30, hopSec: 5))
+    }
+
     /// Breath is BINARY: a doorway is worth the same whatever its rate.
     ///
     /// A doorway can only exist between 3.5 and 9 breaths/min, and across that

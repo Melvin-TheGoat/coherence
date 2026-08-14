@@ -138,7 +138,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "5.0.0"
+    static let version = "5.1.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -195,22 +195,54 @@ enum SignalEngine {
         // nobody is deliberately slowing down, so there is no doorway and
         // breath simply leaves the score. Already this codebase's documented
         // line between slowing on purpose and just breathing.
-    private static let breathDoorwayMaxStartSec = 300.0  // the stretch must
-        // BEGIN within the first five minutes. Slow breathing is an entry
-        // technique: you use it to open the state and then leave it alone.
-        // Pacing late is someone managing a number rather than meditating, and
-        // the effort of doing it costs them the state they are being scored on
-        // (Aziz, 2026-08-14) — the same reason the app shows no live
-        // biometrics at all.
+    private static let breathDoorwayTrustedStartSec = 90.0  // a doorway that
+        // BEGINS at or before this scores on start time alone. Measured: all
+        // nine confirmed slow-breathing captures start their doorway within
+        // 65 s (5, 5, 5, 5, 30, 35, 35, 45, 65). People who slow their breath
+        // do it when they sit down.
+    private static let breathDoorwayLateClarity = 0.85  // a doorway beginning
+        // AFTER the trusted window must average this stretch clarity. The bar
+        // sits where sway has never been: across 227 Monte-Carlo drift
+        // sessions (random-walk wrist motion, no breathing in any of them)
+        // the highest forged-doorway clarity was 0.79, median 0.61, while
+        // real paced breathing reads 0.85–0.96. So someone who fidgets for
+        // three minutes and then genuinely paces still scores — deliberate
+        // pacing is exactly what produces 0.9 clarity — and mid-session sway
+        // does not.
         //
-        // Fixed minutes, NOT a fraction of the session: opening the state does
-        // not take longer in a 25-minute sit than a 10-minute one. The side
-        // effect is that short sessions are effectively unconstrained, since a
-        // four-minute sit is all beginning, which is correct.
+        // The belly path feeds its concentration series through the same
+        // rule; conc rarely reaches 0.85, so a late-starting belly doorway
+        // will usually be refused. Accepted: belly is opt-in deliberate
+        // practice begun at Begin, and dormant in the MVP.
+    private static let breathDoorwayMaxStartSec = 300.0  // and after five
+        // minutes nothing scores, however clear (Aziz, 2026-08-14). Slow
+        // breathing is an entry technique — you open the state and then leave
+        // it alone — so pacing late is managing a number rather than
+        // meditating, and the effort of it costs the state being scored. Same
+        // reason the app shows no live biometrics. Fixed seconds, NOT a
+        // fraction of the session: opening the state does not take longer in
+        // a 25-minute sit. A sit shorter than five minutes is unconstrained
+        // by this cap, which is the intent — a four-minute sit is all
+        // beginning.
         //
-        // Late slow breathing earns nothing. It is never penalised — breath can
-        // only ever add, because a silent breath signal is ambiguous between
-        // "very settled" and "we missed it".
+        // Late slow breathing earns nothing but is never penalised: breath
+        // can only ever add, because a silent breath signal is ambiguous
+        // between "very settled" and "we missed it".
+        //
+        // KNOWN RESIDUAL, accepted with eyes open: sway inside the trusted
+        // window forges a doorway that start time cannot refuse. Measured on
+        // pure synthetic drift through the gated engine: 62% of sits forge
+        // one, independent of length — only the first 90 s matter now, and
+        // the synthetic walk is the adversarial worst case (its clarity and
+        // rate are tuned to look like breathing; the accel gate and clarity
+        // floor barely bite on it). Nothing measured here separates those
+        // from real early doorways — CC436767 (confirmed real slow breathing,
+        // stretch clarity 0.58, start 45 s) and 39F2003D (confirmed NO
+        // breathing, clarity 0.65, start 45 s) are indistinguishable, and any
+        // gate refusing the second refuses the first. Accepted because breath
+        // is .20 and binary: a forged doorway moves a typical session about
+        // three points. At the old .45 weight it moved eighteen, and this
+        // trade would have been wrong.
     private static let breathStretchFloorClarity = 0.45  // PROVISIONAL, not
         // measured. A per-window floor so one weak window BREAKS a run rather
         // than diluting its mean. It also stops `medianFiltered5`, which runs
@@ -290,8 +322,11 @@ enum SignalEngine {
     // genuinely carried 14x the power of his breath, and clean sway is
     // indistinguishable from clean breath by shape alone. Showing that number
     // costs little; letting it move the score would corrupt the only
-    // measurement this product sells. `wristMinPathClarity` is now the whole
-    // of that defence.
+    // measurement this product sells. The doorway start rules are now the
+    // whole of that defence, and they are imperfect on purpose: early sway
+    // can forge a doorway (measured — see breathDoorwayMaxStartSec), but at
+    // a .20 binary weight that forgery buys about three points, and every
+    // stricter gate tried so far refused real practice to prevent it.
 
     // MARK: Continuity tracking (calibrated 2026-08-10 on eleven captures)
     //
@@ -309,18 +344,27 @@ enum SignalEngine {
         // not worth a state in the trellis.
     private static let wristCandidateMerge = 0.35  // breaths/min. Closer than
         // this and two candidates are one peak seen through two tunings.
-    private static let wristMinPathClarity = 0.60  // mean clarity along the
-        // tracked path, below which the rate is shown but not scored. Measured
-        // over fourteen captures, ten of them with a known answer: **every read
-        // that was right scored 0.65 to 0.94, and every read that was wrong or
-        // off scored 0.37 to 0.55.** 0.60 sits in that empty gap. This replaced
-        // a spread-based gate that got two of the ten wrong.
-        //
-        // FITTED, not validated: the ten include five slow deliberate sessions,
-        // which is where clarity is naturally highest. Expect to revisit it as
-        // natural-breathing captures with counts accumulate, and do not treat
-        // the gap as wider than ten sessions can show.
-
+    // REMOVED 2026-08-14: `wristMinPathClarity = 0.60`, the session-level mean
+    // clarity along the tracked path. It threw away real doorways, and the
+    // failure is structural rather than a bad constant.
+    //
+    // A 6.6-minute session opened with NINE consecutive windows at 4.8–5.5
+    // breaths/min and clarity 0.91–1.00 — the cleanest doorway in the entire
+    // capture library. The remaining 5.5 minutes of natural breathing read at
+    // 0.36 and dragged the session mean to 0.51, under the bar. **The gate
+    // punished a real doorway for what happened after it**, which is exactly
+    // the length-dependence that got `wristConfidentFraction` deleted a week
+    // earlier. Coverage and clarity-mean are the same bug wearing different
+    // clothes: any whole-session statistic penalises a short opening inside a
+    // long sit, and a short opening inside a long sit is the practice.
+    //
+    // Nor can it be moved to the STRETCH instead. Across nine confirmed slow
+    // sessions stretch clarity spans 0.58–0.96 while the sessions to refuse
+    // span 0.57–0.69. They overlap, and one real session sits below the
+    // confirmed no-breathing one. Clarity does not carry the information; do
+    // not re-tune it, and do not reintroduce a session-level gate of any kind.
+    // Start time does carry it, plus a one-sided clarity admission for late
+    // starts — see the doorway constants.
     private static let stillnessGain = 5.0     // activity → stillness sharpness
     private static let attitudeWeight = 1.0    // radians vs g weighting in activity
 
@@ -490,7 +534,13 @@ enum SignalEngine {
                 // session as a whole was clearly read. Clarity is the entire
                 // gate now: a 4/min postural sway once read at clarity 0.76 in
                 // a single window, but junk cannot hold a clear SESSION mean.
-                scoredDoorway = r.confident ? r.doorway : nil
+                // The doorway IS the gate now. Everything that decides whether
+                // it may score lives inside `breathDoorway`: contiguity, the
+                // per-window clarity floor, the rate ceiling, and the start
+                // rules (trusted first 90 s; after that only unmistakable
+                // clarity; after five minutes nothing). There is no
+                // session-level test left.
+                scoredDoorway = r.doorway
                 // The PERSISTED doorway is the scored one, not the computed
                 // one. A doorway the gate refused is a claim we declined to
                 // back, and the results graph highlights this stretch as the
@@ -674,8 +724,6 @@ enum SignalEngine {
         /// The slow opening, if the session had one. This is what reaches the
         /// score.
         let doorway: BreathDoorway?
-        /// Good enough to move the score, not merely to display.
-        let confident: Bool
         let axis: [Double]
     }
 
@@ -781,7 +829,11 @@ enum SignalEngine {
             depths.append(bestDepth)
         }
 
-        let (tracked, clarity, perWindowClarity) = trackRates(pool, fallback: rates)
+        // The path-clarity MEAN is deliberately unused: gating on it punished
+        // a real doorway for the natural breathing that followed it. Per-window
+        // clarity is still very much used — it decides which windows a doorway
+        // may be built from. See `breathDoorwayMaxStartSec`.
+        let (tracked, _, perWindowClarity) = trackRates(pool, fallback: rates)
         rates = medianFiltered5(tracked)
 
         let readable = rates.filter { $0 > 0 }
@@ -800,9 +852,6 @@ enum SignalEngine {
                              ? 0 : readable.reduce(0, +) / Double(readable.count),
                          clarity: perWindowClarity,
                          doorway: doorway,
-                         // Clarity alone. See the note where
-                         // wristConfidentFraction used to be.
-                         confident: clarity >= wristMinPathClarity,
                          axis: axis)
     }
 
@@ -918,19 +967,25 @@ enum SignalEngine {
     /// 0.88 against a real 6/min doorway's 1.00. That asymmetry is free defence
     /// and the reason the search is safe to run at all.
     ///
-    /// **Deliberately NOT gated on this stretch's own clarity.** Measured across
-    /// all fourteen captures: gating here produces a 6.5/min "doorway" at
-    /// clarity 0.65, held 90 s, inside `39F2003D` — the session confirmed to
-    /// contain no breathing at all — and no threshold separates it, because real
-    /// reads span 0.61 to 0.96 straddling that value. Searching sub-runs for the
-    /// best-looking stretch finds a good-looking one in junk. The gate that
-    /// works is the SESSION-level clarity mean, which cannot be searched: junk
-    /// carries many readable-but-unclear windows that drag it down, so
-    /// `39F2003D` sits at 0.49 against a 0.60 bar. Keep the gate outside this
-    /// function.
+    /// **Stretch clarity is one-sided evidence, and both halves are measured.**
+    /// As a refusal test it fails: real doorways span clarity 0.58–0.96 and
+    /// sway's forged ones span 0.57–0.79, interleaved — one confirmed-real
+    /// session sits BELOW the confirmed no-breathing one, so any bar that
+    /// refuses junk refuses real practice with it. (An earlier design gated
+    /// here at 0.65 and produced a "doorway" inside a session with no
+    /// breathing in it: searching sub-runs finds a good-looking stretch in
+    /// junk.) As an ADMISSION test it works: sway has never produced 0.85
+    /// across 227 Monte-Carlo drift runs. Hence the start rules — a doorway
+    /// beginning in the trusted first 90 s needs no proof, a later one must
+    /// clear the bar sway cannot forge, and past five minutes nothing scores.
+    ///
+    /// `maxStartSec` is a diagnostics override for tools sweeping the start
+    /// rules; it bypasses the late-clarity test too. Never pass it from
+    /// product code.
     static func breathDoorway(rates: [Double], clarities: [Double],
                               windowSec: Int, hopSec: Int,
-                              clarityFloor: Double? = nil) -> BreathDoorway? {
+                              clarityFloor: Double? = nil,
+                              maxStartSec: Double? = nil) -> BreathDoorway? {
         guard rates.count == clarities.count, hopSec > 0 else { return nil }
         let floor = clarityFloor ?? breathStretchFloorClarity
         // Two windows are fully disjoint observations only when they are far
@@ -949,18 +1004,26 @@ enum SignalEngine {
                   rates[j + 1] > 0, clarities[j + 1] >= floor {
                 j += 1
             }
-            // Prefix sums so every sub-run's mean is O(1).
-            var prefix = [0.0]
-            for k in i...j { prefix.append(prefix[prefix.count - 1] + rates[k]) }
+            // Prefix sums so every sub-run's rate and clarity means are O(1).
+            var prefix = [0.0], cprefix = [0.0]
+            for k in i...j {
+                prefix.append(prefix[prefix.count - 1] + rates[k])
+                cprefix.append(cprefix[cprefix.count - 1] + clarities[k])
+            }
             for a in i...j where a + minWindows - 1 <= j {
                 // A window is centred on its span, so window `a` begins
                 // windowSec/2 before its centre.
                 let startSec = max(0, Double(a) * Double(hopSec))
-                guard startSec <= breathDoorwayMaxStartSec else { break }
+                guard startSec <= (maxStartSec ?? breathDoorwayMaxStartSec) else { break }
                 for b in (a + minWindows - 1)...j {
                     let n = b - a + 1
                     let mean = (prefix[b - i + 1] - prefix[a - i]) / Double(n)
                     guard mean <= breathDoorwayMaxRate else { continue }
+                    // Late start: only the clarity sway cannot forge admits it.
+                    if maxStartSec == nil, startSec > breathDoorwayTrustedStartSec {
+                        let clarityMean = (cprefix[b - i + 1] - cprefix[a - i]) / Double(n)
+                        guard clarityMean >= breathDoorwayLateClarity else { continue }
+                    }
                     let credit = breathCredit(rate: mean)
                     if best == nil || credit > best!.credit {
                         best = (credit, mean,
