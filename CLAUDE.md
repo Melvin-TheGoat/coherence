@@ -1074,6 +1074,14 @@ UI must coach it, and the 2-signal degrade path must stay.
   build's STATUS field in App Store Connect is the only source of truth.
   Subsequent builds of the same version skip review unless entitlements,
   privacy strings or marketing copy change.
+- **A development build will NOT reach the Watch after a TestFlight one,
+  unless you stamp its build number.** `project.yml` hardcodes
+  `CURRENT_PROJECT_VERSION: "1"`, and only `tools/archive.sh` overrides it, so
+  a plain `xcodebuild ... build` installs build 1 over a TestFlight build
+  numbered like 202608120358. iOS compares versions and correctly concludes
+  the Watch already has something far newer, so the iPhone Watch app offers no
+  update and nothing is visibly wrong. Pass the same stamp the archive script
+  uses: `CURRENT_PROJECT_VERSION=$(date -u +%Y%m%d%H%M)`.
 - **Never side-load the Watch app with `devicectl`.** It puts the app on the
   wrist but does NOT register it as the iOS app's companion, so
   `startWatchApp` fails and the phone reports "808 isn't on your Watch yet".
