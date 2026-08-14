@@ -1154,8 +1154,10 @@ UI must coach it, and the 2-signal degrade path must stay.
   **30 bpm** and every breath graph **12 breaths/min**, centred on the
   session; stillness stays 0–1; if a session genuinely moves more than the
   window, the window GROWS (never clip, and never anchor heart rate at zero —
-  both standing rules survive inside `fixedSpan`). The drawn curve is
-  `EvidenceSeries.smoothedPoints`, a 7-point weighted moving average (~35 s),
+  the heart rule survives inside `fixedSpan`; breathing is the one deliberate
+  exception, a shared absolute **0–20** ruler per Aziz, safe because a breath
+  curve is not a settle whose slope must survive). The drawn curve is
+  `EvidenceSeries.smoothedPoints`, a 9-point weighted moving average (~45 s),
   **display only** — stored data, scores and the doorway all read the raw
   points. Share card uses the identical rules so the shared image teaches the
   same reading.

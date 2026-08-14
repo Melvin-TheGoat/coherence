@@ -267,7 +267,9 @@ struct SessionResultsView: View {
         case .stillness:
             return 0...1
         case .breath:
-            return fixedSpan(lo: lo, hi: hi, span: 12)
+            // Absolute, not centred (Aziz): breathing lives on one shared
+            // 0–20 scale, so every session's breath graph is the same ruler.
+            return 0...Swift.max(20, hi + 1)
         case .heart, .other:
             return fixedSpan(lo: lo, hi: hi, span: 30)
         }
@@ -490,7 +492,7 @@ struct SessionResultsView: View {
         case .stillness:
             return 0...1
         case .breathing:
-            return fixedSpan(lo: lo, hi: hi, span: 12)
+            return 0...Swift.max(20, hi + 1)
         case .heartRate:
             return fixedSpan(lo: lo, hi: hi, span: 30)
         }
