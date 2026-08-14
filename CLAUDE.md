@@ -1147,6 +1147,18 @@ UI must coach it, and the 2-signal degrade path must stay.
     5, 5, 5, 30, 35, 35, 45, 65 s); the three mid-session spurious captures
     (starts 115, 135, 235 s) are refused; late drift doorways in the
     Monte-Carlo runs all blocked.
+- **GRAPHS DRAW AT A FIXED MAGNIFICATION, SMOOTHED (2026-08-14, Aziz).** The
+  y-axis used to zoom to whatever the curve did, so 2 bpm of ordinary wobble
+  in a calm session drew the same mountains as a 12-beat settle, and no two
+  graphs meant the same thing by "up and down". Now every heart graph spans
+  **30 bpm** and every breath graph **12 breaths/min**, centred on the
+  session; stillness stays 0–1; if a session genuinely moves more than the
+  window, the window GROWS (never clip, and never anchor heart rate at zero —
+  both standing rules survive inside `fixedSpan`). The drawn curve is
+  `EvidenceSeries.smoothedPoints`, a 7-point weighted moving average (~35 s),
+  **display only** — stored data, scores and the doorway all read the raw
+  points. Share card uses the identical rules so the shared image teaches the
+  same reading.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

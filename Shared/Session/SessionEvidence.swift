@@ -24,6 +24,28 @@ struct EvidenceSeries: Identifiable {
     let unit: String
     let points: [EvidencePoint]
     var id: String { kind.rawValue }
+
+    /// The curve as drawn: a 7-point weighted moving average (≈35 s at the
+    /// standard 5 s hop), display ONLY. Stored data, scores and the doorway
+    /// all read `points`; nothing downstream of this is ever analysed.
+    ///
+    /// Why it exists: raw window-to-window jitter is measurement noise, not
+    /// physiology, and drawing it at full weight made every session look
+    /// twitchy (Aziz, 2026-08-14). The kernel is centred and edge-normalised,
+    /// so the endpoints stay honest instead of sliding toward zero.
+    var smoothedPoints: [EvidencePoint] {
+        let w: [Double] = [1, 2, 3, 4, 3, 2, 1]
+        return points.indices.map { i in
+            var num = 0.0, den = 0.0
+            for (k, wt) in w.enumerated() {
+                let j = i + k - 3
+                guard points.indices.contains(j) else { continue }
+                num += points[j].value * wt
+                den += wt
+            }
+            return EvidencePoint(t: points[i].t, value: num / den)
+        }
+    }
 }
 
 enum SessionEvidence {

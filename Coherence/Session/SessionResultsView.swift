@@ -247,25 +247,36 @@ struct SessionResultsView: View {
         return .other
     }
 
-    /// Y domain per signal. Heart rate must NOT include zero — an area filled
-    /// from 0 flattens a 74→63 settle into a straight line. Stillness keeps its
-    /// natural 0–1 scale; breath pads around whatever was actually read.
+    /// Y domain per signal, at a FIXED magnification (2026-08-14).
+    ///
+    /// The axis used to zoom to whatever the curve did, so 2 bpm of ordinary
+    /// wobble in a calm session drew the same mountains as a 12-beat settle,
+    /// and no two graphs meant the same thing by "up and down". Now every
+    /// heart graph spans 30 bpm and every breath graph 12 breaths/min,
+    /// centred on the session, so the same wiggle always looks the same size
+    /// and graphs compare across sessions.
+    ///
+    /// Two standing rules survive inside this one: never fill heart rate from
+    /// zero (it flattens a real settle into a straight line — the window is
+    /// centred on the data, not anchored at 0), and never clip (a session
+    /// that genuinely moves more than the window grows the window).
     private func yDomain(_ series: EvidenceSeries, _ kind: GraphKind) -> ClosedRange<Double> {
-        let values = series.points.map(\.value)
+        let values = series.smoothedPoints.map(\.value)
         guard let lo = values.min(), let hi = values.max() else { return 0...1 }
         switch kind {
         case .stillness:
             return 0...1
         case .breath:
-            // No longer forced to contain 3.5–8: that existed to keep the old
-            // fixed band on screen. A minimum span still applies so a nearly
-            // flat curve isn't magnified into drama it doesn't contain.
-            let pad = Swift.max(1.0, (hi - lo) * 0.25)
-            return (lo - pad)...(hi + pad)
+            return fixedSpan(lo: lo, hi: hi, span: 12)
         case .heart, .other:
-            let pad = Swift.max(2.0, (hi - lo) * 0.35)
-            return (lo - pad)...(hi + pad)
+            return fixedSpan(lo: lo, hi: hi, span: 30)
         }
+    }
+
+    private func fixedSpan(lo: Double, hi: Double, span: Double) -> ClosedRange<Double> {
+        let mid = (lo + hi) / 2
+        let half = Swift.max(span / 2, (hi - lo) / 2 + 1)   // grow, never clip
+        return (mid - half)...(mid + half)
     }
 
     /// The doorway as a fraction of a curve's width, for the share card, whose
@@ -330,7 +341,7 @@ struct SessionResultsView: View {
                                   xEnd: .value("min", span.upperBound / 60))
                         .foregroundStyle(AppColor.calmAccent.opacity(0.14))
                 }
-                ForEach(series.points) { point in
+                ForEach(series.smoothedPoints) { point in
                     // Fill down to the domain floor, not to zero.
                     AreaMark(x: .value("min", point.t / 60),
                              yStart: .value(series.title, domain.lowerBound),
@@ -344,7 +355,7 @@ struct SessionResultsView: View {
                         .lineStyle(StrokeStyle(lineWidth: 2))
                         .interpolationMethod(.catmullRom)
                 }
-                if let last = series.points.last {
+                if let last = series.smoothedPoints.last {
                     PointMark(x: .value("min", last.t / 60), y: .value(series.title, last.value))
                         .foregroundStyle(lineColor)
                         .symbolSize(36)
@@ -452,7 +463,7 @@ struct SessionResultsView: View {
             ShareCardData.Curve(
                 title: s.title,
                 reading: shareReading(for: s, stats: stats),
-                values: s.points.map(\.value),
+                values: s.smoothedPoints.map(\.value),
                 // Gold is the achieved signal; the body's signals are teal.
                 isAchievement: s.kind == .stillness,
                 highlight: s.kind == .breathing ? doorwayFraction(s) : nil,
@@ -470,22 +481,18 @@ struct SessionResultsView: View {
             streakDays: streakDays)
     }
 
-    /// Fixed y-ranges, matching the results screen's chart rules: stillness is
-    /// always 0–1, breath always contains the 4.5–7 slow-breathing band (a steady
-    /// breath scaled to its own range would push the band off-view), and heart
-    /// rate scales to itself with padding — never from zero, which flattens a
-    /// real settle into a straight line.
+    /// Fixed y-ranges, the same magnification rules as the results screen
+    /// (see `yDomain`): the shared image must teach the same reading.
     private func shareDomain(for series: EvidenceSeries) -> ClosedRange<Double>? {
-        let values = series.points.map(\.value)
+        let values = series.smoothedPoints.map(\.value)
         guard let lo = values.min(), let hi = values.max() else { return nil }
         switch series.kind {
         case .stillness:
             return 0...1
         case .breathing:
-            return Swift.min(lo - 0.5, 4.0)...Swift.max(hi + 0.5, 7.5)
+            return fixedSpan(lo: lo, hi: hi, span: 12)
         case .heartRate:
-            let pad = Swift.max((hi - lo) * 0.25, 2)
-            return (lo - pad)...(hi + pad)
+            return fixedSpan(lo: lo, hi: hi, span: 30)
         }
     }
 
