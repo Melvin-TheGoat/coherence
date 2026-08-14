@@ -1434,6 +1434,48 @@ Store Connect metadata (attorney question); StoreKit must be live or the
 paywall absent — "Free while we're testing" copy must never reach an App
 Store build (it flips itself once products exist, but verify).
 
+## iCloud / CloudKit — FROZEN during the external beta (2026-08-14)
+
+**Nothing about iCloud ships until the beta says otherwise.** External Beta App
+Review is approved; changing entitlements, Info.plist privacy strings or
+marketing copy forces a new review and costs days. Per Aziz's note above, later
+builds of the same version otherwise skip review entirely, so ordinary feature
+work is free and iCloud work is not.
+
+Where it actually stands, so nobody re-derives it:
+
+- **Melvin's container now exists and is correctly entitled.** He created
+  `iCloud.com.lockout.meditate808` in Xcode; the provisioning profile for
+  `WLZQLLHUB3.com.lockout.meditate808` grants it, verified by reading the
+  profile. Xcode showing the container in **red is stale UI**, not an error.
+  This is his personal dev container and is unrelated to the beta, which ships
+  from Aziz's account under `com.azizmahmud.808`.
+- **The schema was never deployed and must not be yet.** Deploying is a
+  CloudKit Console action rather than an app change, so it would not itself
+  trigger review, but it is pointless before we know sync works and it belongs
+  to whichever container actually ships.
+- **`CloudSchemaPrimer` exists for when we do deploy** (`Shared/`, DEBUG only).
+  CloudKit builds the Development schema **lazily from what the app writes**,
+  and a nil attribute writes no field: the five synced models carry 13
+  optionals, so ordinary use would leave most fields out, and Production is
+  additive and manual with no lazy creation. Core Data's
+  `initializeCloudKitSchema()` does this job and SwiftData does not expose it,
+  so the primer writes one row of every synced model with every attribute
+  non-nil. Deploy, then delete the rows: deleting records never removes fields.
+- **THE SILENT FALLBACK IS THE PRIME SUSPECT FOR "sync has never worked".**
+  `Persistence.cloudKit()` catches a container failure, `print`s it where
+  nobody can see it on a device, and returns a plain local store. A
+  non-syncing app is indistinguishable from a working one. `Persistence.mode`
+  now records the outcome and a DEBUG Settings panel shows it along with the
+  entitled container and the iCloud account status. **This was built and
+  installed but the readout was never actually read**, so the diagnosis is
+  still open. That is the first thing to do when the freeze lifts.
+- **The unresolved risk stays unresolved:** the privacy policy and the sign-in
+  screen both promise sessions survive a new phone via private iCloud sync, and
+  sync has never demonstrably run once. Internal testers are told this in the
+  What to Test notes. It must be fixed or the promise softened before this
+  reaches people who are not us.
+
 ## Toolchain notes (this machine)
 
 - XcodeGen location differs per machine — resolve it with `which xcodegen`
