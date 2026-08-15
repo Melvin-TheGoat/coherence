@@ -93,14 +93,15 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
 
             We do this by creating the conditions for the mind to reach \
             stillness. Just as we cannot pull a flower out of a seed, we cannot \
-            force the mind to be still. What we can do is create the conditions. \
-            Give a seed a pot, soil, water and sunlight and it grows on its own. \
-            Meditation works the same way. Set up the conditions and stillness \
-            arrives by itself, without being forced. Here are the conditions.
+            force the mind to be still. What we can do is create the conditions: \
+            Give a seed a pot, soil, water, and sunlight, and it will naturally \
+            grow on its own. Meditation works the same way. If you create the \
+            right conditions, the mind will naturally reach a peaceful stillness \
+            on its own. Here are the conditions.
             """,
             level: .beginner,
             steps: [
-                "Set aside some time. There is no rule, but 10 to 20 minutes is a good guide. Put your phone somewhere you will not reach for it.",
+                "Set aside some time. There is no rule, but 10 to 20 minutes is a good guide. Consider turning on Do Not Disturb.",
                 "Sit comfortably on a well supported surface with a straight back.",
                 "Focus on an anchor. It can be anything, and the most common one is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.",
                 "Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one. Breathing deeply and naturally works too if that is what relaxes you.",
@@ -111,9 +112,9 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             That is it. The rest is practice.
 
             Meditation is the practice of training your mind. Done regularly it \
-            helps you observe your thoughts without judgement, which is what \
-            leads to a calmer mind, lower stress, better emotional control and a \
-            stronger sense of being present.
+            helps you observe your thoughts without judgement, leading to a \
+            calmer mind, lower stress, better emotional control and a stronger \
+            sense of being present.
             """,
             origin: "",
             variants: []),

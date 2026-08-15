@@ -69,9 +69,9 @@ public struct Award: Identifiable, Hashable {
               is the part most people never do.
               """),
 
-        Award(id: "firstSession", title: "First sit",
+        Award(id: "firstSession", title: "First meditation",
               blurb: "Your first measured session.",
-              group: .beginning, face: .number("1", unit: "sit"),
+              group: .beginning, face: .number("1", unit: "session"),
               meaning: """
               You sat, and your Watch recorded what your body did while you were \
               there. Everything else on this shelf is built on top of this.

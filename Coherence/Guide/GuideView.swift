@@ -27,7 +27,7 @@ struct GuideView: View {
                         Text("How to meditate")
                             .font(AppFont.title)
                             .foregroundStyle(AppColor.textPrimary)
-                        Text("Ways to practise, easiest first. Read one, then go sit. You never have to follow any of them.")
+                        Text("Ways to practise, easiest first.")
                             .font(AppFont.note)
                             .foregroundStyle(AppColor.textSecondary)
                     }
