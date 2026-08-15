@@ -22,6 +22,9 @@ struct ContentView: View {
     /// Presented once the current sheet is down. Setting `sheet` while one is
     /// already up drops the new one on the floor.
     @State private var pendingSheet: HomeSheet?
+    /// Awards earned but not yet celebrated, oldest first. Announced one at a
+    /// time: two unlock screens racing each other would cheapen both.
+    @State private var unlockQueue: [AwardEngine.Earned] = []
     #if DEBUG
     @State private var showBreathingPreview =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
@@ -88,6 +91,16 @@ struct ContentView: View {
             )
         }
         .screenBackground()
+        .fullScreenCover(item: Binding(
+            get: { unlockQueue.first },
+            set: { _ in })) { item in
+            AwardUnlockView(item: item) {
+                AwardsInbox.markAnnounced(item.award.id)
+                unlockQueue.removeFirst()
+            }
+        }
+        .onAppear(perform: refreshAwards)
+        .onChange(of: sessions.count) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(startedAt: Date().addingTimeInterval(-90),
@@ -138,6 +151,31 @@ struct ContentView: View {
                 SessionResultsView(sessionID: id)
             }
         }
+    }
+
+    // MARK: - Awards
+
+    /// Derived from history on every check, so nothing needs backfilling: a
+    /// user with months of sessions simply has the awards those sessions earned.
+    private func refreshAwards() {
+        let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
+            guard let id = st.sessionID, let s = st.overallScore else { return nil }
+            return (id, s)
+        }, uniquingKeysWith: { a, _ in a })
+
+        let earned = AwardEngine.evaluate(
+            sessions: sessions.map {
+                .init(startedAt: $0.startedAt,
+                      durationSec: $0.durationSec,
+                      overallScore: scores[$0.id])
+            },
+            accountCreatedAt: users.first?.createdAt)
+
+        // First run swallows everything already earned. Melvin and Aziz have
+        // months of history and would otherwise meet a dozen unlock screens in
+        // a row, which would cheapen the one that matters.
+        AwardsInbox.seedIfNeeded(with: earned)
+        unlockQueue = AwardsInbox.pending(from: earned)
     }
 
     // MARK: - Header

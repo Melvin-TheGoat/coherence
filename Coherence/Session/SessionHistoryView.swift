@@ -13,6 +13,7 @@ struct JourneyView: View {
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var allStats: [MeditationStats]
     @Query private var reflections: [SessionReflection]
+    @Query private var users: [User]
 
     /// The month currently shown in the calendar (any date within it).
     @State private var monthAnchor = Date()
@@ -26,6 +27,7 @@ struct JourneyView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     statsRow
+                    awardsSection
                     calendarCard
                     logSection
                 }
@@ -34,6 +36,88 @@ struct JourneyView: View {
             .screenBackground()
             .navigationTitle("Your journey")
             .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+
+    // MARK: - Awards
+
+    /// Derived on every render rather than stored: the rules read the same
+    /// history the rest of this screen is already showing, so a shelf can
+    /// never disagree with the sessions above it.
+    private var awardProgress: [AwardEngine.Earned] {
+        let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
+            guard let id = st.sessionID, let s = st.overallScore else { return nil }
+            return (id, s)
+        }, uniquingKeysWith: { a, _ in a })
+
+        return AwardEngine.evaluate(
+            sessions: sessions.map {
+                .init(startedAt: $0.startedAt,
+                      durationSec: $0.durationSec,
+                      overallScore: scores[$0.id])
+            },
+            accountCreatedAt: users.first?.createdAt)
+    }
+
+    private var awardsSection: some View {
+        let items = awardProgress
+        let earned = items.filter(\.isEarned)
+        let next = items.first { !$0.isEarned }
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                SectionHeader(title: "Awards · \(earned.count) of \(items.count)")
+                Spacer()
+                NavigationLink {
+                    AwardsView(earned: items)
+                } label: {
+                    Text("See all")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.accentGold)
+                        .padding(.horizontal, 8).padding(.vertical, 6)
+                }
+                .buttonStyle(CardButtonStyle())
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(items.prefix(8)) { item in
+                        VStack(spacing: 6) {
+                            AwardBadge(award: item.award, earned: item.isEarned, size: 54)
+                            Text(item.award.title)
+                                .font(.system(size: 9.5, weight: .medium))
+                                .foregroundStyle(item.isEarned
+                                                 ? AppColor.textPrimary : AppColor.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                        }
+                        .frame(width: 62)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+            .scrollClipDisabled()
+
+            // One target at a time. A list of everything you have not done yet
+            // reads as a backlog rather than a next step.
+            if let next, next.progress > 0 {
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack {
+                        Text("Next: \(next.award.title.lowercased())")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Spacer()
+                        if let text = next.progressText {
+                            Text(text)
+                                .font(AppFont.caption.weight(.semibold))
+                                .foregroundStyle(AppColor.accentGold)
+                                .monospacedDigit()
+                        }
+                    }
+                    ProgressBar(fraction: next.progress)
+                }
+                .card(padding: 13)
+            }
         }
     }
 
