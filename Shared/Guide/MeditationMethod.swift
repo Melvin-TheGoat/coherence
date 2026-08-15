@@ -35,6 +35,9 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     public let title: String
     /// One line for the roadmap row and the logging picker.
     public let oneLine: String
+    /// Optional framing shown ABOVE the steps. Only the first-timer page needs
+    /// it: everyone else already knows why they sat down.
+    public var intro: String = ""
     public let level: Level
     /// The practice itself, in order. Rendered as numbered steps.
     public let steps: [String]
@@ -79,6 +82,41 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     // MARK: - The list
 
     public static let all: [MeditationMethod] = [
+
+        MeditationMethod(
+            id: "firstTime",
+            title: "First time meditating?",
+            oneLine: "Start here. What it is, and what to actually do.",
+            intro: """
+            The goal of meditation is to train the mind to be more focused, \
+            present, and self aware.
+
+            We do this by creating the conditions for the mind to reach \
+            stillness. Just as we cannot pull a flower out of a seed, we cannot \
+            force the mind to be still. What we can do is create the conditions. \
+            Give a seed a pot, soil, water and sunlight and it grows on its own. \
+            Meditation works the same way. Set up the conditions and stillness \
+            arrives by itself, without being forced. Here are the conditions.
+            """,
+            level: .beginner,
+            steps: [
+                "Set aside some time. There is no rule, but 10 to 20 minutes is a good guide. Put your phone somewhere you will not reach for it.",
+                "Sit comfortably on a well supported surface with a straight back.",
+                "Focus on an anchor. It can be anything, and the most common one is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.",
+                "Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one. Breathing deeply and naturally works too if that is what relaxes you.",
+                "Optional: some people find it helps to picture a bright, rising energy filling the body on the inhale, and a soft, grounding energy leaving on the exhale. In Chinese tradition this is yin, the passive release, and yang, the active expansion.",
+                "When your mind wanders off, and it will, notice it and gently bring your attention back to the breath. Expect the wandering. All that matters is that when you notice, you return, gently and without judgement.",
+            ],
+            purpose: """
+            That is it. The rest is practice.
+
+            Meditation is the practice of training your mind. Done regularly it \
+            helps you observe your thoughts without judgement, which is what \
+            leads to a calmer mind, lower stress, better emotional control and a \
+            stronger sense of being present.
+            """,
+            origin: "",
+            variants: []),
 
         MeditationMethod(
             id: "blueSky",
@@ -144,6 +182,32 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             people, and it costs nothing to try.
             """,
             origin: "",
+            variants: []),
+
+        MeditationMethod(
+            id: "dualAwareness",
+            title: "Dual Awareness",
+            oneLine: "Hold the breath and the whole room at once.",
+            level: .intermediate,
+            steps: [
+                "Settle on the breath the way you would in any practice. Attention on the sensations where the air moves.",
+                "Now, without taking your attention off the breath, notice what else is there. Sounds in the room. The weight of your body on the seat. Light through your eyelids. Air on your skin.",
+                "Keep the breath in the foreground and everything else in the background, both at the same time. You are not switching between them, and you are not trying to name what you notice.",
+                "You will keep collapsing into one or the other. Sometimes you narrow down until only the breath exists. Sometimes you drift out and lose the breath entirely. Both are normal. Widen or return, gently.",
+                "In time a third thing shows up: you start being able to tell what your mind is doing while it is doing it. That is the part worth having.",
+            ],
+            purpose: """
+            Attention and awareness are not the same thing. Attention picks one \
+            small part of experience and studies it. Awareness is open and \
+            holds the whole context around it. Most practice trains only the \
+            first, and attention on its own goes narrow and dull.
+
+            Holding both is what makes the difference. With awareness open you \
+            catch a distraction while it is arriving rather than ten minutes \
+            after it took you, and this is the skill that carries out of the \
+            session and into an ordinary day.
+            """,
+            origin: "Culadasa (John Yates), The Mind Illuminated. Practice tradition, not peer-reviewed evidence.",
             variants: []),
 
         MeditationMethod(

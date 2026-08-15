@@ -174,6 +174,13 @@ struct MethodDetailView: View {
                         .foregroundStyle(AppColor.textSecondary)
                 }
 
+                if !method.intro.isEmpty {
+                    Text(method.intro)
+                        .font(AppFont.note)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 VStack(alignment: .leading, spacing: 12) {
                     SectionHeader(title: "The practice")
                     ForEach(Array(method.steps.enumerated()), id: \.offset) { index, step in

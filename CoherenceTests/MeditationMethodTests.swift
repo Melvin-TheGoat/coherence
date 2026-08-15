@@ -61,8 +61,13 @@ final class MeditationMethodTests: XCTestCase {
             for word in banned {
                 XCTAssertFalse(corpus.contains(word), "\(m.id) says '\(word)'")
             }
-            if m.origin.lowercased().contains("dispenza") {
-                XCTAssertTrue(m.origin.contains("not peer-reviewed"),
+            // Any named teacher, not just the first one we happened to cite.
+            // Culadasa holds a neuroscience PhD, which makes his book the most
+            // tempting of the lot to dress up as evidence. It is still a book.
+            let teachers = ["dispenza", "culadasa", "yates", "goddard", "doty"]
+            if teachers.contains(where: { m.origin.lowercased().contains($0) }) {
+                XCTAssertTrue(m.origin.contains("not peer-reviewed")
+                              || m.origin.contains("not a study"),
                               "\(m.id) cites a teacher without labelling it tradition")
             }
         }
