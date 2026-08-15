@@ -138,7 +138,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "5.2.0"
+    static let version = "5.2.1"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -1254,8 +1254,13 @@ enum SignalEngine {
     /// Minutes at which the long-sit bonus plateaus; past this, more time
     /// buys nothing.
     private static let durationBonusFullMinutes = 40.0
-    /// The plateau of the long-sit bonus: +15% (Aziz, 2026-08-14).
-    private static let durationMaxBonus = 0.15
+    /// The plateau of the long-sit bonus: +8% (Aziz, 2026-08-15, down from
+    /// the original 15% after his first real long session scored 99: heart
+    /// maxed, stillness 0.93, no breath credit, depth 0.89 — an 89 session —
+    /// and the 15% bonus at 28.8 min lifted it to 99, with 100 reachable at
+    /// 40 min from the same depth. At 8% the same session reads 94, and the
+    /// top of the scale stays hard to touch without a genuinely deep sit.
+    private static let durationMaxBonus = 0.08
 
     /// Time's shape, redesigned by Aziz (2026-08-14, replacing the v3 sqrt
     /// ceiling): a linear CEILING to ten minutes, then a small S-shaped BONUS.
@@ -1265,12 +1270,12 @@ enum SignalEngine {
     /// 10 min at 82 and needed 20+ for 100 — this deliberately moves value
     /// toward shorter sessions.)
     ///
-    /// Past ten minutes: 1 + 0.15·smoothstep, flat leaving 10 (the two arms
+    /// Past ten minutes: 1 + bonus·smoothstep, flat leaving 10 (the two arms
     /// join with matching slope-zero, no kink), accelerating through the
-    /// inflection at 25, plateaued at +15% from 40 on.
+    /// inflection at 25, plateaued at `durationMaxBonus` from 40 on.
     ///
-    ///     2 min → 0.60   5 → 0.75   10 → 1.00   15 → 1.01   20 → 1.04
-    ///     25 → 1.075   30 → 1.11   40+ → 1.15
+    ///     2 min → 0.60   5 → 0.75   10 → 1.00   15 → 1.006   20 → 1.02
+    ///     25 → 1.04   30 → 1.06   40+ → 1.08
     ///
     /// The bonus MULTIPLIES depth rather than adding points, which preserves
     /// the principle this factor has carried since v3: thirty restless minutes

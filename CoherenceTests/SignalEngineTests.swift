@@ -865,10 +865,10 @@ extension SignalEngineTests {
         // The arms join without a kink: just past 10 is barely above 1.
         XCTAssertEqual(SignalEngine.durationFactor(seconds: 630), 1.00, accuracy: 0.005)
         // Inflection at 25 sits exactly halfway up the bonus.
-        XCTAssertEqual(SignalEngine.durationFactor(seconds: 1500), 1.075, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 1500), 1.04, accuracy: 0.001)
         // Plateau: 40 minutes and two hours are worth the same.
-        XCTAssertEqual(SignalEngine.durationFactor(seconds: 2400), 1.15, accuracy: 0.001)
-        XCTAssertEqual(SignalEngine.durationFactor(seconds: 7200), 1.15, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 2400), 1.08, accuracy: 0.001)
+        XCTAssertEqual(SignalEngine.durationFactor(seconds: 7200), 1.08, accuracy: 0.001)
     }
 
     /// The bonus multiplies depth, so time still cannot rescue a bad session —

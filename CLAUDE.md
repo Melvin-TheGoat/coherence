@@ -1166,8 +1166,11 @@ UI must coach it, and the 2-signal degrade path must stay.
   10 min at 82 and needed 20+ for 100). Under ten minutes the cap is
   **50 + 5·minutes**, so an excellent 10-minute sit reaches 100. Past ten,
   a smoothstep bonus (flat at 10, inflection 25, plateau 40) multiplies depth
-  by up to **+15%**; `score` clamps at 1.0. Factors: 2 min → .60, 5 → .75,
-  10 → 1.00, 20 → 1.04, 25 → 1.075, 40+ → 1.15.
+  by up to **+8%** (was 15% for a day; Aziz's first real long session scored
+  99 from depth 0.89 and he called it egregious, so the plateau came down —
+  same session now reads 94); `score` clamps at 1.0. Factors: 2 min → .60,
+  5 → .75, 10 → 1.00, 20 → 1.02, 25 → 1.04, 40+ → 1.08. Migration
+  `scoreBackfillDone.v7`.
   - **The bonus multiplies depth, never adds points** — the v3 principle
     (thirty restless minutes lose to five settled ones) survives the
     redesign: a restless 40-minute sit gains ~2 points, a settled one ~12.
