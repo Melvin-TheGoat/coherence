@@ -87,18 +87,18 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             level: .beginner,
             steps: [
                 "Picture yourself lying on a field of grass, looking up at an open sky.",
-                "Thoughts will come. That is not a failure, it is the point.",
-                "Make every thought a cloud. Some are light and pretty, some are dark and stormy. Either way they are far away, and you are down here on the field.",
-                "Sometimes you will notice you have been pulled up into the clouds. When you notice, come back to the field.",
-                "Come back calmly. No judgement, no deciding you are doing it wrong.",
+                "Thoughts and emotions will come. That is not a failure, it is the point.",
+                "Picture every thought as a cloud. Some are light and pretty, some are dark and stormy. Either way they are far away, and you are down here on the field.",
+                "Sometimes you will notice you have been pulled up into the clouds. When you notice, simply come back to the field.",
+                "Come back calmly and without judgement. As long as you are returning, you are doing it correctly.",
             ],
             purpose: """
-            The returning is the practice. You are not training to have no \
-            thoughts, you are training the return, and that is the rep.
+            Understand that the returning IS the practice. You are not training \
+            to have no thoughts, you are training to separate yourself from them.
 
-            What it teaches is that you are not your thoughts, you are the one \
-            watching them. That is what lets you step back from the alarm bells, \
-            whatever yours happen to be.
+            What this teaches is that you are not your thoughts, you are the \
+            observer of your thoughts. Whatever your alarm bells may be, you can \
+            step back from them whenever you'd like.
             """,
             origin: "",
             variants: []),

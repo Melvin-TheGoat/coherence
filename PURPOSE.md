@@ -1,12 +1,8 @@
 # Our Purpose
 
-Beneath every goal you're chasing sits a subconscious identity: the quiet set of beliefs about
-who you are and what you're capable of. When that identity and your goals disagree, you feel it
-as friction. Procrastination. Self-doubt. The sense of pushing against yourself.
-
-We built 808 around a simple conviction. Meditation is not just an escape from that friction.
-It is the tool for dissolving it, a daily practice for rewriting the identity underneath, so
-that who you are and who you're becoming finally point the same way.
+We believe the most powerful tool you have is your mind, and that your mind shapes the reality
+you create. Taking care of your body is mainstream. Taking care of your mind is not. The way
+you take care of your mind is through meditation.
 
 But there's a problem with meditation, and it's why most people quit.
 
@@ -14,11 +10,20 @@ But there's a problem with meditation, and it's why most people quit.
 the same thing every time. Was I doing that right? Is this even working? With no way to see
 what's happening inside, the practice becomes an act of faith, and faith is easy to lose.
 
-So we made the invisible visible. While you meditate, your Apple Watch measures how your body
+We built 808 to make meditation straightforward, habitual and universal. Three things do that.
+
+**We show you what happened.** While you meditate, your Apple Watch measures how your body
 responds: how still you become, how your heart rate settles, and if you're breathing slowly,
 the rhythm of your breath. Nothing is shown while you sit. When you open your eyes, 808 shows
-you what your body did, and keeps it, session after session. You can watch yourself improve
-over weeks and months, on evidence rather than on how you happen to feel that day.
+you what your body did, and you rate the session yourself. Between the two you can see what is
+working for you and what isn't, instead of guessing.
+
+**We keep you coming back.** Streaks, awards, and every session you've practiced kept in one
+place, so consistency becomes something you can see rather than something you hope you have.
+You can watch yourself improve over weeks and months, on evidence rather than on how you happen
+to feel that day.
+
+**We let you share the proof.** Any platform, on your terms.
 
 It works with our guided track, with our sound library, or with nothing at all. Start a session
 and play a meditation from any other app you like. The Watch keeps measuring either way.
@@ -31,8 +36,12 @@ and we list them ourselves in *The Science Behind 808*. The point is narrower th
 headline: this is a practice with a serious literature behind it. What has been missing is any
 way to know whether *you* are doing it.
 
-808 is where the two meet: **a practice that reshapes who you are, and hard evidence that it's
-happening.**
+Underneath every goal you're chasing sits the quiet set of beliefs about who you are and what
+you're capable of. Meditation is not just an escape from the friction between those beliefs and
+what you want. It is the tool for dissolving it. That is the practice. The evidence is how you
+know it's happening.
 
-That's why we made this. Not to give you one more thing to be good at, but to hand you proof
-that you're changing.
+If you meditate, or you would like to start, 808 was made for you. We enhance the experience of
+meditation, and we aim to connect millions of practitioners around the world.
+
+**We're the social network for those who breathe. Join us.**
