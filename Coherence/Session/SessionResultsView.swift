@@ -425,6 +425,19 @@ struct SessionResultsView: View {
                 highlight: s.kind == .breathing ? doorwayFraction(s) : nil,
                 domain: shareDomain(for: s))
         }
+        // The subjective half. Read from what's on screen rather than from
+        // storage, so the card can never show a note the user has just edited
+        // away, and the sheet renders it before anything leaves the phone.
+        let verdict = VerdictEngine.verdict(for: .init(
+            overallScore: stats.overallScore,
+            stillnessScore: stats.stillnessScore,
+            hrDecline: stats.hrDecline,
+            meanBreathingRate: stats.meanBreathingRate,
+            resonanceMatchScore: stats.resonanceMatchScore,
+            breathDoorwayRate: stats.breathDoorwayRate,
+            breathDoorwayHeldSec: stats.breathDoorwayHeldSec,
+            bellyBreathing: session.bellyBreathing))
+
         return ShareCardData(
             date: session.startedAt,
             durationSec: session.durationSec,
@@ -434,7 +447,12 @@ struct SessionResultsView: View {
             hrDecline: stats.hrDecline,
             meanBreathingRate: stats.meanBreathingRate,
             curves: curves,
-            streakDays: streakDays)
+            streakDays: streakDays,
+            verdict: verdict.sentence,
+            rating: reflectionSaved ? Int(rating) : nil,
+            note: reflectionSaved ? note : "",
+            techniqueLabel: MeditationMethod.label(for: technique),
+            soundLabel: SoundCatalog.title(for: session.frequencyID) ?? "Silence")
     }
 
     /// Fixed y-ranges, the same magnification rules as the results screen

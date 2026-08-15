@@ -13,6 +13,39 @@ import Photos
 
 // MARK: - Card data
 
+/// Which layout the sharer picked. `full` is what everyone got before styles
+/// existed and stays the default: a change of default silently changes what
+/// most people post.
+enum ShareCardStyle: String, CaseIterable, Identifiable {
+    case full, score, verdict, words, receipt
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .full:    return "Everything"
+        case .score:   return "Score"
+        case .verdict: return "Verdict"
+        case .words:   return "Your words"
+        case .receipt: return "Receipt"
+        }
+    }
+
+    /// Styles that would render empty for this session are never offered. A
+    /// picker that shows a blank card is worse than one with fewer choices.
+    static func available(for data: ShareCardData) -> [ShareCardStyle] {
+        allCases.filter { style in
+            switch style {
+            case .full:    return true
+            case .score:   return data.overallScore != nil
+            case .verdict: return data.verdict?.isEmpty == false
+            case .words:   return data.rating != nil || !data.note.isEmpty
+            case .receipt: return true
+            }
+        }
+    }
+}
+
 struct ShareCardData {
     /// One signal's curve as the card draws it: values in time order, the name,
     /// the headline reading, and whether it's a body signal (teal) or an
@@ -44,12 +77,23 @@ struct ShareCardData {
     /// without a readable breath carry two — never a placeholder.
     let curves: [Curve]
     let streakDays: Int
+
+    // Written by the user rather than measured off the wrist. Only the styles
+    // that ask for it ever render these, and the sheet shows the finished card
+    // before anything leaves the phone: a share must never publish someone's
+    // private note without them seeing it first.
+    var verdict: String? = nil
+    var rating: Int? = nil
+    var note: String = ""
+    var techniqueLabel: String? = nil
+    var soundLabel: String? = nil
 }
 
 // MARK: - The story card (360×640 pt → rendered ×3 = 1080×1920 px)
 
 struct SessionShareCard: View {
     let data: ShareCardData
+    var style: ShareCardStyle = .full
 
     var body: some View {
         ZStack {
@@ -59,6 +103,23 @@ struct SessionShareCard: View {
                 colors: [AppColor.backgroundPrimary, AppColor.backgroundSecondary],
                 startPoint: .top, endPoint: .bottom)
 
+            Group {
+                switch style {
+                case .full:    fullLayout
+                case .score:   scoreLayout
+                case .verdict: verdictLayout
+                case .words:   wordsLayout
+                case .receipt: receiptLayout
+                }
+            }
+            .padding(.horizontal, 32)
+        }
+        .frame(width: 360, height: 640)
+    }
+
+    // MARK: Everything (the original, and still the default)
+
+    private var fullLayout: some View {
             VStack(spacing: 0) {
                 Spacer(minLength: 44)
 
@@ -115,9 +176,243 @@ struct SessionShareCard: View {
 
                 Spacer(minLength: 40)
             }
-            .padding(.horizontal, 32)
+    }
+
+    // MARK: Shared furniture
+
+    /// The mark, the wordmark and the date. Every style opens the same way so a
+    /// post is recognisable as 808 before anyone reads a number.
+    private var brandBlock: some View {
+        VStack(spacing: 0) {
+            LogoMark()
+                .frame(width: 34, height: 34)
+            Text("808")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.accentGold)
+                .padding(.top, 6)
         }
-        .frame(width: 360, height: 640)
+    }
+
+    private var footerLine: some View {
+        Text("MEASURED ON APPLE WATCH")
+            .font(.system(size: 10, weight: .semibold, design: .rounded))
+            .tracking(2)
+            .foregroundStyle(AppColor.textSecondary)
+    }
+
+    private var dateLine: some View {
+        Text(data.date.formatted(date: .abbreviated, time: .omitted))
+            .font(.system(size: 13, weight: .medium, design: .rounded))
+            .foregroundStyle(AppColor.textSecondary)
+    }
+
+    private var minutesText: String {
+        let m = max(1, Int((Double(data.durationSec) / 60).rounded()))
+        return "\(m) min"
+    }
+
+    // MARK: A — score only
+
+    /// Two numbers. Survives being shrunk to a thumbnail in a feed, which none
+    /// of the dense layouts do.
+    private var scoreLayout: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            brandBlock
+            Spacer()
+            VStack(spacing: 6) {
+                Text("\(Int(((data.overallScore ?? 0) * 100).rounded()))")
+                    .font(.system(size: 108, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.accentGold)
+                    .monospacedDigit()
+                Text("PRACTICE SCORE")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2)
+                    .foregroundStyle(AppColor.textSecondary)
+                Text(minutesText)
+                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .padding(.top, 26)
+                Text("MEDITATED")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            Spacer()
+            dateLine
+            footerLine.padding(.top, 6)
+            Spacer(minLength: 40)
+        }
+    }
+
+    // MARK: B — score plus the spoken verdict
+
+    /// The ring with the sentence the app already writes. The words travel to
+    /// people who do not have 808 and cannot read the number.
+    private var verdictLayout: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            brandBlock
+            Spacer()
+            if let score = data.overallScore { scoreRing(score) }
+            if let verdict = data.verdict, !verdict.isEmpty {
+                Text(verdict)
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(4)
+                    .minimumScaleFactor(0.7)
+                    .padding(.top, 26)
+            }
+            Spacer()
+            Text("\(minutesText) · \(data.date.formatted(date: .abbreviated, time: .omitted))")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary)
+            footerLine.padding(.top, 6)
+            Spacer(minLength: 40)
+        }
+    }
+
+    // MARK: C — what you wrote
+
+    /// The only layout that sounds like a person, and the only one that puts
+    /// felt beside measured. Renders nothing the user did not type.
+    private var wordsLayout: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            brandBlock
+            Spacer()
+            VStack(alignment: .leading, spacing: 16) {
+                if let rating = data.rating {
+                    HStack(spacing: 3) {
+                        ForEach(0..<10, id: \.self) { i in
+                            Image(systemName: i < rating ? "star.fill" : "star")
+                                .font(.system(size: 12))
+                                .foregroundStyle(i < rating
+                                                 ? AppColor.accentGold
+                                                 : AppColor.textSecondary.opacity(0.4))
+                        }
+                    }
+                }
+                if !data.note.isEmpty {
+                    Text("\u{201C}\(data.note)\u{201D}")
+                        .font(.system(size: 19, weight: .regular, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .lineLimit(7)
+                        .minimumScaleFactor(0.75)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Rectangle()
+                    .fill(AppColor.textSecondary.opacity(0.25))
+                    .frame(height: 1)
+                HStack(spacing: 26) {
+                    if let rating = data.rating {
+                        labelled("\(rating)/10", "FELT LIKE")
+                    }
+                    if let score = data.overallScore {
+                        labelled("\(Int((score * 100).rounded()))", "MEASURED")
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer()
+            Text([minutesText, data.techniqueLabel].compactMap { $0 }.joined(separator: " · "))
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary)
+            footerLine.padding(.top, 6)
+            Spacer(minLength: 40)
+        }
+    }
+
+    private func labelled(_ value: String, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(value)
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .monospacedDigit()
+            Text(label)
+                .font(.system(size: 9, weight: .semibold))
+                .tracking(1)
+                .foregroundStyle(AppColor.textSecondary)
+        }
+    }
+
+    // MARK: I — the receipt
+
+    /// Deliberately unglamorous, and the only layout that records which method
+    /// was practised, which is the thing the technique log exists to compare.
+    private var receiptLayout: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            brandBlock
+            dateLine.padding(.top, 8)
+            Spacer()
+            VStack(spacing: 0) {
+                ForEach(Array(receiptRows.enumerated()), id: \.offset) { i, row in
+                    if i > 0 {
+                        Rectangle()
+                            .fill(AppColor.textSecondary.opacity(0.18))
+                            .frame(height: 1)
+                    }
+                    HStack {
+                        Text(row.0)
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundStyle(AppColor.textSecondary)
+                        Spacer()
+                        Text(row.1)
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .monospacedDigit()
+                    }
+                    .padding(.vertical, 9)
+                }
+                if let score = data.overallScore {
+                    Rectangle()
+                        .fill(AppColor.textSecondary.opacity(0.18))
+                        .frame(height: 1)
+                    HStack(alignment: .lastTextBaseline) {
+                        Text("SCORE")
+                            .font(.system(size: 10, weight: .semibold))
+                            .tracking(1.6)
+                            .foregroundStyle(AppColor.textSecondary)
+                        Spacer()
+                        Text("\(Int((score * 100).rounded()))")
+                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColor.accentGold)
+                            .monospacedDigit()
+                    }
+                    .padding(.top, 10)
+                }
+            }
+            Spacer()
+            if data.streakDays > 1 {
+                Text("DAY \(data.streakDays)")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(2)
+                    .foregroundStyle(AppColor.accentGold)
+                    .padding(.bottom, 6)
+            }
+            footerLine
+            Spacer(minLength: 40)
+        }
+    }
+
+    /// Only rows the session actually has. A dash where a measurement should be
+    /// reads as a failure rather than an absence.
+    private var receiptRows: [(String, String)] {
+        var rows: [(String, String)] = []
+        if let t = data.techniqueLabel { rows.append(("Practice", t)) }
+        if let s = data.soundLabel { rows.append(("Sound", s)) }
+        rows.append(("Time", minutesText))
+        if let d = data.hrDecline { rows.append(("Heart", String(format: "%+.0f bpm", -d))) }
+        if let s = data.stillnessScore {
+            rows.append(("Stillness", "\(Int((s * 100).rounded()))%"))
+        }
+        if let r = data.meanBreathingRate {
+            rows.append(("Breath", String(format: "%.1f/min", r)))
+        }
+        if let rating = data.rating { rows.append(("Felt like", "\(rating)/10")) }
+        return rows
     }
 
     private func scoreRing(_ score: Double) -> some View {
@@ -270,8 +565,8 @@ enum ShareCardRenderer {
     /// Renders the card at 3× (1080×1920) with the dark palette, regardless of
     /// the app's current theme — share cards should always look the same.
     @MainActor
-    static func render(_ data: ShareCardData) -> UIImage? {
-        let renderer = ImageRenderer(content: SessionShareCard(data: data)
+    static func render(_ data: ShareCardData, style: ShareCardStyle = .full) -> UIImage? {
+        let renderer = ImageRenderer(content: SessionShareCard(data: data, style: style)
             .environment(\.colorScheme, .dark))
         renderer.scale = 3
         return renderer.uiImage
@@ -343,21 +638,14 @@ struct ShareSessionSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var rendered: UIImage?
     @State private var storyHint: String?
+    /// `.full` stays the default deliberately. Changing it would change what
+    /// most people post without anyone choosing to.
+    @State private var style: ShareCardStyle = .full
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 18) {
-                if let rendered {
-                    Image(uiImage: rendered)
-                        .resizable()
-                        .aspectRatio(9.0 / 16.0, contentMode: .fit)
-                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
-                        .frame(maxHeight: .infinity)
-                        .padding(.horizontal, 44)
-                } else {
-                    ProgressView().frame(maxHeight: .infinity)
-                }
+                cardPager
 
                 VStack(spacing: 10) {
                     if InstagramShare.isInstalled, let rendered {
@@ -406,7 +694,36 @@ struct ShareSessionSheet: View {
                     Button("Done") { dismiss() }.tint(AppColor.accentGold)
                 }
             }
-            .task { rendered = ShareCardRenderer.render(data) }
+            .task(id: style) { rendered = ShareCardRenderer.render(data, style: style) }
         }
+    }
+
+    /// Swipe between layouts, dots only. Labels under the card competed with
+    /// the card for attention and made a private preview look like a form.
+    ///
+    /// The pages are the live SwiftUI card rather than rendered images: five
+    /// cards at export resolution would be about 40 MB of bitmaps just to look
+    /// at. Only the selected style is ever rasterised, and only for sharing.
+    private var cardPager: some View {
+        let styles = ShareCardStyle.available(for: data)
+        return GeometryReader { geo in
+            TabView(selection: $style) {
+                ForEach(styles) { s in
+                    let scale = min((geo.size.width - 88) / 360,
+                                    (geo.size.height - 40) / 640)
+                    SessionShareCard(data: data, style: s)
+                        .environment(\.colorScheme, .dark)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
+                        .scaleEffect(scale)
+                        .frame(width: 360 * scale, height: 640 * scale)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .tag(s)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: styles.count > 1 ? .always : .never))
+            .indexViewStyle(.page(backgroundDisplayMode: .always))
+        }
+        .frame(maxHeight: .infinity)
     }
 }
