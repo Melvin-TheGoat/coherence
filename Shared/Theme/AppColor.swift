@@ -7,7 +7,18 @@ import SwiftUI
 enum AppColor {
     static let backgroundPrimary = Color("BackgroundPrimary")
     static let backgroundSecondary = Color("BackgroundSecondary")
+    /// Gold as a FILL: buttons, rings, tinted discs. Light mode runs it
+    /// LIGHTER than dark mode, which is the opposite of the usual instinct and
+    /// is correct: the label on a gold plate is near-black, so a lighter plate
+    /// gains contrast (10.04 against 8.07 before).
     static let accentGold = Color("AccentGold")
+
+    /// Gold as TEXT on a background: score numbers, the streak digit, "See all".
+    /// A separate token because no single gold can be both a bright plate and a
+    /// readable number. The fill at 10.04 on its label reads only 1.78 as text
+    /// on the light background; this one reads 4.51. In DARK mode both resolve
+    /// to the same gold, so nothing about that theme changes.
+    static let accentGoldText = Color("AccentGoldText")
     static let textPrimary = Color("TextPrimary")
     static let textSecondary = Color("TextSecondary")
     /// Muted teal-sage for the calming moments (session / breathing surfaces).

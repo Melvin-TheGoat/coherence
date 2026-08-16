@@ -14,7 +14,7 @@ struct PermissionBlockedView: View {
 
             Image(systemName: icon)
                 .font(.system(size: 44, weight: .light))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .padding(.bottom, 22)
 
             Text(title)

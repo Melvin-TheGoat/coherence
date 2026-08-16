@@ -251,7 +251,7 @@ struct ContentView: View {
     private func statLine(value: String, label: String) -> some View {
         HStack(spacing: 5) {
             Text(label).font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
-            Text(value).font(AppFont.caption.weight(.bold)).foregroundStyle(AppColor.accentGold)
+            Text(value).font(AppFont.caption.weight(.bold)).foregroundStyle(AppColor.accentGoldText)
                 .monospacedDigit()
         }
     }
@@ -282,12 +282,12 @@ struct ContentView: View {
                                                 startPoint: .top, endPoint: .bottom))
                 .interpolationMethod(.catmullRom)
             LineMark(x: .value("session", i), y: .value("score", score))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .lineStyle(StrokeStyle(lineWidth: 2))
                 .interpolationMethod(.catmullRom)
             if i == scores.count - 1 {
                 PointMark(x: .value("session", i), y: .value("score", score))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .symbolSize(40)
             }
         }
@@ -362,7 +362,7 @@ struct ContentView: View {
                     Button { sheet = .journey } label: {
                         Text("See all")
                             .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                             .padding(.horizontal, 8).padding(.vertical, 6)
                     }
                     .buttonStyle(CardButtonStyle())

@@ -81,7 +81,7 @@ struct EvidenceRow: View {
             if let rating { RatingChip(rating: rating) }
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
         }
         .padding(.vertical, 10)
     }
@@ -168,7 +168,9 @@ struct MonthCalendar: View {
                 .font(.system(size: 12, weight: isToday || isSelected ? .bold : .regular, design: .rounded))
                 .foregroundStyle(inMonth ? AppColor.textPrimary : AppColor.textSecondary.opacity(0.35))
             Circle()
-                .fill(done ? AppColor.accentGold : .clear)
+                // Informational, not decorative: at fill-gold it reads 1.78
+                // against the card and stops being a signal.
+                .fill(done ? AppColor.accentGoldText : .clear)
                 .frame(width: 4.5, height: 4.5)
         }
         .frame(maxWidth: .infinity, minHeight: 32)

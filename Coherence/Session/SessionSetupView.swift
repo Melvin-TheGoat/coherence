@@ -136,7 +136,7 @@ struct SessionOptionsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { tone.stop(); dismiss() }.tint(AppColor.accentGold)
+                    Button("Done") { tone.stop(); dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
             .onDisappear { tone.stop() }
@@ -159,7 +159,7 @@ struct SessionOptionsView: View {
                         .stroke(AppColor.accentGold.opacity(0.5), lineWidth: 1)
                     Image(systemName: "sparkles")
                         .font(.system(size: 18))
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                 }
                 .frame(width: 52, height: 52)
 
@@ -167,7 +167,7 @@ struct SessionOptionsView: View {
                     Text("Guided journey")
                         .font(.system(size: 9, weight: .heavy))
                         .tracking(1.1)
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                     Text(preset.title)
                         .font(AppFont.callout.weight(.bold))
                         .foregroundStyle(AppColor.textPrimary)
@@ -203,7 +203,7 @@ struct SessionOptionsView: View {
             HStack(spacing: 12) {
                 Image(systemName: "speaker.slash")
                     .font(.system(size: 14))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .frame(width: 32, height: 32)
                     .background(AppColor.accentGold.opacity(0.16),
                                 in: RoundedRectangle(cornerRadius: 11, style: .continuous))
@@ -274,7 +274,7 @@ struct SessionOptionsView: View {
     private var checkmark: some View {
         Image(systemName: "checkmark")
             .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(AppColor.accentGold)
+            .foregroundStyle(AppColor.accentGoldText)
     }
 
     /// Audition without committing the whole session to it.

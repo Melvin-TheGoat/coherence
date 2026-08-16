@@ -73,7 +73,7 @@ struct JourneyView: View {
                 } label: {
                     Text("See all")
                         .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                         .padding(.horizontal, 8).padding(.vertical, 6)
                 }
                 .buttonStyle(CardButtonStyle())
@@ -110,7 +110,7 @@ struct JourneyView: View {
                         if let text = next.progressText {
                             Text(text)
                                 .font(AppFont.caption.weight(.semibold))
-                                .foregroundStyle(AppColor.accentGold)
+                                .foregroundStyle(AppColor.accentGoldText)
                                 .monospacedDigit()
                         }
                     }
@@ -138,7 +138,7 @@ struct JourneyView: View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
@@ -172,7 +172,7 @@ struct JourneyView: View {
                 }
                 .buttonStyle(CardButtonStyle())
             }
-            .tint(AppColor.accentGold)
+            .tint(AppColor.accentGoldText)
 
             MonthCalendar(monthAnchor: monthAnchor, practiced: practiced,
                           selectedDay: selectedDay) { day in
@@ -200,7 +200,7 @@ struct JourneyView: View {
                     Button { selectedDay = nil } label: {
                         Text("Clear")
                             .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                             .padding(.horizontal, 8).padding(.vertical, 6)
                     }
                     .buttonStyle(CardButtonStyle())

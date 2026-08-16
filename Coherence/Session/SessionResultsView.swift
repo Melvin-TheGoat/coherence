@@ -60,11 +60,11 @@ struct SessionResultsView: View {
                         Button { showShareSheet = true } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
-                        .tint(AppColor.accentGold)
+                        .tint(AppColor.accentGoldText)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGold)
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
             .sheet(isPresented: $showShareSheet) {
@@ -150,7 +150,7 @@ struct SessionResultsView: View {
                 if let standing {
                     Text(standing)
                         .font(AppFont.caption.weight(.medium))
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                 }
                 Spacer(minLength: 0)
                 // The ring carries a quiet "?" — the only entry point to the
@@ -493,12 +493,12 @@ struct SessionResultsView: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(Int(rating))")
                     .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGold).monospacedDigit()
+                    .foregroundStyle(AppColor.accentGoldText).monospacedDigit()
                 Text("/ 10").font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
                 Spacer()
             }
             Slider(value: $rating, in: 0...10, step: 1)
-                .tint(AppColor.accentGold)
+                .tint(AppColor.accentGoldText)
                 .onChange(of: rating) { _, _ in reflectionSaved = false }
 
             techniqueSection

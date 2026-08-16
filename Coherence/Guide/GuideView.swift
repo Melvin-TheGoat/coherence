@@ -50,7 +50,7 @@ struct GuideView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGold)
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
         }
@@ -123,7 +123,7 @@ private struct PathStop: View {
                     if loggedCount > 0 {
                         Text(loggedCount == 1 ? "1 session" : "\(loggedCount) sessions")
                             .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                             .monospacedDigit()
                     }
                 }

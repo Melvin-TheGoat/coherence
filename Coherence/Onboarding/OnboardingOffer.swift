@@ -92,7 +92,7 @@ struct RatingScreen: View {
                         Button { rating = star } label: {
                             Image(systemName: (rating ?? 0) >= star ? "star.fill" : "star")
                                 .font(.system(size: 30))
-                                .foregroundStyle(AppColor.accentGold)
+                                .foregroundStyle(AppColor.accentGoldText)
                                 .opacity((rating ?? 0) >= star ? 1 : 0.35)
                         }
                         .buttonStyle(CardButtonStyle())
@@ -208,7 +208,7 @@ struct PaywallScreen: View {
                                 if let note = p.note {
                                     Text(note)
                                         .font(.caption2)
-                                        .foregroundStyle(AppColor.accentGold)
+                                        .foregroundStyle(AppColor.accentGoldText)
                                 }
                             }
                             Spacer(minLength: 0)
@@ -325,7 +325,7 @@ struct SignInScreen: View {
 
             Image(systemName: "flame.fill")
                 .font(.system(size: 40))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
 
             Text("Keep your streak\nsafe.")
                 .font(OnboardingType.headline)

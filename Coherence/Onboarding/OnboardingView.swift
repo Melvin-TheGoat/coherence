@@ -420,7 +420,7 @@ struct HealthConsentScreen: View {
 
                 Button("Read the full Privacy Policy") { showPrivacyPolicy = true }
                     .font(.footnote.weight(.medium))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .frame(maxWidth: .infinity)
                     .padding(.top, 4)
             }
@@ -435,7 +435,7 @@ struct HealthConsentScreen: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { showPrivacyPolicy = false }.tint(AppColor.accentGold)
+                        Button("Done") { showPrivacyPolicy = false }.tint(AppColor.accentGoldText)
                     }
                 }
             }
@@ -446,7 +446,7 @@ struct HealthConsentScreen: View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: icon)
                 .font(.title3)
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .frame(width: 30)
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)

@@ -26,7 +26,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGold)
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
         }
@@ -98,7 +98,7 @@ private struct SettingsForm: View {
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                         .padding(.leading, 41)
-                        .tint(AppColor.accentGold)
+                        .tint(AppColor.accentGoldText)
                     }
                     divider
                     row(icon: "hand.tap", title: "Haptics") {
@@ -202,7 +202,7 @@ private struct SettingsForm: View {
                     if primerRows > 0 {
                         Text("\(primerRows) primer rows present")
                             .font(AppFont.caption)
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                     }
                     if !primerMessage.isEmpty {
                         Text(primerMessage)
@@ -243,7 +243,7 @@ private struct SettingsForm: View {
             HStack(spacing: 12) {
                 Text(initial)
                     .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .frame(width: 42, height: 42)
                     .background(AppColor.accentGold.opacity(0.15), in: Circle())
                 VStack(alignment: .leading, spacing: 1) {
@@ -262,7 +262,7 @@ private struct SettingsForm: View {
                 Button { editingName.toggle() } label: {
                     Text(editingName ? "Done" : "Edit")
                         .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                         .padding(.horizontal, 8).padding(.vertical, 6)
                 }
                 .buttonStyle(CardButtonStyle())

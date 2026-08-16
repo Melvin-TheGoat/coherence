@@ -55,7 +55,7 @@ struct ReliefScreen: View {
                 Text("808")
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .tracking(3.3)
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
             }
             .padding(.bottom, 34)
             .opacity(appeared ? 1 : 0)
@@ -825,7 +825,7 @@ private struct WatchIllustration: View {
                         Text("STILL")
                             .font(.system(size: 8.5, weight: .heavy))
                             .tracking(0.8)
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                             .padding(.top, 7)
                     }
                     .padding(.horizontal, 8)

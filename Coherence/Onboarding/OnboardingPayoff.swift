@@ -71,7 +71,7 @@ struct CalculatingScreen: View {
                 // Typed out rather than faded in: the handoff should read as a
                 // person speaking, not a form submitting.
                 (Text(typed) + Text(typed.count < handoffText.count ? "▌" : "")
-                    .foregroundStyle(AppColor.accentGold))
+                    .foregroundStyle(AppColor.accentGoldText))
                     .font(.system(size: 21, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -371,7 +371,7 @@ struct ProofScreen: View {
                          "Nothing at all"], id: \.self) { line in
                     HStack(spacing: 11) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                         Text(line)
                             .font(.subheadline)
                             .foregroundStyle(AppColor.textPrimary)
@@ -737,7 +737,7 @@ struct WallScreen: View {
                             .fixedSize(horizontal: false, vertical: true)
                         Text(q.who)
                             .font(.caption2.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(15)
@@ -784,7 +784,7 @@ struct ProfileScreen: View {
         HStack(spacing: 14) {
             Image(systemName: icon)
                 .font(.system(size: 16))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .frame(width: 30, height: 30)
                 .background(AppColor.accentGold.opacity(0.14),
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -833,7 +833,7 @@ struct ProjectionScreen: View {
                                                         startPoint: .top, endPoint: .bottom))
                         .interpolationMethod(.catmullRom)
                     LineMark(x: .value("Week", i + 1), y: .value("Sessions", days))
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                         .lineStyle(StrokeStyle(lineWidth: 2.5))
                         .interpolationMethod(.catmullRom)
                 }
@@ -906,7 +906,7 @@ struct HowScreen: View {
                 // them on a question they were never asked.
                 if !named.isEmpty {
                     SectionHeader(title: "You said")
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                         .padding(.bottom, 9)
 
                     VStack(spacing: 9) {
@@ -940,7 +940,7 @@ struct HowScreen: View {
             HStack(alignment: .top, spacing: 9) {
                 Image(systemName: "arrow.turn.down.right")
                     .font(.caption)
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                 Text(concern.answer)
                     .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
@@ -996,9 +996,9 @@ struct CommitmentScreen: View {
             VStack(spacing: 22) {
                 // Their own sentence, assembled from their own answers.
                 (Text("I'll practise ")
-                 + Text("\(daysPerWeek) days a week").foregroundStyle(AppColor.accentGold).bold()
+                 + Text("\(daysPerWeek) days a week").foregroundStyle(AppColor.accentGoldText).bold()
                  + Text(anchor.map { ", \($0.phrase)" } ?? "")
-                     .foregroundStyle(AppColor.accentGold).bold()
+                     .foregroundStyle(AppColor.accentGoldText).bold()
                  + Text("."))
                     .font(.system(size: 21, weight: .medium, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
@@ -1009,7 +1009,7 @@ struct CommitmentScreen: View {
                 if let cost {
                     Text("So that \(cost.echo).")
                         .font(AppFont.callout)
-                        .foregroundStyle(AppColor.accentGold)
+                        .foregroundStyle(AppColor.accentGoldText)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.bottom, 4)
@@ -1200,7 +1200,7 @@ struct WeekPreviewScreen: View {
                         VStack(alignment: .leading, spacing: 4) {
                             Text(day.0)
                                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                                .foregroundStyle(AppColor.accentGold)
+                                .foregroundStyle(AppColor.accentGoldText)
                             Text(day.1)
                                 .font(.footnote)
                                 .foregroundStyle(AppColor.textSecondary)

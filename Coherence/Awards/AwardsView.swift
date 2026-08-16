@@ -16,11 +16,14 @@ struct AwardBadge: View {
 
     var body: some View {
         ZStack {
+            // The disc uses the FILL gold, the ring and the number use the TEXT
+            // gold. That keeps the badge reading warm and gold while the number
+            // inside it stays legible on a light background.
             Circle()
-                .fill(earned ? AppColor.accentGold.opacity(0.11)
+                .fill(earned ? AppColor.accentGold.opacity(0.22)
                              : AppColor.textSecondary.opacity(0.05))
             Circle()
-                .strokeBorder(earned ? AppColor.accentGold
+                .strokeBorder(earned ? AppColor.accentGoldText
                                      : AppColor.textSecondary.opacity(0.3),
                               lineWidth: size > 80 ? 2 : 1.5)
             switch award.face {
@@ -39,7 +42,7 @@ struct AwardBadge: View {
                         .font(.system(size: size * 0.13, weight: .semibold))
                         .tracking(0.4)
                 }
-                .foregroundStyle(earned ? AppColor.accentGold
+                .foregroundStyle(earned ? AppColor.accentGoldText
                                         : AppColor.textSecondary.opacity(0.55))
                 .padding(.horizontal, size * 0.12)
             }
@@ -134,7 +137,7 @@ struct AwardDetailView: View {
                         if let date = item.earnedAt {
                             Text("Earned \(date.formatted(date: .long, time: .omitted))")
                                 .font(AppFont.caption)
-                                .foregroundStyle(AppColor.accentGold)
+                                .foregroundStyle(AppColor.accentGoldText)
                         } else {
                             Text(item.award.blurb)
                                 .font(AppFont.caption)
@@ -159,7 +162,7 @@ struct AwardDetailView: View {
                                 if let text = item.progressText {
                                     Text(text)
                                         .font(AppFont.caption.weight(.semibold))
-                                        .foregroundStyle(AppColor.accentGold)
+                                        .foregroundStyle(AppColor.accentGoldText)
                                         .monospacedDigit()
                                 }
                             }
@@ -174,7 +177,7 @@ struct AwardDetailView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGold)
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
         }
@@ -219,7 +222,7 @@ struct AwardUnlockView: View {
                 Text("AWARD UNLOCKED")
                     .font(.caption2.weight(.semibold))
                     .tracking(1.6)
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                 Text(item.award.title)
                     .font(AppFont.title)
                     .foregroundStyle(AppColor.textPrimary)

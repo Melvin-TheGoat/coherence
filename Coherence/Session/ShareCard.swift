@@ -130,7 +130,7 @@ struct SessionShareCard: View {
                     .frame(width: 42, height: 42)
                 Text("808")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .padding(.top, 8)
                 Text(data.date.formatted(date: .abbreviated, time: .shortened))
                     .font(.system(size: 13, weight: .medium, design: .rounded))
@@ -165,7 +165,7 @@ struct SessionShareCard: View {
                         Text("\(data.streakDays)-day streak")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                     }
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .padding(.bottom, 14)
                 }
 
@@ -188,7 +188,7 @@ struct SessionShareCard: View {
                 .frame(width: 34, height: 34)
             Text("808")
                 .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .padding(.top, 6)
         }
     }
@@ -223,7 +223,7 @@ struct SessionShareCard: View {
             VStack(spacing: 6) {
                 Text("\(Int(((data.overallScore ?? 0) * 100).rounded()))")
                     .font(.system(size: 108, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .monospacedDigit()
                 Text("PRACTICE SCORE")
                     .font(.system(size: 10, weight: .semibold))
@@ -378,7 +378,7 @@ struct SessionShareCard: View {
                         Spacer()
                         Text("\(Int((score * 100).rounded()))")
                             .font(.system(size: 44, weight: .bold, design: .rounded))
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGoldText)
                             .monospacedDigit()
                     }
                     .padding(.top, 10)
@@ -389,7 +389,7 @@ struct SessionShareCard: View {
                 Text("DAY \(data.streakDays)")
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(2)
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .padding(.bottom, 6)
             }
             footerLine
@@ -691,7 +691,7 @@ struct ShareSessionSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGold)
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
             .task(id: style) { rendered = ShareCardRenderer.render(data, style: style) }

@@ -122,7 +122,7 @@ struct MarkdownView: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text("\(n)")
                     .font(.caption2.weight(.semibold).monospacedDigit())
-                    .foregroundStyle(AppColor.accentGold)
+                    .foregroundStyle(AppColor.accentGoldText)
                     .frame(width: 16, alignment: .trailing)
                 Text(inline(s))
                     .font(.caption2)
