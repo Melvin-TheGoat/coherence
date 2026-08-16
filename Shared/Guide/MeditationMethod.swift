@@ -120,24 +120,20 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             variants: []),
 
         MeditationMethod(
-            id: "blueSky",
-            title: "Blue Sky",
-            oneLine: "Watch your thoughts pass like clouds.",
+            id: "countdown",
+            title: "Counting Down From Ten",
+            oneLine: "Ten slow numbers, sinking deeper on each.",
             level: .beginner,
             steps: [
-                "Picture yourself lying on a field of grass, looking up at an open sky.",
-                "Thoughts and emotions will come. That is not a failure, it is the point.",
-                "Picture every thought as a cloud. Some are light and pretty, some are dark and stormy. Either way they are far away, and you are down here on the field.",
-                "Sometimes you will notice you have been pulled up into the clouds. When you notice, simply come back to the field.",
-                "Come back calmly and without judgement. As long as you are returning, you are doing it correctly.",
+                "Close your eyes and count down from ten.",
+                "With each number, imagine yourself sinking deeper.",
+                "Let each one take a full breath. There is no rush.",
+                "At one, stay there.",
             ],
             purpose: """
-            Understand that the returning IS the practice. You are not training \
-            to have no thoughts, you are training to separate yourself from them.
-
-            What this teaches is that you are not your thoughts, you are the \
-            observer of your thoughts. Whatever your alarm bells may be, you can \
-            step back from them whenever you'd like.
+            A simple way into a relaxed state, and a good on-ramp before any of \
+            the others. This is a standard induction. It works for a lot of \
+            people, and it costs nothing to try.
             """,
             origin: "",
             variants: []),
@@ -167,20 +163,29 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             variants: []),
 
         MeditationMethod(
-            id: "countdown",
-            title: "Counting Down From Ten",
-            oneLine: "Ten slow numbers, sinking deeper on each.",
-            level: .beginner,
+            id: "blueSky",
+            title: "Blue Sky",
+            oneLine: "Watch your thoughts pass like clouds.",
+            level: .intermediate,
             steps: [
-                "Close your eyes and count down from ten.",
-                "With each number, imagine yourself sinking deeper.",
-                "Let each one take a full breath. There is no rush.",
-                "At one, stay there.",
+                "Picture yourself lying on a field of grass, looking up at an open sky.",
+                "Thoughts and emotions will come. That is not a failure, it is the point.",
+                "Picture every thought as a cloud. Some are light and pretty, some are dark and stormy. Either way they are far away, and you are down here on the field.",
+                "Sometimes you will notice you have been pulled up into the clouds. When you notice, simply come back to the field.",
+                "Come back calmly and without judgement. As long as you are returning, you are doing it correctly.",
             ],
             purpose: """
-            A simple way into a relaxed state, and a good on-ramp before any of \
-            the others. This is a standard induction. It works for a lot of \
-            people, and it costs nothing to try.
+            Understand that the returning IS the practice. You are not training \
+            to have no thoughts, you are training to separate yourself from them.
+
+            What this teaches is that you are not your thoughts, you are the \
+            observer of your thoughts. Whatever your alarm bells may be, you can \
+            step back from them whenever you'd like.
+
+            Come up with your own version if you like. The same idea works as \
+            cars passing on a highway, ships crossing the ocean, fish moving \
+            through a pond. Anything that means something to you. Or just do \
+            blue sky.
             """,
             origin: "",
             variants: []),
@@ -235,7 +240,7 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             id: "reconditioning",
             title: "Reconditioning the Body to a New Mind",
             oneLine: "Start with the feeling, let the vision follow.",
-            level: .intermediate,
+            level: .advanced,
             steps: [
                 "Close your eyes and bring your attention off the outside world and onto the space of your chest.",
                 "Breathe slower and deeper.",
@@ -261,17 +266,16 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             oneLine: "Plant an intention while the body is settled.",
             level: .advanced,
             steps: [
-                "Do the body scan first. This is done from a settled body, not a busy one.",
+                "Relax the body completely. You can use breathing techniques, the body scan, counting down from ten, or whatever combination you choose.",
                 "Bring intentions you prepared ahead of time. This one does not work improvised.",
-                "Wrap them in love, gratitude and joy, as much as you can genuinely find.",
-                "Use one of the two techniques below.",
-                "Keep going until you have actually felt it, not just pictured it.",
-                "Then let it go and come back to the present.",
+                "Deeply feel the elevated emotions around your intentions, such as love, gratitude, and joy. To help you do this, you can perform one or both of the two techniques below.",
+                "Fully feel these emotions until you are satisfied.",
+                "Let it go and return to the present.",
             ],
             purpose: """
             Emotional intensity at the time of an experience affects how \
-            strongly it consolidates, which is why the feeling matters more \
-            here than the picture.
+            strongly it consolidates. This embeds the intention into your \
+            subconscious in the most powerful way possible.
             """,
             origin: """
             "Manifestation: embedding intentions into your subconscious." \

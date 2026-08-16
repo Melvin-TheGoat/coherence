@@ -41,6 +41,19 @@ final class MeditationMethodTests: XCTestCase {
         }
     }
 
+    /// The roadmap's order IS the catalog's order, and it must climb. Reordering
+    /// by hand has already put an intermediate method above a beginner one once.
+    func test_roadmapClimbsInDifficulty() {
+        let rank: [MeditationMethod.Level: Int] = [.beginner: 0, .intermediate: 1, .advanced: 2]
+        let levels = MeditationMethod.all.map { rank[$0.level]! }
+        XCTAssertEqual(levels, levels.sorted(),
+                       "the roadmap puts a harder method before an easier one: "
+                       + MeditationMethod.all.map { "\($0.title) (\($0.level.rawValue))" }
+                           .joined(separator: ", "))
+        XCTAssertEqual(MeditationMethod.all.first?.id, "firstTime",
+                       "the first-timer page must open the roadmap")
+    }
+
     func test_labelRoundTripsForEveryLoggableID() {
         for item in MeditationMethod.loggable {
             XCTAssertEqual(MeditationMethod.label(for: item.id), item.label)
