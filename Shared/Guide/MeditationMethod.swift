@@ -274,8 +274,8 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             ],
             purpose: """
             Emotional intensity at the time of an experience affects how \
-            strongly it consolidates. This embeds the intention into your \
-            subconscious in the most powerful way possible.
+            strongly it consolidates. This helps embed the intention into your \
+            subconscious.
             """,
             origin: """
             "Manifestation: embedding intentions into your subconscious." \
