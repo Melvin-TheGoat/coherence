@@ -96,8 +96,8 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             force the mind to be still. What we can do is create the conditions: \
             Give a seed a pot, soil, water, and sunlight, and it will naturally \
             grow on its own. Meditation works the same way. If you create the \
-            right conditions, the mind will naturally reach a peaceful stillness \
-            on its own. Here are the conditions.
+            right conditions, the mind will naturally come to a stillness on its \
+            own. Here are the conditions.
             """,
             level: .beginner,
             steps: [
