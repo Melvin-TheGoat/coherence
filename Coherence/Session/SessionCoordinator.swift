@@ -128,6 +128,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             )
             currentAttemptID = params.sessionID
             if let soundID { pendingSoundIDs[params.sessionID] = soundID }
+            Analytics.track(.sessionStarted(source: "phone", sound: soundID ?? "silence"))
 
             // Deliver params over every available channel: queued user-info
             // always; a message if reachable now; and application-context so a
@@ -296,6 +297,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         currentAttemptID = nil
         startFailure = failure
         status = "Couldn't start: \(failure.rawValue)"
+        Analytics.track(.sessionStartFailed(reason: failure.rawValue))
         log.error("session refused to start: \(failure.rawValue)")
     }
 
@@ -344,6 +346,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         guard isCurrent else { return }
         lastSessionID = session.id
         status = "Saved ✓"
+        let dates = ((try? context.fetch(FetchDescriptor<Session>())) ?? []).map(\.startedAt)
+        Analytics.track(.sessionCompleted(
+            durationBand: Analytics.durationBand(seconds: session.durationSec),
+            streakBand: Analytics.streakBand(days: StreakCalculator.streak(from: dates).current)))
     }
 }
 

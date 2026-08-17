@@ -1176,6 +1176,28 @@ UI must coach it, and the 2-signal degrade path must stay.
     redesign: a restless 40-minute sit gains ~2 points, a settled one ~12.
   - Boundary values pinned exactly in `test_score_durationShape`. Migration
     key `scoreBackfillDone.v6` rescores all history to 5.2.0 on next launch.
+- **ANALYTICS FACADE BUILT, INERT (2026-08-17, Aziz's call to add tracking at
+  LAUNCH).** `Coherence/Analytics/Analytics.swift`: one enum of ~20 behavioral
+  events (onboarding funnel via the single `go()` line, watch gate, session
+  started/completed/start-failed, result viewed/missing, paywall
+  viewed/dismissed, trial/purchase/restore/entitlement-lost, share, guide,
+  reminders, awards, account-deleted), wired at every call site. **The sink is
+  a no-op** (console in DEBUG): no SDK, no network, no privacy-manifest
+  change, safe in beta builds. At launch: drop PostHog (chosen 2026-08-17)
+  behind `Analytics.sink` + update privacy policy, App Privacy labels ("Data
+  Not Collected" dies, accepted by Aziz) and both manifests IN THE SAME PASS.
+  - **NEVER track a biometric.** No scores, HR, or breathing values, even
+    banded: HR arrives via HealthKit and 5.1.3 bans third-party disclosure;
+    scores inherit it. Engine-tuning analytics would need a first-party
+    endpoint with consent. No free text, no identity; bands only
+    (`durationBand`, `streakBand`).
+  - Benchmarks researched 2026-08-17 for targets: health/fitness medians D1
+    ~27% / D7 10–18% / D30 4–8%; meditation targets D1 ≥30 / D7 ≥20 / D30 ≥9;
+    trial→paid median ~35–40%; hard paywalls ~12% install→paid median. The
+    unique-to-808 metric is `result_missing` (sessions that produce no stats).
+  - Not yet wired: `notification_opened` (no UNUserNotificationCenter
+    delegate exists), `paywall_dismissed` (paywall flow still moving; wire
+    when placement is settled).
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along

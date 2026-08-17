@@ -147,6 +147,7 @@ struct ContentView: View {
                 SettingsView()
             case .guide:
                 GuideView { pendingSheet = .setup }
+                    .onAppear { Analytics.track(.guideOpened) }
             case .results(let id):
                 SessionResultsView(sessionID: id)
             }
@@ -176,6 +177,7 @@ struct ContentView: View {
         // a row, which would cheapen the one that matters.
         AwardsInbox.seedIfNeeded(with: earned)
         unlockQueue = AwardsInbox.pending(from: earned)
+        for award in unlockQueue { Analytics.track(.awardUnlocked(id: award.id)) }
     }
 
     // MARK: - Header

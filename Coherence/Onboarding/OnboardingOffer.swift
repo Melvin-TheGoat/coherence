@@ -127,6 +127,10 @@ struct RatingScreen: View {
 /// and is reinstalling. It is wired to nothing today because StoreKit is not
 /// wired to anything today; it must do real work before submission.
 struct PaywallScreen: View {
+    /// Where this paywall stands: "onboarding" or "root_lock". Analytics only.
+    var placement: String = "onboarding"
+    @State private var trackedView = false
+
     @State private var started = false
     @State private var legalDoc: LegalDoc?
     @EnvironmentObject private var store: Store
@@ -261,6 +265,11 @@ struct PaywallScreen: View {
                         .navigationBarTitleDisplayMode(.inline)
                 }
             }
+            .onAppear {
+                guard !trackedView else { return }
+                trackedView = true
+                Analytics.track(.paywallViewed(placement: placement))
+            }
         }
     }
 
@@ -272,6 +281,8 @@ struct PaywallScreen: View {
         guard selling else { onDone(false); return }
         Task { @MainActor in
             if await store.purchase(plan) == .bought {
+                if store.trialEligible { Analytics.track(.trialStarted) }
+                Analytics.track(.purchase(plan: plan.rawValue))
                 started = true
                 onDone(true)
             }
@@ -281,7 +292,10 @@ struct PaywallScreen: View {
     private func restore() {
         Task { @MainActor in
             await store.restore()
-            if store.entitled { onDone(true) }
+            if store.entitled {
+                Analytics.track(.restore)
+                onDone(true)
+            }
         }
     }
 }

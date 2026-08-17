@@ -33,7 +33,7 @@ struct RootView: View {
                     // The same paywall onboarding uses. Purchase and restore
                     // both flip `store.entitled`, which re-renders this view
                     // into the app; the closure has nothing left to do.
-                    PaywallScreen(plan: $lockedPlan) { _ in }
+                    PaywallScreen(placement: "root_lock", plan: $lockedPlan) { _ in }
                 } else {
                     ContentView()
                 }

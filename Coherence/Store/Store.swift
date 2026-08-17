@@ -171,6 +171,7 @@ final class Store: ObservableObject {
             if let expiry = transaction.expirationDate, expiry < Date() { continue }
             active = true
         }
+        if entitled && !active { Analytics.track(.entitlementLost) }
         entitled = active
     }
 }

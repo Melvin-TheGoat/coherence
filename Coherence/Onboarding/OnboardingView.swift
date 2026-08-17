@@ -199,8 +199,14 @@ struct OnboardingView: View {
         case .watchGate:
             WatchGateScreen(hasWatch: $answers.hasWatch,
                             progress: interviewProgress,
-                            onYes: { go(nextAfter(.watchGate)) },
-                            onNo: { go(.waitlist) })
+                            onYes: {
+                                Analytics.track(.watchGate(outcome: "hasWatch"))
+                                go(nextAfter(.watchGate))
+                            },
+                            onNo: {
+                                Analytics.track(.watchGate(outcome: "waitlist"))
+                                go(.waitlist)
+                            })
 
         case .waitlist:
             // Joining is optional either way: declining clears the email so
@@ -322,6 +328,9 @@ struct OnboardingView: View {
 
     private func go(_ next: Step) {
         history.append(step)
+        // One line covers the whole 26-screen funnel: the step being LEFT is
+        // the one that was completed.
+        Analytics.track(.onboardingStep(id: String(describing: step)))
         withAnimation { step = next }
     }
 
@@ -375,6 +384,7 @@ struct OnboardingView: View {
             if (user.email ?? "").isEmpty { user.email = waitlistEmail }
             user.marketingOptIn = true
         }
+        Analytics.track(.onboardingCompleted)
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
             prefs.onboardingComplete = true
             if let anchor = answers.anchor {

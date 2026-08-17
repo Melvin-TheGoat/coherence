@@ -74,7 +74,10 @@ struct SessionResultsView: View {
                 ScoreMeaningSheet(score: stats?.overallScore)
                     .presentationDetents([.medium, .large])
             }
-            .onAppear(perform: load)
+            .onAppear {
+                load()
+                Analytics.track(stats == nil ? .resultMissing : .resultViewed)
+            }
         }
     }
 
@@ -402,7 +405,10 @@ struct SessionResultsView: View {
     // MARK: Share
 
     private var shareButton: some View {
-        Button { showShareSheet = true } label: {
+        Button {
+            Analytics.track(.shareOpened)
+            showShareSheet = true
+        } label: {
             Label("Share the proof", systemImage: "square.and.arrow.up")
         }
         .buttonStyle(PrimaryButtonStyle())

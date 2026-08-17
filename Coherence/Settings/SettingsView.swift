@@ -17,7 +17,9 @@ struct SettingsView: View {
                 if let user = currentUser, let prefs = preferences.first {
                     SettingsForm(user: user, prefs: prefs,
                                  onSignOut: { SessionStore.signOut(in: context); dismiss() },
-                                 onDelete: { SessionStore.softDeleteCurrentUser(in: context); dismiss() })
+                                 onDelete: {
+                                     Analytics.track(.accountDeleted)
+                                     SessionStore.softDeleteCurrentUser(in: context); dismiss() })
                 } else {
                     Text("No account").foregroundStyle(AppColor.textSecondary)
                 }
@@ -82,6 +84,7 @@ private struct SettingsForm: View {
                             get: { prefs.remindersEnabled },
                             set: { on in
                                 prefs.remindersEnabled = on
+                                if on { Analytics.track(.reminderEnabled) }
                                 if on && prefs.reminderTime == nil {
                                     prefs.reminderTime = defaultReminderTime()
                                 }
