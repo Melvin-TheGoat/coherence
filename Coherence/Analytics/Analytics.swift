@@ -1,5 +1,6 @@
 import Foundation
 import os
+import PostHog
 
 /// The app's single analytics doorway. Every tracked moment routes through
 /// here, and here decides where it goes.
@@ -94,8 +95,31 @@ enum Analytics {
         }
     }
 
-    /// Where events go. Swapped for the provider at launch; nothing else in
-    /// the app knows or cares.
+    /// The PostHog project API key. A PUBLISHABLE client key, not a secret,
+    /// so committing it is fine (it can only write events, never read them).
+    /// Empty = analytics fully off: no SDK setup, no network, events go to
+    /// the debug console only. That emptiness is the launch switch.
+    private static let postHogKey = ""
+    private static let postHogHost = "https://us.i.posthog.com"
+
+    /// Call once at app start. A no-op while the key is empty.
+    static func start() {
+        guard !postHogKey.isEmpty else { return }
+        let config = PostHogConfig(apiKey: postHogKey, host: postHogHost)
+        // Manual events only. Autocapture would hoover screen names and taps
+        // we never reviewed against the no-biometrics/no-text rules; every
+        // event this app sends is a named case in `Event`, on purpose.
+        config.captureScreenViews = false
+        config.captureApplicationLifecycleEvents = true   // app_opened powers retention
+        config.sessionReplay = false
+        PostHogSDK.shared.setup(config)
+        sink = { event in
+            PostHogSDK.shared.capture(event.name, properties: event.properties)
+        }
+    }
+
+    /// Where events go. `start()` swaps this to PostHog when a key is set;
+    /// nothing else in the app knows or cares.
     static var sink: (Event) -> Void = { event in
         #if DEBUG
         Logger(subsystem: "com.lockout.meditate808", category: "analytics")

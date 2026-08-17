@@ -10,6 +10,7 @@ struct CoherenceApp: App {
     @StateObject private var store = Store()
 
     init() {
+        Analytics.start()   // no-op until a provider key is set
         // One-time rescue of pre-split health stats — the extract MUST run
         // before the split container first opens the main store.
         let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()
