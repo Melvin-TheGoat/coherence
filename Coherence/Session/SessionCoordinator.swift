@@ -465,6 +465,7 @@ extension SessionCoordinator: WCSessionDelegate {
         guard currentAttemptID != sessionID else { return }   // double delivery
         currentAttemptID = sessionID
         if let soundID { pendingSoundIDs[sessionID] = soundID }
+        Analytics.track(.sessionStarted(source: "watch", sound: soundID ?? "silence"))
         active = ActiveSession(id: sessionID,
                                startedAt: startedAt,
                                plannedDurationSec: nil,
