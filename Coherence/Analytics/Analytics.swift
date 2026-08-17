@@ -99,7 +99,7 @@ enum Analytics {
     /// so committing it is fine (it can only write events, never read them).
     /// Empty = analytics fully off: no SDK setup, no network, events go to
     /// the debug console only. That emptiness is the launch switch.
-    private static let postHogKey = ""
+    private static let postHogKey = "phc_BUkC4ZWkwcp2L3XPjZAo94CP43bUDLMgDtaNM5BqML3s"
     private static let postHogHost = "https://us.i.posthog.com"
 
     /// Call once at app start. A no-op while the key is empty.

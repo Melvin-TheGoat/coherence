@@ -1182,10 +1182,17 @@ UI must coach it, and the 2-signal degrade path must stay.
   started/completed/start-failed, result viewed/missing, paywall
   viewed/dismissed, trial/purchase/restore/entitlement-lost, share, guide,
   reminders, awards, account-deleted), wired at every call site. **The sink is
-  a no-op** (console in DEBUG): no SDK, no network, no privacy-manifest
-  change, safe in beta builds. At launch: drop PostHog (chosen 2026-08-17)
-  behind `Analytics.sink` + update privacy policy, App Privacy labels ("Data
-  Not Collected" dies, accepted by Aziz) and both manifests IN THE SAME PASS.
+  a no-op** only while the key is empty. **ACTIVATED 2026-08-17, Aziz's call
+  to have dashboards DURING the beta:** PostHog live behind `Analytics.sink`
+  (key in Analytics.swift, a publishable client key, committed on purpose;
+  US Cloud, free tier; autocapture/replay/heatmaps OFF both client- and
+  server-side — manual named events only). Same pass updated: iOS
+  `PrivacyInfo.xcprivacy` (ProductInteraction / Analytics / not linked /
+  not tracking), `PRIVACY_POLICY.md` + `website/privacy.html` (new "Usage
+  analytics" section naming PostHog; Aziz must REDEPLOY the site by hand).
+  STILL OWED: App Privacy labels in App Store Connect flip from "Data Not
+  Collected" to Product Interaction at the next submission, and the next
+  TestFlight upload re-enters Beta App Review (manifest changed).
   - **NEVER track a biometric.** No scores, HR, or breathing values, even
     banded: HR arrives via HealthKit and 5.1.3 bans third-party disclosure;
     scores inherit it. Engine-tuning analytics would need a first-party

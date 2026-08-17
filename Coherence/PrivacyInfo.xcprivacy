@@ -4,18 +4,24 @@
   Privacy manifest (required since 2024 for required-reason APIs).
 
   Accessed APIs: UserDefaults only, reason CA92.1 (the app reading its own
-  preferences: migration flags, AppStorage-backed setup choices). Nothing else
-  on Apple's required-reason list is used: no file-timestamp reads, no disk
-  space, no boot time, no keyboard APIs.
+  preferences: migration flags, AppStorage-backed setup choices).
 
-  Collected data is EMPTY on purpose, and the App Privacy labels at submission
-  must say the same thing ("Data Not Collected"). Apple defines "collect" as
-  transmitting data off device in a way the developer or a third party can
-  read. 808 transmits nothing we can read: health results never leave the
-  device at all, and the account/session log syncs to the user's own PRIVATE
-  CloudKit database, which we cannot access. No analytics, no ads, no
-  tracking, no server of ours. If any of that ever changes, this file and the
-  submission labels change together.
+  Collected data: PRODUCT INTERACTION only, for analytics, since 2026-08-17
+  (PostHog, behavioral events: screens completed, sessions started and
+  finished, paywall and purchase funnel, feature usage). Not linked to
+  identity: the ID is an anonymous install-scoped UUID. NSPrivacyTracking
+  stays FALSE because nothing is used for cross-app tracking or advertising.
+
+  What is deliberately NOT collected, and must never appear here: health and
+  fitness data. Heart rate, breathing, stillness, scores, and every value
+  derived from them stay on device (HealthKit data may not be disclosed to
+  third parties, guideline 5.1.3). Health results never leave the device;
+  the account/session log syncs only to the user's own PRIVATE CloudKit
+  database, which we cannot read.
+
+  The App Privacy labels in App Store Connect must match this file: at the
+  next submission the labels change from "Data Not Collected" to Product
+  Interaction (Analytics, not linked to you). Change them together, always.
 -->
 <plist version="1.0">
 <dict>
@@ -24,7 +30,20 @@
 	<key>NSPrivacyTrackingDomains</key>
 	<array/>
 	<key>NSPrivacyCollectedDataTypes</key>
-	<array/>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>

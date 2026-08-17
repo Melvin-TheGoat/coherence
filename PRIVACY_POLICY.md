@@ -16,7 +16,9 @@ handles information in the **808** app for iPhone and Apple Watch.
   them anywhere, not even to iCloud. We have no backend that receives or stores
   your personal or health information.
 - **We don't sell your data, run ads, or track you.** There are no advertising
-  identifiers, no third-party analytics, and no cross-app tracking.
+  identifiers and no cross-app tracking. We collect anonymous usage analytics
+  (which features are used, not what your body measured); see "Usage
+  analytics" below.
 - **Your health data never leaves your devices.** It's measured on your Apple
   Watch and turned into your session results; we never use it for advertising and
   never share it.
@@ -62,11 +64,24 @@ rate and movement, only during the session, only on your own devices.
 results and streak, and your **preferences** (theme, haptics, reminder time,
 default length).
 
+**Usage analytics.** The app sends us anonymous usage events so we can see
+which features are used and where people get stuck: things like "a session was
+started", "a session was completed" with its rough length, which onboarding
+screens were completed, and whether a subscription screen was viewed. These
+events are processed for us by PostHog, Inc. on servers in the United States,
+under an anonymous identifier created for your install. They are never linked
+to your name, email, or Apple ID.
+
+**Your measurements are never in those events.** No heart rate, breathing
+values, stillness, scores, or anything derived from your body's signals is
+ever included, at any precision. Your health results stay on your device,
+exactly as described above.
+
 **What we do NOT collect.** We do not collect your location, contacts, photos,
 camera or microphone data, or browsing activity. We do not access, monitor, or
 receive any information about other apps you use or the audio, video, or media you
-play while a session runs. We use no advertising identifiers, no third-party
-analytics or tracking SDKs, and no cross-app or cross-website tracking.
+play while a session runs. We use no advertising identifiers and no cross-app
+or cross-website tracking.
 
 ## Where your information lives and who can access it
 
@@ -125,6 +140,10 @@ create an account, and it involves no health data of any kind.
   order to send those emails and does not receive any health data.
 - **Website form processing** — waitlist and questionnaire responses are stored in
   a spreadsheet hosted by Google. No health data is collected there.
+- **PostHog, Inc.** — anonymous usage analytics for the app, as described
+  under "Usage analytics". PostHog receives feature-usage events under an
+  anonymous identifier and never receives health data, your name, or your
+  email.
 - Audio in the app is bundled with the app; playing it sends no data about you.
 
 We otherwise do not share your information with third parties, and we do not use
@@ -182,8 +201,9 @@ information from children under 13.
 
 Your data is protected by your device's security and by Apple's encryption of
 iCloud data. No method of storage or transmission is 100% secure, but because we
-operate no servers holding your data, the attack surface is limited to your own
-device and Apple's infrastructure.
+operate no servers holding your personal or health data, the attack surface
+for that data is limited to your own device and Apple's infrastructure.
+Anonymous usage events are held by PostHog under its own security practices.
 
 ## Changes to this policy
 

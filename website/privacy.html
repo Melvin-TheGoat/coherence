@@ -97,7 +97,7 @@
   <p>808 is built to be private by design:</p>
   <ul>
     <li><b>We don't run a server and we can't see your data.</b> Your account, preferences, and session log sync through <b>your own private iCloud account</b> (Apple's CloudKit). Your <b>health results</b> (heart-rate trend, stillness, breathing rate, and Apple's heart-rate-variability readings when your Watch produces them) are stored <b>only on the device that recorded them</b> — the app never uploads them anywhere, not even to iCloud. We have no backend that receives or stores your personal or health information.</li>
-    <li><b>We don't sell your data, run ads, or track you.</b> There are no advertising identifiers, no third-party analytics, and no cross-app tracking.</li>
+    <li><b>We don't sell your data, run ads, or track you.</b> There are no advertising identifiers and no cross-app tracking. We collect anonymous usage analytics (which features are used, not what your body measured); see "Usage analytics" below.</li>
     <li><b>Your health data never leaves your devices.</b> It's measured on your Apple Watch and turned into your session results; we never use it for advertising and never share it.</li>
     <li><b>We don't know what you listen to.</b> 808 measures in the background so you can play a meditation from YouTube or any other app. We receive no information about what you play, and we have no connection to those services.</li>
     <li><b>You can delete everything</b> at any time from Settings → Delete Account.</li>
@@ -113,7 +113,9 @@
   </ul>
   <p><b>Sessions run in the background.</b> So that you can listen to whatever you like while you practice, a session keeps measuring on your Apple Watch after you leave the 808 app on your phone. This does not change what we collect: the same heart rate and movement, only during the session, only on your own devices.</p>
   <p><b>Session and app data.</b> Session dates, durations, the type of session, your results and streak, and your <b>preferences</b> (theme, haptics, reminder time, default length).</p>
-  <p><b>What we do NOT collect.</b> We do not collect your location, contacts, photos, camera or microphone data, or browsing activity. We do not access, monitor, or receive any information about other apps you use or the audio, video, or media you play while a session runs. We use no advertising identifiers, no third-party analytics or tracking SDKs, and no cross-app or cross-website tracking.</p>
+  <p><b>Usage analytics.</b> The app sends us anonymous usage events so we can see which features are used and where people get stuck: things like "a session was started", "a session was completed" with its rough length, which onboarding screens were completed, and whether a subscription screen was viewed. These events are processed for us by PostHog, Inc. on servers in the United States, under an anonymous identifier created for your install. They are never linked to your name, email, or Apple ID.</p>
+  <p><b>Your measurements are never in those events.</b> No heart rate, breathing values, stillness, scores, or anything derived from your body's signals is ever included, at any precision. Your health results stay on your device, exactly as described above.</p>
+  <p><b>What we do NOT collect.</b> We do not collect your location, contacts, photos, camera or microphone data, or browsing activity. We do not access, monitor, or receive any information about other apps you use or the audio, video, or media you play while a session runs. We use no advertising identifiers and no cross-app or cross-website tracking.</p>
   <h2>Where your information lives and who can access it</h2>
   <p>Your information lives in two places, by design:</p>
   <ul>
@@ -137,6 +139,7 @@
     <li><b>Apple</b> — Sign in with Apple, HealthKit, CloudKit/iCloud sync, and App Store distribution, governed by Apple's terms.</li>
     <li><b>Email delivery provider</b> — only your email address, and only if you opt into product emails or join the website waitlist. The provider stores the address in order to send those emails and does not receive any health data.</li>
     <li><b>Website form processing</b> — waitlist and questionnaire responses are stored in a spreadsheet hosted by Google. No health data is collected there.</li>
+    <li><b>PostHog, Inc.</b> — anonymous usage analytics for the app, as described under "Usage analytics". PostHog receives feature-usage events under an anonymous identifier and never receives health data, your name, or your email.</li>
     <li>Audio in the app is bundled with the app; playing it sends no data about you.</li>
   </ul>
   <p>We otherwise do not share your information with third parties, and we do not use health data with any third party for advertising.</p>
@@ -162,7 +165,7 @@
   <h2>Children</h2>
   <p>808 is not directed to children under 13, and we do not knowingly collect personal information from children under 13.</p>
   <h2>Security</h2>
-  <p>Your data is protected by your device's security and by Apple's encryption of iCloud data. No method of storage or transmission is 100% secure, but because we operate no servers holding your data, the attack surface is limited to your own device and Apple's infrastructure.</p>
+  <p>Your data is protected by your device's security and by Apple's encryption of iCloud data. No method of storage or transmission is 100% secure, but because we operate no servers holding your personal or health data, the attack surface for that data is limited to your own device and Apple's infrastructure. Anonymous usage events are held by PostHog under its own security practices.</p>
   <h2>Changes to this policy</h2>
   <p>We may update this policy; we'll revise the "Last updated" date and, for material changes, provide notice in the app. Continued use after an update means you accept the revised policy.</p>
   <h2>Contact</h2>
