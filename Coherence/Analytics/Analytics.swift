@@ -112,6 +112,11 @@ enum Analytics {
         config.captureScreenViews = false
         config.captureApplicationLifecycleEvents = true   // app_opened powers retention
         config.sessionReplay = false
+        // Element-interaction autocapture is ON by default and slipped a
+        // "Rageclick" with a SwiftUI view-hierarchy string into the live
+        // feed. The policy promises named behavioral events only; every
+        // capture path that invents its own events stays off.
+        config.captureElementInteractions = false
         PostHogSDK.shared.setup(config)
         sink = { event in
             PostHogSDK.shared.capture(event.name, properties: event.properties)
