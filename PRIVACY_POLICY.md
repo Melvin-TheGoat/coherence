@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: August 11, 2026**
+**Last updated: August 17, 2026**
 
 This Privacy Policy explains how **LockOut LLC ("we," "us," "808")**
 handles information in the **808** app for iPhone and Apple Watch.
