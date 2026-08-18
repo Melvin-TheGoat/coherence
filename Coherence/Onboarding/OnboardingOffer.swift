@@ -30,9 +30,26 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
 
     var price: String {
         switch self {
-        case .monthly:  return "$5"
-        case .yearly:   return "$30"
-        case .lifetime: return "$50"
+        case .monthly:  return "$4.99"
+        case .yearly:   return "$29.99"
+        case .lifetime: return "$49.99"
+        }
+    }
+
+    /// The launch list price, struck through beside what you actually pay.
+    ///
+    /// **This is a legal object, not a design flourish.** A struck-through
+    /// "was" price the product never actually sold at is a fake reference
+    /// price under FTC pricing guidance and several state laws. Melvin cleared
+    /// these with the attorney on the basis of documented prior intent to
+    /// market at them (2026-08-18). If the plan ever changes so these were
+    /// never really the list price, this property comes out, it does not get
+    /// quietly re-pointed at a bigger number.
+    var anchorPrice: String {
+        switch self {
+        case .monthly:  return "$7.99"
+        case .yearly:   return "$59.99"
+        case .lifetime: return "$199"
         }
     }
 
@@ -44,12 +61,26 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         }
     }
 
-    /// True arithmetic only — $30/yr against $5/mo is a real 50% saving.
+    /// The price restated in the smallest honest unit.
+    ///
+    /// This is the one piece of pricing psychology the flow does use, and it is
+    /// used because it is TRUE rather than because it converts: every figure
+    /// here is arithmetic on the price beside it, and a test recomputes all
+    /// three. Headspace and Calm both show an annual plan's effective monthly
+    /// for the same reason, since $29.99 once a year and $2.50 a month are the
+    /// same fact and only one of them is easy to picture.
+    ///
+    /// What it is not allowed to become: a comparison we cannot support. "Less
+    /// than a coffee" survives because $2.50 genuinely is. "Less than you spend
+    /// on X" does not, because we have no idea what anyone spends on X.
     var note: String? {
         switch self {
-        case .monthly:  return nil
-        case .yearly:   return "Half the monthly price"
-        case .lifetime: return "Pay once, keep it"
+        // $59.88 a year over 365 days.
+        case .monthly:  return "About 16 cents a day"
+        // $29.99 over 12 months, and half the monthly plan, both true.
+        case .yearly:   return "$2.50 a month"
+        // $49.99 against $4.99 a month is 10.02 months.
+        case .lifetime: return "Ten months, then never again"
         }
     }
 }
@@ -133,6 +164,8 @@ struct PaywallScreen: View {
 
     @State private var started = false
     @State private var legalDoc: LegalDoc?
+    /// The rung currently on screen. Nil means the prices are showing.
+    @State private var rung: DownsellRung?
     @EnvironmentObject private var store: Store
     @Binding var plan: SubscriptionPlan
     /// The one exit. `true` means a VERIFIED purchase or restore completed;
@@ -213,13 +246,26 @@ struct PaywallScreen: View {
                                     Text(note)
                                         .font(.caption2)
                                         .foregroundStyle(AppColor.accentGoldText)
+                                        .fixedSize(horizontal: false, vertical: true)
                                 }
                             }
                             Spacer(minLength: 0)
                             VStack(alignment: .trailing, spacing: 1) {
-                                Text(store.displayPrice(for: p) ?? p.price)
-                                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                                    .foregroundStyle(AppColor.textPrimary)
+                                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                                    // Only shown against OUR price. Apple's
+                                    // localized string is a different currency
+                                    // in most countries, and a dollar anchor
+                                    // beside a euro price is nonsense.
+                                    if store.displayPrice(for: p) == nil {
+                                        Text(p.anchorPrice)
+                                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                                            .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                                            .strikethrough(true, color: AppColor.textSecondary.opacity(0.7))
+                                    }
+                                    Text(store.displayPrice(for: p) ?? p.price)
+                                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                                        .foregroundStyle(AppColor.textPrimary)
+                                }
                                 Text(p.cadence)
                                     .font(.caption2)
                                     .foregroundStyle(AppColor.textSecondary)
@@ -257,6 +303,32 @@ struct PaywallScreen: View {
                 .font(.caption2.weight(.medium))
                 .foregroundStyle(AppColor.textSecondary)
                 .padding(.top, 2)
+
+                // The way out. Only when there is something to decline, and
+                // worded as a decision rather than an escape, because the
+                // ladder behind it is an offer and not a trap.
+                if selling || ProcessInfo.processInfo.isPreviewingDownsell {
+                    Button("Not right now") { rung = .trial }
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .padding(.top, 8)
+                }
+            }
+            .fullScreenCover(item: $rung) { current in
+                DownsellSheet(rung: current, plan: plan) {
+                    // Taking a rung buys the plan that rung sells. A rung that
+                    // congratulated someone and then charged them for a
+                    // different plan would be the deception this ladder avoids.
+                    plan = current.plan
+                    rung = nil
+                    advance()
+                } onDecline: {
+                    // Straight to the next rung, or out. No rung repeats, and
+                    // declining the last one ends the offer for this run rather
+                    // than looping back to the top.
+                    rung = current.next
+                    if current.next == nil { onDone(false) }
+                }
             }
             .sheet(item: $legalDoc) { doc in
                 NavigationStack {
