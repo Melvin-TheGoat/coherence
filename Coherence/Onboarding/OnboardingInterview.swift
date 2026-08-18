@@ -460,7 +460,7 @@ private struct StressWave: Shape {
 /// deterioration is inside the question rather than asserted at the user. That
 /// distinction is the point. We may ask whether their attention has slipped; we
 /// may never tell them it has, because that's a claim about their brain we
-/// cannot measure. Same line the theta copy respects.
+/// cannot measure. Same line the mechanism screen respects.
 ///
 /// The ground turns red here — this is now the first pain question.
 struct AloneWithThoughtsScreen: View {

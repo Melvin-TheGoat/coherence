@@ -36,8 +36,8 @@ enum OnboardingSection {
 /// One modifier so no screen hand-rolls a background and drifts.
 struct OnboardingBackground: ViewModifier {
     let section: OnboardingSection
-    /// Off for the theta screen only. A second moving line next to the word
-    /// "theta" in a health app starts to look like a live reading, and that
+    /// Off for the mechanism screen only. A second moving line next to a
+    /// nervous-system claim starts to look like a live reading, and that
     /// screen's entire job is admitting we cannot take one.
     var ambient: Bool = true
     @State private var breathe = false
@@ -290,7 +290,7 @@ struct OnboardingScreen<Content: View>: View {
     var ctaTitle: String = "Continue"
     var ctaFootnote: String? = nil
     var ctaEnabled: Bool = true
-    /// See `OnboardingBackground.ambient`. Off for the theta screen only.
+    /// See `OnboardingBackground.ambient`. Off for the mechanism screen only.
     var ambient: Bool = true
     /// Single-select questions advance on the answer tap and therefore show NO
     /// Continue button at all. Keeping a button next to tap-to-advance was

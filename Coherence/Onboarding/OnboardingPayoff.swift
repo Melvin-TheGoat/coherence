@@ -307,7 +307,7 @@ struct CostScreen: View {
 
 // MARK: - 13–15 · Proof
 
-/// The mechanism: your body already keeps score (theta), then — after the two
+/// The mechanism: meditation shifts the nervous system, then after the two
 /// sample-session screens — you can meditate however you like. The old middle
 /// beat ("So you get a number", a static ring) was replaced by the start/build
 /// pair below, which shows the number discriminating instead of asserting it.
@@ -320,10 +320,10 @@ struct ProofScreen: View {
     var body: some View {
         OnboardingScreen(section: .win, title: title, subtitle: subtitle,
                          ctaTitle: beat == .yourWay ? "That's what I want" : "Go on",
-                         // The theta beat is the one screen with no ambient
-                         // wave: a second moving line beside that word starts
-                         // to look like a reading, and this screen exists to
-                         // admit we can't take one.
+                         // The mechanism beat is the one screen with no
+                         // ambient wave: a moving line next to a claim about
+                         // the nervous system starts to look like a reading,
+                         // and this screen exists to admit we can't take one.
                          ambient: beat != .body,
                          onContinue: onContinue) {
             illustration.frame(maxWidth: .infinity).padding(.vertical, 10)
@@ -332,7 +332,7 @@ struct ProofScreen: View {
 
     private var title: String {
         switch beat {
-        case .body:    return "Deep meditation runs\non theta."
+        case .body:    return "Meditation shifts you out\nof fight or flight."
         case .yourWay: return "Meditate however\nyou like."
         }
     }
@@ -340,7 +340,7 @@ struct ProofScreen: View {
     private var subtitle: String {
         switch beat {
         case .body:
-            return "It's the slow brainwave state that shows up when someone really drops in. Measured in labs for decades."
+            return "Stress holds your body in the sympathetic state: heart up, muscles ready, mind scanning for the next thing. Slow, settled breathing moves you toward the parasympathetic side, the one your body rests and recovers in."
         case .yourWay:
             return "A guided meditation or frequency track on YouTube or Spotify, a teacher you follow, prayer, or silence. Start the session, leave the app, play whatever you meditate to. The Watch keeps measuring."
         }
@@ -351,8 +351,8 @@ struct ProofScreen: View {
         switch beat {
         case .body:
             VStack(spacing: 16) {
-                ThetaWaveCard()
-                Text("But the body that goes with it **is** visible. When someone drops into that state, three things happen, and your Watch reads all three.")
+                NervousSystemCard()
+                Text("You can't see that switch flip. But the body that comes with it **is** visible. When someone settles, three things happen, and your Watch reads all three.")
                     .font(OnboardingType.sub)
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -429,84 +429,53 @@ struct ProofScreen: View {
     }
 }
 
-/// The theta illustration, and the sentence that keeps it honest.
+/// The two states, and the honest gap between them.
 ///
-/// **These two must never be separated.** A moving wave beside the word "theta"
-/// in a health app is close to looking like a measurement, and we measure heart
-/// rate and movement, not brain activity. The disclaimer is load-bearing: it is
-/// what makes the animation an illustration rather than a claim.
+/// **The gap is the point of this card.** 808 does not measure your nervous
+/// system, and nothing on a wrist can. What it measures is what a settling body
+/// does: heart drifting down, motion falling away, breath slowing. Say the
+/// shift, then say plainly that the evidence for it is the body, which is the
+/// same two-tier rule `SCIENCE.md` holds everywhere else.
 ///
-/// The wave therefore has no leading edge, no cursor and no scrolling data. It
-/// drifts by exactly one period on a loop, which reads as decoration rather than
-/// a live trace, and it holds still under Reduce Motion.
-///
-/// Never write "your theta", "reach theta" or "theta score". Theta exists in the
-/// research; it is not something we hand the user. Teal, never gold: it is
-/// physiology, not an achievement.
-private struct ThetaWaveCard: View {
-    @State private var drift = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    /// One period of the wave, in points. The path repeats every `period`, so
-    /// translating by exactly this much loops seamlessly.
-    private let period: CGFloat = 84
-
+/// Never write "your parasympathetic score", "reach parasympathetic", or imply
+/// a reading. The teal is the body's own signal colour; the stressed state is
+/// deliberately colourless, because it is the one we are moving away from.
+private struct NervousSystemCard: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Theta")
-                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.calmAccent)
-                Spacer()
-                Text("4 to 8 Hz")
-                    .font(.system(size: 10))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-
-            ThetaWave(period: period)
-                .stroke(AppColor.calmAccent, style: StrokeStyle(lineWidth: 2.2, lineCap: .round))
-                .frame(height: 46)
-                .offset(x: drift ? -period : 0)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .clipped()
-                .onAppear {
-                    guard !reduceMotion else { return }
-                    withAnimation(.linear(duration: 1.9).repeatForever(autoreverses: false)) {
-                        drift = true
-                    }
-                }
-
-            Divider().overlay(AppColor.textSecondary.opacity(0.12))
-
-            Text("We can't see that from a wrist.")
-                .font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(AppColor.textPrimary)
+        HStack(spacing: 12) {
+            state("bolt.fill", "Fight or flight", "Sympathetic",
+                  tint: AppColor.textSecondary, filled: false)
+            Image(systemName: "arrow.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+            state("leaf.fill", "Rest and digest", "Parasympathetic",
+                  tint: AppColor.calmAccent, filled: true)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AppColor.backgroundSecondary.opacity(0.7),
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 14)
+        .background(AppColor.backgroundSecondary,
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
-}
 
-/// A plain sine, drawn wide enough that drifting one period never exposes an end.
-private struct ThetaWave: Shape {
-    let period: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        var p = Path()
-        let mid = rect.midY
-        let amp = rect.height * 0.38
-        // Twice the visible width plus one period of overrun.
-        let end = rect.width * 2 + period
-        p.move(to: CGPoint(x: 0, y: mid))
-        var x: CGFloat = 0
-        while x <= end {
-            let y = mid - sin(x / period * 2 * .pi) * amp
-            p.addLine(to: CGPoint(x: x, y: y))
-            x += 1
+    private func state(_ icon: String, _ title: String, _ term: String,
+                       tint: Color, filled: Bool) -> some View {
+        VStack(spacing: 7) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(tint)
+                .frame(width: 38, height: 38)
+                .background(tint.opacity(filled ? 0.14 : 0.07), in: Circle())
+            Text(title)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(filled ? AppColor.textPrimary : AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+            Text(term.uppercased())
+                .font(.system(size: 8.5, weight: .semibold))
+                .tracking(0.7)
+                .foregroundStyle(AppColor.textSecondary.opacity(0.8))
         }
-        return p
+        .frame(maxWidth: .infinity)
     }
 }
 

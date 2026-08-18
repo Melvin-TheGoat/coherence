@@ -236,7 +236,7 @@ struct OnboardingView: View {
             ResultScreen(answers: answers) { go(.cost) }
 
         case .cost:
-            CostScreen(costs: $answers.costs) { go(.proofBody) }
+            CostScreen(costs: $answers.costs) { go(.wall) }
 
         case .proofBody:
             ProofScreen(beat: .body) { go(.sampleStart) }
@@ -250,10 +250,13 @@ struct OnboardingView: View {
             SampleSessionScreen(phase: .build) { go(.proofYourWay) }
 
         case .proofYourWay:
-            ProofScreen(beat: .yourWay) { go(.wall) }
+            ProofScreen(beat: .yourWay) { go(.profile) }
 
+        // The wall comes BEFORE the mechanism screen. Testers said the
+        // company they'd be in was what opened them up; the explanation
+        // lands better once they already want it to be true.
         case .wall:
-            WallScreen { go(.profile) }
+            WallScreen { go(.proofBody) }
 
         case .profile:
             ProfileScreen(answers: answers) { go(.commitment) }
