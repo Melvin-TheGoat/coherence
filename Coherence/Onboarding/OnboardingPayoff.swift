@@ -180,17 +180,15 @@ struct ResultScreen: View {
                                "That's not a character flaw. It's a missing feedback loop.")
                 }
 
-                // The regular's one question, answered. It used to be collected
-                // and then never read anywhere in the app.
-                if let blindSpot = answers.blindSpot {
-                    reflection("What you can't see: \u{201C}\(blindSpot.label).\u{201D}",
-                               "That's the gap 808 exists to close. \(blindSpot.answer).")
-                }
-
                 if answers.isHighStress, let m = answers.primaryMotivation {
                     reflection("You're carrying a lot, and you want \(m.label.lowercased()).",
                                "Those two pull against each other. The stress is exactly what makes practice hardest to keep.")
                 }
+
+                // Everything they named, each against the thing that answers
+                // it. The screen used to speak to one cause and drop the rest,
+                // which is what makes an interview feel decorative.
+                answered
 
                 Text("Your own answers, alongside published research on meditation-app dropout. Not a diagnosis.")
                     .font(.caption2)
@@ -200,6 +198,45 @@ struct ResultScreen: View {
             .sensoryFeedback(.success, trigger: revealed)
             .onAppear { revealed = true }
         }
+    }
+
+    /// Every concern this person raised, paired with what 808 does about it.
+    ///
+    /// The pillar tag is not decoration: before this existed the flow could
+    /// talk about measurement and nothing else, and two thirds of the mission
+    /// went unsaid for the whole onboarding. `PersonalPlan` guarantees a line
+    /// for habitual and universal even when nobody asked for one.
+    private var answered: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("WHAT WE DO ABOUT IT")
+                .font(.system(size: 9.5, weight: .heavy))
+                .tracking(1.1)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 2)
+
+            ForEach(PersonalPlan.answers(for: answers)) { item in
+                HStack(alignment: .top, spacing: 11) {
+                    Image(systemName: item.icon)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(AppColor.calmAccent)
+                        .frame(width: 22, height: 20)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.concern)
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(item.response)
+                            .font(.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer(minLength: 0)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func reflection(_ headline: String, _ body: String) -> some View {
@@ -504,12 +541,19 @@ private struct NervousSystemCard: View {
 struct SampleSessionScreen: View {
     enum Phase { case start, build }
     let phase: Phase
+    /// Only the build screen reads these; the start screen is deliberately
+    /// impersonal, because it describes everybody's first week.
+    var motivations: Set<Motivation> = []
     let onContinue: () -> Void
 
-    /// The warm "wrong direction" tint used by curves moving against the user
-    /// (climbing HR, fast breath). Deliberately NOT a saturated alarm red —
-    /// the bad session is information, not a siren.
-    private let warn = Color(red: 0.78, green: 0.48, blue: 0.43)
+    /// Their own words, appended to ours. Someone who said they wanted less
+    /// stress and sharper focus reads those two back here, as the thing the
+    /// still body is FOR.
+    private var buildSubtitle: String {
+        let base = "The same person, days later. Slow breath, settled heart, still body."
+        let outcomes = PersonalPlan.outcomeSentence(for: motivations)
+        return outcomes.isEmpty ? base : base + " " + outcomes
+    }
 
     var body: some View {
         OnboardingScreen(section: phase == .start ? .cost : .win,
@@ -517,7 +561,7 @@ struct SampleSessionScreen: View {
                                                 : "Where you can\nbuild to.",
                          subtitle: phase == .start
                             ? "A real first week looks like this. Restless is normal; now it's measured."
-                            : "The same person, days later. Slow breath, settled heart, still body.",
+                            : buildSubtitle,
                          ctaTitle: phase == .start ? "So what's possible?" : "Show me how",
                          onContinue: onContinue) {
             VStack(alignment: .leading, spacing: 11) {
@@ -542,7 +586,7 @@ struct SampleSessionScreen: View {
                     panel(name: "Heart rate", tint: AppColor.calmAccent,
                           value: "72 → 84 bpm · climbing",
                           points: [72, 72.4, 73.2, 73, 74.6, 76, 77.2, 78.6, 80.2, 82, 84],
-                          domain: 70...85, lineTint: warn)
+                          domain: 63...93, lineTint: AppColor.calmAccent)
                     // Irregular on purpose, and dense enough that catmull-rom
                     // can't smooth it into a serene wave: fidgety must LOOK
                     // fidgety next to the build screen's clean rise.
@@ -550,24 +594,25 @@ struct SampleSessionScreen: View {
                           value: "0.31 · fidgety",
                           points: [0.38, 0.15, 0.42, 0.3, 0.12, 0.5, 0.22, 0.44, 0.1, 0.36,
                                    0.52, 0.18, 0.4, 0.14, 0.46, 0.25, 0.35, 0.12, 0.44, 0.2, 0.33],
-                          domain: 0...1, lineTint: AppColor.accentGold.opacity(0.55))
+                          domain: 0...1, lineTint: AppColor.accentGold)
                     panel(name: "Breath", tint: AppColor.calmAccent,
                           value: "13.8/min · quick, shallow",
                           points: [14.5, 13.2, 14.8, 13.5, 14.2, 13.0, 14.4, 13.6, 14.6, 13.2, 14.0],
-                          domain: 4...16, lineTint: warn, resonanceBand: true)
+                          domain: 0...20, lineTint: AppColor.calmAccent)
                 } else {
                     panel(name: "Heart rate", tint: AppColor.calmAccent,
                           value: "74 → 63 bpm · settling",
                           points: [74, 73.6, 73, 72, 70.6, 69, 67.6, 66, 65, 63.8, 63],
-                          domain: 60...75, lineTint: AppColor.calmAccent)
+                          domain: 53.5...83.5, lineTint: AppColor.calmAccent)
                     panel(name: "Stillness", tint: AppColor.accentGold,
                           value: "0.86 · nearly still",
                           points: [0.55, 0.66, 0.74, 0.8, 0.84, 0.87, 0.88, 0.89, 0.9, 0.9, 0.91],
                           domain: 0...1, lineTint: AppColor.accentGold)
                     panel(name: "Breath", tint: AppColor.calmAccent,
-                          value: "5.9/min · resonance",
+                          value: "5.9/min · slow and steady",
                           points: [6.6, 6.3, 6.1, 6.0, 5.9, 5.85, 5.9, 5.85, 5.8, 5.85, 5.9],
-                          domain: 4...8, lineTint: AppColor.calmAccent, resonanceBand: true)
+                          domain: 0...20, lineTint: AppColor.calmAccent,
+                          doorway: 0.0...3.5)
                 }
             }
         }
@@ -583,14 +628,25 @@ struct SampleSessionScreen: View {
             .overlay(Capsule().stroke(AppColor.calmAccent.opacity(0.4), lineWidth: 1))
     }
 
-    /// One labeled mini-graph: signal name, headline value, curve with real
-    /// axes (same chart grammar as the results screen, so this teaches the
-    /// reading before it matters). `resonanceBand` shades 4.5–7 breaths/min in
-    /// teal — the bad breath rides above it, the good one inside it, and the
-    /// band placement tells that story without a word.
+    /// One labeled mini-graph, drawn on the RESULTS SCREEN'S rules so this
+    /// teaches the reading it will need later.
+    ///
+    /// Those rules, and why: heart rate spans a fixed 30 bpm centred on the
+    /// session, so two beats of ordinary wobble never draw the same mountains
+    /// as a twelve-beat settle. Breath sits on a shared absolute 0-20 ruler.
+    /// Stillness stays 0-1. Nothing is tinted by whether it went well: the app
+    /// draws a bad session in the same colours as a good one and lets the shape
+    /// say it.
+    ///
+    /// `doorway` shades a time span floor to ceiling, exactly like the real
+    /// breath graph marks the stretch of slow breathing that earned credit.
+    /// It replaces the old 4.5-7 resonance band, which was deleted from the
+    /// product in v5.0.0 and must not come back here: a "good" band under a
+    /// score that no longer grades against one teaches the wrong thing.
     private func panel(name: String, tint: Color, value: String,
                        points: [Double], domain: ClosedRange<Double>,
-                       lineTint: Color, resonanceBand: Bool = false) -> some View {
+                       lineTint: Color,
+                       doorway: ClosedRange<Double>? = nil) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(alignment: .firstTextBaseline) {
                 Text(name.uppercased())
@@ -607,10 +663,10 @@ struct SampleSessionScreen: View {
             // one time axis.
             let xStep = 10.0 / Double(max(points.count - 1, 1))
             Chart {
-                if resonanceBand {
-                    RectangleMark(xStart: .value("t", 0.0), xEnd: .value("t", 10.0),
-                                  yStart: .value("v", 4.5), yEnd: .value("v", 7.0))
-                        .foregroundStyle(AppColor.calmAccent.opacity(0.18))
+                if let doorway {
+                    RectangleMark(xStart: .value("t", doorway.lowerBound),
+                                  xEnd: .value("t", doorway.upperBound))
+                        .foregroundStyle(AppColor.calmAccent.opacity(0.16))
                 }
                 ForEach(Array(points.enumerated()), id: \.offset) { i, v in
                     LineMark(x: .value("t", Double(i) * xStep), y: .value("v", v))

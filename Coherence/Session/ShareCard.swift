@@ -519,8 +519,6 @@ struct SessionShareCard: View {
     }
 }
 
-/// The 4.5–7 breaths/min resonance zone, mapped into the same normalized space
-/// `CurveShape` uses so the band and the line agree.
 /// A smoothed sparkline of raw values, normalized to fit its rect (with a small
 /// vertical margin so the stroke never clips). Chart-free so `ImageRenderer`
 /// output is fully deterministic.

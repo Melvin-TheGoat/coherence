@@ -247,7 +247,8 @@ struct OnboardingView: View {
             SampleSessionScreen(phase: .start) { go(.sampleBuild) }
 
         case .sampleBuild:
-            SampleSessionScreen(phase: .build) { go(.proofYourWay) }
+            SampleSessionScreen(phase: .build,
+                                motivations: answers.motivations) { go(.proofYourWay) }
 
         case .proofYourWay:
             ProofScreen(beat: .yourWay) { go(.profile) }
