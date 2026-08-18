@@ -52,6 +52,9 @@ final class OnboardingBranchTests: XCTestCase {
             a.currentFrequency = frequency
             XCTAssertEqual(a.persona, .restarter, "\(frequency)")
             XCTAssertTrue(a.interview.contains(.restarts))
+            // .causes is now conditional on the restarts answer, so set one that
+            // does not opt out.
+            a.restarts = .few
             XCTAssertTrue(a.interview.contains(.causes))
             XCTAssertFalse(a.interview.contains(.intendedFor), "\(frequency): they've already started")
             XCTAssertFalse(a.interview.contains(.blindSpot), "\(frequency): that's the regular's question")
@@ -115,6 +118,31 @@ final class OnboardingBranchTests: XCTestCase {
             if asked.contains(.causes) { XCTAssertFalse(a.causes.isEmpty, "\(persona)") }
             if asked.contains(.blindSpot) { XCTAssertNotNil(a.blindSpot, "\(persona)") }
         }
+    }
+
+    /// Melvin hit this in the flow: he answered "It sticks" and was still asked
+    /// what made him stop. The baseline decides the persona, but a later, more
+    /// specific answer has to be allowed to overrule it.
+    func test_itSticksIsNeverAskedWhatMadeThemStop() {
+        for frequency in [CurrentFrequency.triedNeverStuck, .fewTimesMonth] {
+            var a = OnboardingAnswers()
+            a.currentFrequency = frequency
+            a.restarts = .sticks
+            XCTAssertEqual(a.persona, .restarter, "\(frequency)")
+            XCTAssertFalse(a.interview.contains(.causes),
+                           "\(frequency): asked why they stopped after they said it stuck")
+            XCTAssertTrue(a.interview.contains(.restarts),
+                          "\(frequency): the question they answered must still be asked")
+        }
+    }
+
+    /// And the ordinary restarter still gets it, or the fix above quietly
+    /// deletes the question for everyone.
+    func test_anOrdinaryRestarterIsStillAskedWhyTheyStopped() {
+        var a = OnboardingAnswers()
+        a.currentFrequency = .triedNeverStuck
+        a.restarts = .few
+        XCTAssertTrue(a.interview.contains(.causes))
     }
 
     /// Exhaustive: every combination of baseline × restarts × intendedFor.

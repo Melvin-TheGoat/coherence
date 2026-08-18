@@ -13,7 +13,8 @@ import Foundation
 // MARK: - Questions
 
 public enum Motivation: String, CaseIterable, Identifiable, Codable {
-    case lessStressed, sharperFocus, moreDiscipline, betterSleep, lessAnxious, deeperPractice
+    case lessStressed, sharperFocus, moreDiscipline, betterSleep, lessAnxious,
+         deeperPractice, manifestGoals, changeIdentity, other
 
     public var id: String { rawValue }
 
@@ -25,6 +26,9 @@ public enum Motivation: String, CaseIterable, Identifiable, Codable {
         case .betterSleep:    return "Better sleep"
         case .lessAnxious:    return "Less anxious"
         case .deeperPractice: return "Deeper prayer or practice"
+        case .manifestGoals:  return "Manifest my goals"
+        case .changeIdentity: return "Change who I am"
+        case .other:          return "Something else"
         }
     }
 
@@ -36,6 +40,9 @@ public enum Motivation: String, CaseIterable, Identifiable, Codable {
         case .betterSleep:    return "moon.stars"
         case .lessAnxious:    return "heart"
         case .deeperPractice: return "hands.and.sparkles"
+        case .manifestGoals:  return "sparkles"
+        case .changeIdentity: return "person.crop.circle.badge.checkmark"
+        case .other:          return "ellipsis.circle"
         }
     }
 }
@@ -54,8 +61,8 @@ public enum CurrentFrequency: String, CaseIterable, Identifiable, Codable {
         case .never:           return "Never. This would be the start"
         case .triedNeverStuck: return "I've tried, it never stuck"
         case .fewTimesMonth:   return "A few times a month"
-        case .mostWeeks:       return "Most weeks"
-        case .almostDaily:     return "Almost every day"
+        case .mostWeeks:       return "A few times a week"
+        case .almostDaily:     return "Daily"
         }
     }
 
@@ -166,7 +173,7 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
         case .few:       return "Two or three times"
         case .many:      return "More than I'd like to admit"
         case .lostCount: return "I've lost count"
-        case .sticks:    return "It sticks. I'm here for the stats"
+        case .sticks:    return "It sticks. I'm here for the stats and community"
         }
     }
 
@@ -240,7 +247,8 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
 /// Why they stopped. Every option is one 808 has an answer for — that mapping
 /// is the whole point of screen 16d, so it lives on the case itself.
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
-    case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring
+    case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
+         noAccountability
 
     public var id: String { rawValue }
 
@@ -252,6 +260,7 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         case .feltWrong:      return "I felt like I was doing it wrong"
         case .noTime:         return "I ran out of time"
         case .gotBoring:      return "It got boring"
+        case .noAccountability: return "No one kept me accountable"
         }
     }
 
@@ -263,6 +272,7 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         case .feltWrong:      return "questionmark.circle"
         case .noTime:         return "clock.badge.exclamationmark"
         case .gotBoring:      return "zzz"
+        case .noAccountability: return "person.2.slash"
         }
     }
 
@@ -286,6 +296,9 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         case .feltWrong:      return "Nothing to get wrong. We read your body, not your technique"
         case .noTime:         return "Sessions end when you end them, so two minutes still counts"
         case .gotBoring:      return "Your own audio, still measured"
+        // The only answer that reaches outside the app, which is the point:
+        // nothing on your own phone can be the person expecting you.
+        case .noAccountability: return "A streak that notices, and people practising alongside you"
         }
     }
 }
@@ -294,7 +307,7 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
 /// because anchoring to an existing routine measurably lowered abandonment
 /// (Mindfulness, 2023; see ONBOARDING.md).
 public enum Anchor: String, CaseIterable, Identifiable, Codable {
-    case wake, coffee, commute, lunch, afterWork, beforeBed
+    case wake, coffee, commute, lunch, afterWork, beforeSport, beforeBed
 
     public var id: String { rawValue }
 
@@ -305,6 +318,7 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         case .commute:   return "After my commute"
         case .lunch:     return "Around lunch"
         case .afterWork: return "When I get home from work"
+        case .beforeSport: return "Before my sport, activity, or hobby"
         case .beforeBed: return "Before bed"
         }
     }
@@ -316,6 +330,7 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         case .commute:   return "car"
         case .lunch:     return "fork.knife"
         case .afterWork: return "house"
+        case .beforeSport: return "figure.run"
         case .beforeBed: return "moon.stars"
         }
     }
@@ -329,6 +344,7 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         case .commute:   return "after your commute"
         case .lunch:     return "around lunch"
         case .afterWork: return "when you get home"
+        case .beforeSport: return "before you train"
         case .beforeBed: return "before bed"
         }
     }
@@ -342,6 +358,9 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         case .commute:   return 9
         case .lunch:     return 12
         case .afterWork: return 18
+        // Early evening: the usual slot for training or a hobby, and it keeps
+        // the reminder clear of the before-bed one.
+        case .beforeSport: return 17
         case .beforeBed: return 22
         }
     }
@@ -522,14 +541,15 @@ public struct OnboardingAnswers: Codable, Equatable {
     /// The single cause we speak to when we can only name one. Ordered by how
     /// directly 808 answers it, not by the enum's declaration order.
     public var primaryCause: DropoutCause? {
-        let priority: [DropoutCause] = [.couldntTell, .tooManyChoices, .forgot,
-                                        .feltWrong, .gotBoring, .noTime]
+        let priority: [DropoutCause] = [.couldntTell, .noAccountability, .tooManyChoices,
+                                        .forgot, .feltWrong, .gotBoring, .noTime]
         return priority.first { causes.contains($0) } ?? causes.first
     }
 
     public var primaryMotivation: Motivation? {
         let priority: [Motivation] = [.moreDiscipline, .lessAnxious, .lessStressed,
-                                      .sharperFocus, .betterSleep, .deeperPractice]
+                                      .sharperFocus, .betterSleep, .changeIdentity,
+                                      .manifestGoals, .deeperPractice, .other]
         return priority.first { motivations.contains($0) } ?? motivations.first
     }
 
@@ -738,9 +758,13 @@ extension OnboardingAnswers {
         case .intendedFor:
             return persona == .newcomer
 
-        // Presumes they stopped.
+        // Presumes they stopped. The persona is decided by the BASELINE answer
+        // alone, so someone who said "I've tried, it never stuck" there and then
+        // "It sticks" one screen later used to be asked what made them stop.
+        // Melvin hit this in the flow. `restarts == .sticks` is the later, more
+        // specific answer, so it wins.
         case .causes:
-            return persona == .restarter
+            return persona == .restarter && restarts != .sticks
 
         // Only meaningful for someone with a practice to be blind about.
         case .blindSpot:

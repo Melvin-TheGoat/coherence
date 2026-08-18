@@ -342,7 +342,7 @@ struct ProofScreen: View {
         case .body:
             return "It's the slow brainwave state that shows up when someone really drops in. Measured in labs for decades."
         case .yourWay:
-            return "YouTube, Spotify, a podcast, prayer, or silence. Start the session, leave the app, put on whatever you actually meditate to. The Watch keeps measuring."
+            return "A guided meditation or frequency track on YouTube or Spotify, a teacher you follow, prayer, or silence. Start the session, leave the app, play whatever you meditate to. The Watch keeps measuring."
         }
     }
 
@@ -365,8 +365,8 @@ struct ProofScreen: View {
             }
         case .yourWay:
             VStack(alignment: .leading, spacing: 10) {
-                ForEach(["Your favourite teacher on YouTube",
-                         "That one Spotify playlist",
+                ForEach(["A guided meditation on YouTube",
+                         "A frequency track on Spotify",
                          "Prayer, in your own tradition",
                          "Nothing at all"], id: \.self) { line in
                     HStack(spacing: 11) {
