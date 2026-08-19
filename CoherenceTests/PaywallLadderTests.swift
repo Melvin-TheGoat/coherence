@@ -75,8 +75,9 @@ final class PaywallLadderTests: XCTestCase {
         let yearly = dollars(SubscriptionPlan.yearly.price)
         let lifetime = dollars(SubscriptionPlan.lifetime.price)
 
-        // "About 16 cents a day"
-        XCTAssertEqual((monthly * 12 / 365) * 100, 16, accuracy: 1.0)
+        // "About $1.15 a week"
+        XCTAssertEqual(monthly * 12 / 52, 1.15, accuracy: 0.02)
+        XCTAssertTrue(SubscriptionPlan.monthly.note?.contains("$1.15") == true)
         // "$2.50 a month"
         XCTAssertEqual(yearly / 12, 2.50, accuracy: 0.01)
         XCTAssertTrue(SubscriptionPlan.yearly.note?.contains("$2.50") == true)

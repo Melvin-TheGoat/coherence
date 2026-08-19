@@ -75,8 +75,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// on X" does not, because we have no idea what anyone spends on X.
     var note: String? {
         switch self {
-        // $59.88 a year over 365 days.
-        case .monthly:  return "About 16 cents a day"
+        // $59.88 a year over 52 weeks. Weekly rather than daily: a cent
+        // figure reads as a rounding trick, $1.15 reads as a price.
+        case .monthly:  return "About $1.15 a week"
         // $29.99 over 12 months, and half the monthly plan, both true.
         case .yearly:   return "$2.50 a month"
         // $49.99 against $4.99 a month is 10.02 months.
