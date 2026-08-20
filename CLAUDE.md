@@ -1505,6 +1505,30 @@ Where it actually stands, so nobody re-derives it:
   What to Test notes. It must be fixed or the promise softened before this
   reaches people who are not us.
 
+## Marketing, advertising, and persuasion copy (standing rule, Melvin 2026-08-20)
+
+**Always apply Eugene Schwartz's *Breakthrough Advertising* when working on
+anything marketing-, advertising- or psychology-adjacent**: the website,
+onboarding, the paywall and its downsell ladder, App Store copy, reels,
+end cards, and any ad or social content. The parts that matter most here:
+
+- **Channel existing desire, never manufacture it.** People already want a
+  calmer mind, proof they're improving, a habit that sticks. Copy's job is to
+  aim that at 808, not to argue people into wanting it.
+- **Meet the prospect at their stage of awareness.** Someone who has never
+  meditated needs the problem named; someone who quit needs the mechanism
+  (why THIS works when the last app didn't); someone who practises daily needs
+  only the new claim (scored, verified, shareable). The onboarding personas
+  map to awareness stages; use them.
+- **The headline's only job is the felt effect.** A number without a feeling
+  attached is trivia (this is why the research section leads "A sharper mind"
+  before "+16 points").
+- **Intensify by demonstration, not adjectives.** Show the low-scoring session
+  next to the high one; show the real graph. 808's whole position is proof,
+  so the copy must never out-claim the instrument.
+- Schwartz never licenses invention. Every claim stays sourced and honest;
+  the em-dash rule and the no-invented-numbers rule still bind.
+
 ## Toolchain notes (this machine)
 
 - XcodeGen location differs per machine — resolve it with `which xcodegen`

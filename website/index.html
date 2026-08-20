@@ -184,9 +184,12 @@
   .figs.three{ grid-template-columns:repeat(3,minmax(0,1fr)); }
   .figs > div{ border-top:1px solid var(--border); padding:30px 34px 28px 0; }
   .figs > div + div{ border-left:1px solid var(--border); padding-left:34px; }
+  .figkick{ display:block; font-family:var(--mono); font-weight:500;
+    font-size:12px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:10px; }
   .fig{ font-family:var(--display); font-weight:800; display:block;
     font-size:clamp(26px,2.6vw,36px); line-height:1; letter-spacing:-.03em;
-    margin-bottom:14px; font-variant-numeric:tabular-nums; color:var(--gold); }
+    margin-bottom:14px; font-variant-numeric:tabular-nums; color:var(--fg); }
   .figs p{ margin:0; font-size:15px; color:var(--muted); }
 
   .sources{ margin-top:48px; border-top:1px solid var(--border); padding-top:22px; }
@@ -517,24 +520,35 @@
       <h2>Meditation itself has the evidence.</h2>
     </div>
 
+    <div class="prose" style="margin-top:24px">
+      <p>Not our studies. The field's. What a steady practice has measurably
+        done for other people:</p>
+    </div>
+
     <div class="figs three">
       <div>
-        <span class="fig">+16</span>
-        <p>Percentile points on GRE reading comprehension after two weeks of
-          meditation training, in a randomized trial.<sup><a href="#sources">2</a></sup></p>
+        <span class="figkick">A sharper mind</span>
+        <span class="fig">+16 points</span>
+        <p>Two weeks of meditation training moved students 16 percentile points
+          on GRE reading comprehension, in a randomized
+          trial.<sup><a href="#sources">2</a></sup> Fourteen days, and reading
+          the same page got measurably easier.</p>
       </div>
       <div>
-        <span class="fig">47</span>
-        <p>Meditation trials showing real reductions in anxiety and
-          depression.<sup><a href="#sources">3</a></sup></p>
+        <span class="figkick">A calmer one</span>
+        <span class="fig">3,515 people</span>
+        <p>Across 47 randomized trials, meditation produced real reductions in
+          anxiety and depression.<sup><a href="#sources">3</a></sup> Not a
+          vibe. A measured shift, replicated for years.</p>
       </div>
       <div>
-        <span class="fig">AHA</span>
-        <p>Calls meditation a reasonable addition to standard care for
-          cardiovascular risk.<sup><a href="#sources">4</a></sup> One five-year
-          trial in heart patients found 48% fewer deaths, heart attacks and
-          strokes, though the group that teaches the technique ran
-          it.<sup><a href="#sources">5</a></sup></p>
+        <span class="figkick">A stronger heart</span>
+        <span class="fig">48% fewer</span>
+        <p>Deaths, heart attacks and strokes in the meditation group of a
+          five-year trial of heart patients.<sup><a href="#sources">5</a></sup>
+          The group that teaches the technique ran it, so hold it loosely. The
+          American Heart Association still calls meditation a reasonable
+          addition to standard care.<sup><a href="#sources">4</a></sup></p>
       </div>
     </div>
 
