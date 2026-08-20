@@ -32,9 +32,8 @@ struct SessionResultsView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if let session {
-                        header(session)
                         if let stats {
-                            hero(stats)
+                            hero(session, stats)
                             tiles(stats)
                             if stats.breathDoorwayRate != nil { resonanceChip }
                             let series = SessionEvidence.series(from: stats)
@@ -48,6 +47,7 @@ struct SessionResultsView: View {
                             }
                             shareButton
                         } else {
+                            header(session)
                             missingStatsCard
                         }
                         reflectionCard
@@ -103,9 +103,6 @@ struct SessionResultsView: View {
                 if let sound = SoundCatalog.title(for: session.frequencyID) {
                     MetaChip(text: sound)
                 }
-                // Which instrument measured this. Quiet, but always present —
-                // a Watch score and a camera score aren't the same currency.
-                if let source = instrumentLabel { MetaChip(text: source) }
             }
         }
     }
@@ -116,9 +113,13 @@ struct SessionResultsView: View {
         return "\(day), \(time)"
     }
 
-    // MARK: Hero — the spoken verdict
+    // MARK: Hero — the score, then the spoken verdict (option C, Melvin)
 
-    private func hero(_ stats: MeditationStats) -> some View {
+    /// The score is the event: it opens the screen, huge and centred, and the
+    /// verdict folds underneath. This replaced a left-aligned header where the
+    /// ring floated mid-right and left a field of empty grey beside it.
+    /// Tapping the ring still opens the score explainer.
+    private func hero(_ session: Session, _ stats: MeditationStats) -> some View {
         let verdict = VerdictEngine.verdict(for: .init(
             overallScore: stats.overallScore,
             stillnessScore: stats.stillnessScore,
@@ -127,49 +128,44 @@ struct SessionResultsView: View {
             resonanceMatchScore: stats.resonanceMatchScore,
             breathDoorwayRate: stats.breathDoorwayRate,
             breathDoorwayHeldSec: stats.breathDoorwayHeldSec,
-            bellyBreathing: session?.bellyBreathing ?? false))
-        // The words lead; the number supports. A score means little on its own
-        // once the Watch and the camera both produce one — what's true and
-        // comparable is how this session sits against THIS user's own history.
-        return VStack(alignment: .leading, spacing: 10) {
+            bellyBreathing: session.bellyBreathing))
+
+        return VStack(spacing: 12) {
+            Button { showScoreMeaning = true } label: {
+                ScoreRing(score: stats.overallScore, size: 128, lineWidth: 10)
+            }
+            .buttonStyle(CardButtonStyle())
+            .padding(.top, 2)
+
             Text(verdict.headline)
                 .font(.system(size: 25, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+
             Text(verdict.sentence)
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 6)
 
-
-            HStack(spacing: 10) {
-                Spacer(minLength: 0)
-                // Tapping the ring opens the score explainer. No "?" badge:
-                // Melvin cut it, and the sheet is still one tap away for
-                // whoever goes looking.
-                Button { showScoreMeaning = true } label: {
-                    ScoreRing(score: stats.overallScore, size: 52, lineWidth: 6)
-                }
-                .buttonStyle(CardButtonStyle())
-            }
-            .padding(.top, 2)
+            // Date, length and sound in one quiet line. These were a header
+            // row and chips; as facts about a finished session they are
+            // footnotes, not framing.
+            Text(metaLine(session))
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary.opacity(0.8))
         }
+        .frame(maxWidth: .infinity)
         .padding(.vertical, 2)
     }
 
-    /// Human name for the instrument behind this row.
-    private var instrumentLabel: String? {
-        switch stats?.measurementSource {
-        case "camera": "Camera"
-        // The Watch is the default instrument for every session; a chip
-        // saying so on all of them was noise. Only a DIFFERENT instrument is
-        // worth a label.
-        case "watch": nil
-        default: nil
-        }
+    private func metaLine(_ session: Session) -> String {
+        var parts = [headerWhen(session), SessionListSupport.duration(session.durationSec)]
+        if let sound = SoundCatalog.title(for: session.frequencyID) { parts.append(sound) }
+        return parts.joined(separator: " · ")
     }
-
-    // MARK: Signal tiles
 
     private func tiles(_ stats: MeditationStats) -> some View {
         HStack(spacing: 8) {
