@@ -133,5 +133,67 @@ enum DemoData {
                                          note: "Could not settle at all today."))
         try? context.save()
     }
+
+    /// One noisy, honest, low-scoring session WITH a readable breath, for
+    /// screenshots (`PREVIEW_NOISY=1`). The point of the noise is the point of
+    /// the product: the instrument is sensitive, so a restless sit LOOKS
+    /// restless. Deterministic wobble, no randomness, so every capture of it
+    /// is identical. Idempotent via a fixed timestamp.
+    static func seedNoisyBad(in context: ModelContext) {
+        let cal = Calendar.current
+        let day = cal.date(byAdding: .day, value: -1, to: Date())!
+        let start = cal.date(bySettingHour: 19, minute: 12, second: 0, of: day)!
+
+        let existing = (try? context.fetch(FetchDescriptor<Session>())) ?? []
+        guard !existing.contains(where: { abs($0.startedAt.timeIntervalSince(start)) < 60 })
+        else { return }
+
+        let dur = 720
+        let n = dur / 5   // 144 windows
+
+        // Heart: drifts UP 71 -> 81 with visible beat-to-window wobble.
+        let wob: [Double] = [0.0, 1.8, -1.2, 2.4, -0.6, 1.1, -1.9, 0.7]
+        let hr: [Double] = (0..<n).map { i in
+            let ramp = 71.0 + 10.0 * Double(i) / Double(n - 1)
+            let sway = 1.6 * sin(Double(i) / 3.1)
+            return ramp + sway + wob[i % wob.count]
+        }
+
+        // Stillness: low and jagged, never settling.
+        let jag: [Double] = [0.42, 0.18, 0.51, 0.22, 0.35, 0.12, 0.47, 0.28,
+                             0.15, 0.44, 0.24, 0.38]
+        let still: [Double] = (0..<n).map { i in
+            min(0.6, max(0.05, jag[i % jag.count] + 0.06 * sin(Double(i) / 5.0)))
+        }
+
+        // Breath: READ, but fast and uneven, wandering 8-12/min, with patches
+        // the engine could not follow (zeros, not plotted). Roughly 72%
+        // readable, so it displays plainly, without the partial-read tag.
+        let breath: [Double] = (0..<n).map { i in
+            if (i % 11) < 3 { return 0 }   // unreadable stretch
+            let wander = 9.8 + 1.6 * sin(Double(i) / 7.0)
+            let jitter = 0.9 * sin(Double(i) / 2.3) + 0.5 * sin(Double(i) / 1.4)
+            return max(6.5, min(13.5, wander + jitter))
+        }
+
+        let session = Session(mode: "silence", bellyBreathing: false,
+                              frequencyID: nil, startedAt: start, durationSec: dur)
+        let stats = MeditationStats(
+            sessionID: session.id,
+            heartRateTimeseries: hr, meanHR: 76, startHR: 71, endHR: 81,
+            hrDecline: -10,
+            stillnessTimeseries: still, stillnessScore: 0.31,
+            stillnessMethod: "total",
+            breathingRateTimeseries: breath, breathDepthTimeseries: [],
+            meanBreathingRate: 9.8, breathingRegularity: 0.34,
+            resonanceMatchScore: nil,
+            overallScore: 0.29, windowSec: 30, hopSec: 5
+        )
+        context.insert(session)
+        context.insert(stats)
+        context.insert(SessionReflection(sessionID: session.id, rating: 4,
+                                         note: "Mind was racing the whole time."))
+        try? context.save()
+    }
 }
 #endif

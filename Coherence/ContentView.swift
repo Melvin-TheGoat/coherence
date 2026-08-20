@@ -118,6 +118,9 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_HISTORY"] == "1" {
                 DemoData.seedHistory(in: context)
             }
+            if ProcessInfo.processInfo.environment["PREVIEW_NOISY"] == "1" {
+                DemoData.seedNoisyBad(in: context)
+            }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
