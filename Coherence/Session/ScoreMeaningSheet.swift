@@ -44,17 +44,21 @@ struct ScoreMeaningSheet: View {
                         .foregroundStyle(AppColor.textPrimary)
                         .padding(.top, 18)
 
-                    input("wind", "Breath.",
-                          "Slow breathing is the switch. Around six a minute flips it hardest.",
-                          AppColor.calmAccent)
-                    input("heart.fill", "Heart.",
-                          "A heart that drifts down is the stress system letting go.",
-                          AppColor.calmAccent)
+                    // Ordered by weight, heaviest first, so the list reads as
+                    // the score is actually built (v5: heart half, stillness
+                    // .30, breath .20 and binary). Breath used to lead from the
+                    // era when it carried .45; Melvin caught the stale order.
+                    input("heart.fill", "Heart, half the score.",
+                          "A heart that drifts down and stays down is the stress system letting go. The biggest single input.",
+                          AppColor.accentGold)
                     input("figure.mind.and.body", "Stillness.",
-                          "A quiet body means a quiet system.",
+                          "A quiet body means a quiet system, measured the whole session.",
+                          AppColor.accentGold)
+                    input("wind", "Breath, the doorway.",
+                          "Opening with a few minutes of slow breathing earns full credit here. It is the smallest slice, and it is all or nothing.",
                           AppColor.accentGold)
                     input("clock", "Time.",
-                          "Getting there counts. Staying there counts more.",
+                          "Ten settled minutes can score 100. Longer sits earn a small bonus, but thirty restless minutes never beat five settled ones.",
                           AppColor.accentGold)
                 }
                 .padding(AppMetrics.screenPadding)

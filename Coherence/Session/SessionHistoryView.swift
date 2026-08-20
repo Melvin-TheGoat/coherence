@@ -14,6 +14,7 @@ struct JourneyView: View {
     @Query private var allStats: [MeditationStats]
     @Query private var reflections: [SessionReflection]
     @Query private var users: [User]
+    @Environment(\.dismiss) private var dismiss
 
     /// The month currently shown in the calendar (any date within it).
     @State private var monthAnchor = Date()
@@ -36,6 +37,13 @@ struct JourneyView: View {
             .screenBackground()
             .navigationTitle("Your journey")
             .navigationBarTitleDisplayMode(.inline)
+            // Presented full-screen, so the way home must be a button: the
+            // old sheet's swipe-down went away with the sheet.
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
+                }
+            }
         }
     }
 
