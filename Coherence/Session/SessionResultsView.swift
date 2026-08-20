@@ -144,18 +144,6 @@ struct SessionResultsView: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Breath is the intervention; a settling heart is the evidence it
-            // landed. Shown only when both actually happened, and never negated
-            // when they didn't: plenty of people reach the same state without
-            // ever slowing their breath.
-            if let coupling = VerdictEngine.doorwayCoupling(
-                doorwayRate: stats.breathDoorwayRate, hrDecline: stats.hrDecline) {
-                Text(coupling)
-                    .font(AppFont.caption.weight(.medium))
-                    .foregroundStyle(AppColor.calmAccent)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 2)
-            }
 
             HStack(spacing: 10) {
                 if let standing {
@@ -206,12 +194,21 @@ struct SessionResultsView: View {
         HStack(spacing: 8) {
             ForEach(tileData(stats), id: \.label) { tile in
                 VStack(spacing: 2) {
-                    Text(tile.value)
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(tile.teal ? AppColor.calmAccent : AppColor.accentGold)
-                        .monospacedDigit()
-                        .minimumScaleFactor(0.7)
-                        .lineLimit(1)
+                    if tile.value.isEmpty {
+                        // The unread state: the signal's own glyph, quiet, at
+                        // the same optical size as the numbers beside it.
+                        Image(systemName: "lungs")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                            .frame(height: 22)
+                    } else {
+                        Text(tile.value)
+                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .foregroundStyle(tile.teal ? AppColor.calmAccent : AppColor.accentGold)
+                            .monospacedDigit()
+                            .minimumScaleFactor(0.7)
+                            .lineLimit(1)
+                    }
                     Text(tile.label.uppercased())
                         .font(.system(size: 8, weight: .bold))
                         .tracking(0.6)
@@ -232,7 +229,16 @@ struct SessionResultsView: View {
         // The session average, deliberately: the curve right below this tile
         // shows the whole session, so a headline naming only the slow opening
         // would contradict its own picture.
-        if let r = stats.meanBreathingRate { t.append(("Breaths/min", String(format: "%.1f", r), true)) }
+        //
+        // The tile is ALWAYS there. It used to vanish when no breath was read,
+        // so a two-tile session looked like a different product from a
+        // three-tile one. An unread breath shows a lungs glyph instead of a
+        // number (rendered by `tiles`), and the card below the graphs says why.
+        if let r = stats.meanBreathingRate {
+            t.append(("Breaths/min", String(format: "%.1f", r), true))
+        } else {
+            t.append(("Breath not read", "", true))
+        }
         return t
     }
 

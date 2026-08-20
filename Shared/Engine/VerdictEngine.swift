@@ -50,33 +50,8 @@ public enum VerdictEngine {
     public static func verdict(for m: Inputs) -> Verdict {
         let overall = m.overallScore ?? 0
 
-        // When the coupling line is going to appear under this sentence, it
-        // carries the breath and heart facts, so the sentence must not. Both
-        // texts were built from the same two numbers, and on every good session
-        // the screen said everything twice: Melvin caught it on a screenshot
-        // ("heart settled 13... breath slowed to 5.6" followed by "Breath
-        // slowed to 5.6, and your heart followed, down 13").
-        let couplingWillShow = doorwayCoupling(doorwayRate: m.breathDoorwayRate,
-                                               hrDecline: m.hrDecline) != nil
-
         // Collect true, concrete claims — strongest first within each signal.
         var claims: [String] = []
-
-        if couplingWillShow {
-            // The one signal the coupling line does not cover.
-            if let s = m.stillnessScore {
-                if s >= 0.85 { claims.append("body went almost fully still") }
-                else if s >= 0.65 { claims.append("body mostly settled") }
-                else if s < 0.4 { claims.append("body stayed restless") }
-            }
-            let headline = headlineFor(overall)
-            let sentence = claims.isEmpty
-                ? (overall >= 0.55 ? "The signals agree: you settled."
-                                   : "A quieter read this time. Showing up still counts.")
-                : claims.prefix(3).joined(separator: ", ")
-                    .replacingFirstLetterCapitalized() + "."
-            return Verdict(headline: headline, sentence: sentence)
-        }
 
         if let d = m.hrDecline {
             if d >= 10 { claims.append("heart settled \(Int(d.rounded())) beats") }
@@ -199,11 +174,6 @@ public enum VerdictEngine {
         }
     }
 
-    public static func doorwayCoupling(doorwayRate: Double?, hrDecline: Double?) -> String? {
-        guard let rate = doorwayRate, let drop = hrDecline, drop >= 3 else { return nil }
-        return String(format: "Breath slowed to %.1f, and your heart followed, down %d.",
-                      rate, Int(drop.rounded()))
-    }
 }
 
 private extension String {
