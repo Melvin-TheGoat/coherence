@@ -6,14 +6,37 @@ import XCTest
 /// signals actually show, and a weak session is coached honestly, never shamed.
 final class VerdictEngineTests: XCTestCase {
 
-    func test_strongSession_namesEverySignal() {
-        let v = VerdictEngine.verdict(for: .init(
+    /// The hero is the sentence PLUS the coupling line, and between them every
+    /// signal is named exactly once. They used to both carry breath and heart,
+    /// built from the same two numbers, so every good session said everything
+    /// twice. Melvin caught it on a screenshot.
+    func test_strongSession_namesEverySignalOnceAcrossBothLines() {
+        let inputs = VerdictEngine.Inputs(
             overallScore: 0.81, stillnessScore: 0.88, hrDecline: 11,
             meanBreathingRate: 5.8, resonanceMatchScore: 0.72,
-            breathDoorwayRate: 5.8, breathDoorwayHeldSec: 180, bellyBreathing: true))
+            breathDoorwayRate: 5.8, breathDoorwayHeldSec: 180, bellyBreathing: true)
+        let v = VerdictEngine.verdict(for: inputs)
+        let coupling = VerdictEngine.doorwayCoupling(doorwayRate: 5.8, hrDecline: 11)
+
         XCTAssertEqual(v.headline, "Your practice landed.")
+        XCTAssertNotNil(coupling)
+
+        // The coupling line owns breath and heart.
+        XCTAssertTrue(coupling!.contains("5.8"), coupling!)
+        XCTAssertTrue(coupling!.contains("11"), coupling!)
+        // The sentence owns what's left, and repeats neither.
+        XCTAssertTrue(v.sentence.contains("still"), v.sentence)
+        XCTAssertFalse(v.sentence.contains("breath"), "the sentence repeats the coupling line")
+        XCTAssertFalse(v.sentence.contains("beats"), "the sentence repeats the coupling line")
+    }
+
+    /// With no doorway there is no coupling line, so the sentence must carry
+    /// heart and stillness itself, exactly as before.
+    func test_noDoorway_sentenceStillNamesTheSignals() {
+        let v = VerdictEngine.verdict(for: .init(
+            overallScore: 0.7, stillnessScore: 0.88, hrDecline: 11,
+            bellyBreathing: false))
         XCTAssertTrue(v.sentence.contains("11 beats"), v.sentence)
-        XCTAssertTrue(v.sentence.contains("breath slowed"), v.sentence)
         XCTAssertTrue(v.sentence.contains("still"), v.sentence)
     }
 

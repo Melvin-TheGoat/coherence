@@ -40,7 +40,15 @@ struct SessionResultsView: View {
                             hero(stats)
                             tiles(stats)
                             if stats.breathDoorwayRate != nil { resonanceChip }
-                            ForEach(SessionEvidence.series(from: stats)) { graphCard($0) }
+                            let series = SessionEvidence.series(from: stats)
+                            ForEach(series) { graphCard($0) }
+                            // Breath never silently vanishes. When nothing was
+                            // readable the card stays, and says so, because a
+                            // missing section reads as a bug and an honest
+                            // absence reads as an instrument.
+                            if !series.contains(where: { $0.kind == .breathing }) {
+                                breathingUnreadCard
+                            }
                             shareButton
                         } else {
                             missingStatsCard
@@ -398,6 +406,32 @@ struct SessionResultsView: View {
             Text("This session's measurements aren't on this device. Results are kept only on the device that recorded them, and they're never uploaded.")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
+        }
+        .card()
+    }
+
+    /// The breathing card for a session with no readable breath.
+    ///
+    /// "Too quiet to read" is deliberate: it blames the signal, not the
+    /// sitter, and it is literally true, since the stiller the body the
+    /// smaller the wave. The caption states what reads best without ever
+    /// claiming breathing always works, which is the line Aziz drew for
+    /// user-facing copy.
+    private var breathingUnreadCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Breathing")
+                    .font(AppFont.headline)
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                Text("too quiet to read")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            Text("No steady breath rose above the session's own movement this time. Slow, deliberate breathing, around six a minute, is what the wrist reads best.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .card()
     }
