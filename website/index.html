@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>808 · Meditation, measured on your Apple Watch</title>
-<meta name="description" content="The first app that scores your meditation from your own body. Your Apple Watch reads stillness, heart rate and breathing while you sit, and shows you the evidence afterwards.">
-<meta property="og:title" content="808 · Meditation, measured">
-<meta property="og:description" content="The first app that scores your meditation from your own body.">
+<meta name="description" content="Meet 808, the first app that scores your meditation from your body, with all the tools to verify, track, and share your practice.">
+<meta property="og:title" content="Make meditation easy with 808">
+<meta property="og:description" content="The first app that scores your meditation from your body.">
 <meta property="og:image" content="img/shot-share.png">
 <link rel="preload" href="fonts/manrope-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/hanken-var.woff2" as="font" type="font/woff2" crossorigin>
@@ -22,8 +22,8 @@
   @font-face { font-family:'DM Mono'; src:url('fonts/dmmono-500.woff2') format('woff2');
     font-weight:500; font-display:swap; }
 
-  /* ---- the app's own tokens. Gold = what you achieved, teal = what your
-         body did. One gold thing per section, never both loud at once. ---- */
+  /* ---- the app's own tokens. One accent, gold, everywhere. The old
+         two-colour grammar was cut in the app and dies here with it. ---- */
   :root{
     --bg:#13100D;
     --card:#221E19;
@@ -31,11 +31,9 @@
     --border:#2E2A23;
     --fg:#F5F3EC;
     --muted:#9A9A93;
-    --dim:#55534E;                 /* unlit words, quiet grid lines */
+    --dim:#55534E;
     --gold:#D4AF37;
-    --gold-ink:#17130A;            /* text ON a gold plate */
-    --teal:#73A8A1;
-    --ember:oklch(62% .10 32);     /* cost and loss, never alarm */
+    --gold-ink:#17130A;
     --display:'Manrope', ui-sans-serif, system-ui, sans-serif;
     --body:'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
     --mono:'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -48,9 +46,10 @@
     font-family:var(--body); font-size:17px; line-height:1.6;
     -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
+  body.has-banner{ padding-bottom:84px; }
   ::selection{ background:rgba(212,175,55,.28); }
-  /* height:auto or the width/height attributes win and a phone
-     screenshot renders at its full 2622px natural height */
+  /* height:auto is load-bearing: the width/height attributes reserve layout
+     space, and without it a 320px-wide phone keeps its 2622px attribute height. */
   img{ max-width:100%; height:auto; display:block; }
   a{ color:var(--gold); text-decoration:none; }
   a:hover{ text-decoration:underline; }
@@ -72,9 +71,7 @@
   .prose b{ color:var(--fg); font-weight:600; }
 
   /* ---- masthead ---- */
-  .masthead{
-    display:flex; align-items:center; gap:14px; padding:22px 0 8px;
-  }
+  .masthead{ display:flex; align-items:center; gap:14px; padding:22px 0 8px; }
   .wordmark{ display:flex; align-items:center; gap:10px;
     font-family:var(--display); font-weight:800; font-size:22px; }
   .wordmark svg{ width:30px; height:30px; }
@@ -84,24 +81,16 @@
     text-transform:uppercase; padding:12px 4px; }
 
   /* ---- hero ---- */
-  .hero{
-    display:grid; grid-template-columns:1.15fr .85fr; gap:44px;
-    align-items:center; padding:56px 0 72px;
-  }
-  h1{
-    font-size:clamp(34px,5.6vw,56px); font-weight:800; letter-spacing:-.025em;
-    line-height:1.06; margin:0 0 18px;
-  }
+  .hero{ display:grid; grid-template-columns:1.15fr .85fr; gap:44px;
+    align-items:center; padding:56px 0 72px; }
+  h1{ font-size:clamp(34px,5.4vw,54px); font-weight:800; letter-spacing:-.025em;
+    line-height:1.08; margin:0 0 18px; }
   h1 .em{ color:var(--gold); }
   .lede{ font-size:18px; color:var(--muted); max-width:54ch; margin:0 0 26px; }
   .lede b{ color:var(--fg); font-weight:600; }
 
-  /* the phone frame: raw simulator pixels inside a bezel */
-  .phone{
-    border-radius:44px; border:1px solid var(--border);
-    overflow:hidden; background:#000;
-    box-shadow:0 30px 80px rgba(0,0,0,.5);
-  }
+  .phone{ border-radius:44px; border:1px solid var(--border); overflow:hidden;
+    background:#000; box-shadow:0 30px 80px rgba(0,0,0,.5); }
   .hero .phone{ max-width:320px; justify-self:center; }
 
   /* ---- waitlist form ---- */
@@ -123,7 +112,7 @@
   .check{ display:flex; align-items:center; gap:9px; margin-top:12px;
     color:var(--muted); font-size:14px; cursor:pointer; min-height:44px; }
   .check input{ width:17px; height:17px; accent-color:var(--gold); }
-  .formerr{ display:none; color:var(--ember); font-size:14px; margin:8px 0 0; }
+  .formerr{ display:none; color:#C08A6B; font-size:14px; margin:8px 0 0; }
   .microcopy{ font-family:var(--mono); font-size:11px; letter-spacing:.06em;
     text-transform:uppercase; color:var(--dim); margin:10px 0 0; }
   .done{ display:none; padding:18px 20px; background:var(--card);
@@ -131,20 +120,15 @@
   .done b{ font-family:var(--display); }
   .done p{ margin:4px 0 0; color:var(--muted); font-size:15px; }
 
-  /* ---- the mission: pinned, words lighting as you scroll ---- */
+  /* ---- the mission, lit word by word ---- */
   .mission{ height:320svh; position:relative; }
-  .mission-pin{
-    position:sticky; top:0; height:100svh;
-    display:grid; place-items:center; padding:0 22px;
-  }
-  .mission p{
-    max-width:820px; margin:0;
+  .mission-pin{ position:sticky; top:0; height:100svh;
+    display:grid; place-items:center; padding:0 22px; }
+  .mission p{ max-width:860px; margin:0;
     font-family:var(--display); font-weight:700;
-    font-size:clamp(24px,4.4vw,44px); line-height:1.3; letter-spacing:-.015em;
-    text-wrap:balance;
-  }
-  /* Lit by default so the paragraph reads with JavaScript off. The script
-     adds .dimmable on load, then lights word by word from scroll position. */
+    font-size:clamp(24px,4.2vw,42px); line-height:1.32; letter-spacing:-.015em;
+    text-wrap:balance; }
+  /* Lit by default so the paragraph reads with JavaScript off. */
   .mission p span{ color:var(--fg); transition:color .18s linear; }
   .mission.dimmable p span{ color:var(--dim); }
   .mission.dimmable p span.lit{ color:var(--fg); }
@@ -153,49 +137,6 @@
     .mission-pin{ position:static; height:auto; }
     .mission.dimmable p span{ color:var(--fg); }
   }
-
-  /* ---- the wall ---- */
-  .wall{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:14px; margin-top:38px; }
-  .wall .q{
-    padding:20px 22px; border-radius:18px; background:var(--card-soft);
-    border:1px solid var(--border);
-  }
-  .wall .q.verbatim{ background:var(--card); }
-  .wall .q p{ margin:0 0 10px; font-size:16.5px; line-height:1.55; color:var(--muted); }
-  .wall .q.verbatim p{ color:var(--fg); font-weight:500;
-    font-size:18px; }
-  .wall .who{ font-family:var(--mono); font-weight:500; font-size:12px;
-    letter-spacing:.08em; text-transform:uppercase; color:var(--gold); }
-  .wallnote{ margin-top:16px; font-size:13px; color:var(--dim); max-width:62ch; }
-
-  /* ---- testimonials ---- */
-  .cards{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:14px; margin-top:38px; }
-  .tcard{
-    display:flex; flex-direction:column; gap:12px;
-    padding:22px; border-radius:18px; background:var(--card);
-    border:1px solid var(--border);
-  }
-  .tcard h3{ margin:0; font-size:16px; font-weight:700; }
-  .tcard blockquote{ margin:0; font-size:15px; line-height:1.6;
-    color:var(--muted); flex:1; }
-  .stars{ color:var(--gold); font-size:13px; letter-spacing:2px; }
-  .tcard .who{ font-family:var(--mono); font-size:12px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--fg); }
-  .tcard .who span{ color:var(--dim); }
-
-  /* ---- research figures ---- */
-  .figs{ display:grid; gap:0; margin-top:16px; }
-  .figs.three{ grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .figs > div{ border-top:1px solid var(--border); padding:30px 34px 28px 0; }
-  .figs > div + div{ border-left:1px solid var(--border); padding-left:34px; }
-  .fig{
-    font-family:var(--display); font-weight:800; display:block;
-    font-size:clamp(26px,2.6vw,36px); line-height:1; letter-spacing:-.03em;
-    margin-bottom:14px; font-variant-numeric:tabular-nums; color:var(--gold);
-  }
-  .figs p{ margin:0; font-size:15px; color:var(--muted); }
 
   /* ---- features: the four pain points ---- */
   .pain{ display:grid; grid-template-columns:1fr .9fr; gap:44px;
@@ -210,12 +151,43 @@
     letter-spacing:-.02em; margin:10px 0 12px; }
   .pain .prose{ font-size:16px; }
   .painlab{ font-family:var(--mono); font-weight:500; font-size:12px;
-    letter-spacing:.1em; text-transform:uppercase; color:var(--teal); }
-  .pain ul{ margin:14px 0 0; padding:0; list-style:none; }
-  .pain li{ padding:7px 0 7px 26px; position:relative; color:var(--muted); font-size:15.5px; }
-  .pain li::before{ content:''; position:absolute; left:2px; top:15px;
-    width:8px; height:8px; border-radius:50%; background:var(--teal); opacity:.7; }
-  .pain li b{ color:var(--fg); font-weight:600; }
+    letter-spacing:.1em; text-transform:uppercase; color:var(--gold); }
+
+  /* ---- testimonials ---- */
+  .cards{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:14px; margin-top:38px; }
+  .tcard{ display:flex; flex-direction:column; gap:12px;
+    padding:22px; border-radius:18px; background:var(--card);
+    border:1px solid var(--border); }
+  .tcard h3{ margin:0; font-size:16px; font-weight:700; }
+  .tcard blockquote{ margin:0; font-size:15px; line-height:1.6;
+    color:var(--muted); flex:1; }
+  .stars{ color:var(--gold); font-size:13px; letter-spacing:2px; }
+  .tcard .who{ font-family:var(--mono); font-size:12px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--fg); }
+  .tcard .who span{ color:var(--dim); }
+
+  /* ---- the wall ---- */
+  .wall{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:14px; margin-top:38px; }
+  .wall .q{ padding:20px 22px; border-radius:18px; background:var(--card-soft);
+    border:1px solid var(--border); }
+  .wall .q.verbatim{ background:var(--card); }
+  .wall .q p{ margin:0 0 10px; font-size:16.5px; line-height:1.55; color:var(--muted); }
+  .wall .q.verbatim p{ color:var(--fg); font-weight:500; font-size:18px; }
+  .wall .who{ font-family:var(--mono); font-weight:500; font-size:12px;
+    letter-spacing:.08em; text-transform:uppercase; color:var(--gold); }
+  .wallnote{ margin-top:16px; font-size:13px; color:var(--dim); max-width:62ch; }
+
+  /* ---- research figures ---- */
+  .figs{ display:grid; gap:0; margin-top:16px; }
+  .figs.three{ grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .figs > div{ border-top:1px solid var(--border); padding:30px 34px 28px 0; }
+  .figs > div + div{ border-left:1px solid var(--border); padding-left:34px; }
+  .fig{ font-family:var(--display); font-weight:800; display:block;
+    font-size:clamp(26px,2.6vw,36px); line-height:1; letter-spacing:-.03em;
+    margin-bottom:14px; font-variant-numeric:tabular-nums; color:var(--gold); }
+  .figs p{ margin:0; font-size:15px; color:var(--muted); }
 
   .sources{ margin-top:48px; border-top:1px solid var(--border); padding-top:22px; }
   .sources summary{ font-family:var(--mono); font-size:13px; letter-spacing:.06em;
@@ -224,11 +196,30 @@
   .sources li{ margin:0 0 14px; }
   .sources i{ font-style:italic; }
 
+  .legal{ margin-top:44px; font-size:13px; color:var(--dim); max-width:70ch; }
+
   /* ---- closer ---- */
   .closer{ padding:96px 0 90px; text-align:center; }
-  .closer h2{ margin-bottom:30px; }
+  .closer h2{ margin-bottom:14px; }
   .closer .g{ color:var(--gold); }
+  .closer .prose{ margin:0 auto 30px; }
   .closer .signup, .closer .done{ max-width:480px; margin:0 auto; text-align:left; }
+
+  /* ---- persistent waitlist banner ---- */
+  .banner{
+    position:fixed; left:0; right:0; bottom:0; z-index:50;
+    background:rgba(19,16,13,.92); backdrop-filter:blur(14px);
+    border-top:1px solid var(--border);
+    transform:translateY(110%); transition:transform .35s ease;
+  }
+  .banner.show{ transform:translateY(0); }
+  .banner .inner{ max-width:1080px; margin:0 auto; padding:12px 22px;
+    display:flex; align-items:center; gap:16px; }
+  .banner .btext{ flex:1; min-width:0; }
+  .banner b{ font-family:var(--display); font-size:15px; display:block; }
+  .banner small{ color:var(--muted); font-size:12.5px; }
+  .banner .cta{ min-height:46px; padding:0 20px; font-size:15px; white-space:nowrap; }
+  @media (prefers-reduced-motion: reduce){ .banner{ transition:none; } }
 
   /* ---- footer ---- */
   footer{ border-top:1px solid var(--border); margin-top:20px; }
@@ -244,38 +235,7 @@
   .footnote{ display:flex; flex-wrap:wrap; gap:8px 20px; padding:0 0 34px;
     font-family:var(--mono); font-size:11.5px; color:var(--dim); }
 
-  .legal{ margin-top:44px; font-size:13px; color:var(--dim); max-width:70ch; }
-
-
-  /* ---- the section badge, straight from the Figma ---- */
-  .badge{
-    display:inline-block; font-family:var(--mono); font-weight:500;
-    font-size:12.5px; letter-spacing:.06em; text-transform:none;
-    background:var(--gold); color:var(--gold-ink);
-    padding:9px 18px; border-radius:8px;
-  }
-  .pain .center{ text-align:center; margin-bottom:8px; }
-
-  /* ---- persistent waitlist banner: arrives after the mission ---- */
-  .bar{
-    position:fixed; left:0; right:0; bottom:0; z-index:50;
-    transform:translateY(110%); transition:transform .35s ease;
-    background:rgba(19,16,13,.92); backdrop-filter:blur(14px);
-    border-top:1px solid var(--border);
-  }
-  .bar.on{ transform:translateY(0); }
-  .bar .inner{
-    max-width:1080px; margin:0 auto; padding:12px 22px;
-    display:flex; align-items:center; gap:16px;
-  }
-  .bar p{ margin:0; font-size:14.5px; color:var(--muted); flex:1; }
-  .bar p b{ color:var(--fg); font-weight:600; }
-  .bar .cta{ min-height:46px; padding:0 20px; font-size:15px; }
-  @media (max-width:560px){ .bar p{ display:none; } .bar .cta{ flex:1; } }
-  @media (prefers-reduced-motion: reduce){ .bar{ transition:none; } }
-
-  /* ---- mobile: designed narrow first, these are the wide overrides
-         collapsing back down ---- */
+  /* ---- mobile ---- */
   @media (max-width:880px){
     .hero{ grid-template-columns:1fr; padding-top:34px; }
     .hero .phone{ max-width:270px; }
@@ -292,6 +252,8 @@
   @media (max-width:420px){
     .pain .shots{ flex-direction:column; align-items:center; }
     .pain .phone{ max-width:280px; }
+    .banner b{ font-size:14px; }
+    .banner small{ display:none; }
   }
 </style>
 </head>
@@ -314,11 +276,10 @@
   <!-- ============ hero ============ -->
   <div class="hero">
     <div>
-      <h1>The most powerful tool you have is <span class="em">your mind.</span></h1>
+      <h1>Make meditation easy <span class="em">with 808.</span></h1>
       <p class="lede">
-        808 is the first app that <b>scores your meditation from your own
-        body</b>. Your Apple Watch reads your heartbeat, stillness and
-        breathing while you sit, and shows you the proof after.
+        Meet 808, the first app that <b>scores your meditation from your
+        body</b>, with all the tools to verify, track, and share your practice.
       </p>
 
       <form class="signup" id="join" novalidate>
@@ -348,38 +309,44 @@
 <!-- ============ the mission, lit word by word ============ -->
 <div class="mission" id="mission">
   <div class="mission-pin">
-    <p aria-label="We're taught to take care of our physical bodies, tracking strength, endurance, and fitness to improve our wellbeing. Yet we rarely approach our minds with the same level of intention, even though our mental state shapes how we experience the world around us. Meditation is how we train the mind, build awareness, take responsibility for the reality we create."><!--
-   --><span>We're</span> <span>taught</span> <span>to</span> <span>take</span> <span>care</span> <span>of</span> <span>our</span> <span>physical</span> <span>bodies,</span>
-      <span>tracking</span> <span>strength,</span> <span>endurance,</span> <span>and</span> <span>fitness</span> <span>to</span> <span>improve</span> <span>our</span> <span>wellbeing.</span>
-      <span>Yet</span> <span>we</span> <span>rarely</span> <span>approach</span> <span>our</span> <span>minds</span> <span>with</span> <span>the</span> <span>same</span> <span>level</span> <span>of</span> <span>intention,</span>
-      <span>even</span> <span>though</span> <span>our</span> <span>mental</span> <span>state</span> <span>shapes</span> <span>how</span> <span>we</span> <span>experience</span> <span>the</span> <span>world</span> <span>around</span> <span>us.</span>
-      <span><b>Meditation</b></span> <span><b>is</b></span> <span><b>how</b></span> <span><b>we</b></span> <span><b>train</b></span> <span><b>the</b></span> <span><b>mind,</b></span>
-      <span><b>build</b></span> <span><b>awareness,</b></span> <span><b>take</b></span> <span><b>responsibility</b></span> <span><b>for</b></span> <span><b>the</b></span> <span><b>reality</b></span> <span><b>we</b></span> <span><b>create.</b></span>
+    <p aria-label="The most powerful tool you have is your mind. It shapes your reality. Taking care of your body is mainstream. Taking care of your mind is not. The way you take care of your mind is through meditation. So we built 808 to make meditation measurable, habitual, and universal."><!--
+   --><span>The</span> <span>most</span> <span>powerful</span> <span>tool</span> <span>you</span> <span>have</span> <span>is</span> <span>your</span> <span>mind.</span>
+      <span>It</span> <span>shapes</span> <span>your</span> <span>reality.</span>
+      <span>Taking</span> <span>care</span> <span>of</span> <span>your</span> <span>body</span> <span>is</span> <span>mainstream.</span>
+      <span>Taking</span> <span>care</span> <span>of</span> <span>your</span> <span>mind</span> <span>is</span> <span>not.</span>
+      <span>The</span> <span>way</span> <span>you</span> <span>take</span> <span>care</span> <span>of</span> <span>your</span> <span>mind</span> <span>is</span> <span>through</span> <span>meditation.</span>
+      <span>So</span> <span>we</span> <span>built</span> <span>808</span> <span>to</span> <span>make</span> <span>meditation</span>
+      <span>measurable,</span> <span>habitual,</span> <span>and</span> <span>universal.</span>
     </p>
   </div>
 </div>
 <div id="mission-end"></div>
 
-<!-- ============ 01 how 808 helps: the four screens ============ -->
+<!-- ============ 01 the four pain points ============ -->
 <div class="shell">
   <section id="features">
+    <div class="head">
+      <p class="lab"><span class="n">01</span> / What 808 does about it</p>
+      <h2>Four problems, four answers.</h2>
+    </div>
 
     <div class="pain">
       <div>
-        <p class="center" style="text-align:left"><span class="badge">How 808 helps you take control of your mind</span></p>
-        <h3>Track Your Biofeedback</h3>
+        <span class="painlab">Pain 1 / &ldquo;Am I even doing this right?&rdquo;</span>
+        <h3>Every session scored, honestly.</h3>
         <div class="prose">
-          <p>Measure your heartbeat, stillness, and breathing in real time,
-            then rate your experience to build a clearer picture of what works
-            for you and what doesn't.</p>
-          <p><b>See what's happening beneath the surface.</b></p>
+          <p>Heart rate, stillness and breathing, drawn as curves you can read.
+            One score out of 100. A written takeaway in plain words.</p>
+          <p>And when a session goes badly, 808 says so. A restless sit scores
+            a 24, not a participation trophy. That is exactly why the good
+            sessions mean something.</p>
         </div>
       </div>
       <div class="shots">
         <div class="phone"><img src="img/shot-result-high.png" loading="lazy" width="1206" height="2622"
-          alt="A high scoring session: Your practice landed, score 81, with heart rate and stillness curves"></div>
+          alt="A high scoring session: Your practice landed, score 81, heart settled 13 beats, with heart rate and stillness curves"></div>
         <div class="phone"><img src="img/shot-result-low.png" loading="lazy" width="1206" height="2622"
-          alt="A low scoring session: A restless one, that happens. Score 24, heart rate climbing, stillness jagged"></div>
+          alt="A low scoring session: A restless one, that happens. Score 24, heart rate climbing, stillness jagged, breath not read"></div>
       </div>
     </div>
 
@@ -389,25 +356,27 @@
           alt="The journey screen: a 7 day streak, awards shelf, and a month calendar dotted on practiced days"></div>
       </div>
       <div>
-        <p class="center" style="text-align:left"><span class="badge">How 808 helps you take control of your mind</span></p>
-        <h3>Build Momentum</h3>
+        <span class="painlab">Pain 2 / &ldquo;Nothing keeps me accountable&rdquo;</span>
+        <h3>A streak that notices, and awards you keep.</h3>
         <div class="prose">
-          <p>See your practice evolve through streaks, milestones, awards, and
-            meditation history.</p>
-          <p><b>Stay consistent and see the difference.</b></p>
+          <p>Your streak, a calendar of practiced days, and seventeen awards
+            earned by things you actually did. An award never expires: break a
+            streak and what you earned stays earned.</p>
+          <p>And you will not be doing it alone. Group meditations and
+            challenges run on
+            <a href="https://instagram.com/808meditate">@808meditate</a>.</p>
         </div>
       </div>
     </div>
 
     <div class="pain">
       <div>
-        <p class="center" style="text-align:left"><span class="badge">How 808 helps you take control of your mind</span></p>
-        <h3>Show Your Work</h3>
+        <span class="painlab">Pain 3 / &ldquo;I can't prove I did it&rdquo;</span>
+        <h3>Share the proof.</h3>
         <div class="prose">
-          <p>Meditation is practice. Show that you're doing it. Share your
-            sessions across any social platform and make your commitment
-            visible.</p>
-          <p><b>Turn practice into proof.</b></p>
+          <p>Every session becomes a card carrying your measured score, your
+            curves and your streak. Post it to Instagram, X, or anywhere else.
+            Not a claim that you meditated. A reading.</p>
         </div>
       </div>
       <div class="shots single">
@@ -422,20 +391,25 @@
           alt="The how to meditate guide: a path from First time meditating through Counting Down, Body Scan, Blue Sky, Dual Awareness and more"></div>
       </div>
       <div>
-        <p class="center" style="text-align:left"><span class="badge">How 808 helps you take control of your mind</span></p>
-        <h3>Learn How to Meditate</h3>
+        <span class="painlab">Pain 4 / &ldquo;I don't know how&rdquo;</span>
+        <h3>From first sit to advanced practice.</h3>
         <div class="prose">
-          <p>A built-in guide with eight methods, easiest first. Beginners
-            start with what meditation even is, then counting down and the body
-            scan. Further along: dual awareness, blessing the energy centers,
-            manifestation.</p>
-          <p>Or play a guided meditation or frequency track from YouTube or
-            Spotify, or sit in silence. The Watch measures either way.</p>
-          <p><b>From your first sit to advanced practice.</b></p>
+          <p>A built-in guide with eight methods, easiest first. Complete
+            beginners start with what meditation even is, then counting down
+            and the body scan. Further along: dual awareness, blessing the
+            energy centers, manifestation.</p>
+          <p>Or ignore all of it. Play a guided meditation or frequency track
+            from YouTube or Spotify, or sit in silence. <b>The Watch measures
+            either way.</b></p>
         </div>
       </div>
     </div>
 
+    <p class="legal">
+      Needs an iPhone and an Apple Watch. Start a session from either one.
+      808 is a wellness tool, not a medical device. It doesn't diagnose or
+      treat anything, and your measurements never leave your own devices.
+    </p>
   </section>
 </div>
 
@@ -535,38 +509,42 @@
   </section>
 </div>
 
-<!-- ============ 04 the benefits, measured ============ -->
+<!-- ============ 04 the research ============ -->
 <div class="shell">
   <section id="science">
     <div class="head">
       <p class="lab"><span class="n">04</span> / The research</p>
-      <h2>The benefits are measured, not promised.</h2>
+      <h2>Meditation itself has the evidence.</h2>
     </div>
 
     <div class="figs three">
       <div>
         <span class="fig">+16</span>
         <p>Percentile points on GRE reading comprehension after two weeks of
-          meditation training, in a randomized trial.<sup><a href="#sources">1</a></sup></p>
+          meditation training, in a randomized trial.<sup><a href="#sources">2</a></sup></p>
       </div>
       <div>
         <span class="fig">47</span>
         <p>Meditation trials showing real reductions in anxiety and
-          depression.<sup><a href="#sources">2</a></sup></p>
+          depression.<sup><a href="#sources">3</a></sup></p>
       </div>
       <div>
         <span class="fig">AHA</span>
         <p>Calls meditation a reasonable addition to standard care for
-          cardiovascular risk.<sup><a href="#sources">3</a></sup> One five-year
+          cardiovascular risk.<sup><a href="#sources">4</a></sup> One five-year
           trial in heart patients found 48% fewer deaths, heart attacks and
           strokes, though the group that teaches the technique ran
-          it.<sup><a href="#sources">4</a></sup></p>
+          it.<sup><a href="#sources">5</a></sup></p>
       </div>
     </div>
 
     <details class="sources" id="sources">
       <summary>Where these numbers come from</summary>
       <ol>
+        <li>Killingsworth, M. A., &amp; Gilbert, D. T. (2010). A wandering mind
+          is an unhappy mind. <i>Science</i>, 330(6006), 932.
+          <a href="https://doi.org/10.1126/science.1192439">doi:10.1126/science.1192439</a>.
+          2,250 adults, experience sampling. Mind wandering in 46.9% of samples.</li>
         <li>Mrazek, M. D., Franklin, M. S., Phillips, D. T., Baird, B., &amp;
           Schooler, J. W. (2013). Mindfulness training improves working memory
           capacity and GRE performance while reducing mind wandering.
@@ -607,24 +585,16 @@
         to change anything your doctor told you. Nobody has run that trial yet,
         and we won't pretend otherwise.</p>
     </details>
-
-    <p class="legal">
-      Needs an iPhone and an Apple Watch. Start a session from either one.
-      808 is a wellness tool, not a medical device. It doesn't diagnose or
-      treat anything, and your measurements never leave your own devices.
-    </p>
   </section>
 </div>
 
 <!-- ============ closer ============ -->
 <div class="shell">
-  <div class="closer" id="join-bottom">
-    <div class="prose" style="margin:0 auto 26px; text-align:center">
-      <p>If you meditate, or you're ready to start, 808 was made for you.</p>
-      <p>Track your progress, understand your mind, and connect with a global
-        community of practitioners.</p>
-    </div>
+  <div class="closer" id="closer">
     <h2>Your mind is worth training. <span class="g">Start with 808.</span></h2>
+    <p class="prose">If you meditate, or you're ready to start, 808 was made
+      for you. Track your progress, understand your mind, and connect with a
+      global community of practitioners.</p>
     <form class="signup" novalidate>
       <div class="row">
         <input type="email" required autocomplete="email"
@@ -642,16 +612,6 @@
       <b>You're in</b>
       <p>We'll email you when 808 is ready.</p>
     </div>
-  </div>
-</div>
-
-<!-- The persistent waitlist bar. Hidden until the reader has scrolled past
-     the mission, hidden again while the closer's own form is on screen, and
-     absent entirely with JavaScript off (the hero and closer forms carry it). -->
-<div class="bar" id="bar" hidden>
-  <div class="inner">
-    <p><b>808</b> · meditation, measured on your Apple Watch</p>
-    <a class="cta" href="#join-bottom" style="display:flex;align-items:center">Join the waitlist</a>
   </div>
 </div>
 
@@ -674,14 +634,14 @@
         <ul>
           <li><a href="#join">Join the waitlist</a></li>
           <li><a href="#features">Features</a></li>
-          <li><a href="#science">The science</a></li>
+          <li><a href="#science">The research</a></li>
         </ul>
       </div>
       <div>
         <h4>Company</h4>
         <ul>
           <li><a href="#mission">About 808</a></li>
-          <li><a href="#about">Who built it</a></li>
+          <li><a href="survey.html">Questionnaire</a></li>
         </ul>
       </div>
       <div>
@@ -706,16 +666,27 @@
   </div>
 </footer>
 
+<!-- ============ persistent waitlist banner ============ -->
+<div class="banner" id="banner" aria-hidden="true">
+  <div class="inner">
+    <div class="btext">
+      <b>Make meditation easy with 808</b>
+      <small>Scored from your body. iPhone + Apple Watch.</small>
+    </div>
+    <button class="cta" id="banner-cta" type="button">Join the waitlist</button>
+  </div>
+</div>
+
 <script>
 (function () {
   'use strict';
 
-  // ---- the mission, lit word by word --------------------------------------
-  // The paragraph ships fully lit so it reads with JavaScript off; this dims
-  // it on load and lights it back up from scroll position. Driven by scroll,
-  // never by a timer, and skipped entirely under prefers-reduced-motion.
-  var mission = document.getElementById('mission');
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- the mission, lit word by word --------------------------------------
+  // Ships fully lit so it reads with JavaScript off; this dims it on load and
+  // lights it back up from scroll position. Never a timer.
+  var mission = document.getElementById('mission');
   if (mission && !reduced) {
     var words = mission.querySelectorAll('span');
     mission.classList.add('dimmable');
@@ -724,8 +695,6 @@
       var rect = mission.getBoundingClientRect();
       var total = rect.height - window.innerHeight;
       var progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 1;
-      // The last word lands at 92% so the paragraph holds, complete, for a
-      // beat before it releases.
       var want = Math.floor(Math.min(1, progress / 0.92) * words.length);
       if (want === lit) return;
       for (var i = 0; i < words.length; i++) {
@@ -734,13 +703,49 @@
       lit = want;
     }
     var ticking = false;
-    function onScroll() {
+    window.addEventListener('scroll', function () {
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(function () { paint(); ticking = false; });
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
+    }, { passive: true });
     paint();
+  }
+
+  // ---- persistent waitlist banner ------------------------------------------
+  // Appears once the mission has been read past, stays for the rest of the
+  // page, and hides while the closer's own form is on screen so it never
+  // covers the thing it points at. JS off = no banner; both real forms remain.
+  // Position is computed from rects on every scroll frame rather than from an
+  // IntersectionObserver: an anchor click or fast flick can jump PAST a
+  // sentinel in one frame, and an observer that never saw it never fires.
+  var banner = document.getElementById('banner');
+  var missionEnd = document.getElementById('mission-end');
+  var closer = document.getElementById('closer');
+  if (banner && missionEnd && closer) {
+    var shown = null;
+    function syncBanner() {
+      var pastMission = missionEnd.getBoundingClientRect().top < 0;
+      var c = closer.getBoundingClientRect();
+      var closerVisible = c.top < window.innerHeight && c.bottom > 0;
+      var show = pastMission && !closerVisible;
+      if (show === shown) return;
+      shown = show;
+      banner.classList.toggle('show', show);
+      banner.setAttribute('aria-hidden', show ? 'false' : 'true');
+      document.body.classList.toggle('has-banner', show);
+    }
+    var bTicking = false;
+    window.addEventListener('scroll', function () {
+      if (bTicking) return;
+      bTicking = true;
+      requestAnimationFrame(function () { syncBanner(); bTicking = false; });
+    }, { passive: true });
+    syncBanner();
+    document.getElementById('banner-cta').addEventListener('click', function () {
+      closer.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
+      var field = closer.querySelector('input[type=email]');
+      if (field) setTimeout(function () { field.focus(); }, reduced ? 0 : 450);
+    });
   }
 
   // ---- waitlist ------------------------------------------------------------
@@ -826,27 +831,6 @@
   var forms = document.querySelectorAll('form.signup');
   for (var i = 0; i < forms.length; i++) {
     initForm(forms[i], i === 0 ? 'hero' : 'closer');
-  }
-
-  // ---- the persistent bar ------------------------------------------------
-  // Appears once the mission has been read, leaves while the closer's own
-  // form is on screen so the page never shows two identical CTAs at once.
-  var bar = document.getElementById('bar');
-  var missionEnd = document.getElementById('mission-end');
-  var closer = document.getElementById('join-bottom');
-  if (bar && missionEnd && closer && 'IntersectionObserver' in window) {
-    bar.hidden = false;
-    var pastMission = false, closerVisible = false;
-    function sync() { bar.classList.toggle('on', pastMission && !closerVisible); }
-    new IntersectionObserver(function (entries) {
-      var e = entries[0];
-      if (e.boundingClientRect.top < 0 || e.isIntersecting) pastMission = true;
-      sync();
-    }).observe(missionEnd);
-    new IntersectionObserver(function (entries) {
-      closerVisible = entries[0].isIntersecting;
-      sync();
-    }, { threshold: 0.2 }).observe(closer);
   }
 })();
 </script>
