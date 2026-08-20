@@ -219,11 +219,15 @@ enum SessionListSupport {
         return out
     }
 
-    /// "Tonight · Belly", "Yesterday · Guided", "Fri, Aug 1 · Rain".
+    /// "Yesterday · Manifest", "Fri, Aug 1 · Rain".
     static func rowTitle(_ session: Session) -> String {
-        var what = session.bellyBreathing ? "Belly" : nil
+        // bellyBreathing is still stored (dropping stored properties is a
+        // migration hazard) but the MODE is cut, so the label would name a
+        // feature that no longer exists. Old belly-era rows read like any
+        // other session now.
+        var what: String? = nil
         if let sound = SoundCatalog.title(for: session.frequencyID) {
-            what = what.map { "\($0) · \(sound)" } ?? sound
+            what = sound
         }
         let when = relativeDay(session.startedAt)
         return what.map { "\(when) · \($0)" } ?? when

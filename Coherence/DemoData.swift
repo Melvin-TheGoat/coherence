@@ -69,7 +69,10 @@ enum DemoData {
             let dur = [600, 900, 1530, 300, 600][i % 5]
             let session = Session(mode: pick.mode, bellyBreathing: pick.belly,
                                   frequencyID: pick.id, startedAt: start, durationSec: dur)
-            let n = 14
+            // One point per hop across the WHOLE duration, or the chart's
+            // x-axis ends long before the header's minutes do. Melvin caught a
+            // "5 min" session whose curve stopped at 1.4 minutes.
+            let n = max(14, dur / 5)
             let drop = Double(6 + (i * 7) % 12)                     // HR settles 6–17 bpm
             let hr = (0..<n).map { 74.0 - drop * Double($0) / Double(n - 1) + Double((i + $0) % 3) }
             let still = (0..<n).map { 0.5 + 0.4 * Double($0) / Double(n - 1) }

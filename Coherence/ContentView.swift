@@ -135,7 +135,12 @@ struct ContentView: View {
         .fullScreenCover(item: $coordinator.startFailure) { failure in
             PermissionBlockedView(failure: failure) { coordinator.startFailure = nil }
         }
-        .sheet(item: $sheet, onDismiss: {
+        // Full-screen, not a sheet: a sheet keeps the presenting screen visible
+        // in the strip above it, and on a dark theme that strip reads as a
+        // rendering glitch (Melvin hit it while screenshotting). Every
+        // destination carries its own Done or Cancel, so nothing needs the
+        // swipe-down affordance.
+        .fullScreenCover(item: $sheet, onDismiss: {
             if let next = pendingSheet { pendingSheet = nil; sheet = next }
         }) { which in
             switch which {

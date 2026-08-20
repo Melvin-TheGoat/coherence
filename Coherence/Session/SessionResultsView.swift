@@ -144,19 +144,11 @@ struct SessionResultsView: View {
 
             HStack(spacing: 10) {
                 Spacer(minLength: 0)
-                // The ring carries a quiet "?" — the only entry point to the
-                // explainer. Anyone who doesn't care never reads a word.
+                // Tapping the ring opens the score explainer. No "?" badge:
+                // Melvin cut it, and the sheet is still one tap away for
+                // whoever goes looking.
                 Button { showScoreMeaning = true } label: {
-                    ZStack(alignment: .topTrailing) {
-                        ScoreRing(score: stats.overallScore, size: 52, lineWidth: 6)
-                        Text("?")
-                            .font(.system(size: 10, weight: .heavy))
-                            .foregroundStyle(AppColor.textSecondary)
-                            .frame(width: 17, height: 17)
-                            .background(AppColor.backgroundSecondary, in: Circle())
-                            .overlay(Circle().stroke(AppColor.textSecondary.opacity(0.18), lineWidth: 1))
-                            .offset(x: 4, y: -3)
-                    }
+                    ScoreRing(score: stats.overallScore, size: 52, lineWidth: 6)
                 }
                 .buttonStyle(CardButtonStyle())
             }
@@ -169,7 +161,10 @@ struct SessionResultsView: View {
     private var instrumentLabel: String? {
         switch stats?.measurementSource {
         case "camera": "Camera"
-        case "watch": "Apple Watch"
+        // The Watch is the default instrument for every session; a chip
+        // saying so on all of them was noise. Only a DIFFERENT instrument is
+        // worth a label.
+        case "watch": nil
         default: nil
         }
     }
@@ -347,13 +342,30 @@ struct SessionResultsView: View {
         case .breath:
             // The session average. The doorway's claim lives on the Resonance
             // chip now, so "slowed to" no longer appears twice on one screen.
-            return stats.meanBreathingRate.map { String(format: "%.1f/min avg", $0) }
+            // Below the confident bar the reading says so: the display floor
+            // was lowered (0.35 -> 0.20) so rough curves show, and a rough
+            // curve marked rough is honesty, where a rough curve unmarked is
+            // not. The score never reads these windows either way.
+            guard let mean = stats.meanBreathingRate else { return nil }
+            let base = String(format: "%.1f/min avg", mean)
+            return breathReadIsPartial(stats) ? base + " · partial read" : base
         case .stillness:
             return VerdictEngine.stillnessReading(points: stats.stillnessTimeseries,
                                                   hopSec: Double(stats.hopSec))
         case .other:
             return nil
         }
+    }
+
+    /// True when breath was readable in fewer than the confident fraction of
+    /// windows. Zeros in the stored series mean "window unreadable", so the
+    /// fraction is recoverable for every session ever recorded.
+    private func breathReadIsPartial(_ stats: MeditationStats) -> Bool {
+        let series = stats.breathingRateTimeseries
+        guard !series.isEmpty else { return false }
+        let readable = series.filter { $0 > 0 }.count
+        return Double(readable) / Double(series.count)
+            < SignalEngine.wristConfidentDisplayFraction
     }
 
     // MARK: Coherence differential (camera check)

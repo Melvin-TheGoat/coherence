@@ -138,7 +138,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "5.2.1"
+    static let version = "5.2.2"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -171,11 +171,17 @@ enum SignalEngine {
         // clean fake ~2/min wave at only ~1.6× median accel (measured), far
         // under any absolute threshold that survives normal fidgeting. Relative
         // to the session's own median catches exactly the shift windows.
-    /// Enough windows to SHOW a rate. Deliberately lax: a number on screen that
-    /// is roughly right beats an empty tile, and the user can see the curve and
-    /// judge it. What this must never do is feed the score, which is gated
-    /// separately and strictly (see wristConfidentFraction).
-    private static let wristDisplayFraction = 0.35
+    /// Enough windows to SHOW a rate. Deliberately lax, and lowered again
+    /// 2026-08-20 (0.35 -> 0.20, Melvin): people would rather see a rough
+    /// curve than an empty card. Below 0.35 the results screen labels the
+    /// read as partial, so the laxness is visible rather than silent. What
+    /// this must never do is feed the score, which is gated separately and
+    /// strictly, and none of those gates moved.
+    static let wristDisplayFraction = 0.20
+
+    /// Above this the read is shown plainly; between `wristDisplayFraction`
+    /// and this the UI marks it as a partial read.
+    static let wristConfidentDisplayFraction = 0.35
 
     // MARK: The doorway (calibrated 2026-08-14 on fourteen captures)
     //
