@@ -1,200 +1,260 @@
 # Website revamp: the prompt
 
-Paste the block below back to Claude to execute the rebuild. Everything it needs
-is either stated in it or named by file path, so it should not have to guess.
+Paste the block under **THE PROMPT** back to Claude to execute. Everything it
+needs is stated in it or named by file path.
 
-Written 2026-08-19, against app version 5.2.0 / commit `680cdf7`.
+Written 2026-08-19 against app 5.2.0. Supersedes the first draft.
+
+**Privacy note.** Six real people gave us reviews with their email addresses.
+**Their emails are deliberately not in this file**, because this repo is public.
+First names only. Before publishing, confirm each person is happy to be quoted
+by first name.
 
 ---
 
 ## THE PROMPT
 
-> Rebuild `website/index.html` as a single self-contained static page, replacing
-> the current one. Keep `privacy.html`, `terms.html` and `survey.html` working
-> and restyle them to match. This is the marketing site for **808**, a meditation
-> app for iPhone and Apple Watch.
+> Rebuild `website/index.html` as one self-contained static page. Keep
+> `privacy.html`, `terms.html` and `survey.html` working, restyled to match.
+> This is the marketing site for **808**, a meditation app for iPhone and Apple
+> Watch. Tone: professional, sleek, convincing, trustworthy, and calm. It is
+> selling proof, so it should feel like evidence rather than like hype.
 >
-> ### Source material, all of it already in this repo
+> ### What 808 is, in one line
 >
-> - **`website/DESIGN.md`** — the existing design system, extracted from the live
->   site rather than remembered.
-> - **`PURPOSE.md`** — the mission statement, in Melvin and Aziz's own words. The
->   scroll-highlight section (below) uses this almost verbatim.
-> - **`SCIENCE.md`** — every research citation we are allowed to make, with DOIs.
->   **Do not cite anything that is not in here.**
-> - **`Coherence/Onboarding/OnboardingPayoff.swift`**, `WallScreen` — the
->   celebrity wall, already written and already tiered. Reuse it exactly.
-> - **`Shared/Awards/Award.swift`** — the seventeen awards, for the features
->   section.
-> - **`Shared/Guide/MeditationMethod.swift`** — the eight guided methods.
-> - Current site sections, for what survives: `01 The cost`, `02 Meditation
->   works`, `03 The catch`, `04 So we gave it a watch`, `05 What you sit
->   through`, `06 Who built it`.
+> **The first app that scores your meditation from your own body.** Your Apple
+> Watch reads three signals while you sit: how still you were, how your heart
+> rate drifted, and how slowly you breathed. Nothing is shown during the
+> session. Afterwards you get one score out of 100, three curves, and a plain
+> sentence saying what happened.
+>
+> ### The four pain points, which are the spine of the page
+>
+> Every feature section answers one of these. Do not add a feature block that
+> does not.
+>
+> | Pain | What we do | Screens to show |
+> |---|---|---|
+> | **1. You can't tell if you're doing it right** | Graphs of heart rate, stillness and breathing, a score, and a written takeaway. Even a session that felt bad shows what your body actually did | The three curves, the metric tiles, the overall score, the verdict sentence. **Show one high-scoring and one low-scoring session**, because that honesty is the product |
+> | **2. Nothing keeps you accountable** | Streaks, a calendar, awards, and people practising alongside you | Streak, month calendar, awards shelf. Instagram for the community |
+> | **3. You can't prove you did it** | Share your verified metrics to Instagram, X, anywhere | The "Share your practice" card |
+> | **4. Beginners don't know how, advanced want more** | A guide with eight methods, from breath and body scan up to manifestation and blessing the energy centers | The guide roadmap, one method page |
+>
+> ### Positioning claim: use the narrow version
+>
+> Melvin wants "the FIRST app that tracks your biofeedback to score your
+> meditation."
+>
+> **Ship this instead: "The first app that scores your meditation from your own
+> body."** The broad version says *tracks biofeedback during meditation*, and
+> Apple's own Mindfulness app already logs heart rate during a session, so it is
+> not defensible and has been left out three times for that reason. **Scoring is
+> the genuinely novel part.** The narrow claim keeps the punch and survives
+> someone checking it. Do not write "first app to track biofeedback".
+>
+> ### Source material, all already in this repo
+>
+> - **`PURPOSE.md`** — the mission, in Melvin and Aziz's words. Drives the
+>   scroll-highlight section.
+> - **`SCIENCE.md`** — every citation we may make, with DOIs. **Cite nothing
+>   that is not in here.**
+> - **`website/DESIGN.md`** — the outgoing design system, for what survives.
+> - **`Coherence/Onboarding/OnboardingPayoff.swift`**, `WallScreen` — the famous
+>   practitioners, already tiered.
+> - **`Shared/Awards/Award.swift`** — the 17 awards.
+> - **`Shared/Guide/MeditationMethod.swift`** — the 8 methods.
+> - Current site sections worth keeping: `01 The cost`, `02 Meditation works`,
+>   `03 The catch`, `04 So we gave it a watch`, `06 Who built it`.
 >
 > ### Type
 >
 > Replace Bricolage Grotesque and IBM Plex entirely.
 >
-> | Role | Face | Use |
+> | Role | Face |
+> |---|---|
+> | Display | **Manrope** |
+> | Body | **Hanken Grotesk** |
+> | Label | **DM Mono**, uppercase, 0.1em tracking |
+>
+> All three are open-licensed. **Self-host in `website/fonts/`**, do not
+> hotlink: no third-party request, and nothing breaks when a CDN does. Preload
+> the display weights.
+>
+> ### Colour: take it from the app
+>
+> There is no Figma file. Use the app's own tokens so the site and the product
+> read as one thing.
+>
+> | Token | Value | Means |
 > |---|---|---|
-> | Display | **Manrope** | headlines, the hero, section titles |
-> | Body | **Hanken Grotesk** | all running text |
-> | Label | **DM Mono** | eyebrows, section numbers, captions, uppercase at 0.1em |
+> | Ground | `#13100D` dark, `#F7F5F0` light | |
+> | Card | `#221E19` dark, `#ECEAE3` light | |
+> | Text | `#F5F3EC` dark, `#111114` light | |
+> | Muted | `#9A9A93` dark, `#6B6B6B` light | |
+> | **Gold** | `#D4AF37` on dark. On light: fill `#DCB63F`, text `#8A6D14` | **What you achieved** |
+> | **Teal** | `#73A8A1` | **What your body did** |
+> | Terracotta | `oklch(62% .10 32)` | Cost and loss only, never alarm |
 >
-> All three are on Google Fonts and open-licensed. Self-host them in
-> `website/fonts/` rather than hotlinking, so the page has no third-party
-> request and cannot break when a CDN does. Preload the two display weights.
+> **The rules that carry meaning, not just taste:**
 >
-> ### Colour
+> - **Gold = achieved, teal = the body's signals.** Never both loud in one
+>   element. Every section shows exactly one gold thing, so the page can be
+>   audited in a vertical sweep. Scores, streaks and awards are gold. Heart
+>   rate and breathing curves are teal.
+> - **The two golds on light backgrounds are not interchangeable.** A gold light
+>   enough to be a good button reads 1.78:1 as text on cream, which is
+>   illegible. Fill and text are separate tokens. Do not collapse them.
+> - **Lead dark.** The app defaults to dark, the end cards are dark, and the
+>   research on wellness palettes points the same way: a true dark ground reads
+>   calmer at night and lets one warm accent carry the whole page. Colour drives
+>   most of a first impression and it forms in seconds, so the ground doing the
+>   calming and a single accent doing the pointing is worth more than a second
+>   accent.
+> - Warm gold on near-black is the whole identity. Resist adding blue for
+>   "trust". The trust here comes from showing real numbers, not from a hue.
 >
-> Keep the app's grammar, because the site and the app must read as one product:
-> **gold = what you achieved, teal = what your body did.** Never both loud in the
-> same element.
+> ### Page order
 >
-> - Gold, dark ground: `#D4AF37`. Gold, light ground: fill `#DCB63F`, text
->   `#8A6D14`. **These are two different tokens and the split is deliberate**:
->   a gold light enough to be a good button is unreadable as text on a light
->   background (measured at 1.78:1). Do not collapse them back into one.
-> - Teal `#73A8A1`. Terracotta `oklch(62% .10 32)` for cost and loss only, never
->   as an alarm.
-> - The designer's Figma may specify its own palette. **If it does, it wins for
->   the site**, but keep the gold/teal semantic split intact and say in your
->   summary what changed.
+> 1. **Hero.** "The most powerful tool you have is your mind." Subhead: what 808
+>    does, concretely. One CTA, **Join the waitlist**. Device shot right on
+>    desktop, stacked on mobile.
+> 2. **The mission, as a scroll-highlight.** Spec below. Centrepiece.
+> 3. **Famous practitioners.** Port `WallScreen` exactly, including its two-tier
+>    rule: **Tier 1 quoted verbatim, Tier 2 described as practising and never
+>    quoted.** Kobe Bryant, Oprah Winfrey, Ray Dalio, Jerry Seinfeld, the
+>    Seattle Seahawks. If a quote is not already in `WallScreen`, it does not
+>    exist. Invent nothing.
+> 4. **Testimonials.** Six real ones, below. Card grid, QUITTR's layout is the
+>    reference: quote, five gold stars, first name, small label. Three up then
+>    two centred, collapsing to one column on mobile.
+> 5. **Why meditation works.** The research, the existing charts, the AHA
+>    statement and the Schneider trial with their disclosures. Keep the closing
+>    note that none of it is about 808 specifically.
+> 6. **Features in detail**, structured as the four pain points above.
+> 7. **Who built it.**
+> 8. **Footer.** See below.
 >
-> ### Page structure, in order
+> ### The six testimonials, verbatim
 >
-> 1. **Hero.** "The most powerful tool you have is your mind." Subhead naming
->    what 808 does. One primary CTA: **Join the waitlist**. A device shot on the
->    right on desktop, stacked on mobile. Use a real screenshot, not a
->    placeholder; if none exists, leave a clearly-marked empty frame rather than
->    inventing UI.
-> 2. **The mission, as a scroll-highlight.** See the spec below. This is the
->    centrepiece.
-> 3. **The famous-practitioner wall.** Port `WallScreen` exactly, including its
->    two-tier rule: **Tier 1 is quoted verbatim, Tier 2 is described as
->    practising and never quoted.** Kobe Bryant, Oprah Winfrey, Ray Dalio, Jerry
->    Seinfeld, the Seattle Seahawks. **Invent nothing.** If a quote is not
->    already in `WallScreen`, it does not go on the page.
-> 4. **User testimonials.** Five-star reviews from real people.
->    **BLOCKED until Melvin supplies the spreadsheet.** Build the section, leave
->    the data in one clearly-marked array at the top of the file, and put three
->    obviously-placeholder entries in it. **Never write a fake testimonial**,
->    not even as filler, and never attribute one to a real name we have not been
->    given.
-> 5. **Why meditation works.** The research. Reuse the existing charts and the
->    seven sourced findings; add the AHA cardiovascular statement and the
->    Schneider trial with the disclosures already written in the current
->    sources list. Keep the closing note that none of this research is about 808
->    specifically.
-> 6. **Features, in detail.** Three or four blocks, each with a real screenshot:
->    the guided meditation, the score and its three curves, the calendar and
->    streak, the awards shelf, and the guide's eight methods. Say what each one
->    measures rather than what it promises.
-> 7. **Who built it.** Keep, lightly restyled.
-> 8. **Footer.** See the footer note below, which is important.
+> Use exactly this text. Do not polish it, do not add any, do not invent
+> avatars. First names only. All five stars.
+>
+> 1. **David** — *Finally know if I'm doing it right*
+>    "I've started and quit meditating probably six times. The thing that always
+>    got me was having no idea if anything was happening. First session with this
+>    showed my heart rate dropped 14 beats when i slowed my breathing down and it
+>    showed me where on the graph. I know it sounds small but it's the first time
+>    I've had any proof I wasn't just sitting there wasting ten minutes."
+> 2. **Julia** — *Use it with my own stuff*
+>    "Big one for me is I already have meditations I like on YouTube. This just
+>    runs in the background on my watch and measures. Don't have to switch to
+>    their library or listen to some voice I don't like. And I love seeing the
+>    data, like how my heart responds to different parts of the meditation"
+> 3. **Ayush** — *Breathing tracking works*
+>    "Skeptical it could pick up breathing from a wrist but it caught me slowing
+>    down at the start of a session and then speeding up later on, surprisingly
+>    accurate"
+> 4. **Maria** — *Love sharing my meditations*
+>    "I meditate a lot and always wanted to have a way of sharing that I do, now
+>    I send my friend my meditation score everytime"
+> 5. **Gabriel** — *Basically Strava for meditation*
+>    "I track everything else so figured why not my morning meditation as well. I
+>    love the streak, keeps me accountable, and the achievements are also fun to
+>    hit"
+> 6. **Charlie** — *How to guide was good*
+>    "Complete beginner to meditating and tried it out with low expectations, the
+>    guide turned out to be incredibly helpful in explaining the purpose and
+>    technique to meditating. Cant wait to try out some more advanced meditations"
+>
+> Note the small typos are theirs. Leave them. Cleaned-up testimonials read as
+> written by us.
+>
+> **Do not publish anyone's email address.** First names only.
 >
 > ### The scroll-highlight section
 >
-> The one piece of real motion on the page, modelled on QUITTR's about-page
-> effect that Melvin referenced.
+> The one real piece of motion, modelled on QUITTR's about page. **Melvin
+> demoed that effect on mobile Chrome and Safari and it works fine, so it ships
+> on mobile too.**
 >
 > - The mission paragraph pins to the centre of the viewport while the page
->   continues to scroll behind it.
-> - Words illuminate from `--muted` to `--fg` **one at a time, in reading
->   order**, driven by scroll position rather than by a timer.
-> - It releases and scrolls on normally once the last word is lit.
-> - Text comes from `PURPOSE.md`, trimmed to roughly 40 to 55 words. The
->   paragraph beginning "We believe the most powerful tool you have is your
->   mind" is the right one.
+>   scrolls behind it.
+> - Words light from muted to full, **one at a time in reading order**, driven
+>   by scroll position, not a timer.
+> - Releases and scrolls on once the last word is lit.
+> - Text from `PURPOSE.md`, trimmed to roughly 40 to 55 words. The paragraph
+>   opening "We believe the most powerful tool you have is your mind" is right.
 >
-> Requirements, all of them load-bearing:
+> Non-negotiable:
 >
-> - **Pure CSS where possible** (`animation-timeline: view()`), with a small
->   `IntersectionObserver` plus `requestAnimationFrame` fallback for Safari.
->   Nothing heavier, and no scroll library.
-> - **Every word must be readable with JavaScript disabled.** Ship the text lit,
->   and let the script dim it on load. The 365-cell grid on the current site was
->   built JS-first, rendered as nothing where scripts were blocked, and Aziz saw
->   exactly that. Do not repeat it.
-> - **`prefers-reduced-motion`**: no pinning, no dimming, just the paragraph.
-> - **Never pin on mobile.** Pinned scroll sections fight iOS Safari's collapsing
->   address bar and feel broken. Below 768px, fade the paragraph in as one block.
+> - **CSS-first** via `animation-timeline: view()`, with a small
+>   `IntersectionObserver` plus `requestAnimationFrame` fallback. No scroll
+>   library.
+> - **Readable with JavaScript off.** Ship the words lit and let the script dim
+>   them on load. The current site's 365-cell grid was built JS-first and
+>   rendered as nothing where scripts were blocked. Do not repeat it.
+> - `prefers-reduced-motion`: no pin, no dim.
+> - On mobile use `100svh` rather than `100vh` for the pin, so iOS Safari's
+>   collapsing address bar does not make it jump.
 >
 > ### Mobile
 >
-> Not an afterthought, and not a media query bolted on at the end. Design the
-> narrow layout first and let it widen. Specifically:
+> Design narrow first and let it widen. Tap targets 44px. No horizontal body
+> scroll at any width. Test 375, 390 and 768. The waitlist form reachable
+> without scrolling past two screens.
 >
-> - Tap targets 44px minimum.
-> - No horizontal body scroll at any width; wide content scrolls inside its own
->   container.
-> - Test at 375px, 390px and 768px.
-> - The waitlist form must be reachable without scrolling past two screens.
->
-> ### The footer
+> ### Footer
 >
 > Melvin pasted QUITTR's footer as a structural example. **Take the shape, not
-> the content.** It literally contains "App to Quit Porn", and several of its
-> links describe things 808 does not have.
+> the content**: it literally says "App to Quit Porn" and links to things we do
+> not have. Ship only what exists:
 >
-> Ship only what exists:
+> - **Product**: Join the waitlist (Download on the App Store once live),
+>   Features, The science
+> - **Company**: About 808, Who built it
+> - **Legal**: Terms, Privacy Policy, Subscription terms
+> - **Socials**: Instagram `@808meditate`. TikTok or X **only if the accounts
+>   exist**, ask first
+> - **Support**: `support@meditate808.com`, and **keep `id="support"`**, because
+>   the App Store support URL points at it and silently landed on the top of the
+>   page once already
 >
-> - **Product**: Download on the App Store (or Join the waitlist until it is
->   live), Features, The science.
-> - **Company**: About 808, Who built it.
-> - **Legal**: Terms, Privacy Policy, Subscription terms.
-> - **Socials**: Instagram `@808meditate`. Add TikTok or X **only if the
->   accounts exist** — ask before adding either.
-> - **Support**: `support@meditate808.com`, and keep the `id="support"` anchor,
->   because the App Store support URL points at it and it silently landed on the
->   top of the page once already.
->
-> **Do not create a Blog, Jobs, Extension, Reddit or UGC Army link.** A footer
-> link to a page that does not exist is worse than a shorter footer.
+> **Do not create Blog, Jobs, Extension, Reddit or UGC Army links.**
 >
 > ### Rules that are not negotiable
 >
-> - **No em dashes in any user-facing copy.** Restructure the sentence instead.
->   This is the third time it has been raised. Code comments are exempt.
-> - **No invented statistics, testimonials, user counts, press logos or award
->   badges.** If we cannot source it, it does not ship.
-> - **No "first app to" claim.** Apple's own Mindfulness app already logs heart
->   rate during sessions, so it is unverifiable.
-> - **Never say 808 measures a brain state.** No theta, no brainwaves, no
->   "detects your nervous system". We measure motion and averaged heart rate,
->   and the honest framing already exists in `SCIENCE.md`.
-> - **Do not use the 23-minute refocus statistic.** It has no paper behind it.
+> - **No em dashes in user-facing copy.** Restructure instead. Third time raised.
+> - **No invented statistics, testimonials, user counts, press logos or badges.**
+> - **Never claim 808 measures a brain state.** No theta, no brainwaves. We
+>   measure motion and averaged heart rate.
+> - **Do not use the 23-minute refocus statistic.** No paper behind it.
 > - Keep the wellness disclaimer and the "none of this research is about 808"
 >   note.
-> - Both existing forms keep their **8-second rejecting timer**. AbortController
->   alone was tested against a stalled fetch and still hung for 18 seconds; the
->   first live signup stuck on "Joining" forever.
-> - `survey-sheet.gs` writes by **the sheet's header row**, not the file's. Do
->   not touch that reconciliation.
+> - Both forms keep the **8-second rejecting timer**. AbortController alone was
+>   tested against a stalled fetch and still hung 18 seconds.
+> - `survey-sheet.gs` writes by the **sheet's** header row. Do not touch that.
 >
 > ### Deliverables
 >
 > 1. Rebuilt `website/index.html`, self-contained apart from `website/fonts/`.
-> 2. `privacy.html`, `terms.html`, `survey.html` restyled to match.
-> 3. `website/DESIGN.md` updated to the new system, so the next person inherits
->    the truth rather than this brief.
-> 4. A short summary of every judgment call you made, and an explicit list of
->    anything you left as a placeholder.
+> 2. `privacy.html`, `terms.html`, `survey.html` restyled.
+> 3. `website/DESIGN.md` updated to the new system.
+> 4. A summary of every judgment call, and an explicit list of placeholders.
 >
-> Verify before you hand it over: render it, screenshot desktop and 390px,
-> check both themes if the design keeps a light mode, confirm no horizontal
-> scroll, and confirm the page still reads with JavaScript off.
+> Verify before handing over: render it, screenshot desktop and 390px, confirm
+> no horizontal scroll, confirm it reads with JavaScript off, confirm the
+> scroll-highlight releases cleanly on a phone.
 >
-> **Do not deploy.** Cloudflare Pages is a direct-upload project and is not
-> connected to git, so pushing changes nothing live. Melvin deploys by hand.
+> **Do not deploy.** Cloudflare Pages is direct-upload and not connected to git.
+> Melvin deploys by hand.
 
 ---
 
-## What is still blocking
+## Still needed from Melvin
 
-| Item | Needed from | Notes |
-|---|---|---|
-| Figma file | Melvin's designer | Layout, spacing, and whether the palette changes |
-| Testimonials spreadsheet | Melvin | Names, ratings, text, and permission to publish each |
-| App screenshots | Melvin | Hero, score, calendar, awards, guide. Real ones |
-| TikTok / X accounts | Melvin | Only linked if they exist |
+| Item | Why |
+|---|---|
+| App screenshots | Hero, high AND low score, calendar, streak, awards, share card, guide. Real ones. Placeholders otherwise |
+| Permission to quote | Confirm the six reviewers are happy to appear by first name |
+| TikTok / X | Only linked if the accounts exist |
+| Instagram reels | Optional, if the community section should show them |
