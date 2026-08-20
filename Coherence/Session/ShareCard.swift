@@ -480,7 +480,7 @@ struct SessionShareCard: View {
     /// body's signals (heart, breath), gold for the achieved one (stillness).
     /// Today's card drew every hero curve gold, including heart rate.
     private func curveCard(_ c: ShareCardData.Curve) -> some View {
-        let tint = c.isAchievement ? AppColor.accentGold : AppColor.calmAccent
+        let tint = c.isAchievement ? AppColor.accentGold : AppColor.accentGold
         return VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline) {
                 Text(c.title.uppercased())
@@ -497,7 +497,7 @@ struct SessionShareCard: View {
                     GeometryReader { geo in
                         let x = geo.size.width * h.lowerBound
                         let w = geo.size.width * (h.upperBound - h.lowerBound)
-                        AppColor.calmAccent.opacity(0.16)
+                        AppColor.accentGold.opacity(0.16)
                             .frame(width: max(w, 1))
                             .offset(x: x)
                     }

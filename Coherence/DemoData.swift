@@ -58,8 +58,8 @@ enum DemoData {
         // then a realistic scatter before that.
         let offsets = [0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13, 15, 17, 18, 20, 22, 25]
         let sounds: [(mode: String, id: String?, belly: Bool)] = [
-            ("guided", "guided.identity", false), ("frequency", "manifest", true),
-            ("nature", "rain", false), ("frequency", "theta", true),
+            ("guided", "guided.identity", false), ("frequency", "manifest", false),
+            ("nature", "rain", false), ("frequency", "theta", false),
             ("silence", nil, false), ("nature", "ocean", false),
         ]
         for (i, back) in offsets.enumerated() {
@@ -78,7 +78,7 @@ enum DemoData {
                 sessionID: session.id,
                 heartRateTimeseries: hr, meanHR: 74 - drop / 2, startHR: 74, endHR: 74 - drop, hrDecline: drop,
                 stillnessTimeseries: still, stillnessScore: min(0.95, overall + 0.08),
-                stillnessMethod: pick.belly ? "breathingExcluded" : "total",
+                stillnessMethod: "total",
                 breathingRateTimeseries: pick.belly ? (0..<n).map { 5.7 + 0.4 * sin(Double($0)) } : [],
                 breathDepthTimeseries: pick.belly ? (0..<n).map { _ in 0.08 } : [],
                 meanBreathingRate: pick.belly ? 5.8 : nil,

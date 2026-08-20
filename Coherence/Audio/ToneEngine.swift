@@ -78,7 +78,7 @@ struct GuidedPreset: Identifiable, Equatable {
 enum GuidedCatalog {
     static let all: [GuidedPreset] = [
         GuidedPreset(id: "guided.identity",
-                     title: "The One Who Follows Through",
+                     title: "Manifest Your Dream Life",
                      subtitle: "Identity-shift journey · 25 min",
                      resource: "guided-identity",
                      durationSec: 1530),

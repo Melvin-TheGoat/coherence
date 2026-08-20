@@ -583,10 +583,10 @@ struct SampleSessionScreen: View {
                 }
 
                 if phase == .start {
-                    panel(name: "Heart rate", tint: AppColor.calmAccent,
+                    panel(name: "Heart rate", tint: AppColor.accentGold,
                           value: "72 → 84 bpm · climbing",
                           points: [72, 72.4, 73.2, 73, 74.6, 76, 77.2, 78.6, 80.2, 82, 84],
-                          domain: 63...93, lineTint: AppColor.calmAccent)
+                          domain: 63...93, lineTint: AppColor.accentGold)
                     // Irregular on purpose, and dense enough that catmull-rom
                     // can't smooth it into a serene wave: fidgety must LOOK
                     // fidgety next to the build screen's clean rise.
@@ -595,23 +595,23 @@ struct SampleSessionScreen: View {
                           points: [0.38, 0.15, 0.42, 0.3, 0.12, 0.5, 0.22, 0.44, 0.1, 0.36,
                                    0.52, 0.18, 0.4, 0.14, 0.46, 0.25, 0.35, 0.12, 0.44, 0.2, 0.33],
                           domain: 0...1, lineTint: AppColor.accentGold)
-                    panel(name: "Breath", tint: AppColor.calmAccent,
+                    panel(name: "Breath", tint: AppColor.accentGold,
                           value: "13.8/min · quick, shallow",
                           points: [14.5, 13.2, 14.8, 13.5, 14.2, 13.0, 14.4, 13.6, 14.6, 13.2, 14.0],
-                          domain: 0...20, lineTint: AppColor.calmAccent)
+                          domain: 0...20, lineTint: AppColor.accentGold)
                 } else {
-                    panel(name: "Heart rate", tint: AppColor.calmAccent,
+                    panel(name: "Heart rate", tint: AppColor.accentGold,
                           value: "74 → 63 bpm · settling",
                           points: [74, 73.6, 73, 72, 70.6, 69, 67.6, 66, 65, 63.8, 63],
-                          domain: 53.5...83.5, lineTint: AppColor.calmAccent)
+                          domain: 53.5...83.5, lineTint: AppColor.accentGold)
                     panel(name: "Stillness", tint: AppColor.accentGold,
                           value: "0.86 · nearly still",
                           points: [0.55, 0.66, 0.74, 0.8, 0.84, 0.87, 0.88, 0.89, 0.9, 0.9, 0.91],
                           domain: 0...1, lineTint: AppColor.accentGold)
-                    panel(name: "Breath", tint: AppColor.calmAccent,
+                    panel(name: "Breath", tint: AppColor.accentGold,
                           value: "5.9/min · slow and steady",
                           points: [6.6, 6.3, 6.1, 6.0, 5.9, 5.85, 5.9, 5.85, 5.8, 5.85, 5.9],
-                          domain: 0...20, lineTint: AppColor.calmAccent,
+                          domain: 0...20, lineTint: AppColor.accentGold,
                           doorway: 0.0...3.5)
                 }
             }

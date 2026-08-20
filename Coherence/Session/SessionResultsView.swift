@@ -23,9 +23,6 @@ struct SessionResultsView: View {
     @State private var technique: String?
     @State private var techniqueNote: String = ""
     @State private var streakDays = 0
-    /// Overall scores of this user's EARLIER sessions, newest first —
-    /// the baseline the standing line is measured against.
-    @State private var priorScores: [Double] = []
     @State private var showShareSheet = false
     @State private var showScoreMeaning = false
     @State private var showResonanceMeaning = false
@@ -146,11 +143,6 @@ struct SessionResultsView: View {
 
 
             HStack(spacing: 10) {
-                if let standing {
-                    Text(standing)
-                        .font(AppFont.caption.weight(.medium))
-                        .foregroundStyle(AppColor.accentGoldText)
-                }
                 Spacer(minLength: 0)
                 // The ring carries a quiet "?" — the only entry point to the
                 // explainer. Anyone who doesn't care never reads a word.
@@ -171,12 +163,6 @@ struct SessionResultsView: View {
             .padding(.top, 2)
         }
         .padding(.vertical, 2)
-    }
-
-    /// "calmer than 8 of your last 10" — nil until there's enough history for
-    /// the claim to be true (see `VerdictEngine.minimumHistory`).
-    private var standing: String? {
-        VerdictEngine.standing(score: stats?.overallScore, history: priorScores)
     }
 
     /// Human name for the instrument behind this row.
@@ -204,7 +190,7 @@ struct SessionResultsView: View {
                     } else {
                         Text(tile.value)
                             .font(.system(size: 17, weight: .bold, design: .rounded))
-                            .foregroundStyle(tile.teal ? AppColor.calmAccent : AppColor.accentGold)
+                            .foregroundStyle(AppColor.accentGold)
                             .monospacedDigit()
                             .minimumScaleFactor(0.7)
                             .lineLimit(1)
@@ -252,7 +238,7 @@ struct SessionResultsView: View {
                 HStack(spacing: 7) {
                     Text("Resonance reached")
                         .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.calmAccent)
+                        .foregroundStyle(AppColor.accentGoldText)
                     Text("?")
                         .font(.system(size: 10, weight: .heavy))
                         .foregroundStyle(AppColor.textSecondary)
@@ -262,8 +248,8 @@ struct SessionResultsView: View {
                 }
                 .padding(.horizontal, 13)
                 .padding(.vertical, 6)
-                .background(AppColor.calmAccent.opacity(0.10), in: Capsule())
-                .overlay(Capsule().stroke(AppColor.calmAccent.opacity(0.30), lineWidth: 1))
+                .background(AppColor.accentGold.opacity(0.10), in: Capsule())
+                .overlay(Capsule().stroke(AppColor.accentGoldText.opacity(0.45), lineWidth: 1))
             }
             // Attached to the button, not stacked on the NavigationStack with
             // the other two sheets — several .sheet modifiers on one view is
@@ -673,20 +659,6 @@ struct SessionResultsView: View {
         let allSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
         streakDays = StreakCalculator.streak(from: allSessions.map(\.startedAt)).current
 
-        // Scores of the user's EARLIER sessions, newest first — the baseline the
-        // standing line compares against. Ordered by session start, not by stats
-        // row, so a late-attached row can't jump the queue.
-        let startedAt = allSessions.reduce(into: [UUID: Date]()) { $0[$1.id] = $1.startedAt }
-        let thisStart = session?.startedAt ?? Date()
-        priorScores = ((try? context.fetch(FetchDescriptor<MeditationStats>())) ?? [])
-            .compactMap { row -> (Date, Double)? in
-                guard let sid = row.sessionID, sid != sessionID,
-                      let score = row.overallScore, let when = startedAt[sid],
-                      when < thisStart else { return nil }
-                return (when, score)
-            }
-            .sorted { $0.0 > $1.0 }
-            .map(\.1)
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { showShareSheet = true }
         #endif
@@ -719,7 +691,11 @@ private struct EvidenceGraphCard: View {
 
     // Color grammar: physiology (heart, the doorway band) reads teal;
     // achievement curves (stillness, breath line) read gold.
-    private var lineColor: Color { kind == .heart ? AppColor.calmAccent : AppColor.accentGold }
+    // One colour for every measured curve. There used to be a grammar here
+    // (gold = achieved, teal = the body's signals) and Melvin and Aziz cut it:
+    // two colours on one screen read as two systems, and nobody could say why
+    // the heart was teal while its tile was gold.
+    private var lineColor: Color { AppColor.accentGold }
 
     private var scrubPoint: EvidencePoint? {
         guard let m = selectedMinutes else { return nil }
@@ -757,7 +733,7 @@ private struct EvidenceGraphCard: View {
                     // Resonance chip's "?" above the graphs.
                     RectangleMark(xStart: .value("min", span.lowerBound / 60),
                                   xEnd: .value("min", span.upperBound / 60))
-                        .foregroundStyle(AppColor.calmAccent.opacity(0.14))
+                        .foregroundStyle(AppColor.accentGold.opacity(0.10))
                 }
                 ForEach(series.smoothedPoints) { point in
                     // Fill down to the domain floor, not to zero.
@@ -840,7 +816,7 @@ private struct ResonanceMeaningSheet: View {
                 Text("THE TEAL BAND ON YOUR BREATHING GRAPH")
                     .font(.system(size: 11, weight: .semibold))
                     .tracking(0.8)
-                    .foregroundStyle(AppColor.calmAccent)
+                    .foregroundStyle(AppColor.accentGoldText)
                 Group {
                     Text("In the opening minutes of this session you slowed your breathing to around six breaths a minute and held it there. That pace is special: breath, heart and blood pressure fall into step, and the nervous system settles toward its rest state. Researchers call it resonance breathing.")
                     Text("The band marks the stretch that did it. It is the entry technique working: a few slow minutes to open the door, then your breath returns to normal while the calm carries on.")

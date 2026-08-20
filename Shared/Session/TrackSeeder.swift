@@ -21,7 +21,7 @@ enum TrackSeeder {
         let defaults: [MeditationTrack] = [
             MeditationTrack(
                 type: TrackType.guided.rawValue,
-                title: "The One Who Follows Through",
+                title: "Manifest Your Dream Life",
                 trackDescription: "An identity-shift journey: descend, open, and rehearse the person you're becoming.",
                 audioURL: "guided-identity.m4a",
                 durationSec: 1530,              // guided tracks carry their own length

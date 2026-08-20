@@ -39,7 +39,7 @@ public enum SoundMenu {
 
     public static let groups: [Group] = [
         Group(name: "Guided", entries: [
-            Entry(id: "guided.identity", title: "Identity", detail: "25 min"),
+            Entry(id: "guided.identity", title: "Dream Life", detail: "25 min"),
         ]),
         Group(name: "Nature", entries: [
             Entry(id: "rain", title: "Rain"),
