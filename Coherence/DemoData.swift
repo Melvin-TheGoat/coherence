@@ -93,6 +93,41 @@ enum DemoData {
                                                  rating: 6 + (i * 3) % 5, note: ""))
             }
         }
+        // One honestly bad session, yesterday evening. The website's whole
+        // argument is that a restless sit still shows you what happened, so the
+        // screenshot set needs a real low score next to the high one: climbing
+        // heart rate, jagged stillness, no readable breath.
+        let badDay = cal.date(byAdding: .day, value: -1, to: Date())!
+        let badStart = cal.date(bySettingHour: 18, minute: 40, second: 0, of: badDay)!
+        let bad = Session(mode: "silence", bellyBreathing: false,
+                          frequencyID: nil, startedAt: badStart, durationSec: 480)
+        // 480 s at hopSec 5 = 96 windows, so the curve spans the whole 8
+        // minutes. A 14-point series under an "8 min" header drew a chart whose
+        // x-axis ended at minute one, which reads as a bug in a screenshot.
+        let bn = 96
+        let wobble: [Double] = [0.0, 1.4, -0.8, 0.6, -1.1]
+        let badHR: [Double] = (0..<bn).map { i -> Double in
+            let ramp: Double = 72.0 + 12.0 * Double(i) / Double(bn - 1)
+            return ramp + wobble[i % 5]
+        }
+        let jitter: [Double] = [0.42, 0.18, 0.35, 0.15, 0.30, 0.44, 0.12,
+                                0.28, 0.38, 0.16, 0.33, 0.20, 0.41, 0.24]
+        let badStill: [Double] = (0..<bn).map { jitter[$0 % jitter.count] }
+        let badStats = MeditationStats(
+            sessionID: bad.id,
+            heartRateTimeseries: badHR, meanHR: 78, startHR: 72, endHR: 84,
+            hrDecline: -12,
+            stillnessTimeseries: badStill, stillnessScore: 0.27,
+            stillnessMethod: "total",
+            breathingRateTimeseries: [], breathDepthTimeseries: [],
+            meanBreathingRate: nil, breathingRegularity: nil,
+            resonanceMatchScore: nil,
+            overallScore: 0.24, windowSec: 30, hopSec: 5
+        )
+        context.insert(bad)
+        context.insert(badStats)
+        context.insert(SessionReflection(sessionID: bad.id, rating: 3,
+                                         note: "Could not settle at all today."))
         try? context.save()
     }
 }
