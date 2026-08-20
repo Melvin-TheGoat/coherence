@@ -226,17 +226,12 @@ struct SessionResultsView: View {
         HStack {
             Spacer()
             Button { showResonanceMeaning = true } label: {
-                HStack(spacing: 7) {
-                    Text("Resonance reached")
-                        .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.accentGoldText)
-                    Text("?")
-                        .font(.system(size: 10, weight: .heavy))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(width: 17, height: 17)
-                        .background(AppColor.backgroundSecondary, in: Circle())
-                        .overlay(Circle().stroke(AppColor.textSecondary.opacity(0.18), lineWidth: 1))
-                }
+                // No "?" badge, same call as the score ring: the chip itself
+                // is the tap target and the explainer is one tap away for
+                // whoever goes looking.
+                Text("Resonance reached")
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.accentGoldText)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 6)
                 .background(AppColor.accentGold.opacity(0.10), in: Capsule())
