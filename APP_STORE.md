@@ -277,40 +277,79 @@ Then, in Connect:
 
 ## Enrolling the Organization (the current blocker)
 
-$99/year, at [developer.apple.com/programs/enroll](https://developer.apple.com/programs/enroll/).
-Enrol **on the web, not in the Apple Developer app**: the app route sets the
-membership up as an auto-renewable subscription tied to a personal Apple
-Account, which is the wrong shape for a company.
+**Do NOT pay a third $99.** Melvin and Aziz each already hold an Individual
+membership. Apple lets an existing Individual membership be **converted** to an
+Organization in place, and additional people join that one team for free, so
+the company needs exactly one paid membership, not three.
 
-**Have ready before starting:**
+**Decided 2026-08-24: Melvin's account converts.** He holds the corporate
+paperwork and owns the store listing. It is also the better team technically:
+converting **preserves the Team ID (`WLZQLLHUB3`)**, and that team already has
+the production App ID `com.lockout.meditate808` registered and the
+`iCloud.com.lockout.meditate808` container created and entitled. All of it
+carries over instead of being rebuilt.
 
-| Field | Value | Watch out |
-|---|---|---|
-| Legal entity name | The C-corp's exact registered name | Must match D&B **character for character**, including "Inc." or "Corporation". A DBA or trade name is rejected outright, and this string becomes the **seller name shown on the App Store**. |
-| D-U-N-S Number | The approved number | Allow up to 2 business days after D&B approval for Apple to receive the record. If enrolment says it cannot find you, that lag is usually why. |
-| Work email | An address **on the company domain** | A gmail address is rejected. `melvin@meditate808.com` or similar via Cloudflare Email Routing, which already runs `support@`. |
-| Website | `https://meditate808.com` | Must be live, functional, and on a domain tied to the entity. Ours qualifies. A social profile or a placeholder page does not. |
-| Apple Account | **Two-factor enabled**, person of legal age | Use a NEW Apple Account owned by the company, never a personal one. The account holder controls the whole team forever, and moving it later is painful. |
-| Legal authority | Owner, founder, or executive | Whoever enrols must be able to bind the corporation. If it is not an owner, Apple asks for a reference to confirm authority. |
+### How the conversion works
 
-**Then, in order:**
+Sign in as the Account Holder at
+[developer.apple.com/account](https://developer.apple.com/account) → **Membership
+details** → **Submit a request** next to *Convert to Organization*. (The same
+request can be raised through Contact us → Membership and Account → Program
+Enrollment.)
 
-1. Enrol on the web with the fields above, and complete identity verification.
-2. Wait for Apple to verify. They may phone the number on the D&B record, so
-   make sure it reaches someone; some regions also require notarised documents.
-3. Accept the Program License Agreement and pay the $99.
-4. In App Store Connect, accept the **Paid Applications Agreement** and fill in
-   banking and tax (the corp's EIN, and the US tax forms). **This is the step
-   people forget**, and without it no paid app or subscription can sell, which
-   would block the whole paywall.
-5. Register the App ID `com.lockout.meditate808` with HealthKit, Sign in with
-   Apple, CloudKit and Push, then the Watch App ID, then create the app record.
-6. Add both cofounders as Admins, and set `DEVELOPMENT_TEAM` locally per the
-   signing note in `CLAUDE.md`. The committed `project.yml` keeps
-   `DEVELOPMENT_TEAM: ""`, so nothing personal lands in a commit.
+Supply: the CEO's first and last name, the company name **including the entity
+type** (Inc. / Corp.), the D-U-N-S Number, the company address, and a phone
+number Apple can actually reach. Only a founder or co-founder may request it,
+which both cofounders satisfy.
 
-**Do not register the production bundle IDs anywhere else while waiting.** An
-App ID consumed by an App Store Connect record can never be reused, on any
+Expect several days. Apple may telephone to verify within about two weeks and
+may ask for business documents, so the number on the D&B record has to reach a
+human.
+
+### What this changes about the earlier advice
+
+An earlier draft of this file said to enrol fresh on the web with a new
+company-owned Apple Account. That is correct for someone with no membership and
+wrong here: it would mean paying again and abandoning a team that already holds
+the right App ID and iCloud container. The one genuine cost of converting is
+that the Account Holder is Melvin's personal Apple Account rather than a
+company address. That is reversible: Apple permits transferring the Account
+Holder role to another team member later, so it can move to a company Apple
+Account once one exists.
+
+### Aziz, and the running beta
+
+Aziz joins the converted team as **Admin**, using his own Apple Account, at no
+cost. Roles control access; only the organization pays.
+
+**His TestFlight beta does not come with him.** It lives on his individual team
+under `com.azizmahmud.808` and stays there. That costs us nothing, because the
+store build must ship under `com.lockout.meditate808` regardless, and a
+different bundle ID means a different app record and re-invited testers either
+way. So the beta keeps running on his account during the transition and is
+retired when the org build takes over.
+
+**Do not cancel his membership until the org is verified and the beta is no
+longer needed.** After that it can simply lapse at renewal.
+
+### Then, in order
+
+1. Conversion approved, and the team reads Organization with the corporation's
+   exact legal name.
+2. Accept the **Paid Applications Agreement** in App Store Connect and complete
+   banking and tax with the corp's EIN. **This is the step people forget**, and
+   until it is done no subscription can sell, which silently blocks the entire
+   paywall.
+3. Confirm the App ID `com.lockout.meditate808` carries HealthKit, Sign in with
+   Apple, CloudKit and Push, register the Watch App ID, and create the app
+   record as **808: Meditate**.
+4. Invite Aziz as Admin. Local signing keeps working on both machines: the Team
+   ID is unchanged for Melvin, and Aziz switches his uncommitted `project.yml`
+   to `WLZQLLHUB3` with the `com.lockout.meditate808` prefix when he builds for
+   the org.
+
+**Do not register the production bundle IDs on any other team while waiting.**
+An App ID consumed by an App Store Connect record can never be reused, on any
 team, which is exactly why the beta ships under a personal identifier.
 
 ## Things deliberately not in the listing
