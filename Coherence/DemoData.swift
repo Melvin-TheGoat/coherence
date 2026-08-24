@@ -13,8 +13,24 @@ enum DemoData {
         // 18, which drew ninety seconds of curve under a "10 min" header.
         let n = (600 - 30) / 5 + 1
         let f = { (i: Int) in Double(i) / Double(n - 1) }
-        let hr = (0..<n).map { 75.0 - 13.0 * f($0) }                               // 75 → 62
-        let still = (0..<n).map { 0.60 + 0.30 * f($0) }                            // 0.60 → 0.90
+        // Shaped like a real settle rather than a ruled line: heart rate falls
+        // fast in the first couple of minutes and then wobbles along a floor,
+        // which is what every captured session actually looks like. A linear
+        // ramp reads as placeholder art in a screenshot.
+        let hrWob: [Double] = [0.0, 0.9, -0.7, 1.3, -0.4, 0.6, -1.1, 0.4, 0.8, -0.9]
+        let hr: [Double] = (0..<n).map { i in
+            let settle: Double = 62.0 + 13.0 * exp(-3.4 * f(i))
+            let drift: Double = 0.8 * sin(Double(i) / 5.7)
+            return settle + drift + hrWob[i % hrWob.count]
+        }
+        // Stillness climbs as the body gives up holding itself, with two small
+        // dips where a real sitter shifts.
+        let stillDip: [Double] = [0.0, 0.0, -0.05, 0.0, 0.02, 0.0, -0.03, 0.01]
+        let still: [Double] = (0..<n).map { i in
+            let rise: Double = 0.93 - 0.36 * exp(-3.1 * f(i))
+            let sway: Double = 0.018 * sin(Double(i) / 4.3)
+            return min(0.98, max(0.4, rise + sway + stillDip[i % stillDip.count]))
+        }
         // A slow opening, then natural breathing — the shape the score is built
         // for, and the reason the graph highlights a stretch rather than a band.
         let breaths = (0..<n).map { i -> Double in
