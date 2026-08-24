@@ -603,6 +603,35 @@ UI must coach it, and the 2-signal degrade path must stay.
     userInfo queue. Persist is idempotent by sessionID so double delivery is
     safe. Same family as the stale-WC-queue bugs: the queued channel is never
     prompt.
+- **CAMERA VISION EXPERIMENTS — pilot POSITIVE on 2 real videos (2026-08-24,
+  Melvin's no-Watch idea: score stillness + breath from a propped phone
+  camera).** Offline harness `tools/camera_probe.swift` — Swift + AVFoundation
+  because this Mac has no ffmpeg/numpy/OpenCV, and it is the stack that would
+  ship anyway. Decodes at ~6 fps, block-averages luma to ~240 px, and extracts
+  four signals: global mean |frame diff| (stillness), sub-pixel vertical +
+  horizontal body shift (1-D gradient optical flow on row/column mean
+  profiles), and center-third mean luma (chest-toward-lens). Then the engine's
+  windowed DFT scan (30 s / 5 s hop). Ground truth: videos + matched Watch
+  result screenshots in `~/Desktop/captures/video/` (NOTES.md logs each; NEVER
+  commit — repo is public).
+  - **Findings, both videos:** stillness signature is unmistakable (settle
+    spike → flat floor → getting-up spike). Breathing: Melvin 10-min @ ~2 m,
+    4K — 137/138 windows clear, median 5.6/min vs Watch 7.3 natural (both
+    inside natural-breathing error). Aziz 28-min @ ~0.5 m — first ~10 min read
+    a steady 4.2–6.0/min matching his "6/min at the start" note, then ~11–12.5
+    matching the Watch's 12.5/min session mean. The camera sees the doorway.
+  - **Two calibration lessons, same family as the wrist path:** (1) clarity
+    must be normalized over INDEPENDENT frequency bins (spacing 60/windowSec),
+    not the fine scan grid — overlapping scan points count the same power many
+    times and diluted every peak to ~0.05; (2) drift owns the band edge — a
+    15 s moving-average high-pass first, scan floor 3.5/min, and a peak ON the
+    floor is leakage, clarity zeroed.
+  - **Not yet done:** person/torso ROI (Vision framework) instead of
+    whole-frame profiles; continuity tracking; HR (rPPG — possible but
+    reintroduces the skin-tone validation burden, treat as a later stretch);
+    thermal/battery of a 20-min live camera; the capture path in-app. No HR
+    means score v5 (heart .50) cannot run as-is — a camera session needs its
+    own composition, absence never subtracts.
 - **WRIST BREATHING SHIPPED — posture-free, VERIFIED on-device across 8 live
   sessions (2026-08-07, field-calibrated in 5 rounds like the camera was).**
   Every non-belly session gets a breathing attempt automatically: no mode, no
