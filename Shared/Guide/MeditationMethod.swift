@@ -101,20 +101,20 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             """,
             level: .beginner,
             steps: [
-                "Set aside some time. There is no rule, but 10 to 20 minutes is a good guide. Consider turning on Do Not Disturb.",
-                "Sit comfortably on a well supported surface with a straight back.",
-                "Focus on an anchor. It can be anything, and the most common one is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.",
+                "Set aside some time, 10 to 20 minutes is great. Ensure you are undisturbed.",
+                "Sit comfortably with a straight back on a well supported surface.",
+                "Focus on an anchor. It can be anything, but the most common is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.",
                 "Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one. Breathing deeply and naturally works too if that is what relaxes you.",
                 "Optional: some people find it helps to picture a bright, rising energy filling the body on the inhale, and a soft, grounding energy leaving on the exhale. In Chinese tradition this is yin, the passive release, and yang, the active expansion.",
-                "When your mind wanders off, and it will, notice it and gently bring your attention back to the breath. Expect the wandering. All that matters is that when you notice, you return, gently and without judgement.",
+                "When you inevitably notice your mind has wandered off, calmly bring your attention back to the breath. Remember: the wandering is expected, what matters is that you return, gently and without judgement.",
             ],
             purpose: """
             That is it. The rest is practice.
 
             Meditation is the practice of training your mind. Done regularly it \
-            helps you observe your thoughts without judgement, leading to a \
-            calmer mind, lower stress, better emotional control and a stronger \
-            sense of being present.
+            helps you observe your thoughts without judgement, leading to lower \
+            stress, better emotional control, and a stronger sense of being \
+            present.
             """,
             origin: "",
             variants: []),
