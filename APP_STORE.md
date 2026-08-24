@@ -16,19 +16,16 @@ cannot measure.
 
 ---
 
-## The one open decision: what leads
+## Subtitle (30 max)
 
-The website leads with **"the first app that scores your meditation from your
-own body."** The old store draft led with **"meditation for manifestation."**
-Both are true; only one can be the subtitle. Recommendation below is the
-scoring angle, because it is the differentiator, it matches the site, and
-manifestation survives as a feature and a keyword either way.
+**Score your meditation** *(21 chars)*
 
-| | Subtitle | Chars |
-|---|---|---|
-| **A (recommended)** | Score your meditation | 21 |
-| B | Proof your meditation worked | 28 |
-| C | Meditation for manifestation | 28 |
+Decided by Melvin 2026-08-24: the listing leads with the scoring angle, the
+same pitch as the website ("the first app that scores your meditation from your
+own body"). Manifestation survives as a feature in the description and as a
+keyword, so nothing is lost by not leading with it. Alternatives considered and
+rejected: "Proof your meditation worked" (28), "Meditation for manifestation"
+(28, the old draft's lead).
 
 ## Name (30 max)
 
@@ -156,8 +153,26 @@ Generated and committed at `marketing/appstore/`. Real screens from the iPhone
 The first three are what appear in search results, so they carry the argument:
 proof, then the evidence behind it, then the habit.
 
-**Apple Watch screenshots are a separate required set** if we ship the Watch app
-(we do). Sizes come from the watchOS simulator; not yet captured.
+### Apple Watch (separate required set, we ship a Watch app)
+
+Captured at `marketing/appstore/watch/`, 416x496 (Series 11 46mm, an accepted
+size). Uploaded **raw, no caption frame**: the watch canvas is too small to
+carry text above the device the way the iPhone set does, and plain screenshots
+are the norm on watch listings.
+
+| # | File | Screen |
+|---|---|---|
+| 1 | 01-begin | Start: the mark, the gold Begin orb, the chosen sound |
+| 2 | 02-measuring | Live: elapsed time inside the teal orb, End |
+
+Two gotchas worth keeping, both cost time:
+
+- **watchOS ignores `simctl status_bar override`**, so the real clock shows.
+  Apple does not require 9:41 on watch screenshots.
+- **An unpaired watch simulator draws a red disconnected-phone glyph in the
+  status bar**, which reads as an error state in a listing. Fix by pairing the
+  watch and phone simulators (`xcrun simctl pair <watch> <phone>`) and waiting
+  for the pair to report `connected`, not just `active`.
 
 ## Age rating
 
@@ -217,11 +232,11 @@ not ask. If it does: standard Apple encryption only, exempt.
 Ordered by what blocks what. Items 1 to 4 are gates; nothing else matters until
 they clear.
 
-1. **Organization account active.** The D-U-N-S number has arrived, so
-   enrolment can start. Every remaining item hangs off this, because the
-   shipping bundle IDs (`com.lockout.meditate808*`) must be registered there
-   and never on a personal account. The TestFlight beta is running under Aziz's
-   personal `com.azizmahmud.808`, which cannot become the store build.
+1. **Organization account active.** See the walkthrough below. Every remaining
+   item hangs off this, because the shipping bundle IDs
+   (`com.lockout.meditate808*`) must be registered there and never on a
+   personal account. The TestFlight beta runs under Aziz's personal
+   `com.azizmahmud.808`, which cannot become the store build.
 2. **StoreKit products created** under the Org account with the exact IDs in
    `Store.ProductID` (`.monthly`, `.yearly`, `.lifetime`), prices per the
    agreed ladder. Until products load, `RootView` leaves the app unlocked, so a
@@ -235,17 +250,23 @@ they clear.
    built for exactly this has still never been read) or soften both strings.
    The iCloud freeze was for the beta and lifts when we move to the Org
    account, since that build re-enters review anyway.
-4. **Legal entity swap.** The policy, terms and website footer all name LockOut
-   LLC. If the DE corporation is the entity that owns the app at launch, every
-   mention changes in one pass, and the attorney needs to answer the LLC to
-   corp assignment of the app and the user data.
+4. **Legal entity swap, now unblocked.** The C-corp exists, has its EIN, and is
+   the entity the approved D-U-N-S was issued to (confirmed 2026-08-24), so it
+   is the entity that enrols and therefore the seller name on the App Store.
+   The policy, terms and website footer all still name **LockOut LLC**. Change
+   every mention to the corporation's exact registered name in one pass, and
+   ask the attorney about assigning the app and the user data from the LLC to
+   the corp (the ToS assignment clause and the policy's material-change notice
+   both bear on it). **The name in those documents must match the name on the
+   Apple enrolment**, or the listing contradicts its own legal pages.
 
 Then, in Connect:
 
 5. Age-rating questionnaire (new format, answered honestly).
 6. App Privacy labels set to Product Interaction, per the section above.
-7. Screenshots uploaded: the eight iPhone images in `marketing/appstore/`, plus
-   an Apple Watch set that still needs capturing.
+7. Screenshots uploaded: the eight iPhone images in `marketing/appstore/` and
+   the two Apple Watch images in `marketing/appstore/watch/`. Both sets are
+   done and committed.
 8. Support URL `https://meditate808.com/#support` (the anchor exists), marketing
    URL, privacy URL. The website is a **manual** Cloudflare Pages upload, so any
    copy change there has to be dragged in by hand; pushing to git deploys
@@ -253,6 +274,44 @@ Then, in Connect:
 9. Capabilities on the shipping App ID: HealthKit, Sign in with Apple, CloudKit,
    Push.
 10. Internal TestFlight on the Org build, then external, then submit.
+
+## Enrolling the Organization (the current blocker)
+
+$99/year, at [developer.apple.com/programs/enroll](https://developer.apple.com/programs/enroll/).
+Enrol **on the web, not in the Apple Developer app**: the app route sets the
+membership up as an auto-renewable subscription tied to a personal Apple
+Account, which is the wrong shape for a company.
+
+**Have ready before starting:**
+
+| Field | Value | Watch out |
+|---|---|---|
+| Legal entity name | The C-corp's exact registered name | Must match D&B **character for character**, including "Inc." or "Corporation". A DBA or trade name is rejected outright, and this string becomes the **seller name shown on the App Store**. |
+| D-U-N-S Number | The approved number | Allow up to 2 business days after D&B approval for Apple to receive the record. If enrolment says it cannot find you, that lag is usually why. |
+| Work email | An address **on the company domain** | A gmail address is rejected. `melvin@meditate808.com` or similar via Cloudflare Email Routing, which already runs `support@`. |
+| Website | `https://meditate808.com` | Must be live, functional, and on a domain tied to the entity. Ours qualifies. A social profile or a placeholder page does not. |
+| Apple Account | **Two-factor enabled**, person of legal age | Use a NEW Apple Account owned by the company, never a personal one. The account holder controls the whole team forever, and moving it later is painful. |
+| Legal authority | Owner, founder, or executive | Whoever enrols must be able to bind the corporation. If it is not an owner, Apple asks for a reference to confirm authority. |
+
+**Then, in order:**
+
+1. Enrol on the web with the fields above, and complete identity verification.
+2. Wait for Apple to verify. They may phone the number on the D&B record, so
+   make sure it reaches someone; some regions also require notarised documents.
+3. Accept the Program License Agreement and pay the $99.
+4. In App Store Connect, accept the **Paid Applications Agreement** and fill in
+   banking and tax (the corp's EIN, and the US tax forms). **This is the step
+   people forget**, and without it no paid app or subscription can sell, which
+   would block the whole paywall.
+5. Register the App ID `com.lockout.meditate808` with HealthKit, Sign in with
+   Apple, CloudKit and Push, then the Watch App ID, then create the app record.
+6. Add both cofounders as Admins, and set `DEVELOPMENT_TEAM` locally per the
+   signing note in `CLAUDE.md`. The committed `project.yml` keeps
+   `DEVELOPMENT_TEAM: ""`, so nothing personal lands in a commit.
+
+**Do not register the production bundle IDs anywhere else while waiting.** An
+App ID consumed by an App Store Connect record can never be reused, on any
+team, which is exactly why the beta ships under a personal identifier.
 
 ## Things deliberately not in the listing
 
