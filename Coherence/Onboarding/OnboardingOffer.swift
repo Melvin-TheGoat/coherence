@@ -164,9 +164,28 @@ struct PaywallScreen: View {
     @State private var trackedView = false
 
     @State private var started = false
+    /// The deepest rung the user actually saw, so `free_tier_entered` can say
+    /// how far the ladder got before they settled.
+    @State private var lastRung: DownsellRung?
     @State private var legalDoc: LegalDoc?
-    /// The rung currently on screen. Nil means the prices are showing.
-    @State private var rung: DownsellRung?
+    /// What is covering the prices right now. Nil means the prices are showing.
+    ///
+    /// One cover, switching on a route, for the same reason the results screen
+    /// has one sheet: stacking presentation modifiers on a single view is the
+    /// documented only-one-presents trap.
+    @State private var route: PaywallRoute?
+
+    enum PaywallRoute: Identifiable {
+        case rung(DownsellRung)
+        case freeTier
+
+        var id: String {
+            switch self {
+            case .rung(let r): return "rung-\(r.rawValue)"
+            case .freeTier:    return "free"
+            }
+        }
+    }
     @EnvironmentObject private var store: Store
     @Binding var plan: SubscriptionPlan
     /// The one exit. `true` means a VERIFIED purchase or restore completed;
@@ -309,26 +328,44 @@ struct PaywallScreen: View {
                 // worded as a decision rather than an escape, because the
                 // ladder behind it is an offer and not a trap.
                 if selling || ProcessInfo.processInfo.isPreviewingDownsell {
-                    Button("Not right now") { rung = .trial }
+                    Button("Not right now") {
+                        Analytics.track(.paywallDismissed)
+                        route = .rung(.trial)
+                    }
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.textSecondary)
                         .padding(.top, 8)
                 }
             }
-            .fullScreenCover(item: $rung) { current in
-                DownsellSheet(rung: current, plan: plan) {
-                    // Taking a rung buys the plan that rung sells. A rung that
-                    // congratulated someone and then charged them for a
-                    // different plan would be the deception this ladder avoids.
-                    plan = current.plan
-                    rung = nil
-                    advance()
-                } onDecline: {
-                    // Straight to the next rung, or out. No rung repeats, and
-                    // declining the last one ends the offer for this run rather
-                    // than looping back to the top.
-                    rung = current.next
-                    if current.next == nil { onDone(false) }
+            .fullScreenCover(item: $route) { destination in
+                switch destination {
+                case .rung(let current):
+                    DownsellSheet(rung: current, plan: plan) {
+                        // Taking a rung buys the plan that rung sells. A rung
+                        // that congratulated someone and then charged them for
+                        // a different plan would be the deception this ladder
+                        // avoids.
+                        plan = current.plan
+                        route = nil
+                        advance()
+                    } onDecline: {
+                        // Straight to the next rung, or to the free tier. No
+                        // rung repeats, and the ladder no longer dead-ends:
+                        // 808 is usable without paying, so the last thing it
+                        // says should be that.
+                        route = current.next.map { .rung($0) } ?? .freeTier
+                        lastRung = current
+                    }
+                case .freeTier:
+                    FreeTierScreen {
+                        route = nil
+                        advance()
+                    } onContinueFree: {
+                        Analytics.track(.freeTierEntered(
+                            afterRung: lastRung?.analyticsName ?? "none"))
+                        route = nil
+                        onDone(false)
+                    }
                 }
             }
             .sheet(item: $legalDoc) { doc in
@@ -351,7 +388,15 @@ struct PaywallScreen: View {
     /// A cancelled or failed purchase stays put without comment, because the
     /// system sheet the user just dismissed IS the comment.
     private func advance() {
-        guard selling else { onDone(false); return }
+        guard selling else {
+            #if DEBUG
+            // Review mode: the "purchase" that StoreKit cannot run happens as
+            // a simulated entitlement, so the unlock is real on this build and
+            // the free → trial → unlocked loop can be reviewed end to end.
+            if Store.previewFreeByDefault { store.setPreviewEntitled(true) }
+            #endif
+            onDone(false); return
+        }
         Task { @MainActor in
             if await store.purchase(plan) == .bought {
                 if store.trialEligible { Analytics.track(.trialStarted) }

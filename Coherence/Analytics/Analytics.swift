@@ -46,6 +46,20 @@ enum Analytics {
         case purchase(plan: String)
         case restore
         case entitlementLost
+        /// Settled for free 808. `afterRung` is how far down the ladder they
+        /// got first, so we learn whether the downsells do anything at all.
+        case freeTierEntered(afterRung: String)
+        /// Tapped a locked curve, tile or trend. The single most useful signal
+        /// we have for which piece of evidence actually sells.
+        ///
+        /// **Carries the signal's NAME, never its value.** Heart rate arrives
+        /// via HealthKit and 5.1.3 bans third-party disclosure; a banded score
+        /// inherits the same problem. "heart" is a screen region, not a
+        /// biometric.
+        case lockedTapped(signal: String)
+        /// Tapped a locked share-card skin. Decides whether cosmetics are
+        /// worth developing into a real line.
+        case skinLockedTapped(skin: String)
 
         // Engagement
         case shareOpened
@@ -71,6 +85,9 @@ enum Analytics {
             case .purchase: "purchase"
             case .restore: "restore"
             case .entitlementLost: "entitlement_lost"
+            case .freeTierEntered: "free_tier_entered"
+            case .lockedTapped: "locked_tapped"
+            case .skinLockedTapped: "skin_locked_tapped"
             case .shareOpened: "share_opened"
             case .guideOpened: "guide_opened"
             case .reminderEnabled: "reminder_enabled"
@@ -90,6 +107,9 @@ enum Analytics {
             case .paywallViewed(let placement): ["placement": placement]
             case .purchase(let plan): ["plan": plan]
             case .awardUnlocked(let id): ["id": id]
+            case .freeTierEntered(let rung): ["after_rung": rung]
+            case .lockedTapped(let signal): ["signal": signal]
+            case .skinLockedTapped(let skin): ["skin": skin]
             default: [:]
             }
         }

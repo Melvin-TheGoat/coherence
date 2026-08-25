@@ -49,6 +49,7 @@ private struct SettingsForm: View {
     @State private var confirmSignOut = false
     @State private var editingName = false
     #if DEBUG
+    @EnvironmentObject private var store: Store
     @Environment(\.modelContext) private var context
     @State private var primerRows = 0
     @State private var primerMessage = ""
@@ -137,6 +138,7 @@ private struct SettingsForm: View {
                 }
 
                 #if DEBUG
+                freeTierDebugSection
                 cloudKitDebugSection
                 #endif
 
@@ -159,6 +161,36 @@ private struct SettingsForm: View {
     /// Creates every field of every synced model so the Development schema is
     /// complete before it gets promoted. See `CloudSchemaPrimer` for why this
     /// is not optional busywork.
+    /// The free-tier review controls. The review build simulates a purchase
+    /// when the paywall's buy button is tapped (no products exist, so StoreKit
+    /// cannot run a real one); this is the way back to free without
+    /// reinstalling.
+    @ViewBuilder
+    private var freeTierDebugSection: some View {
+        SectionHeader(title: "Free tier (debug)")
+        settingsCard {
+            VStack(alignment: .leading, spacing: 8) {
+                Toggle(isOn: Binding(
+                    get: { store.previewEntitled },
+                    set: { store.setPreviewEntitled($0) })) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Simulated purchase")
+                            .font(AppFont.callout.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(store.previewEntitled
+                             ? "Everything unlocked, as after buying. Turn off to review as a free user."
+                             : "Reviewing as a free user. The paywall's buy button flips this on.")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .tint(AppColor.accentGold)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     @ViewBuilder
     private var cloudKitDebugSection: some View {
         SectionHeader(title: "CloudKit (debug)")

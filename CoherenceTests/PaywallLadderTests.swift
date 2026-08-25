@@ -5,14 +5,28 @@ import XCTest
 /// so its shape is asserted rather than trusted to review.
 final class PaywallLadderTests: XCTestCase {
 
-    /// Cheapest concession first: risk, then commitment, then price. A ladder
-    /// that opens with money has nothing left to offer and teaches people to
-    /// wait for the discount.
-    func test_rungsGoRiskThenCommitmentThenPrice() {
-        XCTAssertEqual(DownsellRung.allCases, [.trial, .firstMonthHalf, .yearReframe])
-        XCTAssertEqual(DownsellRung.trial.next, .firstMonthHalf)
-        XCTAssertEqual(DownsellRung.firstMonthHalf.next, .yearReframe)
+    /// Cheapest concession first: risk, then price. A ladder that opens with
+    /// money has nothing left to offer and teaches people to wait for the
+    /// discount.
+    func test_rungsGoRiskThenPrice() {
+        XCTAssertEqual(DownsellRung.allCases, [.trial, .yearReframe])
+        XCTAssertEqual(DownsellRung.trial.next, .yearReframe)
         XCTAssertNil(DownsellRung.yearReframe.next, "the ladder must end")
+    }
+
+    /// **A rung may only sell an offer the product it buys can actually
+    /// deliver.**
+    ///
+    /// A half-off-first-month rung shipped on 2026-08-18 and was removed on
+    /// 2026-08-24: it sold `.monthly`, and a product carries exactly one
+    /// introductory offer, which for the monthly product is the free week. So
+    /// the screen promised a discount the purchase sheet would contradict.
+    /// This test is the tripwire, because the mistake is invisible until a
+    /// real purchase runs.
+    func test_noTwoRungsSellTheSameProductWithDifferentOffers() {
+        let plans = DownsellRung.allCases.map(\.plan)
+        XCTAssertEqual(Set(plans).count, plans.count,
+                       "two rungs sell the same product, so they cannot both carry their own intro offer")
     }
 
     /// No rung may repeat, or someone who declines is walked in a circle.
@@ -34,7 +48,6 @@ final class PaywallLadderTests: XCTestCase {
     func test_eachRungSellsWhatItDescribes() {
         XCTAssertEqual(DownsellRung.yearReframe.plan, .yearly)
         XCTAssertEqual(DownsellRung.trial.plan, .monthly)
-        XCTAssertEqual(DownsellRung.firstMonthHalf.plan, .monthly)
         XCTAssertTrue(DownsellRung.yearReframe.subtitle(plan: .yearly)
             .contains(SubscriptionPlan.yearly.price))
     }

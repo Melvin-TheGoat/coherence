@@ -31,6 +31,29 @@ enum ShareCardStyle: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The one card free 808 can post.
+    ///
+    /// `.score` carries the number, the minutes and the streak and NO measured
+    /// values, which is exactly the free tier's boundary: the score is free,
+    /// the evidence behind it is not. `.full` and `.receipt` are locked because
+    /// they draw curves and metric values, and a free user who could post those
+    /// would be screenshotting their own card to walk around the in-app lock.
+    ///
+    /// **Sharing itself is never locked.** Free users post, every post carries
+    /// the 808 mark, and that loop is the only organic acquisition the app has.
+    /// What is locked is the choice of card, which is the one thing 808 can
+    /// charge for that is not evidence.
+    static let free: ShareCardStyle = .score
+
+    static func free(for data: ShareCardData) -> [ShareCardStyle] {
+        let offered = available(for: data)
+        // Fallbacks stay numberless: a free user's verdict is already rendered
+        // without quantities, so either of these is safe to post.
+        for candidate in [ShareCardStyle.score, .verdict, .words]
+        where offered.contains(candidate) { return [candidate] }
+        return offered.isEmpty ? [] : [.score]
+    }
+
     /// Styles that would render empty for this session are never offered. A
     /// picker that shows a blank card is worse than one with fewer choices.
     static func available(for data: ShareCardData) -> [ShareCardStyle] {
@@ -633,7 +656,25 @@ enum InstagramShare {
 /// share paths (direct to Instagram Stories, or the system share sheet).
 struct ShareSessionSheet: View {
     let data: ShareCardData
+    var entitlements: Entitlements = .unlocked
     @Environment(\.dismiss) private var dismiss
+    @State private var showPlans = false
+    @State private var plansPlan: SubscriptionPlan = .monthly
+
+    /// Cards this person may actually post.
+    private var unlockedStyles: [ShareCardStyle] {
+        entitlements.shareCurves
+            ? ShareCardStyle.available(for: data)
+            : ShareCardStyle.free(for: data)
+    }
+
+    private var styleIsLocked: Bool { !unlockedStyles.contains(style) }
+
+    /// How many cards paying would add. Named as a count rather than shown as a
+    /// preview, because a preview is what leaked in the first place.
+    private var lockedCardCount: Int {
+        ShareCardStyle.available(for: data).count - unlockedStyles.count
+    }
     @State private var rendered: UIImage?
     @State private var storyHint: String?
     /// `.full` stays the default deliberately. Changing it would change what
@@ -681,6 +722,17 @@ struct ShareSessionSheet: View {
                                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
+                    if lockedCardCount > 0 {
+                        Button {
+                            Analytics.track(.skinLockedTapped(skin: "share_more_cards"))
+                            showPlans = true
+                        } label: {
+                            Text("\(lockedCardCount) more cards with 808 Premium")
+                                .font(.caption)
+                                .foregroundStyle(AppColor.textSecondary)
+                        }
+                        .padding(.top, 2)
+                    }
                 }
             }
             .padding(AppMetrics.screenPadding)
@@ -692,7 +744,19 @@ struct ShareSessionSheet: View {
                     Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
-            .task(id: style) { rendered = ShareCardRenderer.render(data, style: style) }
+            .task(id: style) {
+                // Never rasterise a card the user cannot post.
+                rendered = ShareCardRenderer.render(data, style: style)
+            }
+            .onAppear {
+                // Open on a card they can actually share.
+                if styleIsLocked, let first = unlockedStyles.first { style = first }
+            }
+            .fullScreenCover(isPresented: $showPlans) {
+                PaywallScreen(placement: "share_skin_lock", plan: $plansPlan) { _ in
+                    showPlans = false
+                }
+            }
         }
     }
 
@@ -702,8 +766,21 @@ struct ShareSessionSheet: View {
     /// The pages are the live SwiftUI card rather than rendered images: five
     /// cards at export resolution would be about 40 MB of bitmaps just to look
     /// at. Only the selected style is ever rasterised, and only for sharing.
+    /// **Only cards this person may post are ever built.**
+    ///
+    /// An earlier version rendered the locked layouts behind a 55% scrim as an
+    /// upsell. Aziz found the hole in minutes: `.receipt` prints Heart,
+    /// Stillness and Breath as rows and `.full` carries a stat row, and a
+    /// translucent overlay is not a lock, it is a slightly dimmed readout. A
+    /// free user could read every measurement the results screen was
+    /// withholding, and screenshot it.
+    ///
+    /// The lesson generalises: **a lock drawn ON TOP of the data is not a
+    /// lock.** The only reliable version is not putting the data on screen,
+    /// which is why `SessionResultsView` also stops handing the values to
+    /// `ShareCardData` at all.
     private var cardPager: some View {
-        let styles = ShareCardStyle.available(for: data)
+        let styles = unlockedStyles
         return GeometryReader { geo in
             TabView(selection: $style) {
                 ForEach(styles) { s in

@@ -96,6 +96,9 @@ struct SessionOptionsView: View {
     @Binding var soundID: String
     @Environment(\.dismiss) private var dismiss
     @StateObject private var tone = ToneEngine()
+    @EnvironmentObject private var store: Store
+    @State private var showPlans = false
+    @State private var plansPlan: SubscriptionPlan = .monthly
 
     /// Brainwave presets, deepest first (delta 2.5 → theta 6 → alpha 8).
     private var brainwave: [FrequencyPreset] {
@@ -140,6 +143,11 @@ struct SessionOptionsView: View {
                 }
             }
             .onDisappear { tone.stop() }
+            .fullScreenCover(isPresented: $showPlans) {
+                PaywallScreen(placement: "guided_lock", plan: $plansPlan) { _ in
+                    showPlans = false
+                }
+            }
         }
     }
 
@@ -147,7 +155,18 @@ struct SessionOptionsView: View {
 
     private func guidedCard(_ preset: GuidedPreset) -> some View {
         let selected = soundID == preset.id
-        return Button { select(preset.id) } label: {
+        // The only content 808 owns, so the only content worth gating. Nature,
+        // frequency, silence and anything the user plays in another app all
+        // stay free.
+        let unlocked = store.entitlements.guidedTrack
+        return Button {
+            guard unlocked else {
+                Analytics.track(.lockedTapped(signal: "guided"))
+                showPlans = true
+                return
+            }
+            select(preset.id)
+        } label: {
             HStack(spacing: 13) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
@@ -179,8 +198,12 @@ struct SessionOptionsView: View {
                         .foregroundStyle(AppColor.textSecondary)
                 }
                 Spacer(minLength: 0)
-                previewButton(preset.id, prominent: true)
-                if selected { checkmark }
+                if unlocked {
+                    previewButton(preset.id, prominent: true)
+                    if selected { checkmark }
+                } else {
+                    LockPill()
+                }
             }
             .padding(14)
             .background(

@@ -8,35 +8,22 @@ import AuthenticationServices
 struct RootView: View {
     @Query private var preferences: [Preferences]
     @Environment(\.modelContext) private var context
-    @EnvironmentObject private var store: Store
-    @State private var lockedPlan: SubscriptionPlan = .yearly
-
-    /// Paying unlocks the entire app (Aziz, 2026-08-11). The gate lives HERE,
-    /// not in onboarding, because onboarding runs once and entitlement is a
-    /// living fact: a lapsed subscription must re-lock the app, and StoreKit's
-    /// cached entitlements flipping `store.entitled` is exactly that.
+    /// **808 is no longer a hard paywall** (Aziz, 2026-08-24), reversing the
+    /// 2026-08-11 decision that paying unlocked the entire app. The app opens
+    /// for everyone; what paying unlocks is the EVIDENCE behind the score.
     ///
-    /// The gate only exists while the store is actually SELLING. While
-    /// products can't load (`.loading`, `.unavailable`) the app stays open:
-    /// that is what keeps every beta tester in during the pre-billing era with
-    /// no flag to remember, and it means a network hiccup can never lock out a
-    /// paying user, because entitlements are cached on device and don't need
-    /// the network to say yes.
-    private var locked: Bool {
-        store.state == .ready && !store.entitled
-    }
+    /// The gate did not disappear, it moved down a level into `Entitlements`,
+    /// which each screen consults for the part it owns. Three reasons for the
+    /// reversal, ascending: free users cost nothing because there is no
+    /// backend; a hard paywall throttles installs by roughly 8x at median
+    /// conversion; and asking for money before anyone has seen a single
+    /// reading contradicts the one thing 808 sells, which is not being asked
+    /// to take a claim on faith. See ENTITLEMENTS.md.
 
     var body: some View {
         Group {
             if preferences.contains(where: { $0.onboardingComplete }) {
-                if locked {
-                    // The same paywall onboarding uses. Purchase and restore
-                    // both flip `store.entitled`, which re-renders this view
-                    // into the app; the closure has nothing left to do.
-                    PaywallScreen(placement: "root_lock", plan: $lockedPlan) { _ in }
-                } else {
-                    ContentView()
-                }
+                ContentView()
             } else {
                 OnboardingView()
             }

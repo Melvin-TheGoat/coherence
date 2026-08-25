@@ -15,7 +15,11 @@ struct OnboardingView: View {
 
     @State private var step: Step = .relief
     @State private var answers = OnboardingAnswers()
-    @State private var plan: SubscriptionPlan = .yearly
+    /// Monthly, preselected (Aziz, 2026-08-24): the 7-day trial renews into
+    /// Monthly, and the plan under the CTA must be the plan the footnote
+    /// describes. Yearly and Lifetime stay one tap away for anyone who wants
+    /// them.
+    @State private var plan: SubscriptionPlan = .monthly
     @State private var waitlistEmail = ""
     @State private var planRating: Int?
     /// Whether the user actually turned the daily reminder on: tapped "Turn on

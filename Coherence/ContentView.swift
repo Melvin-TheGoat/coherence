@@ -242,6 +242,12 @@ struct ContentView: View {
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.calmAccent)
             }
+            // The sparkline is FREE (Aziz, 2026-08-24, reversing the first
+            // build). It draws overall scores, and every history row below it
+            // already shows each session's score to a free user, so locking
+            // the line was locking arithmetic on free numbers, not evidence.
+            // The rule survives intact: the score is free, the measurements
+            // behind it are not.
             if scores.count >= 2 {
                 sparkline(scores)
                     .frame(height: 46)

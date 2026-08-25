@@ -23,8 +23,44 @@ struct SessionResultsView: View {
     @State private var technique: String?
     @State private var techniqueNote: String = ""
     @State private var streakDays = 0
-    @State private var showShareSheet = false
-    @State private var showScoreMeaning = false
+    @EnvironmentObject private var store: Store
+    /// Every modal on this screen goes through ONE `.sheet(item:)`.
+    ///
+    /// Stacking several `.sheet` modifiers on one view is the documented
+    /// only-one-presents trap (CLAUDE.md, cost a QA cycle on Home). This screen
+    /// was already carrying two on the NavigationStack and the free tier adds
+    /// two more, so they are consolidated here and chained through `onDismiss`
+    /// the same way Home does it.
+    @State private var route: ResultRoute?
+    @State private var pendingRoute: ResultRoute?
+    @State private var paywallPlan: SubscriptionPlan = .monthly
+
+    private var entitlements: Entitlements { store.entitlements }
+
+    enum ResultRoute: Identifiable {
+        case share
+        case scoreMeaning
+        case locked(LockedSignal)
+        case plans
+
+        var id: String {
+            switch self {
+            case .share:            return "share"
+            case .scoreMeaning:     return "score"
+            case .locked(let sig):  return "locked-\(sig.rawValue)"
+            case .plans:            return "plans"
+            }
+        }
+    }
+
+    /// Opening the plans from inside the unlock sheet means dismissing one
+    /// sheet and presenting another, which SwiftUI will not do in the same
+    /// runloop turn. `pendingRoute` is handed to `onDismiss`, exactly the
+    /// pattern Home uses to chain into results after a modal.
+    private func replaceRoute(with next: ResultRoute?) {
+        pendingRoute = next
+        route = nil
+    }
     @State private var showResonanceMeaning = false
 
     var body: some View {
@@ -45,6 +81,7 @@ struct SessionResultsView: View {
                             if !series.contains(where: { $0.kind == .breathing }) {
                                 breathingUnreadCard
                             }
+                            if !entitlements.curves { unlockCTA }
                             shareButton
                         } else {
                             header(session)
@@ -62,7 +99,7 @@ struct SessionResultsView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     if session != nil, stats != nil {
-                        Button { showShareSheet = true } label: {
+                        Button { route = .share } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
                         .tint(AppColor.accentGoldText)
@@ -72,12 +109,31 @@ struct SessionResultsView: View {
                     Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
             }
-            .sheet(isPresented: $showShareSheet) {
-                if let data = shareData { ShareSessionSheet(data: data) }
-            }
-            .sheet(isPresented: $showScoreMeaning) {
-                ScoreMeaningSheet(score: stats?.overallScore)
-                    .presentationDetents([.medium, .large])
+            .sheet(item: $route, onDismiss: {
+                guard let next = pendingRoute else { return }
+                pendingRoute = nil
+                route = next
+            }) { destination in
+                switch destination {
+                case .share:
+                    if let data = shareData {
+                        ShareSessionSheet(data: data, entitlements: entitlements)
+                    }
+                case .scoreMeaning:
+                    ScoreMeaningSheet(score: stats?.overallScore)
+                        .presentationDetents([.medium, .large])
+                case .locked(let signal):
+                    UnlockSheet(signal: signal) {
+                        replaceRoute(with: .plans)
+                    } onDismiss: {
+                        route = nil
+                    }
+                    .presentationDetents([.medium])
+                case .plans:
+                    PaywallScreen(placement: "results_lock", plan: $paywallPlan) { _ in
+                        route = nil
+                    }
+                }
             }
             .onAppear {
                 load()
@@ -128,10 +184,14 @@ struct SessionResultsView: View {
             resonanceMatchScore: stats.resonanceMatchScore,
             breathDoorwayRate: stats.breathDoorwayRate,
             breathDoorwayHeldSec: stats.breathDoorwayHeldSec,
-            bellyBreathing: session.bellyBreathing))
+            bellyBreathing: session.bellyBreathing),
+            // A free user reads the same verdict with the quantities removed.
+            // "Heart settled 11 beats" IS evidence, so leaving it in would
+            // walk straight through the lock on the card below it.
+            numbers: entitlements.metrics)
 
         return VStack(spacing: 12) {
-            Button { showScoreMeaning = true } label: {
+            Button { route = .scoreMeaning } label: {
                 ScoreRing(score: stats.overallScore, size: 128, lineWidth: 10)
             }
             .buttonStyle(CardButtonStyle())
@@ -161,13 +221,45 @@ struct SessionResultsView: View {
         .padding(.vertical, 2)
     }
 
+    /// The real paywall.
+    ///
+    /// The onboarding one sells a promise; this one sells proof the user has
+    /// already earned, ten minutes after they were asked to take it on faith.
+    /// It is also the screen's single gold call to action, which is why the
+    /// locks above it are deliberately quiet.
+    private var unlockCTA: some View {
+        Button {
+            Analytics.track(.lockedTapped(signal: "results_cta"))
+            route = .plans
+        } label: {
+            Text("Unlock your evidence")
+        }
+        .buttonStyle(PrimaryButtonStyle())
+        .padding(.top, 2)
+    }
+
     private func metaLine(_ session: Session) -> String {
         var parts = [headerWhen(session), SessionListSupport.duration(session.durationSec)]
         if let sound = SoundCatalog.title(for: session.frequencyID) { parts.append(sound) }
         return parts.joined(separator: " · ")
     }
 
+    @ViewBuilder
     private func tiles(_ stats: MeditationStats) -> some View {
+        if entitlements.metrics {
+            paidTiles(stats)
+        } else {
+            // Same three shapes, same labels, values withheld. Hiding the
+            // tiles would hide what is missing, and the shape of what is
+            // missing is the sell.
+            LockedTiles(labels: tileData(stats).map(\.label)) {
+                Analytics.track(.lockedTapped(signal: LockedSignal.heart.analyticsName))
+                route = .locked(.heart)
+            }
+        }
+    }
+
+    private func paidTiles(_ stats: MeditationStats) -> some View {
         HStack(spacing: 8) {
             ForEach(tileData(stats), id: \.label) { tile in
                 VStack(spacing: 2) {
@@ -317,12 +409,33 @@ struct SessionResultsView: View {
         return hi > lo ? lo...hi : nil
     }
 
+    @ViewBuilder
     private func graphCard(_ series: EvidenceSeries) -> some View {
         let k = kind(of: series)
-        return EvidenceGraphCard(series: series, kind: k,
-                                 domain: yDomain(series, k),
-                                 doorwaySpan: k == .breath ? doorwaySpan(series) : nil,
-                                 reading: reading(for: k))
+        if entitlements.curves {
+            paidGraphCard(series, k)
+        } else {
+            LockedGraphCard(title: series.title) {
+                let signal = lockedSignal(for: k)
+                Analytics.track(.lockedTapped(signal: signal.analyticsName))
+                route = .locked(signal)
+            }
+        }
+    }
+
+    private func lockedSignal(for kind: GraphKind) -> LockedSignal {
+        switch kind {
+        case .heart:  return .heart
+        case .breath: return .breath
+        default:      return .stillness
+        }
+    }
+
+    private func paidGraphCard(_ series: EvidenceSeries, _ k: GraphKind) -> some View {
+        EvidenceGraphCard(series: series, kind: k,
+                          domain: yDomain(series, k),
+                          doorwaySpan: k == .breath ? doorwaySpan(series) : nil,
+                          reading: reading(for: k))
     }
 
     private func reading(for kind: GraphKind) -> String? {
@@ -433,14 +546,39 @@ struct SessionResultsView: View {
 
     // MARK: Share
 
+    /// Share stays gold for a paid user and steps down to a quiet button for a
+    /// free one.
+    ///
+    /// Not because sharing matters less: it is the only organic acquisition
+    /// 808 has and it is never locked. It is because a screen may hold ONE gold
+    /// call to action, and on a locked results screen that has to be the
+    /// unlock. Two gold buttons stacked read as a form, and the user picks
+    /// neither.
+    @ViewBuilder
     private var shareButton: some View {
-        Button {
-            Analytics.track(.shareOpened)
-            showShareSheet = true
-        } label: {
-            Label("Share the proof", systemImage: "square.and.arrow.up")
+        if entitlements.curves {
+            Button {
+                Analytics.track(.shareOpened)
+                route = .share
+            } label: {
+                Label("Share the proof", systemImage: "square.and.arrow.up")
+            }
+            .buttonStyle(PrimaryButtonStyle())
+        } else {
+            Button {
+                Analytics.track(.shareOpened)
+                route = .share
+            } label: {
+                Label("Share the proof", systemImage: "square.and.arrow.up")
+                    .font(AppFont.callout.weight(.medium))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 13)
+                    .background(AppColor.backgroundSecondary,
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+            .buttonStyle(CardButtonStyle())
         }
-        .buttonStyle(PrimaryButtonStyle())
     }
 
     /// Value snapshot for the share card — built from the rows already loaded,
@@ -471,17 +609,31 @@ struct SessionResultsView: View {
             resonanceMatchScore: stats.resonanceMatchScore,
             breathDoorwayRate: stats.breathDoorwayRate,
             breathDoorwayHeldSec: stats.breathDoorwayHeldSec,
-            bellyBreathing: session.bellyBreathing))
+            bellyBreathing: session.bellyBreathing),
+            numbers: entitlements.metrics)
 
+        // **A free card is never HANDED the measurements.**
+        //
+        // Not hidden by a layout, not covered by an overlay: absent from the
+        // value the card is built from. The first version relied on the pager
+        // only offering unlocked layouts, and a translucent lock over the
+        // `.receipt` card left every number readable underneath. A lock drawn
+        // on top of data is not a lock. This is the version that cannot leak,
+        // because there is nothing on the card to leak, whatever any future
+        // layout decides to render.
+        //
+        // The score, the streak, the date and the length stay: those are the
+        // free tier, and the verdict above was already built numberless.
+        let showsEvidence = entitlements.metrics
         return ShareCardData(
             date: session.startedAt,
             durationSec: session.durationSec,
             bellyBreathing: session.bellyBreathing,
             overallScore: stats.overallScore,
-            stillnessScore: stats.stillnessScore,
-            hrDecline: stats.hrDecline,
-            meanBreathingRate: stats.meanBreathingRate,
-            curves: curves,
+            stillnessScore: showsEvidence ? stats.stillnessScore : nil,
+            hrDecline: showsEvidence ? stats.hrDecline : nil,
+            meanBreathingRate: showsEvidence ? stats.meanBreathingRate : nil,
+            curves: showsEvidence ? curves : [],
             streakDays: streakDays,
             verdict: verdict.sentence,
             rating: reflectionSaved ? Int(rating) : nil,
@@ -663,7 +815,7 @@ struct SessionResultsView: View {
         streakDays = StreakCalculator.streak(from: allSessions.map(\.startedAt)).current
 
         #if DEBUG
-        if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { showShareSheet = true }
+        if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { route = .share }
         #endif
     }
 }

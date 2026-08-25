@@ -1253,10 +1253,26 @@ UI must coach it, and the 2-signal degrade path must stay.
     recorded above and does not need arguing in front of the user.
   - Paired-device test of the **Watch app install** is done; a **timed** belly
     session no longer exists, so that old test is moot.
-  - Business: **Delaware C-corp** question from the lawyer (he advised a DE
-    corporation over the MI LLC for hiring/investors/exit — this would ADD an
-    entity, not fix a mistake; the LLC, EIN and in-flight D-U-N-S all stay valid).
-    **D-U-N-S case 10747633** with D&B — documents sent, awaiting the number.
+  - Business: **Delaware C-corp EXISTS and is D-U-N-S registered (2026-08-24).**
+    The lawyer advised a DE corporation over the MI LLC for hiring/investors/exit
+    — it ADDS an entity, it does not fix a mistake; the LLC and its EIN stay
+    valid. D&B case 10747633 resolved.
+    - **Exact legal name: `Lock Out Inc.`** — a SPACE, and `Inc.`, not the
+      `LockOut LLC` that the policy, ToS and website footer currently name. The
+      two strings are not interchangeable and the entity swap must use this one
+      character for character.
+    - **D-U-N-S 149914479.** Registered at 8 The Green Ste A, Dover DE 19901;
+      2 employees; start year 2026; legal form Corporation. Melvin A Van Cleave
+      is CEO / primary principal, Aziz Mahmud is listed Prin, **stock 50/50**.
+      Telephone 818-422-1140.
+    - The D-U-N-S is what an Apple **Organization** account needs, so the
+      blocker on the org account is now the D-U-N-S no longer. Everything the
+      org account gates still stands: the permanent `com.lockout.meditate808`
+      bundle IDs, the StoreKit product IDs, the real iCloud container, and the
+      legal-entity swap below.
+    - **STILL OPEN for the attorney:** the LLC→corp assignment of the app and
+      the user data (which entity actually owns 808 on the day we swap the
+      name), and whether the LLC stays alive or is wound down.
     Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
     Meta app ID still needed for zero-tap Instagram Stories.
 
@@ -1438,6 +1454,10 @@ Audited against the current App Store Review Guidelines. Fixed:
   honestly on a fresh install (screenshot-verified). Ten passes total, finds
   in nine of them; the reading-based scan is at the bottom of the well.
 
+**REVERSED 2026-08-24 — see the FREE TIER section below. The paragraph that
+follows is the superseded 2026-08-11 decision, kept because its reasoning about
+the `.ready` guard survived the reversal intact.**
+
 **DECIDED (Aziz, 2026-08-11): paying unlocks the ENTIRE app — hard paywall.**
 Implemented at the ROOT, not in onboarding: `RootView` locks to `PaywallScreen`
 whenever `store.state == .ready && !store.entitled`, so a lapsed subscription
@@ -1460,15 +1480,85 @@ actually verified (VoiceOver etc.), never aspirationally; and "808" as a name
 is fine for App Review but Roland's TR-808 mark is worth one question to the
 lawyer already reviewing the four documents. Other items owed at submission: **the legal-entity swap** — the policy, ToS
 and website footer all name LockOut LLC, which is correct TODAY (the LLC
-exists and operates 808; the DE corp is pending and cannot be named until it
-exists). Swap every entity mention to the corporation's exact legal name in
-one pass the day the Organization account goes live, and ask the attorney
+exists and operates 808). **The DE corporation now exists: `Lock Out Inc.`,
+D-U-N-S 149914479** — so the swap is unblocked and waiting only on the
+attorney's answer about which entity owns the app. Swap every entity mention
+to that exact string, space and `Inc.` included, in one pass the day the
+Organization account goes live, and ask the attorney
 about the LLC→corp assignment of the app and user data (ToS assignment
 clause + the policy's material-change notice). Also: App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App
 Store Connect metadata (attorney question); StoreKit must be live or the
 paywall absent — "Free while we're testing" copy must never reach an App
 Store build (it flips itself once products exist, but verify).
+
+## FREE TIER — 808 is no longer a hard paywall (BUILT 2026-08-24)
+
+Full spec and the file-by-file record live in **`ENTITLEMENTS.md`**. 198 tests
+green, verified on the simulator. The short version:
+
+- **The rule: free gives you the score, paid gives you the evidence behind it.**
+  One sentence, so a new feature sorts itself. Free keeps the score, the written
+  verdict, the streak, calendar, awards, history, the home practice-score
+  sparkline, nature/frequency/silence, and bring-your-own-audio. Paid unlocks
+  the three curves, the metric tiles and readings, the guided journey, and four
+  of the five share cards. (The sparkline was locked at first and REVERSED
+  on-device same day: it draws overall scores, and every history row already
+  shows each session's score to a free user, so the lock was withholding
+  arithmetic on free numbers, not evidence.)
+- **Why the reversal**, ascending: free users cost nothing because there is no
+  backend; a hard paywall needs roughly 8x the installs at median conversion;
+  and asking for money before anyone has seen a single reading contradicts the
+  one thing 808 sells, which is not being asked to take a claim on faith.
+- **`Entitlements` is the single gate** (`Coherence/Store/Entitlements.swift`).
+  Views ask it, never `store.entitled`. **The load-bearing line is
+  `paid: state != .ready || entitled`:** while the store CANNOT sell, everyone
+  is paid. Simplifying that to `entitled` alone strips every beta tester of
+  their curves the day products go live and downgrades a payer whose network
+  dropped. Same reasoning the old `RootView.locked` carried. Locked by
+  `EntitlementsTests`.
+- **The real paywall is the first results screen**, not onboarding. Ten minutes
+  in they have their own score and three locked panels about their own body,
+  which is maximum desire and an honest sell because the claim is now proven.
+- **The verdict has a numberless variant** (`verdict(for:numbers:)`). Every
+  phrase is its numbered sibling with the quantity removed, never a softer
+  claim, because "heart settled 11 beats" IS evidence and would walk straight
+  through the lock below it. `NumberlessVerdictTests` asserts no digit escapes.
+- **The ladder is `trial` → `yearReframe` → `FreeTierScreen`.** One trial
+  length, 7 days everywhere, renewing into Monthly, so the existing
+  subscription group works untouched with no second product.
+- **A `firstMonthHalf` rung was DELETED, and do not add it back without its own
+  product.** It shipped 2026-08-18, sold `.monthly`, and a product carries
+  exactly ONE introductory offer, which for the monthly product is the free
+  week. So the screen promised a discount the purchase sheet would contradict:
+  an App Review 3.1.2 problem and a plain lie. Never seen by a user (no
+  production products exist). `test_noTwoRungsSellTheSameProductWithDifferentOffers`
+  is the tripwire, because the mistake is invisible until a real purchase runs.
+- **Sharing is NEVER locked; the CARD is.** Free posts `.score` (number,
+  minutes, streak, no measured values); the other four layouts lock, and
+  `.full`/`.receipt` must stay locked because they draw curves and metric
+  values. **A free card showing curves would make screenshotting your own card
+  the way around the in-app lock.** Every post carries the 808 mark, and that
+  loop is the only organic acquisition 808 has.
+- **Colour grammar held against pressure:** the Locked pill is NOT gold. A lock
+  is neither chosen nor achieved. The first build made it gold and the results
+  screen carried seven gold objects against a rule of one per section. For the
+  same reason the share button steps down to secondary when the screen is
+  locked, so the one gold CTA is the unlock.
+- **Reviewing the free tier on a dev build:** flip `Store.previewFreeByDefault`
+  (or launch with `PREVIEW_FREE=1`). It forces the free tier AND reveals the
+  paywall's "Not right now" entry (otherwise hidden when nothing is on sale, so
+  the whole ladder is invisible on dev builds). The paywall's buy button then
+  SIMULATES the purchase (`previewEntitled`, persisted) so the
+  lock → trial → unlock loop reviews end to end; Settings > "Free tier (debug)"
+  switches back to free. All DEBUG-only. Monthly is preselected on the paywall,
+  since the 7-day trial renews into it.
+- New analytics: `free_tier_entered`, `locked_tapped`, `skin_locked_tapped`,
+  and `paywall_dismissed` is finally fired. **Signal NAMES only, never values.**
+- **Sharper now than it was:** the 5.1.3 store split keeps `MeditationStats`
+  device-local, so a PAID user on a second device sees no curves at all. That
+  was defensible when everything was paid. Curves are now the thing being sold,
+  and it sits on top of CloudKit never having demonstrably synced.
 
 ## iCloud / CloudKit — FROZEN during the external beta (2026-08-14)
 

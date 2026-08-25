@@ -74,6 +74,26 @@ final class Store: ObservableObject {
     /// and reviewers check the claim against the purchase sheet.
     @Published private(set) var trialEligible = true
 
+    #if DEBUG
+    /// The review build's simulated purchase.
+    ///
+    /// On a build with no products the buy button cannot reach StoreKit, so
+    /// the lock → trial → unlock loop was unreviewable: tapping "Start 7 days
+    /// free" navigated and nothing changed. When the review switch
+    /// (`previewFreeByDefault`) is on, "buying" sets this instead, so the
+    /// unlock actually happens and the loop can be felt end to end. Persisted,
+    /// so it survives relaunch the way a real purchase would; the switch to
+    /// go back to free lives in Settings' DEBUG section. Compiled out of
+    /// Release entirely.
+    @Published private(set) var previewEntitled =
+        UserDefaults.standard.bool(forKey: "previewEntitled.debug")
+
+    func setPreviewEntitled(_ value: Bool) {
+        previewEntitled = value
+        UserDefaults.standard.set(value, forKey: "previewEntitled.debug")
+    }
+    #endif
+
     private var updates: Task<Void, Never>?
 
     init() {

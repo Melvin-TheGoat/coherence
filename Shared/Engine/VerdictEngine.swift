@@ -47,25 +47,45 @@ public enum VerdictEngine {
         }
     }
 
-    public static func verdict(for m: Inputs) -> Verdict {
+    /// - Parameter numbers: false renders the same verdict with every measured
+    ///   quantity removed. This is what a free-tier user reads: the claims stay
+    ///   exactly as true, they just stop being specific. Free 808 gives the
+    ///   score and withholds the evidence, and a sentence saying "heart settled
+    ///   11 beats" IS evidence, so it would walk straight through the lock the
+    ///   graph card above it is enforcing.
+    ///
+    ///   Every numberless phrase here is its numbered sibling with the quantity
+    ///   removed, not a softer claim. "Heart settled" and "heart settled 11
+    ///   beats" report the same fact at different resolutions; a free user is
+    ///   never told something a paid user would be told differently.
+    public static func verdict(for m: Inputs, numbers: Bool = true) -> Verdict {
         let overall = m.overallScore ?? 0
 
         // Collect true, concrete claims — strongest first within each signal.
         var claims: [String] = []
 
         if let d = m.hrDecline {
-            if d >= 10 { claims.append("heart settled \(Int(d.rounded())) beats") }
-            else if d >= 4 { claims.append("heart eased down \(Int(d.rounded())) beats") }
-            else if d <= -5 { claims.append("heart stayed lively") }
+            if d >= 10 {
+                claims.append(numbers ? "heart settled \(Int(d.rounded())) beats" : "heart settled")
+            } else if d >= 4 {
+                claims.append(numbers ? "heart eased down \(Int(d.rounded())) beats" : "heart eased down")
+            } else if d <= -5 {
+                claims.append("heart stayed lively")
+            }
         }
         // The doorway, never the session mean: the mean is what the score
         // stopped being built from. Silence above 8/min used to leave a score's
         // largest component unexplained, so the last branch exists to say the
         // true thing rather than nothing.
         if let rate = m.breathDoorwayRate {
-            let held = m.breathDoorwayHeldSec.map { " for \(Int(($0 / 60).rounded(.down)))" }
-            let minutes = (m.breathDoorwayHeldSec ?? 0) >= 90 ? (held.map { "\($0) minutes" } ?? "") : ""
-            claims.append(String(format: "breath slowed to %.1f a minute%@", rate, minutes))
+            let heldLongEnough = (m.breathDoorwayHeldSec ?? 0) >= 90
+            if numbers {
+                let held = m.breathDoorwayHeldSec.map { " for \(Int(($0 / 60).rounded(.down)))" }
+                let minutes = heldLongEnough ? (held.map { "\($0) minutes" } ?? "") : ""
+                claims.append(String(format: "breath slowed to %.1f a minute%@", rate, minutes))
+            } else {
+                claims.append(heldLongEnough ? "breath slowed and held there" : "breath slowed")
+            }
         } else if m.meanBreathingRate != nil {
             claims.append("breath stayed at its own pace")
         }
@@ -107,7 +127,11 @@ public enum VerdictEngine {
     ///     EXCLUDING this one.
     /// - Returns: a phrase like "calmer than 8 of your last 10", or nil when
     ///   there isn't enough history to say anything true.
-    public static func standing(score: Double?, history: [Double]) -> String? {
+    /// - Parameter numbers: false drops the count, for the same reason
+    ///   `verdict(for:numbers:)` does. "Calmer than 8 of your last 10" is a
+    ///   measurement of a run of sessions, which is exactly what the locked
+    ///   home sparkline is withholding.
+    public static func standing(score: Double?, history: [Double], numbers: Bool = true) -> String? {
         guard let score else { return nil }
         // Cold start: with almost no history, any comparison is noise dressed as
         // insight. Say nothing rather than something shaky.
@@ -118,6 +142,11 @@ public enum VerdictEngine {
 
         if beaten == window.count { return "your stillest session yet" }
         if beaten == 0 { return "a quieter showing than usual" }
+        guard numbers else {
+            return beaten * 2 >= window.count
+                ? "calmer than most of your recent sessions"
+                : "a quieter showing than usual"
+        }
         return "calmer than \(beaten) of your last \(window.count)"
     }
 
