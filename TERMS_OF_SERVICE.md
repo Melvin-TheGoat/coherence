@@ -1,9 +1,9 @@
 # Terms of Service
 
-**Last updated: August 5, 2026**
+**Last updated: August 25, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
-**LockOut LLC ("we," "us," "808")** governing your use of the **808** app
+**Lock Out Inc. ("we," "us," "808")** governing your use of the **808** app
 for iPhone and Apple Watch (the "App"). By downloading or using the App, you agree
 to these Terms. If you don't agree, don't use the App.
 
@@ -162,7 +162,7 @@ other part of these Terms.
 
 ## 15. Governing law
 
-These Terms are governed by the laws of the State of **Michigan**, without
+These Terms are governed by the laws of the State of **Delaware**, without
 regard to conflict-of-laws rules.
 
 ## 16. Apple App Store — additional terms (EULA)

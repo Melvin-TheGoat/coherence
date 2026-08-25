@@ -1479,12 +1479,13 @@ Labels exist in App Store Connect and are OPTIONAL — declare only features
 actually verified (VoiceOver etc.), never aspirationally; and "808" as a name
 is fine for App Review but Roland's TR-808 mark is worth one question to the
 lawyer already reviewing the four documents. Other items owed at submission: **the legal-entity swap** — the policy, ToS
-and website footer all name LockOut LLC, which is correct TODAY (the LLC
-exists and operates 808). **The DE corporation now exists: `Lock Out Inc.`,
-D-U-N-S 149914479** — so the swap is unblocked and waiting only on the
-attorney's answer about which entity owns the app. Swap every entity mention
-to that exact string, space and `Inc.` included, in one pass the day the
-Organization account goes live, and ask the attorney
+and website footer named LockOut LLC. **SWAPPED 2026-08-25 (Aziz's call, no
+attorney): every user-facing doc now names `Lock Out Inc.` and the ToS
+governs under Delaware, matching the corp that will hold the Organization
+account.** Owed by that decision: a papered LLC→corp IP assignment (one page,
+both members sign, before launch) and the LLC's dormant-vs-wound-down call;
+see LEGAL_ACTION_ITEMS.md. The website needs a manual Cloudflare redeploy to
+carry it live. When the org account goes live, and ask the attorney
 about the LLC→corp assignment of the app and user data (ToS assignment
 clause + the policy's material-change notice). Also: App Privacy labels
 matching the policy; the new age-rating questionnaire; EULA placement in App

@@ -1,6 +1,26 @@
 # Legal Review — Action Items
 
-**LockOut LLC (808)** · prepared 2026-08-05
+**LockOut LLC / Lock Out Inc. (808)** · prepared 2026-08-05 · entity swap executed 2026-08-25
+
+> **2026-08-25, founder decision (Aziz), no attorney:** the user-facing legal
+> surface now names **Lock Out Inc.** (the DE corp, D-U-N-S 149914479) and the
+> ToS governing law moved Michigan → Delaware to match. Both bundled docs, all
+> four website pages, dates bumped. Rationale: the corp will hold the Apple
+> Organization account and operate the store listing, so the docs name the
+> entity users will actually contract with.
+>
+> **What this decision creates, still owed:**
+> 1. **Paper the IP assignment.** A short assignment of the 808 app, code,
+>    brand and user-data responsibilities from LockOut LLC to Lock Out Inc.,
+>    signed by both members. Until it exists, the docs name an entity the
+>    assets have not formally moved into. One page; do it before launch.
+> 2. **Decide the LLC's fate** (dormant vs wound down). Michigan annual report
+>    still due 02/15/2027 either way while it exists.
+> 3. **TR-808 trademark: accepted risk, decided without counsel.** Roland's
+>    marks cover instruments and music hardware; a wellness app named 808 in a
+>    different class with no drum-machine trade dress is a low-confusion
+>    profile, and "808" is in broad cultural use. Revisit only if the store
+>    listing ever leans on music-production aesthetics.
 Members: Aziz Mahmud, Melvin Alirio Van Cleave
 
 Priority order. Items 1–3 block launch; 4–6 should start now because they get
