@@ -7,7 +7,7 @@
 <meta name="description" content="Meet 808, the first app that scores your meditation from your body, with all the tools to verify, track, and share your practice.">
 <meta property="og:title" content="Make meditation easy with 808">
 <meta property="og:description" content="The first app that scores your meditation from your body.">
-<meta property="og:image" content="img/shot-share.png">
+<meta property="og:image" content="img/store-share.png">
 <link rel="preload" href="fonts/manrope-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/hanken-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='5'%3E%3Cellipse cx='50' cy='28.5' rx='13.5' ry='20.5'/%3E%3Cellipse cx='50' cy='71.5' rx='13.5' ry='20.5'/%3E%3Cellipse cx='28.5' cy='50' rx='20.5' ry='13.5'/%3E%3Cellipse cx='71.5' cy='50' rx='20.5' ry='13.5'/%3E%3C/g%3E%3C/svg%3E">
@@ -92,6 +92,9 @@
   .phone{ border-radius:44px; border:1px solid var(--border); overflow:hidden;
     background:#000; box-shadow:0 30px 80px rgba(0,0,0,.5); }
   .hero .phone{ max-width:320px; justify-self:center; }
+  /* Store slides carry their own drawn bezel, caption and ground, so the CSS
+     frame comes off and the corner radius just softens the card. */
+  .phone.store{ border:none; border-radius:20px; }
 
   /* ---- waitlist form ---- */
   .signup .row{ display:flex; gap:10px; flex-wrap:wrap; }
@@ -304,7 +307,7 @@
       </div>
     </div>
 
-    <div class="phone"><img src="img/shot-hero.png" width="1206" height="2622"
+    <div class="phone store"><img src="img/store-habit.png" width="1320" height="2868"
       alt="808 home screen: a 7 day streak, a gold practice score sparkline, and a month calendar dotted on practiced days"></div>
   </div>
 </div>
@@ -341,21 +344,21 @@
           <p>Heart rate, stillness and breathing, drawn as curves you can read.
             One score out of 100, scored via our proprietary algorithm, first of its kind. A written takeaway in plain words.</p>
           <p>And when a session goes badly, 808 says so. A restless sit scores
-            a 24, not a participation trophy. That is exactly why the good
+            a 29, not a participation trophy. That is exactly why the good
             sessions mean something.</p>
         </div>
       </div>
       <div class="shots">
-        <div class="phone"><img src="img/shot-result-high.png" loading="lazy" width="1206" height="2622"
+        <div class="phone store"><img src="img/store-score.png" loading="lazy" width="1320" height="2868"
           alt="A high scoring session: Your practice landed, score 81, heart settled 13 beats, with heart rate and stillness curves"></div>
-        <div class="phone"><img src="img/shot-result-low.png" loading="lazy" width="1206" height="2622"
-          alt="A low scoring session: A restless one, that happens. Score 24, heart rate climbing, stillness jagged, breath not read"></div>
+        <div class="phone store"><img src="img/store-low.png" loading="lazy" width="1320" height="2868"
+          alt="A low scoring session: A restless one, that happens. Score 29, heart rate climbing, stillness jagged, breath not read"></div>
       </div>
     </div>
 
     <div class="pain flip">
       <div class="shots single">
-        <div class="phone"><img src="img/shot-journey.png" loading="lazy" width="1206" height="2622"
+        <div class="phone store"><img src="img/store-journey.png" loading="lazy" width="1320" height="2868"
           alt="The journey screen: a 7 day streak, awards shelf, and a month calendar dotted on practiced days"></div>
       </div>
       <div>
@@ -383,21 +386,21 @@
         </div>
       </div>
       <div class="shots single">
-        <div class="phone"><img src="img/shot-share.png" loading="lazy" width="1206" height="2622"
+        <div class="phone store"><img src="img/store-share.png" loading="lazy" width="1320" height="2868"
           alt="The share screen: a branded card with practice score 81, minutes, stillness, heart rate settle, breathing, and a 7 day streak"></div>
       </div>
     </div>
 
     <div class="pain flip">
       <div class="shots single">
-        <div class="phone"><img src="img/shot-guide.png" loading="lazy" width="1206" height="2622"
+        <div class="phone store"><img src="img/store-guide.png" loading="lazy" width="1320" height="2868"
           alt="The how to meditate guide: a path from First time meditating through Counting Down, Body Scan, Blue Sky, Dual Awareness and more"></div>
       </div>
       <div>
         <span class="painlab">Pain 4 / &ldquo;I don't know how&rdquo;</span>
         <h3>From first sit to advanced practice.</h3>
         <div class="prose">
-          <p>A built-in guide with eight methods, easiest first. Complete
+          <p>A built-in guide, easiest methods first. Complete
             beginners start with what meditation even is, then counting down
             and the body scan. Further along: dual awareness, blessing the
             energy centers, manifestation.</p>

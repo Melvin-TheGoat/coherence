@@ -938,6 +938,19 @@ private struct EvidenceGraphCard: View {
                 }
             }
             .chartXSelection(value: $selectedMinutes)
+            .onAppear {
+                #if DEBUG
+                // Screenshot hook: scrubbing only renders under a live finger,
+                // which a screenshot cannot hold. PREVIEW_SCRUB=<minutes> pins
+                // the heart chart's selection so the callout is capturable.
+                if kind == .heart,
+                   let m = ProcessInfo.processInfo.environment["PREVIEW_SCRUB"]
+                       .flatMap(Double.init),
+                   let last = series.smoothedPoints.last {
+                    selectedMinutes = min(m, last.t / 60)
+                }
+                #endif
+            }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                     AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
