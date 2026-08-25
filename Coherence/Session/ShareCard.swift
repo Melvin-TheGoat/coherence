@@ -17,7 +17,7 @@ import Photos
 /// existed and stays the default: a change of default silently changes what
 /// most people post.
 enum ShareCardStyle: String, CaseIterable, Identifiable {
-    case full, score, verdict, words, receipt
+    case full, score, verdict, words, receipt, streak
 
     var id: String { rawValue }
 
@@ -28,6 +28,7 @@ enum ShareCardStyle: String, CaseIterable, Identifiable {
         case .verdict: return "Verdict"
         case .words:   return "Your words"
         case .receipt: return "Receipt"
+        case .streak:  return "Streak"
         }
     }
 
@@ -64,6 +65,9 @@ enum ShareCardStyle: String, CaseIterable, Identifiable {
             case .verdict: return data.verdict?.isEmpty == false
             case .words:   return data.rating != nil || !data.note.isEmpty
             case .receipt: return true
+            // A one-day "streak" is just today; the card only exists once
+            // there is a run to brag about.
+            case .streak:  return data.streakDays > 1
             }
         }
     }
@@ -133,6 +137,7 @@ struct SessionShareCard: View {
                 case .verdict: verdictLayout
                 case .words:   wordsLayout
                 case .receipt: receiptLayout
+                case .streak:  streakLayout
                 }
             }
             .padding(.horizontal, 32)
@@ -357,6 +362,44 @@ struct SessionShareCard: View {
                 .font(.system(size: 9, weight: .semibold))
                 .tracking(1)
                 .foregroundStyle(AppColor.textSecondary)
+        }
+    }
+
+    // MARK: The streak
+
+    /// The habit, not the session. Carries no measured value at all, which is
+    /// the point: this is the card for the day the practice showed up, whatever
+    /// the sit itself was like. The flame is the same mark the home screen
+    /// burns, so the card and the app teach the same symbol.
+    private var streakLayout: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 40)
+            brandBlock
+            Spacer()
+            VStack(spacing: 10) {
+                Image(systemName: "flame.fill")
+                    .font(.system(size: 64))
+                    .foregroundStyle(AppColor.accentGold)
+                    .shadow(color: AppColor.accentGold.opacity(0.45), radius: 26)
+                Text("\(data.streakDays)")
+                    .font(.system(size: 108, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.accentGoldText)
+                    .monospacedDigit()
+                Text("DAY STREAK")
+                    .font(.system(size: 11, weight: .semibold))
+                    .tracking(2.4)
+                    .foregroundStyle(AppColor.textSecondary)
+                Text("Showed up again today.")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .padding(.top, 18)
+            }
+            Spacer()
+            Text("\(minutesText) · \(data.date.formatted(date: .abbreviated, time: .omitted))")
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary)
+            footerLine.padding(.top, 6)
+            Spacer(minLength: 40)
         }
     }
 

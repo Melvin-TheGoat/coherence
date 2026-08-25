@@ -226,9 +226,11 @@ struct BreathScreen: View {
 
     /// Line, pause, orb, breath.
     ///
-    /// The two-second hold is the whole intro now. It is there so the line is
-    /// read before anything moves, and so the inhale reads as something
-    /// starting rather than something already underway.
+    /// One second on the line, then "Breathe in" arrives and holds for half a
+    /// second before the orb moves (Melvin, 2026-08-25: the old two-second
+    /// hold made the instruction feel late, and the half-second beat between
+    /// the words and the expansion is what makes the inhale feel cued rather
+    /// than already underway).
     ///
     /// Every sleep is followed by a cancellation check. A cancelled
     /// `Task.sleep` throws, `try?` swallows it, and the next line runs
@@ -236,7 +238,7 @@ struct BreathScreen: View {
     /// whole sequence at once.
     private func intro() async {
         withAnimation(.easeOut(duration: 0.5)) { titleOpacity = 1 }
-        try? await Task.sleep(for: .seconds(2))
+        try? await Task.sleep(for: .seconds(1))
         guard !Task.isCancelled else { return }
 
         withAnimation(.easeOut(duration: 0.4)) {
@@ -285,7 +287,7 @@ struct BaselineScreen: View {
                                      selected: frequency == f) { pick(f) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: frequency)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: frequency)
         }
     }
 
@@ -299,8 +301,11 @@ struct BaselineScreen: View {
 
 struct MotivationScreen: View {
     @Binding var selected: Set<Motivation>
+    @Binding var otherText: String
     let progress: Double
     let onContinue: () -> Void
+
+    @FocusState private var otherFocused: Bool
 
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
@@ -309,14 +314,38 @@ struct MotivationScreen: View {
                          ctaEnabled: !selected.isEmpty,
                          onContinue: onContinue) {
             VStack(spacing: 10) {
-                ForEach(Motivation.allCases) { m in
+                ForEach(Motivation.offered) { m in
                     OnboardingOption(label: m.label, icon: m.icon,
                                      selected: selected.contains(m)) {
-                        if selected.contains(m) { selected.remove(m) } else { selected.insert(m) }
+                        if selected.contains(m) {
+                            selected.remove(m)
+                            if m == .other { otherFocused = false }
+                        } else {
+                            selected.insert(m)
+                            if m == .other { otherFocused = true }
+                        }
+                    }
+                    // "Something else" opens a line of their own words, right
+                    // under the option, never required: an empty field is a
+                    // valid answer and the CTA does not gate on it.
+                    if m == .other, selected.contains(.other) {
+                        TextField("Tell us, in your words", text: $otherText)
+                            .focused($otherFocused)
+                            .textInputAutocapitalization(.sentences)
+                            .font(.system(size: 16, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 13)
+                            .background(AppColor.backgroundSecondary.opacity(0.7),
+                                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(AppColor.accentGold.opacity(0.4), lineWidth: 1))
+                            .transition(.opacity)
                     }
                 }
             }
-            .sensoryFeedback(.selection, trigger: selected)
+            .animation(.easeOut(duration: 0.2), value: selected.contains(.other))
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: selected)
         }
     }
 }
@@ -404,7 +433,7 @@ struct StressScreen: View {
                     .foregroundStyle(AppColor.textSecondary)
                 }
             }
-            .sensoryFeedback(.selection, trigger: notch)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: notch)
         }
     }
 }
@@ -482,7 +511,7 @@ struct AloneWithThoughtsScreen: View {
                                      selected: answer == a) { pick(a) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: answer)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: answer)
         }
     }
 
@@ -521,7 +550,7 @@ struct DoingNothingScreen: View {
                                      selected: answer == d) { pick(d) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: answer)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: answer)
         }
     }
 
@@ -554,7 +583,7 @@ struct RestartScreen: View {
                                      selected: restarts == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.impact(flexibility: .rigid), trigger: restarts)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: restarts)
         }
     }
 
@@ -588,7 +617,7 @@ struct IntendedForScreen: View {
                                      selected: intended == i) { pick(i) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: intended)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: intended)
         }
     }
 
@@ -619,7 +648,7 @@ struct CauseScreen: View {
                     }
                 }
             }
-            .sensoryFeedback(.selection, trigger: causes)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: causes)
         }
     }
 }
@@ -667,7 +696,7 @@ struct WatchGateScreen: View {
                                      selected: hasWatch == false) { pick(false) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: hasWatch)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: hasWatch)
         }
     }
 
@@ -857,7 +886,7 @@ struct AnchorScreen: View {
                                      selected: anchor == a) { pick(a) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: anchor)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: anchor)
         }
     }
 
@@ -913,7 +942,7 @@ struct NameScreen: View {
                     }
                 }
             }
-            .sensoryFeedback(.selection, trigger: ageBracket)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: ageBracket)
         }
     }
 
@@ -952,7 +981,7 @@ struct ReferralScreen: View {
                                      selected: referral == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.selection, trigger: referral)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: referral)
         }
     }
 
@@ -989,7 +1018,7 @@ struct BlindSpotScreen: View {
                                      selected: blindSpot == b) { pick(b) }
                 }
             }
-            .sensoryFeedback(.impact(flexibility: .rigid), trigger: blindSpot)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: blindSpot)
         }
     }
 

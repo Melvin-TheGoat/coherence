@@ -309,7 +309,7 @@ struct CostScreen: View {
                         .padding(.top, 2)
                 }
             }
-            .sensoryFeedback(.selection, trigger: costs)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: costs)
         }
     }
 
@@ -985,12 +985,12 @@ struct HowScreen: View {
     private func restRow(_ cause: DropoutCause) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Circle()
-                .fill(AppColor.textSecondary.opacity(0.30))
+                .fill(AppColor.accentGold.opacity(0.55))
                 .frame(width: 5, height: 5)
-                .padding(.top, 7)
+                .padding(.top, 8)
             Text(cause.answer)
-                .font(.footnote)
-                .foregroundStyle(AppColor.textSecondary)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -1056,7 +1056,7 @@ struct CommitmentScreen: View {
                         .buttonStyle(CardButtonStyle())
                     }
                 }
-                .sensoryFeedback(.selection, trigger: daysPerWeek)
+                .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: daysPerWeek)
                 .sensoryFeedback(.success, trigger: committed)
 
                 Text("Days per week")

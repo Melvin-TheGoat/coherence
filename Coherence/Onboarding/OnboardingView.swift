@@ -135,7 +135,7 @@ struct OnboardingView: View {
                     removal: .move(edge: .leading).combined(with: .opacity)))
                 .animation(.easeInOut(duration: 0.32), value: step)
         }
-        .sensoryFeedback(.impact(flexibility: .soft), trigger: step)
+        .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: step)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
         #if DEBUG
@@ -170,6 +170,7 @@ struct OnboardingView: View {
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
+                             otherText: $answers.motivationOther,
                              progress: interviewProgress) { go(nextAfter(.motivation)) }
 
         case .stress:
@@ -237,7 +238,13 @@ struct OnboardingView: View {
                               answerCount: answeredCount) { go(.result) }
 
         case .result:
-            ResultScreen(answers: answers) { go(.cost) }
+            // The cost screen is skipped (Melvin, 2026-08-25: another round
+            // of questions right after the interview reads as being made to
+            // work). The Step case and CostScreen stay so ONBOARDING_STEP
+            // indices hold and the screen can come back with one edit; with
+            // no costs ticked, downstream echoes (`primaryCost`) are nil and
+            // every reader already handles nil.
+            ResultScreen(answers: answers) { go(.wall) }
 
         case .cost:
             CostScreen(costs: $answers.costs) { go(.wall) }

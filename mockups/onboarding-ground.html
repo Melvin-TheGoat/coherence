@@ -1,0 +1,83 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding ground options</title>
+<style>
+@font-face{ font-family:Manrope; src:url(../website/fonts/manrope-var.woff2) format('woff2'); font-weight:200 800; }
+@font-face{ font-family:Hanken; src:url(../website/fonts/hanken-var.woff2) format('woff2'); font-weight:100 900; }
+@font-face{ font-family:DMMono; src:url(../website/fonts/dmmono-500.woff2) format('woff2'); font-weight:500; }
+:root{ --bg:#13100D; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 4px; } .note{ color:var(--muted); font-size:13px; max-width:640px; line-height:1.5; }
+h2{ font-size:15px; margin:34px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:18px; flex-wrap:wrap; }
+.phone{ width:250px; height:470px; border-radius:34px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; }
+.glow{ position:absolute; inset:0; }
+.wave{ position:absolute; left:0; right:0; bottom:58px; height:70px; opacity:.5; }
+.content{ position:absolute; inset:0; padding:26px 20px; display:flex; flex-direction:column; }
+.q{ font-size:19px; font-weight:700; line-height:1.25; margin-top:34px; }
+.sub{ font-size:12px; color:var(--muted); margin-top:8px; }
+.opt{ margin-top:12px; border:1px solid rgba(255,255,255,.14); border-radius:13px; padding:11px 13px; font-size:13.5px; background:rgba(255,255,255,.04); }
+.opt.sel{ border-color:var(--gold); background:rgba(212,175,55,.10); }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:8px; width:250px; line-height:1.45; }
+.cap b{ color:var(--fg); }
+.fonts .q{ margin-top:22px; }
+.manrope .q{ font-family:Manrope; font-weight:700; letter-spacing:-.02em; }
+.manrope .sub,.manrope .opt{ font-family:Hanken; }
+.manrope .k{ font-family:DMMono; font-size:9.5px; letter-spacing:.12em; color:var(--gold); text-transform:uppercase; margin-top:26px; }
+.sf .k{ font-size:9.5px; letter-spacing:.12em; color:var(--gold); text-transform:uppercase; margin-top:26px; font-weight:600; }
+</style></head><body>
+
+<h1>Onboarding ground, screens 3 to 9</h1>
+<p class="note">The interview currently sits on teal (option A). Pick the ground for the
+"body enters" section. Every panel keeps the same near-black base, the same radial glow shape,
+and the same drifting wave; only the colour changes. Gold selection stays gold in all of them.</p>
+
+<h2>Ground colour</h2>
+<div class="row">
+  <div>
+    <div class="phone"><div class="glow" style="background:radial-gradient(circle at 50% 28%, rgba(94,177,168,.30), rgba(41,92,89,.12) 55%, transparent 75%)"></div>
+      <svg class="wave" viewBox="0 0 250 70" preserveAspectRatio="none"><path d="M0,40 C40,20 70,55 110,38 C150,22 180,52 250,32" stroke="#5EB1A8" fill="none" stroke-width="1.6"/></svg>
+      <div class="content"><div class="q">Can you be alone<br>with your thoughts?</div><div class="sub">Compared to a few years ago.</div>
+      <div class="opt sel">Easily, and I enjoy it</div><div class="opt">Sometimes, if it's quiet</div><div class="opt">Honestly, no</div></div></div>
+    <div class="cap"><b>A · Teal (current)</b>. The body's signal colour everywhere else in the app.</div>
+  </div>
+  <div>
+    <div class="phone"><div class="glow" style="background:radial-gradient(circle at 50% 28%, rgba(124,168,110,.30), rgba(58,88,50,.12) 55%, transparent 75%)"></div>
+      <svg class="wave" viewBox="0 0 250 70" preserveAspectRatio="none"><path d="M0,40 C40,20 70,55 110,38 C150,22 180,52 250,32" stroke="#7CA86E" fill="none" stroke-width="1.6"/></svg>
+      <div class="content"><div class="q">Can you be alone<br>with your thoughts?</div><div class="sub">Compared to a few years ago.</div>
+      <div class="opt sel">Easily, and I enjoy it</div><div class="opt">Sometimes, if it's quiet</div><div class="opt">Honestly, no</div></div></div>
+    <div class="cap"><b>B · Sage green</b>. Calm and organic, still clearly distinct from the gold win section.</div>
+  </div>
+  <div>
+    <div class="phone"><div class="glow" style="background:radial-gradient(circle at 50% 28%, rgba(212,175,55,.26), rgba(107,79,21,.12) 55%, transparent 75%)"></div>
+      <svg class="wave" viewBox="0 0 250 70" preserveAspectRatio="none"><path d="M0,40 C40,20 70,55 110,38 C150,22 180,52 250,32" stroke="#D4AF37" fill="none" stroke-width="1.6"/></svg>
+      <div class="content"><div class="q">Can you be alone<br>with your thoughts?</div><div class="sub">Compared to a few years ago.</div>
+      <div class="opt sel">Easily, and I enjoy it</div><div class="opt">Sometimes, if it's quiet</div><div class="opt">Honestly, no</div></div></div>
+    <div class="cap"><b>C · Gold</b>. Warmest and most branded, but the win section loses its reveal: gold no longer means "you've arrived".</div>
+  </div>
+  <div>
+    <div class="phone"><div class="glow" style="background:radial-gradient(circle at 50% 28%, rgba(196,150,88,.28), rgba(94,66,32,.12) 55%, transparent 75%)"></div>
+      <svg class="wave" viewBox="0 0 250 70" preserveAspectRatio="none"><path d="M0,40 C40,20 70,55 110,38 C150,22 180,52 250,32" stroke="#C49658" fill="none" stroke-width="1.6"/></svg>
+      <div class="content"><div class="q">Can you be alone<br>with your thoughts?</div><div class="sub">Compared to a few years ago.</div>
+      <div class="opt sel">Easily, and I enjoy it</div><div class="opt">Sometimes, if it's quiet</div><div class="opt">Honestly, no</div></div></div>
+    <div class="cap"><b>D · Warm bronze</b>. Sits between the amber opening and the gold win, so the whole arc warms and the gold payoff survives.</div>
+  </div>
+</div>
+
+<h2>Type: system (current) vs the website's faces</h2>
+<div class="row fonts">
+  <div>
+    <div class="phone sf"><div class="glow" style="background:radial-gradient(circle at 50% 28%, rgba(196,150,88,.28), rgba(94,66,32,.12) 55%, transparent 75%)"></div>
+      <div class="content"><div class="k">Question 4 of 12</div><div class="q">What are you hoping meditation gives you?</div><div class="sub">Pick as many as are true.</div>
+      <div class="opt sel">Less stressed</div><div class="opt">Sharper focus</div><div class="opt">More discipline</div></div></div>
+    <div class="cap"><b>SF (current)</b>. The system face; matches the rest of the app.</div>
+  </div>
+  <div>
+    <div class="phone manrope"><div class="glow" style="background:radial-gradient(circle at 50% 28%, rgba(196,150,88,.28), rgba(94,66,32,.12) 55%, transparent 75%)"></div>
+      <div class="content"><div class="k">Question 4 of 12</div><div class="q">What are you hoping meditation gives you?</div><div class="sub">Pick as many as are true.</div>
+      <div class="opt sel">Less stressed</div><div class="opt">Sharper focus</div><div class="opt">More discipline</div></div></div>
+    <div class="cap"><b>Website faces</b>: Manrope headings, Hanken body, DM Mono labels. Matching the site means bundling all three and sweeping every screen, not just onboarding, or the app disagrees with itself.</div>
+  </div>
+</div>
+
+</body></html>

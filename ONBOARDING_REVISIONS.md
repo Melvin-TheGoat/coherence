@@ -264,3 +264,69 @@ copy move without a new build.
 5. **Community (item 11).** Naming @808meditate in onboarding promises something
    that lives outside the app today. Fine if the copy says where it is. Flagging
    so it is a decision.
+
+---
+
+# Round 3 — Melvin's pass of 2026-08-25
+
+Nine corrections, delivered alongside the App Store screenshot notes. Status
+legend: DONE = built this pass · MOCKUP = awaiting Melvin's pick from
+`mockups/onboarding-ground.html` · PLANNED = designed, not started.
+
+| # | Item | Status |
+|---|---|---|
+| 1 | Haptics far stronger | DONE — every selection tick is now `.impact(weight: .heavy, intensity: 1)` (17 sites), step-advance is medium. `.success` celebrations unchanged. |
+| 2 | Breath screen: "Breathe in" a second sooner, then a half-second hold before the orb expands | DONE — intro hold cut 2 s → 1 s; the existing 0.5 s beat between label and expansion stays. |
+| 3 | Interview ground: teal → something warm | MOCKUP — four grounds (teal / sage / gold / warm bronze) side by side. Gold has a real cost: the win section loses its reveal. Bronze keeps the arc warm without spending gold early. |
+| 4 | Motivation screen: free text for "Something else", drop "Less anxious" | DONE — `Motivation.offered` excludes `.lessAnxious` (case kept so stored answers decode); picking "Something else" opens an inline field → `answers.motivationOther`, never required, CTA does not gate on it. |
+| 5 | "Before my sport, activity, or hobby" → "Before my sport or hobby" | DONE. |
+| 6 | Same font and theme as the website | MOCKUP — SF vs Manrope/Hanken/DM Mono in the same layout. Note attached: adopting the site faces means bundling three fonts and sweeping the whole app, or the app disagrees with itself. |
+| 7 | Delete "What's it costing you" | DONE — `ResultScreen` routes straight to the wall. The `Step` case and `CostScreen` remain (so `ONBOARDING_STEP` indices hold); `primaryCost` is nil downstream and every reader already handled nil. |
+| 8 | "How you'll get there": the unnamed rows must pop | DONE — 15 pt medium, primary white, gold bullets. Named rows keep the gold card so their own words still lead. |
+| 9 | Interactive walkthrough/demo | PLANNED, blocked on Melvin verifying 1–8 first. Plan below. |
+
+Also this pass, outside onboarding: the streak share card (`ShareCardStyle
+.streak` — flame, day count, "Showed up again today.", no measured values;
+offered only when `streakDays > 1`). Whether it joins the free tier is Aziz's
+pricing call: his entitlement boundary locks the *choice* of card, and the
+streak card carries no evidence, so either answer is defensible.
+
+## The walkthrough plan (item 9, come back to Melvin before building)
+
+What he described: after (or replacing part of) the reflection screens, a
+guided tour that walks the user through the real home screen and streaks, then
+connects their Apple Watch, then runs a ~60-second breathing exercise while the
+Watch measures, ends on a real scored result: "you scored a 95, here are your
+vitals to prove it."
+
+Shape that fits the codebase:
+
+1. **Tour of the real screens, seeded.** Present the actual `ContentView` under
+   a spotlight overlay (dim everything but one region + a caption card), using
+   the demo seeds that already exist (`DemoData`). Two or three stops: streak
+   headline, calendar, Begin. No new screens to maintain; the tour shows the
+   app it ships.
+2. **Watch connect.** The existing watch gate answer decides entry. The connect
+   step reuses `SessionCoordinator`'s preflight (paired? installed? reachable?)
+   with the onboarding's own coaching copy.
+3. **The measured breath.** A real, short session: `startWatchApp` →
+   `SessionParams` flagged as a ~60 s exercise → the phone shows the paced orb
+   (6 s in, 6 s out — the Watch live screen's breathing orb already beats at
+   this pace) → payload lands → score it with the REAL engine and show the
+   real curves.
+4. **The number must be real.** "You scored a 95" only if the engine said 95.
+   The no-invented-numbers rule holds especially here, at the moment of first
+   trust. If the read fails (Watch off wrist, no HR), the honest fallback is
+   the same one the app already has: "we couldn't read this one", and the tour
+   continues to the projection unbruised.
+
+Copy note for the science line in his draft: swap the labels — slow breathing
+moves you OUT of fight-or-flight (sympathetic) INTO rest-and-digest
+(parasympathetic). His draft has the two systems reversed, and SCIENCE.md /
+the mechanism screen state it correctly already.
+
+Open questions for him before building: where it sits (his instinct: after the
+interview, before the projection?); whether the no-Watch path gets the tour
+without the breath (recommend yes, tour-only); and whether the breath exercise
+writes a Session row (recommend no — it is a demo, not practice, and it would
+start a streak the user did not earn).

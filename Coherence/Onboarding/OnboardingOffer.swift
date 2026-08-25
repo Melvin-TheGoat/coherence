@@ -131,7 +131,7 @@ struct RatingScreen: View {
                     }
                 }
                 .padding(.top, 22)
-                .sensoryFeedback(.selection, trigger: rating)
+                .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: rating)
 
                 Text(rating == nil ? "Tap to answer" : "Thank you.")
                     .font(AppFont.caption)
@@ -300,7 +300,7 @@ struct PaywallScreen: View {
                     }
                     .buttonStyle(CardButtonStyle())
                 }
-                .sensoryFeedback(.selection, trigger: plan)
+                .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: plan)
                 .sensoryFeedback(.success, trigger: started)
 
                 Text(selling ? "No charge today. We'll remind you before the trial ends."

@@ -32,6 +32,13 @@ public enum Motivation: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// What the motivation screen offers. `.lessAnxious` was cut 2026-08-25
+    /// (Melvin: same thing as less stressed, and the list was giving him
+    /// choice fatigue) but the case survives so stored answers still decode.
+    public static var offered: [Motivation] {
+        allCases.filter { $0 != .lessAnxious }
+    }
+
     public var icon: String {
         switch self {
         case .lessStressed:   return "wind"
@@ -318,7 +325,7 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         case .commute:   return "After my commute"
         case .lunch:     return "Around lunch"
         case .afterWork: return "When I get home from work"
-        case .beforeSport: return "Before my sport, activity, or hobby"
+        case .beforeSport: return "Before my sport or hobby"
         case .beforeBed: return "Before bed"
         }
     }
@@ -475,6 +482,8 @@ public enum CostSymptom: String, CaseIterable, Identifiable, Codable {
 public struct OnboardingAnswers: Codable, Equatable {
     public var currentFrequency: CurrentFrequency?
     public var motivations: Set<Motivation> = []
+    /// Their own words, only when "Something else" is picked. Never required.
+    public var motivationOther: String = ""
     /// 0 = "Fine", 1 = "Fried".
     public var stress: Double = 0.5
     public var aloneWithThoughts: AloneWithThoughts?
