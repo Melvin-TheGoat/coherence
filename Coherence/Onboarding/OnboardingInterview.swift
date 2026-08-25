@@ -287,7 +287,7 @@ struct BaselineScreen: View {
                                      selected: frequency == f) { pick(f) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: frequency)
+            .sensoryFeedback(.success, trigger: frequency)
         }
     }
 
@@ -345,7 +345,7 @@ struct MotivationScreen: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: selected.contains(.other))
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: selected)
+            .sensoryFeedback(.success, trigger: selected)
         }
     }
 }
@@ -433,7 +433,7 @@ struct StressScreen: View {
                     .foregroundStyle(AppColor.textSecondary)
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: notch)
+            .sensoryFeedback(.success, trigger: notch)
         }
     }
 }
@@ -511,7 +511,7 @@ struct AloneWithThoughtsScreen: View {
                                      selected: answer == a) { pick(a) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: answer)
+            .sensoryFeedback(.success, trigger: answer)
         }
     }
 
@@ -550,7 +550,7 @@ struct DoingNothingScreen: View {
                                      selected: answer == d) { pick(d) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: answer)
+            .sensoryFeedback(.success, trigger: answer)
         }
     }
 
@@ -583,7 +583,7 @@ struct RestartScreen: View {
                                      selected: restarts == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: restarts)
+            .sensoryFeedback(.success, trigger: restarts)
         }
     }
 
@@ -617,7 +617,7 @@ struct IntendedForScreen: View {
                                      selected: intended == i) { pick(i) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: intended)
+            .sensoryFeedback(.success, trigger: intended)
         }
     }
 
@@ -648,7 +648,7 @@ struct CauseScreen: View {
                     }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: causes)
+            .sensoryFeedback(.success, trigger: causes)
         }
     }
 }
@@ -696,7 +696,7 @@ struct WatchGateScreen: View {
                                      selected: hasWatch == false) { pick(false) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: hasWatch)
+            .sensoryFeedback(.success, trigger: hasWatch)
         }
     }
 
@@ -886,7 +886,7 @@ struct AnchorScreen: View {
                                      selected: anchor == a) { pick(a) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: anchor)
+            .sensoryFeedback(.success, trigger: anchor)
         }
     }
 
@@ -942,7 +942,7 @@ struct NameScreen: View {
                     }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: ageBracket)
+            .sensoryFeedback(.success, trigger: ageBracket)
         }
     }
 
@@ -981,7 +981,7 @@ struct ReferralScreen: View {
                                      selected: referral == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: referral)
+            .sensoryFeedback(.success, trigger: referral)
         }
     }
 
@@ -1018,7 +1018,7 @@ struct BlindSpotScreen: View {
                                      selected: blindSpot == b) { pick(b) }
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: blindSpot)
+            .sensoryFeedback(.success, trigger: blindSpot)
         }
     }
 

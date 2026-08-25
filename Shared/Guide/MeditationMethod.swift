@@ -101,7 +101,7 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             """,
             level: .beginner,
             steps: [
-                "Set aside some time, 10 to 20 minutes is great. Ensure you are undisturbed.",
+                "Set aside some time, 10 to 20 minutes is great. Make sure you are undisturbed.",
                 "Sit comfortably with a straight back on a well supported surface.",
                 "Focus on an anchor. It can be anything, but the most common is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.",
                 "Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one. Breathing deeply and naturally works too if that is what relaxes you.",

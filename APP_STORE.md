@@ -142,7 +142,7 @@ Generated and committed at `marketing/appstore/`. Real screens from the iPhone
 | # | File | Headline | Subhead |
 |---|---|---|---|
 | 1 | 01-score | Proof your meditation landed | A score out of 100, measured on your wrist |
-| 2 | 02-evidence | See what your body actually did | Slide your finger across any graph to replay it |
+| 2 | 02-evidence | See what your body actually did | Heart rate, stillness and breath, minute by minute |
 | 3 | 03-habit | Every session, on one calendar | Your streak, your history, your practice score |
 | 4 | 04-audio | Bring your own meditation | Or use the guided journey, tones and nature sounds |
 | 5 | 05-awards | Awards worth chasing | Ten straight days. A score of 90. A full hour. |
@@ -150,11 +150,14 @@ Generated and committed at `marketing/appstore/`. Real screens from the iPhone
 | 7 | 07-guide | Learn different techniques | Explained plainly, easiest first |
 | 8 | 08-share | Share the proof, not a caption | A card built from your own session |
 
-Melvin's revision pass (2026-08-25): slide 2 now shows the scrub callout live
-on the heart graph (the app already scrubbed; `PREVIEW_SCRUB=<minutes>` is a
-DEBUG hook that pins the selection so a screenshot can hold it). Slide 5 sells
-the chase, not the keeping (keeping is implied). Slide 7 names no count: the
-guide is a growing list and a fixed number caps it.
+Melvin's revision pass (2026-08-25): slide 2 opens on the FULL top of the
+results page (score ring first, never mid-scroll) with the scrub callout
+visible on the heart graph as a detail, and its caption stays the evidence
+line: the scrub is a feature to glimpse, not the selling point of the first
+screen a searcher sees. `PREVIEW_SCRUB=<minutes>` is the DEBUG hook that pins
+the callout so a screenshot can hold it. Slide 5 sells the chase, not the
+keeping (keeping is implied). Slide 7 names no count: the guide is a growing
+list and a fixed number caps it.
 
 The first three are what appear in search results, so they carry the argument:
 proof, then the evidence behind it, then the habit.

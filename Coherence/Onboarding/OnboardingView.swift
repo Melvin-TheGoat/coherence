@@ -135,7 +135,7 @@ struct OnboardingView: View {
                     removal: .move(edge: .leading).combined(with: .opacity)))
                 .animation(.easeInOut(duration: 0.32), value: step)
         }
-        .sensoryFeedback(.impact(weight: .medium, intensity: 1), trigger: step)
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: step)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
         #if DEBUG

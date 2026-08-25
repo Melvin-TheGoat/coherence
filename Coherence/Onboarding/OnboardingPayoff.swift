@@ -309,7 +309,7 @@ struct CostScreen: View {
                         .padding(.top, 2)
                 }
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: costs)
+            .sensoryFeedback(.success, trigger: costs)
         }
     }
 
@@ -1056,7 +1056,7 @@ struct CommitmentScreen: View {
                         .buttonStyle(CardButtonStyle())
                     }
                 }
-                .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: daysPerWeek)
+                .sensoryFeedback(.success, trigger: daysPerWeek)
                 .sensoryFeedback(.success, trigger: committed)
 
                 Text("Days per week")
