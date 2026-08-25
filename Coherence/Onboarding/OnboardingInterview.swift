@@ -162,12 +162,12 @@ struct BreathScreen: View {
 
             ZStack {
                 Circle()
-                    .fill(RadialGradient(colors: [AppColor.calmAccent.opacity(0.55),
-                                                  AppColor.calmAccent.opacity(0.05)],
+                    .fill(RadialGradient(colors: [Color.onboardingSage.opacity(0.55),
+                                                  Color.onboardingSage.opacity(0.05)],
                                          center: .center, startRadius: 6, endRadius: 130))
                     .frame(width: 230, height: 230)
                 Circle()
-                    .stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1.5)
+                    .stroke(Color.onboardingSage.opacity(0.45), lineWidth: 1.5)
                     .frame(width: 230, height: 230)
             }
             .scaleEffect(scale)
@@ -387,7 +387,7 @@ struct StressScreen: View {
     /// exactly the midpoint most people leave the slider on.
     private var tint: Color {
         let t = min(max(stress, 0), 1)
-        let calm  = (r: 0.45, g: 0.66, b: 0.63)   // AppColor.calmAccent
+        let calm  = (r: 0.486, g: 0.659, b: 0.431)   // Color.onboardingSage
         // A warm orange, pushed deliberately off the gold. The obvious midpoint
         // sits so close to AccentGold that the wave and the Continue button
         // below it read as the same colour, which is both flat to look at and
@@ -770,11 +770,11 @@ private struct WatchIllustration: View {
                         // the illustration looked broken rather than alive.
                         ZStack {
                             PulseTrace()
-                                .stroke(AppColor.calmAccent.opacity(0.3),
+                                .stroke(Color.onboardingSage.opacity(0.3),
                                         style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                             PulseTrace()
                                 .trim(from: 0, to: sweep ? 1 : 0)
-                                .stroke(AppColor.calmAccent,
+                                .stroke(Color.onboardingSage,
                                         style: StrokeStyle(lineWidth: 2, lineCap: .round, lineJoin: .round))
                         }
                         .frame(height: 26)

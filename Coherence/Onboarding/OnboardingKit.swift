@@ -10,6 +10,14 @@ import SwiftUI
 
 // MARK: - The colour arc
 
+/// The interview's accent. Melvin picked sage over the app's teal for the
+/// onboarding ground (2026-08-25, option B of mockups/onboarding-ground.html):
+/// warmer and more inviting for a first meeting, while the app itself keeps
+/// teal for the body's signals. Onboarding-only on purpose.
+extension Color {
+    static let onboardingSage = Color(red: 0.486, green: 0.659, blue: 0.431)
+}
+
 enum OnboardingSection {
     /// Screens 1–2. Blame comes off before any ask.
     case relief
@@ -24,7 +32,7 @@ enum OnboardingSection {
     var glow: (Color, Color) {
         switch self {
         case .relief: return (Color(red: 0.85, green: 0.60, blue: 0.24), Color(red: 0.55, green: 0.33, blue: 0.12))
-        case .body:   return (AppColor.calmAccent, Color(red: 0.16, green: 0.36, blue: 0.35))
+        case .body:   return (.onboardingSage, Color(red: 0.227, green: 0.345, blue: 0.196))
         case .cost:   return (Color(red: 0.62, green: 0.18, blue: 0.16), Color(red: 0.32, green: 0.08, blue: 0.08))
         case .win:    return (AppColor.accentGold, Color(red: 0.42, green: 0.31, blue: 0.08))
         }
