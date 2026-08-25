@@ -283,7 +283,7 @@ legend: DONE = built this pass · MOCKUP = awaiting Melvin's pick from
 | 6 | Same font and theme as the website | MOCKUP — SF vs Manrope/Hanken/DM Mono in the same layout. Note attached: adopting the site faces means bundling three fonts and sweeping the whole app, or the app disagrees with itself. |
 | 7 | Delete "What's it costing you" | DONE — `ResultScreen` routes straight to the wall. The `Step` case and `CostScreen` remain (so `ONBOARDING_STEP` indices hold); `primaryCost` is nil downstream and every reader already handled nil. |
 | 8 | "How you'll get there": the unnamed rows must pop | DONE — 15 pt medium, primary white, gold bullets. Named rows keep the gold card so their own words still lead. |
-| 9 | Interactive walkthrough/demo | PLANNED, blocked on Melvin verifying 1–8 first. Plan below. |
+| 9 | Interactive walkthrough/demo | BUILT v1, 2026-08-25 (see below). Awaiting Melvin's demo pass. |
 
 Also this pass, outside onboarding: the streak share card (`ShareCardStyle
 .streak` — flame, day count, "Showed up again today.", no measured values;
@@ -330,3 +330,40 @@ interview, before the projection?); whether the no-Watch path gets the tour
 without the breath (recommend yes, tour-only); and whether the breath exercise
 writes a Session row (recommend no — it is a demo, not practice, and it would
 start a streak the user did not earn).
+
+
+## Walkthrough v1 — BUILT (2026-08-25), awaiting Melvin's demo
+
+`Coherence/Onboarding/OnboardingWalkthrough.swift`, four steps between health
+consent and the paywall (no-Watch users skip straight to sign-in, unchanged):
+
+1. **TourHomeScreen** — the real `ContentView`, hit-testing off, dimmed under
+   three sequential notes (home/streak/calendar → Begin + bring-your-own-audio
+   → the guide). Nothing mocked: it is the user's actual, empty home.
+2. **WatchConnectScreen** — reads WCSession truthfully (paired / 808
+   installed), with the install hint and a Check again CTA. "I'll do this
+   later" skips honestly to the offer.
+3. **GuidedBreathScreen** — a REAL 2-minute session through the coordinator
+   (`plannedDurationSec: 120`, new `paceBreathing` flag). The Watch taps the
+   6 s rhythm on the wrist (`WKInterfaceDevice` directionUp/Down every 6 s,
+   new optional `SessionParams.paceBreathing`, back-compatible decode) and
+   auto-ends at 2:00; the phone shows the paced sage orb with a countdown.
+   Start failures surface the same PermissionBlockedView the app uses, then
+   skip forward. The score is whatever SignalEngine measured; per the
+   no-invented-numbers rule there is no scripted "95".
+4. **WalkthroughResultsScreen** — the real SessionResultsView for that
+   session, one dismissible note on top, Continue pinned beneath. Graphs,
+   verdict, rating, share are the app itself.
+
+**The paywall demo-sells.** In DEBUG builds `selling` is always true: full
+trial copy, anchored prices, the downsell ladder, and the free tier, with the
+purchase granted as the persisted preview entitlement. No "nothing is charged
+on this build" tell anywhere. Release builds keep the honest not-selling copy
+until StoreKit products exist, and the flag compiles away.
+
+Copy note honoured: the breathe screen says slow breathing settles the nervous
+system (Melvin's draft had sympathetic and parasympathetic swapped; the screen
+avoids both labels and stays right).
+
+`ONBOARDING_STEP` indices shifted: tourHome 32, watchConnect 33, breathe 34,
+sessionResults 35, paywall 36, signIn 37.

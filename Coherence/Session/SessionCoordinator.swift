@@ -86,7 +86,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// `soundID` is given, the phone plays that frequency tone+bed OR nature sound
     /// during the session.
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?,
-               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
+               hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false,
+               paceBreathing: Bool = false) {
         Task {
             // Ask WatchConnectivity what it knows before asking HealthKit to
             // launch anything. `startWatchApp` fails the same way whether no
@@ -124,7 +125,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 trackID: trackID,
                 plannedDurationSec: plannedDurationSec,
                 bellyBreathing: false,
-                hapticsEnabled: hapticsEnabled
+                hapticsEnabled: hapticsEnabled,
+                paceBreathing: paceBreathing ? true : nil
             )
             currentAttemptID = params.sessionID
             if let soundID { pendingSoundIDs[params.sessionID] = soundID }

@@ -49,6 +49,7 @@ struct OnboardingView: View {
         case wall, profile, commitment, projection, how        // 16–16d, 20
         case permission, week, rating                          // 21–22, 22b
         case health                                            // consent, kept from the old flow
+        case tourHome, watchConnect, breathe, sessionResults   // the walkthrough
         case paywall, signIn                                   // 23, 25
 
         /// Progress rail: only the interview shows one. Once we're reflecting
@@ -69,6 +70,9 @@ struct OnboardingView: View {
         var allowsBack: Bool {
             switch self {
             case .paywall, .signIn: return false
+            // Mid-practice and mid-result: backing into the interview from a
+            // running Watch session would strand the session.
+            case .breathe, .sessionResults: return false
             default: return true
             }
         }
@@ -108,6 +112,15 @@ struct OnboardingView: View {
             return .calculating     // interview over
         }
         return step
+    }
+
+    /// The session the walkthrough's breathing practice produced.
+    @State private var walkthroughSessionID: UUID?
+
+    /// After the walkthrough (or skipping out of it): the offer, or sign-in
+    /// when the paywall lives outside onboarding.
+    private var afterWalkthrough: Step {
+        Self.paywallInsideOnboarding ? .paywall : .signIn
     }
 
     /// Where they've been, so the chevron can undo a wrong tap. A stack rather
@@ -298,10 +311,32 @@ struct OnboardingView: View {
 
         case .health:
             HealthConsentScreen {
-                // No-Watch users never see the paywall, whether or not they
-                // joined the waitlist: we don't sell a subscription to someone
-                // the app cannot yet work for.
-                go(Self.paywallInsideOnboarding && answers.hasWatch != false ? .paywall : .signIn)
+                // No-Watch users skip the walkthrough AND the paywall: we
+                // neither demo nor sell what the app cannot yet do for them.
+                go(answers.hasWatch != false ? .tourHome : .signIn)
+            }
+
+        // MARK: The walkthrough (see OnboardingWalkthrough.swift)
+
+        case .tourHome:
+            TourHomeScreen { go(.watchConnect) }
+
+        case .watchConnect:
+            WatchConnectScreen(onReady: { go(.breathe) },
+                               onSkip: { go(afterWalkthrough) })
+
+        case .breathe:
+            GuidedBreathScreen(onScored: { id in
+                walkthroughSessionID = id
+                go(.sessionResults)
+            }, onSkip: { go(afterWalkthrough) })
+
+        case .sessionResults:
+            if let id = walkthroughSessionID {
+                WalkthroughResultsScreen(sessionID: id) { go(afterWalkthrough) }
+            } else {
+                // Unreachable by routing; a safe landing beats a crash.
+                Color.clear.onAppear { go(afterWalkthrough) }
             }
 
         case .paywall:

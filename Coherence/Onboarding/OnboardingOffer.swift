@@ -203,7 +203,20 @@ struct PaywallScreen: View {
     /// and the answer flips by itself the day billing is switched on. A flag
     /// would need remembering, and the failure mode of forgetting is a beta
     /// screen shipped to paying customers.
-    private var selling: Bool { store.state == .ready }
+    private var selling: Bool { store.state == .ready || Self.demoSelling }
+
+    /// DEBUG builds sell even before StoreKit has products, so the whole
+    /// offer (prices, trial, ladder, free tier) demos exactly as it will
+    /// ship: full sell copy, and the buy button grants the simulated
+    /// entitlement Aziz's preview machinery already persists. Release builds
+    /// are untouched: before billing exists they keep the honest
+    /// nothing-for-sale copy, and the flag needs no remembering because it
+    /// compiles away.
+    #if DEBUG
+    private static let demoSelling = true
+    #else
+    private static let demoSelling = false
+    #endif
 
     /// Apple's price string when there is a real product, ours otherwise.
     /// A hardcoded dollar amount beside a live purchase button is wrong in
@@ -216,7 +229,7 @@ struct PaywallScreen: View {
     /// Whether the free week may be promised. StoreKit knows if this person
     /// already used the introductory offer; promising it anyway would put a
     /// claim on screen that the purchase sheet contradicts one tap later.
-    private var offerTrial: Bool { store.trialEligible }
+    private var offerTrial: Bool { store.trialEligible || store.state != .ready }
 
     var body: some View {
         OnboardingScreen(section: .win,
@@ -388,14 +401,17 @@ struct PaywallScreen: View {
     /// A cancelled or failed purchase stays put without comment, because the
     /// system sheet the user just dismissed IS the comment.
     private func advance() {
-        guard selling else {
+        guard store.state == .ready else {
             #if DEBUG
-            // Review mode: the "purchase" that StoreKit cannot run happens as
-            // a simulated entitlement, so the unlock is real on this build and
-            // the free → trial → unlocked loop can be reviewed end to end.
-            if Store.previewFreeByDefault { store.setPreviewEntitled(true) }
+            // The purchase StoreKit cannot run happens as a simulated
+            // entitlement instead, so the unlock is real on this build and
+            // buy → unlock reviews end to end with no demo tell on screen.
+            store.setPreviewEntitled(true)
+            onDone(true)
+            #else
+            onDone(false)
             #endif
-            onDone(false); return
+            return
         }
         Task { @MainActor in
             if await store.purchase(plan) == .bought {

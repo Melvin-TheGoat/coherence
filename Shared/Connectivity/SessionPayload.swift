@@ -13,6 +13,10 @@ struct SessionParams: Codable, Equatable {
     let plannedDurationSec: Int?     // nil = open-ended
     let bellyBreathing: Bool
     let hapticsEnabled: Bool
+    /// Watch taps the 6s-in / 6s-out rhythm on the wrist during the session
+    /// (the onboarding breathing practice). Optional so params from an older
+    /// phone decode on a newer Watch and vice versa.
+    let paceBreathing: Bool?
 
     init(
         sessionID: UUID,
@@ -20,7 +24,8 @@ struct SessionParams: Codable, Equatable {
         trackID: UUID? = nil,
         plannedDurationSec: Int?,
         bellyBreathing: Bool,
-        hapticsEnabled: Bool
+        hapticsEnabled: Bool,
+        paceBreathing: Bool? = nil
     ) {
         self.sessionID = sessionID
         self.mode = mode
@@ -28,6 +33,7 @@ struct SessionParams: Codable, Equatable {
         self.plannedDurationSec = plannedDurationSec
         self.bellyBreathing = bellyBreathing
         self.hapticsEnabled = hapticsEnabled
+        self.paceBreathing = paceBreathing
     }
 }
 
