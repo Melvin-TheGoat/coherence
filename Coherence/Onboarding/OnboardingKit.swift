@@ -182,7 +182,7 @@ struct OnboardingCTA: View {
                                        startPoint: .topLeading, endPoint: .bottomTrailing),
                         in: RoundedRectangle(cornerRadius: 17, style: .continuous))
             }
-            .buttonStyle(CardButtonStyle())
+            .buttonStyle(PressReleaseHapticStyle())
             .disabled(!enabled)
             .opacity(enabled ? 1 : 0.4)
 

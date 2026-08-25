@@ -251,10 +251,12 @@ struct BreathScreen: View {
         try? await Task.sleep(for: .seconds(1))
         guard !Task.isCancelled else { return }
 
-        withAnimation(.easeOut(duration: 0.4)) {
-            orbOpacity = 1
-            labelOpacity = 1
-        }
+        // Staggered on purpose: "Breathe in" speaks first, and the orb
+        // arrives a beat later as the thing the words were announcing.
+        withAnimation(.easeOut(duration: 0.35)) { labelOpacity = 1 }
+        try? await Task.sleep(for: .seconds(0.45))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.4)) { orbOpacity = 1 }
         try? await Task.sleep(for: .seconds(0.5))
     }
 
