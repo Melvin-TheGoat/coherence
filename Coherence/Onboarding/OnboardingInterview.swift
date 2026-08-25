@@ -40,6 +40,9 @@ final class AdvanceGate: ObservableObject {
 
 struct ReliefScreen: View {
     let onContinue: () -> Void
+    /// Jumps straight to Sign in with Apple. A returning user reinstalling
+    /// should not have to re-answer an interview the app already knows.
+    let onSignIn: () -> Void
     @State private var appeared = false
 
     var body: some View {
@@ -86,6 +89,13 @@ struct ReliefScreen: View {
             // the first real score is a whole session away. An invitation also
             // suits a page whose job is taking blame off.
             OnboardingCTA(title: "Let's find out", action: onContinue)
+                .opacity(appeared ? 1 : 0)
+                .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
+
+            Button("Already have an account?", action: onSignIn)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 14)
                 .opacity(appeared ? 1 : 0)
                 .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
         }
@@ -287,7 +297,6 @@ struct BaselineScreen: View {
                                      selected: frequency == f) { pick(f) }
                 }
             }
-            .sensoryFeedback(.success, trigger: frequency)
         }
     }
 
@@ -345,7 +354,6 @@ struct MotivationScreen: View {
                 }
             }
             .animation(.easeOut(duration: 0.2), value: selected.contains(.other))
-            .sensoryFeedback(.success, trigger: selected)
         }
     }
 }
@@ -433,7 +441,7 @@ struct StressScreen: View {
                     .foregroundStyle(AppColor.textSecondary)
                 }
             }
-            .sensoryFeedback(.success, trigger: notch)
+            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: notch)
         }
     }
 }
@@ -511,7 +519,6 @@ struct AloneWithThoughtsScreen: View {
                                      selected: answer == a) { pick(a) }
                 }
             }
-            .sensoryFeedback(.success, trigger: answer)
         }
     }
 
@@ -550,7 +557,6 @@ struct DoingNothingScreen: View {
                                      selected: answer == d) { pick(d) }
                 }
             }
-            .sensoryFeedback(.success, trigger: answer)
         }
     }
 
@@ -583,7 +589,6 @@ struct RestartScreen: View {
                                      selected: restarts == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.success, trigger: restarts)
         }
     }
 
@@ -617,7 +622,6 @@ struct IntendedForScreen: View {
                                      selected: intended == i) { pick(i) }
                 }
             }
-            .sensoryFeedback(.success, trigger: intended)
         }
     }
 
@@ -648,7 +652,6 @@ struct CauseScreen: View {
                     }
                 }
             }
-            .sensoryFeedback(.success, trigger: causes)
         }
     }
 }
@@ -696,7 +699,6 @@ struct WatchGateScreen: View {
                                      selected: hasWatch == false) { pick(false) }
                 }
             }
-            .sensoryFeedback(.success, trigger: hasWatch)
         }
     }
 
@@ -886,7 +888,6 @@ struct AnchorScreen: View {
                                      selected: anchor == a) { pick(a) }
                 }
             }
-            .sensoryFeedback(.success, trigger: anchor)
         }
     }
 
@@ -942,7 +943,6 @@ struct NameScreen: View {
                     }
                 }
             }
-            .sensoryFeedback(.success, trigger: ageBracket)
         }
     }
 
@@ -981,7 +981,6 @@ struct ReferralScreen: View {
                                      selected: referral == r) { pick(r) }
                 }
             }
-            .sensoryFeedback(.success, trigger: referral)
         }
     }
 
@@ -1018,7 +1017,6 @@ struct BlindSpotScreen: View {
                                      selected: blindSpot == b) { pick(b) }
                 }
             }
-            .sensoryFeedback(.success, trigger: blindSpot)
         }
     }
 

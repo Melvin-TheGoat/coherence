@@ -7,7 +7,7 @@
 <meta name="description" content="Meet 808, the first app that scores your meditation from your body, with all the tools to verify, track, and share your practice.">
 <meta property="og:title" content="Make meditation easy with 808">
 <meta property="og:description" content="The first app that scores your meditation from your body.">
-<meta property="og:image" content="img/store-share.png">
+<meta property="og:image" content="img/shot-share.png">
 <link rel="preload" href="fonts/manrope-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/hanken-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='5'%3E%3Cellipse cx='50' cy='28.5' rx='13.5' ry='20.5'/%3E%3Cellipse cx='50' cy='71.5' rx='13.5' ry='20.5'/%3E%3Cellipse cx='28.5' cy='50' rx='20.5' ry='13.5'/%3E%3Cellipse cx='71.5' cy='50' rx='20.5' ry='13.5'/%3E%3C/g%3E%3C/svg%3E">
@@ -89,12 +89,10 @@
   .lede{ font-size:18px; color:var(--muted); max-width:54ch; margin:0 0 26px; }
   .lede b{ color:var(--fg); font-weight:600; }
 
-  .phone{ border-radius:44px; border:1px solid var(--border); overflow:hidden;
-    background:#000; box-shadow:0 30px 80px rgba(0,0,0,.5); }
+  .phone{ border-radius:44px; border:9px solid #26231f; overflow:hidden;
+    background:#000; outline:1px solid rgba(170,163,150,.6);
+    box-shadow:0 26px 70px rgba(0,0,0,.75); }
   .hero .phone{ max-width:320px; justify-self:center; }
-  /* Store slides carry their own drawn bezel, caption and ground, so the CSS
-     frame comes off and the corner radius just softens the card. */
-  .phone.store{ border:none; border-radius:20px; }
 
   /* ---- waitlist form ---- */
   .signup .row{ display:flex; gap:10px; flex-wrap:wrap; }
@@ -307,7 +305,7 @@
       </div>
     </div>
 
-    <div class="phone store"><img src="img/store-habit.png" width="1320" height="2868"
+    <div class="phone"><img src="img/shot-hero.png" width="644" height="1400"
       alt="808 home screen: a 7 day streak, a gold practice score sparkline, and a month calendar dotted on practiced days"></div>
   </div>
 </div>
@@ -349,16 +347,16 @@
         </div>
       </div>
       <div class="shots">
-        <div class="phone store"><img src="img/store-score.png" loading="lazy" width="1320" height="2868"
+        <div class="phone"><img src="img/shot-result-high.png" loading="lazy" width="644" height="1400"
           alt="A high scoring session: Your practice landed, score 81, heart settled 13 beats, with heart rate and stillness curves"></div>
-        <div class="phone store"><img src="img/store-low.png" loading="lazy" width="1320" height="2868"
+        <div class="phone"><img src="img/shot-result-low.png" loading="lazy" width="644" height="1400"
           alt="A low scoring session: A restless one, that happens. Score 29, heart rate climbing, stillness jagged, breath not read"></div>
       </div>
     </div>
 
     <div class="pain flip">
       <div class="shots single">
-        <div class="phone store"><img src="img/store-journey.png" loading="lazy" width="1320" height="2868"
+        <div class="phone"><img src="img/shot-journey.png" loading="lazy" width="644" height="1400"
           alt="The journey screen: a 7 day streak, awards shelf, and a month calendar dotted on practiced days"></div>
       </div>
       <div>
@@ -386,14 +384,14 @@
         </div>
       </div>
       <div class="shots single">
-        <div class="phone store"><img src="img/store-share.png" loading="lazy" width="1320" height="2868"
+        <div class="phone"><img src="img/shot-share.png" loading="lazy" width="644" height="1400"
           alt="The share screen: a branded card with practice score 81, minutes, stillness, heart rate settle, breathing, and a 7 day streak"></div>
       </div>
     </div>
 
     <div class="pain flip">
       <div class="shots single">
-        <div class="phone store"><img src="img/store-guide.png" loading="lazy" width="1320" height="2868"
+        <div class="phone"><img src="img/shot-guide.png" loading="lazy" width="644" height="1400"
           alt="The how to meditate guide: a path from First time meditating through Counting Down, Body Scan, Blue Sky, Dual Awareness and more"></div>
       </div>
       <div>

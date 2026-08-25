@@ -159,7 +159,7 @@ struct OnboardingView: View {
     private var content: some View {
         switch step {
         case .relief:
-            ReliefScreen { go(.breath) }
+            ReliefScreen(onContinue: { go(.breath) }, onSignIn: { go(.signIn) })
 
         case .breath:
             BreathScreen { go(.baseline) }

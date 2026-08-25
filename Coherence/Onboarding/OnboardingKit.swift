@@ -200,6 +200,23 @@ struct OnboardingCTA: View {
 
 /// One tappable answer. Tap advances where the screen allows it — no confirm
 /// button, which is most of why the reference flow feels like a game.
+/// The double pulse Melvin approved, split across the physical gesture
+/// (2026-08-25): touch-down fires the first hit, letting go fires the second.
+/// UIKit generators rather than .sensoryFeedback because SwiftUI's trigger
+/// fires on state change, and press state never changes for a cancelled tap.
+struct PressReleaseHapticStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .contentShape(Rectangle())
+            .opacity(configuration.isPressed ? 0.55 : 1)
+            .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .onChange(of: configuration.isPressed) { _, pressed in
+                let gen = UIImpactFeedbackGenerator(style: pressed ? .heavy : .rigid)
+                gen.impactOccurred(intensity: 1.0)
+            }
+    }
+}
+
 struct OnboardingOption: View {
     let label: String
     var icon: String? = nil
@@ -236,7 +253,7 @@ struct OnboardingOption: View {
             .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
                 .stroke(selected ? AppColor.accentGold : .clear, lineWidth: 1.5))
         }
-        .buttonStyle(CardButtonStyle())
+        .buttonStyle(PressReleaseHapticStyle())
     }
 }
 

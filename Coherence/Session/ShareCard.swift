@@ -389,10 +389,6 @@ struct SessionShareCard: View {
                     .font(.system(size: 11, weight: .semibold))
                     .tracking(2.4)
                     .foregroundStyle(AppColor.textSecondary)
-                Text("Showed up again today.")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .padding(.top, 18)
             }
             Spacer()
             Text("\(minutesText) · \(data.date.formatted(date: .abbreviated, time: .omitted))")
