@@ -20,7 +20,7 @@ Method, guided steps, length picker).
 | Audience | Disciplined achiever **+** anxious/stressed, bridged by "bring your own audio". |
 | The offer | "See it work, so you keep doing it." |
 | No Apple Watch | **Waitlist**, offered honestly at Q5. Never funnel them to a paywall. |
-| Pricing | 7-day free trial · **$5/mo · $30/yr · $50 lifetime** |
+| Pricing | 7-day free trial · **$7.99/mo · $29.99/yr · $99.99 lifetime** (repriced 2026-08-25, Aziz; was $5/$30/$50) |
 | Sign in with Apple | **After** the paywall. |
 | Haptics | Every tap. Spec below. |
 | Colour | **Stay gold-on-near-black.** Add a per-section colour arc, not a new hue. |
@@ -77,7 +77,7 @@ the palette, not a different palette.
 20. **Commitment** — days/week, assembled into their own sentence.
 21. **Permission** — notifications, asked *after* the commitment, phrased in their anchor. Pre-prompt so a "no" doesn't burn the system dialog.
 22. **Your week** — Day 1 / 2 / 3 / 7 preview.
-23. **Paywall** — 7 days free, then $5/mo · $30/yr · $50 lifetime. Trial terms on the button's own line.
+23. **Paywall** — 7 days free, then $7.99/mo · $29.99/yr · $99.99 lifetime. Trial terms on the button's own line.
 24. **Exit offer** — **30 days free instead**, not a fake discount.
 25. **Sign in with Apple** — framed as saving the streak they just built.
 

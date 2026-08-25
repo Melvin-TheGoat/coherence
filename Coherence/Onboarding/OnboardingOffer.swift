@@ -30,9 +30,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
 
     var price: String {
         switch self {
-        case .monthly:  return "$4.99"
+        case .monthly:  return "$7.99"
         case .yearly:   return "$29.99"
-        case .lifetime: return "$49.99"
+        case .lifetime: return "$99.99"
         }
     }
 
@@ -45,9 +45,14 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// market at them (2026-08-18). If the plan ever changes so these were
     /// never really the list price, this property comes out, it does not get
     /// quietly re-pointed at a bigger number.
-    var anchorPrice: String {
+    ///
+    /// **Monthly's anchor came out on 2026-08-25, per that exact rule.** The
+    /// repriced stack ($7.99 / $29.99 / $99.99) makes $7.99 the real monthly
+    /// price, and a strikethrough equal to the sale price is the fake
+    /// reference this comment forbids. nil = no anchor shown.
+    var anchorPrice: String? {
         switch self {
-        case .monthly:  return "$7.99"
+        case .monthly:  return nil
         case .yearly:   return "$59.99"
         case .lifetime: return "$199"
         }
@@ -75,13 +80,13 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// on X" does not, because we have no idea what anyone spends on X.
     var note: String? {
         switch self {
-        // $59.88 a year over 52 weeks. Weekly rather than daily: a cent
-        // figure reads as a rounding trick, $1.15 reads as a price.
-        case .monthly:  return "About $1.15 a week"
-        // $29.99 over 12 months, and half the monthly plan, both true.
+        // $95.88 a year over 52 weeks. Weekly rather than daily: a cent
+        // figure reads as a rounding trick, $1.84 reads as a price.
+        case .monthly:  return "About $1.84 a week"
+        // $29.99 over 12 months, and under a third of the monthly plan.
         case .yearly:   return "$2.50 a month"
-        // $49.99 against $4.99 a month is 10.02 months.
-        case .lifetime: return "Ten months, then never again"
+        // $99.99 against $7.99 a month is 12.5 months.
+        case .lifetime: return "A year of monthly, then never again"
         }
     }
 }
@@ -289,8 +294,9 @@ struct PaywallScreen: View {
                                     // localized string is a different currency
                                     // in most countries, and a dollar anchor
                                     // beside a euro price is nonsense.
-                                    if store.displayPrice(for: p) == nil {
-                                        Text(p.anchorPrice)
+                                    if store.displayPrice(for: p) == nil,
+                                       let anchor = p.anchorPrice {
+                                        Text(anchor)
                                             .font(.system(size: 13, weight: .medium, design: .rounded))
                                             .foregroundStyle(AppColor.textSecondary.opacity(0.7))
                                             .strikethrough(true, color: AppColor.textSecondary.opacity(0.7))

@@ -230,10 +230,13 @@ configuration there is and this has never been seen by a user. Three ways out:
 Recommendation is 1 until billing is live, because product IDs are permanent and
 this one would exist only to serve a downsell we have not tested.
 
-Related and smaller: `SubscriptionPlan.price` hardcodes `$4.99 / $29.99 /
-$49.99` while `808.storekit` uses `5.00 / 30.00 / 50.00`. Harmless today because
-`PaywallScreen` prefers Apple's `displayPrice` whenever a product exists, but
-the two should be reconciled so design reviews and the simulator agree.
+Resolved 2026-08-25: the stack was repriced to **$7.99 monthly / $29.99
+yearly / $99.99 lifetime** and `808.storekit` now mirrors it exactly.
+Reasoning (competitor ceilings, LTV arithmetic, the lifetime underpricing at
+1.67x annual) is in the pricing analysis of 2026-08-25. Monthly's $7.99
+anchor came OUT with the reprice: its real price is now the old anchor, and a
+strikethrough equal to the sale price is the fake reference price the
+attorney note forbids. Yearly ($59.99) and lifetime ($199) anchors survive.
 
 ### Trial length
 
@@ -242,8 +245,8 @@ the same day. One trial length means one intro offer per product and the
 existing subscription group works untouched, with no second product to create.
 
 The trial renews into **Monthly**, so Monthly is preselected and every footnote
-offering the trial reads "Then $5 a month. Renews automatically. Cancel any time
-in Settings." Yearly and Lifetime stay available to anyone who picks them.
+offering the trial reads "Then $7.99 a month. Renews automatically. Cancel any
+time in Settings." (repriced 2026-08-25). Yearly and Lifetime stay available to anyone who picks them.
 
 *Known trade, accepted:* renewing into monthly gets more trial starts than an
 annual default and is worth materially less per user over a year, because it

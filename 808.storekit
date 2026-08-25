@@ -4,7 +4,7 @@
   ],
   "products" : [
     {
-      "displayPrice" : "50.00",
+      "displayPrice" : "99.99",
       "familyShareable" : false,
       "internalID" : "808000003",
       "localizations" : [
@@ -36,7 +36,7 @@
           ],
           "codeOffers" : [
           ],
-          "displayPrice" : "5.00",
+          "displayPrice" : "7.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "808000001",
@@ -63,7 +63,7 @@
           ],
           "codeOffers" : [
           ],
-          "displayPrice" : "30.00",
+          "displayPrice" : "29.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "808000002",

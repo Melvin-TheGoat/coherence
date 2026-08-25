@@ -65,16 +65,21 @@ final class PaywallLadderTests: XCTestCase {
         }
     }
 
-    /// Every anchor must be above the price it anchors, or it is not a
-    /// discount, it is a mistake someone will screenshot.
+    /// Every anchor that exists must be above the price it anchors, or it is
+    /// not a discount, it is a mistake someone will screenshot. Monthly
+    /// deliberately has none since the 2026-08-25 reprice made its old anchor
+    /// the real price.
     func test_anchorsAreHigherThanPrices() {
         func dollars(_ s: String) -> Double {
             Double(s.replacingOccurrences(of: "$", with: "")) ?? 0
         }
         for plan in SubscriptionPlan.allCases {
-            XCTAssertGreaterThan(dollars(plan.anchorPrice), dollars(plan.price),
+            guard let anchor = plan.anchorPrice else { continue }
+            XCTAssertGreaterThan(dollars(anchor), dollars(plan.price),
                                  "\(plan)'s anchor is not above its price")
         }
+        XCTAssertNil(SubscriptionPlan.monthly.anchorPrice,
+                     "monthly sells AT its old anchor; striking it through would be a fake reference price")
     }
 
     /// Every per-unit claim is recomputed from the price beside it. This is the
@@ -88,17 +93,21 @@ final class PaywallLadderTests: XCTestCase {
         let yearly = dollars(SubscriptionPlan.yearly.price)
         let lifetime = dollars(SubscriptionPlan.lifetime.price)
 
-        // "About $1.15 a week"
-        XCTAssertEqual(monthly * 12 / 52, 1.15, accuracy: 0.02)
-        XCTAssertTrue(SubscriptionPlan.monthly.note?.contains("$1.15") == true)
+        // "About $1.84 a week"
+        XCTAssertEqual(monthly * 12 / 52, 1.84, accuracy: 0.02)
+        XCTAssertTrue(SubscriptionPlan.monthly.note?.contains("$1.84") == true)
         // "$2.50 a month"
         XCTAssertEqual(yearly / 12, 2.50, accuracy: 0.01)
         XCTAssertTrue(SubscriptionPlan.yearly.note?.contains("$2.50") == true)
         // "less than one coffee" has to actually be a small number
         XCTAssertLessThan(yearly / 12, 4.0, "the coffee claim stopped being true")
-        // "Ten months of monthly"
-        XCTAssertEqual(lifetime / monthly, 10, accuracy: 0.2)
-        // And the yearly really is half the monthly, which the note implies.
+        // "A year of monthly": 99.99 / 7.99 is 12.5 months, a year rounded the
+        // honest direction (claiming less than it is, never more).
+        XCTAssertEqual(lifetime / monthly, 12.5, accuracy: 0.2)
+        XCTAssertGreaterThanOrEqual(lifetime / monthly, 12,
+                                    "the note says a year; the ratio fell under one")
+        // And the yearly is far under the monthly run-rate, which the ladder's
+        // reframe rung leans on.
         XCTAssertLessThanOrEqual(yearly, monthly * 12 * 0.55)
     }
 
