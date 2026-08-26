@@ -16,6 +16,9 @@ struct CoherenceApp: App {
         let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()
         let container = Persistence.cloudKit()
         modelContainer = container
+        #if DEBUG
+        CloudSyncProbe.start()   // prints the sync story to the launch console
+        #endif
         Persistence.completeRescue(rescued, into: container)
         let setup = ModelContext(container)
         TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks

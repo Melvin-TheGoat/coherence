@@ -1590,19 +1590,36 @@ Where it actually stands, so nobody re-derives it:
   `initializeCloudKitSchema()` does this job and SwiftData does not expose it,
   so the primer writes one row of every synced model with every attribute
   non-nil. Deploy, then delete the rows: deleting records never removes fields.
-- **THE SILENT FALLBACK IS THE PRIME SUSPECT FOR "sync has never worked".**
-  `Persistence.cloudKit()` catches a container failure, `print`s it where
-  nobody can see it on a device, and returns a plain local store. A
-  non-syncing app is indistinguishable from a working one. `Persistence.mode`
-  now records the outcome and a DEBUG Settings panel shows it along with the
-  entitled container and the iCloud account status. **This was built and
-  installed but the readout was never actually read**, so the diagnosis is
-  still open. That is the first thing to do when the freeze lifts.
-- **The unresolved risk stays unresolved:** the privacy policy and the sign-in
-  screen both promise sessions survive a new phone via private iCloud sync, and
-  sync has never demonstrably run once. Internal testers are told this in the
-  What to Test notes. It must be fixed or the promise softened before this
-  reaches people who are not us.
+- **DIAGNOSED 2026-08-25, on-device: SYNC WORKS on dev builds and always
+  has.** `CloudSyncProbe` (DEBUG, `Coherence/Settings/`) prints the whole
+  story to the cabled launch console: mode "CloudKit sync active", container
+  `iCloud.com.azizmahmud.808`, account available, setup + repeated import
+  AND export events all `succeeded=true` on Aziz's phone. The silent
+  fallback never fired; the Development schema had built itself lazily from
+  real writes. The readout just had never been read.
+  - **The real defect: TestFlight talks to CloudKit PRODUCTION, and the
+    Production schema has never been deployed.** Development builds schema
+    lazily; Production only ever gets schema by manual promotion in the
+    CloudKit Console. So cabled dev builds sync perfectly while every
+    TestFlight install exports into an environment with no record types and
+    fails. That one difference explains every "sync never worked" report.
+  - **The fix sequence (Console actions, no app change, no new review):**
+    (1) run `CloudSchemaPrimer` from Settings > CloudKit (debug) on a dev
+    build so the Development schema carries ALL fields (13 optionals write
+    no field until primed; Production promotion is additive and manual);
+    (2) CloudKit Console > `iCloud.com.azizmahmud.808` > deploy schema
+    Development → Production; (3) fresh TestFlight install, sign in, check
+    sessions appear on a second install. The same promotion must later be
+    repeated on `iCloud.com.lockout.meditate808` when the Organization
+    account exists — put it on the org-account-day checklist.
+  - Remaining honesty gap even after promotion: `MeditationStats` is
+    device-local BY DESIGN (5.1.3 split), so curves never roam. The sync
+    promise covers sessions and the streak, and the results screen already
+    explains a synced session without local stats.
+- **The promise is now backed by evidence on dev builds** (see the diagnosis
+  above). It becomes true for TestFlight the day the schema is promoted to
+  Production; until then the What to Test note stays. Verify a real
+  second-install round-trip before deleting that note.
 
 ## Marketing, advertising, and persuasion copy (standing rule, Melvin 2026-08-20)
 
