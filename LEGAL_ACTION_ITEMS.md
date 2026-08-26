@@ -10,10 +10,15 @@
 > entity users will actually contract with.
 >
 > **What this decision creates, still owed:**
-> 1. **Paper the IP assignment.** A short assignment of the 808 app, code,
->    brand and user-data responsibilities from LockOut LLC to Lock Out Inc.,
->    signed by both members. Until it exists, the docs name an entity the
->    assets have not formally moved into. One page; do it before launch.
+> 1. **Paper the IP assignment — NOT a launch gate (Aziz, 2026-08-25).** A
+>    short assignment of the 808 app, code, brand and user-data
+>    responsibilities from LockOut LLC to Lock Out Inc., signed by both
+>    members. Deferred deliberately: Apple never checks it, both founders are
+>    50/50 in both entities so ownership lands identically in any dispute,
+>    and confirmatory assignments after the fact are routine. **It becomes
+>    mandatory at the first diligence event** (outside money, acquisition
+>    talk, or a serious legal threat), and it is cheapest to sign while both
+>    founders agree on everything, so do it in a quiet week, not never.
 > 2. **Decide the LLC's fate** (dormant vs wound down). Michigan annual report
 >    still due 02/15/2027 either way while it exists.
 > 3. **TR-808 trademark: accepted risk, decided without counsel.** Roland's

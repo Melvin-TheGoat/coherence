@@ -1483,8 +1483,9 @@ and website footer named LockOut LLC. **SWAPPED 2026-08-25 (Aziz's call, no
 attorney): every user-facing doc now names `Lock Out Inc.` and the ToS
 governs under Delaware, matching the corp that will hold the Organization
 account.** Owed by that decision: a papered LLC→corp IP assignment (one page,
-both members sign, before launch) and the LLC's dormant-vs-wound-down call;
-see LEGAL_ACTION_ITEMS.md. The website needs a manual Cloudflare redeploy to
+both members sign — NOT a launch gate per Aziz 2026-08-25, mandatory only at
+the first diligence event, cheapest in a quiet week) and the LLC's
+dormant-vs-wound-down call; see LEGAL_ACTION_ITEMS.md. The website needs a manual Cloudflare redeploy to
 carry it live. When the org account goes live, and ask the attorney
 about the LLC→corp assignment of the app and user data (ToS assignment
 clause + the policy's material-change notice). Also: App Privacy labels
