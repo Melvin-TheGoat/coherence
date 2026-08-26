@@ -1562,13 +1562,20 @@ green, verified on the simulator. The short version:
   was defensible when everything was paid. Curves are now the thing being sold,
   and it sits on top of CloudKit never having demonstrably synced.
 
-## iCloud / CloudKit — FROZEN during the external beta (2026-08-14)
+## iCloud / CloudKit — diagnosed working; fix is Console-side (2026-08-25)
 
-**Nothing about iCloud ships until the beta says otherwise.** External Beta App
-Review is approved; changing entitlements, Info.plist privacy strings or
-marketing copy forces a new review and costs days. Per Aziz's note above, later
-builds of the same version otherwise skip review entirely, so ordinary feature
-work is free and iCloud work is not.
+**The 2026-08-14 freeze is effectively over, because the fix turned out to
+need no app change at all.** The freeze existed because touching entitlements
+or privacy strings forces a new Beta App Review; the diagnosis below showed
+the entitlements were fine all along and the missing piece is a CloudKit
+Console schema promotion, which Apple never reviews. The freeze rule itself
+still stands for any change that WOULD touch entitlements or Info.plist.
+
+**OWED NEXT, in order (first two are Aziz's, minutes each):** (1) run the
+schema primer from Settings > CloudKit (debug) on a dev build; (2) CloudKit
+Console > `iCloud.com.azizmahmud.808` > deploy schema Development →
+Production; (3) verify on a fresh TestFlight install that signed-in sessions
+reappear, then delete the "sync doesn't work" line from What to Test.
 
 Where it actually stands, so nobody re-derives it:
 
