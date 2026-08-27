@@ -34,6 +34,13 @@ rejected: "Proof your meditation worked" (28), "Meditation for manifestation"
 The App Store Connect record is **"808: Meditate"** because bare "808" is
 taken. `CFBundleDisplayName` stays 808, so the icon reads 808 either way.
 
+## Seller / parent company
+
+**Lock Out Inc.**, a Delaware corporation, D-U-N-S 149914479. This exact string
+is the App Store seller name, the party named in the privacy policy and terms,
+and the attribution shown in the app's Settings screen. It must match the Apple
+Developer enrolment character for character.
+
 ## Category
 
 Primary **Health & Fitness** · Secondary **Lifestyle**
@@ -259,15 +266,18 @@ they clear.
    built for exactly this has still never been read) or soften both strings.
    The iCloud freeze was for the beta and lifts when we move to the Org
    account, since that build re-enters review anyway.
-4. **Legal entity swap, now unblocked.** The C-corp exists, has its EIN, and is
-   the entity the approved D-U-N-S was issued to (confirmed 2026-08-24), so it
-   is the entity that enrols and therefore the seller name on the App Store.
-   The policy, terms and website footer all still name **LockOut LLC**. Change
-   every mention to the corporation's exact registered name in one pass, and
-   ask the attorney about assigning the app and the user data from the LLC to
-   the corp (the ToS assignment clause and the policy's material-change notice
-   both bear on it). **The name in those documents must match the name on the
-   Apple enrolment**, or the listing contradicts its own legal pages.
+4. **Legal entity: `Lock Out Inc.` DONE, one page still owed.** The DE
+   corporation is the parent company of 808 and the party every legal document
+   names. The swap was executed 2026-08-25: the privacy policy, the terms, all
+   four website footers and the in-app Settings screen now read **Lock Out
+   Inc.** character for character, which is the string the D-U-N-S record
+   carries (149914479) and therefore the string the Apple enrolment and the App
+   Store seller name must match exactly. A space, and `Inc.`, never `LockOut
+   LLC`.
+
+   Still owed, not a launch blocker: a papered LLC to corp assignment of the
+   app and the user data, plus a decision on whether the Michigan LLC stays
+   dormant or is wound down. See `LEGAL_ACTION_ITEMS.md`.
 
 Then, in Connect:
 

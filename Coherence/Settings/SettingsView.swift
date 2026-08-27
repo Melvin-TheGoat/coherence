@@ -392,9 +392,35 @@ private struct SettingsForm: View {
             Button("Delete account") { confirmDelete = true }
                 .font(AppFont.caption)
                 .foregroundStyle(.red.opacity(0.75))
+
+            // Who actually stands behind the app. The legal docs above name
+            // Lock Out Inc. as the party you are agreeing with, and until now
+            // nothing in the app itself said so: a policy that introduces a
+            // company the product never mentions reads as boilerplate someone
+            // pasted. Also the conventional home for the build number, which
+            // is the first thing a support email needs.
+            VStack(spacing: 3) {
+                Text("808 is made by Lock Out Inc.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                Text(Self.versionLine)
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.6))
+                    .monospacedDigit()
+            }
+            .padding(.top, 22)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 12)
+    }
+
+    /// "Version 1.0 (202608251757)" from the bundle, never hardcoded: a
+    /// hand-typed version is wrong the moment it is typed.
+    private static var versionLine: String {
+        let info = Bundle.main.infoDictionary
+        let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "Version \(short) (\(build))"
     }
 
     private func docPage(_ name: String) -> some View {

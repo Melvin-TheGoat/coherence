@@ -13,6 +13,9 @@ finish, 808 shows what your body actually did and gives you one score out of
 100.
 
 - **Website:** meditate808.com
+- **Parent company:** Lock Out Inc. (write it exactly like that: a space, and
+  `Inc.`). Only needed where a slide, caption or footer names the publisher.
+  The product is always called 808, never the company name.
 - **Instagram / TikTok:** @808meditate
 - **Status:** pre-launch, waitlist open.
 - **Requires:** a paired Apple Watch to measure a session.
