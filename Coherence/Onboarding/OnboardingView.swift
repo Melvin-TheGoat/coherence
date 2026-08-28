@@ -43,6 +43,7 @@ struct OnboardingView: View {
         case restarts, intendedFor, causes                     // 5–6
         case blindSpot                                         // the regular's question
         case watchGate, waitlist                               // 7, 7b
+        case watchSetup                                        // 7c: getting 808 on the wrist
         case anchor, you, referral                             // 8–9, then attribution
         case calculating, result, cost                         // 10–12
         case proofBody, sampleStart, sampleBuild, proofYourWay // 13–15 (the pair replaced "so you get a number")
@@ -218,12 +219,17 @@ struct OnboardingView: View {
                             progress: interviewProgress,
                             onYes: {
                                 Analytics.track(.watchGate(outcome: "hasWatch"))
-                                go(nextAfter(.watchGate))
+                                go(.watchSetup)
                             },
                             onNo: {
                                 Analytics.track(.watchGate(outcome: "waitlist"))
                                 go(.waitlist)
                             })
+
+        case .watchSetup:
+            // Instructional only; the live paired/installed check stays in the
+            // walkthrough, where the practice actually needs the Watch.
+            WatchSetupScreen { go(nextAfter(.watchGate)) }
 
         case .waitlist:
             // Joining is optional either way: declining clears the email so

@@ -89,6 +89,64 @@ struct TourHomeScreen: View {
     }
 }
 
+// MARK: - Getting 808 onto the Watch (right after the gate)
+
+/// Instructions, immediately after "yes, I have a Watch" (Aziz, 2026-08-28:
+/// "that is not clear"). The walkthrough's live check comes later; this screen
+/// exists because a first-time user has no reason to know the Watch app
+/// installs itself alongside the phone app, and the walkthrough's connect
+/// screen is a worse place to learn it for the first time while a practice is
+/// waiting on you.
+///
+/// Instructional only, no live WCSession check, deliberately: at this point in
+/// onboarding the user may be mid-commute with the Watch at home, and a check
+/// that can fail here would turn information into a gate. The real gate stays
+/// in `WatchConnectScreen`, where the practice actually needs the Watch.
+struct WatchSetupScreen: View {
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .body,
+                         title: "808 goes on your Watch by itself.",
+                         subtitle: "Installing on this iPhone installs the Watch side too. Here's how to make sure it's there.",
+                         ctaTitle: "Got it",
+                         onContinue: onContinue) {
+            VStack(spacing: 12) {
+                step(1, "Put your Watch on",
+                     "Snug enough that the sensors sit against your skin.")
+                step(2, "Press the crown and look for the 808 app",
+                     "It installs alongside the iPhone app automatically.")
+                step(3, "Not there? Open the Watch app on this iPhone",
+                     "Scroll to 808 under Available Apps and tap Install.")
+            }
+        }
+    }
+
+    private func step(_ n: Int, _ title: String, _ detail: String) -> some View {
+        HStack(alignment: .top, spacing: 13) {
+            Text("\(n)")
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.accentGoldText)
+                .frame(width: 30, height: 30)
+                .background(AppColor.accentGold.opacity(0.14), in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(detail)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(AppColor.backgroundSecondary.opacity(0.7),
+                    in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+    }
+}
+
 // MARK: - 2 · Connect the Watch
 
 /// The honest gate before the practice. Reads what WatchConnectivity already
@@ -102,6 +160,13 @@ struct WatchConnectScreen: View {
     @State private var paired = false
     @State private var installed = false
     @State private var checking = true
+    /// Failed "Check again" taps. The walkthrough is the product's first
+    /// proof, so there is no standing skip (Aziz, 2026-08-28: "we really want
+    /// the user to experience that"). But a user whose Watch is at home on the
+    /// charger CANNOT pass this screen, and an onboarding that hard-blocks on
+    /// external state is a stranding, so an escape appears after three failed
+    /// checks. Default path: do the practice. Escape: earned by trying.
+    @State private var failedChecks = 0
 
     private var ready: Bool { paired && installed }
 
@@ -111,9 +176,11 @@ struct WatchConnectScreen: View {
                          subtitle: "The next two minutes are measured from your wrist, so make sure it's snug and awake.",
                          ctaTitle: ready ? "It's on. Let's breathe" : "Check again",
                          ctaEnabled: !checking,
-                         skipTitle: "I'll do this later",
-                         onSkip: onSkip,
-                         onContinue: { ready ? onReady() : refresh() }) {
+                         skipTitle: "My Watch isn't with me. Continue",
+                         onSkip: failedChecks >= 3 ? onSkip : nil,
+                         onContinue: {
+                             if ready { onReady() } else { failedChecks += 1; refresh() }
+                         }) {
             VStack(spacing: 12) {
                 row(ok: paired, label: "Apple Watch paired")
                 row(ok: installed, label: "808 installed on the Watch",
