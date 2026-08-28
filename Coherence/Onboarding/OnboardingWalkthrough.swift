@@ -26,13 +26,22 @@ struct TourHomeScreen: View {
     private struct Note {
         let title: String
         let body: String
+        /// The card floats mid-screen (ZStack-centred) for notes about things
+        /// that live at the bottom. The Begin button is pinned to the bottom
+        /// edge, and the first build put the card right on top of it: a note
+        /// saying "one button starts everything" while hiding the button
+        /// (Aziz, 2026-08-28). Centred beats top-pinned here because top would
+        /// just cover the streak instead, and the greeting gives the card
+        /// nothing to explain.
+        var cardOnTop = false
     }
 
     private let notes: [Note] = [
         .init(title: "This is home.",
               body: "Your streak lives at the top, and every practiced day lands a dot on the calendar. It fills in as you show up."),
         .init(title: "One button starts everything.",
-              body: "Begin session tells your Watch to start measuring. Play any audio you like from any app, or nothing at all. 808 measures either way."),
+              body: "Begin session tells your Watch to start measuring. Play any audio you like from any app, or nothing at all. 808 measures either way.",
+              cardOnTop: true),
         .init(title: "The guide is always here.",
               body: "How to meditate, plainly explained, easiest first. Every session you finish comes back as a score and the story of what your body did."),
     ]
@@ -47,7 +56,12 @@ struct TourHomeScreen: View {
             Color.black.opacity(0.45).ignoresSafeArea()
 
             VStack {
-                Spacer()
+                if notes[stop].cardOnTop { noteCard } else { Spacer(); noteCard }
+            }
+        }
+    }
+
+    private var noteCard: some View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text(notes[stop].title)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -84,8 +98,7 @@ struct TourHomeScreen: View {
                     .stroke(AppColor.accentGold.opacity(0.25), lineWidth: 1))
                 .padding(.horizontal, 16)
                 .padding(.bottom, 24)
-            }
-        }
+                .padding(.top, 8)
     }
 }
 
@@ -108,16 +121,16 @@ struct WatchSetupScreen: View {
     var body: some View {
         OnboardingScreen(section: .body,
                          title: "808 goes on your Watch by itself.",
-                         subtitle: "Installing on this iPhone installs the Watch side too. Here's how to make sure it's there.",
+                         subtitle: "Installing 808 on this iPhone puts it on your Watch too. Take a second to make sure it's there, since that's where every session is measured.",
                          ctaTitle: "Got it",
                          onContinue: onContinue) {
             VStack(spacing: 12) {
                 step(1, "Put your Watch on",
-                     "Snug enough that the sensors sit against your skin.")
-                step(2, "Press the crown and look for the 808 app",
-                     "It installs alongside the iPhone app automatically.")
-                step(3, "Not there? Open the Watch app on this iPhone",
-                     "Scroll to 808 under Available Apps and tap Install.")
+                     "Wear it snug on your wrist. The sensors need skin contact to read your heart.")
+                step(2, "Check your Watch for the 808 app",
+                     "Press the side crown to see your apps. 808 installs itself alongside the iPhone app, so it should already be waiting there.")
+                step(3, "Not there? Install it from this iPhone",
+                     "Open the Watch app on this iPhone, scroll down to Available Apps, and tap Install next to 808.")
             }
         }
     }
@@ -188,7 +201,14 @@ struct WatchConnectScreen: View {
                         "Open the Watch app on this iPhone, scroll to 808, and tap Install.")
             }
         }
-        .onAppear(perform: refresh)
+        // Live, not one-shot. The first build read WCSession once with a 3 s
+        // window, and activation routinely settles slower than that on a
+        // fresh launch (the same race the first-Begin path documents), so the
+        // rows sat unchecked against a paired Watch and read as broken
+        // (Aziz, 2026-08-28: "make sure the checkboxes are actually
+        // functional"). This watches for as long as the screen is up and the
+        // rows tick the moment the system reports them.
+        .task { await monitor() }
     }
 
     private func row(ok: Bool, label: String, hint: String? = nil) -> some View {
@@ -216,20 +236,30 @@ struct WatchConnectScreen: View {
     }
 
     private func refresh() {
-        checking = true
-        // Activation settles async on first launch; poll briefly rather than
-        // reporting a state WCSession hasn't finished forming.
-        Task { @MainActor in
-            let wc = WCSession.default
-            if wc.activationState != .activated { wc.activate() }
-            for _ in 0..<10 {
-                if wc.activationState == .activated { break }
-                try? await Task.sleep(for: .seconds(0.3))
+        Task { @MainActor in await monitor() }
+    }
+
+    /// Reads the session state every half second while the screen is up,
+    /// stopping once both rows are green. `.task` cancels it on disappear.
+    /// Re-entrant calls (the Check again button) just overlap harmlessly:
+    /// every writer writes the same truth.
+    @MainActor
+    private func monitor() async {
+        let wc = WCSession.default
+        if wc.activationState != .activated { wc.activate() }
+        for tick in 0..<120 {
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                paired = WCSession.isSupported() && wc.isPaired
+                installed = wc.isWatchAppInstalled
             }
-            paired = WCSession.isSupported() && wc.isPaired
-            installed = wc.isWatchAppInstalled
-            checking = false
+            // The first honest read is in: let the button enable. Before it,
+            // "Check again" against unformed state would only mislead.
+            if tick >= 1 { checking = false }
+            if paired && installed { checking = false; return }
+            try? await Task.sleep(for: .seconds(0.5))
         }
+        checking = false
     }
 }
 
