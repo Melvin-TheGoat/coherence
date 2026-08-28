@@ -15,6 +15,34 @@ import WatchConnectivity
 
 // MARK: - 1 · The home tour
 
+/// The home screen's tour targets, published as anchor preferences by
+/// `ContentView` and read here. Harmless in the real app: nothing outside the
+/// tour ever reads the key.
+enum TourTarget: Hashable { case streak, guide, begin }
+
+struct TourTargetKey: PreferenceKey {
+    static var defaultValue: [TourTarget: SwiftUI.Anchor<CGRect>] = [:]
+    static func reduce(value: inout [TourTarget: SwiftUI.Anchor<CGRect>],
+                       nextValue: () -> [TourTarget: SwiftUI.Anchor<CGRect>]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
+
+/// The whole screen dimmed except a rounded window over the target. Even-odd
+/// fill: the outer rect and the inner rounded rect cancel, so the target shows
+/// through at full brightness.
+private struct SpotlightDim: Shape {
+    var window: CGRect?
+    func path(in bounds: CGRect) -> Path {
+        var p = Path()
+        p.addRect(bounds)
+        if let w = window {
+            p.addRoundedRect(in: w, cornerSize: CGSize(width: 18, height: 18))
+        }
+        return p
+    }
+}
+
 /// The real home screen, dimmed under a sequence of notes. Hit testing is off:
 /// this is show, not touch, and Begin here would start a session the flow is
 /// about to start properly anyway.
@@ -26,39 +54,64 @@ struct TourHomeScreen: View {
     private struct Note {
         let title: String
         let body: String
-        /// The card floats mid-screen (ZStack-centred) for notes about things
-        /// that live at the bottom. The Begin button is pinned to the bottom
-        /// edge, and the first build put the card right on top of it: a note
-        /// saying "one button starts everything" while hiding the button
-        /// (Aziz, 2026-08-28). Centred beats top-pinned here because top would
-        /// just cover the streak instead, and the greeting gives the card
-        /// nothing to explain.
-        var cardOnTop = false
+        /// The element this note is about. The spotlight opens over it and the
+        /// card takes the opposite half of the screen.
+        let target: TourTarget
     }
 
     private let notes: [Note] = [
         .init(title: "This is home.",
-              body: "Your streak lives at the top, and every practiced day lands a dot on the calendar. It fills in as you show up."),
+              body: "Your streak lives at the top, and every practiced day lands a dot on the calendar. It fills in as you show up.",
+              target: .streak),
         .init(title: "One button starts everything.",
               body: "Begin session tells your Watch to start measuring. Play any audio you like from any app, or nothing at all. 808 measures either way.",
-              cardOnTop: true),
+              target: .begin),
         .init(title: "The guide is always here.",
-              body: "How to meditate, plainly explained, easiest first. Every session you finish comes back as a score and the story of what your body did."),
+              body: "How to meditate, plainly explained, easiest first. Every session you finish comes back as a score and the story of what your body did.",
+              target: .guide),
     ]
 
     var body: some View {
-        ZStack {
-            ContentView()
-                .allowsHitTesting(false)
-
-            // The dim: enough that the notes own the screen, light enough
-            // that the app underneath reads as real, because it is.
-            Color.black.opacity(0.45).ignoresSafeArea()
-
-            VStack {
-                if notes[stop].cardOnTop { noteCard } else { Spacer(); noteCard }
+        ContentView()
+            .allowsHitTesting(false)
+            // The dim with a hole in it. The tour's first build dimmed the
+            // whole screen flat and pinned every note to the bottom, which
+            // both hid the Begin button under the note describing it and
+            // highlighted nothing (Aziz, 2026-08-28: "make sure the box is
+            // not covering the thing it's trying to highlight, and then
+            // actually highlight that portion"). ContentView publishes the
+            // real frames, so the spotlight is on the actual element at any
+            // screen size, not a guessed rectangle.
+            .overlayPreferenceValue(TourTargetKey.self) { anchors in
+                GeometryReader { proxy in
+                    let target = anchors[notes[stop].target]
+                        .map { proxy[$0].insetBy(dx: -8, dy: -6) }
+                    ZStack {
+                        SpotlightDim(window: target)
+                            .fill(Color.black.opacity(0.55), style: FillStyle(eoFill: true))
+                            .ignoresSafeArea()
+                        if let target {
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(AppColor.accentGold.opacity(0.85), lineWidth: 1.5)
+                                .frame(width: target.width, height: target.height)
+                                .position(x: target.midX, y: target.midY)
+                                .shadow(color: AppColor.accentGold.opacity(0.35), radius: 10)
+                        }
+                        // The card takes whichever half the target is not in,
+                        // so it can never cover the thing it is pointing at.
+                        VStack {
+                            if let target, target.midY > proxy.size.height / 2 {
+                                noteCard
+                                Spacer()
+                            } else {
+                                Spacer()
+                                noteCard
+                            }
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.25), value: stop)
+                }
             }
-        }
     }
 
     private var noteCard: some View {

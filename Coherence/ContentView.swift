@@ -50,8 +50,10 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 22) {
                 header
                 streakBlock
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
                 calendarCard
                 guideCard
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
                 proofSection
                 #if DEBUG
                 debugButtons
@@ -78,6 +80,7 @@ struct ContentView: View {
                 }
                 Button("Begin session") { sheet = .setup }
                     .buttonStyle(PrimaryButtonStyle())
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
             }
             .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
             .padding(.horizontal, AppMetrics.screenPadding)
