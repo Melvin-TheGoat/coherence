@@ -22,3 +22,38 @@ follow.
 **The device frame is drawn, not photographed.** Apple's marketing guidelines
 forbid depicting Apple hardware inaccurately, and a generic dark bezel avoids
 claiming to be a specific model.
+
+## `decks/` and `tools/carousel.swift`
+
+Social carousels are rendered, not designed one at a time. A deck is a JSON
+file of copy; `tools/carousel.swift` lays it out on the brand ground and writes
+one PNG per slide in every size asked for.
+
+```bash
+swift tools/carousel.swift marketing/decks/meditate-blind.json out all
+```
+
+Sizes: `ig` 1080x1350 (Instagram carousel, the default), `vertical` 1080x1920
+(TikTok, Stories, and the frames a reel gets cut from), `square` 1080x1080.
+One deck renders all three, so there is never a second write-up per platform.
+
+**The copy comes from somewhere else.** Either written by hand or by the
+carousel generator, which is given `CAROUSEL_BRIEF.md` as its whole brief and
+hands back a deck in the shape section 14 of that file specifies. The split is
+deliberate: a model is good at hooks and bad at consistency, and 808's whole
+position is that it looks deliberate. Nothing about layout, colour or type is
+ever decided per post.
+
+**It refuses rather than warns.** An em dash, a banned phrase, a screenshot
+path that does not exist, a slide with no gold element or with two, or copy
+that overruns the safe area all fail the render and name the slide. The checks
+a machine cannot make are still section 13 of the brief, read by a person
+before publishing.
+
+## `fonts/`
+
+Manrope, Hanken Grotesk and DM Mono, the three faces the website already uses,
+downloaded from Google Fonts and committed because neither cofounder has them
+installed. All three are OFL licensed. Without them the renderer would fall
+back to SF Pro and quietly ship a carousel that does not match the site, so it
+exits instead.

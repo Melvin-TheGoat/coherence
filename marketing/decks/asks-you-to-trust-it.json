@@ -1,0 +1,49 @@
+{
+  "topic": "Every meditation app asks you to trust it",
+  "handle": "@808meditate",
+  "slides": [
+    {
+      "kind": "hook",
+      "kicker": "01 / if you have quit before",
+      "headline": "Every meditation app asks you to trust it.",
+      "highlight": "trust"
+    },
+    {
+      "kind": "statement",
+      "kicker": "why it did not stick last time",
+      "headline": "You had no way to tell whether it was working.",
+      "body": "So when a busy morning broke the streak, there was nothing to miss. Nothing had ever been shown to you, so nothing felt earned."
+    },
+    {
+      "kind": "statement",
+      "kicker": "the difference",
+      "headline": "808 hands you the reading.",
+      "highlight": "reading",
+      "body": "You meditate the way you already do. The Apple Watch is already on your wrist. The measuring happens quietly in the background and the reading arrives when you finish."
+    },
+    {
+      "kind": "statement",
+      "kicker": "what it measures",
+      "headline": "Stillness, heart rate, breath.",
+      "body": "How still your body got. How far your heart rate settled across the session. And when you deliberately slow your breath, the small tilt of the wrist that comes with it."
+    },
+    {
+      "kind": "shot",
+      "kicker": "it does not flatter you",
+      "headline": "A restless sit scores a 29.",
+      "image": "website/img/shot-result-low.png"
+    },
+    {
+      "kind": "quote",
+      "kicker": "an early tester",
+      "quote": "I track everything else so figured why not my morning meditation as well. I love the streak, keeps me accountable, and the achievements are also fun to hit",
+      "attribution": "Beta tester"
+    },
+    {
+      "kind": "cta",
+      "headline": "See what your next session does.",
+      "body": "Join the waitlist. An Apple Watch is required to measure a session.",
+      "cta": "meditate808.com"
+    }
+  ]
+}

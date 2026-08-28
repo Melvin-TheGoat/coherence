@@ -1,0 +1,55 @@
+{
+  "topic": "Most people meditate blind",
+  "handle": "@808meditate",
+  "slides": [
+    {
+      "kind": "hook",
+      "kicker": "01 / the problem",
+      "headline": "Most people meditate blind.",
+      "highlight": "blind"
+    },
+    {
+      "kind": "statement",
+      "kicker": "the part nobody says out loud",
+      "headline": "You close your eyes for ten minutes. Then what?",
+      "body": "You get up. You have no idea whether anything happened. And the next morning it is a little harder to sit down again."
+    },
+    {
+      "kind": "statement",
+      "kicker": "what is actually missing",
+      "headline": "It was never effort. It was evidence.",
+      "body": "Your watch counts your steps, your runs, your sleep. Meditation is the one habit it stays quiet about, so the only thing you have to go on is a feeling you cannot check."
+    },
+    {
+      "kind": "statement",
+      "kicker": "what 808 measures",
+      "headline": "Three signals, read off your own wrist.",
+      "body": "How still your body got. How far your heart rate settled across the session. And when you deliberately slow your breath, the small tilt of the wrist that comes with it."
+    },
+    {
+      "kind": "shot",
+      "kicker": "after the session, never during",
+      "headline": "One score out of 100.",
+      "image": "website/img/shot-result-high.png"
+    },
+    {
+      "kind": "stat",
+      "kicker": "a mind that is somewhere else",
+      "value": "46.9%",
+      "label": "of waking moments are spent thinking about something other than what you are doing.",
+      "source": "Killingsworth & Gilbert 2010, Science, doi:10.1126/science.1192439. 2,250 adults. This is the research on attention and meditation, not on 808, and none of it is medical advice."
+    },
+    {
+      "kind": "quote",
+      "kicker": "an early tester",
+      "quote": "I've started and quit meditating probably six times. The thing that always got me was having no idea if anything was happening. First session with this showed my heart rate dropped 14 beats when i slowed my breathing down and it showed me where on the graph.",
+      "attribution": "Beta tester, first week"
+    },
+    {
+      "kind": "cta",
+      "headline": "Proof your meditation landed.",
+      "body": "Join the waitlist. An Apple Watch is required to measure a session.",
+      "cta": "meditate808.com"
+    }
+  ]
+}

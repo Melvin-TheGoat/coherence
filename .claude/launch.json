@@ -4,8 +4,22 @@
     {
       "name": "website",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8990", "--directory", "website"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8990",
+        "--directory",
+        "website"
+      ],
       "port": 8990
+    },
+    {
+      "name": "carousel",
+      "runtimeExecutable": "/Users/melvinvancleave/carousel-generator-v2/.venv/bin/python",
+      "runtimeArgs": [
+        "/Users/melvinvancleave/carousel-generator-v2/app.py"
+      ],
+      "port": 8501
     }
   ]
 }

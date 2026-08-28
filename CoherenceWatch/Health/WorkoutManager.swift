@@ -52,7 +52,15 @@ final class WorkoutManager: NSObject, ObservableObject {
     /// collection has actually begun.
     @discardableResult
     func start() async -> Bool {
-        guard !isRunning else { return false }
+        // Reclaim rather than refuse. A session the app never got to end (killed
+        // mid-practice, a walkthrough exited early, a crash) used to leave
+        // `isRunning` true forever, and every future Begin was rejected on the
+        // spot. Tearing the stale one down first makes the failure self-healing
+        // instead of permanent.
+        if isRunning || session != nil {
+            log.error("a previous workout was still open; ending it before starting a new one")
+            teardown()
+        }
         statusMessage = nil
         hrSamples = []
         sessionStart = nil
@@ -157,6 +165,17 @@ final class WorkoutManager: NSObject, ObservableObject {
     private func teardown() {
         isRunning = false
         hrv.stop()
+        motion.stop()
+        // END the session, don't just forget it.
+        //
+        // watchOS allows ONE active workout session at a time. Dropping our
+        // references without ending it leaves it alive in HealthKit, and every
+        // later start then fails while the Watch is sitting right there,
+        // reported to the phone as a permissions problem it never was. Melvin
+        // hit this as "workout failed" with the Watch on his wrist and nearby.
+        if let session, session.state != .ended, session.state != .notStarted {
+            session.end()
+        }
         session = nil
         builder = nil
     }

@@ -311,3 +311,89 @@ most, and usually none.
 6. Does any research slide carry the "this is about meditation, not about 808"
    caveat?
 7. Is every screenshot a real one?
+
+---
+
+## 14. What to hand back: the deck file
+
+You write the copy. You do **not** design the slides. 808 renders its own
+slides from a JSON deck so that every set looks identical and the palette, the
+type and the one-gold-element rule are enforced by a program rather than
+remembered by a person. Layout, colour, fonts, the phone frame and the mark are
+all decided by `tools/carousel.swift` in the 808 repo.
+
+So the deliverable is a JSON file in exactly this shape, plus the caption
+separately. Nothing else.
+
+```json
+{
+  "topic": "Most people meditate blind",
+  "handle": "@808meditate",
+  "slides": [
+    { "kind": "hook", "kicker": "01 / the problem",
+      "headline": "Most people meditate blind.", "highlight": "blind" },
+
+    { "kind": "statement", "kicker": "what is actually missing",
+      "headline": "It was never effort. It was evidence.",
+      "body": "Two or three short sentences. Left aligned on the slide." },
+
+    { "kind": "stat", "kicker": "a mind that is somewhere else",
+      "value": "46.9%",
+      "label": "of waking moments are spent thinking about something else.",
+      "source": "Killingsworth & Gilbert 2010, Science, doi:10.1126/science.1192439. This is the research on attention and meditation, not on 808." },
+
+    { "kind": "shot", "kicker": "after the session, never during",
+      "headline": "One score out of 100.",
+      "image": "website/img/shot-result-high.png" },
+
+    { "kind": "quote", "kicker": "an early tester",
+      "quote": "Verbatim from section 10. Do not clean up the typos.",
+      "attribution": "Beta tester, first week" },
+
+    { "kind": "cta", "headline": "Proof your meditation landed.",
+      "body": "Join the waitlist. An Apple Watch is required to measure a session.",
+      "cta": "meditate808.com" }
+  ]
+}
+```
+
+**The six slide kinds, and what each one is for:**
+
+| Kind | Use it for | Required | Optional |
+|---|---|---|---|
+| `hook` | Slide 1 only. The largest type in the set. | `headline` | `kicker`, `highlight`, `body` |
+| `statement` | The body of the argument. Most slides are this. | `headline` | `kicker`, `highlight`, `body` |
+| `stat` | One research number. | `value`, `label` | `kicker`, `source` |
+| `shot` | A real screenshot. | `headline`, `image` | `kicker`, `highlight`, `body` |
+| `quote` | A testimonial from section 10, verbatim. | `quote` | `kicker`, `attribution` |
+| `cta` | The final slide, always. | `headline` | `body`, `cta` |
+
+**Spending the gold.** Every slide gets exactly one gold element and the
+renderer refuses to draw a slide that has none or more than one. You control
+which one:
+
+- On `hook`, `statement` and `shot`: set `highlight` to one word from the
+  headline and the kicker goes quiet, or leave `highlight` out and the kicker
+  is the gold thing. A `highlight` is much stronger. Use it on slide 1.
+- On `stat`: the number is always the gold, so the kicker is always quiet. The
+  kicker names the felt effect, not the metric.
+- On `quote`: the kicker is the gold.
+- On `cta`: the 808 lockup is the gold, automatically.
+
+**Rules the renderer enforces, so do not fight them:**
+
+- An em dash or an en dash anywhere in the deck fails the render outright, and
+  names the slide it is on. Same for "scientifically proven", "23 minutes",
+  "download now", any mention of the App Store, and the 48% figure.
+- "brainwave", "theta", "HRV", "nervous system", "transform", "optimize",
+  "biohack", "rewire" and "unlock your potential" print a warning. They are
+  only allowed when the sentence is denying the claim rather than making it.
+- An `image` path that does not exist fails the render. Point at a file that is
+  really in the repo: `website/img/shot-hero.png`, `shot-result-high.png`,
+  `shot-result-low.png`, `shot-journey.png`, `shot-share.png`, `shot-guide.png`.
+- Copy that runs past the safe area fails the render and tells you by how much.
+  Headlines are two lines. Body is two or three short sentences.
+
+**Sizes come for free.** One deck renders the Instagram carousel at 1080x1350,
+the TikTok and Stories version at 1080x1920, and a square set, with no second
+write-up. Do not write a separate deck per platform.
