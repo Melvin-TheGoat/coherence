@@ -31,8 +31,31 @@ rejected: "Proof your meditation worked" (28), "Meditation for manifestation"
 
 **808**
 
-The App Store Connect record is **"808: Meditate"** because bare "808" is
-taken. `CFBundleDisplayName` stays 808, so the icon reads 808 either way.
+The App Store Connect record is **"808: Meditate"**. `CFBundleDisplayName` stays
+`808`, so the icon on the home screen reads 808 either way.
+
+**Why not the bare "808", even if it is available.** An earlier draft of this
+file said the bare name was taken. That was never verified and should not be
+relied on: App Store Connect is the only authority, and it tells you the moment
+you type a name into the record. The reason to qualify the name anyway is
+threefold, and none of it depends on availability:
+
+1. **The name field is the heaviest ASO signal there is**, and "808" alone is a
+   keyword we can never rank for. The 808 space on the App Store belongs to
+   drum machines and bass synths (EGDR808, X808, LE01 Bass 808, Boom 808).
+   Nobody searching that string wants meditation, and we would be competing for
+   an audience that is not ours.
+2. **A searcher who sees "808" alone learns nothing.** Same rule the screenshot
+   captions follow: the listing is met with no context.
+3. **Trademark distance.** Roland's TR-808 is a live mark in music hardware. A
+   bare numeric "808" sitting in a music-adjacent search result is closer to it
+   than "808: Meditate", which lands the name unambiguously in wellness. Still
+   worth one question to the attorney, but the qualified name is the safer of
+   the two.
+
+Do not spend the name on words already carried elsewhere: the subtitle holds
+"score" and "meditation", and `tracker` is in the keyword field. Repeating a
+term across fields buys nothing; Apple counts each token once.
 
 ## Seller / parent company
 
