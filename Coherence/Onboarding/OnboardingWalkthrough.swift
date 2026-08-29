@@ -348,6 +348,7 @@ struct GuidedBreathScreen: View {
     @State private var inhale = false
     /// The intro's preview orb, breathing on its own clock.
     @State private var introInhale = false
+    @State private var introLabelOpacity = 1.0
     @State private var label = "Breathe in"
     @State private var remaining = practiceSeconds
 
@@ -375,7 +376,7 @@ struct GuidedBreathScreen: View {
                         Text(introInhale ? "in" : "out")
                             .font(.system(size: 15, weight: .medium, design: .rounded))
                             .foregroundStyle(AppColor.textSecondary)
-                            .contentTransition(.opacity)
+                            .opacity(introLabelOpacity)
                     }
                     .scaleEffect(introInhale ? 1.0 : 0.68)
                     .animation(.easeInOut(duration: 6), value: introInhale)
@@ -590,14 +591,21 @@ struct GuidedBreathScreen: View {
                     in: RoundedRectangle(cornerRadius: 15, style: .continuous))
     }
 
-    /// The preview orb breathes until the intro is left; `stage` changes end it.
+    /// The preview orb breathes until the intro is left; `stage` changes end
+    /// it. The word swap is SEQUENCED, not cross-faded: a cross-fade shows
+    /// both words superimposed at half opacity mid-transition (Aziz,
+    /// 2026-08-29), so the label fades fully out, swaps, and fades back in.
     private func introBreathing() {
         Task { @MainActor in
             introInhale = true
             while stage == .intro {
-                try? await Task.sleep(for: .seconds(6))
+                try? await Task.sleep(for: .seconds(5.6))
+                guard !Task.isCancelled, stage == .intro else { return }
+                withAnimation(.easeOut(duration: 0.2)) { introLabelOpacity = 0 }
+                try? await Task.sleep(for: .seconds(0.2))
                 guard !Task.isCancelled, stage == .intro else { return }
                 introInhale.toggle()
+                withAnimation(.easeIn(duration: 0.3)) { introLabelOpacity = 1 }
             }
         }
     }
