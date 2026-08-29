@@ -906,6 +906,12 @@ private struct EvidenceGraphCard: View {
     // the heart was teal while its tile was gold.
     private var lineColor: Color { AppColor.accentGold }
 
+    /// Under two minutes the x-axis speaks seconds; "0.3 min" is a unit for
+    /// sits, not samples.
+    private var shortSession: Bool {
+        (series.smoothedPoints.last?.t ?? 0) < 120
+    }
+
     private var scrubPoint: EvidencePoint? {
         guard let m = selectedMinutes else { return nil }
         return series.smoothedPoints.min { abs($0.t / 60 - m) < abs($1.t / 60 - m) }
@@ -1006,9 +1012,19 @@ private struct EvidenceGraphCard: View {
                 #endif
             }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 4)) { _ in
+                AxisMarks(values: .automatic(desiredCount: 4)) { value in
                     AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
-                    AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
+                    // Sub-two-minute sessions (the onboarding demo) read in
+                    // seconds: "0.3 min" gridlines were the tell that the
+                    // axis was designed for sits, not samples.
+                    if let minutes = value.as(Double.self), shortSession {
+                        AxisValueLabel {
+                            Text("\(Int((minutes * 60).rounded()))s")
+                        }
+                        .foregroundStyle(AppColor.textSecondary).font(.caption2)
+                    } else {
+                        AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
+                    }
                 }
             }
             .chartYAxis {

@@ -68,3 +68,27 @@ final class SessionEvidenceTests: XCTestCase {
         XCTAssertTrue(s.isEmpty)
     }
 }
+
+extension SessionEvidenceTests {
+    /// The drawn curve must cover the span the windows actually measured.
+    /// Point i sits at its window's CENTER, but its value describes the whole
+    /// window: on a 45-second demo session the centers span only 15–30 s, and
+    /// before this the auto-fitted axis showed "barely anything" (Aziz,
+    /// 2026-08-29). Display only; `points` stays untouched for scoring.
+    func test_smoothedCurveExtendsToWindowCoverage() {
+        let series = SessionEvidence.series(
+            heartRate: [70, 68, 66, 65], stillness: [], breathing: [],
+            windowSec: 30, hopSec: 5)
+        let hr = series[0]
+        // Analysis points untouched: first center at 15 s.
+        XCTAssertEqual(hr.points.first?.t, 15)
+        XCTAssertEqual(hr.points.last?.t, 30)
+        // Drawn curve reaches the edges of what was measured: 0 to 45 s.
+        XCTAssertEqual(hr.smoothedPoints.first?.t, 0)
+        XCTAssertEqual(hr.smoothedPoints.last?.t, 45)
+        // The pads carry the endpoint values sideways, claiming nothing new.
+        XCTAssertEqual(hr.smoothedPoints.first?.value, hr.smoothedPoints[1].value)
+        XCTAssertEqual(hr.smoothedPoints.last?.value,
+                       hr.smoothedPoints[hr.smoothedPoints.count - 2].value)
+    }
+}
