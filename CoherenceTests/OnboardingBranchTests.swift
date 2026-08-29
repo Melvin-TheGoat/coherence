@@ -25,7 +25,9 @@ final class OnboardingBranchTests: XCTestCase {
         var a = OnboardingAnswers()
         a.currentFrequency = .never
         XCTAssertEqual(a.persona, .newcomer)
-        XCTAssertFalse(a.interview.contains(.causes), "asked a newcomer why they stopped")
+        XCTAssertFalse(a.interview.contains(.bodyCuriosity), "asked a newcomer what they wonder mid-session")
+        XCTAssertFalse(a.interview.contains(.bodyProof), "asked a newcomer how they judge sessions they've never had")
+        XCTAssertTrue(a.interview.contains(.bodyTracking), "tracking is about their life, not their practice")
         XCTAssertFalse(a.interview.contains(.restarts), "asked a newcomer how often they restarted")
         XCTAssertTrue(a.interview.contains(.intendedFor), "a newcomer should be asked how long they've meant to start")
     }
@@ -38,7 +40,8 @@ final class OnboardingBranchTests: XCTestCase {
             a.currentFrequency = frequency
             XCTAssertEqual(a.persona, .regular, "\(frequency)")
             XCTAssertFalse(a.interview.contains(.intendedFor), "\(frequency): asked when they'd start")
-            XCTAssertFalse(a.interview.contains(.causes), "\(frequency): asked why they stopped")
+            XCTAssertTrue(a.interview.contains(.bodyCuriosity), "\(frequency): the body questions are for practitioners")
+            XCTAssertTrue(a.interview.contains(.bodyProof), "\(frequency)")
             XCTAssertFalse(a.interview.contains(.restarts), "\(frequency): asked about restarts")
             XCTAssertFalse(a.interview.contains(.aloneWithThoughts), "\(frequency): condescending diagnostic")
             XCTAssertTrue(a.interview.contains(.blindSpot), "\(frequency): never asked what they can't see")
@@ -52,10 +55,9 @@ final class OnboardingBranchTests: XCTestCase {
             a.currentFrequency = frequency
             XCTAssertEqual(a.persona, .restarter, "\(frequency)")
             XCTAssertTrue(a.interview.contains(.restarts))
-            // .causes is now conditional on the restarts answer, so set one that
-            // does not opt out.
-            a.restarts = .few
-            XCTAssertTrue(a.interview.contains(.causes))
+            XCTAssertTrue(a.interview.contains(.bodyCuriosity))
+            XCTAssertTrue(a.interview.contains(.bodyProof))
+            XCTAssertTrue(a.interview.contains(.bodyTracking))
             XCTAssertFalse(a.interview.contains(.intendedFor), "\(frequency): they've already started")
             XCTAssertFalse(a.interview.contains(.blindSpot), "\(frequency): that's the regular's question")
         }
@@ -88,11 +90,15 @@ final class OnboardingBranchTests: XCTestCase {
 
     /// The interview must stay short enough to finish. QUITTR spends ten
     /// questions on a user motivated by shame; ours is aspirational and can't.
+    /// The cap moved 11 → 13 on 2026-08-29: the cause question became three
+    /// body questions (net +2 on the restarter path), while four non-question
+    /// screens left the flow in the same pass, so the whole onboarding got
+    /// SHORTER even as the interview grew.
     func test_noPathIsTooLong() {
         for frequency in CurrentFrequency.allCases {
             var a = OnboardingAnswers()
             a.currentFrequency = frequency
-            XCTAssertLessThanOrEqual(a.interview.count, 11,
+            XCTAssertLessThanOrEqual(a.interview.count, 13,
                                      "\(frequency) asks \(a.interview.count) questions")
         }
     }
@@ -108,41 +114,34 @@ final class OnboardingBranchTests: XCTestCase {
             let asked = Set(a.interview)
             if !asked.contains(.restarts) { XCTAssertNil(a.restarts, "\(persona)") }
             if !asked.contains(.intendedFor) { XCTAssertNil(a.intendedFor, "\(persona)") }
-            if !asked.contains(.causes) { XCTAssertTrue(a.causes.isEmpty, "\(persona)") }
+            if !asked.contains(.bodyCuriosity) { XCTAssertNil(a.bodyCuriosity, "\(persona)") }
+            if !asked.contains(.bodyProof) { XCTAssertNil(a.bodyProof, "\(persona)") }
             if !asked.contains(.blindSpot) { XCTAssertNil(a.blindSpot, "\(persona)") }
 
             // And it must fill what they ARE asked, or the screens under review
             // render their empty state instead of the copy being reviewed.
             if asked.contains(.restarts) { XCTAssertNotNil(a.restarts, "\(persona)") }
             if asked.contains(.intendedFor) { XCTAssertNotNil(a.intendedFor, "\(persona)") }
-            if asked.contains(.causes) { XCTAssertFalse(a.causes.isEmpty, "\(persona)") }
+            if asked.contains(.bodyCuriosity) { XCTAssertNotNil(a.bodyCuriosity, "\(persona)") }
+            if asked.contains(.bodyProof) { XCTAssertNotNil(a.bodyProof, "\(persona)") }
+            if asked.contains(.bodyTracking) { XCTAssertFalse(a.bodyTracking.isEmpty, "\(persona)") }
             if asked.contains(.blindSpot) { XCTAssertNotNil(a.blindSpot, "\(persona)") }
         }
     }
 
-    /// Melvin hit this in the flow: he answered "It sticks" and was still asked
-    /// what made him stop. The baseline decides the persona, but a later, more
-    /// specific answer has to be allowed to overrule it.
-    func test_itSticksIsNeverAskedWhatMadeThemStop() {
-        for frequency in [CurrentFrequency.triedNeverStuck, .fewTimesMonth] {
+    /// "What made you stop?" is gone (2026-08-29), and with it the "It sticks"
+    /// special case it needed. What replaced it must not inherit the bug: the
+    /// body questions ask about sessions, which a sticks-restarter has plenty
+    /// of, so they are asked regardless of the restarts answer.
+    func test_bodyQuestionsIgnoreTheRestartsAnswer() {
+        for restarts in RestartCount.allCases {
             var a = OnboardingAnswers()
-            a.currentFrequency = frequency
-            a.restarts = .sticks
-            XCTAssertEqual(a.persona, .restarter, "\(frequency)")
-            XCTAssertFalse(a.interview.contains(.causes),
-                           "\(frequency): asked why they stopped after they said it stuck")
-            XCTAssertTrue(a.interview.contains(.restarts),
-                          "\(frequency): the question they answered must still be asked")
+            a.currentFrequency = .triedNeverStuck
+            a.restarts = restarts
+            XCTAssertTrue(a.interview.contains(.bodyCuriosity), "\(restarts)")
+            XCTAssertTrue(a.interview.contains(.bodyProof), "\(restarts)")
+            XCTAssertTrue(a.interview.contains(.bodyTracking), "\(restarts)")
         }
-    }
-
-    /// And the ordinary restarter still gets it, or the fix above quietly
-    /// deletes the question for everyone.
-    func test_anOrdinaryRestarterIsStillAskedWhyTheyStopped() {
-        var a = OnboardingAnswers()
-        a.currentFrequency = .triedNeverStuck
-        a.restarts = .few
-        XCTAssertTrue(a.interview.contains(.causes))
     }
 
     /// Exhaustive: every combination of baseline × restarts × intendedFor.
@@ -160,8 +159,8 @@ final class OnboardingBranchTests: XCTestCase {
                     checked += 1
 
                     if a.persona == .newcomer {
-                        XCTAssertFalse(shown.contains(.causes),
-                                       "newcomer/\(restarts)/\(intended) asked why they stopped")
+                        XCTAssertFalse(shown.contains(.bodyCuriosity),
+                                       "newcomer/\(restarts)/\(intended) asked about sessions they've never had")
                     }
                     if a.persona == .regular {
                         XCTAssertFalse(shown.contains(.intendedFor),

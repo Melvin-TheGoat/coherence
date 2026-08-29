@@ -253,6 +253,87 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
 
 /// Why they stopped. Every option is one 808 has an answer for — that mapping
 /// is the whole point of screen 16d, so it lives on the case itself.
+/// Q · body A: does a session have a hidden physical story? Every answer is a
+/// yes of a different size; the question plants the idea without claiming
+/// anything (approved 2026-08-29).
+public enum BodyCuriosity: String, CaseIterable, Identifiable, Codable {
+    case allTheTime, afterGoodOnes, neverThought, assumedNoWay
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .allTheTime:   return "All the time"
+        case .afterGoodOnes: return "Sometimes, after a good one"
+        case .neverThought: return "Never thought about it until now"
+        case .assumedNoWay: return "I assumed there was no way to know"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .allTheTime:   return "sparkle.magnifyingglass"
+        case .afterGoodOnes: return "clock.arrow.circlepath"
+        case .neverThought: return "lightbulb"
+        case .assumedNoWay: return "eye.slash"
+        }
+    }
+}
+
+/// Q · body B: how they currently judge a session. Asks about their life, not
+/// our instrument, so it needs no metric expertise (the earlier draft asked
+/// which metric they'd want to see, and was cut for exactly that reason).
+/// Three options, per Aziz.
+public enum BodyProof: String, CaseIterable, Identifiable, Codable {
+    case byFeel, dont, wantProof
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .byFeel:    return "I go by how I feel after"
+        case .dont:      return "Honestly, I don't"
+        case .wantProof: return "I've always wanted real proof"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .byFeel:    return "hand.wave"
+        case .dont:      return "questionmark.circle"
+        case .wantProof: return "checkmark.seal"
+        }
+    }
+}
+
+/// Q · body C: the ICP validator. People who close rings already believe in
+/// measurement; meditation is the one practice giving them nothing back.
+public enum BodyTracking: String, CaseIterable, Identifiable, Codable {
+    case rings, sleep, heart, workouts, nothing
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .rings:    return "Activity rings or steps"
+        case .sleep:    return "Sleep"
+        case .heart:    return "Heart rate or HRV"
+        case .workouts: return "Runs, lifts, workouts"
+        case .nothing:  return "Nothing yet"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .rings:    return "circle.circle"
+        case .sleep:    return "moon.stars"
+        case .heart:    return "heart"
+        case .workouts: return "figure.run"
+        case .nothing:  return "circle.dotted"
+        }
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -490,7 +571,13 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var doingNothing: DoingNothing?
     public var restarts: RestartCount?
     public var intendedFor: IntendedFor?
+    /// Kept although its question was removed (2026-08-29): the field decodes
+    /// interrupted onboardings saved before the change, and the reflection
+    /// copy still reads `primaryCause` as a fallback.
     public var causes: Set<DropoutCause> = []
+    public var bodyCuriosity: BodyCuriosity?
+    public var bodyProof: BodyProof?
+    public var bodyTracking: Set<BodyTracking> = []
     public var costs: Set<CostSymptom> = []
     public var hasWatch: Bool?
     public var anchor: Anchor?
@@ -531,6 +618,9 @@ public struct OnboardingAnswers: Codable, Equatable {
         // Only ever fill what this persona is actually asked. Leaving a field
         // set that the interview never collects is precisely the bug the
         // payoff screens had.
+        // Everyone is asked what they track; only people with sessions to
+        // wonder about get the curiosity and proof questions.
+        a.bodyTracking = [.rings, .sleep]
         switch persona {
         case .newcomer:
             a.currentFrequency = .never
@@ -538,10 +628,13 @@ public struct OnboardingAnswers: Codable, Equatable {
         case .restarter:
             a.currentFrequency = .triedNeverStuck
             a.restarts = .few
-            a.causes = [.couldntTell, .tooManyChoices]
+            a.bodyCuriosity = .afterGoodOnes
+            a.bodyProof = .wantProof
         case .regular:
             a.currentFrequency = .mostWeeks
             a.blindSpot = .whichWorks
+            a.bodyCuriosity = .allTheTime
+            a.bodyProof = .byFeel
         }
         return a
     }
@@ -767,13 +860,16 @@ extension OnboardingAnswers {
         case .intendedFor:
             return persona == .newcomer
 
-        // Presumes they stopped. The persona is decided by the BASELINE answer
-        // alone, so someone who said "I've tried, it never stuck" there and then
-        // "It sticks" one screen later used to be asked what made them stop.
-        // Melvin hit this in the flow. `restarts == .sticks` is the later, more
-        // specific answer, so it wins.
-        case .causes:
-            return persona == .restarter && restarts != .sticks
+        // Presume sessions to wonder about. A newcomer has never sat, so
+        // "when you meditate…" and "after a session…" contradict their own
+        // baseline answer; they still get the tracking question, which is
+        // about their life, not their practice.
+        case .bodyCuriosity, .bodyProof:
+            return persona != .newcomer
+
+        // Everyone tracks something, or meaningfully doesn't.
+        case .bodyTracking:
+            return true
 
         // Only meaningful for someone with a practice to be blind about.
         case .blindSpot:
@@ -793,7 +889,8 @@ extension OnboardingAnswers {
 public enum InterviewStep: String, CaseIterable, Codable {
     case baseline, motivation, stress
     case aloneWithThoughts, doingNothing
-    case restarts, intendedFor, causes
+    case restarts, intendedFor
+    case bodyCuriosity, bodyProof, bodyTracking
     case blindSpot
     case watchGate, anchor, you, referral
 }

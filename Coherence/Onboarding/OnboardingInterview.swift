@@ -635,26 +635,228 @@ struct IntendedForScreen: View {
 
 // MARK: - 6 · Q4 The cause
 
-struct CauseScreen: View {
-    @Binding var causes: Set<DropoutCause>
+struct BodyCuriosityScreen: View {
+    @StateObject private var gate = AdvanceGate()
+    @Binding var answer: BodyCuriosity?
     let progress: Double
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .cost, progress: progress,
-                         title: "What made you stop\nmeditating?",
-                         subtitle: "Pick whatever rings true.",
-                         ctaEnabled: !causes.isEmpty,
+        OnboardingScreen(section: .body, progress: progress,
+                         title: "When you meditate, do you\never wonder what your body\nis actually doing?",
+                         subtitle: "Underneath the stillness, something is happening.",
+                         ctaEnabled: answer != nil,
+                         autoAdvances: true,
+                         onContinue: { gate.now(onContinue) }) {
+            VStack(spacing: 10) {
+                ForEach(BodyCuriosity.allCases) { c in
+                    OnboardingOption(label: c.label, icon: c.icon,
+                                     selected: answer == c) { pick(c) }
+                }
+            }
+        }
+    }
+
+    private func pick(_ c: BodyCuriosity) {
+        answer = c
+        gate.advance(onContinue)
+    }
+}
+
+struct BodyProofScreen: View {
+    @StateObject private var gate = AdvanceGate()
+    @Binding var answer: BodyProof?
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .body, progress: progress,
+                         title: "After a session, how do\nyou know it worked?",
+                         subtitle: "There's no wrong answer. Most people have never had a way to check.",
+                         ctaEnabled: answer != nil,
+                         autoAdvances: true,
+                         onContinue: { gate.now(onContinue) }) {
+            VStack(spacing: 10) {
+                ForEach(BodyProof.allCases) { b in
+                    OnboardingOption(label: b.label, icon: b.icon,
+                                     selected: answer == b) { pick(b) }
+                }
+            }
+        }
+    }
+
+    private func pick(_ b: BodyProof) {
+        answer = b
+        gate.advance(onContinue)
+    }
+}
+
+struct BodyTrackingScreen: View {
+    @Binding var tracking: Set<BodyTracking>
+    let progress: Double
+    let onContinue: () -> Void
+
+    var body: some View {
+        OnboardingScreen(section: .body, progress: progress,
+                         title: "What do you already track\nabout your body?",
+                         subtitle: "Pick everything that applies.",
+                         ctaEnabled: !tracking.isEmpty,
                          onContinue: onContinue) {
             VStack(spacing: 10) {
-                ForEach(DropoutCause.allCases) { c in
-                    OnboardingOption(label: c.label, icon: c.icon,
-                                     selected: causes.contains(c)) {
-                        if causes.contains(c) { causes.remove(c) } else { causes.insert(c) }
+                ForEach(BodyTracking.allCases) { t in
+                    OnboardingOption(label: t.label, icon: t.icon,
+                                     selected: tracking.contains(t)) {
+                        if tracking.contains(t) { tracking.remove(t) } else { tracking.insert(t) }
                     }
                 }
             }
         }
+    }
+}
+
+// MARK: - The accessibility reveal (after the body questions)
+
+/// "Seeing your body meditate used to cost $400." The three questions above
+/// name a wish; this screen reveals it is sold as dedicated hardware, then
+/// resolves to the watch already on the wrist. Approved mockup 2026-08-29.
+///
+/// Copy rules: prices are public list prices, marked ≈, checked before ship.
+/// Deliberately VAGUE about what any device measures (Aziz): naming sensors
+/// starts a spec-sheet argument this screen doesn't need to win. The claim is
+/// the wish, the price, and "something similar for everyone". No product
+/// photos: silhouettes keep the screen ours.
+struct HardwareScreen: View {
+    let onContinue: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("THE HARDWARE YOU'D OTHERWISE NEED")
+                    .font(.system(size: 10, weight: .semibold))
+                    .tracking(1.4)
+                    .foregroundStyle(Color(red: 0.79, green: 0.54, blue: 0.51))
+                Text("Seeing your body meditate used to cost $400.")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("Dedicated devices sell exactly this wish as extra hardware.")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .padding(.top, 12)
+
+            VStack(spacing: 8) {
+                deviceRow(name: "Muse S", sub: "Meditation headband", price: "≈ $400", headband: true)
+                deviceRow(name: "Muse 2", sub: "Meditation headband", price: "≈ $250", headband: true)
+                deviceRow(name: "HeartMath", sub: "Clip-on biofeedback sensor", price: "≈ $200", headband: false)
+            }
+
+            watchRow
+
+            Text("**We offer something similar, for everyone.** No extra hardware, no gadget shelf: 808 reads your body from the watch already on your wrist.")
+                .font(.system(size: 13.5))
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Spacer(minLength: 8)
+
+            OnboardingCTA(title: "Continue", action: onContinue)
+        }
+        .padding(.horizontal, 24)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(hardwareGround.ignoresSafeArea())
+    }
+
+    /// The onboarding arc in miniature: ember above (what it costs elsewhere)
+    /// resolving to gold below (what you already own). Hand-rolled against the
+    /// one-ground-per-section rule because this screen IS the transition, per
+    /// the approved mockup.
+    private var hardwareGround: some View {
+        ZStack {
+            AppColor.backgroundPrimary
+            RadialGradient(colors: [Color(red: 0.71, green: 0.39, blue: 0.35).opacity(0.22), .clear],
+                           center: .init(x: 0.5, y: -0.08), startRadius: 10, endRadius: 430)
+            RadialGradient(colors: [AppColor.accentGold.opacity(0.16), .clear],
+                           center: .init(x: 0.5, y: 1.08), startRadius: 10, endRadius: 460)
+        }
+    }
+
+    private let ember = Color(red: 0.79, green: 0.54, blue: 0.51)
+
+    private func deviceRow(name: String, sub: String, price: String, headband: Bool) -> some View {
+        HStack(spacing: 12) {
+            Group {
+                if headband { HeadbandSilhouette().stroke(ember, style: StrokeStyle(lineWidth: 2.4, lineCap: .round)) }
+                else { SensorSilhouette().stroke(ember, style: StrokeStyle(lineWidth: 2.2, lineCap: .round)) }
+            }
+            .frame(width: 38, height: 24)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(name).font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text(sub).font(.system(size: 11)).foregroundStyle(AppColor.textSecondary)
+            }
+            Spacer(minLength: 0)
+            Text(price)
+                .font(.system(size: 13, weight: .medium, design: .monospaced))
+                .foregroundStyle(ember)
+        }
+        .padding(12)
+        .background(AppColor.backgroundSecondary.opacity(0.72),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+
+    private var watchRow: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "applewatch")
+                .font(.system(size: 22))
+                .foregroundStyle(AppColor.accentGold)
+                .frame(width: 38)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Your Apple Watch")
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("Heart, stillness and breath, every session")
+                    .font(.system(size: 11)).foregroundStyle(AppColor.textSecondary)
+            }
+            Spacer(minLength: 0)
+            Text("$0 extra")
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .foregroundStyle(AppColor.accentGoldText)
+        }
+        .padding(13)
+        .background(
+            LinearGradient(colors: [AppColor.accentGold.opacity(0.16),
+                                    AppColor.accentGold.opacity(0.05)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing),
+            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .stroke(AppColor.accentGold.opacity(0.55), lineWidth: 1))
+    }
+}
+
+/// A minimal over-the-head band arc with ear pods.
+private struct HeadbandSilhouette: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.move(to: CGPoint(x: r.minX + 2, y: r.maxY - 3))
+        p.addQuadCurve(to: CGPoint(x: r.maxX - 2, y: r.maxY - 3),
+                       control: CGPoint(x: r.midX, y: r.minY - 4))
+        p.addEllipse(in: CGRect(x: r.minX, y: r.maxY - 7, width: 5, height: 5))
+        p.addEllipse(in: CGRect(x: r.maxX - 5, y: r.maxY - 7, width: 5, height: 5))
+        return p
+    }
+}
+
+/// A clip-on sensor: a rounded module with a short lead.
+private struct SensorSilhouette: Shape {
+    func path(in r: CGRect) -> Path {
+        var p = Path()
+        p.addRoundedRect(in: CGRect(x: r.midX - 8, y: r.minY, width: 16, height: 12),
+                         cornerSize: CGSize(width: 3.5, height: 3.5))
+        p.move(to: CGPoint(x: r.midX, y: r.minY + 12))
+        p.addLine(to: CGPoint(x: r.midX, y: r.maxY))
+        return p
     }
 }
 

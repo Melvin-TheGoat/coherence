@@ -40,14 +40,16 @@ struct OnboardingView: View {
         case baseline                                          // where they are today
         case motivation, stress                                // 3–4
         case aloneWithThoughts, doingNothing                   // escalation, then the evidence
-        case restarts, intendedFor, causes                     // 5–6
+        case restarts, intendedFor                             // 5–6
+        case bodyCuriosity, bodyProof, bodyTracking            // the body questions
+        case hardware                                          // the accessibility reveal
         case blindSpot                                         // the regular's question
         case watchGate, waitlist                               // 7, 7b
         case watchSetup                                        // 7c: getting 808 on the wrist
         case anchor, you, referral                             // 8–9, then attribution
         case calculating, result, cost                         // 10–12
         case proofBody, sampleStart, sampleBuild, proofYourWay // 13–15 (the pair replaced "so you get a number")
-        case wall, profile, commitment, projection, how        // 16–16d, 20
+        case wall, commitment                                  // 16, 20
         case permission, week, rating                          // 21–22, 22b
         case health                                            // consent, kept from the old flow
         case tourHome, watchConnect, breathe, sessionResults   // the walkthrough
@@ -92,7 +94,9 @@ struct OnboardingView: View {
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
         (.aloneWithThoughts, .aloneWithThoughts), (.doingNothing, .doingNothing),
-        (.restarts, .restarts), (.intendedFor, .intendedFor), (.causes, .causes),
+        (.restarts, .restarts), (.intendedFor, .intendedFor),
+        (.bodyCuriosity, .bodyCuriosity), (.bodyProof, .bodyProof),
+        (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot), (.watchGate, .watchGate),
         (.anchor, .anchor), (.you, .you), (.referral, .referral),
     ]
@@ -212,9 +216,23 @@ struct OnboardingView: View {
             IntendedForScreen(intended: $answers.intendedFor,
                               progress: interviewProgress) { go(nextAfter(.intendedFor)) }
 
-        case .causes:
-            CauseScreen(causes: $answers.causes,
-                        progress: interviewProgress) { go(nextAfter(.causes)) }
+        case .bodyCuriosity:
+            BodyCuriosityScreen(answer: $answers.bodyCuriosity,
+                                progress: interviewProgress) { go(nextAfter(.bodyCuriosity)) }
+
+        case .bodyProof:
+            BodyProofScreen(answer: $answers.bodyProof,
+                            progress: interviewProgress) { go(nextAfter(.bodyProof)) }
+
+        case .bodyTracking:
+            BodyTrackingScreen(tracking: $answers.bodyTracking,
+                               progress: interviewProgress) { go(.hardware) }
+
+        // Not a question: the reveal that the wish the last three questions
+        // named is sold as $200-$400 hardware, and 808 reads it from the
+        // watch already on the wrist. Lands while the wish is one screen old.
+        case .hardware:
+            HardwareScreen { go(nextAfter(.bodyTracking)) }
 
         case .blindSpot:
             BlindSpotScreen(blindSpot: $answers.blindSpot,
@@ -286,7 +304,7 @@ struct OnboardingView: View {
                                 motivations: answers.motivations) { go(.proofYourWay) }
 
         case .proofYourWay:
-            ProofScreen(beat: .yourWay) { go(.profile) }
+            ProofScreen(beat: .yourWay) { go(.commitment) }
 
         // The wall comes BEFORE the mechanism screen. Testers said the
         // company they'd be in was what opened them up; the explanation
@@ -294,21 +312,10 @@ struct OnboardingView: View {
         case .wall:
             WallScreen { go(.proofBody) }
 
-        case .profile:
-            ProfileScreen(answers: answers) { go(.commitment) }
-
-        // Commitment comes BEFORE the projection: the projection is arithmetic
-        // from the days-per-week they commit to, so we can't draw it first.
         case .commitment:
             CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
                              anchor: answers.anchor,
-                             cost: answers.primaryCost) { go(.projection) }
-
-        case .projection:
-            ProjectionScreen(daysPerWeek: answers.daysPerWeek) { go(.how) }
-
-        case .how:
-            HowScreen(answers: answers) { go(.permission) }
+                             cost: answers.primaryCost) { go(.permission) }
 
         case .permission:
             PermissionScreen(anchor: answers.anchor,
@@ -377,7 +384,9 @@ struct OnboardingView: View {
         if answers.doingNothing != nil { n += 1 }
         if answers.restarts != nil { n += 1 }
         if answers.intendedFor != nil { n += 1 }
-        if !answers.causes.isEmpty { n += 1 }
+        if answers.bodyCuriosity != nil { n += 1 }
+        if answers.bodyProof != nil { n += 1 }
+        if !answers.bodyTracking.isEmpty { n += 1 }
         if answers.hasWatch != nil { n += 1 }
         if answers.anchor != nil { n += 1 }
         if !answers.firstName.trimmingCharacters(in: .whitespaces).isEmpty { n += 1 }
