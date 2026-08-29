@@ -201,28 +201,40 @@ struct OnboardingView: View {
                          progress: interviewProgress) { go(nextAfter(.stress)) }
 
         case .aloneWithThoughts:
-            AloneWithThoughtsScreen(answer: $answers.aloneWithThoughts,
-                                    progress: interviewProgress) { go(nextAfter(.aloneWithThoughts)) }
+            guarded(.aloneWithThoughts) {
+                AloneWithThoughtsScreen(answer: $answers.aloneWithThoughts,
+                                        progress: interviewProgress) { go(nextAfter(.aloneWithThoughts)) }
+            }
 
         case .doingNothing:
-            DoingNothingScreen(answer: $answers.doingNothing,
-                               progress: interviewProgress) { go(nextAfter(.doingNothing)) }
+            guarded(.doingNothing) {
+                DoingNothingScreen(answer: $answers.doingNothing,
+                                   progress: interviewProgress) { go(nextAfter(.doingNothing)) }
+            }
 
         case .restarts:
-            RestartScreen(restarts: $answers.restarts,
-                          progress: interviewProgress) { go(nextAfter(.restarts)) }
+            guarded(.restarts) {
+                RestartScreen(restarts: $answers.restarts,
+                              progress: interviewProgress) { go(nextAfter(.restarts)) }
+            }
 
         case .intendedFor:
-            IntendedForScreen(intended: $answers.intendedFor,
-                              progress: interviewProgress) { go(nextAfter(.intendedFor)) }
+            guarded(.intendedFor) {
+                IntendedForScreen(intended: $answers.intendedFor,
+                                  progress: interviewProgress) { go(nextAfter(.intendedFor)) }
+            }
 
         case .bodyCuriosity:
-            BodyCuriosityScreen(answer: $answers.bodyCuriosity,
-                                progress: interviewProgress) { go(nextAfter(.bodyCuriosity)) }
+            guarded(.bodyCuriosity) {
+                BodyCuriosityScreen(answer: $answers.bodyCuriosity,
+                                    progress: interviewProgress) { go(nextAfter(.bodyCuriosity)) }
+            }
 
         case .bodyProof:
-            BodyProofScreen(answer: $answers.bodyProof,
-                            progress: interviewProgress) { go(nextAfter(.bodyProof)) }
+            guarded(.bodyProof) {
+                BodyProofScreen(answer: $answers.bodyProof,
+                                progress: interviewProgress) { go(nextAfter(.bodyProof)) }
+            }
 
         case .bodyTracking:
             BodyTrackingScreen(tracking: $answers.bodyTracking,
@@ -235,8 +247,10 @@ struct OnboardingView: View {
             HardwareScreen { go(nextAfter(.bodyTracking)) }
 
         case .blindSpot:
-            BlindSpotScreen(blindSpot: $answers.blindSpot,
-                            progress: interviewProgress) { go(nextAfter(.blindSpot)) }
+            guarded(.blindSpot) {
+                BlindSpotScreen(blindSpot: $answers.blindSpot,
+                                progress: interviewProgress) { go(nextAfter(.blindSpot)) }
+            }
 
         case .watchGate:
             WatchGateScreen(hasWatch: $answers.hasWatch,
@@ -402,6 +416,42 @@ struct OnboardingView: View {
         // the one that was completed.
         Analytics.track(.onboardingStep(id: String(describing: step)))
         withAnimation { step = next }
+    }
+
+    /// Belt and suspenders for the interview's branching (Melvin, 2026-08-29:
+    /// he selected "first time meditating" and was still shown "what made you
+    /// stop?" on an earlier build). The model decides who is asked what and is
+    /// exhaustively tested, but routing has more roads into a screen than
+    /// `nextAfter`: back navigation followed by a changed answer, a resumed
+    /// flow, a future edit. So every persona-gated question also validates its
+    /// own premise on arrival and silently skips itself when the answers
+    /// contradict it. Skips bypass `go()` on purpose: no history entry (or the
+    /// back button would bounce), no analytics step event for a screen never
+    /// seen.
+    @ViewBuilder
+    private func guarded<V: View>(_ step: Step, @ViewBuilder screen: () -> V) -> some View {
+        if let interview = Self.interviewPairs.first(where: { $0.0 == step })?.1,
+           !answers.interview.contains(interview) {
+            Color.clear.onAppear {
+                // NOT nextAfter: that helper assumes its argument is in the
+                // interview, and for a contradicted step it drops the whole
+                // list and lands on .calculating, skipping every remaining
+                // question including the Watch gate (caught in verification,
+                // 2026-08-29). Walk the canonical order instead: the first
+                // question this person IS asked at or after this position.
+                let canonical = Self.interviewPairs.map(\.1)
+                let here = canonical.firstIndex(of: interview) ?? 0
+                let next = answers.interview.first {
+                    (canonical.firstIndex(of: $0) ?? .max) > here
+                }
+                let target = next.flatMap { q in
+                    Self.interviewPairs.first { $0.1 == q }?.0
+                } ?? .calculating
+                withAnimation { self.step = target }
+            }
+        } else {
+            screen()
+        }
     }
 
     private func goBack() {
