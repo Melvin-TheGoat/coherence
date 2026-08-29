@@ -754,13 +754,13 @@ struct SessionResultsView: View {
         .card()
     }
 
-    /// Which method they practised. Unreported is the default and stays a
+    /// Which method they practiced. Unreported is the default and stays a
     /// legitimate answer — a session nobody labelled is still a good session,
     /// and forcing the tag would poison the very data it exists to collect.
     @ViewBuilder
     private var techniqueSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("What did you practise?")
+            Text("What did you practice?")
                 .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.textSecondary)
 
@@ -912,9 +912,21 @@ private struct EvidenceGraphCard: View {
         (series.smoothedPoints.last?.t ?? 0) < 120
     }
 
+    /// The scrubbed value, interpolated BETWEEN points rather than snapped to
+    /// the nearest one. Snapping was invisible on a 20-minute sit and turned
+    /// the demo's handful of points into a marker jumping in five-second
+    /// steps (Aziz, 2026-08-29). Linear interpolation on the drawn curve: the
+    /// marker tracks the finger continuously and the value stays honest.
     private var scrubPoint: EvidencePoint? {
         guard let m = selectedMinutes else { return nil }
-        return series.smoothedPoints.min { abs($0.t / 60 - m) < abs($1.t / 60 - m) }
+        let pts = series.smoothedPoints
+        guard let first = pts.first, let last = pts.last else { return nil }
+        let t = min(max(m * 60, first.t), last.t)
+        guard let i = pts.firstIndex(where: { $0.t >= t }) else { return last }
+        guard i > 0 else { return first }
+        let a = pts[i - 1], b = pts[i]
+        let f = (t - a.t) / max(b.t - a.t, 1e-9)
+        return EvidencePoint(t: t, value: a.value + (b.value - a.value) * f)
     }
 
     /// The value in this graph's own unit — the whole point of scrubbing.

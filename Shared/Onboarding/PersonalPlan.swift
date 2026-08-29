@@ -8,7 +8,7 @@ import Foundation
 ///
 /// - **Measurable** — the score, the curves, the verdict
 /// - **Habitual** — streaks, awards, history, the reminder
-/// - **Universal** — bring your own audio, share the proof, practise alongside
+/// - **Universal** — bring your own audio, share the proof, practice alongside
 ///   other people
 ///
 /// The interview asks thirteen questions and then almost nothing downstream
@@ -63,7 +63,7 @@ public enum PersonalPlan {
         case .moreDiscipline: return "a streak you can see"
         case .betterSleep:    return "an easier wind-down"
         case .changeIdentity: return "the person you are becoming"
-        case .manifestGoals:  return "your intentions, practised daily"
+        case .manifestGoals:  return "your intentions, practiced daily"
         case .deeperPractice: return "a deeper practice"
         case .other:          return nil
         }
@@ -145,7 +145,7 @@ public enum PersonalPlan {
                           pillar: .measurable, icon: "chart.line.uptrend.xyaxis")
         case .noAccountability:
             return Answer(concern: cause.label,
-                          response: "A streak that notices, plus challenges and group sits with other people practising",
+                          response: "A streak that notices, plus challenges and group sits with other people practicing",
                           pillar: .universal, icon: "person.2")
         case .forgot:
             return Answer(concern: cause.label,
@@ -176,7 +176,7 @@ public enum PersonalPlan {
         switch motivation {
         case .moreDiscipline:
             return Answer(concern: "More discipline",
-                          response: "Streaks, awards, and every session you have practised in one place",
+                          response: "Streaks, awards, and every session you have practiced in one place",
                           pillar: .habitual, icon: "flame")
         case .lessStressed, .lessAnxious:
             return Answer(concern: motivation.label,
@@ -196,7 +196,7 @@ public enum PersonalPlan {
                           pillar: .measurable, icon: "person.crop.circle.badge.checkmark")
         case .manifestGoals:
             return Answer(concern: "Manifest my goals",
-                          response: "The manifestation method in the guide, practised from a settled body",
+                          response: "The manifestation method in the guide, practiced from a settled body",
                           pillar: .measurable, icon: "sparkles")
         // Real practices, but 808 answers them no differently from anyone else,
         // and inventing a response would be the decorative-question failure in

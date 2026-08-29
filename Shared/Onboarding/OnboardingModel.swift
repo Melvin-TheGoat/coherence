@@ -305,12 +305,12 @@ public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
         case .gotBoring:      return "Your own audio, still measured"
         // The only answer that reaches outside the app, which is the point:
         // nothing on your own phone can be the person expecting you.
-        case .noAccountability: return "A streak that notices, and people practising alongside you"
+        case .noAccountability: return "A streak that notices, and people practicing alongside you"
         }
     }
 }
 
-/// When they'll practise — anchored to something they already do daily,
+/// When they'll practice — anchored to something they already do daily,
 /// because anchoring to an existing routine measurably lowered abandonment
 /// (Mindfulness, 2023; see ONBOARDING.md).
 public enum Anchor: String, CaseIterable, Identifiable, Codable {
@@ -622,14 +622,14 @@ public struct OnboardingAnswers: Codable, Equatable {
 
 public enum OnboardingProjection {
 
-    /// The date their 30th practised day lands, given the days-per-week they
+    /// The date their 30th practiced day lands, given the days-per-week they
     /// just committed to. **Real arithmetic from their own answer** — the one
     /// number in onboarding that isn't simply repeated back, and the reason
     /// screen 16c carries a footnote saying exactly this.
     ///
     /// - Parameters:
     ///   - daysPerWeek: 1...7, as committed.
-    ///   - target: how many practised days we're counting to (default 30).
+    ///   - target: how many practiced days we're counting to (default 30).
     ///   - from: start date (defaults to today at the caller's clock).
     /// - Returns: the projected date, or nil if daysPerWeek is out of range.
     public static func streakDate(daysPerWeek: Int, target: Int = 30,
@@ -642,7 +642,7 @@ public enum OnboardingProjection {
     }
 
     /// A rising four-week curve for the projection chart. Deliberately NOT a
-    /// promise about their score: it's the count of practised days accumulating
+    /// promise about their score: it's the count of practiced days accumulating
     /// at the rate they chose, which is arithmetic and can't be wrong.
     public static func weeklyCumulativeDays(daysPerWeek: Int, weeks: Int = 4) -> [Int] {
         guard (1...7).contains(daysPerWeek), weeks > 0 else { return [] }
@@ -681,7 +681,7 @@ public struct PracticeProfile: Equatable {
             }
         }
 
-        anchorLine = a.anchor.map { "You practise \($0.phrase)" }
+        anchorLine = a.anchor.map { "You practice \($0.phrase)" }
             ?? "You'll find your time"
 
         // Their own words where we have them. The regular answered this
@@ -712,9 +712,9 @@ public struct PracticeProfile: Equatable {
 ///
 /// Deriving a persona lets us *not ask* rather than ask and forgive.
 public enum OnboardingPersona: String, CaseIterable, Codable {
-    /// Has never really practised. Their pain is starting.
+    /// Has never really practiced. Their pain is starting.
     case newcomer
-    /// Has practised and it didn't hold. Their pain is consistency.
+    /// Has practiced and it didn't hold. Their pain is consistency.
     case restarter
     /// Practises regularly already. Their pain is flying blind.
     case regular
@@ -723,7 +723,7 @@ public enum OnboardingPersona: String, CaseIterable, Codable {
         switch self {
         case .newcomer:  return "hasn't started yet"
         case .restarter: return "starts and stops"
-        case .regular:   return "already practises"
+        case .regular:   return "already practices"
         }
     }
 }

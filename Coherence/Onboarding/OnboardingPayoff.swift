@@ -729,7 +729,7 @@ struct WallScreen: View {
         .init(who: "Phil Jackson's Bulls and Lakers",
               text: "Ran mindfulness training through Michael Jordan's and Kobe Bryant's championship years.", verbatim: false),
         .init(who: "The Seattle Seahawks",
-              text: "Have practised mindfulness as a team since 2011.", verbatim: false),
+              text: "Have practiced mindfulness as a team since 2011.", verbatim: false),
         .init(who: "Ray Dalio",
               text: "Transcendental Meditation has probably been the single most important reason for whatever success I've had.", verbatim: true),
         .init(who: "Kobe Bryant",
@@ -741,7 +741,7 @@ struct WallScreen: View {
         .init(who: "LeBron James, Novak Djokovic, Derek Jeter",
               text: "All credit a meditation practice.", verbatim: false),
         .init(who: "Jerry Seinfeld",
-              text: "Has practised Transcendental Meditation for roughly forty years.", verbatim: false),
+              text: "Has practiced Transcendental Meditation for roughly forty years.", verbatim: false),
         .init(who: "Bill Gates, Jeff Bezos, Marc Benioff",
               text: "Each have described a regular practice.", verbatim: false),
     ]
@@ -1020,7 +1020,7 @@ struct CommitmentScreen: View {
                          onContinue: { committed = true; onContinue() }) {
             VStack(spacing: 22) {
                 // Their own sentence, assembled from their own answers.
-                (Text("I'll practise ")
+                (Text("I'll practice ")
                  + Text("\(daysPerWeek) days a week").foregroundStyle(AppColor.accentGoldText).bold()
                  + Text(anchor.map { ", \($0.phrase)" } ?? "")
                      .foregroundStyle(AppColor.accentGoldText).bold()

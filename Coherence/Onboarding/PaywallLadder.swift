@@ -162,6 +162,7 @@ struct FreeTierScreen: View {
 
     private let kept = [
         "A score after every session",
+        "Your score trend across sessions",
         "Streak, calendar and awards",
         "Any audio you like, measured",
         "Nature and frequency tracks",
@@ -169,7 +170,6 @@ struct FreeTierScreen: View {
     private let locked = [
         "The curves behind the score",
         "Heart rate, breath, stillness",
-        "Your trend across sessions",
         "The guided journey",
         "Curves on your share card",
     ]

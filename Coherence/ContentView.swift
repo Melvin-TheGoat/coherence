@@ -358,7 +358,7 @@ struct ContentView: View {
                     Text("How to meditate")
                         .font(AppFont.headline)
                         .foregroundStyle(AppColor.textPrimary)
-                    Text("Ways to practise, easiest first")
+                    Text("Ways to practice, easiest first")
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                 }
