@@ -572,9 +572,9 @@ struct GuidedBreathScreen: View {
         HStack(alignment: .top, spacing: 13) {
             Image(systemName: icon)
                 .font(.system(size: 17, weight: .medium))
-                .foregroundStyle(Color.onboardingSage)
+                .foregroundStyle(AppColor.accentGoldText)
                 .frame(width: 30, height: 30)
-                .background(Color.onboardingSage.opacity(0.12), in: Circle())
+                .background(AppColor.accentGold.opacity(0.14), in: Circle())
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.system(size: 15.5, weight: .semibold, design: .rounded))

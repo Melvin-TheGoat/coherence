@@ -502,9 +502,11 @@ UI must coach it, and the 2-signal degrade path must stay.
       arithmetic. Pure Foundation, 10 tests. Projection dates are hand-checked in
       the tests (30 days at 5/week lands Sept 16) so a rounding change can't
       quietly move the date we print at someone.
-    - `OnboardingKit.swift` — the **colour arc as a modifier**. Screens declare a
-      SECTION, never a colour: amber (relief) → teal (the body enters) → red
-      (cost) → gold (the win). No screen hand-rolls a background.
+    - `OnboardingKit.swift` — the ground as a modifier. Screens declare a
+      SECTION, never a colour; no screen hand-rolls a background. **The
+      per-section colour arc (amber → sage → red → gold) was RETIRED 2026-08-29
+      (Aziz): every section now grounds in the same warm gold.** The section
+      enum survives so an arc could return as a one-line change.
     - Interview is now **12 questions**: baseline · why · stress · alone-with-
       thoughts · doing-nothing · restarts · how-long · causes · watch gate ·
       anchor · you · attribution.

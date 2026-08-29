@@ -29,13 +29,17 @@ enum OnboardingSection {
     case win
 
     /// Two stops for the ground gradient, over the app's near-black.
+    ///
+    /// **The per-section colour arc is retired (Aziz, 2026-08-29).** The
+    /// original decision (Melvin, 2026-08-05) ran amber → sage → red → gold as
+    /// an emotional arc, and walking the finished flow the shifts read as the
+    /// app changing its mind about its own identity rather than as staging.
+    /// Every section now grounds in the same warm gold the app itself lives
+    /// in. The section enum STAYS: screens still declare what they are, so an
+    /// arc could return as a one-line change, and no screen hand-rolls a
+    /// background.
     var glow: (Color, Color) {
-        switch self {
-        case .relief: return (Color(red: 0.85, green: 0.60, blue: 0.24), Color(red: 0.55, green: 0.33, blue: 0.12))
-        case .body:   return (.onboardingSage, Color(red: 0.227, green: 0.345, blue: 0.196))
-        case .cost:   return (Color(red: 0.62, green: 0.18, blue: 0.16), Color(red: 0.32, green: 0.08, blue: 0.08))
-        case .win:    return (AppColor.accentGold, Color(red: 0.42, green: 0.31, blue: 0.08))
-        }
+        (AppColor.accentGold, Color(red: 0.42, green: 0.31, blue: 0.08))
     }
 }
 

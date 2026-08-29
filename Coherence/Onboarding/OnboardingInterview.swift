@@ -734,7 +734,7 @@ struct HardwareScreen: View {
                 Text("THE HARDWARE YOU'D OTHERWISE NEED")
                     .font(.system(size: 10, weight: .semibold))
                     .tracking(1.4)
-                    .foregroundStyle(Color(red: 0.79, green: 0.54, blue: 0.51))
+                    .foregroundStyle(AppColor.textSecondary)
                 Text("Seeing your body meditate used to cost $400.")
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
@@ -773,9 +773,12 @@ struct HardwareScreen: View {
     /// one-ground-per-section rule because this screen IS the transition, per
     /// the approved mockup.
     private var hardwareGround: some View {
+        // One hue with the rest of onboarding (Aziz, 2026-08-29): the ember
+        // top went with the colour arc. Cost still reads in the terracotta
+        // PRICE text; the ground stays the app's gold.
         ZStack {
             AppColor.backgroundPrimary
-            RadialGradient(colors: [Color(red: 0.71, green: 0.39, blue: 0.35).opacity(0.22), .clear],
+            RadialGradient(colors: [AppColor.accentGold.opacity(0.10), .clear],
                            center: .init(x: 0.5, y: -0.08), startRadius: 10, endRadius: 430)
             RadialGradient(colors: [AppColor.accentGold.opacity(0.16), .clear],
                            center: .init(x: 0.5, y: 1.08), startRadius: 10, endRadius: 460)
