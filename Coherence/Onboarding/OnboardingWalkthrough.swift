@@ -346,6 +346,8 @@ struct GuidedBreathScreen: View {
 
     // The orb. 6 s in, 6 s out — the same resonance pace the Watch taps.
     @State private var inhale = false
+    /// The intro's preview orb, breathing on its own clock.
+    @State private var introInhale = false
     @State private var label = "Breathe in"
     @State private var remaining = practiceSeconds
 
@@ -355,27 +357,50 @@ struct GuidedBreathScreen: View {
 
             switch stage {
             case .intro:
-                VStack(spacing: 14) {
+                VStack(spacing: 22) {
+                    // The orb they are about to follow, already breathing at
+                    // the real pace. A rehearsal, not a decoration: by the
+                    // time they tap Start they have seen a full breath cycle
+                    // (Aziz, 2026-08-29: the old screen was "just a bunch of
+                    // text").
+                    ZStack {
+                        Circle()
+                            .fill(RadialGradient(colors: [Color.onboardingSage.opacity(0.5),
+                                                          Color.onboardingSage.opacity(0.04)],
+                                                 center: .center, startRadius: 4, endRadius: 84))
+                            .frame(width: 152, height: 152)
+                        Circle()
+                            .stroke(Color.onboardingSage.opacity(0.45), lineWidth: 1.5)
+                            .frame(width: 152, height: 152)
+                        Text(introInhale ? "in" : "out")
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundStyle(AppColor.textSecondary)
+                            .contentTransition(.opacity)
+                    }
+                    .scaleEffect(introInhale ? 1.0 : 0.68)
+                    .animation(.easeInOut(duration: 6), value: introInhale)
+
                     Text("Two minutes.\nJust breathe.")
                         .font(.system(size: 29, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.center)
+
                     // Posture before pace: it changes the reading. Seated and
                     // still is what the sensors want, and telling people after
                     // the fact would be telling them why their number was low.
-                    Text("First, sit like you mean it: upright somewhere comfortable, back tall, shoulders soft, hands resting in your lap.")
-                        .font(.system(size: 16))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 6)
-                    Text("Then six seconds in, six seconds out. Your Watch taps your wrist with the rhythm, so you can close your eyes. Slow breathing like this settles the nervous system, and 808 will measure it happening.")
-                        .font(.system(size: 16))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .multilineTextAlignment(.center)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 6)
+                    VStack(spacing: 10) {
+                        introRow(icon: "figure.mind.and.body",
+                                 title: "Sit tall",
+                                 detail: "Upright somewhere comfortable. Shoulders soft, hands resting in your lap.")
+                        introRow(icon: "applewatch.radiowaves.left.and.right",
+                                 title: "Six in, six out",
+                                 detail: "Your Watch taps the rhythm on your wrist, so you can close your eyes.")
+                        introRow(icon: "waveform.path.ecg",
+                                 title: "808 measures it landing",
+                                 detail: "Slow breathing settles the nervous system. You'll see it in your score.")
+                    }
                 }
+                .onAppear { introBreathing() }
             case .starting:
                 VStack(spacing: 16) {
                     ProgressView().controlSize(.large).tint(AppColor.accentGold)
@@ -538,6 +563,41 @@ struct GuidedBreathScreen: View {
                 try? await Task.sleep(for: .seconds(6))
                 guard !Task.isCancelled else { return }
                 inhale.toggle()
+            }
+        }
+    }
+
+    private func introRow(icon: String, title: String, detail: String) -> some View {
+        HStack(alignment: .top, spacing: 13) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(Color.onboardingSage)
+                .frame(width: 30, height: 30)
+                .background(Color.onboardingSage.opacity(0.12), in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.system(size: 15.5, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text(detail)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(13)
+        .background(AppColor.backgroundSecondary.opacity(0.65),
+                    in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+    }
+
+    /// The preview orb breathes until the intro is left; `stage` changes end it.
+    private func introBreathing() {
+        Task { @MainActor in
+            introInhale = true
+            while stage == .intro {
+                try? await Task.sleep(for: .seconds(6))
+                guard !Task.isCancelled, stage == .intro else { return }
+                introInhale.toggle()
             }
         }
     }
