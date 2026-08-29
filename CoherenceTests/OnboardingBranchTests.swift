@@ -30,7 +30,7 @@ final class OnboardingBranchTests: XCTestCase {
         XCTAssertTrue(a.interview.contains(.intendedFor), "a newcomer should be asked how long they've meant to start")
     }
 
-    /// Someone who already practises isn't "meaning to start", and shouldn't be
+    /// Someone who already practices isn't "meaning to start", and shouldn't be
     /// quizzed on whether they can sit with their own thoughts.
     func test_regularIsNotTreatedAsABeginner() {
         for frequency in [CurrentFrequency.mostWeeks, .almostDaily] {

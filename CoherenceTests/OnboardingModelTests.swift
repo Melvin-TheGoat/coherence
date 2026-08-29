@@ -62,7 +62,7 @@ final class OnboardingModelTests: XCTestCase {
         let p = PracticeProfile(from: a)
         XCTAssertEqual(p.chasing, "More discipline")          // priority beats set order
         XCTAssertTrue(p.pattern.contains("more times"))
-        XCTAssertEqual(p.anchorLine, "You practise with your morning coffee")
+        XCTAssertEqual(p.anchorLine, "You practice with your morning coffee")
         // couldntTell outranks forgot: it's the one 808 answers most directly.
         XCTAssertEqual(p.blindSpot, "I couldn't tell it was working")
     }
