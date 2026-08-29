@@ -12,6 +12,31 @@ import os
 @MainActor
 final class WatchSessionManager: NSObject, ObservableObject {
 
+    /// Whether the PHONE has finished onboarding, last we heard. Gates the
+    /// start screen: a wrist Begin before the phone is set up would run a
+    /// session into an app that cannot receive it, so the Watch says "finish
+    /// setup on your iPhone" instead. Persisted, because the Watch launches
+    /// cold with no phone in reach and must remember the last known answer;
+    /// a fresh install defaults to NOT onboarded, which is the honest state
+    /// for a Watch whose phone app has never run.
+    @Published var phoneOnboarded =
+        UserDefaults.standard.bool(forKey: "phoneOnboarded.v1")
+
+    /// Reads the onboarded flag wherever it appears; it rides every
+    /// application-context update from the phone, including the post-session
+    /// clear.
+    private nonisolated func handleOnboarded(_ dict: [String: Any]) {
+        if let done = dict[WCKeys.onboarded] as? Bool {
+            Task { @MainActor in self.applyOnboarded(done) }
+        }
+    }
+
+    @MainActor private func applyOnboarded(_ done: Bool) {
+        guard done != phoneOnboarded else { return }
+        phoneOnboarded = done
+        UserDefaults.standard.set(done, forKey: "phoneOnboarded.v1")
+    }
+
     enum Phase: Equatable {
         case idle
         case running
@@ -380,7 +405,7 @@ extension WatchSessionManager: WCSessionDelegate {
         // A params context queued before the app launched is delivered here.
         if activationState == .activated {
             let ctx = session.receivedApplicationContext
-            if !ctx.isEmpty { handleParams(ctx) }
+            if !ctx.isEmpty { handleParams(ctx); handleOnboarded(ctx) }
         }
     }
 
@@ -396,5 +421,6 @@ extension WatchSessionManager: WCSessionDelegate {
 
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         handleParams(applicationContext)
+        handleOnboarded(applicationContext)
     }
 }

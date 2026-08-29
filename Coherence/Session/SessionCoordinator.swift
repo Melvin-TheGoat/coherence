@@ -17,6 +17,15 @@ final class SessionCoordinator: NSObject, ObservableObject {
     @Published var status: String = "Idle"
     /// ID of the most recently persisted session — opens the results graphs.
     @Published var lastSessionID: UUID?
+    /// The current attempt's payload arrived but was too short or unreadable
+    /// to persist. The onboarding walkthrough listens so its "scoring it"
+    /// state can resolve honestly instead of waiting forever.
+    @Published var lastDiscardedID: UUID?
+    /// Whether onboarding is complete, mirrored to the Watch inside every
+    /// application-context update. The Watch's start screen gates on it: a
+    /// wrist Begin before the phone is set up would run a session into an app
+    /// that cannot yet receive it.
+    private(set) var onboarded = false
     /// The session currently running on the Watch — drives the phone's
     /// mid-session screen. Non-nil from a successful `startWatchApp` until the
     /// payload lands.
@@ -143,7 +152,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
                     wc.sendMessage([WCKeys.params: data], replyHandler: nil, errorHandler: nil)
                 }
                 if wc.activationState == .activated {
-                    try? wc.updateApplicationContext([WCKeys.params: data])
+                    try? wc.updateApplicationContext([WCKeys.params: data,
+                                                      WCKeys.onboarded: true])
                 }
             }
 
@@ -310,6 +320,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
         tone.stop(reason: reason)
     }
 
+    /// RootView reports onboarding state here (at launch and on change); the
+    /// Watch hears about it through the application context. Sign-out resets
+    /// `onboardingComplete`, so a signed-out phone re-gates the wrist too.
+    func setOnboarded(_ done: Bool) {
+        onboarded = done
+        try? WCSession.default.updateApplicationContext([WCKeys.onboarded: done])
+    }
+
     private func persist(_ payload: SessionPayload) {
         // A payload is "ours" if it matches the session the user just began, or
         // if no attempt is in flight (e.g. the app relaunched mid-session and the
@@ -332,7 +350,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // The session is complete — clear the "start" command from the persistent
             // application context so a cold-launching Watch can't replay a finished
             // session (application context lingers until overwritten).
-            try? WCSession.default.updateApplicationContext([:])
+            // Clearing the start command must not also clear the Watch's
+            // onboarded flag, which rides the same context.
+            try? WCSession.default.updateApplicationContext([WCKeys.onboarded: onboarded])
         } else {
             log.info("Stale payload \(payload.sessionID) persisted without touching the live session")
         }
@@ -342,7 +362,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let context = container.mainContext
         guard let session = SessionStore.persist(payload, frequencyID: soundID,
                                                  in: context) else {
-            if isCurrent { status = "Session discarded (too short / unreadable)" }
+            if isCurrent {
+                status = "Session discarded (too short / unreadable)"
+                lastDiscardedID = payload.sessionID
+            }
             return
         }
         guard isCurrent else { return }

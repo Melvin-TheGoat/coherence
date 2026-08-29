@@ -5,6 +5,12 @@ import Foundation
 enum WCKeys {
     /// Phone → Watch: JSON-encoded `SessionParams`.
     static let params = "params"
+    /// Phone → Watch (application context): whether onboarding is complete on
+    /// the phone. The Watch's start screen gates Begin on it, because a wrist
+    /// session before the phone is set up delivers into an app that cannot
+    /// receive it. Rides EVERY context update, including the post-session
+    /// clear, so the flag survives the start command's lifecycle.
+    static let onboarded = "onboarded"
     /// Watch → Phone: JSON-encoded `SessionPayload`.
     static let payload = "payload"
     /// Phone → Watch: end the running session now (the phone's mid-session End

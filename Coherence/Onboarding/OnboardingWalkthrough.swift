@@ -86,8 +86,16 @@ struct TourHomeScreen: View {
                 GeometryReader { proxy in
                     let target = anchors[notes[stop].target]
                         .map { proxy[$0].insetBy(dx: -8, dy: -6) }
+                    // The dim ignores the safe area (it must cover the status
+                    // bar), which moves its origin ABOVE the reader's by the
+                    // top inset. The window is measured in reader space, so it
+                    // must shift down by that inset or the cutout lands above
+                    // the element it frames — exactly the "the lit region is
+                    // above the button" bug (Aziz, 2026-08-29).
+                    let inset = proxy.safeAreaInsets
+                    let window = target.map { $0.offsetBy(dx: inset.leading, dy: inset.top) }
                     ZStack {
-                        SpotlightDim(window: target)
+                        SpotlightDim(window: window)
                             .fill(Color.black.opacity(0.55), style: FillStyle(eoFill: true))
                             .ignoresSafeArea()
                         if let target {
@@ -332,7 +340,7 @@ struct GuidedBreathScreen: View {
 
     private static let practiceSeconds = 45
 
-    private enum Stage: Equatable { case intro, starting, breathing, finishing, done(UUID) }
+    private enum Stage: Equatable { case intro, starting, breathing, finishing, done(UUID), unreadable }
     @State private var stage: Stage = .intro
     @State private var startedAt: Date?
 
@@ -406,6 +414,22 @@ struct GuidedBreathScreen: View {
                         .font(.system(size: 16))
                         .foregroundStyle(AppColor.textSecondary)
                 }
+            case .unreadable:
+                VStack(spacing: 14) {
+                    Image(systemName: "wind")
+                        .font(.system(size: 38))
+                        .foregroundStyle(AppColor.textSecondary)
+                    Text("We didn't get a score back.")
+                        .font(.system(size: 26, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                    Text("That happens: the Watch may have been mid-session, off the wrist, or out of reach. Real sessions retry all of this automatically, so keep going.")
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 6)
+                }
             case .done:
                 VStack(spacing: 14) {
                     Image(systemName: "checkmark.circle.fill")
@@ -431,6 +455,9 @@ struct GuidedBreathScreen: View {
             if case .done(let id) = stage {
                 OnboardingCTA(title: "Let's see your results") { onScored(id) }
             }
+            if stage == .unreadable {
+                OnboardingCTA(title: "Continue") { onSkip() }
+            }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
@@ -441,6 +468,13 @@ struct GuidedBreathScreen: View {
         // taps into, not a redirect.
         .onChange(of: coordinator.lastSessionID) { _, id in
             if let id { withAnimation(.easeOut(duration: 0.3)) { stage = .done(id) } }
+        }
+        // The Watch answered, but the read was unusable (too short, no
+        // signal). Waiting longer will not improve it; be honest instead.
+        .onChange(of: coordinator.lastDiscardedID) { _, id in
+            if id != nil, stage == .finishing || stage == .breathing {
+                withAnimation { stage = .unreadable }
+            }
         }
         // The Watch refused (no HR, permissions, out of reach). The honest
         // path forward is the same one the app takes: say so, move on.
@@ -476,6 +510,25 @@ struct GuidedBreathScreen: View {
     private func breathe() {
         stage = .breathing
         startedAt = Date()
+        // Two clocks on purpose. The breath loop wakes every 6 s to turn the
+        // orb, and the first build also updated the countdown there, so the
+        // number stepped 45 → 39 → 33 and read as broken (Aziz, 2026-08-29).
+        // The countdown is its own 1 s ticker off the wall clock.
+        Task { @MainActor in
+            while stage == .breathing {
+                if let s = startedAt {
+                    remaining = max(0, Self.practiceSeconds - Int(Date().timeIntervalSince(s)))
+                }
+                // The Watch ends the session itself at 0:00; once the live
+                // session drops, we are waiting on the payload.
+                if coordinator.active == nil && remaining <= 2 {
+                    stage = .finishing
+                    finishingWatchdog()
+                }
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+            }
+        }
         Task { @MainActor in
             var goingIn = true
             inhale = true
@@ -485,15 +538,20 @@ struct GuidedBreathScreen: View {
                 try? await Task.sleep(for: .seconds(6))
                 guard !Task.isCancelled else { return }
                 inhale.toggle()
-                if let s = startedAt {
-                    remaining = max(0, Self.practiceSeconds - Int(Date().timeIntervalSince(s)))
-                }
-                // The Watch ends the session itself at 2:00; once the live
-                // session drops, we are waiting on the payload.
-                if coordinator.active == nil && remaining <= 2 {
-                    stage = .finishing
-                }
             }
+        }
+    }
+
+    /// "Your Watch is scoring it…" must not be a place someone can live.
+    /// The payload normally lands seconds after the session ends; if half a
+    /// minute passes with nothing (a stale Watch session, a discarded read,
+    /// a dropped link), say so honestly and let the flow continue. The score
+    /// was never the toll for finishing onboarding.
+    private func finishingWatchdog() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(30))
+            guard !Task.isCancelled, stage == .finishing else { return }
+            withAnimation { stage = .unreadable }
         }
     }
 }

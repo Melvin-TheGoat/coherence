@@ -8,6 +8,7 @@ import AuthenticationServices
 struct RootView: View {
     @Query private var preferences: [Preferences]
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var coordinator: SessionCoordinator
     /// **808 is no longer a hard paywall** (Aziz, 2026-08-24), reversing the
     /// 2026-08-11 decision that paying unlocked the entire app. The app opens
     /// for everyone; what paying unlocks is the EVIDENCE behind the score.
@@ -29,6 +30,12 @@ struct RootView: View {
             }
         }
         .preferredColorScheme(colorScheme)
+        // The Watch mirrors the onboarding fact. Reported at launch and on
+        // every change, so finishing onboarding unlocks the wrist and signing
+        // out re-locks it.
+        .onChange(of: preferences.contains { $0.onboardingComplete }, initial: true) { _, done in
+            coordinator.setOnboarded(done)
+        }
         .task {
             // A Sign in with Apple credential can be revoked from iOS Settings
             // at any moment, and Apple's SIWA rules require apps to verify the

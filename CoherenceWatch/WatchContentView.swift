@@ -28,7 +28,7 @@ struct WatchContentView: View {
             authorizeScreen
         } else {
             switch manager.phase {
-            case .idle:    startScreen
+            case .idle:    manager.phoneOnboarded ? AnyView(startScreen) : AnyView(setupScreen)
             case .running: liveScreen
             case .sending: sendingScreen
             case .sent:    sentScreen
@@ -55,6 +55,31 @@ struct WatchContentView: View {
                     .foregroundStyle(WatchPalette.inkMuted)
                     .multilineTextAlignment(.center)
             }
+            Spacer()
+        }
+        .padding(.horizontal, 6)
+    }
+
+    // MARK: - Phone not set up yet
+
+    /// The phone hasn't finished onboarding (or its user signed out), so a
+    /// session started here would deliver into an app that can't receive it.
+    /// Say what to do instead of offering a Begin that half-works.
+    private var setupScreen: some View {
+        VStack(spacing: 10) {
+            markRow
+            Spacer()
+            Image(systemName: "iphone.gen3")
+                .font(.system(size: 26))
+                .foregroundStyle(WatchPalette.calm)
+            Text("Set up 808 on your iPhone first.")
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundStyle(WatchPalette.ink)
+                .multilineTextAlignment(.center)
+            Text("Open the app on your phone and finish the setup. This screen unlocks by itself.")
+                .font(.system(size: 11))
+                .foregroundStyle(WatchPalette.inkMuted)
+                .multilineTextAlignment(.center)
             Spacer()
         }
         .padding(.horizontal, 6)
