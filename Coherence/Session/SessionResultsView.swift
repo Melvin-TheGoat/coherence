@@ -7,10 +7,29 @@ import Charts
 /// (rule-based `VerdictEngine`, no AI), every curve carries its own reading
 /// and real axes, and the color grammar holds: teal = the body's signals,
 /// gold = achievement. Passed only a sessionID (conventions).
+/// The onboarding walkthrough's guided read of the results screen: one element
+/// lit, everything else dimmed, in the order the evidence should be met.
+/// nil = the screen behaves normally, which is every use outside onboarding.
+enum ResultsTourStage: Int, CaseIterable {
+    case score, heart, stillness, breathing
+}
+
+private struct ResultsTourStageKey: EnvironmentKey {
+    static let defaultValue: ResultsTourStage? = nil
+}
+
+extension EnvironmentValues {
+    var resultsTourStage: ResultsTourStage? {
+        get { self[ResultsTourStageKey.self] }
+        set { self[ResultsTourStageKey.self] = newValue }
+    }
+}
+
 struct SessionResultsView: View {
     let sessionID: UUID
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.resultsTourStage) private var tourStage
     @State private var session: Session?
     @State private var stats: MeditationStats?
     @State private var rating: Double = 5
@@ -65,29 +84,37 @@ struct SessionResultsView: View {
 
     var body: some View {
         NavigationStack {
+            ScrollViewReader { scroller in
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if let session {
                         if let stats {
-                            hero(session, stats)
-                            tiles(stats)
-                            if stats.breathDoorwayRate != nil { resonanceChip }
+                            tourDim(hero(session, stats), lit: .score)
+                                .id(ResultsTourStage.score)
+                            tourDim(tiles(stats), lit: nil)
+                            if stats.breathDoorwayRate != nil {
+                                tourDim(resonanceChip, lit: nil)
+                            }
                             let series = SessionEvidence.series(from: stats)
-                            ForEach(series) { graphCard($0) }
+                            ForEach(series) { s in
+                                tourDim(graphCard(s), lit: tourStage(for: s.kind))
+                                    .id(tourStage(for: s.kind))
+                            }
                             // Breath never silently vanishes. When nothing was
                             // readable the card stays, and says so, because a
                             // missing section reads as a bug and an honest
                             // absence reads as an instrument.
                             if !series.contains(where: { $0.kind == .breathing }) {
-                                breathingUnreadCard
+                                tourDim(breathingUnreadCard, lit: .breathing)
+                                    .id(ResultsTourStage.breathing)
                             }
-                            if !entitlements.curves { unlockCTA }
-                            shareButton
+                            if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
+                            tourDim(shareButton, lit: nil)
                         } else {
                             header(session)
                             missingStatsCard
                         }
-                        reflectionCard
+                        tourDim(reflectionCard, lit: nil)
                     } else {
                         Text("No results for this session.")
                             .font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
@@ -139,7 +166,34 @@ struct SessionResultsView: View {
                 load()
                 Analytics.track(stats == nil ? .resultMissing : .resultViewed)
             }
+            // The tour brings each element to the reader, top-anchored for the
+            // score so the whole hero shows, centred for the graphs.
+            .onChange(of: tourStage) { _, stage in
+                guard let stage else { return }
+                withAnimation(.easeOut(duration: 0.4)) {
+                    scroller.scrollTo(stage, anchor: stage == .score ? .top : .center)
+                }
+            }
+            }
         }
+    }
+
+    /// Which tour stage lights a given curve.
+    private func tourStage(for kind: EvidenceSeries.Kind) -> ResultsTourStage? {
+        switch kind {
+        case .heartRate: return .heart
+        case .stillness: return .stillness
+        case .breathing: return .breathing
+        }
+    }
+
+    /// During the walkthrough's tour, everything except the current stage's
+    /// element steps far back. Opacity rather than removal, so the layout
+    /// (and the scroll offsets the tour animates to) never shifts.
+    private func tourDim<V: View>(_ view: V, lit: ResultsTourStage?) -> some View {
+        view
+            .opacity(tourStage == nil || tourStage == lit ? 1 : 0.15)
+            .animation(.easeOut(duration: 0.3), value: tourStage)
     }
 
     // MARK: Header

@@ -318,10 +318,11 @@ struct WatchConnectScreen: View {
 
 // MARK: - 3 · The two-minute practice
 
-/// A real session: the coordinator launches the Watch workout with a 120 s
+/// A real session: the coordinator launches the Watch workout with a 45 s
 /// plan and wrist pacing, the phone shows the paced orb, and the Watch taps
-/// the rhythm. When the payload lands and persists, the flow moves itself to
-/// the results.
+/// the rhythm. When the payload lands and persists, a Done state offers the
+/// results rather than jumping there: arriving somewhere you tapped to go
+/// beats being teleported (Aziz, 2026-08-29).
 struct GuidedBreathScreen: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     /// Fires with the persisted sessionID once the Watch ships the result.
@@ -329,9 +330,9 @@ struct GuidedBreathScreen: View {
     /// The session could not run (Watch declined, took it off, etc.).
     let onSkip: () -> Void
 
-    private static let practiceSeconds = 120
+    private static let practiceSeconds = 45
 
-    private enum Stage { case intro, starting, breathing, finishing }
+    private enum Stage: Equatable { case intro, starting, breathing, finishing, done(UUID) }
     @State private var stage: Stage = .intro
     @State private var startedAt: Date?
 
@@ -347,11 +348,20 @@ struct GuidedBreathScreen: View {
             switch stage {
             case .intro:
                 VStack(spacing: 14) {
-                    Text("Two minutes.\nJust breathe.")
+                    Text("45 seconds.\nJust breathe.")
                         .font(.system(size: 29, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.center)
-                    Text("Six seconds in, six seconds out. Your Watch taps your wrist with the rhythm, so you can close your eyes. Slow breathing like this settles the nervous system, and 808 will measure it happening.")
+                    // Posture before pace: it changes the reading. Seated and
+                    // still is what the sensors want, and telling people after
+                    // the fact would be telling them why their number was low.
+                    Text("First, sit like you mean it: upright somewhere comfortable, back tall, shoulders soft, hands resting in your lap.")
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 6)
+                    Text("Then six seconds in, six seconds out. Your Watch taps your wrist with the rhythm, so you can close your eyes. Slow breathing like this settles the nervous system, and 808 will measure it happening.")
                         .font(.system(size: 16))
                         .foregroundStyle(AppColor.textSecondary)
                         .multilineTextAlignment(.center)
@@ -396,6 +406,21 @@ struct GuidedBreathScreen: View {
                         .font(.system(size: 16))
                         .foregroundStyle(AppColor.textSecondary)
                 }
+            case .done:
+                VStack(spacing: 14) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 44))
+                        .foregroundStyle(AppColor.accentGold)
+                    Text("Done.")
+                        .font(.system(size: 29, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text("That was 45 seconds of measured practice. Your Watch read your heart, your stillness and your breath the whole way through.")
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 6)
+                }
             }
 
             Spacer()
@@ -403,14 +428,19 @@ struct GuidedBreathScreen: View {
             if stage == .intro {
                 OnboardingCTA(title: "Start breathing") { start() }
             }
+            if case .done(let id) = stage {
+                OnboardingCTA(title: "Let's see your results") { onScored(id) }
+            }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onboardingGround(.body, ambient: false)
         // The payload landed and was persisted: this is the real sessionID.
+        // Land on Done rather than jumping: the results are a reveal the user
+        // taps into, not a redirect.
         .onChange(of: coordinator.lastSessionID) { _, id in
-            if let id { onScored(id) }
+            if let id { withAnimation(.easeOut(duration: 0.3)) { stage = .done(id) } }
         }
         // The Watch refused (no HR, permissions, out of reach). The honest
         // path forward is the same one the app takes: say so, move on.
@@ -470,57 +500,113 @@ struct GuidedBreathScreen: View {
 
 // MARK: - 4 · The scored result
 
-/// The real results screen for the session they just breathed, with one
-/// walkthrough note on top and Continue pinned underneath. Everything in
-/// between (score, verdict, graphs, rating, share) is the app itself.
+/// The real results screen for the session they just breathed, read to the
+/// user one element at a time (Aziz, 2026-08-29): the score first, then each
+/// curve, everything else dimmed, with a plain-words explanation of what the
+/// lit thing measures and why it matters to meditation. The screen underneath
+/// is the app itself, driven through `resultsTourStage`, so what the tour
+/// explains is exactly what every later session shows.
+///
+/// Copy rules bind here harder than anywhere: these are the first claims 808
+/// makes about the user's own body. Heart rate is an averaged trend, never
+/// beat-to-beat. Stillness is motion, not attention: we say what settling
+/// LOOKS like, we never assert what their mind did. Breathing may legitimately
+/// be unread in 45 seconds, so its copy works for both outcomes.
 struct WalkthroughResultsScreen: View {
     let sessionID: UUID
     let onContinue: () -> Void
 
-    @State private var noteShown = true
+    /// nil = the tour is over; the screen is theirs to scroll.
+    @State private var stage: ResultsTourStage? = .score
 
     var body: some View {
         ZStack(alignment: .bottom) {
             NavigationStack {
                 SessionResultsView(sessionID: sessionID)
             }
+            .environment(\.resultsTourStage, stage)
+            .allowsHitTesting(stage == nil)
             .safeAreaInset(edge: .bottom) {
-                OnboardingCTA(title: "Continue", action: onContinue)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
-                    .padding(.bottom, 6)
-                    .background(
-                        LinearGradient(colors: [AppColor.backgroundPrimary.opacity(0),
-                                                AppColor.backgroundPrimary],
-                                       startPoint: .top, endPoint: .center)
-                        .ignoresSafeArea()
-                    )
+                if stage == nil {
+                    OnboardingCTA(title: "Continue", action: onContinue)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8)
+                        .padding(.bottom, 6)
+                        .background(
+                            LinearGradient(colors: [AppColor.backgroundPrimary.opacity(0),
+                                                    AppColor.backgroundPrimary],
+                                           startPoint: .top, endPoint: .center)
+                            .ignoresSafeArea()
+                        )
+                }
             }
 
-            if noteShown {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("This is what every session gives you.")
-                        .font(.system(size: 17, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text("Your score, what your heart and body did minute by minute, a place to say how it felt, and a card you can share. Scroll through it. It's yours.")
-                        .font(.system(size: 14))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button("Got it") {
-                        withAnimation(.easeOut(duration: 0.25)) { noteShown = false }
-                    }
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGoldText)
-                }
-                .padding(18)
-                .background(AppColor.backgroundSecondary.opacity(0.97),
-                            in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(AppColor.accentGold.opacity(0.3), lineWidth: 1))
-                .padding(.horizontal, 20)
-                .padding(.bottom, 92)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+            if let stage {
+                explainerCard(stage)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
+        }
+        .animation(.easeOut(duration: 0.25), value: stage)
+    }
+
+    private func explainerCard(_ stage: ResultsTourStage) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title(for: stage))
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(body(for: stage))
+                .font(.system(size: 14))
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 5) {
+                ForEach(ResultsTourStage.allCases, id: \.rawValue) { st in
+                    Capsule()
+                        .fill(st == stage ? AppColor.accentGold
+                                          : AppColor.textSecondary.opacity(0.3))
+                        .frame(width: st == stage ? 18 : 6, height: 6)
+                }
+                Spacer()
+            }
+            .padding(.top, 2)
+
+            OnboardingCTA(title: stage == ResultsTourStage.allCases.last ? "Got it" : "Next") {
+                advance(from: stage)
+            }
+            .padding(.top, 4)
+        }
+        .padding(18)
+        .background(AppColor.backgroundSecondary.opacity(0.97),
+                    in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .stroke(AppColor.accentGold.opacity(0.3), lineWidth: 1))
+        .padding(.horizontal, 20)
+        .padding(.bottom, 16)
+    }
+
+    private func advance(from current: ResultsTourStage) {
+        stage = ResultsTourStage(rawValue: current.rawValue + 1)   // nil after the last
+    }
+
+    private func title(for stage: ResultsTourStage) -> String {
+        switch stage {
+        case .score:     return "This is your practice score."
+        case .heart:     return "Your heart, across the sit."
+        case .stillness: return "How still your body was."
+        case .breathing: return "Your breath, read from your wrist."
+        }
+    }
+
+    private func body(for stage: ResultsTourStage) -> String {
+        switch stage {
+        case .score:
+            return "One number for how deep your body settled and how long it stayed there. It comes entirely from what your Watch measured, so it can't be flattered, and a short sit like this one is capped low by design. Longer, deeper sits score higher."
+        case .heart:
+            return "When attention settles, heart rate drifts down. This curve is that drift: where your heart started, where it landed, and the minute it turned. Watching it fall across a session is the plainest evidence meditation gives."
+        case .stillness:
+            return "Read from the motion sensors, scored from zero to one. A settling mind shows up as a settling body, which is why every tradition starts by sitting still: stillness is the part of concentration the body can show."
+        case .breathing:
+            return "Read from the tiny wrist movements breathing makes. Slowing your breath toward six a minute is the fastest lever you have: the heart settles behind it. When 808 can't read a clear rhythm it says so rather than guessing, so a reading here always means something."
         }
     }
 }

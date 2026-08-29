@@ -163,6 +163,12 @@ struct OnboardingView: View {
                 guard let raw = ProcessInfo.processInfo.environment["ONBOARDING_STEP"],
                       let index = Int(raw), let target = Step(rawValue: index) else { return }
                 answers = .sample
+                // Jumping to the walkthrough's results needs a session to
+                // show; seed the demo one so the tour is reviewable without
+                // breathing at a Watch first.
+                if target == .sessionResults {
+                    walkthroughSessionID = DemoData.seedResults(in: context)
+                }
                 step = target
             }
         #endif
