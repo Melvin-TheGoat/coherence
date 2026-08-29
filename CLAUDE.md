@@ -1579,6 +1579,43 @@ Console > `iCloud.com.azizmahmud.808` > deploy schema Development →
 Production; (3) verify on a fresh TestFlight install that signed-in sessions
 reappear, then delete the "sync doesn't work" line from What to Test.
 
+**ORG-ACCOUNT-DAY CHECKLIST (Lock Out Inc. was APPROVED to submit,
+2026-08-29; sequence for the shippable version, no app changes anywhere):**
+
+1. **FIRST, the container-collision check (five minutes, gates step 2).**
+   Melvin created `iCloud.com.lockout.meditate808` under his PERSONAL team
+   (WLZQLLHUB3) during the CloudKit investigation. iCloud container
+   identifiers are global across all teams and can NEVER be deleted. In the
+   org account's Certificates, Identifiers & Profiles, try to register that
+   exact container. If it registers, clean. If it is taken, pick the
+   alternate container ID immediately, BEFORE any production build exists;
+   it is a config change on our side and only cheap while nothing ships.
+2. Register `com.lockout.meditate808` + `.watchkitapp` under the org with
+   HealthKit, Sign in with Apple, and iCloud capabilities.
+3. One dev build signed by the ORG team on the production bundle ID, real
+   phone, signed into iCloud: Settings > CloudKit (debug) > run the schema
+   primer (13 optionals write no field until primed; Production promotion is
+   additive-only).
+4. CloudKit Console > the org container > deploy schema Development →
+   Production.
+5. Fresh TestFlight install from the org account: sign in, verify sessions
+   from another device appear. Only then delete the What to Test sync
+   disclaimer. (Curves still never roam: `MeditationStats` is device-local
+   by 5.1.3 design; the promise covers account, sessions, streak, history.)
+6. Agreements, Tax, and Banking: sign Paid Applications, enter Lock Out
+   Inc.'s bank + W-9. **Nothing in the app carries or needs banking info.**
+   Enroll in the **Small Business Program** the same sitting (15% vs 30%).
+7. Create the products EXACTLY as compiled:
+   `com.lockout.meditate808.{monthly,yearly,lifetime}`, monthly + yearly as
+   auto-renewables in ONE subscription group at **$7.99 / $29.99**, both
+   carrying the **7-day free intro**; lifetime as a non-consumable at
+   **$99.99**, no intro (its CTA says "charged today" on purpose). The app
+   flips itself when products load (`state == .ready`): real sell copy, free
+   tier live, no build change and no flag.
+8. At submission: App Privacy labels flip to Product Interaction (PostHog),
+   the new age-rating questionnaire, and a `808.storekit` rehearsal in Xcode
+   (buy each plan once; the config mirrors the real stack exactly).
+
 Where it actually stands, so nobody re-derives it:
 
 - **Melvin's container now exists and is correctly entitled.** He created
