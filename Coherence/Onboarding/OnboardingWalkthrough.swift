@@ -326,8 +326,8 @@ struct WatchConnectScreen: View {
 
 // MARK: - 3 · The two-minute practice
 
-/// A real session: the coordinator launches the Watch workout with a 45 s
-/// plan and wrist pacing, the phone shows the paced orb, and the Watch taps
+/// A real session: the coordinator launches the Watch workout with a
+/// two-minute plan and wrist pacing, the phone shows the paced orb, and the Watch taps
 /// the rhythm. When the payload lands and persists, a Done state offers the
 /// results rather than jumping there: arriving somewhere you tapped to go
 /// beats being teleported (Aziz, 2026-08-29).
@@ -338,7 +338,7 @@ struct GuidedBreathScreen: View {
     /// The session could not run (Watch declined, took it off, etc.).
     let onSkip: () -> Void
 
-    private static let practiceSeconds = 45
+    private static let practiceSeconds = 120
 
     private enum Stage: Equatable { case intro, starting, breathing, finishing, done(UUID), unreadable }
     @State private var stage: Stage = .intro
@@ -356,7 +356,7 @@ struct GuidedBreathScreen: View {
             switch stage {
             case .intro:
                 VStack(spacing: 14) {
-                    Text("45 seconds.\nJust breathe.")
+                    Text("Two minutes.\nJust breathe.")
                         .font(.system(size: 29, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)
                         .multilineTextAlignment(.center)
@@ -438,7 +438,7 @@ struct GuidedBreathScreen: View {
                     Text("Done.")
                         .font(.system(size: 29, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)
-                    Text("That was 45 seconds of measured practice. Your Watch read your heart, your stillness and your breath the whole way through.")
+                    Text("That was two minutes of measured practice. Your Watch read your heart, your stillness and your breath the whole way through.")
                         .font(.system(size: 16))
                         .foregroundStyle(AppColor.textSecondary)
                         .multilineTextAlignment(.center)
@@ -658,7 +658,7 @@ struct WalkthroughResultsScreen: View {
     private func body(for stage: ResultsTourStage) -> String {
         switch stage {
         case .score:
-            return "One number for how deep your body settled and how long it stayed there. It comes entirely from what your Watch measured, so it can't be flattered, and a short sit like this one is capped low by design. Longer, deeper sits score higher."
+            return "One number for how deep your body settled and how long it stayed there. It comes entirely from what your Watch measured, so it can't be flattered. If yours reads low, that's mostly the clock: this demo session was very short, and the score pays for time held. Your real sits will score higher."
         case .heart:
             return "When attention settles, heart rate drifts down. This curve is that drift: where your heart started, where it landed, and the minute it turned. Watching it fall across a session is the plainest evidence meditation gives."
         case .stillness:
