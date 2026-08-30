@@ -29,15 +29,17 @@ rejected: "Proof your meditation worked" (28), "Meditation for manifestation"
 
 ## Name (30 max)
 
-**808**
+**`808 Meditate`** — REGISTERED 2026-08-30, this is the live App Store Connect
+record. No colon: **`808: Meditate` was rejected as already in use**, and
+dropping the colon cleared it, because Apple checks the exact string.
 
-The App Store Connect record is **"808: Meditate"**. `CFBundleDisplayName` stays
-`808`, so the icon on the home screen reads 808 either way.
+`CFBundleDisplayName` stays `808`, so the icon on the home screen reads 808
+regardless. The store listing name and the springboard name are separate
+fields and are meant to differ here.
 
-**Why not the bare "808", even if it is available.** An earlier draft of this
-file said the bare name was taken. That was never verified and should not be
-relied on: App Store Connect is the only authority, and it tells you the moment
-you type a name into the record. The reason to qualify the name anyway is
+**Why not the bare "808".** An earlier draft of this file said the bare name was
+taken. That was never verified and should not have been stated as fact: App
+Store Connect is the only authority. The reason to qualify the name anyway is
 threefold, and none of it depends on availability:
 
 1. **The name field is the heaviest ASO signal there is**, and "808" alone is a
