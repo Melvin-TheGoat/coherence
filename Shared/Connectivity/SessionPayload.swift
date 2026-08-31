@@ -17,6 +17,13 @@ struct SessionParams: Codable, Equatable {
     /// (the onboarding breathing practice). Optional so params from an older
     /// phone decode on a newer Watch and vice versa.
     let paceBreathing: Bool?
+    /// When the phone sent this start command. The queued transferUserInfo
+    /// channel flushes its whole backlog when a cold Watch launches, replaying
+    /// start commands from attempts the phone gave up on long ago; the Watch
+    /// only honours a command inside its freshness window. Optional for
+    /// decode compatibility, and a MISSING value is treated as stale on
+    /// purpose: it can only come from an old build's queue.
+    let sentAt: Date?
 
     init(
         sessionID: UUID,
@@ -25,7 +32,8 @@ struct SessionParams: Codable, Equatable {
         plannedDurationSec: Int?,
         bellyBreathing: Bool,
         hapticsEnabled: Bool,
-        paceBreathing: Bool? = nil
+        paceBreathing: Bool? = nil,
+        sentAt: Date? = nil
     ) {
         self.sessionID = sessionID
         self.mode = mode
@@ -34,6 +42,7 @@ struct SessionParams: Codable, Equatable {
         self.bellyBreathing = bellyBreathing
         self.hapticsEnabled = hapticsEnabled
         self.paceBreathing = paceBreathing
+        self.sentAt = sentAt
     }
 }
 

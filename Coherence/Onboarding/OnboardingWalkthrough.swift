@@ -522,10 +522,15 @@ struct GuidedBreathScreen: View {
         coordinator.begin(mode: "silence", trackID: nil,
                           plannedDurationSec: Self.practiceSeconds,
                           hapticsEnabled: true, paceBreathing: true)
-        // The coordinator flips `active` when the Watch acks the start; ride it.
+        // Wait for the Watch's ACK, not the phone-side launch callback: the
+        // callback fires seconds early, and on a cold Watch tens of seconds
+        // early, which started the phone's orb and countdown long before the
+        // wrist was measuring anything (Aziz, 2026-08-31). The coordinator's
+        // start watchdog turns a missing ack into `startFailure`, which the
+        // cover below already handles.
         Task { @MainActor in
-            for _ in 0..<120 {          // up to ~60 s for a cold Watch launch
-                if coordinator.active != nil { breathe(); return }
+            for _ in 0..<160 {          // up to ~80 s for a cold Watch launch
+                if coordinator.startAcked { breathe(); return }
                 if coordinator.startFailure != nil { return }
                 try? await Task.sleep(for: .seconds(0.5))
             }
@@ -541,15 +546,28 @@ struct GuidedBreathScreen: View {
         // number stepped 45 → 39 → 33 and read as broken (Aziz, 2026-08-29).
         // The countdown is its own 1 s ticker off the wall clock.
         Task { @MainActor in
+            var overrunSec = 0
             while stage == .breathing {
-                if let s = startedAt {
-                    remaining = max(0, Self.practiceSeconds - Int(Date().timeIntervalSince(s)))
+                // The coordinator's clock, not a local one: it re-anchors to
+                // the Watch's reported workout start, so this countdown reads
+                // the same seconds the wrist is counting.
+                if let anchor = coordinator.active?.startedAt ?? startedAt {
+                    remaining = max(0, Self.practiceSeconds - Int(Date().timeIntervalSince(anchor)))
                 }
                 // The Watch ends the session itself at 0:00; once the live
                 // session drops, we are waiting on the payload.
                 if coordinator.active == nil && remaining <= 2 {
                     stage = .finishing
                     finishingWatchdog()
+                }
+                // The countdown reaching zero while the coordinator still
+                // thinks a session is live means the Watch ran something else
+                // (a stale command) or the link died. Waiting cannot fix
+                // either; the breathing screen must never be a place someone
+                // can live (it was, 2026-08-31).
+                if remaining <= 0 {
+                    overrunSec += 1
+                    if overrunSec > 40 { withAnimation { stage = .unreadable }; return }
                 }
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled else { return }

@@ -21,6 +21,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// to persist. The onboarding walkthrough listens so its "scoring it"
     /// state can resolve honestly instead of waiting forever.
     @Published var lastDiscardedID: UUID?
+    /// True once the Watch has ACKED the current attempt's actual workout
+    /// start. `active` alone is a phone-side guess: `startWatchApp`'s callback
+    /// fires seconds (a cold Watch: tens of seconds) before the wrist really
+    /// begins, which is why the mid-session clock re-anchors on the ack. The
+    /// onboarding demo waits for THIS, so its orb and countdown start with
+    /// the Watch instead of ahead of it (Aziz, 2026-08-31).
+    @Published private(set) var startAcked = false
     /// Whether onboarding is complete, mirrored to the Watch inside every
     /// application-context update. The Watch's start screen gates on it: a
     /// wrist Begin before the phone is set up would run a session into an app
@@ -135,9 +142,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 plannedDurationSec: plannedDurationSec,
                 bellyBreathing: false,
                 hapticsEnabled: hapticsEnabled,
-                paceBreathing: paceBreathing ? true : nil
+                paceBreathing: paceBreathing ? true : nil,
+                sentAt: Date()
             )
             currentAttemptID = params.sessionID
+            await MainActor.run { self.startAcked = false }
             if let soundID { pendingSoundIDs[params.sessionID] = soundID }
             Analytics.track(.sessionStarted(source: "phone", sound: soundID ?? "silence"))
 
@@ -260,6 +269,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // for, and it counts even if `active` has already moved on.
         if sessionID == currentAttemptID { startWatchdog?.cancel() }
         guard let current = active, current.id == sessionID else { return }
+        startAcked = true
         active = ActiveSession(id: current.id,
                                startedAt: startedAt,
                                plannedDurationSec: current.plannedDurationSec,
@@ -491,6 +501,7 @@ extension SessionCoordinator: WCSessionDelegate {
         currentAttemptID = sessionID
         if let soundID { pendingSoundIDs[sessionID] = soundID }
         Analytics.track(.sessionStarted(source: "watch", sound: soundID ?? "silence"))
+        startAcked = true
         active = ActiveSession(id: sessionID,
                                startedAt: startedAt,
                                plannedDurationSec: nil,

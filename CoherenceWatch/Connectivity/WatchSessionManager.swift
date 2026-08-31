@@ -116,7 +116,8 @@ final class WatchSessionManager: NSObject, ObservableObject {
             trackID: nil,
             plannedDurationSec: nil,      // wrist sessions are open-ended
             bellyBreathing: false,
-            hapticsEnabled: true
+            hapticsEnabled: true,
+            sentAt: Date()
         )
         Task { await begin(p, watchInitiated: true) }
     }
@@ -128,6 +129,22 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // that fast shouldn't have it silently swallowed.
         if phase == .sent { phase = .idle }
         guard phase == .idle, !handledSessionIDs.contains(p.sessionID) else { return }
+        // A cold launch flushes the queued backlog of start commands from
+        // every earlier attempt, oldest first, and running one resurrects a
+        // session the phone gave up on long ago (Aziz's demo, 2026-08-31:
+        // Watch off at Begin, the Watch ran a stale id, the fresh command was
+        // dropped by the phase guard above, and the phone waited forever for
+        // a payload it could only file as stale). A start command is honoured
+        // only inside its freshness window. Params with no `sentAt` come from
+        // an old build's queue and are stale by definition. Watch-initiated
+        // sessions stamp their own `sentAt` and pass untouched.
+        if !watchInitiated {
+            guard let sentAt = p.sentAt, Date().timeIntervalSince(sentAt) < 180 else {
+                handledSessionIDs.insert(p.sessionID)   // never revisit it
+                statusMessage = nil
+                return
+            }
+        }
         handledSessionIDs.insert(p.sessionID)
         params = p
         elapsed = 0
@@ -325,13 +342,19 @@ final class WatchSessionManager: NSObject, ObservableObject {
     /// across the room, and the wrist is where the rhythm can be felt with
     /// closed eyes.
     private func startBreathPacing() {
+        // A leftover pacer from a previous session could overlap this one and
+        // stack taps (the "haptics going off three times in a row" report,
+        // 2026-08-31), and the old loop played BEFORE checking cancellation,
+        // so even a cancelled pacer landed one extra tap. Cancel first, check
+        // first.
+        pacer?.cancel()
         pacer = Task { @MainActor [weak self] in
             var inhale = true
             while let self, self.phase == .running {
+                guard !Task.isCancelled else { return }
                 WKInterfaceDevice.current().play(inhale ? .directionUp : .directionDown)
                 inhale.toggle()
                 try? await Task.sleep(for: .seconds(6))
-                guard !Task.isCancelled else { return }
             }
         }
     }
