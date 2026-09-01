@@ -117,7 +117,8 @@ Primary **Health & Fitness** · Secondary **Lifestyle**
 > seventeen awards. Earned awards are yours for good, even if a streak breaks.
 >
 > **SHARE THE PROOF**
-> Turn any session into a card carrying your real graphs, ready for your story.
+> Every session becomes a shareable card carrying your score and your streak.
+> Members' cards carry the full graphs.
 >
 > **PRIVATE BY DESIGN**
 > Your heart rate, your breathing and your scores are computed on your devices
@@ -133,8 +134,25 @@ Primary **Health & Fitness** · Secondary **Lifestyle**
 > device, and does not diagnose, treat or prevent any condition.
 >
 > Requires a paired Apple Watch to measure a session.
+>
+> **SUBSCRIPTION INFORMATION**
+> The score, the streak, the calendar and your session history are free. An
+> 808 membership unlocks the evidence behind the score: the heart, stillness
+> and breathing graphs, the guided journey, and the full set of share cards.
+>
+> 808 Monthly: $7.99 per month, after a 7-day free trial.
+> 808 Yearly: $29.99 per year, after a 7-day free trial.
+> Both renew automatically unless cancelled at least 24 hours before the end
+> of the current period. Manage or cancel in your App Store account settings.
+> 808 Lifetime: $99.99, one payment, nothing renews.
+>
+> Terms of Use: https://meditate808.com/terms.html
+> Privacy Policy: https://meditate808.com/privacy.html
 
-*(~2,300 chars, leaving room for the testimonial block below if used.)*
+*(the subscription block is REQUIRED for auto-renewables: title, length,
+price, renewal statement, and a functional Terms of Use link in metadata is
+one of the most-rejected 3.1.2 items. Prices here must match App Store
+Connect exactly; update both together or neither.)*
 
 ### Optional testimonial block
 
@@ -288,9 +306,18 @@ not ask. If it does: standard Apple encryption only, exempt.
 
 > 808 measures meditation sessions using Apple Watch (heart rate and motion via
 > a .mindAndBody workout). A paired physical Apple Watch is required to record
-> a session; everything else (onboarding, sounds, guide, history, settings) is
-> fully reviewable on iPhone alone. Sign in with Apple is the only sign-in and
-> it is optional, so no demo account exists or is needed.
+> a session; everything else (onboarding, sounds, guide, history, settings,
+> and all three in-app purchases) is fully reviewable on iPhone alone. Sign in
+> with Apple is the only sign-in and it is optional, so no demo account exists
+> or is needed.
+>
+> Reviewing without an Apple Watch: at the onboarding question "Do you have an
+> Apple Watch?", answer YES (answering no honestly routes to a waitlist and
+> deliberately never shows the paywall, since the app will not sell to someone
+> it cannot measure for). At the "Put your Watch on" screen, tap "Check again"
+> three times; a "My Watch isn't with me. Continue" option appears and the
+> two-minute practice is skipped, never simulated. The paywall, the free tier,
+> and every purchase flow are reachable from there with no hardware.
 >
 > Health data: session results are computed on-device and stored only
 > on-device, in a store excluded from CloudKit sync, per guideline 5.1.3(ii).
@@ -353,7 +380,9 @@ Then, in Connect:
    the two Apple Watch images in `marketing/appstore/watch/`. Both sets are
    done and committed.
 8. Support URL `https://meditate808.com/#support` (the anchor exists), marketing
-   URL, privacy URL. The website is a **manual** Cloudflare Pages upload, so any
+   URL `https://meditate808.com`, privacy URL
+   `https://meditate808.com/privacy.html`, and the copyright field:
+   `© 2026 Lock Out Inc.` (exact string, the space and `Inc.`). The website is a **manual** Cloudflare Pages upload, so any
    copy change there has to be dragged in by hand; pushing to git deploys
    nothing.
 9. Capabilities on the shipping App ID: HealthKit, Sign in with Apple, CloudKit,
@@ -427,7 +456,7 @@ longer needed.** After that it can simply lapse at renewal.
    paywall.
 3. Confirm the App ID `com.lockout.meditate808` carries HealthKit, Sign in with
    Apple, CloudKit and Push, register the Watch App ID, and create the app
-   record as **808: Meditate**.
+   record as **808 Meditate** (the colon variant was already rejected as in use).
 4. Invite Aziz as Admin. Local signing keeps working on both machines: the Team
    ID is unchanged for Melvin, and Aziz switches his uncommitted `project.yml`
    to `WLZQLLHUB3` with the `com.lockout.meditate808` prefix when he builds for

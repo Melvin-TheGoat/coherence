@@ -231,6 +231,30 @@ struct PaywallScreen: View {
             ?? "\(plan.price) \(plan.cadence)"
     }
 
+    private var notSellingFootnote: String {
+        #if DEBUG
+        "Nothing is charged. There is no payment set up on this build."
+        #else
+        "Nothing is charged while plans can't load."
+        #endif
+    }
+
+    private var notSellingTitle: String {
+        #if DEBUG
+        "Free while we're testing."
+        #else
+        "Plans aren't loading."
+        #endif
+    }
+
+    private var notSellingSubtitle: String {
+        #if DEBUG
+        "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it."
+        #else
+        "The App Store didn't answer just now. Everything stays open, and you can subscribe later from any locked screen."
+        #endif
+    }
+
     /// Whether the free week may be promised. StoreKit knows if this person
     /// already used the introductory offer; promising it anyway would put a
     /// claim on screen that the purchase sheet contradicts one tap later.
@@ -238,13 +262,18 @@ struct PaywallScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .win,
+                         // The not-selling copy differs by build on purpose.
+                         // DEBUG genuinely is the testing era; a RELEASE user
+                         // only lands here when the product fetch failed, and
+                         // "free while we're testing" on a shipping app is a
+                         // claim about the business, not their connection.
                          title: selling ? (offerTrial ? "Seven days free." : "Welcome back.")
-                                        : "Free while we're testing.",
+                                        : notSellingTitle,
                          subtitle: selling
                             ? (offerTrial
                                ? "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing."
                                : "Pick a plan to keep going. Every plan unlocks everything.")
-                            : "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it.",
+                            : notSellingSubtitle,
                          // The free week is the subscriptions' introductory
                          // offer. Lifetime has none: it is one charge, today,
                          // and both the button and the footnote must say so
@@ -264,7 +293,7 @@ struct PaywallScreen: View {
                                : offerTrial
                                ? "7 days free, then \(priceLine). Renews automatically until you cancel in Settings."
                                : "\(priceLine). Renews automatically until you cancel in Settings.")
-                            : "Nothing is charged. There is no payment set up on this build.",
+                            : notSellingFootnote,
                          skipTitle: "Restore purchase",
                          onSkip: selling ? { restore() } : nil,
                          onContinue: { advance() }) {
@@ -280,7 +309,13 @@ struct PaywallScreen: View {
                                 Text(p.title)
                                     .font(.system(size: 16, weight: .bold, design: .rounded))
                                     .foregroundStyle(AppColor.textPrimary)
-                                if let note = p.note {
+                                // The notes are arithmetic on OUR dollar
+                                // prices ("About $1.84 a week"). Beside
+                                // Apple's localized price they would be a
+                                // dollar claim about a euro charge, so they
+                                // render only with our fallback prices, the
+                                // same guard the anchor already has.
+                                if store.displayPrice(for: p) == nil, let note = p.note {
                                     Text(note)
                                         .font(.caption2)
                                         .foregroundStyle(AppColor.accentGoldText)
@@ -411,6 +446,11 @@ struct PaywallScreen: View {
                 }
             }
             .onAppear {
+                // A transient fetch failure should not be a permanent state:
+                // every arrival at the paywall retries the load.
+                if store.state != .ready {
+                    Task { await store.load() }
+                }
                 guard !trackedView else { return }
                 trackedView = true
                 Analytics.track(.paywallViewed(placement: placement))

@@ -7,14 +7,21 @@ enum NotificationScheduler {
     private static let reminderID = "daily-meditation-reminder"
 
     /// Requests permission then schedules (or cancels) based on `enabled`.
-    static func apply(enabled: Bool, at time: Date?) {
+    /// `onDenied` fires on the main thread when the OS refuses, so the caller
+    /// can flip its switch back OFF: a toggle showing ON while the system will
+    /// never deliver anything is the settings screen lying.
+    static func apply(enabled: Bool, at time: Date?,
+                      onDenied: (() -> Void)? = nil) {
         let center = UNUserNotificationCenter.current()
         guard enabled, let time else {
             center.removePendingNotificationRequests(withIdentifiers: [reminderID])
             return
         }
         center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
-            guard granted else { return }
+            guard granted else {
+                DispatchQueue.main.async { onDenied?() }
+                return
+            }
             schedule(at: time)
         }
     }

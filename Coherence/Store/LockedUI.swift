@@ -165,6 +165,9 @@ struct LockedTiles: View {
 /// same screen exists twice.
 struct UnlockSheet: View {
     let signal: LockedSignal
+    /// Whether the free week may still be promised. A lapsed subscriber sees
+    /// "See the plans"; the paywall then shows what is actually true.
+    var trialEligible: Bool = true
     let onSeePlans: () -> Void
     let onDismiss: () -> Void
 
@@ -184,7 +187,8 @@ struct UnlockSheet: View {
             }
             Spacer(minLength: 16)
             VStack(spacing: 8) {
-                Button("Start 7 days free", action: onSeePlans)
+                Button(trialEligible ? "Start 7 days free" : "See the plans",
+                       action: onSeePlans)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Not now", action: onDismiss)
                     .font(AppFont.callout)

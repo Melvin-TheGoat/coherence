@@ -140,7 +140,7 @@ public struct Award: Identifiable, Hashable {
         Award(id: "streak\(days)", title: title, blurb: blurb,
               group: .consistency, face: .number("\(days)", unit: "days"),
               meaning: """
-              \(days) days in a row. Across 280,000 sessions studied, how often \
+              \(days) days in a row. Across 280,000 sessions in one large study (Cearns and Clark 2023), how often \
               people practised predicted whether they improved. How long each \
               sitting lasted did not.
 

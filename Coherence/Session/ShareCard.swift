@@ -784,8 +784,11 @@ struct ShareSessionSheet: View {
                 }
             }
             .task(id: style) {
-                // Never rasterise a card the user cannot post.
-                rendered = ShareCardRenderer.render(data, style: style)
+                // Never rasterise a card the user cannot post: the initial
+                // style is `.full` for one frame before onAppear corrects a
+                // free user onto an unlocked card, and that frame must not
+                // produce a bitmap of locked data.
+                rendered = styleIsLocked ? nil : ShareCardRenderer.render(data, style: style)
             }
             .onAppear {
                 // Open on a card they can actually share.

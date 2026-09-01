@@ -150,7 +150,8 @@ struct SessionResultsView: View {
                     ScoreMeaningSheet(score: stats?.overallScore)
                         .presentationDetents([.medium, .large])
                 case .locked(let signal):
-                    UnlockSheet(signal: signal) {
+                    UnlockSheet(signal: signal,
+                                trialEligible: store.trialEligible || store.state != .ready) {
                         replaceRoute(with: .plans)
                     } onDismiss: {
                         route = nil

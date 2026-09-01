@@ -104,7 +104,7 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
                 "Set aside some time, 10 to 20 minutes is great. Make sure you are undisturbed.",
                 "Sit comfortably with a straight back on a well supported surface.",
                 "Focus on an anchor. It can be anything, but the most common is the breath. Slowly breathe in through the nose, then steadily out through the mouth. Put all of your attention on the air rising through the nostrils on the way in, and releasing on the way out. Hold that focus.",
-                "Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one. Breathing deeply and naturally works too if that is what relaxes you.",
+                "Optional: try a pattern. Box breathing is 4 seconds in, 4 hold, 4 out, 4 hold, repeat. Or 4-7-8, which is 4 in, 7 hold, 8 out. Both are ways into a calmer, parasympathetic state. There is no pressure to use one, and if a hold ever makes you light-headed, skip it and simply breathe out longer than you breathe in. Breathing deeply and naturally works too if that is what relaxes you.",
                 "Optional: some people find it helps to picture a bright, rising energy filling the body on the inhale, and a soft, grounding energy leaving on the exhale. In Chinese tradition this is yin, the passive release, and yang, the active expansion.",
                 "When you inevitably notice your mind has wandered off, calmly bring your attention back to the breath. Remember: the wandering is expected, what matters is that you return, gently and without judgement.",
             ],
@@ -157,7 +157,8 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             is the state the rest is done from.
 
             The body scan is a core part of the eight-week mindfulness course \
-            that produced measurable increases in gray matter density.
+            that produced measurable increases in gray matter density in one \
+            widely cited study (Holzel 2011).
             """,
             origin: "Clinical mindfulness practice (MBSR)",
             variants: []),

@@ -118,7 +118,11 @@ final class Store: ObservableObject {
         do {
             let found = try await Product.products(for: ProductID.all)
             products = found.sorted { $0.price < $1.price }
-            state = found.isEmpty ? .unavailable : .ready
+            // All three or none: a partial fetch would render hardcoded
+            // fallback prices beside live rows and a buy button that silently
+            // no-ops on the missing product. Unavailable keeps the app open
+            // and everyone paid, which is the safe floor.
+            state = found.count == ProductID.all.count ? .ready : .unavailable
         } catch {
             state = .unavailable
         }

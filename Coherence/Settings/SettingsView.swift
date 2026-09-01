@@ -89,7 +89,11 @@ private struct SettingsForm: View {
                                 if on && prefs.reminderTime == nil {
                                     prefs.reminderTime = defaultReminderTime()
                                 }
-                                NotificationScheduler.apply(enabled: on, at: prefs.reminderTime)
+                                NotificationScheduler.apply(enabled: on, at: prefs.reminderTime) {
+                                    // The OS said no: the switch must not
+                                    // claim otherwise.
+                                    prefs.remindersEnabled = false
+                                }
                             }
                         )).labelsHidden().tint(AppColor.calmAccent)
                     }
