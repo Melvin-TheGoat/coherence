@@ -4,8 +4,17 @@ Values only, in the order the forms ask for them. Reasoning lives in
 `APP_STORE.md`; this file exists to be copied from without reading.
 
 Rewritten 2026-09-01 against the shipping build. Verified: 17 awards, the 25
-minute guided track, 4 nature sounds, 3 brainwave tones, 4 tunings, and the
-onboarding walkthrough that ends in a real measured session.
+minute guided track, 4 nature sounds, 3 brainwave tones, 4 tunings.
+
+**The description opens on the problem, never on the score** (Melvin, 2026-09-01:
+"a user might ask what score, why do I care about that above all other
+things"). Checked against how comparable apps actually open: Athlytic
+"transforms Apple Watch data into actionable fitness insights", Gentler Streak
+"guidance that adapts to your daily capabilities", Balance "a personal
+meditation coach", and Muse, which scores meditation from EEG and still leads
+with "track and improve your brain health". None of them opens with its metric.
+The score is the mechanism, and it only earns attention after the reader has
+been reminded of the question it answers.
 
 ---
 
@@ -58,45 +67,45 @@ these labels are a public claim.
 **Promotional Text** (editable later without a new review)
 
 ```
-Your first score arrives before setup is finished. Two minutes of slow breathing, measured on your Apple Watch, and you see exactly what your body did.
+Your Watch already tracks your runs, your sleep and your steps. 808 makes it track the ten minutes you spend meditating, and shows you what your body actually did.
 ```
 
 **Description**
 
 ```
-Most people meditate blind. You sit, you follow your breath, and afterwards you have no idea whether anything actually happened.
+You sit for ten minutes, open your eyes, and have no idea whether anything happened. Meditation is the one habit that never tells you how it went.
 
-808 answers that. Wear your Apple Watch, meditate however you like, and when you finish you get one number out of 100, built from what your body actually did while you were there.
+Your Apple Watch already tracks your runs, your sleep and your steps. 808 makes it track this too. Wear it while you meditate, in whatever way you already meditate, and afterwards 808 shows you what your body actually did.
 
-YOUR FIRST SCORE ARRIVES BEFORE SETUP IS FINISHED
-808 ends its setup by measuring you. Two minutes of slow breathing, read from your wrist, then your real result. Not a demo and not a sample. Your body, your number, in the first few minutes you own the app.
+MEDITATE HOWEVER YOU LIKE
+Keep the teacher you like on YouTube or Spotify. Start a session, play whatever you want in any other app, and the Watch keeps measuring. Nothing to switch to, nothing to give up. Silence works too.
 
-WHAT IT MEASURES
-Three signals, all from the Watch already on your wrist. How still your body became. How far your heart rate settled across the session. And your breathing rate, read from the small tilt of your wrist when you slow your breath down. No chest strap, no special posture, no setup.
+SEE WHAT YOUR BODY DID
+Three signals, all from the Watch already on your wrist. How far your heart rate came down. How still you became, and when you settled. And your breathing rate, read from the small tilt of your wrist when you slow your breath. Every one of them drawn as a curve you can scrub through, minute by minute.
 
-ONE SCORE, NOT A GUESS
-The score is how deep you got and how long you held it. Thirty restless minutes will never beat five settled ones. Nothing is shown while you practise, because a live number is just one more thing to chase. The evidence comes after.
+ONE NUMBER, SO YOU CAN COMPARE
+Every session ends with a practice score out of 100, so today means something next to last Tuesday. It is built from how deep you got and how long you held it, which is why thirty restless minutes never beat five settled ones. Underneath it, a plain sentence telling you what happened, in words rather than numbers.
 
-BRING YOUR OWN MEDITATION
-Already have a teacher you like on YouTube or Spotify? Start a session and play whatever you want in any other app. The Watch keeps measuring. There is nothing to switch to and nothing to give up.
+NOTHING TO CHASE WHILE YOU SIT
+There is no live score, on purpose. A number moving in real time is just one more thing to grip. You close your eyes, you practise, and the evidence is waiting when you finish.
 
-OR USE OURS
+THE HABIT, NOT JUST THE SESSION
+A streak, a calendar that fills in as you show up, your full history, and seventeen awards. Earned awards are yours for good, even when a streak breaks, because the point is coming back rather than never slipping.
+
+IF YOU ARE NEW TO THIS
+A written guide to the techniques themselves, easiest first, starting with what to actually do the very first time you sit down. It grows over time.
+
+OR USE OUR SOUNDS
 A 25 minute guided journey, professionally narrated. Brainwave paced tones for delta, theta and alpha. Traditional tunings at 432, 528, 852 and 963 Hz, each over an ambient bed. Rain, ocean, forest and campfire.
 
-LEARN HOW TO ACTUALLY MEDITATE
-A written guide to the techniques themselves, easiest first, from your first ever sit through to visualisation practice. It grows over time.
-
-A HABIT YOU CAN SEE
-Streaks, a calendar of practised days, your full session history, and seventeen awards. Earned awards are yours for good, even if a streak breaks.
-
-SHARE THE PROOF
-Turn any session into a card carrying your real graphs, ready for your story.
+SHARE IT IF YOU WANT TO
+Turn any session into a card carrying your real graphs and your streak, ready for your story.
 
 WHAT IS FREE
-Your score, the verdict in plain words, your streak, the calendar, your full history and every award are free. A membership unlocks the evidence underneath the score: the heart rate, stillness and breathing graphs, the guided journey, and the rest of the share cards.
+Your score, the written verdict, your streak, the calendar, your full history and every award are free. A membership unlocks the evidence underneath the score: the heart rate, stillness and breathing curves, the guided journey, and the rest of the share cards.
 
 PRIVATE BY DESIGN
-Your heart rate, your breathing and your scores are computed on your devices and stay on your device. They are never uploaded, and we cannot see them. We use basic anonymous analytics to learn which screens people use, and no biometric data is ever part of it. No ads. No data sales. Sign in with Apple is the only sign-in and it is optional.
+Your heart rate, your breathing and your scores are computed on your devices and stay on your device. They are never uploaded, and we cannot see them. We use basic anonymous analytics to learn which screens people use, and no biometric data is ever part of it. No ads. No data sales. Sign in with Apple is the only sign-in, and it is optional.
 
 HONEST SCIENCE
 The stillness and breathing measurements are grounded in peer-reviewed research on wrist-worn motion sensing. Traditional frequencies are labelled as tradition, not sold as proven. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
