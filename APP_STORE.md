@@ -191,7 +191,7 @@ Generated and committed at `marketing/appstore/`. Real screens from the iPhone
 
 | # | File | Headline | Subhead |
 |---|---|---|---|
-| 1 | 01-score | Proof your meditation landed | A score out of 100, measured on your wrist |
+| 1 | 01-score | Did that actually work? | Your Apple Watch knows. 808 tells you. |
 | 2 | 02-evidence | See what your body actually did | Heart rate, stillness and breath, minute by minute |
 | 3 | 03-habit | Every session, on one calendar | Your streak, your history, your practice score |
 | 4 | 04-audio | Bring your own meditation | Or use the guided journey, tones and nature sounds |
@@ -210,7 +210,13 @@ keeping (keeping is implied). Slide 7 names no count: the guide is a growing
 list and a fixed number caps it.
 
 The first three are what appear in search results, so they carry the argument:
-proof, then the evidence behind it, then the habit.
+the question, then the evidence that answers it, then the habit.
+
+**Slide 1 asks before it answers** (Melvin, 2026-09-01, the same correction that
+reshaped the description). It used to read "Proof your meditation landed / A
+score out of 100", which leads with a metric nobody has been given a reason to
+want. It now names the question the reader already has. Slide 5 was recaptured
+the same day: the awards shelf no longer carries the "yours for good" line.
 
 ### Apple Watch (separate required set, we ship a Watch app)
 
