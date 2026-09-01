@@ -1582,16 +1582,19 @@ reappear, then delete the "sync doesn't work" line from What to Test.
 **ORG-ACCOUNT-DAY CHECKLIST (Lock Out Inc. was APPROVED to submit,
 2026-08-29; sequence for the shippable version, no app changes anywhere):**
 
-1. **FIRST, the container-collision check (five minutes, gates step 2).**
-   Melvin created `iCloud.com.lockout.meditate808` under his PERSONAL team
-   (WLZQLLHUB3) during the CloudKit investigation. iCloud container
-   identifiers are global across all teams and can NEVER be deleted. In the
-   org account's Certificates, Identifiers & Profiles, try to register that
-   exact container. If it registers, clean. If it is taken, pick the
-   alternate container ID immediately, BEFORE any production build exists;
-   it is a config change on our side and only cheap while nothing ships.
-2. Register `com.lockout.meditate808` + `.watchkitapp` under the org with
-   HealthKit, Sign in with Apple, and iCloud capabilities.
+1. **Container-collision check: DONE 2026-09-01, CLEAN.** The org's
+   Identifiers list shows `iCloud.com.lockout.meditate808` and it is ticked on
+   the `com.lockout.meditate808` App ID, so the personal-team registration
+   never blocked it and NO config change is needed. The entitlement is written
+   `iCloud.$(CFBundleIdentifier)`, which expands to exactly that container.
+   (`iCloud.com.lockout.coherence` also sits in the list, a leftover from the
+   old project name. Unused, and containers can never be deleted.)
+   **One residual check for step 4:** confirm the container appears under Lock
+   Out Inc. in the CloudKit Console. If it turns out to live under the personal
+   team, the Production promotion has to happen there instead.
+2. **DONE 2026-09-01.** `com.lockout.meditate808` registered under the org with
+   HealthKit, Sign in with Apple, iCloud and Push all ticked (In-App Purchase
+   too), and `com.lockout.meditate808.watchkitapp` exists with HealthKit.
 3. One dev build signed by the ORG team on the production bundle ID, real
    phone, signed into iCloud: Settings > CloudKit (debug) > run the schema
    primer (13 optionals write no field until primed; Production promotion is
