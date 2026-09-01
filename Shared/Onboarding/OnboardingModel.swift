@@ -437,6 +437,23 @@ public enum Anchor: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// The same phrase in the FIRST person, for sentences the user speaks
+    /// ("I'll practice 5 days a week, with my morning coffee"). The
+    /// commitment screen used `phrase` and produced "I'll practice … with
+    /// your morning coffee", a person mismatch only a walkthrough caught
+    /// (2026-08-31).
+    public var firstPersonPhrase: String {
+        switch self {
+        case .wake:      return "right after I wake up"
+        case .coffee:    return "with my morning coffee"
+        case .commute:   return "after my commute"
+        case .lunch:     return "around lunch"
+        case .afterWork: return "when I get home"
+        case .beforeSport: return "before I train"
+        case .beforeBed: return "before bed"
+        }
+    }
+
     /// Default reminder hour (24h) — pre-fills the notification time so the
     /// user isn't asked a second time for something they just told us.
     public var defaultHour: Int {

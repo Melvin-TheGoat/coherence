@@ -52,37 +52,8 @@ enum HealthKitAuth {
         }
     }
 
-    /// Whether recent heart-rate data is readable — a **fast-path hint, not a
-    /// gate.**
-    ///
-    /// **HealthKit will not tell us whether a read was granted.**
-    /// `authorizationStatus(for:)` reports *share* status only, and a denied
-    /// read returns an empty result rather than an error, deliberately, so an
-    /// app can't learn what a user declined.
-    ///
-    /// So this can only ever be a hint: `true` proves we can read, but `false`
-    /// proves nothing — it's equally "permission denied", "watch not worn
-    /// today", or "asked before authorization finished". **It must never block a
-    /// session on its own.** An earlier version did exactly that and refused to
-    /// start sessions for a user whose permissions were fully granted. The real
-    /// gate is live HR arriving once the workout runs; see
-    /// `WatchSessionManager`'s heart-rate watchdog.
-    static func hasRecentHeartRateData() async -> Bool {
-        guard HKHealthStore.isHealthDataAvailable() else { return false }
-        let hrType = HKQuantityType(.heartRate)
-        // A week, not a day: someone who left the Watch off the charger
-        // overnight still has readable history, and a narrow window turned that
-        // into a false "no permission".
-        let since = Date().addingTimeInterval(-7 * 24 * 60 * 60)
-        let predicate = HKQuery.predicateForSamples(withStart: since, end: Date())
-        return await withCheckedContinuation { cont in
-            let q = HKSampleQuery(
-                sampleType: hrType, predicate: predicate, limit: 1,
-                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
-            ) { _, samples, _ in
-                cont.resume(returning: !(samples ?? []).isEmpty)
-            }
-            store.execute(q)
-        }
-    }
+    // NOTE: a 7-day heart-rate history probe used to live here, uncalled.
+    // Deleted 2026-08-31: the privacy policy says heart rate is read live
+    // during a session only, and dead code that would break that promise on
+    // its first caller is a loaded gun, not a utility.
 }

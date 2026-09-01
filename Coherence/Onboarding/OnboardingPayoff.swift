@@ -1022,7 +1022,7 @@ struct CommitmentScreen: View {
                 // Their own sentence, assembled from their own answers.
                 (Text("I'll practice ")
                  + Text("\(daysPerWeek) days a week").foregroundStyle(AppColor.accentGoldText).bold()
-                 + Text(anchor.map { ", \($0.phrase)" } ?? "")
+                 + Text(anchor.map { ", \($0.firstPersonPhrase)" } ?? "")
                      .foregroundStyle(AppColor.accentGoldText).bold()
                  + Text("."))
                     .font(.system(size: 21, weight: .medium, design: .rounded))

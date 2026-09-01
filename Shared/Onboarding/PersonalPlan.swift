@@ -145,7 +145,7 @@ public enum PersonalPlan {
                           pillar: .measurable, icon: "chart.line.uptrend.xyaxis")
         case .noAccountability:
             return Answer(concern: cause.label,
-                          response: "A streak that notices, plus challenges and group sits with other people practicing",
+                          response: "A streak that notices, and a share card other people actually see, so showing up stops being invisible",
                           pillar: .universal, icon: "person.2")
         case .forgot:
             return Answer(concern: cause.label,
@@ -161,7 +161,7 @@ public enum PersonalPlan {
                           pillar: .measurable, icon: "checkmark.seal")
         case .gotBoring:
             return Answer(concern: cause.label,
-                          response: "Your own audio, a guide with eight methods, and awards to chase",
+                          response: "Your own audio, a guide of methods, easiest first, and awards to chase",
                           pillar: .universal, icon: "headphones")
         case .noTime:
             return Answer(concern: cause.label,

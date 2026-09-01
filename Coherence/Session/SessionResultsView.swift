@@ -1070,7 +1070,7 @@ private struct ResonanceMeaningSheet: View {
                     .foregroundStyle(AppColor.accentGoldText)
                 Group {
                     Text("In the opening minutes of this session you slowed your breathing to around six breaths a minute and held it there. That pace is special: breath, heart and blood pressure fall into step, and the nervous system settles toward its rest state. Researchers call it resonance breathing.")
-                    Text("The band marks the stretch that did it. It is the entry technique working: a few slow minutes to open the door, then your breath returns to normal while the calm carries on.")
+                    Text("The band marks the stretch that did it. It is the entry technique working: a few slow minutes to open the door, then your breath returns to normal.")
                 }
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
