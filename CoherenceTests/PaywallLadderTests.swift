@@ -48,7 +48,8 @@ final class PaywallLadderTests: XCTestCase {
     func test_eachRungSellsWhatItDescribes() {
         XCTAssertEqual(DownsellRung.yearReframe.plan, .yearly)
         XCTAssertEqual(DownsellRung.trial.plan, .monthly)
-        XCTAssertTrue(DownsellRung.yearReframe.subtitle(plan: .yearly)
+        XCTAssertTrue(DownsellRung.yearReframe
+            .subtitle(plan: .yearly, yearlyPrice: SubscriptionPlan.yearly.price)
             .contains(SubscriptionPlan.yearly.price))
     }
 
@@ -58,7 +59,8 @@ final class PaywallLadderTests: XCTestCase {
                       "never see", "act now", "% off"]
         for rung in DownsellRung.allCases {
             let text = (rung.title + " " + rung.cta + " "
-                        + rung.subtitle(plan: .monthly)).lowercased()
+                        + rung.subtitle(plan: .monthly,
+                                        yearlyPrice: SubscriptionPlan.yearly.price)).lowercased()
             for word in banned {
                 XCTAssertFalse(text.contains(word), "\(rung) says '\(word)'")
             }
@@ -111,14 +113,15 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertLessThanOrEqual(yearly, monthly * 12 * 0.55)
     }
 
-    /// The weekly reframe has to be arithmetic, not a flourish. Yearly divided
-    /// by 52, to the nearest cent.
-    func test_theWeeklyReframeIsTrue() {
-        let yearly = Double(SubscriptionPlan.yearly.price.dropFirst()) ?? 0
-        let weekly = yearly / 52
-        let claimed = Double(DownsellRung.weeklyEquivalent
-            .replacingOccurrences(of: " cents", with: "")) ?? 0
-        XCTAssertEqual(weekly * 100, claimed, accuracy: 1.0,
-                       "the weekly equivalent does not match the yearly price")
+    /// The year rung must state auto-renewal in its own words: it advertises
+    /// a subscription, and "paid once a year" alone reads as a one-time
+    /// charge. (The weekly-cents reframe was dropped with the localized
+    /// price: a cents figure computed from USD is wrong in every other
+    /// currency.)
+    func test_theYearRungSaysItRenews() {
+        let text = DownsellRung.yearReframe
+            .subtitle(plan: .yearly, yearlyPrice: SubscriptionPlan.yearly.price)
+            .lowercased()
+        XCTAssertTrue(text.contains("renews"), "the year rung hides the renewal")
     }
 }

@@ -575,7 +575,7 @@ struct SampleSessionScreen: View {
                             .font(.system(size: 15, weight: .bold, design: .rounded))
                             .foregroundStyle(AppColor.textPrimary)
                         Text(phase == .start ? "Evidence, not judgment. Every day counts."
-                                             : "Heart settled 11 beats. Breath found the resonance zone.")
+                                             : "Heart settled 11 beats. Breath slowed toward six a minute.")
                             .font(.caption)
                             .foregroundStyle(AppColor.textSecondary)
                             .fixedSize(horizontal: false, vertical: true)

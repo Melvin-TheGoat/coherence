@@ -306,6 +306,16 @@ struct WatchConnectScreen: View {
     /// every writer writes the same truth.
     @MainActor
     private func monitor() async {
+        // An iPad running the iPhone app in compatibility mode has no
+        // WatchConnectivity at all; touching WCSession.default there is
+        // documented-invalid, and a reviewer should not have to fail "Check
+        // again" three times to find the way past a screen their hardware
+        // can never satisfy.
+        guard WCSession.isSupported() else {
+            checking = false
+            failedChecks = 3
+            return
+        }
         let wc = WCSession.default
         if wc.activationState != .activated { wc.activate() }
         for tick in 0..<120 {
@@ -398,7 +408,7 @@ struct GuidedBreathScreen: View {
                                  detail: "Follow the circle on the next screen: it swells as you breathe in, settles as you breathe out.")
                         introRow(icon: "waveform.path.ecg",
                                  title: "808 measures it landing",
-                                 detail: "Slow breathing settles the nervous system. You'll see it in your score.")
+                                 detail: "Slow breathing helps your body settle. Your Watch reads what that looks like.")
                     }
                 }
                 .onAppear { introBreathing() }
@@ -464,7 +474,7 @@ struct GuidedBreathScreen: View {
                     Text("Done.")
                         .font(.system(size: 29, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColor.textPrimary)
-                    Text("That was two minutes of measured practice. Your Watch read your heart, your stillness and your breath the whole way through.")
+                    Text("That was two minutes of measured practice. Your Watch read your heart and your stillness the whole way, and listened for your breath.")
                         .font(.system(size: 16))
                         .foregroundStyle(AppColor.textSecondary)
                         .multilineTextAlignment(.center)

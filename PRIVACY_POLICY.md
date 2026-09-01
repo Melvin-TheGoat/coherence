@@ -43,9 +43,11 @@ heart-rate-variability (SDNN) readings when your Watch happens to produce
 them, and a summary score.
 Important details:
 
-- The app requests HealthKit permission only for **heart rate** and **workouts**,
-  and only reads your heart rate **live during a session** — it does not read your
-  broader Health history.
+- The app requests HealthKit permission only for **heart rate**,
+  **heart-rate variability (SDNN)** and **workouts**. Heart rate is read
+  **live during a session** only. HRV is read as Apple's own passive samples,
+  including up to 30 days of them, solely to give your readings a baseline.
+  Nothing else in your Health history is read.
 - We store the **computed results**, not raw biometric samples. The iPhone reads
   **no** biometric data directly.
 - **Measurement runs only during a session you start**, and stops when the session

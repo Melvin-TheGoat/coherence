@@ -41,12 +41,15 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         }
     }
 
-    func subtitle(plan: SubscriptionPlan) -> String {
+    /// `yearlyPrice` is Apple's localized string when a live product exists,
+    /// so the rung never states a dollar figure to someone who will be shown
+    /// euros one tap later.
+    func subtitle(plan: SubscriptionPlan, yearlyPrice: String) -> String {
         switch self {
         case .trial:
             return "Seven days, everything unlocked, cancel any time. If a week of measured sessions doesn't convince you, you pay nothing."
         case .yearReframe:
-            return "A year is \(SubscriptionPlan.yearly.price), which works out at about \(DownsellRung.weeklyEquivalent) a week. Same everything, paid once a year."
+            return "A year is \(yearlyPrice). Same everything, paid once a year, and it renews until you cancel."
         }
     }
 
@@ -65,10 +68,6 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// $29.99 across 52 weeks. Stated as "about" because it is a rounding, and
-    /// because a precise-looking number invites someone to check it.
-    static let weeklyEquivalent = "58 cents"
-
     var next: DownsellRung? {
         DownsellRung(rawValue: rawValue + 1)
     }
@@ -79,7 +78,11 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
 struct DownsellSheet: View {
     let rung: DownsellRung
     let plan: SubscriptionPlan
-    /// Accepted this rung.
+    /// Apple's localized yearly price when available; our fallback otherwise.
+    let yearlyPrice: String
+    /// Accepted this rung. The caller preselects the rung's plan and returns
+    /// to the paywall, which owns every purchase and every 3.1.2 disclosure;
+    /// nothing is bought from this sheet.
     let onTake: () -> Void
     /// Declined. The caller decides whether another rung follows.
     let onDecline: () -> Void
@@ -93,7 +96,7 @@ struct DownsellSheet: View {
                     .font(.system(size: 27, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(AppColor.textPrimary)
-                Text(rung.subtitle(plan: plan))
+                Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice))
                     .font(AppFont.note)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(AppColor.textSecondary)
@@ -157,6 +160,9 @@ extension ProcessInfo {
 /// What it must never do is shame anyone for not paying. The columns state
 /// what is true on each side and stop there.
 struct FreeTierScreen: View {
+    /// Whether the free week may still be promised. A lapsed subscriber sees
+    /// "See the plans" instead; the paywall then shows what is actually true.
+    var trialEligible: Bool = true
     let onStartTrial: () -> Void
     let onContinueFree: () -> Void
 
@@ -198,7 +204,8 @@ struct FreeTierScreen: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 10) {
-                Button("Start 7 days free", action: onStartTrial)
+                Button(trialEligible ? "Start 7 days free" : "See the plans",
+                       action: onStartTrial)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Continue with free 808", action: onContinueFree)
                     .font(AppFont.callout)

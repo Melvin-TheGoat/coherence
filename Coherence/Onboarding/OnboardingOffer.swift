@@ -322,8 +322,11 @@ struct PaywallScreen: View {
                 .sensoryFeedback(.success, trigger: plan)
                 .sensoryFeedback(.success, trigger: started)
 
-                Text(selling ? "No charge today. We'll remind you before the trial ends."
-                            : "Planned pricing. Nothing here can be bought yet.")
+                Text(selling
+                     ? (plan == .lifetime || !offerTrial
+                        ? "One tap on the button above shows Apple's purchase sheet before anything is charged."
+                        : "No charge today. Cancel before the week ends and you pay nothing.")
+                     : "Planned pricing. Nothing here can be bought yet.")
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.top, 4)
@@ -349,7 +352,10 @@ struct PaywallScreen: View {
                 if selling || ProcessInfo.processInfo.isPreviewingDownsell {
                     Button("Not right now") {
                         Analytics.track(.paywallDismissed)
-                        route = .rung(.trial)
+                        // No free-week rung for someone who already used the
+                        // intro offer: it would promise a trial the purchase
+                        // sheet contradicts.
+                        route = .rung(offerTrial ? .trial : .yearReframe)
                     }
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.textSecondary)
@@ -359,14 +365,18 @@ struct PaywallScreen: View {
             .fullScreenCover(item: $route) { destination in
                 switch destination {
                 case .rung(let current):
-                    DownsellSheet(rung: current, plan: plan) {
-                        // Taking a rung buys the plan that rung sells. A rung
-                        // that congratulated someone and then charged them for
-                        // a different plan would be the deception this ladder
-                        // avoids.
+                    DownsellSheet(rung: current, plan: plan,
+                                  yearlyPrice: store.displayPrice(for: .yearly)
+                                      ?? SubscriptionPlan.yearly.price) {
+                        // Taking a rung PRESELECTS the plan and returns to the
+                        // paywall; the purchase happens there and only there.
+                        // The rungs used to buy in place, which put a
+                        // purchase-initiating CTA on a screen carrying no
+                        // price, no renewal statement and no legal links: the
+                        // textbook 3.1.2 rejection. One screen holds every
+                        // disclosure; every sale goes through it.
                         plan = current.plan
                         route = nil
-                        advance()
                     } onDecline: {
                         // Straight to the next rung, or to the free tier. No
                         // rung repeats, and the ladder no longer dead-ends:
@@ -376,9 +386,15 @@ struct PaywallScreen: View {
                         lastRung = current
                     }
                 case .freeTier:
-                    FreeTierScreen {
+                    FreeTierScreen(trialEligible: offerTrial) {
+                        // Same rule, plus the bug it fixes: this closure used
+                        // to call advance() with whatever plan was last
+                        // selected, so a "Start 7 days free" button could
+                        // charge $99.99 for a Lifetime someone had tapped
+                        // minutes earlier. The trial is the monthly product's;
+                        // select it, return, let the paywall sell it.
+                        plan = .monthly
                         route = nil
-                        advance()
                     } onContinueFree: {
                         Analytics.track(.freeTierEntered(
                             afterRung: lastRung?.analyticsName ?? "none"))

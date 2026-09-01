@@ -1794,9 +1794,11 @@ Phase 0 entitlements files are empty (`<dict/>`). Add later:
 
 **Info.plist usage strings:** the Watch needs `NSMotionUsageDescription`
 (CoreMotion drives stillness + belly-breathing) alongside the HealthKit strings.
-**HealthKit scope is minimal:** the Watch requests heart-rate **READ** + workout
-**SHARE** only — no HRV/heartbeat-series read (those were for the dropped
-coherence path).
+**HealthKit scope:** the Watch requests heart-rate **READ**, **HRV (SDNN)
+READ** (the dormant baseline pipeline, added 2026-08-07; up to 30 days of
+Apple's passive samples) + workout **SHARE**. No heartbeat-series read (that
+was the dropped coherence path). The privacy policy's scope bullet names all
+three; keep them in lockstep.
 
 ## Schema (5 SwiftData models, `Shared/Models/`)
 

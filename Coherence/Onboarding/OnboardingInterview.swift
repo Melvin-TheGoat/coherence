@@ -753,7 +753,7 @@ struct HardwareScreen: View {
 
             watchRow
 
-            Text("**We offer something similar, for everyone.** No extra hardware, no gadget shelf: 808 reads your body from the watch already on your wrist.")
+            Text("**808 answers the same wish, for everyone.** No extra hardware, no gadget shelf: your body, read from the watch already on your wrist.")
                 .font(.system(size: 13.5))
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)

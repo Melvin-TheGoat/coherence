@@ -5,13 +5,12 @@ import PostHog
 /// The app's single analytics doorway. Every tracked moment routes through
 /// here, and here decides where it goes.
 ///
-/// **Today it goes nowhere.** The sink is a no-op (console in DEBUG), so this
-/// file changes nothing about what the app collects or transmits: no SDK, no
-/// network, no privacy-manifest change, safe in beta builds. At launch the
-/// real provider (PostHog was the pick, 2026-08-17) drops in behind
-/// `Analytics.sink`, and the whole event set lights up in one commit —
-/// together with the privacy policy, App Privacy labels and manifest updates,
-/// which MUST land in that same pass.
+/// **LIVE since 2026-08-17: Release builds ship named events to PostHog**
+/// (US Cloud, publishable client key below, autocapture and replay off).
+/// DEBUG builds never touch the network: `start()` returns before SDK setup,
+/// so local runs print to the console sink and stay out of the beta's
+/// dashboards. The privacy manifest declares Product Interaction; the App
+/// Privacy labels in App Store Connect must say the same at submission.
 ///
 /// Rules, decided with Aziz (2026-08-17) — hold them:
 /// - **Behavioral events only. Never a biometric.** No scores, no heart rate,
@@ -124,6 +123,12 @@ enum Analytics {
 
     /// Call once at app start. A no-op while the key is empty.
     static func start() {
+        #if DEBUG
+        // Dev and simulator launches stay out of the production project: the
+        // dashboards exist to read the beta, and every local run was writing
+        // into them. Events still print to the console sink below.
+        return
+        #else
         guard !postHogKey.isEmpty else { return }
         let config = PostHogConfig(apiKey: postHogKey, host: postHogHost)
         // Manual events only. Autocapture would hoover screen names and taps
@@ -141,6 +146,7 @@ enum Analytics {
         sink = { event in
             PostHogSDK.shared.capture(event.name, properties: event.properties)
         }
+        #endif
     }
 
     /// Where events go. `start()` swaps this to PostHog when a key is set;
