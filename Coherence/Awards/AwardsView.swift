@@ -66,9 +66,6 @@ struct AwardsView: View {
                     Text("\(count) of \(earned.count)")
                         .font(AppFont.title)
                         .foregroundStyle(AppColor.textPrimary)
-                    Text("Earned awards are yours for good, even if a streak breaks.")
-                        .font(AppFont.note)
-                        .foregroundStyle(AppColor.textSecondary)
                 }
 
                 ForEach(Award.Group.allCases, id: \.self) { group in
