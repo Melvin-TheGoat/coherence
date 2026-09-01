@@ -57,3 +57,28 @@ downloaded from Google Fonts and committed because neither cofounder has them
 installed. All three are OFL licensed. Without them the renderer would fall
 back to SF Pro and quietly ship a carousel that does not match the site, so it
 exits instead.
+
+
+## `appstore/65/`
+
+The same eight slides at **1284 x 2778**, the 6.5 inch legacy size (iPhone 11
+Pro Max through 13 Pro Max). Generated from the 6.9 inch masters by scaling to
+width and centre-cropping twelve pixels of height, which the design absorbs
+because the phone already bleeds off the bottom edge.
+
+**Prefer the 6.9 inch set.** Apple requires 6.9 inch (1320 x 2868) and scales it
+down for smaller devices; 6.5 inch is optional. If App Store Connect rejects an
+upload with "dimensions should be 1242 x 2688, 2688 x 1242, 1284 x 2778 or
+2778 x 1284", the device-size selector above the upload area is on the 6.5 inch
+slot, not the 6.9 inch one. Switching slots is the fix; this folder is the
+fallback.
+
+Regenerate after any change to the masters:
+
+```
+for f in marketing/appstore/*.png; do
+  n=$(basename "$f"); cp "$f" "marketing/appstore/65/$n"
+  sips --resampleWidth 1284 "marketing/appstore/65/$n" >/dev/null
+  sips --cropToHeightWidth 2778 1284 "marketing/appstore/65/$n" >/dev/null
+done
+```

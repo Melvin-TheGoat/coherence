@@ -12,14 +12,6 @@
         "website"
       ],
       "port": 8990
-    },
-    {
-      "name": "carousel",
-      "runtimeExecutable": "/Users/melvinvancleave/carousel-generator-v2/.venv/bin/python",
-      "runtimeArgs": [
-        "/Users/melvinvancleave/carousel-generator-v2/app.py"
-      ],
-      "port": 8501
     }
   ]
 }
