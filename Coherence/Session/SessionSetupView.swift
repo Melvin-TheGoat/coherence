@@ -21,6 +21,13 @@ struct SessionSetupView: View {
     /// Empty = silence.
     @AppStorage("sessionSoundID") private var soundID: String = ""
 
+    /// Seconds left before the Watch is told to start, or nil when not
+    /// counting. Phone-initiated sessions only: starting from the wrist means
+    /// you are already sitting, so the Watch's own Begin stays immediate
+    /// (Melvin, 2026-09-01).
+    @State private var countdown: Int?
+    @State private var countdownTask: Task<Void, Never>?
+
     var body: some View {
         VStack(spacing: 0) {
             Spacer()
@@ -55,6 +62,7 @@ struct SessionSetupView: View {
         .padding(AppMetrics.screenPadding)
         .padding(.bottom, 6)
         .screenBackground()
+        .overlay { if countdown != nil { countdownOverlay } }
         .overlay(alignment: .topTrailing) {
             Button("Cancel") { dismiss() }
                 .font(AppFont.callout)
@@ -70,7 +78,56 @@ struct SessionSetupView: View {
         return "Open · \(sound)  ›"
     }
 
+    /// Five seconds to put the phone down and sit, then the Watch is told to
+    /// start. Tapping Begin used to start measuring while you were still
+    /// getting comfortable, and the first half-minute of every phone-started
+    /// session was the motion of settling in.
+    private var countdownOverlay: some View {
+        ZStack {
+            AppColor.backgroundPrimary.opacity(0.97).ignoresSafeArea()
+            VStack(spacing: 14) {
+                Text(countdown.map(String.init) ?? "")
+                    .font(.system(size: 96, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.accentGoldText)
+                    .monospacedDigit()
+                    .contentTransition(.numericText(countsDown: true))
+                Text("Get comfortable.")
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textSecondary)
+                Button("Cancel") { cancelCountdown() }
+                    .font(AppFont.caption.weight(.medium))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.top, 26)
+            }
+        }
+        .transition(.opacity)
+    }
+
     private func begin() {
+        countdownTask?.cancel()
+        withAnimation(.easeOut(duration: 0.2)) { countdown = 5 }
+        countdownTask = Task { @MainActor in
+            while let n = countdown, n > 0 {
+                // A cancelled sleep THROWS and `try?` swallows it, so without
+                // this guard cancelling would fall straight through and start
+                // the session anyway. Same trap that once killed guided audio
+                // a second into a session.
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeOut(duration: 0.15)) { countdown = n - 1 }
+            }
+            guard !Task.isCancelled else { return }
+            startNow()
+        }
+    }
+
+    private func cancelCountdown() {
+        countdownTask?.cancel()
+        countdownTask = nil
+        withAnimation(.easeOut(duration: 0.2)) { countdown = nil }
+    }
+
+    private func startNow() {
         let id = soundID.isEmpty ? nil : soundID
         coordinator.begin(mode: SoundCatalog.mode(for: id),
                           trackID: nil,
