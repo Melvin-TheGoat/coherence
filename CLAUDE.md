@@ -1456,6 +1456,71 @@ Audited against the current App Store Review Guidelines. Fixed:
   honestly on a fresh install (screenshot-verified). Ten passes total, finds
   in nine of them; the reading-based scan is at the bottom of the well.
 
+## Passes 11–14 (2026-08-31/09-01, pre-submission): the well is DRY
+
+Eleven was the free-tier build audit; twelve through fourteen ran in the
+final three days with nine parallel reviewers plus two instruments no code
+read can replace. Recorded here so nobody re-runs a fifteenth: **another
+pass produces noise, not safety.** The remaining rejection risk lives in
+App Store Connect and on the wrist, not in this repo.
+
+- **Twelfth (3 agents: payments, onboarding claims, config/privacy).** The
+  big ones: the downsell rungs and FreeTierScreen initiated purchases from
+  screens with no price/renewal/legal links (classic 3.1.2), and the
+  free-tier CTA bought WHATEVER PLAN WAS LAST SELECTED, so "Start 7 days
+  free" could charge $99.99 for a Lifetime tapped minutes earlier. Fix was
+  structural: **taking any offer preselects the plan and returns to the
+  paywall; one screen owns every purchase and every disclosure.** Also:
+  trial rung skipped for lapsed subscribers; the caption stopped
+  contradicting Lifetime's "charged today"; the demo stopped implying the
+  score shows nervous-system state; the hardware screen claims the wish,
+  never similarity to named EEG devices; the policy's HealthKit bullet
+  gained the HRV (SDNN) read it omitted (both copies); DEBUG launches no
+  longer pollute production PostHog.
+- **Thirteenth (fixes-verification + metadata + surfaces).** All twelve-pass
+  fixes held. New: APP_STORE.md gained the missing SUBSCRIPTION INFORMATION
+  block (title/price/renewal/ToU link — the most-rejected 3.1.2 item) and
+  review notes that route a Watch-less reviewer (answer YES at the gate,
+  three "Check again" taps reveal the escape); UnlockSheet stopped promising
+  the free week to lapsed subscribers; USD unit-notes never render beside
+  Apple's localized prices; a partial product fetch counts as not-selling;
+  Release fallback copy is "Plans aren't loading" with retry, never "Free
+  while we're testing"; guide breath-holds carry a skip-if-light-headed
+  clause; the reminders toggle flips off when the OS denies.
+- **Release-binary proof (strings(1) on compiled Release products):** every
+  DEBUG marker — beta paywall copy, simulated purchase, free-tier switch,
+  CloudKit panel, demo seeds, all PREVIEW_*/SKIP_ONBOARDING/ONBOARDING_STEP
+  hooks, the Watch CSV capture — is provably ABSENT from both Release
+  binaries. The #if DEBUG boundary holds empirically, not just by read.
+- **Fourteenth (never-read files + a 22-screen human walk of the Release
+  build).** The sweep's blocker: PersonalPlan promised "challenges and group
+  sits" — features that DO NOT EXIST — to the user who quit over
+  accountability; now answers with the streak and the share card (the
+  people-not-data test still passes, honestly). Also: the resonance sheet
+  stopped claiming the calm outlasts the pacing (no study supports a
+  duration); the dead 7-day heart-history probe was deleted before any
+  caller could break the policy's live-only promise; citations added
+  (Holzel 2011, Cearns and Clark 2023). The WALK — fresh Release install
+  tapped end to end exactly as the review notes instruct, declining name,
+  notifications and Watch — reached the paywall with no dead ends and
+  caught what no code read could: "I'll practice 5 days a week, with YOUR
+  morning coffee" (person splice; anchors now carry `firstPersonPhrase`).
+- **Melvin's parallel prep, reviewed and correct:** paste sheet for Connect
+  (now carrying the subscription block + reviewer route), age-rating
+  answers (UGC No / Social No / Wellness Yes / Medical None, with the
+  guardrail that any condition-targeted guide entry flips Medical to
+  Infrequent), Watch-side ITSAppUsesNonExemptEncryption, Mercury address
+  log, "808 Meditate" name registered.
+
+**What review CANNOT clear, the actual submission-day gate:** CloudKit
+Production schema promotion (or the sync promise ships false); products
+created at $7.99/$29.99/$99.99 with 7-day intros and ATTACHED to the
+version (else the reviewer meets the fallback paywall); privacy labels →
+Product Interaction (+ check whether PostHog's anonymous id needs an
+Identifiers entry); age answers + copyright `© 2026 Lock Out Inc.` entered;
+Muse/HeartMath ≈ prices verified the week of submission; and one real
+session on a wrist with the final build.
+
 **REVERSED 2026-08-24 — see the FREE TIER section below. The paragraph that
 follows is the superseded 2026-08-11 decision, kept because its reasoning about
 the `.ready` guard survived the reversal intact.**
