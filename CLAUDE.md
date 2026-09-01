@@ -1708,7 +1708,9 @@ reappear, then delete the "sync doesn't work" line from What to Test.
    disclaimer. (Curves still never roam: `MeditationStats` is device-local
    by 5.1.3 design; the promise covers account, sessions, streak, history.)
 6. Agreements, Tax, and Banking: sign Paid Applications, enter Lock Out
-   Inc.'s bank + W-9. **Nothing in the app carries or needs banking info.**
+   Inc.'s bank + W-9. **Mercury cleared 2026-09-01, so this is unblocked;
+   the W-9 was filed the same day (C corporation, exempt payee, EIN, Dover
+   address to match the IRS record).** **Nothing in the app carries or needs banking info.**
    Enroll in the **Small Business Program** the same sitting (15% vs 30%).
 7. Create the products EXACTLY as compiled:
    `com.lockout.meditate808.{monthly,yearly,lifetime}`, monthly + yearly as

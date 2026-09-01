@@ -184,27 +184,19 @@ Listing so nothing falls through:
 
 - **D-U-N-S number** — in progress with Dun & Bradstreet (case # 10747633).
   This is Apple enrollment paperwork, not a legal matter.
-- **Business bank account (Mercury) — OPEN AND BLOCKING, 2026-09-01.** It gates
-  Apple's Paid Applications agreement, which gates the StoreKit products, which
-  gates submission. Mercury is holding the account for proof of the PHYSICAL
-  address, and a driver's licence was already rejected.
+- **Business bank account (Mercury) — CLEARED 2026-09-01.** It had been holding
+  the account for proof of the physical address. Resolved, and the Paid
+  Applications agreement is no longer blocked.
 
   **The two addresses are both correct and must not be reconciled into one.**
-  The Delaware RA (8 The Green Ste A, Dover DE 19901) is the legal address: state
-  filings, service of process, and the D-U-N-S record. **183 South 8th Street,
-  Brooklyn NY 11211** is the physical operating address, which is what Mercury
-  has on file. Banks are required under their Customer Identification Program
-  obligations to hold a real physical address and may not accept a registered
-  agent address as the only one, so no document will ever satisfy them at the
-  Dover address. If anyone later "corrects" one of these into the other, they
-  have broken something that was right.
-
-  What clears it: one document in Melvin's name at the Brooklyn address, from
-  Mercury's accepted list. The active lease, a Con Edison or National Grid bill,
-  an internet bill, or a personal bank or credit card statement from the last 90
-  days. The licence most likely failed because its address is not the Brooklyn
-  one; if it does show that address, ask Mercury what actually failed rather than
-  resubmitting.
+  The Delaware RA (8 The Green Ste A, Dover DE 19901) is the legal address:
+  state filings, service of process, the D-U-N-S record, and the EU trader
+  details published on the App Store listing. **183 South 8th Street, Brooklyn
+  NY 11211** is the physical operating address, which is what a bank is
+  required to hold under its Customer Identification Program obligations and
+  what no registered agent address can ever satisfy. If anyone later
+  "corrects" one of these into the other, they have broken something that was
+  right.
 
   Company money must never touch a personal account.
 - **Michigan annual report** — due **02/15/2027**.
