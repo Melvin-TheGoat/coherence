@@ -276,6 +276,28 @@ and there is no reason to defer it.
 
 ## Age rating
 
+**User-Generated Content: NO. Social Media: NO.** (Answered 2026-09-01.)
+
+Both are No because nothing a user creates in 808 can reach another user. The
+reflection note is private (device plus the user's own private CloudKit); the
+share card leaves only through the system share sheet, to a destination the
+user picks, after the sheet shows them the finished image. There is no feed, no
+follows, no comments, no discovery, and no server of ours for content to pass
+through.
+
+**Answering Yes would be worse than wrong, not safer.** Yes invokes Guideline
+1.2, which requires content filtering, a reporting mechanism, the ability to
+block abusive users, and published moderation contact details. 808 implements
+none of that because it has nothing to moderate, so a Yes is a rejection in the
+other direction, and it raises the age rating for nothing.
+
+**Both answers flip the day a community ships.** "The social network for those
+who breathe" means a feed, and a feed means Yes to both plus the whole 1.2
+moderation stack built BEFORE submission. Scope it as a real feature, never as
+an addition to a release.
+
+## Age rating
+
 Apple's 2025 questionnaire is answered at submission. Honest answers: wellness
 content without medical advice, no unrestricted web, no user-generated content,
 no gambling. Expect the lowest tier. The questionnaire cross-references the
