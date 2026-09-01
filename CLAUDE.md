@@ -1811,7 +1811,16 @@ end cards, and any ad or social content. The parts that matter most here:
 - Regenerate the project after any `project.yml` change: `xcodegen generate`.
 - **Close Xcode before `xcodegen generate`** (or reopen the project after) — regen
   while it's open yields "the active scheme has no targets."
-- **Signing is per-developer and LOCAL (never committed).** The repo commits
+- **Signing: ONE org team since 2026-09-01.** The Organization conversion
+  **preserved the Team ID**, so Lock Out Inc. is `WLZQLLHUB3`, the same string
+  Melvin's individual account used. Nothing had to be repointed, and every
+  build made before the conversion was already signed by what is now the org.
+  Archive with `TEAM=WLZQLLHUB3 ./tools/archive.sh`; the override exists so
+  nobody edits a tracked file to ship. Aziz switches from `H5ZH6P56Q8` /
+  `com.azizmahmud.808` to the org team and the production bundle IDs when he
+  next builds for release. The paragraph below describes why the two-account
+  split existed and is kept for the beta's history:
+- **Signing WAS per-developer and LOCAL (never committed).** The repo commits
   `DEVELOPMENT_TEAM: ""` and `com.lockout.meditate808`. But the two cofounders have
   **separate individual Apple Developer accounts**, and one bundle ID can't be
   registered to both once HealthKit (an explicit App-ID capability) is enabled — so

@@ -48,12 +48,16 @@ ARCHIVE="$HOME/Library/Developer/Xcode/Archives/$(date +%Y-%m-%d)/808-${BUILD}.x
 EXPORT="build/808-${BUILD}"
 mkdir -p "$(dirname "$ARCHIVE")"
 
-# The team is per-developer and lives in an uncommitted project.yml, so read it
-# from the project rather than hardcoding anyone's here.
-TEAM="$(xcodebuild -scheme Coherence -showBuildSettings 2>/dev/null \
-        | awk -F' = ' '/ DEVELOPMENT_TEAM = /{print $2; exit}' | tr -d ' ')"
+# The team. `TEAM=... ./tools/archive.sh` wins, so nobody has to edit a tracked
+# file to archive; otherwise it is read from the project. The committed
+# project.yml deliberately carries an empty DEVELOPMENT_TEAM, and since the org
+# conversion both founders sign with the SAME team, so the override is now the
+# normal path rather than a workaround.
+TEAM="${TEAM:-$(xcodebuild -scheme Coherence -showBuildSettings 2>/dev/null \
+        | awk -F' = ' '/ DEVELOPMENT_TEAM = /{print $2; exit}' | tr -d ' ')}"
 if [ -z "$TEAM" ]; then
-  echo "No DEVELOPMENT_TEAM in the project. Set it in project.yml and re-run."
+  echo "No team. Run: TEAM=<10-char Team ID> ./tools/archive.sh"
+  echo "(Lock Out Inc. is WLZQLLHUB3.)"
   exit 1
 fi
 
@@ -65,6 +69,8 @@ xcodebuild archive \
   -destination 'generic/platform=iOS' \
   -archivePath "$ARCHIVE" \
   CURRENT_PROJECT_VERSION="$BUILD" \
+  DEVELOPMENT_TEAM="$TEAM" \
+  -allowProvisioningUpdates \
   | grep -E 'error:|ARCHIVE SUCCEEDED|ARCHIVE FAILED' || true
 
 [ -d "$ARCHIVE" ] || { echo "No archive produced. See the errors above."; exit 1; }

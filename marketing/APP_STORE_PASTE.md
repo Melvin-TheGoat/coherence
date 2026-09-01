@@ -193,8 +193,9 @@ No iPad set: the app is iPhone and Watch only (`TARGETED_DEVICE_FAMILY: 1`).
 **Sign-in required?** No. Sign in with Apple is the only sign-in and it is
 optional, so no demo account exists or is needed.
 
-**Contact** — Melvin Van Cleave, 818-422-1140, and an email on the
-meditate808.com domain. **Not a personal Gmail.**
+**Contact** — First name `Melvin`, last name `Van Cleave`, phone
+`818-422-1140`, email `support@meditate808.com` (confirmed 2026-09-01; never a
+personal Gmail, Apple emails this address about the review).
 
 **Notes**
 
