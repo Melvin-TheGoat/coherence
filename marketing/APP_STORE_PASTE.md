@@ -84,7 +84,7 @@ SEE WHAT YOUR BODY DID
 Three signals, all from the Watch already on your wrist. How far your heart rate came down. How still you became, and when you settled. And your breathing rate, read from the small tilt of your wrist when you slow your breath. Every one of them drawn as a curve you can scrub through, minute by minute.
 
 ONE NUMBER, SO YOU CAN COMPARE
-Every session ends with a practice score out of 100, so today means something next to last Tuesday. It is built from how deep you got and how long you held it, which is why thirty restless minutes never beat five settled ones. Underneath it, a plain sentence telling you what happened, in words rather than numbers.
+Every session ends with a practice score out of 100, so today means something next to last Tuesday. It is built from how deep you got and how long you held it, so a short settled sit can score every bit as well as a long one. Underneath it, a plain sentence telling you what happened, in words rather than numbers.
 
 THE HABIT, NOT JUST THE SESSION
 A streak, a calendar that fills in as you show up, your full history, and seventeen awards to work towards.

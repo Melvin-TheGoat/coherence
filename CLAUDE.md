@@ -514,6 +514,25 @@ UI must coach it, and the 2-signal degrade path must stay.
       projection (the projection is arithmetic *from* the committed days/week);
       the progress rail shows during the interview only; paywall position is one
       constant, `paywallInsideOnboarding`.
+  - **NEVER TELL THE READER WHAT THEY LACK, AND NEVER SET UP A LOSER FOR THE
+    COPY TO BEAT** (Melvin, 2026-09-01, after correcting it four times in one
+    sitting). The failures all looked different and were the same thing:
+    "Watch the habit take hold" told a reader who already meditates that they
+    had not started; "Share the proof, not a caption" invented a behaviour
+    nobody recognises and then argued with it; "small and often beats long and
+    rare" made a loser of anyone who sits long and rarely; and listing award
+    thresholds ("ten straight days, a score of 90") read as chores rather than
+    reasons. **State the positive. If a sentence needs a foil to make its
+    point, the point is not strong enough yet.**
+    A full sweep of the website, the store description and the app on
+    2026-09-01 found five more and fixed them; what survived, and why, is
+    recorded there. The legitimate exceptions are narrow: the relief screen may
+    exonerate a fear the user actually arrived with ("You just never got told
+    whether it was working"), the verdict may report a poor session honestly,
+    and legal lines like "not a medical device" stay. Naming the reader's pain
+    in THEIR words, as the website's "Am I even doing this right?" labels do,
+    is the Schwartz move and is correct. Telling them what they are missing in
+    OUR words is not.
   - **NEVER BOAST THAT EARNED AWARDS ARE KEPT. It is not a feature** (Melvin,
     2026-09-01, third time he has cut it). No app in history has ever taken back
     an award someone earned, so saying "yours for good, even if a streak breaks"

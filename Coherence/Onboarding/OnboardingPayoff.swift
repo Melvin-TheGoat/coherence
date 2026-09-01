@@ -1199,7 +1199,7 @@ struct WeekPreviewScreen: View {
 
     private let days = [("Day 1", "Your first measured session. You'll see a number that means something."),
                         ("Day 2", "A second point. Two points make a line."),
-                        ("Day 3", "The streak starts to feel like something you don't want to break."),
+                        ("Day 3", "The streak starts to feel like something worth keeping."),
                         ("Day 7", "A week of evidence, and the first honest answer to \"is this working?\"")]
 
     var body: some View {
