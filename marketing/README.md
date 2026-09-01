@@ -82,3 +82,18 @@ for f in marketing/appstore/*.png; do
   sips --cropToHeightWidth 2778 1284 "marketing/appstore/65/$n" >/dev/null
 done
 ```
+
+## `appstore/iap/`
+
+`paywall-review.png`, **640 x 920**, the review screenshot every in-app purchase
+requires. That is a different spec from App Store screenshots, and Connect
+rejects the 1320 x 2868 masters with the same "dimensions are wrong" message.
+
+It shows the **paywall**, not a results screen: a reviewer needs to see where
+the purchase happens, with all three products, their prices, and the trial
+disclosure visible.
+
+Regenerate by capturing the paywall (`ONBOARDING_STEP=37` on a fresh install,
+since the hook only applies before onboarding completes) and top-cropping.
+`sips --cropToHeightWidth` crops CENTRED, which cuts the headline that
+documents the introductory offer, so use a top crop instead.
