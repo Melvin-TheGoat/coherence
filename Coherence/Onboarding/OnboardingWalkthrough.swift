@@ -739,23 +739,25 @@ struct WalkthroughResultsScreen: View {
 
     private func title(for stage: ResultsTourStage) -> String {
         switch stage {
-        case .score:     return "This is your practice score."
-        case .heart:     return "Your heart, across the sit."
-        case .stillness: return "How still your body was."
-        case .breathing: return "Your breath, read from your wrist."
+        case .score:     return "Your score."
+        case .heart:     return "Your heart."
+        case .stillness: return "Your stillness."
+        case .breathing: return "Your breath."
         }
     }
 
     private func body(for stage: ResultsTourStage) -> String {
         switch stage {
+        // Aziz's wording (2026-08-31), trimmed from a longer draft that read as
+        // generated. Full sentences, half the length, same four facts.
         case .score:
-            return "One number for how deep your body settled and how long it stayed there. It comes entirely from what your Watch measured, so it can't be flattered. If yours reads low, that's mostly the clock: this demo session was very short, and the score pays for time held. Your real sits will score higher."
+            return "This number shows how deep your body settled and how long it stayed there and is measured off your wrist. A two-minute demo caps the score low, and real sits score higher."
         case .heart:
-            return "When attention settles, heart rate drifts down. This curve is that drift: where your heart started, where it landed, and the minute it turned. Watching it fall across a session is the plainest evidence meditation gives."
+            return "When you settle, your heart slows. This curve shows where it started, where it landed, and the minute it turned."
         case .stillness:
-            return "Read from the motion sensors, scored from zero to one. A settling mind shows up as a settling body, which is why every tradition starts by sitting still: stillness is the part of concentration the body can show."
+            return "A settling mind shows up as a settling body. This shows how still you were from minute to minute."
         case .breathing:
-            return "Read from the tiny wrist movements breathing makes. Slowing your breath toward six a minute is the fastest lever you have: the heart settles behind it. When 808 can't read a clear rhythm it says so rather than guessing, so a reading here always means something."
+            return "Your breath is read from tiny wrist movements. Slow it toward six a minute and your heart follows. When 808 can't read a clear rhythm, it says so instead of guessing."
         }
     }
 }
