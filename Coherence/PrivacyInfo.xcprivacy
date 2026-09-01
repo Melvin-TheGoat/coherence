@@ -19,9 +19,20 @@
   the account/session log syncs only to the user's own PRIVATE CloudKit
   database, which we cannot read.
 
-  The App Privacy labels in App Store Connect must match this file: at the
-  next submission the labels change from "Data Not Collected" to Product
-  Interaction (Analytics, not linked to you). Change them together, always.
+  The App Privacy labels in App Store Connect must match this file. As of
+  2026-09-01 that is THREE types, all Analytics, none linked, none tracking:
+  Product Interaction, User ID, and Purchases.
+
+  User ID is declared because the analytics SDK generates a persistent
+  install-scoped UUID (a random UUID v7 in its own storage, never the IDFA or
+  identifierForVendor) and transmits it with every event as the distinct_id.
+  It is anonymous, which is why it is NOT linked, but it is collected.
+
+  Purchases is declared because the monetization events name the plan bought
+  (purchase, trial started, restore, entitlement lost). No payment details ever
+  touch this path, so Financial Info stays off.
+
+  Change the manifest and the labels together, always.
 -->
 <plist version="1.0">
 <dict>
@@ -34,6 +45,30 @@
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeUserID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
