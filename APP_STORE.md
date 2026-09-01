@@ -215,6 +215,47 @@ Two gotchas worth keeping, both cost time:
   watch and phone simulators (`xcrun simctl pair <watch> <phone>`) and waiting
   for the pair to report `connected`, not just `active`.
 
+## In-app purchases, exactly as to be created
+
+Blocked until the **Paid Applications agreement** is active (App Store Connect
+hides Monetization without it), so this is data entry for the day the bank
+clears. Product IDs must match `Store.ProductID` character for character: the
+app fetches these strings and a typo shows as "nothing for sale", not an error.
+
+**Subscription group** (monthly and yearly share ONE group so a user can move
+between them without double-paying):
+
+- Reference name (internal): `808`
+- Group display name (USER VISIBLE, in Manage Subscriptions): `808`
+
+**The three products:**
+
+| Product ID | Type | Duration | Price | Intro offer |
+|---|---|---|---|---|
+| `com.lockout.meditate808.monthly` | Auto-renewable | 1 month | $7.99 | 7 days free |
+| `com.lockout.meditate808.yearly` | Auto-renewable | 1 year | $29.99 | 7 days free |
+| `com.lockout.meditate808.lifetime` | Non-consumable | n/a | $99.99 | **none** |
+
+Lifetime takes no introductory offer on purpose. Its button reads "charged
+today, nothing renews", and a free week attached to it would be the paywall
+contradicting the purchase sheet, which is the 3.1.2 problem the ladder was
+built to avoid.
+
+**Localized display name and description** (user visible, App Store Connect
+requires both per product; 30 and 45 characters respectively):
+
+- **Monthly** → name `808 Monthly` · description `Every session measured and scored.`
+- **Yearly** → name `808 Yearly` · description `A year of measured practice. Best value.`
+- **Lifetime** → name `808 Lifetime` · description `Pay once. Every session, measured, forever.`
+
+Each product also needs a **review screenshot**. Use
+`marketing/appstore/01-score.png`: it shows the scored result, which is the
+thing being sold, and a reviewer can see immediately what the purchase unlocks.
+
+**Enrol in the Small Business Program** in the same sitting as the agreements.
+15% commission instead of 30%, applies while revenue is under the threshold,
+and there is no reason to defer it.
+
 ## Age rating
 
 Apple's 2025 questionnaire is answered at submission. Honest answers: wellness
