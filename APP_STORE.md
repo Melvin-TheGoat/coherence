@@ -276,7 +276,32 @@ and there is no reason to defer it.
 
 ## Age rating
 
-**User-Generated Content: NO. Social Media: NO.** (Answered 2026-09-01.)
+**The four answers, and why** (2026-09-01):
+
+| Question | Answer |
+|---|---|
+| User-Generated Content | **No** |
+| Social Media | **No** |
+| Health or Wellness Topics | **Yes** |
+| Medical or Treatment Information | **None** |
+
+**The wellness pair goes together and only makes sense together.** Apple splits
+"self-care or lifestyle recommendations" from "diagnoses or guidance around the
+management of medical conditions"; if generic wellness content belonged in the
+medical question, the wellness question would be redundant. So the guide's
+eight techniques are declared under Health or Wellness Topics, and Medical is
+None because nothing in 808 diagnoses anything or tells anyone how to manage a
+condition. Answering Yes to wellness is what makes None honest rather than
+evasive: the content is declared, in the right box.
+
+**Medical becomes Infrequent the moment any content is condition-targeted.**
+A "meditation for anxiety" or "for insomnia" entry in the guide is guidance on
+managing a condition. The guide is deliberately general today.
+
+If a reviewer questions the None, the app's own copy is the defence: the
+description states 808 is a wellness app and not a medical device, and the
+bundled Science page says the cited research is about meditation rather than
+about 808.
 
 Both are No because nothing a user creates in 808 can reach another user. The
 reflection note is private (device plus the user's own private CloudKit); the
