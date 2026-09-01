@@ -204,8 +204,22 @@ app fetches these strings and a typo shows as "nothing for sale", not an error.
 **Subscription group** (monthly and yearly share ONE group so a user can move
 between them without double-paying):
 
-- Reference name (internal): `808`
-- Group display name (USER VISIBLE, in Manage Subscriptions): `808`
+- Reference name (internal): `808 Membership`
+- Group display name (USER VISIBLE, in Manage Subscriptions): `808 Membership`
+- Custom App Name: leave BLANK, so the sheet uses "808 Meditate"
+
+App Store Connect calls the user-facing text "Localization". Only English (U.S.)
+is needed. The group takes a display name; each product takes a display name
+(30 max) and a description (45 max). These appear in the purchase sheet, in
+Settings > Subscriptions, and on receipts.
+
+**Rank Yearly ABOVE Monthly in the group.** Rank decides upgrade versus
+downgrade: monthly to yearly then applies immediately as an upgrade, and yearly
+to monthly waits for renewal as a downgrade. That is the behaviour we want.
+
+**The introductory offer type is Free Trial, one week**, not Pay As You Go or
+Pay Up Front. StoreKit will not display a trial the product does not carry, and
+the paywall's "Start my free week" copy depends on it.
 
 **The three products:**
 
