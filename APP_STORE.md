@@ -130,11 +130,11 @@ Generated and committed at `marketing/appstore/`. Real screens from the iPhone
 | 1 | 01-score | Did that actually work? | Your Apple Watch knows. 808 tells you. |
 | 2 | 02-evidence | See what your body actually did | Heart rate, stillness and breath, minute by minute |
 | 3 | 03-habit | Every session, on one calendar | Your streak, your history, your practice score |
-| 4 | 04-audio | Bring your own meditation | Or use the guided journey, tones and nature sounds |
-| 5 | 05-awards | Awards worth chasing | Ten straight days. A score of 90. A full hour. |
-| 6 | 06-journey | Watch the habit take hold | Streaks, hours practised and awards earned |
-| 7 | 07-guide | Learn different techniques | Explained plainly, easiest first |
-| 8 | 08-share | Share the proof, not a caption | A card built from your own session |
+| 4 | 04-share | Share it with your friends. | Your real graphs and your streak, on one card. |
+| 5 | 05-audio | Bring your own meditation | Or use the guided journey, tones and nature sounds |
+| 6 | 06-awards | A sharper mind. A calmer one. | What a steady meditation practice is shown to do. |
+| 7 | 07-journey | Your practice, adding up. | Streak, hours, awards, and every session logged. |
+| 8 | 08-guide | Learn different techniques | Explained plainly, easiest first |
 
 Melvin's revision pass (2026-08-25): slide 2 opens on the FULL top of the
 results page (score ring first, never mid-scroll) with the scrub callout
@@ -147,6 +147,25 @@ list and a fixed number caps it.
 
 The first three are what appear in search results, so they carry the argument:
 the question, then the evidence that answers it, then the habit.
+
+**Sharing moved to slide 4** (Melvin, 2026-09-01): it is the only organic
+acquisition loop 808 has, so eighth was underselling it. Files are renumbered so
+folder order matches upload order.
+
+**Three captions were rewritten the same day, all for the same fault: assuming
+something about the reader.** "Watch the habit take hold" implied they had no
+practice yet, when most users already meditate. "Share the proof, not a caption"
+invented a behaviour nobody recognises and then argued against it. And the
+awards slide named thresholds ("ten straight days, a score of 90"), which read
+as chores rather than reasons. The rule these all break: **do not tell the
+reader what they lack, and never set up a loser for the copy to beat.**
+
+The awards slide now carries a benefit rather than a mechanic, using the same
+kickers as the website's research section. A specific alternative was drafted
+and rejected as the riskier of the two: "Two weeks in, a sharper mind" with
+Mrazek 2013's +16 percentile points. It is true and cited, but it is an outcome
+claim on an image with no room for the "this is research on meditation, not on
+808" caveat that every other surface carries.
 
 **Slide 1 asks before it answers** (Melvin, 2026-09-01, the same correction that
 reshaped the description). It used to read "Proof your meditation landed / A
