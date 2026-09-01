@@ -393,9 +393,9 @@ struct GuidedBreathScreen: View {
                         introRow(icon: "figure.mind.and.body",
                                  title: "Sit tall",
                                  detail: "Upright somewhere comfortable. Shoulders soft, hands resting in your lap.")
-                        introRow(icon: "applewatch.radiowaves.left.and.right",
+                        introRow(icon: "circle.dashed",
                                  title: "Six in, six out",
-                                 detail: "Your Watch taps the rhythm on your wrist, so you can close your eyes.")
+                                 detail: "Follow the circle on the next screen: it swells as you breathe in, settles as you breathe out.")
                         introRow(icon: "waveform.path.ecg",
                                  title: "808 measures it landing",
                                  detail: "Slow breathing settles the nervous system. You'll see it in your score.")
@@ -519,9 +519,14 @@ struct GuidedBreathScreen: View {
 
     private func start() {
         stage = .starting
+        // No wrist pacing in the demo (Aziz, 2026-08-31): the taps were the
+        // buggiest part of the first runs, and the orb on this screen already
+        // carries the rhythm. `paceBreathing` stays in the contract for any
+        // future use; the demo just stops asking for it. The end-of-session
+        // haptic stays, it marks the finish.
         coordinator.begin(mode: "silence", trackID: nil,
                           plannedDurationSec: Self.practiceSeconds,
-                          hapticsEnabled: true, paceBreathing: true)
+                          hapticsEnabled: true, paceBreathing: false)
         // Wait for the Watch's ACK, not the phone-side launch callback: the
         // callback fires seconds early, and on a cold Watch tens of seconds
         // early, which started the phone's orb and countdown long before the
