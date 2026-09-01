@@ -78,6 +78,17 @@ HONEST SCIENCE
 The stillness and breathing measurements are grounded in peer-reviewed research on wrist-worn motion sensing. Traditional frequencies are labelled as tradition, not sold as proven. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
 
 Requires a paired Apple Watch to measure a session.
+
+SUBSCRIPTION INFORMATION
+The score, the streak, the calendar and your session history are free. An 808 membership unlocks the evidence behind the score: the heart, stillness and breathing graphs, the guided journey, and the full set of share cards.
+
+808 Monthly: $7.99 per month, after a 7-day free trial.
+808 Yearly: $29.99 per year, after a 7-day free trial.
+Both renew automatically unless cancelled at least 24 hours before the end of the current period. Manage or cancel in your App Store account settings.
+808 Lifetime: $99.99, one payment, nothing renews.
+
+Terms of Use: https://meditate808.com/terms.html
+Privacy Policy: https://meditate808.com/privacy.html
 ```
 
 **Keywords** (100 max, no spaces after commas)
@@ -160,7 +171,9 @@ optional, so no demo account exists or is needed.
 **Notes**
 
 ```
-808 measures meditation sessions using Apple Watch (heart rate and motion via a .mindAndBody workout). A paired physical Apple Watch is required to record a session; everything else (onboarding, sounds, guide, history, settings) is fully reviewable on iPhone alone. Sign in with Apple is the only sign-in and it is optional, so no demo account exists or is needed.
+808 measures meditation sessions using Apple Watch (heart rate and motion via a .mindAndBody workout). A paired physical Apple Watch is required to record a session; everything else (onboarding, sounds, guide, history, settings, and all three in-app purchases) is fully reviewable on iPhone alone. Sign in with Apple is the only sign-in and it is optional, so no demo account exists or is needed.
+
+Reviewing without an Apple Watch: at the onboarding question "Do you have an Apple Watch?", answer YES (answering no honestly routes to a waitlist and deliberately never shows the paywall, since the app will not sell to someone it cannot measure for). At the "Put your Watch on" screen, tap "Check again" three times; a "My Watch isn't with me. Continue" option appears and the two-minute practice is skipped, never simulated. The paywall, the free tier, and every purchase flow are reachable from there with no hardware.
 
 Health data: session results are computed on-device and stored only on-device, in a store excluded from CloudKit sync, per guideline 5.1.3(ii).
 
