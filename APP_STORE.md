@@ -70,89 +70,25 @@ Developer enrolment character for character.
 
 Primary **Health & Fitness** · Secondary **Lifestyle**
 
-## Promo text (170 max, editable without review)
+## Promo text and Description
 
-> Meditate however you like. Your Apple Watch measures how far your body
-> settled, and 808 scores it out of 100 when you finish.
+**Both live in `marketing/APP_STORE_PASTE.md` and nowhere else.**
 
-*(139 chars)*
+They used to be duplicated here, and the copies drifted: this file still
+carried the technique count and the awards-are-kept line for a day after both
+were cut, which is exactly how the wrong text gets pasted into Connect. One
+source, and it is the paste sheet, because that is the file someone actually
+copies from with the form open.
 
-## Description (4000 max)
+The reasoning behind the current copy is recorded at the top of that file: the
+description opens on the problem rather than the score, checked against how
+Athlytic, Gentler Streak, Balance and Muse open.
 
-> Most people meditate blind. You sit, you follow your breath, and afterwards
-> you have no idea whether anything actually happened. 808 answers that.
->
-> Wear your Apple Watch and meditate however you like. When you finish, 808
-> shows you what your body did while you were there, and gives you one score
-> out of 100.
->
-> **WHAT 808 MEASURES**
-> Three signals, all from the Watch already on your wrist. How still your body
-> became. How far your heart rate settled across the session. And your
-> breathing rate, read from the small tilt of your wrist when you slow your
-> breath down. No chest strap, no special posture, no setup.
->
-> **ONE SCORE, NOT A GUESS**
-> Every session ends with a practice score built from how deep you got and how
-> long you held it. Thirty restless minutes will never beat five settled ones.
-> Nothing is shown while you practise, because a live number is just one more
-> thing to chase. The evidence comes after.
->
-> **BRING YOUR OWN MEDITATION**
-> Already have a teacher you like on YouTube or Spotify? Start a session and
-> play whatever you want in any other app. The Watch keeps measuring. There is
-> nothing to switch to and nothing to give up.
->
-> **OR USE OURS**
-> A 25 minute guided journey, professionally narrated. Brainwave paced tones
-> for delta, theta and alpha. Traditional tunings at 432, 528, 852 and 963 Hz,
-> each over an ambient bed. Rain, ocean, forest and campfire.
->
-> **LEARN HOW TO ACTUALLY MEDITATE**
-> Eight techniques written in plain language, easiest first, from your first
-> ever sit through to visualisation practice.
->
-> **A HABIT YOU CAN SEE**
-> Streaks, a calendar of practised days, your full session history, and
-> seventeen awards. Earned awards are yours for good, even if a streak breaks.
->
-> **SHARE THE PROOF**
-> Every session becomes a shareable card carrying your score and your streak.
-> Members' cards carry the full graphs.
->
-> **PRIVATE BY DESIGN**
-> Your heart rate, your breathing and your scores are computed on your devices
-> and stay on your device. They are never uploaded, and we cannot see them. We
-> use basic anonymous analytics to learn which screens people use, and no
-> biometric data is ever part of it. No ads. No data sales. Sign in with Apple
-> is the only sign-in and it is optional.
->
-> **HONEST SCIENCE**
-> The stillness and breathing measurements are grounded in peer-reviewed
-> research on wrist-worn motion sensing. Traditional frequencies are labelled
-> as tradition, not sold as proven. 808 is a wellness app, not a medical
-> device, and does not diagnose, treat or prevent any condition.
->
-> Requires a paired Apple Watch to measure a session.
->
-> **SUBSCRIPTION INFORMATION**
-> The score, the streak, the calendar and your session history are free. An
-> 808 membership unlocks the evidence behind the score: the heart, stillness
-> and breathing graphs, the guided journey, and the full set of share cards.
->
-> 808 Monthly: $7.99 per month, after a 7-day free trial.
-> 808 Yearly: $29.99 per year, after a 7-day free trial.
-> Both renew automatically unless cancelled at least 24 hours before the end
-> of the current period. Manage or cancel in your App Store account settings.
-> 808 Lifetime: $99.99, one payment, nothing renews.
->
-> Terms of Use: https://meditate808.com/terms.html
-> Privacy Policy: https://meditate808.com/privacy.html
-
-*(the subscription block is REQUIRED for auto-renewables: title, length,
-price, renewal statement, and a functional Terms of Use link in metadata is
-one of the most-rejected 3.1.2 items. Prices here must match App Store
-Connect exactly; update both together or neither.)*
+**The subscription block inside the description is REQUIRED** for
+auto-renewables (title, length, price, renewal statement, and a functional
+Terms of Use link in the metadata itself). It is one of the most-rejected 3.1.2
+items. The prices there must match App Store Connect exactly; change both or
+neither.
 
 ### Optional testimonial block
 
