@@ -460,6 +460,45 @@ Screens to design (all already exist functionally): **Onboarding** (Purpose/Scie
 ### 8a.1 — Near-term feature adds (before or alongside the redesign)
 - **Post-session logging:** after each meditation, let the user add a **free-text comment** and a **subjective 0–10 rating** ("how did that feel?"). Store on the `Session` (or a small linked note record) — a couple new optional fields + a simple entry screen after the evidence graphs. Feeds the history/journal and, later, correlations ("your rating vs. stillness over time").
 
+### 8a.2 — Accessibility, measured 2026-09-01 (POST-LAUNCH, and the reason the
+### App Store's Accessibility section is deliberately blank)
+
+The Accessibility Nutrition Labels in App Store Connect are OPTIONAL and were
+left **empty at 1.0 on purpose**. They are a public claim, and a VoiceOver user
+who finds the app unusable after we declared support has a fair complaint about
+a promise on our own store page. Declare only what has been verified on device.
+
+What the codebase actually supports, counted rather than guessed:
+
+| Feature | State |
+|---|---|
+| Reduced Motion | **Honored in 8 places.** The only one that would survive scrutiny today. |
+| Dark Interface | Supported; dark is the default and the theme switch works. |
+| Larger Text (Dynamic Type) | **Not supported in most of the app.** 167 fixed `.font(.system(size:))` calls against 73 scalable text styles. Bumping the system text size changes almost nothing. |
+| VoiceOver | **Effectively unsupported.** Three `accessibilityLabel` uses in the whole codebase. The score ring, all three charts, the breathing orb and the award badges are custom drawing that announces nothing useful. |
+
+**Why this matters beyond the form.** 808's audience skews older than most apps,
+and someone who raised their system text size for readability gets none of it
+here. It is a real usability gap, not a compliance checkbox.
+
+The work, in dependency order:
+
+1. **Dynamic Type.** Replace `.font(.system(size:))` with text styles, or scale
+   through `@ScaledMetric`. Mechanical, and the largest single win. Check the
+   dense screens at the biggest accessibility sizes: the results tiles, the
+   Journey stats row, and the paywall plan rows will all need to wrap or stack.
+2. **VoiceOver labels on the custom drawing.** ScoreRing should announce its
+   score and what it means, each chart its reading in words (the verdict already
+   writes exactly this sentence, so reuse `VerdictEngine`), the badges their
+   award and whether it is earned. This is where the app's own written verdict
+   becomes an accessibility asset rather than decoration.
+3. **Contrast audit** of the muted greys on the near-black ground, and confirm
+   nothing is conveyed by gold alone without a label beside it.
+
+**Only after all three are verified on a device does the App Store
+Accessibility section get filled in**, and then only for what was tested. It can
+be updated any time without a new build.
+
 ## 8b — Brand & assets
 
 - **Name lockup + logo** for **808** — a logo is already sketched (Melvin has it; ask him for it when doing this); finalize the palette.
