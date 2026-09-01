@@ -86,20 +86,17 @@ Three signals, all from the Watch already on your wrist. How far your heart rate
 ONE NUMBER, SO YOU CAN COMPARE
 Every session ends with a practice score out of 100, so today means something next to last Tuesday. It is built from how deep you got and how long you held it, which is why thirty restless minutes never beat five settled ones. Underneath it, a plain sentence telling you what happened, in words rather than numbers.
 
-NOTHING TO CHASE WHILE YOU SIT
-There is no live score, on purpose. A number moving in real time is just one more thing to grip. You close your eyes, you practise, and the evidence is waiting when you finish.
-
 THE HABIT, NOT JUST THE SESSION
-A streak, a calendar that fills in as you show up, your full history, and seventeen awards. Earned awards are yours for good, even when a streak breaks, because the point is coming back rather than never slipping.
+A streak, a calendar that fills in as you show up, your full history, and seventeen awards to work towards.
 
 IF YOU ARE NEW TO THIS
-A written guide to the techniques themselves, easiest first, starting with what to actually do the very first time you sit down. It grows over time.
+A written guide to the techniques themselves, easiest first, starting with what to actually do the very first time you sit down.
 
 OR USE OUR SOUNDS
 A 25 minute guided journey, professionally narrated. Brainwave paced tones for delta, theta and alpha. Traditional tunings at 432, 528, 852 and 963 Hz, each over an ambient bed. Rain, ocean, forest and campfire.
 
-SHARE IT IF YOU WANT TO
-Turn any session into a card carrying your real graphs and your streak, ready for your story.
+SHARE IT WITH YOUR FRIENDS
+Turn any session into a card carrying your real graphs and your streak, compatible with any app.
 
 WHAT IS FREE
 Your score, the written verdict, your streak, the calendar, your full history and every award are free. A membership unlocks the evidence underneath the score: the heart rate, stillness and breathing curves, the guided journey, and the rest of the share cards.

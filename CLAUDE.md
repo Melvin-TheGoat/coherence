@@ -514,6 +514,24 @@ UI must coach it, and the 2-signal degrade path must stay.
       projection (the projection is arithmetic *from* the committed days/week);
       the progress rail shows during the interview only; paywall position is one
       constant, `paywallInsideOnboarding`.
+  - **NEVER BOAST THAT EARNED AWARDS ARE KEPT. It is not a feature** (Melvin,
+    2026-09-01, third time he has cut it). No app in history has ever taken back
+    an award someone earned, so saying "yours for good, even if a streak breaks"
+    answers a question nobody asked. Worse, defending against a fear the reader
+    did not have is what plants it: the sentence's only achievement is making
+    them wonder whether some app somewhere confiscates trophies.
+    **The ENGINE rule stays** and is still load-bearing (`AwardEngine` derives
+    from "did this ever happen", and `test_brokenStreakKeepsTheAward` locks it,
+    because taking an award back would punish exactly the person we want to
+    bring back). What stops is TELLING the user about it. Behaviour yes,
+    bragging no.
+    Same family as the general rule: **do not sell the absence of a problem the
+    reader never imagined having.** It reads as defensive and spends words that
+    could carry a real claim.
+    Still live in two places at the time of writing, both fair game to cut:
+    `AwardsView` ("Earned awards are yours for good, even if a streak breaks.")
+    and `website/index.html` ("An award never expires: break a streak and what
+    you earned stays earned.").
   - **NO EM DASHES IN USER-FACING COPY. EVER.** (Aziz, 2026-08-06, third time
     he has raised it: website, DM scripts, now permanently.) The em dash is the
     clearest tell that text was machine-written, and for a product whose pitch is
