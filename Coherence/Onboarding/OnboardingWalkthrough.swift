@@ -529,14 +529,12 @@ struct GuidedBreathScreen: View {
 
     private func start() {
         stage = .starting
-        // No wrist pacing in the demo (Aziz, 2026-08-31): the taps were the
-        // buggiest part of the first runs, and the orb on this screen already
-        // carries the rhythm. `paceBreathing` stays in the contract for any
-        // future use; the demo just stops asking for it. The end-of-session
-        // haptic stays, it marks the finish.
+        // The Watch plays no haptics at all (Melvin, 2026-09-01): a buzzing
+        // wrist reads as an interruption in a product about settling down, and
+        // the orb on this screen already carries the rhythm.
         coordinator.begin(mode: "silence", trackID: nil,
                           plannedDurationSec: Self.practiceSeconds,
-                          hapticsEnabled: true, paceBreathing: false)
+                          hapticsEnabled: true)
         // Wait for the Watch's ACK, not the phone-side launch callback: the
         // callback fires seconds early, and on a cold Watch tens of seconds
         // early, which started the phone's orb and countdown long before the

@@ -720,6 +720,21 @@ UI must coach it, and the 2-signal degrade path must stay.
   - Watch elapsed derives from the wall clock (a sleep-loop counter drifted
     seconds behind); both sides now compute from the same clock.
   - **Dark is the default theme** for new installs (`Preferences.theme`).
+  - **THE WATCH PLAYS NO HAPTICS. NONE. Do not add one back** (Melvin,
+    2026-09-01, pre-submission). A buzzing wrist reads as an interruption in a
+    product whose entire promise is settling down, and it is a reason someone
+    puts the app down rather than a reason they keep it. The 6s-in / 6s-out
+    breath pacer (`startBreathPacing`, `WKInterfaceDevice.current().play`) is
+    DELETED along with the `paceBreathing` field it was gated on, which the
+    walkthrough had already set false. `grep WKInterfaceDevice CoherenceWatch/`
+    must stay empty. Any wrist buzz a user still feels during a session is
+    watchOS's own workout start/stop haptic or a mirrored iPhone notification,
+    neither of which a third-party app can suppress; do not go hunting in our
+    code for it.
+  - **The Settings "Haptics" toggle now governs the award celebration**
+    (`AwardUnlockView`), which is the only haptic left outside onboarding. It
+    was left driving nothing when the pacer went, and a settings control that
+    does nothing is a small lie in a product selling honesty.
   - Cosmetic, not a bug: a one-second flash of the previous build's screen at
     launch is watchOS replaying the old install's snapshot.
 - **SCORE v3 — evidence-weighted, time-capped, back-filled (2026-08-08).**

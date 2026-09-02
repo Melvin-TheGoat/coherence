@@ -72,7 +72,6 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
     let workout = WorkoutManager()
     private var timer: Task<Void, Never>?
-    private var pacer: Task<Void, Never>?
     /// Wall-clock anchor for `elapsed`. A sleep-loop counter drifts a few
     /// seconds behind over a long session; deriving from the clock keeps the
     /// Watch and the phone (which also derives from the clock) in agreement.
@@ -173,7 +172,6 @@ final class WatchSessionManager: NSObject, ObservableObject {
         startedOnWatch = watchInitiated
         sessionStartedAt = Date()
         startTimer(planned: p.plannedDurationSec)
-        if p.paceBreathing == true { startBreathPacing() }
         armHeartRateWatchdog(sessionID: p.sessionID)
 
         let wc = WCSession.default
@@ -268,7 +266,6 @@ final class WatchSessionManager: NSObject, ObservableObject {
             self.statusMessage = "No heart rate. Check 808 in the iPhone Health app."
             _ = await self.workout.finish()      // stop the workout, discard the result
             self.timer?.cancel(); self.timer = nil
-            self.pacer?.cancel(); self.pacer = nil
             self.phase = .idle
             self.report(.heartRateUnavailable, sessionID: sessionID)
             self.params = nil
@@ -281,7 +278,6 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     private func endSession() async {
-        pacer?.cancel(); pacer = nil
         guard phase == .running, let p = params else { return }
         timer?.cancel()
         timer = nil
@@ -333,29 +329,6 @@ final class WatchSessionManager: NSObject, ObservableObject {
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(3))
             if self.phase == .sent { self.phase = .idle }
-        }
-    }
-
-    /// The onboarding breathing practice: a rising tap when the inhale should
-    /// begin, a falling one for the exhale, every six seconds, for as long as
-    /// the session runs. Wrist-side on purpose: the phone may be face down
-    /// across the room, and the wrist is where the rhythm can be felt with
-    /// closed eyes.
-    private func startBreathPacing() {
-        // A leftover pacer from a previous session could overlap this one and
-        // stack taps (the "haptics going off three times in a row" report,
-        // 2026-08-31), and the old loop played BEFORE checking cancellation,
-        // so even a cancelled pacer landed one extra tap. Cancel first, check
-        // first.
-        pacer?.cancel()
-        pacer = Task { @MainActor [weak self] in
-            var inhale = true
-            while let self, self.phase == .running {
-                guard !Task.isCancelled else { return }
-                WKInterfaceDevice.current().play(inhale ? .directionUp : .directionDown)
-                inhale.toggle()
-                try? await Task.sleep(for: .seconds(6))
-            }
         }
     }
 

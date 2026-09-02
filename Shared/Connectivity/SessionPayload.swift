@@ -13,10 +13,6 @@ struct SessionParams: Codable, Equatable {
     let plannedDurationSec: Int?     // nil = open-ended
     let bellyBreathing: Bool
     let hapticsEnabled: Bool
-    /// Watch taps the 6s-in / 6s-out rhythm on the wrist during the session
-    /// (the onboarding breathing practice). Optional so params from an older
-    /// phone decode on a newer Watch and vice versa.
-    let paceBreathing: Bool?
     /// When the phone sent this start command. The queued transferUserInfo
     /// channel flushes its whole backlog when a cold Watch launches, replaying
     /// start commands from attempts the phone gave up on long ago; the Watch
@@ -32,7 +28,6 @@ struct SessionParams: Codable, Equatable {
         plannedDurationSec: Int?,
         bellyBreathing: Bool,
         hapticsEnabled: Bool,
-        paceBreathing: Bool? = nil,
         sentAt: Date? = nil
     ) {
         self.sessionID = sessionID
@@ -41,7 +36,6 @@ struct SessionParams: Codable, Equatable {
         self.plannedDurationSec = plannedDurationSec
         self.bellyBreathing = bellyBreathing
         self.hapticsEnabled = hapticsEnabled
-        self.paceBreathing = paceBreathing
         self.sentAt = sentAt
     }
 }

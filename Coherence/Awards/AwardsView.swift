@@ -204,6 +204,9 @@ struct AwardUnlockView: View {
     let item: AwardEngine.Earned
     let onDone: () -> Void
 
+    /// The one haptic left in the app outside onboarding, so it is what the
+    /// Settings toggle now governs. The Watch plays none at all.
+    @Query private var preferences: [Preferences]
     @State private var appeared = false
 
     var body: some View {
@@ -250,7 +253,9 @@ struct AwardUnlockView: View {
         .screenBackground()
         .onAppear {
             withAnimation(.spring(response: 0.55, dampingFraction: 0.62)) { appeared = true }
-            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            if preferences.first?.hapticsEnabled ?? true {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
         }
     }
 }
