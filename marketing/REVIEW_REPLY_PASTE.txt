@@ -1,0 +1,28 @@
+2. PURPOSE
+808 scores meditation using the Apple Watch the user already owns. Meditation gives no feedback: a runner sees pace and distance, someone who meditates has no idea whether anything happened. The user starts a session on iPhone or Watch and meditates however they like, including playing audio from another app. The Watch runs a .mindAndBody workout recording heart rate and CoreMotion data, and an on-device algorithm produces three signals (stillness, heart rate settling, breathing rate from wrist tilt) plus a score out of 100, with curves and a summary. For adults who own an Apple Watch. General wellness, 4+, no medical claims.
+
+3. SETUP
+No account or credentials required. Sign in with Apple is optional and every feature works without it, so there is no demo account.
+With a Watch: launch, finish onboarding, tap "Begin session", meditate, tap End on the Watch. Results open with score, summary and curves.
+WITHOUT a Watch (recommended if none is available): at "Do you have an Apple Watch?" answer YES. At "Put your Watch on", tap "Check again" three times; "My Watch isn't with me. Continue" appears and the practice is skipped. No data is ever simulated. Everything except live measurement is then reachable, including the paywall and purchase flows.
+Account deletion: Settings (gear, top right of home) > Delete account.
+
+4. EXTERNAL SERVICES
+Apple frameworks only, plus one analytics SDK. No server of ours, no backend, no AI or machine learning service anywhere in the app.
+HealthKit reads heart rate and HRV on the Watch and records the workout; results stay on device. CoreMotion supplies Watch accelerometer data and never leaves it. WatchConnectivity carries the session to the iPhone. CloudKit syncs account, session log and streak to the user's private iCloud database, which we cannot read; health results are excluded per 5.1.3(ii). Sign in with Apple and StoreKit 2 complete the list.
+PostHog (US Cloud) receives named behavioral events only, such as screens completed and paywall viewed. Never biometrics, health data, scores or free text; the identifier is an anonymous per-install UUID. It is the only third party the app contacts, and is declared in the privacy manifest and App Privacy labels.
+The score, summary and every measurement come from our own deterministic on-device algorithm. No language model is involved.
+
+5. REGIONAL DIFFERENCES
+None. Identical in every region and storefront. English only, no region-gated content, no location data, no regional pricing beyond Apple's standard territory conversion.
+
+6. REGULATED INDUSTRY / THIRD-PARTY CONTENT
+General wellness, not a medical device. It does not diagnose, treat, cure or prevent any condition, stated in the description, the in-app Science page and the Terms of Service. It shows users their own Watch data on their own device.
+All audio is ours to ship: the guided narration was commissioned with a commercial license, the frequency tones are synthesized at runtime by our own code, and the ambient and nature recordings were generated under commercial license. No third-party copyrighted material appears. Research on the Science page is presented as research about meditation, not as claims about 808.
+
+7. IN-APP PURCHASES
+808 is free to download and use. The score, summary, streak, calendar, history and awards are free. A membership unlocks the evidence behind the score: the heart rate, stillness and breathing curves, the guided journey and extra share layouts.
+com.lockout.meditate808.monthly, auto-renewable, 1 month, USD 7.99, 7-day trial
+com.lockout.meditate808.yearly, auto-renewable, 1 year, USD 29.99, 7-day trial
+com.lockout.meditate808.lifetime, non-consumable, USD 99.99, nothing renews
+Two ways to reach it: near the end of onboarding (use the three "Check again" taps above if no Watch is present), or open any completed session and tap the unlock control on the locked curves. The offer screen shows each product's title, duration, price and renewal terms in words, with working Privacy Policy and Terms of Use links, plus Restore Purchase.
