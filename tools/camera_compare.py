@@ -60,4 +60,8 @@ def compare(wrist_csv, cam_csv, sess, minutes=False):
 
 if __name__ == '__main__':
     a = sys.argv[1:]
-    compare(a[0], a[1], int(a[2]), minutes='--minutes' in a)
+    sess = a[2]
+    if sess == 'auto':
+        import json
+        sess = json.load(open(a[0]))['durationSec']
+    compare(a[0], a[1], int(sess), minutes='--minutes' in a)
