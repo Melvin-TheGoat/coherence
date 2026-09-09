@@ -21,6 +21,12 @@ struct SessionActiveView: View {
     @State private var inhaling = false
     @State private var now = Date()
 
+    #if DEBUG
+    /// The camera-capture recorder, when Settings has it on: a small mirror so
+    /// the phone can be aimed (lap to head in frame). Compiled out of Release.
+    @EnvironmentObject private var coordinator: SessionCoordinator
+    #endif
+
     // ~6 breaths/min: 5 s inhale, 5 s exhale.
     private let breathPhase = Timer.publish(every: 5, on: .main, in: .common).autoconnect()
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -45,6 +51,20 @@ struct SessionActiveView: View {
                     MetaChip(text: planChip)
                         .padding(.top, 6)
                 }
+                #if DEBUG
+                if let rec = coordinator.cameraRecorder {
+                    VStack(spacing: 4) {
+                        CameraPreviewView(session: rec.captureSession)
+                            .frame(width: 132, height: 176)
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(rec.roiFixed ? AppColor.calmAccent : AppColor.textSecondary, lineWidth: 1))
+                        Text("\(rec.statusLine) · \(rec.frameCount) frames\(rec.roiFixed ? " · ROI fixed" : "")")
+                            .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                    }
+                    .padding(.top, 8)
+                }
+                #endif
 
                 Spacer()
 

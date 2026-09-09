@@ -68,6 +68,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// receiving banner so the handoff never looks frozen.
     @Published var receivingFromWatch = false
 
+    #if DEBUG
+    /// Camera signals recorded alongside this Watch session (Settings >
+    /// "Camera capture (debug)"). Started on the Watch's started-ack so t=0 is
+    /// the session's real start; stopped, and written with the wrist's own
+    /// result beside it, when the payload lands.
+    @Published private(set) var cameraRecorder: CameraSignalRecorder?
+    #endif
+
     private let container: ModelContainer
     private let healthStore = HKHealthStore()
     private let log = Logger(subsystem: "com.lockout.meditate808", category: "SessionCoordinator")
@@ -268,6 +276,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
         if sessionID == currentAttemptID { startWatchdog?.cancel() }
         guard let current = active, current.id == sessionID else { return }
         startAcked = true
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: CameraSignalRecorder.debugToggleKey), cameraRecorder == nil {
+            let rec = CameraSignalRecorder(sessionID: sessionID, sessionStartedAt: startedAt)
+            rec.start()
+            cameraRecorder = rec
+        }
+        #endif
         active = ActiveSession(id: current.id,
                                startedAt: startedAt,
                                plannedDurationSec: current.plannedDurationSec,
@@ -313,6 +328,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
             return
         }
         stopAudio(reason: "start failure: \(failure.rawValue)")
+        #if DEBUG
+        cameraRecorder?.stop(wrist: nil); cameraRecorder = nil
+        #endif
         active = nil
         currentAttemptID = nil
         startFailure = failure
@@ -344,6 +362,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // still gets persisted below (it's a real finished session), but it must
         // not stop the new session's audio or tear down its screen.
         let isCurrent = currentAttemptID == nil || payload.sessionID == currentAttemptID
+        #if DEBUG
+        if let rec = cameraRecorder, rec.sessionID == payload.sessionID {
+            rec.stop(wrist: payload)
+            cameraRecorder = nil
+        }
+        #endif
 
         if isCurrent {
             receivingFromWatch = false

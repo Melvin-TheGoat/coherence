@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Score a camera tracked series against a digitized wrist series.
 
-    tools/camera_compare.py wrist.csv camera_tracked.csv SESSION_SEC [--minutes]
+    tools/camera_compare.py wrist.csv|<id>_wrist.json camera_tracked.csv SESSION_SEC [--minutes]
 
 Finds the video-to-session offset (0-180 s) that minimises median |error| over
 windows both instruments read, then reports median error and the fraction
@@ -17,8 +17,19 @@ def load(path, tkey, vkey, ckey=None):
         out.append((t, v, float(r[ckey]) if ckey else 1.0))
     return out
 
+def load_wrist(path):
+    """A digitized CSV (t_sec,breath,stillness) or the app's <id>_wrist.json
+    (a SessionPayload: result.breathingRateTimeseries on a windowSec/hopSec
+    grid). Either way: (t_sec, breath, 1.0) at window centres, zeros dropped."""
+    if path.endswith('.json'):
+        import json
+        j = json.load(open(path)); r = j['result']
+        win, hop = r['windowSec'], r['hopSec']
+        return [(win / 2 + i * hop, v, 1.0) for i, v in enumerate(r['breathingRateTimeseries']) if v > 0]
+    return load(path, 't_sec', 'breath')
+
 def compare(wrist_csv, cam_csv, sess, minutes=False):
-    w = load(wrist_csv, 't_sec', 'breath'); c = load(cam_csv, 't_video_sec', 'rate', 'clarity')
+    w = load_wrist(wrist_csv); c = load(cam_csv, 't_video_sec', 'rate', 'clarity')
     wd = {int(round(t / 5)) * 5: v for t, v, _ in w}
     best = None
     for off in range(0, 181, 5):

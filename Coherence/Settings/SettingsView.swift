@@ -144,6 +144,7 @@ private struct SettingsForm: View {
                 #if DEBUG
                 freeTierDebugSection
                 cloudKitDebugSection
+                cameraCaptureDebugSection
                 #endif
 
                 accountFooter
@@ -160,6 +161,28 @@ private struct SettingsForm: View {
     }
 
     #if DEBUG
+    // MARK: Camera capture (developer only, compiled out of Release)
+
+    @AppStorage(CameraSignalRecorder.debugToggleKey) private var cameraCapture = false
+
+    /// Records the camera-vision signals beside a Watch session, so the sit
+    /// becomes a labelled pair for the camera work. Prop the phone facing you,
+    /// lap to head in frame, and keep the app open for the whole session.
+    private var cameraCaptureDebugSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader(title: "Camera capture (debug)")
+            settingsCard {
+                row(icon: "camera", title: "Record camera with sessions") {
+                    Toggle("", isOn: $cameraCapture).labelsHidden().tint(AppColor.calmAccent)
+                }
+                divider
+                Text("Front camera, 10 fps, no video stored. Prop the phone facing you with your lap and head in frame; the live screen shows a preview to aim by. Files land in Documents/CameraCaptures beside the wrist result.")
+                    .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                    .padding(.vertical, 6)
+            }
+        }
+    }
+
     // MARK: CloudKit schema (developer only, compiled out of Release)
 
     /// Creates every field of every synced model so the Development schema is
