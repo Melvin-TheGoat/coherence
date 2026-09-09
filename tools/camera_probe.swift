@@ -344,7 +344,7 @@ func highpass(_ x: [Double], samplesPerSec: Double, seconds: Double = 15) -> [Do
 /// clarity is zeroed so it can never win.
 func analyze(signal raw: [Double], times: [Double],
              windowSec: Double = 30, hopSec: Double = 5,
-             loRate: Double = 3.5, hiRate: Double = 20.0) -> [WindowRead] {
+             loRate: Double = 3.5, hiRate: Double = 26.0) -> [WindowRead] {
     guard times.count > 4 else { return [] }
     let duration = times.last! - times.first!
     let dt = duration / Double(times.count - 1)
@@ -397,7 +397,9 @@ func analyze(signal raw: [Double], times: [Double],
             let left = k == 0 ? -1.0 : scanPow[k - 1]
             let right = k == scanRates.count - 1 ? -1.0 : scanPow[k + 1]
             guard p > left && p >= right else { continue }
-            let edge = scanRates[k] <= loRate + 0.15
+            // Either edge of the scan is leakage, not a read: the low one is
+            // drift, the high one is whatever sits above the band.
+            let edge = scanRates[k] <= loRate + 0.15 || scanRates[k] >= hiRate - 0.15
             maxima.append((scanRates[k], edge ? 0 : (total > 0 ? p / total : 0)))
         }
         maxima.sort { $0.clarity > $1.clarity }
@@ -420,7 +422,7 @@ func analyze(signal raw: [Double], times: [Double],
 // the camera's channels, so the path may switch from dy to luma to dx for
 // free: they are three views of the same chest, not three hypotheses.
 
-let trackJumpCost = 0.45   // score paid per breath/min of jump between windows
+var trackJumpCost = 0.45   // score paid per breath/min of jump between windows (--jump)
 let trackPeaks = 3         // candidates kept per channel per window
 let trackFloor = 0.10      // clarity below which a peak gets no state
 let candidateMerge = 0.35  // breaths/min; closer than this is one peak twice
@@ -479,7 +481,7 @@ struct ChannelSet {
 /// summary and (optionally) the full table. Returns the winner rates for
 /// windows that cleared the bar, so sets can be compared.
 @discardableResult
-func report(_ set: ChannelSet, times: [Double], table: Bool) -> (clear: Int, total: Int, median: Double?) {
+func report(_ set: ChannelSet, times: [Double], table: Bool) -> (clear: Int, total: Int, median: Double?, series: [(t: Double, rate: Double, clarity: Double)]) {
     var perChannel: [String: [WindowRead]] = [:]
     for (name, sig) in set.channels { perChannel[name] = analyze(signal: sig, times: times) }
     let count = perChannel.values.map(\.count).min() ?? 0
@@ -533,15 +535,16 @@ func report(_ set: ChannelSet, times: [Double], table: Bool) -> (clear: Int, tot
                      set.name as NSString, trackedRates.count, count, ts[ts.count / 2], meanJump))
     }
 
+    let series = (0..<count).map { (t: perChannel[names[0]]![$0].t, rate: tracked.rates[$0], clarity: tracked.clarity[$0]) }
     if winnerRates.isEmpty {
         print("== [\(set.name)] no window reached clarity 0.30 (\(count) windows)")
-        return (0, count, nil)
+        return (0, count, nil, series)
     }
     let sorted = winnerRates.sorted()
     let median = sorted[sorted.count / 2]
     print(String(format: "== [%@] %d/%d windows clear (clarity ≥ 0.30), median winner rate %.1f/min",
                  set.name as NSString, winnerRates.count, count, median))
-    return (winnerRates.count, count, median)
+    return (winnerRates.count, count, median, series)
 }
 
 func printStillness(_ set: ChannelSet, times: [Double]) {
@@ -584,6 +587,7 @@ var dumpPath: String?
 var useROI = true
 var table = false
 var gridMax = 240
+var trackedOut: String?
 var i = 2
 while i < args.count {
     switch args[i] {
@@ -592,6 +596,8 @@ while i < args.count {
     case "--no-roi": useROI = false; i += 1
     case "--table": table = true; i += 1
     case "--grid" where i + 1 < args.count: gridMax = Int(args[i + 1]) ?? 240; i += 2
+    case "--dump-tracked" where i + 1 < args.count: trackedOut = args[i + 1]; i += 2
+    case "--jump" where i + 1 < args.count: trackJumpCost = Double(args[i + 1]) ?? 0.45; i += 2
     default: i += 1
     }
 }
@@ -624,6 +630,22 @@ printStillness(whole, times: times)
 let w = report(whole, times: times, table: table)
 
 if hasROI {
+    // All six views of the same chest in one trellis. Whole-frame and ROI
+    // disagree on harmonics (Aziz's paced opening read 12 whole-frame and ~5
+    // in the ROI), and continuity across a richer candidate pool is the
+    // cheapest arbiter we have.
+    let both = ChannelSet(name: "all six",
+                          channels: [("dy", samples.map(\.dy)), ("dx", samples.map(\.dx)), ("luma", samples.map(\.luma)),
+                                     ("rdy", samples.map(\.rdy)), ("rdx", samples.map(\.rdx)), ("rluma", samples.map(\.rluma))],
+                          motion: samples.map(\.rmotion))
+    let six = report(both, times: times, table: table)
+    if let trackedOut {
+        var csv = "t_video_sec,rate,clarity\n"
+        for p in six.series { csv += String(format: "%.1f,%.2f,%.3f\n", p.t, p.rate, p.clarity) }
+        try? csv.write(toFile: trackedOut, atomically: true, encoding: .utf8)
+        print("tracked → \(trackedOut)")
+    }
+
     let roiSet = ChannelSet(name: "torso ROI",
                             channels: [("dy", samples.map(\.rdy)), ("dx", samples.map(\.rdx)), ("luma", samples.map(\.rluma))],
                             motion: samples.map(\.rmotion))
