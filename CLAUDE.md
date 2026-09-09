@@ -649,6 +649,72 @@ UI must coach it, and the 2-signal degrade path must stay.
   a propped phone camera, and the full findings live in that branch's CLAUDE.md
   section. Ground-truth videos stay in `~/Desktop/captures/video/` (never
   commit — public repo). Not to be worked on while launch is in flight.
+- **CAMERA VISION, ROUND 2 (2026-09-09, branch `camera-vision`, rebased onto
+  mvp so it carries every launch fix).** Tools: `tools/camera_probe.swift`
+  (Vision torso ROI, `--grid`, six-channel continuity tracker, `--jump`,
+  `--dump-tracked`), `tools/card_digitize.swift` (recovers the wrist's
+  breathing + stillness curves as numbers from a share-card image: the card is
+  deterministic, 34 pt rect, 8 % inset, 274 pt wide, breath on 0–20, and the
+  printed mean pins the vertical offset), `tools/camera_compare.py` (aligns
+  camera video time to session time and scores agreement). Ground truth is
+  still the two Aug 24 exports in `~/Desktop/captures/video/` (never commit).
+  - **Headline: the camera and the wrist agree on steady breathing.** Aziz's
+    28-minute sit: both read ~19/min for nine straight minutes (camera 18.2–21.1,
+    wrist 18.1–20.4, session minutes 10–18), and both read the slow open and
+    close at 5–8. His tile said "12.5" only because that is a mean over slow
+    and fast phases. Median |error| over 260 compared windows 1.68/min, 45 %
+    within ±1.5. Melvin's 10-minute sit: 1.29/min over 73 windows, 56 % within
+    ±1.5, on the seven minutes the wrist read clearly.
+  - **The ROI is what made that possible.** Whole-frame read Aziz's plateau as
+    ~11–12 (a subharmonic) and his paced 6/min opening as ~12 (the second
+    harmonic of deep breathing, the same physics the wrist path documented).
+    Pooling all six channels (whole-frame dy/dx/luma + ROI dy/dx/luma) into
+    ONE trellis fixed both: the path switches channel for free, and continuity
+    picks the fundamental. ROI = Vision `VNDetectHumanRectanglesRequest`
+    (upperBodyOnly) every 5 s in a sparse first pass, MEDIAN box over the
+    video, padded 12 %, fixed for the whole extraction; a moving box would
+    inject its own jitter into the sub-pixel shift signal. Box found 125/141
+    probes at 2 m/4K (box 18 % × 17 % of frame), 347/347 at 0.5 m/1080p.
+  - **Tracker constants transfer unchanged.** Jump cost swept 0.45 → 0.03:
+    0.45 is best or tied, and Aziz's error climbs monotonically below it
+    (1.68 → 2.71). Same flat-then-cliff as the wrist. Peaks 3, floor 0.10,
+    merge 0.35, all as the wrist. Scan band 3.5–26/min with BOTH edges zeroed
+    (a peak at the ceiling is leakage exactly like one at the floor; the ROI
+    was reporting 19.9 = the old 20 ceiling before this).
+  - **Grid resolution is NOT a lever:** 720-px grid vs 240 moved Melvin's ROI
+    median 4.9 → 5.1. Decode is ~40 s per 10 min once the file is cached.
+  - **Where they disagree, and it is unresolved:** short high-rate episodes.
+    Melvin's wrist read 17 / 14.5 / 19.7 in its last three minutes; whole-frame
+    saw a rock-steady ~6 at clarity up to 1.06, the ROI saw ~15 at clarity
+    0.3–0.64 only at the very end, and the tracker (correctly, on its rule)
+    stayed at 6. Aziz's wrist held ~19 until minute 21.5; the camera's 19
+    vanished at minute 19 and a suspiciously clean 4.5@1.00 took over, which
+    reads like postural sway, the wrist's old enemy, with no accel gate here
+    to catch it. Three instruments, three answers, two sessions. **Do not tune
+    toward either instrument until a counted fast-breathing segment exists.**
+  - **Camera stillness at 2 m is coarse.** The settle spike and getting-up
+    spike are unmistakable (×18–64 the floor), and the ROI showed Melvin's
+    settle actually took 2.5 minutes where whole-frame said 1. But his three
+    wrist fidgets (0.41–0.59) read ×1.1–1.5 against a settled 90th percentile
+    of ×1.31: not resolvable. Hands were out of frame (chest-up), and wrist
+    fidgets are hand movements. Spearman 0.50 on his session, 0.04 on Aziz's
+    (nothing to correlate, flat 0.98–1.06). Camera stillness must be
+    normalised per session (floor = 10th percentile of 5 s means; absolute
+    motion is 0.21 at 2 m/4K and 0.50 at 0.5 m/1080p for the same stillness).
+  - **Video time ≠ session time.** Recording starts before Begin: 20 s and
+    25 s offsets on these two, found by minimising error. The in-app path
+    will not have this problem; the offline lab must always solve for it.
+  - **Digitizer caveat:** the Aug-16 card dropped unreadable breathing
+    windows and drew the rest evenly by INDEX, so the wrist curve's time axis
+    is linear only where every window read. Values are exact; times can
+    slide where gaps existed. Anchor error ≈ ±0.7/min (the wrist floor is 3.5
+    and digitized lows reach 2.8).
+  - **Next, decided:** an in-app capture path (DEBUG first) that records a
+    camera session AND a Watch session at once, writing the per-frame camera
+    signals beside the wrist's own per-window results, so every test sit is a
+    labelled pair with no screenshots involved. That is the ground-truth
+    collector this work is starved for, and it is the capture code that ships
+    anyway.
 - **WRIST BREATHING SHIPPED — posture-free, VERIFIED on-device across 8 live
   sessions (2026-08-07, field-calibrated in 5 rounds like the camera was).**
   Every non-belly session gets a breathing attempt automatically: no mode, no
