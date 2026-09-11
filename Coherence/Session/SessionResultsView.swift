@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Charts
+import StoreKit
 
 /// Post-session evidence — the payoff, told as an argument (design review
 /// 2026-08): verdict → numbers → proof → witness. The verdict is SPOKEN
@@ -30,6 +31,10 @@ struct SessionResultsView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.dismiss) private var dismiss
     @Environment(\.resultsTourStage) private var tourStage
+    /// Apple's rating sheet. Asked after a completed session, never during the
+    /// onboarding tour, and blind to how the session went (see `ReviewPrompt`).
+    @Environment(\.requestReview) private var requestReview
+    @Query private var preferences: [Preferences]
     @State private var session: Session?
     @State private var stats: MeditationStats?
     @State private var rating: Double = 5
@@ -166,6 +171,7 @@ struct SessionResultsView: View {
             .onAppear {
                 load()
                 Analytics.track(stats == nil ? .resultMissing : .resultViewed)
+                maybeAskForRating()
             }
             // The tour brings each element to the reader, top-anchored for the
             // score so the whole hero shows, centred for the graphs.
@@ -853,6 +859,28 @@ struct SessionResultsView: View {
     }
 
     // MARK: Data
+
+    /// Asks for an App Store rating on the third completed session or later,
+    /// after a 90-day cooldown, and only outside onboarding. Delayed so the
+    /// score ring lands first; the person is looking at their own result when
+    /// the sheet appears. Unconditional on the result by design (CLAUDE.md,
+    /// App Review pass 2026-08-11): gating on happy sessions is ratings
+    /// manipulation and a rejection reason.
+    private func maybeAskForRating() {
+        guard tourStage == nil, stats != nil else { return }
+        let onboarded = preferences.contains { $0.onboardingComplete }
+        let count = (try? context.fetchCount(FetchDescriptor<Session>())) ?? 0
+        let last = UserDefaults.standard.object(forKey: ReviewPrompt.lastAskedKey) as? Date
+        guard ReviewPrompt.shouldAsk(sessionCount: count, onboardingComplete: onboarded,
+                                     lastAskedAt: last) else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            UserDefaults.standard.set(Date(), forKey: ReviewPrompt.lastAskedKey)
+            Analytics.track(.ratingPrompted)
+            requestReview()
+        }
+    }
 
     private func load() {
         let sid = sessionID

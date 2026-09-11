@@ -37,6 +37,7 @@ enum Analytics {
         case sessionStartFailed(reason: String)
         case resultViewed
         case resultMissing                        // a session ended with no stats: the failure metric
+        case ratingPrompted                       // Apple's rating sheet was requested (it decides whether to show)
 
         // Monetization
         case paywallViewed(placement: String)
@@ -78,6 +79,7 @@ enum Analytics {
             case .sessionStartFailed: "session_start_failed"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
+            case .ratingPrompted: "rating_prompted"
             case .paywallViewed: "paywall_viewed"
             case .paywallDismissed: "paywall_dismissed"
             case .trialStarted: "trial_started"
