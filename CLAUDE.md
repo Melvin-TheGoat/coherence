@@ -1330,6 +1330,65 @@ UI must coach it, and the 2-signal degrade path must stay.
     Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
     Meta app ID still needed for zero-tap Instagram Stories.
 
+## APPROVED AND LIVE (2026-09-11): the launch marketing plan
+
+App Review approved 1.0 on 2026-09-10 after the 2.1 information request;
+released for distribution the same day, live within 24 hours. The full plan
+is `marketing/LAUNCH_PLAN.md`; these are the decisions, so nobody re-derives
+them.
+
+- **Organic is the engine, paid is for learning.** At our prices ($7.99 /
+  $29.99, free tier) and benchmark freemium conversion (2–4 % install → paid),
+  revenue per install is roughly $0.60–1.20 against a $4–15 CPI for meditation
+  keywords. Paid installs do not pay back in year one. So: two weeks of one
+  reel + one carousel per day (tri-posted to IG, TikTok, Shorts) to find
+  formats that hold, THEN UGC creators on the winners, and Meta only behind a
+  gate. Replace the benchmark numbers with our own by week 3 (App Store
+  Connect Subscriptions + PostHog funnel).
+- **Budget $1,500–2,500 for 60 days, hard cap $3,000** until a channel shows
+  two consecutive weeks with cost per trial start under $10. Scale a winner
+  20–30 % per week; kill anything two weeks above twice its target.
+- **Apple Search Ads is the one always-on paid line** ($15–25/day, Advanced,
+  exact match on "meditation apple watch" and its siblings, no competitor
+  names until week 3). Highest intent that exists, reports installs with no
+  SDK, lowest CPI of any iOS channel.
+- **A boost is a Meta ad** (same auction, same billing) that cannot use the
+  app-install objective and does not lift organic reach afterwards. Use it
+  ONLY to test whether a reel holds a cold audience ($20–30, objective
+  "profile visits"), total under $150. Never expect installs from it.
+- **Meta Advantage+ App campaigns are gated:** they need the Meta SDK or an
+  MMP in the app (a 1.0.1 build, a review, new App Privacy labels), ~50
+  installs per ad set per week to leave learning, and 8–10 creatives at a
+  time. Run one 14-day test at $40/day only once a format has proven organic
+  retention and install → trial ≥ 5 % is measured.
+- **App Store Connect campaign links** (App Analytics → Campaigns,
+  `?pt=…&ct=<name>&mt=8`) are our attribution: one per surface (ig-bio,
+  tiktok-bio, website, reddit, press, yt-shorts). This is how we learn which
+  platform sends installs before any SDK exists.
+- **Launch-week moves:** r/AppleWatch post written as a person (not
+  r/Meditation, bans promotion); tip lines at 9to5Mac, MacRumors,
+  AppleInsider, iMore, Cult of Mac, pitched on the Watch angle, never "first";
+  featuring nomination in App Store Connect aimed three weeks out; promo
+  codes (100 per version) gifted to Watch YouTubers with no ask; Product Hunt
+  one Tuesday–Thursday in week 3–4 once 10+ ratings exist, worth one day, not
+  a strategy.
+- **Rating prompt SHIPPED** (`ReviewPrompt`, `Shared/Session/`): fires from
+  the results screen on the third completed session or later, never inside
+  onboarding (double-gated on `onboardingComplete` and the tour environment),
+  90-day cooldown, and takes no score or sentiment by construction; the
+  signature is the guarantee and `ReviewPromptTests` locks it.
+- **No-Watch churn is answered by the camera-vision session, not a subtitle
+  warning** (Melvin, 2026-09-11). If campaign links show installs churning at
+  the Watch gate, that is the signal to ship branch `camera-vision`.
+- **Website at launch:** hero and banner point at the App Store
+  (`https://apps.apple.com/app/id6806785308`, swap in the `website` campaign
+  link once created); the waitlist form is repurposed for the no-Watch
+  audience ("we'll tell you when a session works without a Watch"). Deploy is
+  still manual: drag `website/` into Cloudflare Pages.
+- Still live on the site and worth a look: the hero says "the first app
+  that scores your meditation from your body", the very claim this file
+  records leaving out three times. Aziz's call.
+
 ## TestFlight (first build 2026-08-11; build 202608120358 — all eleven
 ## compliance passes — APPROVED for external testing 2026-08-13)
 
