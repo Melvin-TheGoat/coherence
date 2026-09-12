@@ -1,7 +1,6 @@
 #if DEBUG
 import Foundation
 import CloudKit
-import Security
 
 /// Answers the two questions that decide whether sync can work at all, and that
 /// the app was previously unable to answer on a device: which container the
@@ -47,10 +46,18 @@ struct CloudStatus: Equatable {
            !value.isEmpty {
             return value
         }
-        guard let task = SecTaskCreateFromSelf(nil),
-              let value = SecTaskCopyValueForEntitlement(
-                task, "com.apple.developer.icloud-container-identifiers" as CFString, nil),
-              let ids = value as? [String],
+        // Development builds carry their profile, and this probe is DEBUG-only.
+        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
+              let data = try? Data(contentsOf: url),
+              let text = String(data: data, encoding: .isoLatin1),
+              let start = text.range(of: "<plist"),
+              let end = text.range(of: "</plist>")
+        else { return nil }
+        let plistText = String(text[start.lowerBound..<end.upperBound])
+        guard let plistData = plistText.data(using: .utf8),
+              let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+              let ents = plist["Entitlements"] as? [String: Any],
+              let ids = ents["com.apple.developer.icloud-container-identifiers"] as? [String],
               let first = ids.first, !first.isEmpty
         else { return nil }
         return first
