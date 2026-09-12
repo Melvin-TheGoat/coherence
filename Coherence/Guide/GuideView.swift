@@ -12,6 +12,9 @@ import SwiftData
 /// "Method" was the second thing and it fought the promise that you can meditate
 /// however you like. See `METHODS.md`.
 struct GuideView: View {
+    /// True when the guide is the Guide tab rather than a full-screen sheet:
+    /// no Done button, nothing to dismiss.
+    var embedded: Bool = false
     /// Leave the guide and open the Begin sheet. Owned by the presenter, because
     /// swapping one sheet for another has to happen after this one is down.
     var onBegin: () -> Void = {}
@@ -49,8 +52,10 @@ struct GuideView: View {
             .screenBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
+                if !embedded {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
+                    }
                 }
             }
         }

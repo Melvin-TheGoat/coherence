@@ -2,10 +2,15 @@ import SwiftUI
 import SwiftData
 import Charts
 
-/// Home — the hybrid "proof + practice" screen (design review, 2026-08).
-/// Top to bottom it answers the three questions in the order you ask them:
-/// am I keeping my promise (streak headline + nudge), is it working (the gold
-/// proof curve + evidence rows), what's next (Begin, pinned at the thumb).
+/// The app after onboarding: five tabs on a bottom bar (Melvin, 2026-09-12,
+/// "the layout most apps use, so people open it and instantly understand").
+/// Home is the streak, the proof curve and this month's calendar; Guide is
+/// the how-to; the raised gold plus starts a session; Search waits for
+/// friends; Profile is the person, their stats, awards and full log.
+///
+/// This view still owns every app-wide modal (the live session cover, a start
+/// failure, an award unlock, the setup sheet, results, settings), exactly as
+/// it did when it was only Home. Tabs are content; the modals are the app.
 struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @Environment(\.modelContext) private var context
@@ -13,6 +18,11 @@ struct ContentView: View {
     @Query private var users: [User]
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
+
+    @State private var tab: MainTab = .home
+    /// A day tapped on Home's calendar. Profile opens with its log filtered
+    /// to it, which is what the old month picker was for.
+    @State private var profileDay: Date?
 
     /// ONE sheet presenter for the whole screen. Stacking several
     /// `.sheet` modifiers on the same view silently breaks all but one of
@@ -31,38 +41,33 @@ struct ContentView: View {
     #endif
 
     private enum HomeSheet: Identifiable {
-        case setup, journey, settings, guide
+        case setup, settings
         case results(UUID)
 
         var id: String {
             switch self {
             case .setup: return "setup"
-            case .journey: return "journey"
             case .settings: return "settings"
-            case .guide: return "guide"
             case .results(let id): return "results-\(id)"
             }
         }
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                streakBlock
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
-                calendarCard
-                guideCard
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
-                proofSection
-                #if DEBUG
-                debugButtons
-                #endif
+        Group {
+            switch tab {
+            case .home:
+                homeTab
+            case .guide:
+                GuideView(embedded: true) { sheet = .setup }
+                    .onAppear { Analytics.track(.guideOpened) }
+            case .search:
+                SearchTab()
+            case .profile:
+                ProfileTab(selectedDay: $profileDay) { sheet = .settings }
             }
-            .padding(AppMetrics.screenPadding)
-            .padding(.bottom, 8)
         }
-        .safeAreaInset(edge: .bottom) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 8) {
                 // The Watch announced End; the payload is seconds behind. The
                 // live screen is already down — this is the handoff's face.
@@ -78,20 +83,9 @@ struct ContentView: View {
                     .background(AppColor.backgroundSecondary.opacity(0.92), in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                Button("Begin session") { sheet = .setup }
-                    .buttonStyle(PrimaryButtonStyle())
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
+                MainTabBar(selection: $tab) { sheet = .setup }
             }
             .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.top, 6)
-            .padding(.bottom, 4)
-            .background(
-                LinearGradient(colors: [AppColor.backgroundPrimary.opacity(0),
-                                        AppColor.backgroundPrimary],
-                               startPoint: .top, endPoint: .center)
-                .ignoresSafeArea()
-            )
         }
         .screenBackground()
         .fullScreenCover(item: Binding(
@@ -127,6 +121,14 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
+            if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
+                switch which {
+                case "guide": tab = .guide
+                case "search": tab = .search
+                case "profile": tab = .profile
+                default: tab = .home
+                }
+            }
         }
         #endif
         // A session is running on the Watch — take over the phone for every mode.
@@ -152,16 +154,34 @@ struct ContentView: View {
             switch which {
             case .setup:
                 SessionSetupView()
-            case .journey:
-                JourneyView()
             case .settings:
                 SettingsView()
-            case .guide:
-                GuideView { pendingSheet = .setup }
-                    .onAppear { Analytics.track(.guideOpened) }
             case .results(let id):
                 SessionResultsView(sessionID: id)
             }
+        }
+    }
+
+    // MARK: - Home
+
+    /// Top to bottom it answers the questions in the order you ask them: am I
+    /// keeping my promise (streak headline + nudge), is it working (the gold
+    /// proof curve), what has this month looked like, what did the last few
+    /// sessions say. Starting one is the plus on the bar.
+    private var homeTab: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+                streakBlock
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
+                calendarCard
+                proofSection
+                #if DEBUG
+                debugButtons
+                #endif
+            }
+            .padding(AppMetrics.screenPadding)
+            .padding(.bottom, 8)
         }
     }
 
@@ -195,31 +215,13 @@ struct ContentView: View {
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                LogoMark()
-                    .frame(width: 44, height: 44)
-                Spacer()
-                HStack(spacing: 18) {
-                    iconButton("clock.arrow.circlepath") { sheet = .journey }
-                    iconButton("gearshape") { sheet = .settings }
-                }
-            }
+            LogoMark()
+                .frame(width: 44, height: 44)
             Text(greeting)
                 .font(AppFont.title)
                 .italic()
                 .foregroundStyle(AppColor.textPrimary)
         }
-    }
-
-    private func iconButton(_ name: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: name)
-                .font(.system(size: 19, weight: .medium))
-                .foregroundStyle(AppColor.textSecondary)
-                // A 19pt glyph is well under the 44pt minimum target.
-                .frame(width: 44, height: 44)
-        }
-        .buttonStyle(CardButtonStyle())
     }
 
     // MARK: - Streak headline + proof curve
@@ -317,6 +319,9 @@ struct ContentView: View {
 
     // MARK: - Calendar
 
+    /// This month only. Tapping a dotted day opens Profile with the log
+    /// filtered to it; the month picker that used to live on Journey is gone
+    /// because this card took its job.
     private var calendarCard: some View {
         let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
         let today = Date()
@@ -328,13 +333,12 @@ struct ContentView: View {
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
             }
-            MonthCalendar(monthAnchor: today, practiced: practiced) { _ in
-                sheet = .journey
+            MonthCalendar(monthAnchor: today, practiced: practiced) { day in
+                profileDay = day
+                tab = .profile
             }
         }
         .card(padding: 14)
-        .contentShape(Rectangle())
-        .onTapGesture { sheet = .journey }
     }
 
     private func practicedThisMonth(_ practiced: Set<Date>) -> Int {
@@ -344,41 +348,13 @@ struct ContentView: View {
 
     // MARK: - The proof
 
-    /// The most common question anyone asks about meditating is what to
-    /// actually do, and until now the app had no answer. Above History because
-    /// the person who needs it has no history to look at.
-    private var guideCard: some View {
-        Button { sheet = .guide } label: {
-            HStack(spacing: 14) {
-                Image(systemName: "list.bullet.rectangle.portrait")
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(AppColor.calmAccent)
-                    .frame(width: 26)
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("How to meditate")
-                        .font(AppFont.headline)
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text("Ways to practice, easiest first")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-            .card()
-        }
-        .buttonStyle(CardButtonStyle())
-    }
-
     private var proofSection: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                SectionHeader(title: "History")
+                SectionHeader(title: "Recent")
                 Spacer()
                 if !sessions.isEmpty {
-                    Button { sheet = .journey } label: {
+                    Button { profileDay = nil; tab = .profile } label: {
                         Text("See all")
                             .font(AppFont.caption.weight(.semibold))
                             .foregroundStyle(AppColor.accentGoldText)

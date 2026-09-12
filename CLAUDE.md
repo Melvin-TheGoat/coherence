@@ -1389,6 +1389,45 @@ them.
   that scores your meditation from your body", the very claim this file
   records leaving out three times. Aziz's call.
 
+## FIVE-TAB LAYOUT + USERNAME (2026-09-12, Melvin: "familiar, Strava vibes")
+
+The root after onboarding is a bottom bar: **Home · Guide · [gold plus] ·
+Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
+`mockups/tabbar.html`, reviewed before any Swift, per the standing rule.
+
+- **The plus is the only way to start a session** and the only gold object
+  on the bar; selected tabs read in the text colour. The old Begin button
+  and Home's two top-right icons are gone (their jobs became tabs).
+- **Home** keeps the greeting (Melvin's call), the streak, the sparkline,
+  THIS month's calendar and the three most recent sessions. Tapping a dotted
+  day switches to Profile with the log filtered to that day.
+- **Guide** is `GuideView(embedded: true)`: no Done button; its Begin opens
+  the setup sheet directly.
+- **Search** is an honest placeholder ("Friends are coming", no date).
+- **Profile** is what Journey was, minus the month picker (Home's calendar
+  took the job): initials avatar, display name, `@username`, "Practicing
+  since", the four stats, the awards shelf, the full log, settings in the
+  gear. `JourneyView` is now `ProfileTab` (same file). Do not bring the
+  month picker back; the calendar must not appear twice.
+- **Every app-wide modal still lives on `ContentView`** (live session cover,
+  start failure, award unlock, setup, results, settings) through the single
+  `HomeSheet` presenter. Tabs are content; the modals are the app.
+- **Tour anchors moved with their targets:** `.begin` is the plus, `.guide`
+  is the Guide tab item, `.streak` stays on Home.
+- **Username.** `User.username: String?` (optional, CloudKit-safe, lightweight
+  migration). Asked on the onboarding "Last thing" screen beside the name,
+  OPTIONAL like everything on that screen (5.1.1); editable in Settings.
+  `Username.normalize` (Shared) lowercases, strips a leading @, keeps
+  `[a-z0-9_.]`, clips to 20, and returns nil for empty so "" is never stored.
+  **It is cosmetic until a backend enforces uniqueness**; do not present it as
+  reserved. `UsernameTests` locks the normaliser.
+- **Settings gained a Membership section:** Restore purchases (the gap the
+  App Review audit flagged: reviewers look for Restore in Settings) and
+  Redeem a code (`AppStore.presentOfferCodeRedeemSheet`, for the offer codes
+  in `marketing/LAUNCH_PLAN.md`). The redeemed transaction lands on
+  `Transaction.updates`, which `Store` already listens to.
+- `PREVIEW_TAB=guide|search|profile` (DEBUG) opens the app on a tab.
+
 ## TestFlight (first build 2026-08-11; build 202608120358 — all eleven
 ## compliance passes — APPROVED for external testing 2026-08-13)
 

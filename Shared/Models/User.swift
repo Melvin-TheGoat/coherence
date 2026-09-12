@@ -13,6 +13,9 @@ final class User {
     var appleUserID: String = ""
     var email: String?
     var displayName: String?
+    /// A handle for the friends feature to come. Optional and cosmetic until
+    /// a backend can make it unique; normalised by `Username`.
+    var username: String?
     var marketingOptIn: Bool = false
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
@@ -23,6 +26,7 @@ final class User {
         appleUserID: String = "",
         email: String? = nil,
         displayName: String? = nil,
+        username: String? = nil,
         marketingOptIn: Bool = false,
         createdAt: Date = Date(),
         updatedAt: Date = Date(),
@@ -32,6 +36,7 @@ final class User {
         self.appleUserID = appleUserID
         self.email = email
         self.displayName = displayName
+        self.username = username
         self.marketingOptIn = marketingOptIn
         self.createdAt = createdAt
         self.updatedAt = updatedAt

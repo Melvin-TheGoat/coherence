@@ -282,6 +282,7 @@ struct OnboardingView: View {
 
         case .you:
             NameScreen(firstName: $answers.firstName,
+                       username: $answers.username,
                        ageBracket: $answers.ageBracket,
                        progress: interviewProgress) { go(nextAfter(.you)) }
 
@@ -493,6 +494,9 @@ struct OnboardingView: View {
         let user = SessionStore.currentUser(in: context)
         if let typedName, (user.displayName ?? "").isEmpty {
             user.displayName = typedName
+        }
+        if let handle = Username.normalize(answers.username), (user.username ?? "").isEmpty {
+            user.username = handle
         }
         // The no-Watch waitlist. Until now the typed email was bound into a
         // @State and then dropped on the floor, which made the screen's
