@@ -6,6 +6,14 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## Decided, not started
 
+- **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
+  Pro 3 and Powerbeats Pro 2 carry an optical heart-rate sensor and iOS 26
+  exposes it to apps through HealthKit during a workout. Paired with head
+  motion from `CMHeadphoneMotionManager` (stillness, maybe breathing), that
+  is a second no-Watch path beside camera vision. Investigate: what a
+  phone-only `HKWorkoutSession` receives from the buds, and whether head
+  motion carries a breath. Owner: unassigned.
+
 - **Otto, the data interpreter** (Melvin, 2026-09-12). A chat you can ask
   about your own sessions: heart rate, stillness, breathing, the score, and
   meditation knowledge generally. Speaks in "the data suggests", never a
@@ -43,6 +51,9 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## Done (2026-09-12)
 
+- "Give us feedback" in Settings: opens Mail to support@meditate808.com with
+  the version and build already in the body.
+- "Heart Rate" in title case on the results graph and its mirrors.
 - 808 Beta crash at launch: the DEBUG CloudKit probe guessed a container it
   was not entitled to; it now reads the embedded profile. Beta 202609121726.
 - Average heart rate on the heart panel ("79 → 54 bpm · avg 62").
