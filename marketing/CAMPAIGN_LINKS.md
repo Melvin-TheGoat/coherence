@@ -21,3 +21,17 @@ days means nothing.
 
 Plain link, for anywhere attribution does not matter:
 https://apps.apple.com/app/id6806785308
+
+## Branded short links (website/_redirects, Cloudflare Pages)
+
+For bios and captions, where a raw store URL looks like tracking. Each
+302-redirects to the matching campaign link above, so attribution survives.
+
+| Short link | Redirects to campaign |
+|---|---|
+| https://meditate808.com/ig | `ig-bio` |
+| https://meditate808.com/tiktok | `tiktok-bio` |
+| https://meditate808.com/yt | `yt-shorts` |
+| https://meditate808.com/reddit | `reddit` |
+| https://meditate808.com/press | `press` |
+| https://meditate808.com/app | `website` |
