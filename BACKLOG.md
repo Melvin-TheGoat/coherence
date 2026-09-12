@@ -25,8 +25,6 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 - **AI coach voice library** (Melvin's wedge). ON HOLD: ElevenLabs was tried
   and "is not there yet". When it is, the first version is a pre-generated
   library by length and voice, offline, no runtime generation. Not before.
-- **Average heart rate on the results screen** (Melvin, 2026-09-12). Beside
-  the settle reading on the heart panel. `meanHR` is already stored.
 - **Friends** (Search tab placeholder). Needs a backend; the username is
   cosmetic until then and must not be presented as reserved.
 - **Camera-vision sessions** (branch `camera-vision`): the answer to no-Watch
@@ -42,10 +40,12 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   submission are Melvin's.
 - **1.0.2** (five tabs, username, Restore + Redeem, first-feedback fixes,
   mindful minutes): on `mvp`, on the beta, waiting on Melvin's test.
-- **808 Beta opens and immediately closes** (Melvin, 2026-09-12): under
-  investigation, crash logs pulled.
 
 ## Done (2026-09-12)
+
+- 808 Beta crash at launch: the DEBUG CloudKit probe guessed a container it
+  was not entitled to; it now reads the embedded profile. Beta 202609121726.
+- Average heart rate on the heart panel ("79 → 54 bpm · avg 62").
 
 - Reflections save themselves; gold Save button.
 - "How is this scored?" link under the ring.
