@@ -56,8 +56,17 @@ struct Entitlements {
 
     /// The rule, as a pure function, so it can be tested without a live
     /// StoreKit session. `Store.entitlements` is this and nothing else.
+    ///
+    /// Paid means: StoreKit's on-device record says so, OR the store has not
+    /// finished its first load yet. `.loading` is unlocked only so a payer's
+    /// cached entitlement can resolve before any lock is drawn; it lasts one
+    /// product fetch. `.unavailable` is FREE. It used to unlock everyone, and
+    /// the day billing went live that became "airplane mode at launch = the
+    /// curves for nothing" (Melvin, 2026-09-12). A real payer never needed
+    /// it: `Transaction.currentEntitlements` is cached on device and is read
+    /// before products are fetched.
     static func resolve(state: Store.State, entitled: Bool) -> Entitlements {
-        Entitlements(paid: state != .ready || entitled)
+        Entitlements(paid: entitled || state == .loading)
     }
 }
 
@@ -65,27 +74,23 @@ extension Store {
 
     /// Free is the floor, not a failure state.
     ///
-    /// **Read the condition carefully before changing it.** While the store
-    /// cannot sell (`.loading`, `.unavailable`) EVERYONE is treated as paid.
-    /// That is what keeps the whole pre-billing beta unlocked with no flag to
-    /// remember, and it means a network hiccup can never downgrade someone who
-    /// already paid. StoreKit caches entitlements on device, so a real payer
-    /// stays entitled offline; a user we simply cannot classify yet must never
-    /// be classified as free.
-    ///
-    /// Simplifying this to `entitled` alone would strip every beta tester of
-    /// their curves the moment products go live, before anyone has had the
-    /// chance to buy. This is the same reasoning the old `RootView.locked`
-    /// carried, and it survives the move.
+    /// Until 2026-09-12 this treated every state but `.ready` as paid, which
+    /// kept the pre-billing beta open with no flag to remember. With products
+    /// live that same clause was a hole: launch with no network and the store
+    /// reports `.unavailable`, and the curves unlock for anyone. The rule is
+    /// now `entitled || state == .loading`; see `Entitlements.resolve`. Payers
+    /// are safe offline because their entitlement is read from StoreKit's
+    /// on-device cache before the network fetch, and `load()` retries on
+    /// every return to the foreground so an offline launch can still buy.
     #if DEBUG
     /// **REVIEW BUILD SWITCH. Set back to `false` before committing.**
     ///
     /// True makes every DEBUG build run as a FREE user, so the locked screens
     /// can be looked at by tapping the app icon rather than by remembering a
     /// launch argument. It exists because the locked screens are otherwise
-    /// unreachable off the App Store: no products load on a development build,
-    /// so the store reports `.unavailable` and everyone is correctly treated
-    /// as paid.
+    /// unreachable off the App Store when products do not load (the store
+    /// reports `.unavailable`, which is now FREE, so this switch mostly
+    /// matters for forcing the free tier on a build where products DO load).
     ///
     /// DEBUG-only, so it can never reach TestFlight or the App Store. It can
     /// absolutely confuse the other developer, which is why it is one named

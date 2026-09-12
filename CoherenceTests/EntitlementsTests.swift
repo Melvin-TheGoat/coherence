@@ -5,18 +5,27 @@ import XCTest
 /// rather than trusted to review.
 final class EntitlementsTests: XCTestCase {
 
-    /// **The inversion that protects the beta and every offline payer.**
-    ///
-    /// Free is the floor, but a user we cannot CLASSIFY is not a free user.
-    /// While the store cannot sell, everyone is treated as paid. Simplifying
-    /// this to `entitled` alone would strip every beta tester of their curves
-    /// the moment products go live, before anyone had a chance to buy, and
-    /// would downgrade a paying user whose network dropped at the wrong moment.
-    func test_cannotSellMeansEverythingUnlocked() {
-        for state in [Store.State.loading, .unavailable] {
-            XCTAssertTrue(Entitlements.resolve(state: state, entitled: false).paid,
-                          "\(state) must not lock anyone out")
-            XCTAssertTrue(Entitlements.resolve(state: state, entitled: true).paid)
+    /// **Unavailable is free.** Until 2026-09-12 any state but `.ready`
+    /// unlocked everyone, which kept the pre-billing beta open; with products
+    /// live it meant airplane mode at launch handed out the curves. A payer
+    /// never needed it: their entitlement is read from StoreKit's on-device
+    /// cache before products are fetched.
+    func test_unavailableIsFreeForTheUnentitled() {
+        XCTAssertFalse(Entitlements.resolve(state: .unavailable, entitled: false).paid,
+                       "no network must not mean premium")
+    }
+
+    /// `.loading` is the one grace state: it lasts a single product fetch and
+    /// exists so a payer's cached entitlement resolves before any lock draws.
+    func test_loadingIsTheOnlyGraceState() {
+        XCTAssertTrue(Entitlements.resolve(state: .loading, entitled: false).paid)
+    }
+
+    /// A payer is paid in every state: online, offline, products or none.
+    func test_entitledIsPaidEverywhere() {
+        for state in [Store.State.loading, .ready, .unavailable] {
+            XCTAssertTrue(Entitlements.resolve(state: state, entitled: true).paid,
+                          "\(state) must never lock out a payer")
         }
     }
 

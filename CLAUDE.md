@@ -1691,12 +1691,17 @@ green, verified on the simulator. The short version:
   and asking for money before anyone has seen a single reading contradicts the
   one thing 808 sells, which is not being asked to take a claim on faith.
 - **`Entitlements` is the single gate** (`Coherence/Store/Entitlements.swift`).
-  Views ask it, never `store.entitled`. **The load-bearing line is
-  `paid: state != .ready || entitled`:** while the store CANNOT sell, everyone
-  is paid. Simplifying that to `entitled` alone strips every beta tester of
-  their curves the day products go live and downgrades a payer whose network
-  dropped. Same reasoning the old `RootView.locked` carried. Locked by
-  `EntitlementsTests`.
+  Views ask it, never `store.entitled`. **The load-bearing line is now
+  `paid: entitled || state == .loading`** (changed 2026-09-12, day one on
+  the App Store). Until then any state but `.ready` unlocked everyone, which
+  kept the pre-billing beta open, and with products live it was a hole:
+  launch in airplane mode, the store reports `.unavailable`, the curves
+  unlock for anyone. A payer never needed that clause, because
+  `Transaction.currentEntitlements` is cached on device; `load()` now reads
+  it BEFORE fetching products, `.loading` is the only grace state (one
+  product fetch long), `.unavailable` is free, and the app retries `load()`
+  on every return to the foreground so an offline launch can still buy.
+  Locked by `EntitlementsTests`.
 - **The real paywall is the first results screen**, not onboarding. Ten minutes
   in they have their own score and three locked panels about their own body,
   which is maximum desire and an honest sell because the claim is now proven.
