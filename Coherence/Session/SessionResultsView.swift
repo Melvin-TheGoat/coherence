@@ -517,7 +517,12 @@ struct SessionResultsView: View {
         guard let stats else { return nil }
         switch kind {
         case .heart:
-            return VerdictEngine.hrReading(start: stats.startHR, end: stats.endHR)
+            // "79 → 54 bpm · avg 62": the settle, then the session average
+            // (asked for 2026-09-12). meanHR is 0 when nothing was read.
+            let settle = VerdictEngine.hrReading(start: stats.startHR, end: stats.endHR)
+            let avg = stats.meanHR > 0 ? String(format: "avg %.0f", stats.meanHR) : nil
+            let parts = [settle, avg].compactMap { $0 }
+            return parts.isEmpty ? nil : parts.joined(separator: " · ")
         case .breath:
             // The session average. The doorway's claim lives on the Resonance
             // chip now, so "slowed to" no longer appears twice on one screen.

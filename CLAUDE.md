@@ -1428,6 +1428,23 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   `Transaction.updates`, which `Store` already listens to.
 - `PREVIEW_TAB=guide|search|profile` (DEBUG) opens the app on a tab.
 
+## BACKLOG.md IS THE LIST (2026-09-12)
+
+Melvin: "I am saying a lot and not finishing much." Every decision, request
+and open thread now lands in `BACKLOG.md` (decided / in flight / done), and a
+session that hears a new one adds it there first. Two that live there and
+are easy to lose: **Otto**, the on-device data-interpreter chat (Foundation
+Models, iOS 26, "the data suggests", never a medical claim); and the guided
+sessions in 10/15/20 minutes (Donny cuts now, the ElevenLabs voice library
+on hold because it "is not there yet").
+
+**Side-by-side beta crash, solved:** `CloudStatus.read()` (DEBUG launch
+probe) derived `iCloud.<bundle id>` instead of reading the entitlement, and
+`CKContainer(identifier:)` traps on a container the process does not hold.
+It now reads `com.apple.developer.icloud-container-identifiers` from the
+running task (`SecTaskCopyValueForEntitlement`) and reports "none" instead.
+**Never construct a CKContainer from a guessed identifier.**
+
 ## FIRST USER FEEDBACK, ROUND 1 (2026-09-12) and what shipped for it
 
 Eight items from the first outside testers, the day after launch. Six are in

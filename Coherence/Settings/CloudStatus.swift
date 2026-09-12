@@ -1,6 +1,7 @@
 #if DEBUG
 import Foundation
 import CloudKit
+import Security
 
 /// Answers the two questions that decide whether sync can work at all, and that
 /// the app was previously unable to answer on a device: which container the
@@ -35,15 +36,24 @@ struct CloudStatus: Equatable {
         }
     }
 
-    /// Read from the binary's own entitlements rather than hardcoded, so this
-    /// reports what actually shipped and not what we believe shipped.
+    /// Read from the binary's OWN entitlements, so this reports what actually
+    /// shipped and not what we believe shipped. It used to derive
+    /// `iCloud.<bundle id>` instead, which crashed the side-by-side beta at
+    /// launch (2026-09-12): the beta carries no iCloud entitlement on purpose,
+    /// and `CKContainer(identifier:)` traps (SIGTRAP) on a container the
+    /// process does not hold. nil means "no container", and read() says so.
     private static var entitledContainer: String? {
-        guard let value = Bundle.main.object(
-            forInfoDictionaryKey: "CloudKitContainerOverride") as? String, !value.isEmpty
-        else {
-            return "iCloud." + (Bundle.main.bundleIdentifier ?? "")
+        if let value = Bundle.main.object(forInfoDictionaryKey: "CloudKitContainerOverride") as? String,
+           !value.isEmpty {
+            return value
         }
-        return value
+        guard let task = SecTaskCreateFromSelf(nil),
+              let value = SecTaskCopyValueForEntitlement(
+                task, "com.apple.developer.icloud-container-identifiers" as CFString, nil),
+              let ids = value as? [String],
+              let first = ids.first, !first.isEmpty
+        else { return nil }
+        return first
     }
 }
 #endif
