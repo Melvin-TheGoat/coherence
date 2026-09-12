@@ -477,7 +477,10 @@ struct PaywallScreen: View {
         }
         Task { @MainActor in
             if await store.purchase(plan) == .bought {
-                if store.trialEligible { Analytics.track(.trialStarted) }
+                // Lifetime carries no introductory offer, so it can never be a
+                // trial however eligible the buyer still is for the
+                // subscription group's free week.
+                if store.trialEligible && plan != .lifetime { Analytics.track(.trialStarted) }
                 Analytics.track(.purchase(plan: plan.rawValue))
                 started = true
                 onDone(true)
