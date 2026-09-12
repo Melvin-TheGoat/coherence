@@ -17,9 +17,11 @@ cd "$(dirname "$0")/.."
 DEV="${1:-045D4391-3289-5F58-B71D-DE2C314BF6F6}"
 TEAM="${TEAM:-WLZQLLHUB3}"
 BAK="$(mktemp -d)"
-cp project.yml "$BAK/project.yml"; cp Coherence/Info.plist "$BAK/ios.plist"; cp CoherenceWatch/Info.plist "$BAK/watch.plist"
+ENT="$(grep -m1 'CODE_SIGN_ENTITLEMENTS' project.yml | awk '{print $2}')"
+[ -f "$ENT" ] || { echo "entitlements not found at '$ENT'"; exit 1; }
+cp project.yml "$BAK/project.yml"; cp Coherence/Info.plist "$BAK/ios.plist"; cp CoherenceWatch/Info.plist "$BAK/watch.plist"; cp "$ENT" "$BAK/ents.plist"
 restore() {
-  cp "$BAK/project.yml" project.yml; cp "$BAK/ios.plist" Coherence/Info.plist; cp "$BAK/watch.plist" CoherenceWatch/Info.plist
+  cp "$BAK/project.yml" project.yml; cp "$BAK/ios.plist" Coherence/Info.plist; cp "$BAK/watch.plist" CoherenceWatch/Info.plist; cp "$BAK/ents.plist" "$ENT"
   "$(command -v xcodegen)" generate >/dev/null 2>&1 || true
   echo "tracked files restored"
 }
@@ -38,6 +40,11 @@ for p,companion in [('Coherence/Info.plist',False),('CoherenceWatch/Info.plist',
         s=re.sub(r'(<key>WKCompanionAppBundleIdentifier</key>\s*<string>)com\.lockout\.meditate808(</string>)', r'\g<1>com.lockout.meditate808.dev\2', s, count=1)
     open(p,'w').write(s)
 PY
+# No iCloud on the beta: the container is named after the bundle ID and a
+# .dev one does not exist. Persistence.cloudKit() falls back to a local store
+# when the entitlement is absent, so the beta simply keeps its own data.
+/usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-container-identifiers" "$ENT" 2>/dev/null || true
+/usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-services" "$ENT" 2>/dev/null || true
 "$(command -v xcodegen)" generate >/dev/null 2>&1 || { echo "xcodegen failed"; exit 1; }
 
 B="$(date -u +%Y%m%d%H%M)"
