@@ -146,6 +146,11 @@ private struct SettingsForm: View {
 
                 SectionHeader(title: "The foundation")
                 settingsCard {
+                    membershipRow(icon: "envelope", title: "Give us feedback",
+                                  subtitle: "Opens an email to us. Every message is read.") {
+                        sendFeedback()
+                    }
+                    divider
                     navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }
                     divider
                     navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }
@@ -381,6 +386,22 @@ private struct SettingsForm: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(CardButtonStyle())
+    }
+
+    /// An email to us with the version and build filled in, so a report is
+    /// answerable without a follow-up question.
+    private func sendFeedback() {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        var parts = URLComponents()
+        parts.scheme = "mailto"
+        parts.path = "support@meditate808.com"
+        parts.queryItems = [
+            URLQueryItem(name: "subject", value: "808 feedback"),
+            URLQueryItem(name: "body", value: "\n\n\n808 \(version) (\(build)) on iOS \(UIDevice.current.systemVersion)")
+        ]
+        if let url = parts.url { UIApplication.shared.open(url) }
     }
 
     /// Apple's own redemption sheet. The purchase it produces arrives on
