@@ -211,9 +211,10 @@
 
   /* ---- App Store call to action ---- */
   .store { margin-top: 28px; }
-  /* Match the lede's width cap (54ch at its 18px size) so the centred badge
-     shares the paragraph's centre line on wide screens. */
-  .hero .store { text-align: center; font-size: 18px; max-width: 54ch; }
+  /* 426px is the headline's rendered width ("Make meditation" at the 54px
+     clamp cap), so the centred badge sits on the headline's own centre line.
+     Remeasure if the headline text or its font ever changes. */
+  .hero .store { text-align: center; max-width: 426px; }
   .store .cta { display: inline-block; text-decoration: none; }
   .store-badge { display: inline-block; line-height: 0; }
   .store-badge img { height: 54px; width: auto; display: block; }
