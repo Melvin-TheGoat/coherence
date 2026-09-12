@@ -44,7 +44,9 @@ them, and a summary score.
 Important details:
 
 - The app requests HealthKit permission only for **heart rate**,
-  **heart-rate variability (SDNN)** and **workouts**. Heart rate is read
+  **heart-rate variability (SDNN)**, **workouts** and **mindful minutes**.
+  Each session is written to Health as a Mind and Body workout and as mindful
+  minutes, so it appears beside Apple's own. Heart rate is read
   **live during a session** only. HRV is read as Apple's own passive samples,
   including up to 30 days of them, solely to give your readings a baseline.
   Nothing else in your Health history is read.

@@ -44,6 +44,24 @@ struct SessionSetupView: View {
                 .multilineTextAlignment(.center)
                 .padding(.top, 12)
 
+            // iOS gives apps no way to switch on Do Not Disturb, so the best
+            // the app can do is say where the switch is (asked for by the
+            // first testers, 2026-09-12).
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: "moon.fill")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(AppColor.calmAccent)
+                    .padding(.top, 2)
+                Text("Nothing should interrupt. Swipe down from the top right and turn on Do Not Disturb.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .multilineTextAlignment(.leading)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background(AppColor.backgroundSecondary.opacity(0.7),
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.top, 18)
+
             Spacer()
 
             Button("Begin", action: begin)

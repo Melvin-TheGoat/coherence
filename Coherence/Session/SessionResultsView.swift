@@ -43,6 +43,9 @@ struct SessionResultsView: View {
     /// True while the note is being written. A saved note renders as read-only
     /// flowing text until tapped.
     @State private var isEditingNote = false
+    @FocusState private var noteFocused: Bool
+    /// The debounced write behind every edit. See `markDirty`.
+    @State private var autosave: Task<Void, Never>?
     /// A MeditationMethod id, MeditationMethod.ownID, or nil = unreported.
     @State private var technique: String?
     @State private var techniqueNote: String = ""
@@ -257,6 +260,17 @@ struct SessionResultsView: View {
             }
             .buttonStyle(CardButtonStyle())
             .padding(.top, 2)
+
+            // The ring was tappable and nobody knew (first user feedback,
+            // 2026-09-12). Say it.
+            Button { route = .scoreMeaning } label: {
+                Label("How is this scored?", systemImage: "questionmark.circle")
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.horizontal, 10).padding(.vertical, 6)
+            }
+            .buttonStyle(CardButtonStyle())
+            .padding(.top, -6)
 
             Text(verdict.headline)
                 .font(.system(size: 25, weight: .bold, design: .rounded))
@@ -747,18 +761,22 @@ struct SessionResultsView: View {
             }
             Slider(value: $rating, in: 0...10, step: 1)
                 .tint(AppColor.accentGoldText)
-                .onChange(of: rating) { _, _ in reflectionSaved = false }
+                .onChange(of: rating) { _, _ in markDirty() }
 
             techniqueSection
 
             noteSection
 
+            // Gold, like Share: the first tester typed a note, never saw the
+            // grey button, and lost it. Everything here also saves itself
+            // (`markDirty`), so the button is confirmation, not the only exit.
             Button(reflectionSaved ? "Saved ✓" : "Save reflection") { save() }
-                .buttonStyle(SecondaryButtonStyle())
+                .buttonStyle(PrimaryButtonStyle())
                 .disabled(reflectionSaved)
-                .opacity(reflectionSaved ? 0.6 : 1)
+                .opacity(reflectionSaved ? 0.7 : 1)
         }
         .card()
+        .onDisappear { flushReflection() }
     }
 
     /// Which method they practiced. Unreported is the default and stays a
@@ -803,7 +821,7 @@ struct SessionResultsView: View {
                     .padding(12)
                     .background(AppColor.backgroundPrimary,
                                 in: RoundedRectangle(cornerRadius: 12))
-                    .onChange(of: techniqueNote) { _, _ in reflectionSaved = false }
+                    .onChange(of: techniqueNote) { _, _ in markDirty() }
             }
         }
     }
@@ -811,7 +829,7 @@ struct SessionResultsView: View {
     private func setTechnique(_ id: String?) {
         technique = id
         if id != MeditationMethod.ownID { techniqueNote = "" }
-        reflectionSaved = false
+        markDirty()
     }
 
     /// The note. Once written it reads as flowing full-width text — a post
@@ -831,10 +849,19 @@ struct SessionResultsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(14)
                 .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 14))
-                .onChange(of: note) { _, _ in reflectionSaved = false }
+                .focused($noteFocused)
+                .onChange(of: note) { _, _ in markDirty() }
+                // Focus decides the editing state, so typing into an empty
+                // note cannot flip the field to read-only after the first
+                // character, and dismissing the keyboard saves what was typed.
+                .onChange(of: noteFocused) { _, focused in
+                    if focused { isEditingNote = true }
+                    else if !note.isEmpty { save() }
+                }
         } else {
             Button {
                 isEditingNote = true
+                noteFocused = true
             } label: {
                 Text(note)
                     .font(AppFont.note)
@@ -850,12 +877,37 @@ struct SessionResultsView: View {
         }
     }
 
-    private func save() {
+    /// An edit happened. It persists on its own 0.8 s after the last one, and
+    /// again if the screen goes away first (`flushReflection`). Nothing typed
+    /// here depends on a button any more.
+    private func markDirty() {
+        reflectionSaved = false
+        autosave?.cancel()
+        autosave = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
+            persistReflection()
+        }
+    }
+
+    private func persistReflection() {
         SessionStore.saveReflection(sessionID: sessionID, rating: Int(rating), note: note,
                                     technique: technique, techniqueNote: techniqueNote,
                                     in: context)
         reflectionSaved = true
+    }
+
+    private func flushReflection() {
+        autosave?.cancel()
+        if !reflectionSaved { persistReflection() }
+    }
+
+    /// The explicit save: persists now and ends note editing.
+    private func save() {
+        autosave?.cancel()
+        persistReflection()
         isEditingNote = false
+        noteFocused = false
     }
 
     // MARK: Data
@@ -892,6 +944,10 @@ struct SessionResultsView: View {
             technique = reflection.technique
             techniqueNote = reflection.techniqueNote
             reflectionSaved = true
+        } else if session?.mode == SessionMode.guided.rawValue {
+            // The app knows what they practised; don't make them say it.
+            technique = MeditationMethod.guidedID
+            reflectionSaved = false
         }
         // Streak for the share card, derived the same way the calendar does.
         let allSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []

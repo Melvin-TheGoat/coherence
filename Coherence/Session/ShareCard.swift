@@ -726,6 +726,19 @@ struct ShareSessionSheet: View {
                 cardPager
 
                 VStack(spacing: 10) {
+                    // The system sheet leads: it is where the icons people
+                    // expect appear (Messages, Instagram, Facebook, Photos),
+                    // and "Instagram Story" as the headline read as the only
+                    // option (first user feedback, 2026-09-12).
+                    if let rendered {
+                        ShareLink(
+                            item: Image(uiImage: rendered),
+                            preview: SharePreview("808 practice", image: Image(uiImage: rendered))
+                        ) {
+                            Label("Share", systemImage: "square.and.arrow.up")
+                        }
+                        .buttonStyle(PrimaryButtonStyle())
+                    }
                     if InstagramShare.isInstalled, let rendered {
                         Button {
                             InstagramShare.shareToStory(rendered) { ok in
@@ -736,29 +749,15 @@ struct ShareSessionSheet: View {
                                     : "Allow 808 to add to Photos in Settings to share your story."
                             }
                         } label: {
-                            Label("Share to Instagram Story", systemImage: "camera.circle.fill")
+                            Label("Add to Instagram Story", systemImage: "camera.circle")
                         }
-                        .buttonStyle(PrimaryButtonStyle())
+                        .buttonStyle(SecondaryButtonStyle())
 
                         if let storyHint {
                             Text(storyHint)
                                 .font(.caption)
                                 .foregroundStyle(AppColor.textSecondary)
                                 .multilineTextAlignment(.center)
-                        }
-                    }
-                    if let rendered {
-                        ShareLink(
-                            item: Image(uiImage: rendered),
-                            preview: SharePreview("808 practice", image: Image(uiImage: rendered))
-                        ) {
-                            Text(InstagramShare.isInstalled ? "More ways to share" : "Share")
-                                .font(AppFont.callout.weight(.medium))
-                                .foregroundStyle(AppColor.textPrimary)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 13)
-                                .background(AppColor.backgroundSecondary,
-                                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                         }
                     }
                     if lockedCardCount > 0 {

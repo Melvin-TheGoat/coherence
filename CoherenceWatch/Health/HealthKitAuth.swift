@@ -35,7 +35,12 @@ enum HealthKitAuth {
 
     /// Types we SHARE (write): the workout we record during a session.
     private static var shareTypes: Set<HKSampleType> {
-        [HKObjectType.workoutType()]
+        // Mindful minutes: every session is written as one, so it shows in
+        // Health > Mindfulness beside Apple's own (first user feedback,
+        // 2026-09-12: "we share our rings; can 808 be part of that").
+        var types: Set<HKSampleType> = [HKObjectType.workoutType()]
+        if let mindful = HKObjectType.categoryType(forIdentifier: .mindfulSession) { types.insert(mindful) }
+        return types
     }
 
     /// Requests authorization. Returns `true` if HealthKit is available and the

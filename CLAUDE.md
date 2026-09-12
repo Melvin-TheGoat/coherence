@@ -1428,6 +1428,55 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   `Transaction.updates`, which `Store` already listens to.
 - `PREVIEW_TAB=guide|search|profile` (DEBUG) opens the app on a tab.
 
+## FIRST USER FEEDBACK, ROUND 1 (2026-09-12) and what shipped for it
+
+Eight items from the first outside testers, the day after launch. Six are in
+the app; two are decisions recorded below.
+
+- **"Save reflection" lost a note.** The tester typed a note, never saw the
+  grey button, left, and it was gone. Now every edit on the reflection card
+  saves itself 0.8 s after the last change (`markDirty` → `persistReflection`),
+  dismissing the keyboard saves, leaving the screen saves (`flushReflection`),
+  and the button is gold like Share, confirmation rather than the only exit.
+  The note field's editing state now follows keyboard FOCUS (`noteFocused`),
+  which also closes a latent trap where typing into an empty note could flip
+  it to read-only after the first character.
+- **Nobody knew the ring was tappable.** "How is this scored?" sits under it
+  as a visible link to the same `ScoreMeaningSheet`.
+- **"Guided meditation" is a technique option** (`MeditationMethod.guidedID`,
+  first in the picker), and a guided session arrives pre-tagged with it.
+  "First time meditating?" lost its question mark everywhere the title shows.
+- **Do Not Disturb.** iOS has no API to switch Focus on from an app, and the
+  `App-prefs:` deep links are private and rejected. The setup screen carries
+  a one-line tip pointing at Control Center. Do not build a "block
+  notifications" toggle that cannot do what it says.
+- **Sharing leads with the system sheet** ("Share", gold): that is where the
+  icons people expect appear (Messages, Instagram, Facebook, Photos). "Add
+  to Instagram Story" is secondary and only when Instagram is installed.
+- **Fitness / Activity sharing.** Third-party apps cannot post into Apple's
+  Fitness sharing feed. But every 808 session is already an `HKWorkout`
+  (.mindAndBody), and friends who share Activity already see those workouts
+  with the app name; verify on a friend's phone rather than build anything.
+  New: the Watch writes each session as **mindful minutes**
+  (`HKCategoryTypeIdentifier.mindfulSession`, share permission added in
+  `HealthKitAuth`), so it shows in Health > Mindfulness beside Apple's own.
+  The privacy policy (both copies) names it. **Existing users will see one
+  new Health permission prompt** on their next session.
+- **Shorter guided sessions and a choice of voice (10/15/20 min, man or
+  woman).** The tester loved the 25-minute journey and wanted shorter. Two
+  paths, deliberately separated: (a) cheap and honest now, commission Donny
+  for 10/15/20-minute cuts of the same script, no product change beyond a
+  length picker on the Guided card; (b) the "AI coach" Melvin wants as the
+  wedge. If (b) is built, the FIRST version must be a pre-generated library
+  (ElevenLabs offline, bundled or downloaded, chosen by length and voice),
+  NOT runtime generation: it keeps the App Review answers true (no AI service,
+  no server), keeps sessions offline, and costs nothing per session. A truly
+  adaptive coach is a backend + a privacy policy + a new review, and belongs
+  behind the library. The earlier "AI narration retired" note stands for the
+  flagship track only; the library is a different product from the same
+  pipeline. Needs Aziz's and Melvin's go, not a unilateral build.
+- **The coach's name** is open; candidates were offered, nothing decided.
+
 ## TestFlight (first build 2026-08-11; build 202608120358 — all eleven
 ## compliance passes — APPROVED for external testing 2026-08-13)
 
