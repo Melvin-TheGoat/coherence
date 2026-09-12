@@ -211,7 +211,9 @@
 
   /* ---- App Store call to action ---- */
   .store { margin-top: 28px; }
-  .hero .store { text-align: center; }
+  /* Match the lede's width cap (54ch at its 18px size) so the centred badge
+     shares the paragraph's centre line on wide screens. */
+  .hero .store { text-align: center; font-size: 18px; max-width: 54ch; }
   .store .cta { display: inline-block; text-decoration: none; }
   .store-badge { display: inline-block; line-height: 0; }
   .store-badge img { height: 54px; width: auto; display: block; }
