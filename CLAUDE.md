@@ -1815,16 +1815,24 @@ reappear, then delete the "sync doesn't work" line from What to Test.
 2. **DONE 2026-09-01.** `com.lockout.meditate808` registered under the org with
    HealthKit, Sign in with Apple, iCloud and Push all ticked (In-App Purchase
    too), and `com.lockout.meditate808.watchkitapp` exists with HealthKit.
-3. One dev build signed by the ORG team on the production bundle ID, real
-   phone, signed into iCloud: Settings > CloudKit (debug) > run the schema
-   primer (13 optionals write no field until primed; Production promotion is
-   additive-only).
-4. CloudKit Console > the org container > deploy schema Development →
-   Production.
-5. Fresh TestFlight install from the org account: sign in, verify sessions
-   from another device appear. Only then delete the What to Test sync
-   disclaimer. (Curves still never roam: `MeditationStats` is device-local
-   by 5.1.3 design; the promise covers account, sessions, streak, history.)
+3. **Primer NOT needed, verified 2026-09-12.** Development had all five
+   `CD_` types with every field, optionals included (Melvin's dev builds had
+   written them all: 17/17/16/15/15 fields = model fields + CloudKit's 7).
+4. **DONE 2026-09-12 (Aziz, with Melvin's Console login).** Deployed
+   Development → Production on `iCloud.com.lockout.meditate808`; Production
+   Record Types now lists the five `CD_` types plus the built-in `Users`.
+   **This was the gap found AFTER launch:** 1.0 went live 2026-09-10 with a
+   Production environment that had NO record types, so every App Store
+   sign-in's export failed silently for two days. No data was lost (it all
+   lives on the phone) and pending exports retry on later launches, so
+   affected users self-heal with no update. Lesson, so it never repeats:
+   **a CloudKit promotion is a release step, not a follow-up.** Put it on
+   the same checklist as "attach the products" for every future container.
+5. Still owed: a real second-device round-trip on the App Store build (sign
+   in on two phones, verify sessions appear on both). Until then the
+   promise is backed by the schema being present, not by an observed sync.
+   (Curves still never roam: `MeditationStats` is device-local by 5.1.3
+   design; the promise covers account, sessions, streak, history.)
 6. Agreements, Tax, and Banking: sign Paid Applications, enter Lock Out
    Inc.'s bank + W-9. **Mercury cleared 2026-09-01, so this is unblocked;
    the W-9 was filed the same day (C corporation, exempt payee, EIN, Dover
