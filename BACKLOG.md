@@ -98,15 +98,18 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   because each of these people gets one first session and the live 1.0
   fails most of them.
 
-- **1.0.1** (airplane-mode hole closed, rating prompt): SUBMITTED, "Waiting
-  for Review" as of 2026-09-12. Note it does NOT contain the purchase
-  double-count fix, the screen names, or the team-device switch; those
-  landed after it was archived.
-- **1.0.2** (five tabs, username, Restore + Redeem, first-feedback fixes,
-  mindful minutes, purchase guard, readable analytics screen names,
-  team-device switch): on `mvp`, on the beta, waiting on Melvin's test.
-  **Aziz, 2026-09-12: hold the submission until the session-start failures
-  above are understood.**
+- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12 late evening).**
+  Melvin's build 202609121757 (five tabs, reflections, average HR, mindful
+  minutes, feedback link, airplane-mode fix, rating prompt) was pulled from
+  review and replaced by build **202609130259**, archived from Aziz's Mac
+  on the org team, which adds tonight's work: the three Watch start-failure
+  fixes, the Health prompt on the phone during onboarding, the purchase
+  double-count guard, readable analytics screen names, and the team-device
+  switch. Reasoning: two sequential reviews would have put the Watch fixes
+  in users' hands around the 16th; one submission costs a day of queue
+  position. Melvin's beta test of the evening changes was skipped on Aziz's
+  call ("push out the newest version"); the simulator checks in the commits
+  stand in for it. There is no separate 1.0.2 any more.
 
 ## Done (2026-09-12)
 

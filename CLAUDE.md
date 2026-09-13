@@ -1581,7 +1581,19 @@ the app; two are decisions recorded below.
 - **`./tools/archive.sh` archives, exports and checks the ipa** (distribution
   signature, push environment, CloudKit environment, Watch app present) before
   you upload. Archives land in Xcode's Organizer folder. Upload by hand from
-  Organizer.
+  Organizer, or headless: a second `xcodebuild -exportArchive` on the same
+  archive with `destination = upload` in the options plist uploads through
+  Xcode's signed-in account, no password or API key needed (done for build
+  202609130259, 2026-09-12).
+- **Archiving for the App Store from Aziz's Mac works, with a swap** (first
+  done 2026-09-12). His `project.yml` and `CoherenceWatch/Info.plist` carry
+  the personal-team overrides and are skip-worktree, so: back both up, write
+  the committed versions over them (`git show HEAD:project.yml > project.yml`,
+  same for the plist), set `DEVELOPMENT_TEAM` to `WLZQLLHUB3`, `xcodegen
+  generate`, `TEAM=WLZQLLHUB3 ./tools/archive.sh`, then copy the backups
+  back and regenerate. `-allowProvisioningUpdates` created the org
+  distribution certificate and profiles on its own; nothing had to be made
+  in the portal first.
 - Rejections hit so far, each visible only at upload: **90474**, the bundle
   claimed iPad support with portrait only. Fixed by `TARGETED_DEVICE_FAMILY: "1"`,
   since 808 is iPhone + Watch and no iPad layout exists.
