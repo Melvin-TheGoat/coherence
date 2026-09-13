@@ -109,6 +109,12 @@ struct ContentView: View {
                 let u = SessionStore.currentUser(in: context)
                 if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
             }
+            // Store screenshots of the Profile tab: the handle is optional in
+            // onboarding, so a seeded profile has none unless asked for here.
+            if let handle = ProcessInfo.processInfo.environment["DEMO_USERNAME"] {
+                let u = SessionStore.currentUser(in: context)
+                if (u.username ?? "").isEmpty { u.username = Username.normalize(handle); try? context.save() }
+            }
             if ProcessInfo.processInfo.environment["PREVIEW_BLOCKED"] == "1" {
                 coordinator.startFailure = .heartRateUnavailable
             }
