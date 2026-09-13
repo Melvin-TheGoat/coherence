@@ -252,17 +252,30 @@ function writeFailures() {
 }
 
 function writePurchases() {
+  // ONE ROW PER BUYER, not per event. Listing raw events made four sales look
+  // like nine (Aziz, 2026-09-12): StoreKit returns `.bought` instantly for a
+  // product the Apple ID already owns, so repeat taps logged repeat purchases
+  // (one person fired four in eighteen seconds). The app stopped doing that
+  // in the build after 1.0.1; the extra-taps column keeps the old data honest.
   var sql =
-    "SELECT toDate(timestamp) AS day, toString(properties.plan) AS plan, event, " +
-    "if(toString(properties.$is_testflight) = 'true', 'TestFlight', 'App Store') AS channel " +
+    "SELECT person_id, min(toDate(timestamp)) AS first_bought, " +
+    "arrayStringConcat(groupUniqArray(toString(properties.plan)), ', ') AS plans, " +
+    "countIf(event = 'purchase') AS purchase_events, " +
+    "countIf(event = 'trial_started') AS trial_events " +
     "FROM events WHERE event IN ('trial_started', 'purchase') AND " + NOT_INTERNAL + " " +
-    "ORDER BY timestamp DESC LIMIT 500";
+    "GROUP BY person_id ORDER BY first_bought DESC LIMIT 500";
   var res = query(sql);
-  var rows = [['Day', 'Plan', 'Event', 'Channel']];
-  res.results.forEach(function (r) { rows.push(r); });
+  var rows = [['Buyer (anonymous id)', 'First bought', 'Plan', 'Purchase events',
+               'Trial events', 'Note']];
+  res.results.forEach(function (r) {
+    var plans = String(r[2] || '').replace(/(^, )|(, $)/g, '');
+    rows.push([r[0], r[1], plans, r[3], r[4],
+               r[3] > 1 ? 'Repeat taps on the buy button, not repeat sales' : '']);
+  });
   rows.push(['']);
-  rows.push(['Note', 'Before 1.0.1 a Lifetime purchase also logged a trial_started it never had. Subtract those by hand until then.']);
-  write('Purchases', rows, [110, 100, 130, 110]);
+  rows.push(['BUYERS', res.results.length, '', '', '', 'This is the number that matters.']);
+  rows.push(['Note', 'Before the build after 1.0.1, a Lifetime purchase also logged a trial_started it never had, and repeat taps logged repeat purchases.']);
+  write('Purchases', rows, [280, 110, 140, 130, 110, 380]);
 }
 
 function writeWatchGate() {
