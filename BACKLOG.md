@@ -98,7 +98,8 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   because each of these people gets one first session and the live 1.0
   fails most of them.
 
-- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12 late evening).**
+- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12, 11:07 PM):
+  "Waiting for Review", build 202609130259.**
   Melvin's build 202609121757 (five tabs, reflections, average HR, mindful
   minutes, feedback link, airplane-mode fix, rating prompt) was pulled from
   review and replaced by build **202609130259**, archived from Aziz's Mac
