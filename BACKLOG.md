@@ -91,12 +91,14 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## In flight
 
-- **Launch email to the waitlist + survey list** (33 people after dedupe;
-  draft and rules in `marketing/LAUNCH_EMAIL.md`, campaign `ct=waitlist`).
-  Composed and ready to send from Aziz's own address. **Timing is Aziz's
-  call:** recommended to send the day the fixed Watch-start build is live,
-  because each of these people gets one first session and the live 1.0
-  fails most of them.
+- **Launch email to the waitlist + survey list: SENT 2026-09-13, 1:16 PM
+  EDT**, from Aziz's Outlook, 33 people in BCC, campaign `ct=waitlist`
+  (draft and rules in `marketing/LAUNCH_EMAIL.md`). Aziz chose to send
+  while 1.0.1 (the Watch-start fixes) was still Waiting for Review, knowing
+  the live 1.0 fails most first sessions; the email asks for a reply after
+  the first session, so failures come back as replies. Read the `waitlist`
+  campaign in App Store Connect against this timestamp; it shows only after
+  five distinct installs.
 
 - **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12, 11:24 PM):
   "Waiting for Review", build 202609130259.** Pulled once more at 11:20

@@ -18,8 +18,8 @@ five distinct Apple accounts have installed through it.
 
 Copy is Aziz's own edit (2026-09-12). Sent from his Outlook, as BCC.
 
-**Timing decision (Aziz): on the back burner until the open issues are
-worked through one by one.** Context: the live 1.0 fails to start the first session
+**SENT 2026-09-13, 1:16 PM EDT, by Aziz from Outlook.** He chose to send
+while 1.0.1 was still Waiting for Review. Context: the live 1.0 fails to start the first session
 for most people who try it (10 start failures against 3 completions in the
 first two days), and the fixes are in the build after 1.0.1. The waitlist
 is the warmest audience 808 will ever have and each of them gets exactly
