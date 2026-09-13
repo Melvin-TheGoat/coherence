@@ -124,7 +124,6 @@ function refresh() {
 // Tabs
 
 function writeOverview() {
-  var windows = [['Last 7 days', 7], ['Last 30 days', 30], ['All time', 3650]];
   var rows = [['Metric', 'Last 7 days', 'Last 30 days', 'All time', 'What it means']];
   var metrics = [
     ['Installs', "event = 'Application Installed'", 'people', 'First launch after an App Store install'],
@@ -144,16 +143,26 @@ function writeOverview() {
     ['Shared a card', "event = 'share_opened'", 'people', ''],
     ['Deleted account', "event = 'account_deleted'", 'people', '']
   ];
-  metrics.forEach(function (m) {
-    var row = [m[0]];
+
+  // ONE query for the whole table, not one per cell. The first version fired
+  // 48 requests (16 metrics x 3 windows) and took most of a minute; PostHog
+  // also caps concurrent queries at 3 and requests at 240/minute. Every cell
+  // is a conditional aggregate over the same scan instead.
+  var windows = [[7, 'd7'], [30, 'd30'], [3650, 'all']];
+  var selects = [];
+  metrics.forEach(function (m, i) {
     windows.forEach(function (w) {
-      var agg = m[2] === 'people' ? 'count(DISTINCT person_id)' : 'count()';
-      var sql = 'SELECT ' + agg + ' FROM events WHERE ' + m[1] +
-        ' AND timestamp > now() - INTERVAL ' + w[1] + ' DAY AND ' + NOT_INTERNAL;
-      row.push(scalar(sql));
+      var cond = '(' + m[1] + ') AND timestamp > now() - INTERVAL ' + w[0] + ' DAY';
+      selects.push(m[2] === 'people'
+        ? 'uniqExactIf(person_id, ' + cond + ') AS m' + i + '_' + w[1]
+        : 'countIf(' + cond + ') AS m' + i + '_' + w[1]);
     });
-    row.push(m[3]);
-    rows.push(row);
+  });
+  var res = query('SELECT ' + selects.join(', ') + ' FROM events WHERE ' + NOT_INTERNAL);
+  var v = (res.results && res.results[0]) || [];
+
+  metrics.forEach(function (m, i) {
+    rows.push([m[0], v[i * 3] || 0, v[i * 3 + 1] || 0, v[i * 3 + 2] || 0, m[3]]);
   });
   // Derived rates, the ones the launch plan gates spending on.
   rows.push(['']);
@@ -187,9 +196,13 @@ function writeDaily() {
 
 function writeScreens() {
   // Prefer the readable name the 1.0.1 events carry; name 1.0 events here.
+  // One query covers the screens AND the "finished onboarding" footer: the
+  // completion event is folded in as a pseudo-screen so the tab costs a
+  // single round trip.
   var sql =
-    "SELECT toString(properties.step) AS step, count(DISTINCT person_id) AS people " +
-    "FROM events WHERE event = 'onboarding_step' " +
+    "SELECT if(event = 'onboarding_completed', '__finished', toString(properties.step)) AS step, " +
+    "count(DISTINCT person_id) AS people " +
+    "FROM events WHERE event IN ('onboarding_step', 'onboarding_completed') " +
     "AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
     "GROUP BY step ORDER BY people DESC LIMIT 100";
   var res = query(sql);
@@ -202,7 +215,10 @@ function writeScreens() {
   order.forEach(function (id) {
     var name = SCREEN_NAMES[id];
     var n = counts[id] || 0;
-    var branch = /\(/.test(name) && !/notifications/.test(name);
+    // A lettered number (06a, 12b, 17b) marks a screen only some personas
+    // see. Detecting branches by parentheses instead missed "12b No-Watch
+    // waitlist" and produced a -500% drop-off on the screen after it.
+    var branch = /^\d+[a-z]/.test(name);
     var lost = '';
     if (prev !== null && !branch && prev > 0) {
       lost = Math.round((1 - n / prev) * 100) + '%';
@@ -212,8 +228,7 @@ function writeScreens() {
     if (!branch) prev = n;
   });
   rows.push(['']);
-  rows.push(['', 'Finished onboarding',
-    scalar("SELECT count(DISTINCT person_id) FROM events WHERE event = 'onboarding_completed' AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL),
+  rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen.']);
   write('Screens', rows, [50, 380, 200, 170, 520]);
 }
