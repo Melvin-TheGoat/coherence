@@ -1266,6 +1266,36 @@ UI must coach it, and the 2-signal degrade path must stay.
   - Not yet wired: `notification_opened` (no UNUserNotificationCenter
     delegate exists), `paywall_dismissed` (paywall flow still moving; wire
     when placement is settled).
+  - **POSTHOG DASHBOARD "808 Beta" BUILT 2026-09-12 (Aziz + Claude, driving
+    the browser).** 14 tiles: Day-zero funnel (install → first score, 1-day
+    window, the number the research says predicts everything); Insight A/B
+    retention pair (first-ever `session_completed`, B filtered to cohort
+    "Two sessions in week one" = ≥2 sessions in 90 days, the closest this
+    project's cohort builder offers to "second session within a week");
+    Money funnel; Watch gate by outcome; Which lock gets tapped; Downsell
+    ladder; ALARM tile (`result_missing` + `session_start_failed`, with a
+    daily email alert to Aziz when `result_missing` > 0); Why sessions fail
+    to start (by `reason`); and three onboarding views: users completing
+    each screen (bar), drop-off 1 (interview, universal screens only),
+    drop-off 2 (payoff screens → `onboarding_completed`). Branch screens
+    (aloneWithThoughts, doingNothing, restarts, intendedFor, bodyCuriosity,
+    bodyProof, blindSpot, watchSetup, waitlist, the walkthrough) are left
+    out of the strict funnels on purpose: a persona who never sees a screen
+    would read as churn.
+    - **PROPERTY NAMES, exactly as sent (two tiles were built wrong first):**
+      `onboarding_step` carries `step` (NOT `id`); `free_tier_entered`
+      carries `after_rung` (NOT `afterRung`). `award_unlocked` is the one
+      that uses `id`. The mapping is `Analytics.Event.properties`; read it
+      before building a breakdown.
+    - **Internal-user filter (project setting, default ON):** `$app_build`
+      ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
+      rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
+      friends in those areas may be real users. Founders' App Store installs
+      therefore still count; read small numbers accordingly.
+    - Field finding from the first read: 16 strangers reached `relief` in
+      30 days, 12 left `breath`, everyone who reached `calculating` finished
+      onboarding, and 2 of 12 finishers ever pressed Begin. The leak is at
+      the very first screens and after onboarding, not inside the payoff.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
