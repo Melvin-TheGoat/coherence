@@ -91,6 +91,13 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## In flight
 
+- **Launch email to the waitlist + survey list** (33 people after dedupe;
+  draft and rules in `marketing/LAUNCH_EMAIL.md`, campaign `ct=waitlist`).
+  Composed and ready to send from Aziz's own address. **Timing is Aziz's
+  call:** recommended to send the day the fixed Watch-start build is live,
+  because each of these people gets one first session and the live 1.0
+  fails most of them.
+
 - **1.0.1** (airplane-mode hole closed, rating prompt): SUBMITTED, "Waiting
   for Review" as of 2026-09-12. Note it does NOT contain the purchase
   double-count fix, the screen names, or the team-device switch; those
