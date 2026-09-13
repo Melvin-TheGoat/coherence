@@ -1301,7 +1301,19 @@ UI must coach it, and the 2-signal degrade path must stay.
       filter rule `team_device ≠ true` drops it. Off by default. This is
       the founders' answer to reinstalling constantly: flip it once per
       install. Until 1.0.1 is on their phones, their App Store installs
-      still count in every tile.
+      still count in every tile. **Note: 1.0.1 was already "Waiting for
+      Review" when this landed, so the screen names and the switch ship in
+      the build after it.**
+    - **Google Sheet, live from PostHog: `tools/posthog_sheet.gs`.** Six
+      tabs (Overview with 7d/30d/all-time KPIs and the plan's benchmark
+      rates, Daily, Screens in order with drop-off, Failures by reason,
+      Purchases, Watch gate by week), refreshed hourly by an Apps Script
+      trigger through the HogQL query API. Setup is in the file header;
+      the read-only personal API key lives in Script Properties, never in
+      the repo. Every query was run against the live project before
+      committing. Its internal-user rule matches PostHog's plus
+      `$is_sideloaded` (Melvin's cable-installed betas; the two
+      `result_missing` events on 2026-09-12 came from one).
     - **Internal-user filter (project setting, default ON):** `$app_build`
       ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
       rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
