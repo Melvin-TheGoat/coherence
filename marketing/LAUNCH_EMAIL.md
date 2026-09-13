@@ -16,7 +16,10 @@ Attribution: the link carries `ct=waitlist`, a new campaign on the same
 provider token (see `CAMPAIGN_LINKS.md`). It reports in App Analytics once
 five distinct Apple accounts have installed through it.
 
-**Timing decision (Aziz):** the live 1.0 fails to start the first session
+Copy is Aziz's own edit (2026-09-12). Sent from his Outlook, as BCC.
+
+**Timing decision (Aziz): on the back burner until the open issues are
+worked through one by one.** Context: the live 1.0 fails to start the first session
 for most people who try it (10 start failures against 3 completions in the
 first two days), and the fixes are in the build after 1.0.1. The waitlist
 is the warmest audience 808 will ever have and each of them gets exactly
@@ -31,21 +34,17 @@ Hi,
 A few weeks ago you left your email on meditate808.com. 808 is on the App
 Store now, and I wanted you to hear it from me.
 
-Here is what it does. You meditate however you already do, with your own
-audio or none, and your Apple Watch measures the session: how far your
-heart rate settled, how still you stayed, and whether you slowed your
-breath. Afterwards you get a score out of 100. Nothing shows during the
-session. The evidence comes after.
+Here is what it does. You meditate either with your own audio in the
+background or one that 808 provides, and your Apple Watch measures your
+biometric data during the session. After your meditation, 808 uses that
+data to give you a score that lets you know whether you tapped into a
+meditative state.
 
 Get 808 on the App Store:
 https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=waitlist&mt=8
 
-The score is free; the curves behind it are the membership. You need an
-iPhone and an Apple Watch. If you do not have a Watch, reply and say so,
-and you will be the first to hear when a session works without one.
-
-One favour. After your first session, reply to this email and tell me
-what happened, good or bad. Every reply lands with me, and the next
+One favor though, after your first session, reply to this email and tell
+me what happened, good or bad. Every reply lands with me, and the next
 version gets built from exactly that.
 
 Aziz
