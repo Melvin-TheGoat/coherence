@@ -1894,11 +1894,18 @@ reappear, then delete the "sync doesn't work" line from What to Test.
    affected users self-heal with no update. Lesson, so it never repeats:
    **a CloudKit promotion is a release step, not a follow-up.** Put it on
    the same checklist as "attach the products" for every future container.
-5. Still owed: a real second-device round-trip on the App Store build (sign
-   in on two phones, verify sessions appear on both). Until then the
-   promise is backed by the schema being present, not by an observed sync.
-   (Curves still never roam: `MeditationStats` is device-local by 5.1.3
-   design; the promise covers account, sessions, streak, history.)
+5. **VERIFIED 2026-09-12, by accident and by instrument.** Melvin set up
+   a fresh App Store install on a second phone at ~10:50 EDT, signed in,
+   and within 30 minutes of the 11:30 schema promotion his sessions from
+   the other phone appeared. We know because he tapped two of them and the
+   new PostHog `result_missing` alarm fired (no local stats on the new
+   phone, by 5.1.3 design), which is the trail that proved the sync.
+   The promise covers account, sessions, streak, history; curves never
+   roam. **Copy gap this exposed, for 1.0.1:** the sign-in screen promises
+   sessions "survive a new phone" without saying measurements stay on the
+   phone that recorded them, and `missingStatsCard` explains the rule but
+   gives no next step ("your next session on this phone shows
+   everything"). Neither is a code change; both are one sentence.
 6. Agreements, Tax, and Banking: sign Paid Applications, enter Lock Out
    Inc.'s bank + W-9. **Mercury cleared 2026-09-01, so this is unblocked;
    the W-9 was filed the same day (C corporation, exempt payee, EIN, Dover
