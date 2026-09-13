@@ -44,6 +44,16 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## Bugs found in the live data (Aziz + Claude, 2026-09-12 evening)
 
+- DONE 2026-09-12, in the build after 1.0.1: `heartRateUnavailable` (4 of the
+  10). The Watch asked HealthKit for authorization inside `begin()`, and the
+  system can only present the Health sheet on the IPHONE, so the prompt landed
+  on a screen nobody was looking at while the workout ran unauthorized; the
+  30-second watchdog then aborted the user's first session. Authorization is
+  shared between an iOS app and its companion Watch app, so the phone now asks
+  for the whole scope one screen after the health-consent screen, and only for
+  people who said they have a Watch. `HealthScope` (Shared) is the one
+  definition of that scope; `HealthScopeTests` scans the iOS sources to keep
+  reading Watch-only.
 - PARTLY DONE 2026-09-12, in the build after 1.0.1: the two Watch reasons.
   The setup screen (12a) told people 808 "should already be waiting" on their
   Watch and let them continue without ever checking; the failures then landed
