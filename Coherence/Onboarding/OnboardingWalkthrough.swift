@@ -179,13 +179,27 @@ struct TourHomeScreen: View {
 struct WatchSetupScreen: View {
     let onContinue: () -> Void
 
+    @State private var probe = WatchProbe()
+
     var body: some View {
         OnboardingScreen(section: .body,
                          title: "808 goes on your Watch by itself.",
-                         subtitle: "Installing 808 on this iPhone puts it on your Watch too. Take a second to make sure it's there, since that's where every session is measured.",
-                         ctaTitle: "Got it",
+                         subtitle: "Installing 808 on this iPhone puts it on your Watch too. This screen watches for it, so you can see it arrive.",
+                         // Naming the state in the button means the tap is
+                         // never a guess. It still advances either way: a Watch
+                         // can be paired later, and stranding someone on a
+                         // setup screen is worse than letting them go on.
+                         ctaTitle: probe.ready ? "It's there. Continue" : "Continue anyway",
                          onContinue: onContinue) {
             VStack(spacing: 12) {
+                // LIVE, not instructions alone. This screen's whole job is to
+                // get 808 onto the wrist, and until 2026-09-12 it had no idea
+                // whether that happened: it said "it should already be waiting
+                // there" and let everyone through. The live data showed people
+                // finishing onboarding and hitting `watchAppNotInstalled` or
+                // `watchNotPaired` within a minute of tapping Begin, which is
+                // this screen's failure arriving late and out of context.
+                WatchStatusRows(probe: probe)
                 step(1, "Put your Watch on",
                      "Wear it snug on your wrist. The sensors need skin contact to read your heart.")
                 step(2, "Check your Watch for the 808 app",
@@ -194,6 +208,7 @@ struct WatchSetupScreen: View {
                      "Open the Watch app on this iPhone, scroll down to Available Apps, and tap Install next to 808.")
             }
         }
+        .task { await probe.monitor() }
     }
 
     private func step(_ n: Int, _ title: String, _ detail: String) -> some View {
@@ -226,50 +241,69 @@ struct WatchSetupScreen: View {
 /// The honest gate before the practice. Reads what WatchConnectivity already
 /// knows and names the actual problem when there is one, the same reporting
 /// the session preflight does.
-struct WatchConnectScreen: View {
-    let onReady: () -> Void
-    /// No Watch reachable after trying: the practice is skipped, never faked.
-    let onSkip: () -> Void
+/// What WatchConnectivity already knows about the wrist, watched live.
+///
+/// Shared by every screen that asks about the Watch, because the app kept
+/// telling people the same thing in three different states of knowledge: the
+/// setup screen guessed, the connect screen checked, and the session preflight
+/// checked again and reported the failure minutes later. One reader, one truth.
+@Observable
+final class WatchProbe {
+    var paired = false
+    var installed = false
+    /// No honest read has landed yet. Buttons that depend on the answer stay
+    /// disabled through this, because acting on unformed state misleads.
+    var checking = true
+    /// This device can never pair a Watch (an iPad running the iPhone app in
+    /// compatibility mode, which is a real way reviewers test).
+    var unsupported = false
 
-    @State private var paired = false
-    @State private var installed = false
-    @State private var checking = true
-    /// Failed "Check again" taps. The walkthrough is the product's first
-    /// proof, so there is no standing skip (Aziz, 2026-08-28: "we really want
-    /// the user to experience that"). But a user whose Watch is at home on the
-    /// charger CANNOT pass this screen, and an onboarding that hard-blocks on
-    /// external state is a stranding, so an escape appears after three failed
-    /// checks. Default path: do the practice. Escape: earned by trying.
-    @State private var failedChecks = 0
+    var ready: Bool { paired && installed }
 
-    private var ready: Bool { paired && installed }
+    /// Reads the session state every half second until both are true or the
+    /// caller's `.task` cancels. Re-entrant calls overlap harmlessly: every
+    /// writer writes the same truth.
+    @MainActor
+    func monitor() async {
+        // Touching WCSession.default on an unsupported device is
+        // documented-invalid, so answer from `unsupported` instead.
+        guard WCSession.isSupported() else {
+            unsupported = true
+            checking = false
+            return
+        }
+        let wc = WCSession.default
+        if wc.activationState != .activated { wc.activate() }
+        for tick in 0..<120 {
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) {
+                paired = wc.isPaired
+                installed = wc.isWatchAppInstalled
+            }
+            if tick >= 1 { checking = false }
+            if ready { checking = false; return }
+            try? await Task.sleep(for: .seconds(0.5))
+        }
+        checking = false
+    }
+}
+
+/// The two facts, with the fix for whichever one is missing.
+struct WatchStatusRows: View {
+    let probe: WatchProbe
 
     var body: some View {
-        OnboardingScreen(section: .win,
-                         title: "Put your Watch on.",
-                         subtitle: "The next two minutes are measured from your wrist, so make sure it's snug and awake.",
-                         ctaTitle: ready ? "It's on. Let's breathe" : "Check again",
-                         ctaEnabled: !checking,
-                         skipTitle: "My Watch isn't with me. Continue",
-                         onSkip: failedChecks >= 3 ? onSkip : nil,
-                         onContinue: {
-                             if ready { onReady() } else { failedChecks += 1; refresh() }
-                         }) {
-            VStack(spacing: 12) {
-                row(ok: paired, label: "Apple Watch paired")
-                row(ok: installed, label: "808 installed on the Watch",
-                    hint: installed ? nil :
-                        "Open the Watch app on this iPhone, scroll to 808, and tap Install.")
-            }
+        VStack(spacing: 12) {
+            row(ok: probe.paired, label: "Apple Watch paired",
+                hint: probe.paired || probe.checking ? nil :
+                    "No Watch is paired with this iPhone yet. Pair one in the Watch app, and this ticks by itself.")
+            // Only one problem at a time. Telling someone with no paired Watch
+            // to go install an app on it names the second blocker while the
+            // first is still standing.
+            row(ok: probe.installed, label: "808 installed on the Watch",
+                hint: probe.installed || probe.checking || !probe.paired ? nil :
+                    "Open the Watch app on this iPhone, scroll to 808, and tap Install.")
         }
-        // Live, not one-shot. The first build read WCSession once with a 3 s
-        // window, and activation routinely settles slower than that on a
-        // fresh launch (the same race the first-Begin path documents), so the
-        // rows sat unchecked against a paired Watch and read as broken
-        // (Aziz, 2026-08-28: "make sure the checkboxes are actually
-        // functional"). This watches for as long as the screen is up and the
-        // rows tick the moment the system reports them.
-        .task { await monitor() }
     }
 
     private func row(ok: Bool, label: String, hint: String? = nil) -> some View {
@@ -295,42 +329,47 @@ struct WatchConnectScreen: View {
         .background(AppColor.backgroundSecondary.opacity(0.7),
                     in: RoundedRectangle(cornerRadius: 15, style: .continuous))
     }
+}
 
-    private func refresh() {
-        Task { @MainActor in await monitor() }
+struct WatchConnectScreen: View {
+    let onReady: () -> Void
+    /// No Watch reachable after trying: the practice is skipped, never faked.
+    let onSkip: () -> Void
+
+    @State private var probe = WatchProbe()
+    /// Failed "Check again" taps. The walkthrough is the product's first
+    /// proof, so there is no standing skip (Aziz, 2026-08-28: "we really want
+    /// the user to experience that"). But a user whose Watch is at home on the
+    /// charger CANNOT pass this screen, and an onboarding that hard-blocks on
+    /// external state is a stranding, so an escape appears after three failed
+    /// checks. Default path: do the practice. Escape: earned by trying.
+    @State private var failedChecks = 0
+
+    var body: some View {
+        OnboardingScreen(section: .win,
+                         title: "Put your Watch on.",
+                         subtitle: "The next two minutes are measured from your wrist, so make sure it's snug and awake.",
+                         ctaTitle: probe.ready ? "It's on. Let's breathe" : "Check again",
+                         ctaEnabled: !probe.checking,
+                         skipTitle: "My Watch isn't with me. Continue",
+                         onSkip: (failedChecks >= 3 || probe.unsupported) ? onSkip : nil,
+                         onContinue: {
+                             if probe.ready { onReady() } else { failedChecks += 1; refresh() }
+                         }) {
+            WatchStatusRows(probe: probe)
+        }
+        // Live, not one-shot. The first build read WCSession once with a 3 s
+        // window, and activation routinely settles slower than that on a
+        // fresh launch (the same race the first-Begin path documents), so the
+        // rows sat unchecked against a paired Watch and read as broken
+        // (Aziz, 2026-08-28: "make sure the checkboxes are actually
+        // functional"). This watches for as long as the screen is up and the
+        // rows tick the moment the system reports them.
+        .task { await probe.monitor() }
     }
 
-    /// Reads the session state every half second while the screen is up,
-    /// stopping once both rows are green. `.task` cancels it on disappear.
-    /// Re-entrant calls (the Check again button) just overlap harmlessly:
-    /// every writer writes the same truth.
-    @MainActor
-    private func monitor() async {
-        // An iPad running the iPhone app in compatibility mode has no
-        // WatchConnectivity at all; touching WCSession.default there is
-        // documented-invalid, and a reviewer should not have to fail "Check
-        // again" three times to find the way past a screen their hardware
-        // can never satisfy.
-        guard WCSession.isSupported() else {
-            checking = false
-            failedChecks = 3
-            return
-        }
-        let wc = WCSession.default
-        if wc.activationState != .activated { wc.activate() }
-        for tick in 0..<120 {
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.2)) {
-                paired = WCSession.isSupported() && wc.isPaired
-                installed = wc.isWatchAppInstalled
-            }
-            // The first honest read is in: let the button enable. Before it,
-            // "Check again" against unformed state would only mislead.
-            if tick >= 1 { checking = false }
-            if paired && installed { checking = false; return }
-            try? await Task.sleep(for: .seconds(0.5))
-        }
-        checking = false
+    private func refresh() {
+        Task { @MainActor in await probe.monitor() }
     }
 }
 

@@ -121,6 +121,21 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 return
             }
             let wc = WCSession.default
+            // Wait for activation before reading `isPaired`, rather than
+            // skipping the check when it has not settled. Activation is async
+            // and routinely unsettled on the first Begin after launch (the
+            // same race `invitePhone` documents), and skipping meant a phone
+            // with no Watch fell through to `startWatchApp` and reported
+            // "Your Watch didn't answer" — advice to bring a Watch closer,
+            // given to someone who does not have one. Two seconds is far
+            // longer than activation takes and still invisible next to the
+            // Watch app launching.
+            if wc.activationState != .activated {
+                wc.activate()
+                for _ in 0..<20 where wc.activationState != .activated {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+            }
             if wc.activationState == .activated {
                 if !wc.isPaired {
                     await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
