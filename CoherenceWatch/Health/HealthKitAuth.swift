@@ -24,37 +24,20 @@ enum HealthKitAuth {
     /// The single store instance the Watch uses for auth and workouts.
     static let store = HKHealthStore()
 
-    /// Types we READ: live heart rate, HRV, and workouts.
-    private static var readTypes: Set<HKObjectType> {
-        [
-            HKQuantityType(.heartRate),
-            HKQuantityType(.heartRateVariabilitySDNN),
-            HKObjectType.workoutType(),
-        ]
-    }
-
-    /// Types we SHARE (write): the workout we record during a session.
-    private static var shareTypes: Set<HKSampleType> {
-        // Mindful minutes: every session is written as one, so it shows in
-        // Health > Mindfulness beside Apple's own (first user feedback,
-        // 2026-09-12: "we share our rings; can 808 be part of that").
-        var types: Set<HKSampleType> = [HKObjectType.workoutType()]
-        if let mindful = HKObjectType.categoryType(forIdentifier: .mindfulSession) { types.insert(mindful) }
-        return types
-    }
-
-    /// Requests authorization. Returns `true` if HealthKit is available and the
-    /// prompt completed without error. The user's per-type grant/deny choices are
-    /// private to HealthKit and deliberately not surfaced here.
+    /// Requests authorization for the shared scope (`HealthScope`, so the phone
+    /// and the Watch can never ask for different things). Returns `true` if
+    /// HealthKit is available and the prompt completed without error. The
+    /// user's per-type grant/deny choices are private to HealthKit and
+    /// deliberately not surfaced here.
+    ///
+    /// On a paired Watch this is now the FALLBACK, not the first ask. The
+    /// system can only show the Health sheet on the iPhone, so a request made
+    /// here mid-session put a prompt on a screen the user was not looking at,
+    /// and thirty seconds later the heart-rate watchdog aborted the session
+    /// they had just started. Onboarding asks on the phone instead.
     @discardableResult
     static func authorize() async -> Bool {
-        guard HKHealthStore.isHealthDataAvailable() else { return false }
-        do {
-            try await store.requestAuthorization(toShare: shareTypes, read: readTypes)
-            return true
-        } catch {
-            return false
-        }
+        await HealthScope.request(using: store)
     }
 
     // NOTE: a 7-day heart-rate history probe used to live here, uncalled.

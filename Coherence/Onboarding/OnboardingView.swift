@@ -345,9 +345,27 @@ struct OnboardingView: View {
 
         case .health:
             HealthConsentScreen {
-                // No-Watch users skip the walkthrough AND the paywall: we
-                // neither demo nor sell what the app cannot yet do for them.
-                go(answers.hasWatch != false ? .tourHome : .signIn)
+                // Ask for Health here, on the phone, one screen after the one
+                // that explains what is read. HealthKit authorization is
+                // SHARED with the companion Watch app and the system can only
+                // present the sheet on the iPhone, so asking from the Watch
+                // mid-session (what the app used to do) put the prompt on a
+                // screen nobody was looking at: the workout ran, no heart rate
+                // arrived, and the 30-second watchdog aborted the first
+                // session. Four of ten start failures in the first week of
+                // live data were exactly that.
+                //
+                // Only for people with a Watch: a no-Watch user gets no
+                // session to authorize for, and a permission sheet for
+                // hardware they do not own is a prompt with nothing behind it.
+                Task {
+                    if answers.hasWatch != false { await HealthScope.request() }
+                    // Route after the sheet is dismissed, so the walkthrough
+                    // never starts underneath a system prompt.
+                    await MainActor.run {
+                        go(answers.hasWatch != false ? .tourHome : .signIn)
+                    }
+                }
             }
 
         // MARK: The walkthrough (see OnboardingWalkthrough.swift)
