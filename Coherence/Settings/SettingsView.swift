@@ -498,12 +498,34 @@ private struct SettingsForm: View {
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary.opacity(0.6))
                     .monospacedDigit()
+                    // Seven taps on the version number flag this phone as a
+                    // team device: every analytics event it sends carries
+                    // `team_device = true`, and the PostHog internal-user
+                    // filter drops it. Hidden because it is for the two
+                    // founders, whose constant reinstalls each mint a fresh
+                    // anonymous id and were polluting the launch dashboards.
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        versionTaps += 1
+                        guard versionTaps >= 7 else { return }
+                        versionTaps = 0
+                        teamDevice.toggle()
+                        Analytics.setTeamDevice(teamDevice)
+                    }
+                if teamDevice {
+                    Text("Team device. Analytics from this phone are flagged.")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary.opacity(0.6))
+                }
             }
             .padding(.top, 22)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 12)
     }
+
+    @State private var versionTaps = 0
+    @State private var teamDevice = Analytics.isTeamDevice
 
     /// "Version 1.0 (202608251757)" from the bundle, never hardcoded: a
     /// hand-typed version is wrong the moment it is typed.
