@@ -42,12 +42,41 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 - **Handle for the coach's name** (the narrated guide, not Otto): open.
   Candidates offered: Eight, Cadence, Tempo, Coach 808.
 
+## Bugs found in the live data (Aziz + Claude, 2026-09-12 evening)
+
+- **10 of 13 sessions never started.** `session_start_failed` fires 10 times
+  against 3 completions, by far the worst ratio on the dashboard, and the
+  Watch gate is NOT the cause: 9 of 11 people said they own a Watch. Reasons
+  over 7 days: `heartRateUnavailable` 4, `watchNotPaired` 3,
+  `watchUnreachable` 2, `watchAppNotInstalled` 1. **This is the single
+  biggest thing wrong with the product right now** and it is worth a session
+  of its own: four people denied or could not deliver heart rate, three had
+  no Watch paired despite saying they had one, one never installed the Watch
+  app. Each of those is a different fix (permission copy, a real pairing
+  check at the gate, the Watch-install screen landing late).
+- **Two people who finished onboarding never pressed Begin, and a third of
+  everyone quits on screen one.** 16 reach "Relief: you're not bad at
+  meditation", 12 leave it. Everyone who reaches the payoff screens finishes.
+  So the leaks are the very first screen and the gap between onboarding and
+  the first session, not the interview.
+- DONE, in the build after 1.0.1: repeat taps on the paywall's buy button
+  logged repeat `purchase` events (one person, four in eighteen seconds),
+  because StoreKit returns `.bought` instantly for a product the Apple ID
+  already owns. `advance()` now guards on `started` and `buying`.
+- DONE, in the build after 1.0.1: a Lifetime purchase logged a
+  `trial_started` it never had.
+
 ## In flight
 
-- **1.0.1** (airplane-mode hole closed, rating prompt): archived, upload and
-  submission are Melvin's.
+- **1.0.1** (airplane-mode hole closed, rating prompt): SUBMITTED, "Waiting
+  for Review" as of 2026-09-12. Note it does NOT contain the purchase
+  double-count fix, the screen names, or the team-device switch; those
+  landed after it was archived.
 - **1.0.2** (five tabs, username, Restore + Redeem, first-feedback fixes,
-  mindful minutes): on `mvp`, on the beta, waiting on Melvin's test.
+  mindful minutes, purchase guard, readable analytics screen names,
+  team-device switch): on `mvp`, on the beta, waiting on Melvin's test.
+  **Aziz, 2026-09-12: hold the submission until the session-start failures
+  above are understood.**
 
 ## Done (2026-09-12)
 
