@@ -44,6 +44,19 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## Bugs found in the live data (Aziz + Claude, 2026-09-12 evening)
 
+- PARTLY DONE 2026-09-12, in the build after 1.0.1: the two Watch reasons.
+  The setup screen (12a) told people 808 "should already be waiting" on their
+  Watch and let them continue without ever checking; the failures then landed
+  a minute later, after the paywall, out of context. `WatchProbe` is now the
+  one reader of paired/installed, shared by the setup screen, the walkthrough
+  connect screen and the failure screen; the setup screen shows both live and
+  says "Continue anyway" when they are not met; the failure screen watches
+  the problem clear; the preflight waits for WCSession activation before
+  reading `isPaired`, so a phone with no Watch is no longer told to bring its
+  Watch closer. **STILL OPEN: `heartRateUnavailable` (4 of the 10).** That is
+  a Health permission the phone cannot read back, so the app cannot tell
+  whether it is denied until a session fails. Worth investigating whether the
+  Watch can ask for it earlier, at the setup screen, instead of at first use.
 - **10 of 13 sessions never started.** `session_start_failed` fires 10 times
   against 3 completions, by far the worst ratio on the dashboard, and the
   Watch gate is NOT the cause: 9 of 11 people said they own a Watch. Reasons
