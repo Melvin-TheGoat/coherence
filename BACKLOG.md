@@ -91,6 +91,14 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## In flight
 
+- **Reddit, first post live:** r/SideProject, 2026-09-13 ~1:50 PM EDT,
+  https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
+  (u/No_Shelter5464, Aziz's account). Reply to every comment for 48 hours.
+  Rules table and the remaining drafts: `marketing/REDDIT.md`. The account
+  has no history, so r/apple waits for five organic comments there (next
+  Sunday at the earliest) and r/iosapps for ten local karma; r/AppleWatch,
+  r/iOS and r/iphone need a modmail first.
+
 - **Launch email to the waitlist + survey list: SENT 2026-09-13, 1:16 PM
   EDT**, from Aziz's Outlook, 33 people in BCC, campaign `ct=waitlist`
   (draft and rules in `marketing/LAUNCH_EMAIL.md`). Aziz chose to send

@@ -40,6 +40,15 @@ people to their first session.
 
 ---
 
+## Posted
+
+- **r/SideProject, 2026-09-13 ~1:50 PM EDT, u/No_Shelter5464.** Aziz's
+  personal-journey post (future self, Dispenza, "what did my body actually
+  do", 808 in one paragraph with a four-word disclosure, ends on a question
+  to the sub). Not the draft below; Aziz wrote it. Reply to every comment for
+  48 hours.
+  https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
+
 ## 1. r/AppleWatch modmail (send first; post nothing there until they answer)
 
 **Subject:** Developer asking permission before posting
