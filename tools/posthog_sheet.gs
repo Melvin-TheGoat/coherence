@@ -297,12 +297,18 @@ function writeInstalls() {
   // with an Application Installed event (first launch after an App Store
   // install), so a reinstall on the same phone is a new row: that is why the
   // founders appear several times until the team-device switch ships.
-  // Location is GeoIP of the network at the time, not the person.
+  // Location is GeoIP of the network at the moment of the install event,
+  // not the person. Pinned to that one event on purpose: any() over all
+  // of a person's events picked a different city on each refresh (a
+  // phone's IP moves between cell towers), so a row read Indiana one
+  // hour and Ohio the next.
   var sql =
     "SELECT person_id, " +
     "toTimeZone(minIf(timestamp, event = 'Application Installed'), 'America/Detroit') AS installed_at, " +
-    "any(properties.$geoip_city_name) AS city, any(properties.$geoip_subdivision_1_name) AS region, " +
-    "any(properties.$geoip_country_name) AS country, any(properties.$device_model) AS device, " +
+    "anyIf(properties.$geoip_city_name, event = 'Application Installed') AS city, " +
+    "anyIf(properties.$geoip_subdivision_1_name, event = 'Application Installed') AS region, " +
+    "anyIf(properties.$geoip_country_name, event = 'Application Installed') AS country, " +
+    "any(properties.$device_model) AS device, " +
     "any(properties.$os_version) AS os, " +
     "countIf(event = 'onboarding_completed') AS finished, " +
     "anyIf(toString(properties.outcome), event = 'watch_gate') AS gate, " +
