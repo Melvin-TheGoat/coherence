@@ -98,8 +98,12 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   because each of these people gets one first session and the live 1.0
   fails most of them.
 
-- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12, 11:07 PM):
-  "Waiting for Review", build 202609130259.**
+- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12, 11:24 PM):
+  "Waiting for Review", build 202609130259.** Pulled once more at 11:20
+  to swap store screenshots 3 and 6 for the five-tab layout (Profile tab
+  and Guide tab); screenshots are locked while a version is in review and
+  cannot change after release without a new version, so it had to happen
+  before this one went through.
   Melvin's build 202609121757 (five tabs, reflections, average HR, mindful
   minutes, feedback link, airplane-mode fix, rating prompt) was pulled from
   review and replaced by build **202609130259**, archived from Aziz's Mac

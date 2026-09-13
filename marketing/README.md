@@ -19,6 +19,15 @@ Captions live in `APP_STORE.md` and must name their subject: a store screenshot
 is met with no context at all, which is the same rule the onboarding screens
 follow.
 
+**Uploading to App Store Connect, learned 2026-09-12:** Media Manager keeps
+screenshots in the order they FINISH uploading, not the order they were
+chosen, so a multi-file upload lands shuffled and the strip cannot be
+reordered by a scripted drag. Upload ONE file at a time, waiting for each to
+process, in the listing order (01, 02, 07, 04, 05, 08, 06 as of 1.0.1). The
+6.9" slot is the one to fill; the 6.5" slot below it rejects these masters
+on dimensions and then shows the 6.9" set anyway. `PREVIEW_TAB=profile` and
+`DEMO_USERNAME=<handle>` (DEBUG) set up the Profile shot.
+
 **The device frame is drawn, not photographed.** Apple's marketing guidelines
 forbid depicting Apple hardware inaccurately, and a generic dark bezel avoids
 claiming to be a specific model.
