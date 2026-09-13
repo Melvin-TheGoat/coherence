@@ -1287,6 +1287,21 @@ UI must coach it, and the 2-signal degrade path must stay.
       carries `after_rung` (NOT `afterRung`). `award_unlocked` is the one
       that uses `id`. The mapping is `Analytics.Event.properties`; read it
       before building a breakdown.
+    - **Readable names, same evening (Aziz: "it's all super vague").**
+      `onboarding_step` ALSO sends `screen`, a numbered human name from
+      `Analytics.onboardingScreenName(for:)` ("12 Do you have an Apple
+      Watch?"; letters mark branch screens a persona may skip:
+      "06a Alone with your thoughts? (not regulars)"). Old funnels keep
+      working on `step`; new ones should break down by `screen`. Both
+      funnel tiles already show the numbered names as step labels.
+      `AnalyticsScreenNamesTests` fails if a Step case ships unnamed.
+    - **Team-device switch (ships with 1.0.1):** seven taps on the version
+      line at the bottom of Settings flag the phone; every event then
+      carries the super property `team_device = true` and the PostHog
+      filter rule `team_device ≠ true` drops it. Off by default. This is
+      the founders' answer to reinstalling constantly: flip it once per
+      install. Until 1.0.1 is on their phones, their App Store installs
+      still count in every tile.
     - **Internal-user filter (project setting, default ON):** `$app_build`
       ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
       rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
