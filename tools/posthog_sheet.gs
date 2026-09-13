@@ -301,13 +301,16 @@ function writeInstalls() {
   // not the person. Pinned to that one event on purpose: any() over all
   // of a person's events picked a different city on each refresh (a
   // phone's IP moves between cell towers), so a row read Indiana one
-  // hour and Ohio the next.
+  // hour and Ohio the next. When the install event itself carries no
+  // city (carrier gateways often resolve to a state only), fall back to
+  // any later event rather than print blank. City-level GeoIP on a
+  // phone is approximate either way; the state is the reliable part.
   var sql =
     "SELECT person_id, " +
     "toTimeZone(minIf(timestamp, event = 'Application Installed'), 'America/Detroit') AS installed_at, " +
-    "anyIf(properties.$geoip_city_name, event = 'Application Installed') AS city, " +
-    "anyIf(properties.$geoip_subdivision_1_name, event = 'Application Installed') AS region, " +
-    "anyIf(properties.$geoip_country_name, event = 'Application Installed') AS country, " +
+    "ifNull(anyIf(properties.$geoip_city_name, event = 'Application Installed'), any(properties.$geoip_city_name)) AS city, " +
+    "ifNull(anyIf(properties.$geoip_subdivision_1_name, event = 'Application Installed'), any(properties.$geoip_subdivision_1_name)) AS region, " +
+    "ifNull(anyIf(properties.$geoip_country_name, event = 'Application Installed'), any(properties.$geoip_country_name)) AS country, " +
     "any(properties.$device_model) AS device, " +
     "any(properties.$os_version) AS os, " +
     "countIf(event = 'onboarding_completed') AS finished, " +
