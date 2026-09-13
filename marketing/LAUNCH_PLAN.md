@@ -119,13 +119,16 @@ Never expect installs from a boost. Total boost spend stays under $150.
 
 ### Reddit
 
-r/AppleWatch allows app posts and is exactly our audience. One post, launch
-week, written by a person: what it measures, one real screenshot, the honest
-limits (needs a Watch; breathing reads slow breathing best), and a promo
-code offer in the comments. Reply to every comment for 48 hours.
-
-Not r/Meditation (bans promotion). Later candidates: r/Mindfulness (check
-rules), r/QuantifiedSelf, r/Biohackers.
+**Corrected 2026-09-13 after reading the rules of every candidate sub
+directly; the drafts and the full rules table live in `REDDIT.md`.**
+r/AppleWatch does NOT allow app posts (rule 5, "No Self Promo", plus rule 2
+requiring mod approval for anything promotional), so the one post there
+needs a modmail first and may never happen. The real openings: r/apple on
+Sundays (developer self-posts, after 5 organic contributions that month),
+r/iosapps once per 30 days (10 local karma, the Transparency path, ABC
+format), r/SideProject any time, and the r/QuantifiedSelf Monday megathread.
+r/Mindfulness, r/Biohackers, r/AppleWatchFitness and r/Meditation all ban
+promotion. Reply to every comment for 48 hours after each post.
 
 ### Press and creators
 
