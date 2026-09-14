@@ -75,6 +75,18 @@ actor CommunityStore {
         return Profile(record: saved) ?? profile
     }
 
+    /// Sets or clears the profile photo. `url` is a prepared JPEG
+    /// (`PostPhoto.prepare`); nil removes the photo.
+    @discardableResult
+    func setAvatar(_ url: URL?) async throws -> Profile {
+        let mine = try await me()
+        guard let record = try await db.fetch(mine) else { throw CommunityError.noProfile }
+        record["avatar"] = url.map { CKAsset(fileURL: $0) }
+        let saved = try await db.save(record)
+        guard let profile = Profile(record: saved) else { throw CommunityError.noProfile }
+        return profile
+    }
+
     /// Records that a first session exists, for the invite reward. Called
     /// once; later calls are no-ops so the date stays the first one.
     func markFirstSession(at date: Date = Date()) async throws {
@@ -220,19 +232,42 @@ actor CommunityStore {
         var caption: String
         var photoURL: URL?
         var practicedAt: Date
+        /// The session this post is. When set, the post's record name is
+        /// derived from it, so saving the same session again UPDATES its post
+        /// and switching it to Only you deletes exactly that one.
+        var sessionID: String? = nil
+        var title: String = ""
+        var sound: String? = nil
     }
 
+    static func postID(forSession sessionID: String) -> String { "post-" + sessionID }
+
     static let captionLimit = 140
+    static let titleLimit = 60
+
+    /// Takes a session's post down (it went to Only you). No-op when it was
+    /// never posted.
+    func unpost(session sessionID: String) async throws {
+        try await db.delete(Self.postID(forSession: sessionID))
+    }
 
     @discardableResult
     func post(_ draft: Draft) async throws -> Post {
         let mine = try await me()
         let caption = String(draft.caption.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.captionLimit))
-        let post = Post(author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
+        let id = draft.sessionID.map(Self.postID(forSession:)) ?? UUID().uuidString
+        let existing = try await db.fetch(id)
+        let post = Post(id: id, author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
                         technique: draft.technique, caption: caption, photoURL: draft.photoURL,
-                        practicedAt: draft.practicedAt)
-        let record = CKRecord(recordType: CommunityType.post, recordID: CKRecord.ID(recordName: post.id))
+                        practicedAt: draft.practicedAt,
+                        createdAt: existing?["createdAt"] as? Date ?? Date(),
+                        title: String(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.titleLimit)),
+                        sound: draft.sound)
+        let record = existing ?? CKRecord(recordType: CommunityType.post, recordID: CKRecord.ID(recordName: id))
+        // An update keeps a photo it already has unless a new one is given.
+        let keptPhoto = draft.photoURL == nil ? record["photo"] : nil
         post.apply(to: record)
+        if let keptPhoto { record["photo"] = keptPhoto }
         let saved = try await db.save(record)
         return Post(record: saved) ?? post
     }

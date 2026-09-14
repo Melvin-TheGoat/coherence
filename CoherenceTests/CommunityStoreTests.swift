@@ -121,11 +121,41 @@ final class CommunityStoreTests: XCTestCase {
     func test_postCarriesOnlyTheFreeCardFields() async throws {
         let post = try await aziz.post(draft(caption: "Roof before work."))
         let record = try XCTUnwrap(db.records[post.id])
-        XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["photo"]),
+        XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["photo", "sound"]),
                        "a post carries the free share card's data and nothing measured: no heart, breath or stillness values, no curves (5.1.3 and the free tier)")
         for banned in ["heart", "hr", "breath", "stillness", "curve", "bpm"] {
             XCTAssertFalse(Post.fields.contains { $0.lowercased().contains(banned) }, banned)
         }
+    }
+
+    func test_savingASessionAgainUpdatesItsPostAndUnpostRemovesIt() async throws {
+        var d = draft(caption: "first")
+        d.sessionID = "S1"; d.title = "Evening meditation"; d.sound = "Rain"
+        let first = try await aziz.post(d)
+        d.caption = "edited"
+        let second = try await aziz.post(d)
+        XCTAssertEqual(first.id, second.id, "one post per session")
+        XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.post }.count, 1)
+        XCTAssertEqual(second.caption, "edited")
+        XCTAssertEqual(second.title, "Evening meditation")
+        XCTAssertEqual(second.sound, "Rain")
+        XCTAssertEqual(second.createdAt, first.createdAt, "an edit keeps its place in the feed")
+
+        try await aziz.unpost(session: "S1")
+        XCTAssertTrue(db.records.values.filter { $0.recordType == CommunityType.post }.isEmpty)
+        try await aziz.unpost(session: "S1")   // already gone: no throw
+    }
+
+    func test_avatarIsSetAndCleared() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("avatar-test.jpg")
+        try Data([0xFF, 0xD8, 0xFF]).write(to: file)
+        var p = try await aziz.setAvatar(file)
+        XCTAssertEqual(p.avatarURL, file)
+        p = try await aziz.claimUsername("aziz", displayName: "Aziz M")
+        XCTAssertEqual(p.avatarURL, file, "renaming never drops the photo")
+        p = try await aziz.setAvatar(nil)
+        XCTAssertNil(p.avatarURL)
     }
 
     func test_captionIsTrimmedAndClipped() async throws {

@@ -42,13 +42,18 @@ struct Profile: Identifiable, Equatable {
     var displayName: String
     var firstSessionAt: Date?
     var createdAt: Date
+    /// The profile photo, as a local file (CloudKit hands assets back as
+    /// files). Optional: initials stand in when there is none.
+    var avatarURL: URL?
 
-    init(id: String, username: String, displayName: String, firstSessionAt: Date? = nil, createdAt: Date = Date()) {
+    init(id: String, username: String, displayName: String, firstSessionAt: Date? = nil,
+         createdAt: Date = Date(), avatarURL: URL? = nil) {
         self.id = id
         self.username = username
         self.displayName = displayName
         self.firstSessionAt = firstSessionAt
         self.createdAt = createdAt
+        self.avatarURL = avatarURL
     }
 
     init?(record: CKRecord) {
@@ -58,9 +63,12 @@ struct Profile: Identifiable, Equatable {
                   username: username,
                   displayName: record["displayName"] as? String ?? "",
                   firstSessionAt: record["firstSessionAt"] as? Date,
-                  createdAt: record["createdAt"] as? Date ?? Date())
+                  createdAt: record["createdAt"] as? Date ?? Date(),
+                  avatarURL: (record["avatar"] as? CKAsset)?.fileURL)
     }
 
+    /// Writes everything but the photo, which changes only through
+    /// `CommunityStore.setAvatar` so a rename never re-uploads it.
     func apply(to record: CKRecord) {
         record["username"] = username
         record["displayName"] = displayName
@@ -102,22 +110,29 @@ struct Post: Identifiable, Equatable {
     var minutes: Int
     var streak: Int
     var technique: String?
+    /// The public description ("How did it go?"). Never the private notes.
     var caption: String
     /// A local file URL for the photo (CloudKit hands assets back as files).
     var photoURL: URL?
     var practicedAt: Date
     var createdAt: Date
+    /// Strava's activity name: "Evening meditation", or whatever they typed.
+    var title: String
+    /// The sound played ("Rain", "Silence"), where Strava shows a location.
+    var sound: String?
 
     /// The only fields a post may carry. Locked by test; if you find yourself
     /// adding one, read the rule at the top of this file first.
-    static let fields = ["author", "score", "minutes", "streak", "technique", "caption", "photo", "practicedAt", "createdAt"]
+    static let fields = ["author", "score", "minutes", "streak", "technique", "caption", "photo",
+                         "practicedAt", "createdAt", "title", "sound"]
 
     init(id: String = UUID().uuidString, author: String, score: Int, minutes: Int, streak: Int,
          technique: String? = nil, caption: String = "", photoURL: URL? = nil,
-         practicedAt: Date, createdAt: Date = Date()) {
+         practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil) {
         self.id = id; self.author = author; self.score = score; self.minutes = minutes
         self.streak = streak; self.technique = technique; self.caption = caption
         self.photoURL = photoURL; self.practicedAt = practicedAt; self.createdAt = createdAt
+        self.title = title; self.sound = sound
     }
 
     init?(record: CKRecord) {
@@ -132,10 +147,14 @@ struct Post: Identifiable, Equatable {
                   caption: record["caption"] as? String ?? "",
                   photoURL: (record["photo"] as? CKAsset)?.fileURL,
                   practicedAt: record["practicedAt"] as? Date ?? Date(),
-                  createdAt: record["createdAt"] as? Date ?? Date())
+                  createdAt: record["createdAt"] as? Date ?? Date(),
+                  title: record["title"] as? String ?? "",
+                  sound: record["sound"] as? String)
     }
 
     func apply(to record: CKRecord) {
+        record["title"] = title
+        record["sound"] = sound
         record["author"] = CommunityRecordValue.reference(author).ckValue
         record["score"] = score
         record["minutes"] = minutes
