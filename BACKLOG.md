@@ -63,10 +63,13 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   says "Continue anyway" when they are not met; the failure screen watches
   the problem clear; the preflight waits for WCSession activation before
   reading `isPaired`, so a phone with no Watch is no longer told to bring its
-  Watch closer. **STILL OPEN: `heartRateUnavailable` (4 of the 10).** That is
-  a Health permission the phone cannot read back, so the app cannot tell
-  whether it is denied until a session fails. Worth investigating whether the
-  Watch can ask for it earlier, at the setup screen, instead of at first use.
+  Watch closer. (An earlier version of this line called `heartRateUnavailable`
+  still open; the bullet above supersedes it.) **What remains open on heart
+  rate:** HealthKit never reveals whether a READ permission was denied, so if
+  someone taps Don't Allow on the phone prompt the app cannot know, and their
+  first session still ends at the 30-second watchdog with the "We can't read
+  your heart rate" screen. Nothing to build until the next week of data says
+  how many people that is.
 - **10 of 13 sessions never started.** `session_start_failed` fires 10 times
   against 3 completions, by far the worst ratio on the dashboard, and the
   Watch gate is NOT the cause: 9 of 11 people said they own a Watch. Reasons
