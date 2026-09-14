@@ -82,7 +82,7 @@ struct ClaimUsernameView: View {
     let onClaimed: (String) -> Void
 
     @State private var handle: String = ""
-    @State private var available: Bool?
+    @State private var availability: CommunityModel.Availability?
     @State private var checking = false
     @State private var claiming = false
     @FocusState private var focused: Bool
@@ -122,8 +122,9 @@ struct ClaimUsernameView: View {
 
                 Text(status)
                     .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(available == true ? AppColor.calmAccent : AppColor.textSecondary)
+                    .foregroundStyle(availability == .available ? AppColor.calmAccent : AppColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Button {
                     claim()
@@ -131,8 +132,8 @@ struct ClaimUsernameView: View {
                     Text(claiming ? "Claiming…" : (handle.isEmpty ? "Claim your name" : "Claim @\(handle)"))
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                .disabled(available != true || claiming)
-                .opacity(available == true ? 1 : 0.55)
+                .disabled(availability != .available || claiming)
+                .opacity(availability == .available ? 1 : 0.55)
 
                 InviteRewardNote()
                     .padding(.top, 10)
@@ -149,22 +150,24 @@ struct ClaimUsernameView: View {
     private var status: String {
         if handle.isEmpty { return " " }
         if checking { return "Checking…" }
-        switch available {
-        case .some(true):  return "Available"
-        case .some(false): return "Taken"
-        case .none:        return " "
+        switch availability {
+        case .available:          return "@\(handle) is available"
+        case .taken:              return "@\(handle) is taken"
+        case .invalid:            return "Letters, numbers, dots and underscores only."
+        case .failed(let why):    return why
+        case .none:               return " "
         }
     }
 
     private func check() {
         let current = handle
-        guard !current.isEmpty else { available = nil; return }
+        guard !current.isEmpty else { availability = nil; return }
         checking = true
         Task {
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled, current == handle else { return }
-            let ok = await model.isAvailable(current)
-            if current == handle { available = ok; checking = false }
+            let result = await model.availability(of: current)
+            if current == handle { availability = result; checking = false }
         }
     }
 
@@ -173,7 +176,7 @@ struct ClaimUsernameView: View {
         Task {
             let ok = await model.claim(handle, displayName: displayName)
             claiming = false
-            if ok { onClaimed(handle) } else { available = false }
+            if ok { onClaimed(handle) } else { availability = await model.availability(of: handle) }
         }
     }
 }

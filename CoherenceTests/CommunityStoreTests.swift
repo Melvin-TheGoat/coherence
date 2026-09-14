@@ -47,6 +47,47 @@ final class CommunityStoreTests: XCTestCase {
         let again = try await aziz.claimUsername("aziz", displayName: "Aziz M")
         XCTAssertEqual(again.displayName, "Aziz M", "re-claim edits the profile in place")
         XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.profile }.count, 1)
+        XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.username }.count, 1)
+    }
+
+    /// The reservation is fetched by name, never queried: a fresh CloudKit
+    /// container has no record types and no indexes, and a query-based check
+    /// silently failed on a real phone (2026-09-14).
+    func test_claimNeverQueries() async throws {
+        let counting = CountingDatabase(inner: db)
+        let store = CommunityStore(database: counting)
+        _ = try await store.me()
+        try await store.claimUsername("aziz", displayName: "Aziz")
+        let ok = try await store.isUsernameAvailable("aziz")
+        XCTAssertTrue(ok)
+        _ = try await store.search(username: "aziz")
+        XCTAssertEqual(counting.queries, 0)
+    }
+
+    func test_changingHandleReleasesTheOldOne() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await aziz.claimUsername("aziz_m", displayName: "Aziz")
+        let free = try await melvin.isUsernameAvailable("aziz")
+        XCTAssertTrue(free, "the old handle is released")
+        let found = try await melvin.search(username: "aziz")
+        XCTAssertNil(found)
+        let now = try await melvin.search(username: "aziz_m")
+        XCTAssertEqual(now?.id, azizID)
+    }
+
+    func test_simultaneousClaimLosesToTheServer() async throws {
+        // Melvin's reservation lands between Aziz's check and Aziz's create.
+        let r = CKRecord(recordType: CommunityType.username, recordID: CKRecord.ID(recordName: CommunityNames.username("zen")))
+        r["profile"] = CommunityRecordValue.reference(melvinID).ckValue
+        let racing = RacingDatabase(inner: db, injectBeforeCreate: r)
+        let store = CommunityStore(database: racing)
+        _ = try await store.me()
+        do {
+            try await store.claimUsername("zen", displayName: "Aziz")
+            XCTFail("the server's existing reservation must win")
+        } catch let e as CommunityError {
+            XCTAssertEqual(e, .usernameTaken)
+        }
     }
 
     func test_emptyHandleIsInvalid() async throws {
@@ -286,4 +327,34 @@ final class CommunityStoreTests: XCTestCase {
         XCTAssertTrue(ck.predicate.predicateFormat.contains("author IN"))
         XCTAssertTrue(ck.predicate.predicateFormat.contains("caption == \"x\""))
     }
+}
+
+
+/// Counts queries so a test can assert a path never needs an index.
+private final class CountingDatabase: CommunityDatabase {
+    let inner: MemoryCommunityDatabase
+    var queries = 0
+    init(inner: MemoryCommunityDatabase) { self.inner = inner }
+    func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
+    func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
+    func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
+    func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { queries += 1; return try await inner.query(query) }
+    func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
+}
+
+/// Lets a rival's record appear after the check and before the create.
+private final class RacingDatabase: CommunityDatabase {
+    let inner: MemoryCommunityDatabase
+    var inject: CKRecord?
+    init(inner: MemoryCommunityDatabase, injectBeforeCreate: CKRecord) { self.inner = inner; self.inject = injectBeforeCreate }
+    func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
+    func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
+    func create(_ record: CKRecord) async throws -> CKRecord {
+        if let inject { _ = try await inner.save(inject); self.inject = nil }
+        return try await inner.create(record)
+    }
+    func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { try await inner.query(query) }
+    func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
 }

@@ -22,6 +22,9 @@ enum CommunityType {
     static let reaction = "Reaction"
     static let block    = "Block"
     static let report   = "Report"
+    /// A username reservation: record name `username-<handle>`, one field
+    /// `profile` pointing at its owner. See `CommunityStore.claimUsername`.
+    static let username = "Username"
 }
 
 /// Record names are deterministic wherever a second save should overwrite
@@ -33,6 +36,7 @@ enum CommunityNames {
     static func edge(from: String, to: String) -> String { "edge-" + from + "-" + to }
     static func reaction(post: String, by author: String) -> String { "react-" + post + "-" + author }
     static func block(from: String, to: String) -> String { "block-" + from + "-" + to }
+    static func username(_ handle: String) -> String { "username-" + handle }
 }
 
 struct Profile: Identifiable, Equatable {

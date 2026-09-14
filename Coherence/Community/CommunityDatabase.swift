@@ -57,6 +57,10 @@ protocol CommunityDatabase {
     /// opaque, and the root of every record name the user owns.
     func currentUserRecordName() async throws -> String
     func save(_ record: CKRecord) async throws -> CKRecord
+    /// Saves a NEW record and fails with `CommunityError.alreadyExists` if one
+    /// with that name is already on the server. Atomic on the server, which is
+    /// what makes a username reservation a real lock rather than a check.
+    func create(_ record: CKRecord) async throws -> CKRecord
     /// nil when no record has that name.
     func fetch(_ recordName: String) async throws -> CKRecord?
     func query(_ query: CommunityQuery) async throws -> [CKRecord]
@@ -71,6 +75,20 @@ enum CommunityError: Error, Equatable {
     case usernameInvalid
     case noProfile
     case blocked
+    case alreadyExists
+}
+
+extension CommunityError: LocalizedError {
+    var errorDescription: String? {
+        switch self {
+        case .unavailable:     return "iCloud isn't available on this iPhone."
+        case .usernameTaken:   return "That username is taken."
+        case .usernameInvalid: return "Letters, numbers, dots and underscores only."
+        case .noProfile:       return "Create your profile first."
+        case .blocked:         return "You can't do that with this person."
+        case .alreadyExists:   return "That already exists."
+        }
+    }
 }
 
 /// The public database of the app's entitled container.
@@ -99,6 +117,20 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
         try await db.save(record)
     }
 
+    func create(_ record: CKRecord) async throws -> CKRecord {
+        // `.ifServerRecordUnchanged` on a record the server has never seen
+        // fails with serverRecordChanged when someone else created it first.
+        let (saved, _) = try await db.modifyRecords(saving: [record], deleting: [],
+                                                    savePolicy: .ifServerRecordUnchanged,
+                                                    atomically: true)
+        guard let result = saved[record.recordID] else { throw CommunityError.alreadyExists }
+        do {
+            return try result.get()
+        } catch let error as CKError where error.code == .serverRecordChanged {
+            throw CommunityError.alreadyExists
+        }
+    }
+
     func fetch(_ recordName: String) async throws -> CKRecord? {
         do {
             return try await db.record(for: CKRecord.ID(recordName: recordName))
@@ -108,6 +140,16 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
     }
 
     func query(_ query: CommunityQuery) async throws -> [CKRecord] {
+        do {
+            return try await runQuery(query)
+        } catch let error as CKError where error.code == .unknownItem {
+            // "Did not find record type": nobody has ever saved one, so
+            // nothing matches. Development builds the type on first save.
+            return []
+        }
+    }
+
+    private func runQuery(_ query: CommunityQuery) async throws -> [CKRecord] {
         var out: [CKRecord] = []
         var (matches, cursor) = try await db.records(matching: query.ckQuery, resultsLimit: query.limit)
         out += matches.compactMap { try? $0.1.get() }

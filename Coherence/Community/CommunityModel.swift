@@ -145,10 +145,22 @@ final class CommunityModel: ObservableObject {
 
     // MARK: - Username
 
-    /// nil while the handle is invalid, otherwise whether it is free.
-    func isAvailable(_ handle: String) async -> Bool? {
-        guard let store, Username.normalize(handle) != nil else { return nil }
-        return try? await store.isUsernameAvailable(handle)
+    enum Availability: Equatable {
+        case available, taken, invalid
+        /// The check itself failed. Shown on screen; never swallowed (the
+        /// first version turned every iCloud error into a silently disabled
+        /// button).
+        case failed(String)
+    }
+
+    func availability(of handle: String) async -> Availability {
+        guard let store else { return .failed(CommunityError.unavailable.localizedDescription) }
+        guard Username.normalize(handle) != nil else { return .invalid }
+        do {
+            return try await store.isUsernameAvailable(handle) ? .available : .taken
+        } catch {
+            return .failed(Self.plain(error))
+        }
     }
 
     /// True on success. The claimed handle is returned through `profile`.
@@ -157,10 +169,13 @@ final class CommunityModel: ObservableObject {
         do {
             profile = try await store.claimUsername(handle, displayName: displayName)
             Analytics.track(.usernameClaimed)
-            try await refreshLists(store)
             phase = .ready
+            // The claim is done. Loading friends is a separate step whose
+            // failure (e.g. an index missing in the CloudKit Console) must not
+            // read as the claim failing.
+            do { try await refreshLists(store) } catch { errorText = Self.plain(error) }
             return true
-        } catch let e as CommunityError {
+        } catch let e as CommunityError where e == .usernameTaken || e == .usernameInvalid {
             errorText = e == .usernameTaken ? "That name is taken. Try another." : "Letters, numbers, dots and underscores only."
             return false
         } catch {
@@ -270,7 +285,8 @@ final class CommunityModel: ObservableObject {
         } catch { errorText = Self.plain(error) }
     }
 
-    private static func plain(_ error: Error) -> String {
-        "Couldn't reach iCloud. " + error.localizedDescription
+    static func plain(_ error: Error) -> String {
+        if let ce = error as? CommunityError { return ce.localizedDescription }
+        return "Couldn't reach iCloud. " + error.localizedDescription
     }
 }

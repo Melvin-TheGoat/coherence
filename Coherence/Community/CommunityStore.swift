@@ -34,43 +34,65 @@ actor CommunityStore {
         return Profile(record: record)
     }
 
-    /// True when nobody else holds the handle. My own profile holding it
-    /// counts as free, so re-saving my own name never reads as taken.
+    /// The owner of a handle, or nil when nobody holds it.
+    ///
+    /// **Usernames are reserved by RECORD NAME, never found by query.** A
+    /// query needs the record type to exist and the field to be indexed in
+    /// the CloudKit Console; on a fresh container neither is true, and the
+    /// first version's claim screen silently failed on Aziz's phone for
+    /// exactly that reason. A fetch by name needs no schema and no index.
+    private func holder(of handle: String) async throws -> String? {
+        guard let record = try await db.fetch(CommunityNames.username(handle)) else { return nil }
+        return (record["profile"] as? CKRecord.Reference)?.recordID.recordName
+    }
+
+    /// True when nobody else holds the handle. My own reservation counts as
+    /// free, so re-saving my own name never reads as taken.
     func isUsernameAvailable(_ raw: String) async throws -> Bool {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
         let mine = try await me()
-        let holders = try await db.query(CommunityQuery(type: CommunityType.profile,
-                                                        filters: [.equals("username", .string(handle))], limit: 5))
-        return holders.allSatisfy { $0.recordID.recordName == mine }
+        let owner = try await holder(of: handle)
+        return owner == nil || owner == mine
     }
 
-    /// Claim a handle, creating the profile if this is the first time. The
-    /// check-then-save race (two people claiming one name in the same second)
-    /// is caught by a second query after the save: the later claimant, by
-    /// `createdAt`, loses and is told so.
+    /// Claim a handle, creating the profile if this is the first time.
+    ///
+    /// The reservation is CREATED, not saved: the server refuses a second
+    /// record with the same name, so two people claiming one name in the same
+    /// second cannot both win. Changing handles releases the old reservation
+    /// after the new one is held, so a failure never leaves someone nameless.
     @discardableResult
     func claimUsername(_ raw: String, displayName: String) async throws -> Profile {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
-        guard try await isUsernameAvailable(handle) else { throw CommunityError.usernameTaken }
-
         let mine = try await me()
+
+        switch try await holder(of: handle) {
+        case .some(let owner) where owner != mine:
+            throw CommunityError.usernameTaken
+        case .some:
+            break   // already mine
+        case .none:
+            let reservation = CKRecord(recordType: CommunityType.username,
+                                       recordID: CKRecord.ID(recordName: CommunityNames.username(handle)))
+            reservation["profile"] = CommunityRecordValue.reference(mine).ckValue
+            do {
+                _ = try await db.create(reservation)
+            } catch CommunityError.alreadyExists {
+                throw CommunityError.usernameTaken
+            }
+        }
+
         let record = try await db.fetch(mine) ?? CKRecord(recordType: CommunityType.profile,
                                                           recordID: CKRecord.ID(recordName: mine))
         var profile = Profile(record: record) ?? Profile(id: mine, username: handle, displayName: displayName)
+        let previous = profile.username
         profile.username = handle
         profile.displayName = displayName
         profile.apply(to: record)
         let saved = try await db.save(record)
 
-        let holders = try await db.query(CommunityQuery(type: CommunityType.profile,
-                                                        filters: [.equals("username", .string(handle))], limit: 5))
-        let others = holders.filter { $0.recordID.recordName != mine }
-        if let rival = others.compactMap(Profile.init(record:)).min(by: { $0.createdAt < $1.createdAt }),
-           rival.createdAt < profile.createdAt {
-            // Lost the race. Give the handle back and report it.
-            record["username"] = "" as NSString
-            _ = try? await db.save(record)
-            throw CommunityError.usernameTaken
+        if !previous.isEmpty, previous != handle {
+            try? await db.delete(CommunityNames.username(previous))
         }
         return Profile(record: saved) ?? profile
     }
@@ -106,10 +128,9 @@ actor CommunityStore {
     }
 
     func search(username raw: String) async throws -> Profile? {
-        guard let handle = Username.normalize(raw) else { return nil }
-        let found = try await db.query(CommunityQuery(type: CommunityType.profile,
-                                                      filters: [.equals("username", .string(handle))], limit: 1))
-        guard let record = found.first, let profile = Profile(record: record) else { return nil }
+        guard let handle = Username.normalize(raw), let owner = try await holder(of: handle) else { return nil }
+        guard let record = try await db.fetch(owner), let profile = Profile(record: record),
+              profile.username == handle else { return nil }
         let mine = try await me()
         if profile.id != mine, try await isBlocked(between: mine, and: profile.id) { return nil }
         return profile

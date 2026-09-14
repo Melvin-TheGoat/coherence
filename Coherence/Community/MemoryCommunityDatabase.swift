@@ -22,6 +22,11 @@ final class MemoryCommunityDatabase: CommunityDatabase {
         return record
     }
 
+    func create(_ record: CKRecord) async throws -> CKRecord {
+        guard records[record.recordID.recordName] == nil else { throw CommunityError.alreadyExists }
+        return try await save(record)
+    }
+
     func fetch(_ recordName: String) async throws -> CKRecord? { records[recordName] }
 
     func query(_ query: CommunityQuery) async throws -> [CKRecord] {
