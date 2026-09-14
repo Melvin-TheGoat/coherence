@@ -129,13 +129,6 @@ leave after finishing the interview.
 
 ## Decided, not started
 
-- **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
-  Pro 3 and Powerbeats Pro 2 carry an optical heart-rate sensor and iOS 26
-  exposes it to apps through HealthKit during a workout. Paired with head
-  motion from `CMHeadphoneMotionManager` (stillness, maybe breathing), that
-  is a second no-Watch path beside camera vision. Investigate: what a
-  phone-only `HKWorkoutSession` receives from the buds, and whether head
-  motion carries a breath. Owner: unassigned.
 
 - **Otto, the data interpreter** (Melvin, 2026-09-12). A chat you can ask
   about your own sessions: heart rate, stillness, breathing, the score, and
@@ -216,6 +209,23 @@ leave after finishing the interview.
   `trial_started` it never had.
 
 ## In flight
+
+- **AirPods heart rate: FEASIBLE on iOS 26, spike built** (2026-09-14,
+  branch `airpods`, `AIRPODS_PLAN.md` on that branch). Sources: WWDC25
+  session 322 (`HKWorkoutSession` runs on iPhone from iOS 26 and HealthKit
+  pulls heart rate from paired buds), Apple's AirPods Pro 3 support page
+  (third-party workout apps receive it, no Watch needed), Apple DTS on the
+  forums (heart-rate samples only, no HRV, so "no coherence" still stands).
+  Path: iPhone-side `.mindAndBody` workout session, HR as system-written
+  samples, head motion from `CMHeadphoneMotionManager` (~25 Hz). Breathing
+  from head motion is a hypothesis (two papers, still head, ~2/min error),
+  not a promise. Score split: the engine's existing 0.60/0.40 heart/still.
+  Spike: DEBUG-only probe at Settings > AirPods (debug), writes HR and
+  motion CSVs to Documents/AirPodsCaptures; Release binary carries none of
+  it; committed Info.plist unchanged. Shipping it changes Info.plist, the
+  Health strings and the policy's Watch-only wording (a review pass).
+  **Next: a first capture on AirPods Pro 3** (steps in the plan). Nobody
+  has confirmed owning a pair yet.
 
 - **No-Watch waitlist emails now reach us (next build).** The in-app
   waitlist screen saved the typed email on the person's own phone only, so
