@@ -293,7 +293,9 @@ var IPHONE_MODELS = {
 };
 
 function writeInstalls() {
-  // One row per install, newest first. An "install" is one PostHog person
+  // One row per install, newest first. Version is the LATEST the person
+  // ran (argMax by time), so an update shows the build they are on now.
+  // An "install" is one PostHog person
   // with an Application Installed event (first launch after an App Store
   // install), so a reinstall on the same phone is a new row: that is why the
   // founders appear several times until the team-device switch ships.
@@ -312,6 +314,7 @@ function writeInstalls() {
     "argMinIf(toString(properties.$geoip_country_name), timestamp, notEmpty(toString(properties.$geoip_city_name))) AS country, " +
     "any(properties.$device_model) AS device, " +
     "any(properties.$os_version) AS os, " +
+    "argMax(toString(properties.$app_version), timestamp) AS ver, " +
     "countIf(event = 'onboarding_completed') AS finished, " +
     "anyIf(toString(properties.outcome), event = 'watch_gate') AS gate, " +
     "countIf(event = 'paywall_viewed') AS paywall, " +
@@ -328,7 +331,7 @@ function writeInstalls() {
     "ORDER BY installed_at DESC LIMIT 2000";
   var res = query(sql);
   var gates = { hasWatch: 'Has a Watch', waitlist: 'No Watch (waitlist)', declined: 'Declined' };
-  var rows = [['Date', 'Time (Detroit)', 'City', 'State / region', 'Country', 'iPhone', 'iOS',
+  var rows = [['Date', 'Time (Detroit)', 'City', 'State / region', 'Country', 'iPhone', 'iOS', 'Version',
                'Finished onboarding', 'Watch gate', 'Package', 'Sessions started',
                'Sessions completed', 'Start failures', 'Purchase taps', 'Last seen', 'Note',
                'PostHog person id']];
@@ -336,24 +339,24 @@ function writeInstalls() {
     var when = String(r[1] || '').replace('T', ' ').split(' ');
     var city = r[2] || '', device = r[5] || '';
     var pkg;
-    if (r[10] === 'lifetime') pkg = 'Lifetime';
-    else if (r[10]) pkg = r[10].charAt(0).toUpperCase() + r[10].slice(1) + (r[11] > 0 ? ', 7-day trial' : '');
-    else if (r[12] > 0) pkg = 'Free (declined the ladder)';
-    else if (r[9] > 0) pkg = 'Saw the paywall, no plan';
+    if (r[11] === 'lifetime') pkg = 'Lifetime';
+    else if (r[11]) pkg = r[11].charAt(0).toUpperCase() + r[11].slice(1) + (r[12] > 0 ? ', 7-day trial' : '');
+    else if (r[13] > 0) pkg = 'Free (declined the ladder)';
+    else if (r[10] > 0) pkg = 'Saw the paywall, no plan';
     else pkg = 'Free (never reached the paywall)';
     var note = '';
     if (city === 'Cupertino' || city === 'Sunnyvale' || device === 'iPhone99,7') note = 'Apple (App Review)';
-    else if (r[16] > 1) note = 'Repeat taps on the buy button, not repeat sales';
+    else if (r[17] > 1) note = 'Repeat taps on the buy button, not repeat sales';
     rows.push([when[0], (when[1] || '').slice(0, 8), city || '(unknown)', r[3] || '', r[4] || '',
-               IPHONE_MODELS[device] || device, r[6] || '',
-               r[7] > 0 ? 'Yes' : 'No', gates[r[8]] || 'Did not reach it', pkg,
-               r[13], r[14], r[15], r[16], String(r[17] || '').replace('T', ' ').slice(0, 19),
+               IPHONE_MODELS[device] || device, r[6] || '', r[7] || '',
+               r[8] > 0 ? 'Yes' : 'No', gates[r[9]] || 'Did not reach it', pkg,
+               r[14], r[15], r[16], r[17], String(r[18] || '').replace('T', ' ').slice(0, 19),
                note, r[0]]);
   });
   rows.push(['']);
-  rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '',
+  rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Founders count until the team-device switch ships.']);
-  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280]);
+  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280]);
 }
 
 function writeWatchGate() {
