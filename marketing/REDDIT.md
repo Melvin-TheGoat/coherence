@@ -56,6 +56,11 @@ people to their first session.
   a few days; (3) if they say no, post again in a week from an account with
   history, or with the link replaced by the App Store name.
 
+  **2026-09-14: the r/SideProject post goes again from MELVIN's account**
+  (it has history and karma), using draft 4 below, which is different text
+  from Aziz's removed post. Text post, not a link post. Aziz's account stays
+  on comments only until it has karma.
+
   Modmail to r/SideProject:
   > Hi. My post "I started meditating to become a future version of myself"
   > was removed by Reddit's filters, I think because the account is new.
