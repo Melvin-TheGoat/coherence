@@ -31,6 +31,71 @@ yet; every completion so far is a founder, family or friend).
 - **Friday review** (this Friday, 2026-09-18): the sheet's Overview tab
   against the scorecard in the launch plan, section 6.
 
+## Onboarding feedback, round 2 (one tester, no Watch, 2026-09-14)
+
+Walked the whole interview on a phone with no Watch paired. Grouped by what
+it costs. The sheet's Screens tab agrees with the big one: nobody leaves on
+the proof screens (0% each), people leave on screen 1 (19%), at the Watch
+gate (35%) and in the tour after onboarding (33%, 25%, 67%, 100%).
+
+Small fixes, one build:
+- Going BACK to an answered single-select shows the tick but no Continue;
+  the "tap an answer" hint is easy to miss. Show Continue whenever an answer
+  is already selected.
+- Hide the scroll indicator on every onboarding screen; it overlaps the UI.
+- Option rows blend into the background; raise the contrast.
+- Haptic on every option tap, consistently (some screens have it, some do
+  not, and the missing ones read as broken).
+- Multi-select ("what do you already track") uses circles; multi-select is
+  squares by convention. Its Continue also sits differently from every
+  other screen.
+- The no-Watch waitlist email field renders in blue, which reads as a link.
+  Grey placeholder, lowercase "email", standard field.
+- "Where most people start": the circle clips at the edge.
+- "Here's what you told us": some cards have black text and whiter
+  backgrounds, others grey. Unify.
+- The star-rating screen ("Does this sound like it'd work?") does not say
+  what the stars mean. Label it.
+
+Copy:
+- "Fried" on the stress screen; reconsider the word.
+- "You'd be in reasonable company" reads oddly; re-read the wall screen and
+  the surrounding copy aloud.
+- "How long have you been meaning to start" needs a "I haven't, really"
+  option, and its ranges overlap ("a year or so" against "years"; "3+"
+  against "3 to 5"). Dedupe.
+
+Decisions (Melvin + Aziz):
+- **Say "needs an Apple Watch" before the interview starts**, not at screen
+  12. The tester reached the $400 hardware screen assuming the app was for
+  them. The App Store page says it, the flow does not.
+- The hardware screen ("Seeing your body meditate used to cost $400") read
+  as presumptuous and as an upsell mid-interview. Options: cut it, or move
+  it after the Watch gate so only Watch owners see it.
+- Watch gate as three answers (Yes / No / Not yet), or a modal that states
+  the requirement and offers the waitlist.
+- Split the "Last thing" screen: age on one, username on its own at the end.
+- "How did you find us?" earlier. Only 42% finish onboarding, so 58% of
+  installs never answer it where it sits now (screen 15). Screen 2 or 3
+  would capture nearly everyone, at the cost of one more early screen where
+  the first drop already happens.
+- Too much reading before the first session: move the sample-session and
+  proof screens (18 to 22) into the tour after the first Begin. The data
+  says those screens lose nobody, so the case is length, not drop-off.
+- Animation on the minimal screens (the tester named Duolingo's tool, which
+  is Rive). Later, and only for a moment or two.
+- Real design and photography instead of code-drawn screens. Later.
+- Customer discovery question: "what does 808 mean to you when you first
+  see it?" The tester did not know.
+
+Already true:
+- Per-screen churn analytics exist (the sheet's Screens tab).
+
+Refused:
+- "Force sign-in, don't let them skip." No. Guideline 5.1.1(v) makes
+  sign-in optional for an app that works without an account, and it was a
+  documented rejection reason in the audit. Stays optional.
+
 ## Decided, not started
 
 - **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
