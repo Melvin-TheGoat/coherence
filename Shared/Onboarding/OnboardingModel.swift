@@ -599,6 +599,7 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var hasWatch: Bool?
     public var anchor: Anchor?
     public var firstName: String = ""
+    public var username: String = ""
     public var ageBracket: String?
     public var referral: ReferralSource?
     /// What a regular practitioner can't see (regular persona only).

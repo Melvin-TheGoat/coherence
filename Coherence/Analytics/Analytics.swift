@@ -37,6 +37,7 @@ enum Analytics {
         case sessionStartFailed(reason: String)
         case resultViewed
         case resultMissing                        // a session ended with no stats: the failure metric
+        case ratingPrompted                       // Apple's rating sheet was requested (it decides whether to show)
 
         // Monetization
         case paywallViewed(placement: String)
@@ -78,6 +79,7 @@ enum Analytics {
             case .sessionStartFailed: "session_start_failed"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
+            case .ratingPrompted: "rating_prompted"
             case .paywallViewed: "paywall_viewed"
             case .paywallDismissed: "paywall_dismissed"
             case .trialStarted: "trial_started"
@@ -98,7 +100,10 @@ enum Analytics {
 
         var properties: [String: String] {
             switch self {
-            case .onboardingStep(let id): ["step": id]
+            // `step` is the routing id (what the code calls the screen);
+            // `screen` is the numbered human name a dashboard can be read by.
+            // Both ship, so old funnels keep working and new ones read plainly.
+            case .onboardingStep(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
             case .watchGate(let outcome): ["outcome": outcome]
             case .sessionStarted(let source, let sound): ["source": source, "sound": sound]
             case .sessionCompleted(let d, let s): ["duration": d, "streak": s]
@@ -143,11 +148,98 @@ enum Analytics {
         // capture path that invents its own events stays off.
         config.captureElementInteractions = false
         PostHogSDK.shared.setup(config)
+        applyTeamDevice()
         sink = { event in
             PostHogSDK.shared.capture(event.name, properties: event.properties)
         }
         #endif
     }
+
+    // MARK: - Team devices
+
+    /// Founders' phones send events like anyone else's, and every reinstall
+    /// mints a new anonymous id, so neither an id list nor a postal code held
+    /// up as an "internal user" rule (both were tried in PostHog on
+    /// 2026-09-12; the postal one would have hidden friends). Instead the
+    /// phone flags itself: seven taps on the version line in Settings
+    /// registers `team_device = true` as a super property on every event,
+    /// and the project's internal-user filter is `team_device ≠ true`.
+    /// Off by default, so no real user is ever flagged by accident.
+    private static let teamDeviceKey = "analytics.teamDevice.v1"
+
+    static var isTeamDevice: Bool {
+        UserDefaults.standard.bool(forKey: teamDeviceKey)
+    }
+
+    static func setTeamDevice(_ on: Bool) {
+        UserDefaults.standard.set(on, forKey: teamDeviceKey)
+        applyTeamDevice()
+    }
+
+    private static func applyTeamDevice() {
+        #if !DEBUG
+        if isTeamDevice {
+            PostHogSDK.shared.register(["team_device": true])
+        } else {
+            PostHogSDK.shared.unregister("team_device")
+        }
+        #endif
+    }
+
+    // MARK: - Onboarding screen names
+
+    /// The numbered human name for each onboarding screen, keyed by the
+    /// routing id (`String(describing: OnboardingView.Step)`). Read by the
+    /// PostHog funnels, which nobody but the author could follow while they
+    /// showed `relief` and `proofYourWay`. Letters mark branch screens a
+    /// persona may never see, so a funnel over the numbered ones is one every
+    /// user walks. `AnalyticsScreenNamesTests` fails the build if a Step case
+    /// is added without a name here.
+    static func onboardingScreenName(for id: String) -> String {
+        onboardingScreenNames[id] ?? "?? \(id)"
+    }
+
+    private static let onboardingScreenNames: [String: String] = [
+        "relief":            "01 Relief: you're not bad at meditation",
+        "breath":            "02 One breath before we start",
+        "baseline":          "03 How often do you meditate?",
+        "motivation":        "04 What are you hoping for?",
+        "stress":            "05 How stressed lately?",
+        "aloneWithThoughts": "06a Alone with your thoughts? (not regulars)",
+        "doingNothing":      "06b How long doing nothing? (not regulars)",
+        "restarts":          "07a What made you stop? (restarters)",
+        "intendedFor":       "07b How long meaning to start? (newcomers)",
+        "bodyCuriosity":     "08a Wonder what your body is doing? (not newcomers)",
+        "bodyProof":         "08b How do you know it worked? (not newcomers)",
+        "bodyTracking":      "09 What do you already track?",
+        "hardware":          "10 The hardware you'd otherwise need",
+        "blindSpot":         "11 What can't you tell about your practice? (regulars)",
+        "watchGate":         "12 Do you have an Apple Watch?",
+        "watchSetup":        "12a 808 goes on your Watch (has Watch)",
+        "waitlist":          "12b No-Watch waitlist",
+        "anchor":            "13 When will you actually meditate?",
+        "you":               "14 What should we call you?",
+        "referral":          "15 How did you find us?",
+        "calculating":       "16 Calculating your plan",
+        "result":            "17 Here's what you told us",
+        "cost":              "17b The cost (not routed to)",
+        "wall":              "18 The wall: you'd be in company",
+        "proofBody":         "19 Proof: the body is visible",
+        "sampleStart":       "20 Sample session: start",
+        "sampleBuild":       "21 Sample session: the score builds",
+        "proofYourWay":      "22 Proof: your way",
+        "commitment":        "23 Make it a promise",
+        "permission":        "24 One nudge at your time (notifications)",
+        "week":              "25 Your first week",
+        "rating":            "26 Does this sound like it'd work?",
+        "health":            "27 Health data consent",
+        "tourHome":          "28 Tour: this is home",
+        "watchConnect":      "29 Tour: put your Watch on",
+        "breathe":           "30 Tour: two-minute demo",
+        "sessionResults":    "31 Tour: demo results",
+        "paywall":           "32 Paywall",
+        "signIn":            "33 Sign in with Apple",
+    ]
 
     /// Where events go. `start()` swaps this to PostHog when a key is set;
     /// nothing else in the app knows or cares.

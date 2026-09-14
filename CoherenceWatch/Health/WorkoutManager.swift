@@ -122,6 +122,17 @@ final class WorkoutManager: NSObject, ObservableObject {
         session.end()
         _ = await finishBuilder(builder)
 
+        // One mindful-minutes sample per session, so it appears in Health >
+        // Mindfulness and wherever Apple totals them. Never fatal: a refused
+        // permission costs the Health entry, not the session.
+        if let mindful = HKObjectType.categoryType(forIdentifier: .mindfulSession), durationSec > 0 {
+            let sample = HKCategorySample(type: mindful, value: HKCategoryValue.notApplicable.rawValue,
+                                          start: startedAt,
+                                          end: startedAt.addingTimeInterval(Double(durationSec)))
+            do { try await HealthKitAuth.store.save(sample) }
+            catch { log.error("mindful minutes not saved: \(error.localizedDescription)") }
+        }
+
         let motionAll = motion.snapshot()
         let hrAll = hrSamples
         let elapsed = max(motionAll.last?.t ?? 0, hrAll.last?.t ?? 0)

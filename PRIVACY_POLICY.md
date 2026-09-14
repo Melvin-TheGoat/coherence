@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: August 25, 2026**
+**Last updated: September 14, 2026**
 
 This Privacy Policy explains how **Lock Out Inc. ("we," "us," "808")**
 handles information in the **808** app for iPhone and Apple Watch.
@@ -44,7 +44,9 @@ them, and a summary score.
 Important details:
 
 - The app requests HealthKit permission only for **heart rate**,
-  **heart-rate variability (SDNN)** and **workouts**. Heart rate is read
+  **heart-rate variability (SDNN)**, **workouts** and **mindful minutes**.
+  Each session is written to Health as a Mind and Body workout and as mindful
+  minutes, so it appears beside Apple's own. Heart rate is read
   **live during a session** only. HRV is read as Apple's own passive samples,
   including up to 30 days of them, solely to give your readings a baseline.
   Nothing else in your Health history is read.
@@ -133,6 +135,14 @@ sell or share it, and every email includes an unsubscribe link — or you can em
 us and we will remove you. The website is separate from the app: using it does not
 create an account, and it involves no health data of any kind.
 
+**The no-Watch waitlist in the app.** If you tell the app you don't have an Apple
+Watch, it offers to let you know when there is a version that works without one.
+If you type your email address and tap "Join the waitlist", the app sends us that
+address and the app's version number, and nothing else: no health data, no
+device details, and nothing that links it to your usage analytics. It is stored
+in a spreadsheet hosted by Google and used only to email you about that version.
+Joining is optional, and you can ask us to remove you at any time.
+
 ## Third parties
 
 - **Apple** — Sign in with Apple, HealthKit, CloudKit/iCloud sync, and App Store
@@ -140,8 +150,9 @@ create an account, and it involves no health data of any kind.
 - **Email delivery provider** — only your email address, and only if you opt into
   product emails or join the website waitlist. The provider stores the address in
   order to send those emails and does not receive any health data.
-- **Website form processing** — waitlist and questionnaire responses are stored in
-  a spreadsheet hosted by Google. No health data is collected there.
+- **Website and in-app form processing** — website waitlist and questionnaire
+  responses, and the in-app no-Watch waitlist email, are stored in spreadsheets
+  hosted by Google. No health data is collected there.
 - **PostHog, Inc.** — anonymous usage analytics for the app, as described
   under "Usage analytics". PostHog receives feature-usage events under an
   anonymous identifier and never receives health data, your name, or your

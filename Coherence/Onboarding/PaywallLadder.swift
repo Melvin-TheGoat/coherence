@@ -198,7 +198,7 @@ struct FreeTierScreen: View {
                 column("STAYS LOCKED", items: locked, tint: AppColor.textSecondary, symbol: "lock.fill")
             }
 
-            LockedGraphCard(title: "Heart rate",
+            LockedGraphCard(title: "Heart Rate",
                             message: "This is your session. Unlock to read it.")
 
             Spacer(minLength: 8)

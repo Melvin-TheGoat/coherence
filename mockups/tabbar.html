@@ -1,0 +1,166 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · five-tab layout</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.09); }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 4px; } .note{ color:var(--muted); font-size:13px; max-width:720px; line-height:1.5; }
+h2{ font-size:13px; margin:34px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:270px; height:584px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:46px 18px 0; overflow:hidden; font-size:12.5px; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:270px; line-height:1.45; }
+.cap b{ color:var(--fg); }
+.k{ font-size:9.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; font-weight:600; }
+.top{ display:flex; align-items:center; justify-content:space-between; }
+.greet{ font-size:19px; font-weight:700; letter-spacing:-.02em; margin-top:10px; }
+.big{ font-size:44px; font-weight:800; letter-spacing:-.03em; line-height:1; }
+.side{ text-align:right; color:var(--muted); font-size:11px; line-height:1.5; } .side b{ color:var(--gold); }
+.card{ background:var(--card); border-radius:14px; padding:12px; margin-top:12px; }
+.cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px 0; text-align:center; font-size:10.5px; color:var(--muted); margin-top:8px; }
+.cal .d{ position:relative; padding:3px 0; } .cal .d.on::after{ content:""; display:block; width:4px; height:4px; border-radius:50%; background:var(--gold); margin:2px auto 0; }
+.cal .d.today{ color:var(--fg); font-weight:700; outline:1px solid var(--teal); border-radius:8px; }
+.ev{ display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--card); border-radius:14px; margin-top:8px; }
+.ring{ width:34px; height:34px; border-radius:50%; border:3px solid var(--gold); border-left-color:rgba(212,175,55,.25); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+.ev .t{ font-weight:600; font-size:12.5px; } .ev .s{ color:var(--muted); font-size:10.5px; margin-top:2px; }
+.tabs{ height:72px; border-top:1px solid var(--line); background:#141210; display:flex; align-items:flex-start; justify-content:space-around; padding-top:8px; position:relative; }
+.tab{ width:44px; text-align:center; color:var(--muted); font-size:8.5px; letter-spacing:.02em; }
+.tab svg{ width:22px; height:22px; display:block; margin:0 auto 3px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.tab.on{ color:var(--fg); }
+.plus{ width:58px; height:58px; border-radius:50%; background:var(--gold); color:#1a1508; display:flex; align-items:center; justify-content:center; margin-top:-24px; box-shadow:0 8px 24px rgba(212,175,55,.35); font-size:34px; font-weight:300; line-height:1; }
+.hero{ display:flex; align-items:center; gap:12px; margin-top:8px; }
+.avatar{ width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#3a2f13,#6b4f15); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:var(--gold); }
+.name{ font-size:18px; font-weight:800; letter-spacing:-.02em; } .since{ color:var(--muted); font-size:11px; margin-top:2px; }
+.stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:14px; }
+.stat{ background:var(--card); border-radius:12px; padding:10px 6px; text-align:center; } .stat b{ display:block; font-size:18px; font-weight:800; } .stat span{ font-size:8.5px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.awards{ display:flex; gap:8px; margin-top:8px; } .aw{ width:34px; height:34px; border-radius:50%; border:1.5px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--gold); } .aw.off{ border-color:#3a3833; color:#5a5851; }
+.gear{ width:26px; height:26px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; }
+.guide{ display:flex; align-items:center; justify-content:space-between; padding:13px 12px; background:var(--card); border-radius:14px; margin-top:8px; } .guide .t{ font-weight:600; } .guide .s{ color:var(--muted); font-size:10.5px; margin-top:2px; }
+.search{ margin-top:14px; border:1px solid var(--line); border-radius:12px; padding:9px 12px; color:var(--muted); display:flex; gap:8px; align-items:center; }
+.center{ text-align:center; margin-top:110px; } .center .mg{ font-size:44px; color:var(--muted); }
+.center h3{ font-size:16px; margin:14px 0 6px; } .center p{ color:var(--muted); font-size:12px; line-height:1.5; margin:0 22px; }
+.pill{ display:inline-block; margin-top:14px; padding:6px 12px; border-radius:999px; border:1px solid var(--gold); color:var(--gold); font-size:10px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; }
+.q{ margin-top:34px; max-width:720px; } .q li{ margin:8px 0; line-height:1.5; font-size:13.5px; } .q b{ color:var(--gold); }
+</style></head><body>
+<h1>808 · five-tab layout</h1>
+<p class="note">The standard bottom bar: Home, Guide, a raised gold plus that starts a session, Search (coming soon), Profile. Same palette, same components, same wiring underneath. The plus opens the existing "Ready when you are" sheet; every modal (live session, results, award unlock, start failure) stays app-wide exactly as today.</p>
+
+<h2>The five tabs</h2>
+<div class="row">
+
+<!-- HOME -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top"><span class="k">808</span></div>
+  <div class="greet">Good afternoon, Melvin</div>
+  <div class="top" style="margin-top:14px">
+    <div><div class="k">Day streak</div><div class="big" style="margin-top:6px">7</div></div>
+    <div class="side">longest <b>7</b><br>sessions <b>20</b></div>
+  </div>
+  <svg viewBox="0 0 230 40" style="width:100%;height:40px;margin-top:8px"><path d="M2 26 C20 10 30 30 50 22 S80 6 100 20 S130 34 150 18 S190 26 228 8" stroke="#D4AF37" fill="none" stroke-width="2"/></svg>
+  <div class="k" style="margin-top:2px">Practice score · last 11 sessions</div>
+  <div class="card">
+    <div class="top"><span class="k" style="color:var(--fg)">September</span><span class="k">17 practiced days</span></div>
+    <div class="cal">
+      <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+      <div class="d" style="opacity:.3">31</div><div class="d on">1</div><div class="d on">2</div><div class="d">3</div><div class="d on">4</div><div class="d on">5</div><div class="d">6</div>
+      <div class="d on">7</div><div class="d on">8</div><div class="d on">9</div><div class="d on">10</div><div class="d on">11</div><div class="d on today">12</div><div class="d">13</div>
+      <div class="d">14</div><div class="d">15</div><div class="d">16</div><div class="d">17</div><div class="d">18</div><div class="d">19</div><div class="d">20</div>
+    </div>
+  </div>
+  <div class="k" style="margin-top:14px">Recent</div>
+  <div class="ev"><div class="ring">81</div><div><div class="t">Today · Rain</div><div class="s">10 min · HR −13 · breath 8.9</div></div></div>
+  <div class="ev"><div class="ring">64</div><div><div class="t">Yesterday · Silence</div><div class="s">12 min · HR −6</div></div></div>
+</div>
+<div class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Home.</b> Streak, sparkline, this month, the last few sessions. The Begin button and the two top-right icons are gone: the plus and the tabs took their jobs. Tapping a dotted day opens that day's sessions.</div>
+</div>
+
+<!-- GUIDE -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="greet">How to meditate</div>
+  <div class="k" style="margin-top:4px">Ways to practise, easiest first</div>
+  <div class="guide" style="margin-top:16px"><div><div class="t">First time meditating?</div><div class="s">What to actually do when you sit down</div></div><span style="color:var(--muted)">›</span></div>
+  <div class="guide"><div><div class="t">Counting the breath</div><div class="s">The one most teachers start with</div></div><span style="color:var(--muted)">›</span></div>
+  <div class="guide"><div><div class="t">Slow breathing</div><div class="s">Four to seven a minute. 808 reads this best</div></div><span style="color:var(--muted)">›</span></div>
+  <div class="guide"><div><div class="t">Body scan</div><div class="s">Attention travels, the body stays</div></div><span style="color:var(--muted)">›</span></div>
+  <div class="guide"><div><div class="t">Open awareness</div><div class="s">Nothing to hold, nothing to push away</div></div><span style="color:var(--muted)">›</span></div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Guide.</b> The existing guide, promoted from a home row to a tab. Entries here are placeholders for the real list.</div>
+</div>
+
+<!-- SEARCH -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="greet">Search</div>
+  <div class="search"><span>⌕</span><span>Search your friends</span></div>
+  <div class="center">
+    <div class="mg">⌕</div>
+    <h3>Friends are coming</h3>
+    <p>Find people you know, follow their practice, and compare scores. This tab opens up in a coming update.</p>
+    <span class="pill">Coming soon</span>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Search.</b> A disabled field and an honest placeholder. Says what is coming, promises no date.</div>
+</div>
+
+<!-- PROFILE -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top"><span class="k">Profile</span><span class="gear">⚙</span></div>
+  <div class="hero">
+    <div class="avatar">MV</div>
+    <div><div class="name">Melvin</div><div class="since">Practising since Aug 2026</div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>7</b><span>Streak</span></div>
+    <div class="stat"><b>7</b><span>Longest</span></div>
+    <div class="stat"><b>20</b><span>Sessions</span></div>
+    <div class="stat"><b>3.4</b><span>Hours</span></div>
+  </div>
+  <div class="top" style="margin-top:16px"><span class="k">Awards · 8 of 17</span><span class="k" style="color:var(--gold)">See all ›</span></div>
+  <div class="awards"><div class="aw">1</div><div class="aw">3</div><div class="aw">5</div><div class="aw">50</div><div class="aw">75</div><div class="aw off">10</div><div class="aw off">25</div></div>
+  <div class="top" style="margin-top:16px"><span class="k">All sessions</span></div>
+  <div class="ev"><div class="ring">81</div><div><div class="t">Today · Rain</div><div class="s">10 min · HR −13 · breath 8.9</div></div></div>
+  <div class="ev"><div class="ring">64</div><div><div class="t">Yesterday · Silence</div><div class="s">12 min · HR −6</div></div></div>
+  <div class="ev"><div class="ring">72</div><div><div class="t">Wed · Guided journey</div><div class="s">25 min · HR −11 · breath 5.8</div></div></div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>Search</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Profile.</b> Identity on top (initials avatar, the name from onboarding, practising-since), the four stats, an awards strip, the full log. Settings in the gear. The month picker leaves Journey; the calendar lives on Home.</div>
+</div>
+
+</div>
+
+<h2>Decisions in this mockup, and two questions</h2>
+<ul class="q">
+  <li><b>Calendar on Home only.</b> Journey's month picker goes away; Profile keeps the stats, awards and the full log. Tapping a dotted day on Home opens that day's sessions, which is what the picker was for.</li>
+  <li><b>Begin button gone.</b> The gold plus is the one gold CTA on the bar, and the colour rule (one gold thing per section) holds because the tabs are grey.</li>
+  <li><b>Question: the name.</b> The app has a display name from onboarding ("What should we call you?") and no usernames. A handle like @melvin is new data, needs uniqueness, and needs a server the app does not have. Proposal: initials avatar + display name now, handle when the friends feature brings a backend.</li>
+  <li><b>Question: Home's greeting.</b> Keep "Good afternoon, Melvin" on Home, or move the name to Profile only and let Home open on the streak?</li>
+</ul>
+</body></html>

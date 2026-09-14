@@ -8,6 +8,7 @@ struct CoherenceApp: App {
     let modelContainer: ModelContainer
     @StateObject private var coordinator: SessionCoordinator
     @StateObject private var store = Store()
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         Analytics.start()   // no-op until a provider key is set
@@ -34,10 +35,18 @@ struct CoherenceApp: App {
                 .environmentObject(store)
                 // Products are fetched from Apple, so this is a network call
                 // and the paywall has to survive it not having finished. Until
-                // it does, `store.state` is .loading and the screen shows the
-                // beta copy, which is also the correct answer if it never
-                // finishes.
+                // it does, `store.state` is .loading. If the launch had no
+                // network the store lands on .unavailable (free); coming back
+                // to the foreground retries, so that person can still buy.
                 .task { await store.load() }
+                // A no-Watch waitlist signup that could not be delivered (no
+                // network at the end of onboarding) goes out on a later launch.
+                .task { await WaitlistClient.flush() }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active, store.state != .ready {
+                        Task { await store.load() }
+                    }
+                }
         }
         .modelContainer(modelContainer)
     }

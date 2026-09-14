@@ -59,7 +59,7 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     /// Every method a session can be tagged with, including variants, flattened
     /// for the picker.
     public static var loggable: [(id: String, label: String)] {
-        all.flatMap { method -> [(String, String)] in
+        [(guidedID, "Guided meditation")] + all.flatMap { method -> [(String, String)] in
             guard !method.variants.isEmpty else { return [(method.id, method.title)] }
             return method.variants.map { (($0.id), "\(method.title) · \($0.title)") }
         }
@@ -78,6 +78,9 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
 
     /// The id used when someone describes their own practice.
     public static let ownID = "own"
+    /// The 808 guided journey. Not in the guide's method list (it is audio, not
+    /// a technique to learn), but the most common thing a new person did.
+    public static let guidedID = "guided"
 
     // MARK: - The list
 
@@ -85,7 +88,7 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
 
         MeditationMethod(
             id: "firstTime",
-            title: "First time meditating?",
+            title: "First time meditating",
             oneLine: "Start here. What it is, and what to actually do.",
             intro: """
             The goal of meditation is to train the mind to be more focused, \

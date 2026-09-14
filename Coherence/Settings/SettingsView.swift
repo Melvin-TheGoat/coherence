@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import StoreKit
 
 /// Settings, grouped by question (design review 2026-08): who you are, how you
 /// practice, how the app looks, what we stand on. Destructive actions are
@@ -48,8 +49,8 @@ private struct SettingsForm: View {
     @State private var confirmDelete = false
     @State private var confirmSignOut = false
     @State private var editingName = false
-    #if DEBUG
     @EnvironmentObject private var store: Store
+    #if DEBUG
     @Environment(\.modelContext) private var context
     @State private var primerRows = 0
     @State private var primerMessage = ""
@@ -115,6 +116,19 @@ private struct SettingsForm: View {
                     }
                 }
 
+                SectionHeader(title: "Membership")
+                settingsCard {
+                    membershipRow(icon: "arrow.clockwise", title: "Restore purchases",
+                                  subtitle: "Bought on another device, or reinstalled") {
+                        Task { await store.restore() }
+                    }
+                    divider
+                    membershipRow(icon: "ticket", title: "Redeem a code",
+                                  subtitle: "An offer code from a friend or a creator") {
+                        redeemCode()
+                    }
+                }
+
                 SectionHeader(title: "Appearance")
                 settingsCard {
                     row(icon: "circle.lefthalf.filled", title: "Theme") {
@@ -132,6 +146,11 @@ private struct SettingsForm: View {
 
                 SectionHeader(title: "The foundation")
                 settingsCard {
+                    membershipRow(icon: "envelope", title: "Give us feedback",
+                                  subtitle: "Opens an email to us. Every message is read.") {
+                        sendFeedback()
+                    }
+                    divider
                     navRow(icon: "sparkles", title: "Why 808 exists", teal: true) { docPage("PURPOSE") }
                     divider
                     navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }
@@ -312,6 +331,11 @@ private struct SettingsForm: View {
                     Text(user.displayName?.isEmpty == false ? user.displayName! : "Add your name")
                         .font(AppFont.callout.weight(.semibold))
                         .foregroundStyle(AppColor.textPrimary)
+                    if let handle = Username.display(user.username) {
+                        Text(handle)
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
                     // The bootstrap user (skipped sign-in) is not "Signed in
                     // with Apple", and a reviewer who skipped sign-in reads
                     // this line thirty seconds later. Say what is true.
@@ -337,6 +361,19 @@ private struct SettingsForm: View {
                 .font(AppFont.callout)
                 .padding(10)
                 .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 10))
+                HStack(spacing: 6) {
+                    Text("@").foregroundStyle(AppColor.textSecondary)
+                    TextField("Username", text: Binding(
+                        get: { user.username ?? "" },
+                        set: { user.username = Username.normalize($0) }
+                    ))
+                    .textContentType(.username)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                }
+                .font(AppFont.callout)
+                .padding(10)
+                .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 10))
                 Toggle("Product emails", isOn: $user.marketingOptIn)
                     .font(AppFont.caption)
                     .tint(AppColor.calmAccent)
@@ -347,6 +384,56 @@ private struct SettingsForm: View {
 
     private var initial: String {
         String((user.displayName ?? "•").prefix(1)).uppercased()
+    }
+
+    // MARK: Membership
+
+    private func membershipRow(icon: String, title: String, subtitle: String,
+                               action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(width: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(AppFont.callout).foregroundStyle(AppColor.textPrimary)
+                    Text(subtitle).font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(CardButtonStyle())
+    }
+
+    /// An email to us with the version and build filled in, so a report is
+    /// answerable without a follow-up question.
+    private func sendFeedback() {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "?"
+        let build = info?["CFBundleVersion"] as? String ?? "?"
+        var parts = URLComponents()
+        parts.scheme = "mailto"
+        parts.path = "support@meditate808.com"
+        parts.queryItems = [
+            URLQueryItem(name: "subject", value: "808 feedback"),
+            URLQueryItem(name: "body", value: "\n\n\n808 \(version) (\(build)) on iOS \(UIDevice.current.systemVersion)")
+        ]
+        if let url = parts.url { UIApplication.shared.open(url) }
+    }
+
+    /// Apple's own redemption sheet. The purchase it produces arrives on
+    /// `Transaction.updates`, which `Store` has listened to since launch, so
+    /// nothing here needs to handle the result.
+    private func redeemCode() {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first else { return }
+        Task { try? await AppStore.presentOfferCodeRedeemSheet(in: scene) }
     }
 
     // MARK: Building blocks
@@ -434,12 +521,34 @@ private struct SettingsForm: View {
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary.opacity(0.6))
                     .monospacedDigit()
+                    // Seven taps on the version number flag this phone as a
+                    // team device: every analytics event it sends carries
+                    // `team_device = true`, and the PostHog internal-user
+                    // filter drops it. Hidden because it is for the two
+                    // founders, whose constant reinstalls each mint a fresh
+                    // anonymous id and were polluting the launch dashboards.
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        versionTaps += 1
+                        guard versionTaps >= 7 else { return }
+                        versionTaps = 0
+                        teamDevice.toggle()
+                        Analytics.setTeamDevice(teamDevice)
+                    }
+                if teamDevice {
+                    Text("Team device. Analytics from this phone are flagged.")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary.opacity(0.6))
+                }
             }
             .padding(.top, 22)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 12)
     }
+
+    @State private var versionTaps = 0
+    @State private var teamDevice = Analytics.isTeamDevice
 
     /// "Version 1.0 (202608251757)" from the bundle, never hardcoded: a
     /// hand-typed version is wrong the moment it is typed.

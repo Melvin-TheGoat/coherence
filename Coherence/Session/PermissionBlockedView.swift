@@ -48,13 +48,37 @@ struct PermissionBlockedView: View {
             .card()
             .padding(.top, 26)
 
+            // The two failures the phone can watch itself out of. Without
+            // this the screen was a dead end: it gave instructions, and the
+            // only way to learn whether they worked was to dismiss, tap
+            // Begin, and meet the same screen again. Now the rows tick as the
+            // Watch pairs or the app installs, and the button says so.
+            if watchable {
+                WatchStatusRows(probe: probe)
+                    .padding(.top, 14)
+            }
+
             Spacer()
 
-            Button("Done", action: onDismiss)
+            Button(watchable && probe.ready ? "Ready. Start a session" : "Done",
+                   action: onDismiss)
                 .buttonStyle(PrimaryButtonStyle())
         }
         .padding(AppMetrics.screenPadding)
         .screenBackground()
+        .task { if watchable { await probe.monitor() } }
+    }
+
+    @State private var probe = WatchProbe()
+
+    /// Whether this failure is one WatchConnectivity can report clearing.
+    /// Heart rate and workout permission are Health settings the phone cannot
+    /// read back, so those screens stay instructions only.
+    private var watchable: Bool {
+        switch failure {
+        case .watchNotPaired, .watchAppNotInstalled, .watchUnreachable: true
+        case .heartRateUnavailable, .workoutNotAuthorized: false
+        }
     }
 
     private var icon: String {

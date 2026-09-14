@@ -1332,6 +1332,69 @@ UI must coach it, and the 2-signal degrade path must stay.
   - Not yet wired: `notification_opened` (no UNUserNotificationCenter
     delegate exists), `paywall_dismissed` (paywall flow still moving; wire
     when placement is settled).
+  - **POSTHOG DASHBOARD "808 Beta" BUILT 2026-09-12 (Aziz + Claude, driving
+    the browser).** 14 tiles: Day-zero funnel (install → first score, 1-day
+    window, the number the research says predicts everything); Insight A/B
+    retention pair (first-ever `session_completed`, B filtered to cohort
+    "Two sessions in week one" = ≥2 sessions in 90 days, the closest this
+    project's cohort builder offers to "second session within a week");
+    Money funnel; Watch gate by outcome; Which lock gets tapped; Downsell
+    ladder; ALARM tile (`result_missing` + `session_start_failed`, with a
+    daily email alert to Aziz when `result_missing` > 0); Why sessions fail
+    to start (by `reason`); and three onboarding views: users completing
+    each screen (bar), drop-off 1 (interview, universal screens only),
+    drop-off 2 (payoff screens → `onboarding_completed`). Branch screens
+    (aloneWithThoughts, doingNothing, restarts, intendedFor, bodyCuriosity,
+    bodyProof, blindSpot, watchSetup, waitlist, the walkthrough) are left
+    out of the strict funnels on purpose: a persona who never sees a screen
+    would read as churn.
+    - **PROPERTY NAMES, exactly as sent (two tiles were built wrong first):**
+      `onboarding_step` carries `step` (NOT `id`); `free_tier_entered`
+      carries `after_rung` (NOT `afterRung`). `award_unlocked` is the one
+      that uses `id`. The mapping is `Analytics.Event.properties`; read it
+      before building a breakdown.
+    - **Readable names, same evening (Aziz: "it's all super vague").**
+      `onboarding_step` ALSO sends `screen`, a numbered human name from
+      `Analytics.onboardingScreenName(for:)` ("12 Do you have an Apple
+      Watch?"; letters mark branch screens a persona may skip:
+      "06a Alone with your thoughts? (not regulars)"). Old funnels keep
+      working on `step`; new ones should break down by `screen`. Both
+      funnel tiles already show the numbered names as step labels.
+      `AnalyticsScreenNamesTests` fails if a Step case ships unnamed.
+    - **Team-device switch (ships with 1.0.1):** seven taps on the version
+      line at the bottom of Settings flag the phone; every event then
+      carries the super property `team_device = true` and the PostHog
+      filter rule `team_device ≠ true` drops it. Off by default. This is
+      the founders' answer to reinstalling constantly: flip it once per
+      install. Until 1.0.1 is on their phones, their App Store installs
+      still count in every tile. **Note: 1.0.1 was already "Waiting for
+      Review" when this landed, so the screen names and the switch ship in
+      the build after it.**
+    - **Google Sheet, live from PostHog: `tools/posthog_sheet.gs`.** Six
+      tabs (Overview with 7d/30d/all-time KPIs and the plan's benchmark
+      rates, Daily, Screens in order with drop-off, Failures by reason,
+      Purchases, Watch gate by week), refreshed hourly by an Apps Script
+      trigger through the HogQL query API. Setup is in the file header;
+      the read-only personal API key lives in Script Properties, never in
+      the repo. Every query was run against the live project before
+      committing.
+      **The hourly trigger did not exist until 2026-09-14**: `installTrigger`
+      is a setup step nobody ran, so every refresh for two days was the
+      menu, and the sheet sat on Friday night's numbers while Apple showed
+      Saturday's. Created from the Apps Script Triggers page (refresh,
+      time-based, every hour). Check the Triggers page, not the stamp, when
+      the sheet looks stale. Its internal-user rule matches PostHog's plus
+      `$is_sideloaded` (Melvin's cable-installed betas; the two
+      `result_missing` events on 2026-09-12 came from one).
+    - **Internal-user filter (project setting, default ON):** `$app_build`
+      ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
+      rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
+      friends in those areas may be real users. Founders' App Store installs
+      therefore still count; read small numbers accordingly.
+    - Field finding from the first read: 16 strangers reached `relief` in
+      30 days, 12 left `breath`, everyone who reached `calculating` finished
+      onboarding, and 2 of 12 finishers ever pressed Begin. The leak is at
+      the very first screens and after onboarding, not inside the payoff.
 - **STILL TO DO (picked up 2026-08-06):**
   - **Onboarding gaps:** the cost screen is passive where the reference flow has
     the user *select* symptoms across four lenses (we dropped the selection along
@@ -1396,6 +1459,231 @@ UI must coach it, and the 2-signal degrade path must stay.
     Lawyer redlines pending on the four docs in `~/Desktop/808-legal-review/`.
     Meta app ID still needed for zero-tap Instagram Stories.
 
+## APPROVED AND LIVE (2026-09-11): the launch marketing plan
+
+App Review approved 1.0 on 2026-09-10 after the 2.1 information request;
+released for distribution the same day, live within 24 hours. The full plan
+is `marketing/LAUNCH_PLAN.md`; these are the decisions, so nobody re-derives
+them.
+
+- **Organic is the engine, paid is for learning.** At our prices ($7.99 /
+  $29.99, free tier) and benchmark freemium conversion (2–4 % install → paid),
+  revenue per install is roughly $0.60–1.20 against a $4–15 CPI for meditation
+  keywords. Paid installs do not pay back in year one. So: two weeks of one
+  reel + one carousel per day (tri-posted to IG, TikTok, Shorts) to find
+  formats that hold, THEN UGC creators on the winners, and Meta only behind a
+  gate. Replace the benchmark numbers with our own by week 3 (App Store
+  Connect Subscriptions + PostHog funnel).
+- **Budget $1,500–2,500 for 60 days, hard cap $3,000** until a channel shows
+  two consecutive weeks with cost per trial start under $10. Scale a winner
+  20–30 % per week; kill anything two weeks above twice its target.
+- **Apple Search Ads is the one always-on paid line** ($15–25/day, Advanced,
+  exact match on "meditation apple watch" and its siblings, no competitor
+  names until week 3). Highest intent that exists, reports installs with no
+  SDK, lowest CPI of any iOS channel.
+- **A boost is a Meta ad** (same auction, same billing) that cannot use the
+  app-install objective and does not lift organic reach afterwards. Use it
+  ONLY to test whether a reel holds a cold audience ($20–30, objective
+  "profile visits"), total under $150. Never expect installs from it.
+- **Meta Advantage+ App campaigns are gated:** they need the Meta SDK or an
+  MMP in the app (a 1.0.1 build, a review, new App Privacy labels), ~50
+  installs per ad set per week to leave learning, and 8–10 creatives at a
+  time. Run one 14-day test at $40/day only once a format has proven organic
+  retention and install → trial ≥ 5 % is measured.
+- **App Store Connect campaign links** (App Analytics → Campaigns,
+  `?pt=…&ct=<name>&mt=8`) are our attribution: one per surface (ig-bio,
+  tiktok-bio, website, reddit, press, yt-shorts). This is how we learn which
+  platform sends installs before any SDK exists.
+- **Launch-week moves:** r/AppleWatch post written as a person (not
+  r/Meditation, bans promotion); tip lines at 9to5Mac, MacRumors,
+  AppleInsider, iMore, Cult of Mac, pitched on the Watch angle, never "first";
+  featuring nomination in App Store Connect aimed three weeks out; promo
+  codes (100 per version) gifted to Watch YouTubers with no ask; Product Hunt
+  one Tuesday–Thursday in week 3–4 once 10+ ratings exist, worth one day, not
+  a strategy.
+- **Rating prompt SHIPPED** (`ReviewPrompt`, `Shared/Session/`): fires from
+  the results screen on the third completed session or later, never inside
+  onboarding (double-gated on `onboardingComplete` and the tour environment),
+  90-day cooldown, and takes no score or sentiment by construction; the
+  signature is the guarantee and `ReviewPromptTests` locks it.
+- **No-Watch churn is answered by the camera-vision session, not a subtitle
+  warning** (Melvin, 2026-09-11). If campaign links show installs churning at
+  the Watch gate, that is the signal to ship branch `camera-vision`.
+- **Website at launch:** hero and banner point at the App Store
+  (`https://apps.apple.com/app/id6806785308`, swap in the `website` campaign
+  link once created); the waitlist form is repurposed for the no-Watch
+  audience ("we'll tell you when a session works without a Watch"). Deploy is
+  still manual: drag `website/` into Cloudflare Pages.
+- Still live on the site and worth a look: the hero says "the first app
+  that scores your meditation from your body", the very claim this file
+  records leaving out three times. Aziz's call.
+
+## FIVE-TAB LAYOUT + USERNAME (2026-09-12, Melvin: "familiar, Strava vibes")
+
+The root after onboarding is a bottom bar: **Home · Guide · [gold plus] ·
+Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
+`mockups/tabbar.html`, reviewed before any Swift, per the standing rule.
+
+- **The plus is the only way to start a session** and the only gold object
+  on the bar; selected tabs read in the text colour. The old Begin button
+  and Home's two top-right icons are gone (their jobs became tabs).
+- **Home** keeps the greeting (Melvin's call), the streak, the sparkline,
+  THIS month's calendar and the three most recent sessions. Tapping a dotted
+  day switches to Profile with the log filtered to that day.
+- **Guide** is `GuideView(embedded: true)`: no Done button; its Begin opens
+  the setup sheet directly.
+- **Search** is an honest placeholder ("Friends are coming", no date).
+- **Profile** is what Journey was, minus the month picker (Home's calendar
+  took the job): initials avatar, display name, `@username`, "Practicing
+  since", the four stats, the awards shelf, the full log, settings in the
+  gear. `JourneyView` is now `ProfileTab` (same file). Do not bring the
+  month picker back; the calendar must not appear twice.
+- **Every app-wide modal still lives on `ContentView`** (live session cover,
+  start failure, award unlock, setup, results, settings) through the single
+  `HomeSheet` presenter. Tabs are content; the modals are the app.
+- **Tour anchors moved with their targets:** `.begin` is the plus, `.guide`
+  is the Guide tab item, `.streak` stays on Home.
+- **Username.** `User.username: String?` (optional, CloudKit-safe, lightweight
+  migration). Asked on the onboarding "Last thing" screen beside the name,
+  OPTIONAL like everything on that screen (5.1.1); editable in Settings.
+  `Username.normalize` (Shared) lowercases, strips a leading @, keeps
+  `[a-z0-9_.]`, clips to 20, and returns nil for empty so "" is never stored.
+  **It is cosmetic until a backend enforces uniqueness**; do not present it as
+  reserved. `UsernameTests` locks the normaliser.
+- **Settings gained a Membership section:** Restore purchases (the gap the
+  App Review audit flagged: reviewers look for Restore in Settings) and
+  Redeem a code (`AppStore.presentOfferCodeRedeemSheet`, for the offer codes
+  in `marketing/LAUNCH_PLAN.md`). The redeemed transaction lands on
+  `Transaction.updates`, which `Store` already listens to.
+- `PREVIEW_TAB=guide|search|profile` (DEBUG) opens the app on a tab.
+
+## LAUNCH WEEK, DAYS 3 TO 5 (2026-09-12 to 09-14): what happened and what it taught
+
+- **1.0.1 shipped as ONE build with the Watch fixes.** Melvin's 1.0.1
+  (202609121757) was pulled from review and replaced by 202609130259,
+  archived from Aziz's Mac on the org team, then pulled once more to swap
+  store screenshots 3 and 6 for the five-tab layout. Approved and released
+  2026-09-14. **Screenshots are locked while a version is in review**; changing
+  them means Remove from Review, which costs queue position.
+- **Media Manager orders screenshots by upload COMPLETION.** Upload one file at
+  a time in listing order; recorded in `marketing/README.md`.
+- **Reading App Store Connect sources:** App Referrer = a link opened inside
+  another app (Instagram's browser, but ALSO iMessage, so a founder texting the
+  link to friends lands here); App Store Search = typed a query (founders
+  reinstalling inflate it); App Store Browse = found without typing (Apps tab,
+  charts, categories). Apple counts downloads, PostHog counts first launches:
+  expect Apple to run ~10 to 20% higher, and subtract App Review's Cupertino /
+  Sunnyvale installs from ours. Apple's overview cards show ONE day.
+- **Analytics sheet:** new Installs tab (one row per install: when, where,
+  phone, Version, onboarding, Watch gate, package, sessions) and the hourly
+  trigger that was never installed now exists. Sheets parses "1.0" as the
+  number 1 through `setValues`; prefix version strings with an apostrophe.
+  GeoIP moves on a phone: read city, state and country from ONE event.
+- **Waitlist launch email SENT** 2026-09-13 1:16 PM EDT, 33 people, from
+  Aziz's Outlook, campaign `ct=waitlist` (`marketing/LAUNCH_EMAIL.md`).
+- **Reddit (`marketing/REDDIT.md`):** rules read directly from each sub's
+  `about/rules.json`. **r/AppleWatch bans self-promotion** (the launch plan
+  was wrong). Openings: r/apple Sundays (5 organic contributions that month),
+  r/iosapps once per 30 days (10 local karma + Transparency path),
+  r/SideProject, r/QuantifiedSelf Monday megathread. r/Mindfulness,
+  r/Biohackers, r/AppleWatchFitness, r/Meditation ban promotion. First post
+  live on r/SideProject from u/No_Shelter5464 (new, 1 karma).
+  **Founder posts disclose.** Claude will not write or post content that
+  presents a founder as an unaffiliated customer; the disclosed version of
+  the same story is fine and was posted.
+- **Deleted the questionnaire sheet's tab of six pre-written 5-star App Store
+  reviews.** Handing people review text is review manipulation (3.2.2). Ask
+  happy users to review in their own words; the rating prompt does the rest.
+- **The in-app no-Watch waitlist never sent anything.** Its email stayed on
+  the person's phone (an export that was never built), so every address from
+  1.0 and 1.0.1 is lost. `WaitlistClient` now posts to the "808 no watch
+  waitlist" sheet via `tools/nowatch-waitlist.gs` (verified end to end). This
+  is the first personal data the app sends us: manifest, both policies and the
+  App Privacy label must move together (`RELEASE_CHECKLIST.md`).
+- **The no-Watch share is rising:** Watch gate answers the week of 09-13 were
+  7 no Watch to 5 has Watch. Camera vision is the next product question after
+  activation, not a someday item.
+- **Where the business stands (09-14):** ~26 real installs, ~19 strangers,
+  zero strangers with a completed session (all on the broken 1.0), two
+  strangers reached the paywall, three trials all founders or family ending
+  09-19, one Lifetime (family). The test of the product starts with 1.0.1.
+
+## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
+
+Aziz: "before we push, make sure you tell us to check if these are done."
+**Before archiving, uploading or submitting any build, read
+`RELEASE_CHECKLIST.md` aloud with the user and walk its OPEN and ALWAYS
+lists.** Do not press "Add for Review" with an OPEN item unticked unless the
+user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
+items at the end of every run. Anything learned mid-session that must happen
+at submission goes into OPEN the moment it's learned, not into a summary.
+
+## BACKLOG.md IS THE LIST (2026-09-12)
+
+Melvin: "I am saying a lot and not finishing much." Every decision, request
+and open thread now lands in `BACKLOG.md` (decided / in flight / done), and a
+session that hears a new one adds it there first. Two that live there and
+are easy to lose: **Otto**, the on-device data-interpreter chat (Foundation
+Models, iOS 26, "the data suggests", never a medical claim); and the guided
+sessions in 10/15/20 minutes (Donny cuts now, the ElevenLabs voice library
+on hold because it "is not there yet").
+
+**Side-by-side beta crash, solved:** `CloudStatus.read()` (DEBUG launch
+probe) derived `iCloud.<bundle id>` instead of reading the entitlement, and
+`CKContainer(identifier:)` traps on a container the process does not hold.
+It now reads `com.apple.developer.icloud-container-identifiers` from the
+running task (`SecTaskCopyValueForEntitlement`) and reports "none" instead.
+**Never construct a CKContainer from a guessed identifier.**
+
+## FIRST USER FEEDBACK, ROUND 1 (2026-09-12) and what shipped for it
+
+Eight items from the first outside testers, the day after launch. Six are in
+the app; two are decisions recorded below.
+
+- **"Save reflection" lost a note.** The tester typed a note, never saw the
+  grey button, left, and it was gone. Now every edit on the reflection card
+  saves itself 0.8 s after the last change (`markDirty` → `persistReflection`),
+  dismissing the keyboard saves, leaving the screen saves (`flushReflection`),
+  and the button is gold like Share, confirmation rather than the only exit.
+  The note field's editing state now follows keyboard FOCUS (`noteFocused`),
+  which also closes a latent trap where typing into an empty note could flip
+  it to read-only after the first character.
+- **Nobody knew the ring was tappable.** "How is this scored?" sits under it
+  as a visible link to the same `ScoreMeaningSheet`.
+- **"Guided meditation" is a technique option** (`MeditationMethod.guidedID`,
+  first in the picker), and a guided session arrives pre-tagged with it.
+  "First time meditating?" lost its question mark everywhere the title shows.
+- **Do Not Disturb.** iOS has no API to switch Focus on from an app, and the
+  `App-prefs:` deep links are private and rejected. The setup screen carries
+  a one-line tip pointing at Control Center. Do not build a "block
+  notifications" toggle that cannot do what it says.
+- **Sharing leads with the system sheet** ("Share", gold): that is where the
+  icons people expect appear (Messages, Instagram, Facebook, Photos). "Add
+  to Instagram Story" is secondary and only when Instagram is installed.
+- **Fitness / Activity sharing.** Third-party apps cannot post into Apple's
+  Fitness sharing feed. But every 808 session is already an `HKWorkout`
+  (.mindAndBody), and friends who share Activity already see those workouts
+  with the app name; verify on a friend's phone rather than build anything.
+  New: the Watch writes each session as **mindful minutes**
+  (`HKCategoryTypeIdentifier.mindfulSession`, share permission added in
+  `HealthKitAuth`), so it shows in Health > Mindfulness beside Apple's own.
+  The privacy policy (both copies) names it. **Existing users will see one
+  new Health permission prompt** on their next session.
+- **Shorter guided sessions and a choice of voice (10/15/20 min, man or
+  woman).** The tester loved the 25-minute journey and wanted shorter. Two
+  paths, deliberately separated: (a) cheap and honest now, commission Donny
+  for 10/15/20-minute cuts of the same script, no product change beyond a
+  length picker on the Guided card; (b) the "AI coach" Melvin wants as the
+  wedge. If (b) is built, the FIRST version must be a pre-generated library
+  (ElevenLabs offline, bundled or downloaded, chosen by length and voice),
+  NOT runtime generation: it keeps the App Review answers true (no AI service,
+  no server), keeps sessions offline, and costs nothing per session. A truly
+  adaptive coach is a backend + a privacy policy + a new review, and belongs
+  behind the library. The earlier "AI narration retired" note stands for the
+  flagship track only; the library is a different product from the same
+  pipeline. Needs Aziz's and Melvin's go, not a unilateral build.
+- **The coach's name** is open; candidates were offered, nothing decided.
+
 ## TestFlight (first build 2026-08-11; build 202608120358 — all eleven
 ## compliance passes — APPROVED for external testing 2026-08-13)
 
@@ -1426,7 +1714,19 @@ UI must coach it, and the 2-signal degrade path must stay.
 - **`./tools/archive.sh` archives, exports and checks the ipa** (distribution
   signature, push environment, CloudKit environment, Watch app present) before
   you upload. Archives land in Xcode's Organizer folder. Upload by hand from
-  Organizer.
+  Organizer, or headless: a second `xcodebuild -exportArchive` on the same
+  archive with `destination = upload` in the options plist uploads through
+  Xcode's signed-in account, no password or API key needed (done for build
+  202609130259, 2026-09-12).
+- **Archiving for the App Store from Aziz's Mac works, with a swap** (first
+  done 2026-09-12). His `project.yml` and `CoherenceWatch/Info.plist` carry
+  the personal-team overrides and are skip-worktree, so: back both up, write
+  the committed versions over them (`git show HEAD:project.yml > project.yml`,
+  same for the plist), set `DEVELOPMENT_TEAM` to `WLZQLLHUB3`, `xcodegen
+  generate`, `TEAM=WLZQLLHUB3 ./tools/archive.sh`, then copy the backups
+  back and regenerate. `-allowProvisioningUpdates` created the org
+  distribution certificate and profiles on its own; nothing had to be made
+  in the portal first.
 - Rejections hit so far, each visible only at upload: **90474**, the bundle
   claimed iPad support with portrait only. Fixed by `TARGETED_DEVICE_FAMILY: "1"`,
   since 808 is iPhone + Watch and no iPad layout exists.
@@ -1698,12 +1998,17 @@ green, verified on the simulator. The short version:
   and asking for money before anyone has seen a single reading contradicts the
   one thing 808 sells, which is not being asked to take a claim on faith.
 - **`Entitlements` is the single gate** (`Coherence/Store/Entitlements.swift`).
-  Views ask it, never `store.entitled`. **The load-bearing line is
-  `paid: state != .ready || entitled`:** while the store CANNOT sell, everyone
-  is paid. Simplifying that to `entitled` alone strips every beta tester of
-  their curves the day products go live and downgrades a payer whose network
-  dropped. Same reasoning the old `RootView.locked` carried. Locked by
-  `EntitlementsTests`.
+  Views ask it, never `store.entitled`. **The load-bearing line is now
+  `paid: entitled || state == .loading`** (changed 2026-09-12, day one on
+  the App Store). Until then any state but `.ready` unlocked everyone, which
+  kept the pre-billing beta open, and with products live it was a hole:
+  launch in airplane mode, the store reports `.unavailable`, the curves
+  unlock for anyone. A payer never needed that clause, because
+  `Transaction.currentEntitlements` is cached on device; `load()` now reads
+  it BEFORE fetching products, `.loading` is the only grace state (one
+  product fetch long), `.unavailable` is free, and the app retries `load()`
+  on every return to the foreground so an offline launch can still buy.
+  Locked by `EntitlementsTests`.
 - **The real paywall is the first results screen**, not onboarding. Ten minutes
   in they have their own score and three locked panels about their own body,
   which is maximum desire and an honest sell because the claim is now proven.
@@ -1778,16 +2083,31 @@ reappear, then delete the "sync doesn't work" line from What to Test.
 2. **DONE 2026-09-01.** `com.lockout.meditate808` registered under the org with
    HealthKit, Sign in with Apple, iCloud and Push all ticked (In-App Purchase
    too), and `com.lockout.meditate808.watchkitapp` exists with HealthKit.
-3. One dev build signed by the ORG team on the production bundle ID, real
-   phone, signed into iCloud: Settings > CloudKit (debug) > run the schema
-   primer (13 optionals write no field until primed; Production promotion is
-   additive-only).
-4. CloudKit Console > the org container > deploy schema Development →
-   Production.
-5. Fresh TestFlight install from the org account: sign in, verify sessions
-   from another device appear. Only then delete the What to Test sync
-   disclaimer. (Curves still never roam: `MeditationStats` is device-local
-   by 5.1.3 design; the promise covers account, sessions, streak, history.)
+3. **Primer NOT needed, verified 2026-09-12.** Development had all five
+   `CD_` types with every field, optionals included (Melvin's dev builds had
+   written them all: 17/17/16/15/15 fields = model fields + CloudKit's 7).
+4. **DONE 2026-09-12 (Aziz, with Melvin's Console login).** Deployed
+   Development → Production on `iCloud.com.lockout.meditate808`; Production
+   Record Types now lists the five `CD_` types plus the built-in `Users`.
+   **This was the gap found AFTER launch:** 1.0 went live 2026-09-10 with a
+   Production environment that had NO record types, so every App Store
+   sign-in's export failed silently for two days. No data was lost (it all
+   lives on the phone) and pending exports retry on later launches, so
+   affected users self-heal with no update. Lesson, so it never repeats:
+   **a CloudKit promotion is a release step, not a follow-up.** Put it on
+   the same checklist as "attach the products" for every future container.
+5. **VERIFIED 2026-09-12, by accident and by instrument.** Melvin set up
+   a fresh App Store install on a second phone at ~10:50 EDT, signed in,
+   and within 30 minutes of the 11:30 schema promotion his sessions from
+   the other phone appeared. We know because he tapped two of them and the
+   new PostHog `result_missing` alarm fired (no local stats on the new
+   phone, by 5.1.3 design), which is the trail that proved the sync.
+   The promise covers account, sessions, streak, history; curves never
+   roam. **Copy gap this exposed, for 1.0.1:** the sign-in screen promises
+   sessions "survive a new phone" without saying measurements stay on the
+   phone that recorded them, and `missingStatsCard` explains the rule but
+   gives no next step ("your next session on this phone shows
+   everything"). Neither is a code change; both are one sentence.
 6. Agreements, Tax, and Banking: sign Paid Applications, enter Lock Out
    Inc.'s bank + W-9. **Mercury cleared 2026-09-01, so this is unblocked;
    the W-9 was filed the same day (C corporation, exempt payee, EIN, Dover

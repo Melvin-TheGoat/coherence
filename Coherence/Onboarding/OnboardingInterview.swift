@@ -1117,6 +1117,7 @@ struct AnchorScreen: View {
 struct NameScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var firstName: String
+    @Binding var username: String
     @Binding var ageBracket: String?
     let progress: Double
     let onContinue: () -> Void
@@ -1130,7 +1131,7 @@ struct NameScreen: View {
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
                          title: "Last thing.",
-                         subtitle: "So the app can talk to you like a person. Answer either, both, or neither.",
+                         subtitle: "So the app can talk to you like a person, and so friends can find you later. Answer any of these, or none.",
                          onContinue: { gate.now(onContinue) }) {
             VStack(alignment: .leading, spacing: 20) {
                 TextField("What should we call you?", text: $firstName)
@@ -1140,6 +1141,28 @@ struct NameScreen: View {
                     .padding(16)
                     .background(AppColor.backgroundSecondary.opacity(0.8),
                                 in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                // Optional like everything else here (5.1.1). Lowercase,
+                // letters, digits, underscore and dot, normalised as they type
+                // so the handle they see is the handle that gets saved.
+                HStack(spacing: 6) {
+                    Text("@")
+                        .font(OnboardingType.option)
+                        .foregroundStyle(AppColor.textSecondary)
+                    TextField("Pick a username", text: $username)
+                        .textContentType(.username)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .font(OnboardingType.option)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .onChange(of: username) { _, raw in
+                            let clean = Username.normalize(raw) ?? ""
+                            if clean != raw { username = clean }
+                        }
+                }
+                .padding(16)
+                .background(AppColor.backgroundSecondary.opacity(0.8),
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Age")

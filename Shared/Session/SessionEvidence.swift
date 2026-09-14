@@ -86,7 +86,7 @@ enum SessionEvidence {
 
         var out: [EvidenceSeries] = []
         if !heartRate.isEmpty {
-            out.append(series(.heartRate, "Heart rate", "bpm", points(heartRate)))
+            out.append(series(.heartRate, "Heart Rate", "bpm", points(heartRate)))
         }
         if !stillness.isEmpty {
             out.append(series(.stillness, "Stillness", "", points(stillness)))

@@ -583,7 +583,7 @@ struct SampleSessionScreen: View {
                 }
 
                 if phase == .start {
-                    panel(name: "Heart rate", tint: AppColor.accentGold,
+                    panel(name: "Heart Rate", tint: AppColor.accentGold,
                           value: "72 → 84 bpm · climbing",
                           points: [72, 72.4, 73.2, 73, 74.6, 76, 77.2, 78.6, 80.2, 82, 84],
                           domain: 63...93, lineTint: AppColor.accentGold)
@@ -600,7 +600,7 @@ struct SampleSessionScreen: View {
                           points: [14.5, 13.2, 14.8, 13.5, 14.2, 13.0, 14.4, 13.6, 14.6, 13.2, 14.0],
                           domain: 0...20, lineTint: AppColor.accentGold)
                 } else {
-                    panel(name: "Heart rate", tint: AppColor.accentGold,
+                    panel(name: "Heart Rate", tint: AppColor.accentGold,
                           value: "74 → 63 bpm · settling",
                           points: [74, 73.6, 73, 72, 70.6, 69, 67.6, 66, 65, 63.8, 63],
                           domain: 53.5...83.5, lineTint: AppColor.accentGold)

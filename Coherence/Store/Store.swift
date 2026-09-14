@@ -115,13 +115,17 @@ final class Store: ObservableObject {
     deinit { updates?.cancel() }
 
     func load() async {
+        // The on-device entitlement first: it needs no network, and a payer
+        // must be recognised before the product fetch has a chance to fail
+        // or hang. Only then does `.loading` stop covering for anyone.
+        await refreshEntitlement()
         do {
             let found = try await Product.products(for: ProductID.all)
             products = found.sorted { $0.price < $1.price }
             // All three or none: a partial fetch would render hardcoded
             // fallback prices beside live rows and a buy button that silently
-            // no-ops on the missing product. Unavailable keeps the app open
-            // and everyone paid, which is the safe floor.
+            // no-ops on the missing product. Unavailable means free (the
+            // paywall shows "Plans aren't loading" with a retry).
             state = found.count == ProductID.all.count ? .ready : .unavailable
         } catch {
             state = .unavailable

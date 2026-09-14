@@ -1,0 +1,11 @@
+# Branded short links for bios and posts. Each one 302s to the App Store
+# with its own campaign tag, so a bio can read "meditate808.com/ig" and
+# App Analytics still attributes the install to Instagram.
+# Cloudflare Pages reads this file at deploy; the master list of links is
+# marketing/CAMPAIGN_LINKS.md.
+/ig       https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=ig-bio&mt=8      302
+/tiktok   https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=tiktok-bio&mt=8  302
+/yt       https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=yt-shorts&mt=8   302
+/reddit   https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=reddit&mt=8      302
+/press    https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=press&mt=8       302
+/app      https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8     302

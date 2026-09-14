@@ -1,25 +1,25 @@
 import SwiftUI
 import SwiftData
 
-/// **Journey** — Calendar and History merged into one screen (design review
-/// 2026-08): they were both answering "what have I done?". Stats up top
-/// (streak, longest, sessions, hours), any month browsable, and the full log
-/// beneath. Tapping a dotted day filters the log to that day; tapping the
-/// selected day (or Clear) unfilters.
+/// **Profile** — the far-right tab (2026-09-12): the person, then what they
+/// have done. Identity on top (initials, name, handle, practicing since), the
+/// four stats, the awards shelf, and the full log. Settings sits in the gear.
+///
+/// This was Journey. Its month picker moved to Home, whose calendar now opens
+/// this tab filtered to the tapped day, so nothing was lost; the calendar just
+/// stopped appearing twice.
 ///
 /// Reads storage independently via `@Query`, so it refreshes live when a new
 /// session lands from the Watch. Screens pass only IDs/dates; models are immutable.
-struct JourneyView: View {
+struct ProfileTab: View {
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var allStats: [MeditationStats]
     @Query private var reflections: [SessionReflection]
     @Query private var users: [User]
-    @Environment(\.dismiss) private var dismiss
 
-    /// The month currently shown in the calendar (any date within it).
-    @State private var monthAnchor = Date()
-    /// A practiced day the user tapped — filters the log below.
-    @State private var selectedDay: Date?
+    /// A practiced day tapped on Home — filters the log below.
+    @Binding var selectedDay: Date?
+    let openSettings: () -> Void
 
     private let calendar = Calendar.current
 
@@ -27,31 +27,78 @@ struct JourneyView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    identity
                     statsRow
                     awardsSection
-                    calendarCard
                     logSection
                 }
                 .padding(AppMetrics.screenPadding)
             }
             .screenBackground()
-            .navigationTitle("Your journey")
+            .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
-            // Presented full-screen, so the way home must be a button: the
-            // old sheet's swipe-down went away with the sheet.
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: openSettings) {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(AppColor.textSecondary)
+                            .frame(width: 44, height: 44)
+                    }
+                    .accessibilityLabel("Settings")
                 }
             }
         }
+    }
+
+    // MARK: - Identity
+
+    private var currentUser: User? {
+        users.first { $0.appleUserID != "" && $0.deletedAt == nil } ?? users.first
+    }
+
+    private var identity: some View {
+        let user = currentUser
+        let name = user?.displayName?.isEmpty == false ? user!.displayName! : nil
+        let handle = Username.display(user?.username)
+        return HStack(spacing: 14) {
+            Text(initials(name))
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.accentGoldText)
+                .frame(width: 60, height: 60)
+                .background(AppColor.accentGold.opacity(0.15), in: Circle())
+                .overlay(Circle().stroke(AppColor.accentGold.opacity(0.55), lineWidth: 1.5))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(name ?? "Your practice")
+                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                if let handle {
+                    Text(handle)
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                if let since = user?.createdAt {
+                    Text("Practicing since \(since.formatted(.dateTime.month(.abbreviated).year()))")
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 4)
+    }
+
+    private func initials(_ name: String?) -> String {
+        guard let name else { return "•" }
+        let parts = name.split(separator: " ").prefix(2)
+        return parts.map { String($0.prefix(1)).uppercased() }.joined()
     }
 
     // MARK: - Awards
 
     /// Derived on every render rather than stored: the rules read the same
     /// history the rest of this screen is already showing, so a shelf can
-    /// never disagree with the sessions above it.
+    /// never disagree with the sessions below it.
     private var awardProgress: [AwardEngine.Earned] {
         let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
             guard let id = st.sessionID, let s = st.overallScore else { return nil }
@@ -160,36 +207,6 @@ struct JourneyView: View {
         .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
     }
 
-    // MARK: - Calendar
-
-    private var calendarCard: some View {
-        let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt), calendar: calendar)
-        return VStack(spacing: 10) {
-            HStack {
-                Button { shiftMonth(-1) } label: {
-                    Image(systemName: "chevron.left").frame(width: 44, height: 34)
-                }
-                .buttonStyle(CardButtonStyle())
-                Spacer()
-                Text(monthTitle(monthAnchor))
-                    .font(AppFont.headline)
-                    .foregroundStyle(AppColor.textPrimary)
-                Spacer()
-                Button { shiftMonth(1) } label: {
-                    Image(systemName: "chevron.right").frame(width: 44, height: 34)
-                }
-                .buttonStyle(CardButtonStyle())
-            }
-            .tint(AppColor.accentGoldText)
-
-            MonthCalendar(monthAnchor: monthAnchor, practiced: practiced,
-                          selectedDay: selectedDay) { day in
-                selectedDay = (selectedDay == day) ? nil : day
-            }
-        }
-        .card(padding: 14)
-    }
-
     // MARK: - Log
 
     private var logSection: some View {
@@ -216,7 +233,7 @@ struct JourneyView: View {
             }
             if visible.isEmpty {
                 Text(sessions.isEmpty
-                     ? "No sessions yet. Start one from the home screen."
+                     ? "No sessions yet. Tap the plus to start one."
                      : "No sessions that day.")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
@@ -241,20 +258,5 @@ struct JourneyView: View {
                             in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
             }
         }
-    }
-
-    // MARK: - Helpers
-
-    private func shiftMonth(_ delta: Int) {
-        if let m = calendar.date(byAdding: .month, value: delta, to: monthAnchor) {
-            monthAnchor = m
-        }
-    }
-
-    private func monthTitle(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.calendar = calendar
-        f.dateFormat = "LLLL yyyy"
-        return f.string(from: date)
     }
 }

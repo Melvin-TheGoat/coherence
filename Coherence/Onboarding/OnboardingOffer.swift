@@ -169,6 +169,9 @@ struct PaywallScreen: View {
     @State private var trackedView = false
 
     @State private var started = false
+    /// A purchase is in flight. Without it, taps landing while the StoreKit
+    /// sheet animates up each queue their own purchase.
+    @State private var buying = false
     /// The deepest rung the user actually saw, so `free_tier_entered` can say
     /// how far the ladder got before they settled.
     @State private var lastRung: DownsellRung?
@@ -463,6 +466,13 @@ struct PaywallScreen: View {
     /// A cancelled or failed purchase stays put without comment, because the
     /// system sheet the user just dismissed IS the comment.
     private func advance() {
+        // One sale per visit to this screen. StoreKit returns `.bought`
+        // IMMEDIATELY for a product this Apple ID already owns, so a second
+        // tap on the button logged a second purchase: the live data showed one
+        // person firing four `purchase` events in eighteen seconds (2026-09-12),
+        // which made every event-count of sales wrong. `buying` also blocks the
+        // taps that land while the system sheet is coming up.
+        guard !started, !buying else { return }
         guard store.state == .ready else {
             #if DEBUG
             // The purchase StoreKit cannot run happens as a simulated
@@ -475,9 +485,14 @@ struct PaywallScreen: View {
             #endif
             return
         }
+        buying = true
         Task { @MainActor in
+            defer { buying = false }
             if await store.purchase(plan) == .bought {
-                if store.trialEligible { Analytics.track(.trialStarted) }
+                // Lifetime carries no introductory offer, so it can never be a
+                // trial however eligible the buyer still is for the
+                // subscription group's free week.
+                if store.trialEligible && plan != .lifetime { Analytics.track(.trialStarted) }
                 Analytics.track(.purchase(plan: plan.rawValue))
                 started = true
                 onDone(true)
