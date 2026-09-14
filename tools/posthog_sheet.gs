@@ -348,7 +348,10 @@ function writeInstalls() {
     if (city === 'Cupertino' || city === 'Sunnyvale' || device === 'iPhone99,7') note = 'Apple (App Review)';
     else if (r[17] > 1) note = 'Repeat taps on the buy button, not repeat sales';
     rows.push([when[0], (when[1] || '').slice(0, 8), city || '(unknown)', r[3] || '', r[4] || '',
-               IPHONE_MODELS[device] || device, r[6] || '', r[7] || '',
+               // Leading apostrophe: setValues parses strings as user input, so
+               // "1.0" becomes the number 1 and prints "1". The apostrophe is
+               // the same text-forcing prefix a person would type.
+               IPHONE_MODELS[device] || device, "'" + (r[6] || ''), "'" + (r[7] || ''),
                r[8] > 0 ? 'Yes' : 'No', gates[r[9]] || 'Did not reach it', pkg,
                r[14], r[15], r[16], r[17], String(r[18] || '').replace('T', ' ').slice(0, 19),
                note, r[0]]);
