@@ -356,7 +356,7 @@ function writeInstalls() {
   rows.push(['']);
   rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Founders count until the team-device switch ships.']);
-  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280]);
+  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280], [7, 8]);
 }
 
 function writeWatchGate() {
@@ -412,12 +412,17 @@ function find(rows, label) {
   return null;
 }
 
-function write(name, rows, widths) {
+function write(name, rows, widths, textCols) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
   sheet.clearContents();
   var width = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 1);
   var padded = rows.map(function (r) { while (r.length < width) r.push(''); return r; });
+  // Columns that hold version strings must be formatted as text BEFORE the
+  // values land, or Sheets reads "1.0" as the number 1 and prints "1".
+  (textCols || []).forEach(function (c) {
+    sheet.getRange(1, c, padded.length, 1).setNumberFormat('@');
+  });
   sheet.getRange(1, 1, padded.length, width).setValues(padded);
   sheet.getRange(1, 1, 1, width).setFontWeight('bold');
   sheet.setFrozenRows(1);
