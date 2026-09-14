@@ -1,0 +1,321 @@
+import Foundation
+import CloudKit
+
+/// Everything the Friends tab and the post composer do, over any
+/// `CommunityDatabase`. No UI, no SwiftData; callers pass in what they know
+/// (display name, the session's numbers) and get value types back.
+///
+/// Identity: the iCloud user record name, read once per store. The profile
+/// record name is derived from it, so "me" is always `CommunityNames
+/// .profile(user:)` and never needs a lookup.
+///
+/// Blocks are honoured on every read and write that could cross one: a blocked
+/// person's posts, requests and profile vanish for the blocker, and the blocked
+/// person cannot send a request to, react to, or view the blocker. Both
+/// directions, because a block record is public and readable by both sides.
+actor CommunityStore {
+    private let db: CommunityDatabase
+    private var cachedUser: String?
+
+    init(database: CommunityDatabase) { self.db = database }
+
+    // MARK: - Me
+
+    /// My profile record name, deriving the user on first use.
+    func me() async throws -> String {
+        if let cachedUser { return CommunityNames.profile(user: cachedUser) }
+        let user = try await db.currentUserRecordName()
+        cachedUser = user
+        return CommunityNames.profile(user: user)
+    }
+
+    func myProfile() async throws -> Profile? {
+        guard let record = try await db.fetch(try await me()) else { return nil }
+        return Profile(record: record)
+    }
+
+    /// True when nobody else holds the handle. My own profile holding it
+    /// counts as free, so re-saving my own name never reads as taken.
+    func isUsernameAvailable(_ raw: String) async throws -> Bool {
+        guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
+        let mine = try await me()
+        let holders = try await db.query(CommunityQuery(type: CommunityType.profile,
+                                                        filters: [.equals("username", .string(handle))], limit: 5))
+        return holders.allSatisfy { $0.recordID.recordName == mine }
+    }
+
+    /// Claim a handle, creating the profile if this is the first time. The
+    /// check-then-save race (two people claiming one name in the same second)
+    /// is caught by a second query after the save: the later claimant, by
+    /// `createdAt`, loses and is told so.
+    @discardableResult
+    func claimUsername(_ raw: String, displayName: String) async throws -> Profile {
+        guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
+        guard try await isUsernameAvailable(handle) else { throw CommunityError.usernameTaken }
+
+        let mine = try await me()
+        let record = try await db.fetch(mine) ?? CKRecord(recordType: CommunityType.profile,
+                                                          recordID: CKRecord.ID(recordName: mine))
+        var profile = Profile(record: record) ?? Profile(id: mine, username: handle, displayName: displayName)
+        profile.username = handle
+        profile.displayName = displayName
+        profile.apply(to: record)
+        let saved = try await db.save(record)
+
+        let holders = try await db.query(CommunityQuery(type: CommunityType.profile,
+                                                        filters: [.equals("username", .string(handle))], limit: 5))
+        let others = holders.filter { $0.recordID.recordName != mine }
+        if let rival = others.compactMap(Profile.init(record:)).min(by: { $0.createdAt < $1.createdAt }),
+           rival.createdAt < profile.createdAt {
+            // Lost the race. Give the handle back and report it.
+            record["username"] = "" as NSString
+            _ = try? await db.save(record)
+            throw CommunityError.usernameTaken
+        }
+        return Profile(record: saved) ?? profile
+    }
+
+    /// Records that a first session exists, for the invite reward. Called
+    /// once; later calls are no-ops so the date stays the first one.
+    func markFirstSession(at date: Date = Date()) async throws {
+        let mine = try await me()
+        guard let record = try await db.fetch(mine), record["firstSessionAt"] == nil else { return }
+        record["firstSessionAt"] = date as NSDate
+        _ = try await db.save(record)
+    }
+
+    // MARK: - Finding people
+
+    func profile(named recordName: String) async throws -> Profile? {
+        let mine = try await me()
+        if recordName != mine, try await isBlocked(between: mine, and: recordName) { return nil }
+        guard let record = try await db.fetch(recordName) else { return nil }
+        return Profile(record: record)
+    }
+
+    func search(username raw: String) async throws -> Profile? {
+        guard let handle = Username.normalize(raw) else { return nil }
+        let found = try await db.query(CommunityQuery(type: CommunityType.profile,
+                                                      filters: [.equals("username", .string(handle))], limit: 1))
+        guard let record = found.first, let profile = Profile(record: record) else { return nil }
+        let mine = try await me()
+        if profile.id != mine, try await isBlocked(between: mine, and: profile.id) { return nil }
+        return profile
+    }
+
+    func profiles(named names: [String]) async throws -> [Profile] {
+        guard !names.isEmpty else { return [] }
+        var out: [Profile] = []
+        for name in names {
+            if let record = try await db.fetch(name), let p = Profile(record: record) { out.append(p) }
+        }
+        return out
+    }
+
+    // MARK: - Friends
+
+    enum Relationship: Equatable { case none, requested, incoming, friends }
+
+    /// Edges I wrote (my requests and my half of every friendship).
+    private func edgesFromMe() async throws -> Set<String> {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: CommunityType.edge,
+                                                        filters: [.equals("from", .reference(mine))], limit: 500))
+        return Set(records.compactMap(FriendEdge.init(record:)).map(\.to))
+    }
+
+    /// Edges written towards me (requests to me and their half of friendships).
+    private func edgesToMe() async throws -> Set<String> {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: CommunityType.edge,
+                                                        filters: [.equals("to", .reference(mine))], limit: 500))
+        return Set(records.compactMap(FriendEdge.init(record:)).map(\.from))
+    }
+
+    func relationship(with other: String) async throws -> Relationship {
+        let out = try await edgesFromMe().contains(other)
+        let back = try await edgesToMe().contains(other)
+        switch (out, back) {
+        case (true, true):   return .friends
+        case (true, false):  return .requested
+        case (false, true):  return .incoming
+        case (false, false): return .none
+        }
+    }
+
+    /// Profile record names of everyone with edges in BOTH directions, minus
+    /// anyone blocked either way.
+    func friends() async throws -> [String] {
+        let mutual = try await edgesFromMe().intersection(edgesToMe())
+        let blocked = try await blockedEitherWay()
+        return mutual.subtracting(blocked).sorted()
+    }
+
+    /// People who asked me and whom I have not answered.
+    func incomingRequests() async throws -> [String] {
+        let pending = try await edgesToMe().subtracting(edgesFromMe())
+        let blocked = try await blockedEitherWay()
+        return pending.subtracting(blocked).sorted()
+    }
+
+    /// People I asked who have not answered.
+    func sentRequests() async throws -> [String] {
+        let pending = try await edgesFromMe().subtracting(edgesToMe())
+        return pending.sorted()
+    }
+
+    /// Ask, or accept: both are "write my edge towards them". Refused across
+    /// a block in either direction.
+    func sendRequest(to other: String) async throws {
+        let mine = try await me()
+        guard other != mine else { return }
+        if try await isBlocked(between: mine, and: other) { throw CommunityError.blocked }
+        let edge = FriendEdge(from: mine, to: other)
+        let record = CKRecord(recordType: CommunityType.edge, recordID: CKRecord.ID(recordName: edge.id))
+        edge.apply(to: record)
+        _ = try await db.save(record)
+    }
+
+    func accept(_ other: String) async throws { try await sendRequest(to: other) }
+
+    /// Remove a friend, decline a request, or withdraw one: all are "delete
+    /// my edge towards them". Their edge, if any, is theirs to keep or drop.
+    func removeFriend(_ other: String) async throws {
+        let mine = try await me()
+        try await db.delete(CommunityNames.edge(from: mine, to: other))
+    }
+
+    // MARK: - Posts
+
+    /// The numbers a post carries, handed in by the results screen. Nothing
+    /// measured beyond the score is accepted by this signature on purpose.
+    struct Draft: Equatable {
+        var score: Int
+        var minutes: Int
+        var streak: Int
+        var technique: String?
+        var caption: String
+        var photoURL: URL?
+        var practicedAt: Date
+    }
+
+    static let captionLimit = 140
+
+    @discardableResult
+    func post(_ draft: Draft) async throws -> Post {
+        let mine = try await me()
+        let caption = String(draft.caption.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.captionLimit))
+        let post = Post(author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
+                        technique: draft.technique, caption: caption, photoURL: draft.photoURL,
+                        practicedAt: draft.practicedAt)
+        let record = CKRecord(recordType: CommunityType.post, recordID: CKRecord.ID(recordName: post.id))
+        post.apply(to: record)
+        let saved = try await db.save(record)
+        return Post(record: saved) ?? post
+    }
+
+    func deletePost(_ id: String) async throws {
+        try await db.delete(id)
+    }
+
+    /// Friends' posts and mine, newest first.
+    func feed(limit: Int = 50) async throws -> [Post] {
+        let mine = try await me()
+        let authors = try await friends() + [mine]
+        return try await posts(by: authors, limit: limit)
+    }
+
+    /// One person's posts, newest first. Empty for a stranger: the feed is
+    /// for friends, and a profile page shows posts only once you are one.
+    func posts(by author: String, limit: Int = 50) async throws -> [Post] {
+        let mine = try await me()
+        if author != mine {
+            let friends = try await friends()
+            guard friends.contains(author) else { return [] }
+        }
+        return try await posts(by: [author], limit: limit)
+    }
+
+    private func posts(by authors: [String], limit: Int) async throws -> [Post] {
+        guard !authors.isEmpty else { return [] }
+        var query = CommunityQuery(type: CommunityType.post,
+                                   filters: [.isIn("author", authors.map { .reference($0) })])
+        query.sortField = "createdAt"
+        query.ascending = false
+        query.limit = limit
+        return try await db.query(query).compactMap(Post.init(record:)).sorted { $0.createdAt > $1.createdAt }
+    }
+
+    // MARK: - Reactions
+
+    func react(to postID: String) async throws {
+        let mine = try await me()
+        let reaction = Reaction(post: postID, author: mine)
+        let record = CKRecord(recordType: CommunityType.reaction, recordID: CKRecord.ID(recordName: reaction.id))
+        reaction.apply(to: record)
+        _ = try await db.save(record)
+    }
+
+    func unreact(to postID: String) async throws {
+        let mine = try await me()
+        try await db.delete(CommunityNames.reaction(post: postID, by: mine))
+    }
+
+    /// Who reacted to a post, as profile record names.
+    func reactors(to postID: String) async throws -> [String] {
+        let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
+                                                        filters: [.equals("post", .reference(postID))], limit: 500))
+        return records.compactMap(Reaction.init(record:)).map(\.author).sorted()
+    }
+
+    // MARK: - Block and report
+
+    func block(_ other: String) async throws {
+        let mine = try await me()
+        guard other != mine else { return }
+        let block = Block(from: mine, to: other)
+        let record = CKRecord(recordType: CommunityType.block, recordID: CKRecord.ID(recordName: block.id))
+        block.apply(to: record)
+        _ = try await db.save(record)
+        // A block ends the friendship from my side too.
+        try await removeFriend(other)
+    }
+
+    func unblock(_ other: String) async throws {
+        let mine = try await me()
+        try await db.delete(CommunityNames.block(from: mine, to: other))
+    }
+
+    func blockedByMe() async throws -> [String] {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: CommunityType.block,
+                                                        filters: [.equals("from", .reference(mine))], limit: 500))
+        return records.compactMap(Block.init(record:)).map(\.to).sorted()
+    }
+
+    private func blockedEitherWay() async throws -> Set<String> {
+        let mine = try await me()
+        let out = try await db.query(CommunityQuery(type: CommunityType.block,
+                                                    filters: [.equals("from", .reference(mine))], limit: 500))
+        let inn = try await db.query(CommunityQuery(type: CommunityType.block,
+                                                    filters: [.equals("to", .reference(mine))], limit: 500))
+        return Set(out.compactMap(Block.init(record:)).map(\.to) + inn.compactMap(Block.init(record:)).map(\.from))
+    }
+
+    private func isBlocked(between a: String, and b: String) async throws -> Bool {
+        if try await db.fetch(CommunityNames.block(from: a, to: b)) != nil { return true }
+        if try await db.fetch(CommunityNames.block(from: b, to: a)) != nil { return true }
+        return false
+    }
+
+    @discardableResult
+    func report(_ target: String, as type: Report.Target, reason: String) async throws -> Report {
+        let mine = try await me()
+        let report = Report(reporter: mine, target: target, targetType: type,
+                            reason: String(reason.prefix(500)))
+        let record = CKRecord(recordType: CommunityType.report, recordID: CKRecord.ID(recordName: report.id))
+        report.apply(to: record)
+        _ = try await db.save(record)
+        return report
+    }
+}
