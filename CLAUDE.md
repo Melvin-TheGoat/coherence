@@ -1491,6 +1491,57 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   `Transaction.updates`, which `Store` already listens to.
 - `PREVIEW_TAB=guide|search|profile` (DEBUG) opens the app on a tab.
 
+## LAUNCH WEEK, DAYS 3 TO 5 (2026-09-12 to 09-14): what happened and what it taught
+
+- **1.0.1 shipped as ONE build with the Watch fixes.** Melvin's 1.0.1
+  (202609121757) was pulled from review and replaced by 202609130259,
+  archived from Aziz's Mac on the org team, then pulled once more to swap
+  store screenshots 3 and 6 for the five-tab layout. Approved and released
+  2026-09-14. **Screenshots are locked while a version is in review**; changing
+  them means Remove from Review, which costs queue position.
+- **Media Manager orders screenshots by upload COMPLETION.** Upload one file at
+  a time in listing order; recorded in `marketing/README.md`.
+- **Reading App Store Connect sources:** App Referrer = a link opened inside
+  another app (Instagram's browser, but ALSO iMessage, so a founder texting the
+  link to friends lands here); App Store Search = typed a query (founders
+  reinstalling inflate it); App Store Browse = found without typing (Apps tab,
+  charts, categories). Apple counts downloads, PostHog counts first launches:
+  expect Apple to run ~10 to 20% higher, and subtract App Review's Cupertino /
+  Sunnyvale installs from ours. Apple's overview cards show ONE day.
+- **Analytics sheet:** new Installs tab (one row per install: when, where,
+  phone, Version, onboarding, Watch gate, package, sessions) and the hourly
+  trigger that was never installed now exists. Sheets parses "1.0" as the
+  number 1 through `setValues`; prefix version strings with an apostrophe.
+  GeoIP moves on a phone: read city, state and country from ONE event.
+- **Waitlist launch email SENT** 2026-09-13 1:16 PM EDT, 33 people, from
+  Aziz's Outlook, campaign `ct=waitlist` (`marketing/LAUNCH_EMAIL.md`).
+- **Reddit (`marketing/REDDIT.md`):** rules read directly from each sub's
+  `about/rules.json`. **r/AppleWatch bans self-promotion** (the launch plan
+  was wrong). Openings: r/apple Sundays (5 organic contributions that month),
+  r/iosapps once per 30 days (10 local karma + Transparency path),
+  r/SideProject, r/QuantifiedSelf Monday megathread. r/Mindfulness,
+  r/Biohackers, r/AppleWatchFitness, r/Meditation ban promotion. First post
+  live on r/SideProject from u/No_Shelter5464 (new, 1 karma).
+  **Founder posts disclose.** Claude will not write or post content that
+  presents a founder as an unaffiliated customer; the disclosed version of
+  the same story is fine and was posted.
+- **Deleted the questionnaire sheet's tab of six pre-written 5-star App Store
+  reviews.** Handing people review text is review manipulation (3.2.2). Ask
+  happy users to review in their own words; the rating prompt does the rest.
+- **The in-app no-Watch waitlist never sent anything.** Its email stayed on
+  the person's phone (an export that was never built), so every address from
+  1.0 and 1.0.1 is lost. `WaitlistClient` now posts to the "808 no watch
+  waitlist" sheet via `tools/nowatch-waitlist.gs` (verified end to end). This
+  is the first personal data the app sends us: manifest, both policies and the
+  App Privacy label must move together (`RELEASE_CHECKLIST.md`).
+- **The no-Watch share is rising:** Watch gate answers the week of 09-13 were
+  7 no Watch to 5 has Watch. Camera vision is the next product question after
+  activation, not a someday item.
+- **Where the business stands (09-14):** ~26 real installs, ~19 strangers,
+  zero strangers with a completed session (all on the broken 1.0), two
+  strangers reached the paywall, three trials all founders or family ending
+  09-19, one Lifetime (family). The test of the product starts with 1.0.1.
+
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
 Aziz: "before we push, make sure you tell us to check if these are done."
