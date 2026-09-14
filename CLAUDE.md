@@ -715,6 +715,47 @@ UI must coach it, and the 2-signal degrade path must stay.
     labelled pair with no screenshots involved. That is the ground-truth
     collector this work is starved for, and it is the capture code that ships
     anyway.
+- **CAMERA VISION, ROUND 3 (2026-09-14, Melvin: RESUMED). The probe is now a
+  pure module: `Shared/Engine/CameraSignal.swift`.** Branch merged up to mvp
+  (clean). The design, the no-heart score, the ground-truth plan and the
+  App Store consequences live in **`CAMERA_VISION_PLAN.md`**; read that
+  before touching the flow. Offline: `tools/camera_harness.swift`
+  (`swiftc -parse-as-library -O` with SignalEngine + CameraSignal) runs the
+  REAL module on a capture CSV against the wrist's curve. 20 tests.
+  - **Port is faithful:** under the probe's uniform-time assumption it
+    reproduces the probe's tracked windows to 0.10/min median (the residual
+    is the probe hopping 28 samples = 4.93 s on the irregular 5.68 fps
+    decimation). Shipped module windows by TRUE time (the in-app collector
+    drops frames). Against the wrist: IMG_7635 **1.22/min, 55% within ±1.5**
+    (probe 1.29/56%); IMG_9543 **2.23/min, 35%** (probe 1.68/45%), the whole
+    gap being minutes 6 to 9 flipping to the fast line, the unresolved
+    stretch from round 2. Not tuned toward either instrument.
+  - **Two constants changed by measurement, both against carried-over wrist
+    values.** The motion gate is **x4 the median** window motion: the wrist's
+    x1.5 closed 29 of 114 windows on IMG_7635, fifteen of them correct reads
+    (min 2 and 6, camera 5.3 vs wrist 6.3/5.2 at x2.0 to x3.6), raised error
+    1.27 to 1.52, and blocked BOTH doorways; settles and sit-downs run x5.7
+    to x53 and read a fake 4 to 6/min through it, which x4 closes. The
+    doorway floor is the camera's 0.30 read bar: 0.15 admits the settle as a
+    doorway (6.0 at 0 s on IMG_7635) and nothing between recovers a longer
+    one for Aziz, whose 0.5 m clarity dips to 0.15 at 55 to 75 s.
+  - **Late doorways are refused outright on the camera** (`lateClarity:
+    .infinity`, a new defaulted parameter on `SignalEngine.breathDoorway`).
+    The wrist's 0.85 admission bar was measured against wrist sway; camera
+    sway reads 4.5/min at clarity 0.93 (IMG_9543 minute 19).
+  - **Score with no heart: breath .20 / stillness .80, stillness alone with
+    no doorway.** NOT the .40/.60 the Watch's `depth` would renormalise to:
+    .20 is the weight at which the forged-doorway trade was measured and
+    accepted. Stillness is calibrated onto the wrist's scale (gain 0.36: the
+    camera's session mean on IMG_7635 is 0.800, the wrist's digitized from
+    the same sit 0.82) so `spreadStillness` applies unchanged. Cost on the
+    captures: Aziz 84, Melvin 20 (a 2.5-minute settle with no heart term to
+    carry it). Rows carry `algorithmVersion` "camera-"; **`ScoreMigration`
+    skips that prefix** (test locks it).
+  - **The harness's `--offset auto` is not trustworthy** (locks onto 175 s
+    and 45 s; the true offsets are 20 s and 25 s). Pass them.
+  - **Next is data, not code:** twenty in-app labelled pairs per section 5 of
+    the plan. Paced 6/8/12 first. Add nothing to the engine until they exist.
 - **WRIST BREATHING SHIPPED — posture-free, VERIFIED on-device across 8 live
   sessions (2026-08-07, field-calibrated in 5 rounds like the camera was).**
   Every non-belly session gets a breathing attempt automatically: no mode, no
