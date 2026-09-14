@@ -45,9 +45,23 @@ people to their first session.
 - **r/SideProject, 2026-09-13 ~1:50 PM EDT, u/No_Shelter5464.** Aziz's
   personal-journey post (future self, Dispenza, "what did my body actually
   do", 808 in one paragraph with a four-word disclosure, ends on a question
-  to the sub). Not the draft below; Aziz wrote it. Reply to every comment for
-  48 hours.
+  to the sub). Not the draft below; Aziz wrote it.
   https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
+  **REMOVED by Reddit's filters (seen 2026-09-14).** Site-wide spam filter,
+  not the sub's mods: a brand-new account with no karma posting an outbound
+  link is the textbook trigger, and only the sub's moderators can restore a
+  filtered post. Do NOT repost from the same account; a second removal marks
+  it as spam. Sequence: (1) modmail r/SideProject asking them to approve it
+  (text below); (2) meanwhile the account earns comment karma, no links, for
+  a few days; (3) if they say no, post again in a week from an account with
+  history, or with the link replaced by the App Store name.
+
+  Modmail to r/SideProject:
+  > Hi. My post "I started meditating to become a future version of myself"
+  > was removed by Reddit's filters, I think because the account is new.
+  > It is a personal write-up of a meditation app two of us built, with the
+  > disclosure in the first paragraph. Would you approve it? Happy to take
+  > the link out if that helps. Thank you.
 
 ## 1. r/AppleWatch modmail (send first; post nothing there until they answer)
 

@@ -104,13 +104,15 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   VERSION of the existing deployment; a new deployment changes the URL and
   strands every shipped build.
 
-- **Reddit, first post live:** r/SideProject, 2026-09-13 ~1:50 PM EDT,
-  https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
-  (u/No_Shelter5464, Aziz's account). Reply to every comment for 48 hours.
-  Rules table and the remaining drafts: `marketing/REDDIT.md`. The account
-  has no history, so r/apple waits for five organic comments there (next
-  Sunday at the earliest) and r/iosapps for ten local karma; r/AppleWatch,
-  r/iOS and r/iphone need a modmail first.
+- **Reddit, first post REMOVED by Reddit's filters** (r/SideProject,
+  posted 2026-09-13 1:50 PM EDT from u/No_Shelter5464, Aziz's new account;
+  removal seen 2026-09-14). Cause is the account, not the post: no karma
+  plus an outbound link trips the site-wide spam filter. Next: modmail
+  r/SideProject to approve it (text in `marketing/REDDIT.md`), earn comment
+  karma on the account before any further link post, never repost the same
+  thing from the same account. The rest of the plan stands: r/apple waits
+  for five organic comments (next Sunday at the earliest), r/iosapps for
+  ten local karma; r/AppleWatch, r/iOS and r/iphone need a modmail first.
 
 - **Launch email to the waitlist + survey list: SENT 2026-09-13, 1:16 PM
   EDT**, from Aziz's Outlook, 33 people in BCC, campaign `ct=waitlist`
