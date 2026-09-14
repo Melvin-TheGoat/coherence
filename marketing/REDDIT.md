@@ -34,9 +34,9 @@ Order: r/SideProject today, r/QuantifiedSelf megathread Monday, r/iosapps as
 soon as the karma is there, r/apple next Sunday, r/AppleWatch only if the
 mods say yes. Reply to every comment for 48 hours after each post.
 
-Timing note: 1.0.1 (the build that fixes sessions failing to start) is in
-review. Post the day it is live, not before; every one of these posts sends
-people to their first session.
+Timing note: 1.0.1 (the build that fixes sessions failing to start) went
+live 2026-09-14 around 4 AM EDT, so the posts are clear to go. Every one of
+them sends people to their first session.
 
 ---
 

@@ -126,8 +126,10 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   campaign in App Store Connect against this timestamp; it shows only after
   five distinct installs.
 
-- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12, 11:24 PM):
-  "Waiting for Review", build 202609130259.** Pulled once more at 11:20
+- **1.0.1 is LIVE (approved and released 2026-09-14, about 4 AM EDT;
+  first App Store installs on it the same morning: Ireland 4:07, Oslo 7:05).**
+  Resubmitted with everything by Aziz 2026-09-12, 11:24 PM, build
+  202609130259. Pulled once more at 11:20
   to swap store screenshots 3 and 6 for the five-tab layout (Profile tab
   and Guide tab); screenshots are locked while a version is in review and
   cannot change after release without a new version, so it had to happen
