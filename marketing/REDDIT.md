@@ -175,6 +175,66 @@ that codes go in the body.)
 
 ## 4. r/SideProject
 
+**What wins there (top 25 posts of the month, read 2026-09-14 via the sub's
+RSS; Melvin asked for the post to be rewritten in that register):** nearly
+every top post is a VIDEO or image post with the text as the body; the title
+is "I built a [platform] app that [one concrete thing it does]", first person,
+present tense, no essay title; the body opens "I'm the developer" and
+explains the mechanics in second person ("put the phone on the floor, get
+into a plank, and it counts your reps"); one paragraph on what took most of
+the dev time; one line on privacy where it applies ("no frame leaves the
+phone"); a "the reason it exists" paragraph; prices stated plainly with the
+renewal disclosure; one direct link; and it closes with an ask ("tell me
+where it falls short"). Short paragraphs, no numbered lists, no headers. One
+top post put a public offer code in the body with no redemption limit and
+credited it for installs. The "three things we got wrong" listicle below is
+kept for the record; the version that goes up is 4b.
+
+### 4b. The version that goes up (Melvin's account, video post)
+
+Attach the screen recording as the post itself: Watch end, then the phone's
+results screen with the score and the curves, 20 to 30 seconds, no music.
+The text is the body.
+
+**Title:** I built an Apple Watch app that scores your meditation from your heart rate, your stillness and your breathing
+
+**Body:**
+
+I'm one of the two people who built it. You put on your Watch, press start
+on the phone or the wrist, and meditate the way you already do: a guided
+track, your own audio from any app, or silence. The Watch measures the whole
+time and shows you nothing during the session. When you end it, the phone
+gives you a score from three things: how far your heart rate settled and
+whether it stayed there, how still you sat, and whether you slowed your
+breathing in the first few minutes.
+
+Most of the dev time went into the breathing. The first version only worked
+lying down with the Watch on your belly. It worked, and nobody was ever
+going to do that. The shipped version reads slow breathing from tiny wrist
+tilt, sitting however you like. It's built for deliberate slow breathing,
+the four to seven a minute kind, and when it can't read a breath it says
+nothing rather than inventing a number. That rule runs through the whole
+app: if it wasn't measured, it isn't claimed.
+
+Everything is computed on the Watch and stored on your phone. Your heart
+rate never leaves your devices, and there's no account unless you want
+iCloud sync.
+
+The reason it exists: I meditated for years without knowing whether a given
+session did anything. Now I finish and see it, and the bad sits turned out
+to be as useful as the good ones.
+
+Free gives you the score, your streak and your history. Premium is the
+curves behind the score plus a 25-minute guided journey: $7.99 a month or
+$29.99 a year, both with a 7-day free trial, or $99.99 once. Needs an Apple
+Watch.
+
+App Store: https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=reddit&mt=8
+
+Tell me where it falls short.
+
+### 4a. The earlier draft (not used)
+
 **Title:** Two of us made the Apple Watch score a meditation. It's live. What we got wrong along the way.
 
 **Body:**
