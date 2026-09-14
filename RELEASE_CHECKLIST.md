@@ -6,6 +6,14 @@ Claude session asked to submit must go through it with you first.
 
 Tick an item by moving it to DONE with the date. Never delete a line.
 
+## HOLD
+
+- **1.0.2 (build 202609141719) is uploaded and NOT submitted. Do not create
+  the version, attach the build or press Add for Review until Aziz says so**
+  (2026-09-14: "there is a decent amount I want to do before we do that").
+  More changes will likely go into this version first, which means a new
+  archive; this build may never ship.
+
 ## OPEN: must be done in the submission that ships the next build
 
 - [ ] **App Privacy label: add Email Address.** App Store Connect → 808

@@ -211,28 +211,51 @@ function writeScreens() {
   var counts = {};
   res.results.forEach(function (r) { counts[r[0]] = r[1]; });
 
+  // Which screens only SOME people see, read from the routing in
+  // OnboardingView.swift rather than guessed from the name. The first
+  // version keyed on a letter in the number ("06a") and missed screen 11,
+  // which is guarded to regulars only: it showed a 90% "drop" and then
+  // -900% on the Watch gate, both pure routing.
+  var BRANCH = {
+    aloneWithThoughts: 'not regulars', doingNothing: 'not regulars',
+    restarts: 'restarters only', intendedFor: 'newcomers only',
+    bodyCuriosity: 'not newcomers', bodyProof: 'not newcomers',
+    blindSpot: 'regulars only', watchSetup: 'has a Watch', waitlist: 'no Watch',
+    cost: 'not routed to (screen retired)',
+    paywall: 'only when plans are on sale, after the tour',
+    signIn: 'everyone reaches it, but from two places'
+  };
+  // Screens where the group of people changes, so "lost vs previous" would
+  // count routing as churn. The number is shown; the drop is explained.
+  var REBASE = {
+    anchor: 'Both Watch-gate branches rejoin here. The drop is people who quit on 12a or 12b.',
+    tourHome: 'No-Watch people skip the tour and go straight to sign in, so most of this drop is routing, not churn. Compare with 12a (has a Watch).'
+  };
+
   var rows = [['#', 'Screen', 'People who completed it (30d)', 'Lost vs previous screen', 'Note']];
-  var order = Object.keys(SCREEN_NAMES);
   var prev = null;
-  order.forEach(function (id) {
+  Object.keys(SCREEN_NAMES).forEach(function (id) {
     var name = SCREEN_NAMES[id];
     var n = counts[id] || 0;
-    // A lettered number (06a, 12b, 17b) marks a screen only some personas
-    // see. Detecting branches by parentheses instead missed "12b No-Watch
-    // waitlist" and produced a -500% drop-off on the screen after it.
-    var branch = /^\d+[a-z]/.test(name);
-    var lost = '';
-    if (prev !== null && !branch && prev > 0) {
+    var lost = '', note = '';
+    if (BRANCH[id]) {
+      note = 'Branch screen (' + BRANCH[id] + '): no drop-off computed';
+    } else if (REBASE[id]) {
+      if (prev) lost = Math.round((1 - n / prev) * 100) + '%';
+      note = REBASE[id];
+    } else if (prev) {
       lost = Math.round((1 - n / prev) * 100) + '%';
     }
-    rows.push([name.split(' ')[0], name.replace(/^\S+\s/, ''), n, lost,
-               branch ? 'Branch screen: only some personas see it, so no drop-off is computed' : '']);
-    if (!branch) prev = n;
+    // Apostrophe keeps "06a" and "09" as typed; Sheets would turn "09" into 9.
+    rows.push(["'" + name.split(' ')[0], name.replace(/^\S+\s/, ''), n, lost, note]);
+    if (!BRANCH[id]) prev = n;
   });
   rows.push(['']);
   rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
     '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen.']);
-  write('Screens', rows, [50, 380, 200, 170, 520]);
+  rows.push(['', 'Who is counted', '', '',
+    'Founders’ App Store installs and Apple’s reviewers are INCLUDED (see the Installs tab Note column). Read small numbers with that in mind.']);
+  write('Screens', rows, [50, 380, 200, 170, 620]);
 }
 
 function writeFailures() {
