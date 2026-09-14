@@ -33,8 +33,15 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 - **AI coach voice library** (Melvin's wedge). ON HOLD: ElevenLabs was tried
   and "is not there yet". When it is, the first version is a pre-generated
   library by length and voice, offline, no runtime generation. Not before.
-- **Friends** (Search tab placeholder). Needs a backend; the username is
-  cosmetic until then and must not be presented as reserved.
+- **Friends** (Search tab placeholder). DESIGNED 2026-09-14 (Aziz asked to
+  start): `COMMUNITY.md` is the decision record, `mockups/friends.html` the
+  six screens awaiting review before any Swift. Mutual friends, a feed of
+  posted sessions (photo + score + minutes + streak + technique + caption,
+  never a heart or breath number), one reaction, no comments, report and
+  block, CloudKit public database with no server. Invite reward: free users
+  get 10 sessions of full evidence per friend who accepts and sits once;
+  paid users get an award and the Circle skin. Ships as 1.1, after 1.0.2;
+  flips the UGC and Social age-rating answers to Yes.
 - **Camera-vision sessions** (branch `camera-vision`): the answer to no-Watch
   churn. Ground truth is the bottleneck; the in-app collector exists.
 - **Rating prompt is in 1.0.1.** Watch the ratings count in the launch
