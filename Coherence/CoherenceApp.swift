@@ -39,6 +39,9 @@ struct CoherenceApp: App {
                 // network the store lands on .unavailable (free); coming back
                 // to the foreground retries, so that person can still buy.
                 .task { await store.load() }
+                // A no-Watch waitlist signup that could not be delivered (no
+                // network at the end of onboarding) goes out on a later launch.
+                .task { await WaitlistClient.flush() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }

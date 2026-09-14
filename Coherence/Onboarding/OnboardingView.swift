@@ -516,15 +516,17 @@ struct OnboardingView: View {
         if let handle = Username.normalize(answers.username), (user.username ?? "").isEmpty {
             user.username = handle
         }
-        // The no-Watch waitlist. Until now the typed email was bound into a
-        // @State and then dropped on the floor, which made the screen's
-        // promise unkeepable. It lands on the local user row, where the
-        // marketing export (stubbed, Phase 7) will read from, and it flips
-        // the same product-emails opt-in Settings can undo.
+        // The no-Watch waitlist. The address lands on the local user row (the
+        // product-emails opt-in Settings can undo) AND, since 2026-09-14, is
+        // sent to the "808 no watch waitlist" sheet. Before that it stayed on
+        // the phone only, so the screen's "we'll write to you" could never
+        // happen. `WaitlistClient` never blocks this path and retries offline
+        // signups on the next launch.
         let joined = waitlistEmail.contains("@") && waitlistEmail.contains(".")
         if joined {
             if (user.email ?? "").isEmpty { user.email = waitlistEmail }
             user.marketingOptIn = true
+            WaitlistClient.submit(waitlistEmail)
         }
         Analytics.track(.onboardingCompleted)
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
