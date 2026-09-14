@@ -151,8 +151,6 @@ leave after finishing the interview.
   library by length and voice, offline, no runtime generation. Not before.
 - **Friends** (Search tab placeholder). Needs a backend; the username is
   cosmetic until then and must not be presented as reserved.
-- **Camera-vision sessions** (branch `camera-vision`): the answer to no-Watch
-  churn. Ground truth is the bottleneck; the in-app collector exists.
 - **Rating prompt is in 1.0.1.** Watch the ratings count in the launch
   scorecard.
 - **Handle for the coach's name** (the narrated guide, not Otto): open.
@@ -209,6 +207,22 @@ leave after finishing the interview.
   `trial_started` it never had.
 
 ## In flight
+
+- **Camera vision RESUMED** (2026-09-14, branch `camera-vision`, plan in
+  `CAMERA_VISION_PLAN.md` there). `mvp` merged in with no conflicts (five
+  tabs plus the DEBUG collector); 253 tests green. The probe's pipeline is
+  now a pure engine module, `Shared/Engine/CameraSignal.swift`, shaped for
+  `SignalEngine` (30/5 grid, no heart series), with an offline harness
+  (`tools/camera_harness.swift`) and 20 tests. Score with no heart term:
+  breath .20 / stillness .80 when a doorway opens, stillness alone when
+  not; camera rows are tagged `camera-` and skipped by the Watch's score
+  migration. Accuracy against the wrist on the two existing videos: about
+  1.2/min on one, 2.2/min on the other (the unresolved fast-episode
+  minutes). **Next, a human:** with a DEBUG build and Settings > Camera
+  capture on, record six paced sits at 6, 8 and 12 breaths/min (two
+  people, three minutes paced then five natural), pull with
+  `tools/camera_pull.sh`, run the harness. Add nothing to the engine until
+  those exist.
 
 - **AirPods heart rate: FEASIBLE on iOS 26, spike built** (2026-09-14,
   branch `airpods`, `AIRPODS_PLAN.md` on that branch). Sources: WWDC25
