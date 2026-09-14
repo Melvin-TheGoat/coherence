@@ -111,6 +111,22 @@ Refused:
   sign-in optional for an app that works without an account, and it was a
   documented rejection reason in the audit. Stays optional.
 
+## Cut the fat out of onboarding (Melvin + Aziz, 2026-09-14, direction)
+
+"We think the onboarding is too crowded, so we want to lean towards cutting
+the fat down." A newcomer today sees about 33 screens from Relief to sign
+in. The Screens tab says the proof screens (17 to 22) and the plan screens
+(23 to 26) lose almost nobody, so the case is length and attention, not a
+drop-off cliff; the cliffs are screen 1 (19%), the Watch gate (35%) and the
+tour's two-minute demo (67%, then 100%). Proposal, awaiting the founders'
+list: cut the wall (18), proof: the body is visible (19), proof: your way
+(22), your first week (25) and the star rating (26, internal signal only);
+fold the second escalation question (06b) into the first and the second
+body question (08b) into the first; keep the sample-session pair (20, 21)
+as the one demonstration. That is 33 to about 24 for a newcomer. Separately,
+make the tour's two-minute demo skippable, since it is where the most people
+leave after finishing the interview.
+
 ## Decided, not started
 
 - **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
