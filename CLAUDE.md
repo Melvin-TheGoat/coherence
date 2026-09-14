@@ -1311,7 +1311,13 @@ UI must coach it, and the 2-signal degrade path must stay.
       trigger through the HogQL query API. Setup is in the file header;
       the read-only personal API key lives in Script Properties, never in
       the repo. Every query was run against the live project before
-      committing. Its internal-user rule matches PostHog's plus
+      committing.
+      **The hourly trigger did not exist until 2026-09-14**: `installTrigger`
+      is a setup step nobody ran, so every refresh for two days was the
+      menu, and the sheet sat on Friday night's numbers while Apple showed
+      Saturday's. Created from the Apps Script Triggers page (refresh,
+      time-based, every hour). Check the Triggers page, not the stamp, when
+      the sheet looks stale. Its internal-user rule matches PostHog's plus
       `$is_sideloaded` (Melvin's cable-installed betas; the two
       `result_missing` events on 2026-09-12 came from one).
     - **Internal-user filter (project setting, default ON):** `$app_build`
