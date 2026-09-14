@@ -16,6 +16,10 @@ final class Preferences {
     /// system stay available in Settings; existing users keep whatever they
     /// had stored.
     var theme: String = "dark"
+    /// The same default, readable before any row exists. `RootView` applies
+    /// it to onboarding, which runs before the first Preferences row is
+    /// written. Keep the two in lockstep.
+    static let defaultTheme: Theme = .dark
     var hapticsEnabled: Bool = true
     var createdAt: Date = Date()
     var updatedAt: Date = Date()

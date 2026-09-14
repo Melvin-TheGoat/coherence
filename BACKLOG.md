@@ -4,15 +4,131 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Launch plan items with no record of being done (checked 2026-09-14)
+
+From `marketing/LAUNCH_PLAN.md` section 4, live day and weeks 1 to 2. Each
+is cheap and each sends Watch owners to a first session on 1.0.1, which is
+the test the product is waiting for (zero strangers have completed a session
+yet; every completion so far is a founder, family or friend).
+
+- **Apple Search Ads not started.** $15 a day, Advanced, exact match on
+  "meditation apple watch" and its siblings. The one always-on paid line.
+- **Featuring nomination not submitted** (App Store Connect, aim three weeks
+  out).
+- **Press tips not sent** (9to5Mac, MacRumors, AppleInsider, iMore, Cult of
+  Mac; the Watch angle, never "first"; `ct=press` link).
+- **Promo codes not generated** (App Store Connect > Promo Codes, 100 per
+  version; gift to Watch YouTubers with no ask).
+- **Website is one deploy behind.** The live site has the plain App Store
+  link; the `website` campaign link, the branded short links
+  (`meditate808.com/reddit` returns the home page, no redirect) and the
+  updated privacy page are in the repo and not deployed. Drag `website/`
+  into Cloudflare Pages.
+- **Reels and carousels:** no record in the repo either way. If they are
+  going out, log the format and the day somewhere the Friday review can read.
+- **Reddit:** r/SideProject from Melvin's account today; r/QuantifiedSelf
+  Monday megathread; the rest per `marketing/REDDIT.md`.
+- **Friday review** (this Friday, 2026-09-18): the sheet's Overview tab
+  against the scorecard in the launch plan, section 6.
+
+## Onboarding feedback, round 2 (one tester, no Watch, 2026-09-14)
+
+**Status 2026-09-14 evening: every "small fix" and copy item below is
+BUILT on `mvp`, plus three of the decisions Melvin took the same day
+(the $400 screen moved into the paywall ladder as its first rung, the
+Watch gate has three answers, "How did you find us?" opens the interview).
+Not taken, still open: "needs an Apple Watch" before the interview; the
+"Last thing" split; moving the proof screens into the tour; animation;
+real design. One finding the tester could not have named: onboarding
+rendered in the SYSTEM colour scheme because no Preferences row exists
+until it finishes, so on a light-mode phone the whole flow was light and
+the app went dark afterwards. That was the "black text", "whiter cards",
+"colours bleeding" and the blue caret. The default theme now applies from
+the first frame. For Aziz's sheet: the Watch gate now emits a third
+outcome, `notYet`, beside `hasWatch` and `waitlist`; the Installs tab's
+gate column will show it raw until the script maps it.**
+
+Walked the whole interview on a phone with no Watch paired. Grouped by what
+it costs. The sheet's Screens tab agrees with the big one: nobody leaves on
+the proof screens (0% each), people leave on screen 1 (19%), at the Watch
+gate (35%) and in the tour after onboarding (33%, 25%, 67%, 100%).
+
+Small fixes, one build:
+- Going BACK to an answered single-select shows the tick but no Continue;
+  the "tap an answer" hint is easy to miss. Show Continue whenever an answer
+  is already selected.
+- Hide the scroll indicator on every onboarding screen; it overlaps the UI.
+- Option rows blend into the background; raise the contrast.
+- Haptic on every option tap, consistently (some screens have it, some do
+  not, and the missing ones read as broken).
+- Multi-select ("what do you already track") uses circles; multi-select is
+  squares by convention. Its Continue also sits differently from every
+  other screen.
+- The no-Watch waitlist email field renders in blue, which reads as a link.
+  Grey placeholder, lowercase "email", standard field.
+- "Where most people start": the circle clips at the edge.
+- "Here's what you told us": some cards have black text and whiter
+  backgrounds, others grey. Unify.
+- The star-rating screen ("Does this sound like it'd work?") does not say
+  what the stars mean. Label it.
+
+Copy:
+- "Fried" on the stress screen; reconsider the word.
+- "You'd be in reasonable company" reads oddly; re-read the wall screen and
+  the surrounding copy aloud.
+- "How long have you been meaning to start" needs a "I haven't, really"
+  option, and its ranges overlap ("a year or so" against "years"; "3+"
+  against "3 to 5"). Dedupe.
+
+Decisions (Melvin + Aziz):
+- **Say "needs an Apple Watch" before the interview starts**, not at screen
+  12. The tester reached the $400 hardware screen assuming the app was for
+  them. The App Store page says it, the flow does not.
+- The hardware screen ("Seeing your body meditate used to cost $400") read
+  as presumptuous and as an upsell mid-interview. Options: cut it, or move
+  it after the Watch gate so only Watch owners see it.
+- Watch gate as three answers (Yes / No / Not yet), or a modal that states
+  the requirement and offers the waitlist.
+- Split the "Last thing" screen: age on one, username on its own at the end.
+- "How did you find us?" earlier. Only 42% finish onboarding, so 58% of
+  installs never answer it where it sits now (screen 15). Screen 2 or 3
+  would capture nearly everyone, at the cost of one more early screen where
+  the first drop already happens.
+- Too much reading before the first session: move the sample-session and
+  proof screens (18 to 22) into the tour after the first Begin. The data
+  says those screens lose nobody, so the case is length, not drop-off.
+- Animation on the minimal screens (the tester named Duolingo's tool, which
+  is Rive). Later, and only for a moment or two.
+- Real design and photography instead of code-drawn screens. Later.
+- Customer discovery question: "what does 808 mean to you when you first
+  see it?" The tester did not know.
+
+Already true:
+- Per-screen churn analytics exist (the sheet's Screens tab).
+
+Refused:
+- "Force sign-in, don't let them skip." No. Guideline 5.1.1(v) makes
+  sign-in optional for an app that works without an account, and it was a
+  documented rejection reason in the audit. Stays optional.
+
+## Cut the fat out of onboarding (Melvin + Aziz, 2026-09-14, direction)
+
+"We think the onboarding is too crowded, so we want to lean towards cutting
+the fat down." A newcomer today sees about 33 screens from Relief to sign
+in. The Screens tab says the proof screens (17 to 22) and the plan screens
+(23 to 26) lose almost nobody, so the case is length and attention, not a
+drop-off cliff; the cliffs are screen 1 (19%), the Watch gate (35%) and the
+tour's two-minute demo (67%, then 100%). Proposal, awaiting the founders'
+list: cut the wall (18), proof: the body is visible (19), proof: your way
+(22), your first week (25) and the star rating (26, internal signal only);
+fold the second escalation question (06b) into the first and the second
+body question (08b) into the first; keep the sample-session pair (20, 21)
+as the one demonstration. That is 33 to about 24 for a newcomer. Separately,
+make the tour's two-minute demo skippable, since it is where the most people
+leave after finishing the interview.
+
 ## Decided, not started
 
-- **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
-  Pro 3 and Powerbeats Pro 2 carry an optical heart-rate sensor and iOS 26
-  exposes it to apps through HealthKit during a workout. Paired with head
-  motion from `CMHeadphoneMotionManager` (stillness, maybe breathing), that
-  is a second no-Watch path beside camera vision. Investigate: what a
-  phone-only `HKWorkoutSession` receives from the buds, and whether head
-  motion carries a breath. Owner: unassigned.
 
 - **Otto, the data interpreter** (Melvin, 2026-09-12). A chat you can ask
   about your own sessions: heart rate, stillness, breathing, the score, and
@@ -46,8 +162,6 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   (features 1 to 4). WAITING on Aziz's review of `mockups/friends-v2.html`
   (separate username + photo, existing-user prompt, Save session with
   Friends / Only you). Then moderation (feature 5). Status in CLAUDE.md.
-- **Camera-vision sessions** (branch `camera-vision`): the answer to no-Watch
-  churn. Ground truth is the bottleneck; the in-app collector exists.
 - **Rating prompt is in 1.0.1.** Watch the ratings count in the launch
   scorecard.
 - **Handle for the coach's name** (the narrated guide, not Otto): open.
@@ -74,10 +188,13 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   says "Continue anyway" when they are not met; the failure screen watches
   the problem clear; the preflight waits for WCSession activation before
   reading `isPaired`, so a phone with no Watch is no longer told to bring its
-  Watch closer. **STILL OPEN: `heartRateUnavailable` (4 of the 10).** That is
-  a Health permission the phone cannot read back, so the app cannot tell
-  whether it is denied until a session fails. Worth investigating whether the
-  Watch can ask for it earlier, at the setup screen, instead of at first use.
+  Watch closer. (An earlier version of this line called `heartRateUnavailable`
+  still open; the bullet above supersedes it.) **What remains open on heart
+  rate:** HealthKit never reveals whether a READ permission was denied, so if
+  someone taps Don't Allow on the phone prompt the app cannot know, and their
+  first session still ends at the 30-second watchdog with the "We can't read
+  your heart rate" screen. Nothing to build until the next week of data says
+  how many people that is.
 - **10 of 13 sessions never started.** `session_start_failed` fires 10 times
   against 3 completions, by far the worst ratio on the dashboard, and the
   Watch gate is NOT the cause: 9 of 11 people said they own a Watch. Reasons
@@ -102,6 +219,39 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## In flight
 
+- **Camera vision RESUMED** (2026-09-14, branch `camera-vision`, plan in
+  `CAMERA_VISION_PLAN.md` there). `mvp` merged in with no conflicts (five
+  tabs plus the DEBUG collector); 253 tests green. The probe's pipeline is
+  now a pure engine module, `Shared/Engine/CameraSignal.swift`, shaped for
+  `SignalEngine` (30/5 grid, no heart series), with an offline harness
+  (`tools/camera_harness.swift`) and 20 tests. Score with no heart term:
+  breath .20 / stillness .80 when a doorway opens, stillness alone when
+  not; camera rows are tagged `camera-` and skipped by the Watch's score
+  migration. Accuracy against the wrist on the two existing videos: about
+  1.2/min on one, 2.2/min on the other (the unresolved fast-episode
+  minutes). **Next, a human:** with a DEBUG build and Settings > Camera
+  capture on, record six paced sits at 6, 8 and 12 breaths/min (two
+  people, three minutes paced then five natural), pull with
+  `tools/camera_pull.sh`, run the harness. Add nothing to the engine until
+  those exist.
+
+- **AirPods heart rate: FEASIBLE on iOS 26, spike built** (2026-09-14,
+  branch `airpods`, `AIRPODS_PLAN.md` on that branch). Sources: WWDC25
+  session 322 (`HKWorkoutSession` runs on iPhone from iOS 26 and HealthKit
+  pulls heart rate from paired buds), Apple's AirPods Pro 3 support page
+  (third-party workout apps receive it, no Watch needed), Apple DTS on the
+  forums (heart-rate samples only, no HRV, so "no coherence" still stands).
+  Path: iPhone-side `.mindAndBody` workout session, HR as system-written
+  samples, head motion from `CMHeadphoneMotionManager` (~25 Hz). Breathing
+  from head motion is a hypothesis (two papers, still head, ~2/min error),
+  not a promise. Score split: the engine's existing 0.60/0.40 heart/still.
+  Spike: DEBUG-only probe at Settings > AirPods (debug), writes HR and
+  motion CSVs to Documents/AirPodsCaptures; Release binary carries none of
+  it; committed Info.plist unchanged. Shipping it changes Info.plist, the
+  Health strings and the policy's Watch-only wording (a review pass).
+  **Next: a first capture on AirPods Pro 3** (steps in the plan). Nobody
+  has confirmed owning a pair yet.
+
 - **No-Watch waitlist emails now reach us (next build).** The in-app
   waitlist screen saved the typed email on the person's own phone only, so
   its "we'll write to you" was unkeepable and every address from 1.0 and
@@ -115,13 +265,15 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   VERSION of the existing deployment; a new deployment changes the URL and
   strands every shipped build.
 
-- **Reddit, first post live:** r/SideProject, 2026-09-13 ~1:50 PM EDT,
-  https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
-  (u/No_Shelter5464, Aziz's account). Reply to every comment for 48 hours.
-  Rules table and the remaining drafts: `marketing/REDDIT.md`. The account
-  has no history, so r/apple waits for five organic comments there (next
-  Sunday at the earliest) and r/iosapps for ten local karma; r/AppleWatch,
-  r/iOS and r/iphone need a modmail first.
+- **Reddit, first post REMOVED by Reddit's filters** (r/SideProject,
+  posted 2026-09-13 1:50 PM EDT from u/No_Shelter5464, Aziz's new account;
+  removal seen 2026-09-14). Cause is the account, not the post: no karma
+  plus an outbound link trips the site-wide spam filter. Next: modmail
+  r/SideProject to approve it (text in `marketing/REDDIT.md`), earn comment
+  karma on the account before any further link post, never repost the same
+  thing from the same account. The rest of the plan stands: r/apple waits
+  for five organic comments (next Sunday at the earliest), r/iosapps for
+  ten local karma; r/AppleWatch, r/iOS and r/iphone need a modmail first.
 
 - **Launch email to the waitlist + survey list: SENT 2026-09-13, 1:16 PM
   EDT**, from Aziz's Outlook, 33 people in BCC, campaign `ct=waitlist`
@@ -132,8 +284,10 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   campaign in App Store Connect against this timestamp; it shows only after
   five distinct installs.
 
-- **1.0.1, RESUBMITTED with everything (Aziz, 2026-09-12, 11:24 PM):
-  "Waiting for Review", build 202609130259.** Pulled once more at 11:20
+- **1.0.1 is LIVE (approved and released 2026-09-14, about 4 AM EDT;
+  first App Store installs on it the same morning: Ireland 4:07, Oslo 7:05).**
+  Resubmitted with everything by Aziz 2026-09-12, 11:24 PM, build
+  202609130259. Pulled once more at 11:20
   to swap store screenshots 3 and 6 for the five-tab layout (Profile tab
   and Guide tab); screenshots are locked while a version is in review and
   cannot change after release without a new version, so it had to happen

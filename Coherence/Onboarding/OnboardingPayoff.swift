@@ -748,17 +748,21 @@ struct WallScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .win,
-                         title: "You'd be in\nreasonable company.",
+                         title: "You'd be in\ngood company.",
                          subtitle: "People whose job is measurable performance keep arriving at the same habit.",
                          ctaTitle: "Continue",
                          onContinue: onContinue) {
             VStack(spacing: 11) {
                 ForEach(quotes) { q in
                     VStack(alignment: .leading, spacing: 6) {
+                        // One card style. Verbatim quotes used to sit in
+                        // brighter cards with brighter text, and a tester read
+                        // the two styles as a mistake rather than a
+                        // distinction (2026-09-14). The quotation marks and the
+                        // footnote carry the difference on their own.
                         Text(q.verbatim ? "“\(q.text)”" : q.text)
-                            .font(.system(size: 14, weight: q.verbatim ? .medium : .regular))
-                            .foregroundStyle(q.verbatim ? AppColor.textPrimary
-                                                        : AppColor.textSecondary)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(AppColor.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(q.who)
                             .font(.caption2.weight(.semibold))
@@ -766,7 +770,7 @@ struct WallScreen: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(15)
-                    .background(AppColor.backgroundSecondary.opacity(q.verbatim ? 0.8 : 0.45),
+                    .background(AppColor.backgroundSecondary,
                                 in: RoundedRectangle(cornerRadius: 15, style: .continuous))
                 }
 

@@ -34,9 +34,9 @@ Order: r/SideProject today, r/QuantifiedSelf megathread Monday, r/iosapps as
 soon as the karma is there, r/apple next Sunday, r/AppleWatch only if the
 mods say yes. Reply to every comment for 48 hours after each post.
 
-Timing note: 1.0.1 (the build that fixes sessions failing to start) is in
-review. Post the day it is live, not before; every one of these posts sends
-people to their first session.
+Timing note: 1.0.1 (the build that fixes sessions failing to start) went
+live 2026-09-14 around 4 AM EDT, so the posts are clear to go. Every one of
+them sends people to their first session.
 
 ---
 
@@ -45,9 +45,28 @@ people to their first session.
 - **r/SideProject, 2026-09-13 ~1:50 PM EDT, u/No_Shelter5464.** Aziz's
   personal-journey post (future self, Dispenza, "what did my body actually
   do", 808 in one paragraph with a four-word disclosure, ends on a question
-  to the sub). Not the draft below; Aziz wrote it. Reply to every comment for
-  48 hours.
+  to the sub). Not the draft below; Aziz wrote it.
   https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
+  **REMOVED by Reddit's filters (seen 2026-09-14).** Site-wide spam filter,
+  not the sub's mods: a brand-new account with no karma posting an outbound
+  link is the textbook trigger, and only the sub's moderators can restore a
+  filtered post. Do NOT repost from the same account; a second removal marks
+  it as spam. Sequence: (1) modmail r/SideProject asking them to approve it
+  (text below); (2) meanwhile the account earns comment karma, no links, for
+  a few days; (3) if they say no, post again in a week from an account with
+  history, or with the link replaced by the App Store name.
+
+  **2026-09-14: the r/SideProject post goes again from MELVIN's account**
+  (it has history and karma), using draft 4 below, which is different text
+  from Aziz's removed post. Text post, not a link post. Aziz's account stays
+  on comments only until it has karma.
+
+  Modmail to r/SideProject:
+  > Hi. My post "I started meditating to become a future version of myself"
+  > was removed by Reddit's filters, I think because the account is new.
+  > It is a personal write-up of a meditation app two of us built, with the
+  > disclosure in the first paragraph. Would you approve it? Happy to take
+  > the link out if that helps. Thank you.
 
 ## 1. r/AppleWatch modmail (send first; post nothing there until they answer)
 
@@ -155,6 +174,66 @@ stays quiet rather than guess".
 that codes go in the body.)
 
 ## 4. r/SideProject
+
+**What wins there (top 25 posts of the month, read 2026-09-14 via the sub's
+RSS; Melvin asked for the post to be rewritten in that register):** nearly
+every top post is a VIDEO or image post with the text as the body; the title
+is "I built a [platform] app that [one concrete thing it does]", first person,
+present tense, no essay title; the body opens "I'm the developer" and
+explains the mechanics in second person ("put the phone on the floor, get
+into a plank, and it counts your reps"); one paragraph on what took most of
+the dev time; one line on privacy where it applies ("no frame leaves the
+phone"); a "the reason it exists" paragraph; prices stated plainly with the
+renewal disclosure; one direct link; and it closes with an ask ("tell me
+where it falls short"). Short paragraphs, no numbered lists, no headers. One
+top post put a public offer code in the body with no redemption limit and
+credited it for installs. The "three things we got wrong" listicle below is
+kept for the record; the version that goes up is 4b.
+
+### 4b. The version that goes up (Melvin's account, video post)
+
+Attach the screen recording as the post itself: Watch end, then the phone's
+results screen with the score and the curves, 20 to 30 seconds, no music.
+The text is the body.
+
+**Title:** I built an Apple Watch app that scores your meditation from your heart rate, your stillness and your breathing
+
+**Body:**
+
+I'm one of the two people who built it. You put on your Watch, press start
+on the phone or the wrist, and meditate the way you already do: a guided
+track, your own audio from any app, or silence. The Watch measures the whole
+time and shows you nothing during the session. When you end it, the phone
+gives you a score from three things: how far your heart rate settled and
+whether it stayed there, how still you sat, and whether you slowed your
+breathing in the first few minutes.
+
+Most of the dev time went into the breathing. The first version only worked
+lying down with the Watch on your belly. It worked, and nobody was ever
+going to do that. The shipped version reads slow breathing from tiny wrist
+tilt, sitting however you like. It's built for deliberate slow breathing,
+the four to seven a minute kind, and when it can't read a breath it says
+nothing rather than inventing a number. That rule runs through the whole
+app: if it wasn't measured, it isn't claimed.
+
+Everything is computed on the Watch and stored on your phone. Your heart
+rate never leaves your devices, and there's no account unless you want
+iCloud sync.
+
+The reason it exists: I meditated for years without knowing whether a given
+session did anything. Now I finish and see it, and the bad sits turned out
+to be as useful as the good ones.
+
+Free gives you the score, your streak and your history. Premium is the
+curves behind the score plus a 25-minute guided journey: $7.99 a month or
+$29.99 a year, both with a 7-day free trial, or $99.99 once. Needs an Apple
+Watch.
+
+App Store: https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=reddit&mt=8
+
+Tell me where it falls short.
+
+### 4a. The earlier draft (not used)
 
 **Title:** Two of us made the Apple Watch score a meditation. It's live. What we got wrong along the way.
 

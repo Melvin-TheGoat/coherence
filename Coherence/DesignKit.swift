@@ -39,10 +39,16 @@ struct ScoreRing: View {
     var lineWidth: CGFloat = 4
 
     var body: some View {
+        // Inset by half the stroke: a stroke sits centred on the path, so
+        // without this the outer half fell outside the frame and any clipping
+        // parent cut the ring flat on one side (2026-09-14, sample session).
         ZStack {
-            Circle().stroke(AppColor.textSecondary.opacity(0.15), lineWidth: lineWidth)
+            Circle()
+                .inset(by: lineWidth / 2)
+                .stroke(AppColor.textSecondary.opacity(0.15), lineWidth: lineWidth)
             if let score {
                 Circle()
+                    .inset(by: lineWidth / 2)
                     .trim(from: 0, to: max(0.02, min(score, 1)))
                     .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
