@@ -1466,7 +1466,8 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   day switches to Profile with the log filtered to that day.
 - **Guide** is `GuideView(embedded: true)`: no Done button; its Begin opens
   the setup sheet directly.
-- **Search** is an honest placeholder ("Friends are coming", no date).
+- **Search** was an honest placeholder; it became the **Friends** tab on
+  2026-09-14 (see the FRIENDS section below). `PREVIEW_TAB=search` still works.
 - **Profile** is what Journey was, minus the month picker (Home's calendar
   took the job): initials avatar, display name, `@username`, "Practicing
   since", the four stats, the awards shelf, the full log, settings in the
@@ -1551,6 +1552,71 @@ lists.** Do not press "Add for Review" with an OPEN item unticked unless the
 user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
 items at the end of every run. Anything learned mid-session that must happen
 at submission goes into OPEN the moment it's learned, not into a summary.
+
+## FRIENDS (1.1, IN PROGRESS, 2026-09-14): where it stands
+
+Aziz: a Strava-style community. Friends, not followers; post a session with
+a photo; incentivise inviting. **Design record: `COMMUNITY.md`.** Mockups:
+`mockups/friends.html` (v1, approved) and `mockups/friends-v2.html` (v2,
+AWAITING AZIZ'S REVIEW). Ships as **1.1, separate from 1.0.2**, which is
+still HELD. The 1.1 submission list is in `RELEASE_CHECKLIST.md`.
+
+**Built and committed (feature by feature, 264 tests green):**
+1. `CommunityStore` (`Coherence/Community/`) over the CloudKit PUBLIC
+   database of the existing container. **No Supabase, no server** (Aziz
+   asked; the answer is no). Six record types: Profile, FriendEdge, Post,
+   Reaction, Block, Report. A friendship is TWO edges, each written by its
+   own person, because only a record's creator can modify it in the public
+   DB. Blocks are honoured both ways on every read and write. Tests run on
+   `MemoryCommunityDatabase` (also the `PREVIEW_FRIENDS=1|claim` demo).
+2. The **Friends tab replaced Search**: feed, search by @username, requests,
+   a person page with Remove / Report / Block, report sheet, invite share
+   sheet (`ct=invite` campaign link), first-run username claim, and an
+   honest card when iCloud is unavailable. Reaction word is **"Nice sit"**
+   with 🙏 (Aziz cut "Respect"; still a placeholder).
+3. **Post to friends** from the results screen (`PostComposerView`): optional
+   photo (1080 px JPEG), 140-char caption, community rules on first post.
+   `NSCameraUsageDescription` returned for this one use only.
+4. **Invite reward** (`Shared/Community/InviteReward.swift`): a friend I
+   asked accepts AND sits once, then I get 10 sessions of full evidence
+   (stacking, capped at 50) plus the "Brought a friend" award. Per SESSION,
+   only sessions started after the grant, a covered session stays covered,
+   never unlocks guided or skins. Four defaulted fields on `Preferences`.
+   Nothing for the invitee (Apple rejects that). The Circle skin reward was
+   DROPPED: `CardSkin` has no drawing behind it.
+5. v2 data groundwork: profile photo (`setAvatar`), posts gain `title` and
+   `sound`, a post's record name derives from its session (saving again
+   updates; Only you deletes that one), reflection gains `title`,
+   `publicNote`, `visibility` (default "private" so old sessions stay private).
+
+**Rules learned building it (do not relitigate):**
+- **A post carries only the free share card's data**: score, minutes,
+  streak, technique, title, sound, description, photo. Never HR, breath,
+  stillness or a curve, even for paid users (5.1.3 + the free tier).
+  `test_postCarriesOnlyTheFreeCardFields` pins it.
+- **Anything that fetches a Shared SwiftData model and is tested against
+  `Persistence.inMemory()` must live in `Shared/`.** The test target compiles
+  Shared/ into itself, so an app-module class fetching `Preferences` gets a
+  different class than the test inserted and SwiftData traps ("Failed to
+  cast model Coherence.Preferences"). This produced the "Coherence quit
+  unexpectedly" popups on Aziz's Mac; moving `RewardLedger` to Shared fixed it.
+- A ModelContext does not retain its container in tests; hold it.
+
+**NEXT, when Aziz is back (v2 asks, 2026-09-14):** nickname and @username
+as separate things; username + profile photo in a Create your profile step
+right after Sign in; a one-time required prompt for existing users without
+a username; a Strava-style **Save session** screen that opens when a session
+lands (title, description, photos, technique, **Friends / Only you**, private
+notes) then results; feed card and profile in Strava's shape. **Open
+decisions for Aziz before building those screens:** score shown on Save
+session or saved for the results reveal; default visibility Friends or Only
+you; required username (built as required per Aziz, with the unavoidable
+no-iCloud exit, and a flagged 5.1.1(v) review risk with a one-switch "Not
+now" fallback); private notes stay separate from the public description.
+Then feature 5, moderation: caption word filter, on-device Sensitive
+Content Analysis on photos, `tools/community-reports.gs` emailing reports.
+Nothing has run on real iCloud yet: needs the Console record types and a
+TestFlight on two phones.
 
 ## BACKLOG.md IS THE LIST (2026-09-12)
 

@@ -42,6 +42,10 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
   get 10 sessions of full evidence per friend who accepts and sits once;
   paid users get an award and the Circle skin. Ships as 1.1, after 1.0.2;
   flips the UGC and Social age-rating answers to Yes.
+  BUILT 2026-09-14: data layer, Friends tab, Post to friends, invite reward
+  (features 1 to 4). WAITING on Aziz's review of `mockups/friends-v2.html`
+  (separate username + photo, existing-user prompt, Save session with
+  Friends / Only you). Then moderation (feature 5). Status in CLAUDE.md.
 - **Camera-vision sessions** (branch `camera-vision`): the answer to no-Watch
   churn. Ground truth is the bottleneck; the in-app collector exists.
 - **Rating prompt is in 1.0.1.** Watch the ratings count in the launch
