@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// The five destinations. Search is a placeholder until friends exist.
+/// The five destinations.
 enum MainTab: Hashable {
-    case home, guide, search, profile
+    case home, guide, friends, profile
 }
 
 /// The bottom bar (2026-09-12, Melvin): the layout most apps use, so the app
@@ -20,7 +20,7 @@ struct MainTabBar: View {
             item(.guide, icon: "book.closed", label: "Guide")
                 .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
             plus
-            item(.search, icon: "magnifyingglass", label: "Search")
+            item(.friends, icon: "person.2", label: "Friends")
             item(.profile, icon: "person.crop.circle", label: "Profile")
         }
         .padding(.top, 8)

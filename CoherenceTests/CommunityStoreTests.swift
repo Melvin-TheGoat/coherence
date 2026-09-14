@@ -2,50 +2,16 @@ import XCTest
 import CloudKit
 @testable import Coherence
 
-/// An in-memory public database. Records are keyed by name across types, as
-/// CloudKit's default zone is, so a name collision between types shows up here
-/// too. `user` is who the caller is; tests swap it to act as someone else.
-final class FakeCommunityDatabase: CommunityDatabase {
-    var user: String
-    var records: [String: CKRecord] = [:]
-    var saves = 0
-
-    init(user: String) { self.user = user }
-
-    func currentUserRecordName() async throws -> String { user }
-
-    func save(_ record: CKRecord) async throws -> CKRecord {
-        saves += 1
-        records[record.recordID.recordName] = record
-        return record
-    }
-
-    func fetch(_ recordName: String) async throws -> CKRecord? { records[recordName] }
-
-    func query(_ query: CommunityQuery) async throws -> [CKRecord] {
-        var hits = records.values.filter(query.matches)
-        if let field = query.sortField {
-            hits.sort {
-                guard let a = $0[field] as? Date, let b = $1[field] as? Date else { return false }
-                return query.ascending ? a < b : a > b
-            }
-        }
-        return Array(hits.prefix(query.limit))
-    }
-
-    func delete(_ recordName: String) async throws { records[recordName] = nil }
-}
-
 final class CommunityStoreTests: XCTestCase {
 
-    private var db: FakeCommunityDatabase!
+    private var db: MemoryCommunityDatabase!
     private var aziz: CommunityStore!
     private var melvin: CommunityStore!
     private let azizID = CommunityNames.profile(user: "_aziz")
     private let melvinID = CommunityNames.profile(user: "_melvin")
 
     override func setUp() async throws {
-        db = FakeCommunityDatabase(user: "_aziz")
+        db = MemoryCommunityDatabase(user: "_aziz")
         aziz = CommunityStore(database: db)
         // A second store over the SAME database, acting as Melvin. The fake's
         // `user` is read once per store (cached), so each store keeps its
@@ -175,13 +141,13 @@ final class CommunityStoreTests: XCTestCase {
         try await aziz.sendRequest(to: melvinID)
         try await melvin.accept(azizID)
 
-        let mine = try await aziz.post(draft(score: 60))
-        try await Task.sleep(nanoseconds: 2_000_000)
+        var old = draft(score: 60); old.practicedAt = Date().addingTimeInterval(-3_600)
+        let mine = try await aziz.post(old)
         let theirs = try await melvin.post(draft(score: 81))
         try await stranger.post(draft(score: 99))
 
         let feed = try await aziz.feed()
-        XCTAssertEqual(feed.map(\.id), [theirs.id, mine.id], "newest first; the stranger's post is not in my feed")
+        XCTAssertEqual(feed.map(\.id), [theirs.id, mine.id], "most recently practiced first; the stranger's post is not in my feed")
     }
 
     func test_strangersPostsAreNotReadable() async throws {

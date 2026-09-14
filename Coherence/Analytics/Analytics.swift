@@ -69,6 +69,18 @@ enum Analytics {
         case awardUnlocked(id: String)
         case accountDeleted
 
+        // Friends (COMMUNITY.md). Counts only; never a handle, a caption or a
+        // score.
+        case friendsOpened
+        case usernameClaimed
+        case friendRequestSent
+        case friendAccepted
+        case inviteShared
+        case postCreated(photo: Bool)
+        case reactionGiven
+        case userBlocked
+        case contentReported(kind: String)   // "post" | "profile"
+
         var name: String {
             switch self {
             case .onboardingStep: "onboarding_step"
@@ -95,6 +107,15 @@ enum Analytics {
             case .notificationOpened: "notification_opened"
             case .awardUnlocked: "award_unlocked"
             case .accountDeleted: "account_deleted"
+            case .friendsOpened: "friends_opened"
+            case .usernameClaimed: "username_claimed"
+            case .friendRequestSent: "friend_request_sent"
+            case .friendAccepted: "friend_accepted"
+            case .inviteShared: "invite_shared"
+            case .postCreated: "post_created"
+            case .reactionGiven: "reaction_given"
+            case .userBlocked: "user_blocked"
+            case .contentReported: "content_reported"
             }
         }
 
@@ -114,6 +135,8 @@ enum Analytics {
             case .freeTierEntered(let rung): ["after_rung": rung]
             case .lockedTapped(let signal): ["signal": signal]
             case .skinLockedTapped(let skin): ["skin": skin]
+            case .postCreated(let photo): ["photo": photo ? "yes" : "no"]
+            case .contentReported(let kind): ["kind": kind]
             default: [:]
             }
         }

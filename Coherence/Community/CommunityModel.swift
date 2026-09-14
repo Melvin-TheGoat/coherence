@@ -1,0 +1,228 @@
+import Foundation
+import SwiftUI
+
+/// The Friends tab's state: one object the screens observe, over a
+/// `CommunityStore`. Every network call funnels through here so the views
+/// stay declarative and the "what happens when CloudKit is unavailable"
+/// answer lives in one place (`phase == .unavailable`).
+@MainActor
+final class CommunityModel: ObservableObject {
+
+    enum Phase: Equatable {
+        case loading
+        /// No iCloud account, or a build with no CloudKit container. The tab
+        /// shows an honest card and nothing else.
+        case unavailable
+        /// Signed in, no profile yet: the claim screen.
+        case needsUsername
+        case ready
+    }
+
+    @Published private(set) var phase: Phase = .loading
+    @Published private(set) var profile: Profile?
+    @Published private(set) var feed: [Post] = []
+    /// Profiles by record name, for everyone the feed and the lists mention.
+    @Published private(set) var people: [String: Profile] = [:]
+    @Published private(set) var friends: [String] = []
+    @Published private(set) var incoming: [String] = []
+    @Published private(set) var sent: [String] = []
+    /// Reactor profile names by post id.
+    @Published private(set) var reactions: [String: [String]] = [:]
+    @Published var errorText: String?
+
+    private(set) var store: CommunityStore?
+    private(set) var myID: String?
+    private let demo: Bool
+
+    init(store: CommunityStore?, demo: Bool = false) { self.store = store; self.demo = demo }
+
+    /// The production model: CloudKit if the process holds a container,
+    /// otherwise a permanently unavailable tab.
+    static func live() -> CommunityModel {
+        CommunityModel(store: CloudKitCommunityDatabase.ifEntitled().map { CommunityStore(database: $0) })
+    }
+
+    var friendCount: Int { friends.count }
+
+    // MARK: - Loading
+
+    func load() async {
+        #if DEBUG
+        // `PREVIEW_FRIENDS=1`: a seeded in-memory database, so the tab can be
+        // reviewed on a simulator with no iCloud account.
+        if demo, store == nil { store = await DemoCommunity.store() }
+        #endif
+        guard let store else { phase = .unavailable; return }
+        do {
+            myID = try await store.me()
+            profile = try await store.myProfile()
+            guard let profile, !profile.username.isEmpty else { phase = .needsUsername; return }
+            try await refreshLists(store)
+            phase = .ready
+        } catch {
+            // A missing account is the common case; anything else is shown.
+            if (error as? CommunityError) == .unavailable {
+                phase = .unavailable
+            } else {
+                phase = profile == nil ? .unavailable : .ready
+                errorText = Self.plain(error)
+            }
+        }
+    }
+
+    func refresh() async {
+        guard let store, phase == .ready else { return }
+        do { try await refreshLists(store) } catch { errorText = Self.plain(error) }
+    }
+
+    private func refreshLists(_ store: CommunityStore) async throws {
+        async let f = store.friends()
+        async let i = store.incomingRequests()
+        async let s = store.sentRequests()
+        let (fr, inc, sn) = try await (f, i, s)
+        friends = fr; incoming = inc; sent = sn
+        let posts = try await store.feed(limit: 40)
+        feed = posts
+        reactions = try await store.reactions(for: posts.map(\.id))
+        try await cache(names: Set(fr + inc + sn + posts.map(\.author) + reactions.values.flatMap { $0 }))
+    }
+
+    private func cache(names: Set<String>) async throws {
+        guard let store else { return }
+        let missing = names.filter { people[$0] == nil }
+        for p in try await store.profiles(named: Array(missing)) { people[p.id] = p }
+    }
+
+    func person(_ id: String) -> Profile? { people[id] }
+
+    // MARK: - Username
+
+    /// nil while the handle is invalid, otherwise whether it is free.
+    func isAvailable(_ handle: String) async -> Bool? {
+        guard let store, Username.normalize(handle) != nil else { return nil }
+        return try? await store.isUsernameAvailable(handle)
+    }
+
+    /// True on success. The claimed handle is returned through `profile`.
+    func claim(_ handle: String, displayName: String) async -> Bool {
+        guard let store else { return false }
+        do {
+            profile = try await store.claimUsername(handle, displayName: displayName)
+            Analytics.track(.usernameClaimed)
+            try await refreshLists(store)
+            phase = .ready
+            return true
+        } catch let e as CommunityError {
+            errorText = e == .usernameTaken ? "That name is taken. Try another." : "Letters, numbers, dots and underscores only."
+            return false
+        } catch {
+            errorText = Self.plain(error)
+            return false
+        }
+    }
+
+    // MARK: - People
+
+    func search(_ handle: String) async -> Profile? {
+        guard let store else { return nil }
+        let found = try? await store.search(username: handle)
+        if let found { people[found.id] = found }
+        return found
+    }
+
+    func relationship(with id: String) async -> CommunityStore.Relationship {
+        guard let store else { return .none }
+        return (try? await store.relationship(with: id)) ?? .none
+    }
+
+    func request(_ id: String) async {
+        guard let store else { return }
+        do {
+            try await store.sendRequest(to: id)
+            Analytics.track(.friendRequestSent)
+            try await refreshLists(store)
+        } catch { errorText = Self.plain(error) }
+    }
+
+    func accept(_ id: String) async {
+        guard let store else { return }
+        do {
+            try await store.accept(id)
+            Analytics.track(.friendAccepted)
+            try await refreshLists(store)
+        } catch { errorText = Self.plain(error) }
+    }
+
+    func remove(_ id: String) async {
+        guard let store else { return }
+        do { try await store.removeFriend(id); try await refreshLists(store) } catch { errorText = Self.plain(error) }
+    }
+
+    func posts(by id: String) async -> [Post] {
+        guard let store else { return [] }
+        return (try? await store.posts(by: id)) ?? []
+    }
+
+    // MARK: - Posts and reactions
+
+    func post(_ draft: CommunityStore.Draft) async -> Bool {
+        guard let store else { return false }
+        do {
+            let p = try await store.post(draft)
+            Analytics.track(.postCreated(photo: draft.photoURL != nil))
+            feed.insert(p, at: 0)
+            return true
+        } catch { errorText = Self.plain(error); return false }
+    }
+
+    func deletePost(_ id: String) async {
+        guard let store else { return }
+        do { try await store.deletePost(id); feed.removeAll { $0.id == id } } catch { errorText = Self.plain(error) }
+    }
+
+    func hasReacted(to postID: String) -> Bool {
+        guard let myID else { return false }
+        return reactions[postID]?.contains(myID) ?? false
+    }
+
+    func toggleReaction(_ postID: String) async {
+        guard let store, let myID else { return }
+        let was = hasReacted(to: postID)
+        // Optimistic: the tap should feel instant.
+        var list = reactions[postID] ?? []
+        if was { list.removeAll { $0 == myID } } else { list.append(myID) }
+        reactions[postID] = list
+        do {
+            if was { try await store.unreact(to: postID) } else {
+                try await store.react(to: postID)
+                Analytics.track(.reactionGiven)
+            }
+        } catch {
+            reactions[postID] = was ? list + [myID] : list.filter { $0 != myID }
+            errorText = Self.plain(error)
+        }
+    }
+
+    // MARK: - Block and report
+
+    func block(_ id: String) async {
+        guard let store else { return }
+        do {
+            try await store.block(id)
+            Analytics.track(.userBlocked)
+            try await refreshLists(store)
+        } catch { errorText = Self.plain(error) }
+    }
+
+    func report(_ target: String, as kind: Report.Target, reason: String) async {
+        guard let store else { return }
+        do {
+            try await store.report(target, as: kind, reason: reason)
+            Analytics.track(.contentReported(kind: kind.rawValue))
+        } catch { errorText = Self.plain(error) }
+    }
+
+    private static func plain(_ error: Error) -> String {
+        "Couldn't reach iCloud. " + error.localizedDescription
+    }
+}

@@ -5,8 +5,9 @@ import Charts
 /// The app after onboarding: five tabs on a bottom bar (Melvin, 2026-09-12,
 /// "the layout most apps use, so people open it and instantly understand").
 /// Home is the streak, the proof curve and this month's calendar; Guide is
-/// the how-to; the raised gold plus starts a session; Search waits for
-/// friends; Profile is the person, their stats, awards and full log.
+/// the how-to; the raised gold plus starts a session; Friends is the feed
+/// of what friends posted; Profile is the person, their stats, awards and
+/// full log.
 ///
 /// This view still owns every app-wide modal (the live session cover, a start
 /// failure, an award unlock, the setup sheet, results, settings), exactly as
@@ -61,8 +62,8 @@ struct ContentView: View {
             case .guide:
                 GuideView(embedded: true) { sheet = .setup }
                     .onAppear { Analytics.track(.guideOpened) }
-            case .search:
-                SearchTab()
+            case .friends:
+                FriendsTab()
             case .profile:
                 ProfileTab(selectedDay: $profileDay) { sheet = .settings }
             }
@@ -130,7 +131,7 @@ struct ContentView: View {
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
                 case "guide": tab = .guide
-                case "search": tab = .search
+                case "friends", "search": tab = .friends
                 case "profile": tab = .profile
                 default: tab = .home
                 }

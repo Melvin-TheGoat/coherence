@@ -218,7 +218,7 @@ actor CommunityStore {
         try await db.delete(id)
     }
 
-    /// Friends' posts and mine, newest first.
+    /// Friends' posts and mine, most recently practiced first.
     func feed(limit: Int = 50) async throws -> [Post] {
         let mine = try await me()
         let authors = try await friends() + [mine]
@@ -240,10 +240,12 @@ actor CommunityStore {
         guard !authors.isEmpty else { return [] }
         var query = CommunityQuery(type: CommunityType.post,
                                    filters: [.isIn("author", authors.map { .reference($0) })])
-        query.sortField = "createdAt"
+        // By when the session was sat, not when it was posted: a session
+        // posted a day late still belongs on its own day.
+        query.sortField = "practicedAt"
         query.ascending = false
         query.limit = limit
-        return try await db.query(query).compactMap(Post.init(record:)).sorted { $0.createdAt > $1.createdAt }
+        return try await db.query(query).compactMap(Post.init(record:)).sorted { $0.practicedAt > $1.practicedAt }
     }
 
     // MARK: - Reactions
@@ -259,6 +261,17 @@ actor CommunityStore {
     func unreact(to postID: String) async throws {
         let mine = try await me()
         try await db.delete(CommunityNames.reaction(post: postID, by: mine))
+    }
+
+    /// Reactor profile names for many posts in one query, keyed by post id.
+    func reactions(for postIDs: [String]) async throws -> [String: [String]] {
+        guard !postIDs.isEmpty else { return [:] }
+        let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
+                                                        filters: [.isIn("post", postIDs.map { .reference($0) })],
+                                                        limit: 1000))
+        var out: [String: [String]] = [:]
+        for r in records.compactMap(Reaction.init(record:)) { out[r.post, default: []].append(r.author) }
+        return out.mapValues { $0.sorted() }
     }
 
     /// Who reacted to a post, as profile record names.
