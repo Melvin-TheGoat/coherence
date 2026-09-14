@@ -205,7 +205,11 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
 /// The blame removal lives in the subtitle — "Not trying. Meaning to." Nobody
 /// feels judged for having intended something.
 public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
-    case weeks, months, aYear, years, forever
+    /// Never meant to. The question presumed an intention, and a tester who
+    /// had none found no true answer (2026-09-14). Listed first so it is the
+    /// first thing a person with no history sees.
+    case never
+    case weeks, months, aYear, forever
     /// The identity out. The question presumes the user hasn't started, but
     /// the baseline screen literally offers "Almost every day" — someone who
     /// picked it reaches this screen with no true answer. Their pain isn't
@@ -218,10 +222,10 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
 
     public var label: String {
         switch self {
+        case .never:   return "I haven't, honestly"
         case .weeks:   return "A few weeks"
         case .months:  return "Months"
-        case .aYear:   return "A year or so"
-        case .years:   return "Years"
+        case .aYear:   return "A year or more"
         case .forever: return "As long as I can remember"
         case .alreadyPractice: return "I already meditate. I'm here for the stats"
         }
@@ -229,10 +233,10 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
 
     public var icon: String {
         switch self {
+        case .never:   return "leaf"
         case .weeks:   return "calendar"
         case .months:  return "calendar.badge.clock"
-        case .aYear:   return "clock.arrow.circlepath"
-        case .years:   return "hourglass"
+        case .aYear:   return "hourglass"
         case .forever: return "infinity"
         case .alreadyPractice: return "chart.xyaxis.line"
         }
@@ -241,10 +245,10 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
     /// Phrase for reflecting the answer back ("you've been meaning to for years").
     public var phrase: String {
         switch self {
+        case .never:   return "not at all, until now"
         case .weeks:   return "a few weeks"
         case .months:  return "months"
-        case .aYear:   return "about a year"
-        case .years:   return "years"
+        case .aYear:   return "a year or more"
         case .forever: return "as long as you can remember"
         case .alreadyPractice: return "already, in your own practice"
         }
@@ -905,12 +909,16 @@ extension OnboardingAnswers {
 /// enum so the branching is pure Foundation and can be exhaustively tested
 /// without a running app.
 public enum InterviewStep: String, CaseIterable, Codable {
+    /// Attribution FIRST (Melvin, 2026-09-14). It sat last, and only 42% of
+    /// installs finish the interview, so most people never told us where
+    /// they came from. Asked at the door, nearly everyone answers.
+    case referral
     case baseline, motivation, stress
     case aloneWithThoughts, doingNothing
     case restarts, intendedFor
     case bodyCuriosity, bodyProof, bodyTracking
     case blindSpot
-    case watchGate, anchor, you, referral
+    case watchGate, anchor, you
 }
 
 /// What a regular practitioner can't tell about their own practice.

@@ -1542,6 +1542,56 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## ONBOARDING ROUND 2 (2026-09-14): one tester, thirteen fixes, one root cause
+
+A no-Watch tester walked the interview and narrated it. `BACKLOG.md` holds
+the full list sorted by cost; this is what shipped and what it taught.
+
+- **The root cause of half the visual notes was the colour scheme.**
+  `RootView` read the theme from the first Preferences row, and no row
+  exists until onboarding finishes, so onboarding ran in the SYSTEM scheme.
+  On a light-mode phone the entire flow was light and the app flipped dark
+  on completion. "Black text", "whiter cards", "colours bleeding", a blue
+  caret: all one bug. `Preferences.defaultTheme` now applies from the first
+  frame. **Any screen shown before a Preferences row exists must be checked
+  in light mode too**, because that is what a light-mode phone showed.
+- **Back onto an answered single-select shows Continue.** Tap-to-advance
+  (one affordance, Aziz) stays for a fresh screen; a screen that appears
+  already answered shows the button, because re-tapping a lit tick is not an
+  obvious move. `answeredOnAppear` in `OnboardingScreen`.
+- **Haptics are prepared, not created per tap.** An unprepared
+  `UIImpactFeedbackGenerator` can drop a pulse while the Taptic Engine spins
+  up, which is why the tester felt it on some taps and not others. Two
+  static generators, `prepare()` after every fire.
+- **Multi-select rows draw squares** (`OnboardingOption(multi:)`); rows
+  are full-strength surfaces with a hairline (contrast); scroll indicators
+  hidden on the scaffold; the ScoreRing insets its stroke by half the line
+  so it never clips (`DesignKit`, app-wide); the star screen has a legend;
+  the wall's quote cards share one style; "Fried" is "Burnt out";
+  "reasonable company" is "good company"; "meaning to start" gained "I
+  haven't, honestly" and lost the overlapping "Years"; the waitlist field is
+  a grey "email" field with a gold caret.
+- **The $400 hardware screen left the interview and became the paywall
+  ladder's first rung** (`PaywallRoute.anchor`): "Not right now" → the
+  hardware anchor with 808's live price → "See the plans" back to the
+  paywall, or "Not for me" → trial rung → year rung → free tier. It sells
+  nothing itself (no purchase CTA, no disclosures needed); both exits lead
+  to screens that carry them. `Step.hardware` and `HardwareScreen` remain
+  for ONBOARDING_STEP jumps. Melvin's reasoning: an anchor belongs in front
+  of the person who just declined, not mid-interview in front of someone
+  who may not own a Watch.
+- **Watch gate is Yes / No / Not yet.** Both no answers reach the
+  waitlist; analytics `watch_gate.outcome` gains `notYet` so a planned
+  purchase is a different lead from a never. Aziz's sheet maps the old two.
+- **"How did you find us?" opens the interview** (`InterviewStep.referral`
+  first). It sat last, and only 42% finish, so most installs never answered.
+  The analytics screen name is "02b How did you find us?" from 1.0.2.
+- **Not done, deliberately, awaiting Melvin + Aziz:** stating "needs an
+  Apple Watch" before the interview; splitting the "Last thing" screen;
+  moving the proof screens into the tour; animation; design polish. No
+  HTML mockup was made for this round (revisions to approved screens, all
+  small); the next new screen still gets one.
+
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
 Aziz: "before we push, make sure you tell us to check if these are done."

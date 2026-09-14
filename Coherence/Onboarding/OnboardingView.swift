@@ -92,14 +92,23 @@ struct OnboardingView: View {
     /// `InterviewStep`. The branching lives in the model (and is exhaustively
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
+        (.referral, .referral),
         (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
         (.aloneWithThoughts, .aloneWithThoughts), (.doingNothing, .doingNothing),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
         (.bodyCuriosity, .bodyCuriosity), (.bodyProof, .bodyProof),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot), (.watchGate, .watchGate),
-        (.anchor, .anchor), (.you, .you), (.referral, .referral),
+        (.anchor, .anchor), (.you, .you),
     ]
+
+    /// The interview's first screen, read from the model's order rather than
+    /// hardcoded, so reordering `InterviewStep` moves the door with it.
+    private var firstInterviewStep: Step {
+        answers.interview.first.flatMap { first in
+            Self.interviewPairs.first { $0.1 == first }?.0
+        } ?? .baseline
+    }
 
     /// The next screen after `current`, skipping every question whose premise
     /// this user's answers contradict.
@@ -185,7 +194,7 @@ struct OnboardingView: View {
             ReliefScreen(onContinue: { go(.breath) }, onSignIn: { go(.signIn) })
 
         case .breath:
-            BreathScreen { go(.baseline) }
+            BreathScreen { go(firstInterviewStep) }
 
         case .baseline:
             BaselineScreen(frequency: $answers.currentFrequency,
@@ -238,13 +247,15 @@ struct OnboardingView: View {
 
         case .bodyTracking:
             BodyTrackingScreen(tracking: $answers.bodyTracking,
-                               progress: interviewProgress) { go(.hardware) }
+                               progress: interviewProgress) { go(nextAfter(.bodyTracking)) }
 
-        // Not a question: the reveal that the wish the last three questions
-        // named is sold as $200-$400 hardware, and 808 reads it from the
-        // watch already on the wrist. Lands while the wish is one screen old.
+        // No longer on the path (Melvin, 2026-09-14). A tester with no Watch
+        // met "$400" mid-interview and read it as an upsell aimed at someone
+        // else. The screen now lives in the paywall ladder, shown only to a
+        // person who has just declined to pay, where an anchor belongs. The
+        // Step case stays so ONBOARDING_STEP can still jump to it.
         case .hardware:
-            HardwareScreen { go(nextAfter(.bodyTracking)) }
+            HardwareScreen(onContinue: { go(nextAfter(.bodyTracking)) })
 
         case .blindSpot:
             guarded(.blindSpot) {
@@ -259,8 +270,8 @@ struct OnboardingView: View {
                                 Analytics.track(.watchGate(outcome: "hasWatch"))
                                 go(.watchSetup)
                             },
-                            onNo: {
-                                Analytics.track(.watchGate(outcome: "waitlist"))
+                            onNo: { notYet in
+                                Analytics.track(.watchGate(outcome: notYet ? "notYet" : "waitlist"))
                                 go(.waitlist)
                             })
 

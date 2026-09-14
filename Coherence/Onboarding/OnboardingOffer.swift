@@ -124,21 +124,37 @@ struct RatingScreen: View {
                          // two buttons doing one job.
                          onContinue: { finish() }) {
             VStack(spacing: 6) {
-                HStack(spacing: 9) {
-                    ForEach(1...5, id: \.self) { star in
-                        Button { rating = star } label: {
-                            Image(systemName: (rating ?? 0) >= star ? "star.fill" : "star")
-                                .font(.system(size: 30))
-                                .foregroundStyle(AppColor.accentGoldText)
-                                .opacity((rating ?? 0) >= star ? 1 : 0.35)
+                // Stars and legend share one width: the VStack is sized to the
+                // star row, and the legend's Spacer stretches to exactly that.
+                VStack(spacing: 8) {
+                    HStack(spacing: 9) {
+                        ForEach(1...5, id: \.self) { star in
+                            Button { rating = star } label: {
+                                Image(systemName: (rating ?? 0) >= star ? "star.fill" : "star")
+                                    .font(.system(size: 30))
+                                    .foregroundStyle(AppColor.accentGoldText)
+                                    .opacity((rating ?? 0) >= star ? 1 : 0.35)
+                            }
+                            .buttonStyle(CardButtonStyle())
                         }
-                        .buttonStyle(CardButtonStyle())
                     }
-                }
-                .padding(.top, 22)
-                .sensoryFeedback(.success, trigger: rating)
+                    .sensoryFeedback(.success, trigger: rating)
 
-                Text(rating == nil ? "Tap to answer" : "Thank you.")
+                    // What the ends of the scale mean. Five stars with no
+                    // legend left a tester unsure what he was rating
+                    // (2026-09-14).
+                    HStack {
+                        Text("Not for me")
+                        Spacer(minLength: 12)
+                        Text("Exactly what I need")
+                    }
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.8))
+                }
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.top, 22)
+
+                Text(rating == nil ? "Tap a star" : "Thank you.")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.top, 4)
@@ -183,12 +199,29 @@ struct PaywallScreen: View {
     /// documented only-one-presents trap.
     @State private var route: PaywallRoute?
 
+    /// Apple's localized prices when live, our fallback otherwise, so the
+    /// anchor never states dollars to someone about to be shown euros.
+    private var anchorPriceLine: String {
+        let monthly = store.displayPrice(for: .monthly) ?? SubscriptionPlan.monthly.price
+        let yearly = store.displayPrice(for: .yearly) ?? SubscriptionPlan.yearly.price
+        let base = "808 Premium is \(monthly) a month or \(yearly) a year"
+        return offerTrial ? base + ", and the first week is free." : base + "."
+    }
+
     enum PaywallRoute: Identifiable {
+        /// The first thing a "no" meets: what this wish costs as hardware,
+        /// then 808's price. It was an interview screen until 2026-09-14,
+        /// where a tester with no Watch read it as an upsell aimed past him.
+        /// Here it is aimed at exactly the person it is for, and it sells
+        /// nothing itself: both exits lead to screens that carry the
+        /// disclosures.
+        case anchor
         case rung(DownsellRung)
         case freeTier
 
         var id: String {
             switch self {
+            case .anchor:      return "anchor"
             case .rung(let r): return "rung-\(r.rawValue)"
             case .freeTier:    return "free"
             }
@@ -390,10 +423,7 @@ struct PaywallScreen: View {
                 if selling || ProcessInfo.processInfo.isPreviewingDownsell {
                     Button("Not right now") {
                         Analytics.track(.paywallDismissed)
-                        // No free-week rung for someone who already used the
-                        // intro offer: it would promise a trial the purchase
-                        // sheet contradicts.
-                        route = .rung(offerTrial ? .trial : .yearReframe)
+                        route = .anchor
                     }
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.textSecondary)
@@ -402,6 +432,18 @@ struct PaywallScreen: View {
             }
             .fullScreenCover(item: $route) { destination in
                 switch destination {
+                case .anchor:
+                    HardwareScreen(priceLine: anchorPriceLine,
+                                   ctaTitle: "See the plans",
+                                   declineTitle: "Not for me",
+                                   onContinue: { route = nil },
+                                   onDecline: {
+                                       // No free-week rung for someone who
+                                       // already used the intro offer: it
+                                       // would promise a trial the purchase
+                                       // sheet contradicts.
+                                       route = .rung(offerTrial ? .trial : .yearReframe)
+                                   })
                 case .rung(let current):
                     DownsellSheet(rung: current, plan: plan,
                                   yearlyPrice: store.displayPrice(for: .yearly)

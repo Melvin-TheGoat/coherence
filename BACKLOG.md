@@ -33,6 +33,21 @@ yet; every completion so far is a founder, family or friend).
 
 ## Onboarding feedback, round 2 (one tester, no Watch, 2026-09-14)
 
+**Status 2026-09-14 evening: every "small fix" and copy item below is
+BUILT on `mvp`, plus three of the decisions Melvin took the same day
+(the $400 screen moved into the paywall ladder as its first rung, the
+Watch gate has three answers, "How did you find us?" opens the interview).
+Not taken, still open: "needs an Apple Watch" before the interview; the
+"Last thing" split; moving the proof screens into the tour; animation;
+real design. One finding the tester could not have named: onboarding
+rendered in the SYSTEM colour scheme because no Preferences row exists
+until it finishes, so on a light-mode phone the whole flow was light and
+the app went dark afterwards. That was the "black text", "whiter cards",
+"colours bleeding" and the blue caret. The default theme now applies from
+the first frame. For Aziz's sheet: the Watch gate now emits a third
+outcome, `notYet`, beside `hasWatch` and `waitlist`; the Installs tab's
+gate column will show it raw until the script maps it.**
+
 Walked the whole interview on a phone with no Watch paired. Grouped by what
 it costs. The sheet's Screens tab agrees with the big one: nobody leaves on
 the proof screens (0% each), people leave on screen 1 (19%), at the Watch

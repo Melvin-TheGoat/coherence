@@ -29,7 +29,7 @@ enum Analytics {
         // Onboarding
         case onboardingStep(id: String)
         case onboardingCompleted
-        case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "declined"
+        case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "notYet" | "declined"
 
         // Core loop
         case sessionStarted(source: String, sound: String)   // source: "phone" | "watch"
@@ -212,14 +212,14 @@ enum Analytics {
         "bodyCuriosity":     "08a Wonder what your body is doing? (not newcomers)",
         "bodyProof":         "08b How do you know it worked? (not newcomers)",
         "bodyTracking":      "09 What do you already track?",
-        "hardware":          "10 The hardware you'd otherwise need",
+        "hardware":          "10 The hardware you'd otherwise need (off the path since 1.0.2)",
         "blindSpot":         "11 What can't you tell about your practice? (regulars)",
         "watchGate":         "12 Do you have an Apple Watch?",
         "watchSetup":        "12a 808 goes on your Watch (has Watch)",
         "waitlist":          "12b No-Watch waitlist",
         "anchor":            "13 When will you actually meditate?",
         "you":               "14 What should we call you?",
-        "referral":          "15 How did you find us?",
+        "referral":          "02b How did you find us?",   // first question since 1.0.2; was 15
         "calculating":       "16 Calculating your plan",
         "result":            "17 Here's what you told us",
         "cost":              "17b The cost (not routed to)",
