@@ -226,6 +226,10 @@ struct FeedView: View {
                     InviteButton(username: model.profile?.username ?? "", style: .quiet)
                         .padding(.top, 6)
                 }
+                // Clears the raised plus and the tab bar. The feed's last
+                // item (the invite) sat under them with nowhere left to
+                // scroll, found walking the flow in the simulator.
+                Color.clear.frame(height: 72)
             }
             .padding(AppMetrics.screenPadding)
         }
@@ -526,16 +530,16 @@ private struct PostPhotoView: View {
     @State private var image: UIImage?
 
     var body: some View {
-        ZStack {
-            AppColor.backgroundPrimary.opacity(0.4)
-            if let image {
-                Image(uiImage: image).resizable().scaledToFill()
+        // Same rule as the composer: the photo fills an overlay of a
+        // fixed-size frame, so a wide image can never widen the card.
+        AppColor.backgroundPrimary.opacity(0.4)
+            .frame(maxWidth: .infinity)
+            .frame(height: 360)
+            .overlay {
+                if let image { Image(uiImage: image).resizable().scaledToFill() }
             }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 220)
-        .clipped()
-        .task { image = UIImage(contentsOfFile: url.path) }
+            .clipped()
+            .task { image = UIImage(contentsOfFile: url.path) }
     }
 }
 

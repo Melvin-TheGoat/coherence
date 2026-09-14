@@ -132,8 +132,14 @@ struct PostComposerView: View {
     private var selfieArea: some View {
         if let image {
             ZStack(alignment: .bottomTrailing) {
-                Image(uiImage: image).resizable().scaledToFill()
-                    .frame(maxWidth: .infinity).frame(height: 360).clipped()
+                // The image lives in an overlay of a fixed-size frame: a
+                // scaledToFill image as the frame's own content reports its
+                // natural width and pushes the whole screen wider than the
+                // phone (found in the simulator with a landscape photo).
+                Color.clear
+                    .frame(maxWidth: .infinity).frame(height: 360)
+                    .overlay(Image(uiImage: image).resizable().scaledToFill())
+                    .clipped()
                 Button { openCamera() } label: {
                     Label("Retake", systemImage: "arrow.counterclockwise")
                         .font(AppFont.caption.weight(.semibold))
