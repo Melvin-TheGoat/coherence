@@ -441,7 +441,11 @@ function find(rows, label) {
 function write(name, rows, widths, textCols) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
+  // Formats too, not just contents: a column that moves (adding Version
+  // shifted Purchase taps into the old Last seen column) otherwise inherits
+  // the old date format and prints 3 as 1900-01-02.
   sheet.clearContents();
+  sheet.clearFormats();
   var width = rows.reduce(function (m, r) { return Math.max(m, r.length); }, 1);
   var padded = rows.map(function (r) { while (r.length < width) r.push(''); return r; });
   // Columns that hold version strings must be formatted as text BEFORE the
