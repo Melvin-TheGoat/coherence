@@ -988,12 +988,19 @@ enum SignalEngine {
     /// `maxStartSec` is a diagnostics override for tools sweeping the start
     /// rules; it bypasses the late-clarity test too. Never pass it from
     /// product code.
+    ///
+    /// `lateClarity` is the bar a doorway starting after the trusted window
+    /// must clear; nil means the wrist's measured 0.85. The camera passes
+    /// `.infinity` because its sway reaches clarity 1.00 (IMG_9543, minute
+    /// 19), so on that instrument no late start can be admitted by clarity.
     static func breathDoorway(rates: [Double], clarities: [Double],
                               windowSec: Int, hopSec: Int,
                               clarityFloor: Double? = nil,
-                              maxStartSec: Double? = nil) -> BreathDoorway? {
+                              maxStartSec: Double? = nil,
+                              lateClarity: Double? = nil) -> BreathDoorway? {
         guard rates.count == clarities.count, hopSec > 0 else { return nil }
         let floor = clarityFloor ?? breathStretchFloorClarity
+        let lateBar = lateClarity ?? breathDoorwayLateClarity
         // Two windows are fully disjoint observations only when they are far
         // enough apart not to share signal: (n-1)*hop + window >= dwellMin.
         let minWindows = max(2, Int(((breathDwellMinSec - Double(windowSec))
@@ -1028,7 +1035,7 @@ enum SignalEngine {
                     // Late start: only the clarity sway cannot forge admits it.
                     if maxStartSec == nil, startSec > breathDoorwayTrustedStartSec {
                         let clarityMean = (cprefix[b - i + 1] - cprefix[a - i]) / Double(n)
-                        guard clarityMean >= breathDoorwayLateClarity else { continue }
+                        guard clarityMean >= lateBar else { continue }
                     }
                     let credit = breathCredit(rate: mean)
                     if best == nil || credit > best!.credit {
