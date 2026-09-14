@@ -91,6 +91,19 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## In flight
 
+- **No-Watch waitlist emails now reach us (next build).** The in-app
+  waitlist screen saved the typed email on the person's own phone only, so
+  its "we'll write to you" was unkeepable and every address from 1.0 and
+  1.0.1 is lost. `WaitlistClient` now posts it to the "808 no watch
+  waitlist" sheet (shared Drive folder) through the Apps Script web app in
+  `tools/nowatch-waitlist.gs`, verified end to end 2026-09-14. **Owed at the
+  submission that ships it:** App Privacy label in App Store Connect adds
+  Email Address (linked, Developer's Advertising or Marketing, not
+  tracking) to match `PrivacyInfo.xcprivacy`; redeploy `website/` for the
+  updated privacy page. If the script is ever edited, redeploy as a NEW
+  VERSION of the existing deployment; a new deployment changes the URL and
+  strands every shipped build.
+
 - **Reddit, first post live:** r/SideProject, 2026-09-13 ~1:50 PM EDT,
   https://www.reddit.com/r/SideProject/comments/1wfeqfz/i_started_meditating_to_become_a_future_version/
   (u/No_Shelter5464, Aziz's account). Reply to every comment for 48 hours.
