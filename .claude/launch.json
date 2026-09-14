@@ -12,6 +12,18 @@
         "website"
       ],
       "port": 8990
+    },
+    {
+      "name": "mockups",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8991",
+        "--directory",
+        "mockups"
+      ],
+      "port": 8991
     }
   ]
 }
