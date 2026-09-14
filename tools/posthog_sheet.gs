@@ -112,6 +112,14 @@ function installTrigger() {
 }
 
 function refresh() {
+  // One refresh at a time. The hourly trigger once started while a manual
+  // refresh was running, and the slower one overwrote the newer tab.
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try { refreshAll(); } finally { lock.releaseLock(); }
+}
+
+function refreshAll() {
   writeOverview();
   writeDaily();
   writeScreens();
@@ -382,7 +390,7 @@ function writeInstalls() {
   rows.push(['']);
   rows.push(['INSTALLS', res.results.length, '', '', '', '', '', '', '', '', '', '', '', '', '', '',
              'A reinstall is a new row. Founders count until the team-device switch ships.']);
-  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280], [7, 8]);
+  write('Installs', rows, [90, 100, 110, 110, 110, 150, 60, 70, 130, 150, 220, 110, 120, 100, 100, 150, 340, 280], [7, 8], [12, 13, 14, 15]);
 }
 
 function writeWatchGate() {
@@ -438,7 +446,7 @@ function find(rows, label) {
   return null;
 }
 
-function write(name, rows, widths, textCols) {
+function write(name, rows, widths, textCols, numCols) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName(name) || ss.insertSheet(name);
   // Formats too, not just contents: a column that moves (adding Version
@@ -452,6 +460,11 @@ function write(name, rows, widths, textCols) {
   // values land, or Sheets reads "1.0" as the number 1 and prints "1".
   (textCols || []).forEach(function (c) {
     sheet.getRange(1, c, padded.length, 1).setNumberFormat('@');
+  });
+  // And counts as plain integers. clearFormats alone did not stop a count
+  // landing in a column that once held dates from printing 3 as 1900-01-02.
+  (numCols || []).forEach(function (c) {
+    sheet.getRange(1, c, padded.length, 1).setNumberFormat('0');
   });
   sheet.getRange(1, 1, padded.length, width).setValues(padded);
   sheet.getRange(1, 1, 1, width).setFontWeight('bold');
