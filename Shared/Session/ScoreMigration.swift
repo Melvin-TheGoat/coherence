@@ -74,7 +74,12 @@ enum ScoreMigration {
         for s in sessions { durations[s.id] = s.durationSec }
 
         var updated = 0
-        for row in rows where row.algorithmVersion != version {
+        // Camera rows are a different instrument with a different formula
+        // (`CameraSignal.score`, no heart term). Handing one to the Watch's
+        // `score` would renormalise around the missing heart and quietly
+        // rescore it; they are left exactly as written.
+        for row in rows where row.algorithmVersion != version
+            && !row.algorithmVersion.hasPrefix(CameraSignal.versionPrefix) {
             // Fall back to the timeseries' own span when a session row is
             // missing (a stats row can outlive its session in a partial sync):
             // point i sits at i*hop + window/2, so the last point ends at

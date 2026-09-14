@@ -142,4 +142,25 @@ final class ScoreMigrationTests: XCTestCase {
         XCTAssertEqual(ScoreMigration.backfillIfNeeded(in: ctx, defaults: defaults), 1)
         XCTAssertEqual(ScoreMigration.backfillIfNeeded(in: ctx, defaults: defaults), 0)
     }
+
+    /// A camera row (no heart term, its own formula) is not the Watch's to
+    /// rescore. Given an empty heart series the Watch formula would quietly
+    /// renormalise breath .20 / stillness .30 into .40 / .60, which is not
+    /// what the camera engine computes.
+    func test_backfill_leavesCameraRowsAlone() {
+        let ctx = makeContext()
+        let id = UUID()
+        ctx.insert(Session(id: id, startedAt: Date(), durationSec: 600))
+        let camera = MeditationStats(sessionID: id,
+                                     heartRateTimeseries: [],
+                                     stillnessScore: 0.9,
+                                     breathingRateTimeseries: [Double](repeating: 6, count: 20),
+                                     overallScore: 0.33,
+                                     algorithmVersion: "camera-0.1.0")
+        ctx.insert(camera)
+
+        XCTAssertEqual(ScoreMigration.backfill(in: ctx), 0)
+        XCTAssertEqual(camera.overallScore ?? -1, 0.33, accuracy: 1e-9)
+        XCTAssertEqual(camera.algorithmVersion, "camera-0.1.0")
+    }
 }
