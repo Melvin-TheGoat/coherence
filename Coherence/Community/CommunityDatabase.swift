@@ -76,6 +76,8 @@ enum CommunityError: Error, Equatable {
     case noProfile
     case blocked
     case alreadyExists
+    /// A post needs its selfie (Aziz, 2026-09-14: "like BeReal").
+    case selfieRequired
 }
 
 extension CommunityError: LocalizedError {
@@ -87,6 +89,7 @@ extension CommunityError: LocalizedError {
         case .noProfile:       return "Create your profile first."
         case .blocked:         return "You can't do that with this person."
         case .alreadyExists:   return "That already exists."
+        case .selfieRequired:  return "Take your selfie to post."
         }
     }
 }

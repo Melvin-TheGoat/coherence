@@ -154,15 +154,41 @@ final class CommunityStoreTests: XCTestCase {
 
     // MARK: Posts and the feed
 
+    private lazy var selfie: URL = {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("selfie-test.jpg")
+        try? Data([0xFF, 0xD8, 0xFF]).write(to: url)
+        return url
+    }()
+
     private func draft(score: Int = 77, caption: String = "") -> CommunityStore.Draft {
         .init(score: score, minutes: 18, streak: 4, technique: "Counting", caption: caption,
-              photoURL: nil, practicedAt: Date())
+              photoURL: selfie, practicedAt: Date())
+    }
+
+    func test_noSelfieNoPost() async throws {
+        var d = draft()
+        d.photoURL = nil
+        do {
+            try await aziz.post(d)
+            XCTFail("a post without a selfie must be refused")
+        } catch let e as CommunityError {
+            XCTAssertEqual(e, .selfieRequired)
+        }
+        XCTAssertTrue(db.records.values.filter { $0.recordType == CommunityType.post }.isEmpty)
+    }
+
+    func test_editingAPostKeepsItsSelfie() async throws {
+        var d = draft(); d.sessionID = "S2"
+        try await aziz.post(d)
+        d.photoURL = nil; d.caption = "edited"
+        let edited = try await aziz.post(d)
+        XCTAssertNotNil(edited.photoURL, "an edit without a new selfie keeps the old one")
     }
 
     func test_postCarriesOnlyTheFreeCardFields() async throws {
         let post = try await aziz.post(draft(caption: "Roof before work."))
         let record = try XCTUnwrap(db.records[post.id])
-        XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["photo", "sound"]),
+        XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["sound"]),
                        "a post carries the free share card's data and nothing measured: no heart, breath or stillness values, no curves (5.1.3 and the free tier)")
         for banned in ["heart", "hr", "breath", "stillness", "curve", "bpm"] {
             XCTAssertFalse(Post.fields.contains { $0.lowercased().contains(banned) }, banned)

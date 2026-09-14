@@ -1,6 +1,7 @@
 #if DEBUG
 import Foundation
 import CloudKit
+import UIKit
 
 /// An in-memory public database: a dictionary of records keyed by name, the
 /// way CloudKit's default zone is (so a name collision between types shows up
@@ -46,6 +47,19 @@ final class MemoryCommunityDatabase: CommunityDatabase {
 /// A seeded tab for design review: me (@aziz, claimed), Melvin as a friend
 /// with two posts, one incoming request, one sent request.
 enum DemoCommunity {
+    /// A soft two-tone image standing in for a selfie, so seeded posts obey
+    /// the selfie rule.
+    static func fakeSelfie(_ top: UIColor, _ bottom: UIColor) -> URL? {
+        let size = CGSize(width: 900, height: 1200)
+        let format = UIGraphicsImageRendererFormat.default(); format.scale = 1
+        let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let colors = [top.cgColor, bottom.cgColor] as CFArray
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: [0, 1])!
+            ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
+        }
+        return PostPhoto.prepare(image)
+    }
+
     static func store() async -> CommunityStore {
         let db = MemoryCommunityDatabase(user: "_demo_me")
         let me = CommunityStore(database: db)
@@ -61,9 +75,10 @@ enum DemoCommunity {
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         let melvinPost = try? await melvin.post(.init(score: 81, minutes: 14, streak: 9, technique: "Slow breathing",
                                                        caption: "Roof before work. Cold enough to see my breath.",
-                                                       photoURL: nil, practicedAt: Date().addingTimeInterval(-3_600)))
+                                                       photoURL: fakeSelfie(UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1)),
+                                                       practicedAt: Date().addingTimeInterval(-3_600)))
         _ = try? await melvin.post(.init(score: 64, minutes: 25, streak: 8, technique: "Guided",
-                                          caption: "", photoURL: nil,
+                                          caption: "", photoURL: fakeSelfie(UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1)),
                                           practicedAt: Date().addingTimeInterval(-86_400 - 1_800)))
 
         db.user = "_demo_jordan"
@@ -91,7 +106,7 @@ enum DemoCommunity {
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_lena"))
         if let melvinPost { try? await me.react(to: melvinPost.id) }
         _ = try? await me.post(.init(score: 72, minutes: 18, streak: 4, technique: "Counting",
-                                      caption: "", photoURL: nil,
+                                      caption: "", photoURL: fakeSelfie(UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1)),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2)))
         return me
     }

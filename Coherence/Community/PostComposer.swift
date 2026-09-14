@@ -1,12 +1,18 @@
 import SwiftUI
 import SwiftData
 import PhotosUI
+import AVFoundation
 
-/// "Post to friends", opened from the results screen. A photo (camera or
-/// library, optional), a caption (optional), and the stat strip the post will
-/// carry, which is the free share card's data and nothing measured (see
-/// `CommunityRecords.swift`). The first post ever shows the community rules
-/// and asks for an Agree, which is what guideline 1.2 reviewers look for.
+/// "Post to friends", opened from the results screen.
+///
+/// **BeReal rule (Aziz, 2026-09-14): no selfie, no post.** The photo is a
+/// selfie of you, taken right now on the FRONT camera. No photo library, so
+/// what friends see is you, meditating, today. Post stays disabled until it
+/// exists, and `CommunityStore.post` refuses a draft without one.
+///
+/// A caption is optional. The first post ever asks for one Agree to a
+/// one-line community rule: guideline 1.2 expects users to accept that
+/// abusive content is not tolerated, and Aziz asked for it to be light.
 struct PostComposerView: View {
     let seed: CommunityStore.Draft
     @EnvironmentObject private var model: CommunityModel
@@ -17,8 +23,14 @@ struct PostComposerView: View {
     @AppStorage("community.rulesAgreed.v1") private var rulesAgreed = false
     @State private var caption = ""
     @State private var image: UIImage?
-    @State private var pickerItem: PhotosPickerItem?
     @State private var showCamera = false
+    @State private var cameraDenied = false
+    #if DEBUG && targetEnvironment(simulator)
+    /// The simulator has no camera. DEBUG simulator builds only: pick a
+    /// stand-in from the library so the flow can be reviewed. Compiled out
+    /// of every device build.
+    @State private var simulatorPick: PhotosPickerItem?
+    #endif
     @State private var showRules = false
     @State private var posting = false
     @State private var refusal: String?
@@ -50,7 +62,7 @@ struct PostComposerView: View {
                     ToolbarItem(placement: .confirmationAction) {
                         Button(posting ? "Posting…" : "Post") { tapPost() }
                             .tint(AppColor.accentGoldText)
-                            .disabled(posting)
+                            .disabled(posting || image == nil)
                     }
                 }
             }
@@ -60,10 +72,10 @@ struct PostComposerView: View {
                     showRules = false
                     submit()
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.height(260)])
             }
             .fullScreenCover(isPresented: $showCamera) {
-                CameraPicker { image = $0 }
+                CameraPicker(device: .front) { image = $0 }
                     .ignoresSafeArea()
             }
             .alert("Couldn't post that", isPresented: Binding(get: { refusal != nil }, set: { if !$0 { refusal = nil } })) {
@@ -77,7 +89,7 @@ struct PostComposerView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
                 VStack(alignment: .leading, spacing: 0) {
-                    photoArea
+                    selfieArea
                     HStack(spacing: 14) {
                         ScoreRing(score: Double(seed.score) / 100, size: 36, lineWidth: 3.5)
                         stat("\(seed.minutes) min", "Sat")
@@ -98,60 +110,93 @@ struct PostComposerView: View {
                     .onChange(of: caption) { _, new in
                         if new.count > CommunityStore.captionLimit { caption = String(new.prefix(CommunityStore.captionLimit)) }
                     }
-
-                SectionHeader(title: "What goes out").padding(.top, 6)
-                Text("Your score, minutes, streak, technique, the photo and the caption. Your heart rate, breath and stillness readings stay on your phone.")
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(AppMetrics.screenPadding)
         }
-        .onChange(of: pickerItem) { _, item in
+        #if DEBUG && targetEnvironment(simulator)
+        .onChange(of: simulatorPick) { _, item in
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self), let ui = UIImage(data: data) {
                     image = ui
                 }
-                pickerItem = nil
+                simulatorPick = nil
             }
         }
+        #endif
     }
 
+    /// The selfie: a tall tap target that opens the front camera, or the
+    /// selfie itself with Retake. Nothing else can fill it.
     @ViewBuilder
-    private var photoArea: some View {
+    private var selfieArea: some View {
         if let image {
-            ZStack(alignment: .topTrailing) {
+            ZStack(alignment: .bottomTrailing) {
                 Image(uiImage: image).resizable().scaledToFill()
-                    .frame(maxWidth: .infinity).frame(height: 240).clipped()
-                Button { self.image = nil } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 24))
-                        .foregroundStyle(.white, .black.opacity(0.55))
-                        .padding(8)
+                    .frame(maxWidth: .infinity).frame(height: 360).clipped()
+                Button { openCamera() } label: {
+                    Label("Retake", systemImage: "arrow.counterclockwise")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 12).padding(.vertical, 7)
+                        .background(.black.opacity(0.55), in: Capsule())
+                        .padding(10)
                 }
                 .buttonStyle(.plain)
             }
         } else {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                        Button { showCamera = true } label: {
-                            Label("Take a photo", systemImage: "camera")
-                        }
-                        .buttonStyle(PhotoButtonStyle())
-                    }
-                    PhotosPicker(selection: $pickerItem, matching: .images) {
-                        Label("Choose a photo", systemImage: "photo.on.rectangle")
-                    }
-                    .buttonStyle(PhotoButtonStyle())
+            Button { openCamera() } label: {
+                VStack(spacing: 10) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 30))
+                        .foregroundStyle(AppColor.accentGoldText)
+                    Text("Take your selfie")
+                        .font(AppFont.headline)
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text(cameraDenied
+                         ? "808 can't use the camera. Turn it on in Settings to post."
+                         : "Show your friends you sat. A selfie is how every post starts.")
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
                 }
-                Text("A photo is optional.")
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 300)
+                .contentShape(Rectangle())
             }
-            .padding(12)
+            .buttonStyle(CardButtonStyle())
+            #if DEBUG && targetEnvironment(simulator)
+            .overlay(alignment: .bottom) {
+                PhotosPicker(selection: $simulatorPick, matching: .images) {
+                    Text("Simulator: pick a stand-in")
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .padding(8)
+                }
+            }
+            #endif
         }
+    }
+
+    private func openCamera() {
+        #if targetEnvironment(simulator)
+        return   // no camera; the DEBUG stand-in picker covers review
+        #else
+        switch AVCaptureDevice.authorizationStatus(for: .video) {
+        case .authorized:
+            showCamera = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted { showCamera = true } else { cameraDenied = true }
+                }
+            }
+        default:
+            cameraDenied = true
+            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
+        }
+        #endif
     }
 
     private func stat(_ value: String, _ label: String) -> some View {
@@ -172,14 +217,12 @@ struct PostComposerView: View {
         Task {
             var draft = seed
             draft.caption = caption
-            if let image {
-                guard let url = PostPhoto.prepare(image) else {
-                    refusal = "That photo couldn't be read. Try another."
-                    posting = false
-                    return
-                }
-                draft.photoURL = url
+            guard let image, let url = PostPhoto.prepare(image) else {
+                refusal = "Take your selfie to post."
+                posting = false
+                return
             }
+            draft.photoURL = url
             let ok = await model.post(draft)
             posting = false
             if ok { dismiss() }
@@ -209,30 +252,20 @@ struct CommunityRulesSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Before your first post")
+            Text("Keep it kind")
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.textPrimary)
                 .padding(.top, 8)
-            rule("Post your own practice.")
-            rule("Be kind. No harassment, no hate.")
-            rule("No nudity, no violence.")
-            rule("Anything reported comes down, and people who keep doing it are removed.")
+            Text("Post your own practice. Anything abusive or explicit gets taken down.")
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Button(action: onAgree) { Text("Agree and post") }
                 .buttonStyle(PrimaryButtonStyle())
-            Button("Not now") { dismiss() }
-                .buttonStyle(SecondaryButtonStyle())
         }
         .padding(AppMetrics.screenPadding)
         .screenBackground()
-    }
-
-    private func rule(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "checkmark").foregroundStyle(AppColor.calmAccent).padding(.top, 2)
-            Text(text).font(AppFont.callout).foregroundStyle(AppColor.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
     }
 }
 
@@ -266,15 +299,17 @@ enum PostPhoto {
     }
 }
 
-/// The system camera. Needs `NSCameraUsageDescription`, which names exactly
-/// this use.
+/// The system camera, opened on the front lens for the selfie. Needs
+/// `NSCameraUsageDescription`, which names exactly this use.
 struct CameraPicker: UIViewControllerRepresentable {
+    var device: UIImagePickerController.CameraDevice = .rear
     let onImage: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
         picker.sourceType = .camera
+        if UIImagePickerController.isCameraDeviceAvailable(device) { picker.cameraDevice = device }
         picker.delegate = context.coordinator
         return picker
     }

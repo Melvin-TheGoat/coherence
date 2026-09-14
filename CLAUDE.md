@@ -1624,9 +1624,13 @@ still HELD. The 1.1 submission list is in `RELEASE_CHECKLIST.md`.
    sheet (`ct=invite` campaign link), first-run username claim, and an
    honest card when iCloud is unavailable. Reaction word is **"Nice sit"**
    with 🙏 (Aziz cut "Respect"; still a placeholder).
-3. **Post to friends** from the results screen (`PostComposerView`): optional
-   photo (1080 px JPEG), 140-char caption, community rules on first post.
-   `NSCameraUsageDescription` returned for this one use only.
+3. **Post to friends** from the results screen (`PostComposerView`). **Every
+   post is a front-camera selfie, BeReal style (Aziz): no photo library, no
+   selfie no post**, enforced in the store too. 140-char caption optional.
+   First post asks one Agree to a one-line rule (Aziz: "chill on the what not
+   to post thing"; the Agree stays for guideline 1.2). Invite text is Aziz's:
+   "Add me on 808 Meditate, the social media for meditation: @user" + link.
+   `NSCameraUsageDescription` names the selfie.
 4. **Invite reward** (`Shared/Community/InviteReward.swift`): a friend I
    asked accepts AND sits once, then I get 10 sessions of full evidence
    (stacking, capped at 50) plus the "Brought a friend" award. Per SESSION,

@@ -97,6 +97,20 @@ Record types (public database, `iCloud.com.lockout.meditate808`):
   usernames are offered as the default and may collide; the claim screen
   handles that honestly.
 
+## Every post is a selfie (Aziz, 2026-09-14, "like BeReal")
+
+No selfie, no post. The composer opens on a big "Take your selfie" area
+that launches the FRONT camera; there is no photo library, so a post shows
+you, sitting, today. Post stays disabled until the selfie exists, Retake
+replaces it, and `CommunityStore.post` refuses a draft without one
+(`CommunityError.selfieRequired`, `test_noSelfieNoPost`). An edit to an
+existing post keeps its selfie. The first-post agreement is one line
+("Post your own practice. Anything abusive or explicit gets taken down.")
+because Aziz asked for less, and the "What goes out" section is gone. The
+agreement itself stays: guideline 1.2 expects users to accept that abusive
+content is not tolerated. DEBUG simulator builds only get a stand-in photo
+picker, since the simulator has no camera.
+
 ## Post-session flow
 
 Results screen → new row under the verdict: **"Post to friends"** (gold only

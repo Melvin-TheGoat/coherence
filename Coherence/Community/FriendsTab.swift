@@ -383,7 +383,9 @@ struct InviteButton: View {
     static let storeLink = URL(string: "https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=invite&mt=8")!
 
     private var message: String {
-        "I meditate with 808. It scores every session off your Apple Watch, and we can see each other's sits. Add me: @\(username)\n\(Self.storeLink.absoluteString)"
+        // Aziz's wording (2026-09-14). The App Store link stays on its own
+        // line so the message still gets a friend to the download.
+        "Add me on 808 Meditate, the social media for meditation: @\(username)\n\(Self.storeLink.absoluteString)"
     }
 
     var body: some View {
