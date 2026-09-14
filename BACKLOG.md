@@ -4,6 +4,33 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Launch plan items with no record of being done (checked 2026-09-14)
+
+From `marketing/LAUNCH_PLAN.md` section 4, live day and weeks 1 to 2. Each
+is cheap and each sends Watch owners to a first session on 1.0.1, which is
+the test the product is waiting for (zero strangers have completed a session
+yet; every completion so far is a founder, family or friend).
+
+- **Apple Search Ads not started.** $15 a day, Advanced, exact match on
+  "meditation apple watch" and its siblings. The one always-on paid line.
+- **Featuring nomination not submitted** (App Store Connect, aim three weeks
+  out).
+- **Press tips not sent** (9to5Mac, MacRumors, AppleInsider, iMore, Cult of
+  Mac; the Watch angle, never "first"; `ct=press` link).
+- **Promo codes not generated** (App Store Connect > Promo Codes, 100 per
+  version; gift to Watch YouTubers with no ask).
+- **Website is one deploy behind.** The live site has the plain App Store
+  link; the `website` campaign link, the branded short links
+  (`meditate808.com/reddit` returns the home page, no redirect) and the
+  updated privacy page are in the repo and not deployed. Drag `website/`
+  into Cloudflare Pages.
+- **Reels and carousels:** no record in the repo either way. If they are
+  going out, log the format and the day somewhere the Friday review can read.
+- **Reddit:** r/SideProject from Melvin's account today; r/QuantifiedSelf
+  Monday megathread; the rest per `marketing/REDDIT.md`.
+- **Friday review** (this Friday, 2026-09-18): the sheet's Overview tab
+  against the scorecard in the launch plan, section 6.
+
 ## Decided, not started
 
 - **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
