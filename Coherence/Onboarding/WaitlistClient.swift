@@ -21,9 +21,11 @@ import Foundation
 /// - Never goes through `Analytics`. PostHog must never receive an email.
 enum WaitlistClient {
 
-    /// The web app's /exec URL. Empty means "not deployed": nothing is sent
-    /// and nothing is queued, so a build with no endpoint behaves like 1.0.1.
-    static let endpoint = ""
+    /// The web app's /exec URL (deployment "In-app no-Watch waitlist v1",
+    /// 2026-09-14). Redeploying as a NEW VERSION keeps this URL; creating a
+    /// NEW DEPLOYMENT makes a different one and strands every shipped build.
+    /// Empty would mean nothing is sent and nothing is queued.
+    static let endpoint = "https://script.google.com/macros/s/AKfycbwpsl0kdyj5lulBOJ7e7FOIb8WfXEnzOs7Xm3FqBYZSu1nBeZvZlPRihBgmm0pxeJZA5A/exec"
 
     /// Must equal `APP_TOKEN` in the script. Not a secret (it ships in the
     /// binary); it only keeps a bare scraper from filling the sheet.
