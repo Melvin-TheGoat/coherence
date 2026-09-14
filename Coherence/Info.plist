@@ -40,13 +40,14 @@
 	<string>808 uses heart data recorded on your Apple Watch to measure how your body settled after a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>808 records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
-	<!-- NSCameraUsageDescription removed 2026-08-11. It described the
-	     fingertip-PPG coherence check, which was cut in the MVP; no camera code
-	     remains anywhere in the app. Declaring a permission for a feature that
-	     does not exist makes a false statement to the user, forces a camera
-	     answer in the App Privacy labels, and contradicts the privacy policy's
-	     "we do not collect camera data". If the camera path ever returns (it
-	     lives on the full-feature-set branch), put the string back with it. -->
+	<!-- Camera returned 2026-09-14 for ONE use: the optional photo on a
+	     session posted to friends (PostComposer). The string says exactly
+	     that. It was removed 2026-08-11 with the fingertip-PPG check because a
+	     permission for a feature that does not exist is a false statement;
+	     the same rule means the string must go again if the composer ever
+	     loses its camera button. App Privacy labels: Photos or Videos. -->
+	<key>NSCameraUsageDescription</key>
+	<string>808 uses the camera only for the photo you add to a session you post to friends.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>808 saves your share card to your photo library so you can post it to your Instagram story.</string>
 	<key>LSApplicationQueriesSchemes</key>

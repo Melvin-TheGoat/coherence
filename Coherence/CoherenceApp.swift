@@ -8,6 +8,7 @@ struct CoherenceApp: App {
     let modelContainer: ModelContainer
     @StateObject private var coordinator: SessionCoordinator
     @StateObject private var store = Store()
+    @StateObject private var community = CommunityModel.app()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -33,6 +34,7 @@ struct CoherenceApp: App {
             RootView()
                 .environmentObject(coordinator)
                 .environmentObject(store)
+                .environmentObject(community)
                 // Products are fetched from Apple, so this is a network call
                 // and the paywall has to survive it not having finished. Until
                 // it does, `store.state` is .loading. If the launch had no

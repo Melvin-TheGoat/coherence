@@ -42,7 +42,27 @@ final class CommunityModel: ObservableObject {
         CommunityModel(store: CloudKitCommunityDatabase.ifEntitled().map { CommunityStore(database: $0) })
     }
 
+    /// The one instance the app injects: the live CloudKit model, or the
+    /// seeded demo when `PREVIEW_FRIENDS` is set (DEBUG).
+    static func app() -> CommunityModel {
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["PREVIEW_FRIENDS"] != nil {
+            return CommunityModel(store: nil, demo: true)
+        }
+        #endif
+        return live()
+    }
+
     var friendCount: Int { friends.count }
+
+    /// A session finished. Stamps the profile's first session once, which is
+    /// the fact the invite reward reads. Cheap after the first time: nothing
+    /// is fetched when the profile already carries the date.
+    func noteSessionCompleted(at date: Date) async {
+        guard let store, phase == .ready, let profile, profile.firstSessionAt == nil else { return }
+        try? await store.markFirstSession(at: date)
+        self.profile = try? await store.myProfile()
+    }
 
     // MARK: - Loading
 

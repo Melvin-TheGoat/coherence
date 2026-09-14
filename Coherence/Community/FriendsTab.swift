@@ -9,17 +9,7 @@ import SwiftData
 struct FriendsTab: View {
     @Environment(\.modelContext) private var context
     @Query private var users: [User]
-    @StateObject private var model: CommunityModel
-
-    init() {
-        #if DEBUG
-        if ProcessInfo.processInfo.environment["PREVIEW_FRIENDS"] != nil {
-            _model = StateObject(wrappedValue: CommunityModel(store: nil, demo: true))
-            return
-        }
-        #endif
-        _model = StateObject(wrappedValue: CommunityModel.live())
-    }
+    @EnvironmentObject private var model: CommunityModel
 
     private var user: User? { users.first }
 
@@ -48,7 +38,6 @@ struct FriendsTab: View {
             .navigationTitle("Friends")
             .navigationBarTitleDisplayMode(.inline)
         }
-        .environmentObject(model)
         .task {
             Analytics.track(.friendsOpened)
             await model.load()
@@ -63,7 +52,7 @@ struct FriendsTab: View {
 
 // MARK: - Unavailable
 
-private struct UnavailableCard: View {
+struct UnavailableCard: View {
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: "icloud.slash")
@@ -415,7 +404,7 @@ struct PostCard: View {
             .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 8)
 
             if let url = post.photoURL {
-                PostPhoto(url: url)
+                PostPhotoView(url: url)
             }
 
             HStack(spacing: 14) {
@@ -485,7 +474,7 @@ struct PostCard: View {
     }
 }
 
-private struct PostPhoto: View {
+private struct PostPhotoView: View {
     let url: URL
     @State private var image: UIImage?
 

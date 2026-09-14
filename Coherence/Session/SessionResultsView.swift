@@ -51,6 +51,7 @@ struct SessionResultsView: View {
     @State private var techniqueNote: String = ""
     @State private var streakDays = 0
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var community: CommunityModel
     /// Every modal on this screen goes through ONE `.sheet(item:)`.
     ///
     /// Stacking several `.sheet` modifiers on one view is the documented
@@ -66,6 +67,7 @@ struct SessionResultsView: View {
 
     enum ResultRoute: Identifiable {
         case share
+        case post
         case scoreMeaning
         case locked(LockedSignal)
         case plans
@@ -73,6 +75,7 @@ struct SessionResultsView: View {
         var id: String {
             switch self {
             case .share:            return "share"
+            case .post:             return "post"
             case .scoreMeaning:     return "score"
             case .locked(let sig):  return "locked-\(sig.rawValue)"
             case .plans:            return "plans"
@@ -118,6 +121,7 @@ struct SessionResultsView: View {
                             }
                             if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
                             tourDim(shareButton, lit: nil)
+                            tourDim(postButton, lit: nil)
                         } else {
                             header(session)
                             missingStatsCard
@@ -154,6 +158,10 @@ struct SessionResultsView: View {
                     if let data = shareData {
                         ShareSessionSheet(data: data, entitlements: entitlements)
                     }
+                case .post:
+                    if let draft = postDraft {
+                        PostComposerView(seed: draft)
+                    }
                 case .scoreMeaning:
                     ScoreMeaningSheet(score: stats?.overallScore)
                         .presentationDetents([.medium, .large])
@@ -175,6 +183,11 @@ struct SessionResultsView: View {
                 load()
                 Analytics.track(stats == nil ? .resultMissing : .resultViewed)
                 maybeAskForRating()
+            }
+            .task {
+                // The invite reward reads "has a first session" off the
+                // public profile; a results screen with stats is that fact.
+                if let session, stats != nil { await community.noteSessionCompleted(at: session.startedAt) }
             }
             // The tour brings each element to the reader, top-anchored for the
             // score so the whole hero shows, centred for the graphs.
@@ -661,6 +674,30 @@ struct SessionResultsView: View {
         }
     }
 
+    /// Post to friends sits under Share and is always the quiet style: the
+    /// screen's one gold call to action is Share (paid) or the unlock (free).
+    private var postButton: some View {
+        Button {
+            route = .post
+        } label: {
+            Label("Post to friends", systemImage: "person.2")
+        }
+        .buttonStyle(SecondaryButtonStyle())
+    }
+
+    /// What a post may carry (COMMUNITY.md): the free share card's fields.
+    /// Built here, from the same rows, so the composer never sees the stats.
+    private var postDraft: CommunityStore.Draft? {
+        guard let session, let stats, let score = stats.overallScore else { return nil }
+        return .init(score: Int((score * 100).rounded()),
+                     minutes: max(1, Int((Double(session.durationSec) / 60).rounded())),
+                     streak: streakDays,
+                     technique: MeditationMethod.label(for: technique),
+                     caption: "",
+                     photoURL: nil,
+                     practicedAt: session.startedAt)
+    }
+
     /// Value snapshot for the share card — built from the rows already loaded,
     /// so the sheet never touches storage.
     private var shareData: ShareCardData? {
@@ -960,6 +997,7 @@ struct SessionResultsView: View {
 
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { route = .share }
+        if ProcessInfo.processInfo.environment["PREVIEW_POST"] == "1" { route = .post }
         #endif
     }
 }
