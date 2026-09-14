@@ -34,6 +34,28 @@ Tick an item by moving it to DONE with the date. Never delete a line.
   join the waitlist with a throwaway address, and confirm a row appears in
   the **808 no watch waitlist** sheet. Then delete that row.
 
+## OPEN for 1.1 (Friends), before that build is submitted
+
+- [ ] **CloudKit Console, `iCloud.com.lockout.meditate808`:** the six PUBLIC
+  record types (Profile, FriendEdge, Post, Reaction, Block, Report) with
+  queryable indexes on `username`, `from`, `to`, `author`, `post`,
+  `practicedAt`, `createdAt`; security roles `_world` read / `_creator`
+  write on each; AND the four new `CD_Preferences` fields
+  (`evidenceGrantRemaining`, `evidenceGrantSince`, `rewardedFriends`,
+  `grantedSessionIDs`). Run the schema primer on a dev build, then deploy
+  Development → Production. A promotion is a release step (the 1.0 lesson).
+- [ ] **Age rating questionnaire:** UGC and Social both flip to **Yes**.
+- [ ] **App Privacy label:** add Photos or Videos, User Content, Name, User
+  ID (linked, not tracking, App Functionality). `PrivacyInfo.xcprivacy`
+  matches in the same build.
+- [ ] **Privacy policy, both copies:** a "Friends and posts" section; the
+  "we transmit nothing we can read" line is no longer true.
+- [ ] **Terms of use:** a user-content section (no tolerance for
+  objectionable content; repeat offenders removed).
+- [ ] **Report email path** (`tools/community-reports.gs`) deployed and
+  tested with one real report.
+- [ ] **TestFlight with the founders plus five friends** before the store.
+
 ## ALWAYS: every submission
 
 - [ ] Version number bumped (`MARKETING_VERSION` in `project.yml`) and the

@@ -16,6 +16,7 @@ struct ProfileTab: View {
     @Query private var allStats: [MeditationStats]
     @Query private var reflections: [SessionReflection]
     @Query private var users: [User]
+    @Query private var prefsRows: [Preferences]
 
     /// A practiced day tapped on Home — filters the log below.
     @Binding var selectedDay: Date?
@@ -111,7 +112,8 @@ struct ProfileTab: View {
                       durationSec: $0.durationSec,
                       overallScore: scores[$0.id])
             },
-            accountCreatedAt: users.first?.createdAt)
+            accountCreatedAt: users.first?.createdAt,
+            friendBroughtAt: prefsRows.first?.evidenceGrantSince)
     }
 
     private var awardsSection: some View {

@@ -30,11 +30,23 @@ final class CommunityModel: ObservableObject {
     @Published private(set) var reactions: [String: [String]] = [:]
     @Published var errorText: String?
 
+    /// The reward landing, shown once as a sheet by ContentView.
+    @Published var rewardNews: RewardNews?
+
+    struct RewardNews: Identifiable, Equatable {
+        let friendName: String
+        let remaining: Int
+        var id: String { friendName + "\(remaining)" }
+    }
+
     private(set) var store: CommunityStore?
     private(set) var myID: String?
     private let demo: Bool
+    var ledger: RewardLedger?
 
-    init(store: CommunityStore?, demo: Bool = false) { self.store = store; self.demo = demo }
+    init(store: CommunityStore?, demo: Bool = false, ledger: RewardLedger? = nil) {
+        self.store = store; self.demo = demo; self.ledger = ledger
+    }
 
     /// The production model: CloudKit if the process holds a container,
     /// otherwise a permanently unavailable tab.
@@ -44,13 +56,15 @@ final class CommunityModel: ObservableObject {
 
     /// The one instance the app injects: the live CloudKit model, or the
     /// seeded demo when `PREVIEW_FRIENDS` is set (DEBUG).
-    static func app() -> CommunityModel {
+    static func app(ledger: RewardLedger? = nil) -> CommunityModel {
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_FRIENDS"] != nil {
-            return CommunityModel(store: nil, demo: true)
+            return CommunityModel(store: nil, demo: true, ledger: ledger)
         }
         #endif
-        return live()
+        let model = live()
+        model.ledger = ledger
+        return model
     }
 
     var friendCount: Int { friends.count }
@@ -105,6 +119,20 @@ final class CommunityModel: ObservableObject {
         feed = posts
         reactions = try await store.reactions(for: posts.map(\.id))
         try await cache(names: Set(fr + inc + sn + posts.map(\.author) + reactions.values.flatMap { $0 }))
+        try await checkRewards(store)
+    }
+
+    /// Bring a friend, see the evidence (`InviteReward`). Runs after every
+    /// list refresh; pays out once per friend, from facts on public records.
+    private func checkRewards(_ store: CommunityStore) async throws {
+        guard let ledger else { return }
+        let facts = try await store.friendFacts()
+        for id in InviteReward.newlyRewardable(facts, alreadyRewarded: ledger.rewardedFriends) {
+            guard let remaining = ledger.grant(forFriend: id) else { continue }
+            Analytics.track(.inviteRewarded)
+            let name = people[id]?.displayName ?? ""
+            rewardNews = RewardNews(friendName: name.isEmpty ? "A friend you invited" : name, remaining: remaining)
+        }
     }
 
     private func cache(names: Set<String>) async throws {

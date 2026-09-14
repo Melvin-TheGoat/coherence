@@ -80,6 +80,7 @@ enum Analytics {
         case reactionGiven
         case userBlocked
         case contentReported(kind: String)   // "post" | "profile"
+        case inviteRewarded                  // a brought friend sat; the grant landed
 
         var name: String {
             switch self {
@@ -116,6 +117,7 @@ enum Analytics {
             case .reactionGiven: "reaction_given"
             case .userBlocked: "user_blocked"
             case .contentReported: "content_reported"
+            case .inviteRewarded: "invite_rewarded"
             }
         }
 

@@ -16,9 +16,11 @@ final class AwardEngineTests: XCTestCase {
     }
 
     private func earned(_ facts: [AwardEngine.SessionFact],
-                        created: Date? = Date()) -> [String: AwardEngine.Earned] {
+                        created: Date? = Date(),
+                        friendBroughtAt: Date? = nil) -> [String: AwardEngine.Earned] {
         Dictionary(uniqueKeysWithValues: AwardEngine
-            .evaluate(sessions: facts, accountCreatedAt: created, calendar: cal)
+            .evaluate(sessions: facts, accountCreatedAt: created,
+                      friendBroughtAt: friendBroughtAt, calendar: cal)
             .map { ($0.award.id, $0) })
     }
 
@@ -182,7 +184,10 @@ final class AwardEngineTests: XCTestCase {
         }
         // Every award must be reachable by some rule, or it is decoration that
         // can never be earned.
-        let reachable = earned((0..<400).map { day(-399 + $0, score: 0.95, minutes: 65) })
+        // "Brought a friend" is the one award earned by something other than a
+        // session, so the richest possible history includes that fact too.
+        let reachable = earned((0..<400).map { day(-399 + $0, score: 0.95, minutes: 65) },
+                               friendBroughtAt: Date())
         for award in Award.all {
             XCTAssertTrue(reachable[award.id]!.isEarned,
                           "\(award.id) cannot be earned by any history")

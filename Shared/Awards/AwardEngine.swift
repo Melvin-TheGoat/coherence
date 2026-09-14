@@ -38,8 +38,12 @@ public enum AwardEngine {
 
     /// - Parameter accountCreatedAt: when the user row was made. The signup
     ///   award is the one thing not derived from a session.
+    /// - Parameter friendBroughtAt: when the first invited friend sat their
+    ///   first session (`Preferences.evidenceGrantSince`). The second thing
+    ///   not derived from a session, and still something done, not given.
     public static func evaluate(sessions: [SessionFact],
                                 accountCreatedAt: Date?,
+                                friendBroughtAt: Date? = nil,
                                 calendar: Calendar = .current) -> [Earned] {
         let ordered = sessions.sorted { $0.startedAt < $1.startedAt }
         let runs = streakRuns(ordered.map(\.startedAt), calendar: calendar)
@@ -54,6 +58,10 @@ public enum AwardEngine {
             case "firstSession":
                 return Earned(award: award, earnedAt: ordered.first?.startedAt,
                               progress: ordered.isEmpty ? 0 : 1, progressText: nil)
+
+            case "friendBrought":
+                return Earned(award: award, earnedAt: friendBroughtAt,
+                              progress: friendBroughtAt == nil ? 0 : 1, progressText: nil)
 
             default:
                 if let days = award.streakDays {

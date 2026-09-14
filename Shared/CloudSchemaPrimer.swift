@@ -59,6 +59,10 @@ enum CloudSchemaPrimer {
         prefs.reminderTime = now
         prefs.theme = "dark"
         prefs.hapticsEnabled = true
+        prefs.evidenceGrantRemaining = 1
+        prefs.evidenceGrantSince = now
+        prefs.rewardedFriends = ["primer"]
+        prefs.grantedSessionIDs = ["primer"]
         prefs.createdAt = now
         prefs.updatedAt = now
         context.insert(prefs)

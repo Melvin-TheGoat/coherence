@@ -19,6 +19,8 @@ struct ContentView: View {
     @Query private var users: [User]
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
+    @Query private var prefsRows: [Preferences]
+    @EnvironmentObject private var community: CommunityModel
 
     @State private var tab: MainTab = .home
     /// A day tapped on Home's calendar. Profile opens with its log filtered
@@ -99,6 +101,11 @@ struct ContentView: View {
         }
         .onAppear(perform: refreshAwards)
         .onChange(of: sessions.count) { _, _ in refreshAwards() }
+        .onChange(of: prefsRows.first?.evidenceGrantSince) { _, _ in refreshAwards() }
+        // The invite reward landing: a brought friend sat their first session.
+        .sheet(item: $community.rewardNews) { news in
+            InviteRewardSheet(news: news).presentationDetents([.medium])
+        }
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(startedAt: Date().addingTimeInterval(-90),
@@ -208,7 +215,8 @@ struct ContentView: View {
                       durationSec: $0.durationSec,
                       overallScore: scores[$0.id])
             },
-            accountCreatedAt: users.first?.createdAt)
+            accountCreatedAt: users.first?.createdAt,
+            friendBroughtAt: prefsRows.first?.evidenceGrantSince)
 
         // First run swallows everything already earned. Melvin and Aziz have
         // months of history and would otherwise meet a dozen unlock screens in

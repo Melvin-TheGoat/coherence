@@ -63,7 +63,11 @@ struct SessionResultsView: View {
     @State private var pendingRoute: ResultRoute?
     @State private var paywallPlan: SubscriptionPlan = .monthly
 
-    private var entitlements: Entitlements { store.entitlements }
+    /// Whether the invite reward covers THIS session (`RewardLedger.cover`,
+    /// asked once in `load`). The grant unlocks the evidence for a session,
+    /// never the app.
+    @State private var covered = false
+    private var entitlements: Entitlements { store.entitlements.granting(covered) }
 
     enum ResultRoute: Identifiable {
         case share
@@ -120,6 +124,7 @@ struct SessionResultsView: View {
                                     .id(ResultsTourStage.breathing)
                             }
                             if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
+                            if covered, !store.entitlements.paid { tourDim(grantChip, lit: nil) }
                             tourDim(shareButton, lit: nil)
                             tourDim(postButton, lit: nil)
                         } else {
@@ -324,6 +329,22 @@ struct SessionResultsView: View {
         }
         .buttonStyle(PrimaryButtonStyle())
         .padding(.top, 2)
+    }
+
+    /// The grant, named where it applies, with the balance after this one.
+    private var grantChip: some View {
+        let left = store.ledger?.remaining ?? 0
+        return HStack(spacing: 8) {
+            Image(systemName: "person.2").foregroundStyle(AppColor.calmAccent)
+            Text(left == 0
+                 ? "Evidence from a friend you brought. This was the last session on it."
+                 : "Evidence from a friend you brought · \(left) session\(left == 1 ? "" : "s") left")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1))
     }
 
     private func metaLine(_ session: Session) -> String {
@@ -980,6 +1001,9 @@ struct SessionResultsView: View {
         let sid = sessionID
         session = try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == sid })).first
         stats = try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == sid })).first
+        if let session, stats != nil {
+            covered = store.entitlements(for: session.id, startedAt: session.startedAt).evidenceGranted
+        }
         if let reflection = SessionStore.reflection(for: sid, in: context) {
             rating = Double(reflection.rating ?? 5)
             note = reflection.note

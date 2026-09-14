@@ -35,21 +35,31 @@ enum CardSkin: String, CaseIterable, Identifiable {
 /// file rather than in fifteen `if` statements.
 struct Entitlements {
     let paid: Bool
+    /// This one session's evidence is covered by the invite reward
+    /// (`RewardLedger.cover`). Unlocks exactly what paid unlocks on the
+    /// results screen and the share card, and nothing else: no guided track,
+    /// no skins. Per session, never app-wide.
+    var evidenceGranted: Bool = false
 
     /// The three signal curves on the results screen.
-    var curves: Bool { paid }
+    var curves: Bool { paid || evidenceGranted }
     /// Metric tiles, the resonance chip, and the per-curve readings. Anything
     /// that puts a measured NUMBER in front of the user.
-    var metrics: Bool { paid }
+    var metrics: Bool { paid || evidenceGranted }
     /// The guided journey, the only content 808 owns. Nature, frequency and
     /// silence are free, and so is outside audio.
     var guidedTrack: Bool { paid }
     /// Curves drawn inside the share card. Locked for the same reason the
     /// in-app curves are: otherwise screenshotting your own card is the way
     /// around the lock.
-    var shareCurves: Bool { paid }
+    var shareCurves: Bool { paid || evidenceGranted }
 
     func canUse(_ skin: CardSkin) -> Bool { paid || skin == .free }
+
+    /// The same entitlements with one session's grant applied.
+    func granting(_ covered: Bool) -> Entitlements {
+        Entitlements(paid: paid, evidenceGranted: covered)
+    }
 
     /// Everything unlocked. The state the app is in whenever it cannot sell.
     static let unlocked = Entitlements(paid: true)
@@ -122,5 +132,16 @@ extension Store {
         }
         #endif
         return Entitlements.resolve(state: state, entitled: entitled)
+    }
+
+    /// Entitlements for ONE session, with the invite reward applied. Asking
+    /// consumes a session of the grant the first time a new session asks (see
+    /// `RewardLedger.cover`); a payer's grant is left untouched because the
+    /// screen is already open.
+    @MainActor
+    func entitlements(for sessionID: UUID, startedAt: Date) -> Entitlements {
+        let base = entitlements
+        guard !base.paid, let ledger else { return base }
+        return base.granting(ledger.cover(sessionID: sessionID, startedAt: startedAt))
     }
 }

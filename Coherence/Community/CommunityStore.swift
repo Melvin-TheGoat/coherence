@@ -143,6 +143,29 @@ actor CommunityStore {
         }
     }
 
+    /// The facts the invite reward reads, one per friend: whether my edge is
+    /// the older one (I asked, they accepted) and whether their profile shows
+    /// a first session.
+    func friendFacts() async throws -> [InviteReward.FriendFact] {
+        let mine = try await me()
+        let out = try await db.query(CommunityQuery(type: CommunityType.edge,
+                                                    filters: [.equals("from", .reference(mine))], limit: 500))
+        let inn = try await db.query(CommunityQuery(type: CommunityType.edge,
+                                                    filters: [.equals("to", .reference(mine))], limit: 500))
+        let sent = Dictionary(out.compactMap(FriendEdge.init(record:)).map { ($0.to, $0.createdAt) },
+                              uniquingKeysWith: { a, _ in a })
+        let received = Dictionary(inn.compactMap(FriendEdge.init(record:)).map { ($0.from, $0.createdAt) },
+                                  uniquingKeysWith: { a, _ in a })
+        var facts: [InviteReward.FriendFact] = []
+        for id in try await friends() {
+            guard let mineAt = sent[id], let theirsAt = received[id] else { continue }
+            let profile = try await db.fetch(id).flatMap(Profile.init(record:))
+            facts.append(.init(id: id, iAskedFirst: mineAt < theirsAt,
+                               hasFirstSession: profile?.firstSessionAt != nil))
+        }
+        return facts
+    }
+
     /// Profile record names of everyone with edges in BOTH directions, minus
     /// anyone blocked either way.
     func friends() async throws -> [String] {

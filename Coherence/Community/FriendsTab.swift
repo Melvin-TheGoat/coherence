@@ -325,6 +325,48 @@ private struct EmptyFeed: View {
     }
 }
 
+// MARK: - The reward landing
+
+/// Shown once when a friend you invited has accepted and sat their first
+/// session (`CommunityModel.checkRewards`). Names the friend, states the
+/// grant, and nothing more.
+struct InviteRewardSheet: View {
+    let news: CommunityModel.RewardNews
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: Store
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("🙏").font(.system(size: 36)).padding(.top, 8)
+            Text("\(news.friendName) sat their first session")
+                .font(AppFont.title)
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Text(store.entitlements.paid
+                 ? "You brought them here. The Brought a friend award is on your shelf, and \(news.remaining) sessions of full evidence are banked in case your membership ever lapses."
+                 : "You brought them here. Your next \(news.remaining) sessions show the full evidence: every curve, every reading.")
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            if !store.entitlements.paid {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.2").foregroundStyle(AppColor.calmAccent)
+                    Text("\(news.remaining) sessions of evidence · starts with your next sit")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.calmAccent)
+                }
+                .padding(.horizontal, 12).padding(.vertical, 9)
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(AppColor.calmAccent.opacity(0.5), lineWidth: 1))
+            }
+            Spacer(minLength: 0)
+            Button("Nice") { dismiss() }
+                .buttonStyle(PrimaryButtonStyle())
+        }
+        .padding(AppMetrics.screenPadding)
+        .screenBackground()
+    }
+}
+
 // MARK: - Invite
 
 /// The system share sheet with the App Store link and the handle to search.

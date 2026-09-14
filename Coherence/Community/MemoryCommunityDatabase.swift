@@ -70,6 +70,17 @@ enum DemoCommunity {
         let lena = CommunityStore(database: db)
         try? await lena.claimUsername("lena", displayName: "Lena")
 
+        // Sam: I asked, Sam accepted, Sam sat. The reward case.
+        db.user = "_demo_sam"
+        let sam = CommunityStore(database: db)
+        try? await sam.claimUsername("sam_p", displayName: "Sam")
+        try? await sam.markFirstSession(at: Date().addingTimeInterval(-600))
+
+        db.user = "_demo_me"
+        try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_sam"))
+        db.user = "_demo_sam"
+        try? await sam.accept(CommunityNames.profile(user: "_demo_me"))
+
         db.user = "_demo_me"
         try? await me.accept(CommunityNames.profile(user: "_demo_melvin"))
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_lena"))

@@ -149,12 +149,13 @@ Rewarding the INVITER with your own digital content is common and accepted
   `Entitlements` as `paid || grantRemaining > 0`. Ten per friend, stacking,
   capped at 50 outstanding so a burst of invites cannot mint a year of
   premium.
-- **Paid users get an award and a skin.** A "Brought a friend" award on the
-  shelf (the `AwardEngine` "did this ever happen" rule applies) and a fifth
-  share-card skin, **Circle**, only earnable this way. Paid users already
-  have the evidence; what they lack is a way to show they brought people.
-  Comping subscription time is possible later through one-time offer codes
-  but is manual per code, so not v1.
+- **Everyone gets the "Brought a friend" award** (the `AwardEngine` "did
+  this ever happen" rule applies; `friendBroughtAt` is the first payout
+  date). **Paid users also bank the ten sessions**, which only matter if
+  the membership lapses; they have nothing else to unlock. The Circle skin
+  first proposed for them is NOT built: `CardSkin` exists as an enum with
+  no drawing behind it, so a skin reward would mean building the skin
+  system first. Revisit when skins are real.
 - **Both tiers:** the profile shows the friend count only to you. No public
   counts, ever (Aziz).
 
@@ -203,8 +204,8 @@ Pages) can come later and would open straight to the friend's profile.
 3. Screens: `FriendsTab` replaces `SearchTab` (feed, requests, search,
    empty state), `PostComposer` off results, `FriendProfileView`,
    `CommunityRulesSheet`, `InviteSheet`.
-4. Reward: the grant in `Preferences`, `Entitlements` reads it, the award,
-   the Circle skin.
+4. Reward: the grant in `Preferences` (`RewardLedger`), `Entitlements`
+   reads it per session, the award. BUILT 2026-09-14.
 5. Moderation: word list, sensitive content check, report script
    (`tools/community-reports.gs`, deployed once, edited only as new
    versions of that deployment).
