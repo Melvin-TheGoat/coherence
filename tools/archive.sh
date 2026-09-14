@@ -139,3 +139,18 @@ fi
 echo
 echo "Upload: Xcode → Window → Organizer → Distribute App, or drop the .ipa"
 echo "into Transporter. Both want the App Store Connect record to exist first."
+
+# The things App Store Connect needs that no archive can check. Printed every
+# time so a submission never goes out with an open item nobody remembered.
+CHECKLIST="RELEASE_CHECKLIST.md"
+if [ -f "$CHECKLIST" ]; then
+  OPEN="$(awk '/^## OPEN/{f=1;next} /^## /{f=0} f' "$CHECKLIST" | grep -E '^- \[ \]' || true)"
+  echo
+  if [ -n "$OPEN" ]; then
+    echo "BEFORE YOU SUBMIT: open items in $CHECKLIST"
+    echo "$OPEN" | sed -E 's/^- \[ \] \*\*([^*]+)\*\*.*/  [ ] \1/'
+    echo "  Read the file for the exact steps. Then the ALWAYS list."
+  else
+    echo "No open items in $CHECKLIST. Still run its ALWAYS list."
+  fi
+fi

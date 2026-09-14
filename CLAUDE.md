@@ -1491,6 +1491,16 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   `Transaction.updates`, which `Store` already listens to.
 - `PREVIEW_TAB=guide|search|profile` (DEBUG) opens the app on a tab.
 
+## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
+
+Aziz: "before we push, make sure you tell us to check if these are done."
+**Before archiving, uploading or submitting any build, read
+`RELEASE_CHECKLIST.md` aloud with the user and walk its OPEN and ALWAYS
+lists.** Do not press "Add for Review" with an OPEN item unticked unless the
+user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
+items at the end of every run. Anything learned mid-session that must happen
+at submission goes into OPEN the moment it's learned, not into a summary.
+
 ## BACKLOG.md IS THE LIST (2026-09-12)
 
 Melvin: "I am saying a lot and not finishing much." Every decision, request
