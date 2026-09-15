@@ -450,3 +450,61 @@ private final class FailingProfileSaveDatabase: CommunityDatabase {
     func query(_ query: CommunityQuery) async throws -> [CKRecord] { try await inner.query(query) }
     func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
 }
+
+final class InviteFarmingTests: XCTestCase {
+    /// Adding someone who already practised before you asked is not bringing
+    /// them: no reward, however long you stay friends.
+    func test_friendWhoSatBeforeTheRequestIsNotRewarded() async throws {
+        let db = MemoryCommunityDatabase(user: "_old")
+        let old = CommunityStore(database: db); _ = try await old.me()
+        try await old.claimUsername("veteran", displayName: "V")
+        try await old.markFirstSession(at: Date(timeIntervalSince1970: 1_000))
+        db.user = "_me"
+        let me = CommunityStore(database: db); _ = try await me.me()
+        try await me.sendRequest(to: CommunityNames.profile(user: "_old"))
+        db.user = "_old"
+        try await old.accept(CommunityNames.profile(user: "_me"))
+        db.user = "_me"
+        let facts = try await me.friendFacts()
+        XCTAssertEqual(facts.first?.iAskedFirst, true)
+        XCTAssertEqual(facts.first?.hasFirstSession, false, "their first session predates my request")
+    }
+
+    func test_friendWhoSatAfterTheRequestIsRewarded() async throws {
+        let db = MemoryCommunityDatabase(user: "_new")
+        let new = CommunityStore(database: db); _ = try await new.me()
+        try await new.claimUsername("newbie", displayName: "N")
+        db.user = "_me"
+        let me = CommunityStore(database: db); _ = try await me.me()
+        try await me.sendRequest(to: CommunityNames.profile(user: "_new"))
+        db.user = "_new"
+        try await new.accept(CommunityNames.profile(user: "_me"))
+        try await new.markFirstSession(at: Date().addingTimeInterval(5))
+        db.user = "_me"
+        let facts = try await me.friendFacts()
+        XCTAssertEqual(facts.first?.hasFirstSession, true)
+    }
+}
+
+@MainActor
+final class PostRemovalTests: XCTestCase {
+    /// Deleting a session's post from the feed tells the app which session,
+    /// so its "Friends can see this" chip stops lying.
+    func test_deletingASessionPostReportsTheSession() async throws {
+        let db = MemoryCommunityDatabase(user: "_me")
+        let model = CommunityModel(store: CommunityStore(database: db))
+        await model.load()
+        _ = await model.claim("poster", displayName: "P")
+        let session = UUID()
+        let selfie = FileManager.default.temporaryDirectory.appendingPathComponent("rm-test.jpg")
+        try Data([0xFF, 0xD8, 0xFF]).write(to: selfie)
+        let ok = await model.post(.init(score: 70, minutes: 10, streak: 1, technique: nil, caption: "",
+                                        photoURL: selfie, practicedAt: Date(), sessionID: session.uuidString))
+        XCTAssertTrue(ok)
+        var told: UUID?
+        model.onPostRemoved = { told = $0 }
+        await model.deletePost(CommunityStore.postID(forSession: session.uuidString))
+        XCTAssertEqual(told, session)
+        XCTAssertTrue(model.feed.isEmpty)
+    }
+}

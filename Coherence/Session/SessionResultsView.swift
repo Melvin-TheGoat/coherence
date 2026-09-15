@@ -182,6 +182,14 @@ struct SessionResultsView: View {
                     }
                 }
             }
+            // A free user's invite grant is decided per session, and while the
+            // store is still loading everyone reads as paid. Re-decide when it
+            // settles, or a covered session would open locked.
+            .onChange(of: store.state) { _, _ in
+                if let session, stats != nil {
+                    covered = store.entitlements(for: session.id, startedAt: session.startedAt).evidenceGranted
+                }
+            }
             .onAppear {
                 load()
                 Analytics.track(stats == nil ? .resultMissing : .resultViewed)
@@ -1009,7 +1017,10 @@ struct SessionResultsView: View {
             note = reflection.note
             technique = reflection.technique
             techniqueNote = reflection.techniqueNote
-            reflectionSaved = true
+            // Save session creates a reflection with no rating. Treating that
+            // row as a saved reflection put a 5/10 nobody gave on the share
+            // card; it counts once there is a rating or a note.
+            reflectionSaved = reflection.rating != nil || !reflection.note.isEmpty
         } else if session?.mode == SessionMode.guided.rawValue {
             // The app knows what they practised; don't make them say it.
             technique = MeditationMethod.guidedID

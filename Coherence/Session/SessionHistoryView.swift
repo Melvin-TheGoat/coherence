@@ -105,8 +105,11 @@ struct ProfileTab: View {
         HStack(spacing: 8) {
             Button { editingProfile = true } label: { Label("Edit profile", systemImage: "pencil") }
                 .buttonStyle(SecondaryButtonStyle())
-            InviteButton(username: community.profile?.username ?? currentUser?.username ?? "", style: .quiet,
-                         title: "Share profile")
+            // Only a reserved handle is worth sending: an empty or cosmetic
+            // one would invite a friend to search for nothing.
+            if let handle = community.profile?.username, !handle.isEmpty {
+                InviteButton(username: handle, style: .quiet, title: "Share profile")
+            }
         }
         .sheet(isPresented: $editingProfile) {
             NavigationStack {

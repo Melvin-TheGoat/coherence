@@ -48,6 +48,10 @@ final class CommunityModel: ObservableObject {
     /// The earliest session on this phone, supplied by the app (the model
     /// has no SwiftData access of its own).
     var firstLocalSession: (() -> Date?)?
+    /// Told when one of my posts is deleted from the feed, so the session it
+    /// belonged to stops saying "Friends can see this". Receives the session
+    /// id. Supplied by the app, which owns SwiftData.
+    var onPostRemoved: ((UUID) -> Void)?
 
     init(store: CommunityStore?, demo: Bool = false, ledger: RewardLedger? = nil) {
         self.store = store; self.demo = demo; self.ledger = ledger
@@ -150,6 +154,13 @@ final class CommunityModel: ObservableObject {
     }
 
     func person(_ id: String) -> Profile? { people[id] }
+
+    /// Loads one profile into the cache (a profile page opened for someone
+    /// the lists never mentioned).
+    func loadPerson(_ id: String) async {
+        guard people[id] == nil, let store, let p = try? await store.profile(named: id) else { return }
+        people[id] = p
+    }
 
     // MARK: - Username
 
@@ -282,7 +293,13 @@ final class CommunityModel: ObservableObject {
 
     func deletePost(_ id: String) async {
         guard let store else { return }
-        do { try await store.deletePost(id); feed.removeAll { $0.id == id } } catch { errorText = Self.plain(error) }
+        do {
+            try await store.deletePost(id)
+            feed.removeAll { $0.id == id }
+            if id.hasPrefix("post-"), let session = UUID(uuidString: String(id.dropFirst(5))) {
+                onPostRemoved?(session)
+            }
+        } catch { errorText = Self.plain(error) }
     }
 
     func hasReacted(to postID: String) -> Bool {

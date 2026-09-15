@@ -607,7 +607,7 @@ struct PersonView: View {
 
     @State private var relationship: CommunityStore.Relationship = .none
     @State private var posts: [Post] = []
-    @State private var reporting = false
+    @State private var reportTarget: ReportSheet.Target?
     @State private var confirmBlock = false
     @State private var busy = false
 
@@ -635,7 +635,10 @@ struct PersonView: View {
 
                 if relationship == .friends || isMe {
                     HStack(spacing: 6) {
-                        statTile(posts.first.map { "\($0.streak)" } ?? "–", "Streak")
+                        // A post's streak is the streak on the day it was sat.
+                        // Only the last day or so still describes today.
+                        statTile(posts.first.flatMap { Date().timeIntervalSince($0.practicedAt) < 36 * 3600 ? "\($0.streak)" : nil } ?? "–",
+                                 "Streak")
                         statTile("\(posts.count)", "Posts")
                         statTile(posts.isEmpty ? "–" : "\(posts.map(\.score).reduce(0, +) / posts.count)", "Avg score")
                     }
@@ -646,7 +649,7 @@ struct PersonView: View {
                 if !posts.isEmpty {
                     SectionHeader(title: "Posts").padding(.top, 6)
                     ForEach(posts) { post in
-                        PostCard(post: post, model: model) { reporting = true }
+                        PostCard(post: post, model: model) { reportTarget = .post(post.id) }
                     }
                 } else if relationship != .friends && !isMe {
                     Text("Posts show once you are friends.")
@@ -665,7 +668,7 @@ struct PersonView: View {
                         if relationship == .friends {
                             Button("Remove friend") { Task { await model.remove(id); await reload() } }
                         }
-                        Button("Report", role: .destructive) { reporting = true }
+                        Button("Report", role: .destructive) { reportTarget = .profile(id) }
                         Button("Block", role: .destructive) { confirmBlock = true }
                     } label: {
                         Image(systemName: "ellipsis").foregroundStyle(AppColor.textSecondary)
@@ -673,7 +676,7 @@ struct PersonView: View {
                 }
             }
         }
-        .sheet(isPresented: $reporting) { ReportSheet(target: .profile(id), model: model) }
+        .sheet(item: $reportTarget) { target in ReportSheet(target: target, model: model) }
         .confirmationDialog("Block \(profile?.displayName ?? "this person")?", isPresented: $confirmBlock, titleVisibility: .visible) {
             Button("Block", role: .destructive) {
                 Task { await model.block(id); dismiss() }
@@ -685,12 +688,9 @@ struct PersonView: View {
     }
 
     private func reload() async {
+        await model.loadPerson(id)
         relationship = await model.relationship(with: id)
         posts = await model.posts(by: id)
-        if let store = model.store, model.person(id) == nil,
-           let p = try? await store.profile(named: id) {
-            _ = p // cached through the model on the next refresh; header falls back to the handle
-        }
     }
 
     private func statTile(_ value: String, _ label: String) -> some View {

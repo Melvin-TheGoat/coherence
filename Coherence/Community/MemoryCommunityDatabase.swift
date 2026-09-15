@@ -96,12 +96,12 @@ enum DemoCommunity {
         db.user = "_demo_sam"
         let sam = CommunityStore(database: db)
         try? await sam.claimUsername("sam_p", displayName: "Sam")
-        try? await sam.markFirstSession(at: Date().addingTimeInterval(-600))
 
         db.user = "_demo_me"
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_sam"))
         db.user = "_demo_sam"
         try? await sam.accept(CommunityNames.profile(user: "_demo_me"))
+        try? await sam.markFirstSession(at: Date().addingTimeInterval(1))
 
         db.user = "_demo_me"
         try? await me.accept(CommunityNames.profile(user: "_demo_melvin"))

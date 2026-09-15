@@ -1741,6 +1741,18 @@ version, and the traps that cost time:
     block dialog's "undo" now has a Blocked list under Requests; a failed
     profile save releases the handle it reserved; the reward ledger always
     uses the oldest Preferences row.
+  - **Second sweep.** Rules to keep: **never present from ContentView while
+    another cover is up or animating away** (Save session waits in
+    `FriendsHooks` for the live session and any award unlock to clear, then
+    700 ms); **"brought a friend" means their first session is AFTER my
+    request** (otherwise adding a veteran farmed the reward); **every store
+    method that calls `authored` must call `me()` first**. Also fixed: reporting
+    a post from a profile reported the person; deleting your own post leaves
+    the session's chip honest (`onPostRemoved`); an unrated reflection no
+    longer puts 5/10 on the share card; a free user's grant is re-decided when
+    the store finishes loading; a network error while claiming no longer reads
+    as "taken"; Share profile needs a reserved handle; profile pages load
+    uncached people; a friend's streak shows only if their last post is recent.
 
 ## NO SIGN-IN BEFORE THE END OF ONBOARDING; ONBOARDING RESUMES (2026-09-14)
 

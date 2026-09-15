@@ -40,6 +40,13 @@ struct CoherenceApp: App {
             d.fetchLimit = 1
             return (try? mainContext.fetch(d))?.first?.startedAt
         }
+        community.onPostRemoved = { sessionID in
+            if let row = SessionStore.reflection(for: sessionID, in: mainContext) {
+                row.visibility = "private"
+                row.updatedAt = Date()
+                try? mainContext.save()
+            }
+        }
         _community = StateObject(wrappedValue: community)
     }
 

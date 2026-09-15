@@ -146,9 +146,14 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
                                                         atomically: false)
             guard let result = saved[record.recordID] else { throw CommunityError.alreadyExists }
             return try result.get()
-        } catch let error as CKError
-            where error.code == .serverRecordChanged || error.code == .partialFailure {
+        } catch let error as CKError where error.code == .serverRecordChanged {
             throw CommunityError.alreadyExists
+        } catch let error as CKError where error.code == .partialFailure {
+            // Only a conflict on THIS record means the name is taken. A network
+            // or permission failure must surface as itself, not as "taken".
+            let item = error.partialErrorsByItemID?[record.recordID] as? CKError
+            if item?.code == .serverRecordChanged { throw CommunityError.alreadyExists }
+            throw item ?? error
         }
     }
 

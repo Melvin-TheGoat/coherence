@@ -108,6 +108,7 @@ struct ContentView: View {
         .modifier(FriendsHooks(community: community,
                                users: users,
                                sessionActive: coordinator.active != nil,
+                               awardShowing: !unlockQueue.isEmpty,
                                lastSessionID: coordinator.lastSessionID) { id in
             if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
         })
@@ -471,8 +472,18 @@ private struct FriendsHooks: ViewModifier {
     @ObservedObject var community: CommunityModel
     let users: [User]
     let sessionActive: Bool
+    let awardShowing: Bool
     let lastSessionID: UUID?
     let openSave: (UUID) -> Void
+
+    /// A landed session waiting for the screen to be free. Presenting while
+    /// the live-session cover is still animating away, or while an award
+    /// unlock (which fires on the same new session) is up, makes SwiftUI drop
+    /// the presentation, and a dropped item presentation can leave the root's
+    /// sheet stuck. So it waits for both, plus the dismissal animation.
+    @State private var pendingSave: UUID?
+
+    private struct Gate: Equatable { let pending: UUID?; let busy: Bool }
 
     func body(content: Content) -> some View {
         if FeatureFlags.friends {
@@ -484,7 +495,7 @@ private struct FriendsHooks: ViewModifier {
                 // People who finished onboarding before Friends: one required
                 // prompt to create a profile, whenever iCloud says they have none.
                 .fullScreenCover(isPresented: Binding(
-                    get: { community.phase == .needsUsername && !sessionActive },
+                    get: { community.phase == .needsUsername && !sessionActive && !awardShowing },
                     set: { _ in })) {
                     FriendsIntroView(model: community,
                                      suggested: users.first?.username ?? "",
@@ -492,7 +503,14 @@ private struct FriendsHooks: ViewModifier {
                 }
                 // Strava's flow: the session ends on Save session, then results.
                 .onChange(of: lastSessionID) { _, id in
-                    if let id { openSave(id) }
+                    if let id { pendingSave = id }
+                }
+                .task(id: Gate(pending: pendingSave, busy: sessionActive || awardShowing)) {
+                    guard let id = pendingSave, !sessionActive, !awardShowing else { return }
+                    try? await Task.sleep(nanoseconds: 700_000_000)
+                    guard !Task.isCancelled, pendingSave == id else { return }
+                    pendingSave = nil
+                    openSave(id)
                 }
         } else {
             content

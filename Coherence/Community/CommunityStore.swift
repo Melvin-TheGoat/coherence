@@ -225,8 +225,11 @@ actor CommunityStore {
         for id in try await friends() {
             guard let mineAt = sent[id], let theirsAt = received[id] else { continue }
             let profile = try await db.fetch(id).flatMap(Profile.init(record:))
-            facts.append(.init(id: id, iAskedFirst: mineAt < theirsAt,
-                               hasFirstSession: profile?.firstSessionAt != nil))
+            // "Brought" means they sat for the first time AFTER I asked.
+            // Without this, adding someone who has practised for months paid
+            // out as if I had brought them, and could be farmed.
+            let satAfterAsked = profile?.firstSessionAt.map { $0 >= mineAt } ?? false
+            facts.append(.init(id: id, iAskedFirst: mineAt < theirsAt, hasFirstSession: satAfterAsked))
         }
         return facts
     }
@@ -335,6 +338,7 @@ actor CommunityStore {
 
     /// A post by record name, mine or a friend's. nil when it does not exist.
     func post(id: String) async throws -> Post? {
+        _ = try await me()   // `authored` needs the current user to recognise my own records
         guard let record = try await db.fetch(id), authored(record, by: "author") else { return nil }
         return Post(record: record)
     }
@@ -394,6 +398,7 @@ actor CommunityStore {
     /// Reactor profile names for many posts in one query, keyed by post id.
     func reactions(for postIDs: [String]) async throws -> [String: [String]] {
         guard !postIDs.isEmpty else { return [:] }
+        _ = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
                                                         filters: [.isIn("post", postIDs.map { .reference($0) })],
                                                         limit: 1000))
@@ -406,6 +411,7 @@ actor CommunityStore {
 
     /// Who reacted to a post, as profile record names.
     func reactors(to postID: String) async throws -> [String] {
+        _ = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
                                                         filters: [.equals("post", .reference(postID))], limit: 500))
         return records.filter { authored($0, by: "author") }.compactMap(Reaction.init(record:)).map(\.author).sorted()
