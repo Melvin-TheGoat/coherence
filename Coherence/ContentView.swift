@@ -49,6 +49,8 @@ struct ContentView: View {
         /// Save session (Friends): opens when a live session lands, then
         /// chains into its results.
         case save(UUID)
+        /// A session the Watch ended without a score (too short, unreadable).
+        case discarded(SessionCoordinator.Discard)
 
         var id: String {
             switch self {
@@ -56,6 +58,7 @@ struct ContentView: View {
             case .settings: return "settings"
             case .results(let id): return "results-\(id)"
             case .save(let id): return "save-\(id)"
+            case .discarded(let d): return "discarded-\(d.id)"
             }
         }
     }
@@ -105,6 +108,10 @@ struct ContentView: View {
         }
         .onAppear(perform: refreshAwards)
         .onChange(of: sessions.count) { _, _ in refreshAwards() }
+        .modifier(DiscardHook(discard: coordinator.lastDiscard,
+                              sessionActive: coordinator.active != nil) { d in
+            if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
+        })
         .modifier(FriendsHooks(community: community,
                                users: users,
                                sessionActive: coordinator.active != nil,
@@ -141,6 +148,9 @@ struct ContentView: View {
             }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
+            }
+            if let secs = ProcessInfo.processInfo.environment["PREVIEW_TOO_SHORT"].flatMap(Int.init), sheet == nil {
+                sheet = .discarded(.init(id: UUID(), durationSec: secs))
             }
             if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
                 sheet = .save(DemoData.seedResults(in: context))
@@ -187,6 +197,10 @@ struct ContentView: View {
                     pendingSheet = .results(id)
                     sheet = nil
                 }
+            case .discarded(let discard):
+                SessionTooShortView(discard: discard,
+                                    onStartAgain: { pendingSheet = .setup; sheet = nil },
+                                    onDone: { sheet = nil })
             }
         }
     }
@@ -514,6 +528,30 @@ private struct FriendsHooks: ViewModifier {
                 }
         } else {
             content
+        }
+    }
+}
+
+
+/// Opens "Too short to score" once the live-session cover has gone. The payload
+/// that says so arrives the same moment the cover is torn down, and presenting
+/// during that animation is the dropped-presentation trap (see FriendsHooks).
+private struct DiscardHook: ViewModifier {
+    let discard: SessionCoordinator.Discard?
+    let sessionActive: Bool
+    let open: (SessionCoordinator.Discard) -> Void
+
+    @State private var shown: UUID?
+
+    private struct Gate: Equatable { let id: UUID?; let busy: Bool }
+
+    func body(content: Content) -> some View {
+        content.task(id: Gate(id: discard?.id, busy: sessionActive)) {
+            guard let d = discard, d.id != shown, !sessionActive else { return }
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled else { return }
+            shown = d.id
+            open(d)
         }
     }
 }

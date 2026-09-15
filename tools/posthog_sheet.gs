@@ -145,6 +145,8 @@ function writeOverview() {
     ['Saw their score', "event = 'result_viewed'", 'people', 'Opened a result with measurements behind it'],
     ['Result missing (ALARM)', "event = 'result_missing'", 'events', 'Opened a result with no measurements. Should be zero.'],
     ['Sessions failed to start', "event = 'session_start_failed'", 'events', 'Watch unreachable, not paired, no heart rate…'],
+    ['Sessions too short to score', "event = 'session_discarded' AND toString(properties.reason) = 'too_short'", 'events', 'Begin then End inside 30 seconds. An accident, not a failure; nothing was saved.'],
+    ['Sessions the Watch could not read', "event = 'session_discarded' AND toString(properties.reason) = 'unreadable'", 'events', 'Ran 30 seconds or more but came back with no readings. Worth watching.'],
     ['Tapped a lock', "event = 'locked_tapped'", 'people', 'Wanted to see something behind the paywall'],
     ['Saw the paywall', "event = 'paywall_viewed'", 'people', ''],
     ['Started a trial', "event = 'trial_started'", 'people', '7-day free week on monthly or yearly'],

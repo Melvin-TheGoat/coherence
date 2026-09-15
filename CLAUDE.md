@@ -1639,6 +1639,15 @@ Read this first after a context reset; the sections below carry the detail.
   entitlement, deploying `tools/community-reports.gs`, age rating, privacy
   labels, policy and terms, store screenshots, flipping the flag, TestFlight
   on two real phones. Nothing but the username claim has run on real iCloud.
+- **Short sessions (2026-09-14):** PostHog showed two "broken" sessions; they
+  were Aziz tapping Begin then End within seconds. The Watch already discards
+  anything under `SessionStore.minDurationSec` (30 s), but the phone showed
+  nothing and logged nothing, so a start with no ending looked broken. Now
+  `SessionCoordinator.lastDiscard` opens `SessionTooShortView` (via
+  `DiscardHook`, after the live cover is gone) and `session_discarded` is
+  tracked with reason `too_short` (an accident, never a failure) or
+  `unreadable`. `tools/posthog_sheet.gs` gained both rows on the Overview;
+  paste the updated script into Apps Script for the sheet to show them.
 - **808 Dev on Aziz's phone** is from before the selfie change; rebuild with
   the plist-swap recipe (display name "808 Dev", restore plists after) if he
   wants to try it.

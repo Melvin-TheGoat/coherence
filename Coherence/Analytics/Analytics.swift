@@ -36,6 +36,9 @@ enum Analytics {
         // Core loop
         case sessionStarted(source: String, sound: String)   // source: "phone" | "watch"
         case sessionCompleted(durationBand: String, streakBand: String)
+        /// A session the Watch ended but did not score: "too_short" (under the
+        /// minimum, an accidental Begin/End, not a failure) or "unreadable".
+        case sessionDiscarded(reason: String, durationBand: String)
         case sessionStartFailed(reason: String)
         case resultViewed
         case resultMissing                        // a session ended with no stats: the failure metric
@@ -94,6 +97,7 @@ enum Analytics {
             case .watchGate: "watch_gate"
             case .sessionStarted: "session_started"
             case .sessionCompleted: "session_completed"
+            case .sessionDiscarded: "session_discarded"
             case .sessionStartFailed: "session_start_failed"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
@@ -138,6 +142,7 @@ enum Analytics {
             case .watchGate(let outcome): ["outcome": outcome]
             case .sessionStarted(let source, let sound): ["source": source, "sound": sound]
             case .sessionCompleted(let d, let s): ["duration": d, "streak": s]
+            case .sessionDiscarded(let reason, let d): ["reason": reason, "duration": d]
             case .sessionStartFailed(let reason): ["reason": reason]
             case .paywallViewed(let placement): ["placement": placement]
             case .purchase(let plan): ["plan": plan]
@@ -290,6 +295,7 @@ enum Analytics {
     /// Coarse bands, so a property can never reconstruct a precise value.
     static func durationBand(seconds: Int) -> String {
         switch seconds {
+        case ..<30: "under30s"
         case ..<180: "under3m"
         case ..<420: "3to7m"
         case ..<720: "7to12m"

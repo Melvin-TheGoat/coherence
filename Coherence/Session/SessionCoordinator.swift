@@ -21,6 +21,16 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// to persist. The onboarding walkthrough listens so its "scoring it"
     /// state can resolve honestly instead of waiting forever.
     @Published var lastDiscardedID: UUID?
+    /// The same event with what the "too short" screen needs. Separate from
+    /// `lastDiscardedID` so the walkthrough's listener is untouched.
+    @Published var lastDiscard: Discard?
+
+    struct Discard: Identifiable, Equatable {
+        let id: UUID
+        let durationSec: Int
+        /// Under the minimum (an accident) rather than long but unreadable.
+        var tooShort: Bool { durationSec < SessionStore.minDurationSec }
+    }
     /// True once the Watch has ACKED the current attempt's actual workout
     /// start. `active` alone is a phone-side guess: `startWatchApp`'s callback
     /// fires seconds (a cold Watch: tens of seconds) before the wrist really
@@ -388,6 +398,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
             if isCurrent {
                 status = "Session discarded (too short / unreadable)"
                 lastDiscardedID = payload.sessionID
+                let discard = Discard(id: payload.sessionID, durationSec: payload.durationSec)
+                lastDiscard = discard
+                // Its own event, NOT a failure: a Begin-then-End by accident is
+                // not a broken session and must not read as one on the
+                // dashboard. Long-but-unreadable is tracked apart from it.
+                Analytics.track(.sessionDiscarded(reason: discard.tooShort ? "too_short" : "unreadable",
+                                                  durationBand: Analytics.durationBand(seconds: payload.durationSec)))
             }
             return
         }

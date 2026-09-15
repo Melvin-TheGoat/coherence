@@ -22,6 +22,10 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
   has only "Let's find out"; quit mid-interview and relaunch lands on the
   same question.
 - Everything already listed for 1.0.2 (no-Watch waitlist, Watch fixes).
+- **"Too short to score" screen** (Aziz, 2026-09-14): a session ended under
+  30 seconds now says so instead of silently vanishing, and logs
+  `session_discarded` (reason `too_short` or `unreadable`) instead of looking
+  like a broken session. Check on a device: Begin, End within a few seconds.
 - Melvin's onboarding round 2 (merged 2026-09-14).
 - **Friends is compiled in but OFF** (`FeatureFlags.friendsInRelease = false`,
   locked by `FeatureFlagTests`). The tab reads Search with "Friends are
