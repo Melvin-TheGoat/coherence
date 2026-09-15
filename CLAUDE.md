@@ -1603,6 +1603,46 @@ user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
 items at the end of every run. Anything learned mid-session that must happen
 at submission goes into OPEN the moment it's learned, not into a summary.
 
+## RESUME HERE (end of 2026-09-14): state of play in one screen
+
+Read this first after a context reset; the sections below carry the detail.
+
+- **Branch `mvp`, pushed, clean.** 295 tests green. Release build compiles.
+- **App Store:** 1.0.1 is live. 1.0.2 build 202609141719 was uploaded and is
+  HELD (predates everything below; the next release needs a NEW archive).
+  Do not submit anything until Aziz says so, and walk RELEASE_CHECKLIST.md
+  with him first (it now lists what the next build contains and the CloudKit
+  schema promotion it requires).
+- **Next App Store build ships:** onboarding without the screen-one sign-in
+  link, onboarding resume, the no-Watch waitlist pipe, the Watch fixes,
+  Melvin's onboarding round 2. **Friends is compiled in but OFF**
+  (`FeatureFlags.friendsInRelease = false`).
+- **Friends (1.1) is feature-complete in DEBUG / 808 Dev:** data layer
+  (CloudKit public DB, no server), Friends tab, Save session after every
+  meditation (Friends / Only you, front-camera selfie required for Friends),
+  Create your profile (photo + reserved @username), existing-user prompt,
+  Strava-style cards and profile, invite reward, moderation (text filter,
+  photo screening scaffold, report emails scaffold). Two bug sweeps done
+  (22 bugs fixed; rules recorded under "FRIENDS, SECOND PASS").
+- **Aziz asked for a THIRD bug sweep** after a context compaction. Areas the
+  first two sweeps did not exercise deeply, so start there:
+  `CreateProfileView` + `FriendsIntroView` (every door: onboarding step,
+  Friends tab, Save session sheet, Edit profile), `OnboardingView` routing
+  with `.profile` + resume + sign-out, `SaveSessionView` edit mode and
+  offline behaviour, `ContentFilter` false positives on real names and
+  handles, `RewardLedger` across sign-out / account deletion / a second
+  device, `CommunityModel.load()` being called concurrently from several
+  views, and anything that differs between `MemoryCommunityDatabase` and
+  real CloudKit (indexes, `creatorUserRecordID`, asset URLs expiring).
+- **Still owed for 1.1** (RELEASE_CHECKLIST.md "OPEN for 1.1"): CloudKit
+  public record types and indexes, the Sensitive Content Analysis
+  entitlement, deploying `tools/community-reports.gs`, age rating, privacy
+  labels, policy and terms, store screenshots, flipping the flag, TestFlight
+  on two real phones. Nothing but the username claim has run on real iCloud.
+- **808 Dev on Aziz's phone** is from before the selfie change; rebuild with
+  the plist-swap recipe (display name "808 Dev", restore plists after) if he
+  wants to try it.
+
 ## FRIENDS (1.1, IN PROGRESS, 2026-09-14): where it stands
 
 Aziz: a Strava-style community. Friends, not followers; post a session with
