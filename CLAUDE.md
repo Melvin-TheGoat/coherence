@@ -1873,12 +1873,20 @@ Models, iOS 26, "the data suggests", never a medical claim); and the guided
 sessions in 10/15/20 minutes (Donny cuts now, the ElevenLabs voice library
 on hold because it "is not there yet").
 
-**Side-by-side beta crash, solved:** `CloudStatus.read()` (DEBUG launch
-probe) derived `iCloud.<bundle id>` instead of reading the entitlement, and
-`CKContainer(identifier:)` traps on a container the process does not hold.
-It now reads `com.apple.developer.icloud-container-identifiers` from the
-running task (`SecTaskCopyValueForEntitlement`) and reports "none" instead.
-**Never construct a CKContainer from a guessed identifier.**
+**Side-by-side beta crash, solved TWICE:** `CloudStatus.read()` (DEBUG
+launch probe) derived `iCloud.<bundle id>` instead of reading the
+entitlement, and `CKContainer(identifier:)` traps on a container the process
+does not hold (2026-09-12). Then the friends store did the same thing by a
+different road (2026-09-15): `CloudKitCommunityDatabase.ifEntitled()` trusted
+`Persistence.mode == .cloudKit` and called `CKContainer.default()`, which
+traps identically, and SwiftData reports sync active on the beta because it
+resolves its container lazily. Both now go through `CloudEntitlement`
+(`Coherence/CloudEntitlement.swift`), which reads the binary's own
+`embedded.mobileprovision`; no profile (an App Store build) means trust the
+App ID. **Never construct a CKContainer, default or by identifier, without
+`CloudEntitlement.mayHoldContainer`. `Persistence.mode` is not proof.**
+The beta strips the iCloud entitlement on purpose, so on the beta friends
+show the honest "iCloud unavailable" card and the rest of the app runs.
 
 ## FIRST USER FEEDBACK, ROUND 1 (2026-09-12) and what shipped for it
 

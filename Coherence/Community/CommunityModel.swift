@@ -19,6 +19,12 @@ final class CommunityModel: ObservableObject {
     }
 
     @Published private(set) var phase: Phase = .loading
+    /// Why `phase` is `.unavailable`, so the card can say what to do. A
+    /// build with no CloudKit container (the side-by-side beta with
+    /// NO_ICLOUD, a simulator) is not something the user can fix; a phone
+    /// with no iCloud account is, and the card walks them through it.
+    enum UnavailableReason: Equatable { case noContainer, noAccount }
+    @Published private(set) var unavailableReason: UnavailableReason = .noAccount
     @Published private(set) var profile: Profile?
     @Published private(set) var feed: [Post] = []
     /// Profiles by record name, for everyone the feed and the lists mention.
@@ -98,7 +104,8 @@ final class CommunityModel: ObservableObject {
         // reviewed on a simulator with no iCloud account.
         if demo, store == nil { store = await DemoCommunity.store() }
         #endif
-        guard let store else { phase = .unavailable; return }
+        guard let store else { unavailableReason = .noContainer; phase = .unavailable; return }
+        unavailableReason = .noAccount
         do {
             myID = try await store.me()
             profile = try await store.myProfile()

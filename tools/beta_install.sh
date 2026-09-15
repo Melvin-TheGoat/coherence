@@ -40,11 +40,25 @@ for p,companion in [('Coherence/Info.plist',False),('CoherenceWatch/Info.plist',
         s=re.sub(r'(<key>WKCompanionAppBundleIdentifier</key>\s*<string>)com\.lockout\.meditate808(</string>)', r'\g<1>com.lockout.meditate808.dev\2', s, count=1)
     open(p,'w').write(s)
 PY
-# No iCloud on the beta: the container is named after the bundle ID and a
-# .dev one does not exist. Persistence.cloudKit() falls back to a local store
-# when the entitlement is absent, so the beta simply keeps its own data.
-/usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-container-identifiers" "$ENT" 2>/dev/null || true
-/usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-services" "$ENT" 2>/dev/null || true
+# No iCloud on the beta by default: the entitlement is written
+# iCloud.$(CFBundleIdentifier), which for the .dev bundle names a container
+# that does not exist, so the keys are stripped and the beta keeps its own
+# local data (Friends then show the "this build can't reach iCloud" card).
+#
+# WITH_ICLOUD=1 pins the entitlement to the real container instead, so
+# Friends can be tested side by side (a Debug build talks to CloudKit's
+# DEVELOPMENT environment, never to App Store users' data). Tried
+# 2026-09-15: signing refused ("profile doesn't match the entitlements",
+# plus "No Accounts"), because the .dev App ID has no iCloud capability.
+# Before using it: Xcode > Settings > Accounts signed in, and in the
+# developer portal, Identifiers > com.lockout.meditate808.dev > iCloud >
+# Configure > tick iCloud.com.lockout.meditate808 > Save.
+if [ "${WITH_ICLOUD:-0}" = "1" ]; then
+  /usr/libexec/PlistBuddy -c "Set :com.apple.developer.icloud-container-identifiers:0 iCloud.com.lockout.meditate808" "$ENT"
+else
+  /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-container-identifiers" "$ENT" 2>/dev/null || true
+  /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-services" "$ENT" 2>/dev/null || true
+fi
 "$(command -v xcodegen)" generate >/dev/null 2>&1 || { echo "xcodegen failed"; exit 1; }
 
 B="$(date -u +%Y%m%d%H%M)"

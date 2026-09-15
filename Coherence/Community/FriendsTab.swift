@@ -21,7 +21,7 @@ struct FriendsTab: View {
                     ProgressView().tint(AppColor.calmAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .unavailable:
-                    UnavailableCard()
+                    UnavailableCard(model: model)
                 case .needsUsername:
                     CreateProfileView(model: model,
                                       suggested: user?.username ?? "",
@@ -48,21 +48,85 @@ struct FriendsTab: View {
 
 // MARK: - Unavailable
 
+/// Friends live in the user's iCloud account: no server, so iCloud IS the
+/// identity and the storage. The card says why, then exactly what to do
+/// (Melvin, 2026-09-15: "there's no instructions for this"), and checks
+/// again on request. iOS offers no public link straight to the iCloud
+/// settings page; "Open Settings" lands one tap away from it.
 struct UnavailableCard: View {
+    @ObservedObject var model: CommunityModel
+    @State private var checking = false
+
+    private let steps = [
+        "Open Settings and tap your name at the top. If it says Sign in to your iPhone, tap that.",
+        "Sign in with your Apple Account.",
+        "Under iCloud, make sure iCloud Drive is on.",
+        "Come back here and tap Check again.",
+    ]
+
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             Image(systemName: "icloud.slash")
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 70)
+                .padding(.top, 40)
             Text("Friends need iCloud")
                 .font(AppFont.headline)
                 .foregroundStyle(AppColor.textPrimary)
-            Text("Sign in to iCloud on this iPhone and 808 can find your friends and show what they post.")
+            Text("Your friends, your posts and your username are kept in your own iCloud account. 808 has no server of its own, so there is nowhere else to keep them.")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
+                .padding(.horizontal, 8)
+
+            if model.unavailableReason == .noContainer {
+                Text("This build of 808 can't reach iCloud. The App Store version can.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.accentGoldText)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 8)
+            } else {
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { i, step in
+                        HStack(alignment: .top, spacing: 10) {
+                            Text("\(i + 1)")
+                                .font(AppFont.caption.weight(.bold))
+                                .foregroundStyle(AppColor.accentGoldText)
+                                .frame(width: 18, height: 18)
+                                .background(AppColor.accentGold.opacity(0.15), in: Circle())
+                            Text(step)
+                                .font(AppFont.callout)
+                                .foregroundStyle(AppColor.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+
+                VStack(spacing: 10) {
+                    Button {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    } label: {
+                        Text("Open Settings")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+
+                    Button {
+                        checking = true
+                        Task { await model.load(); checking = false }
+                    } label: {
+                        Text(checking ? "Checking…" : "Check again")
+                    }
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .disabled(checking)
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(AppMetrics.screenPadding)

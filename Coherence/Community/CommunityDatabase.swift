@@ -108,12 +108,17 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
     init(container: CKContainer) { self.container = container }
 
     /// nil unless the process demonstrably holds a CloudKit container.
-    /// `Persistence.cloudKit()` already proved that by building the synced
-    /// store; a guessed identifier traps, so nothing here guesses one
-    /// (see CLAUDE.md, "Never construct a CKContainer from a guessed
-    /// identifier").
+    ///
+    /// `Persistence.mode == .cloudKit` was the only guard until 2026-09-15,
+    /// and it is not proof: SwiftData resolves its container lazily and
+    /// reported sync active on the side-by-side beta, which strips the
+    /// iCloud entitlement, so `CKContainer.default()` trapped at launch
+    /// (SIGTRAP in `CoherenceApp.init`, every open). `CloudEntitlement`
+    /// reads the binary's own profile; `CKContainer.default()` runs only when
+    /// that says a container is held (see CLAUDE.md, "Never construct a
+    /// CKContainer from a guessed identifier").
     static func ifEntitled() -> CloudKitCommunityDatabase? {
-        guard Persistence.mode == .cloudKit else { return nil }
+        guard Persistence.mode == .cloudKit, CloudEntitlement.mayHoldContainer else { return nil }
         return CloudKitCommunityDatabase(container: CKContainer.default())
     }
 

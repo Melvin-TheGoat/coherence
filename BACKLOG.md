@@ -127,6 +127,23 @@ as the one demonstration. That is 33 to about 24 for a newcomer. Separately,
 make the tour's two-minute demo skippable, since it is where the most people
 leave after finishing the interview.
 
+## Friends without iCloud? (Melvin, 2026-09-15, needs a founders' call)
+
+Melvin: "It should be possible without iCloud in my opinion." Where it
+stands: friends have no server by Aziz's decision (CloudKit public database
+of our own container, "no Supabase, no server"), so the user's iCloud
+account IS the identity and the storage. Without iCloud there is nothing to
+post to and nobody to be. Making friends work with no iCloud means a
+backend: accounts, a database, hosting, a privacy policy that names it, and
+a new App Review posture (today we tell Apple there is no server). Nearly
+every iPhone is signed in to iCloud already; the card appears on the beta
+only because the beta build carried no iCloud entitlement, not because of
+Melvin's phone. Done today instead: the card now says why and gives the four
+steps to sign in, with Open Settings and Check again; and the beta build
+keeps iCloud pinned to the real container (CloudKit Development
+environment), so Friends can be tested side by side. Decide: keep no-server,
+or fund a backend.
+
 ## Decided, not started
 
 
@@ -315,6 +332,13 @@ leave after finishing the interview.
   stand in for it. There is no separate 1.0.2 any more.
 
 ## Done (2026-09-15)
+
+- **808 Beta crashed on open** after the friends merge: the friends store
+  called `CKContainer.default()` on a build that carries no iCloud
+  entitlement (the beta strips it on purpose). Crash log confirmed SIGTRAP
+  in `CoherenceApp.init`. Fixed with one shared entitlement reader
+  (`CloudEntitlement`) in front of every CKContainer; friends show the
+  iCloud-unavailable card on the beta instead. Beta reinstalled.
 
 - **Delete a session** (Melvin: "sometimes we create ones and immediately
   end them"). Results screen: the circled-ellipsis menu beside Share, then
