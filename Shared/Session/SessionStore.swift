@@ -243,6 +243,35 @@ enum SessionStore {
         return reflection
     }
 
+    /// The Save session screen's fields: title, the public description and
+    /// who can see it. Leaves the rating alone; the note is the PRIVATE note.
+    @discardableResult
+    static func saveSession(sessionID: UUID, title: String, publicNote: String, privateNote: String,
+                            visibility: String, technique: String?,
+                            in context: ModelContext) -> SessionReflection {
+        let existing = reflection(for: sessionID, in: context)
+        let row = saveReflection(sessionID: sessionID, rating: existing?.rating, note: privateNote,
+                                 technique: technique, techniqueNote: existing?.techniqueNote ?? "",
+                                 in: context)
+        row.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        row.publicNote = publicNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        row.visibility = visibility
+        row.updatedAt = Date()
+        try? context.save()
+        return row
+    }
+
+    /// "Morning meditation" and friends: Strava's default activity name, by
+    /// the hour the session started.
+    static func defaultTitle(for date: Date, calendar: Calendar = .current) -> String {
+        switch calendar.component(.hour, from: date) {
+        case 5..<12:  return "Morning meditation"
+        case 12..<17: return "Afternoon meditation"
+        case 17..<22: return "Evening meditation"
+        default:      return "Night meditation"
+        }
+    }
+
     /// All session start dates for the store (feeds `StreakCalculator`).
     static func sessionStartDates(in context: ModelContext) -> [Date] {
         let descriptor = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.startedAt)])

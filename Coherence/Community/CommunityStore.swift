@@ -296,6 +296,11 @@ actor CommunityStore {
         return Post(record: saved) ?? post
     }
 
+    /// A post by record name, mine or a friend's. nil when it does not exist.
+    func post(id: String) async throws -> Post? {
+        try await db.fetch(id).flatMap(Post.init(record:))
+    }
+
     func deletePost(_ id: String) async throws {
         try await db.delete(id)
     }

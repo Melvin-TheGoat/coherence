@@ -46,12 +46,16 @@ struct ContentView: View {
     private enum HomeSheet: Identifiable {
         case setup, settings
         case results(UUID)
+        /// Save session (Friends): opens when a live session lands, then
+        /// chains into its results.
+        case save(UUID)
 
         var id: String {
             switch self {
             case .setup: return "setup"
             case .settings: return "settings"
             case .results(let id): return "results-\(id)"
+            case .save(let id): return "save-\(id)"
             }
         }
     }
@@ -101,6 +105,11 @@ struct ContentView: View {
         }
         .onAppear(perform: refreshAwards)
         .onChange(of: sessions.count) { _, _ in refreshAwards() }
+        // Strava's flow: the session ends on Save session, then results.
+        .onChange(of: coordinator.lastSessionID) { _, id in
+            guard FeatureFlags.friends, let id else { return }
+            if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
+        }
         .onChange(of: prefsRows.first?.evidenceGrantSince) { _, _ in refreshAwards() }
         // The invite reward landing: a brought friend sat their first session.
         .sheet(item: FeatureFlags.friends ? $community.rewardNews : .constant(nil)) { news in
@@ -134,6 +143,9 @@ struct ContentView: View {
             }
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
+                sheet = .save(DemoData.seedResults(in: context))
             }
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
@@ -172,6 +184,11 @@ struct ContentView: View {
                 SettingsView()
             case .results(let id):
                 SessionResultsView(sessionID: id)
+            case .save(let id):
+                SaveSessionView(sessionID: id, mode: .new) {
+                    pendingSheet = .results(id)
+                    sheet = nil
+                }
             }
         }
     }

@@ -126,7 +126,7 @@ struct SessionResultsView: View {
                             if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
                             if covered, !store.entitlements.paid { tourDim(grantChip, lit: nil) }
                             tourDim(shareButton, lit: nil)
-                            if FeatureFlags.friends { tourDim(postButton, lit: nil) }
+                            if FeatureFlags.friends { tourDim(visibilityChip, lit: nil) }
                         } else {
                             header(session)
                             missingStatsCard
@@ -164,9 +164,7 @@ struct SessionResultsView: View {
                         ShareSessionSheet(data: data, entitlements: entitlements)
                     }
                 case .post:
-                    if let draft = postDraft {
-                        PostComposerView(seed: draft)
-                    }
+                    SaveSessionView(sessionID: sessionID, mode: .edit) { route = nil; load() }
                 case .scoreMeaning:
                     ScoreMeaningSheet(score: stats?.overallScore)
                         .presentationDetents([.medium, .large])
@@ -697,28 +695,28 @@ struct SessionResultsView: View {
         }
     }
 
-    /// Post to friends sits under Share and is always the quiet style: the
-    /// screen's one gold call to action is Share (paid) or the unlock (free).
-    private var postButton: some View {
-        Button {
-            route = .post
-        } label: {
-            Label("Post to friends", systemImage: "person.2")
+    /// Who can see this session, and the way to change it (Save session in
+    /// edit mode). Quiet, never gold: the screen's one gold object is Share
+    /// or the unlock.
+    private var visibilityChip: some View {
+        let shared = currentVisibility == "friends"
+        return Button { route = .post } label: {
+            HStack(spacing: 7) {
+                Image(systemName: shared ? "person.2" : "lock")
+                Text(shared ? "Friends can see this" : "Only you")
+                Text("· Edit").foregroundStyle(AppColor.textSecondary)
+            }
+            .font(AppFont.caption.weight(.semibold))
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .overlay(Capsule().stroke(AppColor.textSecondary.opacity(0.35), lineWidth: 1))
         }
-        .buttonStyle(SecondaryButtonStyle())
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
     }
 
-    /// What a post may carry (COMMUNITY.md): the free share card's fields.
-    /// Built here, from the same rows, so the composer never sees the stats.
-    private var postDraft: CommunityStore.Draft? {
-        guard let session, let stats, let score = stats.overallScore else { return nil }
-        return .init(score: Int((score * 100).rounded()),
-                     minutes: max(1, Int((Double(session.durationSec) / 60).rounded())),
-                     streak: streakDays,
-                     technique: MeditationMethod.label(for: technique),
-                     caption: "",
-                     photoURL: nil,
-                     practicedAt: session.startedAt)
+    private var currentVisibility: String {
+        SessionStore.reflection(for: sessionID, in: context)?.visibility ?? "private"
     }
 
     /// Value snapshot for the share card — built from the rows already loaded,
@@ -904,7 +902,7 @@ struct SessionResultsView: View {
     @ViewBuilder
     private var noteSection: some View {
         if isEditingNote || note.isEmpty {
-            TextField("Add a note…", text: $note, axis: .vertical)
+            TextField(FeatureFlags.friends ? "Add a private note…" : "Add a note…", text: $note, axis: .vertical)
                 // Open-ended upper bound: the field grows with the note instead
                 // of capping and scrolling inside itself.
                 .lineLimit(3...)

@@ -233,9 +233,24 @@ final class CommunityModel: ObservableObject {
         do {
             let p = try await store.post(draft)
             Analytics.track(.postCreated(photo: draft.photoURL != nil))
+            feed.removeAll { $0.id == p.id }
             feed.insert(p, at: 0)
             return true
         } catch { errorText = Self.plain(error); return false }
+    }
+
+    /// The post for a session, if it was shared.
+    func post(forSession sessionID: UUID) async -> Post? {
+        guard let store else { return nil }
+        return try? await store.post(id: CommunityStore.postID(forSession: sessionID.uuidString))
+    }
+
+    /// Takes a session's post down (it went to Only you).
+    func unpost(session sessionID: UUID) async {
+        guard let store else { return }
+        let id = CommunityStore.postID(forSession: sessionID.uuidString)
+        do { try await store.unpost(session: sessionID.uuidString); feed.removeAll { $0.id == id } }
+        catch { errorText = Self.plain(error) }
     }
 
     func deletePost(_ id: String) async {
