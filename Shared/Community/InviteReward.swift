@@ -70,8 +70,14 @@ final class RewardLedger: ObservableObject {
         rewardedFriends = Set(prefs.rewardedFriends)
     }
 
+    /// The OLDEST Preferences row, always. There can be more than one (the
+    /// bootstrap row and a synced one), and an unsorted `.first` can differ
+    /// between fetches, so a grant written to one row could be read from
+    /// another. The award reads the earliest grant date across all rows.
     private func prefs() -> Preferences? {
-        (try? context.fetch(FetchDescriptor<Preferences>()))?.first
+        var d = FetchDescriptor<Preferences>(sortBy: [SortDescriptor(\.createdAt)])
+        d.fetchLimit = 1
+        return (try? context.fetch(d))?.first
     }
 
     /// Pays out for one friend. Returns the new balance, or nil when this

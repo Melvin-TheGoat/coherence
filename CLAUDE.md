@@ -1722,6 +1722,25 @@ version, and the traps that cost time:
 - The photo-screening entitlement and the report endpoint are intentionally
   absent until 1.1 so the Friends-off build does not change entitlements or
   send anything; both are on the 1.1 checklist.
+- **Bug sweep, same night. Two rules came out of it; hold them:**
+  - **Never trust an author field in the public database.** Anyone can create
+    a record and put any profile in `author` / `from`. `CommunityStore
+    .authored(_:by:)` checks it against CloudKit's own `creatorUserRecordID`
+    (`__defaultOwner__` for your own records) on every post, edge, reaction
+    and block that is read. New record types that carry an author must use it.
+  - **`CKDatabase.save` is not an upsert.** A freshly built record whose name
+    already exists fails. `CloudKitCommunityDatabase.save` uses
+    `modifyRecords(savePolicy: .allKeys)`. `MemoryCommunityDatabase` never
+    modelled the conflict, so tests could not catch it: think about real
+    CloudKit semantics, not only the fake.
+  - Also fixed: re-sending a request no longer resets its date (it decides
+    the invite reward); a friend's first session is stamped even if sat
+    before their profile existed; the entitled-payer paywall skip moved into
+    `go()` (the view version double-advanced after a purchase); Save session
+    is usable before iCloud answers and can't post a scoreless session; the
+    block dialog's "undo" now has a Blocked list under Requests; a failed
+    profile save releases the handle it reserved; the reward ledger always
+    uses the oldest Preferences row.
 
 ## NO SIGN-IN BEFORE THE END OF ONBOARDING; ONBOARDING RESUMES (2026-09-14)
 

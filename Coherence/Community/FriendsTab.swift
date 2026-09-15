@@ -529,7 +529,7 @@ struct RequestsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
-                if model.incoming.isEmpty && model.sent.isEmpty {
+                if model.incoming.isEmpty && model.sent.isEmpty && model.blocked.isEmpty {
                     Text("No requests right now.")
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.textSecondary)
@@ -568,13 +568,32 @@ struct RequestsView: View {
                         }
                     }
                 }
+                if !model.blocked.isEmpty {
+                    SectionHeader(title: "Blocked").padding(.top, 14)
+                    ForEach(model.blocked, id: \.self) { id in
+                        HStack {
+                            Text(model.person(id).map { $0.displayName.isEmpty ? "@" + $0.username : $0.displayName } ?? "Someone")
+                                .font(AppFont.callout.weight(.semibold))
+                                .foregroundStyle(AppColor.textPrimary)
+                            Spacer()
+                            Button("Unblock") { Task { await model.unblock(id) } }
+                                .buttonStyle(.plain)
+                                .font(AppFont.caption.weight(.bold))
+                                .foregroundStyle(AppColor.textSecondary)
+                        }
+                        .padding(.vertical, 9)
+                    }
+                }
             }
             .padding(AppMetrics.screenPadding)
         }
         .screenBackground()
         .navigationTitle("Requests")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationDestination(for: String.self) { id in PersonView(id: id, model: model) }
+        // No navigationDestination here: FeedView's, further up the same
+        // stack, already routes profile ids. A second one for the same type
+        // makes SwiftUI pick one arbitrarily.
+        .task { await model.loadBlocked() }
     }
 }
 
@@ -660,7 +679,7 @@ struct PersonView: View {
                 Task { await model.block(id); dismiss() }
             }
         } message: {
-            Text("They will not see your posts or find you, and you will not see theirs. You can undo this from Settings.")
+            Text("They will not see your posts or find you, and you will not see theirs. You can undo this from Friends → Requests → Blocked.")
         }
         .task { await reload() }
     }

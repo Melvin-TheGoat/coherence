@@ -137,7 +137,11 @@ struct CreateProfileView: View {
         }
         .task {
             await model.load()
+            // A reinstall or Edit profile already has a reserved handle and
+            // name in iCloud; those win over anything typed locally.
+            if handle.isEmpty { handle = model.profile?.username ?? "" }
             if handle.isEmpty { handle = Username.normalize(suggested) ?? "" }
+            if name.isEmpty { name = model.profile?.displayName ?? "" }
             if name.isEmpty { name = nickname }
             if handle.isEmpty { focused = true } else { check() }
         }
@@ -173,6 +177,8 @@ struct CreateProfileView: View {
                     if let photo {
                         Image(uiImage: photo).resizable().scaledToFill()
                             .frame(width: 96, height: 96).clipShape(Circle())
+                    } else if let current = model.profile?.avatarURL {
+                        PersonAvatar(name: name, size: 96, photoURL: current)
                     } else {
                         Circle()
                             .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
@@ -186,7 +192,7 @@ struct CreateProfileView: View {
                                 .foregroundStyle(AppColor.accentGoldText))
                     }
                 }
-                if photo != nil {
+                if photo != nil || model.profile?.avatarURL != nil {
                     Text("Change photo").font(AppFont.caption.weight(.semibold)).foregroundStyle(AppColor.accentGoldText)
                 }
             }

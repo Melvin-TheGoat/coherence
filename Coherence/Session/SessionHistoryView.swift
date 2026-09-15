@@ -136,7 +136,7 @@ struct ProfileTab: View {
                       overallScore: scores[$0.id])
             },
             accountCreatedAt: users.first?.createdAt,
-            friendBroughtAt: prefsRows.first?.evidenceGrantSince)
+            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
     }
 

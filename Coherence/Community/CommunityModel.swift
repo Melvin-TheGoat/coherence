@@ -26,6 +26,8 @@ final class CommunityModel: ObservableObject {
     @Published private(set) var friends: [String] = []
     @Published private(set) var incoming: [String] = []
     @Published private(set) var sent: [String] = []
+    /// People I blocked, for the Unblock list the block dialog points to.
+    @Published private(set) var blocked: [String] = []
     /// Reactor profile names by post id.
     @Published private(set) var reactions: [String: [String]] = [:]
     @Published var errorText: String?
@@ -43,6 +45,9 @@ final class CommunityModel: ObservableObject {
     private(set) var myID: String?
     private let demo: Bool
     var ledger: RewardLedger?
+    /// The earliest session on this phone, supplied by the app (the model
+    /// has no SwiftData access of its own).
+    var firstLocalSession: (() -> Date?)?
 
     init(store: CommunityStore?, demo: Bool = false, ledger: RewardLedger? = nil) {
         self.store = store; self.demo = demo; self.ledger = ledger
@@ -73,6 +78,9 @@ final class CommunityModel: ObservableObject {
     /// the fact the invite reward reads. Cheap after the first time: nothing
     /// is fetched when the profile already carries the date.
     func noteSessionCompleted(at date: Date) async {
+        // Launch's load may still be running when a results screen opens;
+        // skipping then would lose the one fact the invite reward reads.
+        if phase == .loading { await load() }
         guard let store, phase == .ready, let profile, profile.firstSessionAt == nil else { return }
         try? await store.markFirstSession(at: date)
         self.profile = try? await store.myProfile()
@@ -170,6 +178,10 @@ final class CommunityModel: ObservableObject {
             profile = try await store.claimUsername(handle, displayName: displayName)
             Analytics.track(.usernameClaimed)
             phase = .ready
+            // Sessions sat before the profile existed (the onboarding demo,
+            // weeks of practice before 1.1) still count as a first session
+            // for whoever invited this person.
+            if let first = firstLocalSession?() { await noteSessionCompleted(at: first) }
             // The claim is done. Loading friends is a separate step whose
             // failure (e.g. an index missing in the CloudKit Console) must not
             // read as the claim failing.
@@ -303,6 +315,23 @@ final class CommunityModel: ObservableObject {
         do {
             try await store.block(id)
             Analytics.track(.userBlocked)
+            try await refreshLists(store)
+        } catch { errorText = Self.plain(error) }
+    }
+
+    func loadBlocked() async {
+        guard let store else { return }
+        do {
+            blocked = try await store.blockedByMe()
+            try await cache(names: Set(blocked))
+        } catch { errorText = Self.plain(error) }
+    }
+
+    func unblock(_ id: String) async {
+        guard let store else { return }
+        do {
+            try await store.unblock(id)
+            blocked.removeAll { $0 == id }
             try await refreshLists(store)
         } catch { errorText = Self.plain(error) }
     }

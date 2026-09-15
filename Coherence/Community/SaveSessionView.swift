@@ -39,6 +39,12 @@ struct SaveSessionView: View {
     @State private var selfie: UIImage?
     @State private var existingSelfie: URL?
     @State private var loaded = false
+    /// What the session was saved as before this sheet opened, so an Only-you
+    /// save only reaches iCloud when there is a post to take down.
+    @State private var savedVisibility: Visibility = .private
+    /// Set once the person taps a segment, so iCloud finishing its load late
+    /// never overrides their choice.
+    @State private var userPicked = false
 
     @State private var saving = false
     @State private var showRules = false
@@ -198,6 +204,7 @@ struct SaveSessionView: View {
     private func segment(_ value: Visibility, _ title: String, _ icon: String) -> some View {
         let on = visibility == value
         return Button {
+            userPicked = true
             withAnimation(.easeOut(duration: 0.18)) { visibility = value }
         } label: {
             Label(title, systemImage: icon)
@@ -217,6 +224,9 @@ struct SaveSessionView: View {
     private var visibilityNote: some View {
         if visibility == .private {
             Text("Only you will see this session. You can share it later from its results.")
+                .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+        } else if score == nil, loaded {
+            Text("This session has no score on this phone, so it can't be shared. Save it as Only you.")
                 .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
         } else {
             switch community.phase {
@@ -264,7 +274,7 @@ struct SaveSessionView: View {
     private var canSave: Bool {
         guard loaded else { return false }
         if visibility == .private { return true }
-        return community.phase == .ready && (selfie != nil || existingSelfie != nil)
+        return community.phase == .ready && score != nil && (selfie != nil || existingSelfie != nil)
     }
 
     // MARK: - Load and save
@@ -286,15 +296,21 @@ struct SaveSessionView: View {
         technique = reflection?.technique
             ?? (session?.mode == SessionMode.guided.rawValue ? MeditationMethod.guidedID : nil)
 
-        await community.load()
+        savedVisibility = Visibility(rawValue: reflection?.visibility ?? "private") ?? .private
         switch mode {
-        case .edit:
-            visibility = Visibility(rawValue: reflection?.visibility ?? "private") ?? .private
-            if visibility == .friends { existingSelfie = await community.post(forSession: sessionID)?.photoURL }
-        case .new:
-            visibility = community.phase == .unavailable ? .private : .friends
+        case .edit: visibility = savedVisibility
+        case .new:  visibility = score == nil ? .private : .friends
         }
+        // Usable BEFORE iCloud answers. This sheet cannot be swiped away after
+        // a new session, and a slow or offline load used to leave Save
+        // disabled with no way out. Only you never needs the network.
         loaded = true
+
+        await community.load()
+        if mode == .new, !userPicked, community.phase == .unavailable { visibility = .private }
+        if visibility == .friends, savedVisibility == .friends {
+            existingSelfie = await community.post(forSession: sessionID)?.photoURL
+        }
     }
 
     private func tapSave() {
@@ -310,7 +326,7 @@ struct SaveSessionView: View {
                                      technique: technique, in: context)
             switch visibility {
             case .private:
-                await community.unpost(session: sessionID)
+                if savedVisibility == .friends { await community.unpost(session: sessionID) }
             case .friends:
                 guard ContentFilter.check([title, publicNote]) == .ok else {
                     problem = CommunityError.contentBlocked.localizedDescription

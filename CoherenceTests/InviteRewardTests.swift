@@ -113,3 +113,43 @@ final class InviteRewardTests: XCTestCase {
         XCTAssertFalse(none.first { $0.award.id == "friendBrought" }?.isEarned ?? true)
     }
 }
+
+final class RewardLedgerRowTests: XCTestCase {
+    private var container: ModelContainer?
+
+    /// With two Preferences rows, the ledger always writes and reads the
+    /// oldest, so a grant can never land on one row and be read from another.
+    @MainActor
+    func test_ledgerUsesTheOldestPreferencesRow() {
+        let c = Persistence.inMemory(); container = c
+        let ctx = ModelContext(c)
+        let old = Preferences(createdAt: Date(timeIntervalSince1970: 1_000))
+        let new = Preferences(createdAt: Date())
+        ctx.insert(new); ctx.insert(old); try? ctx.save()
+        for _ in 0..<5 {
+            let ledger = RewardLedger(context: ctx)
+            ledger.grant(forFriend: "profile-x")
+            XCTAssertEqual(ledger.remaining, 10)
+        }
+        XCTAssertEqual(old.evidenceGrantRemaining, 10)
+        XCTAssertEqual(new.evidenceGrantRemaining, 0)
+    }
+}
+
+@MainActor
+final class FirstSessionStampTests: XCTestCase {
+    /// A person who sat before creating a profile still counts as having sat,
+    /// so whoever invited them is rewarded.
+    func test_claimingStampsAnEarlierLocalSession() async throws {
+        let db = MemoryCommunityDatabase(user: "_new")
+        let model = CommunityModel(store: CommunityStore(database: db))
+        let sat = Date(timeIntervalSince1970: 5_000)
+        model.firstLocalSession = { sat }
+        await model.load()
+        XCTAssertEqual(model.phase, .needsUsername)
+        let ok = await model.claim("newbie", displayName: "N")
+        XCTAssertTrue(ok)
+        let stamped = db.records[CommunityNames.profile(user: "_new")]?["firstSessionAt"] as? Date
+        XCTAssertEqual(stamped, sat)
+    }
+}

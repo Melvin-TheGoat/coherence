@@ -33,7 +33,14 @@ struct CoherenceApp: App {
         let store = Store()
         store.ledger = ledger
         _store = StateObject(wrappedValue: store)
-        _community = StateObject(wrappedValue: CommunityModel.app(ledger: ledger))
+        let community = CommunityModel.app(ledger: ledger)
+        let mainContext = container.mainContext
+        community.firstLocalSession = {
+            var d = FetchDescriptor<Session>(sortBy: [SortDescriptor(\.startedAt)])
+            d.fetchLimit = 1
+            return (try? mainContext.fetch(d))?.first?.startedAt
+        }
+        _community = StateObject(wrappedValue: community)
     }
 
     var body: some Scene {

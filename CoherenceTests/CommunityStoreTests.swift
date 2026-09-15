@@ -399,3 +399,54 @@ private final class RacingDatabase: CommunityDatabase {
     func query(_ query: CommunityQuery) async throws -> [CKRecord] { try await inner.query(query) }
     func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
 }
+
+final class CommunityBugfixTests: XCTestCase {
+    private func stores() async throws -> (MemoryCommunityDatabase, CommunityStore, CommunityStore) {
+        let db = MemoryCommunityDatabase(user: "_a")
+        let a = CommunityStore(database: db); _ = try await a.me()
+        db.user = "_b"
+        let b = CommunityStore(database: db); _ = try await b.me()
+        db.user = "_a"
+        return (db, a, b)
+    }
+
+    /// Re-sending a request must not reset its date: the older edge decides
+    /// who asked first, and so who earns the invite reward.
+    func test_resendingARequestKeepsItsDate() async throws {
+        let (db, a, b) = try await stores()
+        let bID = CommunityNames.profile(user: "_b"), aID = CommunityNames.profile(user: "_a")
+        try await a.sendRequest(to: bID)
+        let first = db.records[CommunityNames.edge(from: aID, to: bID)]?["createdAt"] as? Date
+        try await Task.sleep(nanoseconds: 5_000_000)
+        try await b.accept(aID)
+        try await a.sendRequest(to: bID)          // a taps Add friend again
+        let after = db.records[CommunityNames.edge(from: aID, to: bID)]?["createdAt"] as? Date
+        XCTAssertEqual(first, after)
+        let facts = try await a.friendFacts()
+        XCTAssertEqual(facts.first?.iAskedFirst, true)
+    }
+
+    /// A failed profile save must give back the handle it just reserved.
+    func test_failedProfileSaveReleasesTheNewHandle() async throws {
+        let db = FailingProfileSaveDatabase(user: "_c")
+        let c = CommunityStore(database: db)
+        do { try await c.claimUsername("calm", displayName: "C"); XCTFail() } catch {}
+        XCTAssertNil(db.records[CommunityNames.username("calm")], "the reservation was rolled back")
+    }
+}
+
+/// Saves everything except Profile records, which fail.
+private final class FailingProfileSaveDatabase: CommunityDatabase {
+    let inner: MemoryCommunityDatabase
+    var records: [String: CKRecord] { inner.records }
+    init(user: String) { inner = MemoryCommunityDatabase(user: user) }
+    func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
+    func save(_ record: CKRecord) async throws -> CKRecord {
+        if record.recordType == CommunityType.profile { throw CommunityError.unavailable }
+        return try await inner.save(record)
+    }
+    func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
+    func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { try await inner.query(query) }
+    func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
+}

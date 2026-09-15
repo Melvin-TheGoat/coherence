@@ -19,6 +19,27 @@ actor CommunityStore {
 
     init(database: CommunityDatabase) { self.db = database }
 
+    // MARK: - Authorship
+
+    /// Whether a record's claimed author (`field`, a profile reference) is
+    /// the iCloud user who actually created it.
+    ///
+    /// The public database lets anyone create a record, and a reference
+    /// field is just data: without this, anyone could write a Post, a
+    /// FriendEdge, a Reaction or a Block naming someone else, and every
+    /// reader would believe it (a post "by" your friend, a fake acceptance).
+    /// CloudKit stamps `creatorUserRecordID` itself, so it cannot be forged.
+    /// For the current user's own records it reads `__defaultOwner__`. The
+    /// in-memory database leaves it nil, which is trusted.
+    private func authored(_ record: CKRecord, by field: String) -> Bool {
+        guard let claimed = (record[field] as? CKRecord.Reference)?.recordID.recordName else { return false }
+        guard let creator = record.creatorUserRecordID?.recordName else { return true }
+        if creator == CKCurrentUserDefaultName {
+            return cachedUser.map { claimed == CommunityNames.profile(user: $0) } ?? false
+        }
+        return claimed == CommunityNames.profile(user: creator)
+    }
+
     // MARK: - Me
 
     /// My profile record name, deriving the user on first use.
@@ -67,12 +88,14 @@ actor CommunityStore {
         guard ContentFilter.check([handle, displayName]) == .ok else { throw CommunityError.contentBlocked }
         let mine = try await me()
 
+        var reservedNow = false
         switch try await holder(of: handle) {
         case .some(let owner) where owner != mine:
             throw CommunityError.usernameTaken
         case .some:
             break   // already mine
         case .none:
+            reservedNow = true
             let reservation = CKRecord(recordType: CommunityType.username,
                                        recordID: CKRecord.ID(recordName: CommunityNames.username(handle)))
             reservation["profile"] = CommunityRecordValue.reference(mine).ckValue
@@ -90,7 +113,15 @@ actor CommunityStore {
         profile.username = handle
         profile.displayName = displayName
         profile.apply(to: record)
-        let saved = try await db.save(record)
+        let saved: CKRecord
+        do {
+            saved = try await db.save(record)
+        } catch {
+            // Give back a handle reserved in this call, or a failed save would
+            // hold it forever against a profile that never carried it.
+            if reservedNow { try? await db.delete(CommunityNames.username(handle)) }
+            throw error
+        }
 
         if !previous.isEmpty, previous != handle {
             try? await db.delete(CommunityNames.username(previous))
@@ -155,7 +186,7 @@ actor CommunityStore {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                         filters: [.equals("from", .reference(mine))], limit: 500))
-        return Set(records.compactMap(FriendEdge.init(record:)).map(\.to))
+        return Set(records.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:)).map(\.to))
     }
 
     /// Edges written towards me (requests to me and their half of friendships).
@@ -163,7 +194,7 @@ actor CommunityStore {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                         filters: [.equals("to", .reference(mine))], limit: 500))
-        return Set(records.compactMap(FriendEdge.init(record:)).map(\.from))
+        return Set(records.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:)).map(\.from))
     }
 
     func relationship(with other: String) async throws -> Relationship {
@@ -186,10 +217,10 @@ actor CommunityStore {
                                                     filters: [.equals("from", .reference(mine))], limit: 500))
         let inn = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                     filters: [.equals("to", .reference(mine))], limit: 500))
-        let sent = Dictionary(out.compactMap(FriendEdge.init(record:)).map { ($0.to, $0.createdAt) },
-                              uniquingKeysWith: { a, _ in a })
-        let received = Dictionary(inn.compactMap(FriendEdge.init(record:)).map { ($0.from, $0.createdAt) },
-                                  uniquingKeysWith: { a, _ in a })
+        let sent = Dictionary(out.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:))
+                                .map { ($0.to, $0.createdAt) }, uniquingKeysWith: { a, _ in a })
+        let received = Dictionary(inn.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:))
+                                    .map { ($0.from, $0.createdAt) }, uniquingKeysWith: { a, _ in a })
         var facts: [InviteReward.FriendFact] = []
         for id in try await friends() {
             guard let mineAt = sent[id], let theirsAt = received[id] else { continue }
@@ -227,6 +258,10 @@ actor CommunityStore {
         let mine = try await me()
         guard other != mine else { return }
         if try await isBlocked(between: mine, and: other) { throw CommunityError.blocked }
+        // Already asked (or already friends): leave the edge alone. Re-saving
+        // would reset `createdAt`, which decides who asked first and so who
+        // earns the invite reward.
+        if try await db.fetch(CommunityNames.edge(from: mine, to: other)) != nil { return }
         let edge = FriendEdge(from: mine, to: other)
         let record = CKRecord(recordType: CommunityType.edge, recordID: CKRecord.ID(recordName: edge.id))
         edge.apply(to: record)
@@ -300,7 +335,8 @@ actor CommunityStore {
 
     /// A post by record name, mine or a friend's. nil when it does not exist.
     func post(id: String) async throws -> Post? {
-        try await db.fetch(id).flatMap(Post.init(record:))
+        guard let record = try await db.fetch(id), authored(record, by: "author") else { return nil }
+        return Post(record: record)
     }
 
     func deletePost(_ id: String) async throws {
@@ -334,7 +370,10 @@ actor CommunityStore {
         query.sortField = "practicedAt"
         query.ascending = false
         query.limit = limit
-        return try await db.query(query).compactMap(Post.init(record:)).sorted { $0.practicedAt > $1.practicedAt }
+        return try await db.query(query)
+            .filter { authored($0, by: "author") }
+            .compactMap(Post.init(record:))
+            .sorted { $0.practicedAt > $1.practicedAt }
     }
 
     // MARK: - Reactions
@@ -359,7 +398,9 @@ actor CommunityStore {
                                                         filters: [.isIn("post", postIDs.map { .reference($0) })],
                                                         limit: 1000))
         var out: [String: [String]] = [:]
-        for r in records.compactMap(Reaction.init(record:)) { out[r.post, default: []].append(r.author) }
+        for r in records.filter({ authored($0, by: "author") }).compactMap(Reaction.init(record:)) {
+            out[r.post, default: []].append(r.author)
+        }
         return out.mapValues { $0.sorted() }
     }
 
@@ -367,7 +408,7 @@ actor CommunityStore {
     func reactors(to postID: String) async throws -> [String] {
         let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
                                                         filters: [.equals("post", .reference(postID))], limit: 500))
-        return records.compactMap(Reaction.init(record:)).map(\.author).sorted()
+        return records.filter { authored($0, by: "author") }.compactMap(Reaction.init(record:)).map(\.author).sorted()
     }
 
     // MARK: - Block and report
@@ -392,7 +433,7 @@ actor CommunityStore {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.block,
                                                         filters: [.equals("from", .reference(mine))], limit: 500))
-        return records.compactMap(Block.init(record:)).map(\.to).sorted()
+        return records.filter { authored($0, by: "from") }.compactMap(Block.init(record:)).map(\.to).sorted()
     }
 
     private func blockedEitherWay() async throws -> Set<String> {
@@ -401,12 +442,13 @@ actor CommunityStore {
                                                     filters: [.equals("from", .reference(mine))], limit: 500))
         let inn = try await db.query(CommunityQuery(type: CommunityType.block,
                                                     filters: [.equals("to", .reference(mine))], limit: 500))
-        return Set(out.compactMap(Block.init(record:)).map(\.to) + inn.compactMap(Block.init(record:)).map(\.from))
+        let trusted = (out + inn).filter { authored($0, by: "from") }.compactMap(Block.init(record:))
+        return Set(trusted.filter { $0.from == mine }.map(\.to) + trusted.filter { $0.to == mine }.map(\.from))
     }
 
     private func isBlocked(between a: String, and b: String) async throws -> Bool {
-        if try await db.fetch(CommunityNames.block(from: a, to: b)) != nil { return true }
-        if try await db.fetch(CommunityNames.block(from: b, to: a)) != nil { return true }
+        if let r = try await db.fetch(CommunityNames.block(from: a, to: b)), authored(r, by: "from") { return true }
+        if let r = try await db.fetch(CommunityNames.block(from: b, to: a)), authored(r, by: "from") { return true }
         return false
     }
 

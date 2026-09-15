@@ -423,11 +423,7 @@ struct OnboardingView: View {
             // Someone who already pays (a reinstall, a new phone) is never
             // shown an offer for what they own. StoreKit's on-device record
             // is the proof; `.loading` alone is not.
-            if store.entitled {
-                Color.clear.onAppear { go(.signIn) }
-            } else {
-                PaywallScreen(plan: $plan) { _ in go(.signIn) }
-            }
+            PaywallScreen(plan: $plan) { _ in go(.signIn) }
 
         case .signIn:
             SignInScreen(onSignedIn: { credential in
@@ -472,7 +468,13 @@ struct OnboardingView: View {
 
     // MARK: - Navigation
 
-    private func go(_ next: Step) {
+    private func go(_ requested: Step) {
+        // Someone who already pays (a reinstall, a new phone) is never shown
+        // an offer for what they own. Decided here, on the way IN, and not by
+        // the paywall view watching `store.entitled`: that version also fired
+        // when a purchase completed ON the paywall, advancing twice.
+        let next: Step = (requested == .paywall && store.entitled) ? .signIn : requested
+        guard next != step else { return }
         history.append(step)
         // One line covers the whole 26-screen funnel: the step being LEFT is
         // the one that was completed.
@@ -505,7 +507,8 @@ struct OnboardingView: View {
         resumed = true
         let point = saved.resumePoint(unresumable: Set(Self.unresumable.map(\.rawValue)),
                                       fallback: Step.watchConnect.rawValue)
-        guard let target = Step(rawValue: point.step), target != .relief else { return }
+        guard var target = Step(rawValue: point.step), target != .relief else { return }
+        if target == .paywall, store.entitled { target = .signIn }
         answers = saved.answers
         history = point.history.compactMap(Step.init(rawValue:))
         plan = SubscriptionPlan(rawValue: saved.plan) ?? .monthly

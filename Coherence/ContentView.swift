@@ -111,7 +111,7 @@ struct ContentView: View {
                                lastSessionID: coordinator.lastSessionID) { id in
             if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
         })
-        .onChange(of: prefsRows.first?.evidenceGrantSince) { _, _ in refreshAwards() }
+        .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(startedAt: Date().addingTimeInterval(-90),
@@ -230,7 +230,7 @@ struct ContentView: View {
                       overallScore: scores[$0.id])
             },
             accountCreatedAt: users.first?.createdAt,
-            friendBroughtAt: prefsRows.first?.evidenceGrantSince)
+            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
 
         // First run swallows everything already earned. Melvin and Aziz have

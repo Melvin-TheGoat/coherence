@@ -122,20 +122,32 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
         return try await container.userRecordID().recordName
     }
 
+    /// An upsert. `CKDatabase.save` refuses a freshly built record whose name
+    /// already exists on the server ("record to insert already exists"),
+    /// which re-sending a request, reacting twice or re-blocking all do. The
+    /// in-memory test database never modelled that, so every test passed while
+    /// the real one would have failed. `.allKeys` writes every field, which
+    /// is what each caller intends: they build or fetch the whole record.
     func save(_ record: CKRecord) async throws -> CKRecord {
-        try await db.save(record)
+        let (saved, _) = try await db.modifyRecords(saving: [record], deleting: [],
+                                                    savePolicy: .allKeys, atomically: false)
+        guard let result = saved[record.recordID] else { return record }
+        return try result.get()
     }
 
     func create(_ record: CKRecord) async throws -> CKRecord {
         // `.ifServerRecordUnchanged` on a record the server has never seen
         // fails with serverRecordChanged when someone else created it first.
-        let (saved, _) = try await db.modifyRecords(saving: [record], deleting: [],
-                                                    savePolicy: .ifServerRecordUnchanged,
-                                                    atomically: true)
-        guard let result = saved[record.recordID] else { throw CommunityError.alreadyExists }
+        // Not atomic: the public database's default zone does not support
+        // atomic modifies. The per-record result carries the conflict.
         do {
+            let (saved, _) = try await db.modifyRecords(saving: [record], deleting: [],
+                                                        savePolicy: .ifServerRecordUnchanged,
+                                                        atomically: false)
+            guard let result = saved[record.recordID] else { throw CommunityError.alreadyExists }
             return try result.get()
-        } catch let error as CKError where error.code == .serverRecordChanged {
+        } catch let error as CKError
+            where error.code == .serverRecordChanged || error.code == .partialFailure {
             throw CommunityError.alreadyExists
         }
     }
