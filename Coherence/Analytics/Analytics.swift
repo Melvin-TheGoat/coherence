@@ -83,6 +83,8 @@ enum Analytics {
         case userBlocked
         case contentReported(kind: String)   // "post" | "profile"
         case inviteRewarded                  // a brought friend sat; the grant landed
+        case profileCreated(photo: Bool)
+        case friendsIntroShown               // the one-time prompt for pre-Friends users
 
         var name: String {
             switch self {
@@ -121,6 +123,8 @@ enum Analytics {
             case .userBlocked: "user_blocked"
             case .contentReported: "content_reported"
             case .inviteRewarded: "invite_rewarded"
+            case .profileCreated: "profile_created"
+            case .friendsIntroShown: "friends_intro_shown"
             }
         }
 
@@ -143,6 +147,7 @@ enum Analytics {
             case .skinLockedTapped(let skin): ["skin": skin]
             case .postCreated(let photo): ["photo": photo ? "yes" : "no"]
             case .contentReported(let kind): ["kind": kind]
+            case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
             default: [:]
             }
         }
@@ -268,6 +273,7 @@ enum Analytics {
         "sessionResults":    "31 Tour: demo results",
         "paywall":           "32 Paywall",
         "signIn":            "33 Sign in with Apple",
+        "profile":           "34 Create your profile (Friends builds)",
     ]
 
     /// Where events go. `start()` swaps this to PostHog when a key is set;

@@ -132,13 +132,9 @@ struct SaveSessionView: View {
             }
             .sheet(isPresented: $showClaim) {
                 NavigationStack {
-                    ClaimUsernameView(model: community,
+                    CreateProfileView(model: community,
                                       suggested: users.first?.username ?? "",
-                                      displayName: users.first?.displayName ?? "") { handle in
-                        if let user = users.first { user.username = handle; try? context.save() }
-                        showClaim = false
-                    }
-                    .screenBackground()
+                                      nickname: users.first?.displayName ?? "") { _ in showClaim = false }
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showClaim = false } } }
                 }
             }

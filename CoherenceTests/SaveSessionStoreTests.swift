@@ -49,3 +49,19 @@ final class SaveSessionStoreTests: XCTestCase {
         XCTAssertEqual(SessionStore.defaultTitle(for: at(2), calendar: cal), "Night meditation")
     }
 }
+
+final class CreateProfileTests: XCTestCase {
+    /// Offered when a handle is taken: all valid handles, all within the
+    /// length limit, none equal to the taken one.
+    func test_alternativesAreValidHandles() {
+        for taken in ["aziz", "jordan.k", String(repeating: "a", count: Username.maxLength)] {
+            let alts = CreateProfileView.alternatives(for: taken)
+            XCTAssertFalse(alts.isEmpty)
+            for alt in alts {
+                XCTAssertEqual(Username.normalize(alt), alt, "\(alt) must already be normalised")
+                XCTAssertLessThanOrEqual(alt.count, Username.maxLength)
+                XCTAssertNotEqual(alt, taken)
+            }
+        }
+    }
+}

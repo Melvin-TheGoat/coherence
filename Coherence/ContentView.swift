@@ -105,16 +105,13 @@ struct ContentView: View {
         }
         .onAppear(perform: refreshAwards)
         .onChange(of: sessions.count) { _, _ in refreshAwards() }
-        // Strava's flow: the session ends on Save session, then results.
-        .onChange(of: coordinator.lastSessionID) { _, id in
-            guard FeatureFlags.friends, let id else { return }
+        .modifier(FriendsHooks(community: community,
+                               users: users,
+                               sessionActive: coordinator.active != nil,
+                               lastSessionID: coordinator.lastSessionID) { id in
             if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
-        }
+        })
         .onChange(of: prefsRows.first?.evidenceGrantSince) { _, _ in refreshAwards() }
-        // The invite reward landing: a brought friend sat their first session.
-        .sheet(item: FeatureFlags.friends ? $community.rewardNews : .constant(nil)) { news in
-            InviteRewardSheet(news: news).presentationDetents([.medium])
-        }
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(startedAt: Date().addingTimeInterval(-90),
@@ -463,5 +460,42 @@ struct ContentView: View {
             ?? users.first?.displayName
         guard let name, !name.isEmpty else { return nil }
         return name.split(separator: " ").first.map(String.init)
+    }
+}
+
+
+/// Everything Friends adds to the app's root, in one modifier so the root
+/// view's chain stays small enough to type-check, and so a switched-off
+/// Friends is one `guard` away from nothing.
+private struct FriendsHooks: ViewModifier {
+    @ObservedObject var community: CommunityModel
+    let users: [User]
+    let sessionActive: Bool
+    let lastSessionID: UUID?
+    let openSave: (UUID) -> Void
+
+    func body(content: Content) -> some View {
+        if FeatureFlags.friends {
+            content
+                // The invite reward landing: a brought friend sat once.
+                .sheet(item: $community.rewardNews) { news in
+                    InviteRewardSheet(news: news).presentationDetents([.medium])
+                }
+                // People who finished onboarding before Friends: one required
+                // prompt to create a profile, whenever iCloud says they have none.
+                .fullScreenCover(isPresented: Binding(
+                    get: { community.phase == .needsUsername && !sessionActive },
+                    set: { _ in })) {
+                    FriendsIntroView(model: community,
+                                     suggested: users.first?.username ?? "",
+                                     nickname: users.first?.displayName ?? "") {}
+                }
+                // Strava's flow: the session ends on Save session, then results.
+                .onChange(of: lastSessionID) { _, id in
+                    if let id { openSave(id) }
+                }
+        } else {
+            content
+        }
     }
 }

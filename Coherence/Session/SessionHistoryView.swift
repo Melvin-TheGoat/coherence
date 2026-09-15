@@ -17,6 +17,8 @@ struct ProfileTab: View {
     @Query private var reflections: [SessionReflection]
     @Query private var users: [User]
     @Query private var prefsRows: [Preferences]
+    @EnvironmentObject private var community: CommunityModel
+    @State private var editingProfile = false
 
     /// A practiced day tapped on Home — filters the log below.
     @Binding var selectedDay: Date?
@@ -29,6 +31,7 @@ struct ProfileTab: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     identity
+                    if FeatureFlags.friends { profileActions }
                     statsRow
                     awardsSection
                     logSection
@@ -60,15 +63,14 @@ struct ProfileTab: View {
 
     private var identity: some View {
         let user = currentUser
-        let name = user?.displayName?.isEmpty == false ? user!.displayName! : nil
-        let handle = Username.display(user?.username)
+        let friendsProfile = FeatureFlags.friends ? community.profile : nil
+        let localName = user?.displayName?.isEmpty == false ? user!.displayName! : nil
+        let name = localName ?? friendsProfile.flatMap { $0.displayName.isEmpty ? nil : $0.displayName }
+        // The reserved handle wins in Friends builds; the local one was cosmetic.
+        let handle = Username.display(friendsProfile?.username ?? user?.username)
         return HStack(spacing: 14) {
-            Text(initials(name))
-                .font(.system(size: 20, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.accentGoldText)
-                .frame(width: 60, height: 60)
-                .background(AppColor.accentGold.opacity(0.15), in: Circle())
-                .overlay(Circle().stroke(AppColor.accentGold.opacity(0.55), lineWidth: 1.5))
+            PersonAvatar(name: name, size: 64,
+                         photoURL: FeatureFlags.friends ? community.profile?.avatarURL : nil)
             VStack(alignment: .leading, spacing: 3) {
                 Text(name ?? "Your practice")
                     .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -93,6 +95,27 @@ struct ProfileTab: View {
         guard let name else { return "•" }
         let parts = name.split(separator: " ").prefix(2)
         return parts.map { String($0.prefix(1)).uppercased() }.joined()
+    }
+
+    // MARK: - Profile actions (Friends)
+
+    /// Edit profile (photo, nickname, @username) and Share profile (the
+    /// invite), Strava's pair under the header.
+    private var profileActions: some View {
+        HStack(spacing: 8) {
+            Button { editingProfile = true } label: { Label("Edit profile", systemImage: "pencil") }
+                .buttonStyle(SecondaryButtonStyle())
+            InviteButton(username: community.profile?.username ?? currentUser?.username ?? "", style: .quiet,
+                         title: "Share profile")
+        }
+        .sheet(isPresented: $editingProfile) {
+            NavigationStack {
+                CreateProfileView(model: community,
+                                  suggested: community.profile?.username ?? currentUser?.username ?? "",
+                                  nickname: currentUser?.displayName ?? "") { _ in editingProfile = false }
+                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { editingProfile = false } } }
+            }
+        }
     }
 
     // MARK: - Awards
@@ -189,6 +212,11 @@ struct ProfileTab: View {
             stat("\(streak.longest)", "longest")
             stat("\(sessions.count)", "sessions")
             stat(hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours), "practiced")
+            // Only you see this screen, so the friend count lives here and
+            // nowhere anyone else can read it.
+            if FeatureFlags.friends, community.phase == .ready {
+                stat("\(community.friendCount)", "friends")
+            }
         }
     }
 

@@ -74,12 +74,14 @@ enum DemoCommunity {
         try? await melvin.markFirstSession(at: Date().addingTimeInterval(-86_400 * 40))
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         let melvinPost = try? await melvin.post(.init(score: 81, minutes: 14, streak: 9, technique: "Slow breathing",
-                                                       caption: "Roof before work. Cold enough to see my breath.",
+                                                       caption: "Cold enough to see my breath.",
                                                        photoURL: fakeSelfie(UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1)),
-                                                       practicedAt: Date().addingTimeInterval(-3_600)))
+                                                       practicedAt: Date().addingTimeInterval(-3_600),
+                                                       title: "Roof before work", sound: "Rain"))
         _ = try? await melvin.post(.init(score: 64, minutes: 25, streak: 8, technique: "Guided",
                                           caption: "", photoURL: fakeSelfie(UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1)),
-                                          practicedAt: Date().addingTimeInterval(-86_400 - 1_800)))
+                                          practicedAt: Date().addingTimeInterval(-86_400 - 1_800),
+                                          title: "Evening meditation", sound: "Guided"))
 
         db.user = "_demo_jordan"
         let jordan = CommunityStore(database: db)
@@ -107,7 +109,8 @@ enum DemoCommunity {
         if let melvinPost { try? await me.react(to: melvinPost.id) }
         _ = try? await me.post(.init(score: 72, minutes: 18, streak: 4, technique: "Counting",
                                       caption: "", photoURL: fakeSelfie(UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1)),
-                                      practicedAt: Date().addingTimeInterval(-86_400 * 2)))
+                                      practicedAt: Date().addingTimeInterval(-86_400 * 2),
+                                      title: "Morning sit", sound: "Silence"))
         return me
     }
 }

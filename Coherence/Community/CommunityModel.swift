@@ -184,6 +184,16 @@ final class CommunityModel: ObservableObject {
         }
     }
 
+    /// Uploads a profile photo (prepared like a post photo). Failures are
+    /// shown but never undo the profile that was just created.
+    func setAvatar(_ image: UIImage) async {
+        guard let store, let url = PostPhoto.prepare(image) else { return }
+        do {
+            profile = try await store.setAvatar(url)
+            if let profile { people[profile.id] = profile }
+        } catch { errorText = Self.plain(error) }
+    }
+
     // MARK: - People
 
     func search(_ handle: String) async -> Profile? {

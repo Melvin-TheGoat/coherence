@@ -23,13 +23,9 @@ struct FriendsTab: View {
                 case .unavailable:
                     UnavailableCard()
                 case .needsUsername:
-                    ClaimUsernameView(model: model,
+                    CreateProfileView(model: model,
                                       suggested: user?.username ?? "",
-                                      displayName: user?.displayName ?? "") { handle in
-                        // The local row follows the claimed handle so Settings
-                        // and Profile show the real one.
-                        if let user { user.username = handle; try? context.save() }
-                    }
+                                      nickname: user?.displayName ?? "") { _ in }
                 case .ready:
                     FeedView(model: model, myDisplayName: user?.displayName ?? "")
                 }
@@ -73,114 +69,6 @@ struct UnavailableCard: View {
     }
 }
 
-// MARK: - Claim a username
-
-struct ClaimUsernameView: View {
-    @ObservedObject var model: CommunityModel
-    let suggested: String
-    let displayName: String
-    let onClaimed: (String) -> Void
-
-    @State private var handle: String = ""
-    @State private var availability: CommunityModel.Availability?
-    @State private var checking = false
-    @State private var claiming = false
-    @FocusState private var focused: Bool
-
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                PersonAvatar(name: displayName, size: 64)
-                    .padding(.top, 30)
-                Text("Pick your @username")
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.textPrimary)
-                Text("This is how friends find you. Letters, numbers, dots and underscores.")
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 12)
-
-                HStack(spacing: 6) {
-                    Text("@").foregroundStyle(AppColor.textSecondary)
-                    TextField("username", text: $handle)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.asciiCapable)
-                        .focused($focused)
-                        .onChange(of: handle) { _, new in
-                            let cleaned = Username.normalize(new) ?? ""
-                            if cleaned != new.lowercased().replacingOccurrences(of: "@", with: "") { handle = cleaned }
-                            check()
-                        }
-                }
-                .font(AppFont.body)
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(14)
-                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .padding(.top, 8)
-
-                Text(status)
-                    .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(availability == .available ? AppColor.calmAccent : AppColor.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
-
-                Button {
-                    claim()
-                } label: {
-                    Text(claiming ? "Claiming…" : (handle.isEmpty ? "Claim your name" : "Claim @\(handle)"))
-                }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(availability != .available || claiming)
-                .opacity(availability == .available ? 1 : 0.55)
-
-                InviteRewardNote()
-                    .padding(.top, 10)
-            }
-            .padding(AppMetrics.screenPadding)
-        }
-        .onAppear {
-            handle = Username.normalize(suggested) ?? ""
-            check()
-            if handle.isEmpty { focused = true }
-        }
-    }
-
-    private var status: String {
-        if handle.isEmpty { return " " }
-        if checking { return "Checking…" }
-        switch availability {
-        case .available:          return "@\(handle) is available"
-        case .taken:              return "@\(handle) is taken"
-        case .invalid:            return "Letters, numbers, dots and underscores only."
-        case .failed(let why):    return why
-        case .none:               return " "
-        }
-    }
-
-    private func check() {
-        let current = handle
-        guard !current.isEmpty else { availability = nil; return }
-        checking = true
-        Task {
-            try? await Task.sleep(nanoseconds: 350_000_000)
-            guard !Task.isCancelled, current == handle else { return }
-            let result = await model.availability(of: current)
-            if current == handle { availability = result; checking = false }
-        }
-    }
-
-    private func claim() {
-        claiming = true
-        Task {
-            let ok = await model.claim(handle, displayName: displayName)
-            claiming = false
-            if ok { onClaimed(handle) } else { availability = await model.availability(of: handle) }
-        }
-    }
-}
-
 /// The reward, stated once, on the claim screen and the empty feed. The
 /// mechanics live in feature 4 (the grant); the copy is here so the promise
 /// and the code ship in the same build.
@@ -220,8 +108,10 @@ struct FeedView: View {
                 if model.feed.isEmpty {
                     EmptyFeed(model: model, username: model.profile?.username ?? "")
                 } else {
-                    ForEach(model.feed) { post in
-                        PostCard(post: post, model: model) { reportTarget = .post(post.id) }
+                    VStack(spacing: 8) {
+                        ForEach(model.feed) { post in
+                            PostCard(post: post, model: model) { reportTarget = .post(post.id) }
+                        }
                     }
                     InviteButton(username: model.profile?.username ?? "", style: .quiet)
                         .padding(.top, 6)
@@ -383,6 +273,7 @@ struct InviteButton: View {
     enum Style { case gold, quiet }
     let username: String
     let style: Style
+    var title: String = "Invite a friend"
 
     static let storeLink = URL(string: "https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=invite&mt=8")!
 
@@ -394,7 +285,7 @@ struct InviteButton: View {
 
     var body: some View {
         ShareLink(item: message) {
-            Label("Invite a friend", systemImage: "square.and.arrow.up")
+            Label(title, systemImage: "square.and.arrow.up")
         }
         .modifier(InviteStyle(style: style))
         .simultaneousGesture(TapGesture().onEnded { Analytics.track(.inviteShared) })
@@ -413,6 +304,10 @@ struct InviteButton: View {
 
 // MARK: - Post card
 
+/// A friend's session, in Strava's activity-card shape (mockup v2, section
+/// 4): who and when (with the sound where Strava shows a place), a bold
+/// title, the description, stats with the label above the number, the selfie
+/// full width, and a footer with who gave 🙏. Edge to edge like Strava's feed.
 struct PostCard: View {
     let post: Post
     @ObservedObject var model: CommunityModel
@@ -423,104 +318,131 @@ struct PostCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 8) {
-                NavigationLink(value: post.author) {
-                    HStack(spacing: 8) {
-                        PersonAvatar(name: author?.displayName, size: 30)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(author?.displayName.isEmpty == false ? author!.displayName : (author.map { "@" + $0.username } ?? "Someone"))
-                                .font(AppFont.callout.weight(.semibold))
-                                .foregroundStyle(AppColor.textPrimary)
-                            Text([author.map { "@" + $0.username }, SessionListSupport.relativeDay(post.practicedAt)].compactMap { $0 }.joined(separator: " · "))
-                                .font(AppFont.caption)
-                                .foregroundStyle(AppColor.textSecondary)
-                        }
-                    }
-                }
-                .buttonStyle(CardButtonStyle())
-                Spacer()
-                Menu {
-                    if isMine {
-                        Button("Delete post", role: .destructive) { Task { await model.deletePost(post.id) } }
-                    } else {
-                        Button("Report", role: .destructive, action: onReport)
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(width: 32, height: 32)
-                        .contentShape(Rectangle())
-                }
+            header
+                .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+
+            Text(post.title.isEmpty ? "Meditation" : post.title)
+                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(.horizontal, 16)
+
+            if !post.caption.isEmpty {
+                Text(post.caption)
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .padding(.horizontal, 16).padding(.top, 4)
             }
-            .padding(.horizontal, 12).padding(.top, 10).padding(.bottom, 8)
+
+            HStack(alignment: .top, spacing: 26) {
+                stat("Score", "\(post.score)")
+                stat("Time", "\(post.minutes)m")
+                stat("Streak", "\(post.streak) day\(post.streak == 1 ? "" : "s")")
+                if let t = post.technique, !t.isEmpty { stat("Technique", t) }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 12)
 
             if let url = post.photoURL {
                 PostPhotoView(url: url)
             }
 
-            HStack(spacing: 14) {
-                ScoreRing(score: Double(post.score) / 100, size: 36, lineWidth: 3.5)
-                stat("\(post.minutes) min", "Sat")
-                stat("\(post.streak) day\(post.streak == 1 ? "" : "s")", "Streak")
-                if let t = post.technique, !t.isEmpty { stat(t, "Technique") }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 12).padding(.vertical, 10)
-
-            if !post.caption.isEmpty {
-                Text(post.caption)
-                    .font(AppFont.note)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .padding(.horizontal, 12).padding(.bottom, 10)
-            }
-
-            reactionRow
-                .padding(.horizontal, 12).padding(.bottom, 10)
+            footer
+                .padding(.horizontal, 16).padding(.vertical, 10)
         }
-        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(AppColor.backgroundSecondary)
+        .padding(.horizontal, -AppMetrics.screenPadding)
     }
 
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(value).font(AppFont.callout.weight(.semibold)).foregroundStyle(AppColor.textPrimary)
-                .lineLimit(1).minimumScaleFactor(0.8)
-            Text(label.uppercased()).font(.system(size: 9, weight: .semibold)).tracking(0.8)
+    private var header: some View {
+        HStack(spacing: 10) {
+            NavigationLink(value: post.author) {
+                HStack(spacing: 10) {
+                    PersonAvatar(name: author?.displayName, size: 38, photoURL: author?.avatarURL)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(displayName)
+                            .font(AppFont.callout.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(whenAndWhere)
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+            }
+            .buttonStyle(CardButtonStyle())
+            Spacer()
+            Menu {
+                if isMine {
+                    Button("Delete post", role: .destructive) { Task { await model.deletePost(post.id) } }
+                } else {
+                    Button("Report", role: .destructive, action: onReport)
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
+            }
+        }
+    }
+
+    private var displayName: String {
+        if let name = author?.displayName, !name.isEmpty { return name }
+        return author.map { "@" + $0.username } ?? "Someone"
+    }
+
+    /// "Today at 7:12 AM · Rain": Strava's date line, with the sound where it
+    /// puts the location.
+    private var whenAndWhere: String {
+        let time = post.practicedAt.formatted(date: .omitted, time: .shortened)
+        let day = SessionListSupport.relativeDay(post.practicedAt)
+        return [day + " at " + time, post.sound].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    private func stat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(AppColor.textSecondary)
+            Text(value)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .lineLimit(1).minimumScaleFactor(0.7)
         }
     }
 
-    private var reactionRow: some View {
+    private var footer: some View {
         let who = model.reactions[post.id] ?? []
         let mine = model.hasReacted(to: post.id)
-        return HStack(spacing: 8) {
+        return HStack(spacing: 10) {
+            Text(reactorLine(who))
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .lineLimit(1)
+            Spacer()
             Button {
                 Task { await model.toggleReaction(post.id) }
             } label: {
-                Text(mine ? "🙏 Nice sit · \(who.count)" : (who.isEmpty ? "🙏 Nice sit" : "🙏 Nice sit · \(who.count)"))
-                    .font(AppFont.caption.weight(.medium))
-                    .foregroundStyle(mine ? AppColor.accentGoldText : AppColor.textPrimary)
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .overlay(Capsule().stroke(mine ? AppColor.accentGold : AppColor.textSecondary.opacity(0.3), lineWidth: 1))
+                HStack(spacing: 5) {
+                    Text("🙏").font(.system(size: 17)).grayscale(mine ? 0 : 1).opacity(mine ? 1 : 0.7)
+                    Text("Nice sit")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(mine ? AppColor.accentGoldText : AppColor.textSecondary)
+                }
+                .padding(.horizontal, 10).padding(.vertical, 6)
+                .overlay(Capsule().stroke(mine ? AppColor.accentGold : AppColor.textSecondary.opacity(0.3), lineWidth: 1))
             }
             .buttonStyle(.plain)
             .disabled(isMine)
-            if !who.isEmpty, !mine || who.count > 1 {
-                Text(names(who))
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .lineLimit(1)
-            }
-            Spacer()
         }
     }
 
-    private func names(_ ids: [String]) -> String {
-        let others = ids.filter { $0 != model.myID }.compactMap { model.person($0)?.displayName }.filter { !$0.isEmpty }
-        switch others.count {
-        case 0: return ""
-        case 1: return others[0]
-        case 2: return "\(others[0]) and \(others[1])"
-        default: return "\(others[0]) and \(others.count - 1) others"
+    private func reactorLine(_ ids: [String]) -> String {
+        let names = ids.map { $0 == model.myID ? "You" : (model.person($0)?.displayName ?? "") }.filter { !$0.isEmpty }
+        switch names.count {
+        case 0: return isMine ? "No 🙏 yet" : "Be the first to give a 🙏"
+        case 1: return names[0] + " gave a 🙏"
+        case 2: return "\(names[0]) and \(names[1])"
+        default: return "\(names[0]) and \(names.count - 1) others"
         }
     }
 }
@@ -548,14 +470,27 @@ private struct PostPhotoView: View {
 struct PersonAvatar: View {
     let name: String?
     var size: CGFloat = 30
+    /// The profile photo when there is one; initials otherwise.
+    var photoURL: URL? = nil
+    @State private var photo: UIImage?
 
     var body: some View {
-        Text(initials)
-            .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
-            .foregroundStyle(AppColor.accentGoldText)
-            .frame(width: size, height: size)
-            .background(AppColor.accentGold.opacity(0.18), in: Circle())
-            .overlay(Circle().stroke(AppColor.accentGold, lineWidth: size > 40 ? 2 : 1.5))
+        ZStack {
+            if let photo {
+                Image(uiImage: photo).resizable().scaledToFill()
+            } else {
+                AppColor.accentGold.opacity(0.18)
+                Text(initials)
+                    .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.accentGoldText)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(AppColor.accentGold, lineWidth: size > 40 ? 2 : 1.5))
+        .task(id: photoURL) {
+            photo = photoURL.flatMap { UIImage(contentsOfFile: $0.path) }
+        }
     }
 
     private var initials: String {
@@ -571,7 +506,7 @@ struct PersonRow<Trailing: View>: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            PersonAvatar(name: profile.displayName, size: 34)
+            PersonAvatar(name: profile.displayName, size: 34, photoURL: profile.avatarURL)
             VStack(alignment: .leading, spacing: 1) {
                 Text(profile.displayName.isEmpty ? "@" + profile.username : profile.displayName)
                     .font(AppFont.callout.weight(.semibold))
@@ -664,7 +599,7 @@ struct PersonView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 HStack(spacing: 12) {
-                    PersonAvatar(name: profile?.displayName, size: 56)
+                    PersonAvatar(name: profile?.displayName, size: 56, photoURL: profile?.avatarURL)
                     VStack(alignment: .leading, spacing: 3) {
                         Text(profile?.displayName.isEmpty == false ? profile!.displayName : "@" + (profile?.username ?? ""))
                             .font(AppFont.title)

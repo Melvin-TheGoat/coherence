@@ -1183,6 +1183,10 @@ struct NameScreen: View {
                 // Optional like everything else here (5.1.1). Lowercase,
                 // letters, digits, underscore and dot, normalised as they type
                 // so the handle they see is the handle that gets saved.
+                // Friends builds ask for the username on its own screen at the
+                // end (Create your profile), reserved for real, so the
+                // cosmetic field here goes away.
+                if !FeatureFlags.friends {
                 HStack(spacing: 6) {
                     Text("@")
                         .font(OnboardingType.option)
@@ -1201,6 +1205,7 @@ struct NameScreen: View {
                 .padding(16)
                 .background(AppColor.backgroundSecondary.opacity(0.8),
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Age")

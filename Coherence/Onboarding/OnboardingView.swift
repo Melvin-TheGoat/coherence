@@ -12,6 +12,7 @@ import AuthenticationServices
 struct OnboardingView: View {
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var community: CommunityModel
     @Query private var preferences: [Preferences]
 
     @State private var step: Step = .relief
@@ -55,6 +56,7 @@ struct OnboardingView: View {
         case health                                            // consent, kept from the old flow
         case tourHome, watchConnect, breathe, sessionResults   // the walkthrough
         case paywall, signIn                                   // 23, 25
+        case profile                                           // Friends: photo + @username
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -73,7 +75,7 @@ struct OnboardingView: View {
         /// reason the thirty-day exit offer is gone.
         var allowsBack: Bool {
             switch self {
-            case .paywall, .signIn: return false
+            case .paywall, .signIn, .profile: return false
             // Mid-practice and mid-result: backing into the interview from a
             // running Watch session would strand the session.
             case .breathe, .sessionResults: return false
@@ -428,8 +430,21 @@ struct OnboardingView: View {
             }
 
         case .signIn:
-            SignInScreen(onSignedIn: handleSignIn,
-                         onSkip: finish)
+            SignInScreen(onSignedIn: { credential in
+                             signInCredential(credential)
+                             afterSignIn()
+                         },
+                         onSkip: afterSignIn)
+
+        case .profile:
+            // Friends builds only: routing never reaches here when the flag
+            // is off, and a resumed record from a Friends build lands safely.
+            CreateProfileView(model: community,
+                              suggested: answers.username,
+                              nickname: answers.firstName) { handle in
+                if let handle { answers.username = handle }
+                finish()
+            }
         }
     }
 
@@ -552,14 +567,23 @@ struct OnboardingView: View {
             .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
-    private func handleSignIn(_ credential: ASAuthorizationAppleIDCredential) {
+    /// Records the Apple credential. Finishing happens in `afterSignIn`,
+    /// which may first route through Create your profile.
+    private func signInCredential(_ credential: ASAuthorizationAppleIDCredential) {
         let name = [credential.fullName?.givenName, credential.fullName?.familyName]
             .compactMap { $0 }.joined(separator: " ")
+        if answers.firstName.trimmingCharacters(in: .whitespaces).isEmpty, !name.isEmpty {
+            answers.firstName = credential.fullName?.givenName ?? name
+        }
         _ = SessionStore.signIn(appleUserID: credential.user,
                                 email: credential.email,
                                 displayName: name.isEmpty ? typedName : name,
                                 in: context)
-        persistAnswers()
+    }
+
+    /// Friends builds end on Create your profile; everything else finishes.
+    private func afterSignIn() {
+        if FeatureFlags.friends { go(.profile) } else { finish() }
     }
 
     private var typedName: String? {
@@ -578,7 +602,10 @@ struct OnboardingView: View {
         if let typedName, (user.displayName ?? "").isEmpty {
             user.displayName = typedName
         }
-        if let handle = Username.normalize(answers.username), (user.username ?? "").isEmpty {
+        if let handle = Username.normalize(answers.username),
+           (user.username ?? "").isEmpty || FeatureFlags.friends {
+            // In Friends builds the handle was just reserved on Create your
+            // profile, so it replaces any older cosmetic one.
             user.username = handle
         }
         // The no-Watch waitlist. The address lands on the local user row (the
