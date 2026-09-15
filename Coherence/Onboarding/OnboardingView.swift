@@ -77,8 +77,9 @@ struct OnboardingView: View {
             switch self {
             case .paywall, .signIn, .profile: return false
             // Mid-practice and mid-result: backing into the interview from a
-            // running Watch session would strand the session.
-            case .breathe, .sessionResults: return false
+            // running Watch session would strand the session. The wall sits
+            // just after them now, so it gets no chevron either.
+            case .breathe, .sessionResults, .wall: return false
             default: return true
             }
         }
@@ -97,12 +98,12 @@ struct OnboardingView: View {
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.referral, .referral),
         (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
-        (.aloneWithThoughts, .aloneWithThoughts), (.doingNothing, .doingNothing),
+        (.aloneWithThoughts, .aloneWithThoughts),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
-        (.bodyCuriosity, .bodyCuriosity), (.bodyProof, .bodyProof),
+        (.bodyCuriosity, .bodyCuriosity),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot), (.watchGate, .watchGate),
-        (.anchor, .anchor), (.you, .you),
+        (.you, .you),
     ]
 
     /// The interview's first screen, read from the model's order rather than
@@ -134,9 +135,14 @@ struct OnboardingView: View {
     /// The session the walkthrough's breathing practice produced.
     @State private var walkthroughSessionID: UUID?
 
-    /// After the walkthrough (or skipping out of it): the offer, or sign-in
-    /// when the paywall lives outside onboarding.
-    private var afterWalkthrough: Step {
+    /// After the walkthrough (or skipping out of it): the company they'd be
+    /// in, then the offer. The wall moved here from the middle of the payoff
+    /// (Melvin, 2026-09-15): social proof lands best right before the ask.
+    private var afterWalkthrough: Step { .wall }
+
+    /// After the wall: the offer, or sign-in when the paywall lives outside
+    /// onboarding.
+    private var afterWall: Step {
         Self.paywallInsideOnboarding ? .paywall : .signIn
     }
 
@@ -227,11 +233,10 @@ struct OnboardingView: View {
                                         progress: interviewProgress) { go(nextAfter(.aloneWithThoughts)) }
             }
 
+        // Cut 2026-09-15. The Step case stays so resume records and
+        // ONBOARDING_STEP indices hold; anyone landing here moves on.
         case .doingNothing:
-            guarded(.doingNothing) {
-                DoingNothingScreen(answer: $answers.doingNothing,
-                                   progress: interviewProgress) { go(nextAfter(.doingNothing)) }
-            }
+            Color.clear.onAppear { go(nextAfter(.aloneWithThoughts)) }
 
         case .restarts:
             guarded(.restarts) {
@@ -251,11 +256,9 @@ struct OnboardingView: View {
                                     progress: interviewProgress) { go(nextAfter(.bodyCuriosity)) }
             }
 
+        // Cut 2026-09-15, same arrangement.
         case .bodyProof:
-            guarded(.bodyProof) {
-                BodyProofScreen(answer: $answers.bodyProof,
-                                progress: interviewProgress) { go(nextAfter(.bodyProof)) }
-            }
+            Color.clear.onAppear { go(nextAfter(.bodyCuriosity)) }
 
         case .bodyTracking:
             BodyTrackingScreen(tracking: $answers.bodyTracking,
@@ -296,12 +299,13 @@ struct OnboardingView: View {
             // Joining is optional either way: declining clears the email so
             // nothing half-typed gets stored at finish.
             WaitlistScreen(email: $waitlistEmail,
-                           onJoin: { go(.anchor) },
-                           onDecline: { waitlistEmail = ""; go(.anchor) })
+                           onJoin: { go(nextAfter(.watchGate)) },
+                           onDecline: { waitlistEmail = ""; go(nextAfter(.watchGate)) })
 
+        // Cut 2026-09-15 (Melvin: nobody wants to be made to commit to a
+        // time of day). The reminder time is picked on the permission screen.
         case .anchor:
-            AnchorScreen(anchor: $answers.anchor,
-                         progress: interviewProgress) { go(nextAfter(.anchor)) }
+            Color.clear.onAppear { go(nextAfter(.watchGate)) }
 
         case .you:
             NameScreen(firstName: $answers.firstName,
@@ -324,13 +328,15 @@ struct OnboardingView: View {
             // indices hold and the screen can come back with one edit; with
             // no costs ticked, downstream echoes (`primaryCost`) are nil and
             // every reader already handles nil.
-            ResultScreen(answers: answers) { go(.wall) }
+            ResultScreen(answers: answers) { go(.sampleStart) }
 
         case .cost:
-            CostScreen(costs: $answers.costs) { go(.wall) }
+            CostScreen(costs: $answers.costs) { go(.sampleStart) }
 
+        // Cut 2026-09-15 with proofYourWay, week and rating: the payoff is
+        // the sample-session pair and the promise, nothing more.
         case .proofBody:
-            ProofScreen(beat: .body) { go(.sampleStart) }
+            Color.clear.onAppear { go(.sampleStart) }
 
         // The start/build pair: the last beat of the cost arc asks "so what's
         // possible?", and the first beat of the win answers it.
@@ -339,16 +345,16 @@ struct OnboardingView: View {
 
         case .sampleBuild:
             SampleSessionScreen(phase: .build,
-                                motivations: answers.motivations) { go(.proofYourWay) }
+                                motivations: answers.motivations) { go(.commitment) }
 
         case .proofYourWay:
-            ProofScreen(beat: .yourWay) { go(.commitment) }
+            Color.clear.onAppear { go(.commitment) }
 
-        // The wall comes BEFORE the mechanism screen. Testers said the
-        // company they'd be in was what opened them up; the explanation
-        // lands better once they already want it to be true.
+        // The last screen before the offer, for everyone who came through
+        // the walkthrough. Kept at Melvin's request, moved from the middle of
+        // the payoff to the end (2026-09-15).
         case .wall:
-            WallScreen { go(.proofBody) }
+            WallScreen { go(afterWall) }
 
         case .commitment:
             CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
@@ -356,15 +362,15 @@ struct OnboardingView: View {
                              cost: answers.primaryCost) { go(.permission) }
 
         case .permission:
-            PermissionScreen(anchor: answers.anchor,
-                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(.week) } },
-                             onSkip: { reminderAllowed = false; go(.week) })
+            PermissionScreen(reminderTime: $answers.reminderTime,
+                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(.health) } },
+                             onSkip: { reminderAllowed = false; go(.health) })
 
         case .week:
-            WeekPreviewScreen { go(.rating) }
+            Color.clear.onAppear { go(.health) }
 
         case .rating:
-            RatingScreen(rating: $planRating) { go(.health) }
+            Color.clear.onAppear { go(.health) }
 
         case .health:
             HealthConsentScreen {
@@ -627,17 +633,16 @@ struct OnboardingView: View {
         OnboardingResume.clear()
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
             prefs.onboardingComplete = true
-            if let anchor = answers.anchor {
-                // The time is stored either way: it is their stated anchor and
-                // the default Settings offers if they enable reminders later.
-                // Whether the reminder is ON is the permission screen's answer,
-                // never the anchor's: picking a time of day is not consent to
-                // be notified at it.
-                prefs.reminderTime = Calendar.current.date(
-                    bySettingHour: anchor.defaultHour, minute: 0, second: 0, of: Date())
-                prefs.remindersEnabled = reminderAllowed
-                NotificationScheduler.apply(enabled: reminderAllowed, at: prefs.reminderTime)
-            }
+            // The time is stored either way: it is what they picked (or the
+            // 8 AM default) and what Settings offers if they enable reminders
+            // later. Whether the reminder is ON is the permission screen's
+            // answer, never the time's: picking a time of day is not consent
+            // to be notified at it.
+            let time = answers.reminderTime
+                ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())
+            prefs.reminderTime = time
+            prefs.remindersEnabled = reminderAllowed
+            NotificationScheduler.apply(enabled: reminderAllowed, at: time)
         }
         try? context.save()
     }

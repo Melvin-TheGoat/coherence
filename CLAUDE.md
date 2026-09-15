@@ -1568,6 +1568,33 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   numbers on a screen and nothing else: the no-haptics rule for the Watch
   is not suspended for a countdown.
 
+## ONBOARDING CUT (2026-09-15, Melvin): seven screens out, the wall moved
+
+"We think the onboarding is too crowded." The data agreed on cause but not
+on place: the proof and plan screens lost nobody, the length did. Cut, all
+routed past rather than deleted: `doingNothing`, `bodyProof` and `anchor`
+left `InterviewStep` (the model never asks them; `asks()` no longer knows
+them); `proofBody`, `proofYourWay`, `week` and `rating` are `Color.clear`
+hops in the routing. **Every `Step` case and every answer field stays**, so
+Aziz's resume records decode and ONBOARDING_STEP indices hold; a resumed
+record on a cut step simply moves on. The wall (celebrity quotes) is kept
+at Melvin's request and now sits after the walkthrough, immediately before
+the paywall (`afterWalkthrough` → `.wall` → `afterWall`), with no chevron
+back into the live session behind it.
+
+- **The reminder time is picked, not inferred.** The anchor question set
+  `reminderTime`; with it gone, `PermissionScreen` carries a compact time
+  picker (`OnboardingAnswers.reminderTime`, 8 AM default), and
+  `persistAnswers` stores the time unconditionally while `remindersEnabled`
+  still follows the permission answer only. Without that change the
+  reminder block was nested under `if let anchor` and would never have run.
+- **Not done: the tour.** Two thirds of people who finish the interview
+  leave on the tour's two-minute demo and nobody has reached its results
+  screen. The proposal (end the tour after "put your Watch on" with a real
+  Begin) is recorded in BACKLOG.md and awaits Melvin's yes.
+- Analytics screen names carry "(cut 1.0.2)" so the sheet reads honestly
+  across versions; the wall is "31b".
+
 ## ONBOARDING ROUND 2 (2026-09-14): one tester, thirteen fixes, one root cause
 
 A no-Watch tester walked the interview and narrated it. `BACKLOG.md` holds

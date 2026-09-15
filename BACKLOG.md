@@ -111,6 +111,21 @@ Refused:
   sign-in optional for an app that works without an account, and it was a
   documented rejection reason in the audit. Stays optional.
 
+## Cut the fat out of onboarding: DONE 2026-09-15 (Melvin's list)
+
+Cut: doing nothing (06b), how do you know it worked (08b), the anchor (13,
+"people don't want to be forced to commit to what time they are going to
+meditate"), proof: the body is visible (19), proof: your way (22), your
+first week (25), the star rating (26). Kept and MOVED: the celebrity wall,
+now the last screen before the paywall, after the walkthrough. The reminder
+time is picked on the notification screen (8 AM default, editable in
+Settings) since the anchor no longer sets it. Every cut screen keeps its
+Step case and answer field, so resume records and readers keep working;
+they are simply never routed to. A newcomer now sees about 23 screens.
+NOT done, still open: ending the tour after "put your Watch on" and
+deleting the two-minute demo (the biggest leak after the gate); Melvin has
+not said yes to that one.
+
 ## Cut the fat out of onboarding (Melvin + Aziz, 2026-09-14, direction)
 
 "We think the onboarding is too crowded, so we want to lean towards cutting

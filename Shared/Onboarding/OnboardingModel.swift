@@ -602,6 +602,9 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var costs: Set<CostSymptom> = []
     public var hasWatch: Bool?
     public var anchor: Anchor?
+    /// The daily reminder time, picked on the notification screen since the
+    /// anchor question was cut (2026-09-15). Nil means the 8 AM default.
+    public var reminderTime: Date?
     public var firstName: String = ""
     public var username: String = ""
     public var ageBracket: String?
@@ -865,13 +868,13 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .stress, .watchGate, .anchor, .you, .referral:
+        case .baseline, .motivation, .stress, .watchGate, .you, .referral:
             return true
 
-        // "Can you be alone with your thoughts?" / "How long can you do
-        // nothing?" are framed as diagnostics of a restless mind. Asking
-        // someone who meditates most days is faintly insulting.
-        case .aloneWithThoughts, .doingNothing:
+        // "Can you be alone with your thoughts?" is framed as a diagnostic of
+        // a restless mind. Asking someone who meditates most days is faintly
+        // insulting.
+        case .aloneWithThoughts:
             return persona != .regular
 
         // Presumes previous attempts.
@@ -882,11 +885,11 @@ extension OnboardingAnswers {
         case .intendedFor:
             return persona == .newcomer
 
-        // Presume sessions to wonder about. A newcomer has never sat, so
-        // "when you meditate…" and "after a session…" contradict their own
-        // baseline answer; they still get the tracking question, which is
-        // about their life, not their practice.
-        case .bodyCuriosity, .bodyProof:
+        // Presumes sessions to wonder about. A newcomer has never sat, so
+        // "when you meditate…" contradicts their own baseline answer; they
+        // still get the tracking question, which is about their life, not
+        // their practice.
+        case .bodyCuriosity:
             return persona != .newcomer
 
         // Everyone tracks something, or meaningfully doesn't.
@@ -914,11 +917,18 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// they came from. Asked at the door, nearly everyone answers.
     case referral
     case baseline, motivation, stress
-    case aloneWithThoughts, doingNothing
+    case aloneWithThoughts
     case restarts, intendedFor
-    case bodyCuriosity, bodyProof, bodyTracking
+    case bodyCuriosity, bodyTracking
     case blindSpot
-    case watchGate, anchor, you
+    case watchGate, you
+    // CUT 2026-09-15 (Melvin: "too crowded"): `doingNothing` (the second
+    // escalation question asked what `aloneWithThoughts` already had),
+    // `bodyProof` (its sibling `bodyCuriosity` carries the idea alone), and
+    // `anchor` (people do not want to be made to commit to a time of day;
+    // the reminder time is picked on the notification screen instead). The
+    // answer fields stay on `OnboardingAnswers` so old resume records and
+    // every downstream reader keep decoding; they are simply never asked.
 }
 
 /// What a regular practitioner can't tell about their own practice.
