@@ -219,6 +219,11 @@ leave after finishing the interview.
 
 ## In flight
 
+- **Onboarding: no sign-in until the end, and progress resumes** (Aziz,
+  2026-09-14, from the PostHog finding that everyone who skipped the paywall
+  used the screen-one sign-in link). Built and verified on the simulator,
+  ships in the next build. Details in CLAUDE.md.
+
 - **Camera vision RESUMED** (2026-09-14, branch `camera-vision`, plan in
   `CAMERA_VISION_PLAN.md` there). `mvp` merged in with no conflicts (five
   tabs plus the DEBUG collector); 253 tests green. The probe's pipeline is

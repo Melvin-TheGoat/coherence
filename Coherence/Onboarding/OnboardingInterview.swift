@@ -40,9 +40,14 @@ final class AdvanceGate: ObservableObject {
 
 struct ReliefScreen: View {
     let onContinue: () -> Void
-    /// Jumps straight to Sign in with Apple. A returning user reinstalling
-    /// should not have to re-answer an interview the app already knows.
-    let onSignIn: () -> Void
+    // No sign-in link on this screen, deliberately (Aziz, 2026-09-14).
+    // It jumped straight to Sign in, skipping every screen including the
+    // paywall, and PostHog showed new people using it that way. Sign-in now
+    // exists only at the end of onboarding. A returning user loses nothing:
+    // their sessions and onboarding flag come back through iCloud (which
+    // skips onboarding by itself once the import lands), and a subscription
+    // rides the Apple ID, restored on the paywall. Quittr and Cal AI make the
+    // same choice: nothing reaches the app without passing the offer.
     @State private var appeared = false
 
     var body: some View {
@@ -92,12 +97,6 @@ struct ReliefScreen: View {
                 .opacity(appeared ? 1 : 0)
                 .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
 
-            Button("Already have an account?", action: onSignIn)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 14)
-                .opacity(appeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)

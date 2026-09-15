@@ -1672,6 +1672,41 @@ Content Analysis on photos, `tools/community-reports.gs` emailing reports.
 Nothing has run on real iCloud yet: needs the Console record types and a
 TestFlight on two phones.
 
+## NO SIGN-IN BEFORE THE END OF ONBOARDING; ONBOARDING RESUMES (2026-09-14)
+
+**Found in PostHog, Aziz asked for both fixes.** Every one of the four people
+who finished onboarding without seeing the paywall (plus Apple's two
+reviewers) got there through "Already have an account?" on screen one, which
+jumped straight to Sign in and skipped about 25 screens including the
+paywall. One was a real stranger (Wednesbury): they answered everything,
+reached the tour, left the app, came back to SCREEN ONE because progress was
+not saved, and used the link to escape.
+
+- **The link is gone. You cannot sign in until onboarding is done** (Aziz:
+  "literally cannot sign in on that screen"). Sign-in exists only after the
+  paywall, still optional (5.1.1). Researched: Quittr asks for sign-up early
+  but it skips nothing and its paywall still stands; Cal AI's ~32-screen quiz
+  ends at its paywall; the pattern is that nothing reaches the app without
+  passing the offer, and payers get in through Restore Purchases because the
+  entitlement rides the Apple ID. `test_firstScreenHasNoSignInLink` locks it.
+- **Returning users lose nothing:** iCloud brings back `onboardingComplete`
+  and their sessions, which skips onboarding by itself once the import
+  lands; a subscriber who does go through onboarding is waved past the
+  paywall (`store.entitled`, the on-device StoreKit record, never `.loading`
+  alone) and can Restore on it. Accepted cost: someone who SIGNS OUT is sent
+  back through onboarding to sign in again.
+- **Onboarding resumes where it was left** (`Shared/Onboarding/
+  OnboardingResume.swift`, UserDefaults `onboarding.progress.v1`): step,
+  history, answers, plan, waitlist email, rating and reminder choice are
+  saved on every advance and every Back, restored on the next launch,
+  cleared when onboarding completes or on sign-out, and discarded after 14
+  days. The live practice session and its results cannot be resumed (they
+  died with the app) and reopen on the Watch connect screen. New event
+  `onboarding_resumed` (with `step` and `screen`). Verified on the simulator:
+  quit mid-interview, relaunch, same question, Back works, earlier answer
+  still selected. Named `OnboardingResume` because `OnboardingProgress` is
+  already the progress-bar view.
+
 ## BACKLOG.md IS THE LIST (2026-09-12)
 
 Melvin: "I am saying a lot and not finishing much." Every decision, request

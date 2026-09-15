@@ -88,6 +88,7 @@ enum SessionStore {
     static func signOut(in context: ModelContext) {
         for prefs in (try? context.fetch(FetchDescriptor<Preferences>())) ?? [] {
             prefs.onboardingComplete = false
+            OnboardingResume.clear()
             prefs.updatedAt = Date()
         }
         try? context.save()

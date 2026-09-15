@@ -29,6 +29,8 @@ enum Analytics {
         // Onboarding
         case onboardingStep(id: String)
         case onboardingCompleted
+        /// Reopened onboarding on the screen they left (`OnboardingResume`).
+        case onboardingResumed(id: String)
         case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "notYet" | "declined"
 
         // Core loop
@@ -86,6 +88,7 @@ enum Analytics {
             switch self {
             case .onboardingStep: "onboarding_step"
             case .onboardingCompleted: "onboarding_completed"
+            case .onboardingResumed: "onboarding_resumed"
             case .watchGate: "watch_gate"
             case .sessionStarted: "session_started"
             case .sessionCompleted: "session_completed"
@@ -127,6 +130,7 @@ enum Analytics {
             // `screen` is the numbered human name a dashboard can be read by.
             // Both ship, so old funnels keep working and new ones read plainly.
             case .onboardingStep(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
+            case .onboardingResumed(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
             case .watchGate(let outcome): ["outcome": outcome]
             case .sessionStarted(let source, let sound): ["source": source, "sound": sound]
             case .sessionCompleted(let d, let s): ["duration": d, "streak": s]

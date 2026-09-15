@@ -11,6 +11,7 @@ import AuthenticationServices
 /// hour to the reminder time, so nothing is asked twice.
 struct OnboardingView: View {
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var store: Store
     @Query private var preferences: [Preferences]
 
     @State private var step: Step = .relief
@@ -137,6 +138,8 @@ struct OnboardingView: View {
         Self.paywallInsideOnboarding ? .paywall : .signIn
     }
 
+    @State private var resumed = false
+
     /// Where they've been, so the chevron can undo a wrong tap. A stack rather
     /// than `Step.allCases` order, because the flow branches: the Watch gate
     /// sends people to the waitlist, and back from there has to mean the gate.
@@ -164,6 +167,13 @@ struct OnboardingView: View {
         }
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
+            .onAppear {
+                #if DEBUG
+                // A DEBUG jump to one screen wins over saved progress.
+                if ProcessInfo.processInfo.environment["ONBOARDING_STEP"] != nil { return }
+                #endif
+                resumeIfSaved()
+            }
         #if DEBUG
             // Jump straight to one screen, with plausible answers already filled
             // in, so copy can be reviewed without tapping through the interview:
@@ -191,7 +201,7 @@ struct OnboardingView: View {
     private var content: some View {
         switch step {
         case .relief:
-            ReliefScreen(onContinue: { go(.breath) }, onSignIn: { go(.signIn) })
+            ReliefScreen(onContinue: { go(.breath) })
 
         case .breath:
             BreathScreen { go(firstInterviewStep) }
@@ -408,7 +418,14 @@ struct OnboardingView: View {
             // and 5.1.1(v) forbids requiring registration after a purchase
             // that isn't account-based. Sessions made before signing in are
             // folded into the account later by the bootstrap-adopt flow.
-            PaywallScreen(plan: $plan) { _ in go(.signIn) }
+            // Someone who already pays (a reinstall, a new phone) is never
+            // shown an offer for what they own. StoreKit's on-device record
+            // is the proof; `.loading` alone is not.
+            if store.entitled {
+                Color.clear.onAppear { go(.signIn) }
+            } else {
+                PaywallScreen(plan: $plan) { _ in go(.signIn) }
+            }
 
         case .signIn:
             SignInScreen(onSignedIn: handleSignIn,
@@ -446,6 +463,42 @@ struct OnboardingView: View {
         // the one that was completed.
         Analytics.track(.onboardingStep(id: String(describing: step)))
         withAnimation { step = next }
+        saveProgress()
+    }
+
+    // MARK: - Resume
+
+    /// Screens whose content died with the app: the live practice session
+    /// and the results it produced. They reopen on the Watch connect screen
+    /// that leads into them.
+    private static let unresumable: Set<Step> = [.breathe, .sessionResults]
+
+    private func saveProgress() {
+        OnboardingResume(step: step.rawValue,
+                           history: history.map(\.rawValue),
+                           answers: answers,
+                           plan: plan.rawValue,
+                           waitlistEmail: waitlistEmail,
+                           planRating: planRating,
+                           reminderAllowed: reminderAllowed).save()
+    }
+
+    /// Reopens where they left off. Runs once, on the first appearance of a
+    /// fresh OnboardingView; a finished onboarding cleared the record.
+    private func resumeIfSaved() {
+        guard !resumed, let saved = OnboardingResume.load() else { return }
+        resumed = true
+        let point = saved.resumePoint(unresumable: Set(Self.unresumable.map(\.rawValue)),
+                                      fallback: Step.watchConnect.rawValue)
+        guard let target = Step(rawValue: point.step), target != .relief else { return }
+        answers = saved.answers
+        history = point.history.compactMap(Step.init(rawValue:))
+        plan = SubscriptionPlan(rawValue: saved.plan) ?? .monthly
+        waitlistEmail = saved.waitlistEmail
+        planRating = saved.planRating
+        reminderAllowed = saved.reminderAllowed
+        step = target
+        Analytics.track(.onboardingResumed(id: String(describing: target)))
     }
 
     /// Belt and suspenders for the interview's branching (Melvin, 2026-08-29:
@@ -487,6 +540,7 @@ struct OnboardingView: View {
     private func goBack() {
         guard let previous = history.popLast() else { return }
         withAnimation { step = previous }
+        saveProgress()
     }
 
     // MARK: - Side effects
@@ -540,6 +594,7 @@ struct OnboardingView: View {
             WaitlistClient.submit(waitlistEmail)
         }
         Analytics.track(.onboardingCompleted)
+        OnboardingResume.clear()
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
             prefs.onboardingComplete = true
             if let anchor = answers.anchor {
