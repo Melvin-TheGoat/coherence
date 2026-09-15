@@ -26,6 +26,8 @@ struct ContentView: View {
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
     @State private var profileDay: Date?
+    /// A recent-session row awaiting the delete confirmation.
+    @State private var pendingDelete: UUID?
 
     /// ONE sheet presenter for the whole screen. Stacking several
     /// `.sheet` modifiers on the same view silently breaks all but one of
@@ -428,11 +430,17 @@ struct ContentView: View {
                                         rating: ratings[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
+                        .contextMenu {
+                            Button(role: .destructive) { pendingDelete = session.id } label: {
+                                Label("Delete session", systemImage: "trash")
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 14)
                 .background(AppColor.backgroundSecondary,
                             in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+                .deleteSessionDialog(pending: $pendingDelete)
             }
         }
     }

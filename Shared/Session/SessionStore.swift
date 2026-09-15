@@ -104,6 +104,32 @@ enum SessionStore {
         signOut(in: context)
     }
 
+    /// Deletes one session and every row keyed to it (stats, reflection).
+    /// Returns whether a session with that id existed.
+    ///
+    /// Sessions are immutable, and this is not an edit: it is the user
+    /// removing a row they never meant to create (Melvin, 2026-09-15: "we
+    /// create ones and immediately end them"). The Watch already refuses
+    /// anything under `minDurationSec`; this covers the junk that clears the
+    /// bar. Streak, awards and the sparkline all derive from the sessions at
+    /// read time, so they correct themselves. What it does NOT touch: the
+    /// workout and mindful minutes the Watch wrote into Health, which belong
+    /// to the user's Health record, not to 808.
+    @discardableResult
+    static func deleteSession(id: UUID, in context: ModelContext) -> Bool {
+        let sessions = (try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == id }))) ?? []
+        guard !sessions.isEmpty else { return false }
+        for stats in (try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == id }))) ?? [] {
+            context.delete(stats)
+        }
+        for r in (try? context.fetch(FetchDescriptor<SessionReflection>(predicate: #Predicate { $0.sessionID == id }))) ?? [] {
+            context.delete(r)
+        }
+        for s in sessions { context.delete(s) }
+        try? context.save()
+        return true
+    }
+
     /// Hard-deletes Users soft-deleted more than `days` ago and every row FK'd to
     /// them (Preferences, Sessions, MeditationStats). Run on app launch. We store
     /// no raw biometrics, so nothing to delete from HealthKit.

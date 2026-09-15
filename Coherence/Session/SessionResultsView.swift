@@ -62,6 +62,11 @@ struct SessionResultsView: View {
     @State private var route: ResultRoute?
     @State private var pendingRoute: ResultRoute?
     @State private var paywallPlan: SubscriptionPlan = .monthly
+    /// The id awaiting the delete confirmation (this screen's own session).
+    @State private var pendingDelete: UUID?
+    /// Set once the rows are gone, so `onDisappear`'s reflection flush cannot
+    /// write an orphan reflection for a session that no longer exists.
+    @State private var deleted = false
 
     /// Whether the invite reward covers THIS session (`RewardLedger.cover`,
     /// asked once in `load`). The grant unlocks the evidence for a session,
@@ -141,17 +146,32 @@ struct SessionResultsView: View {
             }
             .screenBackground()
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItemGroup(placement: .topBarLeading) {
                     if session != nil, stats != nil {
                         Button { route = .share } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
                         .tint(AppColor.accentGoldText)
                     }
+                    if session != nil {
+                        Menu {
+                            Button(role: .destructive) { pendingDelete = sessionID } label: {
+                                Label("Delete session", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                        .tint(AppColor.textSecondary)
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
+            }
+            .deleteSessionDialog(pending: $pendingDelete) { _ in
+                deleted = true
+                autosave?.cancel()
+                dismiss()
             }
             .sheet(item: $route, onDismiss: {
                 guard let next = pendingRoute else { return }
@@ -970,6 +990,7 @@ struct SessionResultsView: View {
 
     private func flushReflection() {
         autosave?.cancel()
+        guard !deleted else { return }
         if !reflectionSaved { persistReflection() }
     }
 

@@ -45,6 +45,13 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     @Published var phase: Phase = .idle
+    /// Seconds left before a wrist-started session begins; nil when no
+    /// countdown is running. The phone counts five seconds down before it
+    /// sends params ("Get comfortable"), so a session started from the wrist
+    /// gets the same five (Melvin, 2026-09-15). Numbers on screen only: the
+    /// Watch plays no haptics, and a countdown is no exception.
+    @Published var countdown: Int?
+    private var countdownTask: Task<Void, Never>?
     @Published var authorized = false
     @Published var elapsed = 0
     @Published var params: SessionParams?
@@ -108,6 +115,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
     /// one extra step is telling a reachable phone to join (live screen +
     /// audio); an unreachable phone costs only the sound.
     func beginFromWatch() {
+        guard countdown == nil, phase == .idle || phase == .sent else { return }
         let chosen = (soundID?.isEmpty == false) ? soundID : nil
         let p = SessionParams(
             sessionID: UUID(),
@@ -118,12 +126,34 @@ final class WatchSessionManager: NSObject, ObservableObject {
             hapticsEnabled: true,
             sentAt: Date()
         )
-        Task { await begin(p, watchInitiated: true) }
+        countdown = 5
+        countdownTask = Task { @MainActor [weak self] in
+            while let self, let n = self.countdown, n > 0 {
+                // A cancelled sleep THROWS and `try?` swallows it; without the
+                // guard, Cancel would start the session (CLAUDE.md, the
+                // guided-audio bug).
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled else { return }
+                self.countdown = n - 1
+            }
+            guard !Task.isCancelled, let self else { return }
+            self.countdown = nil
+            await self.begin(p, watchInitiated: true)
+        }
+    }
+
+    /// Cancel on the countdown screen: back to the start screen, nothing sent.
+    func cancelCountdown() {
+        countdownTask?.cancel()
+        countdownTask = nil
+        countdown = nil
     }
 
     /// Starts a session from received params (no-op if already running or if this
     /// session was already handled via another delivery channel).
     private func begin(_ p: SessionParams, watchInitiated: Bool = false) async {
+        // The phone's start wins over a countdown still ticking on the wrist.
+        if !watchInitiated { cancelCountdown() }
         // .sent is a 3-second cosmetic state; a user starting the next session
         // that fast shouldn't have it silently swallowed.
         if phase == .sent { phase = .idle }

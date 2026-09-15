@@ -83,6 +83,29 @@ final class SessionStoreTests: XCTestCase {
     }
 
 
+    /// Deleting a session takes its stats and reflection with it and leaves
+    /// every other session alone.
+    func test_deleteSessionRemovesItsRowsOnly() throws {
+        let ctx = freshContext()
+        let keep = payload(belly: false)
+        let junk = payload(belly: true)
+        XCTAssertNotNil(SessionStore.persist(keep, in: ctx))
+        XCTAssertNotNil(SessionStore.persist(junk, in: ctx))
+        _ = SessionStore.saveReflection(sessionID: junk.sessionID, rating: 3, note: "oops",
+                                    technique: nil, techniqueNote: "", in: ctx)
+        XCTAssertEqual(count(Session.self, in: ctx), 2)
+        XCTAssertEqual(count(SessionReflection.self, in: ctx), 1)
+
+        XCTAssertTrue(SessionStore.deleteSession(id: junk.sessionID, in: ctx))
+
+        XCTAssertEqual(count(Session.self, in: ctx), 1)
+        XCTAssertEqual(count(MeditationStats.self, in: ctx), 1)
+        XCTAssertEqual(count(SessionReflection.self, in: ctx), 0)
+        let left = try XCTUnwrap(ctx.fetch(FetchDescriptor<Session>()).first)
+        XCTAssertEqual(left.id, keep.sessionID)
+        XCTAssertFalse(SessionStore.deleteSession(id: junk.sessionID, in: ctx), "a second delete finds nothing")
+    }
+
     /// Persisting the same payload twice never creates a duplicate.
     func test_persistIsIdempotent() {
         let ctx = freshContext()

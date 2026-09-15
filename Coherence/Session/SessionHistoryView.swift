@@ -23,6 +23,8 @@ struct ProfileTab: View {
     /// A practiced day tapped on Home — filters the log below.
     @Binding var selectedDay: Date?
     let openSettings: () -> Void
+    /// A log row awaiting the delete confirmation.
+    @State private var pendingDelete: UUID?
 
     private let calendar = Calendar.current
 
@@ -285,11 +287,17 @@ struct ProfileTab: View {
                                         rating: ratings[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
+                        .contextMenu {
+                            Button(role: .destructive) { pendingDelete = session.id } label: {
+                                Label("Delete session", systemImage: "trash")
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 14)
                 .background(AppColor.backgroundSecondary,
                             in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+                .deleteSessionDialog(pending: $pendingDelete)
             }
         }
     }

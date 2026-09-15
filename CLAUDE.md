@@ -1543,6 +1543,31 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## DELETE A SESSION, AND THE WRIST COUNTDOWN (2026-09-15)
+
+- **Sessions are immutable; deleting one is not an edit.** `SessionStore.
+  deleteSession(id:in:)` removes the Session, its MeditationStats and its
+  SessionReflection in one save. Everything derived (streak, awards, the
+  Home sparkline, the calendar) reads the sessions at render time, so
+  nothing else needs touching. The Watch's workout and mindful minutes in
+  Health are deliberately left alone: that is the user's Health record, and
+  the confirmation says so. One dialog, `DeleteSessionDialog`
+  (`Coherence/Session/DeleteSession.swift`), shared by the results screen's
+  ellipsis menu and the long-press menu on Home's recent rows and the
+  Profile log; `SessionDeletion.delete` also takes down a Friends post when
+  the reflection says the session was posted (and only then, because
+  `unpost` on a never-posted session would surface a CloudKit "not found"
+  in the Friends tab). **After a delete the results screen must not flush
+  its reflection** (`deleted` flag): `flushReflection` in `onDisappear`
+  would otherwise upsert an orphan reflection for a session that is gone.
+- **A wrist-started session counts down five seconds first**
+  (`WatchSessionManager.countdown`), the same "Get comfortable." the phone
+  shows, because the first half-minute of a session started the instant
+  Begin is tapped is the motion of settling in. Cancel returns to the start
+  screen with nothing sent; params arriving from the phone cancel it. It is
+  numbers on a screen and nothing else: the no-haptics rule for the Watch
+  is not suspended for a countdown.
+
 ## ONBOARDING ROUND 2 (2026-09-14): one tester, thirteen fixes, one root cause
 
 A no-Watch tester walked the interview and narrated it. `BACKLOG.md` holds

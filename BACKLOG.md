@@ -314,6 +314,21 @@ leave after finishing the interview.
   call ("push out the newest version"); the simulator checks in the commits
   stand in for it. There is no separate 1.0.2 any more.
 
+## Done (2026-09-15)
+
+- **Delete a session** (Melvin: "sometimes we create ones and immediately
+  end them"). Results screen: the circled-ellipsis menu beside Share, then
+  "Delete session". Home's recent rows and the Profile log: long-press a
+  row. One confirmation everywhere, stating what it does not touch (the
+  workout the Watch wrote into Health). Removes the session, its stats and
+  its reflection; if it was posted to friends the post comes down too.
+  Streak, awards and the sparkline recompute by themselves. Analytics:
+  `session_deleted`, name only. `SessionStore.deleteSession`, tested.
+- **Five-second countdown before a wrist-started session**, matching the
+  phone's ("Get comfortable."), with Cancel. Numbers only; the Watch still
+  plays no haptics. A start arriving from the phone cancels a countdown
+  still ticking on the wrist.
+
 ## Done (2026-09-12)
 
 - "Give us feedback" in Settings: opens Mail to support@meditate808.com with

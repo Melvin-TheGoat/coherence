@@ -39,6 +39,8 @@ enum Analytics {
         /// A session the Watch ended but did not score: "too_short" (under the
         /// minimum, an accidental Begin/End, not a failure) or "unreadable".
         case sessionDiscarded(reason: String, durationBand: String)
+        /// The user removed a session from their history. Name only.
+        case sessionDeleted
         case sessionStartFailed(reason: String)
         case resultViewed
         case resultMissing                        // a session ended with no stats: the failure metric
@@ -98,6 +100,7 @@ enum Analytics {
             case .sessionStarted: "session_started"
             case .sessionCompleted: "session_completed"
             case .sessionDiscarded: "session_discarded"
+            case .sessionDeleted: "session_deleted"
             case .sessionStartFailed: "session_start_failed"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
