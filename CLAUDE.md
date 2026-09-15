@@ -1672,6 +1672,34 @@ Content Analysis on photos, `tools/community-reports.gs` emailing reports.
 Nothing has run on real iCloud yet: needs the Console record types and a
 TestFlight on two phones.
 
+## FRIENDS IS BEHIND A SWITCH; THE NEXT BUILD SHIPS WITHOUT IT (2026-09-14)
+
+Aziz wanted the onboarding fixes in the next App Store build, and `mvp` also
+holds the unfinished Friends feature. `Coherence/FeatureFlags.swift`:
+`FeatureFlags.friends` is ON in DEBUG (808 Dev, simulator) and OFF in Release
+until `friendsInRelease` is flipped for the 1.1 archive (`FeatureFlagTests`
+fails if it is flipped early). Off means the pre-Friends app exactly: the tab
+reads Search with the restored "Friends are coming" `SearchTab`, results have
+no Post to friends, the app never touches the public database, the reward
+sheet never shows, and "Brought a friend" is filtered off the award shelf.
+**Anything new built for Friends must check the flag at its entry point.**
+
+Known leftover while off: `NSCameraUsageDescription` (the selfie) stays in
+Info.plist though nothing in a Release build opens the camera. No prompt can
+appear; decide at 1.1 whether that matters, and keep the App Privacy label
+free of Photos until Friends ships.
+
+**Schema gate for the next build:** the new defaulted fields on
+`Preferences` and `SessionReflection` sync through CloudKit, so Development
+→ Production must be promoted before release (RELEASE_CHECKLIST.md OPEN).
+
+The Friends section above still describes where 1.1 stands. Since it was
+written: every post is a front-camera selfie (BeReal style, no library),
+the rules are one line, the invite text is Aziz's, usernames are reserved
+by record name (`username-<handle>`, fetched, never queried) after the
+query-based claim silently failed on his phone, and a simulated run caught
+and fixed two layout bugs (wide photos, the invite hidden under the tab bar).
+
 ## NO SIGN-IN BEFORE THE END OF ONBOARDING; ONBOARDING RESUMES (2026-09-14)
 
 **Found in PostHog, Aziz asked for both fixes.** Every one of the four people

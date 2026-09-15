@@ -65,7 +65,7 @@ struct ContentView: View {
                 GuideView(embedded: true) { sheet = .setup }
                     .onAppear { Analytics.track(.guideOpened) }
             case .friends:
-                FriendsTab()
+                if FeatureFlags.friends { FriendsTab() } else { SearchTab() }
             case .profile:
                 ProfileTab(selectedDay: $profileDay) { sheet = .settings }
             }
@@ -103,7 +103,7 @@ struct ContentView: View {
         .onChange(of: sessions.count) { _, _ in refreshAwards() }
         .onChange(of: prefsRows.first?.evidenceGrantSince) { _, _ in refreshAwards() }
         // The invite reward landing: a brought friend sat their first session.
-        .sheet(item: $community.rewardNews) { news in
+        .sheet(item: FeatureFlags.friends ? $community.rewardNews : .constant(nil)) { news in
             InviteRewardSheet(news: news).presentationDetents([.medium])
         }
         #if DEBUG
@@ -217,6 +217,7 @@ struct ContentView: View {
             },
             accountCreatedAt: users.first?.createdAt,
             friendBroughtAt: prefsRows.first?.evidenceGrantSince)
+            .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
 
         // First run swallows everything already earned. Melvin and Aziz have
         // months of history and would otherwise meet a dozen unlock screens in

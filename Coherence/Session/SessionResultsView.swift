@@ -126,7 +126,7 @@ struct SessionResultsView: View {
                             if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
                             if covered, !store.entitlements.paid { tourDim(grantChip, lit: nil) }
                             tourDim(shareButton, lit: nil)
-                            tourDim(postButton, lit: nil)
+                            if FeatureFlags.friends { tourDim(postButton, lit: nil) }
                         } else {
                             header(session)
                             missingStatsCard
@@ -192,7 +192,9 @@ struct SessionResultsView: View {
             .task {
                 // The invite reward reads "has a first session" off the
                 // public profile; a results screen with stats is that fact.
-                if let session, stats != nil { await community.noteSessionCompleted(at: session.startedAt) }
+                if FeatureFlags.friends, let session, stats != nil {
+                    await community.noteSessionCompleted(at: session.startedAt)
+                }
             }
             // The tour brings each element to the reader, top-anchored for the
             // score so the whole hero shows, centred for the graphs.

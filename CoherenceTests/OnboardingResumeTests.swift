@@ -75,3 +75,11 @@ final class OnboardingResumeTests: XCTestCase {
         XCTAssertFalse(relief.contains("onSignIn"))
     }
 }
+
+/// The next App Store build must not carry the unfinished Friends feature.
+final class FeatureFlagTests: XCTestCase {
+    func test_friendsIsOffForTheAppStoreUntil1_1() {
+        XCTAssertFalse(FeatureFlags.friendsInRelease,
+                       "Friends ships in 1.1 after RELEASE_CHECKLIST's 1.1 list; flip this only in that archive")
+    }
+}

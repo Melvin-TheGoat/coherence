@@ -53,7 +53,7 @@ struct CoherenceApp: App {
                 .task { await WaitlistClient.flush() }
                 // Friends: profile, feed, and any invite reward that landed
                 // while the app was closed.
-                .task { await community.load() }
+                .task { if FeatureFlags.friends { await community.load() } }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }

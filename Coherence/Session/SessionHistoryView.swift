@@ -114,6 +114,7 @@ struct ProfileTab: View {
             },
             accountCreatedAt: users.first?.createdAt,
             friendBroughtAt: prefsRows.first?.evidenceGrantSince)
+            .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
     }
 
     private var awardsSection: some View {

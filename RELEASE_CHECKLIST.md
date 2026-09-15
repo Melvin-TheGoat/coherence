@@ -14,7 +14,34 @@ Tick an item by moving it to DONE with the date. Never delete a line.
   More changes will likely go into this version first, which means a new
   archive; this build may never ship.
 
+## WHAT THE NEXT BUILD CONTAINS (read before archiving)
+
+Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
+- **Onboarding: no sign-in until the end, and progress resumes** (Aziz asked
+  for this in the next release, 2026-09-14). Check on a device: screen one
+  has only "Let's find out"; quit mid-interview and relaunch lands on the
+  same question.
+- Everything already listed for 1.0.2 (no-Watch waitlist, Watch fixes).
+- Melvin's onboarding round 2 (merged 2026-09-14).
+- **Friends is compiled in but OFF** (`FeatureFlags.friendsInRelease = false`,
+  locked by `FeatureFlagTests`). The tab reads Search with "Friends are
+  coming", matching the store screenshots. Do not flip it for this build.
+
+The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
+this release needs a NEW archive.
+
 ## OPEN: must be done in the submission that ships the next build
+
+- [ ] **CloudKit Console: promote the schema Development → Production
+  BEFORE the build goes live.** This build adds fields to two synced models:
+  `CD_Preferences` (evidenceGrantRemaining, evidenceGrantSince,
+  rewardedFriends, grantedSessionIDs) and `CD_SessionReflection` (title,
+  publicNote, visibility). Production rejects fields it has never seen, so
+  without the promotion every Preferences and Reflection export fails
+  silently for every user, the same failure 1.0 shipped with. Run a DEBUG
+  build signed in to iCloud first (or the schema primer in Settings > CloudKit)
+  so Development has the fields, then deploy. Verify the fields are listed
+  under Production before releasing.
 
 - [ ] **App Privacy label: add Email Address.** App Store Connect → 808
   Meditate → App Privacy → Edit → add *Contact Info → Email Address*.

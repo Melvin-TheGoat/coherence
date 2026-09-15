@@ -20,7 +20,11 @@ struct MainTabBar: View {
             item(.guide, icon: "book.closed", label: "Guide")
                 .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
             plus
-            item(.friends, icon: "person.2", label: "Friends")
+            if FeatureFlags.friends {
+                item(.friends, icon: "person.2", label: "Friends")
+            } else {
+                item(.friends, icon: "magnifyingglass", label: "Search")
+            }
             item(.profile, icon: "person.crop.circle", label: "Profile")
         }
         .padding(.top, 8)
