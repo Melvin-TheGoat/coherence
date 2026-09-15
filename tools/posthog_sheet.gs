@@ -120,14 +120,23 @@ function refresh() {
 }
 
 function refreshAll() {
-  writeOverview();
-  writeDaily();
-  writeScreens();
-  writeFailures();
-  writePurchases();
-  writeWatchGate();
-  writeInstalls();
-  stamp();
+  // Each tab is written independently. PostHog answers most queries in a few
+  // seconds and occasionally times one out with a 504; when that happened
+  // inside writeDaily the whole run stopped, so the five tabs after it kept
+  // the previous hour's numbers and the stamp still read an hour earlier.
+  // Now one slow query costs one stale tab, and the failure is still raised
+  // at the end so the run shows as Failed rather than passing quietly.
+  var tabs = [
+    ['Overview', writeOverview], ['Daily', writeDaily], ['Screens', writeScreens],
+    ['Failures', writeFailures], ['Purchases', writePurchases],
+    ['Watch gate', writeWatchGate], ['Installs', writeInstalls],
+  ];
+  var failed = [];
+  tabs.forEach(function (t) {
+    try { t[1](); } catch (e) { failed.push(t[0] + ': ' + e.message); }
+  });
+  stamp(failed);
+  if (failed.length) throw new Error(failed.join(' | '));
 }
 
 // ---------------------------------------------------------------------------
@@ -411,20 +420,35 @@ function writeWatchGate() {
 // ---------------------------------------------------------------------------
 // Plumbing
 
+/** When this run started, so retries can stop before Apps Script's 6-minute cap. */
+var RUN_STARTED = Date.now();
+
 function query(sql) {
   var key = PropertiesService.getScriptProperties().getProperty('POSTHOG_KEY');
   if (!key) throw new Error('Set POSTHOG_KEY in Project Settings → Script Properties first.');
-  var res = UrlFetchApp.fetch(HOST + '/api/projects/' + PROJECT_ID + '/query/', {
-    method: 'post',
-    contentType: 'application/json',
-    headers: { Authorization: 'Bearer ' + key },
-    payload: JSON.stringify({ query: { kind: 'HogQLQuery', query: sql }, name: '808 sheet' }),
-    muteHttpExceptions: true
-  });
-  if (res.getResponseCode() >= 300) {
-    throw new Error('PostHog ' + res.getResponseCode() + ': ' + res.getContentText().slice(0, 300));
+  // PostHog rate-limits (429) and times queries out (504) under its own load,
+  // neither of which says anything is wrong with the query. Retry twice, and
+  // only while there is room inside the execution limit: a retry that runs
+  // into the 6-minute cap kills the whole run instead of one tab.
+  var attempt = 0;
+  for (;;) {
+    var res = UrlFetchApp.fetch(HOST + '/api/projects/' + PROJECT_ID + '/query/', {
+      method: 'post',
+      contentType: 'application/json',
+      headers: { Authorization: 'Bearer ' + key },
+      payload: JSON.stringify({ query: { kind: 'HogQLQuery', query: sql }, name: '808 sheet' }),
+      muteHttpExceptions: true
+    });
+    var code = res.getResponseCode();
+    if (code < 300) return JSON.parse(res.getContentText());
+    var worthRetrying = (code === 429 || code >= 500);
+    var roomLeft = (Date.now() - RUN_STARTED) < 200000;
+    if (!worthRetrying || attempt >= 2 || !roomLeft) {
+      throw new Error('PostHog ' + code + ': ' + res.getContentText().slice(0, 300));
+    }
+    attempt++;
+    Utilities.sleep(attempt * 5000);
   }
-  return JSON.parse(res.getContentText());
 }
 
 function scalar(sql) {
@@ -474,9 +498,16 @@ function write(name, rows, widths, textCols, numCols) {
   if (widths) widths.forEach(function (w, i) { sheet.setColumnWidth(i + 1, w); });
 }
 
-function stamp() {
+function stamp(failed) {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Overview');
-  sheet.getRange(1, 7).setValue('Refreshed ' + new Date().toLocaleString() + ' (hourly)');
+  if (!sheet) return;
+  var note = 'Refreshed ' + new Date().toLocaleString() + ' (hourly)';
+  // A tab that could not be rewritten still shows last hour's numbers, so the
+  // stamp has to name it. Otherwise the sheet looks current and is not.
+  if (failed && failed.length) {
+    note += '. Still on last hour: ' + failed.map(function (f) { return f.split(':')[0]; }).join(', ');
+  }
+  sheet.getRange(1, 7).setValue(note);
   ss.setActiveSheet(sheet);
 }
