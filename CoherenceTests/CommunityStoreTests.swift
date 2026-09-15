@@ -225,6 +225,21 @@ final class CommunityStoreTests: XCTestCase {
         XCTAssertNil(p.avatarURL)
     }
 
+    func test_filteredTextNeverReachesTheDatabase() async throws {
+        var d = draft(caption: "f*ck this")
+        do { try await aziz.post(d); XCTFail() } catch let e as CommunityError { XCTAssertEqual(e, .contentBlocked) }
+        d.caption = "fine"; d.title = "porn"
+        do { try await aziz.post(d); XCTFail() } catch let e as CommunityError { XCTAssertEqual(e, .contentBlocked) }
+        do { try await aziz.claimUsername("b1tch", displayName: "x"); XCTFail() } catch let e as CommunityError { XCTAssertEqual(e, .contentBlocked) }
+        XCTAssertTrue(db.records.isEmpty, "nothing refused is saved")
+    }
+
+    func test_reportPayloadCarriesNoPersonalData() throws {
+        let data = ReportClient.body(reportID: "r1", target: "post-S1", kind: "post", reason: "spam", appVersion: "1.1")
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: String])
+        XCTAssertEqual(Set(json.keys), ["token", "report_id", "target", "kind", "reason", "app_version"])
+    }
+
     func test_captionIsTrimmedAndClipped() async throws {
         let long = String(repeating: "a", count: 300)
         let post = try await aziz.post(draft(caption: "  " + long + "  "))

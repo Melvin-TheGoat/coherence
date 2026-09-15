@@ -79,8 +79,21 @@ this release needs a NEW archive.
   "we transmit nothing we can read" line is no longer true.
 - [ ] **Terms of use:** a user-content section (no tolerance for
   objectionable content; repeat offenders removed).
-- [ ] **Report email path** (`tools/community-reports.gs`) deployed and
-  tested with one real report.
+- [ ] **Report email path:** create the "808 friends reports" sheet, deploy
+  `tools/community-reports.gs` (steps in its header), paste the /exec URL
+  into `ReportClient.endpoint` (empty today, so nothing is sent), and file
+  one real report to see the email arrive.
+- [ ] **Photo screening entitlement:** add
+  `com.apple.developer.sensitivecontentanalysis.client` to
+  `Coherence/Coherence.entitlements` and enable it on the App ID. Without it
+  `PhotoScreen` lets every photo through (reports remain the backstop). Left
+  out on purpose so the Friends-off build did not change entitlements.
+- [ ] **Flip `FeatureFlags.friendsInRelease` to true** in the archive that
+  ships 1.1 (and update `FeatureFlagTests` in the same commit).
+- [ ] **Camera string:** `NSCameraUsageDescription` already names the selfie
+  and the profile photo; confirm the App Privacy label adds Photos or Videos.
+- [ ] **Store screenshots:** the Search tab is now Friends; re-shoot any
+  screenshot showing the tab bar.
 - [ ] **TestFlight with the founders plus five friends** before the store.
 
 ## ALWAYS: every submission

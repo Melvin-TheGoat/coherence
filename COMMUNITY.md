@@ -228,3 +228,35 @@ Pages) can come later and would open straight to the friend's profile.
    store. It ships as **1.1**, not inside 1.0.2.
 
 Three weeks of work at a realistic pace, and it must not stall 1.0.2.
+
+
+## Build status (2026-09-14, end of day)
+
+Everything above the moderation line is built and behind
+`FeatureFlags.friends` (on in DEBUG, off in Release until 1.1):
+
+- Data layer, Friends tab, invite reward, usernames reserved by record name.
+- **Save session** opens after every live session (title, Friends / Only
+  you, front-camera selfie for Friends, description, technique, private
+  notes), then results. The results chip reopens it to change visibility;
+  Only you takes the post down. Decisions taken at the v2 mockup's
+  recommendations: score shown on Save, Friends default with a profile,
+  username required except without iCloud, private notes never posted.
+- **Create your profile** (photo + @username, nickname beside it) ends
+  onboarding in Friends builds, is the Friends tab's first screen, and backs
+  Edit profile. **FriendsIntroView** asks existing users once they have no
+  profile, with no skip.
+- **Strava-shaped feed cards** and a profile with photo, Edit profile, Share
+  profile and a private friend count.
+- **Moderation:** `ContentFilter` (Shared, on-device, whole-word after
+  normalisation, catches f*ck / fvck / f u c k, passes Scunthorpe) runs on
+  titles, captions, nicknames and handles in the store itself;
+  `PhotoScreen` uses Sensitive Content Analysis when the entitlement exists
+  and the user has Sensitive Content Warning on, otherwise it cannot screen
+  and lets the photo through; `ReportClient` + `tools/community-reports.gs`
+  email each report (inert until deployed).
+
+Open for 1.1 (RELEASE_CHECKLIST.md): CloudKit public record types and
+indexes, the entitlement, the report script, age rating, privacy labels,
+policy and terms, store screenshots, and a TestFlight on two real phones.
+Nothing has run against real iCloud yet beyond the username claim.

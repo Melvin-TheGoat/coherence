@@ -312,8 +312,18 @@ struct SaveSessionView: View {
             case .private:
                 await community.unpost(session: sessionID)
             case .friends:
+                guard ContentFilter.check([title, publicNote]) == .ok else {
+                    problem = CommunityError.contentBlocked.localizedDescription
+                    saving = false
+                    return
+                }
                 var photo: URL?
                 if let selfie {
+                    if await PhotoScreen.check(selfie) == .sensitive {
+                        problem = CommunityError.photoBlocked.localizedDescription
+                        saving = false
+                        return
+                    }
                     guard let url = PostPhoto.prepare(selfie) else {
                         problem = "That selfie couldn't be read. Take another."
                         saving = false

@@ -162,6 +162,11 @@ leave after finishing the interview.
   (features 1 to 4). WAITING on Aziz's review of `mockups/friends-v2.html`
   (separate username + photo, existing-user prompt, Save session with
   Friends / Only you). Then moderation (feature 5). Status in CLAUDE.md.
+  UPDATE, same evening: v2 and moderation BUILT (Save session, Create your
+  profile, existing-user prompt, Strava cards, content filter, photo
+  screening, report emails), all behind the Friends switch. Remaining work is
+  the 1.1 checklist (iCloud schema, entitlement, report script, legal and
+  labels, TestFlight on two phones). Details in COMMUNITY.md.
 - **Rating prompt is in 1.0.1.** Watch the ratings count in the launch
   scorecard.
 - **Handle for the coach's name** (the narrated guide, not Otto): open.

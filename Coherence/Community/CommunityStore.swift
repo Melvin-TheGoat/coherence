@@ -64,6 +64,7 @@ actor CommunityStore {
     @discardableResult
     func claimUsername(_ raw: String, displayName: String) async throws -> Profile {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
+        guard ContentFilter.check([handle, displayName]) == .ok else { throw CommunityError.contentBlocked }
         let mine = try await me()
 
         switch try await holder(of: handle) {
@@ -281,6 +282,7 @@ actor CommunityStore {
         // BeReal rule: no selfie, no post. An edit to a post that already has
         // one may leave it out and keeps the one it has.
         guard draft.photoURL != nil || existing?["photo"] != nil else { throw CommunityError.selfieRequired }
+        guard ContentFilter.check([draft.title, draft.caption]) == .ok else { throw CommunityError.contentBlocked }
         let post = Post(id: id, author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
                         technique: draft.technique, caption: caption, photoURL: draft.photoURL,
                         practicedAt: draft.practicedAt,

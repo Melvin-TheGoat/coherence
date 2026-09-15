@@ -175,8 +175,8 @@ final class CommunityModel: ObservableObject {
             // read as the claim failing.
             do { try await refreshLists(store) } catch { errorText = Self.plain(error) }
             return true
-        } catch let e as CommunityError where e == .usernameTaken || e == .usernameInvalid {
-            errorText = e == .usernameTaken ? "That name is taken. Try another." : "Letters, numbers, dots and underscores only."
+        } catch let e as CommunityError where e == .usernameTaken || e == .usernameInvalid || e == .contentBlocked {
+            errorText = e == .usernameTaken ? "That name is taken. Try another." : e.localizedDescription
             return false
         } catch {
             errorText = Self.plain(error)
@@ -187,7 +187,12 @@ final class CommunityModel: ObservableObject {
     /// Uploads a profile photo (prepared like a post photo). Failures are
     /// shown but never undo the profile that was just created.
     func setAvatar(_ image: UIImage) async {
-        guard let store, let url = PostPhoto.prepare(image) else { return }
+        guard let store else { return }
+        guard await PhotoScreen.check(image) != .sensitive else {
+            errorText = CommunityError.photoBlocked.localizedDescription
+            return
+        }
+        guard let url = PostPhoto.prepare(image) else { return }
         do {
             profile = try await store.setAvatar(url)
             if let profile { people[profile.id] = profile }
@@ -305,7 +310,8 @@ final class CommunityModel: ObservableObject {
     func report(_ target: String, as kind: Report.Target, reason: String) async {
         guard let store else { return }
         do {
-            try await store.report(target, as: kind, reason: reason)
+            let report = try await store.report(target, as: kind, reason: reason)
+            ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
             Analytics.track(.contentReported(kind: kind.rawValue))
         } catch { errorText = Self.plain(error) }
     }

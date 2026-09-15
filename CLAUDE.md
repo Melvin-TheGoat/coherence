@@ -1700,6 +1700,29 @@ by record name (`username-<handle>`, fetched, never queried) after the
 query-based claim silently failed on his phone, and a simulated run caught
 and fixed two layout bugs (wide photos, the invite hidden under the tab bar).
 
+## FRIENDS, SECOND PASS (2026-09-14 evening): the v2 asks are built
+
+Status and decisions are in `COMMUNITY.md` → "Build status". The short
+version, and the traps that cost time:
+- **Save session** (`SaveSessionView`) replaces Post to friends; it opens from
+  `FriendsHooks` in ContentView when `coordinator.lastSessionID` changes and
+  chains into results through `pendingSheet`. The reflection's `note` is the
+  PRIVATE note; `publicNote` is what friends read. Every session saved before
+  this build has visibility "private".
+- **Create your profile** is one view with four doors (onboarding's last step
+  after Sign in, the Friends tab, Save session, Edit profile) plus
+  `FriendsIntroView` for pre-Friends users. `OnboardingView.Step.profile` is
+  appended after `signIn` so saved resume records keep their raw values.
+- **ContentView hit the type-checker limit** when Friends modifiers were
+  chained on it. They live in the `FriendsHooks` modifier; add new root-level
+  Friends behaviour there, never on ContentView's chain.
+- **Moderation is enforced in `CommunityStore`, not only in views**, so no
+  screen can post filtered text. `ContentFilter` is deliberately blunt; do not
+  add mild words (damn, hell) or substring matching (Scunthorpe).
+- The photo-screening entitlement and the report endpoint are intentionally
+  absent until 1.1 so the Friends-off build does not change entitlements or
+  send anything; both are on the 1.1 checklist.
+
 ## NO SIGN-IN BEFORE THE END OF ONBOARDING; ONBOARDING RESUMES (2026-09-14)
 
 **Found in PostHog, Aziz asked for both fixes.** Every one of the four people
