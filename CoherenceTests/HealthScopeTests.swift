@@ -47,6 +47,20 @@ final class HealthScopeTests: XCTestCase {
         XCTAssertFalse(files.isEmpty, "found no iOS sources to scan")
         for file in files {
             let source = try String(contentsOf: file, encoding: .utf8)
+            // The AirPods probe (Coherence/AirPods/, 2026-09-14) is the one
+            // deliberate exception: a DEBUG-only hardware spike for the
+            // no-Watch path that reads AirPods heart rate on the phone. The
+            // exemption is exactly as wide as `#if DEBUG`: every file in that
+            // folder must open with it and close with `#endif`, so the Release
+            // binary still contains no HealthKit read on iOS.
+            if file.path.contains("/Coherence/AirPods/") {
+                let trimmed = source.trimmingCharacters(in: .whitespacesAndNewlines)
+                XCTAssertTrue(trimmed.hasPrefix("#if DEBUG"),
+                              "\(file.lastPathComponent) must start with #if DEBUG")
+                XCTAssertTrue(trimmed.hasSuffix("#endif"),
+                              "\(file.lastPathComponent) must end with #endif")
+                continue
+            }
             for query in queries {
                 XCTAssertFalse(source.contains(query),
                                "\(file.lastPathComponent) reads HealthKit (\(query)); "
