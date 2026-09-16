@@ -54,6 +54,20 @@ final class MeditationMethodTests: XCTestCase {
                        "the first-timer page must open the roadmap")
     }
 
+    /// Aziz, 2026-09-15: the picker had nothing for sitting in silence, which
+    /// is the most common session there is, so a silent sit could only be
+    /// logged as Unreported or as somebody else's technique.
+    func test_silenceIsOfferedAndIsNotTheFreeTextOption() {
+        let ids = MeditationMethod.loggable.map(\.id)
+        XCTAssertTrue(ids.contains(MeditationMethod.silenceID),
+                      "a silent sit has nothing to pick")
+        XCTAssertNotEqual(MeditationMethod.silenceID, MeditationMethod.ownID,
+                          "silence means no technique; ownID means one we don't list")
+        XCTAssertFalse(MeditationMethod.all.contains { $0.id == MeditationMethod.silenceID },
+                       "silence is not a method the guide teaches")
+        XCTAssertEqual(ids.count, Set(ids).count, "duplicate id in the picker")
+    }
+
     func test_labelRoundTripsForEveryLoggableID() {
         for item in MeditationMethod.loggable {
             XCTAssertEqual(MeditationMethod.label(for: item.id), item.label)

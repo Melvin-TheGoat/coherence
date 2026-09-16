@@ -51,6 +51,12 @@ struct SaveSessionView: View {
     @State private var showClaim = false
     @State private var problem: String?
 
+    /// Which field holds the keyboard, so Done can put it away. A multi-line
+    /// field has no Return key that closes it, and scroll-to-dismiss is a
+    /// gesture nobody finds (Aziz, 2026-09-15).
+    @FocusState private var focused: Field?
+    private enum Field: Hashable { case title, publicNote, privateNote }
+
     enum Visibility: String { case friends, `private` }
 
     var body: some View {
@@ -62,7 +68,11 @@ struct SaveSessionView: View {
                         .padding(.top, 8)
 
                     label("Title")
-                    field { TextField("Title", text: $title).font(AppFont.body) }
+                    field {
+                        TextField("Title", text: $title).font(AppFont.body)
+                            .focused($focused, equals: .title)
+                            .submitLabel(.done)
+                    }
 
                     label("Who can see this")
                     visibilityPicker
@@ -81,6 +91,7 @@ struct SaveSessionView: View {
                             TextField("How did it go? Friends will see this", text: $publicNote, axis: .vertical)
                                 .lineLimit(2...5)
                                 .font(AppFont.callout)
+                                .focused($focused, equals: .publicNote)
                                 .onChange(of: publicNote) { _, new in
                                     if new.count > CommunityStore.captionLimit {
                                         publicNote = String(new.prefix(CommunityStore.captionLimit))
@@ -99,6 +110,7 @@ struct SaveSessionView: View {
                         TextField("Anything you want to remember", text: $privateNote, axis: .vertical)
                             .lineLimit(3...8)
                             .font(AppFont.callout)
+                            .focused($focused, equals: .privateNote)
                     }
 
                     Color.clear.frame(height: 110)
@@ -126,6 +138,11 @@ struct SaveSessionView: View {
             .toolbar {
                 if mode == .edit {
                     ToolbarItem(placement: .cancellationAction) { Button("Cancel") { onDone() } }
+                }
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Done") { focused = nil }
+                        .font(AppFont.callout.weight(.semibold))
                 }
             }
             .sheet(isPresented: $showRules) {

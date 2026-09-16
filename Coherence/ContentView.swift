@@ -15,6 +15,7 @@ import Charts
 struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var users: [User]
     @Query private var reflections: [SessionReflection]
@@ -40,6 +41,11 @@ struct ContentView: View {
     /// Awards earned but not yet celebrated, oldest first. Announced one at a
     /// time: two unlock screens racing each other would cheapen both.
     @State private var unlockQueue: [AwardEngine.Earned] = []
+    /// A session that finished while the app was away and still owes the
+    /// person a Save session screen (`PendingSave`). Recomputed on every
+    /// return to the foreground, because that is the moment they picked the
+    /// phone up after sitting.
+    @State private var resumeSave: UUID?
     #if DEBUG
     @State private var showBreathingPreview =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
@@ -118,9 +124,17 @@ struct ContentView: View {
                                users: users,
                                sessionActive: coordinator.active != nil,
                                awardShowing: !unlockQueue.isEmpty,
-                               lastSessionID: coordinator.lastSessionID) { id in
+                               lastSessionID: coordinator.lastSessionID,
+                               resumeSessionID: resumeSave) { id in
             if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
         })
+        // Picking the phone up after a sit IS the moment to grade it, and by
+        // then the app has usually been suspended or killed, so nothing is
+        // left in memory to act on. Read the waiting session off disk instead.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { readPendingSave() }
+        }
+        .onAppear { readPendingSave() }
         .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
@@ -196,6 +210,8 @@ struct ContentView: View {
                 SessionResultsView(sessionID: id)
             case .save(let id):
                 SaveSessionView(sessionID: id, mode: .new) {
+                    PendingSave.clear()
+                    resumeSave = nil
                     pendingSheet = .results(id)
                     sheet = nil
                 }
@@ -234,6 +250,19 @@ struct ContentView: View {
 
     /// Derived from history on every check, so nothing needs backfilling: a
     /// user with months of sessions simply has the awards those sessions earned.
+    /// The session waiting to be graded, if it is still there. A session can
+    /// be deleted from its results screen, so the stored id is checked against
+    /// storage before a sheet is opened on it; a dangling id clears itself.
+    private func readPendingSave() {
+        guard FeatureFlags.friends, let id = PendingSave.read() else { resumeSave = nil; return }
+        guard sessions.contains(where: { $0.id == id }) else {
+            PendingSave.clear()
+            resumeSave = nil
+            return
+        }
+        resumeSave = id
+    }
+
     private func refreshAwards() {
         let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
             guard let id = st.sessionID, let s = st.overallScore else { return nil }
@@ -496,6 +525,9 @@ private struct FriendsHooks: ViewModifier {
     let sessionActive: Bool
     let awardShowing: Bool
     let lastSessionID: UUID?
+    /// A session read back off disk because the app was not running when it
+    /// landed. Same destination as `lastSessionID`, different road in.
+    let resumeSessionID: UUID?
     let openSave: (UUID) -> Void
 
     /// A landed session waiting for the screen to be free. Presenting while
@@ -527,6 +559,13 @@ private struct FriendsHooks: ViewModifier {
                 .onChange(of: lastSessionID) { _, id in
                     if let id { pendingSave = id }
                 }
+                // The same sheet, for a session that finished while the app
+                // was suspended or dead. Both roads meet at the gate below,
+                // so the presentation rules are stated once.
+                .onChange(of: resumeSessionID) { _, id in
+                    if let id { pendingSave = id }
+                }
+                .onAppear { if let resumeSessionID { pendingSave = resumeSessionID } }
                 .task(id: Gate(pending: pendingSave, busy: sessionActive || awardShowing)) {
                     guard let id = pendingSave, !sessionActive, !awardShowing else { return }
                     try? await Task.sleep(nanoseconds: 700_000_000)

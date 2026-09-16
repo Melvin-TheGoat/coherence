@@ -949,6 +949,17 @@ struct SessionResultsView: View {
                     if focused { isEditingNote = true }
                     else if !note.isEmpty { save() }
                 }
+                // Aziz, 2026-09-15: the keyboard was hard to get rid of. A
+                // multi-line field has no Return key to close it, and the
+                // interactive scroll-to-dismiss is a gesture nobody finds.
+                // An explicit Done above the keys is the affordance.
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { save() }
+                            .font(AppFont.callout.weight(.semibold))
+                    }
+                }
         } else {
             Button {
                 isEditingNote = true

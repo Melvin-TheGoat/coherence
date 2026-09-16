@@ -410,6 +410,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
         guard isCurrent else { return }
         lastSessionID = session.id
+        // Survives the app being suspended or killed between the Watch
+        // shipping the payload and the person picking the phone up, which is
+        // how a session ends nearly every time. See PendingSave.
+        PendingSave.set(session.id)
         status = "Saved ✓"
         let dates = ((try? context.fetch(FetchDescriptor<Session>())) ?? []).map(\.startedAt)
         Analytics.track(.sessionCompleted(

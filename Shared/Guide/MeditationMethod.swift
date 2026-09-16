@@ -59,7 +59,8 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     /// Every method a session can be tagged with, including variants, flattened
     /// for the picker.
     public static var loggable: [(id: String, label: String)] {
-        [(guidedID, "Guided meditation")] + all.flatMap { method -> [(String, String)] in
+        [(silenceID, "Silence / my own practice"),
+         (guidedID, "Guided meditation")] + all.flatMap { method -> [(String, String)] in
             guard !method.variants.isEmpty else { return [(method.id, method.title)] }
             return method.variants.map { (($0.id), "\(method.title) · \($0.title)") }
         }
@@ -78,6 +79,12 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
 
     /// The id used when someone describes their own practice.
     public static let ownID = "own"
+    /// Sitting in silence with no named technique (Aziz, 2026-09-15: the
+    /// picker had nothing for the most common session there is). Distinct
+    /// from `ownID`, which means "a technique you have, that we don't list"
+    /// and carries free text; this one means there was no technique to name.
+    /// Not in the guide's method list: there are no steps to teach.
+    public static let silenceID = "silence"
     /// The 808 guided journey. Not in the guide's method list (it is audio, not
     /// a technique to learn), but the most common thing a new person did.
     public static let guidedID = "guided"
