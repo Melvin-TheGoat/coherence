@@ -178,16 +178,14 @@ are biometric under our rule. Decide after the first weeks of real posts.
 
 ## Decided 2026-09-15 (Melvin), being built now
 
-- **The tour ends at "put your Watch on" with a Begin.** No practice sit,
-  no demo results (two thirds of finishers left there). Their first real
-  session is the first score they see.
-- **THE PAYWALL MOVES TO AFTER THE FIRST MEDITATION.** The first session's
-  results open fully unlocked: score, verdict, every curve and reading.
-  Leaving that screen opens the paywall (the whole ladder). Once the
-  paywall has been shown, the free tier applies everywhere, including that
-  first session when they come back to it. Onboarding no longer contains a
-  paywall; sign in (optional) comes after the wall, before the tour.
-  No-Watch users still never see a paywall, as today.
+- DONE 2026-09-15: **the tour ends at "put your Watch on" with a Begin.**
+  No practice sit, no demo results. Begin finishes onboarding and Home
+  opens the setup sheet.
+- DONE 2026-09-15: **THE PAYWALL IS AFTER THE FIRST MEDITATION.** First
+  results fully unlocked with a one-line chip; leaving them opens the
+  paywall; after that the free tier applies everywhere, including that
+  session. Onboarding contains no paywall; sign in comes after the wall,
+  before the tour. No-Watch users never see a paywall.
 - **Otto is a premium AI chat, definitely.** Always available: interprets
   the score, the session, the data; advises on improving; answers a new
   meditator's questions. Start building. First version on-device

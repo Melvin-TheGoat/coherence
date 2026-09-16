@@ -1558,6 +1558,41 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## THE PAYWALL COMES AFTER THE FIRST MEDITATION (2026-09-15, Melvin)
+
+"Let them see their scores and graphs and everything, and then lock it
+behind a paywall once they try to leave." Onboarding sells nothing now
+(`paywallInsideOnboarding = false`, the `.paywall` step routes on to
+sign-in). The flow for a Watch owner: interview → wall → sign in
+(optional; Create your profile on Friends builds) → tour home → "Put your
+Watch on" with **Begin** → onboarding finishes and Home opens the setup
+sheet by itself (`OnboardingHandoff`) → a real session → results **fully
+unlocked** (`FirstSessionOffer.covers`, a "Your first session. Everything
+is open this once." chip) → leaving the results screen opens the paywall
+from ContentView (`HomeSheet.paywall`, placement `first_session`, the same
+screen and ladder) → bought or declined, `markShown()` → the free tier
+applies everywhere, including that session when they come back. A
+no-Watch user still never meets a paywall.
+
+- **The practice sit and its demo results are gone from the tour.** Two
+  thirds of interview finishers left on them and nobody reached the demo
+  results. `Step.breathe` / `.sessionResults` stay as cases (resume records,
+  ONBOARDING_STEP) and route to `finish()`.
+- **The grant is a device flag, not a synced field**
+  (`paywall.firstSessionShown.v1` in UserDefaults). A reinstall gets its
+  first session unlocked again, which is generous rather than wrong, and it
+  keeps the CloudKit schema out of a monetisation change. It is applied on
+  the results screen only (`entitlements.granting(covered || firstUnlocked)`),
+  never app-wide, and never while a tour stage is set or for a payer.
+- **`FirstSessionHooks` lives off ContentView's chain** (the FriendsHooks
+  precedent). Adding the hook inline plus one more DEBUG env check sent the
+  type checker over its limit; the DEBUG preview hooks are now a function,
+  `debugPreviewHooks()`. `PREVIEW_FIRST_PAYWALL=1` opens the cover on a
+  simulator.
+- Locked by `FirstSessionOfferTests`. Analytics: `paywall_viewed` with
+  placement `first_session`; the tour's two cut screens and the onboarding
+  paywall carry "(cut 1.0.2)" / "(after the first session since 1.0.2)".
+
 ## DELETE A SESSION, AND THE WRIST COUNTDOWN (2026-09-15)
 
 - **Sessions are immutable; deleting one is not an edit.** `SessionStore.
