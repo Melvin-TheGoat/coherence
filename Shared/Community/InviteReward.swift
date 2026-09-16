@@ -16,14 +16,16 @@ import Combine
 /// rejects rewards for downloads, and a session is the thing we actually
 /// want. Both facts are public records, so the phone verifies them itself.
 ///
-/// **Reward:** ten sessions of the full results screen (curves, tiles,
-/// readings, the locked share cards), per friend, stacking, capped at fifty
-/// outstanding so a burst of invites cannot mint a year of premium. Everyone
-/// earns it; a payer simply has nothing to unlock until a subscription
-/// lapses. The "Brought a friend" award lands the same moment.
+/// **Reward:** three sessions of the full results screen (curves, tiles,
+/// readings, the locked share cards), per friend, stacking, capped at
+/// fifteen outstanding so a burst of invites cannot mint months of premium.
+/// Was ten per friend and fifty outstanding until 2026-09-15 (Aziz: "10
+/// sessions is too much lets say like 3 sessions"). Everyone earns it; a
+/// payer simply has nothing to unlock until a subscription lapses. The
+/// "Brought a friend" award lands the same moment.
 enum InviteReward {
-    static let sessionsPerFriend = 10
-    static let cap = 50
+    static let sessionsPerFriend = 3
+    static let cap = 15
 
     struct FriendFact: Equatable {
         let id: String

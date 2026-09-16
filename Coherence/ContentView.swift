@@ -21,6 +21,7 @@ struct ContentView: View {
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
     @Query private var prefsRows: [Preferences]
+    @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
     @EnvironmentObject private var store: Store
 
@@ -442,6 +443,7 @@ struct ContentView: View {
     private var calendarCard: some View {
         let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
         let today = Date()
+        let byDay = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).byDay : [:]
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 SectionHeader(title: today.formatted(.dateTime.month(.wide)))
@@ -450,7 +452,7 @@ struct ContentView: View {
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
             }
-            MonthCalendar(monthAnchor: today, practiced: practiced) { day in
+            MonthCalendar(monthAnchor: today, practiced: practiced, photos: byDay) { day in
                 profileDay = day
                 tab = .profile
             }
@@ -490,6 +492,7 @@ struct ContentView: View {
                 let scores = SessionListSupport.scoreMap(allStats)
                 let stats = SessionListSupport.statsMap(allStats)
                 let ratings = SessionListSupport.ratingMap(reflections)
+                let thumbs = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
                 VStack(spacing: 0) {
                     ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { i, session in
                         if i > 0 { Divider().overlay(AppColor.textSecondary.opacity(0.12)) }
@@ -497,7 +500,8 @@ struct ContentView: View {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
                                         subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
-                                        rating: ratings[session.id])
+                                        rating: ratings[session.id],
+                                        thumbnail: thumbs[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
                         .contextMenu {

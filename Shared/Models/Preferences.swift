@@ -31,7 +31,7 @@ final class Preferences {
     /// accepted, and sat once. Capped at `InviteReward.cap` outstanding.
     var evidenceGrantRemaining: Int = 0
     /// When the first grant landed. Only sessions started after it consume
-    /// one: "your NEXT ten sessions", not ten old ones.
+    /// one: "your NEXT three sessions", not three old ones.
     var evidenceGrantSince: Date?
     /// Profile record names already paid out, so a friend rewards once.
     var rewardedFriends: [String] = []
