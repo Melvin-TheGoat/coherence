@@ -35,7 +35,10 @@ struct OnboardingView: View {
     /// (screen 23), while its open-questions section argues for after the first
     /// session. Kept as one switch so moving it is a one-line change, not a
     /// re-plumb — see ONBOARDING.md "Open — needs a decision before building".
-    private static let paywallInsideOnboarding = true
+    /// FALSE since 2026-09-15 (Melvin): the paywall comes after the first
+    /// meditation, from ContentView (`FirstSessionOffer`), once the person has
+    /// seen their own score, curves and readings. Onboarding sells nothing.
+    private static let paywallInsideOnboarding = false
 
     enum Step: Int, CaseIterable {
         case relief, breath                                    // 1–2
@@ -135,15 +138,18 @@ struct OnboardingView: View {
     /// The session the walkthrough's breathing practice produced.
     @State private var walkthroughSessionID: UUID?
 
-    /// After the walkthrough (or skipping out of it): the company they'd be
-    /// in, then the offer. The wall moved here from the middle of the payoff
-    /// (Melvin, 2026-09-15): social proof lands best right before the ask.
-    private var afterWalkthrough: Step { .wall }
-
-    /// After the wall: the offer, or sign-in when the paywall lives outside
-    /// onboarding.
+    /// After the wall: sign-in (optional), then the tour for Watch owners.
+    /// The wall sits between health consent and sign-in for everyone: the
+    /// company they'd be in, right before the app asks them for anything.
     private var afterWall: Step {
         Self.paywallInsideOnboarding ? .paywall : .signIn
+    }
+
+    /// After the account step (sign-in, and Create your profile on Friends
+    /// builds): Watch owners get the two-screen tour that ends on Begin; a
+    /// person with no Watch is done.
+    private func afterAccount() {
+        if answers.hasWatch != false { go(.tourHome) } else { finish() }
     }
 
     @State private var resumed = false
@@ -392,7 +398,7 @@ struct OnboardingView: View {
                     // Route after the sheet is dismissed, so the walkthrough
                     // never starts underneath a system prompt.
                     await MainActor.run {
-                        go(answers.hasWatch != false ? .tourHome : .signIn)
+                        go(.wall)
                     }
                 }
             }
@@ -402,34 +408,26 @@ struct OnboardingView: View {
         case .tourHome:
             TourHomeScreen { go(.watchConnect) }
 
+        // The tour ends here (Melvin, 2026-09-15: "don't make them do the
+        // sit"). Begin finishes onboarding and asks Home to open the setup
+        // sheet, so their first real session is the first score they see.
+        // The practice sit and its demo results lost two thirds of the people
+        // who reached them; they are no longer routed to.
         case .watchConnect:
-            WatchConnectScreen(onReady: { go(.breathe) },
-                               onSkip: { go(afterWalkthrough) })
+            WatchConnectScreen(onReady: { OnboardingHandoff.requestSetup(); finish() },
+                               onSkip: { finish() })
 
         case .breathe:
-            GuidedBreathScreen(onScored: { id in
-                walkthroughSessionID = id
-                go(.sessionResults)
-            }, onSkip: { go(afterWalkthrough) })
+            Color.clear.onAppear { finish() }
 
         case .sessionResults:
-            if let id = walkthroughSessionID {
-                WalkthroughResultsScreen(sessionID: id) { go(afterWalkthrough) }
-            } else {
-                // Unreachable by routing; a safe landing beats a crash.
-                Color.clear.onAppear { go(afterWalkthrough) }
-            }
+            Color.clear.onAppear { finish() }
 
         case .paywall:
-            // Whether they bought or not, sign-in stays optional: a purchase
-            // rides the Apple ID via StoreKit and needs no account of ours,
-            // and 5.1.1(v) forbids requiring registration after a purchase
-            // that isn't account-based. Sessions made before signing in are
-            // folded into the account later by the bootstrap-adopt flow.
-            // Someone who already pays (a reinstall, a new phone) is never
-            // shown an offer for what they own. StoreKit's on-device record
-            // is the proof; `.loading` alone is not.
-            PaywallScreen(plan: $plan) { _ in go(.signIn) }
+            // No paywall inside onboarding since 2026-09-15; it opens after
+            // the first meditation from ContentView. A saved resume record
+            // pointing here moves on to sign-in.
+            Color.clear.onAppear { go(.signIn) }
 
         case .signIn:
             SignInScreen(onSignedIn: { credential in
@@ -445,7 +443,7 @@ struct OnboardingView: View {
                               suggested: answers.username,
                               nickname: answers.firstName) { handle in
                 if let handle { answers.username = handle }
-                finish()
+                afterAccount()
             }
         }
     }
@@ -592,7 +590,7 @@ struct OnboardingView: View {
 
     /// Friends builds end on Create your profile; everything else finishes.
     private func afterSignIn() {
-        if FeatureFlags.friends { go(.profile) } else { finish() }
+        if FeatureFlags.friends { go(.profile) } else { afterAccount() }
     }
 
     private var typedName: String? {

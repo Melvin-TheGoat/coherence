@@ -22,6 +22,7 @@ struct ContentView: View {
     @Query private var allStats: [MeditationStats]
     @Query private var prefsRows: [Preferences]
     @EnvironmentObject private var community: CommunityModel
+    @EnvironmentObject private var store: Store
 
     @State private var tab: MainTab = .home
     /// A day tapped on Home's calendar. Profile opens with its log filtered
@@ -59,6 +60,9 @@ struct ContentView: View {
         case save(UUID)
         /// A session the Watch ended without a score (too short, unreadable).
         case discarded(SessionCoordinator.Discard)
+        /// The offer, after the first meditation (2026-09-15). Opens when a
+        /// free user leaves the first results screen.
+        case paywall
 
         var id: String {
             switch self {
@@ -67,8 +71,19 @@ struct ContentView: View {
             case .results(let id): return "results-\(id)"
             case .save(let id): return "save-\(id)"
             case .discarded(let d): return "discarded-\(d.id)"
+            case .paywall: return "paywall"
             }
         }
+    }
+
+    /// The plan the post-session paywall preselects. Monthly, since the
+    /// 7-day trial renews into it.
+    @State private var paywallPlan: SubscriptionPlan = .monthly
+    @ObservedObject private var firstOffer = FirstSessionOffer.shared
+
+    /// One cover at a time; anything asked for while one is up waits its turn.
+    private func present(_ next: HomeSheet) {
+        if sheet == nil { sheet = next } else { pendingSheet = next }
     }
 
     var body: some View {
@@ -120,6 +135,9 @@ struct ContentView: View {
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
         })
+        .firstSessionHooks(offer: firstOffer, paid: store.entitlements.paid,
+                           onOpenSetup: { present(.setup) },
+                           onPaywallDue: { present(.paywall) })
         .modifier(FriendsHooks(community: community,
                                users: users,
                                sessionActive: coordinator.active != nil,
@@ -142,44 +160,7 @@ struct ContentView: View {
                               plannedDurationSec: 600,
                               planChip: "10 min") { showBreathingPreview = false }
         }
-        .onAppear {
-            if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
-                let u = SessionStore.currentUser(in: context)
-                if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
-            }
-            // Store screenshots of the Profile tab: the handle is optional in
-            // onboarding, so a seeded profile has none unless asked for here.
-            if let handle = ProcessInfo.processInfo.environment["DEMO_USERNAME"] {
-                let u = SessionStore.currentUser(in: context)
-                if (u.username ?? "").isEmpty { u.username = Username.normalize(handle); try? context.save() }
-            }
-            if ProcessInfo.processInfo.environment["PREVIEW_BLOCKED"] == "1" {
-                coordinator.startFailure = .heartRateUnavailable
-            }
-            if ProcessInfo.processInfo.environment["PREVIEW_HISTORY"] == "1" {
-                DemoData.seedHistory(in: context)
-            }
-            if ProcessInfo.processInfo.environment["PREVIEW_NOISY"] == "1" {
-                DemoData.seedNoisyBad(in: context)
-            }
-            if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
-                sheet = .results(DemoData.seedResults(in: context))
-            }
-            if let secs = ProcessInfo.processInfo.environment["PREVIEW_TOO_SHORT"].flatMap(Int.init), sheet == nil {
-                sheet = .discarded(.init(id: UUID(), durationSec: secs))
-            }
-            if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
-                sheet = .save(DemoData.seedResults(in: context))
-            }
-            if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
-                switch which {
-                case "guide": tab = .guide
-                case "friends", "search": tab = .friends
-                case "profile": tab = .profile
-                default: tab = .home
-                }
-            }
-        }
+        .onAppear(perform: debugPreviewHooks)
         #endif
         // A session is running on the Watch — take over the phone for every mode.
         .fullScreenCover(item: Binding(get: { coordinator.active }, set: { _ in })) { session in
@@ -219,9 +200,66 @@ struct ContentView: View {
                 SessionTooShortView(discard: discard,
                                     onStartAgain: { pendingSheet = .setup; sheet = nil },
                                     onDone: { sheet = nil })
+            case .paywall:
+                // The same screen and ladder onboarding used to end on. Both
+                // exits (bought, or declined down to free) close the grant:
+                // from here the free tier applies, including to the session
+                // they just left.
+                PaywallScreen(placement: "first_session", plan: $paywallPlan) { _ in
+                    firstOffer.markShown()
+                    sheet = nil
+                }
             }
         }
     }
+
+    #if DEBUG
+    /// The simulator review hooks (`PREVIEW_*`, `DEMO_*`). A function rather
+    /// than an inline closure: as one expression on the body's chain it sent
+    /// the type checker over its time limit (2026-09-15).
+    private func debugPreviewHooks() {
+            if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
+                let u = SessionStore.currentUser(in: context)
+                if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
+            }
+            // Store screenshots of the Profile tab: the handle is optional in
+            // onboarding, so a seeded profile has none unless asked for here.
+            if let handle = ProcessInfo.processInfo.environment["DEMO_USERNAME"] {
+                let u = SessionStore.currentUser(in: context)
+                if (u.username ?? "").isEmpty { u.username = Username.normalize(handle); try? context.save() }
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_BLOCKED"] == "1" {
+                coordinator.startFailure = .heartRateUnavailable
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_HISTORY"] == "1" {
+                DemoData.seedHistory(in: context)
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_NOISY"] == "1" {
+                DemoData.seedNoisyBad(in: context)
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
+                sheet = .results(DemoData.seedResults(in: context))
+            }
+            if let secs = ProcessInfo.processInfo.environment["PREVIEW_TOO_SHORT"].flatMap(Int.init), sheet == nil {
+                sheet = .discarded(.init(id: UUID(), durationSec: secs))
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
+                sheet = .save(DemoData.seedResults(in: context))
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_FIRST_PAYWALL"] == "1", sheet == nil {
+                sheet = .paywall
+            }
+            if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
+                switch which {
+                case "guide": tab = .guide
+                case "friends", "search": tab = .friends
+                case "profile": tab = .profile
+                default: tab = .home
+                }
+            }
+        
+    }
+    #endif
 
     // MARK: - Home
 

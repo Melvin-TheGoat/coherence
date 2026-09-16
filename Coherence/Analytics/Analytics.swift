@@ -277,9 +277,9 @@ enum Analytics {
         "health":            "27 Health data consent",
         "tourHome":          "28 Tour: this is home",
         "watchConnect":      "29 Tour: put your Watch on",
-        "breathe":           "30 Tour: two-minute demo",
-        "sessionResults":    "31 Tour: demo results",
-        "paywall":           "32 Paywall",
+        "breathe":           "30 Tour: two-minute demo (cut 1.0.2)",
+        "sessionResults":    "31 Tour: demo results (cut 1.0.2)",
+        "paywall":           "32 Paywall (after the first session since 1.0.2)",
         "signIn":            "33 Sign in with Apple",
         "profile":           "34 Create your profile (Friends builds)",
     ]

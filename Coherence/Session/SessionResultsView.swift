@@ -72,7 +72,12 @@ struct SessionResultsView: View {
     /// asked once in `load`). The grant unlocks the evidence for a session,
     /// never the app.
     @State private var covered = false
-    private var entitlements: Entitlements { store.entitlements.granting(covered) }
+    /// The first meditation's results are fully unlocked for a free user
+    /// until the paywall has been shown (`FirstSessionOffer`). Read once on
+    /// appear, so the screen cannot re-lock underneath them mid-read.
+    @State private var firstUnlocked = false
+    @ObservedObject private var firstOffer = FirstSessionOffer.shared
+    private var entitlements: Entitlements { store.entitlements.granting(covered || firstUnlocked) }
 
     enum ResultRoute: Identifiable {
         case share
@@ -130,6 +135,7 @@ struct SessionResultsView: View {
                             }
                             if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
                             if covered, !store.entitlements.paid { tourDim(grantChip, lit: nil) }
+                            else if firstUnlocked, !store.entitlements.paid { tourDim(firstSessionChip, lit: nil) }
                             tourDim(shareButton, lit: nil)
                             if FeatureFlags.friends { tourDim(visibilityChip, lit: nil) }
                         } else {
@@ -208,6 +214,7 @@ struct SessionResultsView: View {
             .onChange(of: store.state) { _, _ in
                 if let session, stats != nil {
                     covered = store.entitlements(for: session.id, startedAt: session.startedAt).evidenceGranted
+                    firstUnlocked = !store.entitlements.paid && firstOffer.covers && tourStage == nil
                 }
             }
             .onAppear {
@@ -360,6 +367,19 @@ struct SessionResultsView: View {
     }
 
     /// The grant, named where it applies, with the balance after this one.
+    /// Says plainly why this screen is open, and that it is a one-off.
+    private var firstSessionChip: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles").foregroundStyle(AppColor.calmAccent)
+            Text("Your first session. Everything is open this once.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1))
+    }
+
     private var grantChip: some View {
         let left = store.ledger?.remaining ?? 0
         return HStack(spacing: 8) {
@@ -867,7 +887,15 @@ struct SessionResultsView: View {
                 .opacity(reflectionSaved ? 0.7 : 1)
         }
         .card()
-        .onDisappear { flushReflection() }
+        .onDisappear {
+            flushReflection()
+            // Leaving the unlocked first results is the moment of the offer.
+            // Never inside the onboarding tour (there is no tour session any
+            // more, but the environment guard is free), never for a payer.
+            if firstUnlocked, !store.entitlements.paid, tourStage == nil {
+                firstOffer.requestPaywall()
+            }
+        }
     }
 
     /// Which method they practiced. Unreported is the default and stays a
@@ -1043,6 +1071,7 @@ struct SessionResultsView: View {
         stats = try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == sid })).first
         if let session, stats != nil {
             covered = store.entitlements(for: session.id, startedAt: session.startedAt).evidenceGranted
+            firstUnlocked = !store.entitlements.paid && firstOffer.covers && tourStage == nil
         }
         if let reflection = SessionStore.reflection(for: sid, in: context) {
             rating = Double(reflection.rating ?? 5)

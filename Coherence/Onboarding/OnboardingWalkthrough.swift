@@ -2,11 +2,12 @@ import SwiftUI
 import SwiftData
 import WatchConnectivity
 
-/// The walkthrough: the last stretch of onboarding, placed just before the
-/// paywall (Melvin's structure, 2026-08-25). Show the real home screen with
-/// notes, connect the Watch, run a real two-minute paced breathing session
-/// with the wrist tapping the rhythm, then land on the real results screen.
-/// By the time the offer appears they have their own score on their own body.
+/// The walkthrough: the last stretch of onboarding. Since 2026-09-15 it is
+/// two screens: the real home screen with notes, then connect the Watch and
+/// tap Begin, which finishes onboarding and opens the setup sheet for a REAL
+/// first session. The two-minute practice sit and its demo results below are
+/// no longer routed to (two thirds of the people who reached them left); the
+/// offer now comes after that first real session, from ContentView.
 ///
 /// Nothing in here is a mock. The tour shows the actual `ContentView`, the
 /// practice runs through the actual `SessionCoordinator` and Watch pipeline,
@@ -348,8 +349,8 @@ struct WatchConnectScreen: View {
     var body: some View {
         OnboardingScreen(section: .win,
                          title: "Put your Watch on.",
-                         subtitle: "The next two minutes are measured from your wrist, so make sure it's snug and awake.",
-                         ctaTitle: probe.ready ? "It's on. Let's breathe" : "Check again",
+                         subtitle: "Your first session is measured from your wrist, so make sure it's snug and awake.",
+                         ctaTitle: probe.ready ? "It's on. Let's begin" : "Check again",
                          ctaEnabled: !probe.checking,
                          skipTitle: "My Watch isn't with me. Continue",
                          onSkip: (failedChecks >= 3 || probe.unsupported) ? onSkip : nil,
