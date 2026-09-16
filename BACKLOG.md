@@ -196,6 +196,21 @@ of 0.60 would have put this session at about 16 (with the same heart and
 breath), and 0.75 is the territory real users with ordinary movement land
 in. Decide with data from the captures, not this one card.
 
+## Two start failures for a real user (Tulsa, 2026-09-15 22:26, PostHog be74c019)
+
+iPhone 13 Pro on iOS 18.7.8, 1.0.1, finished onboarding, said they have a
+Watch, declined the whole ladder (the first "settled on free"), pressed
+Begin, two start failures, gone 90 minutes later with no session. The
+per-person reasons are not in the sheet; the Failures tab moved by exactly
++2 `watchNotPaired` and +1 person overnight, so that is almost certainly
+them: WCSession activated and reported no Apple Watch paired, twice. The
+app cannot tell "no Watch" from "a Watch paired to another iPhone" or "a
+watch that is not an Apple Watch"; the person said yes at the gate. Nothing
+to fix from here without asking them. Same night, Lawrenceville (no Watch
+at the gate) pressed Begin three times and hit `watchAppNotInstalled`, so
+they DO have a paired Watch without 808 on it: the install screen after
+that failure is doing its job or not; worth watching whether they return.
+
 ## Otto is a sloth (Melvin, 2026-09-16)
 
 Otto gets a mascot: a sloth. Melvin's favourite animal, slow and peaceful,
