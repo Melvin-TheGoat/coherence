@@ -211,7 +211,35 @@ at the gate) pressed Begin three times and hit `watchAppNotInstalled`, so
 they DO have a paired Watch without 808 on it: the install screen after
 that failure is doing its job or not; worth watching whether they return.
 
-## Otto is a sloth (Melvin, 2026-09-16)
+## Camera framing before Begin (Melvin, 2026-09-16): BUILT on `camera-vision`
+
+Done the same day: mockup `mockups/camera-framing.html`; the Begin sheet
+shows the front camera at 3:4, full width, with a white seated-figure
+outline (`SeatedFigureOutline`) that turns teal with "You're in frame"
+once a person is detected three times in four seconds; the live screen
+keeps a thumbnail; one recorder owned by the coordinator serves the
+preview and the session, and the preview's detected box becomes the
+session ROI from t = 0 when you were framed before Begin. 366 tests.
+Melvin to check on the phone: the outline goes teal within about 3 s of
+sitting down, and the next capture's header reads `roi_fixed_at_sec=0.0`.
+
+The camera preview moves to the setup sheet ("Ready when you are") so
+people place themselves before the session starts; it gets bigger (the
+width of the sheet); and a thin white outline of a seated person is laid
+over it to fit yourself into, turning teal with "You're in frame" once the
+torso is detected. Mockup first (`mockups/camera-framing.html`), then the
+Swift on the camera branch behind the DEBUG collector toggle for now; the
+live screen keeps a modest preview. Begin stays the only gold object.
+
+## Otto is a sloth (Melvin, 2026-09-16): direction chosen
+
+Melvin picked board 1 (Otto sitting cross-legged, eyes closed) for the big
+placements and the head badge for the chat rows and header. Colour still
+to confirm (teal recommended). Next: finish the two drawings (Figma pass
+in-house or a line-art illustrator briefed with `mockups/otto-sloth.md`),
+then replace `OttoMark` with the badge and put the sitting figure on the
+locked and empty states.
+
 
 Otto gets a mascot: a sloth. Melvin's favourite animal, slow and peaceful,
 on brand. Needs: an illustration (the `OttoMark` placeholder "O" becomes
@@ -219,7 +247,11 @@ the sloth on the results row, the Profile row and the chat header), a
 one-line voice note in the brief so Otto's tone matches (unhurried, warm,
 never breathless), and the App Store copy for the paid tier once Otto
 ships. Design first: a mockup with the sloth before any Swift. Not a
-photo; drawn, in the app's line-art language like the 808 mark.
+photo; drawn, in the app's line-art language like the 808 mark. IN FLIGHT
+2026-09-16: concept page `mockups/otto-sloth.html` on branch `sloth`
+(four artboards, three colour treatments, a voice line) plus
+`mockups/otto-sloth.md` on how to finish it (in-house in Figma or
+Illustrator, or a line-art illustrator briefed with the SVGs).
 
 **Otto's facts, for the founders (2026-09-16):** it runs on Apple's own
 on-device language model (the Foundation Models framework, part of Apple
