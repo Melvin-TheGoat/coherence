@@ -76,8 +76,20 @@ struct SelfieCamera: View {
         ZStack(alignment: .bottom) {
             if let captured {
                 // The shot fills the same frame the preview did, so review is
-                // a continuation of the same screen, not a new page.
-                Color.black.overlay(Image(uiImage: captured).resizable().scaledToFill())
+                // a continuation of the same screen, not a new page. Sized by
+                // the frame and clipped INSIDE it: a scaled-to-fill image in a
+                // bare overlay keeps its oversized frame, and SwiftUI hit-tests
+                // that frame even where it is clipped, which is how the shot
+                // was swallowing taps on the Retake button (2026-09-16).
+                GeometryReader { geo in
+                    Image(uiImage: captured)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.height)
+                        .clipped()
+                }
+                .background(Color.black)
+                .allowsHitTesting(false)
             } else {
                 switch camera.state {
                 case .denied:
@@ -111,6 +123,7 @@ struct SelfieCamera: View {
                         .padding(.horizontal, 20).padding(.vertical, 14)
                         .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous)
                             .stroke(.white.opacity(0.3), lineWidth: 1))
+                        .contentShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
                 }
                 .buttonStyle(.plain)
                 Button {
@@ -231,11 +244,36 @@ final class SelfieCameraModel: ObservableObject {
                    session.canAddInput(input), session.canAddOutput(output) {
                     session.addInput(input)
                     session.addOutput(output)
+                    // Focus and exposure: the default after adding an input is
+                    // whatever the device was last left in, and a front camera
+                    // with autofocus (iPhone 15 and later) can sit locked at a
+                    // stale distance. Ask for continuous both ways, and let a
+                    // change of subject retrigger them (2026-09-16: "trouble
+                    // focusing").
+                    if (try? device.lockForConfiguration()) != nil {
+                        if device.isFocusModeSupported(.continuousAutoFocus) {
+                            device.focusMode = .continuousAutoFocus
+                        }
+                        if device.isExposureModeSupported(.continuousAutoExposure) {
+                            device.exposureMode = .continuousAutoExposure
+                        }
+                        device.isSubjectAreaChangeMonitoringEnabled = true
+                        device.unlockForConfiguration()
+                    }
+                    output.maxPhotoQualityPrioritization = .quality
                     if let connection = output.connection(with: .video) {
                         if connection.isVideoRotationAngleSupported(90) { connection.videoRotationAngle = 90 }
+                        // NOT mirrored here. Rotation and mirroring on the same
+                        // photo connection came back as a photo rotated a
+                        // quarter turn anticlockwise on Melvin's phone
+                        // (2026-09-16): the two are folded into one EXIF
+                        // orientation and not every consumer reads it the same
+                        // way. The shot is mirrored in software after capture,
+                        // into upright pixels, so nothing downstream depends on
+                        // an orientation tag.
                         if connection.isVideoMirroringSupported {
                             connection.automaticallyAdjustsVideoMirroring = false
-                            connection.isVideoMirrored = true
+                            connection.isVideoMirrored = false
                         }
                     }
                 } else {
@@ -258,6 +296,7 @@ final class SelfieCameraModel: ObservableObject {
         capturing = true
         defer { capturing = false }
         let settings = AVCapturePhotoSettings()
+        settings.photoQualityPrioritization = .quality
         if canFlash { settings.flashMode = flash ? .on : .off }
         return await withCheckedContinuation { (continuation: CheckedContinuation<UIImage?, Never>) in
             let delegate = PhotoDelegate { image in
@@ -275,7 +314,26 @@ final class SelfieCameraModel: ObservableObject {
             guard error == nil, let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
                 done(nil); return
             }
-            done(image)
+            // Upright pixels, mirrored like the preview, orientation .up. Every
+            // consumer (the review frame, the resizer, the calendar thumbnail,
+            // the post) then sees the same picture with no EXIF to interpret.
+            done(image.uprightMirroredSelfie())
+        }
+    }
+}
+
+private extension UIImage {
+    /// Redraws the image into a fresh bitmap: `draw(in:)` applies the stored
+    /// orientation, the transform flips it horizontally, and the result carries
+    /// orientation `.up`. `size` is already orientation-adjusted points, and a
+    /// camera JPEG decodes at scale 1, so the pixel dimensions are preserved.
+    func uprightMirroredSelfie() -> UIImage {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            ctx.cgContext.translateBy(x: size.width, y: 0)
+            ctx.cgContext.scaleBy(x: -1, y: 1)
+            draw(in: CGRect(origin: .zero, size: size))
         }
     }
 }

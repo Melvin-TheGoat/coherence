@@ -231,7 +231,15 @@ torso is detected. Mockup first (`mockups/camera-framing.html`), then the
 Swift on the camera branch behind the DEBUG collector toggle for now; the
 live screen keeps a modest preview. Begin stays the only gold object.
 
-## Otto is a sloth (Melvin, 2026-09-16)
+## Otto is a sloth (Melvin, 2026-09-16): direction chosen
+
+Melvin picked board 1 (Otto sitting cross-legged, eyes closed) for the big
+placements and the head badge for the chat rows and header. Colour still
+to confirm (teal recommended). Next: finish the two drawings (Figma pass
+in-house or a line-art illustrator briefed with `mockups/otto-sloth.md`),
+then replace `OttoMark` with the badge and put the sitting figure on the
+locked and empty states.
+
 
 Otto gets a mascot: a sloth. Melvin's favourite animal, slow and peaceful,
 on brand. Needs: an illustration (the `OttoMark` placeholder "O" becomes
