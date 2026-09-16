@@ -1873,8 +1873,9 @@ still HELD. The 1.1 submission list is in `RELEASE_CHECKLIST.md`.
    "Add me on 808 Meditate, the social media for meditation: @user" + link.
    `NSCameraUsageDescription` names the selfie.
 4. **Invite reward** (`Shared/Community/InviteReward.swift`): a friend I
-   asked accepts AND sits once, then I get 10 sessions of full evidence
-   (stacking, capped at 50) plus the "Brought a friend" award. Per SESSION,
+   asked accepts AND sits once, then I get 3 sessions of full evidence
+   (stacking, capped at 15; was 10 and 50 until 2026-09-15, Aziz: "10
+   sessions is too much") plus the "Brought a friend" award. Per SESSION,
    only sessions started after the grant, a covered session stays covered,
    never unlocks guided or skins. Four defaulted fields on `Preferences`.
    Nothing for the invitee (Apple rejects that). The Circle skin reward was
