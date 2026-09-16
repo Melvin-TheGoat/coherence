@@ -1,0 +1,162 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Otto</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.09); }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 4px; } .note{ color:var(--muted); font-size:13px; max-width:720px; line-height:1.5; }
+h2{ font-size:13px; margin:34px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:270px; height:584px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:46px 18px 0; overflow:hidden; font-size:12.5px; position:relative; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:270px; line-height:1.45; } .cap b{ color:var(--fg); }
+.k{ font-size:9.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; font-weight:600; }
+.top{ display:flex; align-items:center; justify-content:space-between; }
+.nav{ display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--gold); } .nav .t{ color:var(--fg); font-weight:600; }
+.card{ background:var(--card); border-radius:14px; padding:12px; margin-top:12px; }
+.bigring{ width:96px; height:96px; border-radius:50%; border:8px solid var(--gold); border-left-color:rgba(212,175,55,.25); margin:8px auto 0; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:800; }
+.how{ text-align:center; color:var(--muted); font-size:10px; margin-top:6px; }
+.headline{ text-align:center; font-size:19px; font-weight:800; letter-spacing:-.02em; margin-top:10px; }
+.verdict{ text-align:center; color:var(--muted); font-size:11.5px; line-height:1.45; margin-top:6px; padding:0 6px; }
+.meta{ text-align:center; color:#6f6d66; font-size:10px; margin-top:6px; }
+.otto-row{ display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--card); border-radius:14px; margin-top:12px; }
+.otto-row .t{ font-weight:600; font-size:12.5px; } .otto-row .s{ color:var(--muted); font-size:10.5px; margin-top:2px; }
+.otto-row .chev{ margin-left:auto; color:var(--gold); }
+.mark{ width:32px; height:32px; border-radius:50%; border:2px solid var(--teal); color:var(--teal); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; letter-spacing:-.02em; }
+.mark.big{ width:56px; height:56px; font-size:22px; border-width:3px; margin:0 auto; }
+.mark.sm{ width:24px; height:24px; font-size:10px; border-width:1.5px; }
+.lock{ display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:999px; border:1px solid rgba(154,154,147,.4); color:var(--muted); font-size:8px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+.tiles{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:12px; }
+.tile{ background:var(--card); border-radius:12px; padding:9px 4px; text-align:center; } .tile b{ display:block; font-size:15px; color:var(--gold); } .tile span{ font-size:7.5px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; }
+.hero{ display:flex; align-items:center; gap:12px; margin-top:8px; }
+.avatar{ width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#3a2f13,#6b4f15); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:18px; color:var(--gold); }
+.name{ font-size:18px; font-weight:800; letter-spacing:-.02em; } .since{ color:var(--muted); font-size:11px; margin-top:2px; }
+.stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:14px; }
+.stat{ background:var(--card); border-radius:12px; padding:10px 6px; text-align:center; } .stat b{ display:block; font-size:18px; font-weight:800; color:var(--gold); } .stat span{ font-size:8.5px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.awards{ display:flex; gap:8px; margin-top:8px; } .aw{ width:34px; height:34px; border-radius:50%; border:1.5px solid var(--gold); display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:700; color:var(--gold); } .aw.off{ border-color:#3a3833; color:#5a5851; }
+.gear{ width:26px; height:26px; border-radius:50%; background:var(--card); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:13px; }
+.chat{ display:flex; flex-direction:column; height:100%; }
+.privacy{ text-align:center; color:#6f6d66; font-size:9.5px; margin-top:6px; }
+.msg{ display:flex; gap:8px; margin-top:12px; align-items:flex-start; }
+.msg .b{ font-size:11.5px; line-height:1.5; color:var(--fg); }
+.msg.me{ justify-content:flex-end; } .msg.me .b{ background:var(--card); border-radius:14px 14px 4px 14px; padding:8px 11px; max-width:190px; border:1px solid var(--line); }
+.chips{ display:flex; flex-wrap:wrap; gap:6px; margin-top:12px; }
+.chip{ padding:6px 10px; border-radius:999px; border:1px solid var(--line); color:var(--fg); font-size:10.5px; }
+.composer{ position:absolute; left:14px; right:14px; bottom:14px; display:flex; gap:8px; align-items:center; }
+.field{ flex:1; border:1px solid var(--line); border-radius:999px; padding:9px 12px; color:var(--muted); background:var(--card); font-size:11.5px; }
+.send{ width:34px; height:34px; border-radius:50%; background:var(--gold); color:#1a1508; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:16px; flex:none; }
+.typing{ color:var(--muted); font-size:11px; letter-spacing:2px; }
+.center{ text-align:center; margin-top:70px; } .center h3{ font-size:17px; margin:14px 0 6px; letter-spacing:-.02em; } .center p{ color:var(--muted); font-size:11.5px; line-height:1.5; margin:0 14px; }
+.cta{ margin-top:14px; background:var(--gold); color:#1a1508; text-align:center; border-radius:13px; padding:12px; font-weight:700; font-size:13px; }
+.quiet{ text-align:center; color:var(--muted); font-size:11.5px; margin-top:10px; }
+.lines{ text-align:left; margin:14px 4px 0; } .lines div{ display:flex; gap:9px; align-items:flex-start; font-size:11.5px; line-height:1.45; color:var(--fg); margin-top:8px; } .lines i{ color:var(--teal); font-style:normal; flex:none; }
+.q{ margin-top:34px; max-width:720px; } .q li{ margin:8px 0; line-height:1.5; font-size:13.5px; } .q b{ color:var(--gold); }
+code{ color:var(--teal); font-size:12px; }
+</style></head><body>
+<h1>808 · Otto</h1>
+<p class="note">Otto is the data interpreter: a chat that reads your own sessions back to you, explains how the score is built, compares one sit with the last few, and answers the questions a new meditator has. Premium, on the paid tier with the curves. It runs on the phone (Apple's on-device model, iOS 26, Apple Intelligence phones); nothing typed and no number ever leaves the device. The name is the one hiding in 8-0-8.</p>
+
+<h2>Where you meet Otto</h2>
+<div class="row">
+
+<!-- RESULTS ENTRY -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span>⇪ &nbsp;⋯</span><span class="t"></span><span>Done</span></div>
+  <div class="bigring">62</div>
+  <div class="how">ⓘ How is this scored?</div>
+  <div class="headline">It landed, gently.</div>
+  <div class="verdict">Heart eased down 6 beats, breath slowed to 5.8 a minute for 2 minutes, body mostly settled.</div>
+  <div class="meta">Today, 7:41 AM · 10 min · Rain</div>
+  <div class="otto-row"><div class="mark">O</div><div><div class="t">Ask Otto about this session</div><div class="s">Why this score, and what to try next</div></div><span class="chev">›</span></div>
+  <div class="tiles"><div class="tile"><b>−6</b><span>HR settle</span></div><div class="tile"><b>0.84</b><span>Stillness</span></div><div class="tile"><b>7.9</b><span>Breaths/min</span></div></div>
+  <div class="card" style="height:70px"><div class="k">Heart rate</div></div>
+</div></div>
+<div class="cap"><b>Results.</b> One row under the verdict, teal mark because Otto is guidance, not achievement. The gold on this screen stays where it was: the ring and the unlock or Share. A free user sees the same row with a LOCKED pill.</div>
+</div>
+
+<!-- PROFILE ENTRY -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top"><span class="k">Profile</span><span class="gear">⚙</span></div>
+  <div class="hero">
+    <div class="avatar">MV</div>
+    <div><div class="name">Melvin</div><div class="since">@melvin · Practicing since Aug 2026</div></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><b>7</b><span>Streak</span></div>
+    <div class="stat"><b>7</b><span>Longest</span></div>
+    <div class="stat"><b>20</b><span>Sessions</span></div>
+    <div class="stat"><b>3.4h</b><span>Practiced</span></div>
+  </div>
+  <div class="otto-row"><div class="mark">O</div><div><div class="t">Ask Otto</div><div class="s">Your last sessions, explained</div></div><span class="chev">›</span></div>
+  <div class="top" style="margin-top:16px"><span class="k">Awards · 8 of 17</span><span class="k" style="color:var(--gold)">See all ›</span></div>
+  <div class="awards"><div class="aw">1</div><div class="aw">3</div><div class="aw">5</div><div class="aw">50</div><div class="aw">75</div><div class="aw off">10</div><div class="aw off">25</div></div>
+  <div class="top" style="margin-top:16px"><span class="k">All sessions</span></div>
+</div></div>
+<div class="cap"><b>Profile.</b> The same row under the stats. From here Otto opens without a session in focus and reads the last ten instead.</div>
+</div>
+
+</div>
+
+<h2>The chat</h2>
+<div class="row">
+
+<!-- CHAT -->
+<div>
+<div class="phone"><div class="screen chat">
+  <div class="nav"><span></span><span class="t">Otto</span><span>Done</span></div>
+  <div class="privacy">Runs on your iPhone. Nothing you say, and none of your numbers, leave the phone.</div>
+  <div class="msg"><div class="mark sm">O</div><div class="b">Here is your 62 from this morning's 10 minute sit: heart eased down 6 beats, breath slowed to 5.8 a minute for 2 minutes, body mostly settled. Ask me anything about it, or what to try next time.</div></div>
+  <div class="chips"><span class="chip">Why did I score 62?</span><span class="chip">What is a breath doorway?</span><span class="chip">How do I settle faster?</span></div>
+  <div class="msg me"><div class="b">Why did I score 62?</div></div>
+  <div class="msg"><div class="mark sm">O</div><div class="b">The data suggests a good middle. Your heart held at or below its opening for most of the sit and dropped 6 beats, which is half the score doing solid work. Stillness at 0.84 is settled but not fully still. The doorway at 5.8 a minute earned the breath credit. What kept it under 75 is time: at 10 minutes the ceiling is 100, so the room left is in depth, mainly a bigger settle in the heart.</div></div>
+  <div class="msg"><div class="mark sm">O</div><div class="typing">•••</div></div>
+  <div class="composer"><div class="field">Ask Otto</div><div class="send">↑</div></div>
+</div></div>
+<div class="cap"><b>Chat.</b> Otto's first message is written by rules from the session's numbers (the same engine as the verdict), so it is instant and can never claim something the screen behind it does not show. Suggested questions as chips; the send button is the one gold thing. Answers stream in.</div>
+</div>
+
+<!-- LOCKED -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span></span><span class="t">Otto</span><span>Done</span></div>
+  <div class="center" style="margin-top:44px">
+    <div class="mark big">O</div>
+    <div style="margin-top:12px"><span class="lock">🔒 Locked</span></div>
+    <h3>Otto reads your evidence back to you. Free 808 keeps the evidence closed.</h3>
+    <div class="lines">
+      <div><i>●</i>Explains your score, number by number, from your own session.</div>
+      <div><i>●</i>Compares this sit with your last ten.</div>
+      <div><i>●</i>Answers the questions a new meditator has, and says what to try next.</div>
+    </div>
+    <div class="cta">Start 7 days free</div>
+    <div class="quiet">Not now</div>
+  </div>
+</div></div>
+<div class="cap"><b>Free tier.</b> The same lock language as the curves: a LOCKED pill, one sentence naming the specific thing withheld, one gold CTA to the plans, Not now underneath. The chat itself never opens for a free user.</div>
+</div>
+
+<!-- NEEDS APPLE INTELLIGENCE -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span></span><span class="t">Otto</span><span>Done</span></div>
+  <div class="center">
+    <div class="mark big" style="opacity:.55">O</div>
+    <h3>Otto needs an iPhone with Apple Intelligence and iOS 26.</h3>
+    <p>Otto runs on the phone so your numbers never leave it, and that needs Apple's on-device model. Turn on Apple Intelligence in Settings, then come back.</p>
+  </div>
+</div></div>
+<div class="cap"><b>Not available here.</b> Shown before the lock, so nobody is sold a chat their phone cannot run. The second line changes with the reason: not eligible, not switched on, model still downloading, or iOS older than 26.</div>
+</div>
+
+</div>
+
+<h2>Decisions in this mockup</h2>
+<ul class="q">
+  <li><b>Teal, not gold.</b> Otto is guidance, so the mark is teal everywhere it appears. Each screen keeps one gold object: the send button in the chat, the unlock CTA on the locked screen, the ring on results.</li>
+  <li><b>The opening line is rules, not the model.</b> It is built from the session's stored numbers with the verdict engine's own phrase bank, so it is instant, offline, and cannot contradict the results screen it sits under. Only the replies come from the model.</li>
+  <li><b>What Otto knows.</b> A few hundred words we wrote: how the score is built (heart half, stillness, the breath doorway, the time ceiling), what the Watch can and cannot read, the guide's techniques, beginner basics. Plus a compact table of the last ten sessions (date, length, score, heart start and end, stillness, doorway, technique, rating). Nothing from the model's own training is trusted about 808.</li>
+  <li><b>What Otto never says.</b> "The data suggests", never "you are". No diagnosis, no medical advice, no brainwaves, theta, HRV or health outcomes as facts about the person. Anything medical gets one line: "That one is for a doctor or another health professional, not for me." Medical questions are caught before the model sees them, and the model is told the same rule.</li>
+  <li><b>On the phone, by construction.</b> Apple's on-device model; the app makes no network call. Analytics carry two names only, <code>otto_opened</code> and <code>otto_asked</code>: no question text, no number, ever.</li>
+  <li><b>Premium.</b> Otto sorts under the standing rule: free gives you the score, paid gives you the evidence behind it. Otto is the evidence, spoken.</li>
+</ul>
+</body></html>

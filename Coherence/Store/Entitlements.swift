@@ -53,6 +53,10 @@ struct Entitlements {
     /// in-app curves are: otherwise screenshotting your own card is the way
     /// around the lock.
     var shareCurves: Bool { paid || evidenceGranted }
+    /// Otto, the data interpreter chat. Paid only: it reads the evidence
+    /// back in words, so it sorts with the evidence. The invite grant does
+    /// not open it, the same way it opens no guided track and no skin.
+    var otto: Bool { paid }
 
     func canUse(_ skin: CardSkin) -> Bool { paid || skin == .free }
 
