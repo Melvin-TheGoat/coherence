@@ -1320,6 +1320,21 @@ UI must coach it, and the 2-signal degrade path must stay.
       the sheet looks stale. Its internal-user rule matches PostHog's plus
       `$is_sideloaded` (Melvin's cable-installed betas; the two
       `result_missing` events on 2026-09-12 came from one).
+      **Pasting the script into Apps Script: `pbcopy` follows the shell's
+      locale, and the default here is not UTF-8.** A plain
+      `pbcopy < tools/posthog_sheet.gs` mangled all thirteen non-ASCII
+      characters (the arrows in "Install → first session" pasted as
+      "‚Üí"), which reaches the sheet as visible garbage on the next
+      refresh. Use `LC_ALL=en_US.UTF-8 pbcopy < tools/posthog_sheet.gs`,
+      and check the arrow on line 2 of the editor before saving.
+    - **A failed refresh costs one tab, not six (2026-09-15).** PostHog
+      answers a query with a 504 "max execution time" now and then; it
+      says nothing about the query. `refreshAll` writes each tab inside
+      its own try and rethrows at the end, `query` retries a 429 or 5xx
+      twice while the run is under 200 seconds old (Apps Script kills
+      anything past six minutes), and `stamp` names any tab still holding
+      last hour's numbers. Before this, a timeout in `writeDaily` left the
+      five tabs after it silently stale with a stamp an hour old.
     - **Internal-user filter (project setting, default ON):** `$app_build`
       ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
       rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
