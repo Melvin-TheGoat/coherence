@@ -211,6 +211,16 @@ at the gate) pressed Begin three times and hit `watchAppNotInstalled`, so
 they DO have a paired Watch without 808 on it: the install screen after
 that failure is doing its job or not; worth watching whether they return.
 
+## Camera framing before Begin (Melvin, 2026-09-16, in flight on `camera-vision`)
+
+The camera preview moves to the setup sheet ("Ready when you are") so
+people place themselves before the session starts; it gets bigger (the
+width of the sheet); and a thin white outline of a seated person is laid
+over it to fit yourself into, turning teal with "You're in frame" once the
+torso is detected. Mockup first (`mockups/camera-framing.html`), then the
+Swift on the camera branch behind the DEBUG collector toggle for now; the
+live screen keeps a modest preview. Begin stays the only gold object.
+
 ## Otto is a sloth (Melvin, 2026-09-16)
 
 Otto gets a mascot: a sloth. Melvin's favourite animal, slow and peaceful,
@@ -219,7 +229,11 @@ the sloth on the results row, the Profile row and the chat header), a
 one-line voice note in the brief so Otto's tone matches (unhurried, warm,
 never breathless), and the App Store copy for the paid tier once Otto
 ships. Design first: a mockup with the sloth before any Swift. Not a
-photo; drawn, in the app's line-art language like the 808 mark.
+photo; drawn, in the app's line-art language like the 808 mark. IN FLIGHT
+2026-09-16: concept page `mockups/otto-sloth.html` on branch `sloth`
+(four artboards, three colour treatments, a voice line) plus
+`mockups/otto-sloth.md` on how to finish it (in-house in Figma or
+Illustrator, or a line-art illustrator briefed with the SVGs).
 
 **Otto's facts, for the founders (2026-09-16):** it runs on Apple's own
 on-device language model (the Foundation Models framework, part of Apple
