@@ -1558,6 +1558,23 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## SCORE v5.3.0: stillness is cubed, not floored (2026-09-16, Melvin)
+
+A real user's card showed stillness 75%, heart 74 → 79, breathing 6.2/min
+and a score of 1. The formula was exact: v3's `spreadStillness` mapped
+[0.80, 0.98] onto [0, 1], so 75% earned nothing, a climbing heart earned
+about 0.03, and the 6.2/min had no qualifying doorway. Melvin: "scale it so
+that if it's higher it matters more, but lower down it doesn't just cut
+off." `spreadStillness` is now raw cubed. Measured on the scale: 0.84 → 0.59,
+0.90 → 0.73, 0.97 → 0.91 (a 13-point gap of the 40 on offer between a good
+sit and a great one, against 29 under the floor and 5 under a straight
+line); 0.75 → 0.42, 0.50 → 0.13, 0.22 → 0.01. That user's session goes from
+1 to about 18. The card's percentage and the score's stillness now move
+together. Migration key `scoreBackfillDone.v8` rescores all history.
+`OttoBrief`'s score rules say "cubed". Heart term unchanged: 60% for time
+at or below the opening rate, 40% for the size of the drop, which is
+already "the longer you stayed under your start, the better."
+
 ## STREAK FORGIVENESS: one rest day per seven (2026-09-16, Melvin)
 
 `StreakCalculator.runs` is THE rule and `AwardEngine.streakRuns` delegates

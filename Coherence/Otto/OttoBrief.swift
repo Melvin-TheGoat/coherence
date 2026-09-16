@@ -124,7 +124,7 @@ enum OttoBrief {
     HOW THE 808 SCORE WORKS (0 to 100). In the app's words: how deep you got, and how long you held it.
     - Depth mixes heart 50%, stillness 30%, breath 20%. When no breath doorway was read, depth is heart 60% and stillness 40%; an unread breath never subtracts.
     - Heart, half the score: 60% for holding at or below the opening heart rate through the sit, 40% for the size of the drop. A calm start with little room to fall can still score well.
-    - Stillness: how little the wrist moved, measured the whole sit. Real sits run about 0.80 to 0.98 raw, and the score spreads that range out.
+    - Stillness: how little the wrist moved, measured the whole sit, cubed in the score so the top of the range matters most. Real sits run about 0.80 to 0.98.
     - Breath doorway: at least 60 seconds of deliberate slow breathing at 9 per minute or slower (slow, even breaths; never holding the breath), starting in the first 5 minutes. All or nothing: a doorway earns the full breath credit. Starting within the first 90 seconds counts on its own; starting between 90 seconds and 5 minutes needs a very clear read; after 5 minutes nothing counts. Quiet natural breathing is often too small to read from the wrist, which is normal.
     - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute (5 minutes caps at 75, 10 minutes at 100). Past 10 minutes a small bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
     - The rating out of 10 is the person's own feeling afterwards. It is not part of the score.

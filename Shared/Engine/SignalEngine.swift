@@ -138,7 +138,7 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "5.2.2"
+    static let version = "5.3.0"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -1358,15 +1358,20 @@ enum SignalEngine {
         return terms.reduce(0) { $0 + $1.value * $1.weight } / total
     }
 
-    /// Stillness rescaled so real sessions actually spread out.
+    /// Stillness curved so the top of the scale matters most and the bottom
+    /// never cuts off: raw stillness cubed (v5.3.0, Melvin, 2026-09-16).
     ///
-    /// The raw curve saturates: every genuine sit measured 0.84–0.97. Mapping
-    /// [0.80, 0.98] onto [0, 1] restores the resolution — a typical good sit
-    /// lands mid-scale and near-perfect stillness has to be earned — while
-    /// anything below 0.80 (the fidgety session's territory) floors at 0.
+    /// History: the raw curve saturates (every genuine sit measured 0.84 to
+    /// 0.97, a fidgety one 0.22), so v3 mapped [0.80, 0.98] onto [0, 1] to
+    /// restore the spread. That floor made a real user's 75% sit worth
+    /// nothing while the card printed "75%", and a score of 1 beside it read
+    /// as broken. The cube keeps most of the spread at the top (0.84 → 0.59,
+    /// 0.97 → 0.91, a 13-point gap of the 40 on offer) without a cliff:
+    /// 0.75 → 0.42, 0.50 → 0.13, 0.22 → 0.01. What the card shows and what
+    /// the score uses now move together.
     static func spreadStillness(_ raw: Double) -> Double {
-        let lo = 0.80, hi = 0.98
-        return min(1, max(0, (raw - lo) / (hi - lo)))
+        let r = min(1, max(0, raw))
+        return r * r * r
     }
 
     /// The heart term: mostly "did you stay at or below where you started",

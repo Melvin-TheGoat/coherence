@@ -178,6 +178,10 @@ are biometric under our rule. Decide after the first weeks of real posts.
 
 ## A real user scored 1 (2026-09-16): the formula worked, and it reads as broken
 
+**RESOLVED 2026-09-16 (Melvin's call): stillness is cubed instead of
+floored.** Higher still matters more, nothing cuts off. That session
+rescores to about 18. Engine 5.3.0, migration v8. Aziz to note.
+
 The card: 10 min, stillness 75%, heart 74 → 79 (rose), breathing 6.2/min,
 score 1. By the v5 formula that is exact: stillness below 0.80 floors at
 zero (`spreadStillness` maps 0.80 to 0.98 onto 0 to 1, calibrated on eight
@@ -191,6 +195,25 @@ feel):** the 0.80 stillness floor gives a 0.75 sit nothing at all; a floor
 of 0.60 would have put this session at about 16 (with the same heart and
 breath), and 0.75 is the territory real users with ordinary movement land
 in. Decide with data from the captures, not this one card.
+
+## Otto is a sloth (Melvin, 2026-09-16)
+
+Otto gets a mascot: a sloth. Melvin's favourite animal, slow and peaceful,
+on brand. Needs: an illustration (the `OttoMark` placeholder "O" becomes
+the sloth on the results row, the Profile row and the chat header), a
+one-line voice note in the brief so Otto's tone matches (unhurried, warm,
+never breathless), and the App Store copy for the paid tier once Otto
+ships. Design first: a mockup with the sloth before any Swift. Not a
+photo; drawn, in the app's line-art language like the 808 mark.
+
+**Otto's facts, for the founders (2026-09-16):** it runs on Apple's own
+on-device language model (the Foundation Models framework, part of Apple
+Intelligence on iOS 26). Apple's model, not ours, not a third party. It
+costs nothing per question and needs no key or server. Nothing leaves the
+phone. Before `ottoInRelease` flips: one sentence in the privacy policy
+(both copies) saying Otto answers on the device with Apple's model and
+sends nothing anywhere, and the paid tier's store description names it.
+Works on iPhone 15 Pro and newer with Apple Intelligence turned on.
 
 ## Decided 2026-09-15 (Melvin), being built now
 
@@ -208,7 +231,14 @@ in. Decide with data from the captures, not this one card.
   1.5. Stillness read low (mean 0.75, spikes to 30x the floor: adjusting
   in frame) so the camera score was 15 where the wrist would score higher;
   that is the placement and motion-gate question the plan's sits 3 and 5
-  exist for. Nineteen sits to go per `CAMERA_VISION_PLAN.md`.
+  exist for. Nineteen sits to go per `CAMERA_VISION_PLAN.md`. **They are
+  not training data.** The camera engine is rules, not a trained model;
+  the sits are ground truth to measure it against and to set its few
+  constants from measurement (the plan's five questions: paced accuracy
+  at 6, 8 and 12/min; counted natural breathing; distance 0.5, 1 and 2 m
+  on lap, desk and bed, plus one dim-lamp sit; no-breathing controls;
+  stillness against the wrist). Different distances and lighting are
+  exactly what sits 3 and 5 ask for. Two people for some of them.
 
 - DONE 2026-09-15: **the tour ends at "put your Watch on" with a Begin.**
   No practice sit, no demo results. Begin finishes onboarding and Home
