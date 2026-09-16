@@ -475,7 +475,8 @@ struct SessionResultsView: View {
 
     private func tileData(_ stats: MeditationStats) -> [(label: String, value: String, teal: Bool)] {
         var t: [(String, String, Bool)] = []
-        if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", -d), false)) }
+        // Positive = settled (hrDecline is start minus end). See ShareCard.
+        if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", d), false)) }
         if let s = stats.stillnessScore { t.append(("Stillness", String(format: "%.2f", s), false)) }
         // The session average, deliberately: the curve right below this tile
         // shows the whole session, so a headline naming only the slow opening

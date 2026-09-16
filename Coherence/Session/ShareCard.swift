@@ -466,7 +466,7 @@ struct SessionShareCard: View {
         if let t = data.techniqueLabel { rows.append(("Practice", t)) }
         if let s = data.soundLabel { rows.append(("Sound", s)) }
         rows.append(("Time", minutesText))
-        if let d = data.hrDecline { rows.append(("Heart", String(format: "%+.0f bpm", -d))) }
+        if let d = data.hrDecline { rows.append(("Heart", String(format: "%+.0f bpm settled", d))) }
         if let s = data.stillnessScore {
             rows.append(("Stillness", "\(Int((s * 100).rounded()))%"))
         }
@@ -507,7 +507,10 @@ struct SessionShareCard: View {
         HStack(spacing: 10) {
             stat(durationText, "MINUTES")
             if let s = data.stillnessScore { stat("\(Int((s * 100).rounded()))%", "STILLNESS") }
-            if let d = data.hrDecline { stat(String(format: "%+.0f", -d), "HR SETTLED") }
+            // Positive = settled, the sign the label promises. It used to be
+            // negated, so a heart that ROSE six beats read "+6 HR settled" on
+            // a real user's card (2026-09-16) beside a "74 → 79 bpm" graph.
+            if let d = data.hrDecline { stat(String(format: "%+.0f", d), "HR SETTLED") }
             if let r = data.meanBreathingRate { stat(String(format: "%.1f", r), "BREATHS/MIN") }
         }
     }
