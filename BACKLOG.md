@@ -176,6 +176,33 @@ anything drives a hide request it will be that, and the fix may be how the
 feed card presents a short sit. Cannot be measured in PostHog: score bands
 are biometric under our rule. Decide after the first weeks of real posts.
 
+## Decided 2026-09-15 (Melvin), being built now
+
+- **The tour ends at "put your Watch on" with a Begin.** No practice sit,
+  no demo results (two thirds of finishers left there). Their first real
+  session is the first score they see.
+- **THE PAYWALL MOVES TO AFTER THE FIRST MEDITATION.** The first session's
+  results open fully unlocked: score, verdict, every curve and reading.
+  Leaving that screen opens the paywall (the whole ladder). Once the
+  paywall has been shown, the free tier applies everywhere, including that
+  first session when they come back to it. Onboarding no longer contains a
+  paywall; sign in (optional) comes after the wall, before the tour.
+  No-Watch users still never see a paywall, as today.
+- **Otto is a premium AI chat, definitely.** Always available: interprets
+  the score, the session, the data; advises on improving; answers a new
+  meditator's questions. Start building. First version on-device
+  (Foundation Models, iOS 26, Apple Intelligence phones) per the recorded
+  architecture decision; a cloud model is a separate decision because it
+  sends session data off the phone (privacy policy, 5.1.3, the "no server"
+  review answer). Mockup first.
+- **Camera vision: Melvin records a sit today** on the camera-vision build.
+- **All three instruments ship eventually: Watch, AirPods, camera.** The
+  frame is "a social media for meditation": as many people as possible
+  should be able to take part, with the meditation verified by one of the
+  three. **Plus a manual log** ("I did one") for people with none of them,
+  shown as logged rather than measured. Open: whether a logged sit counts
+  toward streak and awards, and how the feed marks it. Needs a mockup.
+
 ## Decided, not started
 
 
