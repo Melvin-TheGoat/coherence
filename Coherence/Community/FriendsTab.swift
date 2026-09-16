@@ -60,7 +60,7 @@ struct UnavailableCard: View {
     private let steps = [
         "Open Settings and tap your name at the top. If it says Sign in to your iPhone, tap that.",
         "Sign in with your Apple Account.",
-        "Under iCloud, make sure iCloud Drive is on.",
+        "Tap iCloud, then Saved to iCloud (or See All), and make sure 808 is switched on.",
         "Come back here and tap Check again.",
     ]
 
@@ -85,6 +85,25 @@ struct UnavailableCard: View {
                     .foregroundStyle(AppColor.accentGoldText)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 8)
+            } else if case .failed(let message) = model.unavailableReason {
+                VStack(spacing: 10) {
+                    Text("iCloud answered, but Friends couldn't load.")
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text(message)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.center)
+                    Button {
+                        checking = true
+                        Task { await model.load(); checking = false }
+                    } label: {
+                        Text(checking ? "Trying…" : "Try again")
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(checking)
+                }
+                .padding(.horizontal, 8)
             } else {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(Array(steps.enumerated()), id: \.offset) { i, step in

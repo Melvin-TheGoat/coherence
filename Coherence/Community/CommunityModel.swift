@@ -23,7 +23,13 @@ final class CommunityModel: ObservableObject {
     /// build with no CloudKit container (the side-by-side beta with
     /// NO_ICLOUD, a simulator) is not something the user can fix; a phone
     /// with no iCloud account is, and the card walks them through it.
-    enum UnavailableReason: Equatable { case noContainer, noAccount }
+    enum UnavailableReason: Equatable {
+        case noContainer, noAccount
+        /// iCloud answered and something else failed (a missing record type
+        /// or index in this environment, a network error). Shown as what it
+        /// is; telling this person to sign in to iCloud would be a lie.
+        case failed(String)
+    }
     @Published private(set) var unavailableReason: UnavailableReason = .noAccount
     @Published private(set) var profile: Profile?
     @Published private(set) var feed: [Post] = []
@@ -113,11 +119,17 @@ final class CommunityModel: ObservableObject {
             try await refreshLists(store)
             phase = .ready
         } catch {
-            // A missing account is the common case; anything else is shown.
+            // A missing account is the common case. Anything else, before a
+            // profile exists, is a failure the card states plainly; with a
+            // profile the tab stays usable and the error is an alert.
             if (error as? CommunityError) == .unavailable {
+                unavailableReason = .noAccount
+                phase = .unavailable
+            } else if profile == nil {
+                unavailableReason = .failed(Self.plain(error))
                 phase = .unavailable
             } else {
-                phase = profile == nil ? .unavailable : .ready
+                phase = .ready
                 errorText = Self.plain(error)
             }
         }
