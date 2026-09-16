@@ -75,6 +75,12 @@ enum Analytics {
         case notificationOpened
         case awardUnlocked(id: String)
         case accountDeleted
+        /// Otto, the on-device data interpreter. Two names and nothing else:
+        /// the chat holds heart rates and scores in its prompt, so no
+        /// question, reply or number may ride along (5.1.3 and the no-text
+        /// rule above).
+        case ottoOpened
+        case ottoAsked
 
         // Friends (COMMUNITY.md). Counts only; never a handle, a caption or a
         // score.
@@ -120,6 +126,8 @@ enum Analytics {
             case .notificationOpened: "notification_opened"
             case .awardUnlocked: "award_unlocked"
             case .accountDeleted: "account_deleted"
+            case .ottoOpened: "otto_opened"
+            case .ottoAsked: "otto_asked"
             case .friendsOpened: "friends_opened"
             case .usernameClaimed: "username_claimed"
             case .friendRequestSent: "friend_request_sent"

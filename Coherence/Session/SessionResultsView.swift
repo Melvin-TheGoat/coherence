@@ -80,6 +80,8 @@ struct SessionResultsView: View {
         case scoreMeaning
         case locked(LockedSignal)
         case plans
+        /// Otto, opened on this session.
+        case otto
 
         var id: String {
             switch self {
@@ -88,6 +90,7 @@ struct SessionResultsView: View {
             case .scoreMeaning:     return "score"
             case .locked(let sig):  return "locked-\(sig.rawValue)"
             case .plans:            return "plans"
+            case .otto:             return "otto"
             }
         }
     }
@@ -111,6 +114,7 @@ struct SessionResultsView: View {
                         if let stats {
                             tourDim(hero(session, stats), lit: .score)
                                 .id(ResultsTourStage.score)
+                            tourDim(ottoRow, lit: nil)
                             tourDim(tiles(stats), lit: nil)
                             if stats.breathDoorwayRate != nil {
                                 tourDim(resonanceChip, lit: nil)
@@ -200,6 +204,8 @@ struct SessionResultsView: View {
                     PaywallScreen(placement: "results_lock", plan: $paywallPlan) { _ in
                         route = nil
                     }
+                case .otto:
+                    OttoView(sessionID: sessionID)
                 }
             }
             // A free user's invite grant is decided per session, and while the
@@ -340,6 +346,21 @@ struct SessionResultsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 2)
+    }
+
+    /// Otto, under the verdict: the spoken verdict is what the rules can
+    /// say; Otto is where the person asks the follow-up. Teal mark, never
+    /// gold, so the ring stays the section's one gold object. A free user
+    /// sees the row with the Locked pill and meets the lock inside Otto.
+    private var ottoRow: some View {
+        OttoRow(title: "Ask Otto about this session",
+                subtitle: "Why this score, and what to try next",
+                locked: !store.entitlements.otto) {
+            if !store.entitlements.otto {
+                Analytics.track(.lockedTapped(signal: "otto"))
+            }
+            route = .otto
+        }
     }
 
     /// The real paywall.
