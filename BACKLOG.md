@@ -33,6 +33,21 @@ yet; every completion so far is a founder, family or friend).
 
 ## Onboarding feedback, round 2 (one tester, no Watch, 2026-09-14)
 
+**Status 2026-09-14 evening: every "small fix" and copy item below is
+BUILT on `mvp`, plus three of the decisions Melvin took the same day
+(the $400 screen moved into the paywall ladder as its first rung, the
+Watch gate has three answers, "How did you find us?" opens the interview).
+Not taken, still open: "needs an Apple Watch" before the interview; the
+"Last thing" split; moving the proof screens into the tour; animation;
+real design. One finding the tester could not have named: onboarding
+rendered in the SYSTEM colour scheme because no Preferences row exists
+until it finishes, so on a light-mode phone the whole flow was light and
+the app went dark afterwards. That was the "black text", "whiter cards",
+"colours bleeding" and the blue caret. The default theme now applies from
+the first frame. For Aziz's sheet: the Watch gate now emits a third
+outcome, `notYet`, beside `hasWatch` and `waitlist`; the Installs tab's
+gate column will show it raw until the script maps it.**
+
 Walked the whole interview on a phone with no Watch paired. Grouped by what
 it costs. The sheet's Screens tab agrees with the big one: nobody leaves on
 the proof screens (0% each), people leave on screen 1 (19%), at the Watch
@@ -96,15 +111,100 @@ Refused:
   sign-in optional for an app that works without an account, and it was a
   documented rejection reason in the audit. Stays optional.
 
+## Cut the fat out of onboarding: DONE 2026-09-15 (Melvin's list)
+
+Cut: doing nothing (06b), how do you know it worked (08b), the anchor (13,
+"people don't want to be forced to commit to what time they are going to
+meditate"), proof: the body is visible (19), proof: your way (22), your
+first week (25), the star rating (26). Kept and MOVED: the celebrity wall,
+now the last screen before the paywall, after the walkthrough. The reminder
+time is picked on the notification screen (8 AM default, editable in
+Settings) since the anchor no longer sets it. Every cut screen keeps its
+Step case and answer field, so resume records and readers keep working;
+they are simply never routed to. A newcomer now sees about 23 screens.
+NOT done, still open: ending the tour after "put your Watch on" and
+deleting the two-minute demo (the biggest leak after the gate); Melvin has
+not said yes to that one.
+
+## Cut the fat out of onboarding (Melvin + Aziz, 2026-09-14, direction)
+
+"We think the onboarding is too crowded, so we want to lean towards cutting
+the fat down." A newcomer today sees about 33 screens from Relief to sign
+in. The Screens tab says the proof screens (17 to 22) and the plan screens
+(23 to 26) lose almost nobody, so the case is length and attention, not a
+drop-off cliff; the cliffs are screen 1 (19%), the Watch gate (35%) and the
+tour's two-minute demo (67%, then 100%). Proposal, awaiting the founders'
+list: cut the wall (18), proof: the body is visible (19), proof: your way
+(22), your first week (25) and the star rating (26, internal signal only);
+fold the second escalation question (06b) into the first and the second
+body question (08b) into the first; keep the sample-session pair (20, 21)
+as the one demonstration. That is 33 to about 24 for a newcomer. Separately,
+make the tour's two-minute demo skippable, since it is where the most people
+leave after finishing the interview.
+
+## Friends without iCloud? (Melvin, 2026-09-15, needs a founders' call)
+
+Melvin: "It should be possible without iCloud in my opinion." Where it
+stands: friends have no server by Aziz's decision (CloudKit public database
+of our own container, "no Supabase, no server"), so the user's iCloud
+account IS the identity and the storage. Without iCloud there is nothing to
+post to and nobody to be. Making friends work with no iCloud means a
+backend: accounts, a database, hosting, a privacy policy that names it, and
+a new App Review posture (today we tell Apple there is no server). Nearly
+every iPhone is signed in to iCloud already; the card appears on the beta
+only because the beta build carried no iCloud entitlement, not because of
+Melvin's phone. Done today instead: the card now says why and gives the four
+steps to sign in, with Open Settings and Check again; and the beta build
+keeps iCloud pinned to the real container (CloudKit Development
+environment), so Friends can be tested side by side. Decide: keep no-server,
+or fund a backend.
+
+## Hide the score on a friends post? (Aziz asked, 2026-09-15; decide later)
+
+Aziz: "should we make an option to hide the score by having a little eye
+icon or some other intuitive way?" Claude's recommendation, given the same
+day: **not as a per-post control.** A hidden score tells every friend what
+the score was (Strava's hidden pace has this exact tell); it adds a
+decision at the moment right after a sit when the screen should ask the
+least; and the score is what makes an 808 post an 808 post, the way Strava
+never lets you hide distance or time. If real posts show people choosing
+Only you on low days, the right shape is one profile preference, "Show my
+scores to friends", set once, default on, so it applies to every post and
+carries no tell. Strava's own model: a privacy default, not a ritual. Note
+for later: short sits score low by design (time is a ceiling), so if
+anything drives a hide request it will be that, and the fix may be how the
+feed card presents a short sit. Cannot be measured in PostHog: score bands
+are biometric under our rule. Decide after the first weeks of real posts.
+
+## Decided 2026-09-15 (Melvin), being built now
+
+- **The tour ends at "put your Watch on" with a Begin.** No practice sit,
+  no demo results (two thirds of finishers left there). Their first real
+  session is the first score they see.
+- **THE PAYWALL MOVES TO AFTER THE FIRST MEDITATION.** The first session's
+  results open fully unlocked: score, verdict, every curve and reading.
+  Leaving that screen opens the paywall (the whole ladder). Once the
+  paywall has been shown, the free tier applies everywhere, including that
+  first session when they come back to it. Onboarding no longer contains a
+  paywall; sign in (optional) comes after the wall, before the tour.
+  No-Watch users still never see a paywall, as today.
+- **Otto is a premium AI chat, definitely.** Always available: interprets
+  the score, the session, the data; advises on improving; answers a new
+  meditator's questions. Start building. First version on-device
+  (Foundation Models, iOS 26, Apple Intelligence phones) per the recorded
+  architecture decision; a cloud model is a separate decision because it
+  sends session data off the phone (privacy policy, 5.1.3, the "no server"
+  review answer). Mockup first.
+- **Camera vision: Melvin records a sit today** on the camera-vision build.
+- **All three instruments ship eventually: Watch, AirPods, camera.** The
+  frame is "a social media for meditation": as many people as possible
+  should be able to take part, with the meditation verified by one of the
+  three. **Plus a manual log** ("I did one") for people with none of them,
+  shown as logged rather than measured. Open: whether a logged sit counts
+  toward streak and awards, and how the feed marks it. Needs a mockup.
+
 ## Decided, not started
 
-- **AirPods as the heart-rate source** (Melvin's friend, 2026-09-12). AirPods
-  Pro 3 and Powerbeats Pro 2 carry an optical heart-rate sensor and iOS 26
-  exposes it to apps through HealthKit during a workout. Paired with head
-  motion from `CMHeadphoneMotionManager` (stillness, maybe breathing), that
-  is a second no-Watch path beside camera vision. Investigate: what a
-  phone-only `HKWorkoutSession` receives from the buds, and whether head
-  motion carries a breath. Owner: unassigned.
 
 - **Otto, the data interpreter** (Melvin, 2026-09-12). A chat you can ask
   about your own sessions: heart rate, stillness, breathing, the score, and
@@ -125,10 +225,24 @@ Refused:
 - **AI coach voice library** (Melvin's wedge). ON HOLD: ElevenLabs was tried
   and "is not there yet". When it is, the first version is a pre-generated
   library by length and voice, offline, no runtime generation. Not before.
-- **Friends** (Search tab placeholder). Needs a backend; the username is
-  cosmetic until then and must not be presented as reserved.
-- **Camera-vision sessions** (branch `camera-vision`): the answer to no-Watch
-  churn. Ground truth is the bottleneck; the in-app collector exists.
+- **Friends** (Search tab placeholder). DESIGNED 2026-09-14 (Aziz asked to
+  start): `COMMUNITY.md` is the decision record, `mockups/friends.html` the
+  six screens awaiting review before any Swift. Mutual friends, a feed of
+  posted sessions (photo + score + minutes + streak + technique + caption,
+  never a heart or breath number), one reaction, no comments, report and
+  block, CloudKit public database with no server. Invite reward: free users
+  get 10 sessions of full evidence per friend who accepts and sits once;
+  paid users get an award and the Circle skin. Ships as 1.1, after 1.0.2;
+  flips the UGC and Social age-rating answers to Yes.
+  BUILT 2026-09-14: data layer, Friends tab, Post to friends, invite reward
+  (features 1 to 4). WAITING on Aziz's review of `mockups/friends-v2.html`
+  (separate username + photo, existing-user prompt, Save session with
+  Friends / Only you). Then moderation (feature 5). Status in CLAUDE.md.
+  UPDATE, same evening: v2 and moderation BUILT (Save session, Create your
+  profile, existing-user prompt, Strava cards, content filter, photo
+  screening, report emails), all behind the Friends switch. Remaining work is
+  the 1.1 checklist (iCloud schema, entitlement, report script, legal and
+  labels, TestFlight on two phones). Details in COMMUNITY.md.
 - **Rating prompt is in 1.0.1.** Watch the ratings count in the launch
   scorecard.
 - **Handle for the coach's name** (the narrated guide, not Otto): open.
@@ -186,6 +300,64 @@ Refused:
 
 ## In flight
 
+- **Save session in Strava's iOS shape, and an in-app camera** (Aziz,
+  2026-09-15: "take a look at the strava UI for sharing a session and copy
+  that, i dont like the UI here for after the meditation"; "i want the
+  camera thing to be like an in app photo thing similar to sweatmates and
+  bereal"). Mockups `mockups/save-session-v4.html` (Strava's real iOS
+  anatomy: outlined fields, no labels, bold sentence-case headers, pinned
+  bottom button) and `save-session-v5.html` (the senior-review pass: one
+  big score, visibility first, portrait selfie tile, a button that names
+  the block, Skip, Only you hides the sharing fields, no camera flip).
+  Decisions taken: Strava iOS behaviour (Cancel top left, pinned button),
+  private notes inline, one photo, one front camera and no dual shot
+  (SweatMates forces it and it is their most-complained-about feature).
+  Awaiting Aziz's read of v5, then Swift. One rebuild of 808 Dev at the
+  end, per Aziz. Also shipped the same day, already on the branch: the
+  save screen reopens when you pick the phone up after a sit
+  (`PendingSave`), "Silence / my own practice" as a technique, and a Done
+  key above the keyboard on both note fields.
+
+- **Onboarding: no sign-in until the end, and progress resumes** (Aziz,
+  2026-09-14, from the PostHog finding that everyone who skipped the paywall
+  used the screen-one sign-in link). Built and verified on the simulator,
+  ships in the next build. Details in CLAUDE.md.
+
+- **Camera vision RESUMED** (2026-09-14, branch `camera-vision`, plan in
+  `CAMERA_VISION_PLAN.md` there). `mvp` merged in with no conflicts (five
+  tabs plus the DEBUG collector); 253 tests green. The probe's pipeline is
+  now a pure engine module, `Shared/Engine/CameraSignal.swift`, shaped for
+  `SignalEngine` (30/5 grid, no heart series), with an offline harness
+  (`tools/camera_harness.swift`) and 20 tests. Score with no heart term:
+  breath .20 / stillness .80 when a doorway opens, stillness alone when
+  not; camera rows are tagged `camera-` and skipped by the Watch's score
+  migration. Accuracy against the wrist on the two existing videos: about
+  1.2/min on one, 2.2/min on the other (the unresolved fast-episode
+  minutes). **Next, a human:** with a DEBUG build and Settings > Camera
+  capture on, record six paced sits at 6, 8 and 12 breaths/min (two
+  people, three minutes paced then five natural), pull with
+  `tools/camera_pull.sh`, run the harness. Add nothing to the engine until
+  those exist.
+
+- **AirPods heart rate: FEASIBLE on iOS 26, spike built** (2026-09-14,
+  branch `airpods`, `AIRPODS_PLAN.md` on that branch). Sources: WWDC25
+  session 322 (`HKWorkoutSession` runs on iPhone from iOS 26 and HealthKit
+  pulls heart rate from paired buds), Apple's AirPods Pro 3 support page
+  (third-party workout apps receive it, no Watch needed), Apple DTS on the
+  forums (heart-rate samples only, no HRV, so "no coherence" still stands).
+  Path: iPhone-side `.mindAndBody` workout session, HR as system-written
+  samples, head motion from `CMHeadphoneMotionManager` (~25 Hz). Breathing
+  from head motion is a hypothesis (two papers, still head, ~2/min error),
+  not a promise. Score split: the engine's existing 0.60/0.40 heart/still.
+  Spike: DEBUG-only probe at Settings > AirPods (debug), writes HR and
+  motion CSVs to Documents/AirPodsCaptures; Release binary carries none of
+  it; committed Info.plist unchanged. Shipping it changes Info.plist, the
+  Health strings and the policy's Watch-only wording (a review pass).
+  **Next: a first capture on AirPods Pro 3 or Powerbeats Pro 2** (steps in
+  the plan). Melvin does not own a pair (2026-09-15); the probe is on his
+  beta anyway. Needs Aziz or a friend with the buds, or a pair bought for
+  the purpose. Parked until then.
+
 - **No-Watch waitlist emails now reach us (next build).** The in-app
   waitlist screen saved the typed email on the person's own phone only, so
   its "we'll write to you" was unkeepable and every address from 1.0 and
@@ -237,6 +409,28 @@ Refused:
   position. Melvin's beta test of the evening changes was skipped on Aziz's
   call ("push out the newest version"); the simulator checks in the commits
   stand in for it. There is no separate 1.0.2 any more.
+
+## Done (2026-09-15)
+
+- **808 Beta crashed on open** after the friends merge: the friends store
+  called `CKContainer.default()` on a build that carries no iCloud
+  entitlement (the beta strips it on purpose). Crash log confirmed SIGTRAP
+  in `CoherenceApp.init`. Fixed with one shared entitlement reader
+  (`CloudEntitlement`) in front of every CKContainer; friends show the
+  iCloud-unavailable card on the beta instead. Beta reinstalled.
+
+- **Delete a session** (Melvin: "sometimes we create ones and immediately
+  end them"). Results screen: the circled-ellipsis menu beside Share, then
+  "Delete session". Home's recent rows and the Profile log: long-press a
+  row. One confirmation everywhere, stating what it does not touch (the
+  workout the Watch wrote into Health). Removes the session, its stats and
+  its reflection; if it was posted to friends the post comes down too.
+  Streak, awards and the sparkline recompute by themselves. Analytics:
+  `session_deleted`, name only. `SessionStore.deleteSession`, tested.
+- **Five-second countdown before a wrist-started session**, matching the
+  phone's ("Get comfortable."), with Cancel. Numbers only; the Watch still
+  plays no haptics. A start arriving from the phone cancels a countdown
+  still ticking on the wrist.
 
 ## Done (2026-09-12)
 

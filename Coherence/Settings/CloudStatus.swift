@@ -38,29 +38,8 @@ struct CloudStatus: Equatable {
     /// Read from the binary's OWN entitlements, so this reports what actually
     /// shipped and not what we believe shipped. It used to derive
     /// `iCloud.<bundle id>` instead, which crashed the side-by-side beta at
-    /// launch (2026-09-12): the beta carries no iCloud entitlement on purpose,
-    /// and `CKContainer(identifier:)` traps (SIGTRAP) on a container the
-    /// process does not hold. nil means "no container", and read() says so.
-    private static var entitledContainer: String? {
-        if let value = Bundle.main.object(forInfoDictionaryKey: "CloudKitContainerOverride") as? String,
-           !value.isEmpty {
-            return value
-        }
-        // Development builds carry their profile, and this probe is DEBUG-only.
-        guard let url = Bundle.main.url(forResource: "embedded", withExtension: "mobileprovision"),
-              let data = try? Data(contentsOf: url),
-              let text = String(data: data, encoding: .isoLatin1),
-              let start = text.range(of: "<plist"),
-              let end = text.range(of: "</plist>")
-        else { return nil }
-        let plistText = String(text[start.lowerBound..<end.upperBound])
-        guard let plistData = plistText.data(using: .utf8),
-              let plist = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
-              let ents = plist["Entitlements"] as? [String: Any],
-              let ids = ents["com.apple.developer.icloud-container-identifiers"] as? [String],
-              let first = ids.first, !first.isEmpty
-        else { return nil }
-        return first
-    }
+    /// launch (2026-09-12). The reader now lives in `CloudEntitlement`, shared
+    /// with the friends store, which hit the same trap on 2026-09-15.
+    private static var entitledContainer: String? { CloudEntitlement.container }
 }
 #endif

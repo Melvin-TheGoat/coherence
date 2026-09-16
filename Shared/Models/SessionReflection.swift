@@ -24,6 +24,14 @@ final class SessionReflection {
     var technique: String?
     /// Free text, only when `technique == MeditationMethod.ownID`.
     var techniqueNote: String = ""
+    // Save session (added 2026-09-14, all defaulted: lightweight migration,
+    // CloudKit-safe). `note` above is now shown as PRIVATE NOTES and is never
+    // posted; `publicNote` is the separate description friends can read.
+    var title: String = ""
+    var publicNote: String = ""
+    /// "friends" or "private". Private is the stored default so every session
+    /// saved before this build stays exactly as private as it was.
+    var visibility: String = "private"
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
 

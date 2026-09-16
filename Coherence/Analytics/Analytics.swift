@@ -29,11 +29,18 @@ enum Analytics {
         // Onboarding
         case onboardingStep(id: String)
         case onboardingCompleted
-        case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "declined"
+        /// Reopened onboarding on the screen they left (`OnboardingResume`).
+        case onboardingResumed(id: String)
+        case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "notYet" | "declined"
 
         // Core loop
         case sessionStarted(source: String, sound: String)   // source: "phone" | "watch"
         case sessionCompleted(durationBand: String, streakBand: String)
+        /// A session the Watch ended but did not score: "too_short" (under the
+        /// minimum, an accidental Begin/End, not a failure) or "unreadable".
+        case sessionDiscarded(reason: String, durationBand: String)
+        /// The user removed a session from their history. Name only.
+        case sessionDeleted
         case sessionStartFailed(reason: String)
         case resultViewed
         case resultMissing                        // a session ended with no stats: the failure metric
@@ -69,13 +76,31 @@ enum Analytics {
         case awardUnlocked(id: String)
         case accountDeleted
 
+        // Friends (COMMUNITY.md). Counts only; never a handle, a caption or a
+        // score.
+        case friendsOpened
+        case usernameClaimed
+        case friendRequestSent
+        case friendAccepted
+        case inviteShared
+        case postCreated(photo: Bool)
+        case reactionGiven
+        case userBlocked
+        case contentReported(kind: String)   // "post" | "profile"
+        case inviteRewarded                  // a brought friend sat; the grant landed
+        case profileCreated(photo: Bool)
+        case friendsIntroShown               // the one-time prompt for pre-Friends users
+
         var name: String {
             switch self {
             case .onboardingStep: "onboarding_step"
             case .onboardingCompleted: "onboarding_completed"
+            case .onboardingResumed: "onboarding_resumed"
             case .watchGate: "watch_gate"
             case .sessionStarted: "session_started"
             case .sessionCompleted: "session_completed"
+            case .sessionDiscarded: "session_discarded"
+            case .sessionDeleted: "session_deleted"
             case .sessionStartFailed: "session_start_failed"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
@@ -95,6 +120,18 @@ enum Analytics {
             case .notificationOpened: "notification_opened"
             case .awardUnlocked: "award_unlocked"
             case .accountDeleted: "account_deleted"
+            case .friendsOpened: "friends_opened"
+            case .usernameClaimed: "username_claimed"
+            case .friendRequestSent: "friend_request_sent"
+            case .friendAccepted: "friend_accepted"
+            case .inviteShared: "invite_shared"
+            case .postCreated: "post_created"
+            case .reactionGiven: "reaction_given"
+            case .userBlocked: "user_blocked"
+            case .contentReported: "content_reported"
+            case .inviteRewarded: "invite_rewarded"
+            case .profileCreated: "profile_created"
+            case .friendsIntroShown: "friends_intro_shown"
             }
         }
 
@@ -104,9 +141,11 @@ enum Analytics {
             // `screen` is the numbered human name a dashboard can be read by.
             // Both ship, so old funnels keep working and new ones read plainly.
             case .onboardingStep(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
+            case .onboardingResumed(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
             case .watchGate(let outcome): ["outcome": outcome]
             case .sessionStarted(let source, let sound): ["source": source, "sound": sound]
             case .sessionCompleted(let d, let s): ["duration": d, "streak": s]
+            case .sessionDiscarded(let reason, let d): ["reason": reason, "duration": d]
             case .sessionStartFailed(let reason): ["reason": reason]
             case .paywallViewed(let placement): ["placement": placement]
             case .purchase(let plan): ["plan": plan]
@@ -114,6 +153,9 @@ enum Analytics {
             case .freeTierEntered(let rung): ["after_rung": rung]
             case .lockedTapped(let signal): ["signal": signal]
             case .skinLockedTapped(let skin): ["skin": skin]
+            case .postCreated(let photo): ["photo": photo ? "yes" : "no"]
+            case .contentReported(let kind): ["kind": kind]
+            case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
             default: [:]
             }
         }
@@ -206,32 +248,32 @@ enum Analytics {
         "motivation":        "04 What are you hoping for?",
         "stress":            "05 How stressed lately?",
         "aloneWithThoughts": "06a Alone with your thoughts? (not regulars)",
-        "doingNothing":      "06b How long doing nothing? (not regulars)",
+        "doingNothing":      "06b How long doing nothing? (cut 1.0.2)",
         "restarts":          "07a What made you stop? (restarters)",
         "intendedFor":       "07b How long meaning to start? (newcomers)",
         "bodyCuriosity":     "08a Wonder what your body is doing? (not newcomers)",
-        "bodyProof":         "08b How do you know it worked? (not newcomers)",
+        "bodyProof":         "08b How do you know it worked? (cut 1.0.2)",
         "bodyTracking":      "09 What do you already track?",
-        "hardware":          "10 The hardware you'd otherwise need",
+        "hardware":          "10 The hardware you'd otherwise need (off the path since 1.0.2)",
         "blindSpot":         "11 What can't you tell about your practice? (regulars)",
         "watchGate":         "12 Do you have an Apple Watch?",
         "watchSetup":        "12a 808 goes on your Watch (has Watch)",
         "waitlist":          "12b No-Watch waitlist",
-        "anchor":            "13 When will you actually meditate?",
+        "anchor":            "13 When will you actually meditate? (cut 1.0.2)",
         "you":               "14 What should we call you?",
-        "referral":          "15 How did you find us?",
+        "referral":          "02b How did you find us?",   // first question since 1.0.2; was 15
         "calculating":       "16 Calculating your plan",
         "result":            "17 Here's what you told us",
         "cost":              "17b The cost (not routed to)",
-        "wall":              "18 The wall: you'd be in company",
-        "proofBody":         "19 Proof: the body is visible",
+        "wall":              "31b The wall: you'd be in company (before the paywall since 1.0.2)",
+        "proofBody":         "19 Proof: the body is visible (cut 1.0.2)",
         "sampleStart":       "20 Sample session: start",
         "sampleBuild":       "21 Sample session: the score builds",
-        "proofYourWay":      "22 Proof: your way",
+        "proofYourWay":      "22 Proof: your way (cut 1.0.2)",
         "commitment":        "23 Make it a promise",
         "permission":        "24 One nudge at your time (notifications)",
-        "week":              "25 Your first week",
-        "rating":            "26 Does this sound like it'd work?",
+        "week":              "25 Your first week (cut 1.0.2)",
+        "rating":            "26 Does this sound like it'd work? (cut 1.0.2)",
         "health":            "27 Health data consent",
         "tourHome":          "28 Tour: this is home",
         "watchConnect":      "29 Tour: put your Watch on",
@@ -239,6 +281,7 @@ enum Analytics {
         "sessionResults":    "31 Tour: demo results",
         "paywall":           "32 Paywall",
         "signIn":            "33 Sign in with Apple",
+        "profile":           "34 Create your profile (Friends builds)",
     ]
 
     /// Where events go. `start()` swaps this to PostHog when a key is set;
@@ -255,6 +298,7 @@ enum Analytics {
     /// Coarse bands, so a property can never reconstruct a precise value.
     static func durationBand(seconds: Int) -> String {
         switch seconds {
+        case ..<30: "under30s"
         case ..<180: "under3m"
         case ..<420: "3to7m"
         case ..<720: "7to12m"

@@ -40,9 +40,14 @@ final class AdvanceGate: ObservableObject {
 
 struct ReliefScreen: View {
     let onContinue: () -> Void
-    /// Jumps straight to Sign in with Apple. A returning user reinstalling
-    /// should not have to re-answer an interview the app already knows.
-    let onSignIn: () -> Void
+    // No sign-in link on this screen, deliberately (Aziz, 2026-09-14).
+    // It jumped straight to Sign in, skipping every screen including the
+    // paywall, and PostHog showed new people using it that way. Sign-in now
+    // exists only at the end of onboarding. A returning user loses nothing:
+    // their sessions and onboarding flag come back through iCloud (which
+    // skips onboarding by itself once the import lands), and a subscription
+    // rides the Apple ID, restored on the paywall. Quittr and Cal AI make the
+    // same choice: nothing reaches the app without passing the offer.
     @State private var appeared = false
 
     var body: some View {
@@ -92,12 +97,6 @@ struct ReliefScreen: View {
                 .opacity(appeared ? 1 : 0)
                 .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
 
-            Button("Already have an account?", action: onSignIn)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 14)
-                .opacity(appeared ? 1 : 0)
-                .animation(.easeOut(duration: 0.6).delay(1.25), value: appeared)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
@@ -327,7 +326,7 @@ struct MotivationScreen: View {
             VStack(spacing: 10) {
                 ForEach(Motivation.offered) { m in
                     OnboardingOption(label: m.label, icon: m.icon,
-                                     selected: selected.contains(m)) {
+                                     selected: selected.contains(m), multi: true) {
                         if selected.contains(m) {
                             selected.remove(m)
                             if m == .other { otherFocused = false }
@@ -387,7 +386,7 @@ struct StressScreen: View {
         case 1: return "A bit wound up"
         case 2: return "Carrying a lot"
         case 3: return "Close to the edge"
-        default: return "Fried"
+        default: return "Burnt out"
         }
     }
 
@@ -437,7 +436,7 @@ struct StressScreen: View {
                     HStack {
                         Text("Fine")
                         Spacer()
-                        Text("Fried")
+                        Text("Burnt out")
                     }
                     .font(.caption)
                     .foregroundStyle(AppColor.textSecondary)
@@ -705,7 +704,7 @@ struct BodyTrackingScreen: View {
             VStack(spacing: 10) {
                 ForEach(BodyTracking.allCases) { t in
                     OnboardingOption(label: t.label, icon: t.icon,
-                                     selected: tracking.contains(t)) {
+                                     selected: tracking.contains(t), multi: true) {
                         if tracking.contains(t) { tracking.remove(t) } else { tracking.insert(t) }
                     }
                 }
@@ -726,7 +725,16 @@ struct BodyTrackingScreen: View {
 /// the wish, the price, and "something similar for everyone". No product
 /// photos: silhouettes keep the screen ours.
 struct HardwareScreen: View {
+    /// Where 808 Premium's price lands once the anchor has been set. Only the
+    /// paywall ladder passes one; the interview path never did and no longer
+    /// shows this screen at all (Melvin, 2026-09-14).
+    var priceLine: String? = nil
+    var ctaTitle: String = "Continue"
+    /// A second, quieter way out. The ladder needs one at every rung, in
+    /// plain words, so a decline never has to be hunted for.
+    var declineTitle: String? = nil
     let onContinue: () -> Void
+    var onDecline: (() -> Void)? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -758,9 +766,24 @@ struct HardwareScreen: View {
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            if let priceLine {
+                Text(priceLine)
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
             Spacer(minLength: 8)
 
-            OnboardingCTA(title: "Continue", action: onContinue)
+            OnboardingCTA(title: ctaTitle, action: onContinue)
+
+            if let declineTitle, let onDecline {
+                Button(declineTitle, action: onDecline)
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
+            }
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
@@ -872,7 +895,13 @@ struct WatchGateScreen: View {
     @Binding var hasWatch: Bool?
     let progress: Double
     let onYes: () -> Void
-    let onNo: () -> Void
+    /// `notYet` is true for "Not yet": no Watch today, one in mind. Both
+    /// answers land on the waitlist; the analytics outcome tells them apart,
+    /// because a person who plans to buy a Watch is a different lead from one
+    /// who never will (Melvin, 2026-09-14: three answers, not two).
+    let onNo: (_ notYet: Bool) -> Void
+    /// Which of the two "no" rows is lit. `hasWatch` alone cannot say.
+    @State private var notYet = false
 
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
@@ -884,7 +913,7 @@ struct WatchGateScreen: View {
                          // label, which is fine: that screen explains itself in
                          // its first line and the chevron comes straight back.
                          autoAdvances: true,
-                         onContinue: { gate.now { hasWatch == false ? onNo() : onYes() } }) {
+                         onContinue: { gate.now { hasWatch == false ? onNo(notYet) : onYes() } }) {
             VStack(spacing: 22) {
                 // Two options left over 400 pt of black on the one screen that
                 // decides whether the product can work for this person at all.
@@ -902,16 +931,19 @@ struct WatchGateScreen: View {
                 VStack(spacing: 10) {
                     OnboardingOption(label: "Yes", icon: "applewatch",
                                      selected: hasWatch == true) { pick(true) }
-                    OnboardingOption(label: "No, not yet", icon: "applewatch.slash",
-                                     selected: hasWatch == false) { pick(false) }
+                    OnboardingOption(label: "No", icon: "applewatch.slash",
+                                     selected: hasWatch == false && !notYet) { pick(false) }
+                    OnboardingOption(label: "Not yet", icon: "cart",
+                                     selected: hasWatch == false && notYet) { pick(false, notYet: true) }
                 }
             }
         }
     }
 
-    private func pick(_ yes: Bool) {
+    private func pick(_ yes: Bool, notYet planned: Bool = false) {
         hasWatch = yes
-        gate.advance { yes ? onYes() : onNo() }
+        notYet = planned
+        gate.advance { yes ? onYes() : onNo(planned) }
     }
 }
 
@@ -1057,16 +1089,22 @@ struct WaitlistScreen: View {
                          skipTitle: "Continue without joining",
                          onSkip: onDecline,
                          onContinue: onJoin) {
-            TextField("you@example.com", text: $email)
+            // A plain grey field that says "email" (2026-09-14 tester: the
+            // example address read as a link). Gold caret so the one accent
+            // on the screen is ours, not the system blue.
+            TextField("", text: $email, prompt: Text("email").foregroundStyle(AppColor.textSecondary.opacity(0.6)))
                 .textContentType(.emailAddress)
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .font(OnboardingType.option)
                 .foregroundStyle(AppColor.textPrimary)
+                .tint(AppColor.accentGold)
                 .padding(16)
-                .background(AppColor.backgroundSecondary.opacity(0.8),
+                .background(AppColor.backgroundSecondary,
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .stroke(AppColor.textSecondary.opacity(0.22), lineWidth: 1))
         }
     }
 }
@@ -1145,6 +1183,10 @@ struct NameScreen: View {
                 // Optional like everything else here (5.1.1). Lowercase,
                 // letters, digits, underscore and dot, normalised as they type
                 // so the handle they see is the handle that gets saved.
+                // Friends builds ask for the username on its own screen at the
+                // end (Create your profile), reserved for real, so the
+                // cosmetic field here goes away.
+                if !FeatureFlags.friends {
                 HStack(spacing: 6) {
                     Text("@")
                         .font(OnboardingType.option)
@@ -1163,6 +1205,7 @@ struct NameScreen: View {
                 .padding(16)
                 .background(AppColor.backgroundSecondary.opacity(0.8),
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Age")
@@ -1200,7 +1243,7 @@ struct ReferralScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .body, progress: progress,
-                         title: "One last thing.\nHow did you find us?",
+                         title: "First, how did\nyou find us?",
                          subtitle: "It's the only way we know where to show up.",
                          ctaEnabled: referral != nil,
                          autoAdvances: true,

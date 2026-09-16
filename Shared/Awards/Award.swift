@@ -77,6 +77,15 @@ public struct Award: Identifiable, Hashable {
               there. Everything else on this shelf is built on top of this.
               """),
 
+        Award(id: "friendBrought", title: "Brought a friend",
+              blurb: "Someone you invited sat their first session.",
+              group: .beginning, face: .mark,
+              meaning: """
+              You asked someone to sit with you, they said yes, and they sat. \
+              Practice is easier to keep with company, and you gave someone \
+              theirs.
+              """),
+
         streak(3,   "Three days",   "Three in a row."),
         streak(5,   "Five days",    "Five in a row."),
         streak(10,  "Ten days",     "Ten in a row."),

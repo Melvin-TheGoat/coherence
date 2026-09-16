@@ -11,6 +11,8 @@ import AuthenticationServices
 /// hour to the reminder time, so nothing is asked twice.
 struct OnboardingView: View {
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var store: Store
+    @EnvironmentObject private var community: CommunityModel
     @Query private var preferences: [Preferences]
 
     @State private var step: Step = .relief
@@ -54,6 +56,7 @@ struct OnboardingView: View {
         case health                                            // consent, kept from the old flow
         case tourHome, watchConnect, breathe, sessionResults   // the walkthrough
         case paywall, signIn                                   // 23, 25
+        case profile                                           // Friends: photo + @username
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -72,10 +75,11 @@ struct OnboardingView: View {
         /// reason the thirty-day exit offer is gone.
         var allowsBack: Bool {
             switch self {
-            case .paywall, .signIn: return false
+            case .paywall, .signIn, .profile: return false
             // Mid-practice and mid-result: backing into the interview from a
-            // running Watch session would strand the session.
-            case .breathe, .sessionResults: return false
+            // running Watch session would strand the session. The wall sits
+            // just after them now, so it gets no chevron either.
+            case .breathe, .sessionResults, .wall: return false
             default: return true
             }
         }
@@ -92,14 +96,23 @@ struct OnboardingView: View {
     /// `InterviewStep`. The branching lives in the model (and is exhaustively
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
+        (.referral, .referral),
         (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
-        (.aloneWithThoughts, .aloneWithThoughts), (.doingNothing, .doingNothing),
+        (.aloneWithThoughts, .aloneWithThoughts),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
-        (.bodyCuriosity, .bodyCuriosity), (.bodyProof, .bodyProof),
+        (.bodyCuriosity, .bodyCuriosity),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot), (.watchGate, .watchGate),
-        (.anchor, .anchor), (.you, .you), (.referral, .referral),
+        (.you, .you),
     ]
+
+    /// The interview's first screen, read from the model's order rather than
+    /// hardcoded, so reordering `InterviewStep` moves the door with it.
+    private var firstInterviewStep: Step {
+        answers.interview.first.flatMap { first in
+            Self.interviewPairs.first { $0.1 == first }?.0
+        } ?? .baseline
+    }
 
     /// The next screen after `current`, skipping every question whose premise
     /// this user's answers contradict.
@@ -122,11 +135,18 @@ struct OnboardingView: View {
     /// The session the walkthrough's breathing practice produced.
     @State private var walkthroughSessionID: UUID?
 
-    /// After the walkthrough (or skipping out of it): the offer, or sign-in
-    /// when the paywall lives outside onboarding.
-    private var afterWalkthrough: Step {
+    /// After the walkthrough (or skipping out of it): the company they'd be
+    /// in, then the offer. The wall moved here from the middle of the payoff
+    /// (Melvin, 2026-09-15): social proof lands best right before the ask.
+    private var afterWalkthrough: Step { .wall }
+
+    /// After the wall: the offer, or sign-in when the paywall lives outside
+    /// onboarding.
+    private var afterWall: Step {
         Self.paywallInsideOnboarding ? .paywall : .signIn
     }
+
+    @State private var resumed = false
 
     /// Where they've been, so the chevron can undo a wrong tap. A stack rather
     /// than `Step.allCases` order, because the flow branches: the Watch gate
@@ -155,6 +175,13 @@ struct OnboardingView: View {
         }
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
+            .onAppear {
+                #if DEBUG
+                // A DEBUG jump to one screen wins over saved progress.
+                if ProcessInfo.processInfo.environment["ONBOARDING_STEP"] != nil { return }
+                #endif
+                resumeIfSaved()
+            }
         #if DEBUG
             // Jump straight to one screen, with plausible answers already filled
             // in, so copy can be reviewed without tapping through the interview:
@@ -182,10 +209,10 @@ struct OnboardingView: View {
     private var content: some View {
         switch step {
         case .relief:
-            ReliefScreen(onContinue: { go(.breath) }, onSignIn: { go(.signIn) })
+            ReliefScreen(onContinue: { go(.breath) })
 
         case .breath:
-            BreathScreen { go(.baseline) }
+            BreathScreen { go(firstInterviewStep) }
 
         case .baseline:
             BaselineScreen(frequency: $answers.currentFrequency,
@@ -206,11 +233,10 @@ struct OnboardingView: View {
                                         progress: interviewProgress) { go(nextAfter(.aloneWithThoughts)) }
             }
 
+        // Cut 2026-09-15. The Step case stays so resume records and
+        // ONBOARDING_STEP indices hold; anyone landing here moves on.
         case .doingNothing:
-            guarded(.doingNothing) {
-                DoingNothingScreen(answer: $answers.doingNothing,
-                                   progress: interviewProgress) { go(nextAfter(.doingNothing)) }
-            }
+            Color.clear.onAppear { go(nextAfter(.aloneWithThoughts)) }
 
         case .restarts:
             guarded(.restarts) {
@@ -230,21 +256,21 @@ struct OnboardingView: View {
                                     progress: interviewProgress) { go(nextAfter(.bodyCuriosity)) }
             }
 
+        // Cut 2026-09-15, same arrangement.
         case .bodyProof:
-            guarded(.bodyProof) {
-                BodyProofScreen(answer: $answers.bodyProof,
-                                progress: interviewProgress) { go(nextAfter(.bodyProof)) }
-            }
+            Color.clear.onAppear { go(nextAfter(.bodyCuriosity)) }
 
         case .bodyTracking:
             BodyTrackingScreen(tracking: $answers.bodyTracking,
-                               progress: interviewProgress) { go(.hardware) }
+                               progress: interviewProgress) { go(nextAfter(.bodyTracking)) }
 
-        // Not a question: the reveal that the wish the last three questions
-        // named is sold as $200-$400 hardware, and 808 reads it from the
-        // watch already on the wrist. Lands while the wish is one screen old.
+        // No longer on the path (Melvin, 2026-09-14). A tester with no Watch
+        // met "$400" mid-interview and read it as an upsell aimed at someone
+        // else. The screen now lives in the paywall ladder, shown only to a
+        // person who has just declined to pay, where an anchor belongs. The
+        // Step case stays so ONBOARDING_STEP can still jump to it.
         case .hardware:
-            HardwareScreen { go(nextAfter(.bodyTracking)) }
+            HardwareScreen(onContinue: { go(nextAfter(.bodyTracking)) })
 
         case .blindSpot:
             guarded(.blindSpot) {
@@ -259,8 +285,8 @@ struct OnboardingView: View {
                                 Analytics.track(.watchGate(outcome: "hasWatch"))
                                 go(.watchSetup)
                             },
-                            onNo: {
-                                Analytics.track(.watchGate(outcome: "waitlist"))
+                            onNo: { notYet in
+                                Analytics.track(.watchGate(outcome: notYet ? "notYet" : "waitlist"))
                                 go(.waitlist)
                             })
 
@@ -273,12 +299,13 @@ struct OnboardingView: View {
             // Joining is optional either way: declining clears the email so
             // nothing half-typed gets stored at finish.
             WaitlistScreen(email: $waitlistEmail,
-                           onJoin: { go(.anchor) },
-                           onDecline: { waitlistEmail = ""; go(.anchor) })
+                           onJoin: { go(nextAfter(.watchGate)) },
+                           onDecline: { waitlistEmail = ""; go(nextAfter(.watchGate)) })
 
+        // Cut 2026-09-15 (Melvin: nobody wants to be made to commit to a
+        // time of day). The reminder time is picked on the permission screen.
         case .anchor:
-            AnchorScreen(anchor: $answers.anchor,
-                         progress: interviewProgress) { go(nextAfter(.anchor)) }
+            Color.clear.onAppear { go(nextAfter(.watchGate)) }
 
         case .you:
             NameScreen(firstName: $answers.firstName,
@@ -301,13 +328,15 @@ struct OnboardingView: View {
             // indices hold and the screen can come back with one edit; with
             // no costs ticked, downstream echoes (`primaryCost`) are nil and
             // every reader already handles nil.
-            ResultScreen(answers: answers) { go(.wall) }
+            ResultScreen(answers: answers) { go(.sampleStart) }
 
         case .cost:
-            CostScreen(costs: $answers.costs) { go(.wall) }
+            CostScreen(costs: $answers.costs) { go(.sampleStart) }
 
+        // Cut 2026-09-15 with proofYourWay, week and rating: the payoff is
+        // the sample-session pair and the promise, nothing more.
         case .proofBody:
-            ProofScreen(beat: .body) { go(.sampleStart) }
+            Color.clear.onAppear { go(.sampleStart) }
 
         // The start/build pair: the last beat of the cost arc asks "so what's
         // possible?", and the first beat of the win answers it.
@@ -316,16 +345,16 @@ struct OnboardingView: View {
 
         case .sampleBuild:
             SampleSessionScreen(phase: .build,
-                                motivations: answers.motivations) { go(.proofYourWay) }
+                                motivations: answers.motivations) { go(.commitment) }
 
         case .proofYourWay:
-            ProofScreen(beat: .yourWay) { go(.commitment) }
+            Color.clear.onAppear { go(.commitment) }
 
-        // The wall comes BEFORE the mechanism screen. Testers said the
-        // company they'd be in was what opened them up; the explanation
-        // lands better once they already want it to be true.
+        // The last screen before the offer, for everyone who came through
+        // the walkthrough. Kept at Melvin's request, moved from the middle of
+        // the payoff to the end (2026-09-15).
         case .wall:
-            WallScreen { go(.proofBody) }
+            WallScreen { go(afterWall) }
 
         case .commitment:
             CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
@@ -333,15 +362,15 @@ struct OnboardingView: View {
                              cost: answers.primaryCost) { go(.permission) }
 
         case .permission:
-            PermissionScreen(anchor: answers.anchor,
-                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(.week) } },
-                             onSkip: { reminderAllowed = false; go(.week) })
+            PermissionScreen(reminderTime: $answers.reminderTime,
+                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(.health) } },
+                             onSkip: { reminderAllowed = false; go(.health) })
 
         case .week:
-            WeekPreviewScreen { go(.rating) }
+            Color.clear.onAppear { go(.health) }
 
         case .rating:
-            RatingScreen(rating: $planRating) { go(.health) }
+            Color.clear.onAppear { go(.health) }
 
         case .health:
             HealthConsentScreen {
@@ -397,11 +426,27 @@ struct OnboardingView: View {
             // and 5.1.1(v) forbids requiring registration after a purchase
             // that isn't account-based. Sessions made before signing in are
             // folded into the account later by the bootstrap-adopt flow.
+            // Someone who already pays (a reinstall, a new phone) is never
+            // shown an offer for what they own. StoreKit's on-device record
+            // is the proof; `.loading` alone is not.
             PaywallScreen(plan: $plan) { _ in go(.signIn) }
 
         case .signIn:
-            SignInScreen(onSignedIn: handleSignIn,
-                         onSkip: finish)
+            SignInScreen(onSignedIn: { credential in
+                             signInCredential(credential)
+                             afterSignIn()
+                         },
+                         onSkip: afterSignIn)
+
+        case .profile:
+            // Friends builds only: routing never reaches here when the flag
+            // is off, and a resumed record from a Friends build lands safely.
+            CreateProfileView(model: community,
+                              suggested: answers.username,
+                              nickname: answers.firstName) { handle in
+                if let handle { answers.username = handle }
+                finish()
+            }
         }
     }
 
@@ -429,12 +474,55 @@ struct OnboardingView: View {
 
     // MARK: - Navigation
 
-    private func go(_ next: Step) {
+    private func go(_ requested: Step) {
+        // Someone who already pays (a reinstall, a new phone) is never shown
+        // an offer for what they own. Decided here, on the way IN, and not by
+        // the paywall view watching `store.entitled`: that version also fired
+        // when a purchase completed ON the paywall, advancing twice.
+        let next: Step = (requested == .paywall && store.entitled) ? .signIn : requested
+        guard next != step else { return }
         history.append(step)
         // One line covers the whole 26-screen funnel: the step being LEFT is
         // the one that was completed.
         Analytics.track(.onboardingStep(id: String(describing: step)))
         withAnimation { step = next }
+        saveProgress()
+    }
+
+    // MARK: - Resume
+
+    /// Screens whose content died with the app: the live practice session
+    /// and the results it produced. They reopen on the Watch connect screen
+    /// that leads into them.
+    private static let unresumable: Set<Step> = [.breathe, .sessionResults]
+
+    private func saveProgress() {
+        OnboardingResume(step: step.rawValue,
+                           history: history.map(\.rawValue),
+                           answers: answers,
+                           plan: plan.rawValue,
+                           waitlistEmail: waitlistEmail,
+                           planRating: planRating,
+                           reminderAllowed: reminderAllowed).save()
+    }
+
+    /// Reopens where they left off. Runs once, on the first appearance of a
+    /// fresh OnboardingView; a finished onboarding cleared the record.
+    private func resumeIfSaved() {
+        guard !resumed, let saved = OnboardingResume.load() else { return }
+        resumed = true
+        let point = saved.resumePoint(unresumable: Set(Self.unresumable.map(\.rawValue)),
+                                      fallback: Step.watchConnect.rawValue)
+        guard var target = Step(rawValue: point.step), target != .relief else { return }
+        if target == .paywall, store.entitled { target = .signIn }
+        answers = saved.answers
+        history = point.history.compactMap(Step.init(rawValue:))
+        plan = SubscriptionPlan(rawValue: saved.plan) ?? .monthly
+        waitlistEmail = saved.waitlistEmail
+        planRating = saved.planRating
+        reminderAllowed = saved.reminderAllowed
+        step = target
+        Analytics.track(.onboardingResumed(id: String(describing: target)))
     }
 
     /// Belt and suspenders for the interview's branching (Melvin, 2026-08-29:
@@ -476,6 +564,7 @@ struct OnboardingView: View {
     private func goBack() {
         guard let previous = history.popLast() else { return }
         withAnimation { step = previous }
+        saveProgress()
     }
 
     // MARK: - Side effects
@@ -487,14 +576,23 @@ struct OnboardingView: View {
             .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
     }
 
-    private func handleSignIn(_ credential: ASAuthorizationAppleIDCredential) {
+    /// Records the Apple credential. Finishing happens in `afterSignIn`,
+    /// which may first route through Create your profile.
+    private func signInCredential(_ credential: ASAuthorizationAppleIDCredential) {
         let name = [credential.fullName?.givenName, credential.fullName?.familyName]
             .compactMap { $0 }.joined(separator: " ")
+        if answers.firstName.trimmingCharacters(in: .whitespaces).isEmpty, !name.isEmpty {
+            answers.firstName = credential.fullName?.givenName ?? name
+        }
         _ = SessionStore.signIn(appleUserID: credential.user,
                                 email: credential.email,
                                 displayName: name.isEmpty ? typedName : name,
                                 in: context)
-        persistAnswers()
+    }
+
+    /// Friends builds end on Create your profile; everything else finishes.
+    private func afterSignIn() {
+        if FeatureFlags.friends { go(.profile) } else { finish() }
     }
 
     private var typedName: String? {
@@ -513,7 +611,10 @@ struct OnboardingView: View {
         if let typedName, (user.displayName ?? "").isEmpty {
             user.displayName = typedName
         }
-        if let handle = Username.normalize(answers.username), (user.username ?? "").isEmpty {
+        if let handle = Username.normalize(answers.username),
+           (user.username ?? "").isEmpty || FeatureFlags.friends {
+            // In Friends builds the handle was just reserved on Create your
+            // profile, so it replaces any older cosmetic one.
             user.username = handle
         }
         // The no-Watch waitlist. The address lands on the local user row (the
@@ -529,19 +630,19 @@ struct OnboardingView: View {
             WaitlistClient.submit(waitlistEmail)
         }
         Analytics.track(.onboardingCompleted)
+        OnboardingResume.clear()
         if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
             prefs.onboardingComplete = true
-            if let anchor = answers.anchor {
-                // The time is stored either way: it is their stated anchor and
-                // the default Settings offers if they enable reminders later.
-                // Whether the reminder is ON is the permission screen's answer,
-                // never the anchor's: picking a time of day is not consent to
-                // be notified at it.
-                prefs.reminderTime = Calendar.current.date(
-                    bySettingHour: anchor.defaultHour, minute: 0, second: 0, of: Date())
-                prefs.remindersEnabled = reminderAllowed
-                NotificationScheduler.apply(enabled: reminderAllowed, at: prefs.reminderTime)
-            }
+            // The time is stored either way: it is what they picked (or the
+            // 8 AM default) and what Settings offers if they enable reminders
+            // later. Whether the reminder is ON is the permission screen's
+            // answer, never the time's: picking a time of day is not consent
+            // to be notified at it.
+            let time = answers.reminderTime
+                ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())
+            prefs.reminderTime = time
+            prefs.remindersEnabled = reminderAllowed
+            NotificationScheduler.apply(enabled: reminderAllowed, at: time)
         }
         try? context.save()
     }

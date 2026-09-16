@@ -5,8 +5,9 @@ import Charts
 /// The app after onboarding: five tabs on a bottom bar (Melvin, 2026-09-12,
 /// "the layout most apps use, so people open it and instantly understand").
 /// Home is the streak, the proof curve and this month's calendar; Guide is
-/// the how-to; the raised gold plus starts a session; Search waits for
-/// friends; Profile is the person, their stats, awards and full log.
+/// the how-to; the raised gold plus starts a session; Friends is the feed
+/// of what friends posted; Profile is the person, their stats, awards and
+/// full log.
 ///
 /// This view still owns every app-wide modal (the live session cover, a start
 /// failure, an award unlock, the setup sheet, results, settings), exactly as
@@ -14,15 +15,20 @@ import Charts
 struct ContentView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @Environment(\.modelContext) private var context
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var users: [User]
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
+    @Query private var prefsRows: [Preferences]
+    @EnvironmentObject private var community: CommunityModel
 
     @State private var tab: MainTab = .home
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
     @State private var profileDay: Date?
+    /// A recent-session row awaiting the delete confirmation.
+    @State private var pendingDelete: UUID?
 
     /// ONE sheet presenter for the whole screen. Stacking several
     /// `.sheet` modifiers on the same view silently breaks all but one of
@@ -35,6 +41,11 @@ struct ContentView: View {
     /// Awards earned but not yet celebrated, oldest first. Announced one at a
     /// time: two unlock screens racing each other would cheapen both.
     @State private var unlockQueue: [AwardEngine.Earned] = []
+    /// A session that finished while the app was away and still owes the
+    /// person a Save session screen (`PendingSave`). Recomputed on every
+    /// return to the foreground, because that is the moment they picked the
+    /// phone up after sitting.
+    @State private var resumeSave: UUID?
     #if DEBUG
     @State private var showBreathingPreview =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
@@ -43,12 +54,19 @@ struct ContentView: View {
     private enum HomeSheet: Identifiable {
         case setup, settings
         case results(UUID)
+        /// Save session (Friends): opens when a live session lands, then
+        /// chains into its results.
+        case save(UUID)
+        /// A session the Watch ended without a score (too short, unreadable).
+        case discarded(SessionCoordinator.Discard)
 
         var id: String {
             switch self {
             case .setup: return "setup"
             case .settings: return "settings"
             case .results(let id): return "results-\(id)"
+            case .save(let id): return "save-\(id)"
+            case .discarded(let d): return "discarded-\(d.id)"
             }
         }
     }
@@ -61,8 +79,8 @@ struct ContentView: View {
             case .guide:
                 GuideView(embedded: true) { sheet = .setup }
                     .onAppear { Analytics.track(.guideOpened) }
-            case .search:
-                SearchTab()
+            case .friends:
+                if FeatureFlags.friends { FriendsTab() } else { SearchTab() }
             case .profile:
                 ProfileTab(selectedDay: $profileDay) { sheet = .settings }
             }
@@ -98,6 +116,26 @@ struct ContentView: View {
         }
         .onAppear(perform: refreshAwards)
         .onChange(of: sessions.count) { _, _ in refreshAwards() }
+        .modifier(DiscardHook(discard: coordinator.lastDiscard,
+                              sessionActive: coordinator.active != nil) { d in
+            if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
+        })
+        .modifier(FriendsHooks(community: community,
+                               users: users,
+                               sessionActive: coordinator.active != nil,
+                               awardShowing: !unlockQueue.isEmpty,
+                               lastSessionID: coordinator.lastSessionID,
+                               resumeSessionID: resumeSave) { id in
+            if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
+        })
+        // Picking the phone up after a sit IS the moment to grade it, and by
+        // then the app has usually been suspended or killed, so nothing is
+        // left in memory to act on. Read the waiting session off disk instead.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { readPendingSave() }
+        }
+        .onAppear { readPendingSave() }
+        .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(isPresented: $showBreathingPreview) {
             SessionActiveView(startedAt: Date().addingTimeInterval(-90),
@@ -127,10 +165,16 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
+            if let secs = ProcessInfo.processInfo.environment["PREVIEW_TOO_SHORT"].flatMap(Int.init), sheet == nil {
+                sheet = .discarded(.init(id: UUID(), durationSec: secs))
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
+                sheet = .save(DemoData.seedResults(in: context))
+            }
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
                 case "guide": tab = .guide
-                case "search": tab = .search
+                case "friends", "search": tab = .friends
                 case "profile": tab = .profile
                 default: tab = .home
                 }
@@ -164,6 +208,17 @@ struct ContentView: View {
                 SettingsView()
             case .results(let id):
                 SessionResultsView(sessionID: id)
+            case .save(let id):
+                SaveSessionView(sessionID: id, mode: .new) {
+                    PendingSave.clear()
+                    resumeSave = nil
+                    pendingSheet = .results(id)
+                    sheet = nil
+                }
+            case .discarded(let discard):
+                SessionTooShortView(discard: discard,
+                                    onStartAgain: { pendingSheet = .setup; sheet = nil },
+                                    onDone: { sheet = nil })
             }
         }
     }
@@ -195,6 +250,19 @@ struct ContentView: View {
 
     /// Derived from history on every check, so nothing needs backfilling: a
     /// user with months of sessions simply has the awards those sessions earned.
+    /// The session waiting to be graded, if it is still there. A session can
+    /// be deleted from its results screen, so the stored id is checked against
+    /// storage before a sheet is opened on it; a dangling id clears itself.
+    private func readPendingSave() {
+        guard FeatureFlags.friends, let id = PendingSave.read() else { resumeSave = nil; return }
+        guard sessions.contains(where: { $0.id == id }) else {
+            PendingSave.clear()
+            resumeSave = nil
+            return
+        }
+        resumeSave = id
+    }
+
     private func refreshAwards() {
         let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
             guard let id = st.sessionID, let s = st.overallScore else { return nil }
@@ -207,7 +275,9 @@ struct ContentView: View {
                       durationSec: $0.durationSec,
                       overallScore: scores[$0.id])
             },
-            accountCreatedAt: users.first?.createdAt)
+            accountCreatedAt: users.first?.createdAt,
+            friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
+            .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
 
         // First run swallows everything already earned. Melvin and Aziz have
         // months of history and would otherwise meet a dozen unlock screens in
@@ -389,11 +459,17 @@ struct ContentView: View {
                                         rating: ratings[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
+                        .contextMenu {
+                            Button(role: .destructive) { pendingDelete = session.id } label: {
+                                Label("Delete session", systemImage: "trash")
+                            }
+                        }
                     }
                 }
                 .padding(.horizontal, 14)
                 .background(AppColor.backgroundSecondary,
                             in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+                .deleteSessionDialog(pending: $pendingDelete)
             }
         }
     }
@@ -436,5 +512,93 @@ struct ContentView: View {
             ?? users.first?.displayName
         guard let name, !name.isEmpty else { return nil }
         return name.split(separator: " ").first.map(String.init)
+    }
+}
+
+
+/// Everything Friends adds to the app's root, in one modifier so the root
+/// view's chain stays small enough to type-check, and so a switched-off
+/// Friends is one `guard` away from nothing.
+private struct FriendsHooks: ViewModifier {
+    @ObservedObject var community: CommunityModel
+    let users: [User]
+    let sessionActive: Bool
+    let awardShowing: Bool
+    let lastSessionID: UUID?
+    /// A session read back off disk because the app was not running when it
+    /// landed. Same destination as `lastSessionID`, different road in.
+    let resumeSessionID: UUID?
+    let openSave: (UUID) -> Void
+
+    /// A landed session waiting for the screen to be free. Presenting while
+    /// the live-session cover is still animating away, or while an award
+    /// unlock (which fires on the same new session) is up, makes SwiftUI drop
+    /// the presentation, and a dropped item presentation can leave the root's
+    /// sheet stuck. So it waits for both, plus the dismissal animation.
+    @State private var pendingSave: UUID?
+
+    private struct Gate: Equatable { let pending: UUID?; let busy: Bool }
+
+    func body(content: Content) -> some View {
+        if FeatureFlags.friends {
+            content
+                // The invite reward landing: a brought friend sat once.
+                .sheet(item: $community.rewardNews) { news in
+                    InviteRewardSheet(news: news).presentationDetents([.medium])
+                }
+                // People who finished onboarding before Friends: one required
+                // prompt to create a profile, whenever iCloud says they have none.
+                .fullScreenCover(isPresented: Binding(
+                    get: { community.phase == .needsUsername && !sessionActive && !awardShowing },
+                    set: { _ in })) {
+                    FriendsIntroView(model: community,
+                                     suggested: users.first?.username ?? "",
+                                     nickname: users.first?.displayName ?? "") {}
+                }
+                // Strava's flow: the session ends on Save session, then results.
+                .onChange(of: lastSessionID) { _, id in
+                    if let id { pendingSave = id }
+                }
+                // The same sheet, for a session that finished while the app
+                // was suspended or dead. Both roads meet at the gate below,
+                // so the presentation rules are stated once.
+                .onChange(of: resumeSessionID) { _, id in
+                    if let id { pendingSave = id }
+                }
+                .onAppear { if let resumeSessionID { pendingSave = resumeSessionID } }
+                .task(id: Gate(pending: pendingSave, busy: sessionActive || awardShowing)) {
+                    guard let id = pendingSave, !sessionActive, !awardShowing else { return }
+                    try? await Task.sleep(nanoseconds: 700_000_000)
+                    guard !Task.isCancelled, pendingSave == id else { return }
+                    pendingSave = nil
+                    openSave(id)
+                }
+        } else {
+            content
+        }
+    }
+}
+
+
+/// Opens "Too short to score" once the live-session cover has gone. The payload
+/// that says so arrives the same moment the cover is torn down, and presenting
+/// during that animation is the dropped-presentation trap (see FriendsHooks).
+private struct DiscardHook: ViewModifier {
+    let discard: SessionCoordinator.Discard?
+    let sessionActive: Bool
+    let open: (SessionCoordinator.Discard) -> Void
+
+    @State private var shown: UUID?
+
+    private struct Gate: Equatable { let id: UUID?; let busy: Bool }
+
+    func body(content: Content) -> some View {
+        content.task(id: Gate(id: discard?.id, busy: sessionActive)) {
+            guard let d = discard, d.id != shown, !sessionActive else { return }
+            try? await Task.sleep(nanoseconds: 700_000_000)
+            guard !Task.isCancelled else { return }
+            shown = d.id
+            open(d)
+        }
     }
 }

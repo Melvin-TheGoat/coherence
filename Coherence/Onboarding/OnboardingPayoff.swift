@@ -44,7 +44,7 @@ struct CalculatingScreen: View {
         [("Reading your \(answerCount) answers", "Read your \(answerCount) answers"),
          ("Matching your reasons to what 808 does about them",
           "Matched your reasons to what 808 does about them"),
-         ("Setting your anchor", "Set your anchor"),
+         ("Shaping your plan", "Shape your plan"),
          ("Building your profile", "Built your profile")]
     }
 
@@ -748,17 +748,21 @@ struct WallScreen: View {
 
     var body: some View {
         OnboardingScreen(section: .win,
-                         title: "You'd be in\nreasonable company.",
+                         title: "You'd be in\ngood company.",
                          subtitle: "People whose job is measurable performance keep arriving at the same habit.",
                          ctaTitle: "Continue",
                          onContinue: onContinue) {
             VStack(spacing: 11) {
                 ForEach(quotes) { q in
                     VStack(alignment: .leading, spacing: 6) {
+                        // One card style. Verbatim quotes used to sit in
+                        // brighter cards with brighter text, and a tester read
+                        // the two styles as a mistake rather than a
+                        // distinction (2026-09-14). The quotation marks and the
+                        // footnote carry the difference on their own.
                         Text(q.verbatim ? "“\(q.text)”" : q.text)
-                            .font(.system(size: 14, weight: q.verbatim ? .medium : .regular))
-                            .foregroundStyle(q.verbatim ? AppColor.textPrimary
-                                                        : AppColor.textSecondary)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(AppColor.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                         Text(q.who)
                             .font(.caption2.weight(.semibold))
@@ -766,7 +770,7 @@ struct WallScreen: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(15)
-                    .background(AppColor.backgroundSecondary.opacity(q.verbatim ? 0.8 : 0.45),
+                    .background(AppColor.backgroundSecondary,
                                 in: RoundedRectangle(cornerRadius: 15, style: .continuous))
                 }
 
@@ -1072,15 +1076,24 @@ struct CommitmentScreen: View {
 /// Asked after the commitment and phrased in their anchor, so a "no" doesn't
 /// burn the one system dialog iOS gives us.
 struct PermissionScreen: View {
-    let anchor: Anchor?
+    /// Picked here since the anchor question was cut (2026-09-15). Nil until
+    /// the picker is touched; the banner and the stored default are 8 AM.
+    @Binding var reminderTime: Date?
     let onAllow: () -> Void
     let onSkip: () -> Void
+
+    private static var eightAM: Date {
+        Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
+    }
+
+    private var pickedHour: Int {
+        Calendar.current.component(.hour, from: reminderTime ?? Self.eightAM)
+    }
 
     var body: some View {
         OnboardingScreen(section: .win,
                          title: "One nudge,\nat your time.",
-                         subtitle: anchor.map { "We'll remind you \($0.phrase), the moment you just chose. Nothing else, ever." }
-                            ?? "One reminder a day at the time you choose. Nothing else, ever.",
+                         subtitle: "One reminder a day, at the time you pick. Nothing else, ever.",
                          ctaTitle: "Turn on my reminder",
                          // Not a skip either: both buttons continue the flow.
                          // This one declines the iOS permission, and iOS gives
@@ -1095,11 +1108,29 @@ struct PermissionScreen: View {
                          onContinue: onAllow) {
             VStack(spacing: 14) {
                 // We're asking permission for something they've never seen, so
-                // show it arriving, on a lock screen, at the hour their own
-                // anchor implies. Demonstrated beats described, and it replaced
-                // a flat card floating in 440 pt of dark.
-                LockScreenBanner(hour: anchor?.defaultHour ?? 8)
-                Text("One a day. Nothing else, ever.")
+                // show it arriving, on a lock screen, at the hour they pick.
+                // Demonstrated beats described, and it replaced a flat card
+                // floating in 440 pt of dark.
+                LockScreenBanner(hour: pickedHour)
+
+                HStack(spacing: 12) {
+                    Text("Remind me at")
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.textSecondary)
+                    Spacer(minLength: 0)
+                    DatePicker("Reminder time",
+                               selection: Binding(get: { reminderTime ?? Self.eightAM },
+                                                  set: { reminderTime = $0 }),
+                               displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .tint(AppColor.accentGold)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+                Text("One a day. Change it any time in Settings.")
                     .font(.caption)
                     .foregroundStyle(AppColor.textSecondary)
             }

@@ -40,13 +40,13 @@
 	<string>808 uses heart data recorded on your Apple Watch to measure how your body settled after a session.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>808 records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
-	<!-- Camera returns on the camera-vision branch (2026-09-09): DEBUG builds
-	     record the camera-vision signals beside a Watch session as ground truth.
-	     No frame is ever stored. The shipping string must be rewritten for the
-	     real feature before this branch merges; the privacy policy and the App
-	     Privacy labels change with it. -->
+	<!-- Camera: the selfie on a session posted to friends (mvp, 2026-09-14),
+	     and on THIS branch also the camera-vision read (DEBUG collector now;
+	     the shipped no-Watch session later). One key, one string that is true
+	     of both. The shipping string is rewritten when camera vision ships,
+	     with the privacy policy and the App Privacy labels. -->
 	<key>NSCameraUsageDescription</key>
-	<string>808 can measure how still you were and your breathing rate from the front camera while you meditate. Nothing is recorded or stored.</string>
+	<string>808 uses the camera for the selfie you take when you post a meditation to friends, and to measure how still you were and how you breathed during a session. Session frames are never recorded or stored.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>808 saves your share card to your photo library so you can post it to your Instagram story.</string>
 	<key>LSApplicationQueriesSchemes</key>

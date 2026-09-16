@@ -1427,6 +1427,21 @@ UI must coach it, and the 2-signal degrade path must stay.
       the sheet looks stale. Its internal-user rule matches PostHog's plus
       `$is_sideloaded` (Melvin's cable-installed betas; the two
       `result_missing` events on 2026-09-12 came from one).
+      **Pasting the script into Apps Script: `pbcopy` follows the shell's
+      locale, and the default here is not UTF-8.** A plain
+      `pbcopy < tools/posthog_sheet.gs` mangled all thirteen non-ASCII
+      characters (the arrows in "Install → first session" pasted as
+      "‚Üí"), which reaches the sheet as visible garbage on the next
+      refresh. Use `LC_ALL=en_US.UTF-8 pbcopy < tools/posthog_sheet.gs`,
+      and check the arrow on line 2 of the editor before saving.
+    - **A failed refresh costs one tab, not six (2026-09-15).** PostHog
+      answers a query with a 504 "max execution time" now and then; it
+      says nothing about the query. `refreshAll` writes each tab inside
+      its own try and rethrows at the end, `query` retries a 429 or 5xx
+      twice while the run is under 200 seconds old (Apps Script kills
+      anything past six minutes), and `stamp` names any tab still holding
+      last hour's numbers. Before this, a timeout in `writeDaily` left the
+      five tabs after it silently stale with a stamp an hour old.
     - **Internal-user filter (project setting, default ON):** `$app_build`
       ≠ 1 (locally built installs) AND `$is_testflight` ≠ true. A postal-code
       rule (Melvin 11211, Aziz 48073) was tried and REMOVED the same day:
@@ -1573,7 +1588,8 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   day switches to Profile with the log filtered to that day.
 - **Guide** is `GuideView(embedded: true)`: no Done button; its Begin opens
   the setup sheet directly.
-- **Search** is an honest placeholder ("Friends are coming", no date).
+- **Search** was an honest placeholder; it became the **Friends** tab on
+  2026-09-14 (see the FRIENDS section below). `PREVIEW_TAB=search` still works.
 - **Profile** is what Journey was, minus the month picker (Home's calendar
   took the job): initials avatar, display name, `@username`, "Practicing
   since", the four stats, the awards shelf, the full log, settings in the
@@ -1649,6 +1665,108 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## DELETE A SESSION, AND THE WRIST COUNTDOWN (2026-09-15)
+
+- **Sessions are immutable; deleting one is not an edit.** `SessionStore.
+  deleteSession(id:in:)` removes the Session, its MeditationStats and its
+  SessionReflection in one save. Everything derived (streak, awards, the
+  Home sparkline, the calendar) reads the sessions at render time, so
+  nothing else needs touching. The Watch's workout and mindful minutes in
+  Health are deliberately left alone: that is the user's Health record, and
+  the confirmation says so. One dialog, `DeleteSessionDialog`
+  (`Coherence/Session/DeleteSession.swift`), shared by the results screen's
+  ellipsis menu and the long-press menu on Home's recent rows and the
+  Profile log; `SessionDeletion.delete` also takes down a Friends post when
+  the reflection says the session was posted (and only then, because
+  `unpost` on a never-posted session would surface a CloudKit "not found"
+  in the Friends tab). **After a delete the results screen must not flush
+  its reflection** (`deleted` flag): `flushReflection` in `onDisappear`
+  would otherwise upsert an orphan reflection for a session that is gone.
+- **A wrist-started session counts down five seconds first**
+  (`WatchSessionManager.countdown`), the same "Get comfortable." the phone
+  shows, because the first half-minute of a session started the instant
+  Begin is tapped is the motion of settling in. Cancel returns to the start
+  screen with nothing sent; params arriving from the phone cancel it. It is
+  numbers on a screen and nothing else: the no-haptics rule for the Watch
+  is not suspended for a countdown.
+
+## ONBOARDING CUT (2026-09-15, Melvin): seven screens out, the wall moved
+
+"We think the onboarding is too crowded." The data agreed on cause but not
+on place: the proof and plan screens lost nobody, the length did. Cut, all
+routed past rather than deleted: `doingNothing`, `bodyProof` and `anchor`
+left `InterviewStep` (the model never asks them; `asks()` no longer knows
+them); `proofBody`, `proofYourWay`, `week` and `rating` are `Color.clear`
+hops in the routing. **Every `Step` case and every answer field stays**, so
+Aziz's resume records decode and ONBOARDING_STEP indices hold; a resumed
+record on a cut step simply moves on. The wall (celebrity quotes) is kept
+at Melvin's request and now sits after the walkthrough, immediately before
+the paywall (`afterWalkthrough` → `.wall` → `afterWall`), with no chevron
+back into the live session behind it.
+
+- **The reminder time is picked, not inferred.** The anchor question set
+  `reminderTime`; with it gone, `PermissionScreen` carries a compact time
+  picker (`OnboardingAnswers.reminderTime`, 8 AM default), and
+  `persistAnswers` stores the time unconditionally while `remindersEnabled`
+  still follows the permission answer only. Without that change the
+  reminder block was nested under `if let anchor` and would never have run.
+- **Not done: the tour.** Two thirds of people who finish the interview
+  leave on the tour's two-minute demo and nobody has reached its results
+  screen. The proposal (end the tour after "put your Watch on" with a real
+  Begin) is recorded in BACKLOG.md and awaits Melvin's yes.
+- Analytics screen names carry "(cut 1.0.2)" so the sheet reads honestly
+  across versions; the wall is "31b".
+
+## ONBOARDING ROUND 2 (2026-09-14): one tester, thirteen fixes, one root cause
+
+A no-Watch tester walked the interview and narrated it. `BACKLOG.md` holds
+the full list sorted by cost; this is what shipped and what it taught.
+
+- **The root cause of half the visual notes was the colour scheme.**
+  `RootView` read the theme from the first Preferences row, and no row
+  exists until onboarding finishes, so onboarding ran in the SYSTEM scheme.
+  On a light-mode phone the entire flow was light and the app flipped dark
+  on completion. "Black text", "whiter cards", "colours bleeding", a blue
+  caret: all one bug. `Preferences.defaultTheme` now applies from the first
+  frame. **Any screen shown before a Preferences row exists must be checked
+  in light mode too**, because that is what a light-mode phone showed.
+- **Back onto an answered single-select shows Continue.** Tap-to-advance
+  (one affordance, Aziz) stays for a fresh screen; a screen that appears
+  already answered shows the button, because re-tapping a lit tick is not an
+  obvious move. `answeredOnAppear` in `OnboardingScreen`.
+- **Haptics are prepared, not created per tap.** An unprepared
+  `UIImpactFeedbackGenerator` can drop a pulse while the Taptic Engine spins
+  up, which is why the tester felt it on some taps and not others. Two
+  static generators, `prepare()` after every fire.
+- **Multi-select rows draw squares** (`OnboardingOption(multi:)`); rows
+  are full-strength surfaces with a hairline (contrast); scroll indicators
+  hidden on the scaffold; the ScoreRing insets its stroke by half the line
+  so it never clips (`DesignKit`, app-wide); the star screen has a legend;
+  the wall's quote cards share one style; "Fried" is "Burnt out";
+  "reasonable company" is "good company"; "meaning to start" gained "I
+  haven't, honestly" and lost the overlapping "Years"; the waitlist field is
+  a grey "email" field with a gold caret.
+- **The $400 hardware screen left the interview and became the paywall
+  ladder's first rung** (`PaywallRoute.anchor`): "Not right now" → the
+  hardware anchor with 808's live price → "See the plans" back to the
+  paywall, or "Not for me" → trial rung → year rung → free tier. It sells
+  nothing itself (no purchase CTA, no disclosures needed); both exits lead
+  to screens that carry them. `Step.hardware` and `HardwareScreen` remain
+  for ONBOARDING_STEP jumps. Melvin's reasoning: an anchor belongs in front
+  of the person who just declined, not mid-interview in front of someone
+  who may not own a Watch.
+- **Watch gate is Yes / No / Not yet.** Both no answers reach the
+  waitlist; analytics `watch_gate.outcome` gains `notYet` so a planned
+  purchase is a different lead from a never. Aziz's sheet maps the old two.
+- **"How did you find us?" opens the interview** (`InterviewStep.referral`
+  first). It sat last, and only 42% finish, so most installs never answered.
+  The analytics screen name is "02b How did you find us?" from 1.0.2.
+- **Not done, deliberately, awaiting Melvin + Aziz:** stating "needs an
+  Apple Watch" before the interview; splitting the "Last thing" screen;
+  moving the proof screens into the tour; animation; design polish. No
+  HTML mockup was made for this round (revisions to approved screens, all
+  small); the next new screen still gets one.
+
 ## RELEASE_CHECKLIST.md GATES EVERY SUBMISSION (2026-09-14)
 
 Aziz: "before we push, make sure you tell us to check if these are done."
@@ -1658,6 +1776,241 @@ lists.** Do not press "Add for Review" with an OPEN item unticked unless the
 user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
 items at the end of every run. Anything learned mid-session that must happen
 at submission goes into OPEN the moment it's learned, not into a summary.
+
+## RESUME HERE (end of 2026-09-14): state of play in one screen
+
+Read this first after a context reset; the sections below carry the detail.
+
+- **Branch `mvp`, pushed, clean.** 295 tests green. Release build compiles.
+- **App Store:** 1.0.1 is live. 1.0.2 build 202609141719 was uploaded and is
+  HELD (predates everything below; the next release needs a NEW archive).
+  Do not submit anything until Aziz says so, and walk RELEASE_CHECKLIST.md
+  with him first (it now lists what the next build contains and the CloudKit
+  schema promotion it requires).
+- **Next App Store build ships:** onboarding without the screen-one sign-in
+  link, onboarding resume, the no-Watch waitlist pipe, the Watch fixes,
+  Melvin's onboarding round 2. **Friends is compiled in but OFF**
+  (`FeatureFlags.friendsInRelease = false`).
+- **Friends (1.1) is feature-complete in DEBUG / 808 Dev:** data layer
+  (CloudKit public DB, no server), Friends tab, Save session after every
+  meditation (Friends / Only you, front-camera selfie required for Friends),
+  Create your profile (photo + reserved @username), existing-user prompt,
+  Strava-style cards and profile, invite reward, moderation (text filter,
+  photo screening scaffold, report emails scaffold). Two bug sweeps done
+  (22 bugs fixed; rules recorded under "FRIENDS, SECOND PASS").
+- **Aziz asked for a THIRD bug sweep** after a context compaction. Areas the
+  first two sweeps did not exercise deeply, so start there:
+  `CreateProfileView` + `FriendsIntroView` (every door: onboarding step,
+  Friends tab, Save session sheet, Edit profile), `OnboardingView` routing
+  with `.profile` + resume + sign-out, `SaveSessionView` edit mode and
+  offline behaviour, `ContentFilter` false positives on real names and
+  handles, `RewardLedger` across sign-out / account deletion / a second
+  device, `CommunityModel.load()` being called concurrently from several
+  views, and anything that differs between `MemoryCommunityDatabase` and
+  real CloudKit (indexes, `creatorUserRecordID`, asset URLs expiring).
+- **Still owed for 1.1** (RELEASE_CHECKLIST.md "OPEN for 1.1"): CloudKit
+  public record types and indexes, the Sensitive Content Analysis
+  entitlement, deploying `tools/community-reports.gs`, age rating, privacy
+  labels, policy and terms, store screenshots, flipping the flag, TestFlight
+  on two real phones. Nothing but the username claim has run on real iCloud.
+- **Short sessions (2026-09-14):** PostHog showed two "broken" sessions; they
+  were Aziz tapping Begin then End within seconds. The Watch already discards
+  anything under `SessionStore.minDurationSec` (30 s), but the phone showed
+  nothing and logged nothing, so a start with no ending looked broken. Now
+  `SessionCoordinator.lastDiscard` opens `SessionTooShortView` (via
+  `DiscardHook`, after the live cover is gone) and `session_discarded` is
+  tracked with reason `too_short` (an accident, never a failure) or
+  `unreadable`. `tools/posthog_sheet.gs` gained both rows on the Overview;
+  paste the updated script into Apps Script for the sheet to show them.
+- **808 Dev on Aziz's phone** is from before the selfie change; rebuild with
+  the plist-swap recipe (display name "808 Dev", restore plists after) if he
+  wants to try it.
+
+## FRIENDS (1.1, IN PROGRESS, 2026-09-14): where it stands
+
+Aziz: a Strava-style community. Friends, not followers; post a session with
+a photo; incentivise inviting. **Design record: `COMMUNITY.md`.** Mockups:
+`mockups/friends.html` (v1, approved) and `mockups/friends-v2.html` (v2,
+AWAITING AZIZ'S REVIEW). Ships as **1.1, separate from 1.0.2**, which is
+still HELD. The 1.1 submission list is in `RELEASE_CHECKLIST.md`.
+
+**Built and committed (feature by feature, 264 tests green):**
+1. `CommunityStore` (`Coherence/Community/`) over the CloudKit PUBLIC
+   database of the existing container. **No Supabase, no server** (Aziz
+   asked; the answer is no). Six record types: Profile, FriendEdge, Post,
+   Reaction, Block, Report. A friendship is TWO edges, each written by its
+   own person, because only a record's creator can modify it in the public
+   DB. Blocks are honoured both ways on every read and write. Tests run on
+   `MemoryCommunityDatabase` (also the `PREVIEW_FRIENDS=1|claim` demo).
+2. The **Friends tab replaced Search**: feed, search by @username, requests,
+   a person page with Remove / Report / Block, report sheet, invite share
+   sheet (`ct=invite` campaign link), first-run username claim, and an
+   honest card when iCloud is unavailable. Reaction word is **"Nice sit"**
+   with 🙏 (Aziz cut "Respect"; still a placeholder).
+3. **Post to friends** from the results screen (`PostComposerView`). **Every
+   post is a front-camera selfie, BeReal style (Aziz): no photo library, no
+   selfie no post**, enforced in the store too. 140-char caption optional.
+   First post asks one Agree to a one-line rule (Aziz: "chill on the what not
+   to post thing"; the Agree stays for guideline 1.2). Invite text is Aziz's:
+   "Add me on 808 Meditate, the social media for meditation: @user" + link.
+   `NSCameraUsageDescription` names the selfie.
+4. **Invite reward** (`Shared/Community/InviteReward.swift`): a friend I
+   asked accepts AND sits once, then I get 10 sessions of full evidence
+   (stacking, capped at 50) plus the "Brought a friend" award. Per SESSION,
+   only sessions started after the grant, a covered session stays covered,
+   never unlocks guided or skins. Four defaulted fields on `Preferences`.
+   Nothing for the invitee (Apple rejects that). The Circle skin reward was
+   DROPPED: `CardSkin` has no drawing behind it.
+5. v2 data groundwork: profile photo (`setAvatar`), posts gain `title` and
+   `sound`, a post's record name derives from its session (saving again
+   updates; Only you deletes that one), reflection gains `title`,
+   `publicNote`, `visibility` (default "private" so old sessions stay private).
+
+**Rules learned building it (do not relitigate):**
+- **A post carries only the free share card's data**: score, minutes,
+  streak, technique, title, sound, description, photo. Never HR, breath,
+  stillness or a curve, even for paid users (5.1.3 + the free tier).
+  `test_postCarriesOnlyTheFreeCardFields` pins it.
+- **Anything that fetches a Shared SwiftData model and is tested against
+  `Persistence.inMemory()` must live in `Shared/`.** The test target compiles
+  Shared/ into itself, so an app-module class fetching `Preferences` gets a
+  different class than the test inserted and SwiftData traps ("Failed to
+  cast model Coherence.Preferences"). This produced the "Coherence quit
+  unexpectedly" popups on Aziz's Mac; moving `RewardLedger` to Shared fixed it.
+- A ModelContext does not retain its container in tests; hold it.
+
+**NEXT, when Aziz is back (v2 asks, 2026-09-14):** nickname and @username
+as separate things; username + profile photo in a Create your profile step
+right after Sign in; a one-time required prompt for existing users without
+a username; a Strava-style **Save session** screen that opens when a session
+lands (title, description, photos, technique, **Friends / Only you**, private
+notes) then results; feed card and profile in Strava's shape. **Open
+decisions for Aziz before building those screens:** score shown on Save
+session or saved for the results reveal; default visibility Friends or Only
+you; required username (built as required per Aziz, with the unavoidable
+no-iCloud exit, and a flagged 5.1.1(v) review risk with a one-switch "Not
+now" fallback); private notes stay separate from the public description.
+Then feature 5, moderation: caption word filter, on-device Sensitive
+Content Analysis on photos, `tools/community-reports.gs` emailing reports.
+Nothing has run on real iCloud yet: needs the Console record types and a
+TestFlight on two phones.
+
+## FRIENDS IS BEHIND A SWITCH; THE NEXT BUILD SHIPS WITHOUT IT (2026-09-14)
+
+Aziz wanted the onboarding fixes in the next App Store build, and `mvp` also
+holds the unfinished Friends feature. `Coherence/FeatureFlags.swift`:
+`FeatureFlags.friends` is ON in DEBUG (808 Dev, simulator) and OFF in Release
+until `friendsInRelease` is flipped for the 1.1 archive (`FeatureFlagTests`
+fails if it is flipped early). Off means the pre-Friends app exactly: the tab
+reads Search with the restored "Friends are coming" `SearchTab`, results have
+no Post to friends, the app never touches the public database, the reward
+sheet never shows, and "Brought a friend" is filtered off the award shelf.
+**Anything new built for Friends must check the flag at its entry point.**
+
+Known leftover while off: `NSCameraUsageDescription` (the selfie) stays in
+Info.plist though nothing in a Release build opens the camera. No prompt can
+appear; decide at 1.1 whether that matters, and keep the App Privacy label
+free of Photos until Friends ships.
+
+**Schema gate for the next build:** the new defaulted fields on
+`Preferences` and `SessionReflection` sync through CloudKit, so Development
+→ Production must be promoted before release (RELEASE_CHECKLIST.md OPEN).
+
+The Friends section above still describes where 1.1 stands. Since it was
+written: every post is a front-camera selfie (BeReal style, no library),
+the rules are one line, the invite text is Aziz's, usernames are reserved
+by record name (`username-<handle>`, fetched, never queried) after the
+query-based claim silently failed on his phone, and a simulated run caught
+and fixed two layout bugs (wide photos, the invite hidden under the tab bar).
+
+## FRIENDS, SECOND PASS (2026-09-14 evening): the v2 asks are built
+
+Status and decisions are in `COMMUNITY.md` → "Build status". The short
+version, and the traps that cost time:
+- **Save session** (`SaveSessionView`) replaces Post to friends; it opens from
+  `FriendsHooks` in ContentView when `coordinator.lastSessionID` changes and
+  chains into results through `pendingSheet`. The reflection's `note` is the
+  PRIVATE note; `publicNote` is what friends read. Every session saved before
+  this build has visibility "private".
+- **Create your profile** is one view with four doors (onboarding's last step
+  after Sign in, the Friends tab, Save session, Edit profile) plus
+  `FriendsIntroView` for pre-Friends users. `OnboardingView.Step.profile` is
+  appended after `signIn` so saved resume records keep their raw values.
+- **ContentView hit the type-checker limit** when Friends modifiers were
+  chained on it. They live in the `FriendsHooks` modifier; add new root-level
+  Friends behaviour there, never on ContentView's chain.
+- **Moderation is enforced in `CommunityStore`, not only in views**, so no
+  screen can post filtered text. `ContentFilter` is deliberately blunt; do not
+  add mild words (damn, hell) or substring matching (Scunthorpe).
+- The photo-screening entitlement and the report endpoint are intentionally
+  absent until 1.1 so the Friends-off build does not change entitlements or
+  send anything; both are on the 1.1 checklist.
+- **Bug sweep, same night. Two rules came out of it; hold them:**
+  - **Never trust an author field in the public database.** Anyone can create
+    a record and put any profile in `author` / `from`. `CommunityStore
+    .authored(_:by:)` checks it against CloudKit's own `creatorUserRecordID`
+    (`__defaultOwner__` for your own records) on every post, edge, reaction
+    and block that is read. New record types that carry an author must use it.
+  - **`CKDatabase.save` is not an upsert.** A freshly built record whose name
+    already exists fails. `CloudKitCommunityDatabase.save` uses
+    `modifyRecords(savePolicy: .allKeys)`. `MemoryCommunityDatabase` never
+    modelled the conflict, so tests could not catch it: think about real
+    CloudKit semantics, not only the fake.
+  - Also fixed: re-sending a request no longer resets its date (it decides
+    the invite reward); a friend's first session is stamped even if sat
+    before their profile existed; the entitled-payer paywall skip moved into
+    `go()` (the view version double-advanced after a purchase); Save session
+    is usable before iCloud answers and can't post a scoreless session; the
+    block dialog's "undo" now has a Blocked list under Requests; a failed
+    profile save releases the handle it reserved; the reward ledger always
+    uses the oldest Preferences row.
+  - **Second sweep.** Rules to keep: **never present from ContentView while
+    another cover is up or animating away** (Save session waits in
+    `FriendsHooks` for the live session and any award unlock to clear, then
+    700 ms); **"brought a friend" means their first session is AFTER my
+    request** (otherwise adding a veteran farmed the reward); **every store
+    method that calls `authored` must call `me()` first**. Also fixed: reporting
+    a post from a profile reported the person; deleting your own post leaves
+    the session's chip honest (`onPostRemoved`); an unrated reflection no
+    longer puts 5/10 on the share card; a free user's grant is re-decided when
+    the store finishes loading; a network error while claiming no longer reads
+    as "taken"; Share profile needs a reserved handle; profile pages load
+    uncached people; a friend's streak shows only if their last post is recent.
+
+## NO SIGN-IN BEFORE THE END OF ONBOARDING; ONBOARDING RESUMES (2026-09-14)
+
+**Found in PostHog, Aziz asked for both fixes.** Every one of the four people
+who finished onboarding without seeing the paywall (plus Apple's two
+reviewers) got there through "Already have an account?" on screen one, which
+jumped straight to Sign in and skipped about 25 screens including the
+paywall. One was a real stranger (Wednesbury): they answered everything,
+reached the tour, left the app, came back to SCREEN ONE because progress was
+not saved, and used the link to escape.
+
+- **The link is gone. You cannot sign in until onboarding is done** (Aziz:
+  "literally cannot sign in on that screen"). Sign-in exists only after the
+  paywall, still optional (5.1.1). Researched: Quittr asks for sign-up early
+  but it skips nothing and its paywall still stands; Cal AI's ~32-screen quiz
+  ends at its paywall; the pattern is that nothing reaches the app without
+  passing the offer, and payers get in through Restore Purchases because the
+  entitlement rides the Apple ID. `test_firstScreenHasNoSignInLink` locks it.
+- **Returning users lose nothing:** iCloud brings back `onboardingComplete`
+  and their sessions, which skips onboarding by itself once the import
+  lands; a subscriber who does go through onboarding is waved past the
+  paywall (`store.entitled`, the on-device StoreKit record, never `.loading`
+  alone) and can Restore on it. Accepted cost: someone who SIGNS OUT is sent
+  back through onboarding to sign in again.
+- **Onboarding resumes where it was left** (`Shared/Onboarding/
+  OnboardingResume.swift`, UserDefaults `onboarding.progress.v1`): step,
+  history, answers, plan, waitlist email, rating and reminder choice are
+  saved on every advance and every Back, restored on the next launch,
+  cleared when onboarding completes or on sign-out, and discarded after 14
+  days. The live practice session and its results cannot be resumed (they
+  died with the app) and reopen on the Watch connect screen. New event
+  `onboarding_resumed` (with `step` and `screen`). Verified on the simulator:
+  quit mid-interview, relaunch, same question, Back works, earlier answer
+  still selected. Named `OnboardingResume` because `OnboardingProgress` is
+  already the progress-bar view.
 
 ## BACKLOG.md IS THE LIST (2026-09-12)
 
@@ -1669,12 +2022,20 @@ Models, iOS 26, "the data suggests", never a medical claim); and the guided
 sessions in 10/15/20 minutes (Donny cuts now, the ElevenLabs voice library
 on hold because it "is not there yet").
 
-**Side-by-side beta crash, solved:** `CloudStatus.read()` (DEBUG launch
-probe) derived `iCloud.<bundle id>` instead of reading the entitlement, and
-`CKContainer(identifier:)` traps on a container the process does not hold.
-It now reads `com.apple.developer.icloud-container-identifiers` from the
-running task (`SecTaskCopyValueForEntitlement`) and reports "none" instead.
-**Never construct a CKContainer from a guessed identifier.**
+**Side-by-side beta crash, solved TWICE:** `CloudStatus.read()` (DEBUG
+launch probe) derived `iCloud.<bundle id>` instead of reading the
+entitlement, and `CKContainer(identifier:)` traps on a container the process
+does not hold (2026-09-12). Then the friends store did the same thing by a
+different road (2026-09-15): `CloudKitCommunityDatabase.ifEntitled()` trusted
+`Persistence.mode == .cloudKit` and called `CKContainer.default()`, which
+traps identically, and SwiftData reports sync active on the beta because it
+resolves its container lazily. Both now go through `CloudEntitlement`
+(`Coherence/CloudEntitlement.swift`), which reads the binary's own
+`embedded.mobileprovision`; no profile (an App Store build) means trust the
+App ID. **Never construct a CKContainer, default or by identifier, without
+`CloudEntitlement.mayHoldContainer`. `Persistence.mode` is not proof.**
+The beta strips the iCloud entitlement on purpose, so on the beta friends
+show the honest "iCloud unavailable" card and the rest of the app runs.
 
 ## FIRST USER FEEDBACK, ROUND 1 (2026-09-12) and what shipped for it
 

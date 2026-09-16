@@ -1,0 +1,147 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Save session v6, outlined or bare</title>
+<style>
+:root{
+  --bg:#13100D; --fg:#F5F3EC; --muted:#9A9A93; --dim:#7a7871;
+  --gold:#D4AF37; --teal:#5EB1A8; --hair:rgba(255,255,255,.14); --hair2:rgba(255,255,255,.08);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 80px; }
+h1{ font-size:20px; margin:0 0 6px; }
+.note{ color:var(--muted); font-size:13px; max-width:820px; line-height:1.6; } .note b{ color:var(--fg); }
+h2{ font-size:13px; margin:40px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:284px; height:614px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:40px 0 0; overflow:hidden; font-size:12.5px; position:relative; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:284px; line-height:1.5; } .cap b{ color:var(--fg); }
+.tag{ display:inline-block; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; padding:3px 8px; border-radius:999px; border:1px solid var(--hair); color:var(--muted); margin-bottom:8px; }
+.tag.rec{ border-color:rgba(94,177,168,.6); color:var(--teal); }
+
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 16px 14px; }
+.nav .l{ color:var(--muted); font-size:12.5px; width:52px; }
+.nav .t{ font-weight:700; font-size:14.5px; }
+.nav .sp{ width:52px; }
+
+.stats{ display:flex; align-items:flex-end; padding:0 16px 18px; }
+.stats .s{ padding-left:14px; margin-left:14px; border-left:1px solid var(--hair2); }
+.stats .s span{ display:block; font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--dim); font-weight:700; margin-bottom:4px; }
+.stats .s b{ display:block; font-size:19px; font-weight:700; letter-spacing:-.02em; line-height:1; }
+.stats .s b i{ font-style:normal; font-size:10.5px; font-weight:600; color:var(--muted); margin-left:2px; }
+.stats .hero{ padding-left:0; margin-left:0; border-left:none; }
+.stats .hero b{ font-size:38px; font-weight:800; letter-spacing:-.035em; color:var(--gold); }
+
+/* A: Strava's outlined field */
+.f{ margin:0 16px 10px; border:1px solid var(--hair); border-radius:9px; padding:12px 13px; display:flex; align-items:center; gap:10px; min-height:44px; }
+.f .ic{ width:15px; text-align:center; color:var(--dim); font-size:12px; flex:none; }
+.f .v{ font-size:13px; flex:1; }
+.f .ph{ font-size:13px; color:var(--dim); flex:1; line-height:1.45; }
+.f .cd{ color:var(--dim); font-size:10px; flex:none; }
+.f.tall{ align-items:flex-start; min-height:76px; }
+
+/* B: Letterboxd / Nike / Hevy: bare text on a hairline. Section boundaries
+   run full bleed; separators within a section are inset 16 on the left. */
+.r{ margin:0 0 0 16px; padding:13px 16px 13px 0; border-bottom:1px solid var(--hair2); display:flex; align-items:center; gap:10px; min-height:44px; }
+.r .ic{ width:15px; text-align:center; color:var(--dim); font-size:12px; flex:none; }
+.r .v{ font-size:13px; flex:1; }
+.r .v.title{ font-weight:700; font-size:15px; }
+.r .ph{ font-size:13px; color:var(--dim); flex:1; line-height:1.45; }
+.r .cd{ color:var(--dim); font-size:10px; flex:none; }
+.r.tall{ align-items:flex-start; min-height:72px; }
+.r.last{ border-bottom:none; }
+.bleed{ height:1px; background:var(--hair2); margin:0; }
+
+.sec{ font-size:16px; font-weight:700; letter-spacing:-.01em; padding:14px 16px 8px; }
+
+.selfie{ display:flex; gap:12px; align-items:center; margin:12px 16px 12px; }
+.tile{ width:78px; height:104px; border-radius:10px; flex:none; border:1.5px dashed rgba(212,175,55,.65); display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:22px; }
+.selfie .txt{ flex:1; }
+.selfie .h{ font-size:13px; font-weight:600; }
+.selfie .d{ font-size:11.5px; color:var(--muted); line-height:1.45; margin-top:3px; }
+
+.dock{ position:absolute; left:0; right:0; bottom:0; padding:12px 16px 20px; background:linear-gradient(180deg,rgba(19,16,13,0),var(--bg) 26%); }
+.cta{ background:var(--gold); color:#1a1508; text-align:center; border-radius:13px; padding:14px; font-weight:700; font-size:13.5px; }
+
+table{ border-collapse:collapse; margin-top:10px; font-size:13px; max-width:860px; }
+td,th{ text-align:left; padding:9px 16px 9px 0; border-bottom:1px solid var(--hair2); vertical-align:top; line-height:1.55; }
+th{ color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; }
+.y{ color:var(--teal); font-weight:600; } .n{ color:#d98a6a; font-weight:600; } .p{ color:var(--muted); }
+.q{ margin-top:16px; max-width:860px; } .q li{ margin:10px 0; line-height:1.6; font-size:13.5px; } .q b{ color:var(--gold); }
+</style></head><body>
+
+<h1>808 · Save session v6: the one decision the research surfaces</h1>
+<p class="note">Two reference passes are now in, across fourteen apps (Strava, Hevy, Strong, Gentler Streak, Nike Run Club, Whoop, Oura, Apple Fitness, Letterboxd, Calm, Headspace, Balance, Day One, Bevel, Flighty, Things 3), most of them read off real screenshots at pixel level. Everything in v5 survives except one question, and it is the one that decides how clean the screen reads: <b>does a text field live inside an outlined box, or bare on a hairline?</b> Strava on iOS boxes it. Nearly every app admired for clean design does not. You chose Strava, so v5 is drawn boxed. This page shows the same screen both ways so you can choose with the evidence in front of you.</p>
+
+<h2>Five things the clean screens all do</h2>
+<table>
+<tr><th>Move</th><th>Who</th><th>v5 (outlined)</th><th>v6 (bare)</th></tr>
+<tr><td><b>One filled object on the screen, and it is the primary action.</b></td><td>Letterboxd, Things 3, Day One, Bevel's journal. Calm fills nothing at all.</td><td class="y">yes</td><td class="y">yes</td></tr>
+<tr><td><b>Never box a field.</b> Bare text on a 0.5pt hairline. Full-bleed rules only between sections; rules inset 16pt between rows of the same section.</td><td>Letterboxd (zero boxes, zero corner radii on its whole log sheet), Nike, Hevy, Day One, Things 3. Oura outlines the group and leaves rows bare inside it.</td><td class="n">no, Strava's boxes</td><td class="y">yes</td></tr>
+<tr><td><b>One text size; weight and colour carry the hierarchy. Break the rule once, with a graphic.</b></td><td>Letterboxd: nav title, film title, label and value all within 1.5pt of each other. The stars are the one big thing, 3.5 times body.</td><td class="p">partly: the score is the one big thing, title matches body</td><td class="y">yes: the title is bold, not bigger</td></tr>
+<tr><td><b>Big number, small grey caption. Demote the unit by colour, not only size.</b></td><td>Bevel ("71" heavy, "bpm" same size in grey), Flighty, Headspace, Gentler Streak.</td><td class="y">yes</td><td class="y">yes</td></tr>
+<tr><td><b>Show four things and leave the rest empty.</b> Airiness is a smaller count of elements, not padding.</td><td>Letterboxd: five rows and a deliberate void. Calm's check-in: a question and a grid, no buttons.</td><td class="y">yes, since v5</td><td class="y">yes</td></tr>
+</table>
+
+<h2>Same screen, two skins</h2>
+<div class="row">
+
+<div>
+<div class="tag">A · v5, outlined (Strava iOS)</div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="ic">◍</div><div class="v">Friends can see this</div><div class="cd">⌄</div></div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="f tall"><div class="ph">How'd it go? Friends will see this.</div></div>
+  <div class="selfie">
+    <div class="tile">◎</div>
+    <div class="txt"><div class="h">Take your selfie</div><div class="d">Friends see you, right after you sat. Sharing needs one.</div></div>
+  </div>
+  <div class="sec">Details</div>
+  <div class="f"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="dock"><div class="cta">Take your selfie</div></div>
+</div></div>
+<div class="cap"><b>Boxed.</b> Five rounded rectangles on the screen before the selfie tile makes six. Each border is a shape the eye has to read past. This is exactly Strava's iOS screen in 808's colours.</div>
+</div>
+
+<div>
+<div class="tag rec">B · v6, bare (Letterboxd, Nike, Hevy)</div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="bleed"></div>
+  <div class="r"><div class="ic">◍</div><div class="v">Friends can see this</div><div class="cd">⌄</div></div>
+  <div class="r"><div class="v title">Afternoon meditation</div></div>
+  <div class="r tall last"><div class="ph">How'd it go? Friends will see this.</div></div>
+  <div class="bleed"></div>
+  <div class="selfie">
+    <div class="tile">◎</div>
+    <div class="txt"><div class="h">Take your selfie</div><div class="d">Friends see you, right after you sat. Sharing needs one.</div></div>
+  </div>
+  <div class="bleed"></div>
+  <div class="sec">Details</div>
+  <div class="r"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="r tall last"><div class="ic">🔒</div><div class="ph">Private notes. Only you can see these.</div></div>
+  <div class="dock"><div class="cta">Take your selfie</div></div>
+</div></div>
+<div class="cap"><b>Bare.</b> Same content, same order, same button. One shape on the whole screen (the selfie tile) instead of six. Rules between sections run edge to edge; rules between rows start at the text. The title is bold rather than boxed, which is how Hevy and Nike mark it.</div>
+</div>
+
+</div>
+
+<h2>My recommendation</h2>
+<ol class="q">
+<li><b>B.</b> Both passes, fourteen apps, and the one that matches our situation best (Letterboxd: you just finished something, now grade it) all land on the same rule: do not box a field. Strava is the outlier, and its own users call the save screen cluttered. Strava's iOS <b>behaviour</b> stays exactly as you chose: Cancel-style exit top left, nothing top right, the filled button pinned at the bottom. What changes is only the skin on the inputs.</li>
+<li><b>If you want A</b>, everything in v5 is already drawn that way and the Swift is a few more lines. No argument; it is a legitimate reading of "copy Strava".</li>
+<li>Either way the camera is unchanged from v5, and nothing here touches what a post carries.</li>
+</ol>
+
+<p class="note" style="margin-top:22px">One finding from the meditation apps worth keeping in a drawer, not for this screen: <b>Calm's post-session check-in has no buttons at all</b>. A question, a 3 by 4 grid of mood tiles, and tapping one is the whole interaction. If we ever add a "how do you feel" step after the score, that is the shape.</p>
+
+</body></html>

@@ -28,7 +28,9 @@ struct WatchContentView: View {
             authorizeScreen
         } else {
             switch manager.phase {
-            case .idle:    manager.phoneOnboarded ? AnyView(startScreen) : AnyView(setupScreen)
+            case .idle:
+                if manager.countdown != nil { AnyView(countdownScreen) }
+                else { manager.phoneOnboarded ? AnyView(startScreen) : AnyView(setupScreen) }
             case .running: liveScreen
             case .sending: sendingScreen
             case .sent:    sentScreen
@@ -144,6 +146,37 @@ struct WatchContentView: View {
         }
         .padding(.horizontal, 4)
         .padding(.vertical, 2)
+    }
+
+    // MARK: - Countdown
+
+    /// Five seconds to settle before the wrist starts measuring, matching the
+    /// phone's countdown. A number, a line, a way out. No haptics.
+    private var countdownScreen: some View {
+        VStack(spacing: 6) {
+            Spacer(minLength: 0)
+            Text(manager.countdown.map(String.init) ?? "")
+                .font(.system(size: 64, weight: .bold, design: .rounded))
+                .foregroundStyle(WatchPalette.gold)
+                .monospacedDigit()
+                .contentTransition(.numericText(countsDown: true))
+                .animation(.easeOut(duration: 0.15), value: manager.countdown)
+            Text("Get comfortable.")
+                .font(.system(size: 12))
+                .foregroundStyle(WatchPalette.inkMuted)
+            Spacer(minLength: 0)
+            Button(action: { manager.cancelCountdown() }) {
+                Text("Cancel")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(WatchPalette.inkMuted)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(WatchPalette.surface, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 6)
+        .padding(.bottom, 4)
     }
 
     private var markRow: some View {

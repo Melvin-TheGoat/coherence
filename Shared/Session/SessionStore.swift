@@ -88,6 +88,7 @@ enum SessionStore {
     static func signOut(in context: ModelContext) {
         for prefs in (try? context.fetch(FetchDescriptor<Preferences>())) ?? [] {
             prefs.onboardingComplete = false
+            OnboardingResume.clear()
             prefs.updatedAt = Date()
         }
         try? context.save()
@@ -101,6 +102,32 @@ enum SessionStore {
         target?.deletedAt = now
         target?.updatedAt = now
         signOut(in: context)
+    }
+
+    /// Deletes one session and every row keyed to it (stats, reflection).
+    /// Returns whether a session with that id existed.
+    ///
+    /// Sessions are immutable, and this is not an edit: it is the user
+    /// removing a row they never meant to create (Melvin, 2026-09-15: "we
+    /// create ones and immediately end them"). The Watch already refuses
+    /// anything under `minDurationSec`; this covers the junk that clears the
+    /// bar. Streak, awards and the sparkline all derive from the sessions at
+    /// read time, so they correct themselves. What it does NOT touch: the
+    /// workout and mindful minutes the Watch wrote into Health, which belong
+    /// to the user's Health record, not to 808.
+    @discardableResult
+    static func deleteSession(id: UUID, in context: ModelContext) -> Bool {
+        let sessions = (try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == id }))) ?? []
+        guard !sessions.isEmpty else { return false }
+        for stats in (try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == id }))) ?? [] {
+            context.delete(stats)
+        }
+        for r in (try? context.fetch(FetchDescriptor<SessionReflection>(predicate: #Predicate { $0.sessionID == id }))) ?? [] {
+            context.delete(r)
+        }
+        for s in sessions { context.delete(s) }
+        try? context.save()
+        return true
     }
 
     /// Hard-deletes Users soft-deleted more than `days` ago and every row FK'd to
@@ -240,6 +267,35 @@ enum SessionStore {
         context.insert(reflection)
         try? context.save()
         return reflection
+    }
+
+    /// The Save session screen's fields: title, the public description and
+    /// who can see it. Leaves the rating alone; the note is the PRIVATE note.
+    @discardableResult
+    static func saveSession(sessionID: UUID, title: String, publicNote: String, privateNote: String,
+                            visibility: String, technique: String?,
+                            in context: ModelContext) -> SessionReflection {
+        let existing = reflection(for: sessionID, in: context)
+        let row = saveReflection(sessionID: sessionID, rating: existing?.rating, note: privateNote,
+                                 technique: technique, techniqueNote: existing?.techniqueNote ?? "",
+                                 in: context)
+        row.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        row.publicNote = publicNote.trimmingCharacters(in: .whitespacesAndNewlines)
+        row.visibility = visibility
+        row.updatedAt = Date()
+        try? context.save()
+        return row
+    }
+
+    /// "Morning meditation" and friends: Strava's default activity name, by
+    /// the hour the session started.
+    static func defaultTitle(for date: Date, calendar: Calendar = .current) -> String {
+        switch calendar.component(.hour, from: date) {
+        case 5..<12:  return "Morning meditation"
+        case 12..<17: return "Afternoon meditation"
+        case 17..<22: return "Evening meditation"
+        default:      return "Night meditation"
+        }
     }
 
     /// All session start dates for the store (feeds `StreakCalculator`).

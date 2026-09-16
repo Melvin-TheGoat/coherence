@@ -209,14 +209,27 @@ struct OnboardingCTA: View {
 /// UIKit generators rather than .sensoryFeedback because SwiftUI's trigger
 /// fires on state change, and press state never changes for a cancelled tap.
 struct PressReleaseHapticStyle: ButtonStyle {
+    /// Two generators kept alive and PREPARED. A generator created on the
+    /// tap and fired at once can miss: the Taptic Engine spins up in a few
+    /// milliseconds and an unprepared request that arrives first is dropped.
+    /// A tester on 2026-09-14 lost the pulse on some taps and not others,
+    /// which is exactly that failure. Prepared generators fire every time.
+    private static let press = UIImpactFeedbackGenerator(style: .heavy)
+    private static let release = UIImpactFeedbackGenerator(style: .rigid)
+
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.55 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
+            .onAppear {
+                Self.press.prepare()
+                Self.release.prepare()
+            }
             .onChange(of: configuration.isPressed) { _, pressed in
-                let gen = UIImpactFeedbackGenerator(style: pressed ? .heavy : .rigid)
+                let gen = pressed ? Self.press : Self.release
                 gen.impactOccurred(intensity: 1.0)
+                gen.prepare()
             }
     }
 }
@@ -225,6 +238,10 @@ struct OnboardingOption: View {
     let label: String
     var icon: String? = nil
     let selected: Bool
+    /// Multi-select rows draw a square, single-select rows a circle: the
+    /// convention every form uses, and the one cue that tells someone whether
+    /// tapping a second answer will replace the first (2026-09-14 tester).
+    var multi: Bool = false
     let action: () -> Void
 
     var body: some View {
@@ -242,20 +259,24 @@ struct OnboardingOption: View {
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                Image(systemName: selected ? (multi ? "checkmark.square.fill" : "checkmark.circle.fill")
+                                           : (multi ? "square" : "circle"))
                     .font(.system(size: 16))
                     .foregroundStyle(selected ? AppColor.accentGold
-                                              : AppColor.textSecondary.opacity(0.35))
+                                              : AppColor.textSecondary.opacity(0.5))
             }
             .padding(.horizontal, 16)
             // 18, not 15: the taller row is half of why a five-option screen
             // stopped looking like a list floating in a void.
             .padding(.vertical, 18)
-            .background(selected ? AppColor.accentGold.opacity(0.10)
-                                 : AppColor.backgroundSecondary.opacity(0.75),
+            // Full-strength surface and a hairline. At 0.75 opacity the rows
+            // bled into the ground (2026-09-14 tester: "too close in colour").
+            .background(selected ? AppColor.accentGold.opacity(0.12)
+                                 : AppColor.backgroundSecondary,
                         in: RoundedRectangle(cornerRadius: 15, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .stroke(selected ? AppColor.accentGold : .clear, lineWidth: 1.5))
+                .stroke(selected ? AppColor.accentGold : AppColor.textSecondary.opacity(0.22),
+                        lineWidth: selected ? 1.5 : 1))
         }
         .buttonStyle(PressReleaseHapticStyle())
     }
@@ -344,6 +365,13 @@ struct OnboardingScreen<Content: View>: View {
     @ViewBuilder var content: Content
 
     @Environment(\.onboardingBack) private var back
+    /// Whether an answer was already ticked when this screen appeared. That
+    /// only happens on the way BACK, and there the tap-to-advance model
+    /// breaks down: the tick is already lit, so tapping it again is not an
+    /// obvious move and "Tap an answer" reads as a contradiction (2026-09-14
+    /// tester). A returning screen shows Continue; a fresh one keeps the
+    /// single affordance Aziz asked for.
+    @State private var answeredOnAppear = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -411,9 +439,11 @@ struct OnboardingScreen<Content: View>: View {
                     .frame(minHeight: geo.size.height)
                 }
                 .scrollBounceBehavior(.basedOnSize)
+                // The bar sat on top of the option rows (2026-09-14 tester).
+                .scrollIndicators(.hidden)
             }
 
-            if autoAdvances {
+            if autoAdvances && !answeredOnAppear {
                 // No button: the answer IS the action. A quiet line keeps the
                 // bottom from reading as unfinished and teaches the model once.
                 Text(autoAdvanceHint)
@@ -441,6 +471,7 @@ struct OnboardingScreen<Content: View>: View {
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .onboardingGround(section, ambient: ambient)
+        .onAppear { answeredOnAppear = autoAdvances && ctaEnabled }
     }
 }
 

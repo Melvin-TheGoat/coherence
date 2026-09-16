@@ -164,6 +164,7 @@ private struct SettingsForm: View {
                 freeTierDebugSection
                 cloudKitDebugSection
                 cameraCaptureDebugSection
+                airPodsDebugSection
                 #endif
 
                 accountFooter
@@ -298,6 +299,22 @@ private struct SettingsForm: View {
         .onAppear {
             primerRows = CloudSchemaPrimer.primedRowCount(in: context)
             Task { cloudStatus = await CloudStatus.read() }
+        }
+    }
+
+    /// The AirPods hardware probe (no-Watch path spike, 2026-09-14). The row
+    /// only exists on iOS 26, where an iPhone can run its own workout session.
+    /// The probe is the one place the iOS target reads a biometric, and it is
+    /// compiled out of Release with the rest of this section.
+    @ViewBuilder
+    private var airPodsDebugSection: some View {
+        if #available(iOS 26.0, *) {
+            SectionHeader(title: "AirPods (debug)")
+            settingsCard {
+                navRow(icon: "airpodspro", title: "AirPods capture probe", teal: true) {
+                    AirPodsProbeView()
+                }
+            }
         }
     }
 

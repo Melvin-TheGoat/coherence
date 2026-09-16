@@ -1,0 +1,281 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Profiles and saving a session</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --card2:#221e19; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.08); }
+*{ box-sizing:border-box; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 6px; } .note{ color:var(--muted); font-size:13px; max-width:760px; line-height:1.55; }
+h2{ font-size:13px; margin:36px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:280px; height:600px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:44px 0 0; overflow:hidden; font-size:12.5px; position:relative; }
+.pad{ padding:0 16px; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:280px; line-height:1.45; } .cap b{ color:var(--fg); }
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:6px 16px 10px; border-bottom:1px solid var(--line); }
+.nav .t{ font-weight:700; font-size:14px; } .nav .l{ color:var(--muted); font-size:12.5px; } .nav .r{ color:var(--gold); font-weight:600; font-size:12.5px; }
+.k{ font-size:9.5px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; font-weight:600; }
+.big{ font-size:22px; font-weight:800; letter-spacing:-.02em; line-height:1.15; }
+.sub{ color:var(--muted); font-size:12px; line-height:1.5; margin-top:6px; }
+.cta{ background:var(--gold); color:#1a1508; text-align:center; border-radius:12px; padding:13px; font-weight:700; font-size:13.5px; }
+.quiet{ color:var(--muted); text-align:center; font-size:12px; margin-top:10px; }
+.field{ border:1px solid var(--line); background:var(--card); border-radius:10px; padding:11px 12px; color:var(--muted); font-size:12.5px; }
+.field b{ color:var(--fg); font-weight:600; }
+.lbl{ font-size:10.5px; color:var(--muted); margin:14px 0 6px; font-weight:600; }
+.avatar{ border-radius:50%; background:linear-gradient(135deg,#3a2f13,#6b4f15); border:2px solid var(--gold); display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--gold); flex:none; }
+.photo-av{ background:linear-gradient(160deg,#6b5a48,#b08a62 55%,#3b2f25); }
+.addphoto{ width:88px; height:88px; border-radius:50%; border:1.5px dashed rgba(212,175,55,.7); display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--gold); font-size:10.5px; font-weight:600; margin:0 auto; gap:3px; }
+.addphoto .i{ font-size:22px; line-height:1; }
+.ok{ color:var(--teal); font-size:11px; font-weight:600; margin-top:6px; }
+.list-row{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); }
+.list-row .v{ color:var(--muted); } .chev{ color:var(--muted); margin-left:6px; }
+.seg{ display:flex; background:var(--card); border-radius:10px; padding:3px; gap:3px; }
+.seg div{ flex:1; text-align:center; padding:8px 4px; border-radius:8px; font-size:11.5px; color:var(--muted); font-weight:600; }
+.seg .on{ background:#2d2820; color:var(--fg); box-shadow:inset 0 0 0 1px rgba(212,175,55,.55); }
+.tiles{ display:flex; gap:8px; } .tile{ width:64px; height:64px; border-radius:10px; border:1.5px dashed rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:20px; }
+.tile.img{ border:none; background:linear-gradient(180deg,#3d5a6b 0%,#8a6b4a 70%,#2a2119 100%); }
+.scorebar{ display:flex; align-items:center; gap:12px; background:var(--card); border-radius:12px; padding:10px 12px; }
+.ring{ width:40px; height:40px; border-radius:50%; border:3px solid var(--gold); border-left-color:rgba(212,175,55,.25); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex:none; }
+.stats3{ display:flex; gap:18px; } .stats3 .s span{ display:block; font-size:9.5px; color:var(--muted); letter-spacing:.04em; } .stats3 .s b{ font-size:15px; font-weight:700; }
+.feed-card{ background:var(--card); margin-top:8px; }
+.fc-head{ display:flex; gap:9px; align-items:center; padding:12px 14px 6px; }
+.fc-head .n{ font-weight:700; font-size:12.5px; } .fc-head .d{ color:var(--muted); font-size:10.5px; margin-top:1px; }
+.fc-title{ font-weight:800; font-size:15px; padding:2px 14px 8px; letter-spacing:-.01em; }
+.fc-desc{ padding:0 14px 8px; font-size:12px; line-height:1.4; }
+.fc-stats{ display:flex; gap:22px; padding:0 14px 10px; }
+.fc-stats .s span{ display:block; font-size:9.5px; color:var(--muted); } .fc-stats .s b{ font-size:15px; font-weight:700; }
+.fc-photo{ height:150px; background:linear-gradient(180deg,#3d5a6b 0%,#8a6b4a 70%,#2a2119 100%); }
+.fc-foot{ display:flex; justify-content:space-between; align-items:center; padding:9px 14px; border-top:1px solid var(--line); color:var(--muted); font-size:11px; }
+.fc-actions{ display:flex; gap:28px; font-size:16px; } .fc-actions .on{ color:var(--gold); }
+.tabs{ height:66px; border-top:1px solid var(--line); background:#141210; display:flex; align-items:flex-start; justify-content:space-around; padding-top:8px; flex:none; }
+.tab{ width:44px; text-align:center; color:var(--muted); font-size:8.5px; } .tab .ic{ font-size:17px; display:block; margin-bottom:2px; } .tab.on{ color:var(--fg); }
+.plus{ width:52px; height:52px; border-radius:50%; background:var(--gold); color:#1a1508; display:flex; align-items:center; justify-content:center; margin-top:-22px; font-size:30px; font-weight:300; }
+.banner{ margin:0 16px; border-radius:12px; padding:10px 12px; background:rgba(94,177,168,.08); border:1px solid rgba(94,177,168,.4); font-size:11.5px; line-height:1.45; }
+.banner b{ color:var(--teal); }
+.hero{ height:190px; background:radial-gradient(ellipse at 50% 70%, rgba(212,175,55,.28), transparent 60%), #16120e; display:flex; align-items:center; justify-content:center; gap:-10px; }
+.stack{ display:flex; } .stack .avatar{ margin-left:-14px; box-shadow:0 0 0 3px #16120e; }
+.bul{ display:flex; gap:10px; margin-top:12px; font-size:12.5px; line-height:1.4; } .bul .i{ color:var(--gold); width:18px; text-align:center; }
+.chip{ display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px; border:1px solid var(--line); font-size:11px; color:var(--muted); }
+.q{ margin-top:34px; max-width:760px; } .q li{ margin:10px 0; line-height:1.55; font-size:13.5px; } .q b{ color:var(--gold); }
+.flow{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin:6px 0 4px; }
+.flow span{ padding:5px 10px; border:1px solid var(--line); border-radius:999px; color:var(--fg); } .flow i{ font-style:normal; color:var(--gold); }
+</style></head><body>
+
+<h1>808 · Profiles, and saving a session</h1>
+<p class="note">Strava is the layout guide; 808's dark ground and gold stay. Three changes: (1) your <b>nickname</b> and your <b>@username</b> are separate, and the username plus a profile photo are made in their own step at the end of onboarding; (2) people who already have 808 get a one-time "Friends is here" prompt that asks for the same; (3) a session no longer drops you back at Home. It ends on a Strava-style <b>Save session</b> screen where you name it, add a photo, and choose <b>Friends</b> or <b>Only you</b>.</p>
+
+<h2>1 · Onboarding: nickname and username are two screens</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen pad">
+  <div class="k" style="margin-top:6px">Last thing</div>
+  <div class="big" style="margin-top:8px">What should we call you?</div>
+  <div class="sub">This is how 808 talks to you. Friends see it next to your posts.</div>
+  <div class="lbl">Nickname</div>
+  <div class="field"><b>Aziz</b></div>
+  <div class="lbl">Age</div>
+  <div class="field">25–34</div>
+  <div style="position:absolute; left:16px; right:16px; bottom:24px"><div class="cta">Continue</div></div>
+</div></div>
+<div class="cap"><b>Nickname screen (today's "Last thing", trimmed).</b> Only the name and age. The @username field moves off this screen. Still optional, as 5.1.1 requires.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen pad">
+  <div class="k" style="margin-top:6px">Your profile</div>
+  <div class="big" style="margin-top:8px">Create your profile</div>
+  <div class="sub">Your username is how friends find you. It's yours alone.</div>
+  <div style="margin-top:22px"><div class="addphoto"><span class="i">＋</span>Add photo</div></div>
+  <div class="lbl" style="margin-top:20px">Username</div>
+  <div class="field"><span style="color:var(--muted)">@</span><b>aziz</b></div>
+  <div class="ok">✓ @aziz is available</div>
+  <div class="lbl">Nickname</div>
+  <div class="field"><b>Aziz</b> <span style="float:right">edit</span></div>
+  <div style="position:absolute; left:16px; right:16px; bottom:24px"><div class="cta">Create profile</div></div>
+</div></div>
+<div class="cap"><b>New: Create your profile.</b> The last onboarding screen, right after Sign in (both the sign-in and skip paths land here). Photo from camera or library, optional. Username checked live against everyone else's. The nickname carries over and is shown so people see the difference.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen pad">
+  <div class="k" style="margin-top:6px">Your profile</div>
+  <div class="big" style="margin-top:8px">Create your profile</div>
+  <div style="margin-top:22px"><div class="avatar photo-av" style="width:88px;height:88px;margin:0 auto"></div></div>
+  <div class="quiet" style="color:var(--gold)">Change photo</div>
+  <div class="lbl" style="margin-top:16px">Username</div>
+  <div class="field"><span style="color:var(--muted)">@</span><b>melvin</b></div>
+  <div class="ok" style="color:#e07a6a">@melvin is taken. Try @melvin.vc or @melvin_808</div>
+  <div class="banner" style="margin:18px 0 0">
+    <b>No iCloud on this iPhone.</b> Usernames are saved to iCloud. You can finish setting up now and create your profile once iCloud is on.
+  </div>
+  <div style="position:absolute; left:16px; right:16px; bottom:24px"><div class="cta" style="opacity:.5">Create profile</div><div class="quiet">Continue without a profile</div></div>
+</div></div>
+<div class="cap"><b>The two ways it can't finish.</b> A taken name suggests free ones. With no iCloud account a username physically cannot be saved, so this is the only case with a way past. Otherwise the step is required.</div>
+</div>
+</div>
+
+<h2>2 · People who already have 808: a one-time prompt</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="hero"><div class="stack">
+    <div class="avatar photo-av" style="width:58px;height:58px"></div>
+    <div class="avatar" style="width:58px;height:58px;font-size:18px">MV</div>
+    <div class="avatar" style="width:58px;height:58px;font-size:18px">JK</div>
+  </div></div>
+  <div class="pad" style="margin-top:14px">
+    <div class="k" style="color:var(--gold)">New in 808</div>
+    <div class="big" style="margin-top:6px">Meditate with your friends</div>
+    <div class="bul"><span class="i">◎</span><span>See the sessions your friends post, and give them a 🙏.</span></div>
+    <div class="bul"><span class="i">▣</span><span>Post yours with a photo when you finish.</span></div>
+    <div class="bul"><span class="i">🔒</span><span>Any session can stay private. Heart rate and breathing never leave your phone.</span></div>
+  </div>
+  <div style="position:absolute; left:16px; right:16px; bottom:24px"><div class="cta">Pick your username</div></div>
+</div></div>
+<div class="cap"><b>"Friends is here."</b> Shown once, full screen, on the first launch of 1.1 for anyone who finished onboarding before this build. The button goes to the same Create your profile screen. No skip: you asked for the username to be required.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span class="l">‹ Back</span><span class="t">Create your profile</span><span></span></div>
+  <div class="pad">
+    <div style="margin-top:22px"><div class="addphoto"><span class="i">＋</span>Add photo</div></div>
+    <div class="lbl" style="margin-top:20px">Username</div>
+    <div class="field"><span style="color:var(--muted)">@</span><b>jordan.k</b></div>
+    <div class="ok">✓ @jordan.k is available</div>
+    <div class="lbl">Nickname</div>
+    <div class="field"><b>Jordan</b> <span style="float:right">edit</span></div>
+    <div class="sub" style="margin-top:14px">We filled in the username you typed before. It wasn't reserved until now.</div>
+  </div>
+  <div style="position:absolute; left:16px; right:16px; bottom:24px"><div class="cta">Create profile</div></div>
+</div></div>
+<div class="cap"><b>Same screen, prefilled.</b> Anyone who typed a username in 1.0 or 1.0.1 gets it offered first. If someone else claimed it in the meantime they're told plainly and shown free alternatives.</div>
+</div>
+</div>
+
+<h2>3 · After a meditation: Save session, then your results</h2>
+<div class="flow"><span>End on Watch or phone</span><i>→</i><span>Save session</span><i>→</i><span>Results</span><i>→</i><span>Home</span></div>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span class="l"></span><span class="t">Save session</span><span></span></div>
+  <div class="pad">
+    <div class="scorebar" style="margin-top:12px">
+      <div class="ring">81</div>
+      <div class="stats3"><div class="s"><span>Time</span><b>18:04</b></div><div class="s"><span>Streak</span><b>4 days</b></div><div class="s"><span>Sound</span><b>Rain</b></div></div>
+    </div>
+    <div class="lbl">Title</div>
+    <div class="field"><b>Evening meditation</b></div>
+    <div class="field" style="margin-top:8px; height:54px">How did it go? Share more about this session</div>
+    <div class="lbl">Selfie <span style="font-weight:400">· required to share</span></div>
+    <div class="tiles"><div class="tile img"></div><div class="tile" style="font-size:12px">↻</div></div>
+  </div>
+  <div class="list-row" style="margin-top:12px; border-top:1px solid var(--line)"><span>Technique</span><span class="v">Counting<span class="chev">›</span></span></div>
+  <div class="pad" style="margin-top:12px">
+    <div class="lbl" style="margin-top:0">Who can see this</div>
+    <div class="seg"><div class="on">👥 Friends</div><div>🔒 Only you</div></div>
+  </div>
+  <div style="position:absolute; left:16px; right:16px; bottom:20px"><div class="cta">Save session</div></div>
+</div></div>
+<div class="cap"><b>Save session (Strava's Save Activity).</b> Opens by itself the moment the Watch's results land. Title prefilled from the time of day, description, a front-camera selfie (required for Friends, like BeReal; no photo library), technique, and Friends or Only you. The score sits at the top the way Strava shows your distance and time.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span class="l"></span><span class="t">Save session</span><span></span></div>
+  <div class="pad">
+    <div class="scorebar" style="margin-top:12px">
+      <div class="ring">81</div>
+      <div class="stats3"><div class="s"><span>Time</span><b>18:04</b></div><div class="s"><span>Streak</span><b>4 days</b></div><div class="s"><span>Sound</span><b>Rain</b></div></div>
+    </div>
+    <div class="lbl">Title</div>
+    <div class="field"><b>Evening meditation</b></div>
+    <div class="lbl">Who can see this</div>
+    <div class="seg"><div>👥 Friends</div><div class="on">🔒 Only you</div></div>
+    <div class="sub">Only you will see this session. You can share it later from its results.</div>
+    <div class="lbl" style="margin-top:18px">Private notes <span style="font-weight:400">· only you</span></div>
+    <div class="field" style="height:70px">Kept drifting to work around minute 10. Came back with the breath.</div>
+  </div>
+  <div style="position:absolute; left:16px; right:16px; bottom:20px"><div class="cta">Save session</div></div>
+</div></div>
+<div class="cap"><b>Only you.</b> Nothing is posted. Photo and description fields fold away because nobody else will read them. <b>Private notes</b> is today's reflection note, moved here and labelled plainly, and never posted even on a Friends session (Strava keeps the same split).</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><span class="l"></span><span class="t">Results</span><span class="r">Done</span></div>
+  <div class="pad" style="text-align:center">
+    <div style="margin-top:10px"><span class="chip">👥 Friends can see this · Edit</span></div>
+    <div class="ring" style="width:110px;height:110px;font-size:34px;border-width:7px;margin:16px auto 0">81</div>
+    <div class="big" style="margin-top:14px; font-size:18px">Your practice landed.</div>
+    <div class="sub">Heart settled, body went almost fully still.</div>
+  </div>
+  <div class="pad" style="margin-top:14px">
+    <div class="field" style="height:74px; display:flex; align-items:center; justify-content:center">Heart rate curve</div>
+    <div class="field" style="height:74px; margin-top:8px; display:flex; align-items:center; justify-content:center">Stillness curve</div>
+  </div>
+</div></div>
+<div class="cap"><b>Results, unchanged, plus one chip.</b> The chip at the top says who can see the session and opens the same choice to change it. Switching to Only you takes the post down; switching to Friends posts it. The "Post to friends" button from last build goes away.</div>
+</div>
+</div>
+
+<h2>4 · The feed and the profile, closer to Strava</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen" style="padding-top:36px">
+  <div class="nav" style="border:none"><span class="t" style="font-size:17px">Friends</span><span class="r">🔍 &nbsp;👤＋</span></div>
+  <div class="feed-card">
+    <div class="fc-head"><div class="avatar photo-av" style="width:34px;height:34px"></div><div><div class="n">Melvin</div><div class="d">Today at 7:12 AM · Rain</div></div></div>
+    <div class="fc-title">Roof before work</div>
+    <div class="fc-desc">Cold enough to see my breath.</div>
+    <div class="fc-stats"><div class="s"><span>Score</span><b>81</b></div><div class="s"><span>Time</span><b>14m</b></div><div class="s"><span>Streak</span><b>9 days</b></div></div>
+    <div class="fc-photo"></div>
+    <div class="fc-foot"><span>Aziz and 2 others</span><span class="fc-actions"><span class="on">🙏</span><span>↗</span></span></div>
+  </div>
+  <div class="feed-card">
+    <div class="fc-head"><div class="avatar" style="width:34px;height:34px;font-size:11px">JK</div><div><div class="n">Jordan</div><div class="d">Yesterday at 9:40 PM · Silence</div></div></div>
+    <div class="fc-title">Evening meditation</div>
+    <div class="fc-stats"><div class="s"><span>Score</span><b>64</b></div><div class="s"><span>Time</span><b>25m</b></div><div class="s"><span>Streak</span><b>2 days</b></div></div>
+  </div>
+</div>
+<div class="tabs"><div class="tab"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">▤</span>Guide</div><div class="plus">+</div><div class="tab on"><span class="ic">👥</span>Friends</div><div class="tab"><span class="ic">◉</span>Profile</div></div>
+</div>
+<div class="cap"><b>Feed card, Strava's shape.</b> Avatar, name, when and which sound (where Strava puts location), a bold title, the description, stats with the label above the number, the photo full width, and a footer with who gave 🙏. Cards run edge to edge like Strava's.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen" style="padding-top:36px">
+  <div class="nav" style="border:none"><span class="t" style="font-size:17px">Profile</span><span class="r">⚙︎</span></div>
+  <div class="pad" style="display:flex; gap:14px; align-items:center; margin-top:4px">
+    <div class="avatar photo-av" style="width:68px;height:68px"></div>
+    <div><div style="font-size:18px; font-weight:800">Aziz</div><div class="sub" style="margin-top:2px">@aziz · practicing since July</div></div>
+  </div>
+  <div class="pad" style="margin-top:12px; display:flex; gap:8px"><div class="field" style="flex:1; text-align:center; color:var(--fg); font-weight:600">Edit profile</div><div class="field" style="flex:1; text-align:center; color:var(--fg); font-weight:600">Share profile</div></div>
+  <div class="pad" style="margin-top:14px">
+    <div class="stats3" style="justify-content:space-between"><div class="s"><span>Streak</span><b>31</b></div><div class="s"><span>Sessions</span><b>104</b></div><div class="s"><span>Hours</span><b>38</b></div><div class="s"><span>Friends</span><b>6</b></div></div>
+  </div>
+  <div class="pad" style="margin-top:16px"><div class="k">Awards · 9 of 17</div></div>
+  <div class="pad" style="margin-top:16px"><div class="k">Sessions</div>
+    <div class="scorebar" style="margin-top:8px"><div class="ring">81</div><div><div style="font-weight:700">Evening meditation</div><div class="sub" style="margin-top:1px">Today · 18m · 🔒 Only you</div></div></div>
+    <div class="scorebar" style="margin-top:8px"><div class="ring">72</div><div><div style="font-weight:700">Morning sit</div><div class="sub" style="margin-top:1px">Yesterday · 20m · 👥 Friends</div></div></div>
+  </div>
+</div>
+<div class="tabs"><div class="tab"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">▤</span>Guide</div><div class="plus">+</div><div class="tab"><span class="ic">👥</span>Friends</div><div class="tab on"><span class="ic">◉</span>Profile</div></div>
+</div>
+<div class="cap"><b>Your profile.</b> Photo, nickname, @username, Edit profile (photo, nickname, username) and Share profile (the invite link). The friend count is here because only you see this screen; it never appears on anyone else's view of you. Each session row shows who can see it.</div>
+</div>
+</div>
+
+<div class="q">
+<h2>Decisions to confirm</h2>
+<ul>
+<li><b>Save session shows the score before you save.</b> Strava shows distance and time on its save screen, so the number is there before you choose. The alternative keeps the big reveal for Results by hiding the score until after Save, at the cost of choosing to share a session you haven't seen.</li>
+<li><b>Default visibility: Friends</b> for anyone with a profile (Strava defaults to Everyone). Only you would be the cautious default; Friends is what makes the feed fill up.</li>
+<li><b>Username is required, with one exit.</b> You asked for it to be required, and the prompt has no skip. The exit is needed because a phone with no iCloud account cannot save a username at all, and blocking the app there would lock people out. <b>Review risk, stated plainly:</b> guideline 5.1.1(v) says apps may not force account creation for features that don't need one, and a required public profile in a meditation app is close to that line. If it's rejected, the fix is one switch that adds "Not now" to both screens and keeps the username required only for Friends.</li>
+<li><b>Private notes stay private.</b> Today's reflection note becomes "Private notes" and is never posted. The public text is a separate "How did it go?" description, so nobody publishes their journal by accident.</li>
+<li><b>Nothing measured is posted</b>, even on Friends: score, time, streak, sound, title, description, photos. Heart rate, breathing and the curves stay on the phone (guideline 5.1.3 and the free tier).</li>
+</ul>
+</div>
+</body></html>

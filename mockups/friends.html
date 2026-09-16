@@ -1,0 +1,243 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Friends</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.09); }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 4px; } .note{ color:var(--muted); font-size:13px; max-width:720px; line-height:1.5; }
+h2{ font-size:13px; margin:34px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:270px; height:584px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:46px 18px 0; overflow:hidden; font-size:12.5px; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:270px; line-height:1.45; } .cap b{ color:var(--fg); }
+.k{ font-size:9.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; font-weight:600; }
+.top{ display:flex; align-items:center; justify-content:space-between; }
+.greet{ font-size:19px; font-weight:700; letter-spacing:-.02em; margin-top:10px; }
+.card{ background:var(--card); border-radius:14px; padding:12px; margin-top:12px; }
+.tabs{ height:72px; border-top:1px solid var(--line); background:#141210; display:flex; align-items:flex-start; justify-content:space-around; padding-top:8px; position:relative; }
+.tab{ width:44px; text-align:center; color:var(--muted); font-size:8.5px; letter-spacing:.02em; }
+.tab svg{ width:22px; height:22px; display:block; margin:0 auto 3px; stroke:currentColor; fill:none; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
+.tab.on{ color:var(--fg); }
+.plus{ width:58px; height:58px; border-radius:50%; background:var(--gold); color:#1a1508; display:flex; align-items:center; justify-content:center; margin-top:-24px; box-shadow:0 8px 24px rgba(212,175,55,.35); font-size:34px; font-weight:300; line-height:1; }
+.search{ margin-top:12px; border:1px solid var(--line); border-radius:12px; padding:9px 12px; color:var(--muted); display:flex; gap:8px; align-items:center; }
+.av{ width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#3a2f13,#6b4f15); border:1.5px solid var(--gold); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:11px; color:var(--gold); flex:none; }
+.av.big{ width:56px; height:56px; font-size:18px; border-width:2px; }
+.post{ background:var(--card); border-radius:14px; margin-top:10px; overflow:hidden; }
+.post .who{ display:flex; align-items:center; gap:8px; padding:10px 12px 8px; } .post .who .n{ font-weight:600; } .post .who .s{ color:var(--muted); font-size:10.5px; }
+.post .who .more{ margin-left:auto; color:var(--muted); letter-spacing:1px; }
+.photo{ height:120px; background:linear-gradient(160deg,#2b2419 0%,#4a3a22 60%,#1d1a14 100%); position:relative; }
+.photo.sky{ background:linear-gradient(180deg,#3d5a6b 0%,#8a6b4a 70%,#2a2119 100%); }
+.strip{ display:flex; align-items:center; gap:12px; padding:10px 12px; }
+.ring{ width:36px; height:36px; border-radius:50%; border:3px solid var(--gold); border-left-color:rgba(212,175,55,.25); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:700; flex:none; }
+.stat{ display:flex; flex-direction:column; } .stat b{ font-size:12.5px; } .stat span{ font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+.captn{ padding:0 12px 10px; font-size:12px; line-height:1.4; }
+.react{ display:flex; align-items:center; gap:8px; padding:0 12px 10px; color:var(--muted); font-size:11px; }
+.react .btn{ padding:5px 10px; border-radius:999px; border:1px solid var(--line); color:var(--fg); font-size:11px; }
+.react .btn.on{ border-color:var(--gold); color:var(--gold); }
+.cta{ margin-top:12px; background:var(--gold); color:#1a1508; text-align:center; border-radius:13px; padding:12px; font-weight:700; font-size:13px; }
+.cta.quiet{ background:var(--card); color:var(--fg); font-weight:600; }
+.field{ margin-top:10px; border:1px solid var(--line); border-radius:12px; padding:10px 12px; color:var(--muted); }
+.field b{ color:var(--fg); font-weight:600; }
+.list{ margin-top:8px; } .li{ display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line); }
+.li .n{ font-weight:600; } .li .s{ color:var(--muted); font-size:10.5px; }
+.pill{ margin-left:auto; padding:5px 10px; border-radius:999px; border:1px solid var(--gold); color:var(--gold); font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }
+.pill.done{ border-color:var(--line); color:var(--muted); }
+.center{ text-align:center; margin-top:60px; } .center h3{ font-size:16px; margin:14px 0 6px; } .center p{ color:var(--muted); font-size:12px; line-height:1.5; margin:0 18px; }
+.sheet{ position:absolute; left:0; right:0; bottom:0; background:#1f1b16; border-radius:24px 24px 0 0; padding:18px 18px 22px; box-shadow:0 -20px 40px rgba(0,0,0,.5); }
+.sheet h3{ margin:0 0 6px; font-size:16px; } .sheet p{ color:var(--muted); font-size:12px; line-height:1.5; margin:0 0 8px; }
+.dim{ position:absolute; inset:0; background:rgba(0,0,0,.45); }
+.menu{ position:absolute; right:14px; top:150px; background:#26221c; border-radius:12px; padding:6px 0; width:150px; font-size:12.5px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+.menu div{ padding:9px 14px; } .menu .red{ color:#e07a6a; }
+.stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:14px; }
+.stats .st{ background:var(--card); border-radius:12px; padding:10px 6px; text-align:center; } .stats .st b{ display:block; font-size:18px; font-weight:800; } .stats .st span{ font-size:8.5px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; }
+.lock{ display:inline-block; padding:2px 7px; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-size:9px; letter-spacing:.08em; text-transform:uppercase; }
+.grant{ margin-top:12px; border:1px solid rgba(94,177,168,.5); border-radius:12px; padding:10px 12px; font-size:11.5px; line-height:1.45; } .grant b{ color:var(--teal); }
+.q{ margin-top:34px; max-width:720px; } .q li{ margin:8px 0; line-height:1.5; font-size:13.5px; } .q b{ color:var(--gold); }
+</style></head><body>
+<h1>808 · Friends</h1>
+<p class="note">The Search tab becomes Friends. Mutual friends only (you ask, they accept), a feed of what your friends posted, one reaction per post, no comments in v1, no counts shown to anyone but you. A post is made from the results screen and carries exactly what the free share card carries: score, minutes, streak, technique, a photo, a caption. Never a heart-rate or breath number, never a curve. The design record is <code>COMMUNITY.md</code>.</p>
+
+<h2>The feed and the first run</h2>
+<div class="row">
+
+<!-- FEED -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top"><div class="greet">Friends</div><span class="k" style="color:var(--gold)">2 requests</span></div>
+  <div class="search"><span>⌕</span><span>Find a friend by @username</span></div>
+
+  <div class="post">
+    <div class="who"><div class="av">MV</div><div><div class="n">Melvin</div><div class="s">@melvin · this morning</div></div><span class="more">···</span></div>
+    <div class="photo sky"></div>
+    <div class="strip"><div class="ring">81</div><div class="stat"><b>14 min</b><span>Sat</span></div><div class="stat"><b>9 days</b><span>Streak</span></div><div class="stat"><b>Slow breathing</b><span>Technique</span></div></div>
+    <div class="captn">Roof before work. Cold enough to see my breath.</div>
+    <div class="react"><span class="btn on">🙏 Nice sit · 3</span></div>
+  </div>
+
+  <div class="post">
+    <div class="who"><div class="av">AM</div><div><div class="n">Aziz</div><div class="s">@aziz · yesterday</div></div><span class="more">···</span></div>
+    <div class="strip"><div class="ring">64</div><div class="stat"><b>25 min</b><span>Sat</span></div><div class="stat"><b>31 days</b><span>Streak</span></div><div class="stat"><b>Guided</b><span>Technique</span></div></div>
+    <div class="react"><span class="btn">🙏 Nice sit</span><span>Melvin and 1 other</span></div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M16 20a6 6 0 0 1 6-5"/></svg>Friends</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Feed.</b> Friends' posts, newest first. A post is the photo (optional), a score ring, minutes, streak, technique, a caption. One reaction, "Nice sit" (placeholder word), one per person per post. The ··· menu holds Report. Requests sit behind the gold count top right. No comments.</div>
+</div>
+
+<!-- FIRST RUN / CLAIM USERNAME -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="greet">Friends</div>
+  <div class="center" style="margin-top:36px">
+    <div class="av big" style="margin:0 auto">AM</div>
+    <h3>Pick your @username</h3>
+    <p>This is how friends find you. Letters, numbers, dots and underscores.</p>
+  </div>
+  <div class="field"><b>@aziz</b></div>
+  <div class="k" style="margin-top:6px; color:var(--teal)">Available</div>
+  <div class="cta">Claim @aziz</div>
+  <div class="grant" style="margin-top:22px"><b>Bring a friend, see the evidence.</b> When a friend you invite accepts and finishes their first session, your next 10 sessions unlock the full results: every curve and every reading.</div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M16 20a6 6 0 0 1 6-5"/></svg>Friends</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>First open.</b> The username stops being cosmetic here: it is checked against everyone else's and claimed. The one they typed in onboarding is offered first. The teal box is the free-tier reward, stated once. A paid user sees the award and the Circle skin instead.</div>
+</div>
+
+<!-- EMPTY FEED + INVITE -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top"><div class="greet">Friends</div></div>
+  <div class="search"><span>⌕</span><span>Find a friend by @username</span></div>
+  <div class="center">
+    <div style="font-size:40px; color:var(--muted)">🙏</div>
+    <h3>Nobody here yet</h3>
+    <p>Your feed shows the sessions your friends post. Ask someone to sit with you.</p>
+  </div>
+  <div class="cta">Invite a friend</div>
+  <div class="cta quiet">Search by @username</div>
+  <div class="k" style="margin-top:18px">Your link</div>
+  <div class="field" style="margin-top:6px">meditate808.com/f/<b>aziz</b></div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M16 20a6 6 0 0 1 6-5"/></svg>Friends</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Empty feed.</b> This is the screen most people will see for a while, so it does the inviting. Invite opens the system share sheet with the link and a one-line message. The link goes to a page on the site that names who invited you and sends you to the App Store.</div>
+</div>
+</div>
+
+<h2>Posting a session, and a friend's profile</h2>
+<div class="row">
+
+<!-- COMPOSER -->
+<div>
+<div class="phone"><div class="screen">
+  <div class="top"><span class="k">Cancel</span><div class="greet" style="margin:0">Post to friends</div><span class="k" style="color:var(--gold)">Post</span></div>
+  <div class="post" style="margin-top:14px">
+    <div class="photo"><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:11px">📷 Add a photo (optional)</div></div>
+    <div class="strip"><div class="ring">77</div><div class="stat"><b>18 min</b><span>Sat</span></div><div class="stat"><b>4 days</b><span>Streak</span></div><div class="stat"><b>Counting</b><span>Technique</span></div></div>
+  </div>
+  <div class="field" style="min-height:44px">Say something, or don't</div>
+  <div class="k" style="margin-top:14px">What goes out</div>
+  <p style="color:var(--muted); font-size:11px; line-height:1.5; margin:6px 0 0">Your score, minutes, streak, technique, the photo and the caption. Your heart rate, breath and stillness readings stay on your phone.</p>
+</div>
+<div class="tabs" style="justify-content:center; align-items:center; padding-top:0"><span class="k">Opened from the results screen</span></div>
+</div>
+<div class="cap"><b>Composer.</b> Reached from a "Post to friends" row under the verdict on the results screen (gold when Share has stepped down; never two gold objects). Photo and caption both optional; a session with neither still posts. The "what goes out" line is there so nobody wonders. First post ever shows the community rules with Agree.</div>
+</div>
+
+<!-- FRIEND PROFILE -->
+<div>
+<div class="phone"><div class="screen" style="position:relative">
+  <div class="top"><span class="k">‹ Friends</span><span class="more" style="color:var(--muted); letter-spacing:1px">···</span></div>
+  <div style="display:flex; align-items:center; gap:12px; margin-top:14px"><div class="av big">MV</div><div><div style="font-size:18px; font-weight:800; letter-spacing:-.02em">Melvin</div><div class="k" style="margin-top:3px; text-transform:none; letter-spacing:0; font-size:11px">@melvin · practicing since July</div></div></div>
+  <div class="stats"><div class="st"><b>9</b><span>Streak</span></div><div class="st"><b>41</b><span>Sessions</span></div><div class="st"><b>72</b><span>Avg score</span></div></div>
+  <div class="pill done" style="display:inline-block; margin-top:12px">Friends ✓</div>
+  <div class="k" style="margin-top:16px">Posts</div>
+  <div class="post"><div class="photo sky" style="height:70px"></div><div class="strip"><div class="ring">81</div><div class="stat"><b>14 min</b><span>Sat</span></div><div class="stat"><b>Slow breathing</b><span>Technique</span></div></div></div>
+  <div class="menu"><div>Remove friend</div><div class="red">Report</div><div class="red">Block</div></div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M16 20a6 6 0 0 1 6-5"/></svg>Friends</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>A friend's profile.</b> Three numbers derived from their posts (streak, sessions, average score), no friend count. The ··· menu is Remove, Report, Block: the three things guideline 1.2 checks for. A stranger's profile shows the same header with "Add friend" and no posts.</div>
+</div>
+
+<!-- REQUESTS + REWARD -->
+<div>
+<div class="phone"><div class="screen" style="position:relative">
+  <div class="top"><span class="k">‹ Friends</span><div class="greet" style="margin:0">Requests</div><span></span></div>
+  <div class="list" style="margin-top:14px">
+    <div class="li"><div class="av">JK</div><div><div class="n">Jordan</div><div class="s">@jordan.k · 2 sessions</div></div><span class="pill">Accept</span></div>
+    <div class="li"><div class="av">SP</div><div><div class="n">Sam</div><div class="s">@sam_p · new</div></div><span class="pill">Accept</span></div>
+  </div>
+  <div class="k" style="margin-top:18px">Sent</div>
+  <div class="list"><div class="li"><div class="av">LT</div><div><div class="n">Lena</div><div class="s">@lena · waiting</div></div><span class="pill done">Sent</span></div></div>
+  <div class="dim"></div>
+  <div class="sheet">
+    <h3>Jordan sat their first session</h3>
+    <p>You brought them here. Your next <b style="color:var(--fg)">10 sessions</b> show the full evidence: every curve, every reading.</p>
+    <div class="grant" style="margin-top:6px">10 sessions of evidence · <b>starts with your next sit</b></div>
+    <div class="cta">Nice</div>
+  </div>
+</div>
+<div class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 4h11a3 3 0 0 1 3 3v13H7a3 3 0 0 0-3 3z"/><path d="M4 4v16a3 3 0 0 1 3-3h11"/></svg>Guide</div>
+  <div class="plus">+</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="3"/><path d="M16 20a6 6 0 0 1 6-5"/></svg>Friends</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</div>
+</div></div>
+<div class="cap"><b>Requests, and the reward landing.</b> Incoming on top, sent below. The sheet fires the first time the app sees that a friend you asked has accepted AND has a first session on their profile. Not on install, not on sign-up: Apple rejects rewards for downloads, and a session is the thing we actually want. Paid users get the "Brought a friend" award and the Circle skin here instead.</div>
+</div>
+</div>
+
+<h2>Locked evidence, with a grant running</h2>
+<div class="row">
+<div>
+<div class="phone"><div class="screen">
+  <div class="k">Today · 18 min</div>
+  <div style="display:flex; align-items:center; gap:14px; margin-top:12px"><div class="ring" style="width:64px; height:64px; font-size:22px; border-width:5px">77</div><div style="font-size:13px; line-height:1.45">Your heart settled and you barely moved. A solid sit.</div></div>
+  <div class="card"><div class="top"><span class="k" style="color:var(--fg)">Heart rate</span><span class="k" style="color:var(--teal)">Evidence · 7 of 10 left</span></div>
+    <svg viewBox="0 0 230 50" style="width:100%; height:50px; margin-top:8px"><path d="M2 12 C30 14 50 30 80 28 S130 40 170 36 S210 44 228 42" stroke="#5EB1A8" fill="none" stroke-width="2"/></svg>
+    <div class="k" style="margin-top:4px; color:var(--fg); text-transform:none; letter-spacing:0; font-size:11px">74 → 63 bpm · settled by min 4</div></div>
+  <div class="card"><div class="top"><span class="k" style="color:var(--fg)">Stillness</span></div>
+    <svg viewBox="0 0 230 50" style="width:100%; height:50px; margin-top:8px"><path d="M2 40 C30 20 60 14 100 12 S180 10 228 8" stroke="#D4AF37" fill="none" stroke-width="2"/></svg></div>
+  <div class="cta quiet" style="margin-top:14px">Post to friends</div>
+  <div class="cta quiet">Share the proof</div>
+</div>
+<div class="tabs" style="justify-content:center; align-items:center; padding-top:0"><span class="k">Results, free user, grant active</span></div>
+</div>
+<div class="cap"><b>Results with the grant running.</b> A free user with sessions left on the grant sees the exact paid screen, plus a teal counter on the first panel. When it reaches zero the panels lock again and the paywall's copy can say what they just had. The grant is per session opened, not per day.</div>
+</div>
+</div>
+
+<div class="q">
+<h2>Decisions to confirm</h2>
+<ul>
+<li><b>Tab name.</b> "Friends" replaces "Search". The icon is two people.</li>
+<li><b>The reaction word.</b> "Respect" was cut (Aziz). "Nice sit" is the new placeholder: it is what meditators actually say to each other after a session. Other options: "Well sat", "Deep", "Still", or a plain 🙏 with no word at all.</li>
+<li><b>No comments in v1.</b> Reactions carry the loop; comments add the moderation surface Apple audits hardest. Add them in v2 if people ask.</li>
+<li><b>What a post carries</b> is fixed by two rules (5.1.3 and the free tier) and is not a design choice: score, minutes, streak, technique, photo, caption. No heart-rate or breath numbers, no curves, even for paid users.</li>
+<li><b>Reward:</b> free users get 10 sessions of full evidence per friend who accepts and sits once (stacking, capped at 50 outstanding). Paid users get the "Brought a friend" award and the Circle card skin. Nothing for the invited person: Apple rejects that.</li>
+<li><b>Backend:</b> CloudKit public database, no server. Report emails come through an Apps Script like the waitlist. Photos are screened on device with Apple's Sensitive Content Analysis before upload.</li>
+<li><b>Ships as 1.1</b>, after 1.0.2. Flips the age-rating answers for UGC and Social to Yes, adds privacy labels, a terms section and a policy section.</li>
+</ul>
+</div>
+</body></html>

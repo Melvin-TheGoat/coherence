@@ -205,7 +205,11 @@ public enum RestartCount: String, CaseIterable, Identifiable, Codable {
 /// The blame removal lives in the subtitle — "Not trying. Meaning to." Nobody
 /// feels judged for having intended something.
 public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
-    case weeks, months, aYear, years, forever
+    /// Never meant to. The question presumed an intention, and a tester who
+    /// had none found no true answer (2026-09-14). Listed first so it is the
+    /// first thing a person with no history sees.
+    case never
+    case weeks, months, aYear, forever
     /// The identity out. The question presumes the user hasn't started, but
     /// the baseline screen literally offers "Almost every day" — someone who
     /// picked it reaches this screen with no true answer. Their pain isn't
@@ -218,10 +222,10 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
 
     public var label: String {
         switch self {
+        case .never:   return "I haven't, honestly"
         case .weeks:   return "A few weeks"
         case .months:  return "Months"
-        case .aYear:   return "A year or so"
-        case .years:   return "Years"
+        case .aYear:   return "A year or more"
         case .forever: return "As long as I can remember"
         case .alreadyPractice: return "I already meditate. I'm here for the stats"
         }
@@ -229,10 +233,10 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
 
     public var icon: String {
         switch self {
+        case .never:   return "leaf"
         case .weeks:   return "calendar"
         case .months:  return "calendar.badge.clock"
-        case .aYear:   return "clock.arrow.circlepath"
-        case .years:   return "hourglass"
+        case .aYear:   return "hourglass"
         case .forever: return "infinity"
         case .alreadyPractice: return "chart.xyaxis.line"
         }
@@ -241,10 +245,10 @@ public enum IntendedFor: String, CaseIterable, Identifiable, Codable {
     /// Phrase for reflecting the answer back ("you've been meaning to for years").
     public var phrase: String {
         switch self {
+        case .never:   return "not at all, until now"
         case .weeks:   return "a few weeks"
         case .months:  return "months"
-        case .aYear:   return "about a year"
-        case .years:   return "years"
+        case .aYear:   return "a year or more"
         case .forever: return "as long as you can remember"
         case .alreadyPractice: return "already, in your own practice"
         }
@@ -598,6 +602,9 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var costs: Set<CostSymptom> = []
     public var hasWatch: Bool?
     public var anchor: Anchor?
+    /// The daily reminder time, picked on the notification screen since the
+    /// anchor question was cut (2026-09-15). Nil means the 8 AM default.
+    public var reminderTime: Date?
     public var firstName: String = ""
     public var username: String = ""
     public var ageBracket: String?
@@ -861,13 +868,13 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .stress, .watchGate, .anchor, .you, .referral:
+        case .baseline, .motivation, .stress, .watchGate, .you, .referral:
             return true
 
-        // "Can you be alone with your thoughts?" / "How long can you do
-        // nothing?" are framed as diagnostics of a restless mind. Asking
-        // someone who meditates most days is faintly insulting.
-        case .aloneWithThoughts, .doingNothing:
+        // "Can you be alone with your thoughts?" is framed as a diagnostic of
+        // a restless mind. Asking someone who meditates most days is faintly
+        // insulting.
+        case .aloneWithThoughts:
             return persona != .regular
 
         // Presumes previous attempts.
@@ -878,11 +885,11 @@ extension OnboardingAnswers {
         case .intendedFor:
             return persona == .newcomer
 
-        // Presume sessions to wonder about. A newcomer has never sat, so
-        // "when you meditate…" and "after a session…" contradict their own
-        // baseline answer; they still get the tracking question, which is
-        // about their life, not their practice.
-        case .bodyCuriosity, .bodyProof:
+        // Presumes sessions to wonder about. A newcomer has never sat, so
+        // "when you meditate…" contradicts their own baseline answer; they
+        // still get the tracking question, which is about their life, not
+        // their practice.
+        case .bodyCuriosity:
             return persona != .newcomer
 
         // Everyone tracks something, or meaningfully doesn't.
@@ -905,12 +912,23 @@ extension OnboardingAnswers {
 /// enum so the branching is pure Foundation and can be exhaustively tested
 /// without a running app.
 public enum InterviewStep: String, CaseIterable, Codable {
+    /// Attribution FIRST (Melvin, 2026-09-14). It sat last, and only 42% of
+    /// installs finish the interview, so most people never told us where
+    /// they came from. Asked at the door, nearly everyone answers.
+    case referral
     case baseline, motivation, stress
-    case aloneWithThoughts, doingNothing
+    case aloneWithThoughts
     case restarts, intendedFor
-    case bodyCuriosity, bodyProof, bodyTracking
+    case bodyCuriosity, bodyTracking
     case blindSpot
-    case watchGate, anchor, you, referral
+    case watchGate, you
+    // CUT 2026-09-15 (Melvin: "too crowded"): `doingNothing` (the second
+    // escalation question asked what `aloneWithThoughts` already had),
+    // `bodyProof` (its sibling `bodyCuriosity` carries the idea alone), and
+    // `anchor` (people do not want to be made to commit to a time of day;
+    // the reminder time is picked on the notification screen instead). The
+    // answer fields stay on `OnboardingAnswers` so old resume records and
+    // every downstream reader keep decoding; they are simply never asked.
 }
 
 /// What a regular practitioner can't tell about their own practice.

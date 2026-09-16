@@ -51,6 +51,7 @@ struct SessionResultsView: View {
     @State private var techniqueNote: String = ""
     @State private var streakDays = 0
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var community: CommunityModel
     /// Every modal on this screen goes through ONE `.sheet(item:)`.
     ///
     /// Stacking several `.sheet` modifiers on one view is the documented
@@ -61,11 +62,21 @@ struct SessionResultsView: View {
     @State private var route: ResultRoute?
     @State private var pendingRoute: ResultRoute?
     @State private var paywallPlan: SubscriptionPlan = .monthly
+    /// The id awaiting the delete confirmation (this screen's own session).
+    @State private var pendingDelete: UUID?
+    /// Set once the rows are gone, so `onDisappear`'s reflection flush cannot
+    /// write an orphan reflection for a session that no longer exists.
+    @State private var deleted = false
 
-    private var entitlements: Entitlements { store.entitlements }
+    /// Whether the invite reward covers THIS session (`RewardLedger.cover`,
+    /// asked once in `load`). The grant unlocks the evidence for a session,
+    /// never the app.
+    @State private var covered = false
+    private var entitlements: Entitlements { store.entitlements.granting(covered) }
 
     enum ResultRoute: Identifiable {
         case share
+        case post
         case scoreMeaning
         case locked(LockedSignal)
         case plans
@@ -73,6 +84,7 @@ struct SessionResultsView: View {
         var id: String {
             switch self {
             case .share:            return "share"
+            case .post:             return "post"
             case .scoreMeaning:     return "score"
             case .locked(let sig):  return "locked-\(sig.rawValue)"
             case .plans:            return "plans"
@@ -117,7 +129,9 @@ struct SessionResultsView: View {
                                     .id(ResultsTourStage.breathing)
                             }
                             if !entitlements.curves { tourDim(unlockCTA, lit: nil) }
+                            if covered, !store.entitlements.paid { tourDim(grantChip, lit: nil) }
                             tourDim(shareButton, lit: nil)
+                            if FeatureFlags.friends { tourDim(visibilityChip, lit: nil) }
                         } else {
                             header(session)
                             missingStatsCard
@@ -132,17 +146,32 @@ struct SessionResultsView: View {
             }
             .screenBackground()
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItemGroup(placement: .topBarLeading) {
                     if session != nil, stats != nil {
                         Button { route = .share } label: {
                             Image(systemName: "square.and.arrow.up")
                         }
                         .tint(AppColor.accentGoldText)
                     }
+                    if session != nil {
+                        Menu {
+                            Button(role: .destructive) { pendingDelete = sessionID } label: {
+                                Label("Delete session", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis.circle")
+                        }
+                        .tint(AppColor.textSecondary)
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
                 }
+            }
+            .deleteSessionDialog(pending: $pendingDelete) { _ in
+                deleted = true
+                autosave?.cancel()
+                dismiss()
             }
             .sheet(item: $route, onDismiss: {
                 guard let next = pendingRoute else { return }
@@ -154,6 +183,8 @@ struct SessionResultsView: View {
                     if let data = shareData {
                         ShareSessionSheet(data: data, entitlements: entitlements)
                     }
+                case .post:
+                    SaveSessionView(sessionID: sessionID, mode: .edit) { route = nil; load() }
                 case .scoreMeaning:
                     ScoreMeaningSheet(score: stats?.overallScore)
                         .presentationDetents([.medium, .large])
@@ -171,10 +202,25 @@ struct SessionResultsView: View {
                     }
                 }
             }
+            // A free user's invite grant is decided per session, and while the
+            // store is still loading everyone reads as paid. Re-decide when it
+            // settles, or a covered session would open locked.
+            .onChange(of: store.state) { _, _ in
+                if let session, stats != nil {
+                    covered = store.entitlements(for: session.id, startedAt: session.startedAt).evidenceGranted
+                }
+            }
             .onAppear {
                 load()
                 Analytics.track(stats == nil ? .resultMissing : .resultViewed)
                 maybeAskForRating()
+            }
+            .task {
+                // The invite reward reads "has a first session" off the
+                // public profile; a results screen with stats is that fact.
+                if FeatureFlags.friends, let session, stats != nil {
+                    await community.noteSessionCompleted(at: session.startedAt)
+                }
             }
             // The tour brings each element to the reader, top-anchored for the
             // score so the whole hero shows, centred for the graphs.
@@ -311,6 +357,22 @@ struct SessionResultsView: View {
         }
         .buttonStyle(PrimaryButtonStyle())
         .padding(.top, 2)
+    }
+
+    /// The grant, named where it applies, with the balance after this one.
+    private var grantChip: some View {
+        let left = store.ledger?.remaining ?? 0
+        return HStack(spacing: 8) {
+            Image(systemName: "person.2").foregroundStyle(AppColor.calmAccent)
+            Text(left == 0
+                 ? "Evidence from a friend you brought. This was the last session on it."
+                 : "Evidence from a friend you brought · \(left) session\(left == 1 ? "" : "s") left")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 9)
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1))
     }
 
     private func metaLine(_ session: Session) -> String {
@@ -661,6 +723,30 @@ struct SessionResultsView: View {
         }
     }
 
+    /// Who can see this session, and the way to change it (Save session in
+    /// edit mode). Quiet, never gold: the screen's one gold object is Share
+    /// or the unlock.
+    private var visibilityChip: some View {
+        let shared = currentVisibility == "friends"
+        return Button { route = .post } label: {
+            HStack(spacing: 7) {
+                Image(systemName: shared ? "person.2" : "lock")
+                Text(shared ? "Friends can see this" : "Only you")
+                Text("· Edit").foregroundStyle(AppColor.textSecondary)
+            }
+            .font(AppFont.caption.weight(.semibold))
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.horizontal, 12).padding(.vertical, 7)
+            .overlay(Capsule().stroke(AppColor.textSecondary.opacity(0.35), lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var currentVisibility: String {
+        SessionStore.reflection(for: sessionID, in: context)?.visibility ?? "private"
+    }
+
     /// Value snapshot for the share card — built from the rows already loaded,
     /// so the sheet never touches storage.
     private var shareData: ShareCardData? {
@@ -844,7 +930,7 @@ struct SessionResultsView: View {
     @ViewBuilder
     private var noteSection: some View {
         if isEditingNote || note.isEmpty {
-            TextField("Add a note…", text: $note, axis: .vertical)
+            TextField(FeatureFlags.friends ? "Add a private note…" : "Add a note…", text: $note, axis: .vertical)
                 // Open-ended upper bound: the field grows with the note instead
                 // of capping and scrolling inside itself.
                 .lineLimit(3...)
@@ -862,6 +948,17 @@ struct SessionResultsView: View {
                 .onChange(of: noteFocused) { _, focused in
                     if focused { isEditingNote = true }
                     else if !note.isEmpty { save() }
+                }
+                // Aziz, 2026-09-15: the keyboard was hard to get rid of. A
+                // multi-line field has no Return key to close it, and the
+                // interactive scroll-to-dismiss is a gesture nobody finds.
+                // An explicit Done above the keys is the affordance.
+                .toolbar {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { save() }
+                            .font(AppFont.callout.weight(.semibold))
+                    }
                 }
         } else {
             Button {
@@ -904,6 +1001,7 @@ struct SessionResultsView: View {
 
     private func flushReflection() {
         autosave?.cancel()
+        guard !deleted else { return }
         if !reflectionSaved { persistReflection() }
     }
 
@@ -943,12 +1041,18 @@ struct SessionResultsView: View {
         let sid = sessionID
         session = try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == sid })).first
         stats = try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == sid })).first
+        if let session, stats != nil {
+            covered = store.entitlements(for: session.id, startedAt: session.startedAt).evidenceGranted
+        }
         if let reflection = SessionStore.reflection(for: sid, in: context) {
             rating = Double(reflection.rating ?? 5)
             note = reflection.note
             technique = reflection.technique
             techniqueNote = reflection.techniqueNote
-            reflectionSaved = true
+            // Save session creates a reflection with no rating. Treating that
+            // row as a saved reflection put a 5/10 nobody gave on the share
+            // card; it counts once there is a rating or a note.
+            reflectionSaved = reflection.rating != nil || !reflection.note.isEmpty
         } else if session?.mode == SessionMode.guided.rawValue {
             // The app knows what they practised; don't make them say it.
             technique = MeditationMethod.guidedID
@@ -960,6 +1064,7 @@ struct SessionResultsView: View {
 
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { route = .share }
+        if ProcessInfo.processInfo.environment["PREVIEW_POST"] == "1" { route = .post }
         #endif
     }
 }

@@ -19,6 +19,7 @@ days means nothing.
 | Press tips and replies | `press` | https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=press&mt=8 |
 | YouTube Shorts | `yt-shorts` | https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=yt-shorts&mt=8 |
 | Launch email to the waitlist + survey list (`LAUNCH_EMAIL.md`) | `waitlist` | https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=waitlist&mt=8 |
+| In-app "Invite a friend" share sheet (Friends tab, `InviteButton`) | `invite` | https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=invite&mt=8 |
 
 Plain link, for anywhere attribution does not matter:
 https://apps.apple.com/app/id6806785308

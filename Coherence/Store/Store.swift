@@ -73,6 +73,9 @@ final class Store: ObservableObject {
     /// charge immediately: that is the difference between an offer and a lie,
     /// and reviewers check the claim against the purchase sheet.
     @Published private(set) var trialEligible = true
+    /// The invite reward's balance, attached by the app at launch
+    /// (`RewardLedger`). nil on a store with no persistence (tests).
+    var ledger: RewardLedger?
 
     #if DEBUG
     /// The review build's simulated purchase.

@@ -65,10 +65,17 @@ struct RootView: View {
     }
 
     private var colorScheme: ColorScheme? {
-        switch preferences.first?.themeValue {
+        // No Preferences row exists until onboarding writes one, so the whole
+        // flow used to render in the SYSTEM scheme: on a light-mode phone every
+        // onboarding screen was light, and the app went dark the moment it
+        // finished. A tester saw exactly that (2026-09-14: "black text",
+        // "whiter backgrounds", "colours bleeding into each other", a blue
+        // caret) and read it as a design mistake. The default theme applies
+        // from the first frame; a stored choice still wins.
+        switch preferences.first?.themeValue ?? Preferences.defaultTheme {
         case .light: return .light
         case .dark: return .dark
-        default: return nil   // system
+        case .system: return nil
         }
     }
 }

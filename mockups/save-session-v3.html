@@ -1,0 +1,233 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Save session, Strava-shaped, and the in-app camera</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --card2:#221e19; --fg:#F5F3EC; --muted:#9A9A93; --dim:#6f6d66; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.08); --line2:rgba(255,255,255,.14); }
+*{ box-sizing:border-box; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 80px; }
+h1{ font-size:20px; margin:0 0 6px; }
+.note{ color:var(--muted); font-size:13px; max-width:780px; line-height:1.6; }
+.note b{ color:var(--fg); }
+h2{ font-size:13px; margin:40px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:280px; height:600px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:40px 0 0; overflow:hidden; font-size:12.5px; position:relative; }
+.pad{ padding:0 16px; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:280px; line-height:1.5; } .cap b{ color:var(--fg); }
+
+/* nav */
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:4px 16px 12px; }
+.nav .t{ font-weight:700; font-size:14px; } .nav .l{ color:var(--muted); font-size:12.5px; } .nav .r{ color:var(--gold); font-weight:700; font-size:13px; }
+.nav .r.off{ color:#6a5c2e; }
+
+/* the stats header: no card, hairlines only */
+.stats{ display:flex; align-items:center; gap:0; padding:2px 16px 16px; }
+.stats .s{ flex:1; padding-left:12px; border-left:1px solid var(--line); }
+.stats .s:first-child{ padding-left:0; border-left:none; }
+.stats .s b{ display:block; font-size:21px; font-weight:800; letter-spacing:-.02em; line-height:1.1; }
+.stats .s span{ display:block; font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); margin-top:3px; font-weight:600; }
+.ringwrap{ display:flex; align-items:baseline; gap:3px; }
+.ringwrap i{ font-style:normal; font-size:11px; color:var(--dim); font-weight:600; }
+
+/* photo strip */
+.strip{ display:flex; gap:8px; padding:0 16px 4px; }
+.shot{ width:66px; height:82px; border-radius:10px; flex:none; background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); position:relative; }
+.shot .x{ position:absolute; top:3px; right:3px; width:15px; height:15px; border-radius:50%; background:rgba(0,0,0,.6); color:#fff; font-size:9px; display:flex; align-items:center; justify-content:center; }
+.addshot{ width:66px; height:82px; border-radius:10px; flex:none; border:1.5px dashed rgba(212,175,55,.55); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--gold); font-size:9.5px; font-weight:600; }
+.addshot .i{ font-size:19px; line-height:1; }
+
+/* plain fields on hairlines, Strava style */
+.plain{ padding:13px 16px; border-top:1px solid var(--line); }
+.plain .v{ font-size:14px; font-weight:600; }
+.plain .ph{ font-size:13px; color:var(--dim); }
+.plain .d{ font-size:12.5px; color:var(--muted); line-height:1.45; }
+
+/* list rows */
+.lrow{ display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-top:1px solid var(--line); }
+.lrow .lbl{ font-size:13px; }
+.lrow .rt{ display:flex; align-items:center; gap:6px; color:var(--muted); font-size:12.5px; }
+.lrow .rt .chev{ color:#5a5852; font-size:11px; }
+.lrow .rt .set{ color:var(--fg); font-weight:600; }
+.lrow .ic{ width:17px; text-align:center; color:var(--dim); margin-right:9px; font-size:12px; }
+.hint{ padding:0 16px 13px; font-size:11px; color:var(--dim); line-height:1.45; margin-top:-3px; }
+.hint.teal{ color:var(--teal); }
+
+/* menu popover */
+.menu{ position:absolute; left:16px; right:16px; top:236px; background:#2a2620; border-radius:13px; border:1px solid var(--line2); overflow:hidden; box-shadow:0 18px 40px rgba(0,0,0,.6); }
+.menu div{ padding:11px 13px; font-size:12.5px; border-bottom:1px solid rgba(255,255,255,.05); }
+.menu div:last-child{ border-bottom:none; }
+.menu .on{ color:var(--gold); font-weight:700; }
+.menu .hd{ font-size:9.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--dim); font-weight:700; }
+
+/* camera */
+.cam{ position:absolute; inset:0; background:#0e0d0b; display:flex; flex-direction:column; }
+.camview{ position:absolute; left:0; right:0; top:0; bottom:0; background:
+  radial-gradient(ellipse at 50% 34%, rgba(150,120,90,.55), transparent 58%),
+  linear-gradient(180deg,#3a3a3e 0%,#4d4438 45%,#221d18 100%); }
+.camtop{ position:absolute; top:12px; left:14px; right:14px; display:flex; align-items:center; justify-content:space-between; z-index:3; }
+.cbtn{ width:30px; height:30px; border-radius:50%; background:rgba(0,0,0,.42); display:flex; align-items:center; justify-content:center; font-size:14px; color:#fff; }
+.camtitle{ position:absolute; left:0; right:0; top:16px; text-align:center; font-size:11.5px; color:rgba(255,255,255,.85); font-weight:600; z-index:2; }
+.cambot{ position:absolute; bottom:0; left:0; right:0; height:132px; background:linear-gradient(180deg,transparent,rgba(8,7,6,.92) 42%); display:flex; align-items:center; justify-content:center; gap:44px; z-index:3; }
+.shutter{ width:62px; height:62px; border-radius:50%; border:3.5px solid #fff; display:flex; align-items:center; justify-content:center; }
+.shutter i{ width:50px; height:50px; border-radius:50%; background:#fff; display:block; }
+.shutter.gold{ border-color:var(--gold); } .shutter.gold i{ background:var(--gold); }
+.sidebtn{ width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.14); display:flex; align-items:center; justify-content:center; font-size:15px; color:#fff; }
+.camhint{ position:absolute; bottom:138px; left:0; right:0; text-align:center; font-size:11px; color:rgba(255,255,255,.72); z-index:3; }
+.pill{ display:inline-block; padding:5px 11px; border-radius:999px; background:rgba(0,0,0,.45); font-size:10.5px; color:#fff; }
+.revbar{ position:absolute; bottom:0; left:0; right:0; padding:16px; background:linear-gradient(180deg,transparent,rgba(8,7,6,.95) 34%); display:flex; gap:10px; align-items:center; z-index:3; }
+.ghost{ flex:none; padding:12px 16px; border-radius:11px; border:1px solid rgba(255,255,255,.28); color:#fff; font-size:12.5px; font-weight:600; }
+.cta{ background:var(--gold); color:#1a1508; text-align:center; border-radius:11px; padding:12px; font-weight:700; font-size:13px; flex:1; }
+.pip{ position:absolute; top:52px; left:14px; width:62px; height:80px; border-radius:9px; border:2px solid rgba(255,255,255,.85); background:linear-gradient(160deg,#5a6b7a,#2b2621); z-index:3; }
+
+.q{ margin-top:34px; max-width:780px; } .q li{ margin:11px 0; line-height:1.6; font-size:13.5px; } .q b{ color:var(--gold); }
+.bad{ color:#d98a6a; } .good{ color:var(--teal); }
+table{ border-collapse:collapse; margin-top:10px; font-size:13px; max-width:780px; }
+td,th{ text-align:left; padding:7px 16px 7px 0; border-bottom:1px solid var(--line); vertical-align:top; line-height:1.5; }
+th{ color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; }
+</style></head><body>
+
+<h1>808 · Save session, Strava-shaped, and an in-app camera</h1>
+<p class="note">Two screens, from Aziz on 2026-09-15: <b>"take a look at the strava UI for sharing a session and copy that, i dont like the UI here for after the meditation"</b> and <b>"i want the camera thing to be like an in app photo thing similar to sweatmates and bereal"</b>. Everything else he asked for that day is already built and on the branch: the phone opens on this screen when you pick it up after a sit, silence is a technique you can log, and the keyboard has a Done key.</p>
+
+<h2>1 · What today's screen gets wrong</h2>
+<p class="note">Not the content. The content is right, and it is already in Strava's order. What is wrong is that <b>every single field is a filled rounded box on a dark ground</b>, so the screen reads as five heavy slabs with an uppercase label floating above each one. Strava does almost none of that: it puts text straight on the background and separates things with hairlines, which is why a screen with ten rows on it still feels light.</p>
+<table>
+<tr><th>Today</th><th>Strava, and this proposal</th></tr>
+<tr><td>Score, time, streak and sound inside a filled card.</td><td class="good">The numbers sit on the background, divided by hairlines. The result is the loudest thing on the screen, which is the point of it.</td></tr>
+<tr><td>Title and both notes are filled boxes with an uppercase label above.</td><td class="good">Title is just large text you tap. The label is the placeholder. One hairline under it.</td></tr>
+<tr><td>Technique and visibility are a menu button and a segmented control, styled differently from each other.</td><td class="good">Both are list rows: name on the left, current value on the right in grey, chevron. Identical shape, so the eye stops reading them one at a time.</td></tr>
+<tr><td>The selfie is a 320pt block that only appears once you pick Friends, so the page jumps under your thumb.</td><td class="good">A photo strip near the top, always there, one tile wide until you add one. Adding a photo never moves anything below it.</td></tr>
+<tr><td>Save is a full-width gold bar pinned to the bottom, competing with the content.</td><td class="good">Save is the top right of the nav bar, where Strava puts it and where a form's commit belongs.</td></tr>
+</table>
+
+<h2>2 · Save session, rebuilt</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Cancel</div><div class="t">Save session</div><div class="r">Save</div></div>
+  <div class="stats">
+    <div class="s"><b class="ringwrap">81</b><span>Score</span></div>
+    <div class="s"><b>10<i> min</i></b><span>Time</span></div>
+    <div class="s"><b>4<i> days</i></b><span>Streak</span></div>
+  </div>
+  <div class="strip"><div class="addshot"><div class="i">◎</div>Selfie</div></div>
+  <div class="plain" style="margin-top:12px"><div class="v">Afternoon meditation</div></div>
+  <div class="plain"><div class="ph">How did it go?</div></div>
+  <div class="lrow"><div class="lbl">Who can see this</div><div class="rt"><span class="set">Only you</span><span class="chev">›</span></div></div>
+  <div class="lrow"><div class="lbl">Technique</div><div class="rt"><span>Unreported</span><span class="chev">›</span></div></div>
+  <div class="lrow"><div class="lbl">Private notes</div><div class="rt"><span>Only you</span><span class="chev">›</span></div></div>
+</div></div>
+<div class="cap"><b>The default state.</b> Three numbers, a place for the selfie, a title you can tap, and three rows. Nothing is boxed. Compare the weight of this against the screenshot of today's build.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Cancel</div><div class="t">Save session</div><div class="r">Save</div></div>
+  <div class="stats">
+    <div class="s"><b class="ringwrap">81</b><span>Score</span></div>
+    <div class="s"><b>10<i> min</i></b><span>Time</span></div>
+    <div class="s"><b>4<i> days</i></b><span>Streak</span></div>
+  </div>
+  <div class="strip"><div class="shot"><div class="x">×</div></div><div class="addshot"><div class="i">＋</div>Add</div></div>
+  <div class="plain" style="margin-top:12px"><div class="v">Afternoon meditation</div></div>
+  <div class="plain"><div class="d">Ten minutes before the day starts. Rain, eyes closed, nothing clever.</div></div>
+  <div class="lrow"><div class="lbl">Who can see this</div><div class="rt"><span class="set">Friends</span><span class="chev">›</span></div></div>
+  <div class="hint">Friends see your selfie, title, score, time and streak. Heart and breath stay on your phone.</div>
+  <div class="lrow"><div class="lbl">Technique</div><div class="rt"><span class="set">Silence / my own practice</span><span class="chev">›</span></div></div>
+  <div class="lrow"><div class="lbl">Private notes</div><div class="rt"><span>Only you</span><span class="chev">›</span></div></div>
+</div></div>
+<div class="cap"><b>Filled in, shared with Friends.</b> The selfie lands in the strip, so nothing below it moves. The one explanatory line appears under the row it explains, and only for Friends.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Cancel</div><div class="t">Save session</div><div class="r">Save</div></div>
+  <div class="stats">
+    <div class="s"><b class="ringwrap">81</b><span>Score</span></div>
+    <div class="s"><b>10<i> min</i></b><span>Time</span></div>
+    <div class="s"><b>4<i> days</i></b><span>Streak</span></div>
+  </div>
+  <div class="strip"><div class="shot"><div class="x">×</div></div><div class="addshot"><div class="i">＋</div>Add</div></div>
+  <div class="plain" style="margin-top:12px"><div class="v">Afternoon meditation</div></div>
+  <div class="plain"><div class="d">Ten minutes before the day starts.</div></div>
+  <div class="lrow"><div class="lbl">Who can see this</div><div class="rt"><span class="set">Friends</span><span class="chev">›</span></div></div>
+  <div class="menu" style="top:300px">
+    <div class="hd">Technique</div>
+    <div class="on">Silence / my own practice ✓</div>
+    <div>Guided meditation</div>
+    <div>First time meditating</div>
+    <div>Breath counting</div>
+    <div>Body scan</div>
+    <div style="color:var(--muted)">Unreported</div>
+  </div>
+</div></div>
+<div class="cap"><b>A row opens its menu in place.</b> Same control for technique and for visibility, so there is one thing to learn. This is also where the new <b>Silence / my own practice</b> entry lives, already on the branch.</div>
+</div>
+
+</div>
+
+<h2>3 · The camera, in the app</h2>
+<p class="note">Today the selfie opens Apple's camera sheet. It carries Apple's chrome, a photo library button, and a preview step that says "Use Photo" in Apple's voice, and it looks like it belongs to a different app, because it does. The BeReal move is that the camera <b>is</b> the app for those few seconds: full-bleed preview, one shutter, nothing else competing.</p>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camview"></div>
+    <div class="camtop"><div class="cbtn">×</div><div class="cbtn">⚡</div></div>
+    <div class="camtitle">You, right after you sat</div>
+    <div class="camhint"><span class="pill">Front camera</span></div>
+    <div class="cambot">
+      <div class="sidebtn" style="opacity:0"></div>
+      <div class="shutter"><i></i></div>
+      <div class="sidebtn">⟳</div>
+    </div>
+  </div>
+</div></div>
+<div class="cap"><b>Capture.</b> Edge to edge preview, one line of copy at the top saying why, a white shutter, flip on the right, close top left. No library button anywhere: the BeReal rule is that it has to be now.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camview" style="background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%)"></div>
+    <div class="camtop"><div class="cbtn">×</div><div class="cbtn" style="opacity:0"></div></div>
+    <div class="revbar">
+      <div class="ghost">Retake</div>
+      <div class="cta">Use this one</div>
+    </div>
+  </div>
+</div></div>
+<div class="cap"><b>Review.</b> The shot fills the screen; two choices at the bottom in 808's own words and 808's gold. This is the step Apple's sheet does in its own voice today.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camview"></div>
+    <div class="pip"></div>
+    <div class="camtop"><div class="cbtn">×</div><div class="cbtn">⚡</div></div>
+    <div class="camtitle">You, and where you sat</div>
+    <div class="cambot">
+      <div class="sidebtn" style="opacity:0"></div>
+      <div class="shutter gold"><i></i></div>
+      <div class="sidebtn">⟳</div>
+    </div>
+  </div>
+</div></div>
+<div class="cap"><b>Optional, and a real decision:</b> BeReal's two-camera shot. Front and back fired together, the back one inset. It is the single thing that makes a BeReal post read as unstaged. <span class="bad">Not proposed for the first build</span>: it doubles the capture code and the post's photo handling, and it is easy to add later.</div>
+</div>
+
+</div>
+
+<h2>4 · What I would build, and what I want you to decide</h2>
+<ol class="q">
+<li><b>Build:</b> the three screens in section 2 and the two camera screens in section 3, keeping every rule already agreed. A selfie is still mandatory for Friends, still front camera, still no photo library, and the store still refuses a Friends post without one.</li>
+<li><b>Decide: does Save move to the nav bar?</b> Strava puts it there and this mockup copies that. The cost is that it is a smaller target than today's gold bar, on the screen we most want people to finish. I lean Strava, since the screen is short enough that the bottom bar is not buying much.</li>
+<li><b>Decide: private notes inline or its own screen?</b> Strava pushes to a separate screen, which is what the row above implies. Inline is one fewer tap and is what you have today. I lean <span class="good">inline, expanding under the row</span>, because a private note after a sit is a thing people abandon if it costs a navigation.</li>
+<li><b>Decide: more than one photo?</b> Strava takes many, BeReal takes one. The strip is drawn for many; the store, the feed card and the share card are all built for one. Staying at one is free; going to several is real work in the record and the card.</li>
+<li><b>Not doing unless you say so:</b> the dual front-and-back capture in the third camera screen.</li>
+</ol>
+
+<p class="note" style="margin-top:26px">Nothing here changes what a post carries. Score, minutes, streak, technique, title, sound, description, photo, exactly as today, and never a heart rate, a breath rate or a curve.</p>
+
+</body></html>

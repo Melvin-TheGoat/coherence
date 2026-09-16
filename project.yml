@@ -58,6 +58,29 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         GENERATE_INFOPLIST_FILE: NO
         SWIFT_VERSION: "5.10"
+    postBuildScripts:
+      # AIRPODS PROBE, DEBUG ONLY (2026-09-14). CMHeadphoneMotionManager
+      # crashes the app when NSMotionUsageDescription is missing, and the probe
+      # in Coherence/AirPods/ is compiled only into Debug. INFOPLIST_KEY_*
+      # settings are ignored while GENERATE_INFOPLIST_FILE is NO (verified on
+      # the built product), so the string is written into the BUILT Debug
+      # Info.plist here, after the phases and before code signing. The
+      # committed Coherence/Info.plist and every Release build are untouched.
+      # If the AirPods path ever ships, the string moves into Info.plist, and
+      # that change forces a fresh App Review pass (usage strings are reviewed).
+      - name: "AirPods probe: Debug-only motion usage string"
+        # The input file orders this phase AFTER Xcode's Info.plist processing;
+        # without it the phase ran first and the processed plist overwrote it.
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "${CONFIGURATION}" = "Debug" ]; then
+            PLIST="${TARGET_BUILD_DIR}/${INFOPLIST_PATH}"
+            TEXT="808 reads head motion from your AirPods during this developer test."
+            /usr/libexec/PlistBuddy -c "Set :NSMotionUsageDescription ${TEXT}" "${PLIST}" 2>/dev/null \
+              || /usr/libexec/PlistBuddy -c "Add :NSMotionUsageDescription string ${TEXT}" "${PLIST}"
+          fi
 
   CoherenceWatch:
     type: application
