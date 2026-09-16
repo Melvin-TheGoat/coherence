@@ -61,6 +61,17 @@ enum OttoBrief {
         }
 
         var score100: Int? { overallScore.map { Int(($0 * 100).rounded()) } }
+
+        /// The same depth scored under the 10-minute ceiling, for sits shorter
+        /// than ten minutes. Nil at or past ten minutes (the ceiling is already
+        /// reached) or with no score. Depth is the score over its time factor;
+        /// at ten minutes the factor is exactly 1.0.
+        var scoreAtTenMinutes: Int? {
+            guard minutes < 10, let score = overallScore else { return nil }
+            let factor = SignalEngine.durationFactor(seconds: minutes * 60)
+            guard factor > 0 else { return nil }
+            return Int((min(1, score / factor) * 100).rounded())
+        }
     }
 
     // MARK: - Budget
@@ -99,6 +110,7 @@ enum OttoBrief {
             parts[5] = table(rows, focus: focus, now: now)
             text = parts.joined(separator: "\n\n")
         }
+
         return text
     }
 
@@ -127,6 +139,7 @@ enum OttoBrief {
     - Stillness: how little the wrist moved, measured the whole sit, cubed in the score so the top of the range matters most. Real sits run about 0.80 to 0.98.
     - Breath doorway: at least 60 seconds of deliberate slow breathing at 9 per minute or slower (slow, even breaths; never holding the breath), starting in the first 5 minutes. All or nothing: a doorway earns the full breath credit. Starting within the first 90 seconds counts on its own; starting between 90 seconds and 5 minutes needs a very clear read; after 5 minutes nothing counts. Quiet natural breathing is often too small to read from the wrist, which is normal.
     - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute (5 minutes caps at 75, 10 minutes at 100). Past 10 minutes a small bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
+    - NEVER work out a score yourself, and never say what a score "would have been". The app has already computed the only hypothetical it allows: a session line that says "at 10 min the same sit would score N". Quote N exactly when asked; if a line has no such number, say the app does not estimate that. A longer sit only raises the ceiling; it does not change how deep the sit was.
     - The rating out of 10 is the person's own feeling afterwards. It is not part of the score.
     """
 
@@ -158,6 +171,11 @@ enum OttoBrief {
         var parts: [String] = [when(r.date, now: now) + (focus ? " (in focus)" : ""),
                                "\(r.minutes) min"]
         parts.append(r.score100.map { "score \($0)" } ?? "no score")
+        // The one hypothetical Otto may quote, computed here so the model
+        // never does arithmetic: the same depth under the 10-minute ceiling.
+        // Otto once told Melvin a 5-minute sit "would have scored 100 at 10
+        // minutes"; the true number was the score over its time factor.
+        if let at10 = r.scoreAtTenMinutes { parts.append("at 10 min the same sit would score \(at10)") }
         if let s = r.startHR, let e = r.endHR {
             var heart = "heart \(Int(s.rounded())) to \(Int(e.rounded())) bpm"
             if let m = r.meanHR, m > 0 { heart += ", avg \(Int(m.rounded()))" }

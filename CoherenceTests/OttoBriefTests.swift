@@ -66,6 +66,24 @@ final class OttoBriefTests: XCTestCase {
 
     /// Absences are named so the model repeats a sentence instead of
     /// filling a gap.
+    /// Otto must not do arithmetic. The brief precomputes the one hypothetical
+    /// it allows, a short sit's depth under the 10-minute ceiling, and the
+    /// rules forbid inventing any other "would have scored".
+    func test_shortSitCarriesItsTenMinuteEquivalentAndTheRuleAgainstGuessing() {
+        var five = row(daysAgo: 0, score: 0.60)
+        five.minutes = 5
+        XCTAssertEqual(five.scoreAtTenMinutes, 80, "5 min caps at 75%, so 60 is depth 0.80")
+        let text = OttoBrief.line(five, focus: true, now: now)
+        XCTAssertTrue(text.contains("at 10 min the same sit would score 80"), text)
+
+        var ten = row(daysAgo: 0, score: 0.60)
+        ten.minutes = 10
+        XCTAssertNil(ten.scoreAtTenMinutes, "at ten minutes there is nothing to extrapolate")
+        XCTAssertFalse(OttoBrief.line(ten, focus: true, now: now).contains("would score"))
+
+        XCTAssertTrue(OttoBrief.scoreRules.contains("NEVER work out a score yourself"))
+    }
+
     func test_unreadSignalsAreNamedNotOmitted() {
         let bare = OttoBrief.SessionRow(date: now, minutes: 5)
         let line = OttoBrief.line(bare, focus: false, now: now)
