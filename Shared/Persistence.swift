@@ -47,6 +47,7 @@ enum Persistence {
         Session.self,
         MeditationStats.self,
         SessionReflection.self,
+        SessionPhoto.self,
     ])
 
     /// Models safe to sync through the user's private iCloud: account, settings,
@@ -57,6 +58,7 @@ enum Persistence {
         MeditationTrack.self,
         Session.self,
         SessionReflection.self,
+        SessionPhoto.self,
     ])
 
     /// Health-derived results (HR timeseries, stillness, breathing metrics).

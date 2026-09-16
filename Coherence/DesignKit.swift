@@ -71,6 +71,10 @@ struct EvidenceRow: View {
     let score: Double?
     var subtitle: String
     var rating: Int? = nil
+    /// The photo taken after the sit, when there is one (mockup
+    /// `save-session-v7.html`). Portrait, small, before the chevron; a row
+    /// without one is exactly the row it always was.
+    var thumbnail: UIImage? = nil
 
     var body: some View {
         HStack(spacing: 12) {
@@ -85,6 +89,12 @@ struct EvidenceRow: View {
             }
             Spacer(minLength: 0)
             if let rating { RatingChip(rating: rating) }
+            if let thumbnail {
+                Color.clear
+                    .frame(width: 32, height: 42)
+                    .overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            }
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(AppColor.accentGoldText)
@@ -130,6 +140,13 @@ struct MetaChip: View {
 struct MonthCalendar: View {
     let monthAnchor: Date
     let practiced: Set<Date>
+    /// Start-of-day → the photo taken after that day's sit (the latest one).
+    /// A day with a photo shows it where the dot was; a day without keeps
+    /// its dot. The month becomes a strip of your own face, which says
+    /// "look how much you sat" better than twelve gold dots
+    /// (mockup `save-session-v7.html`, Aziz 2026-09-15). Declared before
+    /// `onDayTap` so the trailing-closure call sites keep working.
+    var photos: [Date: UIImage] = [:]
     var selectedDay: Date? = nil
     var onDayTap: ((Date) -> Void)? = nil
 
@@ -169,17 +186,30 @@ struct MonthCalendar: View {
         let done = practiced.contains(day)
         let isToday = day == today
         let isSelected = selectedDay == day
-        return VStack(spacing: 2) {
+        let photo = photos[day]
+        // Rows grow only in a month that has a photo in it, so a calendar
+        // with none is pixel-identical to the one that shipped.
+        let tall = !photos.isEmpty
+        return VStack(spacing: tall ? 3 : 2) {
             Text("\(n)")
                 .font(.system(size: 12, weight: isToday || isSelected ? .bold : .regular, design: .rounded))
                 .foregroundStyle(inMonth ? AppColor.textPrimary : AppColor.textSecondary.opacity(0.35))
-            Circle()
-                // Informational, not decorative: at fill-gold it reads 1.78
-                // against the card and stops being a signal.
-                .fill(done ? AppColor.accentGoldText : .clear)
-                .frame(width: 4.5, height: 4.5)
+            if let photo {
+                Color.clear
+                    .frame(width: 24, height: 26)
+                    .overlay(Image(uiImage: photo).resizable().scaledToFill())
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            } else {
+                Circle()
+                    // Informational, not decorative: at fill-gold it reads 1.78
+                    // against the card and stops being a signal.
+                    .fill(done ? AppColor.accentGoldText : .clear)
+                    .frame(width: 4.5, height: 4.5)
+                    // Keeps the number row aligned with photo days.
+                    .frame(height: tall ? 26 : 4.5, alignment: .top)
+            }
         }
-        .frame(maxWidth: .infinity, minHeight: 32)
+        .frame(maxWidth: .infinity, minHeight: tall ? 46 : 32)
         .background {
             if isSelected {
                 Circle().fill(AppColor.accentGold.opacity(0.18)).frame(width: 30, height: 30).offset(y: -2)

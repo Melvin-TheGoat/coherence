@@ -17,7 +17,14 @@ struct ProfileTab: View {
     @Query private var reflections: [SessionReflection]
     @Query private var users: [User]
     @Query private var prefsRows: [Preferences]
+    @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
+
+    /// Session id → the photo taken after it, for the rows. Empty with
+    /// Friends off, so the Release build draws the rows it always did.
+    private var photoThumbs: [UUID: UIImage] {
+        FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
+    }
     @State private var editingProfile = false
 
     /// A practiced day tapped on Home — filters the log below.
@@ -275,6 +282,7 @@ struct ProfileTab: View {
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.vertical, 12)
             } else {
+                let thumbs = photoThumbs
                 VStack(spacing: 0) {
                     ForEach(Array(visible.enumerated()), id: \.element.id) { i, session in
                         if i > 0 { Divider().overlay(AppColor.textSecondary.opacity(0.12)) }
@@ -284,7 +292,8 @@ struct ProfileTab: View {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
                                         subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
-                                        rating: ratings[session.id])
+                                        rating: ratings[session.id],
+                                        thumbnail: thumbs[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
                         .contextMenu {

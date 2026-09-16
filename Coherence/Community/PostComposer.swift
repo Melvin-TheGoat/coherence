@@ -3,96 +3,87 @@ import SwiftData
 import PhotosUI
 import AVFoundation
 
-/// The selfie a Friends post is built on.
+/// The photo row on Save session (mockup `mockups/save-session-v7.html`): a
+/// PORTRAIT tile with the explanation beside it. Portrait because a
+/// front-camera shot is 3:4 and a landscape slot crops the face, which is the
+/// one thing the picture is for.
 ///
-/// **BeReal rule (Aziz, 2026-09-14): no selfie, no post.** Taken right now on
-/// the FRONT camera, no photo library, so what friends see is you, meditating,
-/// today. `CommunityStore.post` refuses a draft without one. An edit to a post
-/// that already has a selfie may keep it (`existingURL`).
-struct SelfieCapture: View {
-    @Binding var image: UIImage?
-    var existingURL: URL? = nil
-    var height: CGFloat = 320
+/// **BeReal rule (Aziz, 2026-09-14): no selfie, no post.** Taken now, on the
+/// front camera, no library. `CommunityStore.post` refuses a draft without
+/// one. Since 2026-09-15 the photo is also OPTIONAL for a private session
+/// (Aziz: "even if its a private one") and shows on the calendar, so the tile
+/// is always present and only its urgency changes: gold when sharing needs
+/// it, quiet when it is yours to skip.
+///
+/// The tile does not own the camera. Its parent does, because the pinned
+/// button also opens it ("Take your selfie" is the primary action while the
+/// shot is missing), and a screen with two owners of one sheet is the
+/// dropped-presentation trap.
+struct PhotoTile: View {
+    let shown: UIImage?
+    let required: Bool
+    let onTap: () -> Void
+    /// DEBUG simulator only: the simulator has no camera, so a stand-in can
+    /// be picked from the library to review the flow. Compiled out of every
+    /// device build.
+    var onSimulatorPick: ((UIImage) -> Void)? = nil
 
-    @State private var showCamera = false
-    @State private var cameraDenied = false
-    @State private var existing: UIImage?
     #if DEBUG && targetEnvironment(simulator)
-    /// The simulator has no camera. DEBUG simulator builds only: pick a
-    /// stand-in from the library so the flow can be reviewed. Compiled out
-    /// of every device build.
     @State private var simulatorPick: PhotosPickerItem?
     #endif
 
+    private let tileSize = CGSize(width: 78, height: 104)
+
     var body: some View {
-        Group {
-            if let shown = image ?? existing {
-                ZStack(alignment: .bottomTrailing) {
-                    // The image lives in an overlay of a fixed-size frame: a
-                    // scaledToFill image as the frame's own content reports its
-                    // natural width and pushes the screen wider than the phone.
-                    Color.clear
-                        .frame(maxWidth: .infinity).frame(height: height)
-                        .overlay(Image(uiImage: shown).resizable().scaledToFill())
-                        .clipped()
-                    Button { openCamera() } label: {
-                        Label("Retake", systemImage: "arrow.counterclockwise")
-                            .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 12).padding(.vertical, 7)
-                            .background(.black.opacity(0.55), in: Capsule())
-                            .padding(10)
-                    }
-                    .buttonStyle(.plain)
-                }
-            } else {
-                Button { openCamera() } label: {
-                    VStack(spacing: 10) {
-                        Image(systemName: "camera.fill")
-                            .font(.system(size: 30))
-                            .foregroundStyle(AppColor.accentGoldText)
-                        Text("Take your selfie")
-                            .font(AppFont.headline)
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                tile
+                VStack(alignment: .leading, spacing: 3) {
+                    if shown != nil {
+                        Text(required ? "Your selfie" : "Your photo")
+                            .font(AppFont.callout.weight(.semibold))
                             .foregroundStyle(AppColor.textPrimary)
-                        Text(cameraDenied
-                             ? "808 can't use the camera. Turn it on in Settings to share."
-                             : "Friends see you, right after you sat.")
+                        Text("Retake")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGoldText)
+                            .padding(.top, 3)
+                    } else if required {
+                        Text("Take your selfie")
+                            .font(AppFont.callout.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text("Friends see you, right after you sat. Sharing needs one.")
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 24)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: height * 0.8)
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(CardButtonStyle())
-                #if DEBUG && targetEnvironment(simulator)
-                .overlay(alignment: .bottom) {
-                    PhotosPicker(selection: $simulatorPick, matching: .images) {
-                        Text("Simulator: pick a stand-in")
+                    } else {
+                        Text("Add a photo")
+                            .font(AppFont.callout.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text("Only you see it, on your calendar. Optional.")
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.textSecondary)
-                            .padding(8)
                     }
                 }
-                #endif
+                .multilineTextAlignment(.leading)
+                Spacer(minLength: 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        #if DEBUG && targetEnvironment(simulator)
+        .overlay(alignment: .bottomTrailing) {
+            if shown == nil, onSimulatorPick != nil {
+                PhotosPicker(selection: $simulatorPick, matching: .images) {
+                    Text("Simulator stand-in")
+                        .font(.caption2)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
             }
         }
-        .background(AppColor.backgroundSecondary)
-        .fullScreenCover(isPresented: $showCamera) {
-            CameraPicker(device: .front) { image = $0 }
-                .ignoresSafeArea()
-        }
-        .task(id: existingURL) {
-            if let url = existingURL { existing = UIImage(contentsOfFile: url.path) }
-        }
-        #if DEBUG && targetEnvironment(simulator)
         .onChange(of: simulatorPick) { _, item in
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self), let ui = UIImage(data: data) {
-                    image = ui
+                    onSimulatorPick?(ui)
                 }
                 simulatorPick = nil
             }
@@ -100,26 +91,28 @@ struct SelfieCapture: View {
         #endif
     }
 
-    var hasSelfie: Bool { image != nil || existingURL != nil }
-
-    private func openCamera() {
-        #if targetEnvironment(simulator)
-        return   // no camera; the DEBUG stand-in picker covers review
-        #else
-        switch AVCaptureDevice.authorizationStatus(for: .video) {
-        case .authorized:
-            showCamera = true
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                DispatchQueue.main.async {
-                    if granted { showCamera = true } else { cameraDenied = true }
+    @ViewBuilder
+    private var tile: some View {
+        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        if let shown {
+            // Overlay on a fixed frame, not the image as content: a
+            // scaledToFill image reports its natural width and widens the
+            // whole screen (found in the 2026-09-14 simulation).
+            Color.clear
+                .frame(width: tileSize.width, height: tileSize.height)
+                .overlay(Image(uiImage: shown).resizable().scaledToFill())
+                .clipShape(shape)
+        } else {
+            shape
+                .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                .foregroundStyle(required ? AppColor.accentGold.opacity(0.65) : AppColor.textSecondary.opacity(0.35))
+                .frame(width: tileSize.width, height: tileSize.height)
+                .overlay {
+                    Image(systemName: "camera")
+                        .font(.system(size: 22, weight: .regular))
+                        .foregroundStyle(required ? AppColor.accentGoldText : AppColor.textSecondary)
                 }
-            }
-        default:
-            cameraDenied = true
-            if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
         }
-        #endif
     }
 }
 
@@ -163,6 +156,78 @@ enum PostPhoto {
     static func jpeg(_ image: UIImage, quality: CGFloat = 0.8) -> Data? {
         resized(image).jpegData(compressionQuality: quality)
     }
+
+    /// The calendar and row thumbnail, about 240 px on the long side. Small
+    /// enough to live inline on the `SessionPhoto` row, so a month view never
+    /// decodes a full-size image.
+    static let thumbSide: CGFloat = 240
+
+    static func thumbnail(_ image: UIImage, quality: CGFloat = 0.75) -> Data? {
+        resized(image, to: thumbSide).jpegData(compressionQuality: quality)
+    }
+
+    /// Upload bytes already stored on a `SessionPhoto`: written to a temp
+    /// file for `CKAsset`, the same shape `prepare(_:)` gives a fresh image.
+    static func prepare(data: Data) -> URL? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("post-\(UUID().uuidString).jpg")
+        do { try data.write(to: url) } catch { return nil }
+        return url
+    }
+
+    static func resized(_ image: UIImage, to side: CGFloat) -> UIImage {
+        let size = image.size
+        let longest = max(size.width, size.height)
+        guard longest > side else { return image }
+        let scale = side / longest
+        let target = CGSize(width: (size.width * scale).rounded(), height: (size.height * scale).rounded())
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: target, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: target))
+        }
+    }
+}
+
+/// Decoded thumbnails, cached by row so a calendar redraw does not decode
+/// thirty JPEGs. Keyed on id plus the time the shot was taken, so a retake
+/// is never served the old picture.
+enum PhotoThumbs {
+    private static let cache = NSCache<NSString, UIImage>()
+
+    static func image(for photo: SessionPhoto) -> UIImage? {
+        let key = "\(photo.id.uuidString)-\(photo.takenAt.timeIntervalSince1970)" as NSString
+        if let hit = cache.object(forKey: key) { return hit }
+        guard let data = photo.thumbnail, let image = UIImage(data: data) else { return nil }
+        cache.setObject(image, forKey: key)
+        return image
+    }
+
+    /// The full-size picture, decoded on demand and not cached: it is shown
+    /// on one screen at a time.
+    static func full(_ photo: SessionPhoto) -> UIImage? {
+        photo.jpeg.flatMap(UIImage.init(data:))
+    }
+
+    /// Session id → thumbnail, and practiced day → thumbnail (the latest sit
+    /// that day), from the rows Home and Profile already query.
+    static func maps(photos: [SessionPhoto], sessions: [Session],
+                     calendar: Calendar = .current) -> (bySession: [UUID: UIImage], byDay: [Date: UIImage]) {
+        let starts = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0.startedAt) })
+        var bySession: [UUID: UIImage] = [:]
+        var byDay: [Date: (Date, UIImage)] = [:]
+        for photo in photos {
+            guard let sid = photo.sessionID, let started = starts[sid], let img = image(for: photo) else { continue }
+            bySession[sid] = img
+            let day = calendar.startOfDay(for: started)
+            if let (when, _) = byDay[day], when > started { continue }
+            byDay[day] = (started, img)
+        }
+        return (bySession, byDay.mapValues(\.1))
+    }
+}
+
+extension PostPhoto {
+    /// Upload size, 1080 on the long side. Kept as the original entry point.
 
     static func resized(_ image: UIImage) -> UIImage {
         let size = image.size

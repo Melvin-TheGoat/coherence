@@ -1618,6 +1618,96 @@ no-Watch user still never meets a paywall.
   numbers on a screen and nothing else: the no-haptics rule for the Watch
   is not suspended for a countdown.
 
+## SAVE SESSION REBUILT, AN IN-APP CAMERA, AND A PHOTO FOR EVERY SIT (2026-09-15 evening)
+
+Aziz: "take a look at the strava UI for sharing a session and copy that, i
+dont like the UI here for after the meditation" ... "review it again under
+intense scrutiny, imagine you are a SENIOR UI/UX designer" ... "go on the
+internet and look because i want the UI to look clean" ... "you should still
+have an option to take pictures after the meditation even if its a private
+one and then those pictures can be shown in the calendar". Mockups v3 to v7
+in `mockups/save-session-v*.html`; v6 and v7 are what shipped. 312 tests.
+
+- **What was actually wrong with the old screen, so nobody re-fixes the
+  wrong thing:** the CONTENT was already in Strava's order. Every field was a
+  filled rounded box with an uppercase label floating above it, five slabs on
+  a dark ground. Two research passes over fourteen apps (Strava, Hevy,
+  Strong, Gentler Streak, Nike Run Club, Whoop, Oura, Apple Fitness,
+  Letterboxd, Calm, Headspace, Balance, Day One, Bevel, Flighty, Things 3),
+  most read off real screenshots at pixel level, agree on the fix: **no
+  boxes, no labels. Bare text on a 0.5pt hairline, full bleed between
+  sections, inset to the text within one; the placeholder does the
+  labelling; section headers bold sentence case, larger than body; one
+  filled object on the screen, the primary action.** Letterboxd's log sheet
+  (zero boxes, zero corner radii) is the closest analogue and the model.
+- **Strava on iOS was misremembered twice in v3, corrected from captures:**
+  nothing top right, Cancel top left, a full-width filled button pinned at
+  the bottom (the top-right SAVE is Android); and its fields are outlined
+  rectangles with the value inside, not list rows. Aziz chose Strava's iOS
+  behaviour (kept) and then the bare skin over Strava's outlined one (B, from
+  `v6.html`, where both are drawn side by side).
+- **Layout, top to bottom:** the score as the one big gold number with time
+  and streak small beside it; **who can see this FIRST**, because it decides
+  whether the description and selfie exist (cause above effect; this is the
+  one knowing departure from Strava's order); the title, bold not boxed;
+  the description friends read (Friends only); the photo tile; then Details:
+  technique and private notes inline (Aziz: inline). Only you hides the
+  fields that address a reader who does not exist. **The button is never
+  dead:** Friends with no selfie reads "Take your selfie" and opens the
+  camera, then "Save session". **Skip** (new sessions) keeps the session as
+  Only you under the default title, because it is already stored and a
+  sheet with no exit is hostile. Gold lands three times, once per section:
+  score, tile when a selfie is required, button. Cancel stays neutral where
+  Strava paints it orange, for that rule.
+- **A portrait photo in a landscape slot was the blocking find** of the
+  senior-review pass: the old 320pt full-width tile cropped a 3:4 selfie's
+  face every time. `PhotoTile` is 78 by 104 with the words beside it.
+- **`SelfieCamera` replaces `UIImagePickerController` for the selfie**
+  (`Coherence/Community/SelfieCamera.swift`): black, the mark centred, a
+  rounded viewfinder that is not full bleed, one unfilled white ring, flash
+  top right when the device offers a screen flash, Retake / Use this one.
+  **No flip button**: front camera only, always, because a back-camera shot
+  taken privately could be shared later by changing visibility, and the
+  "you, meditating" rule would break silently. Capture is mirrored to match
+  the preview. No gold anywhere on it: a coloured ring reads as a record
+  button. SweatMates, which Aziz named, forces a front-and-back dual shot
+  and it is the most complained-about thing in its reviews (photographing
+  bystanders at the gym); not copied. `CameraPicker` survives for the
+  profile photo only.
+- **`SessionPhoto`** (`Shared/Models/`, in BOTH `Persistence.schema` and
+  `cloudSyncedSchema`): one per session, `jpeg` external storage at 1080px,
+  `thumbnail` inline at 240px so a month view never decodes a full image,
+  upserted by `SessionStore.savePhoto`, deleted with the session
+  (`deleteSession`) and with the account (`purgeExpired`), primed by
+  `CloudSchemaPrimer`. **In the synced store on purpose:** a photo is not
+  health data, so it may survive a new phone with the sessions and die with
+  the account. **Optional for Only you, still required for Friends.** The
+  post path always sends the bytes when there are any (about 200 KB), so a
+  photo taken privately and shared later, or a post whose picture was lost,
+  both come out right. **Release gate:** one more record type to promote
+  Development to Production on `iCloud.com.lockout.meditate808` before 1.1
+  (RELEASE_CHECKLIST.md). Privacy policy, both copies, names the photo and
+  says it is shared only when the session is posted to friends.
+- **Where photos show:** `MonthCalendar` draws the day's photo, 24 by 26,
+  where the dot was (`photos:` is declared before `onDayTap` so the trailing
+  closure call sites keep working; rows grow only in a month that has one,
+  so an empty calendar is pixel-identical); `EvidenceRow` takes a 32 by 42
+  `thumbnail` before the chevron; the results screen shows it whole above
+  the reflection card, tapping opens Save session for Retake.
+  `PhotoThumbs` caches decoded thumbnails by id plus takenAt. Every photo
+  surface is behind `FeatureFlags.friends`, so the Release build is
+  unchanged.
+- **Hide the score on a post? Recommended no** (per-post hiding tells every
+  friend what the score was, adds a decision at the worst moment, and the
+  score is what makes an 808 post an 808 post; Strava never lets you hide
+  distance or time). If real posts show people choosing Only you on low
+  days, the shape is a once-set profile preference. In BACKLOG.md.
+- Also that day, from the same list: `PendingSave` reopens the save screen
+  when the phone is picked up after a sit (the in-memory hand-off died with
+  the app, which is how nearly every session ends), "Silence / my own
+  practice" as a technique (`MeditationMethod.silenceID`, distinct from
+  `ownID`), and a Done key above the keyboard on both note fields.
+
 ## ONBOARDING CUT (2026-09-15, Melvin): seven screens out, the wall moved
 
 "We think the onboarding is too crowded." The data agreed on cause but not

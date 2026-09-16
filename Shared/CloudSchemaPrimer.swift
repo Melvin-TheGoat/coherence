@@ -99,6 +99,12 @@ enum CloudSchemaPrimer {
         reflection.updatedAt = now
         context.insert(reflection)
 
+        // One byte each is enough: the schema needs the FIELDS to exist, and
+        // a nil Data writes no field. Matched for removal by session id.
+        let photo = SessionPhoto(sessionID: sessionID, takenAt: now,
+                                 jpeg: Data([0xFF]), thumbnail: Data([0xFF]), createdAt: now)
+        context.insert(photo)
+
         try? context.save()
     }
 
@@ -135,6 +141,11 @@ enum CloudSchemaPrimer {
         for r in reflections
         where r.note == marker || r.sessionID.map(primerSessionIDs.contains) == true {
             context.delete(r); removed += 1
+        }
+
+        let photos = (try? context.fetch(FetchDescriptor<SessionPhoto>())) ?? []
+        for p in photos where p.sessionID.map(primerSessionIDs.contains) == true {
+            context.delete(p); removed += 1
         }
 
         try? context.save()
