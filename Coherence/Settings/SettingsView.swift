@@ -196,7 +196,7 @@ private struct SettingsForm: View {
                     Toggle("", isOn: $cameraCapture).labelsHidden().tint(AppColor.calmAccent)
                 }
                 divider
-                Text("Front camera, 10 fps, no video stored. Prop the phone facing you with your lap and head in frame; the live screen shows a preview to aim by. Files land in Documents/CameraCaptures beside the wrist result.")
+                Text("Front camera, 10 fps, no video stored. The Begin sheet shows the camera with an outline to sit into, so you can prop the phone before the session starts; the live screen keeps a small view of it. Files land in Documents/CameraCaptures beside the wrist result.")
                     .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
                     .padding(.vertical, 6)
             }

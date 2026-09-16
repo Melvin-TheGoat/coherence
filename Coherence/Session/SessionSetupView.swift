@@ -30,7 +30,10 @@ struct SessionSetupView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
+            // With the camera preview up, the preview is the flexible element
+            // and the title sits under the Cancel button; otherwise the copy
+            // floats to the middle as it always has.
+            if cameraShowing { Color.clear.frame(height: 40) } else { Spacer() }
 
             Text("Ready when\nyou are.")
                 .font(.system(size: 34, weight: .bold, design: .rounded))
@@ -62,7 +65,19 @@ struct SessionSetupView: View {
                         in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .padding(.top, 18)
 
+            #if DEBUG
+            if cameraCapture, let rec = coordinator.cameraRecorder {
+                // Frame yourself before the session, while moving still
+                // helps. The same running camera carries into the live screen.
+                CameraFramingView(recorder: rec)
+                    .padding(.top, 16)
+                    .padding(.bottom, 14)
+            } else {
+                Spacer()
+            }
+            #else
             Spacer()
+            #endif
 
             Button("Begin", action: begin)
                 .buttonStyle(PrimaryButtonStyle())
@@ -88,6 +103,37 @@ struct SessionSetupView: View {
                 .padding(AppMetrics.screenPadding)
         }
         .sheet(isPresented: $showOptions) { SessionOptionsView(soundID: $soundID) }
+        .onAppear(perform: cameraAppeared)
+        .onDisappear(perform: cameraDisappeared)
+    }
+
+    #if DEBUG
+    /// The DEBUG camera collector. When it is on, the sheet shows the camera
+    /// with a figure to sit into, and the same running camera carries into
+    /// the live screen at Begin: the coordinator owns the one instance.
+    @AppStorage(CameraSignalRecorder.debugToggleKey) private var cameraCapture = false
+    #endif
+
+    private var cameraShowing: Bool {
+        #if DEBUG
+        return cameraCapture && coordinator.cameraRecorder != nil
+        #else
+        return false
+        #endif
+    }
+
+    private func cameraAppeared() {
+        #if DEBUG
+        if cameraCapture { coordinator.startCameraPreview() }
+        #endif
+    }
+
+    /// Dismissed without beginning: the camera must not run on. After Begin
+    /// the coordinator has claimed it and this is a no-op.
+    private func cameraDisappeared() {
+        #if DEBUG
+        coordinator.releaseCameraPreviewIfUnclaimed()
+        #endif
     }
 
     /// "Open · Silence ›" — exactly what happens if you just tap Begin.

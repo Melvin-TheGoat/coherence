@@ -250,6 +250,16 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_FIRST_PAYWALL"] == "1", sheet == nil {
                 sheet = .paywall
             }
+            // The camera framing on the Begin sheet: PREVIEW_CAMERA=1 flips
+            // the Settings toggle on (before the sheet reads it), PREVIEW_SETUP=1
+            // opens the sheet. The simulator has no camera, so the preview is
+            // dark; the outline and caption still render.
+            if ProcessInfo.processInfo.environment["PREVIEW_CAMERA"] == "1" {
+                UserDefaults.standard.set(true, forKey: CameraSignalRecorder.debugToggleKey)
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_SETUP"] == "1", sheet == nil {
+                sheet = .setup
+            }
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
                 case "guide": tab = .guide
