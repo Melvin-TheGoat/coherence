@@ -1,0 +1,183 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · v7, a photo for every sit, shown on the calendar</title>
+<style>
+:root{
+  --bg:#13100D; --card:#1c1915; --fg:#F5F3EC; --muted:#9A9A93; --dim:#7a7871;
+  --gold:#D4AF37; --goldtext:#E2C15A; --teal:#5EB1A8; --hair:rgba(255,255,255,.14); --hair2:rgba(255,255,255,.08);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 80px; }
+h1{ font-size:20px; margin:0 0 6px; }
+.note{ color:var(--muted); font-size:13px; max-width:820px; line-height:1.6; } .note b{ color:var(--fg); }
+h2{ font-size:13px; margin:40px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:284px; height:614px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:40px 0 0; overflow:hidden; font-size:12.5px; position:relative; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:284px; line-height:1.5; } .cap b{ color:var(--fg); }
+
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 16px 14px; }
+.nav .l{ color:var(--muted); font-size:12.5px; width:52px; }
+.nav .t{ font-weight:700; font-size:14.5px; }
+.nav .sp{ width:52px; }
+.stats{ display:flex; align-items:flex-end; padding:0 16px 18px; }
+.stats .s{ padding-left:14px; margin-left:14px; border-left:1px solid var(--hair2); }
+.stats .s span{ display:block; font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--dim); font-weight:700; margin-bottom:4px; }
+.stats .s b{ display:block; font-size:19px; font-weight:700; letter-spacing:-.02em; line-height:1; }
+.stats .s b i{ font-style:normal; font-size:10.5px; font-weight:600; color:var(--muted); margin-left:2px; }
+.stats .hero{ padding-left:0; margin-left:0; border-left:none; }
+.stats .hero b{ font-size:38px; font-weight:800; letter-spacing:-.035em; color:var(--gold); }
+.r{ margin:0 0 0 16px; padding:13px 16px 13px 0; border-bottom:1px solid var(--hair2); display:flex; align-items:center; gap:10px; min-height:44px; }
+.r .ic{ width:15px; text-align:center; color:var(--dim); font-size:12px; flex:none; }
+.r .v{ font-size:13px; flex:1; } .r .v.title{ font-weight:700; font-size:15px; }
+.r .ph{ font-size:13px; color:var(--dim); flex:1; line-height:1.45; }
+.r .cd{ color:var(--dim); font-size:10px; flex:none; }
+.r.tall{ align-items:flex-start; min-height:72px; } .r.last{ border-bottom:none; }
+.bleed{ height:1px; background:var(--hair2); }
+.sec{ font-size:16px; font-weight:700; letter-spacing:-.01em; padding:14px 16px 8px; }
+.selfie{ display:flex; gap:12px; align-items:center; margin:12px 16px 12px; }
+.tile{ width:78px; height:104px; border-radius:10px; flex:none; border:1.5px dashed rgba(212,175,55,.65); display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:22px; }
+.tile.quiet{ border-color:rgba(255,255,255,.22); color:var(--muted); }
+.tile.img{ border:none; background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); }
+.selfie .txt{ flex:1; } .selfie .h{ font-size:13px; font-weight:600; }
+.selfie .d{ font-size:11.5px; color:var(--muted); line-height:1.45; margin-top:3px; }
+.dock{ position:absolute; left:0; right:0; bottom:0; padding:12px 16px 20px; background:linear-gradient(180deg,rgba(19,16,13,0),var(--bg) 26%); }
+.cta{ background:var(--gold); color:#1a1508; text-align:center; border-radius:13px; padding:14px; font-weight:700; font-size:13.5px; }
+
+/* home */
+.greet{ padding:0 16px; } .greet .k{ font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim); font-weight:700; }
+.greet .big{ font-size:21px; font-weight:800; letter-spacing:-.02em; margin-top:4px; }
+.greet .sub{ font-size:11.5px; color:var(--muted); margin-top:3px; }
+.cardx{ background:var(--card); border-radius:18px; margin:14px 16px 0; padding:12px 12px 10px; }
+.cardx .h{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:8px; font-weight:600; }
+.cal{ display:grid; grid-template-columns:repeat(7,1fr); row-gap:4px; }
+.cal .wd{ font-size:8.5px; color:var(--dim); text-align:center; font-weight:700; padding-bottom:2px; }
+.cal .d{ height:44px; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; font-size:11px; }
+.cal .d.out{ color:rgba(154,154,147,.35); }
+.cal .dot{ width:4.5px; height:4.5px; border-radius:50%; background:var(--goldtext); }
+.cal .nodot{ width:4.5px; height:4.5px; }
+.cal .th{ width:24px; height:26px; border-radius:6px; background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); }
+.cal .th.b{ background:linear-gradient(160deg,#7a5a48,#c39a6a 55%,#3b2f25); }
+.cal .th.c{ background:linear-gradient(200deg,#3a4a5a,#8a7a6a 60%,#1f1a16); }
+.cal .th.e{ background:linear-gradient(150deg,#5a4a3a,#b08a62 50%,#2a2119); }
+.cal .today{ box-shadow:inset 0 0 0 1.4px var(--teal); border-radius:50%; width:26px; height:26px; display:flex; align-items:center; justify-content:center; margin-top:-3px; font-weight:700; }
+
+/* rows */
+.erow{ display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--hair2); }
+.ring{ width:38px; height:38px; border-radius:50%; border:3px solid var(--gold); border-left-color:rgba(212,175,55,.25); display:flex; align-items:center; justify-content:center; font-size:11.5px; font-weight:800; flex:none; }
+.erow .t{ flex:1; } .erow .t b{ display:block; font-size:12.5px; font-weight:600; } .erow .t span{ font-size:10.5px; color:var(--muted); }
+.erow .pth{ width:32px; height:42px; border-radius:6px; background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); flex:none; }
+.erow .pth.b{ background:linear-gradient(160deg,#7a5a48,#c39a6a 55%,#3b2f25); }
+.erow .chev{ color:var(--goldtext); font-size:12px; }
+.tabs{ height:62px; border-top:1px solid var(--hair2); background:#141210; display:flex; align-items:flex-start; justify-content:space-around; padding-top:8px; position:absolute; bottom:0; left:0; right:0; }
+.tab{ width:44px; text-align:center; color:var(--muted); font-size:8.5px; } .tab .ic{ font-size:16px; display:block; margin-bottom:2px; } .tab.on{ color:var(--fg); }
+.plus{ width:50px; height:50px; border-radius:50%; background:var(--gold); color:#1a1508; display:flex; align-items:center; justify-content:center; margin-top:-22px; font-size:28px; font-weight:300; }
+
+table{ border-collapse:collapse; margin-top:10px; font-size:13px; max-width:860px; }
+td,th{ text-align:left; padding:9px 16px 9px 0; border-bottom:1px solid var(--hair2); vertical-align:top; line-height:1.55; }
+th{ color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; }
+.q{ margin-top:16px; max-width:860px; } .q li{ margin:10px 0; line-height:1.6; font-size:13.5px; } .q b{ color:var(--gold); }
+.good{ color:var(--teal); } .warn{ color:#d98a6a; }
+</style></head><body>
+
+<h1>808 · v7: a photo for every sit, and a calendar that shows them</h1>
+<p class="note">Aziz, 2026-09-15: "you should still have an option to take pictures after the meditation even if its a private one and then those pictures can be shown in the calendar." <b>Yes.</b> This is the best idea in the thread, because it changes what the selfie <i>is</i>. Until now it was a toll you pay to share. Now it is your own record of having sat, and sharing is one more thing you can do with it. BeReal's most-loved feature is exactly this: Memories, a private calendar of your own shots. The mandatory-for-Friends rule stops feeling like a gate once the photo was for you first.</p>
+
+<h2>What changes on the save screen (B, bare)</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="bleed"></div>
+  <div class="r"><div class="ic">🔒</div><div class="v">Only you can see this</div><div class="cd">⌄</div></div>
+  <div class="r last"><div class="v title">Afternoon meditation</div></div>
+  <div class="bleed"></div>
+  <div class="selfie">
+    <div class="tile quiet">◎</div>
+    <div class="txt"><div class="h">Add a photo</div><div class="d">Only you see it, on your calendar. Optional.</div></div>
+  </div>
+  <div class="bleed"></div>
+  <div class="sec">Details</div>
+  <div class="r"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="r tall last"><div class="ic">🔒</div><div class="ph">Private notes. Only you can see these.</div></div>
+  <div class="dock"><div class="cta">Save session</div></div>
+</div></div>
+<div class="cap"><b>Only you, with the photo tile.</b> The tile stays, but quiet: neutral dashed border, not gold, because here it is optional and the section's gold has nothing to point at. The button is Save session from the start; nothing blocks it.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="bleed"></div>
+  <div class="r"><div class="ic">◍</div><div class="v">Friends can see this</div><div class="cd">⌄</div></div>
+  <div class="r"><div class="v title">Afternoon meditation</div></div>
+  <div class="r tall last"><div class="ph">How'd it go? Friends will see this.</div></div>
+  <div class="bleed"></div>
+  <div class="selfie">
+    <div class="tile">◎</div>
+    <div class="txt"><div class="h">Take your selfie</div><div class="d">Friends see you, right after you sat. Sharing needs one.</div></div>
+  </div>
+  <div class="bleed"></div>
+  <div class="sec">Details</div>
+  <div class="r"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="dock"><div class="cta">Take your selfie</div></div>
+</div></div>
+<div class="cap"><b>Friends, unchanged from v6.</b> Gold tile, required, the button names the block. Same photo, same camera; the only difference between the two states is whether it is optional.</div>
+</div>
+
+</div>
+
+<h2>Where the photos show up</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="greet"><div class="k">Tuesday</div><div class="big">Good evening, Aziz</div><div class="sub">4 days running. Today's sit is in.</div></div>
+  <div class="cardx">
+    <div class="h"><span>September</span><span>12 sits</span></div>
+    <div class="cal">
+      <div class="wd">S</div><div class="wd">M</div><div class="wd">T</div><div class="wd">W</div><div class="wd">T</div><div class="wd">F</div><div class="wd">S</div>
+      <div class="d out">31</div><div class="d">1<div class="nodot"></div></div><div class="d">2<div class="th c"></div></div><div class="d">3<div class="dot"></div></div><div class="d">4<div class="nodot"></div></div><div class="d">5<div class="th b"></div></div><div class="d">6<div class="nodot"></div></div>
+      <div class="d">7<div class="th"></div></div><div class="d">8<div class="dot"></div></div><div class="d">9<div class="nodot"></div></div><div class="d">10<div class="th e"></div></div><div class="d">11<div class="nodot"></div></div><div class="d">12<div class="th c"></div></div><div class="d">13<div class="th b"></div></div>
+      <div class="d">14<div class="th"></div></div><div class="d"><div class="today">15</div><div class="th e" style="margin-top:0"></div></div><div class="d out">16</div><div class="d out">17</div><div class="d out">18</div><div class="d out">19</div><div class="d out">20</div>
+      <div class="d out">21</div><div class="d out">22</div><div class="d out">23</div><div class="d out">24</div><div class="d out">25</div><div class="d out">26</div><div class="d out">27</div>
+    </div>
+  </div>
+  <div class="erow"><div class="ring">81</div><div class="t"><b>Afternoon meditation</b><span>Today · 10 min · Rain</span></div><div class="pth e"></div><div class="chev">›</div></div>
+  <div class="erow"><div class="ring">74</div><div class="t"><b>Morning sit</b><span>Yesterday · 12 min</span></div><div class="pth"></div><div class="chev">›</div></div>
+  <div class="erow"><div class="ring">66</div><div class="t"><b>Before bed</b><span>Sat · 8 min · Guided</span></div><div class="chev">›</div></div>
+  <div class="tabs"><div class="tab on"><span class="ic">⌂</span>Home</div><div class="tab"><span class="ic">☰</span>Guide</div><div class="plus">+</div><div class="tab"><span class="ic">◍</span>Friends</div><div class="tab"><span class="ic">◯</span>Profile</div></div>
+</div></div>
+<div class="cap"><b>Home.</b> A day with a photo shows the photo, 24 by 26, where the dot was. A day you sat without one keeps its dot. Rows gain a small portrait thumbnail before the chevron; a row without a photo is exactly as today. The month becomes a strip of your own face, which is a stronger "look how much you sat" than twelve gold dots.</div>
+</div>
+
+</div>
+
+<h2>The decisions underneath it</h2>
+<table>
+<tr><th>Question</th><th>Answer, and why</th></tr>
+<tr><td><b>Optional or required?</b></td><td>Optional for Only you, <b>still required for Friends</b>. The BeReal rule is about what you put in front of other people. Your own calendar can have gaps.</td></tr>
+<tr><td><b>Front camera only, still?</b></td><td class="good">Yes. Same camera for both. If the private camera could flip, a back-camera shot taken privately could be shared later by changing visibility from the results screen, and the "you, meditating" rule would break silently. One camera, one rule. If you want the view from the cushion as well, that is a second photo and a separate decision.</td></tr>
+<tr><td><b>Where does a private photo live?</b></td><td>A new SwiftData model, <b>SessionPhoto</b>, in the synced store: session id, the JPEG (1080px, about 200 KB, external storage) and a 200px thumbnail for the calendar. It rides the existing private iCloud sync, so photos <b>survive a new phone</b> the way sessions do, and account deletion removes them with everything else. Health data stays where it is; a photo is not health data. <span class="warn">Cost: one more record type to promote Development to Production before release</span>, which is already a gate on the checklist.</td></tr>
+<tr><td><b>What happens when a private session is shared later?</b></td><td>The same photo is uploaded to the public database as the post's picture, as today. Switching back to Only you takes the post down and leaves your copy alone.</td></tr>
+<tr><td><b>Does it appear anywhere else?</b></td><td>The results screen shows it above the reflection card, where the session's own record lives. <b>Not on the share card yet</b>: a photo would make the free card far stronger, but that is a card redesign and its own mockup.</td></tr>
+<tr><td><b>Privacy policy</b></td><td>One line in the private-iCloud section, both copies: photos you take after a session are stored with your sessions and are shared only when you post them to friends.</td></tr>
+</table>
+
+<h2>Build order</h2>
+<ol class="q">
+<li><b>Save session in B</b>, with the tile for both visibilities and the in-app camera. This is the approved work and it starts now.</li>
+<li><b>SessionPhoto</b> model, save and thumbnail, wired into the tile. The post path reads from it instead of a temp file.</li>
+<li><b>Calendar and row thumbnails</b>, Home and Profile, plus the results screen. Then one rebuild of 808 Dev.</li>
+</ol>
+
+</body></html>
