@@ -1,0 +1,216 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Save session v4, Strava on iOS</title>
+<style>
+:root{
+  --bg:#13100D; --fill:#1a1713; --fg:#F5F3EC; --muted:#9A9A93; --dim:#6b6962;
+  --gold:#D4AF37; --teal:#5EB1A8; --hair:rgba(255,255,255,.14); --hair2:rgba(255,255,255,.07);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 80px; }
+h1{ font-size:20px; margin:0 0 6px; }
+.note{ color:var(--muted); font-size:13px; max-width:800px; line-height:1.6; } .note b{ color:var(--fg); }
+h2{ font-size:13px; margin:40px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:284px; height:614px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:40px 0 0; overflow:hidden; font-size:12.5px; position:relative; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:284px; line-height:1.5; } .cap b{ color:var(--fg); }
+
+/* nav: Strava iOS — Cancel left, title centre, NOTHING right */
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 16px 14px; }
+/* Cancel is NEUTRAL, not gold. Strava paints it orange, but 808's rule is
+   one gold thing per section, and up here that has to be the score. */
+.nav .l{ color:var(--muted); font-size:12.5px; width:52px; }
+.nav .t{ font-weight:700; font-size:14.5px; }
+.nav .sp{ width:52px; }
+
+/* stats strip: tiny uppercase label ABOVE a big number, thin vertical rules */
+.stats{ display:flex; padding:0 16px 20px; }
+.stats .s{ flex:1; padding-left:13px; border-left:1px solid var(--hair2); }
+.stats .s:first-child{ padding-left:0; border-left:none; }
+.stats .s span{ display:block; font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--dim); font-weight:700; margin-bottom:4px; }
+.stats .s b{ display:block; font-size:25px; font-weight:800; letter-spacing:-.025em; line-height:1; }
+.stats .s b i{ font-style:normal; font-size:11.5px; font-weight:600; color:var(--muted); margin-left:2px; }
+.stats .s.score b{ color:var(--gold); }
+
+/* the Strava field: rounded rect, hairline border, NO fill, value inside */
+.f{ margin:0 16px 10px; border:1px solid var(--hair); border-radius:9px; padding:12px 13px; display:flex; align-items:center; gap:10px; min-height:44px; }
+.f .ic{ width:15px; text-align:center; color:var(--dim); font-size:12px; flex:none; }
+.f .v{ font-size:13px; flex:1; }
+.f .ph{ font-size:13px; color:var(--dim); flex:1; line-height:1.45; }
+.f .cd{ color:var(--dim); font-size:10px; flex:none; }
+.f.tall{ align-items:flex-start; min-height:76px; }
+.f.tall .ic{ margin-top:1px; }
+
+/* section header: bold, sentence case, bigger than body */
+.sec{ font-size:16px; font-weight:700; letter-spacing:-.01em; padding:14px 16px 10px; }
+.sub{ font-size:11px; color:var(--dim); padding:0 16px 6px; font-weight:600; }
+.cap2{ font-size:11px; color:var(--dim); padding:0 17px 12px; line-height:1.45; margin-top:-4px; }
+
+/* media tile, Strava's dashed accent tile */
+.media{ margin:2px 16px 12px; height:118px; border:1.5px dashed rgba(212,175,55,.6); border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--gold); font-size:11.5px; font-weight:600; }
+.media .i{ font-size:22px; line-height:1; }
+.shot{ margin:2px 16px 12px; height:118px; border-radius:10px; background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); position:relative; }
+.shot .x{ position:absolute; top:7px; right:7px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,.55); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
+
+/* pinned bottom button, the ONLY filled object */
+.dock{ position:absolute; left:0; right:0; bottom:0; padding:12px 16px 20px; background:linear-gradient(180deg,rgba(19,16,13,0),var(--bg) 26%); }
+.cta{ background:var(--gold); color:#1a1508; text-align:center; border-radius:13px; padding:14px; font-weight:700; font-size:13.5px; }
+.ctao{ border:1px solid rgba(217,138,106,.55); color:#d98a6a; text-align:center; border-radius:13px; padding:12px; font-weight:600; font-size:12.5px; margin-top:8px; }
+
+/* menu */
+.menu{ position:absolute; left:16px; right:16px; background:#2a2620; border-radius:13px; border:1px solid var(--hair); overflow:hidden; box-shadow:0 20px 44px rgba(0,0,0,.65); z-index:5; }
+.menu div{ padding:11px 13px; font-size:12.5px; border-bottom:1px solid rgba(255,255,255,.05); }
+.menu div:last-child{ border-bottom:none; }
+.menu .on{ color:var(--gold); font-weight:700; }
+.menu .hd{ font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--dim); font-weight:700; }
+
+/* camera */
+.cam{ position:absolute; inset:0; background:#000; }
+.camview{ position:absolute; left:0; right:0; top:58px; bottom:132px; border-radius:16px; margin:0 10px; background:
+  radial-gradient(ellipse at 50% 34%, rgba(150,120,90,.55), transparent 58%),
+  linear-gradient(180deg,#3a3a3e 0%,#4d4438 45%,#221d18 100%); }
+.camview.shot2{ background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); }
+.camtop{ position:absolute; top:14px; left:16px; right:16px; display:flex; align-items:center; justify-content:space-between; z-index:3; }
+.camtop .w{ font-weight:800; font-size:13px; letter-spacing:-.01em; }
+.camtop .x{ font-size:15px; color:#fff; width:26px; }
+.camtop .sp{ width:26px; }
+.cambot{ position:absolute; bottom:0; left:0; right:0; height:132px; display:flex; align-items:center; justify-content:space-around; z-index:3; }
+.shutter{ width:66px; height:66px; border-radius:50%; border:3.5px solid #fff; }
+.sbtn{ width:34px; height:34px; display:flex; align-items:center; justify-content:center; font-size:16px; color:#fff; }
+.zoom{ position:absolute; bottom:144px; left:0; right:0; text-align:center; z-index:4; }
+.zoom span{ display:inline-block; padding:4px 10px; border-radius:999px; background:rgba(0,0,0,.42); font-size:10px; color:#fff; }
+.revbar{ position:absolute; bottom:0; left:0; right:0; height:132px; display:flex; align-items:center; justify-content:center; gap:12px; padding:0 16px; z-index:3; }
+.ghost{ padding:13px 20px; border-radius:12px; border:1px solid rgba(255,255,255,.3); color:#fff; font-size:12.5px; font-weight:600; }
+.use{ flex:1; background:var(--gold); color:#1a1508; text-align:center; border-radius:12px; padding:13px; font-weight:700; font-size:13px; }
+
+table{ border-collapse:collapse; margin-top:10px; font-size:13px; max-width:800px; }
+td,th{ text-align:left; padding:8px 18px 8px 0; border-bottom:1px solid var(--hair2); vertical-align:top; line-height:1.55; }
+th{ color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; }
+.q{ margin-top:20px; max-width:800px; } .q li{ margin:11px 0; line-height:1.6; font-size:13.5px; } .q b{ color:var(--gold); }
+.good{ color:var(--teal); }
+</style></head><body>
+
+<h1>808 · Save session v4, built on Strava's actual iOS screen</h1>
+<p class="note">v3 was drawn from memory and got Strava wrong twice. Corrected here from real captures of the shipping app. <b>Your three calls are in: Strava iOS behaviour, notes inline, one photo.</b></p>
+
+<h2>What I had wrong in v3</h2>
+<table>
+<tr><th>v3 said</th><th>Strava on iOS actually</th></tr>
+<tr><td>Save sits top right in the nav bar.</td><td class="good">Nothing sits top right. <b>Cancel</b> is top left, and a full-width filled orange button is pinned at the bottom. The top-right SAVE is the Android build. So the button we already have was right.</td></tr>
+<tr><td>Rows are flat text on hairline dividers, label left, value right, chevron.</td><td class="good">Nothing on the screen is a list row. Every input is a <b>free-standing rounded rectangle with a 1pt hairline border and no fill</b>. The value lives inside the field, after a small grey monoline icon, with a chevron pointing <b>down</b>.</td></tr>
+<tr><td>Uppercase grey labels above each field.</td><td class="good">There are <b>no labels</b>. The placeholder does the labelling, which is why the strings read as questions: "Title your run", "How did that activity feel?". Grey uppercase headers existed in an older build and were removed.</td></tr>
+<tr><td>Section headers as small gold uppercase.</td><td class="good">Section headers are <b>bold, sentence case, and larger than body text</b>, sitting on the page background: "Details", "Visibility".</td></tr>
+</table>
+<p class="note" style="margin-top:14px">The discipline underneath all of it: <b>orange appears on exactly four things</b> (Cancel, the dashed add-photo tile, one outlined button, and the save button) and <b>only one of them is filled</b>. Everything else on the screen is neutral. That restraint is what makes it read as clean rather than as a form.</p>
+<p class="note" style="margin-top:10px">One deliberate departure: <b>Cancel stays neutral grey here, where Strava paints it orange.</b> 808's rule is one gold thing per section, and in that header it has to be the score. Gold therefore lands three times on the whole screen, once per section: the score, the add-selfie tile, the save button.</p>
+
+<h2>Save session</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Cancel</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s score"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="ph">Title your session</div></div>
+  <div class="f tall"><div class="ph">How'd it go? Friends will see this.</div></div>
+  <div class="media"><div class="i">◎</div>Add your selfie</div>
+  <div class="sec">Details</div>
+  <div class="f"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="f tall"><div class="ic">🔒</div><div class="ph">Jot down private notes here. Only you can see these.</div></div>
+</div></div>
+<div class="cap"><b>Empty, as it opens.</b> No labels anywhere: every field says what it wants. Three numbers at the top, hairline-ruled, score in gold because it is the one thing 808 has that Strava does not.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Cancel</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s score"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="f tall"><div class="v" style="line-height:1.45">Ten minutes before the day starts. Rain, eyes closed, nothing clever.</div></div>
+  <div class="shot"><div class="x">×</div></div>
+  <div class="sec">Details</div>
+  <div class="f"><div class="ic">✦</div><div class="v">Silence / my own practice</div><div class="cd">⌄</div></div>
+  <div class="f tall"><div class="ic">🔒</div><div class="v" style="line-height:1.45; color:var(--muted)">Same thought kept coming back.</div></div>
+  <div class="dock"><div class="cta">Save session</div></div>
+</div></div>
+<div class="cap"><b>Filled in.</b> The selfie replaces the dashed tile in place, so nothing below it moves. Private notes are inline, your call. The pinned gold button is the only filled object on the screen.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Cancel</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s score"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="shot" style="height:96px"><div class="x">×</div></div>
+  <div class="sec">Visibility</div>
+  <div class="sub">Who can see</div>
+  <div class="f"><div class="ic">◍</div><div class="v">Friends</div><div class="cd">⌄</div></div>
+  <div class="cap2">Friends see your selfie, title, score, time and streak. Heart and breath stay on your phone.</div>
+  <div class="menu" style="top:392px">
+    <div class="hd">Who can see</div>
+    <div class="on">Friends ✓</div>
+    <div>Only you</div>
+  </div>
+</div></div>
+<div class="cap"><b>Visibility, scrolled to.</b> Its own bold header and the one grey sub-label Strava allows itself, because "Visibility / Who can see" is the single place a noun beats a question. The menu opens in place; technique uses the identical control.</div>
+</div>
+
+</div>
+
+<h2>The camera</h2>
+<p class="note">BeReal's capture screen, checked against real captures: pure black, no accent colour at all, the wordmark centred at the top, a <b>rounded-corner viewfinder that is not full bleed</b> (black shows above and below), a small zoom pill at its bottom edge, and exactly three controls on one line underneath: flash left, an <b>unfilled white ring</b> shutter centre, flip right. No library button, no filters, no modes. Ours is that, with 808's mark where BeReal puts its own.</p>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camtop"><div class="x">✕</div><div class="w">808</div><div class="sp"></div></div>
+    <div class="camview"></div>
+    <div class="zoom"><span>You, right after you sat</span></div>
+    <div class="cambot">
+      <div class="sbtn">⚡</div>
+      <div class="shutter"></div>
+      <div class="sbtn">⟳</div>
+    </div>
+  </div>
+</div></div>
+<div class="cap"><b>Capture.</b> Unfilled white ring, exactly as BeReal. The gold stays out of the camera entirely: on a photo screen an accent ring reads as a record button.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camtop"><div class="x">✕</div><div class="w">808</div><div class="sp"></div></div>
+    <div class="camview shot2"></div>
+    <div class="revbar">
+      <div class="ghost">Retake</div>
+      <div class="use">Use this one</div>
+    </div>
+  </div>
+</div></div>
+<div class="cap"><b>Review.</b> Same header, same frame, so it does not feel like a new page. Two choices in 808's words. Unlimited retakes.</div>
+</div>
+
+</div>
+
+<h2>Worth knowing, from the research</h2>
+<ol class="q">
+<li><b>SweatMates forces the dual front-and-back shot, and it is their most-complained-about feature.</b> Real App Store reviews object to being made to use the back camera, one specifically about capturing bystanders at the gym. Since you named SweatMates as a reference, that is the thing I would not copy from it. One front camera, as agreed.</li>
+<li><b>BeReal puts the caption AFTER posting</b>, not before. Our description sits on the save screen, which is Strava's model, and I think that is right for us because the save screen is also where the session gets graded.</li>
+<li><b>Strava's current build dropped its stats strip</b> and demoted the map to a thumbnail. We keep three numbers, because unlike a run, a meditation has nothing else to show and the score is the reason this screen exists.</li>
+</ol>
+
+<p class="note" style="margin-top:22px">Two more reference passes across Hevy, Gentler Streak, Nike Run Club, Whoop, Letterboxd and the meditation apps are still running. If they turn up something that makes this cleaner I will fold it in before writing any Swift.</p>
+
+</body></html>
