@@ -80,10 +80,42 @@ final class SessionCoordinator: NSObject, ObservableObject {
 
     #if DEBUG
     /// Camera signals recorded alongside this Watch session (Settings >
-    /// "Camera capture (debug)"). Started on the Watch's started-ack so t=0 is
-    /// the session's real start; stopped, and written with the wrist's own
-    /// result beside it, when the payload lands.
+    /// "Camera capture (debug)"). ONE instance, owned here, across two
+    /// screens: the Begin sheet starts it previewing so the person can frame
+    /// themselves (`startCameraPreview`), `begin` claims it so it outlives the
+    /// sheet, the Watch's started-ack arms it so t = 0 is the session's real
+    /// start, and it is stopped, with the wrist's own result written beside
+    /// it, when the payload lands. A sheet dismissed without beginning
+    /// releases it (`releaseCameraPreviewIfUnclaimed`), so the camera never
+    /// runs on with nothing left to stop it.
     @Published private(set) var cameraRecorder: CameraSignalRecorder?
+    /// True from Begin until the attempt ends. Set synchronously in `begin`
+    /// because the sheet's onDisappear fires before the attempt has an id.
+    private var cameraClaimed = false
+
+    private var cameraCaptureOn: Bool {
+        UserDefaults.standard.bool(forKey: CameraSignalRecorder.debugToggleKey)
+    }
+
+    /// The Begin sheet is up: run the camera so the person can frame themselves.
+    func startCameraPreview() {
+        guard cameraCaptureOn, cameraRecorder == nil else { return }
+        let rec = CameraSignalRecorder()
+        rec.start()
+        cameraRecorder = rec
+    }
+
+    /// The Begin sheet went away. If no session claimed the camera, stop it.
+    func releaseCameraPreviewIfUnclaimed() {
+        guard !cameraClaimed else { return }
+        releaseCamera(wrist: nil)
+    }
+
+    private func releaseCamera(wrist: SessionPayload?) {
+        cameraRecorder?.stop(wrist: wrist)
+        cameraRecorder = nil
+        cameraClaimed = false
+    }
     #endif
 
     private let container: ModelContainer
@@ -121,6 +153,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// during the session.
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?,
                hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
+        #if DEBUG
+        // Claim the previewing camera before the sheet's onDisappear can
+        // release it; the attempt's own id does not exist yet.
+        cameraClaimed = true
+        #endif
         Task {
             // Ask WatchConnectivity what it knows before asking HealthKit to
             // launch anything. `startWatchApp` fails the same way whether no
@@ -302,10 +339,16 @@ final class SessionCoordinator: NSObject, ObservableObject {
         guard let current = active, current.id == sessionID else { return }
         startAcked = true
         #if DEBUG
-        if UserDefaults.standard.bool(forKey: CameraSignalRecorder.debugToggleKey), cameraRecorder == nil {
-            let rec = CameraSignalRecorder(sessionID: sessionID, sessionStartedAt: startedAt)
-            rec.start()
-            cameraRecorder = rec
+        if cameraCaptureOn {
+            // Usually the sheet's preview, already running and framed; a
+            // fresh one if the session began some other way.
+            if cameraRecorder == nil {
+                let rec = CameraSignalRecorder()
+                rec.start()
+                cameraRecorder = rec
+            }
+            cameraClaimed = true
+            cameraRecorder?.arm(sessionID: sessionID, sessionStartedAt: startedAt)
         }
         #endif
         active = ActiveSession(id: current.id,
@@ -354,7 +397,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
         stopAudio(reason: "start failure: \(failure.rawValue)")
         #if DEBUG
-        cameraRecorder?.stop(wrist: nil); cameraRecorder = nil
+        releaseCamera(wrist: nil)
         #endif
         active = nil
         currentAttemptID = nil
@@ -388,9 +431,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // not stop the new session's audio or tear down its screen.
         let isCurrent = currentAttemptID == nil || payload.sessionID == currentAttemptID
         #if DEBUG
-        if let rec = cameraRecorder, rec.sessionID == payload.sessionID {
-            rec.stop(wrist: payload)
-            cameraRecorder = nil
+        if let rec = cameraRecorder {
+            if rec.sessionID == payload.sessionID {
+                releaseCamera(wrist: payload)
+            } else if isCurrent {
+                // The attempt is over without the camera ever being armed
+                // (no started-ack reached the phone): nothing to write.
+                releaseCamera(wrist: nil)
+            }
         }
         #endif
 

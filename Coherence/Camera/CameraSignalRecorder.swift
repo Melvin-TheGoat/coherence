@@ -16,8 +16,13 @@ import os
 /// at ~10 fps, with a torso ROI from Vision fixed over the first 30 s. No frame
 /// is ever stored; only the numbers leave this class.
 ///
-/// t = 0 is the Watch's real start (the started-ack), not the tap, so the two
-/// files line up without the offline lab having to solve for an offset.
+/// Two phases, ONE camera session. `start()` runs the front camera in
+/// PREVIEW: frames are watched for a person (`framed`, which drives the Begin
+/// sheet's outline) and nothing is recorded. `arm(sessionID:sessionStartedAt:)`,
+/// called on the Watch's started-ack, makes the next frame t = 0 and begins
+/// the samples, so the two files line up without the offline lab having to
+/// solve for an offset. The camera is never restarted between the phases:
+/// that is what lets a person frame themselves before Begin and keep it.
 ///
 /// DEBUG only, and behind Settings > "Camera capture (debug)".
 final class CameraSignalRecorder: NSObject, ObservableObject {
@@ -31,7 +36,7 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
     }
 
     /// Normalized, origin top-left, in the (rotated-to-portrait) buffer's space.
-    struct ROI {
+    struct ROI: Equatable {
         var x: Double, y: Double, w: Double, h: Double
         func padded(_ pad: Double) -> ROI {
             let nx = max(0, x - w * pad), ny = max(0, y - h * pad)
@@ -39,13 +44,17 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
         }
     }
 
-    let sessionID: UUID
-    let sessionStartedAt: Date
+    /// Named by `arm`; nil while the camera is only previewing.
+    private(set) var sessionID: UUID?
+    private(set) var sessionStartedAt: Date?
     let captureSession = AVCaptureSession()
 
     @Published private(set) var frameCount = 0
+    /// A person is in the frame: found in three of the last four detections
+    /// (one a second while previewing). Drives the framing outline.
+    @Published private(set) var framed = false
     @Published private(set) var roiFixed = false
-    @Published private(set) var statusLine = "camera: starting"
+    @Published private(set) var statusLine = "starting"
 
     private let queue = DispatchQueue(label: "com.lockout.meditate808.camera-signals", qos: .userInitiated)
     private let output = AVCaptureVideoDataOutput()
@@ -53,9 +62,12 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
     private let log = Logger(subsystem: "com.lockout.meditate808", category: "camera")
 
     // Per-frame state, touched only on `queue`.
+    private var armed = false
+    private var stopped = false
     private var samples: [Sample] = []
     private var recorderStartedAt = Date()
     private var firstPTS: CMTime?
+    private var lastFrameT = 0.0
     private var prev: LumaGrid?
     private var prevRow: [Double] = [], prevCol: [Double] = [], prevRRow: [Double] = [], prevRCol: [Double] = []
     private var dyAcc = 0.0, dxAcc = 0.0, rdyAcc = 0.0, rdxAcc = 0.0
@@ -64,29 +76,45 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
     private var roi: ROI?
     private var roiFixedAt: Double?
     private var exposureLocked = false
+    /// Preview-phase detections, oldest first: when, and the box if a person
+    /// was found. Kept so `arm` can fix the ROI from the last few seconds.
+    private var previewHits: [(t: Double, box: CGRect?)] = []
+    private var lastPreviewDetectT = -10.0
+    private var framedOnQueue = false
 
     private static let gridMax = 240
     private static let fps = 10
     private static let detectEverySec = 5.0
     private static let detectUntilSec = 30.0
     private static let lockExposureAtSec = 3.0
-
-    init(sessionID: UUID, sessionStartedAt: Date) {
-        self.sessionID = sessionID
-        self.sessionStartedAt = sessionStartedAt
-        super.init()
-    }
+    /// Previewing: a detection a second; framed on three hits in the last four.
+    static let previewDetectEverySec = 1.0
+    static let framingWindow = 4
+    static let framingHits = 3
+    /// Person boxes this recent at arm time fix the ROI from t = 0.
+    static let previewROIWindowSec = 6.0
+    static let previewROIMinimumBoxes = 3
 
     // MARK: Lifecycle
 
+    /// Runs the camera in preview. Nothing is recorded until `arm`.
     func start() {
+        // `PREVIEW_FRAMED=1`: the simulator has no camera, so Vision can never
+        // find anyone; this shows the "in frame" state for screenshots.
+        if ProcessInfo.processInfo.environment["PREVIEW_FRAMED"] == "1" { framed = true }
         AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
             guard let self else { return }
             guard granted else {
-                Task { @MainActor in self.statusLine = "camera: permission denied" }
+                Task { @MainActor in self.statusLine = "permission denied" }
                 return
             }
-            self.queue.async { self.configureAndRun() }
+            self.queue.async {
+                // Stopped while the permission prompt was up (the sheet was
+                // dismissed): starting now would leave the camera running
+                // with nothing left to stop it.
+                guard !self.stopped else { return }
+                self.configureAndRun()
+            }
         }
     }
 
@@ -97,7 +125,7 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
         guard let cam = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
               let input = try? AVCaptureDeviceInput(device: cam), s.canAddInput(input) else {
             s.commitConfiguration()
-            Task { @MainActor in self.statusLine = "camera: no front camera" }
+            Task { @MainActor in self.statusLine = "no front camera" }
             return
         }
         device = cam
@@ -122,28 +150,67 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
             cam.unlockForConfiguration()
         }
         s.commitConfiguration()
-        recorderStartedAt = Date()
         s.startRunning()
         Task { @MainActor in
             UIApplication.shared.isIdleTimerDisabled = true
-            self.statusLine = "camera: recording"
+            self.statusLine = "previewing"
         }
     }
 
-    /// Stops the camera and writes both files. Safe to call twice.
+    /// The Watch's workout has begun: the next frame is t = 0 and recording
+    /// starts. If a person was in frame over the last few seconds of preview,
+    /// that median box becomes the ROI from the start instead of thirty
+    /// seconds in; otherwise the in-session detection runs as it always has.
+    /// Auto-exposure stays free until the usual three seconds after t = 0,
+    /// so a preview that was still being aimed never locks a wrong scene.
+    func arm(sessionID: UUID, sessionStartedAt: Date) {
+        self.sessionID = sessionID
+        self.sessionStartedAt = sessionStartedAt
+        queue.async {
+            guard !self.armed, !self.stopped else { return }
+            self.armed = true
+            self.recorderStartedAt = Date()
+            self.firstPTS = nil
+            self.samples = []
+            self.prev = nil
+            self.prevRow = []; self.prevCol = []; self.prevRRow = []; self.prevRCol = []
+            self.dyAcc = 0; self.dxAcc = 0; self.rdyAcc = 0; self.rdxAcc = 0
+            self.boxes = []
+            self.lastDetectT = -10
+            self.exposureLocked = false
+            let recent = self.previewHits
+                .filter { self.lastFrameT - $0.t <= Self.previewROIWindowSec }
+                .compactMap(\.box)
+            if let r = Self.medianROI(recent, minimum: Self.previewROIMinimumBoxes) {
+                self.roi = r
+                self.roiFixedAt = 0
+                Task { @MainActor in self.roiFixed = true }
+            }
+            Task { @MainActor in self.statusLine = "recording" }
+        }
+    }
+
+    /// Stops the camera. Writes both files when a session was recorded; a
+    /// preview that was never armed writes nothing. Safe to call twice.
     @discardableResult
     func stop(wrist: SessionPayload?) -> URL? {
         var snapshot: [Sample] = []
         var roiOut: ROI?
         var fixedAt: Double?
+        var wasArmed = false
         queue.sync {
+            stopped = true
             snapshot = samples
             roiOut = roi
             fixedAt = roiFixedAt
+            wasArmed = armed
         }
-        if captureSession.isRunning { queue.async { self.captureSession.stopRunning() } }
+        queue.async { if self.captureSession.isRunning { self.captureSession.stopRunning() } }
         Task { @MainActor in UIApplication.shared.isIdleTimerDisabled = false }
-        guard !snapshot.isEmpty else { return nil }
+        guard wasArmed, let sessionID, let sessionStartedAt, !snapshot.isEmpty else {
+            Task { @MainActor in self.statusLine = "off" }
+            return nil
+        }
 
         let fm = FileManager.default
         guard let docs = fm.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
@@ -179,13 +246,20 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
             }
         }
         log.info("camera capture written: \(snapshot.count) samples → \(csvURL.lastPathComponent)")
-        Task { @MainActor in self.statusLine = "camera: saved \(snapshot.count) frames" }
+        Task { @MainActor in self.statusLine = "saved \(snapshot.count) frames" }
         return csvURL
     }
 
     // MARK: Per-frame
 
     private func process(_ buffer: CVPixelBuffer, pts: CMTime) {
+        let raw = pts.seconds
+        lastFrameT = raw
+        guard armed else {
+            previewDetect(buffer, at: raw)
+            return
+        }
+
         if firstPTS == nil { firstPTS = pts }
         let t = CMTimeSubtract(pts, firstPTS!).seconds
 
@@ -202,24 +276,15 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
 
         // ROI: a detection every 5 s for the first 30 s, then the median box
         // fixed for the rest of the session (a moving box would inject its own
-        // jitter into the sub-pixel shift signal).
+        // jitter into the sub-pixel shift signal). Skipped entirely when the
+        // preview already fixed it at t = 0.
         if roi == nil, t < Self.detectUntilSec, t - lastDetectT >= Self.detectEverySec {
             lastDetectT = t
-            let req = VNDetectHumanRectanglesRequest()
-            req.upperBodyOnly = true
-            let handler = VNImageRequestHandler(cvPixelBuffer: buffer, orientation: .up, options: [:])
-            try? handler.perform([req])
-            if let best = req.results?.max(by: {
-                $0.boundingBox.width * $0.boundingBox.height < $1.boundingBox.width * $1.boundingBox.height
-            }) {
-                boxes.append(best.boundingBox)
-            }
+            if let box = Self.detectPerson(in: buffer) { boxes.append(box) }
         }
-        if roi == nil, (t >= Self.detectUntilSec || boxes.count >= 6), boxes.count >= 3 {
-            func med(_ v: [CGFloat]) -> Double { let s = v.sorted(); return Double(s[s.count / 2]) }
-            let x = med(boxes.map(\.minX)), y = med(boxes.map(\.minY))
-            let w = med(boxes.map(\.width)), h = med(boxes.map(\.height))
-            roi = ROI(x: x, y: 1 - (y + h), w: w, h: h).padded(0.12)   // Vision is bottom-left
+        if roi == nil, (t >= Self.detectUntilSec || boxes.count >= 6),
+           let r = Self.medianROI(boxes, minimum: 3) {
+            roi = r
             roiFixedAt = t
             Task { @MainActor in self.roiFixed = true }
         }
@@ -252,6 +317,52 @@ final class CameraSignalRecorder: NSObject, ObservableObject {
             }
         }
         prev = grid; prevRow = row; prevCol = col; prevRRow = rrow; prevRCol = rcol
+    }
+
+    /// Previewing: is someone sitting in front of the camera? A detection a
+    /// second, judged over the last four so one missed frame does not
+    /// flicker the outline, and kept so `arm` can fix the ROI from them.
+    private func previewDetect(_ buffer: CVPixelBuffer, at raw: Double) {
+        guard raw - lastPreviewDetectT >= Self.previewDetectEverySec else { return }
+        lastPreviewDetectT = raw
+        previewHits.append((t: raw, box: Self.detectPerson(in: buffer)))
+        if previewHits.count > 12 { previewHits.removeFirst(previewHits.count - 12) }
+        let now = Self.isFramed(previewHits.map { $0.box != nil })
+        if now != framedOnQueue {
+            framedOnQueue = now
+            Task { @MainActor in self.framed = now }
+        }
+    }
+
+    // MARK: Rules (pure, so they can be tested without a camera)
+
+    /// Three hits in the last four detections. Fewer than four so far can
+    /// still qualify (three straight hits), so the outline answers within
+    /// three seconds of the sheet appearing.
+    static func isFramed(_ hits: [Bool]) -> Bool {
+        hits.suffix(framingWindow).filter { $0 }.count >= framingHits
+    }
+
+    /// The median box of a set of detections, flipped from Vision's
+    /// bottom-left origin and padded 12 %, or nil below `minimum` boxes. The
+    /// median is what makes one wild detection harmless.
+    static func medianROI(_ boxes: [CGRect], minimum: Int) -> ROI? {
+        guard boxes.count >= max(1, minimum) else { return nil }
+        func med(_ v: [CGFloat]) -> Double { let s = v.sorted(); return Double(s[s.count / 2]) }
+        let x = med(boxes.map(\.minX)), y = med(boxes.map(\.minY))
+        let w = med(boxes.map(\.width)), h = med(boxes.map(\.height))
+        return ROI(x: x, y: 1 - (y + h), w: w, h: h).padded(0.12)   // Vision is bottom-left
+    }
+
+    /// The largest upper body Vision finds, in its bottom-left normalized space.
+    private static func detectPerson(in buffer: CVPixelBuffer) -> CGRect? {
+        let req = VNDetectHumanRectanglesRequest()
+        req.upperBodyOnly = true
+        let handler = VNImageRequestHandler(cvPixelBuffer: buffer, orientation: .up, options: [:])
+        try? handler.perform([req])
+        return req.results?.max(by: {
+            $0.boundingBox.width * $0.boundingBox.height < $1.boundingBox.width * $1.boundingBox.height
+        })?.boundingBox
     }
 }
 
