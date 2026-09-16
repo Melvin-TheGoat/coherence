@@ -34,6 +34,19 @@ Archive from `mvp` at or after the commit that added `FeatureFlags`. It ships:
 The 1.0.2 build uploaded earlier (202609141719) predates all of this, so
 this release needs a NEW archive.
 
+## OPEN for the build that flips `FeatureFlags.ottoInRelease`
+
+- [ ] Privacy policy, both copies (`PRIVACY_POLICY.md`, `website/privacy.html`):
+      one sentence that Otto answers on the device using Apple's on-device
+      model (Apple Intelligence) and that nothing you ask or your session
+      data is sent anywhere. Redeploy the website.
+- [ ] Paid tier description in App Store Connect names Otto; screenshots if
+      it appears in one.
+- [ ] Review notes: "the assistant runs on Apple's on-device Foundation
+      Models framework; no server, no third-party AI service" (keeps the
+      earlier answers true).
+- [ ] Melvin and Aziz have read a dozen of Otto's answers on a phone.
+
 ## OPEN: must be done in the submission that ships the next build
 
 - [ ] **CloudKit Console: promote the schema Development → Production
