@@ -166,6 +166,22 @@ Against the wrist's own curve, same rule as `camera_compare.py`:
   nothing in between recovers a longer one for Aziz).
 - Runtime: 0.3 s for 28 minutes at 6 fps, in -O. Fine at session end.
 
+## 4b. In-app sits so far (the DEBUG collector, 640x480 front camera)
+
+- 14EDEB30 (Melvin, 2026-09-15, natural breathing, first run): 74% of
+  windows read, median 5.7/min, doorway 5.7 at 90 s; median error against
+  the wrist 1.0/min. Stillness low from real movement.
+- 07707B98 (Melvin, 2026-09-16, **paced 12/min**, ~5.5 min): torso ROI
+  read 57 of 64 windows, median 11.4/min, per minute 10.8 / 10.6 / 10.5 /
+  12.0 / 12.1 / 11.6; the wrist read 10.8 / 10.8 / 10.2 / 12.1 / 12.1.
+  Camera vs wrist median |error| 0.17/min, 100% within ±1.5 (n = 40). No
+  doorway, correctly: 12/min is above the 9/min ceiling. Both instruments
+  sit about 1/min under the pace in the first three minutes and on it in
+  the last two, so either the pacing settled late or both undershoot the
+  same way; a metronome-timed recording would tell. First of the six paced
+  sits in section 5, item 1: **the camera reads a paced 12 as well as the
+  wrist does, and refuses the doorway at that rate.**
+
 ## 5. Ground truth before anything ships
 
 The DEBUG collector (`CameraSignalRecorder`, Settings > Camera capture) is
