@@ -291,8 +291,10 @@ or fund a backend.
   motion CSVs to Documents/AirPodsCaptures; Release binary carries none of
   it; committed Info.plist unchanged. Shipping it changes Info.plist, the
   Health strings and the policy's Watch-only wording (a review pass).
-  **Next: a first capture on AirPods Pro 3** (steps in the plan). Nobody
-  has confirmed owning a pair yet.
+  **Next: a first capture on AirPods Pro 3 or Powerbeats Pro 2** (steps in
+  the plan). Melvin does not own a pair (2026-09-15); the probe is on his
+  beta anyway. Needs Aziz or a friend with the buds, or a pair bought for
+  the purpose. Parked until then.
 
 - **No-Watch waitlist emails now reach us (next build).** The in-app
   waitlist screen saved the typed email on the person's own phone only, so
