@@ -1,0 +1,254 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Otto is a sloth</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.09); }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 4px; } .note{ color:var(--muted); font-size:13px; max-width:720px; line-height:1.5; }
+h2{ font-size:13px; margin:34px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.board{ background:var(--bg); border:1px solid #2c2a25; border-radius:22px; padding:22px; display:flex; flex-direction:column; align-items:center; flex:none; }
+.board svg{ display:block; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:280px; line-height:1.45; } .cap b{ color:var(--fg); }
+.cap.w{ width:400px; } .cap.xw{ width:560px; }
+.k{ font-size:9.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; font-weight:600; }
+.gold{ color:var(--gold); } .teal{ color:var(--teal); } .white{ color:var(--fg); }
+.art{ stroke:currentColor; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+.swatch{ background:var(--bg); border:1px solid #2c2a25; border-radius:22px; padding:22px; width:180px; display:flex; flex-direction:column; align-items:center; gap:12px; flex:none; }
+.swatch.pick{ border-color:var(--teal); }
+.swatch .k{ text-align:center; }
+.sizes{ display:flex; align-items:flex-end; gap:26px; }
+.sizes > div{ display:flex; flex-direction:column; align-items:center; gap:8px; }
+.mark{ width:32px; height:32px; border-radius:50%; border:2px solid var(--teal); color:var(--teal); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex:none; letter-spacing:-.02em; }
+.phone{ width:270px; border-radius:22px; border:1px solid #2c2a25; overflow:hidden; background:var(--bg); flex:none; padding:14px 18px 18px; font-size:12.5px; }
+.nav{ display:flex; align-items:center; justify-content:space-between; font-size:12px; color:var(--gold); } .nav .t{ color:var(--fg); font-weight:600; }
+.otto-row{ display:flex; align-items:center; gap:10px; padding:11px 12px; background:var(--card); border-radius:14px; margin-top:12px; }
+.otto-row .t{ font-weight:600; font-size:12.5px; } .otto-row .s{ color:var(--muted); font-size:10.5px; margin-top:2px; }
+.otto-row .chev{ margin-left:auto; color:var(--gold); }
+.msg{ display:flex; gap:8px; margin-top:12px; align-items:flex-start; }
+.msg .b{ font-size:11.5px; line-height:1.5; color:var(--fg); }
+.privacy{ text-align:center; color:#6f6d66; font-size:9.5px; margin-top:6px; }
+.center{ text-align:center; margin-top:18px; } .center h3{ font-size:15px; margin:12px 0 6px; letter-spacing:-.02em; } .center p{ color:var(--muted); font-size:11.5px; line-height:1.5; margin:0 10px; }
+.voice{ max-width:560px; background:var(--card); border-radius:18px; padding:18px 20px; display:flex; gap:14px; align-items:flex-start; }
+.voice p{ margin:0; font-size:15px; line-height:1.55; }
+.voice .who{ color:var(--muted); font-size:11px; margin-top:8px; }
+.q{ margin-top:34px; max-width:720px; } .q li{ margin:8px 0; line-height:1.5; font-size:13.5px; } .q b{ color:var(--gold); }
+code{ color:var(--teal); font-size:12px; }
+</style></head><body>
+
+<!-- ================================================================
+     The drawings. Every figure is one symbol, drawn once, stroked in
+     currentColor with no stroke-width of its own, so a page (or an
+     app) sets the weight and the colour from outside and the same
+     paths serve every size.
+     ================================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+
+  <!-- The face, in a 64 unit head. Eyes closed, the three-toed mask as a
+       soft wash, a small flat nose, the wide low smile. -->
+  <g id="face-64">
+    <ellipse cx="18.5" cy="31" rx="12" ry="4.8" transform="rotate(-20 18.5 31)" fill="currentColor" fill-opacity=".26" stroke="none"/>
+    <ellipse cx="45.5" cy="31" rx="12" ry="4.8" transform="rotate(20 45.5 31)" fill="currentColor" fill-opacity=".26" stroke="none"/>
+    <path d="M17 29.2Q22 33.8 27 29.2"/>
+    <path d="M37 29.2Q42 33.8 47 29.2"/>
+    <path d="M30.6 39H33.4"/>
+    <path d="M22 45.5Q32 53.5 42 45.5"/>
+  </g>
+
+  <!-- (3) Head badge. The circle is the head. 64 box. -->
+  <g id="otto-badge">
+    <circle cx="32" cy="32" r="29"/>
+    <use href="#face-64"/>
+  </g>
+
+  <!-- (1) Sitting cross-legged. 240 box. Head 84 wide, the face is
+       #face-64 scaled by 1.3125 and written out in these coordinates so
+       the stroke stays one weight. -->
+  <g id="otto-sit">
+    <ellipse cx="120" cy="74" rx="42" ry="38"/>
+    <ellipse cx="102.3" cy="72.7" rx="15.75" ry="6.3" transform="rotate(-20 102.3 72.7)" fill="currentColor" fill-opacity=".26" stroke="none"/>
+    <ellipse cx="137.7" cy="72.7" rx="15.75" ry="6.3" transform="rotate(20 137.7 72.7)" fill="currentColor" fill-opacity=".26" stroke="none"/>
+    <path d="M100.3 70.3Q106.9 76.4 113.4 70.3"/>
+    <path d="M126.6 70.3Q133.1 76.4 139.7 70.3"/>
+    <path d="M118.2 83.2H121.8"/>
+    <path d="M106.9 91.7Q120 102.2 133.1 91.7"/>
+    <g id="sit-arm">
+      <path d="M92 101C76 106 62 118 58 136C54 150 54 162 58 172"/>
+      <path d="M100 118C88 130 82 148 82 166"/>
+      <path d="M58 172C62 184 78 184 82 166"/>
+      <path d="M63 180C61 186 62 192 66 196"/>
+      <path d="M70 182C69 188 70 194 74 198"/>
+      <path d="M77 180C77 186 78 192 82 195"/>
+    </g>
+    <use href="#sit-arm" transform="translate(240 0) scale(-1 1)"/>
+    <path d="M58 172C44 178 42 196 60 204C92 214 148 214 180 204C198 196 196 178 182 172"/>
+    <path d="M156 170C134 178 100 190 72 203"/>
+    <path d="M82 168C96 176 110 182 122 186"/>
+    <path d="M72 203C66 204 60 208 60 213"/>
+    <path d="M77 205C72 207 68 211 68 215"/>
+    <path d="M82 206C78 209 76 213 77 217"/>
+  </g>
+
+  <!-- (2) Hanging from a branch. 320 x 200 box. Belly to the branch,
+       back sagging, four limbs up to the branch and three claws curled
+       over its top edge (the palm is behind the branch, so the limb
+       stops under it and nothing crosses it), head at the left end. -->
+  <g id="otto-hang">
+    <path d="M-4 30C80 24 200 38 324 30"/>
+    <path d="M-4 46C80 40 200 54 324 46"/>
+    <path d="M272 33C280 22 288 15 300 14"/>
+    <path d="M300 14C304 4 316 1 322 7C316 16 306 19 300 14Z"/>
+    <ellipse cx="72" cy="128" rx="36" ry="33"/>
+    <ellipse cx="56.8" cy="126.9" rx="13.5" ry="5.4" transform="rotate(-20 56.8 126.9)" fill="currentColor" fill-opacity=".26" stroke="none"/>
+    <ellipse cx="87.2" cy="126.9" rx="13.5" ry="5.4" transform="rotate(20 87.2 126.9)" fill="currentColor" fill-opacity=".26" stroke="none"/>
+    <path d="M55.1 124.9Q60.8 130 66.4 124.9"/>
+    <path d="M77.6 124.9Q83.3 130 88.9 124.9"/>
+    <path d="M70.4 135.9H73.6"/>
+    <path d="M60.8 143.2Q72 152.2 83.3 143.2"/>
+    <path d="M100 107C130 92 220 94 256 116C268 128 262 154 246 162C210 182 150 180 116 162C108 158 102 154 100 149"/>
+    <!-- near arm, claws curl forward -->
+    <path d="M114 103C106 90 104 70 110 47"/>
+    <path d="M132 99C124 86 122 68 128 47"/>
+    <path d="M110 30C109 22 104 17 99 19"/>
+    <path d="M118 30C117 22 112 17 107 19"/>
+    <path d="M126 30C125 22 120 17 115 19"/>
+    <!-- far arm -->
+    <path d="M156 98C150 84 148 66 152 48"/>
+    <path d="M174 97C168 82 166 66 170 48"/>
+    <path d="M152 31C151 23 146 18 141 20"/>
+    <path d="M160 31C159 23 154 18 149 20"/>
+    <path d="M168 31C167 23 162 18 157 20"/>
+    <!-- far leg, claws curl back -->
+    <path d="M200 102C198 88 200 70 206 50"/>
+    <path d="M216 102C215 88 218 70 224 50"/>
+    <path d="M208 32.5C209 24.5 214 19.5 219 21.5"/>
+    <path d="M216 32.5C217 24.5 222 19.5 227 21.5"/>
+    <path d="M224 32.5C225 24.5 230 19.5 235 21.5"/>
+    <!-- near leg -->
+    <path d="M234 112C232 98 234 74 240 51"/>
+    <path d="M250 116C249 102 252 78 258 52"/>
+    <path d="M242 33C243 25 248 20 253 22"/>
+    <path d="M250 33C251 25 256 20 261 22"/>
+    <path d="M258 33C259 25 264 20 269 22"/>
+  </g>
+
+  <!-- The 808 mark, LogoMark.swift's geometry in a 100 box:
+       w .135, h .205, offset .215, ring .150 of the size. -->
+  <g id="mark-808">
+    <ellipse cx="50" cy="28.5" rx="13.5" ry="20.5"/>
+    <ellipse cx="50" cy="71.5" rx="13.5" ry="20.5"/>
+    <ellipse cx="28.5" cy="50" rx="20.5" ry="13.5"/>
+    <ellipse cx="71.5" cy="50" rx="20.5" ry="13.5"/>
+    <circle cx="50" cy="50" r="15"/>
+  </g>
+
+</defs>
+</svg>
+
+<h1>808 · Otto is a sloth</h1>
+<p class="note">Otto, the on-device chat that reads your sessions back to you, gets a mascot: a sloth. Slow, peaceful, on brand for an app whose whole promise is settling down. These are concepts to react to, not final art. Everything here is line art in the language of the 808 mark: one stroke weight, round caps, no fills except a soft wash for the sloth's eye mask, no photo, no emoji. The sloth's eyes are closed in every drawing. That is the one decision the four boards share, because a sloth with its eyes shut is already meditating.</p>
+
+<h2>Four artboards</h2>
+<div class="row">
+
+<div>
+<div class="board">
+  <svg class="art teal" viewBox="0 0 240 240" width="280" height="280" stroke-width="3.6"><use href="#otto-sit"/></svg>
+</div>
+<div class="cap"><b>1 · Sitting.</b> Cross-legged, eyes closed, hands resting on the knees with the three claws draped over each one. The right foot tucks out under the left knee. The pose a user recognises as meditating, and the drawing Otto's locked screen and empty state would carry.</div>
+</div>
+
+<div>
+<div class="board">
+  <svg class="art teal" viewBox="0 0 320 200" width="400" height="250" stroke-width="3.6"><use href="#otto-hang"/></svg>
+</div>
+<div class="cap w"><b>2 · Hanging.</b> The classic silhouette: belly to the branch, back sagging like a hammock, four limbs hooked over with three claws each, head at the end, asleep. Arms curl forward, legs curl back. For a splash, a loading state, or the paid-tier store screenshot.</div>
+</div>
+
+<div>
+<div class="board">
+  <div class="sizes">
+    <div><svg class="art teal" viewBox="0 0 64 64" width="160" height="160" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">160</span></div>
+    <div><svg class="art teal" viewBox="0 0 64 64" width="56" height="56" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">56</span></div>
+    <div><svg class="art teal" viewBox="0 0 64 64" width="32" height="32" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">32</span></div>
+    <div><svg class="art teal" viewBox="0 0 64 64" width="24" height="24" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">24</span></div>
+  </div>
+</div>
+<div class="cap w"><b>3 · Head badge.</b> The circle is the head, the same ring the placeholder "O" uses today. Stroke is 5 percent of the diameter, which is the weight the existing ring already has at 24 and 32 pt (1.2 and 1.6 px). The same paths at 160, 56, 32 and 24 px, nothing redrawn.</div>
+</div>
+
+<div>
+<div class="board">
+  <svg class="art" viewBox="0 0 560 240" width="560" height="240" stroke-width="3.6">
+    <g class="gold"><use href="#mark-808" transform="translate(31 51) scale(1.38)" stroke-width="2.6"/></g>
+    <g class="teal"><use href="#otto-sit" transform="translate(190 0)"/></g>
+    <g class="teal"><use href="#otto-badge" transform="translate(411 51) scale(2.156)" stroke-width="1.67"/></g>
+  </svg>
+</div>
+<div class="cap xw"><b>4 · Beside the mark.</b> The 808 mark at 138 pt, gold, with its own stroke ratio from <code>LogoMark.swift</code> (0.026 of the size, so 3.6 here). The sloth and the badge in the same 3.6 stroke, teal. Same weight, same round caps, same ellipses doing the work. They should read as one hand.</div>
+</div>
+
+</div>
+
+<h2>Colour</h2>
+<div class="row">
+  <div class="swatch"><svg class="art gold" viewBox="0 0 64 64" width="96" height="96" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">Gold on dark</span></div>
+  <div class="swatch pick"><svg class="art teal" viewBox="0 0 64 64" width="96" height="96" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">Teal on dark · recommended</span></div>
+  <div class="swatch"><svg class="art white" viewBox="0 0 64 64" width="96" height="96" stroke-width="3.2"><use href="#otto-badge"/></svg><span class="k">White on dark</span></div>
+</div>
+<p class="note" style="margin-top:14px"><b style="color:var(--fg)">Teal.</b> In this app gold means chosen or achieved and teal means the body's signals and guidance. Otto is guidance: it explains, it never awards. A gold sloth would also be a second gold object on every screen it sits on (the results ring, the send button, the unlock button already own that colour), and the rule is one gold thing per section. The Otto mockup already draws its placeholder ring in teal for the same reason; the sloth simply moves into that ring. White is shown for completeness. It works, but it would be the only white line drawing in the app and reads as a system glyph rather than a character. Gold is there so the founders can see it, and it is the right answer only if Otto is ever repositioned as a reward rather than a guide.</p>
+
+<h2>At size, in place</h2>
+<div class="row">
+
+<div>
+<div class="phone">
+  <div class="nav"><span>⇪ &nbsp;⋯</span><span class="t"></span><span>Done</span></div>
+  <div class="otto-row"><svg class="art teal" viewBox="0 0 64 64" width="32" height="32" stroke-width="3.2"><use href="#otto-badge"/></svg><div><div class="t">Ask Otto about this session</div><div class="s">Why this score, and what to try next</div></div><span class="chev">›</span></div>
+  <div class="otto-row"><div class="mark">O</div><div><div class="t">Ask Otto about this session</div><div class="s">Today's placeholder, for comparison</div></div><span class="chev">›</span></div>
+</div>
+<div class="cap" style="width:270px"><b>Results and Profile rows, 32 pt.</b> The sloth in the row the mockup already has, over today's "O" for comparison. Same ring, same weight, same teal.</div>
+</div>
+
+<div>
+<div class="phone">
+  <div class="nav"><span></span><span class="t">Otto</span><span>Done</span></div>
+  <div class="privacy">Runs on your iPhone. Nothing you say, and none of your numbers, leave the phone.</div>
+  <div class="msg"><svg class="art teal" viewBox="0 0 64 64" width="24" height="24" stroke-width="3.2" style="flex:none"><use href="#otto-badge"/></svg><div class="b">Here is your 62 from this morning's 10 minute sit: heart eased down 6 beats, breath slowed to 5.8 a minute for 2 minutes, body mostly settled.</div></div>
+  <div class="msg"><svg class="art teal" viewBox="0 0 64 64" width="24" height="24" stroke-width="3.2" style="flex:none"><use href="#otto-badge"/></svg><div class="b">The data suggests a good middle. Your heart held at or below its opening for most of the sit.</div></div>
+</div>
+<div class="cap" style="width:270px"><b>Chat, 24 pt.</b> The smallest place the badge lives. At this size the mask wash and the nose fall away and the closed eyes and the smile carry it, which is why those two are the widest strokes on the face.</div>
+</div>
+
+<div>
+<div class="phone">
+  <div class="nav"><span></span><span class="t">Otto</span><span>Done</span></div>
+  <div class="center">
+    <svg class="art teal" viewBox="0 0 64 64" width="56" height="56" stroke-width="3.2" style="margin:0 auto"><use href="#otto-badge"/></svg>
+    <h3>Otto reads your evidence back to you.</h3>
+    <p>Explains your score, number by number, from your own session.</p>
+  </div>
+</div>
+<div class="cap" style="width:270px"><b>Chat header and locked screen, 56 pt.</b> The badge where the mockup's big ring sits. The sitting figure (board 1) is the alternative here if the founders want the whole sloth on the empty state.</div>
+</div>
+
+</div>
+
+<h2>Voice</h2>
+<div class="voice">
+  <svg class="art teal" viewBox="0 0 64 64" width="40" height="40" stroke-width="3.2" style="flex:none"><use href="#otto-badge"/></svg>
+  <div>
+    <p>Take your time. I have been sitting with your numbers since you finished, and they will keep. Ask when you are ready, and we will go through them slowly.</p>
+    <div class="who">Otto, as a sloth would say it. Unhurried, warm, plain. Still "the data suggests", still never "you are".</div>
+  </div>
+</div>
+
+<h2>Decisions in this mockup</h2>
+<ul class="q">
+  <li><b>Eyes closed everywhere.</b> One face, three drawings. Closed eyes are calm at 240 pt and legible at 24, and they make the badge a meditator rather than a pet.</li>
+  <li><b>The mask is the only wash.</b> The three-toed sloth's dark eye stripes are what make the face a sloth and not a bear. Outlining them doubles the lines around the eyes and turns to mud at 24 pt, so they are a 26 percent wash of the stroke colour instead, the one fill on the page.</li>
+  <li><b>Three claws, always.</b> Otto is a three-toed sloth, the one with the smile and the mask. Claws are the second identifier after the mask and they survive at every size the figures appear.</li>
+  <li><b>Two stroke ratios, on purpose.</b> The figures use 1.5 percent of their artboard, which lands on the mark's own weight when they sit at the sizes they meet (board 4). The badge uses 5 percent of its diameter because it lives at 24 to 56 pt, where the mark's ratio would be a hairline. Same as an optical size in a typeface.</li>
+  <li><b>No fur, no ears, no branch texture.</b> The mark has none of those either. A finishing illustrator may add a few tufts on the crown of the large figures; nothing should be added to the badge.</li>
+  <li><b>What this is not.</b> Not the App Store copy, not the Swift, not the final art. Design first, per the standing rule: the <code>OttoMark</code> placeholder becomes the badge only after the founders pick a direction here.</li>
+</ul>
+</body></html>
