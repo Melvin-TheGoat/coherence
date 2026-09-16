@@ -1,0 +1,271 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Save session v5, after review</title>
+<style>
+:root{
+  --bg:#13100D; --fg:#F5F3EC; --muted:#9A9A93; --dim:#7a7871;
+  --gold:#D4AF37; --teal:#5EB1A8; --hair:rgba(255,255,255,.14); --hair2:rgba(255,255,255,.07);
+}
+*{ box-sizing:border-box; }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 80px; }
+h1{ font-size:20px; margin:0 0 6px; }
+.note{ color:var(--muted); font-size:13px; max-width:820px; line-height:1.6; } .note b{ color:var(--fg); }
+h2{ font-size:13px; margin:40px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:284px; height:614px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:40px 0 0; overflow:hidden; font-size:12.5px; position:relative; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:284px; line-height:1.5; } .cap b{ color:var(--fg); }
+
+.nav{ display:flex; align-items:center; justify-content:space-between; padding:2px 16px 14px; }
+.nav .l{ color:var(--muted); font-size:12.5px; width:52px; }
+.nav .t{ font-weight:700; font-size:14.5px; }
+.nav .sp{ width:52px; }
+
+/* stats: ONE big number, two small facts. Asymmetric on purpose. */
+.stats{ display:flex; align-items:flex-end; gap:0; padding:0 16px 18px; }
+.stats .s{ padding-left:14px; margin-left:14px; border-left:1px solid var(--hair2); }
+.stats .s span{ display:block; font-size:9px; letter-spacing:.11em; text-transform:uppercase; color:var(--dim); font-weight:700; margin-bottom:4px; }
+.stats .s b{ display:block; font-size:19px; font-weight:700; letter-spacing:-.02em; line-height:1; }
+.stats .s b i{ font-style:normal; font-size:10.5px; font-weight:600; color:var(--muted); margin-left:2px; }
+.stats .hero{ padding-left:0; margin-left:0; border-left:none; }
+.stats .hero b{ font-size:38px; font-weight:800; letter-spacing:-.035em; color:var(--gold); }
+
+.f{ margin:0 16px 10px; border:1px solid var(--hair); border-radius:9px; padding:12px 13px; display:flex; align-items:center; gap:10px; min-height:44px; }
+.f .ic{ width:15px; text-align:center; color:var(--dim); font-size:12px; flex:none; }
+.f .v{ font-size:13px; flex:1; }
+.f .ph{ font-size:13px; color:var(--dim); flex:1; line-height:1.45; }
+.f .cd{ color:var(--dim); font-size:10px; flex:none; }
+.f.tall{ align-items:flex-start; min-height:76px; }
+.f.tall .ic{ margin-top:1px; }
+
+.sec{ font-size:16px; font-weight:700; letter-spacing:-.01em; padding:12px 16px 10px; }
+
+/* selfie: a PORTRAIT tile with the explanation beside it, not a dropzone */
+.selfie{ display:flex; gap:12px; align-items:center; margin:2px 16px 12px; }
+.tile{ width:78px; height:104px; border-radius:10px; flex:none; border:1.5px dashed rgba(212,175,55,.65); display:flex; align-items:center; justify-content:center; color:var(--gold); font-size:22px; }
+.tile.img{ border:none; background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); }
+.selfie .txt{ flex:1; }
+.selfie .h{ font-size:13px; font-weight:600; }
+.selfie .d{ font-size:11.5px; color:var(--muted); line-height:1.45; margin-top:3px; }
+/* Retake is the selfie section's one gold thing once the photo is in. */
+.selfie .rt{ font-size:12px; color:var(--gold); font-weight:600; margin-top:6px; }
+
+.dock{ position:absolute; left:0; right:0; bottom:0; padding:12px 16px 20px; background:linear-gradient(180deg,rgba(19,16,13,0),var(--bg) 26%); }
+.cta{ background:var(--gold); color:#1a1508; text-align:center; border-radius:13px; padding:14px; font-weight:700; font-size:13.5px; }
+
+.menu{ position:absolute; left:16px; right:16px; background:#2a2620; border-radius:13px; border:1px solid var(--hair); overflow:hidden; box-shadow:0 20px 44px rgba(0,0,0,.65); z-index:5; }
+.menu div{ padding:11px 13px; font-size:12.5px; border-bottom:1px solid rgba(255,255,255,.05); display:flex; justify-content:space-between; }
+.menu div:last-child{ border-bottom:none; }
+.menu div small{ color:var(--dim); font-size:11px; }
+.menu .on{ color:var(--gold); font-weight:700; }
+
+/* camera */
+.cam{ position:absolute; inset:0; background:#000; }
+.camview{ position:absolute; left:0; right:0; top:58px; bottom:132px; border-radius:16px; margin:0 10px; background:
+  radial-gradient(ellipse at 50% 34%, rgba(150,120,90,.55), transparent 58%),
+  linear-gradient(180deg,#3a3a3e 0%,#4d4438 45%,#221d18 100%); }
+.camview.shot2{ background:linear-gradient(170deg,#4a5f6b 0%,#a8815c 62%,#2a2119 100%); }
+.camtop{ position:absolute; top:14px; left:16px; right:16px; display:flex; align-items:center; justify-content:space-between; z-index:3; }
+.camtop .w{ font-weight:800; font-size:13px; }
+.camtop .x{ font-size:15px; color:#fff; width:26px; }
+.camtop .fl{ font-size:14px; color:#fff; width:26px; text-align:right; }
+.cambot{ position:absolute; bottom:0; left:0; right:0; height:132px; display:flex; align-items:center; justify-content:center; z-index:3; }
+.shutter{ width:66px; height:66px; border-radius:50%; border:3.5px solid #fff; }
+.zoom{ position:absolute; bottom:144px; left:0; right:0; text-align:center; z-index:4; }
+.zoom span{ display:inline-block; padding:4px 10px; border-radius:999px; background:rgba(0,0,0,.42); font-size:10px; color:#fff; }
+.revbar{ position:absolute; bottom:0; left:0; right:0; height:132px; display:flex; align-items:center; justify-content:center; gap:12px; padding:0 16px; z-index:3; }
+.ghost{ padding:13px 20px; border-radius:12px; border:1px solid rgba(255,255,255,.3); color:#fff; font-size:12.5px; font-weight:600; }
+.use{ flex:1; background:var(--gold); color:#1a1508; text-align:center; border-radius:12px; padding:13px; font-weight:700; font-size:13px; }
+
+table{ border-collapse:collapse; margin-top:10px; font-size:13px; max-width:860px; }
+td,th{ text-align:left; padding:9px 16px 9px 0; border-bottom:1px solid var(--hair2); vertical-align:top; line-height:1.55; }
+th{ color:var(--dim); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; }
+td.n{ color:var(--dim); width:22px; }
+td.sev{ width:64px; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; font-weight:700; }
+.s1{ color:#d98a6a; } .s2{ color:var(--gold); } .s3{ color:var(--dim); }
+.good{ color:var(--teal); }
+.q{ margin-top:16px; max-width:860px; } .q li{ margin:10px 0; line-height:1.6; font-size:13.5px; } .q b{ color:var(--gold); }
+</style></head><body>
+
+<h1>808 · Save session v5, after a senior review of v4</h1>
+<p class="note">Aziz, 2026-09-15: "review it again under intense scrutiny, imagine you are a senior UI/UX designer and make it even better." So this page is in two halves. First the review of v4 as if it were someone else's work, each finding with a severity and a fix. Then v5, which is v4 with every fix applied. Strava's iOS anatomy from v4 stands underneath all of it; nothing below undoes the outlined fields, the absence of labels, or the pinned bottom button.</p>
+
+<h2>The review</h2>
+<table>
+<tr><th></th><th>Severity</th><th>Finding in v4</th><th>Fix in v5</th></tr>
+
+<tr><td class="n">1</td><td class="sev s1">Blocking</td>
+<td><b>A portrait photo is being crammed into a landscape slot.</b> The selfie tile is 118pt tall and full width. A front-camera photo is 3:4 portrait. Filling that slot crops the top and bottom off, which on a selfie means the face. The one mandatory input on the screen would be shown badly every single time.</td>
+<td>A <b>portrait tile</b>, 78 by 104, with the explanation beside it. Filled, it shows the whole shot. The dashed dropzone idiom goes too: it is a web upload convention, and this is one required photo, not a drag target.</td></tr>
+
+<tr><td class="n">2</td><td class="sev s1">Blocking</td>
+<td><b>The decision that governs the screen is at the bottom of it.</b> Visibility is last, but it decides whether the description ("Friends will see this") and the selfie exist at all. Pick Only you at the bottom and two things above you become meaningless with no feedback. Strava can put visibility last because nothing on its screen depends on it. Ours does.</td>
+<td>Visibility becomes the <b>first field</b>, right under the score, and the fields that depend on it sit below and follow it. Cause above effect. The section header and sub-label go, because as a field it labels itself: "Friends can see this".</td></tr>
+
+<tr><td class="n">3</td><td class="sev s1">Blocking</td>
+<td><b>The camera has a flip button.</b> The rule is a selfie of you meditating, front camera, no exceptions, enforced in the store. A flip control on the capture screen is a promise the app will then break when you try to post the back-camera shot.</td>
+<td>No flip. Flash moves to the top right, which leaves <b>one control on the bottom bar: the shutter</b>. Cleaner than BeReal's three, and true.</td></tr>
+
+<tr><td class="n">4</td><td class="sev s2">Should fix</td>
+<td><b>Three equal numbers, one of which is the point.</b> Score, time and streak share one size. The screen exists to grade the sit, and Aziz calls it "the grading". Equal weight is a decision not to have a hierarchy.</td>
+<td><b>One big number, two small facts.</b> The score at 38pt, gold; time and streak at 19pt beside it. The eye lands on the grade, then reads the context, then enters the form.</td></tr>
+
+<tr><td class="n">5</td><td class="sev s2">Should fix</td>
+<td><b>A dead button.</b> With Friends chosen and no selfie taken, Save is disabled and nothing on the screen says why. The person scrolls up looking for what they missed.</td>
+<td><b>The button is never dead. It names the block and resolves it.</b> Friends without a selfie: the button reads <b>Take your selfie</b> and opens the camera. Once the shot exists it reads <b>Save session</b>. One tap fixes what one tap would otherwise have had to diagnose.</td></tr>
+
+<tr><td class="n">6</td><td class="sev s2">Should fix</td>
+<td><b>There is no way out.</b> A new session's save sheet cannot be dismissed. Strava traps you too, but it gives you Resume and Discard. Ours gives you nothing; the only exit is to complete the form. A screen you cannot leave is hostile, and a slow iCloud makes it a cage.</td>
+<td><b>Skip</b>, top left, neutral. The session is already stored, so skipping keeps it as Only you with the default title. Nothing is lost and it can be shared later from its results. "Skip" rather than "Cancel" because Cancel implies something is undone, and nothing is.</td></tr>
+
+<tr><td class="n">7</td><td class="sev s2">Should fix</td>
+<td><b>The mockup shows a state that never occurs.</b> The title field is drawn empty with a placeholder. The app prefills a default ("Afternoon meditation"), so the placeholder would never be seen. Strava prefills too ("Morning Run").</td>
+<td>Title is drawn prefilled, as it will be. The empty state is not a state.</td></tr>
+
+<tr><td class="n">8</td><td class="sev s2">Should fix</td>
+<td><b>Fields that address a reader who may not exist.</b> With Only you chosen, "How'd it go? Friends will see this." is talking to nobody, and Private notes sits right below it saying almost the same thing.</td>
+<td>Only you <b>hides the description and the selfie</b>. The private screen is: score, visibility, title, technique, private notes. Five things. The jump is fine here because the control that causes it sits directly above the things that move (finding 2).</td></tr>
+
+<tr><td class="n">9</td><td class="sev s3">Polish</td>
+<td>Placeholder grey (#6b6962) on the ground is about 3.4:1 contrast. Below the 4.5:1 body text floor. Placeholders are allowed lower, but a form made entirely of placeholders should not lean on that allowance.</td>
+<td>Lifted to #7a7871, about 4.3:1. Still reads as a placeholder next to real text.</td></tr>
+
+<tr><td class="n">10</td><td class="sev s3">Polish</td>
+<td>The "Details" header sits over two fields. A header over two things is on the edge of earning its place.</td>
+<td>Kept. With visibility moved up, Details now separates "what friends see" from "what only you keep", which is a real seam, so the header has a job.</td></tr>
+
+<tr><td class="n">11</td><td class="sev s3">Polish</td>
+<td>Emoji glyphs stand in for icons.</td>
+<td>In Swift these are SF Symbols: <span class="good">person.2</span> / <span class="good">lock</span> for visibility, <span class="good">sparkles</span> for technique, <span class="good">lock</span> for private notes, <span class="good">camera</span> on the tile. Monoline, secondary colour, never filled.</td></tr>
+</table>
+
+<h2>Save session, v5</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="ic">◍</div><div class="v">Friends can see this</div><div class="cd">⌄</div></div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="f tall"><div class="ph">How'd it go? Friends will see this.</div></div>
+  <div class="selfie">
+    <div class="tile">◎</div>
+    <div class="txt"><div class="h">Take your selfie</div><div class="d">Friends see you, right after you sat. Sharing needs one.</div></div>
+  </div>
+  <div class="sec">Details</div>
+  <div class="f"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="f tall"><div class="ic">🔒</div><div class="ph">Private notes. Only you can see these.</div></div>
+  <div class="dock"><div class="cta">Take your selfie</div></div>
+</div></div>
+<div class="cap"><b>As it opens, Friends.</b> The score is the one big thing. Visibility is the first field and reads as a sentence. The button names the only thing standing between you and sharing, and tapping it opens the camera. Private notes sits under Details; the screen scrolls, as Strava's does.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="ic">◍</div><div class="v">Friends can see this</div><div class="cd">⌄</div></div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="f tall"><div class="v" style="line-height:1.45">Ten minutes before the day starts. Rain, eyes closed, nothing clever.</div></div>
+  <div class="selfie">
+    <div class="tile img"></div>
+    <div class="txt"><div class="h">Your selfie</div><div class="rt">Retake</div></div>
+  </div>
+  <div class="sec">Details</div>
+  <div class="f"><div class="ic">✦</div><div class="v">Silence / my own practice</div><div class="cd">⌄</div></div>
+  <div class="f tall"><div class="ic">🔒</div><div class="v" style="line-height:1.45; color:var(--muted)">Same thought kept coming back.</div></div>
+  <div class="dock"><div class="cta">Save session</div></div>
+</div></div>
+<div class="cap"><b>Filled in.</b> The selfie shows whole, portrait, face intact. The button has become Save session because the block is gone. Nothing moved when the photo landed.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="ic">🔒</div><div class="v">Only you can see this</div><div class="cd">⌄</div></div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="sec">Details</div>
+  <div class="f"><div class="ic">✦</div><div class="ph">What did you practise?</div><div class="cd">⌄</div></div>
+  <div class="f tall"><div class="ic">🔒</div><div class="ph">Private notes. Only you can see these.</div></div>
+  <div class="dock"><div class="cta">Save session</div></div>
+</div></div>
+<div class="cap"><b>Only you.</b> The description and the selfie are gone because there is no reader. Five things on the screen. This is the whole private flow.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen">
+  <div class="nav"><div class="l">Skip</div><div class="t">Save session</div><div class="sp"></div></div>
+  <div class="stats">
+    <div class="s hero"><span>Score</span><b>81</b></div>
+    <div class="s"><span>Time</span><b>10<i>min</i></b></div>
+    <div class="s"><span>Streak</span><b>4<i>days</i></b></div>
+  </div>
+  <div class="f"><div class="ic">◍</div><div class="v">Friends can see this</div><div class="cd">⌄</div></div>
+  <div class="menu" style="top:200px">
+    <div class="on"><span>Friends</span><small>selfie, title, score, time, streak</small></div>
+    <div><span>Only you</span><small>nothing leaves your phone</small></div>
+  </div>
+  <div class="f"><div class="v">Afternoon meditation</div></div>
+  <div class="f tall"><div class="ph">How'd it go? Friends will see this.</div></div>
+  <div class="selfie">
+    <div class="tile">◎</div>
+    <div class="txt"><div class="h">Take your selfie</div><div class="d">Friends see you, right after you sat. Sharing needs one.</div></div>
+  </div>
+</div></div>
+<div class="cap"><b>The visibility menu.</b> Each option carries what it means in six words, so the explanatory caption v4 needed under the field is gone. Heart and breath are never listed because they are never shared; a menu should say what you get, not what you are spared.</div>
+</div>
+
+</div>
+
+<h2>The camera, v5</h2>
+<div class="row">
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camtop"><div class="x">✕</div><div class="w">808</div><div class="fl">⚡</div></div>
+    <div class="camview"></div>
+    <div class="zoom"><span>You, right after you sat</span></div>
+    <div class="cambot"><div class="shutter"></div></div>
+  </div>
+</div></div>
+<div class="cap"><b>Capture.</b> One control. The flip is gone because there is nothing to flip to. Flash sits top right where it costs nothing.</div>
+</div>
+
+<div>
+<div class="phone"><div class="screen" style="padding:0">
+  <div class="cam">
+    <div class="camtop"><div class="x">✕</div><div class="w">808</div><div class="fl" style="opacity:0"></div></div>
+    <div class="camview shot2"></div>
+    <div class="revbar">
+      <div class="ghost">Retake</div>
+      <div class="use">Use this one</div>
+    </div>
+  </div>
+</div></div>
+<div class="cap"><b>Review.</b> Unchanged from v4. Same frame, same header, so it is a continuation and not a new page.</div>
+</div>
+
+</div>
+
+<h2>What v5 asks you to accept</h2>
+<ol class="q">
+<li><b>Visibility first, not last.</b> This is the one place v5 knowingly leaves Strava's order, and it does so because our screen has a dependency Strava's does not. If you would rather match Strava exactly, everything else in v5 still holds and visibility drops back to the bottom with its header.</li>
+<li><b>Skip exists.</b> A new session's sheet gets a way out. If you want the trap kept, delete the word and the behaviour stays as today.</li>
+<li><b>The button changes its label.</b> "Take your selfie" until the shot exists, then "Save session". If that feels too clever, the alternative is a disabled Save with a one-line reason above it, and I think that is worse.</li>
+<li><b>Only you hides the sharing fields.</b> Fewer things on the screen for the private case. The alternative is greying them out, which keeps them present and pointless.</li>
+</ol>
+
+</body></html>
