@@ -431,14 +431,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // not stop the new session's audio or tear down its screen.
         let isCurrent = currentAttemptID == nil || payload.sessionID == currentAttemptID
         #if DEBUG
-        if let rec = cameraRecorder {
-            if rec.sessionID == payload.sessionID {
-                releaseCamera(wrist: payload)
-            } else if isCurrent {
-                // The attempt is over without the camera ever being armed
-                // (no started-ack reached the phone): nothing to write.
-                releaseCamera(wrist: nil)
-            }
+        if let rec = cameraRecorder, rec.sessionID == payload.sessionID {
+            releaseCamera(wrist: payload)
+        } else if isCurrent {
+            // The attempt is over. Either the camera was never armed (no
+            // started-ack reached the phone) and there is nothing to write,
+            // or there was no recorder at all; both must drop the claim
+            // `begin` made, or the next preview could never be released.
+            releaseCamera(wrist: nil)
         }
         #endif
 
