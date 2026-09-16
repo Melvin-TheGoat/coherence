@@ -180,8 +180,12 @@ final class CameraSignalTests: XCTestCase {
         XCTAssertEqual(CameraSignal.score(stillnessScore: 0.90, breathDoorway: nil, durationSec: 600) ?? -1,
                        spread, accuracy: 1e-9)
         XCTAssertNil(CameraSignal.score(stillnessScore: nil, breathDoorway: door, durationSec: 600))
-        // The Watch's time factor, unchanged: two minutes caps at 0.6.
-        XCTAssertEqual(CameraSignal.score(stillnessScore: 0.98, breathDoorway: door, durationSec: 120) ?? -1,
+        // The Watch's time factor, unchanged: two minutes caps at 0.6. Perfect
+        // stillness so the depth term is exactly 1 whatever shape
+        // `spreadStillness` takes (0.98 used to saturate under the old floor
+        // rescale; under the v5.3.0 cube it is 0.941, and this line was
+        // reading the rescale, not the factor).
+        XCTAssertEqual(CameraSignal.score(stillnessScore: 1.0, breathDoorway: door, durationSec: 120) ?? -1,
                        0.6, accuracy: 1e-9)
         XCTAssertLessThanOrEqual(CameraSignal.score(stillnessScore: 1.0, breathDoorway: door, durationSec: 3600) ?? 2, 1.0)
     }
