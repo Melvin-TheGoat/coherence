@@ -1665,6 +1665,53 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## STREAK FORGIVENESS: one rest day per seven (2026-09-16, Melvin)
+
+`StreakCalculator.runs` is THE rule and `AwardEngine.streakRuns` delegates
+to it, so the headline and "ten straight days" cannot disagree. A single
+missed day between practised days bridges a run when no other rest day was
+taken in the previous seven (`restDaySpacing`); two missed days break it.
+Rest days do not count as practised days: the number is days actually sat.
+The current streak is alive on a rest day too (missed yesterday, nothing
+yet today, day before practised, rest available), reported as
+`restDayUsed` so Home can say the streak is on the line today. Rest days
+are derived, never stored, like the streak itself. Do not add a stored
+"freeze" inventory; the rolling seven-day rule needs none.
+
+## OTTO v1 (2026-09-15): the premium on-device chat, behind a flag
+
+Melvin: "an AI chatbot, part of the premium version, always available to
+interpret your score, your meditation, your data, offer advice, answer a new
+meditator's questions." Built on `otto`, merged to `mvp`, `Coherence/Otto/`.
+Mockup `mockups/otto.html` came first (Aziz's rule).
+
+- **On-device only.** Apple's Foundation Models framework (`import
+  FoundationModels`, iOS 26, Apple Intelligence phones: iPhone 15 Pro and
+  newer). No network call exists; the review answers ("no server, no AI
+  service") stay true, and heart-rate data never leaves the phone (5.1.3).
+  Phones without the model get "Otto needs an iPhone with Apple Intelligence
+  and iOS 26."
+- **What it knows is ours.** `OttoBrief` builds the system prompt from the
+  v5 score rules, the voice rules, the method list and the last ten sessions
+  (score, minutes, HR, stillness, doorway, technique) as a compact table
+  under a 6,000-character budget; the opening line is rule-written from
+  `VerdictEngine`, never generated. A regex medical pre-filter returns the
+  one decline line before the model sees the question. Em dashes are
+  stripped from replies. `OttoBriefTests` (11) lock all of it, including
+  that the two analytics events carry nothing.
+- **Gate:** `Entitlements.otto = paid` (the invite grant does not open it),
+  AND `FeatureFlags.otto` (ON in DEBUG, OFF in Release via `ottoInRelease`,
+  tripwire in `FeatureFlagTests`). With the flag off no row appears
+  anywhere: a locked row would sell what the build does not contain.
+- **Small-model reality:** answers are plain and a little stiff; the first
+  build parroted its own instruction line and was fixed. Before the flag
+  flips, Melvin and Aziz read a dozen answers on a phone, and the paid
+  tier's store description, the App Privacy answers and the review notes
+  are updated to name it.
+- **The simulator on this Mac can run the model** (Apple Intelligence on
+  the host makes `SystemLanguageModel.default` available in the iOS 26.5
+  simulator), so Otto can be exercised without a phone.
+
 ## THE PAYWALL COMES AFTER THE FIRST MEDITATION (2026-09-15, Melvin)
 
 "Let them see their scores and graphs and everything, and then lock it
@@ -2160,6 +2207,13 @@ resolves its container lazily. Both now go through `CloudEntitlement`
 `embedded.mobileprovision`; no profile (an App Store build) means trust the
 App ID. **Never construct a CKContainer, default or by identifier, without
 `CloudEntitlement.mayHoldContainer`. `Persistence.mode` is not proof.**
+**And `CKContainer.default()` is not the entitled container:** Apple names
+the default after the BUNDLE ID (`iCloud.` + bundle id), which only
+coincides with our entitlement on the production bundle. The `.dev` beta
+asked for `iCloud.com.lockout.meditate808.dev` and got "couldn't get
+container configuration" (2026-09-16). The friends store now builds its
+container from `CloudEntitlement.container` and falls back to `default()`
+only when no profile exists.
 The beta strips the iCloud entitlement on purpose, so on the beta friends
 show the honest "iCloud unavailable" card and the rest of the app runs.
 

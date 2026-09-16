@@ -26,6 +26,21 @@ enum FeatureFlags {
         #endif
     }
 
+    /// **Otto (the premium on-device chat, 2026-09-15) is OFF in Release** until
+    /// Melvin and Aziz have read its answers on a phone and the paid tier's
+    /// description, the App Privacy answers and the review notes say what it
+    /// is. DEBUG builds keep it on. Off means no Otto row anywhere: a locked
+    /// row would sell something the build does not contain.
+    static let ottoInRelease = false
+
+    static var otto: Bool {
+        #if DEBUG
+        return true
+        #else
+        return ottoInRelease
+        #endif
+    }
+
     /// Award ids that belong to a switched-off feature.
     static var hiddenAwardIDs: Set<String> {
         friends ? [] : ["friendBrought"]

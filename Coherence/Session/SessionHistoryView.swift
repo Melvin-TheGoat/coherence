@@ -19,6 +19,7 @@ struct ProfileTab: View {
     @Query private var prefsRows: [Preferences]
     @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
+    @EnvironmentObject private var store: Store
 
     /// Session id → the photo taken after it, for the rows. Empty with
     /// Friends off, so the Release build draws the rows it always did.
@@ -26,6 +27,8 @@ struct ProfileTab: View {
         FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
     }
     @State private var editingProfile = false
+    /// Otto, opened on the last ten sessions rather than one.
+    @State private var askingOtto = false
 
     /// A practiced day tapped on Home — filters the log below.
     @Binding var selectedDay: Date?
@@ -42,6 +45,7 @@ struct ProfileTab: View {
                     identity
                     if FeatureFlags.friends { profileActions }
                     statsRow
+                    if FeatureFlags.otto { ottoRow }
                     awardsSection
                     logSection
                 }
@@ -127,6 +131,26 @@ struct ProfileTab: View {
                                   nickname: currentUser?.displayName ?? "") { _ in editingProfile = false }
                     .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { editingProfile = false } } }
             }
+        }
+    }
+
+    // MARK: - Otto
+
+    /// The second door to Otto (the first is the results screen). Its sheet
+    /// hangs on the row itself, not on the NavigationStack, which already
+    /// carries one: several `.sheet`s on one view is the only-one-presents
+    /// trap.
+    private var ottoRow: some View {
+        OttoRow(title: "Ask Otto",
+                subtitle: "Your last sessions, explained",
+                locked: !store.entitlements.otto) {
+            if !store.entitlements.otto {
+                Analytics.track(.lockedTapped(signal: "otto"))
+            }
+            askingOtto = true
+        }
+        .sheet(isPresented: $askingOtto) {
+            OttoView()
         }
     }
 

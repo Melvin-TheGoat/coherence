@@ -122,36 +122,17 @@ public enum AwardEngine {
         var length: Int { dayDates.count }
     }
 
-    /// Consecutive practised days, collapsed from session timestamps. Two
-    /// sessions on one day are one day, which is the same rule the streak
-    /// headline uses.
+    /// Practised days collapsed into runs, by THE streak rule
+    /// (`StreakCalculator.runs`, rest days included since 2026-09-15), so a
+    /// streak award and the Home headline can never disagree about a run.
     static func streakRuns(_ dates: [Date], calendar: Calendar) -> [Run] {
-        let days = Set(dates.map { calendar.startOfDay(for: $0) }).sorted()
-        guard !days.isEmpty else { return [] }
-
-        var runs: [Run] = []
-        var current: [Date] = [days[0]]
-        for day in days.dropFirst() {
-            let previous = current[current.count - 1]
-            let gap = calendar.dateComponents([.day], from: previous, to: day).day ?? 0
-            if gap == 1 {
-                current.append(day)
-            } else {
-                runs.append(Run(dayDates: current))
-                current = [day]
-            }
-        }
-        runs.append(Run(dayDates: current))
-        return runs
+        StreakCalculator.runs(from: dates, calendar: calendar).map { Run(dayDates: $0.days) }
     }
 
-    /// The run still alive today or yesterday, matching the streak headline's
-    /// grace: practising yesterday and not yet today is still a live streak.
+    /// The run still alive, matching the streak headline's grace exactly
+    /// (yesterday, or a rest day carrying the run to today).
     static func currentStreakLength(_ runs: [Run], calendar: Calendar) -> Int {
-        guard let last = runs.last, let end = last.dayDates.last else { return 0 }
-        let today = calendar.startOfDay(for: Date())
-        let gap = calendar.dateComponents([.day], from: end, to: today).day ?? 0
-        return gap <= 1 ? last.length : 0
+        StreakCalculator.streak(from: runs.flatMap(\.dayDates), calendar: calendar).current
     }
 
     private static func scoreThreshold(_ id: String) -> Double? {

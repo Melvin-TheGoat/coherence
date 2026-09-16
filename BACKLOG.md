@@ -176,7 +176,39 @@ anything drives a hide request it will be that, and the fix may be how the
 feed card presents a short sit. Cannot be measured in PostHog: score bands
 are biometric under our rule. Decide after the first weeks of real posts.
 
+## A real user scored 1 (2026-09-16): the formula worked, and it reads as broken
+
+The card: 10 min, stillness 75%, heart 74 → 79 (rose), breathing 6.2/min,
+score 1. By the v5 formula that is exact: stillness below 0.80 floors at
+zero (`spreadStillness` maps 0.80 to 0.98 onto 0 to 1, calibrated on eight
+of Aziz's sits at 0.84 to 0.97); a heart that climbs and never returns
+scores about 0.03; the 6.2/min read had no doorway that qualified (started
+after 90 s without 0.85 clarity, or after 5 min), so breath added nothing.
+Three zeros stacked. **Bug found beside it, fixed:** the "HR settled" tile
+on the card and the results screen negated the sign, so a six-beat RISE
+read "+6 HR settled". **Open for Aziz (engine calibration, not retuned by
+feel):** the 0.80 stillness floor gives a 0.75 sit nothing at all; a floor
+of 0.60 would have put this session at about 16 (with the same heart and
+breath), and 0.75 is the territory real users with ordinary movement land
+in. Decide with data from the captures, not this one card.
+
 ## Decided 2026-09-15 (Melvin), being built now
+
+- DONE 2026-09-16: **streak forgiveness.** One missed day is forgiven when
+  the days either side were practised and no other rest day was taken in
+  the previous seven; two missed days in a row still break it. A rest day
+  bridges the run without counting as a practised day, so the number on
+  Home is days actually sat. The awards read the same runs. Home's nudge on
+  the day after a rest day: "Yesterday was your rest day. Sit today and
+  your N-day streak carries on." `StreakCalculator.runs`, tested.
+- **Camera capture #1 is in** (Melvin, 2026-09-16, session 14EDEB30, 6.6
+  min, paced 6/min then natural): the camera read 74% of windows, median
+  5.7/min, doorway 5.7/min opening at 90 s, clarity 0.89 median; against
+  the wrist's own curve, median error 1.0/min with 74% of windows within
+  1.5. Stillness read low (mean 0.75, spikes to 30x the floor: adjusting
+  in frame) so the camera score was 15 where the wrist would score higher;
+  that is the placement and motion-gate question the plan's sits 3 and 5
+  exist for. Nineteen sits to go per `CAMERA_VISION_PLAN.md`.
 
 - DONE 2026-09-15: **the tour ends at "put your Watch on" with a Begin.**
   No practice sit, no demo results. Begin finishes onboarding and Home
@@ -186,13 +218,19 @@ are biometric under our rule. Decide after the first weeks of real posts.
   paywall; after that the free tier applies everywhere, including that
   session. Onboarding contains no paywall; sign in comes after the wall,
   before the tour. No-Watch users never see a paywall.
-- **Otto is a premium AI chat, definitely.** Always available: interprets
-  the score, the session, the data; advises on improving; answers a new
-  meditator's questions. Start building. First version on-device
-  (Foundation Models, iOS 26, Apple Intelligence phones) per the recorded
-  architecture decision; a cloud model is a separate decision because it
-  sends session data off the phone (privacy policy, 5.1.3, the "no server"
-  review answer). Mockup first.
+- BUILT 2026-09-15 (v1, on `mvp`, DEBUG only until `FeatureFlags.
+  ottoInRelease`): **Otto, the premium on-device chat.** Mockup
+  `mockups/otto.html`. Entry rows on the results screen (under the verdict)
+  and the Profile tab; locked with the paywall route for free users; an
+  honest card on phones without Apple Intelligence. Apple's on-device model
+  (iOS 26), no network, fed our own score rules, the guide and the last ten
+  sessions as a table; a medical question gets one decline line; "the data
+  suggests" voice. Analytics `otto_opened` / `otto_asked`, name only.
+  **Next:** Melvin reads its answers on his iPhone 17 Pro (Apple
+  Intelligence on, paid or `PREVIEW_PAID=1`), then the founders decide the
+  release: the paid tier's description, App Privacy answers and the review
+  notes must name it. A cloud model remains a separate decision (sends
+  session data off the phone).
 - **Camera vision: Melvin records a sit today** on the camera-vision build.
 - **All three instruments ship eventually: Watch, AirPods, camera.** The
   frame is "a social media for meditation": as many people as possible

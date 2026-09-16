@@ -79,6 +79,8 @@ final class OnboardingResumeTests: XCTestCase {
 /// The next App Store build must not carry the unfinished Friends feature.
 final class FeatureFlagTests: XCTestCase {
     func test_friendsIsOffForTheAppStoreUntil1_1() {
+        XCTAssertFalse(FeatureFlags.ottoInRelease,
+                       "Otto ships to the store only once the founders have read its answers")
         XCTAssertFalse(FeatureFlags.friendsInRelease,
                        "Friends ships in 1.1 after RELEASE_CHECKLIST's 1.1 list; flip this only in that archive")
     }

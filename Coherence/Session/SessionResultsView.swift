@@ -88,6 +88,8 @@ struct SessionResultsView: View {
         case scoreMeaning
         case locked(LockedSignal)
         case plans
+        /// Otto, opened on this session.
+        case otto
 
         var id: String {
             switch self {
@@ -96,6 +98,7 @@ struct SessionResultsView: View {
             case .scoreMeaning:     return "score"
             case .locked(let sig):  return "locked-\(sig.rawValue)"
             case .plans:            return "plans"
+            case .otto:             return "otto"
             }
         }
     }
@@ -119,6 +122,7 @@ struct SessionResultsView: View {
                         if let stats {
                             tourDim(hero(session, stats), lit: .score)
                                 .id(ResultsTourStage.score)
+                            if FeatureFlags.otto { tourDim(ottoRow, lit: nil) }
                             tourDim(tiles(stats), lit: nil)
                             if stats.breathDoorwayRate != nil {
                                 tourDim(resonanceChip, lit: nil)
@@ -210,6 +214,8 @@ struct SessionResultsView: View {
                     PaywallScreen(placement: "results_lock", plan: $paywallPlan) { _ in
                         route = nil
                     }
+                case .otto:
+                    OttoView(sessionID: sessionID)
                 }
             }
             // A free user's invite grant is decided per session, and while the
@@ -353,6 +359,21 @@ struct SessionResultsView: View {
         .padding(.vertical, 2)
     }
 
+    /// Otto, under the verdict: the spoken verdict is what the rules can
+    /// say; Otto is where the person asks the follow-up. Teal mark, never
+    /// gold, so the ring stays the section's one gold object. A free user
+    /// sees the row with the Locked pill and meets the lock inside Otto.
+    private var ottoRow: some View {
+        OttoRow(title: "Ask Otto about this session",
+                subtitle: "Why this score, and what to try next",
+                locked: !store.entitlements.otto) {
+            if !store.entitlements.otto {
+                Analytics.track(.lockedTapped(signal: "otto"))
+            }
+            route = .otto
+        }
+    }
+
     /// The real paywall.
     ///
     /// The onboarding one sells a promise; this one sells proof the user has
@@ -454,7 +475,8 @@ struct SessionResultsView: View {
 
     private func tileData(_ stats: MeditationStats) -> [(label: String, value: String, teal: Bool)] {
         var t: [(String, String, Bool)] = []
-        if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", -d), false)) }
+        // Positive = settled (hrDecline is start minus end). See ShareCard.
+        if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", d), false)) }
         if let s = stats.stillnessScore { t.append(("Stillness", String(format: "%.2f", s), false)) }
         // The session average, deliberately: the curve right below this tile
         // shows the whole session, so a headline naming only the slow opening
