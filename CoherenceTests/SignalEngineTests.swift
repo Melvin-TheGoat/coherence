@@ -329,25 +329,31 @@ final class SignalEngineTests: XCTestCase {
         XCTAssertNotNil(r.meanBreathingRate, "a rough reading is still shown")
     }
 
-    /// Breath counts at any RATE now, but not at any confidence. This is the
-    /// guard that survives: a reading the engine does not trust must leave the
-    /// score exactly where an unread breath would.
+    /// A body that drifts and never breathes still produces a rate, because a
+    /// wandering signal always has a strongest frequency somewhere (a real
+    /// session Aziz confirmed had no breathing in it reads 8.5/min). The v5.1
+    /// gate accepts, with eyes open, that early drift can forge a doorway
+    /// (62% of synthetic drift sits do; CLAUDE.md), so the claim this test
+    /// can honestly make is the one that made the trade acceptable: a forged
+    /// doorway is worth at most the breath weight, never more.
     ///
-    /// The input is a body that drifts and never breathes. It still produces a
-    /// number, because a wandering signal always has a strongest frequency
-    /// somewhere, and this is not hypothetical: a real session Aziz confirmed
-    /// had no breathing in it reads 8.5/min. Two seeds, because one lucky draw
-    /// proves nothing about a random walk.
-    func test_driftWithNoBreathIsShownButNeverScored() {
+    /// Until v5.3.0 this test asserted the score did not move at all, and it
+    /// passed only because the fixture's stillness sat at 1.0 under the old
+    /// rescale, where a binary term worth 1.0 cannot move anything: the
+    /// documented fixture trap. The cube curve exposed it. Two seeds, because
+    /// one draw proves nothing about a random walk.
+    func test_driftDoorwayIsWorthAtMostTheBreathWeight() {
         for seed in [UInt64(7), 3] {
             let m = wander(dur: 240, step: 0.0005, seed: seed)
             let r = SignalEngine.analyze(motion: m, hr: [], bellyBreathing: false)
 
             XCTAssertNotNil(r.meanBreathingRate,
                             "the curve is still shown, so a bad read stays visible")
-            XCTAssertEqual(r.overallScore ?? -1,
-                           scoreWithoutBreath(r, durationSec: 240) ?? -2, accuracy: 0.0001,
-                           "seed \(seed): a rhythm read out of drift must not move the score")
+            let without = scoreWithoutBreath(r, durationSec: Int(m.last!.t.rounded())) ?? -1
+            let with = r.overallScore ?? -1
+            let ceiling = 0.20 * SignalEngine.durationFactor(seconds: Int(m.last!.t.rounded())) + 0.02
+            XCTAssertLessThanOrEqual(with - without, ceiling,
+                                     "seed \(seed): a doorway read out of drift buys at most the breath weight")
         }
     }
 
@@ -678,8 +684,10 @@ final class SignalEngineTests: XCTestCase {
     /// the sessions that actually found a doorway.
     func test_breathCannotCarryASessionTheOtherSignalsRefuse() {
         let climbing = (0..<20).map { 70.0 + Double($0) * 0.26 }
+        // 0.55 is a restless sit. The fixture used 0.82, which the old floor
+        // treated as poor and the cube (v5.3.0) rightly treats as a real sit.
         let withDoorway = SignalEngine.score(
-            stillnessScore: 0.82, heartRateTimeseries: climbing,
+            stillnessScore: 0.55, heartRateTimeseries: climbing,
             breathDoorway: .init(rate: 6, heldSec: 90, startSec: 5),
             durationSec: 1200) ?? -1
         XCTAssertLessThan(withDoorway, 0.35,
@@ -885,16 +893,20 @@ extension SignalEngineTests {
         XCTAssertEqual(s ?? 0, 1.0, accuracy: 0.0001)
     }
 
-    /// Stillness saturated in the old formula: every real session measured
-    /// 0.84–0.97 while a fidgety one measured 0.22, so 55% of the score was a
-    /// constant. The rescale has to restore the spread.
-    func test_score_stillnessRescaleRestoresSpread() {
+    /// Stillness saturates raw (real sits 0.84 to 0.97, fidgety 0.22), so the
+    /// curve must keep the top spread out. Since v5.3.0 it must also never
+    /// cut off: a 75% sit printed on the card earns something in the score.
+    func test_score_stillnessCurveSpreadsTheTopWithoutACliff() {
         let typical = SignalEngine.spreadStillness(0.86)
         let excellent = SignalEngine.spreadStillness(0.96)
-        XCTAssertGreaterThan(excellent - typical, 0.4,
-                             "a good sit and a great one must be far apart now")
-        XCTAssertEqual(SignalEngine.spreadStillness(0.31), 0, "fidgety floors at zero")
-        XCTAssertEqual(SignalEngine.spreadStillness(0.99), 1)
+        XCTAssertGreaterThan(excellent - typical, 0.2,
+                             "a good sit and a great one stay well apart")
+        XCTAssertGreaterThan(SignalEngine.spreadStillness(0.75), 0.35,
+                             "an ordinary sit with some movement is not worth nothing")
+        XCTAssertLessThan(SignalEngine.spreadStillness(0.31), 0.05, "fidgety earns almost nothing")
+        XCTAssertEqual(SignalEngine.spreadStillness(0.75), 0.75 * 0.75 * 0.75, accuracy: 1e-9)
+        XCTAssertEqual(SignalEngine.spreadStillness(1.0), 1)
+        XCTAssertEqual(SignalEngine.spreadStillness(0), 0)
     }
 
     /// The fairness fix: start-minus-end measured how wound up someone was at
