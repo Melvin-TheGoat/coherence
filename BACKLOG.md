@@ -159,6 +159,23 @@ keeps iCloud pinned to the real container (CloudKit Development
 environment), so Friends can be tested side by side. Decide: keep no-server,
 or fund a backend.
 
+## Hide the score on a friends post? (Aziz asked, 2026-09-15; decide later)
+
+Aziz: "should we make an option to hide the score by having a little eye
+icon or some other intuitive way?" Claude's recommendation, given the same
+day: **not as a per-post control.** A hidden score tells every friend what
+the score was (Strava's hidden pace has this exact tell); it adds a
+decision at the moment right after a sit when the screen should ask the
+least; and the score is what makes an 808 post an 808 post, the way Strava
+never lets you hide distance or time. If real posts show people choosing
+Only you on low days, the right shape is one profile preference, "Show my
+scores to friends", set once, default on, so it applies to every post and
+carries no tell. Strava's own model: a privacy default, not a ritual. Note
+for later: short sits score low by design (time is a ceiling), so if
+anything drives a hide request it will be that, and the fix may be how the
+feed card presents a short sit. Cannot be measured in PostHog: score bands
+are biometric under our rule. Decide after the first weeks of real posts.
+
 ## Decided, not started
 
 
@@ -255,6 +272,24 @@ or fund a backend.
   `trial_started` it never had.
 
 ## In flight
+
+- **Save session in Strava's iOS shape, and an in-app camera** (Aziz,
+  2026-09-15: "take a look at the strava UI for sharing a session and copy
+  that, i dont like the UI here for after the meditation"; "i want the
+  camera thing to be like an in app photo thing similar to sweatmates and
+  bereal"). Mockups `mockups/save-session-v4.html` (Strava's real iOS
+  anatomy: outlined fields, no labels, bold sentence-case headers, pinned
+  bottom button) and `save-session-v5.html` (the senior-review pass: one
+  big score, visibility first, portrait selfie tile, a button that names
+  the block, Skip, Only you hides the sharing fields, no camera flip).
+  Decisions taken: Strava iOS behaviour (Cancel top left, pinned button),
+  private notes inline, one photo, one front camera and no dual shot
+  (SweatMates forces it and it is their most-complained-about feature).
+  Awaiting Aziz's read of v5, then Swift. One rebuild of 808 Dev at the
+  end, per Aziz. Also shipped the same day, already on the branch: the
+  save screen reopens when you pick the phone up after a sit
+  (`PendingSave`), "Silence / my own practice" as a technique, and a Done
+  key above the keyboard on both note fields.
 
 - **Onboarding: no sign-in until the end, and progress resumes** (Aziz,
   2026-09-14, from the PostHog finding that everyone who skipped the paywall
