@@ -78,17 +78,77 @@ final class OttoModel {
     private(set) var note: String?
 
     private let instructions: String
+    private let opening: String
+    /// Where this conversation is kept between visits (`OttoChatStore`).
+    private let storeKey: String
     private var session: LanguageModelSession
 
     /// Keeps a reply to a few sentences, which is Otto's voice anyway, and
-    /// leaves room in the window for the conversation to continue.
-    private static let options = GenerationOptions(maximumResponseTokens: 400)
+    /// leaves room in the window for the conversation to continue. The low
+    /// temperature is for consistency: the same question about the same sit
+    /// got a right explanation one time and a wrong one the next (Melvin,
+    /// 2026-09-16); with the score card doing the arithmetic and sampling
+    /// kept close to greedy, the answer stays the same answer.
+    private static let options = GenerationOptions(temperature: 0.3, maximumResponseTokens: 400)
 
-    init(instructions: String, opening: String) {
+    init(instructions: String, opening: String, storeKey: String) {
         self.instructions = instructions
-        self.session = LanguageModelSession(instructions: instructions)
-        self.messages = [OttoMessage(role: .otto, text: opening)]
+        self.opening = opening
+        self.storeKey = storeKey
+        // A saved conversation comes back on screen in full, and its last
+        // turns are replayed into the model's transcript under the CURRENT
+        // brief, so a chat reopened after new sits knows about them.
+        let saved = OttoChatStore.load(key: storeKey)?.lines ?? []
+        if saved.count > 1 {
+            self.messages = saved.map { OttoMessage(role: $0.fromOtto ? .otto : .user, text: $0.text) }
+            self.session = LanguageModelSession(transcript: Self.transcript(instructions: instructions, replaying: saved))
+        } else {
+            self.messages = [OttoMessage(role: .otto, text: opening)]
+            self.session = LanguageModelSession(instructions: instructions)
+        }
         session.prewarm()
+    }
+
+    /// Whether there is a conversation to throw away.
+    var hasHistory: Bool { messages.count > 1 }
+
+    /// Back to the opening line, the saved conversation gone.
+    func startOver() {
+        guard !isResponding else { return }
+        messages = [OttoMessage(role: .otto, text: opening)]
+        session = LanguageModelSession(instructions: instructions)
+        note = nil
+        OttoChatStore.delete(key: storeKey)
+        session.prewarm()
+    }
+
+    /// The model's transcript rebuilt from saved lines: the current
+    /// instructions first, then the last few question/answer pairs. The
+    /// opening line is UI, not a model turn, so it is not replayed.
+    private static func transcript(instructions: String, replaying lines: [OttoChatStore.Saved.Line]) -> Transcript {
+        var entries: [Transcript.Entry] = [
+            .instructions(Transcript.Instructions(segments: [.text(.init(content: instructions))], toolDefinitions: []))
+        ]
+        var pairs: [(String, String)] = []
+        var i = 1
+        while i + 1 < lines.count {
+            if !lines[i].fromOtto, lines[i + 1].fromOtto, !lines[i + 1].text.isEmpty {
+                pairs.append((lines[i].text, lines[i + 1].text))
+                i += 2
+            } else {
+                i += 1
+            }
+        }
+        for (q, a) in pairs.suffix(OttoChatStore.replayedTurns) {
+            entries.append(.prompt(Transcript.Prompt(segments: [.text(.init(content: q))])))
+            entries.append(.response(Transcript.Response(assetIDs: [], segments: [.text(.init(content: a))])))
+        }
+        return Transcript(entries: entries)
+    }
+
+    private func persist() {
+        let lines = messages.filter { !$0.isStreaming }.map { OttoChatStore.Saved.Line(fromOtto: $0.role == .otto, text: $0.text) }
+        OttoChatStore.save(lines, key: storeKey)
     }
 
     func ask(_ question: String) async {
@@ -101,9 +161,11 @@ final class OttoModel {
         // in a rule, not in a small model's reading of its instructions.
         if let decline = OttoBrief.medicalDecline(for: q) {
             messages.append(OttoMessage(role: .otto, text: decline))
+            persist()
             return
         }
         await respond(to: q, retried: false)
+        persist()
     }
 
     private func respond(to q: String, retried: Bool) async {

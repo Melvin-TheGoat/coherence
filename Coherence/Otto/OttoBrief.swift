@@ -34,12 +34,16 @@ enum OttoBrief {
         var technique: String?
         var sound: String?
         var rating: Int?
+        /// The score's working, from the engine, so the card below is
+        /// arithmetic the app did and the model only reads.
+        var breakdown: SignalEngine.ScoreBreakdown?
 
         init(date: Date, minutes: Int, overallScore: Double? = nil,
              startHR: Double? = nil, endHR: Double? = nil, meanHR: Double? = nil,
              stillnessScore: Double? = nil, doorwayRate: Double? = nil,
              doorwayHeldSec: Double? = nil, technique: String? = nil,
-             sound: String? = nil, rating: Int? = nil) {
+             sound: String? = nil, rating: Int? = nil,
+             breakdown: SignalEngine.ScoreBreakdown? = nil) {
             self.date = date
             self.minutes = minutes
             self.overallScore = overallScore
@@ -52,6 +56,7 @@ enum OttoBrief {
             self.technique = technique
             self.sound = sound
             self.rating = rating
+            self.breakdown = breakdown
         }
 
         /// Positive = the heart settled, matching `MeditationStats.hrDecline`.
@@ -78,9 +83,10 @@ enum OttoBrief {
 
     /// The on-device model's context is about 4,096 tokens for instructions,
     /// the conversation and the reply together. Roughly four characters to a
-    /// token, so this keeps the standing brief near 1,500 tokens and leaves
-    /// most of the window for the chat itself.
-    static let characterBudget = 6_000
+    /// token, so this keeps the standing brief near 2,000 tokens (the score
+    /// card for the session in focus is about 450 of them) and leaves the
+    /// rest for the chat; a chat that outgrows it restarts on the same brief.
+    static let characterBudget = 8_000
     /// Sessions listed for the model, newest first. Ten is enough to talk
     /// about a trend and few enough to fit.
     static let maxSessions = 10
@@ -99,8 +105,9 @@ enum OttoBrief {
         // (simulator, 2026-09-15). The opening is UI; the model only needs
         // the table, where the session in focus is marked.
         var parts: [String] = [identity, voiceRules, scoreRules, practiceRules,
-                               "THIS PERSON'S SESSIONS, newest first. \"This session\" means the one marked (in focus); the person is looking at its score and curves on the screen behind this chat.",
+                               "THIS PERSON'S SESSIONS, newest first. \"This session\" means the one marked (in focus); the person is looking at its score and curves on the screen behind this chat. Points are heart + stillness + breath, already scaled to the sit's length.",
                                table(sessions, focus: focus, now: now)]
+        if let focus, let card = scoreCard(focus) { parts.append(card) }
         var text = parts.joined(separator: "\n\n")
         // The fixed text is well under budget; only a pathological table
         // could push it over, and if it does the oldest rows go first.
@@ -139,7 +146,12 @@ enum OttoBrief {
     - Stillness: how little the wrist moved, measured the whole sit, cubed in the score so the top of the range matters most. Real sits run about 0.80 to 0.98.
     - Breath doorway: at least 60 seconds of deliberate slow breathing at 9 per minute or slower (slow, even breaths; never holding the breath), starting in the first 5 minutes. All or nothing: a doorway earns the full breath credit. Starting within the first 90 seconds counts on its own; starting between 90 seconds and 5 minutes needs a very clear read; after 5 minutes nothing counts. Quiet natural breathing is often too small to read from the wrist, which is normal.
     - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute (5 minutes caps at 75, 10 minutes at 100). Past 10 minutes a small bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
-    - NEVER work out a score yourself, and never say what a score "would have been". The app has already computed the only hypothetical it allows: a session line that says "at 10 min the same sit would score N". Quote N exactly when asked; if a line has no such number, say the app does not estimate that. A longer sit only raises the ceiling; it does not change how deep the sit was.
+    - NEVER do arithmetic on the score. Every session line carries its points already worked out by the app ("heart 12 of 45"), and the session in focus has a SCORE CARD below with each line of the working. Quote those lines. Never add percentages, never multiply weights, never say what a score "would have been" beyond the two hypotheticals the app computes for you: "at 10 min the same sit would score N" and "with a breath doorway it would score N". If a line has no such number, say the app does not estimate that. A longer sit only raises the ceiling; it does not change how deep the sit was.
+    - Stillness is a fraction of 1: how still the wrist was over the whole sit, where 1.00 is not moving at all and settled sits read 0.80 to 0.98.
+    - The opening heart rate is the first reading of the sit, printed on the card.
+    - Always explain the why in plain words: a heart rate that climbs means the body did not settle during the sit; movement means the body was not at rest; a doorway is the on-ramp into the settled state, which is why it is scored. Then say what to do about it, from the coaching line.
+    - What a score means: under 40 is a restless or short sit; 40 to 69 is a sit that settled; 70 and up is deep and held. Each session line names its band; quote it, never invent another scale.
+    - Comparing two sessions: name what changed (length, heart, stillness, doorway) in at most four sentences, using the points on each line.
     - The rating out of 10 is the person's own feeling afterwards. It is not part of the score.
     """
 
@@ -170,7 +182,8 @@ enum OttoBrief {
     static func line(_ r: SessionRow, focus: Bool, now: Date) -> String {
         var parts: [String] = [when(r.date, now: now) + (focus ? " (in focus)" : ""),
                                "\(r.minutes) min"]
-        parts.append(r.score100.map { "score \($0)" } ?? "no score")
+        parts.append(r.score100.map { "score \($0), \(band($0))" } ?? "no score")
+        if let b = r.breakdown { parts.append(points(b)) }
         // The one hypothetical Otto may quote, computed here so the model
         // never does arithmetic: the same depth under the 10-minute ceiling.
         // Otto once told Melvin a 5-minute sit "would have scored 100 at 10
@@ -185,7 +198,7 @@ enum OttoBrief {
         }
         parts.append(r.stillnessScore.map { String(format: "stillness %.2f", $0) } ?? "stillness not read")
         if let rate = r.doorwayRate {
-            let held = r.doorwayHeldSec.map { " held \(mmss($0))" } ?? ""
+            let held = r.doorwayHeldSec.map { " kept up for \(mmss($0))" } ?? ""
             parts.append(String(format: "slow-breath doorway %.1f/min", rate) + held)
         } else {
             parts.append("no doorway")
@@ -194,6 +207,127 @@ enum OttoBrief {
         if let s = r.sound, !s.isEmpty { parts.append("sound \(s)") }
         if let rating = r.rating { parts.append("rated \(rating)/10") }
         return parts.joined(separator: " · ")
+    }
+
+    /// The band a score sits in, written here because the model cannot be
+    /// trusted to place 13 under 40 (it called it "deep and held" once).
+    static func band(_ score: Int) -> String {
+        score < 40 ? "a restless or short sit" : score < 70 ? "a sit that settled" : "deep and held"
+    }
+
+    // MARK: - The score card
+
+    /// The points each term earned, scaled to the sit's length so the three
+    /// add up to the score on the ring. "heart 1 of 45 · stillness 13 of 30".
+    /// Written by rules from `ScoreBreakdown`; the model copies it.
+    static func points(_ b: SignalEngine.ScoreBreakdown) -> String {
+        let scaled = min(1, b.durationFactor)
+        var out: [String] = []
+        if let h = b.heartPoints, let max = b.heartMax {
+            out.append("heart \(Int((h * scaled).rounded())) of \(Int((max * scaled).rounded()))")
+        }
+        if let s = b.stillnessPoints, let max = b.stillnessMax {
+            out.append("stillness \(Int((s * scaled).rounded())) of \(Int((max * scaled).rounded()))")
+        }
+        if b.hasDoorway {
+            out.append("breath \(Int((b.breathPoints * scaled).rounded())) of \(Int((b.breathMax * scaled).rounded()))")
+        }
+        return out.joined(separator: ", ")
+    }
+
+    /// The working behind the session in focus, one line per term, with
+    /// the levers ranked at the end. Every number here is computed; the
+    /// model's job is to read it back in a warm voice and answer questions
+    /// about it, not to redo it.
+    static func scoreCard(_ r: SessionRow) -> String? {
+        guard let b = r.breakdown, let score = r.score100 else { return nil }
+        let scaled = min(1, b.durationFactor)
+        func pts(_ v: Double?) -> String { v.map { "\(Int(($0 * scaled).rounded()))" } ?? "0" }
+        var lines: [String] = ["SCORE CARD for the session in focus (score \(score), \(band(score)), \(r.minutes) min). Quote these lines; the arithmetic is done."]
+
+        if b.heartTerm != nil, let held = b.heartHeld, let drop = b.heartDrop,
+           let opening = r.startHR, let closing = r.endHR {
+            let move = drop >= 1 ? "so it settled \(Int(drop.rounded())) beats"
+                : drop <= -1 ? "so it climbed \(Int((-drop).rounded())) beats" : "so it ended where it began"
+            lines.append("- Heart: opened at \(Int(opening.rounded())) bpm, closed at \(Int(closing.rounded())) bpm, \(move). It stayed at or below the opening rate for \(Int((held * 100).rounded()))% of the sit. Heart earned \(pts(b.heartPoints)) of \(pts(b.heartMax)) points: 60% of those are for staying at or under the opening rate, 40% for the size of the drop (12 beats earns all of it).")
+        } else {
+            lines.append("- Heart: not read this sit, so it earned no points and its weight went to the other signals.")
+        }
+
+        if let raw = b.stillnessRaw, let cubed = b.stillnessTerm {
+            let read = raw >= 0.90 ? "a settled body" : raw >= 0.80 ? "ordinary small movement" : raw >= 0.60 ? "noticeable movement, more than a settled sit" : "a lot of movement"
+            lines.append("- Stillness: \(String(format: "%.2f", raw)) on a 0 to 1 scale, which reads as \(read) (settled sits read 0.80 to 0.98). Cubed for the score it is \(String(format: "%.2f", cubed)). Stillness earned \(pts(b.stillnessPoints)) of \(pts(b.stillnessMax)) points.")
+        } else {
+            lines.append("- Stillness: not read this sit.")
+        }
+
+        if b.hasDoorway, let rate = r.doorwayRate {
+            let held = r.doorwayHeldSec.map { ", kept up for \(mmss($0))" } ?? ""
+            lines.append("- Breath: a slow-breath doorway was read at \(String(format: "%.1f", rate)) per minute\(held). Breath earned \(pts(b.breathPoints)) of \(pts(b.breathMax)) points, the full credit.")
+        } else {
+            lines.append("- Breath: no slow-breath doorway was read (no 60 seconds of deliberate slow breathing in the first 5 minutes), so breath earned nothing and heart and stillness share the whole score 60/40. Nothing was subtracted for it.")
+            if let with = scoreWithDoorway(b) { lines.append("- With a breath doorway the same sit would score \(with).") }
+        }
+
+        if b.durationFactor < 1 {
+            lines.append("- Time earns no points of its own; it sets the cap. A \(r.minutes) minute sit is scored against a cap of \(Int(b.cap.rounded())) (50 plus 5 per minute, up to 100 at 10 minutes), and the points above are already scaled to that cap." + (r.scoreAtTenMinutes.map { " At 10 min the same sit would score \($0)." } ?? ""))
+        } else if b.durationFactor > 1 {
+            lines.append("- Time earns no points of its own. Past 10 minutes a length bonus of \(Int(((b.durationFactor - 1) * 100).rounded()))% multiplied the depth.")
+        } else {
+            lines.append("- Time earns no points of its own. At 10 minutes the full 100 was available.")
+        }
+        let sum = "\(pts(b.heartPoints)) + \(pts(b.stillnessPoints)) + \(pts(b.hasDoorway ? b.breathPoints : 0))"
+        if b.durationFactor > 1 {
+            lines.append("- Total: \(sum) = \(Int((b.depth * 100).rounded())) before the length bonus; with it the score is \(score).")
+        } else {
+            lines.append("- Total: \(sum) = \(score), \(band(score)) (rounding may move it by one).")
+        }
+        lines.append(coaching(r, b))
+        return lines.joined(separator: "\n")
+    }
+
+    /// The same sit had it opened with a doorway: the weights change to
+    /// 50/30/20 and breath earns its full 20, so this is a real recompute,
+    /// not a guess. Nil when the sit already had one.
+    static func scoreWithDoorway(_ b: SignalEngine.ScoreBreakdown) -> Int? {
+        guard !b.hasDoorway else { return nil }
+        var terms: [(Double, Double)] = [(1.0, 0.20)]
+        if let h = b.heartTerm { terms.append((h, 0.50)) }
+        if let s = b.stillnessTerm { terms.append((s, 0.30)) }
+        let total = terms.reduce(0) { $0 + $1.1 }
+        let depth = terms.reduce(0) { $0 + $1.0 * $1.1 } / total
+        return Int((min(1, depth * b.durationFactor) * 100).rounded())
+    }
+
+    /// The levers, ranked by points left on the table, so the advice is the
+    /// same every time and always points at the biggest gap.
+    static func coaching(_ r: SessionRow, _ b: SignalEngine.ScoreBreakdown) -> String {
+        var levers: [(gap: Double, text: String)] = []
+        let scaled = min(1, b.durationFactor)
+        if let h = b.heartPoints, let max = b.heartMax, let held = b.heartHeld {
+            let gap = (max - h) * scaled
+            let text = held < 0.5
+                ? "the heart rate ran above where it opened for most of the sit; settle before Begin (sit down, a few slow breaths, then start) and open with a minute of slow breathing so the opening reading is calm and the sit can settle under it"
+                : "the heart held under its opening rate but did not fall far; a longer, quieter opening with slow breathing gives it room to drop"
+            levers.append((gap, "heart (\(Int(gap.rounded())) points left): " + text))
+        }
+        if let s = b.stillnessPoints, let max = b.stillnessMax, let raw = b.stillnessRaw {
+            let gap = (max - s) * scaled
+            let text = raw < 0.80
+                ? "the wrist moved a lot; rest the Watch arm on a leg or cushion, settle the posture before Begin, and let the body go heavy"
+                : "small movement; the top of the range is where the points are, so keep the Watch arm resting and still"
+            levers.append((gap, "stillness (\(Int(gap.rounded())) points left): " + text))
+        }
+        if !b.hasDoorway {
+            let gain = scoreWithDoorway(b).map { max(0, $0 - Int((b.score * 100).rounded())) } ?? 0
+            levers.append((Double(gain), "breath (\(gain) points available): open the sit with a minute or two of slow, even breathing at 4 to 7 per minute, then let it go natural"))
+        }
+        if b.durationFactor < 1 {
+            levers.append((b.durationFactor < 0.8 ? 12 : 4, "time: the same sit at 10 minutes lifts the cap to 100"))
+        }
+        levers.sort { $0.gap > $1.gap }
+        let ranked = levers.prefix(3).map(\.text)
+        return "COACHING FOR THIS SESSION, biggest lever first: " + ranked.joined(separator: "; ") + "."
     }
 
     private static func when(_ date: Date, now: Date) -> String {

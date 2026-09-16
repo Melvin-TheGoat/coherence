@@ -17,10 +17,10 @@ struct SettingsView: View {
             Group {
                 if let user = currentUser, let prefs = preferences.first {
                     SettingsForm(user: user, prefs: prefs,
-                                 onSignOut: { SessionStore.signOut(in: context); dismiss() },
+                                 onSignOut: { SessionStore.signOut(in: context); OttoChatStore.deleteAll(); dismiss() },
                                  onDelete: {
                                      Analytics.track(.accountDeleted)
-                                     SessionStore.softDeleteCurrentUser(in: context); dismiss() })
+                                     SessionStore.softDeleteCurrentUser(in: context); OttoChatStore.deleteAll(); dismiss() })
                 } else {
                     Text("No account").foregroundStyle(AppColor.textSecondary)
                 }

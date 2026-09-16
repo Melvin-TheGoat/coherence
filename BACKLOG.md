@@ -231,6 +231,17 @@ torso is detected. Mockup first (`mockups/camera-framing.html`), then the
 Swift on the camera branch behind the DEBUG collector toggle for now; the
 live screen keeps a modest preview. Begin stays the only gold object.
 
+## Otto understands the score, and remembers (Melvin, 2026-09-16): DONE
+
+Otto's breakdown of a real sit did not make sense ("still for 0.76
+seconds", percentages summed to 100, an invented opening rate), and a
+regenerate gave a different answer. Done: the app now writes the score's
+working in points and the model quotes it (CLAUDE.md, OTTO v1); a lab
+tool on the Mac reads answers without a phone; chats persist per session
+and reopen where they were left, with "Start a new chat" in the menu.
+Read a dozen answers on the phone before the flag flips; the lab found
+the voice plain and consistent, occasionally repetitive on long answers.
+
 ## Otto is a sloth (Melvin, 2026-09-16): direction chosen
 
 Melvin picked board 1 (Otto sitting cross-legged, eyes closed) for the big

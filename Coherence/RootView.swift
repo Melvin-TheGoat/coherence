@@ -51,6 +51,7 @@ struct RootView: View {
                 .credentialState(forUserID: signedIn.appleUserID)
             if state == .revoked {
                 SessionStore.signOut(in: context)
+                OttoChatStore.deleteAll()
             }
         }
         #if DEBUG

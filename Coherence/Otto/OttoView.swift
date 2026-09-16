@@ -60,7 +60,8 @@ struct OttoView: View {
             let loaded = OttoLoader.load(focus: sessionID, in: context)
             OttoChatView(instructions: OttoBrief.instructions(sessions: loaded.rows, focus: loaded.focus),
                          opening: OttoBrief.opening(focus: loaded.focus, sessionCount: loaded.rows.count),
-                         suggestions: OttoBrief.suggestedQuestions(focus: loaded.focus, sessionCount: loaded.rows.count))
+                         suggestions: OttoBrief.suggestedQuestions(focus: loaded.focus, sessionCount: loaded.rows.count),
+                         storeKey: OttoChatStore.key(for: loaded.focus == nil ? nil : sessionID))
         } else {
             OttoUnavailableView(availability: .needsUpdate)
         }
@@ -106,7 +107,13 @@ enum OttoLoader {
                 doorwayHeldSec: st?.breathDoorwayHeldSec,
                 technique: MeditationMethod.label(for: re?.technique),
                 sound: SoundCatalog.title(for: session.frequencyID),
-                rating: re?.rating)
+                rating: re?.rating,
+                breakdown: st.flatMap { st in
+                    SignalEngine.breakdown(stillnessScore: st.stillnessScore,
+                                           heartRateTimeseries: st.heartRateTimeseries,
+                                           hasDoorway: st.breathDoorwayRate != nil,
+                                           durationSec: session.durationSec)
+                })
         }
         let focus = sessionID.flatMap { id in
             sessions.firstIndex { $0.id == id }.map { rows[$0] }
@@ -124,8 +131,8 @@ struct OttoChatView: View {
     @FocusState private var focused: Bool
     let suggestions: [String]
 
-    init(instructions: String, opening: String, suggestions: [String]) {
-        _model = State(initialValue: OttoModel(instructions: instructions, opening: opening))
+    init(instructions: String, opening: String, suggestions: [String], storeKey: String) {
+        _model = State(initialValue: OttoModel(instructions: instructions, opening: opening, storeKey: storeKey))
         self.suggestions = suggestions
     }
 
@@ -168,6 +175,20 @@ struct OttoChatView: View {
                 }
             }
             composer
+        }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                if model.hasHistory {
+                    Menu {
+                        Button("Start a new chat", systemImage: "square.and.pencil") { model.startOver() }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    .disabled(model.isResponding)
+                    .accessibilityLabel("Chat options")
+                }
+            }
         }
     }
 
