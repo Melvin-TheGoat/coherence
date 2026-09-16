@@ -186,13 +186,19 @@ are biometric under our rule. Decide after the first weeks of real posts.
   paywall; after that the free tier applies everywhere, including that
   session. Onboarding contains no paywall; sign in comes after the wall,
   before the tour. No-Watch users never see a paywall.
-- **Otto is a premium AI chat, definitely.** Always available: interprets
-  the score, the session, the data; advises on improving; answers a new
-  meditator's questions. Start building. First version on-device
-  (Foundation Models, iOS 26, Apple Intelligence phones) per the recorded
-  architecture decision; a cloud model is a separate decision because it
-  sends session data off the phone (privacy policy, 5.1.3, the "no server"
-  review answer). Mockup first.
+- BUILT 2026-09-15 (v1, on `mvp`, DEBUG only until `FeatureFlags.
+  ottoInRelease`): **Otto, the premium on-device chat.** Mockup
+  `mockups/otto.html`. Entry rows on the results screen (under the verdict)
+  and the Profile tab; locked with the paywall route for free users; an
+  honest card on phones without Apple Intelligence. Apple's on-device model
+  (iOS 26), no network, fed our own score rules, the guide and the last ten
+  sessions as a table; a medical question gets one decline line; "the data
+  suggests" voice. Analytics `otto_opened` / `otto_asked`, name only.
+  **Next:** Melvin reads its answers on his iPhone 17 Pro (Apple
+  Intelligence on, paid or `PREVIEW_PAID=1`), then the founders decide the
+  release: the paid tier's description, App Privacy answers and the review
+  notes must name it. A cloud model remains a separate decision (sends
+  session data off the phone).
 - **Camera vision: Melvin records a sit today** on the camera-vision build.
 - **All three instruments ship eventually: Watch, AirPods, camera.** The
   frame is "a social media for meditation": as many people as possible

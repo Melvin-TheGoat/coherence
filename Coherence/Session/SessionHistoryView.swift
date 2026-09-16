@@ -38,7 +38,7 @@ struct ProfileTab: View {
                     identity
                     if FeatureFlags.friends { profileActions }
                     statsRow
-                    ottoRow
+                    if FeatureFlags.otto { ottoRow }
                     awardsSection
                     logSection
                 }

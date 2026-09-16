@@ -1558,6 +1558,40 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## OTTO v1 (2026-09-15): the premium on-device chat, behind a flag
+
+Melvin: "an AI chatbot, part of the premium version, always available to
+interpret your score, your meditation, your data, offer advice, answer a new
+meditator's questions." Built on `otto`, merged to `mvp`, `Coherence/Otto/`.
+Mockup `mockups/otto.html` came first (Aziz's rule).
+
+- **On-device only.** Apple's Foundation Models framework (`import
+  FoundationModels`, iOS 26, Apple Intelligence phones: iPhone 15 Pro and
+  newer). No network call exists; the review answers ("no server, no AI
+  service") stay true, and heart-rate data never leaves the phone (5.1.3).
+  Phones without the model get "Otto needs an iPhone with Apple Intelligence
+  and iOS 26."
+- **What it knows is ours.** `OttoBrief` builds the system prompt from the
+  v5 score rules, the voice rules, the method list and the last ten sessions
+  (score, minutes, HR, stillness, doorway, technique) as a compact table
+  under a 6,000-character budget; the opening line is rule-written from
+  `VerdictEngine`, never generated. A regex medical pre-filter returns the
+  one decline line before the model sees the question. Em dashes are
+  stripped from replies. `OttoBriefTests` (11) lock all of it, including
+  that the two analytics events carry nothing.
+- **Gate:** `Entitlements.otto = paid` (the invite grant does not open it),
+  AND `FeatureFlags.otto` (ON in DEBUG, OFF in Release via `ottoInRelease`,
+  tripwire in `FeatureFlagTests`). With the flag off no row appears
+  anywhere: a locked row would sell what the build does not contain.
+- **Small-model reality:** answers are plain and a little stiff; the first
+  build parroted its own instruction line and was fixed. Before the flag
+  flips, Melvin and Aziz read a dozen answers on a phone, and the paid
+  tier's store description, the App Privacy answers and the review notes
+  are updated to name it.
+- **The simulator on this Mac can run the model** (Apple Intelligence on
+  the host makes `SystemLanguageModel.default` available in the iOS 26.5
+  simulator), so Otto can be exercised without a phone.
+
 ## THE PAYWALL COMES AFTER THE FIRST MEDITATION (2026-09-15, Melvin)
 
 "Let them see their scores and graphs and everything, and then lock it

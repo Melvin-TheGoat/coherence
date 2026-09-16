@@ -119,7 +119,7 @@ struct SessionResultsView: View {
                         if let stats {
                             tourDim(hero(session, stats), lit: .score)
                                 .id(ResultsTourStage.score)
-                            tourDim(ottoRow, lit: nil)
+                            if FeatureFlags.otto { tourDim(ottoRow, lit: nil) }
                             tourDim(tiles(stats), lit: nil)
                             if stats.breathDoorwayRate != nil {
                                 tourDim(resonanceChip, lit: nil)
