@@ -154,7 +154,8 @@ Rewarding the INVITER with your own digital content is common and accepted
 - **Trigger:** a friend request you sent is accepted AND that friend's
   profile shows a first session. Not on install, not on sign-up. Both facts
   are public records, so the client can verify them without a server.
-- **Free users get the evidence for their next 10 sessions.** Curves,
+- **Free users get the evidence for their next 3 sessions** (was 10 until
+  2026-09-15, Aziz: "10 sessions is too much"; the cap went 50 → 15). Curves,
   tiles, readings, the four locked share layouts: the full paid results
   screen, ten times. It is the best possible taste of what paid is, and it
   is exactly the thing a free user cannot get any other way. Implemented as
@@ -165,7 +166,7 @@ Rewarding the INVITER with your own digital content is common and accepted
   premium.
 - **Everyone gets the "Brought a friend" award** (the `AwardEngine` "did
   this ever happen" rule applies; `friendBroughtAt` is the first payout
-  date). **Paid users also bank the ten sessions**, which only matter if
+  date). **Paid users also bank the three sessions**, which only matter if
   the membership lapses; they have nothing else to unlock. The Circle skin
   first proposed for them is NOT built: `CardSkin` exists as an enum with
   no drawing behind it, so a skin reward would mean building the skin

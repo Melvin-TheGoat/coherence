@@ -96,9 +96,11 @@ Your information lives in two places, by design:
   storage on the device that recorded them**. The app never syncs them to iCloud
   or anywhere else.
 - **Account and session log sync privately.** Your account info, preferences,
-  and the log of your sessions (dates, durations, types, ratings) sync to
-  **your personal private iCloud database** using Apple's CloudKit, so they
-  survive reinstalls and follow your own devices.
+  and the log of your sessions (dates, durations, types, ratings, notes, and
+  any photo you take after a session) sync to **your personal private iCloud
+  database** using Apple's CloudKit, so they survive reinstalls and follow your
+  own devices. A photo is shared with other people only when you choose to
+  post that session to friends.
 
 **We do not operate servers that store your data, and we cannot access the
 contents of your private iCloud database.** Apple processes this data under

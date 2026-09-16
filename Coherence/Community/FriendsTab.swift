@@ -161,7 +161,7 @@ private struct InviteRewardNote: View {
             Text("Bring a friend, see the evidence.")
                 .font(AppFont.callout.weight(.semibold))
                 .foregroundStyle(AppColor.calmAccent)
-            Text("When a friend you invite accepts and finishes their first session, your next 10 sessions show the full results: every curve and every reading.")
+            Text("When a friend you invite accepts and finishes their first session, your next \(InviteReward.sessionsPerFriend) sessions show the full results: every curve and every reading.")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
         }

@@ -125,6 +125,9 @@ enum SessionStore {
         for r in (try? context.fetch(FetchDescriptor<SessionReflection>(predicate: #Predicate { $0.sessionID == id }))) ?? [] {
             context.delete(r)
         }
+        for p in (try? context.fetch(FetchDescriptor<SessionPhoto>(predicate: #Predicate { $0.sessionID == id }))) ?? [] {
+            context.delete(p)
+        }
         for s in sessions { context.delete(s) }
         try? context.save()
         return true
@@ -141,6 +144,7 @@ enum SessionStore {
 
         let allStats = (try? context.fetch(FetchDescriptor<MeditationStats>())) ?? []
         let allReflections = (try? context.fetch(FetchDescriptor<SessionReflection>())) ?? []
+        let allPhotos = (try? context.fetch(FetchDescriptor<SessionPhoto>())) ?? []
         for user in expired {
             let uid = user.id
             let sessions = (try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.userID == uid }))) ?? []
@@ -150,6 +154,9 @@ enum SessionStore {
             }
             for r in allReflections {
                 if let sid = r.sessionID, sessionIDs.contains(sid) { context.delete(r) }
+            }
+            for p in allPhotos {
+                if let sid = p.sessionID, sessionIDs.contains(sid) { context.delete(p) }
             }
             for session in sessions { context.delete(session) }
             for prefs in (try? context.fetch(FetchDescriptor<Preferences>(predicate: #Predicate { $0.userID == uid }))) ?? [] {
@@ -285,6 +292,42 @@ enum SessionStore {
         row.updatedAt = Date()
         try? context.save()
         return row
+    }
+
+    // MARK: Photos
+
+    /// The photo kept with a session, if one was taken. One per session.
+    static func photo(for sessionID: UUID, in context: ModelContext) -> SessionPhoto? {
+        try? context.fetch(FetchDescriptor<SessionPhoto>(
+            predicate: #Predicate { $0.sessionID == sessionID })).first
+    }
+
+    /// Saves or replaces the session's photo. Takes encoded bytes, not an
+    /// image, because Shared/ is compiled into the Watch target too and the
+    /// resizing lives in the iOS app (`PostPhoto`). Retaking replaces in
+    /// place, so a session never carries two.
+    @discardableResult
+    static func savePhoto(sessionID: UUID, jpeg: Data, thumbnail: Data, takenAt: Date = Date(),
+                          in context: ModelContext) -> SessionPhoto {
+        if let existing = photo(for: sessionID, in: context) {
+            existing.jpeg = jpeg
+            existing.thumbnail = thumbnail
+            existing.takenAt = takenAt
+            try? context.save()
+            return existing
+        }
+        let row = SessionPhoto(sessionID: sessionID, takenAt: takenAt, jpeg: jpeg, thumbnail: thumbnail)
+        context.insert(row)
+        try? context.save()
+        return row
+    }
+
+    static func removePhoto(for sessionID: UUID, in context: ModelContext) {
+        for p in (try? context.fetch(FetchDescriptor<SessionPhoto>(
+            predicate: #Predicate { $0.sessionID == sessionID }))) ?? [] {
+            context.delete(p)
+        }
+        try? context.save()
     }
 
     /// "Morning meditation" and friends: Strava's default activity name, by

@@ -50,6 +50,9 @@ struct SessionResultsView: View {
     @State private var technique: String?
     @State private var techniqueNote: String = ""
     @State private var streakDays = 0
+    /// The photo taken on Save session, the session's own record. Full size,
+    /// decoded once on load.
+    @State private var photo: UIImage?
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var community: CommunityModel
     /// Every modal on this screen goes through ONE `.sheet(item:)`.
@@ -142,6 +145,7 @@ struct SessionResultsView: View {
                             header(session)
                             missingStatsCard
                         }
+                        if FeatureFlags.friends, let photo { tourDim(photoCard(photo), lit: nil) }
                         tourDim(reflectionCard, lit: nil)
                     } else {
                         Text("No results for this session.")
@@ -858,6 +862,36 @@ struct SessionResultsView: View {
 
     // MARK: Reflection
 
+    /// The photo taken on Save session, shown whole, portrait, above the
+    /// reflection because both are the person's own record of the sit.
+    /// Tapping it opens Save session, where Retake lives.
+    private func photoCard(_ image: UIImage) -> some View {
+        Button { route = .post } label: {
+            HStack(alignment: .top, spacing: 14) {
+                Color.clear
+                    .frame(width: 120, height: 160)
+                    .overlay(Image(uiImage: image).resizable().scaledToFill())
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Your photo")
+                        .font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
+                    if let session {
+                        Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                    }
+                    Spacer(minLength: 0)
+                    Text("Retake")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.accentGoldText)
+                }
+                .frame(height: 160)
+                Spacer(minLength: 0)
+            }
+        }
+        .buttonStyle(CardButtonStyle())
+        .card()
+    }
+
     private var reflectionCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("How did it feel?")
@@ -1090,6 +1124,7 @@ struct SessionResultsView: View {
         // Streak for the share card, derived the same way the calendar does.
         let allSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
         streakDays = StreakCalculator.streak(from: allSessions.map(\.startedAt)).current
+        photo = FeatureFlags.friends ? SessionStore.photo(for: sid, in: context).flatMap(PhotoThumbs.full) : nil
 
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { route = .share }

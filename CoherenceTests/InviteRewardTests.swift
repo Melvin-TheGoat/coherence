@@ -19,10 +19,10 @@ final class InviteRewardTests: XCTestCase {
     }
 
     func test_grantStacksAndCaps() {
-        XCTAssertEqual(InviteReward.granted(after: 0), 10)
-        XCTAssertEqual(InviteReward.granted(after: 10), 20)
-        XCTAssertEqual(InviteReward.granted(after: 45), 50, "capped at fifty outstanding")
-        XCTAssertEqual(InviteReward.granted(after: 50), 50)
+        XCTAssertEqual(InviteReward.granted(after: 0), 3)
+        XCTAssertEqual(InviteReward.granted(after: 3), 6)
+        XCTAssertEqual(InviteReward.granted(after: 13), 15, "capped at fifteen outstanding")
+        XCTAssertEqual(InviteReward.granted(after: 15), 15)
     }
 
     // MARK: The ledger
@@ -45,9 +45,9 @@ final class InviteRewardTests: XCTestCase {
     func test_grantPaysOncePerFriend() {
         let (ledger, _) = ledger()
         XCTAssertEqual(ledger.remaining, 0)
-        XCTAssertEqual(ledger.grant(forFriend: "profile-x"), 10)
+        XCTAssertEqual(ledger.grant(forFriend: "profile-x"), 3)
         XCTAssertNil(ledger.grant(forFriend: "profile-x"), "the same friend never pays twice")
-        XCTAssertEqual(ledger.grant(forFriend: "profile-y"), 20)
+        XCTAssertEqual(ledger.grant(forFriend: "profile-y"), 6, "a second friend stacks")
         XCTAssertEqual(ledger.rewardedFriends, ["profile-x", "profile-y"])
         XCTAssertNotNil(ledger.since)
     }
@@ -60,11 +60,11 @@ final class InviteRewardTests: XCTestCase {
 
         ledger.grant(forFriend: "profile-x", at: Date())
         XCTAssertFalse(ledger.cover(sessionID: old, startedAt: Date().addingTimeInterval(-3_600)),
-                       "a session from before the grant is not one of the NEXT ten")
+                       "a session from before the grant is not one of the NEXT three")
         XCTAssertTrue(ledger.cover(sessionID: new, startedAt: Date().addingTimeInterval(60)))
-        XCTAssertEqual(ledger.remaining, 9)
+        XCTAssertEqual(ledger.remaining, 2)
         XCTAssertTrue(ledger.cover(sessionID: new, startedAt: Date().addingTimeInterval(60)))
-        XCTAssertEqual(ledger.remaining, 9, "asking again for a covered session costs nothing")
+        XCTAssertEqual(ledger.remaining, 2, "asking again for a covered session costs nothing")
     }
 
     @MainActor
@@ -72,13 +72,13 @@ final class InviteRewardTests: XCTestCase {
         let (ledger, _) = ledger()
         ledger.grant(forFriend: "profile-x", at: Date(timeIntervalSince1970: 0))
         var ids: [UUID] = []
-        for _ in 0..<10 {
+        for _ in 0..<InviteReward.sessionsPerFriend {
             let id = UUID(); ids.append(id)
             XCTAssertTrue(ledger.cover(sessionID: id, startedAt: Date()))
         }
         XCTAssertEqual(ledger.remaining, 0)
-        XCTAssertFalse(ledger.cover(sessionID: UUID(), startedAt: Date()), "the eleventh is locked")
-        XCTAssertTrue(ledger.cover(sessionID: ids[3], startedAt: Date()), "the fourth still shows its evidence")
+        XCTAssertFalse(ledger.cover(sessionID: UUID(), startedAt: Date()), "the one after the grant is locked")
+        XCTAssertTrue(ledger.cover(sessionID: ids[1], startedAt: Date()), "an earlier covered one still shows its evidence")
     }
 
     @MainActor
@@ -86,7 +86,7 @@ final class InviteRewardTests: XCTestCase {
         let (ledger, context) = ledger()
         ledger.grant(forFriend: "profile-x")
         let again = RewardLedger(context: context)
-        XCTAssertEqual(again.remaining, 10)
+        XCTAssertEqual(again.remaining, InviteReward.sessionsPerFriend)
         XCTAssertEqual(again.rewardedFriends, ["profile-x"])
     }
 
@@ -129,9 +129,9 @@ final class RewardLedgerRowTests: XCTestCase {
         for _ in 0..<5 {
             let ledger = RewardLedger(context: ctx)
             ledger.grant(forFriend: "profile-x")
-            XCTAssertEqual(ledger.remaining, 10)
+            XCTAssertEqual(ledger.remaining, InviteReward.sessionsPerFriend)
         }
-        XCTAssertEqual(old.evidenceGrantRemaining, 10)
+        XCTAssertEqual(old.evidenceGrantRemaining, InviteReward.sessionsPerFriend)
         XCTAssertEqual(new.evidenceGrantRemaining, 0)
     }
 }
