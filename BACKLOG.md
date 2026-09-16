@@ -176,6 +176,22 @@ anything drives a hide request it will be that, and the fix may be how the
 feed card presents a short sit. Cannot be measured in PostHog: score bands
 are biometric under our rule. Decide after the first weeks of real posts.
 
+## A real user scored 1 (2026-09-16): the formula worked, and it reads as broken
+
+The card: 10 min, stillness 75%, heart 74 → 79 (rose), breathing 6.2/min,
+score 1. By the v5 formula that is exact: stillness below 0.80 floors at
+zero (`spreadStillness` maps 0.80 to 0.98 onto 0 to 1, calibrated on eight
+of Aziz's sits at 0.84 to 0.97); a heart that climbs and never returns
+scores about 0.03; the 6.2/min read had no doorway that qualified (started
+after 90 s without 0.85 clarity, or after 5 min), so breath added nothing.
+Three zeros stacked. **Bug found beside it, fixed:** the "HR settled" tile
+on the card and the results screen negated the sign, so a six-beat RISE
+read "+6 HR settled". **Open for Aziz (engine calibration, not retuned by
+feel):** the 0.80 stillness floor gives a 0.75 sit nothing at all; a floor
+of 0.60 would have put this session at about 16 (with the same heart and
+breath), and 0.75 is the territory real users with ordinary movement land
+in. Decide with data from the captures, not this one card.
+
 ## Decided 2026-09-15 (Melvin), being built now
 
 - DONE 2026-09-16: **streak forgiveness.** One missed day is forgiven when

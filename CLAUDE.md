@@ -2100,6 +2100,13 @@ resolves its container lazily. Both now go through `CloudEntitlement`
 `embedded.mobileprovision`; no profile (an App Store build) means trust the
 App ID. **Never construct a CKContainer, default or by identifier, without
 `CloudEntitlement.mayHoldContainer`. `Persistence.mode` is not proof.**
+**And `CKContainer.default()` is not the entitled container:** Apple names
+the default after the BUNDLE ID (`iCloud.` + bundle id), which only
+coincides with our entitlement on the production bundle. The `.dev` beta
+asked for `iCloud.com.lockout.meditate808.dev` and got "couldn't get
+container configuration" (2026-09-16). The friends store now builds its
+container from `CloudEntitlement.container` and falls back to `default()`
+only when no profile exists.
 The beta strips the iCloud entitlement on purpose, so on the beta friends
 show the honest "iCloud unavailable" card and the rest of the app runs.
 

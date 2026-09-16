@@ -119,7 +119,17 @@ final class CloudKitCommunityDatabase: CommunityDatabase {
     /// CKContainer from a guessed identifier").
     static func ifEntitled() -> CloudKitCommunityDatabase? {
         guard Persistence.mode == .cloudKit, CloudEntitlement.mayHoldContainer else { return nil }
-        return CloudKitCommunityDatabase(container: CKContainer.default())
+        // `CKContainer.default()` is NOT the entitled container: Apple names
+        // it after the bundle id ("iCloud." + bundle id). On the App Store
+        // build the two coincide; on the side-by-side beta the bundle id ends
+        // in ".dev" and default() asked CloudKit for a container that does not
+        // exist ("couldn't get container configuration", 2026-09-16). SwiftData
+        // reads the entitlement for the private database, so sync worked while
+        // Friends failed. Use the entitled identifier whenever the profile
+        // names one; default() only where no profile exists (a store build,
+        // whose bundle id is the production one).
+        let container = CloudEntitlement.container.map { CKContainer(identifier: $0) } ?? CKContainer.default()
+        return CloudKitCommunityDatabase(container: container)
     }
 
     func currentUserRecordName() async throws -> String {
