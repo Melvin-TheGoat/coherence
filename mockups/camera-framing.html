@@ -1,0 +1,120 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · camera framing before Begin</title>
+<style>
+:root{ --bg:#13100D; --card:#1c1915; --fg:#F5F3EC; --muted:#9A9A93; --gold:#D4AF37; --teal:#5EB1A8; --line:rgba(255,255,255,.09); --outline:rgba(255,255,255,.92); }
+body{ margin:0; background:#0b0a08; color:var(--fg); font-family:-apple-system,system-ui,sans-serif; padding:28px 20px 60px; }
+h1{ font-size:20px; margin:0 0 4px; } .note{ color:var(--muted); font-size:13px; max-width:720px; line-height:1.5; }
+h2{ font-size:13px; margin:34px 0 12px; color:var(--gold); text-transform:uppercase; letter-spacing:.08em; }
+.row{ display:flex; gap:22px; flex-wrap:wrap; align-items:flex-start; }
+.phone{ width:270px; height:584px; border-radius:38px; border:1px solid #2c2a25; overflow:hidden; position:relative; background:var(--bg); flex:none; display:flex; flex-direction:column; }
+.screen{ flex:1; padding:46px 18px 0; overflow:hidden; font-size:12.5px; display:flex; flex-direction:column; }
+.cap{ font-size:12.5px; color:var(--muted); margin-top:10px; width:270px; line-height:1.45; }
+.cap b{ color:var(--fg); }
+.k{ font-size:9.5px; letter-spacing:.12em; color:var(--muted); text-transform:uppercase; font-weight:600; }
+.cancel{ position:absolute; top:46px; right:18px; color:var(--muted); font-size:12px; }
+.title{ font-size:24px; font-weight:800; letter-spacing:-.03em; line-height:1.08; text-align:center; margin-top:18px; }
+.sub{ color:var(--muted); text-align:center; margin-top:8px; font-size:12px; }
+.tip{ display:flex; gap:7px; align-items:flex-start; background:rgba(28,25,21,.7); border-radius:10px; padding:8px 10px; margin-top:12px; color:var(--muted); font-size:10.5px; line-height:1.4; }
+.tip i{ color:var(--teal); font-style:normal; font-size:10px; margin-top:1px; }
+.prev{ position:relative; aspect-ratio:3/4; width:196px; margin:14px auto 0; border-radius:16px; overflow:hidden;
+  background: radial-gradient(120% 90% at 50% 40%, #2a2622 0%, #16130f 60%, #0e0c0a 100%); }
+.prev .frame{ position:absolute; inset:8%; }
+.prev svg{ width:100%; height:100%; fill:none; stroke:var(--outline); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+.prev.on svg{ stroke:var(--teal); }
+.framecap{ text-align:center; color:var(--muted); font-size:11px; margin-top:8px; }
+.spacer{ flex:1; }
+.begin{ background:var(--gold); color:#1a1508; border-radius:12px; text-align:center; padding:12px; font-weight:700; font-size:13px; margin-top:12px; }
+.defaults{ text-align:center; color:var(--muted); font-size:11px; padding:10px 0 14px; }
+/* live screen */
+.chip{ align-self:center; margin-top:4px; padding:4px 10px; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-size:10px; letter-spacing:.06em; }
+.mini{ width:66px; aspect-ratio:3/4; margin:8px auto 0; border-radius:10px; background: radial-gradient(120% 90% at 50% 40%, #2a2622 0%, #16130f 60%, #0e0c0a 100%); border:1px solid rgba(94,177,168,.8); }
+.minicap{ text-align:center; color:var(--muted); font-size:9.5px; margin-top:4px; }
+.orb{ width:170px; height:170px; border-radius:50%; margin:34px auto 0; background: radial-gradient(circle, rgba(94,177,168,.55) 0%, rgba(94,177,168,.06) 70%); box-shadow:0 0 60px rgba(94,177,168,.18); border:1px solid rgba(94,177,168,.45); display:flex; align-items:center; justify-content:center; font-weight:600; font-size:14px; }
+.clock{ text-align:center; font-size:26px; font-weight:300; margin-top:28px; color:var(--muted); font-variant-numeric:tabular-nums; }
+.measuring{ text-align:center; color:var(--muted); font-size:10.5px; margin-top:4px; }
+.end{ text-align:center; color:var(--muted); font-size:12px; margin-top:26px; }
+.q{ margin-top:34px; max-width:720px; } .q li{ margin:8px 0; line-height:1.5; font-size:13.5px; } .q b{ color:var(--gold); }
+.swatch{ display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:-1px; margin-right:4px; }
+</style></head><body>
+<h1>808 · camera framing before Begin</h1>
+<p class="note">Melvin, 2026-09-16: people need to frame themselves <b>before</b> the session starts, not after. The camera preview moves onto the "Ready when you are" sheet, gets big, and carries a seated-figure outline to sit into. When Vision has found a person, the outline turns teal and the caption says so. Nothing else changes colour; Begin stays the one gold thing. On this branch it appears only with the DEBUG capture toggle on, and the same camera session carries straight into the live screen.</p>
+
+<h2>The Begin sheet, both states, and the live screen</h2>
+<div class="row">
+
+<!-- SETUP, NOT YET FRAMED -->
+<div>
+<div class="phone"><div class="screen">
+  <span class="cancel">Cancel</span>
+  <div class="title">Ready when<br>you are.</div>
+  <div class="sub">Your Watch tracks the whole session.</div>
+  <div class="tip"><i>●</i><span>Nothing should interrupt. Swipe down from the top right and turn on Do Not Disturb.</span></div>
+  <div class="prev"><div class="frame">
+    <svg viewBox="0 0 300 400">
+      <circle cx="150" cy="84" r="34"/>
+      <path d="M122 146 C104 148 88 154 80 166 C66 190 58 226 56 262 C56 280 70 298 98 310"/>
+      <path d="M122 146 C136 138 164 138 178 146"/>
+      <path d="M178 146 C196 148 212 154 220 166 C234 190 242 226 244 262 C244 280 230 298 202 310"/>
+      <path d="M106 180 C100 220 100 262 106 304 M194 180 C200 220 200 262 194 304"/>
+      <path d="M22 338 C66 300 234 300 278 338 C234 382 66 382 22 338 Z"/>
+      <path d="M108 366 C128 350 160 336 200 326 M192 366 C172 350 140 336 100 326"/>
+    </svg>
+  </div></div>
+  <div class="framecap">Sit so your head and lap fit the outline</div>
+  <div class="spacer"></div>
+  <div class="begin">Begin</div>
+  <div class="defaults">Open · Silence &nbsp;›</div>
+</div></div>
+<div class="cap"><b>Before you are in frame.</b> The preview is the front camera, mirrored, 3:4 like its own frame, the width the sheet has left after the title and the tip. A thin white outline of a seated figure sits inside it. The caption tells you what to do with it.</div>
+</div>
+
+<!-- SETUP, FRAMED -->
+<div>
+<div class="phone"><div class="screen">
+  <span class="cancel">Cancel</span>
+  <div class="title">Ready when<br>you are.</div>
+  <div class="sub">Your Watch tracks the whole session.</div>
+  <div class="tip"><i>●</i><span>Nothing should interrupt. Swipe down from the top right and turn on Do Not Disturb.</span></div>
+  <div class="prev on"><div class="frame">
+    <svg viewBox="0 0 300 400">
+      <circle cx="150" cy="84" r="34"/>
+      <path d="M122 146 C104 148 88 154 80 166 C66 190 58 226 56 262 C56 280 70 298 98 310"/>
+      <path d="M122 146 C136 138 164 138 178 146"/>
+      <path d="M178 146 C196 148 212 154 220 166 C234 190 242 226 244 262 C244 280 230 298 202 310"/>
+      <path d="M106 180 C100 220 100 262 106 304 M194 180 C200 220 200 262 194 304"/>
+      <path d="M22 338 C66 300 234 300 278 338 C234 382 66 382 22 338 Z"/>
+      <path d="M108 366 C128 350 160 336 200 326 M192 366 C172 350 140 336 100 326"/>
+    </svg>
+  </div></div>
+  <div class="framecap">You're in frame</div>
+  <div class="spacer"></div>
+  <div class="begin">Begin</div>
+  <div class="defaults">Open · Silence &nbsp;›</div>
+</div></div>
+<div class="cap"><b>In frame.</b> Vision's human-rectangle detector runs once a second while the sheet is up; three hits in the last four turn the outline teal and the caption to "You're in frame". Leave the frame and it goes back. The outline is the only thing that changes: the caption stays grey, Begin stays gold.</div>
+</div>
+
+<!-- LIVE SCREEN -->
+<div>
+<div class="phone"><div class="screen">
+  <span class="chip">OPEN · SILENCE</span>
+  <div class="mini"></div>
+  <div class="minicap">Camera capture · recording</div>
+  <div class="orb">Breathe in</div>
+  <div class="clock">4:12</div>
+  <div class="measuring">Your Watch is measuring. Let it settle.</div>
+  <div class="end">End session</div>
+</div></div>
+<div class="cap"><b>The live screen.</b> The same camera session, not restarted, shrunk to a thumbnail so it reads as "the camera is on", never as a readout. A teal hairline means the recorder has fixed its region of interest. No numbers, no outline, no live biometrics: evidence comes after.</div>
+</div>
+
+</div>
+
+<h2>Decisions in this mockup</h2>
+<ul class="q">
+  <li><b>One camera session, owned by the coordinator.</b> The sheet starts it on appear, hands it to the live screen at Begin, and releases it if the sheet is dismissed without beginning. Recording (t = 0) still starts on the Watch's started-ack, exactly as today; the preview phase before it records nothing.</li>
+  <li><b>The figure fixes the region of interest early.</b> If the person was found in the seconds before the Watch starts, that median box becomes the ROI from t = 0 instead of thirty seconds in. If not, the in-session detection runs as before, so the capture files keep their shape.</li>
+  <li><b>Colour grammar.</b> <span class="swatch" style="background:var(--outline)"></span>white: an instruction, not yet met. <span class="swatch" style="background:var(--teal)"></span>teal: the body's signal, found. <span class="swatch" style="background:var(--gold)"></span>gold: Begin, and only Begin. The plan's earlier "turns gold when framed" is retired; a found torso is guidance, not an achievement.</li>
+  <li><b>The outline is a Shape, not an image.</b> Drawn from paths (head, shoulders and arms, crossed legs, the shins crossing), like the logo, so it scales with the preview and takes any stroke colour.</li>
+  <li><b>Sizing.</b> The preview keeps 3:4 and takes the width left after the title, the subtitle and the Do Not Disturb tip: full content width on a large phone, a little narrower on a small one, never scrolling and never pushing Begin off the screen.</li>
+</ul>
+</body></html>
