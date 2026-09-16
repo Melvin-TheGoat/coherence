@@ -26,4 +26,13 @@ enum AppColor {
     static let calmAccent = Color("CalmAccent")
     /// Dark text for placing on top of the gold accent (fixed in both light + dark).
     static let textOnAccent = Color("TextOnAccent")
+    /// A line drawn over a camera image (the framing outline). White in BOTH
+    /// appearances: the ground under it is the room, not the theme, so the
+    /// theme's text colour would vanish on a light-mode phone.
+    static let cameraOverlay = Color("CameraOverlay")
+    /// The ground behind a camera preview while there is no feed (permission
+    /// pending or denied, the simulator). A viewfinder is black in both
+    /// appearances; the theme's card colour is near-white in light mode and
+    /// would swallow the outline drawn over it.
+    static let cameraGround = Color("CameraGround")
 }
