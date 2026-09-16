@@ -756,6 +756,38 @@ UI must coach it, and the 2-signal degrade path must stay.
     and 45 s; the true offsets are 20 s and 25 s). Pass them.
   - **Next is data, not code:** twenty in-app labelled pairs per section 5 of
     the plan. Paced 6/8/12 first. Add nothing to the engine until they exist.
+- **CAMERA FRAMING BEFORE BEGIN (2026-09-16, Melvin).** The DEBUG collector's
+  preview moved from the live screen (too late to move) onto the "Ready when
+  you are" sheet: big, 3:4, card corners, with `SeatedFigureOutline` (a
+  `Shape` drawn from paths in a 300x400 box; the same numbers draw the SVG in
+  `mockups/camera-framing.html`, keep them in step) laid over it. White until
+  Vision finds a person in three of the last four one-a-second detections,
+  then teal, and the caption flips to "You're in frame". Nothing else changes
+  colour; Begin stays the only gold. Two fixed tokens were added for it:
+  `AppColor.cameraOverlay` (white in both appearances, it sits on the room)
+  and `AppColor.cameraGround` (viewfinder black behind a missing feed; the
+  light-mode card colour swallowed the outline on the simulator).
+  - **ONE recorder, owned by `SessionCoordinator`, two phases.** The sheet's
+    onAppear calls `startCameraPreview()` (camera runs, `framed` is watched,
+    nothing recorded); `begin()` sets `cameraClaimed` SYNCHRONOUSLY before its
+    Task, because the sheet's onDisappear fires before the attempt has an id
+    and would otherwise release it; the Watch's started-ack `arm`s it (the
+    next frame is t = 0, samples begin, exposure locks 3 s later as before);
+    `persist` / `sessionFailedToStart` release it. A sheet dismissed without
+    Begin calls `releaseCameraPreviewIfUnclaimed()`. `stop()` sets a
+    `stopped` flag under the queue so a permission prompt answered after
+    Cancel cannot start a camera nothing will stop.
+  - **The preview fixes the ROI early.** If a person was found in the last
+    6 s before arm, their median box is the ROI from t = 0
+    (`roi_fixed_at_sec=0`); otherwise the in-session 30 s detection runs
+    unchanged, so capture files keep their shape either way.
+  - The live screen keeps a thumbnail (`CameraThumbnail`, 84x112, no outline,
+    no frame count): it says the camera is on and nothing more, per the
+    no-live-biometrics stance. Hooks: `PREVIEW_SETUP=1` opens the sheet,
+    `PREVIEW_CAMERA=1` flips the toggle, `PREVIEW_FRAMED=1` shows the teal
+    state (the simulator has no camera). `CameraFramingRulesTests` pins the
+    three-of-four rule and the median ROI; `SeatedFigureOutlineTests` the
+    shape's fit and scaling.
 - **WRIST BREATHING SHIPPED — posture-free, VERIFIED on-device across 8 live
   sessions (2026-08-07, field-calibrated in 5 rounds like the camera was).**
   Every non-belly session gets a breathing attempt automatically: no mode, no

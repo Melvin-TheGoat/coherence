@@ -22,12 +22,23 @@ room needs enough light to see you (the luma channel and the person detector
 both go blind in the dark). The sound picker is the existing one. The
 Do Not Disturb tip stays.
 
-**Placement check.** The live preview (the DEBUG `CameraPreviewView`, promoted
-to a product view) with one teal outline that turns gold when Vision has found
-a torso in three of the last four detections. Begin is enabled only then. The
-outline is the only feedback; there is no "score" here (the gold ring means a
-measured score, nowhere else). Permission denied leads to a screen that says
-what the camera is for and offers the Watch path; it never dead-ends.
+**Placement check.** The live preview, big on the Begin sheet before the
+session starts (3:4, the front camera's own frame, the width the sheet has
+left after the title and the tip), with a thin WHITE outline of a seated
+figure (`SeatedFigureOutline`, a Shape drawn from paths, no image) laid over
+it to sit into. When Vision has found a person in three of the last four
+detections (one a second) the outline turns TEAL and the caption under the
+preview reads "You're in frame" instead of "Sit so your head and lap fit the
+outline". Nothing else changes colour: a found torso is guidance, not an
+achievement, and Begin stays the only gold thing (Melvin, 2026-09-16; this
+replaces the earlier teal-to-gold idea). Built on this branch for the DEBUG
+collector, behind the same Settings toggle: `CameraFramingView`, with one
+recorder instance owned by `SessionCoordinator` that the sheet starts, Begin
+claims, the Watch's started-ack arms, and a dismissed sheet releases. Whether
+the shipped flow gates Begin on being framed is still open. The outline is the
+only feedback; there is no "score" here (the gold ring means a measured score,
+nowhere else). Permission denied leads to a screen that says what the camera
+is for and offers the Watch path; it never dead-ends.
 
 **Settling countdown.** After Begin, ten seconds before t = 0, screen dimmed,
 a single line "Settling in". The Watch path trims the first and last five
