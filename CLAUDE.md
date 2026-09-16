@@ -1621,6 +1621,34 @@ Mockup `mockups/otto.html` came first (Aziz's rule).
 - **The simulator on this Mac can run the model** (Apple Intelligence on
   the host makes `SystemLanguageModel.default` available in the iOS 26.5
   simulator), so Otto can be exercised without a phone.
+- **THE MODEL DOES NO ARITHMETIC (2026-09-16, Melvin).** On a real sit
+  Otto said "still for 0.76 seconds", invented an opening rate of "50 to
+  60 bpm" and summed "60% + 40% + 0% = 100%", then got it right on a
+  regenerate. A 3B model handed rules and raw numbers will do sums, and do
+  them differently each time. Now `SignalEngine.breakdown` (the same code
+  path as `score`, so ring and explanation cannot disagree) exposes every
+  term, and `OttoBrief.scoreCard` writes the working in POINTS already
+  scaled to the sit's cap ("Heart earned 0 of 45", "Stillness 0.76, cubed
+  0.44, 13 of 30", "Total 0 + 13 + 0 = 13"), plus the only two
+  hypotheticals allowed (at 10 min; with a doorway), the band the score
+  sits in (the model called 13 "deep and held" once), and a rule-ranked
+  COACHING line by points left. Every table row carries its points and
+  band too. Sampling temperature 0.3. **Iterate in the lab, not on a
+  phone:** `test_dumpBriefForTheLab` writes the brief for a sit shaped
+  like Melvin's (`TEST_RUNNER_OTTO_BRIEF_OUT=/tmp/otto_brief.txt`), and
+  `tools/otto_lab.swift` puts questions to the same model on the Mac,
+  `RUNS=3` for consistency. Rules learned there: state facts as
+  descriptions, never prohibitions (a "never seconds" rule was parroted
+  back verbatim); precompute anything the model must compare (bands);
+  avoid words with a second meaning ("doorway held 2:30" became "held the
+  breath", now "kept up for").
+- **Chats persist** (`OttoChatStore`, one JSON per session under
+  Application Support/Otto, plus "profile" for the general chat; never
+  synced, since a transcript quotes heart rates). Reopening replays the
+  last six turns into a fresh `Transcript` under the CURRENT brief, so a
+  chat reopened after new sits knows about them. Deleted with the
+  session, on sign-out, on account deletion and on credential revocation.
+  The ellipsis menu offers "Start a new chat".
 
 ## THE PAYWALL COMES AFTER THE FIRST MEDITATION (2026-09-15, Melvin)
 

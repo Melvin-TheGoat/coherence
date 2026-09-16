@@ -1310,10 +1310,90 @@ enum SignalEngine {
                       heartRateTimeseries: [Double],
                       breathDoorway: BreathDoorway?,
                       durationSec: Int) -> Double? {
-        let d = depth(stillness: stillnessScore.map(spreadStillness),
-                      hrSettling: heartSettling(heartRateTimeseries),
-                      breath: breathDoorway.map { _ in 1.0 })
-        return d.map { min(1, $0 * durationFactor(seconds: durationSec)) }
+        breakdown(stillnessScore: stillnessScore,
+                  heartRateTimeseries: heartRateTimeseries,
+                  hasDoorway: breathDoorway != nil,
+                  durationSec: durationSec)?.score
+    }
+
+    /// The score with its working shown: every term, weight and factor that
+    /// produced it, from the same stored components `score` reads.
+    ///
+    /// Built for Otto (2026-09-16). The on-device model was adding
+    /// percentages ("60% + 40% + 0% = 100%") and inventing an opening rate,
+    /// because it was handed the rules and the raw numbers and left to do
+    /// the arithmetic. Now the arithmetic is done here, in points, and the
+    /// model quotes it. `score` goes through this struct so the explanation
+    /// can never disagree with the number on the ring.
+    struct ScoreBreakdown: Equatable {
+        /// Fraction of the sit spent at or below the opening rate (plus the
+        /// one-beat tolerance), nil when the heart was not read.
+        var heartHeld: Double?
+        /// Beats between the opening and closing rate; positive = settled.
+        var heartDrop: Double?
+        /// 0.6 × held + 0.4 × min(1, drop / 12).
+        var heartTerm: Double?
+        var stillnessRaw: Double?
+        /// Raw cubed (`spreadStillness`).
+        var stillnessTerm: Double?
+        var hasDoorway: Bool
+        /// The weights actually applied: 0.50/0.30/0.20 with a doorway,
+        /// 0.60/0.40 without.
+        var heartWeight: Double
+        var stillnessWeight: Double
+        var breathWeight: Double
+        /// Weighted depth, 0 to 1, before time.
+        var depth: Double
+        var durationSec: Int
+        var durationFactor: Double
+        /// Depth × factor, clamped at 1. This is `score`.
+        var score: Double
+
+        /// Points on the 0 to 100 scale each term contributed BEFORE time,
+        /// out of its weight × 100. Terms that were not read contribute
+        /// nothing and their weight is redistributed by `depth`, so these
+        /// are shown out of the renormalised weights.
+        var heartPoints: Double? { heartTerm.map { $0 * heartWeight / weightSum * 100 } }
+        var stillnessPoints: Double? { stillnessTerm.map { $0 * stillnessWeight / weightSum * 100 } }
+        var breathPoints: Double { hasDoorway ? breathWeight / weightSum * 100 : 0 }
+        var heartMax: Double? { heartTerm == nil ? nil : heartWeight / weightSum * 100 }
+        var stillnessMax: Double? { stillnessTerm == nil ? nil : stillnessWeight / weightSum * 100 }
+        var breathMax: Double { hasDoorway ? breathWeight / weightSum * 100 : 0 }
+
+        /// The score cap for this length: 100 × the factor, capped at 100.
+        var cap: Double { min(1, durationFactor) * 100 }
+
+        private var weightSum: Double {
+            (heartTerm == nil ? 0 : heartWeight) + (stillnessTerm == nil ? 0 : stillnessWeight)
+                + (hasDoorway ? breathWeight : 0)
+        }
+    }
+
+    static func breakdown(stillnessScore: Double?,
+                          heartRateTimeseries: [Double],
+                          hasDoorway: Bool,
+                          durationSec: Int) -> ScoreBreakdown? {
+        let stillnessTerm = stillnessScore.map(spreadStillness)
+        let heartTerm = heartSettling(heartRateTimeseries)
+        guard let d = depth(stillness: stillnessTerm, hrSettling: heartTerm,
+                            breath: hasDoorway ? 1.0 : nil) else { return nil }
+        var held: Double? = nil
+        var drop: Double? = nil
+        if heartTerm != nil, let opening = heartRateTimeseries.first, let closing = heartRateTimeseries.last {
+            let atOrBelow = heartRateTimeseries.dropFirst().filter { $0 <= opening + 1.0 }.count
+            held = Double(atOrBelow) / Double(heartRateTimeseries.count - 1)
+            drop = opening - closing
+        }
+        let factor = durationFactor(seconds: durationSec)
+        return ScoreBreakdown(
+            heartHeld: held, heartDrop: drop, heartTerm: heartTerm,
+            stillnessRaw: stillnessScore, stillnessTerm: stillnessTerm,
+            hasDoorway: hasDoorway,
+            heartWeight: hasDoorway ? 0.50 : 0.60,
+            stillnessWeight: hasDoorway ? 0.30 : 0.40,
+            breathWeight: 0.20,
+            depth: d, durationSec: durationSec, durationFactor: factor,
+            score: min(1, d * factor))
     }
 
     /// Weighted depth (0–1) across whichever signals were actually read.

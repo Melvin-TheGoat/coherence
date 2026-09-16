@@ -21,6 +21,7 @@ enum SessionDeletion {
             Task { await community.unpost(session: id) }
         }
         if SessionStore.deleteSession(id: id, in: context) {
+            OttoChatStore.delete(key: OttoChatStore.key(for: id))
             Analytics.track(.sessionDeleted)
         }
     }
