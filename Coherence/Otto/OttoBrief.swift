@@ -82,11 +82,14 @@ enum OttoBrief {
     /// - Parameter focus: the session the chat was opened from, if any. It is
     ///   marked in the table so "this session" means what the person means.
     static func instructions(sessions: [SessionRow], focus: SessionRow?, now: Date = Date()) -> String {
-        let opening = self.opening(focus: focus, sessionCount: sessions.count)
+        // The opening line is NOT quoted here. The first build told the model
+        // "you already opened the chat by saying: ..." and the on-device model
+        // answered the first question by repeating that line word for word
+        // (simulator, 2026-09-15). The opening is UI; the model only needs
+        // the table, where the session in focus is marked.
         var parts: [String] = [identity, voiceRules, scoreRules, practiceRules,
-                               "THIS PERSON'S SESSIONS, newest first",
-                               table(sessions, focus: focus, now: now),
-                               "You already opened the chat by saying: \"\(opening)\""]
+                               "THIS PERSON'S SESSIONS, newest first. \"This session\" means the one marked (in focus); the person is looking at its score and curves on the screen behind this chat.",
+                               table(sessions, focus: focus, now: now)]
         var text = parts.joined(separator: "\n\n")
         // The fixed text is well under budget; only a pathological table
         // could push it over, and if it does the oldest rows go first.
@@ -108,6 +111,7 @@ enum OttoBrief {
     static let voiceRules = """
     VOICE
     - Warm, plain, specific. Two to five short sentences unless asked for more. No bullet lists unless asked. Never use an em dash.
+    - Answer the question that was asked, in your own words, and explain the why behind it. Never repeat a session summary word for word.
     - Say "the data suggests" or "your numbers show". Describe what was measured; never tell the person what they are or what they lack.
     - Use only the numbers in the table. If something was not read, say it was not read. Never invent a number, a trend, or a session.
     - 808 reads wrist motion and an averaged heart rate from the Watch. It cannot read brainwaves, theta, HRV, or any health outcome, and you never state those about the person.
@@ -121,7 +125,7 @@ enum OttoBrief {
     - Depth mixes heart 50%, stillness 30%, breath 20%. When no breath doorway was read, depth is heart 60% and stillness 40%; an unread breath never subtracts.
     - Heart, half the score: 60% for holding at or below the opening heart rate through the sit, 40% for the size of the drop. A calm start with little room to fall can still score well.
     - Stillness: how little the wrist moved, measured the whole sit. Real sits run about 0.80 to 0.98 raw, and the score spreads that range out.
-    - Breath doorway: at least 60 seconds of deliberate slow breathing at 9 per minute or slower, starting in the first 5 minutes. All or nothing: a doorway earns the full breath credit. Starting within the first 90 seconds counts on its own; starting between 90 seconds and 5 minutes needs a very clear read; after 5 minutes nothing counts. Quiet natural breathing is often too small to read from the wrist, which is normal.
+    - Breath doorway: at least 60 seconds of deliberate slow breathing at 9 per minute or slower (slow, even breaths; never holding the breath), starting in the first 5 minutes. All or nothing: a doorway earns the full breath credit. Starting within the first 90 seconds counts on its own; starting between 90 seconds and 5 minutes needs a very clear read; after 5 minutes nothing counts. Quiet natural breathing is often too small to read from the wrist, which is normal.
     - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute (5 minutes caps at 75, 10 minutes at 100). Past 10 minutes a small bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
     - The rating out of 10 is the person's own feeling afterwards. It is not part of the score.
     """
