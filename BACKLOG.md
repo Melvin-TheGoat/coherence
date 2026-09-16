@@ -211,7 +211,17 @@ at the gate) pressed Begin three times and hit `watchAppNotInstalled`, so
 they DO have a paired Watch without 808 on it: the install screen after
 that failure is doing its job or not; worth watching whether they return.
 
-## Camera framing before Begin (Melvin, 2026-09-16, in flight on `camera-vision`)
+## Camera framing before Begin (Melvin, 2026-09-16): BUILT on `camera-vision`
+
+Done the same day: mockup `mockups/camera-framing.html`; the Begin sheet
+shows the front camera at 3:4, full width, with a white seated-figure
+outline (`SeatedFigureOutline`) that turns teal with "You're in frame"
+once a person is detected three times in four seconds; the live screen
+keeps a thumbnail; one recorder owned by the coordinator serves the
+preview and the session, and the preview's detected box becomes the
+session ROI from t = 0 when you were framed before Begin. 366 tests.
+Melvin to check on the phone: the outline goes teal within about 3 s of
+sitting down, and the next capture's header reads `roi_fixed_at_sec=0.0`.
 
 The camera preview moves to the setup sheet ("Ready when you are") so
 people place themselves before the session starts; it gets bigger (the
