@@ -178,6 +178,22 @@ are biometric under our rule. Decide after the first weeks of real posts.
 
 ## Decided 2026-09-15 (Melvin), being built now
 
+- DONE 2026-09-16: **streak forgiveness.** One missed day is forgiven when
+  the days either side were practised and no other rest day was taken in
+  the previous seven; two missed days in a row still break it. A rest day
+  bridges the run without counting as a practised day, so the number on
+  Home is days actually sat. The awards read the same runs. Home's nudge on
+  the day after a rest day: "Yesterday was your rest day. Sit today and
+  your N-day streak carries on." `StreakCalculator.runs`, tested.
+- **Camera capture #1 is in** (Melvin, 2026-09-16, session 14EDEB30, 6.6
+  min, paced 6/min then natural): the camera read 74% of windows, median
+  5.7/min, doorway 5.7/min opening at 90 s, clarity 0.89 median; against
+  the wrist's own curve, median error 1.0/min with 74% of windows within
+  1.5. Stillness read low (mean 0.75, spikes to 30x the floor: adjusting
+  in frame) so the camera score was 15 where the wrist would score higher;
+  that is the placement and motion-gate question the plan's sits 3 and 5
+  exist for. Nineteen sits to go per `CAMERA_VISION_PLAN.md`.
+
 - DONE 2026-09-15: **the tour ends at "put your Watch on" with a Begin.**
   No practice sit, no demo results. Begin finishes onboarding and Home
   opens the setup sheet.

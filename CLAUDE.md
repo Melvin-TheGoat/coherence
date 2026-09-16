@@ -1558,6 +1558,19 @@ Search · Profile** (`MainTabBar`, `ContentView` as the host). Mockup in
   strangers reached the paywall, three trials all founders or family ending
   09-19, one Lifetime (family). The test of the product starts with 1.0.1.
 
+## STREAK FORGIVENESS: one rest day per seven (2026-09-16, Melvin)
+
+`StreakCalculator.runs` is THE rule and `AwardEngine.streakRuns` delegates
+to it, so the headline and "ten straight days" cannot disagree. A single
+missed day between practised days bridges a run when no other rest day was
+taken in the previous seven (`restDaySpacing`); two missed days break it.
+Rest days do not count as practised days: the number is days actually sat.
+The current streak is alive on a rest day too (missed yesterday, nothing
+yet today, day before practised, rest available), reported as
+`restDayUsed` so Home can say the streak is on the line today. Rest days
+are derived, never stored, like the streak itself. Do not add a stored
+"freeze" inventory; the rolling seven-day rule needs none.
+
 ## OTTO v1 (2026-09-15): the premium on-device chat, behind a flag
 
 Melvin: "an AI chatbot, part of the premium version, always available to

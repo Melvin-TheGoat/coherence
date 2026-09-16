@@ -403,6 +403,9 @@ struct ContentView: View {
         let practicedToday = sessions.contains { cal.isDateInToday($0.startedAt) }
         guard !practicedToday else { return nil }
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
+        if streak.restDayUsed {
+            return "Yesterday was your rest day. Sit today and your \(streak.current)-day streak carries on."
+        }
         if streak.current > 1 {
             return "Nothing measured today. Your \(streak.current)-day streak is on the line."
         }
