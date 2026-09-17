@@ -344,23 +344,54 @@ extension UIImage {
     /// quarter-turned, which is the one fact every consumer agrees on.
     func uprightMirroredSelfie() -> UIImage {
         guard let cg = cgImage else { return self }
-        let quarterTurned: Bool
-        switch imageOrientation {
-        case .left, .leftMirrored, .right, .rightMirrored: quarterTurned = true
-        default: quarterTurned = false
-        }
-        let target = quarterTurned
-            ? CGSize(width: cg.height, height: cg.width)
-            : CGSize(width: cg.width, height: cg.height)
+        let rawIsPortrait = cg.height >= cg.width
+        let baked = bakingOrientation()
 
+        // Which reading of "upright" to believe.
+        //
+        // THE BUG THIS EXISTS FOR (Aziz, three builds running): AVFoundation
+        // can rotate the pixels to portrait via the connection's
+        // `videoRotationAngle` AND still tag the file as quarter-turned. Both
+        // earlier versions applied the tag on top of already-upright pixels,
+        // which turned a portrait selfie on its side and squashed it.
+        //
+        // This screen is portrait only and front camera only, so a landscape
+        // result is definitionally wrong. When the tag would produce one and
+        // the raw pixels are already portrait, the pixels win.
+        let chosen: UIImage
+        if baked.size.height >= baked.size.width {
+            chosen = baked
+        } else if rawIsPortrait {
+            chosen = UIImage(cgImage: cg, scale: 1, orientation: .up)
+        } else {
+            chosen = baked
+        }
+        return chosen.mirroredHorizontally()
+    }
+
+    /// The orientation tag applied to the pixels, leaving orientation `.up`.
+    /// `draw(in:)` does the work; `size` is the orientation-adjusted size, so
+    /// a quarter-turned image comes back the other way round.
+    func bakingOrientation() -> UIImage {
+        guard imageOrientation != .up else { return self }
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
         format.opaque = true
-        return UIGraphicsImageRenderer(size: target, format: format).image { ctx in
-            ctx.cgContext.translateBy(x: target.width, y: 0)
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// Mirrors left to right, so the shot matches the preview the person was
+    /// looking at. A selfie that is not mirrored reads as somebody else.
+    func mirroredHorizontally() -> UIImage {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            ctx.cgContext.translateBy(x: size.width, y: 0)
             ctx.cgContext.scaleBy(x: -1, y: 1)
-            // draw(in:) applies the stored orientation for us.
-            draw(in: CGRect(origin: .zero, size: target))
+            draw(in: CGRect(origin: .zero, size: size))
         }
     }
 
