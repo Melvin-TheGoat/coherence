@@ -311,28 +311,48 @@ final class SelfieCameraModel: ObservableObject {
         let done: (UIImage?) -> Void
         init(done: @escaping (UIImage?) -> Void) { self.done = done }
         func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-            guard error == nil, let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
-                done(nil); return
+            guard error == nil else { done(nil); return }
+            // Oriented from the PIXELS, not from the connection or the EXIF
+            // tag. Twice the shot reached the review frame lying on its side
+            // (Melvin, 2026-09-16 and 09-17): the rotation asked of the photo
+            // connection was not reflected in what `UIImage(data:)` decoded,
+            // so the front sensor's native landscape frame came through. The
+            // app is portrait only and this camera is front only, so the
+            // geometry is known: landscape pixels are the raw sensor frame
+            // and need a quarter turn plus the selfie mirror (`.leftMirrored`);
+            // portrait pixels were already turned and need only the mirror.
+            guard let cg = photo.cgImageRepresentation() else {
+                // No bitmap (should not happen for a processed photo): fall
+                // back to the encoded file and its own orientation.
+                let fallback = photo.fileDataRepresentation().flatMap(UIImage.init(data:))
+                done(fallback?.redrawnUpright(mirrored: true)); return
             }
-            // Upright pixels, mirrored like the preview, orientation .up. Every
-            // consumer (the review frame, the resizer, the calendar thumbnail,
-            // the post) then sees the same picture with no EXIF to interpret.
-            done(image.uprightMirroredSelfie())
+            let orientation: UIImage.Orientation = cg.width > cg.height ? .leftMirrored : .upMirrored
+            #if DEBUG
+            let exif = photo.metadata[kCGImagePropertyOrientation as String] ?? "none"
+            print("[selfie] pixels \(cg.width)x\(cg.height) exif \(exif) -> \(orientation == .leftMirrored ? "leftMirrored" : "upMirrored")")
+            #endif
+            done(UIImage(cgImage: cg, scale: 1, orientation: orientation).redrawnUpright(mirrored: false))
         }
     }
 }
 
 private extension UIImage {
-    /// Redraws the image into a fresh bitmap: `draw(in:)` applies the stored
-    /// orientation, the transform flips it horizontally, and the result carries
-    /// orientation `.up`. `size` is already orientation-adjusted points, and a
-    /// camera JPEG decodes at scale 1, so the pixel dimensions are preserved.
-    func uprightMirroredSelfie() -> UIImage {
+    /// Redraws the image into a fresh bitmap so the result carries
+    /// orientation `.up`: `draw(in:)` applies the stored orientation (the
+    /// mirror included, when the orientation is a mirrored one), and
+    /// `mirrored` adds a horizontal flip for an image that has none. Every
+    /// consumer (the review frame, the resizer, the calendar thumbnail, the
+    /// post) then sees the same upright pixels with nothing to interpret.
+    /// `size` is already orientation-adjusted, and scale 1 keeps the pixels.
+    func redrawnUpright(mirrored: Bool) -> UIImage {
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
         return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
-            ctx.cgContext.translateBy(x: size.width, y: 0)
-            ctx.cgContext.scaleBy(x: -1, y: 1)
+            if mirrored {
+                ctx.cgContext.translateBy(x: size.width, y: 0)
+                ctx.cgContext.scaleBy(x: -1, y: 1)
+            }
             draw(in: CGRect(origin: .zero, size: size))
         }
     }
