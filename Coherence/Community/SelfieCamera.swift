@@ -1,5 +1,13 @@
 import SwiftUI
 import AVFoundation
+import os
+
+/// What the camera actually produced, for reading over the cable
+/// (`xcrun devicectl device process launch --console`). A rotated selfie is
+/// invisible to a simulator, so the facts have to come off the device.
+enum SelfieLog {
+    static let shot = Logger(subsystem: "com.lockout.meditate808", category: "selfie")
+}
 
 /// 808's own camera, BeReal-shaped (mockup `mockups/save-session-v5.html`,
 /// "The camera, v5"): pure black, the mark centred at the top, a rounded
@@ -311,50 +319,96 @@ final class SelfieCameraModel: ObservableObject {
         let done: (UIImage?) -> Void
         init(done: @escaping (UIImage?) -> Void) { self.done = done }
         func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-            guard error == nil else { done(nil); return }
-            // Oriented from the PIXELS, not from the connection or the EXIF
-            // tag. Twice the shot reached the review frame lying on its side
-            // (Melvin, 2026-09-16 and 09-17): the rotation asked of the photo
-            // connection was not reflected in what `UIImage(data:)` decoded,
-            // so the front sensor's native landscape frame came through. The
-            // app is portrait only and this camera is front only, so the
-            // geometry is known: landscape pixels are the raw sensor frame
-            // and need a quarter turn plus the selfie mirror (`.leftMirrored`);
-            // portrait pixels were already turned and need only the mirror.
-            guard let cg = photo.cgImageRepresentation() else {
-                // No bitmap (should not happen for a processed photo): fall
-                // back to the encoded file and its own orientation.
-                let fallback = photo.fileDataRepresentation().flatMap(UIImage.init(data:))
-                done(fallback?.redrawnUpright(mirrored: true)); return
+            guard error == nil, let data = photo.fileDataRepresentation(), let image = UIImage(data: data) else {
+                done(nil); return
             }
-            let orientation: UIImage.Orientation = cg.width > cg.height ? .leftMirrored : .upMirrored
-            #if DEBUG
-            let exif = photo.metadata[kCGImagePropertyOrientation as String] ?? "none"
-            print("[selfie] pixels \(cg.width)x\(cg.height) exif \(exif) -> \(orientation == .leftMirrored ? "leftMirrored" : "upMirrored")")
-            #endif
-            done(UIImage(cgImage: cg, scale: 1, orientation: orientation).redrawnUpright(mirrored: false))
+            // Upright pixels, mirrored like the preview, orientation .up. Every
+            // consumer (the review frame, the resizer, the calendar thumbnail,
+            // the post) then sees the same picture with no EXIF to interpret.
+            let upright = image.uprightMirroredSelfie()
+            SelfieLog.shot.info("captured \(image.selfieDebugDescription, privacy: .public) -> upright \(upright.selfieDebugDescription, privacy: .public)")
+            done(upright)
         }
     }
 }
 
-private extension UIImage {
-    /// Redraws the image into a fresh bitmap so the result carries
-    /// orientation `.up`: `draw(in:)` applies the stored orientation (the
-    /// mirror included, when the orientation is a mirrored one), and
-    /// `mirrored` adds a horizontal flip for an image that has none. Every
-    /// consumer (the review frame, the resizer, the calendar thumbnail, the
-    /// post) then sees the same upright pixels with nothing to interpret.
-    /// `size` is already orientation-adjusted, and scale 1 keeps the pixels.
-    func redrawnUpright(mirrored: Bool) -> UIImage {
+extension UIImage {
+    /// Redraws into a fresh upright bitmap, mirrored like the preview, with
+    /// orientation `.up`, so nothing downstream has to read an orientation tag.
+    ///
+    /// **Derived from the CGImage's real pixels, not from `size`** (Aziz,
+    /// 2026-09-16: shots still came out rotated on the device after the first
+    /// fix). `size` is points and depends on `scale` and on the orientation
+    /// tag being read the way we assume; the bitmap's own width and height do
+    /// not. The target is the bitmap swapped when the tag says the image is
+    /// quarter-turned, which is the one fact every consumer agrees on.
+    func uprightMirroredSelfie() -> UIImage {
+        guard let cg = cgImage else { return self }
+        let rawIsPortrait = cg.height >= cg.width
+        let baked = bakingOrientation()
+
+        // Which reading of "upright" to believe.
+        //
+        // THE BUG THIS EXISTS FOR (Aziz, three builds running): AVFoundation
+        // can rotate the pixels to portrait via the connection's
+        // `videoRotationAngle` AND still tag the file as quarter-turned. Both
+        // earlier versions applied the tag on top of already-upright pixels,
+        // which turned a portrait selfie on its side and squashed it.
+        //
+        // This screen is portrait only and front camera only, so a landscape
+        // result is definitionally wrong. When the tag would produce one and
+        // the raw pixels are already portrait, the pixels win.
+        let chosen: UIImage
+        if baked.size.height >= baked.size.width {
+            chosen = baked
+        } else if rawIsPortrait {
+            chosen = UIImage(cgImage: cg, scale: 1, orientation: .up)
+        } else {
+            // Landscape pixels AND a tag that leaves them landscape: the raw
+            // front sensor frame came through with the connection's rotation
+            // applied nowhere (Melvin's phone, 2026-09-17, "still
+            // horizontal"; unturned it reads as a quarter turn
+            // anticlockwise). The geometry is fixed (portrait app, front
+            // camera), so the frame needs the quarter turn clockwise that
+            // `.right` means; the mirror below makes it the classic
+            // `.leftMirrored` selfie.
+            chosen = UIImage(cgImage: cg, scale: 1, orientation: .right).bakingOrientation()
+        }
+        return chosen.mirroredHorizontally()
+    }
+
+    /// The orientation tag applied to the pixels, leaving orientation `.up`.
+    /// `draw(in:)` does the work; `size` is the orientation-adjusted size, so
+    /// a quarter-turned image comes back the other way round.
+    func bakingOrientation() -> UIImage {
+        guard imageOrientation != .up else { return self }
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
-        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
-            if mirrored {
-                ctx.cgContext.translateBy(x: size.width, y: 0)
-                ctx.cgContext.scaleBy(x: -1, y: 1)
-            }
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { _ in
             draw(in: CGRect(origin: .zero, size: size))
         }
+    }
+
+    /// Mirrors left to right, so the shot matches the preview the person was
+    /// looking at. A selfie that is not mirrored reads as somebody else.
+    func mirroredHorizontally() -> UIImage {
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            ctx.cgContext.translateBy(x: size.width, y: 0)
+            ctx.cgContext.scaleBy(x: -1, y: 1)
+            draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+
+    /// What the pipeline saw, for the device log. Orientation is the raw
+    /// `UIImage.Orientation` value, which is the thing that misreads.
+    var selfieDebugDescription: String {
+        "orientation=\(imageOrientation.rawValue) scale=\(scale) "
+        + "size=\(Int(size.width))x\(Int(size.height)) "
+        + "px=\(cgImage.map { "\($0.width)x\($0.height)" } ?? "none")"
     }
 }
 

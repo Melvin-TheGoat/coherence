@@ -424,24 +424,6 @@ Works on iPhone 15 Pro and newer with Apple Intelligence turned on.
 
 ## In flight
 
-- **Save session in Strava's iOS shape, and an in-app camera** (Aziz,
-  2026-09-15: "take a look at the strava UI for sharing a session and copy
-  that, i dont like the UI here for after the meditation"; "i want the
-  camera thing to be like an in app photo thing similar to sweatmates and
-  bereal"). Mockups `mockups/save-session-v4.html` (Strava's real iOS
-  anatomy: outlined fields, no labels, bold sentence-case headers, pinned
-  bottom button) and `save-session-v5.html` (the senior-review pass: one
-  big score, visibility first, portrait selfie tile, a button that names
-  the block, Skip, Only you hides the sharing fields, no camera flip).
-  Decisions taken: Strava iOS behaviour (Cancel top left, pinned button),
-  private notes inline, one photo, one front camera and no dual shot
-  (SweatMates forces it and it is their most-complained-about feature).
-  Awaiting Aziz's read of v5, then Swift. One rebuild of 808 Dev at the
-  end, per Aziz. Also shipped the same day, already on the branch: the
-  save screen reopens when you pick the phone up after a sit
-  (`PendingSave`), "Silence / my own practice" as a technique, and a Done
-  key above the keyboard on both note fields.
-
 - **Onboarding: no sign-in until the end, and progress resumes** (Aziz,
   2026-09-14, from the PostHog finding that everyone who skipped the paywall
   used the screen-one sign-in link). Built and verified on the simulator,
@@ -533,6 +515,36 @@ Works on iPhone 15 Pro and newer with Apple Intelligence turned on.
   position. Melvin's beta test of the evening changes was skipped on Aziz's
   call ("push out the newest version"); the simulator checks in the commits
   stand in for it. There is no separate 1.0.2 any more.
+
+## Done (2026-09-16)
+
+- **Save session rebuilt, 808's own camera, and a photo for every sit**
+  (Aziz, 2026-09-15/16). Five asks in one thread, all shipped. Mockups
+  `mockups/save-session-v3..v7.html`; v6 (the bare skin he picked over
+  Strava's boxed one) and v7 (photos) are what was built.
+  - The screen: one big gold score, **who can see this first** because it
+    decides whether the description and selfie exist, bold unboxed title,
+    bare rows on hairlines, private notes inline, Only you hides the
+    sharing fields, Skip, and a button that is never dead ("Take your
+    selfie" opens the camera, then reads "Save session").
+  - `SelfieCamera`: black, one unfilled white ring, **no flip** (front
+    only, always). Melvin then fixed its rotation, mirroring, focus and a
+    tap-swallowing review image on 2026-09-16.
+  - `SessionPhoto` in the synced store, optional when private and still
+    required for Friends; the calendar draws the day's photo where the dot
+    was, rows carry a thumbnail, results shows it above the reflection.
+    Verified end to end on the simulator; the today ring was re-anchored to
+    the date after it collided with a photo.
+  - Also: `PendingSave` reopens the screen when the phone is picked up
+    after a sit, "Silence / my own practice" is a technique, the keyboard
+    has a Done key, and the invite reward went 10 sessions to 3 (cap 50 to
+    15).
+  - **Owed at 1.1:** `SessionPhoto` is a new record type, so the CloudKit
+    Development → Production promotion covers it (RELEASE_CHECKLIST.md).
+    The privacy policy already names the photo in both copies; the website
+    needs its manual redeploy.
+  - Still to do: **rebuild 808 Dev on Aziz's phone**, which he asked to be
+    one rebuild once everything landed.
 
 ## Done (2026-09-15)
 
