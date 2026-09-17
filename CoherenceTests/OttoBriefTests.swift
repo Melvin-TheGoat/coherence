@@ -50,6 +50,31 @@ final class OttoBriefTests: XCTestCase {
         }
     }
 
+    /// Aziz, 2026-09-16: he asked Otto why he scored a 38 and "it basically
+    /// gave me the formula back". The formula was the longest, most quotable
+    /// block in the prompt and it sat above his own numbers, so a small
+    /// on-device model reached for it. The answer shape now comes LAST, right
+    /// before the question, and demonstrates the failure it is correcting.
+    func test_theAnswerShapeComesLastAndForbidsRecitingTheFormula() {
+        let focus = row(daysAgo: 0)
+        let text = OttoBrief.instructions(sessions: [focus], focus: focus, now: now)
+
+        // Last, because a small model weights the freshest instruction most.
+        guard let shapeAt = text.range(of: "HOW TO ANSWER")?.lowerBound,
+              let rulesAt = text.range(of: "BACKGROUND ON THE 808 SCORE")?.lowerBound,
+              let tableAt = text.range(of: "THIS PERSON'S SESSIONS")?.lowerBound else {
+            return XCTFail("the brief is missing one of its sections")
+        }
+        XCTAssertTrue(shapeAt > rulesAt, "the rules must not be the freshest thing in the prompt")
+        XCTAssertTrue(shapeAt > tableAt, "the answer shape belongs after the person's own numbers")
+
+        // It must say plainly what not to do, and show it.
+        XCTAssertTrue(text.contains("Never reply by listing the weights"))
+        XCTAssertTrue(text.contains("why did I score a 38?"), "the worked example is the instruction")
+        XCTAssertTrue(text.contains("Bad (never do this)"))
+        XCTAssertTrue(text.contains("Do not recite this"))
+    }
+
     // MARK: The person's numbers
 
     /// The table reads the stored measurements back, on the phone, and marks

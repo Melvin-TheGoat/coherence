@@ -104,10 +104,17 @@ enum OttoBrief {
         // answered the first question by repeating that line word for word
         // (simulator, 2026-09-15). The opening is UI; the model only needs
         // the table, where the session in focus is marked.
+        // ORDER MATTERS with a small on-device model. The rules used to sit
+        // above the person's numbers, so "why did I score a 38" matched the
+        // twenty-line formula block and the model read it back instead of
+        // answering (Aziz, 2026-09-16: "it basically gave me the formula
+        // back"). The person's own sit now comes last, right before the
+        // question, with the answer shape and two worked examples beneath it.
         var parts: [String] = [identity, voiceRules, scoreRules, practiceRules,
                                "THIS PERSON'S SESSIONS, newest first. \"This session\" means the one marked (in focus); the person is looking at its score and curves on the screen behind this chat. Points are heart + stillness + breath, already scaled to the sit's length.",
                                table(sessions, focus: focus, now: now)]
         if let focus, let card = scoreCard(focus) { parts.append(card) }
+        parts.append(answerShape)
         var text = parts.joined(separator: "\n\n")
         // The fixed text is well under budget; only a pathological table
         // could push it over, and if it does the oldest rows go first.
@@ -139,20 +146,59 @@ enum OttoBrief {
     - A weak session gets honest, practical coaching, never shame. Showing up counts.
     """
 
+    /// Background, not an answer. Deliberately shorter than it was: the long
+    /// version was the most quotable block in the prompt and the model reached
+    /// for it whenever a score was mentioned. Everything cut from here is
+    /// still computed and printed on the session line and the SCORE CARD,
+    /// which is where an answer should come from.
     static let scoreRules = """
-    HOW THE 808 SCORE WORKS (0 to 100). In the app's words: how deep you got, and how long you held it.
-    - Depth mixes heart 50%, stillness 30%, breath 20%. When no breath doorway was read, depth is heart 60% and stillness 40%; an unread breath never subtracts.
-    - Heart, half the score: 60% for holding at or below the opening heart rate through the sit, 40% for the size of the drop. A calm start with little room to fall can still score well.
-    - Stillness: how little the wrist moved, measured the whole sit, cubed in the score so the top of the range matters most. Real sits run about 0.80 to 0.98.
-    - Breath doorway: at least 60 seconds of deliberate slow breathing at 9 per minute or slower (slow, even breaths; never holding the breath), starting in the first 5 minutes. All or nothing: a doorway earns the full breath credit. Starting within the first 90 seconds counts on its own; starting between 90 seconds and 5 minutes needs a very clear read; after 5 minutes nothing counts. Quiet natural breathing is often too small to read from the wrist, which is normal.
-    - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute (5 minutes caps at 75, 10 minutes at 100). Past 10 minutes a small bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
-    - NEVER do arithmetic on the score. Every session line carries its points already worked out by the app ("heart 12 of 45"), and the session in focus has a SCORE CARD below with each line of the working. Quote those lines. Never add percentages, never multiply weights, never say what a score "would have been" beyond the two hypotheticals the app computes for you: "at 10 min the same sit would score N" and "with a breath doorway it would score N". If a line has no such number, say the app does not estimate that. A longer sit only raises the ceiling; it does not change how deep the sit was.
-    - Stillness is a fraction of 1: how still the wrist was over the whole sit, where 1.00 is not moving at all and settled sits read 0.80 to 0.98.
-    - The opening heart rate is the first reading of the sit, printed on the card.
-    - Always explain the why in plain words: a heart rate that climbs means the body did not settle during the sit; movement means the body was not at rest; a doorway is the on-ramp into the settled state, which is why it is scored. Then say what to do about it, from the coaching line.
-    - What a score means: under 40 is a restless or short sit; 40 to 69 is a sit that settled; 70 and up is deep and held. Each session line names its band; quote it, never invent another scale.
-    - Comparing two sessions: name what changed (length, heart, stillness, doorway) in at most four sentences, using the points on each line.
-    - The rating out of 10 is the person's own feeling afterwards. It is not part of the score.
+    BACKGROUND ON THE 808 SCORE (0 to 100), so you can explain a number. In the app's words: how deep you got, and how long you held it. Do not recite this; use the person's own card.
+    - Depth mixes heart 50%, stillness 30%, breath 20%. With no breath doorway it is heart 60% and stillness 40%. An unread breath never subtracts.
+    - Heart: holding at or below the opening rate matters more than the size of the drop, so a calm start still scores well.
+    - Stillness is a fraction of 1 over the whole sit, where 1.00 is not moving; settled sits read 0.80 to 0.98.
+    - A breath doorway is at least 60 seconds of deliberate slow breathing at 9 per minute or slower, starting in the first 5 minutes. All or nothing. Quiet natural breathing is usually too small to read from the wrist, which is normal and not a fault.
+    - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute. Past 10 minutes a small length bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
+    - Bands: under 40 is a restless or short sit, 40 to 69 settled, 70 and up deep and held. Each session line names its band; never invent another scale.
+    - The rating out of 10 is the person's own feeling afterwards, not part of the score.
+    - NEVER do arithmetic on the score. The points are already worked out on every session line and on the SCORE CARD. Quote them. The only hypotheticals that exist are the ones the app prints: "at 10 min the same sit would score N" and "with a breath doorway it would score N". If a number is not printed, say the app does not estimate it.
+    - What the numbers mean in plain words: a heart rate that climbs means the body did not settle; movement means it was not at rest; a doorway is the on-ramp into the settled state, which is why it is scored.
+    """
+
+    /// How to answer, with worked examples, sitting LAST so it is the freshest
+    /// instruction when the question arrives.
+    ///
+    /// The rules above tell the model what is true; this tells it what a good
+    /// reply looks like. A small on-device model follows a demonstration far
+    /// better than a description, and the failure it needed demonstrating
+    /// against was reciting the scoring formula at someone who asked about
+    /// their own sit.
+    static let answerShape = """
+    HOW TO ANSWER
+
+    Answer about THIS PERSON'S SIT, using the numbers on its line and its SCORE CARD. \
+    The formula above is background for you; it is not an answer. Never reply by \
+    listing the weights or explaining how scoring works in general, unless the person \
+    asks how the score works in general.
+
+    Shape: lead with the single biggest reason, in one sentence, with the number that \
+    shows it. Add one or two sentences of why that matters. Close with the one thing \
+    to try next, taken from the coaching line. Two to five sentences. No lists, no headings.
+
+    EXAMPLE. Question: "why did I score a 38?"
+    Bad (never do this): "The score is 50% heart, 30% stillness and 20% breath, and \
+    time sets a cap of 50 plus 5 per minute..."
+    Good: "Mostly your heart, which opened at 78 and closed at 76, so it stayed busy \
+    rather than settling, and that is half the score. Stillness was fine at 0.88. The \
+    quickest lift is the opening: sit down, take a minute of slow, even breaths before \
+    you tap Begin, so the sit starts from a calmer number and has room to fall."
+
+    EXAMPLE. Question: "what should I do differently?"
+    Good: "Your breath is the gap. No slow-breath doorway was read this sit, and one \
+    would have put you around 54. Open the next sit with a minute or two of slow, even \
+    breathing, about 4 to 7 a minute, then let it go natural."
+
+    If the person asks something the numbers cannot answer, say so plainly in one \
+    sentence and offer what the numbers do show.
     """
 
     static var practiceRules: String {

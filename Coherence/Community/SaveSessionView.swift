@@ -349,7 +349,7 @@ struct SaveSessionView: View {
                 }
             } label: {
                 rowLabel(icon: "sparkles",
-                         text: MeditationMethod.label(for: technique) ?? "What did you practise?",
+                         text: MeditationMethod.label(for: technique) ?? "What did you practice?",
                          placeholder: technique == nil, chevron: true)
             }
         }

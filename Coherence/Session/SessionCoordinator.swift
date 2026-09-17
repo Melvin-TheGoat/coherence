@@ -336,6 +336,15 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // Cancel before the guard: this ack is the proof the watchdog waits
         // for, and it counts even if `active` has already moved on.
         if sessionID == currentAttemptID { startWatchdog?.cancel() }
+        // The ack arrived for a session the phone is not showing. Either it
+        // gave up (the watchdog fired while the Watch was locked and could not
+        // reach us) or the Watch is telling us it is already running something
+        // else. Both mean a real session IS being measured, so adopt it rather
+        // than leave the truth on the wrist. Aziz, 2026-09-16: locked Watch at
+        // Begin, phone said it could not start, the Watch was at 33 seconds.
+        if active?.id != sessionID {
+            guard adoptRunningSession(sessionID: sessionID, at: startedAt) else { return }
+        }
         guard let current = active, current.id == sessionID else { return }
         startAcked = true
         #if DEBUG
@@ -364,6 +373,58 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 self?.tone.stop(reason: "planned timer (re-anchored, \(Int(remaining))s left)")
             }
         }
+    }
+
+    /// Takes over a session the Watch says it is running but the phone is not
+    /// showing. Returns false when the ack should be ignored.
+    ///
+    /// The danger here is the stale-WC-queue family (bitten four times): a
+    /// queued ack from a finished session replaying hours later would
+    /// resurrect a dead session's screen. Two guards, and both must hold: the
+    /// session cannot already be persisted (a finished one always is), and it
+    /// must have begun recently enough to still be running.
+    @discardableResult
+    private func adoptRunningSession(sessionID: UUID, at startedAt: Date) -> Bool {
+        let context = container.mainContext
+        let existing = try? context.fetch(
+            FetchDescriptor<Session>(predicate: #Predicate { $0.id == sessionID }))
+        guard Self.shouldAdopt(startedAt: startedAt,
+                               alreadyPersisted: !((existing ?? []).isEmpty)) else {
+            log.info("Ignoring a start ack for \(sessionID): not a session that can still be running")
+            return false
+        }
+
+        log.info("Adopting the Watch's running session \(sessionID)")
+        // A different attempt may be in flight (they pressed Begin again while
+        // the Watch was still busy). Its watchdog would otherwise fire and tear
+        // down the session we just adopted.
+        startWatchdog?.cancel()
+        startFailure = nil
+        currentAttemptID = sessionID
+        startAcked = true
+        active = ActiveSession(id: sessionID,
+                               startedAt: startedAt,
+                               plannedDurationSec: nil,
+                               soundTitle: SoundCatalog.title(for: pendingSoundIDs[sessionID]))
+        status = "Running on your Watch"
+        return true
+    }
+
+    /// Past this, a start ack describes a session that cannot still be running,
+    /// so it is a queued message replaying rather than news. Generous, because
+    /// an open-ended sit has no upper bound and only the Watch ends it.
+    static let maxAdoptAgeSec: TimeInterval = 4 * 60 * 60
+
+    /// Whether a start ack for a session the phone is not showing should be
+    /// taken over. Pure, so the stale-queue guards can be tested without a
+    /// Watch: a queued ack replaying from a finished session must never
+    /// resurrect its screen, and a persisted session is by definition finished.
+    nonisolated static func shouldAdopt(startedAt: Date, now: Date = Date(),
+                                        alreadyPersisted: Bool) -> Bool {
+        guard !alreadyPersisted else { return false }
+        let age = now.timeIntervalSince(startedAt)
+        // A start stamped in the future is a clock skew, not news.
+        return age >= 0 && age < maxAdoptAgeSec
     }
 
     /// Ends the running session from the phone. The Watch still performs the
