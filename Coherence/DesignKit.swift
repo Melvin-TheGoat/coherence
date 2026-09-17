@@ -210,11 +210,16 @@ struct MonthCalendar: View {
             }
         }
         .frame(maxWidth: .infinity, minHeight: tall ? 46 : 32)
-        .background {
+        // The ring marks the DATE, so it hangs off the top of the cell rather
+        // than its centre. Centred, a photo day's taller cell dragged the ring
+        // down over the picture (seen on the simulator, 2026-09-16).
+        .background(alignment: tall ? .top : .center) {
+            let mark = Circle().frame(width: 26, height: 26).offset(y: tall ? -3 : -2)
             if isSelected {
-                Circle().fill(AppColor.accentGold.opacity(0.18)).frame(width: 30, height: 30).offset(y: -2)
+                mark.foregroundStyle(AppColor.accentGold.opacity(0.18))
             } else if isToday {
-                Circle().stroke(AppColor.calmAccent, lineWidth: 1.4).frame(width: 30, height: 30).offset(y: -2)
+                Circle().stroke(AppColor.calmAccent, lineWidth: 1.4)
+                    .frame(width: 26, height: 26).offset(y: tall ? -3 : -2)
             }
         }
     }
