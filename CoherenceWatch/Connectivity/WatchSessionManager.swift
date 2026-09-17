@@ -157,6 +157,18 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // .sent is a 3-second cosmetic state; a user starting the next session
         // that fast shouldn't have it silently swallowed.
         if phase == .sent { phase = .idle }
+        // Begin arrived while a session is already running on the wrist. It
+        // used to be dropped in silence, so the phone armed a screen for a
+        // session the Watch would never start and failed 45 seconds later,
+        // twice over (Aziz, 2026-09-16: locked Watch, a false failure, then
+        // Begin again did nothing). Tell the phone what IS running; its
+        // adoption path takes over from there.
+        if phase == .running, !watchInitiated, let running = params,
+           running.sessionID != p.sessionID {
+            handledSessionIDs.insert(p.sessionID)   // never start it later
+            announceRunningSession()
+            return
+        }
         guard phase == .idle, !handledSessionIDs.contains(p.sessionID) else { return }
         // A cold launch flushes the queued backlog of start commands from
         // every earlier attempt, oldest first, and running one resurrects a
@@ -217,6 +229,19 @@ final class WatchSessionManager: NSObject, ObservableObject {
             }
             wc.transferUserInfo(ack)
         }
+    }
+
+    /// Re-announces the session already running here, as a start ack for its
+    /// own id. Both channels, because the reason the phone is out of step is
+    /// usually that the first ack could not be delivered promptly (a locked
+    /// Watch is not reachable, so only the queued copy went out).
+    private func announceRunningSession() {
+        guard phase == .running, let p = params, let startedAt = sessionStartedAt else { return }
+        let ack = [WCKeys.started: "\(p.sessionID.uuidString)|\(startedAt.timeIntervalSince1970)"]
+        let wc = WCSession.default
+        if wc.isReachable { wc.sendMessage(ack, replyHandler: nil, errorHandler: nil) }
+        wc.transferUserInfo(ack)
+        log.info("Told the phone a session is already running here")
     }
 
     /// Invites the phone to join a wrist-started session: live screen + the
@@ -448,5 +473,19 @@ extension WatchSessionManager: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         handleParams(applicationContext)
         handleOnboarded(applicationContext)
+    }
+
+    /// The link came back. If a session is running here, say so again: the
+    /// usual reason the phone is out of step is that the FIRST ack could not
+    /// be sent because the Watch was locked and therefore unreachable, so the
+    /// moment it is reachable is the moment to repeat it. This is what makes
+    /// the phone recover on its own when the wrist is unlocked, with nothing
+    /// for the user to do.
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        guard session.isReachable else { return }
+        Task { @MainActor [weak self] in
+            guard let self, self.phase == .running else { return }
+            self.announceRunningSession()
+        }
     }
 }
