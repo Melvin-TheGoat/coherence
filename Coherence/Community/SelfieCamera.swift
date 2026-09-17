@@ -1,5 +1,13 @@
 import SwiftUI
 import AVFoundation
+import os
+
+/// What the camera actually produced, for reading over the cable
+/// (`xcrun devicectl device process launch --console`). A rotated selfie is
+/// invisible to a simulator, so the facts have to come off the device.
+enum SelfieLog {
+    static let shot = Logger(subsystem: "com.lockout.meditate808", category: "selfie")
+}
 
 /// 808's own camera, BeReal-shaped (mockup `mockups/save-session-v5.html`,
 /// "The camera, v5"): pure black, the mark centred at the top, a rounded
@@ -317,24 +325,51 @@ final class SelfieCameraModel: ObservableObject {
             // Upright pixels, mirrored like the preview, orientation .up. Every
             // consumer (the review frame, the resizer, the calendar thumbnail,
             // the post) then sees the same picture with no EXIF to interpret.
-            done(image.uprightMirroredSelfie())
+            let upright = image.uprightMirroredSelfie()
+            SelfieLog.shot.info("captured \(image.selfieDebugDescription, privacy: .public) -> upright \(upright.selfieDebugDescription, privacy: .public)")
+            done(upright)
         }
     }
 }
 
-private extension UIImage {
-    /// Redraws the image into a fresh bitmap: `draw(in:)` applies the stored
-    /// orientation, the transform flips it horizontally, and the result carries
-    /// orientation `.up`. `size` is already orientation-adjusted points, and a
-    /// camera JPEG decodes at scale 1, so the pixel dimensions are preserved.
+extension UIImage {
+    /// Redraws into a fresh upright bitmap, mirrored like the preview, with
+    /// orientation `.up`, so nothing downstream has to read an orientation tag.
+    ///
+    /// **Derived from the CGImage's real pixels, not from `size`** (Aziz,
+    /// 2026-09-16: shots still came out rotated on the device after the first
+    /// fix). `size` is points and depends on `scale` and on the orientation
+    /// tag being read the way we assume; the bitmap's own width and height do
+    /// not. The target is the bitmap swapped when the tag says the image is
+    /// quarter-turned, which is the one fact every consumer agrees on.
     func uprightMirroredSelfie() -> UIImage {
+        guard let cg = cgImage else { return self }
+        let quarterTurned: Bool
+        switch imageOrientation {
+        case .left, .leftMirrored, .right, .rightMirrored: quarterTurned = true
+        default: quarterTurned = false
+        }
+        let target = quarterTurned
+            ? CGSize(width: cg.height, height: cg.width)
+            : CGSize(width: cg.width, height: cg.height)
+
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 1
-        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
-            ctx.cgContext.translateBy(x: size.width, y: 0)
+        format.opaque = true
+        return UIGraphicsImageRenderer(size: target, format: format).image { ctx in
+            ctx.cgContext.translateBy(x: target.width, y: 0)
             ctx.cgContext.scaleBy(x: -1, y: 1)
-            draw(in: CGRect(origin: .zero, size: size))
+            // draw(in:) applies the stored orientation for us.
+            draw(in: CGRect(origin: .zero, size: target))
         }
+    }
+
+    /// What the pipeline saw, for the device log. Orientation is the raw
+    /// `UIImage.Orientation` value, which is the thing that misreads.
+    var selfieDebugDescription: String {
+        "orientation=\(imageOrientation.rawValue) scale=\(scale) "
+        + "size=\(Int(size.width))x\(Int(size.height)) "
+        + "px=\(cgImage.map { "\($0.width)x\($0.height)" } ?? "none")"
     }
 }
 
