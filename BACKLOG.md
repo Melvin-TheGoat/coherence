@@ -4,6 +4,42 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Other wearables: Garmin, Oura, Samsung, "any brand" (Aziz asked, 2026-09-18; needs a founders' call)
+
+What 808 needs from a device during a sit: motion at tens of Hz (stillness
+and wrist breathing) and heart rate every ~5 s, live, reaching the phone.
+Almost no brand exposes that to a third-party iPhone app; most give cloud
+summaries hours later. Ranked by what is actually reachable:
+
+1. **Any watch or strap that broadcasts heart rate over Bluetooth** (the
+   standard BLE heart-rate profile: Garmin's Broadcast HR, Polar, Wahoo,
+   Coros, Suunto, Whoop 4.0, some Amazfit). CoreBluetooth, no vendor SDK,
+   about a week. Gives the heart term only; paired with the camera path it
+   is a full three-signal sit with no Apple Watch. Cheapest, widest.
+2. **Polar H10 / Verity Sense over the Polar BLE SDK** (open source, iOS):
+   live HR, RR intervals (real HRV, which the Apple Watch cannot give) and
+   raw accelerometer at up to 200 Hz. A chest strap's accelerometer is the
+   respiration-belt physics. Two to three weeks. The "Pro instrument" tier
+   the CLAUDE.md coherence note parked.
+3. **Garmin, via Connect IQ.** The only brand whose watches run third-party
+   apps that talk to an iPhone: a Monkey C watch app gets accelerometer at
+   up to 25 Hz plus heart rate and streams to our phone app over the
+   Connect IQ Mobile SDK. A second watch app, rebuilt from the Apple one's
+   design, one to two months plus Connect IQ store review. Largest
+   non-Apple watch base worth having.
+4. **Samsung Galaxy Watch, Pixel Watch (Wear OS), Fitbit:** pair with
+   Android phones only; needs an Android 808 first. Months. Fitbit's own
+   app SDK is closed to new apps.
+5. **Oura, Whoop, Fitbit, Coros, Suunto, Amazfit cloud APIs:** after-the-fact
+   summaries at 5-minute or daily granularity, no motion, nothing live. Can
+   import "you meditated", cannot measure a sit. Not worth building.
+
+Cheap first move regardless: ask no-Watch people which wearable they own on
+the waitlist screen (one question, bands only), so the choice is made on
+the funnel's numbers, not ours. Privacy: BLE heart rate is not HealthKit, so
+5.1.3 reads differently, but it is still health data: policy, both copies,
+and the App Privacy label move with the build that adds it.
+
 ## Launch plan items with no record of being done (checked 2026-09-14)
 
 From `marketing/LAUNCH_PLAN.md` section 4, live day and weeks 1 to 2. Each

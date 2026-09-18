@@ -182,6 +182,224 @@ Against the wrist's own curve, same rule as `camera_compare.py`:
   sits in section 5, item 1: **the camera reads a paced 12 as well as the
   wrist does, and refuses the doorway at that rate.**
 
+## 4b. FIRST PAIRED SIT, and a tool bug that flattered everything before it
+
+Aziz, 2026-09-17, sit 1 of the twenty: 6/min paced for three minutes, then
+five natural, phone at about a metre, Watch on. `7B2DB2FC`.
+
+**`camera_compare.py` was fitting the alignment it was supposed to measure.**
+It swept offsets 0 to 180 s and kept whichever minimised the median error. On
+this sit it chose 115 s and reported 1.43/min; the capture header says the true
+offset is 8.9 s, which gives **2.52/min**. It also searched positive offsets
+only, so it could never find the real one: the recorder always starts a few
+seconds AFTER the session. Fixed to read `recorder_started_at -
+session_started_at` from the capture header, with the search kept only as a
+labelled fallback for a headerless file. **Every camera-vs-wrist number
+produced before 2026-09-17 was fitted this way and is optimistic; re-run
+anything quoted in this file before relying on it**, including the 12/min
+in-app sit in commit `0ec6c1c`.
+
+**What the sit actually says.** Minute by minute, camera minus wrist:
+
+    paced    min 0  +0.3    min 1  +0.2    min 2  +0.1
+    natural  min 3  -1.3    min 4  -4.2    min 5  -2.0
+             min 6  -8.7    min 7  -7.4
+
+So on the thing the product claims, deliberate slow breathing at the start,
+the camera is **within 0.3/min of the wrist, every window** (n=17, 100% within
+±1.5), comfortably inside the ±0.5 target in section 5. On natural breathing
+it is not close: median 4.7/min out, 11% within ±1.5, and the error grows as
+the real rate climbs.
+
+**The shape matters more than the size.** The camera does not scatter; it sits
+at 4 to 6/min while the wrist climbs past 13.
+
+**SIT 2 (`EC6EBFDD`) IDENTIFIED THE CAUSE, and it is not what sit 1 suggested.**
+The first reading was "it holds the rate it locked onto while paced". Sit 2
+refutes that: its paced phase drifted 7.5 → 6.8 → 5.7 and the camera followed
+it exactly (+0.0, -0.1, +0.0). It tracks a changing rate perfectly well. What
+it has is a **CEILING**. Pooling both sits, 115 windows where both instruments
+read a rate, bucketed by what the wrist called the truth:
+
+    wrist 3.5-6.0   n=20   camera 6.1   median err 0.17
+    wrist 6.0-7.5   n=34   camera 6.5   median err 0.27
+    wrist 7.5-9.0   n=27   camera 4.7   median err 3.03
+    wrist 9.0-11    n= 8   camera 6.7   median err 3.22
+    wrist 11+       n=26   camera 5.2   median err 9.11
+
+Excellent to about 7.5/min, then it degrades fast and falls back to something
+slow rather than reporting nothing. **The doorway band (≤9/min) is almost
+entirely inside the accurate range**, and fast natural breathing is displayed
+but never scored, so this may not block the feature. The danger is the
+converse: an instrument that says 5/min when the truth is 13 will say 5/min
+when there was no slow breathing at all. That is an invented doorway, a false
+claim rather than a missing one, and **group 4's controls are now the
+deciding experiment for whether the camera path ships at all.**
+
+**THE CEILING WAS THE TRACKER'S COST SHAPE, AND IT IS FIXED (engine
+camera-1.1.0, 2026-09-18).** Tested offline in `tools/camera_lab.py`, a
+faithful replica with sweepable constants and two diagnostics the harness
+lacked. The candidate dump settled it in one run: **the true fast rate was
+offered to the tracker in almost every natural-breathing window, often as the
+clearest candidate** (t=439 s of `EC6EBFDD`: 18.0/min at clarity 0.85 offered,
+5.6 at 0.39 chosen), and the tracker refused it because the jump cost was
+0.45 per breath/min of DIFFERENCE, so 5 → 18 cost 5.6 against a clarity that
+cannot exceed 1. Not the band, not 10 fps, not the ROI. The wrist engine's
+"selection, not filtering" lesson in a new place.
+
+Fix: the cost is per natural-log unit of the rate RATIO (`jumpCost`), so a
+doubling costs the same wherever it happens. Sweep over both sits, replica:
+
+    cost shape        >11/min err   7.5-9   9-11   paced bands   doorways
+    abs 0.45 (old)        9.80      3.23    3.30   0.17 / 0.23   both kept
+    abs 0.00              0.95      3.23    4.44   0.17 / 0.23   both kept
+    log 0.10 to 0.60      0.93      3.0-3.7 3.8-4.4 0.17 / 0.23  both kept
+
+Flat across 0.1 to 0.6 per nat, which says the SHAPE was wrong, not the
+number, so 0.45 per nat was kept (about a third of a point per doubling) and
+not picked off the table. Confirmed in the REAL engine via the harness: sit 2
+minute 7 reads 17.9 against the wrist's 17.8 (was 4.8), sit 1 minute 7 reads
+11.8 against 11.9 (was 4.5); both doorways 6.0/min at 15 s, unchanged. Locked
+by `test_trackRates_takesAClearFastPeakHoweverFarAway` (the device window
+above, verbatim) and `test_jumpCost_isPerLogRatioNotPerDifference`.
+
+**What remains is a HARMONIC ambiguity in the 7.5 to 11/min band, and a cost
+cannot fix it.** With the tracker freed, sit 2 minute 5 reads 17.2 against a
+wrist 10.0 (very nearly double), and sit 1's 7.5-9 band still picks 4.4 to 4.7
+against 8.2 to 8.6 (very nearly half). The camera's channels carry real power
+at 2f (and the wrist's own deep-breathing harmonic finding says f/2 vs f is
+genuinely ambiguous from one instrument). The wrist engine refused a harmonic
+rule because wrist breathing has no octave problem; the camera evidently does.
+Do NOT add a harmonic preference on two sits: a rule that prefers 2f would
+double every deep paced sit (the wrist measured the 2nd harmonic at 0.74 of
+the fundamental on deep breathing). What discriminates it is **sit 3, paced at
+12/min**: a known 12 tells us whether the camera reads 12 (fine), 6
+(subharmonic) or 24 (harmonic) with nothing to argue about. That sit is back
+on the list, ahead of set 3. Group 4's controls remain the deciding sits.
+
+**How much of what remains is octave error, measured:** with engine 1.1.0,
+132 paired windows, 59 still off by more than 1.5/min. Of the 38 wrong windows
+in the 7.5-11 band, 16 (42%) are octave-type (12 at 0.5x, 4 at 2x); of the 14
+in 11+, 4 (29%); of the 7 in the paced band, none. The other 39 are neither
+harmonic nor subharmonic. So a harmonic rule, even a perfect one, would fix
+about 16 windows in 132, and the wrist itself is ±1.9/min on natural breathing,
+so part of "wrong" is the reference. The larger lever for the natural band is
+a cleaner raw signal, not a smarter chooser: that is what the methods research
+should be judged against.
+
+Also found on the way: the in-app capture's t = 0 is the RECORDER's start,
+about 9 s after the session's (header: `session_started_at`,
+`recorder_started_at`), not the Watch's started-ack as the harness comment
+claims. `camera_compare.py` now reads that header; the engine's own
+`breathDoorwayStartSec` is still recorder-relative and reads ~9 s early.
+Small, but fix the recorder to arm t = 0 at the ack before the camera path
+ships, or write the shift into the frames.
+
+**Consequence for the doorway.** It may not matter much. The doorway is
+defined over the first five minutes and is all-or-nothing, so a camera that
+reads slow breathing well and natural breathing badly can still score the
+doorway correctly. The risk is the reverse: a camera that always reads 4 to
+6/min will invent doorways in sits that had none, which is precisely what
+section 5's group 4 controls measure. **Those controls are now the most
+important four sits in the programme**, ahead of the counted ones.
+
+## 4c. Methods, models and datasets, researched (2026-09-17)
+
+Aziz asked for two things: an algorithm that catches minute movements
+(models, OpenCV, datasets, "I don't want to settle"), and then an ML model
+or trained data. Two research passes and one experiment. The conclusions,
+so nobody re-runs them.
+
+**Methods, ranked by what the literature says survives contact with real
+video (Charlton et al. 2016 tested more than 100 respiratory-rate
+algorithms; the top of the table was time-domain breath counting, not
+spectral peak picking):**
+
+1. Time-domain breath counting (extrema with an adaptive threshold at 0.3 x
+   the 75th percentile of consecutive extrema differences, then the median
+   inter-peak interval). This is Charlton's Count-adv, Philips' final
+   estimator and Google's low-SNR fallback. **Tested here as an octave
+   VERIFIER, and it is a wash: see below.**
+2. Harmonic-sum emission (score each candidate by power at f plus a fraction
+   at 2f, with a local-peak rule) as a better emission for the tracker.
+   Untested; a perfect harmonic rule fixes at most 17 of 132 windows (the
+   octave count above), so its ceiling is small.
+3. Per-column vertical optical flow (Philips' M1D: the chest region is split
+   into columns, each column's vertical velocity is tracked, the columns are
+   combined by their own periodicity) and Google's pipeline (person
+   segmentation, then flow on the torso). **Both are RECORDER changes, and
+   they are the only lever that reaches the 41 "other" windows**, where no
+   selector can help because the breath is not in the nine numbers we keep.
+4. Deployable ML: there is NO published model that takes a 10 fps torso
+   crop and outputs a respiratory rate, and nothing pretrained on our
+   framing. rPPG toolkits (resPyre, CliffPhys) are open code, not weights
+   for this task. Training our own needs labelled video we do not have.
+
+**The counter experiment (`camera_lab.py --td`).** Where the tracker's pick
+has a candidate at about 2x or 0.5x and the counter sits within 25% of
+exactly one of them, take that one. Two lessons and one number:
+
+- **A counter needs a low-pass the spectrum never needed.** The first cut
+  counted frame-to-frame jitter and read 40 to 300/min on every window. A
+  DFT ignores broadband noise by construction (it spreads thin across bins);
+  a peak counter sees every wobble as an extremum. Smoothed with a 2.5 s
+  centred boxcar (`tdSmoothSec`), the counter agrees with the spectrum to
+  within 1/min across both paced phases (median error 2.3/min overall,
+  entirely from the natural phase).
+- **In the natural phase the counter is also wrong, in its own way** (13 to
+  21/min against a wrist 8 to 12). Where the spectrum cannot find the breath,
+  the counter cannot either: the two methods fail on the same windows,
+  which says the breath is not cleanly in the signal there. A selection fix
+  cannot recover a signal that is absent.
+- **Result: 55% to 56% within 1.5/min over 132 windows.** Loses one window
+  in 6 to 7.5, gains two in 7.5 to 9, changes nothing in 9 to 11, doorways
+  intact on both sits. **Not worth porting to Swift.** The flag stays in the
+  lab as a recorded negative.
+
+**Re-reading the error table with that in mind:** of 58 wrong windows, 17
+are octave errors (11 at 0.5x, 6 at 2x) and 41 are neither. The natural
+band is a SIGNAL problem, not a selection problem. Engine 1.1.0 (log-ratio
+jump cost) already removed the selection ceiling; the next gain is the
+recorder capturing the torso better (per-column flow, or at least a
+finer grid and the full 30 fps), not another chooser.
+
+**Datasets, and the Yale one Aziz found.**
+
+- **OMMDB (Yale Social Robotics Lab, Matheus, Mamantov, Vázquez,
+  Scassellati, ICMI 2023).** 47 adults aged 18 to 28, 280 sessions of 90 s
+  (about 7 hours), a Raspberry Pi camera on the robot's head seeing the
+  person's head and shoulders at 640x360, 30 fps, everything downsampled to
+  10 Hz (our rate exactly). Ground truth is a Vernier chest belt (force in
+  newtons) plus hand-labelled inhale, hold, exhale phases. Their model:
+  Farneback dense optical flow, CNN, LSTM, per-frame phase, F1 0.78 across
+  unseen people; 15% of participants read poorly, and the authors say why:
+  little visible chest or shoulder motion. **Cadences are 3-2-3 (about
+  7/min), 4-4-4-4 (3.75/min) and 5-3-5 (about 4.4/min).** So it covers
+  exactly the band where our engine is already at 0.17 to 0.23/min error,
+  and has no natural breathing at 8 to 12/min, which is where our error
+  lives. What it IS good for: (a) the belt waveform through
+  `tools/resp_reference.py` gives 280 sessions of reference rate against
+  video from a shoulders-and-head framing close to ours, the first
+  independent yardstick for the paced band and for the false-doorway
+  question on people who are not Aziz; (b) their optical-flow input and
+  10 Hz timing are a working precedent for the recorder upgrade. Access is
+  by email to the authors; no licence or form is posted. Draft in
+  `tools/OMMDB_REQUEST.md` for Aziz to send; the ask is
+  research use in a commercial product, said plainly, since a university
+  dataset agreement often forbids commercial use and that must be settled
+  before a byte is downloaded.
+- **COHFACE** (Idiap): 40 people, RGB video with a respiration belt, face
+  framing; natural breathing. Licence agreement, academic-leaning.
+- **OMuSense-23** (Oulu): 50 people, RGB-D and thermal, breathing belt,
+  seated and lying, includes controlled breathing patterns. Request form.
+- **MSPM**: multi-site, RGB with respiration, natural breathing. Request.
+- None of the public sets covers 4 to 9/min deliberate breathing with a
+  torso framing except OMMDB, and OMMDB covers nothing above 7/min. **Our
+  own counted sits remain the only data for the natural band.** A chest
+  belt for Aziz (a Vernier Go Direct is about $110) would give us a
+  reference that is not the wrist's own ±1.9/min, and `resp_reference.py`
+  already turns its output into the grid.
+
 ## 5. Ground truth before anything ships
 
 The DEBUG collector (`CameraSignalRecorder`, Settings > Camera capture) is

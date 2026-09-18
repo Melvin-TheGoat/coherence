@@ -265,6 +265,34 @@ final class CameraSignalTests: XCTestCase {
         XCTAssertEqual(clarity.filter { $0 > 0 }.count, 20)
     }
 
+    /// THE RATE CEILING, as it appeared on Aziz's phone (2026-09-17/18, two
+    /// paired sits): the path is on a slow rate, then the camera sees a
+    /// clear fast peak, 18.0/min at clarity 0.85 against 5.6 at 0.39, and the
+    /// old per-breath/min cost (0.45 x 12.4 = 5.6) made it refuse the jump
+    /// every window for the rest of the sit. With the cost per log-ratio the
+    /// jump is a third of a point and the clear peak wins.
+    func test_trackRates_takesAClearFastPeakHoweverFarAway() {
+        var windows: [[CameraSignal.Peak]] = []
+        for _ in 0..<10 { windows.append([.init(rate: 5.6, clarity: 0.45)]) }
+        for _ in 0..<10 { windows.append([.init(rate: 5.6, clarity: 0.39), .init(rate: 18.0, clarity: 0.85)]) }
+        let (rates, _) = CameraSignal.trackRates(windows)
+        for i in 0..<10 { XCTAssertEqual(rates[i], 5.6, "window \(i) should stay slow") }
+        for i in 10..<20 { XCTAssertEqual(rates[i], 18.0, "window \(i) refused the clear fast peak: \(rates)") }
+    }
+
+    /// Breathing rates are ratio-like: a doubling costs the same wherever it
+    /// happens, and 5 → 18 costs what 5 → 1.4 does. This is the property that
+    /// removed the ceiling, so it is pinned.
+    func test_jumpCost_isPerLogRatioNotPerDifference() {
+        let d = CameraSignal.jumpCost(from: 3, to: 6)
+        XCTAssertEqual(CameraSignal.jumpCost(from: 6, to: 12), d, accuracy: 1e-9)
+        XCTAssertEqual(CameraSignal.jumpCost(from: 9, to: 18), d, accuracy: 1e-9)
+        XCTAssertEqual(CameraSignal.jumpCost(from: 18, to: 9), d, accuracy: 1e-9, "symmetric")
+        XCTAssertEqual(d, 0.45 * log(2), accuracy: 1e-9, "0.45 per nat, about a third of a point per doubling")
+        XCTAssertLessThan(CameraSignal.jumpCost(from: 5, to: 18), 1.0,
+                          "a clarity difference must be able to pay for any plausible jump")
+    }
+
     /// A gap costs one hop, not one per window skipped.
     func test_trackRates_bridgesAGapWithoutStackingJumpCosts() {
         var windows: [[CameraSignal.Peak]] = []
