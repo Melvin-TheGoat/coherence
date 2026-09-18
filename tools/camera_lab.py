@@ -272,13 +272,34 @@ def window_means(y, times, wins):
         out.append(s / n if n else 0.0)
     return out
 
+DEFAULT_CHANNELS = ('dy', 'dx', 'luma', 'rdy', 'rdx', 'rluma')
+
+def load_wrist(path):
+    """The wrist's rate per window centre. `<id>_wrist.json` is the in-app
+    capture's copy of the Watch result; `<id>_wrist.csv` is the
+    t_sec,breath[,stillness] grid that card_digitize / resp_reference write,
+    so a video sit with a digitized card, or a belt, reads the same way."""
+    if path.endswith('.json'):
+        r = json.load(open(path))['result']
+        ww, wh = r['windowSec'], r['hopSec']
+        return {ww / 2 + i * wh: v for i, v in enumerate(r['breathingRateTimeseries'])}, wh
+    wd = {}
+    for row in csv.DictReader(open(path)):
+        try: wd[float(row['t_sec'])] = float(row['breath'])
+        except (KeyError, ValueError): continue
+    return wd, K['hopSec']
+
 def run_capture(csv_path, wrist_json, candidates=False, snr=False):
     hdr, rows = load_capture(csv_path)
-    shift = hdr['recorder_started_at'] - hdr['session_started_at']
+    # Camera time onto session time. In-app captures carry both clocks in the
+    # header; a video sit needs --shift (the seconds of video before Begin).
+    shift = K['shift'] if K.get('shift') is not None else \
+        hdr.get('recorder_started_at', 0.0) - hdr.get('session_started_at', 0.0)
     times = [r['t'] for r in rows]
     total = times[-1] if times else 0
     wins = windows(total, K['windowSec'], K['hopSec'])
-    channels = [[r[k] for r in rows] for k in ('dy', 'dx', 'luma', 'rdy', 'rdx', 'rluma')]
+    names = K.get('channels') or DEFAULT_CHANNELS
+    channels = [[r[k] for r in rows] for k in names]
     reads = [window_reads(ch, times, wins) for ch in channels]
     motion = window_means([r['rmotion'] for r in rows], times, wins)
     gate = st.median(motion) * K['motionGateRatio']
@@ -313,9 +334,7 @@ def run_capture(csv_path, wrist_json, candidates=False, snr=False):
     name0 = os.path.basename(csv_path)[:8]
     print(f"[{name0}] doorway: " + (f"YES  start {door[0]:.0f}s  rate {door[1]:.1f}/min" if door else "NO"))
 
-    r = json.load(open(wrist_json))['result']
-    ww, wh = r['windowSec'], r['hopSec']
-    wd = {ww / 2 + i * wh: v for i, v in enumerate(r['breathingRateTimeseries'])}
+    wd, wh = load_wrist(wrist_json)
     def wrist_at(ts):
         c = min(wd, key=lambda k: abs(k - ts))
         return wd[c] if abs(c - ts) <= wh and wd[c] >= 3.5 else None
@@ -341,7 +360,7 @@ def run_capture(csv_path, wrist_json, candidates=False, snr=False):
         for ts, truth, chosen, w in pairs:
             if ts <= 180: continue
             best_ratio, best_ch = 0.0, '-'
-            for ch_i, ch_name in enumerate(('dy', 'dx', 'luma', 'rdy', 'rdx', 'rluma')):
+            for ch_i, ch_name in enumerate(names):
                 spec = reads[ch_i][w]['spectrum']
                 if spec is None: continue
                 rates_, pows, tot = spec
@@ -376,13 +395,22 @@ if __name__ == '__main__':
         if v is not None: K[key] = v
     if '--cost' in a: K['costModel'] = a[a.index('--cost') + 1]
     K['tdVerify'] = '--td' in a
+    # --channels wupper,wchest,wbelly,shoulder  race a different set of columns
+    #            (camera_expand.swift's expansion signals) through the same
+    #            engine; default is the recorder's six shift/luma channels.
+    # --shift S  seconds of camera time before session t = 0, for video sits
+    #            whose CSV has no clock header (20 for IMG_7635, 25 for IMG_9543).
+    K['channels'] = tuple(a[a.index('--channels') + 1].split(',')) if '--channels' in a else None
+    K['shift'] = opt('--shift')
     print(f"constants: cost={K['costModel']} jump={K['trackJumpCost']} dominance={K['dominance']} "
-          f"floor={K['trackFloor']} hi={K['hiRate']} hp={K['highpassSec']}")
+          f"floor={K['trackFloor']} hi={K['hiRate']} hp={K['highpassSec']} channels={K['channels'] or DEFAULT_CHANNELS}")
     all_pairs = []
-    for f in sorted(os.listdir(folder)):
-        if not f.endswith('.csv') or f.endswith('_tracked.csv') or f.endswith('_wrist.csv'): continue
-        wj = os.path.join(folder, f[:-4] + '_wrist.json')
-        if not os.path.exists(wj): continue
-        all_pairs += run_capture(os.path.join(folder, f), wj,
-                                 candidates='--candidates' in a, snr='--snr' in a)
+    files = [folder] if folder.endswith('.csv') else \
+        [os.path.join(folder, f) for f in sorted(os.listdir(folder)) if f.endswith('.csv')]
+    for path in files:
+        if path.endswith('_tracked.csv') or path.endswith('_wrist.csv'): continue
+        stem = path[:-4]
+        wrist = next((p for p in (stem + '_wrist.json', stem + '_wrist.csv') if os.path.exists(p)), None)
+        if wrist is None: continue
+        all_pairs += run_capture(path, wrist, candidates='--candidates' in a, snr='--snr' in a)
     summarize(all_pairs)
