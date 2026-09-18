@@ -21,6 +21,10 @@ Two diagnostics the harness does not have:
   --snr         per window, the DFT power at the wrist's true rate over the
                 power at the camera's chosen rate: is the truth even in the
                 signal, and by how much is it being out-shouted?
+  --td          run the time-domain breath counter as an octave verifier
+                over the tracked path (see octave_verify). Measured
+                2026-09-17: 55% -> 56% within 1.5/min, a wash. Kept as the
+                recorded negative; do not port it to the engine.
 """
 import csv, json, math, os, re, sys, statistics as st
 from collections import defaultdict
@@ -31,7 +35,9 @@ K = dict(highpassSec=15.0, loRate=3.5, hiRate=26.0, scanStep=0.1, edgeMargin=0.1
          readClarity=0.30, motionGateRatio=4.0, minWindowSamples=8,
          windowSec=30, hopSec=5,
          # Lab-only alternatives to the engine's tracker, see jump_cost().
-         costModel='abs', dominance=None)
+         costModel='abs', dominance=None,
+         # Time-domain counter (--td): boxcar width before counting peaks.
+         tdSmoothSec=2.5)
 
 def load_capture(path):
     hdr, rows = {}, []
@@ -174,6 +180,89 @@ def track(pooled):
         i, j = step
     return rates, clar
 
+def count_rate(seg_t, seg_v, frac=0.3):
+    """Time-domain breaths/min for one window: extrema with an adaptive
+    hysteresis threshold, then the MEDIAN inter-peak interval (not count over
+    window, so three cycles in 30 s still give a usable number).
+
+    Charlton et al. 2016 (>100 algorithms): every top-ranked respiratory-rate
+    method was time-domain breath detection, not spectral peak picking, and
+    the same shape is Philips' final estimator and Google's low-SNR fallback.
+    The threshold is theirs: 0.3 x the 75th percentile of the amplitude
+    differences between consecutive extrema. A breath waveform's second
+    harmonic is strong (inhale is quicker than exhale), which fools a
+    spectrum; it does not add inhales, so it does not fool a count.
+    """
+    n = len(seg_v)
+    if n < 8: return 0.0
+    # extrema of the detrended, high-passed displacement
+    ext = []
+    for i in range(1, n - 1):
+        if seg_v[i] > seg_v[i - 1] and seg_v[i] >= seg_v[i + 1]: ext.append((seg_t[i], seg_v[i], +1))
+        elif seg_v[i] < seg_v[i - 1] and seg_v[i] <= seg_v[i + 1]: ext.append((seg_t[i], seg_v[i], -1))
+    if len(ext) < 3: return 0.0
+    diffs = sorted(abs(ext[i + 1][1] - ext[i][1]) for i in range(len(ext) - 1))
+    p75 = diffs[int(0.75 * (len(diffs) - 1))]
+    thr = frac * p75
+    # iteratively remove the smallest sub-threshold extremum pair
+    while len(ext) >= 3:
+        k = min(range(len(ext) - 1), key=lambda i: abs(ext[i + 1][1] - ext[i][1]))
+        if abs(ext[k + 1][1] - ext[k][1]) >= thr: break
+        del ext[k:k + 2]
+    peaks = [t for t, _, s in ext if s > 0]
+    if len(peaks) < 2: return 0.0
+    ivs = sorted(peaks[i + 1] - peaks[i] for i in range(len(peaks) - 1))
+    med = ivs[len(ivs) // 2]
+    return 60.0 / med if med > 0 else 0.0
+
+def lowpass(x, sps, seconds):
+    """Centred boxcar. The DFT scan never needed one (broadband jitter spreads
+    thin across bins), but a peak COUNTER sees every frame-to-frame wobble as
+    an extremum: unsmoothed, the counter read 40 to 300/min on real captures.
+    1.2 s keeps 26/min (0.43 Hz) at ~0.6 gain and removes everything faster."""
+    if not x: return x
+    half = max(1, int(seconds * sps / 2))
+    prefix = [0.0]
+    for v in x: prefix.append(prefix[-1] + v)
+    n = len(x)
+    return [(prefix[min(n - 1, i + half) + 1] - prefix[max(0, i - half)]) /
+            (min(n - 1, i + half) - max(0, i - half) + 1) for i in range(n)]
+
+def td_rates(raw, times, wins):
+    """Per-window time-domain rate on one channel, same filtering as the scan
+    plus the low-pass a counter needs."""
+    sps = sample_rate(times)
+    sig = lowpass(highpass(raw, sps, K['highpassSec']), sps, K.get('tdSmoothSec', 1.2))
+    out, cursor = [], 0
+    for lo, hi in wins:
+        while cursor < len(times) and times[cursor] < lo: cursor += 1
+        end = cursor
+        while end < len(times) and times[end] < hi: end += 1
+        if end - cursor < K['minWindowSamples']: out.append(0.0); continue
+        t = [times[i] - lo for i in range(cursor, end)]
+        out.append(count_rate(t, detrend(sig[cursor:end], t)))
+    return out
+
+def octave_verify(tracked, pooled, td, tol=0.25, floor=8.0):
+    """Where the tracker's pick has a candidate at ~2x or ~0.5x, and the
+    time-domain count is within `tol` of one of them, take that one. Below
+    `floor` the spectral pick stays authoritative unless the count is clear,
+    because slow deliberate breathing is the verified regime and a count of
+    three cycles is the weakest case for the counter."""
+    out = list(tracked)
+    changed = 0
+    for w, r in enumerate(tracked):
+        if r <= 0 or td[w] <= 0: continue
+        cands = [c[0] for c in pooled[w]]
+        alts = [c for c in cands if 1.7 <= c / r <= 2.3 or 0.43 <= c / r <= 0.58]
+        if not alts: continue
+        options = [r] + alts
+        near = [o for o in options if abs(o - td[w]) / td[w] <= tol]
+        if len(near) != 1 or near[0] == r: continue
+        if r < floor and abs(r - td[w]) / td[w] <= 0.5: continue   # keep slow spectral pick unless the count is way off
+        out[w] = near[0]; changed += 1
+    return out, changed
+
 def window_means(y, times, wins):
     out, cursor = [], 0
     for lo, hi in wins:
@@ -195,6 +284,14 @@ def run_capture(csv_path, wrist_json, candidates=False, snr=False):
     gate = st.median(motion) * K['motionGateRatio']
     pooled = [[] if motion[w] > gate else pool([rd[w] for rd in reads]) for w in range(len(wins))]
     tracked, clar = track(pooled)
+    if K.get('tdVerify'):
+        # The ROI's signed vertical shift is the closest thing to a chest
+        # displacement we record; the whole-frame one is the fallback.
+        td = td_rates([r['rdy'] for r in rows], times, wins)
+        td_fb = td_rates([r['dy'] for r in rows], times, wins)
+        td = [a if a > 0 else b for a, b in zip(td, td_fb)]
+        tracked, changed = octave_verify(tracked, pooled, td)
+        print(f"[{os.path.basename(csv_path)[:8]}] time-domain verifier changed {changed} windows")
     rates = [r if c >= K['readClarity'] else 0.0 for r, c in zip(tracked, clar)]
 
     # Doorway survival: any change to the tracker must keep the paced opening.
@@ -278,6 +375,7 @@ if __name__ == '__main__':
         v = opt(flag)
         if v is not None: K[key] = v
     if '--cost' in a: K['costModel'] = a[a.index('--cost') + 1]
+    K['tdVerify'] = '--td' in a
     print(f"constants: cost={K['costModel']} jump={K['trackJumpCost']} dominance={K['dominance']} "
           f"floor={K['trackFloor']} hi={K['hiRate']} hp={K['highpassSec']}")
     all_pairs = []

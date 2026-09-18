@@ -303,6 +303,103 @@ doorway correctly. The risk is the reverse: a camera that always reads 4 to
 section 5's group 4 controls measure. **Those controls are now the most
 important four sits in the programme**, ahead of the counted ones.
 
+## 4c. Methods, models and datasets, researched (2026-09-17)
+
+Aziz asked for two things: an algorithm that catches minute movements
+(models, OpenCV, datasets, "I don't want to settle"), and then an ML model
+or trained data. Two research passes and one experiment. The conclusions,
+so nobody re-runs them.
+
+**Methods, ranked by what the literature says survives contact with real
+video (Charlton et al. 2016 tested more than 100 respiratory-rate
+algorithms; the top of the table was time-domain breath counting, not
+spectral peak picking):**
+
+1. Time-domain breath counting (extrema with an adaptive threshold at 0.3 x
+   the 75th percentile of consecutive extrema differences, then the median
+   inter-peak interval). This is Charlton's Count-adv, Philips' final
+   estimator and Google's low-SNR fallback. **Tested here as an octave
+   VERIFIER, and it is a wash: see below.**
+2. Harmonic-sum emission (score each candidate by power at f plus a fraction
+   at 2f, with a local-peak rule) as a better emission for the tracker.
+   Untested; a perfect harmonic rule fixes at most 17 of 132 windows (the
+   octave count above), so its ceiling is small.
+3. Per-column vertical optical flow (Philips' M1D: the chest region is split
+   into columns, each column's vertical velocity is tracked, the columns are
+   combined by their own periodicity) and Google's pipeline (person
+   segmentation, then flow on the torso). **Both are RECORDER changes, and
+   they are the only lever that reaches the 41 "other" windows**, where no
+   selector can help because the breath is not in the nine numbers we keep.
+4. Deployable ML: there is NO published model that takes a 10 fps torso
+   crop and outputs a respiratory rate, and nothing pretrained on our
+   framing. rPPG toolkits (resPyre, CliffPhys) are open code, not weights
+   for this task. Training our own needs labelled video we do not have.
+
+**The counter experiment (`camera_lab.py --td`).** Where the tracker's pick
+has a candidate at about 2x or 0.5x and the counter sits within 25% of
+exactly one of them, take that one. Two lessons and one number:
+
+- **A counter needs a low-pass the spectrum never needed.** The first cut
+  counted frame-to-frame jitter and read 40 to 300/min on every window. A
+  DFT ignores broadband noise by construction (it spreads thin across bins);
+  a peak counter sees every wobble as an extremum. Smoothed with a 2.5 s
+  centred boxcar (`tdSmoothSec`), the counter agrees with the spectrum to
+  within 1/min across both paced phases (median error 2.3/min overall,
+  entirely from the natural phase).
+- **In the natural phase the counter is also wrong, in its own way** (13 to
+  21/min against a wrist 8 to 12). Where the spectrum cannot find the breath,
+  the counter cannot either: the two methods fail on the same windows,
+  which says the breath is not cleanly in the signal there. A selection fix
+  cannot recover a signal that is absent.
+- **Result: 55% to 56% within 1.5/min over 132 windows.** Loses one window
+  in 6 to 7.5, gains two in 7.5 to 9, changes nothing in 9 to 11, doorways
+  intact on both sits. **Not worth porting to Swift.** The flag stays in the
+  lab as a recorded negative.
+
+**Re-reading the error table with that in mind:** of 58 wrong windows, 17
+are octave errors (11 at 0.5x, 6 at 2x) and 41 are neither. The natural
+band is a SIGNAL problem, not a selection problem. Engine 1.1.0 (log-ratio
+jump cost) already removed the selection ceiling; the next gain is the
+recorder capturing the torso better (per-column flow, or at least a
+finer grid and the full 30 fps), not another chooser.
+
+**Datasets, and the Yale one Aziz found.**
+
+- **OMMDB (Yale Social Robotics Lab, Matheus, Mamantov, Vázquez,
+  Scassellati, ICMI 2023).** 47 adults aged 18 to 28, 280 sessions of 90 s
+  (about 7 hours), a Raspberry Pi camera on the robot's head seeing the
+  person's head and shoulders at 640x360, 30 fps, everything downsampled to
+  10 Hz (our rate exactly). Ground truth is a Vernier chest belt (force in
+  newtons) plus hand-labelled inhale, hold, exhale phases. Their model:
+  Farneback dense optical flow, CNN, LSTM, per-frame phase, F1 0.78 across
+  unseen people; 15% of participants read poorly, and the authors say why:
+  little visible chest or shoulder motion. **Cadences are 3-2-3 (about
+  7/min), 4-4-4-4 (3.75/min) and 5-3-5 (about 4.4/min).** So it covers
+  exactly the band where our engine is already at 0.17 to 0.23/min error,
+  and has no natural breathing at 8 to 12/min, which is where our error
+  lives. What it IS good for: (a) the belt waveform through
+  `tools/resp_reference.py` gives 280 sessions of reference rate against
+  video from a shoulders-and-head framing close to ours, the first
+  independent yardstick for the paced band and for the false-doorway
+  question on people who are not Aziz; (b) their optical-flow input and
+  10 Hz timing are a working precedent for the recorder upgrade. Access is
+  by email to the authors; no licence or form is posted. Draft in
+  `tools/OMMDB_REQUEST.md` for Aziz to send; the ask is
+  research use in a commercial product, said plainly, since a university
+  dataset agreement often forbids commercial use and that must be settled
+  before a byte is downloaded.
+- **COHFACE** (Idiap): 40 people, RGB video with a respiration belt, face
+  framing; natural breathing. Licence agreement, academic-leaning.
+- **OMuSense-23** (Oulu): 50 people, RGB-D and thermal, breathing belt,
+  seated and lying, includes controlled breathing patterns. Request form.
+- **MSPM**: multi-site, RGB with respiration, natural breathing. Request.
+- None of the public sets covers 4 to 9/min deliberate breathing with a
+  torso framing except OMMDB, and OMMDB covers nothing above 7/min. **Our
+  own counted sits remain the only data for the natural band.** A chest
+  belt for Aziz (a Vernier Go Direct is about $110) would give us a
+  reference that is not the wrist's own ±1.9/min, and `resp_reference.py`
+  already turns its output into the grid.
+
 ## 5. Ground truth before anything ships
 
 The DEBUG collector (`CameraSignalRecorder`, Settings > Camera capture) is
