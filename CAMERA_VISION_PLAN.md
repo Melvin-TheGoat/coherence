@@ -277,6 +277,16 @@ the fundamental on deep breathing). What discriminates it is **sit 3, paced at
 (subharmonic) or 24 (harmonic) with nothing to argue about. That sit is back
 on the list, ahead of set 3. Group 4's controls remain the deciding sits.
 
+**How much of what remains is octave error, measured:** with engine 1.1.0,
+132 paired windows, 59 still off by more than 1.5/min. Of the 38 wrong windows
+in the 7.5-11 band, 16 (42%) are octave-type (12 at 0.5x, 4 at 2x); of the 14
+in 11+, 4 (29%); of the 7 in the paced band, none. The other 39 are neither
+harmonic nor subharmonic. So a harmonic rule, even a perfect one, would fix
+about 16 windows in 132, and the wrist itself is ±1.9/min on natural breathing,
+so part of "wrong" is the reference. The larger lever for the natural band is
+a cleaner raw signal, not a smarter chooser: that is what the methods research
+should be judged against.
+
 Also found on the way: the in-app capture's t = 0 is the RECORDER's start,
 about 9 s after the session's (header: `session_started_at`,
 `recorder_started_at`), not the Watch's started-ack as the harness comment
