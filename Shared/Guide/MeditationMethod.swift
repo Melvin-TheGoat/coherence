@@ -59,7 +59,8 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     /// Every method a session can be tagged with, including variants, flattened
     /// for the picker.
     public static var loggable: [(id: String, label: String)] {
-        [(silenceID, "Silence / my own practice"),
+        [(silenceID, "Silence"),
+         (breathworkID, "Breath work"),
          (guidedID, "Guided meditation")] + all.flatMap { method -> [(String, String)] in
             guard !method.variants.isEmpty else { return [(method.id, method.title)] }
             return method.variants.map { (($0.id), "\(method.title) · \($0.title)") }
@@ -88,6 +89,14 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     /// The 808 guided journey. Not in the guide's method list (it is audio, not
     /// a technique to learn), but the most common thing a new person did.
     public static let guidedID = "guided"
+    /// Deliberate breathing as the practice itself, rather than as the way
+    /// into another one (Melvin, 2026-09-18: "add Silence and Breath work to
+    /// the usual list"). Like `silenceID` and `guidedID` it is loggable but
+    /// not a guide entry: the guide teaches specific patterns inside its own
+    /// methods, and this is the plain category people reach for when naming
+    /// what they just did. It is also the practice 808 reads best, since a
+    /// slow-breath doorway is what the breath term scores.
+    public static let breathworkID = "breathwork"
 
     // MARK: - The list
 

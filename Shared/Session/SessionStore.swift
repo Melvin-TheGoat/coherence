@@ -279,12 +279,17 @@ enum SessionStore {
     /// The Save session screen's fields: title, the public description and
     /// who can see it. Leaves the rating alone; the note is the PRIVATE note.
     @discardableResult
+    /// `techniqueNote` is the words behind "Something else". Nil keeps what
+    /// is already stored, which is what a caller that has no field for it
+    /// means; a caller with the field passes its text, empty included, so
+    /// clearing it sticks.
     static func saveSession(sessionID: UUID, title: String, publicNote: String, privateNote: String,
-                            visibility: String, technique: String?,
+                            visibility: String, technique: String?, techniqueNote: String? = nil,
                             in context: ModelContext) -> SessionReflection {
         let existing = reflection(for: sessionID, in: context)
         let row = saveReflection(sessionID: sessionID, rating: existing?.rating, note: privateNote,
-                                 technique: technique, techniqueNote: existing?.techniqueNote ?? "",
+                                 technique: technique,
+                                 techniqueNote: techniqueNote ?? existing?.techniqueNote ?? "",
                                  in: context)
         row.title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         row.publicNote = publicNote.trimmingCharacters(in: .whitespacesAndNewlines)

@@ -698,6 +698,112 @@ struct RequestsView: View {
     }
 }
 
+/// "12 followers · 8 following" under a handle, the shape every social
+/// profile uses (Melvin, 2026-09-18). Both numbers come from the edges that
+/// already exist: following is who this person added, followers is who added
+/// them, and a mutual pair is a friendship. Nothing new is stored.
+///
+/// Each half opens its list in its OWN sheet, hung on this view rather than
+/// on the screen around it, because the Profile tab and the person page both
+/// already present sheets and stacking them on one view is the
+/// only-one-presents trap.
+struct FollowLine: View {
+    let followers: Int
+    let following: Int
+    /// Whose lists to open. Nil (a profile still loading) shows the numbers
+    /// without making them tappable, rather than opening an empty list.
+    var personID: String?
+
+    @EnvironmentObject private var model: CommunityModel
+    @State private var showing: FollowList?
+
+    var body: some View {
+        HStack(spacing: 6) {
+            part(followers, followers == 1 ? "follower" : "followers", .followers)
+            Text("·").font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+            part(following, "following", .following)
+        }
+        .sheet(item: $showing) { list in
+            FollowListView(list: list, model: model)
+        }
+    }
+
+    @ViewBuilder
+    private func part(_ count: Int, _ label: String, _ which: FollowList.Which) -> some View {
+        let text = Text("\(count) ").font(AppFont.caption.weight(.semibold))
+            .foregroundStyle(AppColor.textPrimary)
+            + Text(label).font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+        if let personID, count > 0 {
+            Button { showing = FollowList(person: personID, which: which) } label: { text }
+                .buttonStyle(.plain)
+        } else {
+            text
+        }
+    }
+}
+
+struct FollowList: Identifiable, Hashable {
+    enum Which: String, Hashable { case followers, following }
+    let person: String
+    let which: Which
+    var id: String { person + which.rawValue }
+    var title: String { which == .followers ? "Followers" : "Following" }
+}
+
+/// The people behind one of the two numbers. Tapping one opens their page,
+/// inside this sheet's own stack.
+struct FollowListView: View {
+    let list: FollowList
+    @ObservedObject var model: CommunityModel
+    @Environment(\.dismiss) private var dismiss
+    @State private var ids: [String]?
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if let ids {
+                    if ids.isEmpty {
+                        Text(list.which == .followers
+                             ? "Nobody yet. Invite someone to sit with you."
+                             : "Nobody yet. Search for a friend by their username.")
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .padding(AppMetrics.screenPadding)
+                    } else {
+                        ScrollView {
+                            VStack(alignment: .leading, spacing: 0) {
+                                ForEach(ids, id: \.self) { id in
+                                    if let person = model.person(id) {
+                                        NavigationLink(value: id) {
+                                            PersonRow(profile: person, subtitle: "@" + person.username) { EmptyView() }
+                                        }
+                                        .buttonStyle(CardButtonStyle())
+                                    }
+                                }
+                            }
+                            .padding(AppMetrics.screenPadding)
+                        }
+                    }
+                } else {
+                    ProgressView().tint(AppColor.textSecondary)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .screenBackground()
+            .navigationTitle(list.title)
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: String.self) { PersonView(id: $0, model: model) }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
+                }
+            }
+        }
+        .task { ids = await model.follows(list) }
+    }
+}
+
 /// A person: header, three numbers from their posts (friends only), the
 /// relationship button, and the menu guideline 1.2 checks for (Remove,
 /// Report, Block).
@@ -729,6 +835,11 @@ struct PersonView: View {
                             .compactMap { $0 }.joined(separator: " · "))
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.textSecondary)
+                        if let counts = model.followCounts[id] {
+                            FollowLine(followers: counts.followers,
+                                       following: counts.following, personID: id)
+                                .padding(.top, 1)
+                        }
                     }
                     Spacer(minLength: 0)
                 }
@@ -785,7 +896,7 @@ struct PersonView: View {
         } message: {
             Text("They will not see your posts or find you, and you will not see theirs. You can undo this from Friends → Requests → Blocked.")
         }
-        .task { await reload() }
+        .task { await reload(); await model.loadFollowCounts(id) }
     }
 
     private func reload() async {

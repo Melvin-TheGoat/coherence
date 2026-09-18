@@ -39,6 +39,30 @@
   the person by definition), purpose Developer's Advertising or Marketing,
   not tracking. The App Privacy labels must add it at that submission.
 
+  Friends (1.1, 2026-09-18) adds FOUR more, and these are different in kind
+  from the analytics above: they are things the person writes and we can
+  read. Posts, profiles and photos go to the PUBLIC CloudKit database of our
+  own container, which the developer can read, so by Apple's definition they
+  are collected. All four are LINKED (a profile is the person) and none are
+  tracking:
+
+    - Photos or Videos: the selfie on a post, and the profile photo.
+    - Other User Content: the post's title and description, and the reason
+      text on a report.
+    - Name: the display name on a profile.
+    - User ID: the @username, which is chosen and public. (The analytics
+      entry above is also User ID but anonymous and unlinked; the label in
+      App Store Connect must be the stronger of the two, linked.)
+
+  What Friends does NOT put in the public database, and must never: heart
+  rate, breathing, stillness, a curve, or any reading behind the score. A
+  post carries only the free share card's fields (score, minutes, streak,
+  technique). 5.1.3 still binds, and `test_postCarriesOnlyTheFreeCardFields`
+  is the guard.
+
+  The private CloudKit database (account, sessions, streak) is still the
+  user's own and still not collected: we cannot read it.
+
   Change the manifest and the labels together, always.
 -->
 <plist version="1.0">
@@ -83,6 +107,42 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePhotosorVideos</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeName</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
 		<dict>
