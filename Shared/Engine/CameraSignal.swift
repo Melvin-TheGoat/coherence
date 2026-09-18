@@ -21,7 +21,7 @@ import Foundation
 //      which would count the same power many times and dilute every peak.
 //      A peak on either scan edge is leakage, not a read, and gets clarity 0.
 //   3. The top three peaks of every channel are POOLED into one candidate set
-//      per window, and a Viterbi tracker with a jump cost of 0.45 per
+//      per window, and a Viterbi tracker with a jump cost of 0.45 per natural-log unit of rate RATIO (was per
 //      breath/min picks the curve as a whole. The path may switch channel for
 //      free: six views of the same chest, not six hypotheses. This is what
 //      resolved the harmonics (a paced 6/min opening read 12 whole-frame and
@@ -107,7 +107,9 @@ enum CameraSignal {
     /// version string alone. `ScoreMigration` must skip rows with this prefix:
     /// the Watch formula given an empty heart series renormalises to
     /// breath .40 / stillness .60, which is not this instrument's score.
-    static let version = "camera-1.0.0"
+    /// 1.1.0: the tracker's jump cost is per log-ratio, not per breath/min,
+    /// which removed a hard ceiling near 7.5/min (see `jumpCost`).
+    static let version = "camera-1.1.0"
     static let versionPrefix = "camera-"
 
     // MARK: Constants. Each one is a measurement; the capture is named.
@@ -429,10 +431,30 @@ enum CameraSignal {
         return out
     }
 
-    /// Viterbi over the pooled candidates: clarity minus `trackJumpCost` per
-    /// breath/min of jump between consecutive states. A gated or empty window
-    /// costs one hop, not one per window skipped: missing evidence is not
-    /// evidence of a jump. Windows with no path get rate 0 and clarity 0.
+    /// The price of moving the path from one rate to another between hops:
+    /// `trackJumpCost` per natural-log unit of the RATIO, so a doubling costs
+    /// the same wherever it happens.
+    ///
+    /// **It was per breath/min of DIFFERENCE, and that was the rate ceiling
+    /// (Aziz's first two paired sits, 2026-09-17/18).** Moving from 5 to 18
+    /// cost 5.85 against a clarity that cannot exceed 1, so the tracker
+    /// refused a clear fast peak every time: at one window the camera saw
+    /// 18.0/min at clarity 0.85 and chose 5.6 at 0.39. The fast rate was
+    /// offered in almost every natural-breathing window; it was never taken.
+    /// Breathing rates are ratio-like, not difference-like, and with the
+    /// ratio cost the error in the >11/min band fell from 9.8 to 0.93 while
+    /// the paced bands (0.17, 0.23) and both doorways were untouched. The
+    /// result is flat across constants from 0.1 to 0.6 per nat, which says
+    /// the shape was wrong, not the number; 0.45 per nat is about a third of
+    /// a point per doubling. Measured in `tools/camera_lab.py`.
+    static func jumpCost(from a: Double, to b: Double) -> Double {
+        trackJumpCost * abs(log(max(b, 0.1) / max(a, 0.1)))
+    }
+
+    /// Viterbi over the pooled candidates: clarity minus `jumpCost` between
+    /// consecutive states. A gated or empty window costs one hop, not one per
+    /// window skipped: missing evidence is not evidence of a jump. Windows
+    /// with no path get rate 0 and clarity 0.
     static func trackRates(_ windows: [[Peak]]) -> (rates: [Double], clarity: [Double]) {
         var dp: [[Double]] = [], back: [[(Int, Int)?]] = []
         for (i, cands) in windows.enumerated() {
@@ -443,7 +465,7 @@ enum CameraSignal {
                 guard let p = prev else { row.append(c.clarity); ptr.append(nil); continue }
                 var best = -Double.greatestFiniteMagnitude, arg = 0
                 for (k, q) in windows[p].enumerated() {
-                    let v = dp[p][k] - trackJumpCost * abs(c.rate - q.rate)
+                    let v = dp[p][k] - jumpCost(from: q.rate, to: c.rate)
                     if v > best { best = v; arg = k }
                 }
                 row.append(c.clarity + best)

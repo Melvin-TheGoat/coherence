@@ -236,10 +236,54 @@ when there was no slow breathing at all. That is an invented doorway, a false
 claim rather than a missing one, and **group 4's controls are now the
 deciding experiment for whether the camera path ships at all.**
 
-Worth testing before tuning anything: whether the ceiling is the band-pass
-edge, the 10 fps sample rate (12/min is 0.2 Hz, far from Nyquist, so probably
-not), or the tracker's jump cost refusing to climb. The buckets above are the
-measurement to beat.
+**THE CEILING WAS THE TRACKER'S COST SHAPE, AND IT IS FIXED (engine
+camera-1.1.0, 2026-09-18).** Tested offline in `tools/camera_lab.py`, a
+faithful replica with sweepable constants and two diagnostics the harness
+lacked. The candidate dump settled it in one run: **the true fast rate was
+offered to the tracker in almost every natural-breathing window, often as the
+clearest candidate** (t=439 s of `EC6EBFDD`: 18.0/min at clarity 0.85 offered,
+5.6 at 0.39 chosen), and the tracker refused it because the jump cost was
+0.45 per breath/min of DIFFERENCE, so 5 → 18 cost 5.6 against a clarity that
+cannot exceed 1. Not the band, not 10 fps, not the ROI. The wrist engine's
+"selection, not filtering" lesson in a new place.
+
+Fix: the cost is per natural-log unit of the rate RATIO (`jumpCost`), so a
+doubling costs the same wherever it happens. Sweep over both sits, replica:
+
+    cost shape        >11/min err   7.5-9   9-11   paced bands   doorways
+    abs 0.45 (old)        9.80      3.23    3.30   0.17 / 0.23   both kept
+    abs 0.00              0.95      3.23    4.44   0.17 / 0.23   both kept
+    log 0.10 to 0.60      0.93      3.0-3.7 3.8-4.4 0.17 / 0.23  both kept
+
+Flat across 0.1 to 0.6 per nat, which says the SHAPE was wrong, not the
+number, so 0.45 per nat was kept (about a third of a point per doubling) and
+not picked off the table. Confirmed in the REAL engine via the harness: sit 2
+minute 7 reads 17.9 against the wrist's 17.8 (was 4.8), sit 1 minute 7 reads
+11.8 against 11.9 (was 4.5); both doorways 6.0/min at 15 s, unchanged. Locked
+by `test_trackRates_takesAClearFastPeakHoweverFarAway` (the device window
+above, verbatim) and `test_jumpCost_isPerLogRatioNotPerDifference`.
+
+**What remains is a HARMONIC ambiguity in the 7.5 to 11/min band, and a cost
+cannot fix it.** With the tracker freed, sit 2 minute 5 reads 17.2 against a
+wrist 10.0 (very nearly double), and sit 1's 7.5-9 band still picks 4.4 to 4.7
+against 8.2 to 8.6 (very nearly half). The camera's channels carry real power
+at 2f (and the wrist's own deep-breathing harmonic finding says f/2 vs f is
+genuinely ambiguous from one instrument). The wrist engine refused a harmonic
+rule because wrist breathing has no octave problem; the camera evidently does.
+Do NOT add a harmonic preference on two sits: a rule that prefers 2f would
+double every deep paced sit (the wrist measured the 2nd harmonic at 0.74 of
+the fundamental on deep breathing). What discriminates it is **sit 3, paced at
+12/min**: a known 12 tells us whether the camera reads 12 (fine), 6
+(subharmonic) or 24 (harmonic) with nothing to argue about. That sit is back
+on the list, ahead of set 3. Group 4's controls remain the deciding sits.
+
+Also found on the way: the in-app capture's t = 0 is the RECORDER's start,
+about 9 s after the session's (header: `session_started_at`,
+`recorder_started_at`), not the Watch's started-ack as the harness comment
+claims. `camera_compare.py` now reads that header; the engine's own
+`breathDoorwayStartSec` is still recorder-relative and reads ~9 s early.
+Small, but fix the recorder to arm t = 0 at the ack before the camera path
+ships, or write the shift into the frames.
 
 **Consequence for the doorway.** It may not matter much. The doorway is
 defined over the first five minutes and is all-or-nothing, so a camera that
