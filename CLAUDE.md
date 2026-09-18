@@ -1797,6 +1797,30 @@ in `mockups/save-session-v*.html`; v6 and v7 are what shipped. 312 tests.
 - **A portrait photo in a landscape slot was the blocking find** of the
   senior-review pass: the old 320pt full-width tile cropped a 3:4 selfie's
   face every time. `PhotoTile` is 78 by 104 with the words beside it.
+- **THE SELFIE ROTATION, MEASURED AT LAST (2026-09-18). Do not re-derive
+  this from reasoning; four fixes were, and all four were wrong.** What
+  Aziz's iPhone 17 Pro Max actually hands back from the front camera:
+
+      pixels 4032x3024 (LANDSCAPE), orientation tag = .down,
+      connection videoRotationAngle = 90, isVideoMirrored = false
+
+  So **`videoRotationAngle` does not rotate the delivered pixels**, and the
+  tag is `.down`, a HALF turn, which leaves the frame landscape however it
+  is applied. Every earlier attempt either applied the tag and kept a
+  landscape image, or assumed the tag meant a quarter turn and swapped the
+  target size, drawing the shot on its side and squashing it.
+  `uprightMirroredSelfie` therefore decides from the PIXELS: apply the tag
+  only when doing so yields portrait; if the pixels are already portrait,
+  ignore the tag; if both are landscape, turn it clockwise. Then mirror, as
+  its own step. The screen is portrait only and front camera only, so a
+  landscape result is wrong by definition.
+  **The lesson that matters more than the fix:** the simulator has no
+  camera and `log collect` on a device needs root, so this was guessed at
+  four times across two people. It was solved in one round by
+  `SelfieDiagnostics` (DEBUG, `SELFIE_DEBUG=1`), which writes the raw file,
+  each intermediate and a facts sheet to Documents/SelfieDebug for
+  `devicectl device copy from --domain-type appDataContainer`. **When a bug
+  only exists on hardware, ship the instrument before the fix.**
 - **`SelfieCamera` replaces `UIImagePickerController` for the selfie**
   (`Coherence/Community/SelfieCamera.swift`): black, the mark centred, a
   rounded viewfinder that is not full bleed, one unfilled white ring, flash

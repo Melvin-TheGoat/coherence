@@ -327,6 +327,13 @@ final class SelfieCameraModel: ObservableObject {
             // the post) then sees the same picture with no EXIF to interpret.
             let upright = image.uprightMirroredSelfie()
             SelfieLog.shot.info("captured \(image.selfieDebugDescription, privacy: .public) -> upright \(upright.selfieDebugDescription, privacy: .public)")
+            #if DEBUG
+            SelfieDiagnostics.dump(raw: data,
+                                   decoded: image,
+                                   baked: image.bakingOrientation(),
+                                   final: upright,
+                                   connection: output.connection(with: .video))
+            #endif
             done(upright)
         }
     }
