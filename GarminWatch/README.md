@@ -4,11 +4,10 @@ The design record is `../GARMIN.md`. Read it first: it carries the five
 platform facts that decided this shape, and the architecture rule it breaks
 on purpose.
 
-**NEVER COMPILED.** The Connect IQ SDK is not on this machine, so no line
-here has passed a type checker. Expect the first build to fail on small
-things: an enum name (`Activity.SPORT_MEDITATION` and `SUB_SPORT_BREATHING`
-are the likeliest), a product id in `manifest.xml`, or an access modifier.
-The SHAPE is the deliverable; the syntax is a first draft.
+**Status 2026-09-18: builds clean for all thirteen devices in the manifest,
+and nine unit tests pass in the simulator.** Never run on real hardware,
+because nobody on the team owns a Garmin watch; treat every number as a
+simulator number until one does.
 
 ## What it does
 
@@ -20,31 +19,33 @@ Bins to 5 Hz, batches every 4 seconds, sends to the iPhone over BLE. The
 phone runs `SignalEngine` unchanged, so a Garmin sit is scored by the same
 code as a Watch sit and sits in the same history.
 
-## Build, once the SDK exists
+## Build and test (these commands were run, they work)
 
-    # 1. A JDK must be on PATH before /usr/bin (Apple Silicon needs this)
-    java -version
+    export PATH="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/connectiq-sdk-mac-9.2.0-2026-06-09-92a1605b2/bin:$PATH"
 
-    # 2. SDK Manager > download the current SDK > accept as active, then
-    export PATH="$HOME/Library/Application Support/Garmin/ConnectIQ/Sdks/<current>/bin:$PATH"
+    # Build for one device. Every id in manifest.xml works.
+    monkeyc -f monkey.jungle -d vivoactive5 -o bin/808.prg \
+            -y ~/.garmin/808_developer_key.der
 
-    # 3. A developer key, once
-    openssl genrsa -out /tmp/808.pem 4096
-    openssl pkcs8 -topk8 -inform PEM -outform DER -in /tmp/808.pem -out ~/.garmin/808_developer_key.der -nocrypt
+    # Tests: build with --unit-test, run with -t. The simulator must be up
+    # (`connectiq &`), and the results print to stdout.
+    monkeyc -f monkey.jungle -d vivoactive5 -o bin/808_test.prg \
+            -y ~/.garmin/808_developer_key.der --unit-test
+    monkeydo bin/808_test.prg vivoactive5 -t
 
-    # 4. Build for one device
-    monkeyc -f monkey.jungle -d fr265 -o bin/808.prg -y ~/.garmin/808_developer_key.der
+A device can only be targeted if it is BOTH in `manifest.xml` AND installed
+in SDK Manager. Only the fenix and vivoactive families are installed here,
+which is why no Forerunner or Venu is listed.
 
-    # 5. Run it in the simulator
-    connectiq && monkeydo bin/808.prg fr265
-
-The simulator is enough to develop against; nobody on the team owns a Garmin
-watch yet, and until one exists every result is a simulator result and must
-be labelled as one.
+`~/.garmin/808_developer_key.der` **is worth backing up**: a published
+Connect IQ app is tied to it, and losing it means never updating that app.
+Never commit it.
 
 ## Files
 
-- `source/Capture.mc` the reduction. The only file with ideas in it.
+- `source/Reducer.mc` the arithmetic. The only file with ideas in it.
+- `source/ReducerTests.mc` nine tests, stripped from non-test builds.
+- `source/Capture.mc` sensors, the activity session, the 4 s batch.
 - `source/Bridge.mc` one batch out every 4 s; drops rather than queues.
 - `source/SessionView.mc` elapsed time and whether the phone is listening.
 - `source/SessionDelegate.mc` start and stop.
@@ -55,5 +56,6 @@ be labelled as one.
 ## Not built yet
 
 The iPhone half: `GarminBridge` (needs the ConnectIQ Swift package added in
-Xcode), the device picker, `FeatureFlags.garmin`, and tests pinning the
-reduction against what `SignalEngine` expects to receive.
+Xcode), the device picker, `FeatureFlags.garmin`, and a test feeding a
+reduced stream through `SignalEngine` so a Garmin sit and a Watch sit
+provably score the same.

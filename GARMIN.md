@@ -98,46 +98,79 @@ never touch HealthKit, so 5.1.3 does not bind them. What does follow:
   the phone: it is the user's own record, and it is how a Garmin sit lands in
   Health beside the Apple Watch ones.
 
-## What is built (2026-09-18)
+## What is built (2026-09-18): COMPILES, and its arithmetic is tested
 
-`GarminWatch/`, the Monkey C app. **Never compiled**: the Connect IQ SDK is
-not on this machine (see Setup below), so treat every line as a first draft
-that has passed nobody's type checker.
+`GarminWatch/`, the Monkey C app. SDK 9.2.0, Temurin 25 (the JDK was no
+trouble, despite the folklore). **Builds clean for all thirteen devices in
+the manifest** (96 to 104 KB of PRG), and **nine unit tests pass in the
+simulator.**
 
-- `source/EightZeroEightApp.mc` the app entry, holds the capture.
-- `source/Capture.mc` the whole idea: gravity EMA, pitch/roll, residual,
-  0.2 s bins, 4 s batches, RR collection, the activity session that keeps
-  the sensors alive.
-- `source/Bridge.mc` `Communications.transmit` with a listener that counts
-  drops rather than retrying (memory).
+- `source/Reducer.mc` the arithmetic, and the only file with ideas in it.
+- `source/ReducerTests.mc` the nine tests. `(:test)` functions are stripped
+  from a normal build, so none of it ships.
+- `source/Capture.mc` the plumbing: the sensor registration, the activity
+  session that keeps the sensors alive, RR collection, the 4 s batch.
+- `source/Bridge.mc` `Communications.transmit`, counting drops rather than
+  retrying (memory).
 - `source/SessionView.mc` / `SessionDelegate.mc` elapsed time, a start and
   an end, nothing else. No haptics: the Watch's no-haptics rule is a product
   rule, not an Apple one, and it applies here.
-- `manifest.xml`, `monkey.jungle`, `resources/`.
 
-Not built yet, in order: the iOS `GarminBridge` (needs the SDK package added
-in Xcode), the device-picker screen, `FeatureFlags.garmin`, and the tests
-that pin the reduction against `SignalEngine`'s expectations.
+### The bug the tests caught, which is the reason to have written them
 
-## Setup, and the parts only Aziz or Melvin can do
+The first draft used **one** exponential average for both jobs: gravity for
+the residual, and the same smoothed vector for pitch and roll. Its cutoff sat
+at about 0.16 Hz, which is INSIDE the breathing band. A one-pole filter
+attenuates by 1/sqrt(1 + (f/fc)^2), so a 15 breaths/min wave arrived at the
+phone at 0.54 of its real size, and the engine's amplitude floor (0.5 mrad,
+itself a measured constant) would have thrown away breaths that were really
+there. Nothing about the watch screen or a build log would have shown this.
 
-1. **A Garmin developer account** (free) at developer.garmin.com. Claude does
-   not create accounts.
-2. **Install a JDK.** `java -version` on this Mac says no runtime. Monkey C's
-   compiler needs one, and on Apple Silicon the JDK's `bin` must precede
-   `/usr/bin` on PATH or `monkeyc` reports it cannot find Java.
-3. **Install the Connect IQ SDK Manager**, download the current SDK, accept
-   it as active, and add its `bin` to PATH. The simulator comes with it, and
-   the simulator is enough to develop against: **we do not need to own a
-   Garmin watch to build this**, only to trust it.
-4. **A watch to verify on, eventually.** Nobody on the team owns one. The
-   cheapest device that exercises everything we use (25 Hz accel, RR
-   intervals, Connect IQ apps) is a current Forerunner or Venu; a fenix is
-   not needed. Until one exists, every result is a simulator result and must
-   be labelled as such, the same discipline the camera work uses.
-5. **An app UUID** is generated when the app is registered in the Connect IQ
-   store; the iOS side needs it, and the store listing is a separate review
-   from Apple's.
+The fix is two filters with opposite jobs, which is now the whole design:
+
+- **Tilt**, for breathing: cutoff about 2 Hz. High enough that the entire
+  band 0.05 to 0.5 Hz passes essentially untouched. Measured by the tests at
+  38 of 40 mrad at 6/min and 36 of 40 at 15/min.
+- **Gravity**, for stillness: cutoff about 0.2 Hz, BELOW the band, so that
+  subtracting it leaves the body's movement and not the breath. Measured:
+  4.8 milli-g of residual during a 20 mrad breath, 136 during a 3 Hz shake.
+
+**Generalise it: a filter that has to pass one thing and reject another
+cannot be the same filter.** The wrist engine learned the neighbouring
+lesson (drift at 2/min out-powers breath 6 to 15 times); this is the same
+family, on the input side.
+
+Not built yet, in order: the iOS `GarminBridge` (needs the ConnectIQ Swift
+package added in Xcode), the device-picker screen, `FeatureFlags.garmin`,
+and a test that feeds a reduced stream through `SignalEngine` to prove a
+Garmin sit and a Watch sit score the same.
+
+## Setup: done, and what is left
+
+Done on Aziz's Mac, 2026-09-18: Temurin JDK 25, SDK Manager in
+`/Applications/SdkManager.app`, **Connect IQ SDK 9.2.0**, and 47 devices
+(the whole fenix and vivoactive families; **no Forerunner, Venu or
+Instinct**, which is why the manifest lists neither). The developer signing
+key is at `~/.garmin/808_developer_key.der`.
+
+**BACK THAT KEY UP.** It is the identity a published Connect IQ app is tied
+to; lose it and a published app can never be updated. It is outside the
+repo and must stay outside it.
+
+Left to do:
+
+1. **More devices in SDK Manager** if we want the Forerunners and Venus,
+   which are the volume models. Tick them under Devices, then add the ids to
+   `manifest.xml`.
+2. **A watch to verify on.** Nobody on the team owns one. The cheapest device
+   exercising everything we use (25 Hz accel, RR intervals, Connect IQ apps)
+   is a current Forerunner or Venu. Until one exists, every result is a
+   simulator result and is labelled as one, the same discipline the camera
+   work uses.
+3. **A Garmin developer account and an app UUID**, generated when the app is
+   registered in the Connect IQ store. The iOS side needs the UUID, and the
+   store listing is a separate review from Apple's. Only needed to publish,
+   not to build.
 
 ## Open questions, not yet decided
 

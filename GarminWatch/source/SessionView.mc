@@ -32,7 +32,7 @@ class SessionView extends WatchUi.View {
         }
     }
 
-    function tick() {
+    function tick() as Void {
         WatchUi.requestUpdate();
     }
 
