@@ -43,6 +43,11 @@ function breathing(n as Lang.Number, bpm as Lang.Float, amp as Lang.Float) as La
     return [xs, ys, zs];
 }
 
+// The reducer emits MICRO units (microradians, micro-g). These helpers return
+// MILLI units, because that is the scale the engine's own constants are quoted
+// in and the scale a person can read.
+const MICRO_PER_MILLI = 1000.0;
+
 // Peak-to-peak of one column of the flat [pitch, roll, residual] output,
 // ignoring the first `skipBins` bins so the filters can settle.
 function spread(out as Lang.Array, column as Lang.Number, skipBins as Lang.Number) as Lang.Float {
@@ -54,7 +59,7 @@ function spread(out as Lang.Array, column as Lang.Number, skipBins as Lang.Numbe
         if (hi == null || v > hi) { hi = v; }
         b += 1;
     }
-    return (lo == null) ? 0.0 : hi - lo;
+    return (lo == null) ? 0.0 : (hi - lo) / MICRO_PER_MILLI;
 }
 
 function meanOf(out as Lang.Array, column as Lang.Number, skipBins as Lang.Number) as Lang.Float {
@@ -65,7 +70,7 @@ function meanOf(out as Lang.Array, column as Lang.Number, skipBins as Lang.Numbe
         count += 1;
         b += 1;
     }
-    return count == 0 ? 0.0 : sum / count;
+    return count == 0 ? 0.0 : (sum / count) / MICRO_PER_MILLI;
 }
 
 (:test)
@@ -127,6 +132,57 @@ function test_aFastBreathAlsoSurvives(logger as Test.Logger) as Lang.Boolean {
     var pp = spread(out, 0, 30);
     logger.debug("15/min: " + pp + " mrad peak to peak, want about 40");
     return pp > 34 && pp < 44;
+}
+
+// The same wrist rock, but handed over as Floats: what the sensor would give
+// us if it were not quantised. Used only to locate where resolution is lost.
+function breathingPrecise(n as Lang.Number, bpm as Lang.Float, amp as Lang.Float) as Lang.Array {
+    var xs = []; var ys = []; var zs = [];
+    for (var i = 0; i < n; i += 1) {
+        var t = i / FS;
+        var theta = amp * Math.sin(2 * Math.PI * (bpm / 60.0) * t);
+        xs.add(-G * Math.sin(theta));
+        ys.add(0.0);
+        zs.add(G * Math.cos(theta));
+    }
+    return [xs, ys, zs];
+}
+
+// RESOLUTION. A settled user's real breath measured 1.1 to 1.5 milliradians on
+// the Apple Watch captures, and the stiller the body the SMALLER the wave.
+//
+// **Garmin hands us whole milli-g.** At 1 g, a tilt of theta radians moves an
+// axis by about 1000*theta milli-g, so one unit of the sensor's own quantiser
+// IS about one milliradian of tilt: the same size as the entire breath we are
+// trying to read. A 1.2 mrad breath arrives at the watch as a three-level
+// staircase before our code sees it, and no choice of units on our side can
+// put back what the sensor never resolved. This pair of tests measures how
+// much is lost and proves where it is lost.
+//
+// It is NOT fatal, and the reason is that the engine estimates a rate by DFT
+// over a 30 s window rather than by measuring an amplitude: quantisation noise
+// is broadband and averages down, while the breath adds coherently. Proving
+// THAT is a phone-side test against the real `SignalEngine`, not a watch test.
+(:test)
+function test_aTinyRealBreathSurvivesTheSensorsQuantiser(logger as Test.Logger) as Lang.Boolean {
+    var b = breathing(1500, 6.0, 0.0012);
+    var out = new Reducer().reduce(b[0], b[1], b[2]);
+    var pp = spread(out, 0, 30);
+    // About 2.4 mrad if nothing were lost; about 2.0 is what whole milli-g
+    // leaves. It must not collapse toward zero or flatten to one level.
+    logger.debug("1.2 mrad breath through whole milli-g: " + pp + " mrad peak to peak");
+    return pp > 1.8 && pp < 2.7;
+}
+
+(:test)
+function test_theLossIsTheSensorsQuantiserAndNotOurUnits(logger as Test.Logger) as Lang.Boolean {
+    var b = breathingPrecise(1500, 6.0, 0.0012);
+    var out = new Reducer().reduce(b[0], b[1], b[2]);
+    var pp = spread(out, 0, 30);
+    // Unquantised input through the identical code returns the full 2.4,
+    // which puts the loss above us and rules out our own arithmetic.
+    logger.debug("same breath, unquantised input: " + pp + " mrad peak to peak");
+    return pp > 2.2 && pp < 2.6;
 }
 
 // Breathing is a tilt, not a shove. It must not read as movement, or every

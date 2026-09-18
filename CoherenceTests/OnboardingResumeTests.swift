@@ -83,5 +83,7 @@ final class FeatureFlagTests: XCTestCase {
                        "Otto ships to the store only once the founders have read its answers")
         XCTAssertFalse(FeatureFlags.friendsInRelease,
                        "Friends ships in 1.1 after RELEASE_CHECKLIST's 1.1 list; flip this only in that archive")
+        XCTAssertFalse(FeatureFlags.garminInRelease,
+                       "Garmin needs the Connect IQ framework, the Info.plist and entitlement changes it brings, a new Beta App Review, and one real watch")
     }
 }

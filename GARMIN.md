@@ -39,6 +39,22 @@ Read from Garmin's own docs, not from memory. Each one closed an option.
    is already running or backgrounded, so the Apple Watch's watch-initiated
    sessions have no equal here in v1. Sessions start on the phone.
 
+6. **Garmin delivers whole milli-g, and that quantiser is about one
+   milliradian of wrist tilt** (at 1 g, a tilt of theta radians moves an axis
+   by roughly 1000*theta milli-g). A settled user's real breath measured
+   **1.1 to 1.5 milliradians** on the Apple Watch captures, so a real breath
+   arrives as a three-level staircase before any of our code runs. Measured
+   on both sides: the watch tests put a 1.2 mrad breath through and get 2.0
+   mrad peak to peak where 2.4 is the truth, and feeding the identical code
+   unquantised floats returns 2.392, which places the loss in the sensor and
+   not in our arithmetic. **The rate survives anyway**, because the engine
+   estimates by DFT over a 30 s window rather than by measuring an amplitude:
+   quantisation noise is broadband and averages down while a breath adds
+   coherently. `test_aTinyRealBreathSurvivesGarminsQuantiser` puts that whole
+   chain through the real `SignalEngine` and reads 6/min. It is still the
+   thinnest margin on this platform and the first thing to re-measure on real
+   hardware.
+
 Two smaller ones that will bite if forgotten: sensors return null on real
 hardware until an **ActivityRecording session** is running (works fine in the
 simulator, which is how people lose an afternoon), and the SDK **requires**
@@ -140,10 +156,41 @@ cannot be the same filter.** The wrist engine learned the neighbouring
 lesson (drift at 2/min out-powers breath 6 to 15 times); this is the same
 family, on the input side.
 
-Not built yet, in order: the iOS `GarminBridge` (needs the ConnectIQ Swift
-package added in Xcode), the device-picker screen, `FeatureFlags.garmin`,
-and a test that feeds a reduced stream through `SignalEngine` to prove a
-Garmin sit and a Watch sit score the same.
+## The phone half (same day): built to the framework, and tested
+
+`Shared/Garmin/` and `Coherence/Garmin/`. **404 tests green.**
+
+- `GarminBatch` decodes one message: validates it, turns micro units into SI,
+  and times each sample backwards from the batch's own stamp, so a dropped
+  batch leaves a gap rather than shifting everything after it. A malformed
+  message decodes to nil; a heart rate of 0 decodes to "no reading" rather
+  than a zero in the curve.
+- `GarminStream` accumulates into `[MotionSample]` and `[HRSample]`, ignores
+  a replayed or out-of-order batch (the stale-WatchConnectivity lesson, and
+  BLE is no better behaved), counts gaps, and finishes by calling
+  `SignalEngine.analyze` and returning a `SessionPayload`. **That is the
+  join**: the payload is the same shape the Apple Watch sends, so
+  persistence, the score, the doorway, the verdict and history are untouched.
+- `GarminLink` is the seam. Above it everything is plain Swift and tested
+  with no watch, no phone and no framework; below it is Garmin's SDK, still
+  unwritten on purpose. `MemoryGarminLink` stands in. The file lists exactly
+  what linking the framework costs, and the point of the seam is that the
+  interesting code was finished and proven before paying it.
+- `FeatureFlags.garmin`, off in Release, with a tripwire test.
+
+**A Garmin sit is scored as any other sit.** No version prefix, no separate
+migration path: the camera work marks itself `camera-` so `ScoreMigration`
+skips it, and Garmin deliberately does not, because it runs the identical
+engine over the identical kind of input and belongs in the same history.
+`test_aGarminSitIsScoredAsAnyOtherSit` pins it.
+
+Two failure modes that are Garmin's alone and are handled: a sit where the
+phone was out of range for most of it is discarded rather than scored off
+fragments, and beat-to-beat intervals are kept but never reach the score.
+
+Not built yet, in order: the ConnectIQ adapter and everything it drags in
+(see the list at the bottom of `GarminLink.swift`), the device-picker
+screen, starting a Garmin sit from the Begin sheet, and a real watch.
 
 ## Setup: done, and what is left
 

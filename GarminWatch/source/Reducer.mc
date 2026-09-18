@@ -30,6 +30,18 @@ class Reducer {
     const TILT_ALPHA = 0.40;     // fc ~2 Hz: the breathing band passes
     const GRAVITY_ALPHA = 0.05;  // fc ~0.2 Hz: below the band, so it is posture
 
+    // MICRORADIANS, not milliradians, and this is not fussiness. A real wrist
+    // breath measured 1.1 to 1.5 milliradians on the Apple Watch captures, and
+    // the engine's amplitude floor is 0.5 mrad. Rounding to whole milliradians
+    // would quantise a breath into two or three levels and bury it in its own
+    // rounding error. A Connect IQ Number is a 32-bit int either way, so the
+    // finer unit costs nothing on the wire: pi radians is 3.14e6, well inside
+    // the range. Same argument for micro-g on the residual, where a settled
+    // body's movement would otherwise round to zero and break the engine's
+    // relative motion gate (1.5x the session median, and 1.5 x 0 is 0).
+    const MICRO = 1000000.0;
+    const MICRO_PER_MILLI = 1000.0;   // milli-g in, micro-g out
+
     var tx, ty, tz;
     var gx, gy, gz;
     var primed;
@@ -85,9 +97,9 @@ class Reducer {
                 sumSquares += rx * rx + ry * ry + rz * rz;
             }
 
-            out.add((1000.0 * sumPitch / BIN).toNumber());
-            out.add((1000.0 * sumRoll / BIN).toNumber());
-            out.add(Math.sqrt(sumSquares / BIN).toNumber());
+            out.add((MICRO * sumPitch / BIN).toNumber());
+            out.add((MICRO * sumRoll / BIN).toNumber());
+            out.add((MICRO_PER_MILLI * Math.sqrt(sumSquares / BIN)).toNumber());
             i += BIN;
         }
 

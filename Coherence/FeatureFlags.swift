@@ -41,6 +41,23 @@ enum FeatureFlags {
         #endif
     }
 
+    /// **Garmin (2026-09-18) is OFF in Release**, and it is further from
+    /// shipping than the flag suggests: the Connect IQ framework is not linked
+    /// yet, so nothing can talk to a watch even in DEBUG. The engine-facing
+    /// half (`GarminBatch`, `GarminStream`) is built and tested, and the watch
+    /// app compiles and passes its own tests. What is left is the framework,
+    /// the Info.plist and entitlement changes it brings, and a real Garmin
+    /// watch to trust any of it on. See `GARMIN.md`.
+    static let garminInRelease = false
+
+    static var garmin: Bool {
+        #if DEBUG
+        return true
+        #else
+        return garminInRelease
+        #endif
+    }
+
     /// Award ids that belong to a switched-off feature.
     static var hiddenAwardIDs: Set<String> {
         friends ? [] : ["friendBrought"]
