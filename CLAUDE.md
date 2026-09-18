@@ -1650,6 +1650,49 @@ Mockup `mockups/otto.html` came first (Aziz's rule).
   session, on sign-out, on account deletion and on credential revocation.
   The ellipsis menu offers "Start a new chat".
 
+## OTTO IS DRAWN; FRIENDS AND PROFILE GET THEIR AIR BACK (2026-09-18)
+
+- **Otto the sloth ships as vector, drawn in Swift** (`Coherence/Otto/
+  OttoArt.swift`). Melvin asked how to "generate" him; the answer is that a
+  generated raster is the wrong artefact here. The mark appears from 24 pt
+  (a chat row) to 160 pt (a locked state) and must recolour with the theme,
+  which a PNG cannot do, and it has to sit in the 808 mark's line-art
+  language, which an image model will not hold across three sizes.
+  **The path data is the approved mockup's `d` strings, character for
+  character** (`mockups/otto-sloth.html`), parsed by a small `SVGPath` that
+  handles the absolute M/L/H/V/C/Q those drawings use. A revised drawing is
+  therefore a changed string, not a rewritten view, and what ships is what
+  was reviewed. `OttoMark` is the head badge (the "O" in a circle is gone);
+  `OttoSlothSitting` carries the locked and unavailable screens. Stroke
+  ratios come from the brief: 5% of diameter for the badge (an optical size
+  for 24 to 56 pt), 1.5% of the artboard for the figure. The eye mask is the
+  one fill, 26% of the tint, because outlining it turns to mud at 24 pt.
+  `OttoArtTests` lock the parser (including that a minus starts a new
+  number, the classic way a hand-rolled path parser silently loses a
+  curve), that every string in the art parses, that the figure stays inside
+  its 240 box, and that the twelve hand-written arm paths really are
+  mirrored about the middle. **If more character is wanted than a glyph,
+  the illustrator brief in `mockups/otto-sloth.md` is written and still
+  valid**; nothing about this rules that out, it replaces a placeholder.
+- **The Friends feed was too dense** (Melvin: "look at strava, much more
+  spaced out, and it has padding around the images and the text"). The post
+  card bled to both screen edges with the photo running wall to wall and
+  8pt between cards, so nothing had air and one sit ran into the next. Now
+  an inset rounded card with ONE inset constant for every child
+  (`PostCard.inset`, 18), the photo inset and rounded like the text, 16pt
+  between cards and between the feed's sections, and bigger avatars and
+  touch targets on the person rows. A feed is read while scrolling, so the
+  white space is what separates one person's sit from the next.
+- **The profile lost two things** (Melvin: "too crowded, i dont think otto
+  should be in there. nor the next: half an hour"). Otto's row is gone from
+  Profile: its door is the results screen, where the person is looking at
+  the sit they want explained and the question has a subject. `OttoView()`
+  with no session id still opens on the last ten sessions, so the general
+  chat is not lost, it just has no second door. The "Next: <award>"
+  progress card is gone too: on a screen already showing the streak, four
+  stats, the shelf and every session, one more bar reads as another thing
+  undone, and the shelf already shows what is unearned.
+
 ## THE PAYWALL COMES AFTER THE FIRST MEDITATION (2026-09-15, Melvin)
 
 "Let them see their scores and graphs and everything, and then lock it

@@ -313,15 +313,12 @@ struct OttoMark: View {
     var dimmed = false
 
     var body: some View {
-        ZStack {
-            Circle().stroke(AppColor.calmAccent, lineWidth: max(1.5, size / 14))
-            Text("O")
-                .font(.system(size: size * 0.42, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.calmAccent)
-        }
-        .frame(width: size, height: size)
-        .opacity(dimmed ? 0.55 : 1)
-        .accessibilityHidden(true)
+        // Otto is a sloth (Melvin, 2026-09-16), and the head badge is the
+        // mark: the "O" in a circle was always a placeholder. The drawing is
+        // `OttoArt`, the mockup's own SVG.
+        OttoSlothBadge(size: size, dimmed: dimmed)
+            .tint(AppColor.calmAccent)
+            .foregroundStyle(AppColor.calmAccent)
     }
 }
 
@@ -379,7 +376,8 @@ struct OttoLockedView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 24)
             VStack(alignment: .leading, spacing: 14) {
-                HStack { OttoMark(size: 56); Spacer() }
+                HStack { OttoSlothSitting(size: 96).tint(AppColor.calmAccent)
+                    .foregroundStyle(AppColor.calmAccent); Spacer() }
                 HStack { LockPill(); Spacer() }
                 Text("Otto reads your evidence back to you. Free 808 keeps the evidence closed.")
                     .font(.system(size: 23, weight: .semibold, design: .rounded))
@@ -429,7 +427,10 @@ struct OttoUnavailableView: View {
     var body: some View {
         VStack(spacing: 14) {
             Spacer(minLength: 40)
-            OttoMark(size: 56, dimmed: true)
+            OttoSlothSitting(size: 96)
+                .tint(AppColor.calmAccent)
+                .foregroundStyle(AppColor.calmAccent)
+                .opacity(0.55)
             Text(OttoAvailability.headline)
                 .font(.system(size: 21, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
