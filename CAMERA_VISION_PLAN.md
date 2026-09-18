@@ -212,13 +212,34 @@ it is not close: median 4.7/min out, 11% within ±1.5, and the error grows as
 the real rate climbs.
 
 **The shape matters more than the size.** The camera does not scatter; it sits
-at 4 to 6/min while the wrist climbs past 13. It reads roughly the rate it
-locked onto during the paced opening and does not track upward. A tracker that
-behaves this way looks perfect on every paced sit and is wrong on every natural
-one, which is exactly the pattern that would survive a ground-truth programme
-made only of paced sits. Whether this is the tracker holding its path, or the
-ROI reading postural sway rather than the torso, is the open question; both
-show up as a slow steady rate.
+at 4 to 6/min while the wrist climbs past 13.
+
+**SIT 2 (`EC6EBFDD`) IDENTIFIED THE CAUSE, and it is not what sit 1 suggested.**
+The first reading was "it holds the rate it locked onto while paced". Sit 2
+refutes that: its paced phase drifted 7.5 → 6.8 → 5.7 and the camera followed
+it exactly (+0.0, -0.1, +0.0). It tracks a changing rate perfectly well. What
+it has is a **CEILING**. Pooling both sits, 115 windows where both instruments
+read a rate, bucketed by what the wrist called the truth:
+
+    wrist 3.5-6.0   n=20   camera 6.1   median err 0.17
+    wrist 6.0-7.5   n=34   camera 6.5   median err 0.27
+    wrist 7.5-9.0   n=27   camera 4.7   median err 3.03
+    wrist 9.0-11    n= 8   camera 6.7   median err 3.22
+    wrist 11+       n=26   camera 5.2   median err 9.11
+
+Excellent to about 7.5/min, then it degrades fast and falls back to something
+slow rather than reporting nothing. **The doorway band (≤9/min) is almost
+entirely inside the accurate range**, and fast natural breathing is displayed
+but never scored, so this may not block the feature. The danger is the
+converse: an instrument that says 5/min when the truth is 13 will say 5/min
+when there was no slow breathing at all. That is an invented doorway, a false
+claim rather than a missing one, and **group 4's controls are now the
+deciding experiment for whether the camera path ships at all.**
+
+Worth testing before tuning anything: whether the ceiling is the band-pass
+edge, the 10 fps sample rate (12/min is 0.2 Hz, far from Nyquist, so probably
+not), or the tracker's jump cost refusing to climb. The buckets above are the
+measurement to beat.
 
 **Consequence for the doorway.** It may not matter much. The doorway is
 defined over the first five minutes and is all-or-nothing, so a camera that
