@@ -182,6 +182,52 @@ Against the wrist's own curve, same rule as `camera_compare.py`:
   sits in section 5, item 1: **the camera reads a paced 12 as well as the
   wrist does, and refuses the doorway at that rate.**
 
+## 4b. FIRST PAIRED SIT, and a tool bug that flattered everything before it
+
+Aziz, 2026-09-17, sit 1 of the twenty: 6/min paced for three minutes, then
+five natural, phone at about a metre, Watch on. `7B2DB2FC`.
+
+**`camera_compare.py` was fitting the alignment it was supposed to measure.**
+It swept offsets 0 to 180 s and kept whichever minimised the median error. On
+this sit it chose 115 s and reported 1.43/min; the capture header says the true
+offset is 8.9 s, which gives **2.52/min**. It also searched positive offsets
+only, so it could never find the real one: the recorder always starts a few
+seconds AFTER the session. Fixed to read `recorder_started_at -
+session_started_at` from the capture header, with the search kept only as a
+labelled fallback for a headerless file. **Every camera-vs-wrist number
+produced before 2026-09-17 was fitted this way and is optimistic; re-run
+anything quoted in this file before relying on it**, including the 12/min
+in-app sit in commit `0ec6c1c`.
+
+**What the sit actually says.** Minute by minute, camera minus wrist:
+
+    paced    min 0  +0.3    min 1  +0.2    min 2  +0.1
+    natural  min 3  -1.3    min 4  -4.2    min 5  -2.0
+             min 6  -8.7    min 7  -7.4
+
+So on the thing the product claims, deliberate slow breathing at the start,
+the camera is **within 0.3/min of the wrist, every window** (n=17, 100% within
+±1.5), comfortably inside the ±0.5 target in section 5. On natural breathing
+it is not close: median 4.7/min out, 11% within ±1.5, and the error grows as
+the real rate climbs.
+
+**The shape matters more than the size.** The camera does not scatter; it sits
+at 4 to 6/min while the wrist climbs past 13. It reads roughly the rate it
+locked onto during the paced opening and does not track upward. A tracker that
+behaves this way looks perfect on every paced sit and is wrong on every natural
+one, which is exactly the pattern that would survive a ground-truth programme
+made only of paced sits. Whether this is the tracker holding its path, or the
+ROI reading postural sway rather than the torso, is the open question; both
+show up as a slow steady rate.
+
+**Consequence for the doorway.** It may not matter much. The doorway is
+defined over the first five minutes and is all-or-nothing, so a camera that
+reads slow breathing well and natural breathing badly can still score the
+doorway correctly. The risk is the reverse: a camera that always reads 4 to
+6/min will invent doorways in sits that had none, which is precisely what
+section 5's group 4 controls measure. **Those controls are now the most
+important four sits in the programme**, ahead of the counted ones.
+
 ## 5. Ground truth before anything ships
 
 The DEBUG collector (`CameraSignalRecorder`, Settings > Camera capture) is
