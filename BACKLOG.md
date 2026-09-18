@@ -4,6 +4,34 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## 1.1 IS THE SOCIAL RELEASE, AND IT WAITS FOR AZIZ (Melvin, 2026-09-18)
+
+Melvin: "push the social media aspect ASAP, because that seems most
+desirable by users right now", and Otto and camera vision would delay it
+over privacy-policy work. So branch **`social-1.1`** carries Friends ON for
+Release, Otto OFF, camera vision absent, version 1.1, plus the three asks
+(follower and following counts, one technique list for both pickers, Silence
+and Breath work). 359 tests green; Release compiles; beta 202609182145 is on
+Melvin's phone.
+
+**DECIDED: the CloudKit Console work and the first real iCloud round trip
+happen with Aziz, not before.** Nothing is submitted until both are done.
+The full list is RELEASE_CHECKLIST.md "OPEN for 1.1"; the two that matter
+most, because they break Friends on day one rather than fail review:
+
+1. The six public record types in PRODUCTION **with their queryable
+   indexes**. Indexes are never created lazily the way fields are, so
+   without them every feed, search and request fails on a real install while
+   the simulator's fake works perfectly. This is the 1.0 failure exactly.
+2. One real round trip on two phones: claim a username, add each other,
+   post a session, see it land, report and block. Friends has never run
+   against real iCloud beyond the username claim.
+
+Then: age rating (UGC and Social to Yes), privacy labels matching the
+manifest, the website redeploy so the live policy and terms carry the new
+sections, the report endpoint deployed so a report reaches a person, and
+store screenshots showing the Friends tab.
+
 ## Launch plan items with no record of being done (checked 2026-09-14)
 
 From `marketing/LAUNCH_PLAN.md` section 4, live day and weeks 1 to 2. Each
