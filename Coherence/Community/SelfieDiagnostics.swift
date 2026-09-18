@@ -21,6 +21,14 @@ import AVFoundation
 /// here can ever write a person's face to disk on the App Store app.
 enum SelfieDiagnostics {
 
+    /// OFF unless asked for. The dump writes the person's face to disk, so it
+    /// stays behind a switch now the bug it was built for is found: relaunch
+    /// with `SELFIE_DEBUG=1` in the environment (or
+    /// `SIMCTL_CHILD_SELFIE_DEBUG=1` on the simulator) to turn it back on.
+    static var enabled: Bool {
+        ProcessInfo.processInfo.environment["SELFIE_DEBUG"] == "1"
+    }
+
     static var folder: URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
         return docs.appendingPathComponent("SelfieDebug", isDirectory: true)
@@ -32,6 +40,7 @@ enum SelfieDiagnostics {
                      baked: UIImage,
                      final: UIImage,
                      connection: AVCaptureConnection?) {
+        guard enabled else { return }
         let fm = FileManager.default
         // A fresh folder each time: the newest capture is the only one that
         // matters and a stale file would be read as evidence.
