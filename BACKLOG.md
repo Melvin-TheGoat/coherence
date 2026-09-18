@@ -478,6 +478,18 @@ Works on iPhone 15 Pro and newer with Apple Intelligence turned on.
 
 ## In flight
 
+- **808 for Garmin** (Aziz, 2026-09-18, "lets start building the garmin
+  version as well"). Design record `GARMIN.md`; the Monkey C watch app is
+  scaffolded in `GarminWatch/` and has never been compiled. The watch
+  reduces and streams, the PHONE runs `SignalEngine`, because a watch app
+  gets 28.5 KB on an older fenix. Blocked on things only a founder can do:
+  a free Garmin developer account, a JDK, the Connect IQ SDK Manager. Not
+  blocked on owning a Garmin watch (the simulator is enough to build
+  against, and nobody on the team owns one). Open for the founders: whether
+  the Watch gate gets a third answer, whether Garmin's real RR intervals
+  get used when Apple's hardware cannot give them, and whether we take a
+  Connect IQ store listing.
+
 - **Onboarding: no sign-in until the end, and progress resumes** (Aziz,
   2026-09-14, from the PostHog finding that everyone who skipped the paywall
   used the screen-one sign-in link). Built and verified on the simulator,
