@@ -27,8 +27,6 @@ struct ProfileTab: View {
         FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
     }
     @State private var editingProfile = false
-    /// Otto, opened on the last ten sessions rather than one.
-    @State private var askingOtto = false
 
     /// A practiced day tapped on Home — filters the log below.
     @Binding var selectedDay: Date?
@@ -45,7 +43,6 @@ struct ProfileTab: View {
                     identity
                     if FeatureFlags.friends { profileActions }
                     statsRow
-                    if FeatureFlags.otto { ottoRow }
                     awardsSection
                     logSection
                 }
@@ -135,24 +132,14 @@ struct ProfileTab: View {
     }
 
     // MARK: - Otto
-
-    /// The second door to Otto (the first is the results screen). Its sheet
-    /// hangs on the row itself, not on the NavigationStack, which already
-    /// carries one: several `.sheet`s on one view is the only-one-presents
-    /// trap.
-    private var ottoRow: some View {
-        OttoRow(title: "Ask Otto",
-                subtitle: "Your last sessions, explained",
-                locked: !store.entitlements.otto) {
-            if !store.entitlements.otto {
-                Analytics.track(.lockedTapped(signal: "otto"))
-            }
-            askingOtto = true
-        }
-        .sheet(isPresented: $askingOtto) {
-            OttoView()
-        }
-    }
+    //
+    // Otto is NOT on this screen (Melvin, 2026-09-18: "the profile page is
+    // too crowded, i dont think otto should be in there"). Its door is the
+    // results screen, where a person is looking at the sit they want
+    // explained and the question has a subject. A row here asked the
+    // question with nothing in front of it, and cost the screen a section.
+    // `OttoView()` still opens on the last ten sessions when it is opened
+    // with no session id, so nothing about the general chat is lost.
 
     // MARK: - Awards
 
@@ -179,7 +166,6 @@ struct ProfileTab: View {
     private var awardsSection: some View {
         let items = awardProgress
         let earned = items.filter(\.isEarned)
-        let next = items.first { !$0.isEarned }
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -215,26 +201,12 @@ struct ProfileTab: View {
             }
             .scrollClipDisabled()
 
-            // One target at a time. A list of everything you have not done yet
-            // reads as a backlog rather than a next step.
-            if let next, next.progress > 0 {
-                VStack(alignment: .leading, spacing: 7) {
-                    HStack {
-                        Text("Next: \(next.award.title.lowercased())")
-                            .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.textPrimary)
-                        Spacer()
-                        if let text = next.progressText {
-                            Text(text)
-                                .font(AppFont.caption.weight(.semibold))
-                                .foregroundStyle(AppColor.accentGoldText)
-                                .monospacedDigit()
-                        }
-                    }
-                    ProgressBar(fraction: next.progress)
-                }
-                .card(padding: 13)
-            }
+            // The "Next: <award>" progress card was CUT (Melvin, same
+            // pass): on a screen that already shows the streak, the four
+            // stats, the shelf and every session, one more bar reads as
+            // another thing undone. The shelf itself already shows what is
+            // unearned, and "See all" carries the progress for anyone who
+            // wants it.
         }
     }
 

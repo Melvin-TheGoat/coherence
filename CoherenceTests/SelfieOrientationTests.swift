@@ -94,6 +94,26 @@ final class SelfieOrientationTests: XCTestCase {
         XCTAssertTrue(isWhite(twice, atX: 4, y: 4), "the mark should be back at the top left")
     }
 
+    /// WHAT AZIZ'S iPHONE 17 PRO MAX ACTUALLY PRODUCES, pulled off the device
+    /// on 2026-09-18 after four blind fixes had failed:
+    ///
+    ///     pixels 4032x3024 (landscape), orientation tag = down,
+    ///     connection videoRotationAngle = 90, isVideoMirrored = false
+    ///
+    /// So `videoRotationAngle` did NOT rotate the pixels, and the tag is
+    /// `.down` (a half turn), which leaves the frame landscape however it is
+    /// applied. Every earlier version either applied the tag and kept a
+    /// landscape image, or swapped the target and drew the shot on its side.
+    /// None of the other tests here covered this combination, which is why it
+    /// survived so long. The finished selfie must be portrait.
+    func test_theRealDeviceCase_landscapePixelsTaggedDown() {
+        let sensorFrame = portrait(.down, w: 4032, h: 3024)
+        let out = sensorFrame.uprightMirroredSelfie()
+        XCTAssertEqual(Int(out.size.width), 3024)
+        XCTAssertEqual(Int(out.size.height), 4032)
+        XCTAssertEqual(out.imageOrientation, .up)
+    }
+
     /// The raw front sensor frame: landscape pixels, no tag worth the name.
     /// Melvin's phone, 2026-09-17. It must leave portrait, turned clockwise
     /// and then mirrored, which puts the frame's top-left mark back at the

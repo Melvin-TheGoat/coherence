@@ -242,6 +242,24 @@ and reopen where they were left, with "Start a new chat" in the menu.
 Read a dozen answers on the phone before the flag flips; the lab found
 the voice plain and consistent, occasionally repetitive on long answers.
 
+## Otto is drawn, and two screens got their air back (2026-09-18): DONE
+
+Melvin: "can we generate Otto?" plus two UI notes. All three shipped.
+
+- **Otto is drawn in Swift** (`Coherence/Otto/OttoArt.swift`), not generated
+  and not commissioned. The path data is the approved mockup's, character
+  for character, so what ships is what was reviewed. `OttoMark` is now the
+  head badge and the locked and unavailable screens carry the sitting
+  figure. Still open if the founders want more character than a glyph: the
+  Fiverr brief in `mockups/otto-sloth.md` is written and still valid.
+- **The Friends feed has padding** (Melvin: "too crowded/dense, look at
+  Strava"). The post card was full bleed with the photo running wall to
+  wall; it is now an inset rounded card, one 18pt inset for every child,
+  the photo inset and rounded, 16pt between cards.
+- **The profile lost Otto and the "Next: <award>" bar** (Melvin: "too
+  crowded, i dont think otto should be in there"). Otto's door is the
+  results screen, where the question has a subject in front of it.
+
 ## Otto is a sloth (Melvin, 2026-09-16): direction chosen
 
 Melvin picked board 1 (Otto sitting cross-legged, eyes closed) for the big

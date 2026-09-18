@@ -184,20 +184,21 @@ struct FeedView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 16) {
                 header
                 searchField
                 if searched { searchResult }
                 if model.feed.isEmpty {
                     EmptyFeed(model: model, username: model.profile?.username ?? "")
                 } else {
-                    VStack(spacing: 8) {
+                    VStack(spacing: 16) {
                         ForEach(model.feed) { post in
                             PostCard(post: post, model: model) { reportTarget = .post(post.id) }
                         }
                     }
+                    .padding(.top, 2)
                     InviteButton(username: model.profile?.username ?? "", style: .quiet)
-                        .padding(.top, 6)
+                        .padding(.top, 10)
                 }
                 // Clears the raised plus and the tab bar. The feed's last
                 // item (the invite) sat under them with nowhere left to
@@ -249,8 +250,8 @@ struct FeedView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 14).padding(.vertical, 12)
-        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
     }
 
     @ViewBuilder
@@ -400,48 +401,63 @@ struct PostCard: View {
     private var isMine: Bool { post.author == model.myID }
 
     var body: some View {
+        // Spacing (Melvin, 2026-09-18: "too crowded/dense, look at Strava").
+        // The card used to bleed to both screen edges with 16pt inside it and
+        // the photo running wall to wall, so nothing had air around it and
+        // one card ran into the next. Now: an inset rounded card, one inset
+        // constant for every child (`inset`), the photo inset and rounded
+        // like the text, and a real gap between the groups. A feed is read at
+        // arm's length while scrolling, so the white space is what separates
+        // one person's sit from the next.
         VStack(alignment: .leading, spacing: 0) {
             header
-                .padding(.horizontal, 16).padding(.top, 14).padding(.bottom, 8)
+                .padding(.horizontal, Self.inset).padding(.top, Self.inset)
 
             Text(post.title.isEmpty ? "Meditation" : post.title)
                 .font(.system(size: 19, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
-                .padding(.horizontal, 16)
+                .padding(.horizontal, Self.inset).padding(.top, 14)
 
             if !post.caption.isEmpty {
                 Text(post.caption)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textPrimary)
-                    .padding(.horizontal, 16).padding(.top, 4)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, Self.inset).padding(.top, 6)
             }
 
-            HStack(alignment: .top, spacing: 26) {
+            HStack(alignment: .top, spacing: 22) {
                 stat("Score", "\(post.score)")
                 stat("Time", "\(post.minutes)m")
                 stat("Streak", "\(post.streak) day\(post.streak == 1 ? "" : "s")")
                 if let t = post.technique, !t.isEmpty { stat("Technique", t) }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 12)
+            .padding(.horizontal, Self.inset).padding(.top, 16)
 
             if let url = post.photoURL {
                 PostPhotoView(url: url)
+                    .padding(.horizontal, Self.inset).padding(.top, 16)
             }
 
             footer
-                .padding(.horizontal, 16).padding(.vertical, 10)
+                .padding(.horizontal, Self.inset)
+                .padding(.top, 16).padding(.bottom, Self.inset)
         }
-        .background(AppColor.backgroundSecondary)
-        .padding(.horizontal, -AppMetrics.screenPadding)
+        .background(AppColor.backgroundSecondary,
+                    in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
+
+    /// One inset for every child of the card, so nothing sits closer to an
+    /// edge than anything else.
+    private static let inset: CGFloat = 18
 
     private var header: some View {
         HStack(spacing: 10) {
             NavigationLink(value: post.author) {
-                HStack(spacing: 10) {
-                    PersonAvatar(name: author?.displayName, size: 38, photoURL: author?.avatarURL)
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 12) {
+                    PersonAvatar(name: author?.displayName, size: 42, photoURL: author?.avatarURL)
+                    VStack(alignment: .leading, spacing: 3) {
                         Text(displayName)
                             .font(AppFont.callout.weight(.semibold))
                             .foregroundStyle(AppColor.textPrimary)
@@ -482,7 +498,7 @@ struct PostCard: View {
     }
 
     private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(AppColor.textSecondary)
@@ -536,14 +552,16 @@ private struct PostPhotoView: View {
 
     var body: some View {
         // Same rule as the composer: the photo fills an overlay of a
-        // fixed-size frame, so a wide image can never widen the card.
+        // fixed-size frame, so a wide image can never widen the card. Rounded
+        // and inset by the caller, so it reads as one more element inside the
+        // card rather than a band cut through it.
         AppColor.backgroundPrimary.opacity(0.4)
             .frame(maxWidth: .infinity)
-            .frame(height: 360)
+            .frame(height: 340)
             .overlay {
                 if let image { Image(uiImage: image).resizable().scaledToFill() }
             }
-            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .task { image = UIImage(contentsOfFile: url.path) }
     }
 }
@@ -588,9 +606,9 @@ struct PersonRow<Trailing: View>: View {
     @ViewBuilder let trailing: () -> Trailing
 
     var body: some View {
-        HStack(spacing: 10) {
-            PersonAvatar(name: profile.displayName, size: 34, photoURL: profile.avatarURL)
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: 12) {
+            PersonAvatar(name: profile.displayName, size: 40, photoURL: profile.avatarURL)
+            VStack(alignment: .leading, spacing: 3) {
                 Text(profile.displayName.isEmpty ? "@" + profile.username : profile.displayName)
                     .font(AppFont.callout.weight(.semibold))
                     .foregroundStyle(AppColor.textPrimary)
@@ -601,7 +619,7 @@ struct PersonRow<Trailing: View>: View {
             Spacer()
             trailing()
         }
-        .padding(.vertical, 9)
+        .padding(.vertical, 12)
         .fullyTappable()
     }
 }
@@ -664,7 +682,7 @@ struct RequestsView: View {
                                 .font(AppFont.caption.weight(.bold))
                                 .foregroundStyle(AppColor.textSecondary)
                         }
-                        .padding(.vertical, 9)
+                        .padding(.vertical, 12)
                     }
                 }
             }
