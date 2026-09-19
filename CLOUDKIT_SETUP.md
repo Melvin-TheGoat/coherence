@@ -27,6 +27,33 @@ requests are the whole feature.
 
 ---
 
+## What is actually there (read off the Console, 2026-09-19)
+
+All seven record types already exist in Development. Four of them have **no
+fields at all**, only the six system metadata rows, because nobody has ever
+added a friend, reacted, blocked or reported against this container. **Zero
+indexes exist.**
+
+| Type | Custom fields present | Missing |
+|---|---|---|
+| Post | all 11 | none |
+| Profile | 4 | `avatar` |
+| Username | 1 | none |
+| FriendEdge | 0 | `from`, `to`, `createdAt` |
+| Reaction | 0 | `post`, `author`, `createdAt` |
+| Block | 0 | `from`, `to` |
+| Report | 0 | `reporter`, `target`, `targetType`, `reason`, `createdAt` |
+
+**Production never creates fields lazily.** Development does, on first write;
+Production only ever gets what a promotion hands it. So every field the app
+writes must exist in Development BEFORE deploying, or the write fails in
+Production exactly the way 1.0's sync did. Step 2 is therefore adding the 14
+missing fields by hand, not creating types.
+
+Note: the 808 Dev beta writes to `iCloud.com.lockout.meditate808.dev`, a
+different container. Only a normal Xcode build on the production bundle id
+touches this one.
+
 ## Step 1: check what Development already has
 
 Console → your container → **Schema → Record Types**, Development.
@@ -35,13 +62,19 @@ Friends has never run against real iCloud beyond one username claim, so
 expect most of this to be missing. Whatever is there, the list below is what
 must exist by the end.
 
-## Step 2: create the seven record types
+## Step 2: add the 14 missing fields
 
-The release checklist said six. It is **seven**: `Username` is a separate
-type that reserves a handle, and without it nobody can claim one.
+Record Types → pick the type → under **Record Fields** press **+** → type the
+name, pick the type → **Save Changes**. Field names are case-sensitive.
 
-Create any that are missing, in the PUBLIC database, with these fields and
-types exactly. Field names are case-sensitive.
+- **FriendEdge**: `from` Reference, `to` Reference, `createdAt` Date/Time
+- **Reaction**: `post` Reference, `author` Reference, `createdAt` Date/Time
+- **Block**: `from` Reference, `to` Reference
+- **Report**: `reporter` Reference, `target` Reference, `targetType` String,
+  `reason` String, `createdAt` Date/Time
+- **Profile**: `avatar` Asset
+
+The full field list for every type, for checking against:
 
 **Profile** — one per iCloud user, record name `profile-<userRecordName>`
 | Field | Type |
