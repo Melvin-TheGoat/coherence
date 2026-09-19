@@ -4,6 +4,24 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## A second app: "Unlock" (Aziz, 2026-09-18). 808 is not cancelled
+
+Aziz's brief: an iPhone app that keeps chosen apps locked every morning until
+you say your affirmations out loud. Its own project, its own directory
+(`~/Documents/Unlock`, `UNLOCK.md`), deliberately NOT folded into 808.
+
+The reasoning, so it is not re-argued: 808 cannot be said in three seconds,
+and at about 41 installs with no paying users outside the team, every other
+problem follows from that. Unlock can be said in three seconds and shown
+rather than explained, it needs no Watch, competitors already charge for the
+behaviour (which is a good sign where their absence was a bad one for 808),
+and the first version is small enough to lose only a couple of weeks.
+
+**What this means for 808: nothing changes and nothing is deleted.** It stays
+as it is. If Unlock works, 808's biofeedback could become a premium tier
+later. Everything in this file stands; it is just not where the next
+fortnight goes.
+
 ## Other wearables: Garmin, Oura, Samsung, "any brand" (Aziz asked, 2026-09-18; needs a founders' call)
 
 What 808 needs from a device during a sit: motion at tens of Hz (stillness
