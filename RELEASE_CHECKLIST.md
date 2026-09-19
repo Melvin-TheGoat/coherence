@@ -100,11 +100,18 @@ on it.
 
 **The rest is not code and none of it can be skipped:**
 
-- [ ] **CloudKit Console, `iCloud.com.lockout.meditate808`:** the six PUBLIC
-  record types (Profile, FriendEdge, Post, Reaction, Block, Report) with
-  queryable indexes on `username`, `from`, `to`, `author`, `post`,
-  `practicedAt`, `createdAt`; security roles `_world` read / `_creator`
-  write on each; AND the four new `CD_Preferences` fields
+- [ ] **CloudKit Console: follow `CLOUDKIT_SETUP.md`**, which has the exact
+  types, fields, indexes and roles derived from the code, plus the round trip
+  to run before promoting. Summary, `iCloud.com.lockout.meditate808`: the six PUBLIC
+  **SEVEN** public record types (Profile, Username, FriendEdge, Post,
+  Reaction, Block, Report: the earlier count of six missed Username, and
+  without it no handle can be claimed) and exactly SEVEN indexes, which are
+  fewer and different from what this line used to claim: QUERYABLE on
+  `FriendEdge.from`, `FriendEdge.to`, `Post.author`, `Reaction.post`,
+  `Block.from`, `Block.to`, and SORTABLE on `Post.practicedAt`. Profile and
+  Username are fetched by record name and never queried, so they need no
+  index. Security roles `_world` read / `_creator` write on each; AND the
+  four new `CD_Preferences` fields
   (`evidenceGrantRemaining`, `evidenceGrantSince`, `rewardedFriends`,
   `grantedSessionIDs`). Run the schema primer on a dev build, then deploy
   Development → Production. A promotion is a release step (the 1.0 lesson).
