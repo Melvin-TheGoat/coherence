@@ -11,15 +11,18 @@ final class Preferences {
     var defaultDurationSec: Int?          // nil = open-ended
     var remindersEnabled: Bool = false
     var reminderTime: Date?
-    /// Dark by default (Aziz, 2026-08-08): every screen was designed
-    /// dark-first, so first impressions match the design intent. Light and
-    /// system stay available in Settings; existing users keep whatever they
-    /// had stored.
-    var theme: String = "dark"
+    /// Light by default (Aziz, 2026-09-19). It was dark from 2026-08-08, when
+    /// every screen had been designed dark-first. The palette is now taken out
+    /// of Otto's artwork, which is cream, and a warm character on a near-black
+    /// ground is the one arrangement that makes him look pasted on. Dark and
+    /// system stay available in Settings and both get the same warm treatment;
+    /// existing users keep whatever they had stored, so this only changes the
+    /// first impression, which is the thing it is meant to change.
+    var theme: String = "light"
     /// The same default, readable before any row exists. `RootView` applies
     /// it to onboarding, which runs before the first Preferences row is
     /// written. Keep the two in lockstep.
-    static let defaultTheme: Theme = .dark
+    static let defaultTheme: Theme = .light
     var hapticsEnabled: Bool = true
     var createdAt: Date = Date()
     var updatedAt: Date = Date()
@@ -52,7 +55,13 @@ final class Preferences {
         defaultDurationSec: Int? = nil,
         remindersEnabled: Bool = false,
         reminderTime: Date? = nil,
-        theme: String = "system",
+        // THREE places carry this default and all three must agree: the stored
+        // property, `defaultTheme`, and this initialiser. The initialiser is
+        // the one that actually decides, because that is how a row gets made,
+        // and it silently said "system" while the other two said "dark" for
+        // six weeks. On a light-mode phone that was invisible; on a dark one it
+        // looked correct for the wrong reason.
+        theme: String = "light",
         hapticsEnabled: Bool = true,
         createdAt: Date = Date(),
         updatedAt: Date = Date()

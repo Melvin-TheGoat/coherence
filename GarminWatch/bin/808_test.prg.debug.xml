@@ -1,0 +1,899 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<debugInfo>
+    <manifest filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/manifest.xml"/>
+    <pcToLineNum>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="201" parent="globals" pc="268435460" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="202" parent="globals" pc="268435471" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="202" parent="globals" pc="268435475" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="202" parent="globals" pc="268435479" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="203" parent="globals" pc="268435483" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="204" parent="globals" pc="268435495" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="206" parent="globals" pc="268435505" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="207" parent="globals" pc="268435545" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="208" parent="globals" pc="268435556" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="210" parent="globals" pc="268435587" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="211" parent="globals" pc="268435621" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="212" parent="globals" pc="268435637" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="1" lineNum="213" parent="globals" pc="268435661" symbol="test_aShakeReadsAsMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="2" lineNum="5" parent="globals" pc="268435667" symbol="getTestObject"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="2" lineNum="6" parent="globals" pc="268435677" symbol="getTestObject"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="65" parent="globals" pc="268435696" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="66" parent="globals" pc="268435707" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="66" parent="globals" pc="268435710" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="67" parent="globals" pc="268435713" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="68" parent="globals" pc="268435717" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="69" parent="globals" pc="268435736" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="70" parent="globals" pc="268435758" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="71" parent="globals" pc="268435765" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="3" lineNum="73" parent="globals" pc="268435775" symbol="meanOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="4" lineNum="191" parent="globals" pc="268435798" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="4" lineNum="192" parent="globals" pc="268435809" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="4" lineNum="193" parent="globals" pc="268435832" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="4" lineNum="194" parent="globals" pc="268435874" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="4" lineNum="195" parent="globals" pc="268435890" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="4" lineNum="196" parent="globals" pc="268435914" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/Rez.mcgen" id="5" lineNum="7" parent="globals/Rez" pc="268435920" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="6" lineNum="97" parent="globals" pc="268435940" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="6" lineNum="99" parent="globals" pc="268435951" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="6" lineNum="100" parent="globals" pc="268435971" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="6" lineNum="101" parent="globals" pc="268436013" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="6" lineNum="102" parent="globals" pc="268436028" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="6" lineNum="103" parent="globals" pc="268436052" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="139" parent="globals" pc="268436071" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="140" parent="globals" pc="268436082" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="140" parent="globals" pc="268436086" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="140" parent="globals" pc="268436090" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="141" parent="globals" pc="268436094" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="142" parent="globals" pc="268436105" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="143" parent="globals" pc="268436115" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="144" parent="globals" pc="268436149" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="145" parent="globals" pc="268436179" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="146" parent="globals" pc="268436190" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="7" lineNum="148" parent="globals" pc="268436230" symbol="breathingPrecise"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="8" lineNum="107" parent="globals" pc="268436250" symbol="test_rollReadsTheOtherAxis"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="8" lineNum="108" parent="globals" pc="268436261" symbol="test_rollReadsTheOtherAxis"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="8" lineNum="109" parent="globals" pc="268436281" symbol="test_rollReadsTheOtherAxis"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="8" lineNum="110" parent="globals" pc="268436323" symbol="test_rollReadsTheOtherAxis"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="8" lineNum="111" parent="globals" pc="268436339" symbol="test_rollReadsTheOtherAxis"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="8" lineNum="112" parent="globals" pc="268436363" symbol="test_rollReadsTheOtherAxis"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="9" lineNum="4" parent="globals/SessionDelegate" pc="268436382" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="10" lineNum="5" parent="globals/EightZeroEightApp" pc="268436394" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="11" lineNum="129" parent="globals" pc="268436406" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="11" lineNum="130" parent="globals" pc="268436417" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="11" lineNum="131" parent="globals" pc="268436440" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="11" lineNum="132" parent="globals" pc="268436482" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="11" lineNum="133" parent="globals" pc="268436497" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="11" lineNum="134" parent="globals" pc="268436521" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="219" parent="globals" pc="268436538" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="220" parent="globals" pc="268436549" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="221" parent="globals" pc="268436569" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="222" parent="globals" pc="268436589" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="223" parent="globals" pc="268436613" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="224" parent="globals" pc="268436637" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="225" parent="globals" pc="268436662" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="226" parent="globals" pc="268436678" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="12" lineNum="227" parent="globals" pc="268436696" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="13" lineNum="10" parent="globals/RunNoEvil" pc="268436702" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="24" parent="globals" pc="268436714" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="25" parent="globals" pc="268436725" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="25" parent="globals" pc="268436729" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="25" parent="globals" pc="268436733" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="26" parent="globals" pc="268436737" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="27" parent="globals" pc="268436748" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="27" parent="globals" pc="268436765" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="27" parent="globals" pc="268436782" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="14" lineNum="29" parent="globals" pc="268436809" symbol="steady"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="34" parent="globals" pc="268436829" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="35" parent="globals" pc="268436840" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="35" parent="globals" pc="268436844" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="35" parent="globals" pc="268436848" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="36" parent="globals" pc="268436852" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="37" parent="globals" pc="268436863" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="38" parent="globals" pc="268436873" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="39" parent="globals" pc="268436907" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="40" parent="globals" pc="268436943" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="41" parent="globals" pc="268436954" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="15" lineNum="43" parent="globals" pc="268437000" symbol="breathing"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="16" lineNum="13" parent="globals/SessionView" pc="268437020" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="53" parent="globals" pc="268437032" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="54" parent="globals" pc="268437043" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="54" parent="globals" pc="268437046" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="55" parent="globals" pc="268437049" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="56" parent="globals" pc="268437053" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="57" parent="globals" pc="268437072" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="58" parent="globals" pc="268437091" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="58" parent="globals" pc="268437105" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="59" parent="globals" pc="268437112" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="59" parent="globals" pc="268437126" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="60" parent="globals" pc="268437133" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="17" lineNum="62" parent="globals" pc="268437143" symbol="spread"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="18" lineNum="118" parent="globals" pc="268437165" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="18" lineNum="119" parent="globals" pc="268437176" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="18" lineNum="120" parent="globals" pc="268437199" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="18" lineNum="121" parent="globals" pc="268437241" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="18" lineNum="122" parent="globals" pc="268437256" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="18" lineNum="123" parent="globals" pc="268437280" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="86" parent="globals" pc="268437297" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="87" parent="globals" pc="268437308" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="88" parent="globals" pc="268437328" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="89" parent="globals" pc="268437370" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="90" parent="globals" pc="268437385" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="91" parent="globals" pc="268437401" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="92" parent="globals" pc="268437417" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="19" lineNum="93" parent="globals" pc="268437453" symbol="test_flatWristReadsZeroTilt"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="20" lineNum="77" parent="globals" pc="268437503" symbol="test_binningShape"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="20" lineNum="78" parent="globals" pc="268437514" symbol="test_binningShape"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="20" lineNum="79" parent="globals" pc="268437533" symbol="test_binningShape"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="20" lineNum="81" parent="globals" pc="268437575" symbol="test_binningShape"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="20" lineNum="82" parent="globals" pc="268437604" symbol="test_binningShape"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="21" lineNum="178" parent="globals" pc="268437615" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="21" lineNum="179" parent="globals" pc="268437626" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="21" lineNum="180" parent="globals" pc="268437649" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="21" lineNum="181" parent="globals" pc="268437691" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="21" lineNum="184" parent="globals" pc="268437706" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="21" lineNum="185" parent="globals" pc="268437730" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="22" lineNum="167" parent="globals" pc="268437753" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="22" lineNum="168" parent="globals" pc="268437764" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="22" lineNum="169" parent="globals" pc="268437787" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="22" lineNum="170" parent="globals" pc="268437829" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="22" lineNum="173" parent="globals" pc="268437844" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" id="22" lineNum="174" parent="globals" pc="268437868" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="23" lineNum="13" parent="globals/Bridge" pc="268437891" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="50" parent="globals/Capture" pc="268437903" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="51" parent="globals/Capture" pc="268437905" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="51" parent="globals/Capture" pc="268437913" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="52" parent="globals/Capture" pc="268437917" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="53" parent="globals/Capture" pc="268437934" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="54" parent="globals/Capture" pc="268437959" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="56" parent="globals/Capture" pc="268437967" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="61" parent="globals/Capture" pc="268438018" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="63" parent="globals/Capture" pc="268438030" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="64" parent="globals/Capture" pc="268438048" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="65" parent="globals/Capture" pc="268438074" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="70" parent="globals/Capture" pc="268438157" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="25" lineNum="90" parent="globals/Capture" pc="268438166" symbol="elapsedSec"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="25" lineNum="91" parent="globals/Capture" pc="268438168" symbol="elapsedSec"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="100" parent="globals/Capture" pc="268438179" symbol="onSensor"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="101" parent="globals/Capture" pc="268438181" symbol="onSensor"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="102" parent="globals/Capture" pc="268438203" symbol="onSensor"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="106" parent="globals/Capture" pc="268438221" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="107" parent="globals/Capture" pc="268438224" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="108" parent="globals/Capture" pc="268438232" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="108" parent="globals/Capture" pc="268438238" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="110" parent="globals/Capture" pc="268438242" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="111" parent="globals/Capture" pc="268438250" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="112" parent="globals/Capture" pc="268438258" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="113" parent="globals/Capture" pc="268438266" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="113" parent="globals/Capture" pc="268438284" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="115" parent="globals/Capture" pc="268438288" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="117" parent="globals/Capture" pc="268438309" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="118" parent="globals/Capture" pc="268438313" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="119" parent="globals/Capture" pc="268438321" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="120" parent="globals/Capture" pc="268438338" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="123" parent="globals/Capture" pc="268438350" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="124" parent="globals/Capture" pc="268438365" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="73" parent="globals/Capture" pc="268438445" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="74" parent="globals/Capture" pc="268438447" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="74" parent="globals/Capture" pc="268438456" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="75" parent="globals/Capture" pc="268438460" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="76" parent="globals/Capture" pc="268438471" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="77" parent="globals/Capture" pc="268438485" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="78" parent="globals/Capture" pc="268438494" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="79" parent="globals/Capture" pc="268438506" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="80" parent="globals/Capture" pc="268438518" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="82" parent="globals/Capture" pc="268438529" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="83" parent="globals/Capture" pc="268438537" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="37" parent="globals/Capture" pc="268438571" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="38" parent="globals/Capture" pc="268438573" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="39" parent="globals/Capture" pc="268438582" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="40" parent="globals/Capture" pc="268438607" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="41" parent="globals/Capture" pc="268438615" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="42" parent="globals/Capture" pc="268438623" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="43" parent="globals/Capture" pc="268438631" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="30" lineNum="86" parent="globals/Capture" pc="268438640" symbol="elapsedMs"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="30" lineNum="87" parent="globals/Capture" pc="268438642" symbol="elapsedMs"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="31" lineNum="26" parent="globals/SessionDelegate" pc="268438673" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="31" lineNum="27" parent="globals/SessionDelegate" pc="268438675" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="31" lineNum="28" parent="globals/SessionDelegate" pc="268438688" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="31" lineNum="29" parent="globals/SessionDelegate" pc="268438700" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="31" lineNum="30" parent="globals/SessionDelegate" pc="268438711" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="31" lineNum="32" parent="globals/SessionDelegate" pc="268438716" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="32" lineNum="8" parent="globals/SessionDelegate" pc="268438718" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="32" lineNum="9" parent="globals/SessionDelegate" pc="268438720" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="32" lineNum="10" parent="globals/SessionDelegate" pc="268438732" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="33" lineNum="16" parent="globals/SessionDelegate" pc="268438742" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="33" lineNum="17" parent="globals/SessionDelegate" pc="268438744" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="33" lineNum="18" parent="globals/SessionDelegate" pc="268438757" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="33" lineNum="20" parent="globals/SessionDelegate" pc="268438772" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="33" lineNum="22" parent="globals/SessionDelegate" pc="268438784" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="33" lineNum="23" parent="globals/SessionDelegate" pc="268438795" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="34" lineNum="14" parent="globals/EightZeroEightApp" pc="268438797" symbol="onStart"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="34" lineNum="15" parent="globals/EightZeroEightApp" pc="268438799" symbol="onStart"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="34" lineNum="16" parent="globals/EightZeroEightApp" pc="268438824" symbol="onStart"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="35" lineNum="27" parent="globals/EightZeroEightApp" pc="268438855" symbol="getInitialView"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="35" lineNum="28" parent="globals/EightZeroEightApp" pc="268438857" symbol="getInitialView"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="36" lineNum="10" parent="globals/EightZeroEightApp" pc="268438914" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="36" lineNum="11" parent="globals/EightZeroEightApp" pc="268438916" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="37" lineNum="21" parent="globals/EightZeroEightApp" pc="268438929" symbol="onStop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="37" lineNum="22" parent="globals/EightZeroEightApp" pc="268438931" symbol="onStop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="37" lineNum="23" parent="globals/EightZeroEightApp" pc="268438940" symbol="onStop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="38" lineNum="40" parent="globals/RunNoEvil" pc="268438956" symbol="getNumberOfTests"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="38" lineNum="41" parent="globals/RunNoEvil" pc="268438958" symbol="getNumberOfTests"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="21" parent="globals/RunNoEvil" pc="268438970" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="22" parent="globals/RunNoEvil" pc="268438973" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="23" parent="globals/RunNoEvil" pc="268438987" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="26" parent="globals/RunNoEvil" pc="268439006" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="27" parent="globals/RunNoEvil" pc="268439019" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="28" parent="globals/RunNoEvil" pc="268439030" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="29" parent="globals/RunNoEvil" pc="268439051" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="39" lineNum="33" parent="globals/RunNoEvil" pc="268439067" symbol="getIndexOf"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="58" parent="globals/RunNoEvil" pc="268439070" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="59" parent="globals/RunNoEvil" pc="268439073" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="60" parent="globals/RunNoEvil" pc="268439076" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="61" parent="globals/RunNoEvil" pc="268439083" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="62" parent="globals/RunNoEvil" pc="268439102" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="63" parent="globals/RunNoEvil" pc="268439110" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="64" parent="globals/RunNoEvil" pc="268439129" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="65" parent="globals/RunNoEvil" pc="268439137" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="66" parent="globals/RunNoEvil" pc="268439156" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="67" parent="globals/RunNoEvil" pc="268439164" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="68" parent="globals/RunNoEvil" pc="268439183" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="69" parent="globals/RunNoEvil" pc="268439191" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="70" parent="globals/RunNoEvil" pc="268439210" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="71" parent="globals/RunNoEvil" pc="268439218" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="72" parent="globals/RunNoEvil" pc="268439237" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="73" parent="globals/RunNoEvil" pc="268439245" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="74" parent="globals/RunNoEvil" pc="268439264" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="75" parent="globals/RunNoEvil" pc="268439272" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="76" parent="globals/RunNoEvil" pc="268439291" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="77" parent="globals/RunNoEvil" pc="268439299" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="78" parent="globals/RunNoEvil" pc="268439318" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="79" parent="globals/RunNoEvil" pc="268439326" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="80" parent="globals/RunNoEvil" pc="268439345" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="81" parent="globals/RunNoEvil" pc="268439353" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="40" lineNum="84" parent="globals/RunNoEvil" pc="268439372" symbol="evaluate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="41" lineNum="14" parent="globals/RunNoEvil" pc="268439375" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="41" lineNum="15" parent="globals/RunNoEvil" pc="268439377" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="41" lineNum="16" parent="globals/RunNoEvil" pc="268439393" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="41" lineNum="17" parent="globals/RunNoEvil" pc="268439422" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="41" lineNum="18" parent="globals/RunNoEvil" pc="268439432" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="44" parent="globals/RunNoEvil" pc="268439440" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="45" parent="globals/RunNoEvil" pc="268439442" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="46" parent="globals/RunNoEvil" pc="268439454" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="47" parent="globals/RunNoEvil" pc="268439467" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="48" parent="globals/RunNoEvil" pc="268439480" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="49" parent="globals/RunNoEvil" pc="268439493" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="50" parent="globals/RunNoEvil" pc="268439506" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="51" parent="globals/RunNoEvil" pc="268439519" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="52" parent="globals/RunNoEvil" pc="268439532" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="53" parent="globals/RunNoEvil" pc="268439545" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="54" parent="globals/RunNoEvil" pc="268439558" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="42" lineNum="55" parent="globals/RunNoEvil" pc="268439571" symbol="populate_test_entries_0_to_11"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="87" parent="globals/RunNoEvil" pc="268439585" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="88" parent="globals/RunNoEvil" pc="268439588" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="89" parent="globals/RunNoEvil" pc="268439592" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="90" parent="globals/RunNoEvil" pc="268439607" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="93" parent="globals/RunNoEvil" pc="268439622" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="94" parent="globals/RunNoEvil" pc="268439649" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="95" parent="globals/RunNoEvil" pc="268439652" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="96" parent="globals/RunNoEvil" pc="268439660" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="99" parent="globals/RunNoEvil" pc="268439680" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="100" parent="globals/RunNoEvil" pc="268439695" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="43" lineNum="103" parent="globals/RunNoEvil" pc="268439701" symbol="runTest"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="44" lineNum="36" parent="globals/RunNoEvil" pc="268439703" symbol="getTestName"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/UnitTests.mcgen" id="44" lineNum="37" parent="globals/RunNoEvil" pc="268439705" symbol="getTestName"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="45" lineNum="23" parent="globals/SessionView" pc="268439714" symbol="onShow"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="45" lineNum="24" parent="globals/SessionView" pc="268439716" symbol="onShow"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="45" lineNum="25" parent="globals/SessionView" pc="268439745" symbol="onShow"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="46" lineNum="18" parent="globals/SessionView" pc="268439777" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="46" lineNum="19" parent="globals/SessionView" pc="268439779" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="46" lineNum="20" parent="globals/SessionView" pc="268439791" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="47" lineNum="28" parent="globals/SessionView" pc="268439801" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="47" lineNum="29" parent="globals/SessionView" pc="268439803" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="47" lineNum="30" parent="globals/SessionView" pc="268439812" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="47" lineNum="31" parent="globals/SessionView" pc="268439824" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="48" lineNum="35" parent="globals/SessionView" pc="268439836" symbol="tick"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="48" lineNum="36" parent="globals/SessionView" pc="268439838" symbol="tick"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="39" parent="globals/SessionView" pc="268439850" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="40" parent="globals/SessionView" pc="268439853" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="41" parent="globals/SessionView" pc="268439865" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="43" parent="globals/SessionView" pc="268439873" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="44" parent="globals/SessionView" pc="268439885" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="46" parent="globals/SessionView" pc="268439897" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="47" parent="globals/SessionView" pc="268439911" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="48" parent="globals/SessionView" pc="268439928" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="50" parent="globals/SessionView" pc="268439954" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="51" parent="globals/SessionView" pc="268439971" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="53" parent="globals/SessionView" pc="268439996" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="55" parent="globals/SessionView" pc="268440021" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="58" parent="globals/SessionView" pc="268440025" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="59" parent="globals/SessionView" pc="268440038" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="61" parent="globals/SessionView" pc="268440083" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="62" parent="globals/SessionView" pc="268440100" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="65" parent="globals/SessionView" pc="268440123" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="66" parent="globals/SessionView" pc="268440140" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="49" lineNum="68" parent="globals/SessionView" pc="268440174" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="58" parent="globals/Reducer" pc="268440197" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="59" parent="globals/Reducer" pc="268440200" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="60" parent="globals/Reducer" pc="268440209" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="60" parent="globals/Reducer" pc="268440222" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="61" parent="globals/Reducer" pc="268440234" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="61" parent="globals/Reducer" pc="268440247" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="63" parent="globals/Reducer" pc="268440259" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="64" parent="globals/Reducer" pc="268440263" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="66" parent="globals/Reducer" pc="268440266" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="67" parent="globals/Reducer" pc="268440277" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="68" parent="globals/Reducer" pc="268440280" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="69" parent="globals/Reducer" pc="268440283" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="71" parent="globals/Reducer" pc="268440286" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="72" parent="globals/Reducer" pc="268440297" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="73" parent="globals/Reducer" pc="268440313" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="74" parent="globals/Reducer" pc="268440329" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="76" parent="globals/Reducer" pc="268440345" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="77" parent="globals/Reducer" pc="268440354" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="77" parent="globals/Reducer" pc="268440363" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="77" parent="globals/Reducer" pc="268440372" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="78" parent="globals/Reducer" pc="268440381" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="78" parent="globals/Reducer" pc="268440390" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="78" parent="globals/Reducer" pc="268440399" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="79" parent="globals/Reducer" pc="268440408" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="81" parent="globals/Reducer" pc="268440419" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="82" parent="globals/Reducer" pc="268440446" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="83" parent="globals/Reducer" pc="268440473" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="84" parent="globals/Reducer" pc="268440500" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="85" parent="globals/Reducer" pc="268440527" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="86" parent="globals/Reducer" pc="268440554" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="90" parent="globals/Reducer" pc="268440581" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="91" parent="globals/Reducer" pc="268440640" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="94" parent="globals/Reducer" pc="268440667" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="95" parent="globals/Reducer" pc="268440677" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="96" parent="globals/Reducer" pc="268440687" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="97" parent="globals/Reducer" pc="268440697" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="100" parent="globals/Reducer" pc="268440729" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="101" parent="globals/Reducer" pc="268440756" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="102" parent="globals/Reducer" pc="268440783" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="103" parent="globals/Reducer" pc="268440822" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="50" lineNum="106" parent="globals/Reducer" pc="268440832" symbol="reduce"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="49" parent="globals/Reducer" pc="268440835" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="50" parent="globals/Reducer" pc="268440837" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="51" parent="globals/Reducer" pc="268440845" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="51" parent="globals/Reducer" pc="268440853" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="51" parent="globals/Reducer" pc="268440861" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="52" parent="globals/Reducer" pc="268440869" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="52" parent="globals/Reducer" pc="268440877" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Reducer.mc" id="51" lineNum="52" parent="globals/Reducer" pc="268440885" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="52" lineNum="38" parent="globals/Bridge" pc="268440894" symbol="delivering"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="52" lineNum="39" parent="globals/Bridge" pc="268440896" symbol="delivering"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="53" lineNum="32" parent="globals/Bridge" pc="268440918" symbol="onError"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="53" lineNum="33" parent="globals/Bridge" pc="268440920" symbol="onError"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="54" lineNum="28" parent="globals/Bridge" pc="268440936" symbol="onComplete"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="54" lineNum="29" parent="globals/Bridge" pc="268440938" symbol="onComplete"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="55" lineNum="18" parent="globals/Bridge" pc="268440954" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="55" lineNum="19" parent="globals/Bridge" pc="268440956" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="55" lineNum="20" parent="globals/Bridge" pc="268440968" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="55" lineNum="21" parent="globals/Bridge" pc="268440976" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="56" lineNum="24" parent="globals/Bridge" pc="268440985" symbol="send"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="56" lineNum="25" parent="globals/Bridge" pc="268440987" symbol="send"/>
+    </pcToLineNum>
+    <symbolTable>
+        <entry id="8388639" module="true" symbol="Graphics"/>
+        <entry field="true" id="8389792" method="true" symbol="getTestName"/>
+        <entry id="8388632" method="true" symbol="&lt;init&gt;"/>
+        <entry id="55" method="true" symbol="delivering"/>
+        <entry field="true" id="41" symbol="&lt;globals/RunNoEvil/&lt;&gt;idToName&gt;"/>
+        <entry id="8388638" module="true" symbol="ActivityRecording"/>
+        <entry field="true" id="42" symbol="&lt;globals/RunNoEvil/&lt;&gt;logger&gt;"/>
+        <entry field="true" id="8388890" symbol="sport"/>
+        <entry field="true" id="45" symbol="ticker"/>
+        <entry id="19" method="true" symbol="test_aNewPostureIsAbsorbed"/>
+        <entry id="18" method="true" symbol="test_aFastBreathAlsoSurvives"/>
+        <entry id="9" object="true" symbol="RunNoEvil"/>
+        <entry id="20" method="true" symbol="test_aShakeReadsAsMovement"/>
+        <entry field="true" id="29" symbol="bridge"/>
+        <entry field="true" id="8388611" module="true" symbol="Toybox"/>
+        <entry id="8388649" module="true" object="true" symbol="Test"/>
+        <entry field="true" id="60" symbol="AppName"/>
+        <entry id="4" module="true" symbol="globals/Rez/Strings"/>
+        <entry field="true" id="46" symbol="BIN"/>
+        <entry field="true" id="34" symbol="reducer"/>
+        <entry id="8388631" module="true" symbol="Activity"/>
+        <entry id="8388648" module="true" symbol="WatchUi"/>
+        <entry id="8389081" method="true" symbol="onBack"/>
+        <entry field="true" id="56" symbol="dropped"/>
+        <entry id="2" module="true" symbol="globals/Rez"/>
+        <entry field="true" id="28" symbol="batches"/>
+        <entry id="31" method="true" symbol="elapsedSec"/>
+        <entry id="8389568" method="true" symbol="runTest"/>
+        <entry id="8389124" method="true" symbol="onUpdate"/>
+        <entry field="true" id="38" symbol="capture"/>
+        <entry field="true" id="54" symbol="tz"/>
+        <entry field="true" id="53" symbol="ty"/>
+        <entry field="true" id="52" symbol="tx"/>
+        <entry id="26" method="true" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <entry id="8388771" module="true" object="true" symbol="Drawables"/>
+        <entry id="5" object="true" symbol="Bridge"/>
+        <entry id="15" method="true" symbol="spread"/>
+        <entry field="true" id="49" symbol="gz"/>
+        <entry field="true" id="48" symbol="gy"/>
+        <entry field="true" id="47" symbol="gx"/>
+        <entry field="true" id="8390134" symbol="sampleRate"/>
+        <entry field="true" id="50" symbol="primed"/>
+        <entry id="8390648" symbol="accelerometer"/>
+        <entry field="true" id="8390655" symbol="heartBeatIntervals"/>
+        <entry id="44" method="true" symbol="tick"/>
+        <entry id="40" method="true" symbol="getIndexOf"/>
+        <entry id="32" method="true" symbol="onData"/>
+        <entry id="8388637" module="true" symbol="Communications"/>
+        <entry id="3" module="true" symbol="globals/Rez/Drawables"/>
+        <entry id="13" method="true" symbol="breathingPrecise"/>
+        <entry id="8388828" method="true" symbol="onError"/>
+        <entry id="8388699" method="true" symbol="stop"/>
+        <entry id="27" method="true" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <entry id="8389823" method="true" symbol="indexOf"/>
+        <entry id="10" object="true" symbol="SessionDelegate"/>
+        <entry field="true" id="8390438" symbol="enabled"/>
+        <entry id="8388644" module="true" symbol="System"/>
+        <entry id="8389619" method="true" symbol="onSelect"/>
+        <entry id="8388769" module="true" object="true" symbol="Rez"/>
+        <entry id="43" method="true" symbol="populate_test_entries_0_to_11"/>
+        <entry id="30" method="true" symbol="elapsedMs"/>
+        <entry id="22" method="true" symbol="test_binningShape"/>
+        <entry field="true" id="35" symbol="running"/>
+        <entry id="12" method="true" symbol="breathing"/>
+        <entry id="23" method="true" symbol="test_breathingIsNotMistakenForMovement"/>
+        <entry id="8388640" module="true" symbol="Lang"/>
+        <entry id="33" method="true" symbol="onSensor"/>
+        <entry field="true" id="59" symbol="LauncherIcon"/>
+        <entry id="17" method="true" symbol="test_aBreathSurvivesTheFilter"/>
+        <entry id="8388610" symbol="statics"/>
+        <entry id="8389123" method="true" symbol="onShow"/>
+        <entry id="8388643" module="true" symbol="Sensor"/>
+        <entry id="8389567" method="true" symbol="getNumberOfTests"/>
+        <entry id="8389350" module="true" symbol="globals"/>
+        <entry id="16" method="true" symbol="steady"/>
+        <entry id="8388770" module="true" object="true" symbol="Strings"/>
+        <entry id="8" object="true" symbol="Reducer"/>
+        <entry field="true" id="8388960" symbol="heartRate"/>
+        <entry id="8388702" method="true" symbol="initialize"/>
+        <entry id="8389279" method="true" symbol="onStart"/>
+        <entry field="true" id="8388891" symbol="subSport"/>
+        <entry id="24" method="true" symbol="test_flatWristReadsZeroTilt"/>
+        <entry field="true" id="37" symbol="startMs"/>
+        <entry field="true" id="8388892" symbol="name"/>
+        <entry id="8389808" symbol="period"/>
+        <entry id="8388641" module="true" symbol="Math"/>
+        <entry id="11" object="true" symbol="SessionView"/>
+        <entry id="21" method="true" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <entry id="8389280" method="true" symbol="getInitialView"/>
+        <entry id="8389281" method="true" symbol="onStop"/>
+        <entry id="7" object="true" symbol="EightZeroEightApp"/>
+        <entry id="39" method="true" symbol="evaluate_test_entries_0_to_11"/>
+        <entry id="6" object="true" symbol="Capture"/>
+        <entry id="25" method="true" symbol="test_rollReadsTheOtherAxis"/>
+        <entry id="8388829" method="true" symbol="onComplete"/>
+        <entry id="8388646" module="true" object="true" symbol="Timer"/>
+        <entry id="8388698" method="true" symbol="start"/>
+        <entry field="true" id="58" symbol="sent"/>
+        <entry id="57" method="true" symbol="send"/>
+        <entry id="8389125" method="true" symbol="onHide"/>
+        <entry field="true" id="36" symbol="session"/>
+        <entry id="8388635" module="true" symbol="Application"/>
+        <entry id="51" method="true" symbol="reduce"/>
+        <entry id="14" method="true" symbol="meanOf"/>
+        <entry field="true" id="8389570" method="true" symbol="getTestObject"/>
+    </symbolTable>
+    <localVars>
+        <entry arg="true" endPc="268435666" name="logger" stackId="1" startPc="268435460"/>
+        <entry endPc="268435666" name="xs" stackId="2" startPc="268435471"/>
+        <entry endPc="268435666" name="ys" stackId="3" startPc="268435471"/>
+        <entry endPc="268435666" name="zs" stackId="4" startPc="268435471"/>
+        <entry endPc="268435586" name="i" stackId="5" startPc="268435495"/>
+        <entry endPc="268435576" name="t" stackId="6" startPc="268435495"/>
+        <entry endPc="268435666" name="out" stackId="7" startPc="268435471"/>
+        <entry endPc="268435666" name="residual" stackId="8" startPc="268435471"/>
+        <entry arg="true" endPc="268435797" name="out" stackId="1" startPc="268435696"/>
+        <entry arg="true" endPc="268435797" name="column" stackId="2" startPc="268435696"/>
+        <entry arg="true" endPc="268435797" name="skipBins" stackId="3" startPc="268435696"/>
+        <entry endPc="268435797" name="sum" stackId="4" startPc="268435707"/>
+        <entry endPc="268435797" name="count" stackId="5" startPc="268435707"/>
+        <entry endPc="268435797" name="b" stackId="6" startPc="268435707"/>
+        <entry arg="true" endPc="268435919" name="logger" stackId="1" startPc="268435798"/>
+        <entry endPc="268435919" name="b" stackId="2" startPc="268435809"/>
+        <entry endPc="268435919" name="out" stackId="3" startPc="268435809"/>
+        <entry endPc="268435919" name="residual" stackId="4" startPc="268435809"/>
+        <entry arg="true" endPc="268436070" name="logger" stackId="1" startPc="268435940"/>
+        <entry endPc="268436070" name="s" stackId="2" startPc="268435951"/>
+        <entry endPc="268436070" name="out" stackId="3" startPc="268435951"/>
+        <entry endPc="268436070" name="pitch" stackId="4" startPc="268435951"/>
+        <entry arg="true" endPc="268436249" name="n" stackId="1" startPc="268436071"/>
+        <entry arg="true" endPc="268436249" name="bpm" stackId="2" startPc="268436071"/>
+        <entry arg="true" endPc="268436249" name="amp" stackId="3" startPc="268436071"/>
+        <entry endPc="268436249" name="xs" stackId="4" startPc="268436082"/>
+        <entry endPc="268436249" name="ys" stackId="5" startPc="268436082"/>
+        <entry endPc="268436249" name="zs" stackId="6" startPc="268436082"/>
+        <entry endPc="268436229" name="i" stackId="7" startPc="268436105"/>
+        <entry endPc="268436219" name="t" stackId="8" startPc="268436105"/>
+        <entry endPc="268436219" name="theta" stackId="9" startPc="268436105"/>
+        <entry arg="true" endPc="268436381" name="logger" stackId="1" startPc="268436250"/>
+        <entry endPc="268436381" name="s" stackId="2" startPc="268436261"/>
+        <entry endPc="268436381" name="out" stackId="3" startPc="268436261"/>
+        <entry endPc="268436381" name="roll" stackId="4" startPc="268436261"/>
+        <entry arg="true" endPc="268436537" name="logger" stackId="1" startPc="268436406"/>
+        <entry endPc="268436537" name="b" stackId="2" startPc="268436417"/>
+        <entry endPc="268436537" name="out" stackId="3" startPc="268436417"/>
+        <entry endPc="268436537" name="pp" stackId="4" startPc="268436417"/>
+        <entry arg="true" endPc="268436701" name="logger" stackId="1" startPc="268436538"/>
+        <entry endPc="268436701" name="r" stackId="2" startPc="268436549"/>
+        <entry endPc="268436701" name="before" stackId="3" startPc="268436549"/>
+        <entry endPc="268436701" name="after" stackId="4" startPc="268436549"/>
+        <entry endPc="268436701" name="out" stackId="5" startPc="268436549"/>
+        <entry endPc="268436701" name="settled" stackId="6" startPc="268436549"/>
+        <entry arg="true" endPc="268436828" name="n" stackId="1" startPc="268436714"/>
+        <entry arg="true" endPc="268436828" name="x" stackId="2" startPc="268436714"/>
+        <entry arg="true" endPc="268436828" name="y" stackId="3" startPc="268436714"/>
+        <entry arg="true" endPc="268436828" name="z" stackId="4" startPc="268436714"/>
+        <entry endPc="268436828" name="xs" stackId="5" startPc="268436725"/>
+        <entry endPc="268436828" name="ys" stackId="6" startPc="268436725"/>
+        <entry endPc="268436828" name="zs" stackId="7" startPc="268436725"/>
+        <entry endPc="268436808" name="i" stackId="8" startPc="268436748"/>
+        <entry arg="true" endPc="268437019" name="n" stackId="1" startPc="268436829"/>
+        <entry arg="true" endPc="268437019" name="bpm" stackId="2" startPc="268436829"/>
+        <entry arg="true" endPc="268437019" name="amp" stackId="3" startPc="268436829"/>
+        <entry endPc="268437019" name="xs" stackId="4" startPc="268436840"/>
+        <entry endPc="268437019" name="ys" stackId="5" startPc="268436840"/>
+        <entry endPc="268437019" name="zs" stackId="6" startPc="268436840"/>
+        <entry endPc="268436999" name="i" stackId="7" startPc="268436863"/>
+        <entry endPc="268436989" name="t" stackId="8" startPc="268436863"/>
+        <entry endPc="268436989" name="theta" stackId="9" startPc="268436863"/>
+        <entry arg="true" endPc="268437164" name="out" stackId="1" startPc="268437032"/>
+        <entry arg="true" endPc="268437164" name="column" stackId="2" startPc="268437032"/>
+        <entry arg="true" endPc="268437164" name="skipBins" stackId="3" startPc="268437032"/>
+        <entry endPc="268437164" name="lo" stackId="4" startPc="268437043"/>
+        <entry endPc="268437164" name="hi" stackId="5" startPc="268437043"/>
+        <entry endPc="268437164" name="b" stackId="6" startPc="268437043"/>
+        <entry endPc="268437139" name="v" stackId="7" startPc="268437072"/>
+        <entry arg="true" endPc="268437296" name="logger" stackId="1" startPc="268437165"/>
+        <entry endPc="268437296" name="b" stackId="2" startPc="268437176"/>
+        <entry endPc="268437296" name="out" stackId="3" startPc="268437176"/>
+        <entry endPc="268437296" name="pp" stackId="4" startPc="268437176"/>
+        <entry arg="true" endPc="268437502" name="logger" stackId="1" startPc="268437297"/>
+        <entry endPc="268437502" name="s" stackId="2" startPc="268437308"/>
+        <entry endPc="268437502" name="out" stackId="3" startPc="268437308"/>
+        <entry endPc="268437502" name="pitch" stackId="4" startPc="268437308"/>
+        <entry endPc="268437502" name="roll" stackId="5" startPc="268437308"/>
+        <entry endPc="268437502" name="residual" stackId="6" startPc="268437308"/>
+        <entry arg="true" endPc="268437614" name="logger" stackId="1" startPc="268437503"/>
+        <entry endPc="268437614" name="s" stackId="2" startPc="268437514"/>
+        <entry endPc="268437614" name="out" stackId="3" startPc="268437514"/>
+        <entry arg="true" endPc="268437752" name="logger" stackId="1" startPc="268437615"/>
+        <entry endPc="268437752" name="b" stackId="2" startPc="268437626"/>
+        <entry endPc="268437752" name="out" stackId="3" startPc="268437626"/>
+        <entry endPc="268437752" name="pp" stackId="4" startPc="268437626"/>
+        <entry arg="true" endPc="268437890" name="logger" stackId="1" startPc="268437753"/>
+        <entry endPc="268437890" name="b" stackId="2" startPc="268437764"/>
+        <entry endPc="268437890" name="out" stackId="3" startPc="268437764"/>
+        <entry endPc="268437890" name="pp" stackId="4" startPc="268437764"/>
+        <entry arg="true" endPc="268438220" name="info" stackId="1" startPc="268438179"/>
+        <entry arg="true" endPc="268438444" name="sensorData" stackId="1" startPc="268438221"/>
+        <entry endPc="268438443" name="accel" stackId="2" startPc="268438224"/>
+        <entry endPc="268438443" name="xs" stackId="3" startPc="268438224"/>
+        <entry endPc="268438443" name="ys" stackId="4" startPc="268438224"/>
+        <entry endPc="268438443" name="zs" stackId="5" startPc="268438224"/>
+        <entry endPc="268438443" name="out" stackId="6" startPc="268438224"/>
+        <entry endPc="268438443" name="rr" stackId="7" startPc="268438224"/>
+        <entry endPc="268438443" name="hrData" stackId="8" startPc="268438224"/>
+        <entry arg="true" endPc="268438639" name="theBridge" stackId="1" startPc="268438571"/>
+        <entry arg="true" endPc="268438741" name="theCapture" stackId="1" startPc="268438718"/>
+        <entry arg="true" endPc="268438854" name="state" stackId="1" startPc="268438797"/>
+        <entry arg="true" endPc="268438955" name="state" stackId="1" startPc="268438929"/>
+        <entry arg="true" endPc="268439069" name="name" stackId="1" startPc="268438970"/>
+        <entry endPc="268439069" name="j" stackId="2" startPc="268438973"/>
+        <entry endPc="268439066" name="i" stackId="3" startPc="268439030"/>
+        <entry arg="true" endPc="268439374" name="id" stackId="1" startPc="268439070"/>
+        <entry arg="true" endPc="268439374" name="logger" stackId="2" startPc="268439070"/>
+        <entry endPc="268439374" name="result" stackId="3" startPc="268439073"/>
+        <entry arg="true" endPc="268439702" name="test" stackId="1" startPc="268439585"/>
+        <entry endPc="268439702" name="id" stackId="2" startPc="268439588"/>
+        <entry endPc="268439702" name="result" stackId="3" startPc="268439588"/>
+        <entry arg="true" endPc="268439713" name="id" stackId="1" startPc="268439703"/>
+        <entry arg="true" endPc="268439800" name="theCapture" stackId="1" startPc="268439777"/>
+        <entry arg="true" endPc="268440196" name="dc" stackId="1" startPc="268439850"/>
+        <entry endPc="268440195" name="cx" stackId="2" startPc="268439853"/>
+        <entry endPc="268440195" name="cy" stackId="3" startPc="268439853"/>
+        <entry endPc="268440195" name="seconds" stackId="4" startPc="268439853"/>
+        <entry endPc="268440195" name="text" stackId="5" startPc="268439853"/>
+        <entry endPc="268440195" name="status" stackId="6" startPc="268439853"/>
+        <entry arg="true" endPc="268440834" name="xs" stackId="1" startPc="268440197"/>
+        <entry arg="true" endPc="268440834" name="ys" stackId="2" startPc="268440197"/>
+        <entry arg="true" endPc="268440834" name="zs" stackId="3" startPc="268440197"/>
+        <entry endPc="268440834" name="n" stackId="4" startPc="268440200"/>
+        <entry endPc="268440834" name="out" stackId="5" startPc="268440200"/>
+        <entry endPc="268440834" name="i" stackId="6" startPc="268440200"/>
+        <entry endPc="268440828" name="sumPitch" stackId="7" startPc="268440277"/>
+        <entry endPc="268440828" name="sumRoll" stackId="8" startPc="268440277"/>
+        <entry endPc="268440828" name="sumSquares" stackId="9" startPc="268440277"/>
+        <entry endPc="268440728" name="k" stackId="10" startPc="268440297"/>
+        <entry endPc="268440718" name="x" stackId="11" startPc="268440297"/>
+        <entry endPc="268440718" name="y" stackId="12" startPc="268440297"/>
+        <entry endPc="268440718" name="z" stackId="13" startPc="268440297"/>
+        <entry endPc="268440718" name="rx" stackId="14" startPc="268440297"/>
+        <entry endPc="268440718" name="ry" stackId="15" startPc="268440297"/>
+        <entry endPc="268440718" name="rz" stackId="16" startPc="268440297"/>
+        <entry arg="true" endPc="268441004" name="payload" stackId="1" startPc="268440985"/>
+    </localVars>
+    <deviceInfo deviceVersion="3d0fb192a2cf01699aefd0f384af3f527e5885bd" partNumber="006-B4426-00"/>
+    <annotations>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="idToName"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="idToName"/>
+        <annotationEntry annotation="typecheck" class="globals" module="" symbol="getTestObject"/>
+        <annotationEntry annotation="languageServer" class="globals" module="" symbol="getTestObject"/>
+        <annotationEntry annotation="initialized" class="Drawables" module="globals/Rez" symbol="LauncherIcon"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="evaluate_test_entries_0_to_11"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="evaluate_test_entries_0_to_11"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_aFastBreathAlsoSurvives"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="logger"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="logger"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="initialize"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="initialize"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_breathingIsNotMistakenForMovement"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="runTest"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="runTest"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="AppName"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_aBreathSurvivesTheFilter"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_theLossIsTheSensorsQuantiserAndNotOurUnits"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_rollReadsTheOtherAxis"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_aShakeReadsAsMovement"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_flatWristReadsZeroTilt"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="getNumberOfTests"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="getNumberOfTests"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="getTestName"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="getTestName"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_tiltOnItsSideReadsAQuarterTurn"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="getIndexOf"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="getIndexOf"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_aNewPostureIsAbsorbed"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_aTinyRealBreathSurvivesTheSensorsQuantiser"/>
+        <annotationEntry annotation="test" class="globals" module="" symbol="test_binningShape"/>
+        <annotationEntry annotation="languageServer" class="RunNoEvil" module="globals" symbol="populate_test_entries_0_to_11"/>
+        <annotationEntry annotation="typecheck" class="RunNoEvil" module="globals" symbol="populate_test_entries_0_to_11"/>
+    </annotations>
+    <dataEntryOffsetMappings>
+        <dataEntry label="globals" offset="49" parentId="" symbolId="globals" type="module"/>
+        <dataEntry label="globals/Rez" offset="305" parentId="globals" symbolId="Rez" type="module"/>
+        <dataEntry label="globals/Capture" offset="349" parentId="globals" symbolId="Capture" type="class"/>
+        <dataEntry label="globals/SessionDelegate" offset="510" parentId="globals" symbolId="SessionDelegate" type="class"/>
+        <dataEntry label="globals/EightZeroEightApp" offset="581" parentId="globals" symbolId="EightZeroEightApp" type="class"/>
+        <dataEntry label="globals/RunNoEvil" offset="670" parentId="globals" symbolId="RunNoEvil" type="class"/>
+        <dataEntry label="globals/SessionView" offset="786" parentId="globals" symbolId="SessionView" type="class"/>
+        <dataEntry label="globals/Reducer" offset="884" parentId="globals" symbolId="Reducer" type="class"/>
+        <dataEntry label="globals/Bridge" offset="1009" parentId="globals" symbolId="Bridge" type="class"/>
+        <dataEntry label="globals/Rez/Drawables" offset="1107" parentId="Rez" symbolId="Drawables" type="module"/>
+        <dataEntry label="globals/Rez/Strings" offset="1142" parentId="Rez" symbolId="Strings" type="module"/>
+    </dataEntryOffsetMappings>
+    <functions>
+        <functionEntry accessMode="public" endPc="268435666" name="test_aShakeReadsAsMovement" startPc="268435460">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435695" name="getTestObject" startPc="268435667">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435797" name="meanOf" startPc="268435696">
+            <param id="out"/>
+            <param id="column"/>
+            <param id="skipBins"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435919" name="test_breathingIsNotMistakenForMovement" startPc="268435798">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435939" name="&lt;init&gt;" parent="Rez" startPc="268435920">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436070" name="test_tiltOnItsSideReadsAQuarterTurn" startPc="268435940">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436249" name="breathingPrecise" startPc="268436071">
+            <param id="n"/>
+            <param id="bpm"/>
+            <param id="amp"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Capture">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436381" name="test_rollReadsTheOtherAxis" startPc="268436250">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436393" name="&lt;init&gt;" parent="SessionDelegate" startPc="268436382">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436405" name="&lt;init&gt;" parent="EightZeroEightApp" startPc="268436394">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436537" name="test_aFastBreathAlsoSurvives" startPc="268436406">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436701" name="test_aNewPostureIsAbsorbed" startPc="268436538">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436713" name="&lt;init&gt;" parent="RunNoEvil" startPc="268436702">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436828" name="steady" startPc="268436714">
+            <param id="n"/>
+            <param id="x"/>
+            <param id="y"/>
+            <param id="z"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437019" name="breathing" startPc="268436829">
+            <param id="n"/>
+            <param id="bpm"/>
+            <param id="amp"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437031" name="&lt;init&gt;" parent="SessionView" startPc="268437020">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437164" name="spread" startPc="268437032">
+            <param id="out"/>
+            <param id="column"/>
+            <param id="skipBins"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437296" name="test_aBreathSurvivesTheFilter" startPc="268437165">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437502" name="test_flatWristReadsZeroTilt" startPc="268437297">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437614" name="test_binningShape" startPc="268437503">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437752" name="test_theLossIsTheSensorsQuantiserAndNotOurUnits" startPc="268437615">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437890" name="test_aTinyRealBreathSurvivesTheSensorsQuantiser" startPc="268437753">
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Reducer">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437902" name="&lt;init&gt;" parent="Bridge" startPc="268437891">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Drawables">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Strings">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438165" name="start" parent="Capture" startPc="268437903">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438178" name="elapsedSec" parent="Capture" startPc="268438166">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438220" name="onSensor" parent="Capture" startPc="268438179">
+            <param id="info"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438444" name="onData" parent="Capture" startPc="268438221">
+            <param id="sensorData"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438570" name="stop" parent="Capture" startPc="268438445">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438639" name="initialize" parent="Capture" startPc="268438571">
+            <param id="theBridge"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438672" name="elapsedMs" parent="Capture" startPc="268438640">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438717" name="onBack" parent="SessionDelegate" startPc="268438673">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438741" name="initialize" parent="SessionDelegate" startPc="268438718">
+            <param id="theCapture"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438796" name="onSelect" parent="SessionDelegate" startPc="268438742">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438854" name="onStart" parent="EightZeroEightApp" startPc="268438797">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438913" name="getInitialView" parent="EightZeroEightApp" startPc="268438855">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438928" name="initialize" parent="EightZeroEightApp" startPc="268438914">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438955" name="onStop" parent="EightZeroEightApp" startPc="268438929">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268438969" name="getNumberOfTests" parent="RunNoEvil" startPc="268438956">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439069" name="getIndexOf" parent="RunNoEvil" startPc="268438970">
+            <param id="name"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439374" name="evaluate_test_entries_0_to_11" parent="RunNoEvil" startPc="268439070">
+            <param id="id"/>
+            <param id="logger"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439439" name="initialize" parent="RunNoEvil" startPc="268439375">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439584" name="populate_test_entries_0_to_11" parent="RunNoEvil" startPc="268439440">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439702" name="runTest" parent="RunNoEvil" startPc="268439585">
+            <param id="test"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439713" name="getTestName" parent="RunNoEvil" startPc="268439703">
+            <param id="id"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439776" name="onShow" parent="SessionView" startPc="268439714">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439800" name="initialize" parent="SessionView" startPc="268439777">
+            <param id="theCapture"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439835" name="onHide" parent="SessionView" startPc="268439801">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268439849" name="tick" parent="SessionView" startPc="268439836">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440196" name="onUpdate" parent="SessionView" startPc="268439850">
+            <param id="dc"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440834" name="reduce" parent="Reducer" startPc="268440197">
+            <param id="xs"/>
+            <param id="ys"/>
+            <param id="zs"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440893" name="initialize" parent="Reducer" startPc="268440835">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440917" name="delivering" parent="Bridge" startPc="268440894">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440935" name="onError" parent="Bridge" startPc="268440918">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440953" name="onComplete" parent="Bridge" startPc="268440936">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268440984" name="initialize" parent="Bridge" startPc="268440954">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268441004" name="send" parent="Bridge" startPc="268440985">
+            <param id="payload"/>
+            <documentation/>
+        </functionEntry>
+    </functions>
+</debugInfo>

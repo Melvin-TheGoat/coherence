@@ -1,0 +1,290 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · friendly redesign v2 (Otto's palette)</title>
+<style>
+:root{
+  /* EVERY COLOUR BELOW IS LIFTED OUT OF OTTO. That is the whole idea:
+     the mascot is not decoration sitting on a design, he IS the design. */
+  --paper:#FDF7ED;   /* his own background */
+  --card:#FFFFFF;
+  --ink:#3C2A1F;     /* his eyes, his smile */
+  --soft:#9C8770;
+  --line:#F1E7D8;
+  --fur:#C99B72;     /* his body */
+  --cream:#F7E5CD;   /* his face and belly */
+  --mask:#896445;    /* his eye patches */
+
+  --amber:#E3A544;      /* SCORE. Achieved. */
+  --amberDeep:#A9761F;  /* score as text */
+  --amberShade:#C78A2E;
+  --sage:#6EAFA2;       /* YOUR BODY's signals */
+  --sageDeep:#3E7E72;
+  --blush:#F2AF91;      /* STREAK. Lifted straight off his cheeks. */
+  --blushShade:#D2795A; --blushDeep:#C2704E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#F2E9DC;color:var(--ink);
+  font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;padding:34px 26px 80px}
+h1{font-size:25px;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:12px;margin:48px 0 6px;color:var(--soft);text-transform:uppercase;letter-spacing:.12em;font-weight:800}
+.lede{color:#7B6754;font-size:14.5px;max-width:770px;line-height:1.6;margin:0}
+.note{color:#7B6754;font-size:13.5px;max-width:740px;line-height:1.6}
+.note b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:18px}
+
+/* Otto: seven transparent cut-outs, so he can sit on anything. */
+.otto{background-repeat:no-repeat;background-position:center bottom;background-size:contain;flex:none}
+.o-sit  {background-image:url("otto/otto-sit.png")}
+.o-awake{background-image:url("otto/otto-awake.png")}
+.o-wave {background-image:url("otto/otto-wave.png")}
+.o-talk {background-image:url("otto/otto-talk.png")}
+.o-sleep{background-image:url("otto/otto-sleep.png")}
+.o-heart{background-image:url("otto/otto-heart.png")}
+.o-look {background-image:url("otto/otto-look.png")}
+.hero{background:url("otto/otto-sit.png") center bottom/contain no-repeat;flex:none}
+
+.sw{width:126px;border-radius:18px;overflow:hidden;background:var(--card);box-shadow:0 2px 0 var(--line);flex:none}
+.sw .chip{height:62px}
+.sw .t{padding:10px 12px 13px;font-size:11.5px;line-height:1.45;color:var(--soft)}
+.sw .t b{display:block;color:var(--ink);font-size:13px;margin-bottom:2px}
+.arrowrow{display:flex;align-items:center;gap:10px;margin-top:16px;flex-wrap:wrap}
+.arrowrow .a{color:var(--soft);font-size:17px}
+</style></head><body>
+
+<h1>808, built around Otto</h1>
+<p class="lede">The character is soft, dusty and low contrast, so a bright app would fight him. Instead
+<b>every colour in the interface is lifted out of the drawing</b>: the paper is his background, the ink is his eyes,
+the streak is his cheeks. Nothing in the app is allowed a colour he does not already have.</p>
+
+<h2>The palette, and where each one comes from</h2>
+<div class="row">
+  <div class="sw"><div class="chip" style="background:#FDF7ED"></div><div class="t"><b>Paper</b>his background<br>#FDF7ED</div></div>
+  <div class="sw"><div class="chip" style="background:#3C2A1F"></div><div class="t"><b>Ink</b>his eyes and smile<br>#3C2A1F</div></div>
+  <div class="sw"><div class="chip" style="background:#C99B72"></div><div class="t"><b>Fur</b>dividers, empty states<br>#C99B72</div></div>
+  <div class="sw"><div class="chip" style="background:#E3A544"></div><div class="t"><b>Amber</b>your score<br>#E3A544</div></div>
+  <div class="sw"><div class="chip" style="background:#6EAFA2"></div><div class="t"><b>Sage</b>your body's signals<br>#6EAFA2</div></div>
+  <div class="sw"><div class="chip" style="background:#F2AF91"></div><div class="t"><b>Blush</b>his cheeks, your streak<br>#F2AF91</div></div>
+</div>
+<p class="note" style="margin-top:16px"><b>The art here is cut out, not pasted on.</b> The generated PNGs came with
+his cream background baked in, which would have put a faint square around him on every screen. Each pose is now
+separated from that background with a soft alpha edge and trimmed to his own outline, so he sits on paper, on a white
+card and on a tinted one without a seam. <b>That is also the first thing to specify when the real art is
+commissioned</b>: transparency, not a background that happens to match.</p>
+
+<style>
+.phone{width:324px;flex:none;background:var(--paper);border-radius:38px;padding:18px 16px 0;
+  box-shadow:0 12px 34px rgba(80,55,30,.15);overflow:hidden;display:flex;flex-direction:column;height:690px}
+.ph-head{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 14px}
+.ph-head .g{font-size:21.5px;font-weight:800;letter-spacing:-.025em}
+.ph-head .d{font-size:12px;color:var(--soft);margin-top:2px}
+.face{width:46px;height:46px;border-radius:50%;flex:none;
+  background:url("otto/otto-awake.png") 50% 2%/124% no-repeat}
+.scroll{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:13px}
+.c{background:var(--card);border-radius:26px;padding:17px 18px;box-shadow:0 2px 0 var(--line)}
+.klabel{font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:var(--soft)}
+.big{font-size:42px;font-weight:800;letter-spacing:-.035em;line-height:1}
+.mid{font-size:15.5px;font-weight:700}
+.sub{font-size:12.5px;color:var(--soft);line-height:1.45;margin-top:3px}
+.btn{display:block;width:100%;text-align:center;border:0;border-radius:20px;padding:16px 0 17px;font:inherit;
+  font-size:16.5px;font-weight:800;color:#fff;background:var(--amber);box-shadow:0 4px 0 var(--amberShade);
+  letter-spacing:-.01em;margin-bottom:16px}
+.btn.ghost{background:transparent;color:var(--soft);box-shadow:none;font-weight:700;font-size:14.5px;padding:6px 0 14px;margin:0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:11px}
+.cal i{aspect-ratio:1;border-radius:12px;background:#F7F0E4;display:flex;align-items:center;justify-content:center;
+  font-size:10.5px;font-style:normal;color:#C8B49B;font-weight:700}
+.cal i.on{background:var(--amber);color:#fff}
+.cal i.rest{background:#FBEAE1;color:var(--blushDeep)}
+.sess{display:flex;align-items:center;gap:13px;padding:11px 0}
+.sess + .sess{border-top:1px solid var(--line)}
+.pill{width:46px;height:46px;border-radius:16px;background:#FBF0DC;color:var(--amberDeep);flex:none;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16.5px}
+.tabs{display:flex;align-items:center;justify-content:space-between;padding:11px 8px 13px;margin:0 -16px;
+  background:#fff;border-top:1px solid var(--line)}
+.tabs b{flex:1;text-align:center;font-size:9.5px;font-weight:700;color:#C8B49B;display:flex;flex-direction:column;
+  align-items:center;gap:4px}
+.tabs b.on{color:var(--ink)}
+.tabs .plus{width:58px;height:58px;border-radius:21px;background:var(--amber);box-shadow:0 4px 0 var(--amberShade);
+  color:#fff;font-size:31px;font-weight:300;display:flex;align-items:center;justify-content:center;margin-top:-15px;flex:none}
+.dot{width:20px;height:20px;border-radius:7px;background:#EADFCE}
+.dot.on{background:var(--ink)}
+.bub{background:#fff;border-radius:22px;border-bottom-left-radius:8px;padding:14px 16px;font-size:13.5px;
+  line-height:1.52;box-shadow:0 2px 0 var(--line)}
+.bub.me{background:var(--amber);color:#fff;border-bottom-left-radius:22px;border-bottom-right-radius:8px;
+  box-shadow:0 2px 0 var(--amberShade);max-width:76%}
+.evi{display:flex;align-items:center;justify-content:space-between}
+.cap{font-size:12.5px;color:#7B6754;margin-top:13px;width:324px;line-height:1.5}
+.cap b{color:var(--ink)}
+.sound{display:flex;align-items:center;gap:12px;padding:13px 15px;background:#fff;border-radius:20px;
+  box-shadow:0 2px 0 var(--line)}
+.sq{width:42px;height:42px;border-radius:14px;flex:none;display:flex;align-items:center;justify-content:center;font-size:18px}
+</style>
+
+<h2>Home</h2>
+<div class="row">
+  <div>
+  <div class="phone">
+    <div class="ph-head"><div><div class="g">Good morning, Aziz</div><div class="d">Friday, 19 September</div></div>
+      <div class="face"></div></div>
+    <div class="scroll">
+      <div class="c" style="background:#FCEFE7;box-shadow:0 2px 0 #F7DFD2;display:flex;align-items:center;gap:12px;padding:14px 16px">
+        <div class="otto o-sit" style="width:70px;height:74px;"></div>
+        <div><div style="display:flex;align-items:baseline;gap:7px">
+          <div class="big" style="color:var(--blushDeep)">12</div><div class="mid" style="color:var(--blushDeep)">days</div></div>
+          <div class="sub" style="color:#B5806A">You have not missed since the 7th.</div></div>
+      </div>
+      <div class="c"><div class="klabel">Your last seven</div>
+        <svg width="252" height="58" style="margin-top:10px">
+          <polyline points="6,44 46,32 86,36 126,18 166,22 206,9 246,14" fill="none" stroke="#E3A544" stroke-width="4.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="246" cy="14" r="7" fill="#E3A544"/><circle cx="246" cy="14" r="2.8" fill="#fff"/></svg></div>
+      <div class="c"><div class="klabel">September</div>
+        <div class="cal"><i>1</i><i>2</i><i class="on">3</i><i class="on">4</i><i class="rest">5</i><i class="on">6</i><i class="on">7</i>
+        <i class="on">8</i><i class="on">9</i><i class="rest">10</i><i class="on">11</i><i class="on">12</i><i class="on">13</i><i class="on">14</i></div></div>
+      <div class="c" style="padding:6px 18px">
+        <div class="sess"><div class="pill">84</div><div><div class="mid">Yesterday</div>
+          <div class="sub">18 min · heart settled 9 beats</div></div></div>
+        <div class="sess"><div class="pill">71</div><div><div class="mid">Wednesday</div>
+          <div class="sub">12 min · breath 6.1 a minute</div></div></div></div>
+    </div>
+    <div class="tabs"><b class="on"><span class="dot on"></span>Home</b><b><span class="dot"></span>Guide</b>
+      <div class="plus">+</div><b><span class="dot"></span>Friends</b><b><span class="dot"></span>Profile</b></div>
+  </div>
+  <div class="cap"><b>Otto sleeps on the streak card.</b> He is the one who knows how many days it has been, which
+  gives the softest number on the screen a reason to be there. Amber appears exactly twice: the sparkline and the
+  practised days. The score chips are amber on tint rather than solid, so the eye still lands on the plus.</div>
+  </div>
+
+  <div>
+  <div class="phone" style="height:760px">
+    <div class="ph-head"><div><div class="g">Yesterday</div><div class="d">18 minutes · Silence</div></div>
+      <div class="face" style="background:#fff;box-shadow:0 2px 0 var(--line);display:flex;align-items:center;
+        justify-content:center;color:var(--soft);font-size:19px">×</div></div>
+    <div class="scroll">
+      <div style="display:flex;justify-content:center;padding:0 0 2px">
+        <svg width="162" height="162" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#F3EADB" stroke-width="13"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#E3A544" stroke-width="13" stroke-linecap="round"
+            stroke-dasharray="264 314" transform="rotate(-90 60 60)"/>
+          <text x="60" y="58" text-anchor="middle" font-size="35" font-weight="800" fill="#3C2A1F"
+            font-family="ui-rounded,system-ui">84</text>
+          <text x="60" y="76" text-anchor="middle" font-size="9" font-weight="700" fill="#9C8770"
+            letter-spacing="1.5" font-family="ui-rounded,system-ui">DEEP AND HELD</text></svg></div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div class="otto o-talk" style="width:66px;height:56px;flex:none"></div>
+        <div class="bub">Your heart came down 9 beats and stayed under where it started. Your breath found six a
+          minute in the first two minutes, and that is the door opening.</div></div>
+      <div class="c" style="padding:14px 17px"><div class="evi">
+        <div><div class="klabel" style="color:var(--sageDeep)">Heart</div>
+          <div class="mid" style="margin-top:4px">74 → 63 bpm</div></div>
+        <svg width="106" height="42"><path d="M4,9 C26,11 40,25 62,29 C84,33 94,32 102,34" fill="none"
+          stroke="#6EAFA2" stroke-width="4.5" stroke-linecap="round"/></svg></div></div>
+      <div class="c" style="padding:14px 17px"><div class="evi">
+        <div><div class="klabel" style="color:var(--sageDeep)">Stillness</div>
+          <div class="mid" style="margin-top:4px">91%</div></div>
+        <svg width="106" height="42"><path d="M4,29 C20,13 34,21 52,11 C70,5 86,13 102,8" fill="none"
+          stroke="#6EAFA2" stroke-width="4.5" stroke-linecap="round"/></svg></div></div>
+      <div class="c" style="padding:14px 17px"><div class="evi">
+        <div><div class="klabel" style="color:var(--sageDeep)">Breathing</div>
+          <div class="mid" style="margin-top:4px">6.1 a minute</div></div>
+        <svg width="106" height="42"><rect x="3" y="3" width="32" height="36" rx="10" fill="#6EAFA2" opacity=".15"/>
+          <path d="M4,25 C14,21 24,23 36,22 C56,20 74,12 102,10" fill="none" stroke="#6EAFA2" stroke-width="4.5"
+          stroke-linecap="round"/></svg></div></div>
+      <button class="btn">Save session</button>
+    </div>
+  </div>
+  <div class="cap"><b>The ring is the only amber object on the screen</b>, which is the rule that was already written
+  and never held. Everything measured off your body is sage. Otto delivers the verdict instead of a bare paragraph,
+  which costs nothing and makes the one piece of writing on the screen get read.</div>
+  </div>
+</div>
+
+<h2>Begin, Otto's chat, and the moment something is earned</h2>
+<div class="row">
+
+  <div>
+  <div class="phone" style="height:620px">
+    <div class="ph-head"><div><div class="g">Ready when you are</div><div class="d">Put your Watch on and sit</div></div>
+      <div class="face" style="background:#fff;box-shadow:0 2px 0 var(--line);display:flex;align-items:center;
+        justify-content:center;color:var(--soft);font-size:19px">×</div></div>
+    <div class="scroll">
+      <div class="hero" style="height:186px;border-radius:26px"></div>
+      <div class="sound"><div class="sq" style="background:#FCEFE7">🌿</div>
+        <div style="flex:1"><div class="mid">Silence</div><div class="sub">or your own audio</div></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:var(--amber);color:#fff;font-size:13px;
+          display:flex;align-items:center;justify-content:center;font-weight:800">✓</div></div>
+      <div class="sound"><div class="sq" style="background:#EDF6F3">🎧</div>
+        <div style="flex:1"><div class="mid">The guided journey</div><div class="sub">25 minutes with a narrator</div></div>
+        <div style="color:#C8B49B;font-size:15px">›</div></div>
+      <div class="sound"><div class="sq" style="background:#FBF0DC">🌊</div>
+        <div style="flex:1"><div class="mid">Nature</div><div class="sub">Rain, ocean, forest, campfire</div></div>
+        <div style="color:#C8B49B;font-size:15px">›</div></div>
+      <div style="margin-top:auto"><button class="btn">Begin</button></div>
+    </div>
+  </div>
+  <div class="cap"><b>Otto is the whole top of the sheet.</b> The old version opened on a grid of choices, which is a
+  decision at the moment you are trying to stop deciding. Here the first thing you see is somebody already sitting,
+  and the default is one tap below him.</div>
+  </div>
+
+  <div>
+  <div class="phone" style="height:620px">
+    <div class="ph-head"><div><div class="g">Otto</div><div class="d">On your phone, nowhere else</div></div>
+      <div class="face"></div></div>
+    <div class="scroll" style="gap:11px">
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <div class="otto o-awake" style="width:52px;height:46px;flex:none"></div>
+        <div class="bub">That 84 is your best this month. Stillness carried most of it, 27 of the 30 on offer.</div></div>
+      <div style="display:flex;justify-content:flex-end"><div class="bub me">Why was my heart score low then?</div></div>
+      <div style="display:flex;gap:6px;align-items:flex-end">
+        <div class="otto o-talk" style="width:52px;height:46px;flex:none"></div>
+        <div class="bub">You started at 74, which is already calm for you, so there was not much room to fall. Heart
+          earned 31 of 45. That is not a bad sit, it is a body with less to let go of.</div></div>
+      <div style="margin-top:auto;padding-bottom:16px">
+        <div style="background:#fff;border-radius:24px;padding:14px 18px;color:#C8B49B;font-size:14px;
+          box-shadow:0 2px 0 var(--line)">Ask Otto about this sit</div></div>
+    </div>
+  </div>
+  <div class="cap"><b>Two faces, used strictly.</b> He listens with his eyes open and he talks mid sentence. Nothing
+  else. A mascot that pulls a different expression every message stops being a person and becomes a sticker pack.</div>
+  </div>
+
+  <div>
+  <div class="phone" style="height:620px;align-items:center;justify-content:center;padding:0 24px">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+      <div class="otto o-wave" style="width:200px;height:170px;"></div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:-.03em;margin-top:6px">Ten straight days</div>
+      <div class="sub" style="font-size:14px;max-width:230px;margin-top:8px">You have practised every day since the
+        ninth. That is the longest you have kept it going.</div>
+      <div style="margin-top:26px;width:100%"><button class="btn">Nice</button>
+        <button class="btn ghost">Share it</button></div>
+    </div>
+  </div>
+  <div class="cap"><b>The delighted face is rationed.</b> Awards only, and nowhere else in the app, so the one time he
+  throws his arms up it actually registers. This is also the only screen where he is drawn large.</div>
+  </div>
+</div>
+
+<h2>What changes in the code</h2>
+<ol class="note" style="max-width:780px;line-height:1.8">
+  <li><b>Seven colorsets get new values and two are added</b> (blush for the streak, paper for the ground). Every
+  colour in the app already routes through <code>AppColor</code>, so this is a data change, not a refactor.</li>
+  <li><b><code>AppFont</code> switches to <code>design: .rounded</code>.</b> One line, and it does more for
+  friendliness than anything else here.</li>
+  <li><b>Light becomes the default theme.</b> Dark stays and takes the same warm treatment: paper goes to a deep
+  cocoa rather than near-black, and Otto needs a dark-mode variant from the illustrator.</li>
+  <li><b><code>DesignKit</code></b>: radii 12 to 26, hairlines become soft bottom edges, buttons gain the pressed
+  edge, calendar and score chips become filled rather than outlined.</li>
+  <li><b><code>OttoArt.swift</code> is deleted.</b> The path-parsing approach was right for a one-colour glyph and is
+  wrong for this: a coloured character ships as an asset. Xcode asset catalogs take SVG as a single-scale vector with
+  light and dark variants, so the illustrator's file goes in untouched and <code>SVGPath</code>,
+  <code>OttoMark</code>, <code>OttoSlothSitting</code> and their tests all go away.</li>
+  <li><b>Nothing about the charts' honesty changes.</b> Same domains, same fixed spans, same doorway band. Thicker
+  rounded strokes, that is all.</li>
+</ol>
+
+<p class="note" style="margin-top:22px"><b>What I am deliberately not touching: the copy.</b> This is a skin. If the
+words move at the same time as the paint, there is no way to tell which one did the work.</p>
+
+<p class="note" style="margin-top:14px"><b>What is still owed on the art.</b> These are 1254px generated rasters
+cut down to between 290 and 970 pixels a side, which is enough for a mockup and not enough to ship: the 186pt Begin
+sheet and the 200pt award screen would both be soft on a 3x phone. The brief for an illustrator is these images as
+the reference, and the deliverable is vector, on transparency, with a dark-mode variant, clean at the five sizes he
+appears: 46pt avatar, 52pt chat, 78pt streak card, 186pt sheet, 200pt award.</p>

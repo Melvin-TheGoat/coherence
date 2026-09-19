@@ -306,19 +306,71 @@ private struct FlowChips: View {
 
 // MARK: - The mark, the row
 
-/// Otto's mark. Teal, because Otto is guidance, not achievement; the colour
-/// grammar keeps gold for chosen and achieved.
+/// Otto, at the size a row or an avatar wants him.
+///
+/// **He is an asset now, not a drawing** (2026-09-19). He was hand-written SVG
+/// paths parsed at runtime, which was the right call while he was a one-colour
+/// line glyph that had to take the theme's tint. He is a full-colour character
+/// as of this pass, and a character is art: `OttoArt`, `SVGPath` and their
+/// tests are gone, and the illustrator's file now ships untouched.
+///
+/// He also carries no tint. The colour grammar is unchanged, it simply no
+/// longer applies to him: amber is a measured score and sage is your body, and
+/// Otto is neither. He is the one thing on screen that is just himself.
 struct OttoMark: View {
     var size: CGFloat = 32
     var dimmed = false
+    /// Eyes open. He looks at you in a row or an avatar, because that is
+    /// someone waiting to be asked something; he closes them only where he is
+    /// actually meditating.
+    var pose: OttoPose = .awake
 
     var body: some View {
-        // Otto is a sloth (Melvin, 2026-09-16), and the head badge is the
-        // mark: the "O" in a circle was always a placeholder. The drawing is
-        // `OttoArt`, the mockup's own SVG.
-        OttoSlothBadge(size: size, dimmed: dimmed)
-            .tint(AppColor.calmAccent)
-            .foregroundStyle(AppColor.calmAccent)
+        Image(pose.asset)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .opacity(dimmed ? 0.45 : 1)
+            .accessibilityHidden(true)
+    }
+}
+
+/// The poses that exist. Each one has a job and none of them is decorative;
+/// a mascot that pulls a new face every message stops reading as a person.
+enum OttoPose {
+    /// Eyes closed, cross-legged. The default, and the streak card.
+    case meditating
+    /// Eyes open, looking at you. Rows, avatars, and listening in the chat.
+    case awake
+    /// Arms up, delighted. Awards ONLY, so that it still means something.
+    case pleased
+    /// Mid sentence. The written verdict, and his own replies.
+    case talking
+    /// Lying down.
+    case resting
+
+    var asset: String {
+        switch self {
+        case .meditating: return "OttoSit"
+        case .awake:      return "OttoAwake"
+        case .pleased:    return "OttoWave"
+        case .talking:    return "OttoTalk"
+        case .resting:    return "OttoSleep"
+        }
+    }
+}
+
+/// Otto drawn large: the locked screen, the unavailable screen, an award.
+struct OttoSlothSitting: View {
+    var size: CGFloat = 96
+    var pose: OttoPose = .meditating
+
+    var body: some View {
+        Image(pose.asset)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
     }
 }
 
@@ -376,8 +428,7 @@ struct OttoLockedView: View {
         VStack(spacing: 0) {
             Spacer(minLength: 24)
             VStack(alignment: .leading, spacing: 14) {
-                HStack { OttoSlothSitting(size: 96).tint(AppColor.calmAccent)
-                    .foregroundStyle(AppColor.calmAccent); Spacer() }
+                HStack { OttoSlothSitting(size: 104); Spacer() }
                 HStack { LockPill(); Spacer() }
                 Text("Otto reads your evidence back to you. Free 808 keeps the evidence closed.")
                     .font(.system(size: 23, weight: .semibold, design: .rounded))
@@ -427,9 +478,7 @@ struct OttoUnavailableView: View {
     var body: some View {
         VStack(spacing: 14) {
             Spacer(minLength: 40)
-            OttoSlothSitting(size: 96)
-                .tint(AppColor.calmAccent)
-                .foregroundStyle(AppColor.calmAccent)
+            OttoSlothSitting(size: 104)
                 .opacity(0.55)
             Text(OttoAvailability.headline)
                 .font(.system(size: 21, weight: .semibold, design: .rounded))

@@ -1,26 +1,40 @@
 import SwiftUI
 
-/// Shared visual language on top of `AppColor` (the only color source). Typography
-/// leans on the rounded system face for a calm, premium feel; spacing + component
-/// modifiers keep every screen cohesive. Compiles into both apps.
+/// Shared visual language on top of `AppColor` (the only color source). Spacing
+/// and component modifiers keep every screen cohesive. Compiles into both apps.
+///
+/// **Rounded everywhere, no exceptions** (2026-09-19). The face used to be
+/// rounded for display sizes and the plain system face for body, which is the
+/// respectable choice and is exactly why the app read as technical: the type a
+/// person actually spends their time reading was the same face as a settings
+/// list. One line here does more for how friendly the app feels than any other
+/// change in this pass, and it costs nothing.
 
 enum AppMetrics {
     static let screenPadding: CGFloat = 20
-    static let gap: CGFloat = 16
-    static let cardRadius: CGFloat = 22
+    static let gap: CGFloat = 14
+    /// Soft rather than merely rounded. At 22 a card reads as a panel; at 26 it
+    /// reads as an object, which is the difference being asked for.
+    static let cardRadius: CGFloat = 26
     static let cardPadding: CGFloat = 18
+    static let buttonRadius: CGFloat = 20
+    /// How far a primary button stands off its own shadow. Pressing it closes
+    /// the gap, so the control behaves like something physical instead of
+    /// fading out. The whole idea is one borrowed from Duolingo and it is the
+    /// single most recognisable thing about a friendly interface.
+    static let buttonLift: CGFloat = 4
 }
 
 enum AppFont {
     static let hero = Font.system(size: 40, weight: .bold, design: .rounded)
     static let title = Font.system(size: 24, weight: .semibold, design: .rounded)
     static let headline = Font.system(.headline, design: .rounded)
-    static let body = Font.system(.body)
-    static let callout = Font.system(.callout)
+    static let body = Font.system(.body, design: .rounded)
+    static let callout = Font.system(.callout, design: .rounded)
     /// Reading size for user-written text (session notes, and later, comments) —
     /// a step down from callout so a long note stays comfortable at full width.
-    static let note = Font.system(.subheadline)
-    static let caption = Font.system(.caption)
+    static let note = Font.system(.subheadline, design: .rounded)
+    static let caption = Font.system(.caption, design: .rounded)
     static let statNumber = Font.system(size: 40, weight: .bold, design: .rounded)
 }
 
@@ -38,7 +52,14 @@ private struct CardStyle: ViewModifier {
         content
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+            .background(
+                RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
+                    .fill(AppColor.backgroundSecondary)
+                    // Cards used to be separated from the ground by a hairline.
+                    // On cream that reads as a drawn box; a 2pt bottom edge in
+                    // the same warm tone reads as a card resting on paper.
+                    .shadow(color: AppColor.hairline, radius: 0, y: 2)
+            )
     }
 }
 
@@ -51,15 +72,25 @@ extension View {
 
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(AppFont.headline)
+        let down = configuration.isPressed
+        let lift = down ? 1 : AppMetrics.buttonLift
+        return configuration.label
+            .font(AppFont.headline.weight(.bold))
             .foregroundStyle(AppColor.textOnAccent)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
-            .background(AppColor.accentGold, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .opacity(configuration.isPressed ? 0.85 : 1)
-            .scaleEffect(configuration.isPressed ? 0.98 : 1)
-            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+            .background(
+                RoundedRectangle(cornerRadius: AppMetrics.buttonRadius, style: .continuous)
+                    .fill(AppColor.accentGold)
+                    // A hard-edged shadow, not a blur: this is the side of the
+                    // button, so it must have an edge.
+                    .shadow(color: AppColor.accentGoldShade, radius: 0, y: lift)
+            )
+            // Move with the edge, so the whole control sinks rather than the
+            // label sliding off its own plate.
+            .offset(y: AppMetrics.buttonLift - lift)
+            .animation(.easeOut(duration: 0.12), value: down)
+            .padding(.bottom, AppMetrics.buttonLift)
     }
 }
 
@@ -69,8 +100,8 @@ struct SecondaryButtonStyle: ButtonStyle {
             .font(AppFont.callout.weight(.medium))
             .foregroundStyle(AppColor.textPrimary)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 13)
-            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.vertical, 14)
+            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .opacity(configuration.isPressed ? 0.85 : 1)
     }
 }
@@ -82,7 +113,7 @@ struct SectionHeader: View {
     let title: String
     var body: some View {
         Text(title.uppercased())
-            .font(.caption.weight(.semibold))
+            .font(AppFont.caption.weight(.bold))
             .tracking(1.1)
             .foregroundStyle(AppColor.textSecondary)
     }
@@ -96,12 +127,12 @@ struct StatTile: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(AppFont.statNumber)
-                .foregroundStyle(AppColor.accentGold)
+                .foregroundStyle(AppColor.accentGoldText)
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             Text(label.uppercased())
-                .font(.caption2.weight(.semibold))
+                .font(.system(.caption2, design: .rounded).weight(.bold))
                 .tracking(0.8)
                 .foregroundStyle(AppColor.textSecondary)
         }

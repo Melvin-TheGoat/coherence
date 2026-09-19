@@ -1,0 +1,111 @@
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 1; @symbol_usingdef<0> = [Toybox,1,6,12]; @symbol_usingdef<1> = [WatchUi,1,13,20]; ]
+using Toybox.WatchUi;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 2; @symbol_usingdef<0> = [Toybox,2,6,12]; @symbol_usingdef<1> = [Lang,2,13,17]; ]
+using Toybox.Lang;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 4; @symbol_classdef = [SessionDelegate,4,6,21]; @symbol_extends<0> = [WatchUi,4,30,37]; @symbol_extends<1> = [BehaviorDelegate,4,38,54]; ]
+class SessionDelegate extends WatchUi.BehaviorDelegate {
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 4; ]
+    <init> {
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 4; ]
+    static
+    <init> {
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 6; @position = 8; @symbol_vardef = [capture,6,8,15]; ]
+    var capture;
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 8; @symbol_functiondef = [initialize,8,13,23]; @symbol_param<0> = [theCapture,8,24,34]; ]
+    function initialize(theCapture) as Void {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_8_36_11_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 9 8 ]
+        symbol [ BehaviorDelegate %tmp.2 9 8 24 ];
+        %tmp.2 = getv ? :BehaviorDelegate;
+        symbol [ initialize %tmp.3 9 25 35 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 10 8 ]
+        %tmp.4 = lgetv %theCapture;
+        symbol [ theCapture %tmp.4 10 18 28 ];
+        symbol [ capture ? 10 8 15 ];
+        putv self :capture %tmp.4;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_8_36_11_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 16; @symbol_functiondef = [onSelect,16,13,21]; ]
+    function onSelect() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_16_24_24_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 17 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_8_21_8_if_stmt:
+        symbol [ capture %tmp.2 17 12 19 ];
+        %tmp.2 = getv ? :capture;
+        symbol [ running %tmp.3 17 20 27 ];
+        %tmp.3 = getv %tmp.2 :running;
+        bf %tmp.3 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_8_21_8_if_else_false;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_8_21_8_if_true:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_29_19_8_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 18 12 ]
+        symbol [ capture %tmp.5 18 12 19 ];
+        %tmp.5 = getv ? :capture;
+        symbol [ stop %tmp.6 18 20 24 ];
+        %tmp.6 = getv function %tmp.5 :stop;
+        invoke %tmp.5 %tmp.6();
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_29_19_8_stop:
+        goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_8_21_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_8_21_8_if_else_false:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_19_15_21_8_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 20 12 ]
+        symbol [ capture %tmp.8 20 12 19 ];
+        %tmp.8 = getv ? :capture;
+        symbol [ start %tmp.9 20 20 25 ];
+        %tmp.9 = getv function %tmp.8 :start;
+        invoke %tmp.8 %tmp.9();
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_19_15_21_8_stop:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_17_8_21_8_if_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 22 8 ]
+        symbol [ WatchUi %tmp.10 22 8 15 ];
+        %tmp.10 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.11 22 16 29 ];
+        %tmp.11 = getv function %tmp.10 :requestUpdate;
+        invoke %tmp.10 %tmp.11();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 23 8 ]
+        %tmp.12 = true;
+        ret %tmp.12;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_16_24_24_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 26; @symbol_functiondef = [onBack,26,13,19]; ]
+    function onBack() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_26_22_33_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 27 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_8_31_8_if_stmt:
+        symbol [ capture %tmp.2 27 12 19 ];
+        %tmp.2 = getv ? :capture;
+        symbol [ running %tmp.3 27 20 27 ];
+        %tmp.3 = getv %tmp.2 :running;
+        bf %tmp.3 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_8_31_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_8_31_8_if_true:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_29_31_8_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 28 12 ]
+        symbol [ capture %tmp.5 28 12 19 ];
+        %tmp.5 = getv ? :capture;
+        symbol [ stop %tmp.6 28 20 24 ];
+        %tmp.6 = getv function %tmp.5 :stop;
+        invoke %tmp.5 %tmp.6();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 29 12 ]
+        symbol [ WatchUi %tmp.7 29 12 19 ];
+        %tmp.7 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.8 29 20 33 ];
+        %tmp.8 = getv function %tmp.7 :requestUpdate;
+        invoke %tmp.7 %tmp.8();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 30 12 ]
+        %tmp.9 = true;
+        ret %tmp.9;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_29_31_8_stop:
+        goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_8_31_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_27_8_31_8_if_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" 32 8 ]
+        %tmp.10 = false;
+        ret %tmp.10;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionDelegate_mc_26_22_33_4_stop:
+    }
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc"; @line = 1; ]
+<init> {
+}

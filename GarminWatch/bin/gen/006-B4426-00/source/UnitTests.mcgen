@@ -1,0 +1,105 @@
+import Toybox.Lang;
+import Toybox.Test;
+
+(:typecheck(false) :languageServer(do_not_complete))
+function getTestObject() as RunNoEvil {
+    return new RunNoEvil();
+}
+
+(:typecheck(false) :languageServer(do_not_complete))
+class RunNoEvil extends Test.Test {
+    private var logger as Logger;
+    private var idToName as Array;
+
+    function initialize() {
+        Test.Test.initialize();
+        logger = new Test.Logger();
+        idToName = new [11];
+        populate_test_entries_0_to_11();
+    }
+
+    function getIndexOf(name as String) as Number {
+        if (idToName has :indexOf) {
+            return idToName.indexOf(name);
+        }
+
+        var j = idToName.size();
+        for (var i = 0; i < j; ++i) {
+            if (idToName[i].equals(name)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    function getTestName(id as Number) as String {
+        return idToName[id];
+    }
+
+    function getNumberOfTests() as Number {
+        return idToName.size();
+    }
+
+    function populate_test_entries_0_to_11() as Void {
+        idToName[0] = "test_binningShape";
+        idToName[1] = "test_flatWristReadsZeroTilt";
+        idToName[2] = "test_tiltOnItsSideReadsAQuarterTurn";
+        idToName[3] = "test_rollReadsTheOtherAxis";
+        idToName[4] = "test_aBreathSurvivesTheFilter";
+        idToName[5] = "test_aFastBreathAlsoSurvives";
+        idToName[6] = "test_aTinyRealBreathSurvivesTheSensorsQuantiser";
+        idToName[7] = "test_theLossIsTheSensorsQuantiserAndNotOurUnits";
+        idToName[8] = "test_breathingIsNotMistakenForMovement";
+        idToName[9] = "test_aShakeReadsAsMovement";
+        idToName[10] = "test_aNewPostureIsAbsorbed";
+    }
+
+    function evaluate_test_entries_0_to_11(id as Number, logger as Logger) {
+        var result = false;
+        if (id == 0) {
+            result = $.test_binningShape(logger);
+        } else if (id == 1) {
+            result = $.test_flatWristReadsZeroTilt(logger);
+        } else if (id == 2) {
+            result = $.test_tiltOnItsSideReadsAQuarterTurn(logger);
+        } else if (id == 3) {
+            result = $.test_rollReadsTheOtherAxis(logger);
+        } else if (id == 4) {
+            result = $.test_aBreathSurvivesTheFilter(logger);
+        } else if (id == 5) {
+            result = $.test_aFastBreathAlsoSurvives(logger);
+        } else if (id == 6) {
+            result = $.test_aTinyRealBreathSurvivesTheSensorsQuantiser(logger);
+        } else if (id == 7) {
+            result = $.test_theLossIsTheSensorsQuantiserAndNotOurUnits(logger);
+        } else if (id == 8) {
+            result = $.test_breathingIsNotMistakenForMovement(logger);
+        } else if (id == 9) {
+            result = $.test_aShakeReadsAsMovement(logger);
+        } else if (id == 10) {
+            result = $.test_aNewPostureIsAbsorbed(logger);
+        }
+
+        return result;
+    }
+
+    function runTest(test as String or Number) as Boolean {
+        var id = test;
+        if (test instanceof Lang.String) {
+            id = getIndexOf(test);
+        }
+
+        assertMessage(id >= 0, "Could not find '" + test + "'");
+        var result = false;
+        if (id < 11) {
+            result = self.evaluate_test_entries_0_to_11(id, logger);
+        }
+
+        if (result instanceof Boolean) {
+            return result;
+        }
+
+        return false;
+    }
+}

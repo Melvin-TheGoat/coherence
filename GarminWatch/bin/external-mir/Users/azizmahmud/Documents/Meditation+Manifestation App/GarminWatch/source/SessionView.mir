@@ -1,0 +1,396 @@
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 8; @symbol_usingdef<0> = [Toybox,8,6,12]; @symbol_usingdef<1> = [WatchUi,8,13,20]; ]
+using Toybox.WatchUi;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 9; @symbol_usingdef<0> = [Toybox,9,6,12]; @symbol_usingdef<1> = [Graphics,9,13,21]; ]
+using Toybox.Graphics;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 10; @symbol_usingdef<0> = [Toybox,10,6,12]; @symbol_usingdef<1> = [Timer,10,13,18]; ]
+using Toybox.Timer;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 11; @symbol_usingdef<0> = [Toybox,11,6,12]; @symbol_usingdef<1> = [Lang,11,13,17]; ]
+using Toybox.Lang;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 13; @symbol_classdef = [SessionView,13,6,17]; @symbol_extends<0> = [WatchUi,13,26,33]; @symbol_extends<1> = [View,13,34,38]; ]
+class SessionView extends WatchUi.View {
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 13; ]
+    <init> {
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 13; ]
+    static
+    <init> {
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 15; @position = 8; @symbol_vardef = [capture,15,8,15]; ]
+    var capture;
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 16; @position = 8; @symbol_vardef = [ticker,16,8,14]; ]
+    var ticker;
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 18; @symbol_functiondef = [initialize,18,13,23]; @symbol_param<0> = [theCapture,18,24,34]; ]
+    function initialize(theCapture) as Void {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_18_36_21_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 19 8 ]
+        symbol [ View %tmp.2 19 8 12 ];
+        %tmp.2 = getv ? :View;
+        symbol [ initialize %tmp.3 19 13 23 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 20 8 ]
+        %tmp.4 = lgetv %theCapture;
+        symbol [ theCapture %tmp.4 20 18 28 ];
+        symbol [ capture ? 20 8 15 ];
+        putv self :capture %tmp.4;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_18_36_21_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 23; @symbol_functiondef = [onShow,23,13,19]; ]
+    function onShow() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_23_22_26_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 24 8 ]
+        symbol [ Timer %tmp.3 24 21 26 ];
+        %tmp.3 = getm $.Toybox.Timer;
+        symbol [ Timer %tmp.4 24 27 32 ];
+        %tmp.4 = getv function ? %tmp.3 :Timer;
+        %tmp.1 = newc %tmp.4 ();
+        symbol [ ticker ? 24 8 14 ];
+        putv self :ticker %tmp.1;
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 25 8 ]
+        symbol [ ticker %tmp.6 25 8 14 ];
+        %tmp.6 = getv ? :ticker;
+        symbol [ start %tmp.7 25 15 20 ];
+        %tmp.7 = getv function %tmp.6 :start;
+        %tmp.8 = self;
+        symbol [ method %tmp.9 25 21 27 ];
+        %tmp.9 = getv function %tmp.8 :method;
+        %tmp.11 = const :tick;
+        symbol [ tick %tmp.11 25 29 33 const ];
+        %tmp.12 = invoke %tmp.8 %tmp.9(%tmp.11);
+        %tmp.13 = 1000;
+        %tmp.14 = true;
+        invoke %tmp.6 %tmp.7(%tmp.12, %tmp.13, %tmp.14);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_23_22_26_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 28; @symbol_functiondef = [onHide,28,13,19]; ]
+    function onHide() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_28_22_33_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 29 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_8_32_8_if_stmt:
+        symbol [ ticker %tmp.2 29 12 18 ];
+        %tmp.2 = getv ? :ticker;
+        %tmp.3 = null;
+        %tmp.4 = ne %tmp.2 %tmp.3;
+        bf %tmp.4 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_8_32_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_8_32_8_if_true:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_28_32_8_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 30 12 ]
+        symbol [ ticker %tmp.6 30 12 18 ];
+        %tmp.6 = getv ? :ticker;
+        %tmp.7 = as %tmp.6 { (!Null) };
+        symbol [ stop %tmp.8 30 19 23 ];
+        %tmp.8 = getv function %tmp.7 :stop;
+        invoke %tmp.7 %tmp.8();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 31 12 ]
+        %tmp.9 = null;
+        symbol [ ticker ? 31 12 18 ];
+        putv self :ticker %tmp.9;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_28_32_8_stop:
+        goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_8_32_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_29_8_32_8_if_end:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_28_22_33_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 35; @symbol_functiondef = [tick,35,13,17]; ]
+    function tick() as Void {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_35_28_37_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 36 8 ]
+        symbol [ WatchUi %tmp.1 36 8 15 ];
+        %tmp.1 = getm $.Toybox.WatchUi;
+        symbol [ requestUpdate %tmp.2 36 16 29 ];
+        %tmp.2 = getv function %tmp.1 :requestUpdate;
+        invoke %tmp.1 %tmp.2();
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_35_28_37_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 39; @symbol_functiondef = [onUpdate,39,13,21]; @symbol_param<0> = [dc,39,22,24]; ]
+    function onUpdate(dc) {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 40 8 ]
+        %tmp.1 = lgetv %dc;
+        symbol [ dc %tmp.1 40 8 10 ];
+        symbol [ setColor %tmp.2 40 11 19 ];
+        %tmp.2 = getv function %tmp.1 :setColor;
+        symbol [ Graphics %tmp.3 40 20 28 ];
+        %tmp.3 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.4 40 29 40 ];
+        %tmp.4 = getv %tmp.3 :COLOR_BLACK;
+        symbol [ Graphics %tmp.5 40 42 50 ];
+        %tmp.5 = getm $.Toybox.Graphics;
+        symbol [ COLOR_BLACK %tmp.6 40 51 62 ];
+        %tmp.6 = getv %tmp.5 :COLOR_BLACK;
+        invoke %tmp.1 %tmp.2(%tmp.4, %tmp.6);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 41 8 ]
+        %tmp.7 = lgetv %dc;
+        symbol [ dc %tmp.7 41 8 10 ];
+        symbol [ clear %tmp.8 41 11 16 ];
+        %tmp.8 = getv function %tmp.7 :clear;
+        invoke %tmp.7 %tmp.8();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 43 8 ]
+        [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_stop" ]
+        %cx.1 = local;
+        symbol [ cx %cx.1 43 12 14 ];
+        %tmp.9 = lgetv %dc;
+        symbol [ dc %tmp.9 43 17 19 ];
+        symbol [ getWidth %tmp.10 43 20 28 ];
+        %tmp.10 = getv function %tmp.9 :getWidth;
+        %tmp.11 = invoke %tmp.9 %tmp.10();
+        %tmp.12 = 2;
+        %tmp.13 = div %tmp.11 %tmp.12;
+        lputv %cx.1 %tmp.13;
+        symbol [ cx %cx.1 43 12 14 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 44 8 ]
+        [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_stop" ]
+        %cy.2 = local;
+        symbol [ cy %cy.2 44 12 14 ];
+        %tmp.14 = lgetv %dc;
+        symbol [ dc %tmp.14 44 17 19 ];
+        symbol [ getHeight %tmp.15 44 20 29 ];
+        %tmp.15 = getv function %tmp.14 :getHeight;
+        %tmp.16 = invoke %tmp.14 %tmp.15();
+        %tmp.17 = 2;
+        %tmp.18 = div %tmp.16 %tmp.17;
+        lputv %cy.2 %tmp.18;
+        symbol [ cy %cy.2 44 12 14 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 46 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_8_56_8_if_stmt:
+        symbol [ capture %tmp.20 46 13 20 ];
+        %tmp.20 = getv ? :capture;
+        symbol [ running %tmp.21 46 21 28 ];
+        %tmp.21 = getv %tmp.20 :running;
+        %tmp.22 = not %tmp.21;
+        bf %tmp.22 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_8_56_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_8_56_8_if_true:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_30_56_8_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 47 12 ]
+        %tmp.23 = lgetv %dc;
+        symbol [ dc %tmp.23 47 12 14 ];
+        symbol [ setColor %tmp.24 47 15 23 ];
+        %tmp.24 = getv function %tmp.23 :setColor;
+        symbol [ Graphics %tmp.25 47 24 32 ];
+        %tmp.25 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.26 47 33 44 ];
+        %tmp.26 = getv %tmp.25 :COLOR_WHITE;
+        symbol [ Graphics %tmp.27 47 46 54 ];
+        %tmp.27 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.28 47 55 72 ];
+        %tmp.28 = getv %tmp.27 :COLOR_TRANSPARENT;
+        invoke %tmp.23 %tmp.24(%tmp.26, %tmp.28);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 48 12 ]
+        %tmp.29 = lgetv %dc;
+        symbol [ dc %tmp.29 48 12 14 ];
+        symbol [ drawText %tmp.30 48 15 23 ];
+        %tmp.30 = getv function %tmp.29 :drawText;
+        %tmp.31 = lgetv %cx.1;
+        symbol [ cx %tmp.31 48 24 26 ];
+        %tmp.32 = lgetv %cy.2;
+        symbol [ cy %tmp.32 48 28 30 ];
+        %tmp.33 = 20;
+        %tmp.34 = sub %tmp.32 %tmp.33;
+        symbol [ Graphics %tmp.35 48 37 45 ];
+        %tmp.35 = getm $.Toybox.Graphics;
+        symbol [ FONT_MEDIUM %tmp.36 48 46 57 ];
+        %tmp.36 = getv %tmp.35 :FONT_MEDIUM;
+        %tmp.37 = "808";
+        symbol [ Graphics %tmp.38 49 24 32 ];
+        %tmp.38 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.39 49 33 52 ];
+        %tmp.39 = getv %tmp.38 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.29 %tmp.30(%tmp.31, %tmp.34, %tmp.36, %tmp.37, %tmp.39);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 50 12 ]
+        %tmp.40 = lgetv %dc;
+        symbol [ dc %tmp.40 50 12 14 ];
+        symbol [ setColor %tmp.41 50 15 23 ];
+        %tmp.41 = getv function %tmp.40 :setColor;
+        symbol [ Graphics %tmp.42 50 24 32 ];
+        %tmp.42 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.43 50 33 46 ];
+        %tmp.43 = getv %tmp.42 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.44 50 48 56 ];
+        %tmp.44 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.45 50 57 74 ];
+        %tmp.45 = getv %tmp.44 :COLOR_TRANSPARENT;
+        invoke %tmp.40 %tmp.41(%tmp.43, %tmp.45);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 51 12 ]
+        %tmp.46 = lgetv %dc;
+        symbol [ dc %tmp.46 51 12 14 ];
+        symbol [ drawText %tmp.47 51 15 23 ];
+        %tmp.47 = getv function %tmp.46 :drawText;
+        %tmp.48 = lgetv %cx.1;
+        symbol [ cx %tmp.48 51 24 26 ];
+        %tmp.49 = lgetv %cy.2;
+        symbol [ cy %tmp.49 51 28 30 ];
+        %tmp.50 = 12;
+        %tmp.51 = add %tmp.49 %tmp.50;
+        symbol [ Graphics %tmp.52 51 37 45 ];
+        %tmp.52 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.53 51 46 56 ];
+        %tmp.53 = getv %tmp.52 :FONT_XTINY;
+        %tmp.54 = "Start on your phone,";
+        symbol [ Graphics %tmp.55 52 24 32 ];
+        %tmp.55 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.56 52 33 52 ];
+        %tmp.56 = getv %tmp.55 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.46 %tmp.47(%tmp.48, %tmp.51, %tmp.53, %tmp.54, %tmp.56);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 53 12 ]
+        %tmp.57 = lgetv %dc;
+        symbol [ dc %tmp.57 53 12 14 ];
+        symbol [ drawText %tmp.58 53 15 23 ];
+        %tmp.58 = getv function %tmp.57 :drawText;
+        %tmp.59 = lgetv %cx.1;
+        symbol [ cx %tmp.59 53 24 26 ];
+        %tmp.60 = lgetv %cy.2;
+        symbol [ cy %tmp.60 53 28 30 ];
+        %tmp.61 = 30;
+        %tmp.62 = add %tmp.60 %tmp.61;
+        symbol [ Graphics %tmp.63 53 37 45 ];
+        %tmp.63 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.64 53 46 56 ];
+        %tmp.64 = getv %tmp.63 :FONT_XTINY;
+        %tmp.65 = "or press start";
+        symbol [ Graphics %tmp.66 54 24 32 ];
+        %tmp.66 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.67 54 33 52 ];
+        %tmp.67 = getv %tmp.66 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.57 %tmp.58(%tmp.59, %tmp.62, %tmp.64, %tmp.65, %tmp.67);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 55 12 ]
+        ret ?;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_30_56_8_stop:
+        goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_8_56_8_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_46_8_56_8_if_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 58 8 ]
+        [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_stop" ]
+        %seconds.3 = local;
+        symbol [ seconds %seconds.3 58 12 19 ];
+        symbol [ capture %tmp.69 58 22 29 ];
+        %tmp.69 = getv ? :capture;
+        symbol [ elapsedSec %tmp.70 58 30 40 ];
+        %tmp.70 = getv function %tmp.69 :elapsedSec;
+        %tmp.71 = invoke %tmp.69 %tmp.70();
+        lputv %seconds.3 %tmp.71;
+        symbol [ seconds %seconds.3 58 12 19 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 59 8 ]
+        [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_stop" ]
+        %text.4 = local;
+        symbol [ text %text.4 59 12 16 ];
+        %tmp.72 = lgetv %seconds.3;
+        symbol [ seconds %tmp.72 59 20 27 ];
+        %tmp.73 = 60;
+        %tmp.74 = div %tmp.72 %tmp.73;
+        symbol [ format %tmp.75 59 34 40 ];
+        %tmp.75 = getv function %tmp.74 :format;
+        %tmp.76 = "%d";
+        %tmp.77 = invoke %tmp.74 %tmp.75(%tmp.76);
+        %tmp.78 = ":";
+        %tmp.79 = add %tmp.77 %tmp.78;
+        %tmp.80 = lgetv %seconds.3;
+        symbol [ seconds %tmp.80 59 56 63 ];
+        %tmp.81 = 60;
+        %tmp.82 = mod %tmp.80 %tmp.81;
+        symbol [ format %tmp.83 59 70 76 ];
+        %tmp.83 = getv function %tmp.82 :format;
+        %tmp.84 = "%02d";
+        %tmp.85 = invoke %tmp.82 %tmp.83(%tmp.84);
+        %tmp.86 = add %tmp.79 %tmp.85;
+        lputv %text.4 %tmp.86;
+        symbol [ text %text.4 59 12 16 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 61 8 ]
+        %tmp.87 = lgetv %dc;
+        symbol [ dc %tmp.87 61 8 10 ];
+        symbol [ setColor %tmp.88 61 11 19 ];
+        %tmp.88 = getv function %tmp.87 :setColor;
+        symbol [ Graphics %tmp.89 61 20 28 ];
+        %tmp.89 = getm $.Toybox.Graphics;
+        symbol [ COLOR_WHITE %tmp.90 61 29 40 ];
+        %tmp.90 = getv %tmp.89 :COLOR_WHITE;
+        symbol [ Graphics %tmp.91 61 42 50 ];
+        %tmp.91 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.92 61 51 68 ];
+        %tmp.92 = getv %tmp.91 :COLOR_TRANSPARENT;
+        invoke %tmp.87 %tmp.88(%tmp.90, %tmp.92);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 62 8 ]
+        %tmp.93 = lgetv %dc;
+        symbol [ dc %tmp.93 62 8 10 ];
+        symbol [ drawText %tmp.94 62 11 19 ];
+        %tmp.94 = getv function %tmp.93 :drawText;
+        %tmp.95 = lgetv %cx.1;
+        symbol [ cx %tmp.95 62 20 22 ];
+        %tmp.96 = lgetv %cy.2;
+        symbol [ cy %tmp.96 62 24 26 ];
+        %tmp.97 = 24;
+        %tmp.98 = sub %tmp.96 %tmp.97;
+        symbol [ Graphics %tmp.99 62 33 41 ];
+        %tmp.99 = getm $.Toybox.Graphics;
+        symbol [ FONT_NUMBER_MEDIUM %tmp.100 62 42 60 ];
+        %tmp.100 = getv %tmp.99 :FONT_NUMBER_MEDIUM;
+        %tmp.101 = lgetv %text.4;
+        symbol [ text %tmp.101 62 62 66 ];
+        symbol [ Graphics %tmp.102 63 20 28 ];
+        %tmp.102 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.103 63 29 48 ];
+        %tmp.103 = getv %tmp.102 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.93 %tmp.94(%tmp.95, %tmp.98, %tmp.100, %tmp.101, %tmp.103);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 65 8 ]
+        %tmp.104 = lgetv %dc;
+        symbol [ dc %tmp.104 65 8 10 ];
+        symbol [ setColor %tmp.105 65 11 19 ];
+        %tmp.105 = getv function %tmp.104 :setColor;
+        symbol [ Graphics %tmp.106 65 20 28 ];
+        %tmp.106 = getm $.Toybox.Graphics;
+        symbol [ COLOR_LT_GRAY %tmp.107 65 29 42 ];
+        %tmp.107 = getv %tmp.106 :COLOR_LT_GRAY;
+        symbol [ Graphics %tmp.108 65 44 52 ];
+        %tmp.108 = getm $.Toybox.Graphics;
+        symbol [ COLOR_TRANSPARENT %tmp.109 65 53 70 ];
+        %tmp.109 = getv %tmp.108 :COLOR_TRANSPARENT;
+        invoke %tmp.104 %tmp.105(%tmp.107, %tmp.109);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 66 8 ]
+        [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_stop" ]
+        %status.5 = local;
+        symbol [ status %status.5 66 12 18 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_begin:
+        symbol [ capture %tmp.111 66 21 28 ];
+        %tmp.111 = getv ? :capture;
+        symbol [ bridge %tmp.112 66 29 35 ];
+        %tmp.112 = getv %tmp.111 :bridge;
+        symbol [ delivering %tmp.113 66 36 46 ];
+        %tmp.113 = getv function %tmp.112 :delivering;
+        %tmp.114 = invoke %tmp.112 %tmp.113();
+        bf %tmp.114 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_else_false;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_true:
+        %tmp.115 = "Sending to iPhone";
+        push %tmp.115;
+        goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_else_false:
+        %tmp.116 = "iPhone out of reach";
+        push %tmp.116;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_end:
+        %tmp.117 = phi [%tmp.114 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_begin] [%tmp.115 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_true] [%tmp.116 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_else_false] [%tmp.117 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_66_21_67_51_end];
+        lputv %status.5 %tmp.117;
+        symbol [ status %status.5 66 12 18 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" 68 8 ]
+        %tmp.118 = lgetv %dc;
+        symbol [ dc %tmp.118 68 8 10 ];
+        symbol [ drawText %tmp.119 68 11 19 ];
+        %tmp.119 = getv function %tmp.118 :drawText;
+        %tmp.120 = lgetv %cx.1;
+        symbol [ cx %tmp.120 68 20 22 ];
+        %tmp.121 = lgetv %cy.2;
+        symbol [ cy %tmp.121 68 24 26 ];
+        %tmp.122 = 26;
+        %tmp.123 = add %tmp.121 %tmp.122;
+        symbol [ Graphics %tmp.124 68 33 41 ];
+        %tmp.124 = getm $.Toybox.Graphics;
+        symbol [ FONT_XTINY %tmp.125 68 42 52 ];
+        %tmp.125 = getv %tmp.124 :FONT_XTINY;
+        %tmp.126 = lgetv %status.5;
+        symbol [ status %tmp.126 68 54 60 ];
+        symbol [ Graphics %tmp.127 69 20 28 ];
+        %tmp.127 = getm $.Toybox.Graphics;
+        symbol [ TEXT_JUSTIFY_CENTER %tmp.128 69 29 48 ];
+        %tmp.128 = getv %tmp.127 :TEXT_JUSTIFY_CENTER;
+        invoke %tmp.118 %tmp.119(%tmp.120, %tmp.123, %tmp.125, %tmp.126, %tmp.128);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_SessionView_mc_39_26_70_4_stop:
+    }
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc"; @line = 8; ]
+<init> {
+}

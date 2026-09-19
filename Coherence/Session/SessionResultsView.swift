@@ -455,7 +455,7 @@ struct SessionResultsView: View {
                     } else {
                         Text(tile.value)
                             .font(.system(size: 17, weight: .bold, design: .rounded))
-                            .foregroundStyle(AppColor.accentGold)
+                            .foregroundStyle(AppColor.calmAccent)
                             .monospacedDigit()
                             .minimumScaleFactor(0.7)
                             .lineLimit(1)
@@ -505,12 +505,11 @@ struct SessionResultsView: View {
                 // is the tap target and the explainer is one tap away for
                 // whoever goes looking.
                 Text("Resonance reached")
-                    .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(AppColor.accentGoldText)
+                    .font(AppFont.caption.weight(.bold))
+                    .foregroundStyle(AppColor.calmAccent)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 6)
-                .background(AppColor.accentGold.opacity(0.10), in: Capsule())
-                .overlay(Capsule().stroke(AppColor.accentGoldText.opacity(0.45), lineWidth: 1))
+                .background(AppColor.calmAccentFill.opacity(0.14), in: Capsule())
             }
             // Attached to the button, not stacked on the NavigationStack with
             // the other two sheets — several .sheet modifiers on one view is
@@ -677,7 +676,7 @@ struct SessionResultsView: View {
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
                 .font(.system(.title, design: .rounded).weight(.bold))
                 .foregroundStyle(score == nil ? AppColor.textSecondary
-                                 : dim ? AppColor.textSecondary : AppColor.accentGold)
+                                 : dim ? AppColor.textSecondary : AppColor.calmAccent)
                 .monospacedDigit()
             Text(label)
                 .font(.caption2.weight(.semibold)).tracking(0.8)
@@ -1179,13 +1178,21 @@ private struct EvidenceGraphCard: View {
     /// steals vertical scrolling from the whole chart area.
     @State private var selectedMinutes: Double?
 
-    // Color grammar: physiology (heart, the doorway band) reads teal;
-    // achievement curves (stillness, breath line) read gold.
-    // One colour for every measured curve. There used to be a grammar here
-    // (gold = achieved, teal = the body's signals) and Melvin and Aziz cut it:
-    // two colours on one screen read as two systems, and nobody could say why
-    // the heart was teal while its tile was gold.
-    private var lineColor: Color { AppColor.accentGold }
+    // One colour for every measured curve, and it is SAGE (2026-09-19).
+    //
+    // This reverses the 2026-08 decision to make every curve gold, and it is
+    // worth being exact about why, because the objection then was correct: the
+    // heart curve was teal while the heart TILE was gold, which reads as two
+    // systems and nobody could say what either one meant. "Make it all gold"
+    // fixed the incoherence by deleting the distinction.
+    //
+    // The distinction is worth keeping and the other fix is the one that keeps
+    // it: a curve and its own tile now match, and everything measured off the
+    // body is sage while amber means a score. So a results screen has exactly
+    // one amber object, the ring, and a reader can find the number they were
+    // given without reading a word. Six amber things on one screen was the
+    // actual reason this app was called hard to look at.
+    private var lineColor: Color { AppColor.calmAccentFill }
 
     /// Under two minutes the x-axis speaks seconds; "0.3 min" is a unit for
     /// sits, not samples.
@@ -1241,7 +1248,7 @@ private struct EvidenceGraphCard: View {
                     // Resonance chip's "?" above the graphs.
                     RectangleMark(xStart: .value("min", span.lowerBound / 60),
                                   xEnd: .value("min", span.upperBound / 60))
-                        .foregroundStyle(AppColor.accentGold.opacity(0.10))
+                        .foregroundStyle(AppColor.calmAccentFill.opacity(0.16))
                 }
                 ForEach(series.smoothedPoints) { point in
                     // Fill down to the domain floor, not to zero.

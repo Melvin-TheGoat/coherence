@@ -1,0 +1,1782 @@
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 16; @symbol_usingdef<0> = [Toybox,16,6,12]; @symbol_usingdef<1> = [Test,16,13,17]; ]
+using Toybox.Test;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 17; @symbol_usingdef<0> = [Toybox,17,6,12]; @symbol_usingdef<1> = [Math,17,13,17]; ]
+using Toybox.Math;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 18; @symbol_usingdef<0> = [Toybox,18,6,12]; @symbol_usingdef<1> = [Lang,18,13,17]; ]
+using Toybox.Lang;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 20; @position = 6; @symbol_constdef = [FS,20,6,8]; ]
+const FS = 25.0;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 21; @position = 6; @symbol_constdef = [G,21,6,7]; ]
+const G = 1000.0;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 24; @symbol_functiondef = [steady,24,9,15]; @symbol_param<0> = [n,24,16,17]; @symbol_param<0>_type<0> = [Lang,24,21,25]; @symbol_param<0>_type<1> = [Number,24,26,32]; @symbol_param<1> = [x,24,34,35]; @symbol_param<1>_type<0> = [Lang,24,39,43]; @symbol_param<1>_type<1> = [Float,24,44,49]; @symbol_param<2> = [y,24,51,52]; @symbol_param<2>_type<0> = [Lang,24,56,60]; @symbol_param<2>_type<1> = [Float,24,61,66]; @symbol_param<3> = [z,24,68,69]; @symbol_param<3>_type<0> = [Lang,24,73,77]; @symbol_param<3>_type<1> = [Float,24,78,83]; @symbol_return<0> = [Lang,24,88,92]; @symbol_return<1> = [Array,24,93,98]; ]
+function steady(n as Lang.Number, x as Lang.Float, y as Lang.Float, z as Lang.Float) as Lang.Array {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 25 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_stop" ]
+    %xs.1 = local;
+    symbol [ xs %xs.1 25 8 10 ];
+    %tmp.1 = newa 0;
+    lputv %xs.1 %tmp.1;
+    symbol [ xs %xs.1 25 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 25 17 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_stop" ]
+    %ys.2 = local;
+    symbol [ ys %ys.2 25 21 23 ];
+    %tmp.2 = newa 0;
+    lputv %ys.2 %tmp.2;
+    symbol [ ys %ys.2 25 21 23 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 25 30 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_stop" ]
+    %zs.3 = local;
+    symbol [ zs %zs.3 25 34 36 ];
+    %tmp.3 = newa 0;
+    lputv %zs.3 %tmp.3;
+    symbol [ zs %zs.3 25 34 36 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 26 4 ]
+    for @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_test @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_incr @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_init:
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_begin" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 26 13 14 ];
+    %tmp.4 = 0;
+    lputv %i.4 %tmp.4;
+    symbol [ i %i.4 26 13 14 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_test:
+    %tmp.5 = lgetv %i.4;
+    symbol [ i %tmp.5 26 20 21 ];
+    %tmp.6 = lgetv %n;
+    symbol [ n %tmp.6 26 24 25 ];
+    %tmp.7 = lt %tmp.5 %tmp.6;
+    bf %tmp.7 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_35_28_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 27 8 ]
+    %tmp.8 = lgetv %xs.1;
+    symbol [ xs %tmp.8 27 8 10 ];
+    symbol [ add %tmp.9 27 11 14 ];
+    %tmp.9 = getv function %tmp.8 :add;
+    %tmp.10 = lgetv %x;
+    symbol [ x %tmp.10 27 15 16 ];
+    symbol [ toNumber %tmp.11 27 17 25 ];
+    %tmp.11 = getv function %tmp.10 :toNumber;
+    %tmp.12 = invoke %tmp.10 %tmp.11();
+    invoke %tmp.8 %tmp.9(%tmp.12);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 27 30 ]
+    %tmp.13 = lgetv %ys.2;
+    symbol [ ys %tmp.13 27 30 32 ];
+    symbol [ add %tmp.14 27 33 36 ];
+    %tmp.14 = getv function %tmp.13 :add;
+    %tmp.15 = lgetv %y;
+    symbol [ y %tmp.15 27 37 38 ];
+    symbol [ toNumber %tmp.16 27 39 47 ];
+    %tmp.16 = getv function %tmp.15 :toNumber;
+    %tmp.17 = invoke %tmp.15 %tmp.16();
+    invoke %tmp.13 %tmp.14(%tmp.17);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 27 52 ]
+    %tmp.18 = lgetv %zs.3;
+    symbol [ zs %tmp.18 27 52 54 ];
+    symbol [ add %tmp.19 27 55 58 ];
+    %tmp.19 = getv function %tmp.18 :add;
+    %tmp.20 = lgetv %z;
+    symbol [ z %tmp.20 27 59 60 ];
+    symbol [ toNumber %tmp.21 27 61 69 ];
+    %tmp.21 = getv function %tmp.20 :toNumber;
+    %tmp.22 = invoke %tmp.20 %tmp.21();
+    invoke %tmp.18 %tmp.19(%tmp.22);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_35_28_4_stop:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_incr:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 26 ]
+    %tmp.23 = lgetv %i.4;
+    symbol [ i %tmp.23 26 27 28 ];
+    %tmp.24 = 1;
+    %tmp.25 = add %tmp.23 %tmp.24;
+    lputv %i.4 %tmp.25;
+    symbol [ i %i.4 26 27 28 ];
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_test;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_26_4_28_4_for_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 29 4 ]
+    %tmp.26 = newa 3;
+    %tmp.27 = lgetv %xs.1;
+    symbol [ xs %tmp.27 29 12 14 ];
+    %tmp.28 = dup %tmp.26;
+    %tmp.29 = aputv %tmp.28 0 %tmp.27;
+    %tmp.30 = lgetv %ys.2;
+    symbol [ ys %tmp.30 29 16 18 ];
+    %tmp.31 = dup %tmp.29;
+    %tmp.32 = aputv %tmp.31 1 %tmp.30;
+    %tmp.33 = lgetv %zs.3;
+    symbol [ zs %tmp.33 29 20 22 ];
+    %tmp.34 = dup %tmp.32;
+    %tmp.35 = aputv %tmp.34 2 %tmp.33;
+    ret %tmp.35;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_24_99_30_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 34; @symbol_functiondef = [breathing,34,9,18]; @symbol_param<0> = [n,34,19,20]; @symbol_param<0>_type<0> = [Lang,34,24,28]; @symbol_param<0>_type<1> = [Number,34,29,35]; @symbol_param<1> = [bpm,34,37,40]; @symbol_param<1>_type<0> = [Lang,34,44,48]; @symbol_param<1>_type<1> = [Float,34,49,54]; @symbol_param<2> = [amp,34,56,59]; @symbol_param<2>_type<0> = [Lang,34,63,67]; @symbol_param<2>_type<1> = [Float,34,68,73]; @symbol_return<0> = [Lang,34,78,82]; @symbol_return<1> = [Array,34,83,88]; ]
+function breathing(n as Lang.Number, bpm as Lang.Float, amp as Lang.Float) as Lang.Array {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 35 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_stop" ]
+    %xs.1 = local;
+    symbol [ xs %xs.1 35 8 10 ];
+    %tmp.1 = newa 0;
+    lputv %xs.1 %tmp.1;
+    symbol [ xs %xs.1 35 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 35 17 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_stop" ]
+    %ys.2 = local;
+    symbol [ ys %ys.2 35 21 23 ];
+    %tmp.2 = newa 0;
+    lputv %ys.2 %tmp.2;
+    symbol [ ys %ys.2 35 21 23 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 35 30 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_stop" ]
+    %zs.3 = local;
+    symbol [ zs %zs.3 35 34 36 ];
+    %tmp.3 = newa 0;
+    lputv %zs.3 %tmp.3;
+    symbol [ zs %zs.3 35 34 36 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 36 4 ]
+    for @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_test @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_incr @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_init:
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_begin" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 36 13 14 ];
+    %tmp.4 = 0;
+    lputv %i.4 %tmp.4;
+    symbol [ i %i.4 36 13 14 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_test:
+    %tmp.5 = lgetv %i.4;
+    symbol [ i %tmp.5 36 20 21 ];
+    %tmp.6 = lgetv %n;
+    symbol [ n %tmp.6 36 24 25 ];
+    %tmp.7 = lt %tmp.5 %tmp.6;
+    bf %tmp.7 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_35_42_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 37 8 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_35_42_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_35_42_4_stop" ]
+    %t.5 = local;
+    symbol [ t %t.5 37 12 13 ];
+    %tmp.8 = lgetv %i.4;
+    symbol [ i %tmp.8 37 16 17 ];
+    symbol [ FS %tmp.10 37 20 22 ];
+    %tmp.10 = getv ? :FS;
+    %tmp.11 = div %tmp.8 %tmp.10;
+    lputv %t.5 %tmp.11;
+    symbol [ t %t.5 37 12 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 38 8 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_35_42_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_35_42_4_stop" ]
+    %theta.6 = local;
+    symbol [ theta %theta.6 38 12 17 ];
+    %tmp.12 = lgetv %amp;
+    symbol [ amp %tmp.12 38 20 23 ];
+    symbol [ Math %tmp.13 38 26 30 ];
+    %tmp.13 = getm $.Toybox.Math;
+    symbol [ sin %tmp.14 38 31 34 ];
+    %tmp.14 = getv function %tmp.13 :sin;
+    %tmp.15 = 2;
+    symbol [ Math %tmp.16 38 39 43 ];
+    %tmp.16 = getm $.Toybox.Math;
+    symbol [ PI %tmp.17 38 44 46 ];
+    %tmp.17 = getv %tmp.16 :PI;
+    %tmp.18 = mul %tmp.15 %tmp.17;
+    %tmp.19 = lgetv %bpm;
+    symbol [ bpm %tmp.19 38 50 53 ];
+    %tmp.20 = 60.0;
+    %tmp.21 = div %tmp.19 %tmp.20;
+    %tmp.22 = mul %tmp.18 %tmp.21;
+    %tmp.23 = lgetv %t.5;
+    symbol [ t %tmp.23 38 64 65 ];
+    %tmp.24 = mul %tmp.22 %tmp.23;
+    %tmp.25 = invoke %tmp.13 %tmp.14(%tmp.24);
+    %tmp.26 = mul %tmp.12 %tmp.25;
+    lputv %theta.6 %tmp.26;
+    symbol [ theta %theta.6 38 12 17 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 39 8 ]
+    %tmp.27 = lgetv %xs.1;
+    symbol [ xs %tmp.27 39 8 10 ];
+    symbol [ add %tmp.28 39 11 14 ];
+    %tmp.28 = getv function %tmp.27 :add;
+    symbol [ G %tmp.30 39 17 18 ];
+    %tmp.30 = getv ? :G;
+    %tmp.31 = sub 0 %tmp.30;
+    symbol [ Math %tmp.32 39 21 25 ];
+    %tmp.32 = getm $.Toybox.Math;
+    symbol [ sin %tmp.33 39 26 29 ];
+    %tmp.33 = getv function %tmp.32 :sin;
+    %tmp.34 = lgetv %theta.6;
+    symbol [ theta %tmp.34 39 30 35 ];
+    %tmp.35 = invoke %tmp.32 %tmp.33(%tmp.34);
+    %tmp.36 = mul %tmp.31 %tmp.35;
+    symbol [ toNumber %tmp.37 39 38 46 ];
+    %tmp.37 = getv function %tmp.36 :toNumber;
+    %tmp.38 = invoke %tmp.36 %tmp.37();
+    invoke %tmp.27 %tmp.28(%tmp.38);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 40 8 ]
+    %tmp.39 = lgetv %ys.2;
+    symbol [ ys %tmp.39 40 8 10 ];
+    symbol [ add %tmp.40 40 11 14 ];
+    %tmp.40 = getv function %tmp.39 :add;
+    %tmp.41 = 0;
+    invoke %tmp.39 %tmp.40(%tmp.41);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 41 8 ]
+    %tmp.42 = lgetv %zs.3;
+    symbol [ zs %tmp.42 41 8 10 ];
+    symbol [ add %tmp.43 41 11 14 ];
+    %tmp.43 = getv function %tmp.42 :add;
+    symbol [ G %tmp.45 41 16 17 ];
+    %tmp.45 = getv ? :G;
+    symbol [ Math %tmp.46 41 20 24 ];
+    %tmp.46 = getm $.Toybox.Math;
+    symbol [ cos %tmp.47 41 25 28 ];
+    %tmp.47 = getv function %tmp.46 :cos;
+    %tmp.48 = lgetv %theta.6;
+    symbol [ theta %tmp.48 41 29 34 ];
+    %tmp.49 = invoke %tmp.46 %tmp.47(%tmp.48);
+    %tmp.50 = mul %tmp.45 %tmp.49;
+    symbol [ toNumber %tmp.51 41 37 45 ];
+    %tmp.51 = getv function %tmp.50 :toNumber;
+    %tmp.52 = invoke %tmp.50 %tmp.51();
+    invoke %tmp.42 %tmp.43(%tmp.52);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_35_42_4_stop:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_incr:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 36 ]
+    %tmp.53 = lgetv %i.4;
+    symbol [ i %tmp.53 36 27 28 ];
+    %tmp.54 = 1;
+    %tmp.55 = add %tmp.53 %tmp.54;
+    lputv %i.4 %tmp.55;
+    symbol [ i %i.4 36 27 28 ];
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_test;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_36_4_42_4_for_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 43 4 ]
+    %tmp.56 = newa 3;
+    %tmp.57 = lgetv %xs.1;
+    symbol [ xs %tmp.57 43 12 14 ];
+    %tmp.58 = dup %tmp.56;
+    %tmp.59 = aputv %tmp.58 0 %tmp.57;
+    %tmp.60 = lgetv %ys.2;
+    symbol [ ys %tmp.60 43 16 18 ];
+    %tmp.61 = dup %tmp.59;
+    %tmp.62 = aputv %tmp.61 1 %tmp.60;
+    %tmp.63 = lgetv %zs.3;
+    symbol [ zs %tmp.63 43 20 22 ];
+    %tmp.64 = dup %tmp.62;
+    %tmp.65 = aputv %tmp.64 2 %tmp.63;
+    ret %tmp.65;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_34_89_44_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 49; @position = 6; @symbol_constdef = [MICRO_PER_MILLI,49,6,21]; ]
+const MICRO_PER_MILLI = 1000.0;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 53; @symbol_functiondef = [spread,53,9,15]; @symbol_param<0> = [out,53,16,19]; @symbol_param<0>_type<0> = [Lang,53,23,27]; @symbol_param<0>_type<1> = [Array,53,28,33]; @symbol_param<1> = [column,53,35,41]; @symbol_param<1>_type<0> = [Lang,53,45,49]; @symbol_param<1>_type<1> = [Number,53,50,56]; @symbol_param<2> = [skipBins,53,58,66]; @symbol_param<2>_type<0> = [Lang,53,70,74]; @symbol_param<2>_type<1> = [Number,53,75,81]; @symbol_return<0> = [Lang,53,86,90]; @symbol_return<1> = [Float,53,91,96]; ]
+function spread(out as Lang.Array, column as Lang.Number, skipBins as Lang.Number) as Lang.Float {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 54 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_stop" ]
+    %lo.1 = local;
+    symbol [ lo %lo.1 54 8 10 ];
+    %tmp.1 = null;
+    lputv %lo.1 %tmp.1;
+    symbol [ lo %lo.1 54 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 54 19 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_stop" ]
+    %hi.2 = local;
+    symbol [ hi %hi.2 54 23 25 ];
+    %tmp.2 = null;
+    lputv %hi.2 %tmp.2;
+    symbol [ hi %hi.2 54 23 25 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 55 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_stop" ]
+    %b.3 = local;
+    symbol [ b %b.3 55 8 9 ];
+    %tmp.3 = lgetv %skipBins;
+    symbol [ skipBins %tmp.3 55 12 20 ];
+    lputv %b.3 %tmp.3;
+    symbol [ b %b.3 55 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 56 4 ]
+    while @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_test @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_test:
+    %tmp.4 = lgetv %b.3;
+    symbol [ b %tmp.4 56 11 12 ];
+    %tmp.5 = 3;
+    %tmp.6 = mul %tmp.4 %tmp.5;
+    %tmp.7 = lgetv %column;
+    symbol [ column %tmp.7 56 19 25 ];
+    %tmp.8 = add %tmp.6 %tmp.7;
+    %tmp.9 = lgetv %out;
+    symbol [ out %tmp.9 56 28 31 ];
+    symbol [ size %tmp.10 56 32 36 ];
+    %tmp.10 = getv function %tmp.9 :size;
+    %tmp.11 = invoke %tmp.9 %tmp.10();
+    %tmp.12 = lt %tmp.8 %tmp.11;
+    bf %tmp.12 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_40_61_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 57 8 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_40_61_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_40_61_4_stop" ]
+    %v.4 = local;
+    symbol [ v %v.4 57 12 13 ];
+    %tmp.13 = lgetv %out;
+    symbol [ out %tmp.13 57 16 19 ];
+    %tmp.14 = lgetv %b.3;
+    symbol [ b %tmp.14 57 20 21 ];
+    %tmp.15 = 3;
+    %tmp.16 = mul %tmp.14 %tmp.15;
+    %tmp.17 = lgetv %column;
+    symbol [ column %tmp.17 57 28 34 ];
+    %tmp.18 = add %tmp.16 %tmp.17;
+    %tmp.19 = agetv %tmp.13 %tmp.18;
+    symbol [ toFloat %tmp.20 57 36 43 ];
+    %tmp.20 = getv function %tmp.19 :toFloat;
+    %tmp.21 = invoke %tmp.19 %tmp.20();
+    lputv %v.4 %tmp.21;
+    symbol [ v %v.4 57 12 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 58 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_8_58_44_if_stmt:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_12_58_30_begin:
+    %tmp.22 = lgetv %lo.1;
+    symbol [ lo %tmp.22 58 12 14 ];
+    %tmp.23 = null;
+    %tmp.24 = eq %tmp.22 %tmp.23;
+    bt %tmp.24 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_8_58_44_if_true;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_26_58_30_false:
+    %tmp.25 = lgetv %v.4;
+    symbol [ v %tmp.25 58 26 27 ];
+    %tmp.26 = lgetv %lo.1;
+    symbol [ lo %tmp.26 58 30 32 ];
+    %tmp.27 = as %tmp.26 { (!Null) };
+    %tmp.28 = lt %tmp.25 %tmp.27;
+    push %tmp.28;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_26_58_30_end:
+    %tmp.29 = phi [%tmp.24 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_12_58_30_begin] [%tmp.28 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_26_58_30_false] [%tmp.29 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_26_58_30_end];
+    bf %tmp.29 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_8_58_44_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_8_58_44_if_true:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_34_58_44_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 58 36 ]
+    %tmp.30 = lgetv %v.4;
+    symbol [ v %tmp.30 58 41 42 ];
+    lputv %lo.1 %tmp.30;
+    symbol [ lo %lo.1 58 36 38 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_34_58_44_stop:
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_8_58_44_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_58_8_58_44_if_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 59 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_8_59_44_if_stmt:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_12_59_30_begin:
+    %tmp.31 = lgetv %hi.2;
+    symbol [ hi %tmp.31 59 12 14 ];
+    %tmp.32 = null;
+    %tmp.33 = eq %tmp.31 %tmp.32;
+    bt %tmp.33 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_8_59_44_if_true;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_26_59_30_false:
+    %tmp.34 = lgetv %v.4;
+    symbol [ v %tmp.34 59 26 27 ];
+    %tmp.35 = lgetv %hi.2;
+    symbol [ hi %tmp.35 59 30 32 ];
+    %tmp.36 = as %tmp.35 { (!Null) };
+    %tmp.37 = gt %tmp.34 %tmp.36;
+    push %tmp.37;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_26_59_30_end:
+    %tmp.38 = phi [%tmp.33 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_12_59_30_begin] [%tmp.37 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_26_59_30_false] [%tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_26_59_30_end];
+    bf %tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_8_59_44_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_8_59_44_if_true:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_34_59_44_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 59 36 ]
+    %tmp.39 = lgetv %v.4;
+    symbol [ v %tmp.39 59 41 42 ];
+    lputv %hi.2 %tmp.39;
+    symbol [ hi %hi.2 59 36 38 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_34_59_44_stop:
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_8_59_44_if_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_59_8_59_44_if_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 60 8 ]
+    %tmp.40 = lgetv %b.3;
+    symbol [ b %tmp.40 60 8 9 ];
+    %tmp.41 = 1;
+    %tmp.42 = add %tmp.40 %tmp.41;
+    lputv %b.3 %tmp.42;
+    symbol [ b %b.3 60 8 9 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_40_61_4_stop:
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_test;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_56_4_61_4_while_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 62 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_begin:
+    %tmp.43 = lgetv %lo.1;
+    symbol [ lo %tmp.43 62 12 14 ];
+    %tmp.44 = null;
+    %tmp.45 = eq %tmp.43 %tmp.44;
+    bf %tmp.45 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_else_false;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_true:
+    %tmp.46 = 0.0;
+    push %tmp.46;
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_else_false:
+    %tmp.47 = lgetv %hi.2;
+    symbol [ hi %tmp.47 62 33 35 ];
+    %tmp.48 = lgetv %lo.1;
+    symbol [ lo %tmp.48 62 38 40 ];
+    %tmp.49 = as %tmp.48 { (!Null) };
+    %tmp.50 = sub %tmp.47 %tmp.49;
+    symbol [ MICRO_PER_MILLI %tmp.52 62 44 59 ];
+    %tmp.52 = getv ? :MICRO_PER_MILLI;
+    %tmp.53 = div %tmp.50 %tmp.52;
+    push %tmp.53;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_end:
+    %tmp.54 = phi [%tmp.45 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_begin] [%tmp.46 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_true] [%tmp.53 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_else_false] [%tmp.54 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_62_11_62_44_end];
+    ret %tmp.54;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_53_97_63_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 65; @symbol_functiondef = [meanOf,65,9,15]; @symbol_param<0> = [out,65,16,19]; @symbol_param<0>_type<0> = [Lang,65,23,27]; @symbol_param<0>_type<1> = [Array,65,28,33]; @symbol_param<1> = [column,65,35,41]; @symbol_param<1>_type<0> = [Lang,65,45,49]; @symbol_param<1>_type<1> = [Number,65,50,56]; @symbol_param<2> = [skipBins,65,58,66]; @symbol_param<2>_type<0> = [Lang,65,70,74]; @symbol_param<2>_type<1> = [Number,65,75,81]; @symbol_return<0> = [Lang,65,86,90]; @symbol_return<1> = [Float,65,91,96]; ]
+function meanOf(out as Lang.Array, column as Lang.Number, skipBins as Lang.Number) as Lang.Float {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 66 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_stop" ]
+    %sum.1 = local;
+    symbol [ sum %sum.1 66 8 11 ];
+    %tmp.1 = 0.0;
+    lputv %sum.1 %tmp.1;
+    symbol [ sum %sum.1 66 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 66 19 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_stop" ]
+    %count.2 = local;
+    symbol [ count %count.2 66 23 28 ];
+    %tmp.2 = 0;
+    lputv %count.2 %tmp.2;
+    symbol [ count %count.2 66 23 28 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 67 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_stop" ]
+    %b.3 = local;
+    symbol [ b %b.3 67 8 9 ];
+    %tmp.3 = lgetv %skipBins;
+    symbol [ skipBins %tmp.3 67 12 20 ];
+    lputv %b.3 %tmp.3;
+    symbol [ b %b.3 67 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 68 4 ]
+    while @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_test @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_test:
+    %tmp.4 = lgetv %b.3;
+    symbol [ b %tmp.4 68 11 12 ];
+    %tmp.5 = 3;
+    %tmp.6 = mul %tmp.4 %tmp.5;
+    %tmp.7 = lgetv %column;
+    symbol [ column %tmp.7 68 19 25 ];
+    %tmp.8 = add %tmp.6 %tmp.7;
+    %tmp.9 = lgetv %out;
+    symbol [ out %tmp.9 68 28 31 ];
+    symbol [ size %tmp.10 68 32 36 ];
+    %tmp.10 = getv function %tmp.9 :size;
+    %tmp.11 = invoke %tmp.9 %tmp.10();
+    %tmp.12 = lt %tmp.8 %tmp.11;
+    bf %tmp.12 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_40_72_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 69 8 ]
+    %tmp.13 = lgetv %sum.1;
+    symbol [ sum %tmp.13 69 8 11 ];
+    %tmp.14 = lgetv %out;
+    symbol [ out %tmp.14 69 15 18 ];
+    %tmp.15 = lgetv %b.3;
+    symbol [ b %tmp.15 69 19 20 ];
+    %tmp.16 = 3;
+    %tmp.17 = mul %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %column;
+    symbol [ column %tmp.18 69 27 33 ];
+    %tmp.19 = add %tmp.17 %tmp.18;
+    %tmp.20 = agetv %tmp.14 %tmp.19;
+    symbol [ toFloat %tmp.21 69 35 42 ];
+    %tmp.21 = getv function %tmp.20 :toFloat;
+    %tmp.22 = invoke %tmp.20 %tmp.21();
+    %tmp.23 = add %tmp.13 %tmp.22;
+    lputv %sum.1 %tmp.23;
+    symbol [ sum %sum.1 69 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 70 8 ]
+    %tmp.24 = lgetv %count.2;
+    symbol [ count %tmp.24 70 8 13 ];
+    %tmp.25 = 1;
+    %tmp.26 = add %tmp.24 %tmp.25;
+    lputv %count.2 %tmp.26;
+    symbol [ count %count.2 70 8 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 71 8 ]
+    %tmp.27 = lgetv %b.3;
+    symbol [ b %tmp.27 71 8 9 ];
+    %tmp.28 = 1;
+    %tmp.29 = add %tmp.27 %tmp.28;
+    lputv %b.3 %tmp.29;
+    symbol [ b %b.3 71 8 9 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_40_72_4_stop:
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_test;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_68_4_72_4_while_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 73 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_begin:
+    %tmp.30 = lgetv %count.2;
+    symbol [ count %tmp.30 73 11 16 ];
+    %tmp.31 = 0;
+    %tmp.32 = eq %tmp.30 %tmp.31;
+    bf %tmp.32 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_else_false;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_true:
+    %tmp.33 = 0.0;
+    push %tmp.33;
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_else_false:
+    %tmp.34 = lgetv %sum.1;
+    symbol [ sum %tmp.34 73 31 34 ];
+    %tmp.35 = lgetv %count.2;
+    symbol [ count %tmp.35 73 37 42 ];
+    %tmp.36 = div %tmp.34 %tmp.35;
+    symbol [ MICRO_PER_MILLI %tmp.38 73 46 61 ];
+    %tmp.38 = getv ? :MICRO_PER_MILLI;
+    %tmp.39 = div %tmp.36 %tmp.38;
+    push %tmp.39;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_end:
+    %tmp.40 = phi [%tmp.32 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_begin] [%tmp.33 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_true] [%tmp.39 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_else_false] [%tmp.40 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_73_11_73_46_end];
+    ret %tmp.40;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_65_97_74_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 77; test = true; @symbol_functiondef = [test_binningShape,77,9,26]; @symbol_param<0> = [logger,77,27,33]; @symbol_param<0>_type<0> = [Test,77,37,41]; @symbol_param<0>_type<1> = [Logger,77,42,48]; @symbol_return<0> = [Lang,77,53,57]; @symbol_return<1> = [Boolean,77,58,65]; ]
+function test_binningShape(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_77_66_83_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 78 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_77_66_83_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_77_66_83_0_stop" ]
+    %s.1 = local;
+    symbol [ s %s.1 78 8 9 ];
+    %tmp.1 = self;
+    symbol [ steady %tmp.2 78 12 18 ];
+    %tmp.2 = getv function %tmp.1 :steady;
+    %tmp.3 = 100;
+    %tmp.4 = 0.0;
+    %tmp.5 = 0.0;
+    symbol [ G %tmp.7 78 34 35 ];
+    %tmp.7 = getv ? :G;
+    %tmp.8 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5, %tmp.7);
+    lputv %s.1 %tmp.8;
+    symbol [ s %s.1 78 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 79 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_77_66_83_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_77_66_83_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 79 8 11 ];
+    symbol [ Reducer %tmp.12 79 18 25 ];
+    %tmp.12 = getv ? :Reducer;
+    %tmp.9 = newc %tmp.12 ();
+    symbol [ reduce %tmp.13 79 28 34 ];
+    %tmp.13 = getv function %tmp.9 :reduce;
+    %tmp.14 = lgetv %s.1;
+    symbol [ s %tmp.14 79 35 36 ];
+    %tmp.15 = 0;
+    %tmp.16 = agetv %tmp.14 %tmp.15;
+    %tmp.17 = lgetv %s.1;
+    symbol [ s %tmp.17 79 41 42 ];
+    %tmp.18 = 1;
+    %tmp.19 = agetv %tmp.17 %tmp.18;
+    %tmp.20 = lgetv %s.1;
+    symbol [ s %tmp.20 79 47 48 ];
+    %tmp.21 = 2;
+    %tmp.22 = agetv %tmp.20 %tmp.21;
+    %tmp.23 = invoke %tmp.9 %tmp.13(%tmp.16, %tmp.19, %tmp.22);
+    lputv %out.2 %tmp.23;
+    symbol [ out %out.2 79 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 81 4 ]
+    %tmp.24 = lgetv %logger;
+    symbol [ logger %tmp.24 81 4 10 ];
+    symbol [ debug %tmp.25 81 11 16 ];
+    %tmp.25 = getv function %tmp.24 :debug;
+    %tmp.26 = "got ";
+    %tmp.27 = lgetv %out.2;
+    symbol [ out %tmp.27 81 26 29 ];
+    symbol [ size %tmp.28 81 30 34 ];
+    %tmp.28 = getv function %tmp.27 :size;
+    %tmp.29 = invoke %tmp.27 %tmp.28();
+    %tmp.30 = add %tmp.26 %tmp.29;
+    %tmp.31 = " numbers";
+    %tmp.32 = add %tmp.30 %tmp.31;
+    invoke %tmp.24 %tmp.25(%tmp.32);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 82 4 ]
+    %tmp.33 = lgetv %out.2;
+    symbol [ out %tmp.33 82 11 14 ];
+    symbol [ size %tmp.34 82 15 19 ];
+    %tmp.34 = getv function %tmp.33 :size;
+    %tmp.35 = invoke %tmp.33 %tmp.34();
+    %tmp.36 = 60;
+    %tmp.37 = eq %tmp.35 %tmp.36;
+    ret %tmp.37;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_77_66_83_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 86; test = true; @symbol_functiondef = [test_flatWristReadsZeroTilt,86,9,36]; @symbol_param<0> = [logger,86,37,43]; @symbol_param<0>_type<0> = [Test,86,47,51]; @symbol_param<0>_type<1> = [Logger,86,52,58]; @symbol_return<0> = [Lang,86,63,67]; @symbol_return<1> = [Boolean,86,68,75]; ]
+function test_flatWristReadsZeroTilt(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 87 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_stop" ]
+    %s.1 = local;
+    symbol [ s %s.1 87 8 9 ];
+    %tmp.1 = self;
+    symbol [ steady %tmp.2 87 12 18 ];
+    %tmp.2 = getv function %tmp.1 :steady;
+    %tmp.3 = 250;
+    %tmp.4 = 0.0;
+    %tmp.5 = 0.0;
+    symbol [ G %tmp.7 87 34 35 ];
+    %tmp.7 = getv ? :G;
+    %tmp.8 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5, %tmp.7);
+    lputv %s.1 %tmp.8;
+    symbol [ s %s.1 87 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 88 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 88 8 11 ];
+    symbol [ Reducer %tmp.12 88 18 25 ];
+    %tmp.12 = getv ? :Reducer;
+    %tmp.9 = newc %tmp.12 ();
+    symbol [ reduce %tmp.13 88 28 34 ];
+    %tmp.13 = getv function %tmp.9 :reduce;
+    %tmp.14 = lgetv %s.1;
+    symbol [ s %tmp.14 88 35 36 ];
+    %tmp.15 = 0;
+    %tmp.16 = agetv %tmp.14 %tmp.15;
+    %tmp.17 = lgetv %s.1;
+    symbol [ s %tmp.17 88 41 42 ];
+    %tmp.18 = 1;
+    %tmp.19 = agetv %tmp.17 %tmp.18;
+    %tmp.20 = lgetv %s.1;
+    symbol [ s %tmp.20 88 47 48 ];
+    %tmp.21 = 2;
+    %tmp.22 = agetv %tmp.20 %tmp.21;
+    %tmp.23 = invoke %tmp.9 %tmp.13(%tmp.16, %tmp.19, %tmp.22);
+    lputv %out.2 %tmp.23;
+    symbol [ out %out.2 88 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 89 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_stop" ]
+    %pitch.3 = local;
+    symbol [ pitch %pitch.3 89 8 13 ];
+    %tmp.24 = self;
+    symbol [ meanOf %tmp.25 89 16 22 ];
+    %tmp.25 = getv function %tmp.24 :meanOf;
+    %tmp.26 = lgetv %out.2;
+    symbol [ out %tmp.26 89 23 26 ];
+    %tmp.27 = 0;
+    %tmp.28 = 10;
+    %tmp.29 = invoke %tmp.24 %tmp.25(%tmp.26, %tmp.27, %tmp.28);
+    lputv %pitch.3 %tmp.29;
+    symbol [ pitch %pitch.3 89 8 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 90 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_stop" ]
+    %roll.4 = local;
+    symbol [ roll %roll.4 90 8 12 ];
+    %tmp.30 = self;
+    symbol [ meanOf %tmp.31 90 15 21 ];
+    %tmp.31 = getv function %tmp.30 :meanOf;
+    %tmp.32 = lgetv %out.2;
+    symbol [ out %tmp.32 90 22 25 ];
+    %tmp.33 = 1;
+    %tmp.34 = 10;
+    %tmp.35 = invoke %tmp.30 %tmp.31(%tmp.32, %tmp.33, %tmp.34);
+    lputv %roll.4 %tmp.35;
+    symbol [ roll %roll.4 90 8 12 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 91 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_stop" ]
+    %residual.5 = local;
+    symbol [ residual %residual.5 91 8 16 ];
+    %tmp.36 = self;
+    symbol [ meanOf %tmp.37 91 19 25 ];
+    %tmp.37 = getv function %tmp.36 :meanOf;
+    %tmp.38 = lgetv %out.2;
+    symbol [ out %tmp.38 91 26 29 ];
+    %tmp.39 = 2;
+    %tmp.40 = 10;
+    %tmp.41 = invoke %tmp.36 %tmp.37(%tmp.38, %tmp.39, %tmp.40);
+    lputv %residual.5 %tmp.41;
+    symbol [ residual %residual.5 91 8 16 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 92 4 ]
+    %tmp.42 = lgetv %logger;
+    symbol [ logger %tmp.42 92 4 10 ];
+    symbol [ debug %tmp.43 92 11 16 ];
+    %tmp.43 = getv function %tmp.42 :debug;
+    %tmp.44 = "pitch ";
+    %tmp.45 = lgetv %pitch.3;
+    symbol [ pitch %tmp.45 92 28 33 ];
+    %tmp.46 = add %tmp.44 %tmp.45;
+    %tmp.47 = " roll ";
+    %tmp.48 = add %tmp.46 %tmp.47;
+    %tmp.49 = lgetv %roll.4;
+    symbol [ roll %tmp.49 92 47 51 ];
+    %tmp.50 = add %tmp.48 %tmp.49;
+    %tmp.51 = " residual ";
+    %tmp.52 = add %tmp.50 %tmp.51;
+    %tmp.53 = lgetv %residual.5;
+    symbol [ residual %tmp.53 92 69 77 ];
+    %tmp.54 = add %tmp.52 %tmp.53;
+    invoke %tmp.42 %tmp.43(%tmp.54);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 93 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_74_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_58_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_46_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_33_begin:
+    %tmp.55 = lgetv %pitch.3;
+    symbol [ pitch %tmp.55 93 11 16 ];
+    %tmp.56 = -5;
+    %tmp.57 = gt %tmp.55 %tmp.56;
+    %tmp.58 = dup %tmp.57;
+    bf %tmp.58 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_25_93_33_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_25_93_33_true:
+    %tmp.59 = lgetv %pitch.3;
+    symbol [ pitch %tmp.59 93 25 30 ];
+    %tmp.60 = 5;
+    %tmp.61 = lt %tmp.59 %tmp.60;
+    %tmp.62 = and %tmp.57 %tmp.61;
+    push %tmp.62;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_25_93_33_end:
+    %tmp.63 = phi [%tmp.58 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_33_begin] [%tmp.62 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_25_93_33_true] [%tmp.63 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_25_93_33_end];
+    %tmp.64 = dup %tmp.63;
+    bf %tmp.64 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_38_93_46_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_38_93_46_true:
+    %tmp.65 = lgetv %roll.4;
+    symbol [ roll %tmp.65 93 38 42 ];
+    %tmp.66 = -5;
+    %tmp.67 = gt %tmp.65 %tmp.66;
+    %tmp.68 = and %tmp.63 %tmp.67;
+    push %tmp.68;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_38_93_46_end:
+    %tmp.69 = phi [%tmp.64 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_46_begin] [%tmp.68 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_38_93_46_true] [%tmp.69 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_38_93_46_end];
+    %tmp.70 = dup %tmp.69;
+    bf %tmp.70 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_51_93_58_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_51_93_58_true:
+    %tmp.71 = lgetv %roll.4;
+    symbol [ roll %tmp.71 93 51 55 ];
+    %tmp.72 = 5;
+    %tmp.73 = lt %tmp.71 %tmp.72;
+    %tmp.74 = and %tmp.69 %tmp.73;
+    push %tmp.74;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_51_93_58_end:
+    %tmp.75 = phi [%tmp.70 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_58_begin] [%tmp.74 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_51_93_58_true] [%tmp.75 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_51_93_58_end];
+    %tmp.76 = dup %tmp.75;
+    bf %tmp.76 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_63_93_74_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_63_93_74_true:
+    %tmp.77 = lgetv %residual.5;
+    symbol [ residual %tmp.77 93 63 71 ];
+    %tmp.78 = 5;
+    %tmp.79 = lt %tmp.77 %tmp.78;
+    %tmp.80 = and %tmp.75 %tmp.79;
+    push %tmp.80;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_63_93_74_end:
+    %tmp.81 = phi [%tmp.76 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_11_93_74_begin] [%tmp.80 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_63_93_74_true] [%tmp.81 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_93_63_93_74_end];
+    ret %tmp.81;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_86_76_94_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 97; test = true; @symbol_functiondef = [test_tiltOnItsSideReadsAQuarterTurn,97,9,44]; @symbol_param<0> = [logger,97,45,51]; @symbol_param<0>_type<0> = [Test,97,55,59]; @symbol_param<0>_type<1> = [Logger,97,60,66]; @symbol_return<0> = [Lang,97,71,75]; @symbol_return<1> = [Boolean,97,76,83]; ]
+function test_tiltOnItsSideReadsAQuarterTurn(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 99 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_stop" ]
+    %s.1 = local;
+    symbol [ s %s.1 99 8 9 ];
+    %tmp.1 = self;
+    symbol [ steady %tmp.2 99 12 18 ];
+    %tmp.2 = getv function %tmp.1 :steady;
+    %tmp.3 = 400;
+    symbol [ G %tmp.5 99 24 25 ];
+    %tmp.5 = getv ? :G;
+    %tmp.6 = 0.0;
+    %tmp.7 = 0.0;
+    %tmp.8 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.5, %tmp.6, %tmp.7);
+    lputv %s.1 %tmp.8;
+    symbol [ s %s.1 99 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 100 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 100 8 11 ];
+    symbol [ Reducer %tmp.12 100 18 25 ];
+    %tmp.12 = getv ? :Reducer;
+    %tmp.9 = newc %tmp.12 ();
+    symbol [ reduce %tmp.13 100 28 34 ];
+    %tmp.13 = getv function %tmp.9 :reduce;
+    %tmp.14 = lgetv %s.1;
+    symbol [ s %tmp.14 100 35 36 ];
+    %tmp.15 = 0;
+    %tmp.16 = agetv %tmp.14 %tmp.15;
+    %tmp.17 = lgetv %s.1;
+    symbol [ s %tmp.17 100 41 42 ];
+    %tmp.18 = 1;
+    %tmp.19 = agetv %tmp.17 %tmp.18;
+    %tmp.20 = lgetv %s.1;
+    symbol [ s %tmp.20 100 47 48 ];
+    %tmp.21 = 2;
+    %tmp.22 = agetv %tmp.20 %tmp.21;
+    %tmp.23 = invoke %tmp.9 %tmp.13(%tmp.16, %tmp.19, %tmp.22);
+    lputv %out.2 %tmp.23;
+    symbol [ out %out.2 100 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 101 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_stop" ]
+    %pitch.3 = local;
+    symbol [ pitch %pitch.3 101 8 13 ];
+    %tmp.24 = self;
+    symbol [ meanOf %tmp.25 101 16 22 ];
+    %tmp.25 = getv function %tmp.24 :meanOf;
+    %tmp.26 = lgetv %out.2;
+    symbol [ out %tmp.26 101 23 26 ];
+    %tmp.27 = 0;
+    %tmp.28 = 40;
+    %tmp.29 = invoke %tmp.24 %tmp.25(%tmp.26, %tmp.27, %tmp.28);
+    lputv %pitch.3 %tmp.29;
+    symbol [ pitch %pitch.3 101 8 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 102 4 ]
+    %tmp.30 = lgetv %logger;
+    symbol [ logger %tmp.30 102 4 10 ];
+    symbol [ debug %tmp.31 102 11 16 ];
+    %tmp.31 = getv function %tmp.30 :debug;
+    %tmp.32 = "pitch ";
+    %tmp.33 = lgetv %pitch.3;
+    symbol [ pitch %tmp.33 102 28 33 ];
+    %tmp.34 = add %tmp.32 %tmp.33;
+    %tmp.35 = " mrad, want about -1571";
+    %tmp.36 = add %tmp.34 %tmp.35;
+    invoke %tmp.30 %tmp.31(%tmp.36);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 103 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_11_103_37_begin:
+    %tmp.37 = lgetv %pitch.3;
+    symbol [ pitch %tmp.37 103 11 16 ];
+    %tmp.38 = -1520;
+    %tmp.39 = lt %tmp.37 %tmp.38;
+    %tmp.40 = dup %tmp.39;
+    bf %tmp.40 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_28_103_37_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_28_103_37_true:
+    %tmp.41 = lgetv %pitch.3;
+    symbol [ pitch %tmp.41 103 28 33 ];
+    %tmp.42 = -1620;
+    %tmp.43 = gt %tmp.41 %tmp.42;
+    %tmp.44 = and %tmp.39 %tmp.43;
+    push %tmp.44;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_28_103_37_end:
+    %tmp.45 = phi [%tmp.40 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_11_103_37_begin] [%tmp.44 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_28_103_37_true] [%tmp.45 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_103_28_103_37_end];
+    ret %tmp.45;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_97_84_104_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 107; test = true; @symbol_functiondef = [test_rollReadsTheOtherAxis,107,9,35]; @symbol_param<0> = [logger,107,36,42]; @symbol_param<0>_type<0> = [Test,107,46,50]; @symbol_param<0>_type<1> = [Logger,107,51,57]; @symbol_return<0> = [Lang,107,62,66]; @symbol_return<1> = [Boolean,107,67,74]; ]
+function test_rollReadsTheOtherAxis(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 108 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_stop" ]
+    %s.1 = local;
+    symbol [ s %s.1 108 8 9 ];
+    %tmp.1 = self;
+    symbol [ steady %tmp.2 108 12 18 ];
+    %tmp.2 = getv function %tmp.1 :steady;
+    %tmp.3 = 400;
+    %tmp.4 = 0.0;
+    symbol [ G %tmp.6 108 29 30 ];
+    %tmp.6 = getv ? :G;
+    %tmp.7 = 0.0;
+    %tmp.8 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.6, %tmp.7);
+    lputv %s.1 %tmp.8;
+    symbol [ s %s.1 108 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 109 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 109 8 11 ];
+    symbol [ Reducer %tmp.12 109 18 25 ];
+    %tmp.12 = getv ? :Reducer;
+    %tmp.9 = newc %tmp.12 ();
+    symbol [ reduce %tmp.13 109 28 34 ];
+    %tmp.13 = getv function %tmp.9 :reduce;
+    %tmp.14 = lgetv %s.1;
+    symbol [ s %tmp.14 109 35 36 ];
+    %tmp.15 = 0;
+    %tmp.16 = agetv %tmp.14 %tmp.15;
+    %tmp.17 = lgetv %s.1;
+    symbol [ s %tmp.17 109 41 42 ];
+    %tmp.18 = 1;
+    %tmp.19 = agetv %tmp.17 %tmp.18;
+    %tmp.20 = lgetv %s.1;
+    symbol [ s %tmp.20 109 47 48 ];
+    %tmp.21 = 2;
+    %tmp.22 = agetv %tmp.20 %tmp.21;
+    %tmp.23 = invoke %tmp.9 %tmp.13(%tmp.16, %tmp.19, %tmp.22);
+    lputv %out.2 %tmp.23;
+    symbol [ out %out.2 109 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 110 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_stop" ]
+    %roll.3 = local;
+    symbol [ roll %roll.3 110 8 12 ];
+    %tmp.24 = self;
+    symbol [ meanOf %tmp.25 110 15 21 ];
+    %tmp.25 = getv function %tmp.24 :meanOf;
+    %tmp.26 = lgetv %out.2;
+    symbol [ out %tmp.26 110 22 25 ];
+    %tmp.27 = 1;
+    %tmp.28 = 40;
+    %tmp.29 = invoke %tmp.24 %tmp.25(%tmp.26, %tmp.27, %tmp.28);
+    lputv %roll.3 %tmp.29;
+    symbol [ roll %roll.3 110 8 12 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 111 4 ]
+    %tmp.30 = lgetv %logger;
+    symbol [ logger %tmp.30 111 4 10 ];
+    symbol [ debug %tmp.31 111 11 16 ];
+    %tmp.31 = getv function %tmp.30 :debug;
+    %tmp.32 = "roll ";
+    %tmp.33 = lgetv %roll.3;
+    symbol [ roll %tmp.33 111 27 31 ];
+    %tmp.34 = add %tmp.32 %tmp.33;
+    %tmp.35 = " mrad, want about 1571";
+    %tmp.36 = add %tmp.34 %tmp.35;
+    invoke %tmp.30 %tmp.31(%tmp.36);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 112 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_11_112_33_begin:
+    %tmp.37 = lgetv %roll.3;
+    symbol [ roll %tmp.37 112 11 15 ];
+    %tmp.38 = 1520;
+    %tmp.39 = gt %tmp.37 %tmp.38;
+    %tmp.40 = dup %tmp.39;
+    bf %tmp.40 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_26_112_33_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_26_112_33_true:
+    %tmp.41 = lgetv %roll.3;
+    symbol [ roll %tmp.41 112 26 30 ];
+    %tmp.42 = 1620;
+    %tmp.43 = lt %tmp.41 %tmp.42;
+    %tmp.44 = and %tmp.39 %tmp.43;
+    push %tmp.44;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_26_112_33_end:
+    %tmp.45 = phi [%tmp.40 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_11_112_33_begin] [%tmp.44 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_26_112_33_true] [%tmp.45 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_112_26_112_33_end];
+    ret %tmp.45;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_107_75_113_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 118; test = true; @symbol_functiondef = [test_aBreathSurvivesTheFilter,118,9,38]; @symbol_param<0> = [logger,118,39,45]; @symbol_param<0>_type<0> = [Test,118,49,53]; @symbol_param<0>_type<1> = [Logger,118,54,60]; @symbol_return<0> = [Lang,118,65,69]; @symbol_return<1> = [Boolean,118,70,77]; ]
+function test_aBreathSurvivesTheFilter(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 119 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_stop" ]
+    %b.1 = local;
+    symbol [ b %b.1 119 8 9 ];
+    %tmp.1 = self;
+    symbol [ breathing %tmp.2 119 12 21 ];
+    %tmp.2 = getv function %tmp.1 :breathing;
+    %tmp.3 = 1500;
+    %tmp.4 = 6.0;
+    %tmp.5 = 0.020;
+    %tmp.6 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+    lputv %b.1 %tmp.6;
+    symbol [ b %b.1 119 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 120 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 120 8 11 ];
+    symbol [ Reducer %tmp.10 120 18 25 ];
+    %tmp.10 = getv ? :Reducer;
+    %tmp.7 = newc %tmp.10 ();
+    symbol [ reduce %tmp.11 120 28 34 ];
+    %tmp.11 = getv function %tmp.7 :reduce;
+    %tmp.12 = lgetv %b.1;
+    symbol [ b %tmp.12 120 35 36 ];
+    %tmp.13 = 0;
+    %tmp.14 = agetv %tmp.12 %tmp.13;
+    %tmp.15 = lgetv %b.1;
+    symbol [ b %tmp.15 120 41 42 ];
+    %tmp.16 = 1;
+    %tmp.17 = agetv %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %b.1;
+    symbol [ b %tmp.18 120 47 48 ];
+    %tmp.19 = 2;
+    %tmp.20 = agetv %tmp.18 %tmp.19;
+    %tmp.21 = invoke %tmp.7 %tmp.11(%tmp.14, %tmp.17, %tmp.20);
+    lputv %out.2 %tmp.21;
+    symbol [ out %out.2 120 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 121 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_stop" ]
+    %pp.3 = local;
+    symbol [ pp %pp.3 121 8 10 ];
+    %tmp.22 = self;
+    symbol [ spread %tmp.23 121 13 19 ];
+    %tmp.23 = getv function %tmp.22 :spread;
+    %tmp.24 = lgetv %out.2;
+    symbol [ out %tmp.24 121 20 23 ];
+    %tmp.25 = 0;
+    %tmp.26 = 30;
+    %tmp.27 = invoke %tmp.22 %tmp.23(%tmp.24, %tmp.25, %tmp.26);
+    lputv %pp.3 %tmp.27;
+    symbol [ pp %pp.3 121 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 122 4 ]
+    %tmp.28 = lgetv %logger;
+    symbol [ logger %tmp.28 122 4 10 ];
+    symbol [ debug %tmp.29 122 11 16 ];
+    %tmp.29 = getv function %tmp.28 :debug;
+    %tmp.30 = "6/min: ";
+    %tmp.31 = lgetv %pp.3;
+    symbol [ pp %tmp.31 122 29 31 ];
+    %tmp.32 = add %tmp.30 %tmp.31;
+    %tmp.33 = " mrad peak to peak, want about 40";
+    %tmp.34 = add %tmp.32 %tmp.33;
+    invoke %tmp.28 %tmp.29(%tmp.34);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 123 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_11_123_27_begin:
+    %tmp.35 = lgetv %pp.3;
+    symbol [ pp %tmp.35 123 11 13 ];
+    %tmp.36 = 36;
+    %tmp.37 = gt %tmp.35 %tmp.36;
+    %tmp.38 = dup %tmp.37;
+    bf %tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_22_123_27_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_22_123_27_true:
+    %tmp.39 = lgetv %pp.3;
+    symbol [ pp %tmp.39 123 22 24 ];
+    %tmp.40 = 44;
+    %tmp.41 = lt %tmp.39 %tmp.40;
+    %tmp.42 = and %tmp.37 %tmp.41;
+    push %tmp.42;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_22_123_27_end:
+    %tmp.43 = phi [%tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_11_123_27_begin] [%tmp.42 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_22_123_27_true] [%tmp.43 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_123_22_123_27_end];
+    ret %tmp.43;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_118_78_124_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 129; test = true; @symbol_functiondef = [test_aFastBreathAlsoSurvives,129,9,37]; @symbol_param<0> = [logger,129,38,44]; @symbol_param<0>_type<0> = [Test,129,48,52]; @symbol_param<0>_type<1> = [Logger,129,53,59]; @symbol_return<0> = [Lang,129,64,68]; @symbol_return<1> = [Boolean,129,69,76]; ]
+function test_aFastBreathAlsoSurvives(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 130 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_stop" ]
+    %b.1 = local;
+    symbol [ b %b.1 130 8 9 ];
+    %tmp.1 = self;
+    symbol [ breathing %tmp.2 130 12 21 ];
+    %tmp.2 = getv function %tmp.1 :breathing;
+    %tmp.3 = 1500;
+    %tmp.4 = 15.0;
+    %tmp.5 = 0.020;
+    %tmp.6 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+    lputv %b.1 %tmp.6;
+    symbol [ b %b.1 130 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 131 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 131 8 11 ];
+    symbol [ Reducer %tmp.10 131 18 25 ];
+    %tmp.10 = getv ? :Reducer;
+    %tmp.7 = newc %tmp.10 ();
+    symbol [ reduce %tmp.11 131 28 34 ];
+    %tmp.11 = getv function %tmp.7 :reduce;
+    %tmp.12 = lgetv %b.1;
+    symbol [ b %tmp.12 131 35 36 ];
+    %tmp.13 = 0;
+    %tmp.14 = agetv %tmp.12 %tmp.13;
+    %tmp.15 = lgetv %b.1;
+    symbol [ b %tmp.15 131 41 42 ];
+    %tmp.16 = 1;
+    %tmp.17 = agetv %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %b.1;
+    symbol [ b %tmp.18 131 47 48 ];
+    %tmp.19 = 2;
+    %tmp.20 = agetv %tmp.18 %tmp.19;
+    %tmp.21 = invoke %tmp.7 %tmp.11(%tmp.14, %tmp.17, %tmp.20);
+    lputv %out.2 %tmp.21;
+    symbol [ out %out.2 131 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 132 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_stop" ]
+    %pp.3 = local;
+    symbol [ pp %pp.3 132 8 10 ];
+    %tmp.22 = self;
+    symbol [ spread %tmp.23 132 13 19 ];
+    %tmp.23 = getv function %tmp.22 :spread;
+    %tmp.24 = lgetv %out.2;
+    symbol [ out %tmp.24 132 20 23 ];
+    %tmp.25 = 0;
+    %tmp.26 = 30;
+    %tmp.27 = invoke %tmp.22 %tmp.23(%tmp.24, %tmp.25, %tmp.26);
+    lputv %pp.3 %tmp.27;
+    symbol [ pp %pp.3 132 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 133 4 ]
+    %tmp.28 = lgetv %logger;
+    symbol [ logger %tmp.28 133 4 10 ];
+    symbol [ debug %tmp.29 133 11 16 ];
+    %tmp.29 = getv function %tmp.28 :debug;
+    %tmp.30 = "15/min: ";
+    %tmp.31 = lgetv %pp.3;
+    symbol [ pp %tmp.31 133 30 32 ];
+    %tmp.32 = add %tmp.30 %tmp.31;
+    %tmp.33 = " mrad peak to peak, want about 40";
+    %tmp.34 = add %tmp.32 %tmp.33;
+    invoke %tmp.28 %tmp.29(%tmp.34);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 134 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_11_134_27_begin:
+    %tmp.35 = lgetv %pp.3;
+    symbol [ pp %tmp.35 134 11 13 ];
+    %tmp.36 = 34;
+    %tmp.37 = gt %tmp.35 %tmp.36;
+    %tmp.38 = dup %tmp.37;
+    bf %tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_22_134_27_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_22_134_27_true:
+    %tmp.39 = lgetv %pp.3;
+    symbol [ pp %tmp.39 134 22 24 ];
+    %tmp.40 = 44;
+    %tmp.41 = lt %tmp.39 %tmp.40;
+    %tmp.42 = and %tmp.37 %tmp.41;
+    push %tmp.42;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_22_134_27_end:
+    %tmp.43 = phi [%tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_11_134_27_begin] [%tmp.42 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_22_134_27_true] [%tmp.43 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_134_22_134_27_end];
+    ret %tmp.43;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_129_77_135_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 139; @symbol_functiondef = [breathingPrecise,139,9,25]; @symbol_param<0> = [n,139,26,27]; @symbol_param<0>_type<0> = [Lang,139,31,35]; @symbol_param<0>_type<1> = [Number,139,36,42]; @symbol_param<1> = [bpm,139,44,47]; @symbol_param<1>_type<0> = [Lang,139,51,55]; @symbol_param<1>_type<1> = [Float,139,56,61]; @symbol_param<2> = [amp,139,63,66]; @symbol_param<2>_type<0> = [Lang,139,70,74]; @symbol_param<2>_type<1> = [Float,139,75,80]; @symbol_return<0> = [Lang,139,85,89]; @symbol_return<1> = [Array,139,90,95]; ]
+function breathingPrecise(n as Lang.Number, bpm as Lang.Float, amp as Lang.Float) as Lang.Array {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 140 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_stop" ]
+    %xs.1 = local;
+    symbol [ xs %xs.1 140 8 10 ];
+    %tmp.1 = newa 0;
+    lputv %xs.1 %tmp.1;
+    symbol [ xs %xs.1 140 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 140 17 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_stop" ]
+    %ys.2 = local;
+    symbol [ ys %ys.2 140 21 23 ];
+    %tmp.2 = newa 0;
+    lputv %ys.2 %tmp.2;
+    symbol [ ys %ys.2 140 21 23 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 140 30 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_stop" ]
+    %zs.3 = local;
+    symbol [ zs %zs.3 140 34 36 ];
+    %tmp.3 = newa 0;
+    lputv %zs.3 %tmp.3;
+    symbol [ zs %zs.3 140 34 36 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 141 4 ]
+    for @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_test @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_incr @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_init:
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_begin" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 141 13 14 ];
+    %tmp.4 = 0;
+    lputv %i.4 %tmp.4;
+    symbol [ i %i.4 141 13 14 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_test:
+    %tmp.5 = lgetv %i.4;
+    symbol [ i %tmp.5 141 20 21 ];
+    %tmp.6 = lgetv %n;
+    symbol [ n %tmp.6 141 24 25 ];
+    %tmp.7 = lt %tmp.5 %tmp.6;
+    bf %tmp.7 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_35_147_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 142 8 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_35_147_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_35_147_4_stop" ]
+    %t.5 = local;
+    symbol [ t %t.5 142 12 13 ];
+    %tmp.8 = lgetv %i.4;
+    symbol [ i %tmp.8 142 16 17 ];
+    symbol [ FS %tmp.10 142 20 22 ];
+    %tmp.10 = getv ? :FS;
+    %tmp.11 = div %tmp.8 %tmp.10;
+    lputv %t.5 %tmp.11;
+    symbol [ t %t.5 142 12 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 143 8 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_35_147_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_35_147_4_stop" ]
+    %theta.6 = local;
+    symbol [ theta %theta.6 143 12 17 ];
+    %tmp.12 = lgetv %amp;
+    symbol [ amp %tmp.12 143 20 23 ];
+    symbol [ Math %tmp.13 143 26 30 ];
+    %tmp.13 = getm $.Toybox.Math;
+    symbol [ sin %tmp.14 143 31 34 ];
+    %tmp.14 = getv function %tmp.13 :sin;
+    %tmp.15 = 2;
+    symbol [ Math %tmp.16 143 39 43 ];
+    %tmp.16 = getm $.Toybox.Math;
+    symbol [ PI %tmp.17 143 44 46 ];
+    %tmp.17 = getv %tmp.16 :PI;
+    %tmp.18 = mul %tmp.15 %tmp.17;
+    %tmp.19 = lgetv %bpm;
+    symbol [ bpm %tmp.19 143 50 53 ];
+    %tmp.20 = 60.0;
+    %tmp.21 = div %tmp.19 %tmp.20;
+    %tmp.22 = mul %tmp.18 %tmp.21;
+    %tmp.23 = lgetv %t.5;
+    symbol [ t %tmp.23 143 64 65 ];
+    %tmp.24 = mul %tmp.22 %tmp.23;
+    %tmp.25 = invoke %tmp.13 %tmp.14(%tmp.24);
+    %tmp.26 = mul %tmp.12 %tmp.25;
+    lputv %theta.6 %tmp.26;
+    symbol [ theta %theta.6 143 12 17 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 144 8 ]
+    %tmp.27 = lgetv %xs.1;
+    symbol [ xs %tmp.27 144 8 10 ];
+    symbol [ add %tmp.28 144 11 14 ];
+    %tmp.28 = getv function %tmp.27 :add;
+    symbol [ G %tmp.30 144 16 17 ];
+    %tmp.30 = getv ? :G;
+    %tmp.31 = sub 0 %tmp.30;
+    symbol [ Math %tmp.32 144 20 24 ];
+    %tmp.32 = getm $.Toybox.Math;
+    symbol [ sin %tmp.33 144 25 28 ];
+    %tmp.33 = getv function %tmp.32 :sin;
+    %tmp.34 = lgetv %theta.6;
+    symbol [ theta %tmp.34 144 29 34 ];
+    %tmp.35 = invoke %tmp.32 %tmp.33(%tmp.34);
+    %tmp.36 = mul %tmp.31 %tmp.35;
+    invoke %tmp.27 %tmp.28(%tmp.36);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 145 8 ]
+    %tmp.37 = lgetv %ys.2;
+    symbol [ ys %tmp.37 145 8 10 ];
+    symbol [ add %tmp.38 145 11 14 ];
+    %tmp.38 = getv function %tmp.37 :add;
+    %tmp.39 = 0.0;
+    invoke %tmp.37 %tmp.38(%tmp.39);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 146 8 ]
+    %tmp.40 = lgetv %zs.3;
+    symbol [ zs %tmp.40 146 8 10 ];
+    symbol [ add %tmp.41 146 11 14 ];
+    %tmp.41 = getv function %tmp.40 :add;
+    symbol [ G %tmp.43 146 15 16 ];
+    %tmp.43 = getv ? :G;
+    symbol [ Math %tmp.44 146 19 23 ];
+    %tmp.44 = getm $.Toybox.Math;
+    symbol [ cos %tmp.45 146 24 27 ];
+    %tmp.45 = getv function %tmp.44 :cos;
+    %tmp.46 = lgetv %theta.6;
+    symbol [ theta %tmp.46 146 28 33 ];
+    %tmp.47 = invoke %tmp.44 %tmp.45(%tmp.46);
+    %tmp.48 = mul %tmp.43 %tmp.47;
+    invoke %tmp.40 %tmp.41(%tmp.48);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_35_147_4_stop:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_incr:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 141 ]
+    %tmp.49 = lgetv %i.4;
+    symbol [ i %tmp.49 141 27 28 ];
+    %tmp.50 = 1;
+    %tmp.51 = add %tmp.49 %tmp.50;
+    lputv %i.4 %tmp.51;
+    symbol [ i %i.4 141 27 28 ];
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_test;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_141_4_147_4_for_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 148 4 ]
+    %tmp.52 = newa 3;
+    %tmp.53 = lgetv %xs.1;
+    symbol [ xs %tmp.53 148 12 14 ];
+    %tmp.54 = dup %tmp.52;
+    %tmp.55 = aputv %tmp.54 0 %tmp.53;
+    %tmp.56 = lgetv %ys.2;
+    symbol [ ys %tmp.56 148 16 18 ];
+    %tmp.57 = dup %tmp.55;
+    %tmp.58 = aputv %tmp.57 1 %tmp.56;
+    %tmp.59 = lgetv %zs.3;
+    symbol [ zs %tmp.59 148 20 22 ];
+    %tmp.60 = dup %tmp.58;
+    %tmp.61 = aputv %tmp.60 2 %tmp.59;
+    ret %tmp.61;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_139_96_149_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 167; test = true; @symbol_functiondef = [test_aTinyRealBreathSurvivesTheSensorsQuantiser,167,9,56]; @symbol_param<0> = [logger,167,57,63]; @symbol_param<0>_type<0> = [Test,167,67,71]; @symbol_param<0>_type<1> = [Logger,167,72,78]; @symbol_return<0> = [Lang,167,83,87]; @symbol_return<1> = [Boolean,167,88,95]; ]
+function test_aTinyRealBreathSurvivesTheSensorsQuantiser(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 168 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_stop" ]
+    %b.1 = local;
+    symbol [ b %b.1 168 8 9 ];
+    %tmp.1 = self;
+    symbol [ breathing %tmp.2 168 12 21 ];
+    %tmp.2 = getv function %tmp.1 :breathing;
+    %tmp.3 = 1500;
+    %tmp.4 = 6.0;
+    %tmp.5 = 0.0012;
+    %tmp.6 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+    lputv %b.1 %tmp.6;
+    symbol [ b %b.1 168 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 169 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 169 8 11 ];
+    symbol [ Reducer %tmp.10 169 18 25 ];
+    %tmp.10 = getv ? :Reducer;
+    %tmp.7 = newc %tmp.10 ();
+    symbol [ reduce %tmp.11 169 28 34 ];
+    %tmp.11 = getv function %tmp.7 :reduce;
+    %tmp.12 = lgetv %b.1;
+    symbol [ b %tmp.12 169 35 36 ];
+    %tmp.13 = 0;
+    %tmp.14 = agetv %tmp.12 %tmp.13;
+    %tmp.15 = lgetv %b.1;
+    symbol [ b %tmp.15 169 41 42 ];
+    %tmp.16 = 1;
+    %tmp.17 = agetv %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %b.1;
+    symbol [ b %tmp.18 169 47 48 ];
+    %tmp.19 = 2;
+    %tmp.20 = agetv %tmp.18 %tmp.19;
+    %tmp.21 = invoke %tmp.7 %tmp.11(%tmp.14, %tmp.17, %tmp.20);
+    lputv %out.2 %tmp.21;
+    symbol [ out %out.2 169 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 170 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_stop" ]
+    %pp.3 = local;
+    symbol [ pp %pp.3 170 8 10 ];
+    %tmp.22 = self;
+    symbol [ spread %tmp.23 170 13 19 ];
+    %tmp.23 = getv function %tmp.22 :spread;
+    %tmp.24 = lgetv %out.2;
+    symbol [ out %tmp.24 170 20 23 ];
+    %tmp.25 = 0;
+    %tmp.26 = 30;
+    %tmp.27 = invoke %tmp.22 %tmp.23(%tmp.24, %tmp.25, %tmp.26);
+    lputv %pp.3 %tmp.27;
+    symbol [ pp %pp.3 170 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 173 4 ]
+    %tmp.28 = lgetv %logger;
+    symbol [ logger %tmp.28 173 4 10 ];
+    symbol [ debug %tmp.29 173 11 16 ];
+    %tmp.29 = getv function %tmp.28 :debug;
+    %tmp.30 = "1.2 mrad breath through whole milli-g: ";
+    %tmp.31 = lgetv %pp.3;
+    symbol [ pp %tmp.31 173 61 63 ];
+    %tmp.32 = add %tmp.30 %tmp.31;
+    %tmp.33 = " mrad peak to peak";
+    %tmp.34 = add %tmp.32 %tmp.33;
+    invoke %tmp.28 %tmp.29(%tmp.34);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 174 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_11_174_28_begin:
+    %tmp.35 = lgetv %pp.3;
+    symbol [ pp %tmp.35 174 11 13 ];
+    %tmp.36 = 1.8;
+    %tmp.37 = gt %tmp.35 %tmp.36;
+    %tmp.38 = dup %tmp.37;
+    bf %tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_23_174_28_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_23_174_28_true:
+    %tmp.39 = lgetv %pp.3;
+    symbol [ pp %tmp.39 174 23 25 ];
+    %tmp.40 = 2.7;
+    %tmp.41 = lt %tmp.39 %tmp.40;
+    %tmp.42 = and %tmp.37 %tmp.41;
+    push %tmp.42;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_23_174_28_end:
+    %tmp.43 = phi [%tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_11_174_28_begin] [%tmp.42 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_23_174_28_true] [%tmp.43 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_174_23_174_28_end];
+    ret %tmp.43;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_167_96_175_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 178; test = true; @symbol_functiondef = [test_theLossIsTheSensorsQuantiserAndNotOurUnits,178,9,56]; @symbol_param<0> = [logger,178,57,63]; @symbol_param<0>_type<0> = [Test,178,67,71]; @symbol_param<0>_type<1> = [Logger,178,72,78]; @symbol_return<0> = [Lang,178,83,87]; @symbol_return<1> = [Boolean,178,88,95]; ]
+function test_theLossIsTheSensorsQuantiserAndNotOurUnits(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 179 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_stop" ]
+    %b.1 = local;
+    symbol [ b %b.1 179 8 9 ];
+    %tmp.1 = self;
+    symbol [ breathingPrecise %tmp.2 179 12 28 ];
+    %tmp.2 = getv function %tmp.1 :breathingPrecise;
+    %tmp.3 = 1500;
+    %tmp.4 = 6.0;
+    %tmp.5 = 0.0012;
+    %tmp.6 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+    lputv %b.1 %tmp.6;
+    symbol [ b %b.1 179 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 180 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 180 8 11 ];
+    symbol [ Reducer %tmp.10 180 18 25 ];
+    %tmp.10 = getv ? :Reducer;
+    %tmp.7 = newc %tmp.10 ();
+    symbol [ reduce %tmp.11 180 28 34 ];
+    %tmp.11 = getv function %tmp.7 :reduce;
+    %tmp.12 = lgetv %b.1;
+    symbol [ b %tmp.12 180 35 36 ];
+    %tmp.13 = 0;
+    %tmp.14 = agetv %tmp.12 %tmp.13;
+    %tmp.15 = lgetv %b.1;
+    symbol [ b %tmp.15 180 41 42 ];
+    %tmp.16 = 1;
+    %tmp.17 = agetv %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %b.1;
+    symbol [ b %tmp.18 180 47 48 ];
+    %tmp.19 = 2;
+    %tmp.20 = agetv %tmp.18 %tmp.19;
+    %tmp.21 = invoke %tmp.7 %tmp.11(%tmp.14, %tmp.17, %tmp.20);
+    lputv %out.2 %tmp.21;
+    symbol [ out %out.2 180 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 181 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_stop" ]
+    %pp.3 = local;
+    symbol [ pp %pp.3 181 8 10 ];
+    %tmp.22 = self;
+    symbol [ spread %tmp.23 181 13 19 ];
+    %tmp.23 = getv function %tmp.22 :spread;
+    %tmp.24 = lgetv %out.2;
+    symbol [ out %tmp.24 181 20 23 ];
+    %tmp.25 = 0;
+    %tmp.26 = 30;
+    %tmp.27 = invoke %tmp.22 %tmp.23(%tmp.24, %tmp.25, %tmp.26);
+    lputv %pp.3 %tmp.27;
+    symbol [ pp %pp.3 181 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 184 4 ]
+    %tmp.28 = lgetv %logger;
+    symbol [ logger %tmp.28 184 4 10 ];
+    symbol [ debug %tmp.29 184 11 16 ];
+    %tmp.29 = getv function %tmp.28 :debug;
+    %tmp.30 = "same breath, unquantised input: ";
+    %tmp.31 = lgetv %pp.3;
+    symbol [ pp %tmp.31 184 54 56 ];
+    %tmp.32 = add %tmp.30 %tmp.31;
+    %tmp.33 = " mrad peak to peak";
+    %tmp.34 = add %tmp.32 %tmp.33;
+    invoke %tmp.28 %tmp.29(%tmp.34);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 185 4 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_11_185_28_begin:
+    %tmp.35 = lgetv %pp.3;
+    symbol [ pp %tmp.35 185 11 13 ];
+    %tmp.36 = 2.2;
+    %tmp.37 = gt %tmp.35 %tmp.36;
+    %tmp.38 = dup %tmp.37;
+    bf %tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_23_185_28_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_23_185_28_true:
+    %tmp.39 = lgetv %pp.3;
+    symbol [ pp %tmp.39 185 23 25 ];
+    %tmp.40 = 2.6;
+    %tmp.41 = lt %tmp.39 %tmp.40;
+    %tmp.42 = and %tmp.37 %tmp.41;
+    push %tmp.42;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_23_185_28_end:
+    %tmp.43 = phi [%tmp.38 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_11_185_28_begin] [%tmp.42 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_23_185_28_true] [%tmp.43 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_185_23_185_28_end];
+    ret %tmp.43;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_178_96_186_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 191; test = true; @symbol_functiondef = [test_breathingIsNotMistakenForMovement,191,9,47]; @symbol_param<0> = [logger,191,48,54]; @symbol_param<0>_type<0> = [Test,191,58,62]; @symbol_param<0>_type<1> = [Logger,191,63,69]; @symbol_return<0> = [Lang,191,74,78]; @symbol_return<1> = [Boolean,191,79,86]; ]
+function test_breathingIsNotMistakenForMovement(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 192 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_stop" ]
+    %b.1 = local;
+    symbol [ b %b.1 192 8 9 ];
+    %tmp.1 = self;
+    symbol [ breathing %tmp.2 192 12 21 ];
+    %tmp.2 = getv function %tmp.1 :breathing;
+    %tmp.3 = 1500;
+    %tmp.4 = 6.0;
+    %tmp.5 = 0.020;
+    %tmp.6 = invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+    lputv %b.1 %tmp.6;
+    symbol [ b %b.1 192 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 193 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_stop" ]
+    %out.2 = local;
+    symbol [ out %out.2 193 8 11 ];
+    symbol [ Reducer %tmp.10 193 18 25 ];
+    %tmp.10 = getv ? :Reducer;
+    %tmp.7 = newc %tmp.10 ();
+    symbol [ reduce %tmp.11 193 28 34 ];
+    %tmp.11 = getv function %tmp.7 :reduce;
+    %tmp.12 = lgetv %b.1;
+    symbol [ b %tmp.12 193 35 36 ];
+    %tmp.13 = 0;
+    %tmp.14 = agetv %tmp.12 %tmp.13;
+    %tmp.15 = lgetv %b.1;
+    symbol [ b %tmp.15 193 41 42 ];
+    %tmp.16 = 1;
+    %tmp.17 = agetv %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %b.1;
+    symbol [ b %tmp.18 193 47 48 ];
+    %tmp.19 = 2;
+    %tmp.20 = agetv %tmp.18 %tmp.19;
+    %tmp.21 = invoke %tmp.7 %tmp.11(%tmp.14, %tmp.17, %tmp.20);
+    lputv %out.2 %tmp.21;
+    symbol [ out %out.2 193 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 194 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_stop" ]
+    %residual.3 = local;
+    symbol [ residual %residual.3 194 8 16 ];
+    %tmp.22 = self;
+    symbol [ meanOf %tmp.23 194 19 25 ];
+    %tmp.23 = getv function %tmp.22 :meanOf;
+    %tmp.24 = lgetv %out.2;
+    symbol [ out %tmp.24 194 26 29 ];
+    %tmp.25 = 2;
+    %tmp.26 = 30;
+    %tmp.27 = invoke %tmp.22 %tmp.23(%tmp.24, %tmp.25, %tmp.26);
+    lputv %residual.3 %tmp.27;
+    symbol [ residual %residual.3 194 8 16 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 195 4 ]
+    %tmp.28 = lgetv %logger;
+    symbol [ logger %tmp.28 195 4 10 ];
+    symbol [ debug %tmp.29 195 11 16 ];
+    %tmp.29 = getv function %tmp.28 :debug;
+    %tmp.30 = "residual during a breath: ";
+    %tmp.31 = lgetv %residual.3;
+    symbol [ residual %tmp.31 195 48 56 ];
+    %tmp.32 = add %tmp.30 %tmp.31;
+    %tmp.33 = " milli-g";
+    %tmp.34 = add %tmp.32 %tmp.33;
+    invoke %tmp.28 %tmp.29(%tmp.34);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 196 4 ]
+    %tmp.35 = lgetv %residual.3;
+    symbol [ residual %tmp.35 196 11 19 ];
+    %tmp.36 = 10;
+    %tmp.37 = lt %tmp.35 %tmp.36;
+    ret %tmp.37;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_191_87_197_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 201; test = true; @symbol_functiondef = [test_aShakeReadsAsMovement,201,9,35]; @symbol_param<0> = [logger,201,36,42]; @symbol_param<0>_type<0> = [Test,201,46,50]; @symbol_param<0>_type<1> = [Logger,201,51,57]; @symbol_return<0> = [Lang,201,62,66]; @symbol_return<1> = [Boolean,201,67,74]; ]
+function test_aShakeReadsAsMovement(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 202 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_stop" ]
+    %xs.1 = local;
+    symbol [ xs %xs.1 202 8 10 ];
+    %tmp.1 = newa 0;
+    lputv %xs.1 %tmp.1;
+    symbol [ xs %xs.1 202 8 10 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 202 17 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_stop" ]
+    %ys.2 = local;
+    symbol [ ys %ys.2 202 21 23 ];
+    %tmp.2 = newa 0;
+    lputv %ys.2 %tmp.2;
+    symbol [ ys %ys.2 202 21 23 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 202 30 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_stop" ]
+    %zs.3 = local;
+    symbol [ zs %zs.3 202 34 36 ];
+    %tmp.3 = newa 0;
+    lputv %zs.3 %tmp.3;
+    symbol [ zs %zs.3 202 34 36 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 203 4 ]
+    for @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_test @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_incr @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_init:
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_begin" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_end" ]
+    %i.4 = local;
+    symbol [ i %i.4 203 13 14 ];
+    %tmp.4 = 0;
+    lputv %i.4 %tmp.4;
+    symbol [ i %i.4 203 13 14 ];
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_test:
+    %tmp.5 = lgetv %i.4;
+    symbol [ i %tmp.5 203 20 21 ];
+    %tmp.6 = 500;
+    %tmp.7 = lt %tmp.5 %tmp.6;
+    bf %tmp.7 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_begin:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_37_209_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 204 8 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_37_209_4_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_37_209_4_stop" ]
+    %t.5 = local;
+    symbol [ t %t.5 204 12 13 ];
+    %tmp.8 = lgetv %i.4;
+    symbol [ i %tmp.8 204 16 17 ];
+    symbol [ FS %tmp.10 204 20 22 ];
+    %tmp.10 = getv ? :FS;
+    %tmp.11 = div %tmp.8 %tmp.10;
+    lputv %t.5 %tmp.11;
+    symbol [ t %t.5 204 12 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 206 8 ]
+    %tmp.12 = lgetv %xs.1;
+    symbol [ xs %tmp.12 206 8 10 ];
+    symbol [ add %tmp.13 206 11 14 ];
+    %tmp.13 = getv function %tmp.12 :add;
+    %tmp.14 = 200;
+    symbol [ Math %tmp.15 206 22 26 ];
+    %tmp.15 = getm $.Toybox.Math;
+    symbol [ sin %tmp.16 206 27 30 ];
+    %tmp.16 = getv function %tmp.15 :sin;
+    %tmp.17 = 2;
+    symbol [ Math %tmp.18 206 35 39 ];
+    %tmp.18 = getm $.Toybox.Math;
+    symbol [ PI %tmp.19 206 40 42 ];
+    %tmp.19 = getv %tmp.18 :PI;
+    %tmp.20 = mul %tmp.17 %tmp.19;
+    %tmp.21 = 3.0;
+    %tmp.22 = mul %tmp.20 %tmp.21;
+    %tmp.23 = lgetv %t.5;
+    symbol [ t %tmp.23 206 51 52 ];
+    %tmp.24 = mul %tmp.22 %tmp.23;
+    %tmp.25 = invoke %tmp.15 %tmp.16(%tmp.24);
+    %tmp.26 = mul %tmp.14 %tmp.25;
+    symbol [ toNumber %tmp.27 206 55 63 ];
+    %tmp.27 = getv function %tmp.26 :toNumber;
+    %tmp.28 = invoke %tmp.26 %tmp.27();
+    invoke %tmp.12 %tmp.13(%tmp.28);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 207 8 ]
+    %tmp.29 = lgetv %ys.2;
+    symbol [ ys %tmp.29 207 8 10 ];
+    symbol [ add %tmp.30 207 11 14 ];
+    %tmp.30 = getv function %tmp.29 :add;
+    %tmp.31 = 0;
+    invoke %tmp.29 %tmp.30(%tmp.31);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 208 8 ]
+    %tmp.32 = lgetv %zs.3;
+    symbol [ zs %tmp.32 208 8 10 ];
+    symbol [ add %tmp.33 208 11 14 ];
+    %tmp.33 = getv function %tmp.32 :add;
+    symbol [ G %tmp.35 208 15 16 ];
+    %tmp.35 = getv ? :G;
+    symbol [ toNumber %tmp.36 208 17 25 ];
+    %tmp.36 = getv function %tmp.35 :toNumber;
+    %tmp.37 = invoke %tmp.35 %tmp.36();
+    invoke %tmp.32 %tmp.33(%tmp.37);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_37_209_4_stop:
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_incr:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 203 ]
+    %tmp.38 = lgetv %i.4;
+    symbol [ i %tmp.38 203 29 30 ];
+    %tmp.39 = 1;
+    %tmp.40 = add %tmp.38 %tmp.39;
+    lputv %i.4 %tmp.40;
+    symbol [ i %i.4 203 29 30 ];
+    goto @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_test;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_203_4_209_4_for_end:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 210 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_stop" ]
+    %out.6 = local;
+    symbol [ out %out.6 210 8 11 ];
+    symbol [ Reducer %tmp.44 210 18 25 ];
+    %tmp.44 = getv ? :Reducer;
+    %tmp.41 = newc %tmp.44 ();
+    symbol [ reduce %tmp.45 210 28 34 ];
+    %tmp.45 = getv function %tmp.41 :reduce;
+    %tmp.46 = lgetv %xs.1;
+    symbol [ xs %tmp.46 210 35 37 ];
+    %tmp.47 = lgetv %ys.2;
+    symbol [ ys %tmp.47 210 39 41 ];
+    %tmp.48 = lgetv %zs.3;
+    symbol [ zs %tmp.48 210 43 45 ];
+    %tmp.49 = invoke %tmp.41 %tmp.45(%tmp.46, %tmp.47, %tmp.48);
+    lputv %out.6 %tmp.49;
+    symbol [ out %out.6 210 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 211 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_stop" ]
+    %residual.7 = local;
+    symbol [ residual %residual.7 211 8 16 ];
+    %tmp.50 = self;
+    symbol [ meanOf %tmp.51 211 19 25 ];
+    %tmp.51 = getv function %tmp.50 :meanOf;
+    %tmp.52 = lgetv %out.6;
+    symbol [ out %tmp.52 211 26 29 ];
+    %tmp.53 = 2;
+    %tmp.54 = 20;
+    %tmp.55 = invoke %tmp.50 %tmp.51(%tmp.52, %tmp.53, %tmp.54);
+    lputv %residual.7 %tmp.55;
+    symbol [ residual %residual.7 211 8 16 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 212 4 ]
+    %tmp.56 = lgetv %logger;
+    symbol [ logger %tmp.56 212 4 10 ];
+    symbol [ debug %tmp.57 212 11 16 ];
+    %tmp.57 = getv function %tmp.56 :debug;
+    %tmp.58 = "residual during a shake: ";
+    %tmp.59 = lgetv %residual.7;
+    symbol [ residual %tmp.59 212 47 55 ];
+    %tmp.60 = add %tmp.58 %tmp.59;
+    %tmp.61 = " milli-g";
+    %tmp.62 = add %tmp.60 %tmp.61;
+    invoke %tmp.56 %tmp.57(%tmp.62);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 213 4 ]
+    %tmp.63 = lgetv %residual.7;
+    symbol [ residual %tmp.63 213 11 19 ];
+    %tmp.64 = 80;
+    %tmp.65 = gt %tmp.63 %tmp.64;
+    ret %tmp.65;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_201_75_214_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 219; test = true; @symbol_functiondef = [test_aNewPostureIsAbsorbed,219,9,35]; @symbol_param<0> = [logger,219,36,42]; @symbol_param<0>_type<0> = [Test,219,46,50]; @symbol_param<0>_type<1> = [Logger,219,51,57]; @symbol_return<0> = [Lang,219,62,66]; @symbol_return<1> = [Boolean,219,67,74]; ]
+function test_aNewPostureIsAbsorbed(logger as Test.Logger) as Lang.Boolean {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 220 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_stop" ]
+    %r.1 = local;
+    symbol [ r %r.1 220 8 9 ];
+    symbol [ Reducer %tmp.4 220 16 23 ];
+    %tmp.4 = getv ? :Reducer;
+    %tmp.1 = newc %tmp.4 ();
+    lputv %r.1 %tmp.1;
+    symbol [ r %r.1 220 8 9 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 221 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_stop" ]
+    %before.2 = local;
+    symbol [ before %before.2 221 8 14 ];
+    %tmp.5 = self;
+    symbol [ steady %tmp.6 221 17 23 ];
+    %tmp.6 = getv function %tmp.5 :steady;
+    %tmp.7 = 250;
+    %tmp.8 = 0.0;
+    %tmp.9 = 0.0;
+    symbol [ G %tmp.11 221 39 40 ];
+    %tmp.11 = getv ? :G;
+    %tmp.12 = invoke %tmp.5 %tmp.6(%tmp.7, %tmp.8, %tmp.9, %tmp.11);
+    lputv %before.2 %tmp.12;
+    symbol [ before %before.2 221 8 14 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 222 4 ]
+    %tmp.13 = lgetv %r.1;
+    symbol [ r %tmp.13 222 4 5 ];
+    symbol [ reduce %tmp.14 222 6 12 ];
+    %tmp.14 = getv function %tmp.13 :reduce;
+    %tmp.15 = lgetv %before.2;
+    symbol [ before %tmp.15 222 13 19 ];
+    %tmp.16 = 0;
+    %tmp.17 = agetv %tmp.15 %tmp.16;
+    %tmp.18 = lgetv %before.2;
+    symbol [ before %tmp.18 222 24 30 ];
+    %tmp.19 = 1;
+    %tmp.20 = agetv %tmp.18 %tmp.19;
+    %tmp.21 = lgetv %before.2;
+    symbol [ before %tmp.21 222 35 41 ];
+    %tmp.22 = 2;
+    %tmp.23 = agetv %tmp.21 %tmp.22;
+    invoke %tmp.13 %tmp.14(%tmp.17, %tmp.20, %tmp.23);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 223 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_stop" ]
+    %after.3 = local;
+    symbol [ after %after.3 223 8 13 ];
+    %tmp.24 = self;
+    symbol [ steady %tmp.25 223 16 22 ];
+    %tmp.25 = getv function %tmp.24 :steady;
+    %tmp.26 = 500;
+    %tmp.27 = 300.0;
+    %tmp.28 = 0.0;
+    %tmp.29 = 954.0;
+    %tmp.30 = invoke %tmp.24 %tmp.25(%tmp.26, %tmp.27, %tmp.28, %tmp.29);
+    lputv %after.3 %tmp.30;
+    symbol [ after %after.3 223 8 13 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 224 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_stop" ]
+    %out.4 = local;
+    symbol [ out %out.4 224 8 11 ];
+    %tmp.31 = lgetv %r.1;
+    symbol [ r %tmp.31 224 14 15 ];
+    symbol [ reduce %tmp.32 224 16 22 ];
+    %tmp.32 = getv function %tmp.31 :reduce;
+    %tmp.33 = lgetv %after.3;
+    symbol [ after %tmp.33 224 23 28 ];
+    %tmp.34 = 0;
+    %tmp.35 = agetv %tmp.33 %tmp.34;
+    %tmp.36 = lgetv %after.3;
+    symbol [ after %tmp.36 224 33 38 ];
+    %tmp.37 = 1;
+    %tmp.38 = agetv %tmp.36 %tmp.37;
+    %tmp.39 = lgetv %after.3;
+    symbol [ after %tmp.39 224 43 48 ];
+    %tmp.40 = 2;
+    %tmp.41 = agetv %tmp.39 %tmp.40;
+    %tmp.42 = invoke %tmp.31 %tmp.32(%tmp.35, %tmp.38, %tmp.41);
+    lputv %out.4 %tmp.42;
+    symbol [ out %out.4 224 8 11 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 225 4 ]
+    [ "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_start" "_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_stop" ]
+    %settled.5 = local;
+    symbol [ settled %settled.5 225 8 15 ];
+    %tmp.43 = self;
+    symbol [ meanOf %tmp.44 225 18 24 ];
+    %tmp.44 = getv function %tmp.43 :meanOf;
+    %tmp.45 = lgetv %out.4;
+    symbol [ out %tmp.45 225 25 28 ];
+    %tmp.46 = 2;
+    %tmp.47 = 60;
+    %tmp.48 = invoke %tmp.43 %tmp.44(%tmp.45, %tmp.46, %tmp.47);
+    lputv %settled.5 %tmp.48;
+    symbol [ settled %settled.5 225 8 15 ];
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 226 4 ]
+    %tmp.49 = lgetv %logger;
+    symbol [ logger %tmp.49 226 4 10 ];
+    symbol [ debug %tmp.50 226 11 16 ];
+    %tmp.50 = getv function %tmp.49 :debug;
+    %tmp.51 = "residual once settled into the new posture: ";
+    %tmp.52 = lgetv %settled.5;
+    symbol [ settled %tmp.52 226 66 73 ];
+    %tmp.53 = add %tmp.51 %tmp.52;
+    invoke %tmp.49 %tmp.50(%tmp.53);
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc" 227 4 ]
+    %tmp.54 = lgetv %settled.5;
+    symbol [ settled %tmp.54 227 11 18 ];
+    %tmp.55 = 10;
+    %tmp.56 = lt %tmp.54 %tmp.55;
+    ret %tmp.56;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_ReducerTests_mc_219_75_228_0_stop:
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/ReducerTests.mc"; @line = 16; ]
+<init> {
+}

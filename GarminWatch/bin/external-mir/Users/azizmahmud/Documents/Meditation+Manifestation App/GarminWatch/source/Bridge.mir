@@ -1,0 +1,103 @@
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 10; @symbol_usingdef<0> = [Toybox,10,6,12]; @symbol_usingdef<1> = [Communications,10,13,27]; ]
+using Toybox.Communications;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 11; @symbol_usingdef<0> = [Toybox,11,6,12]; @symbol_usingdef<1> = [Lang,11,13,17]; ]
+using Toybox.Lang;
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 13; @symbol_classdef = [Bridge,13,6,12]; @symbol_extends<0> = [Communications,13,21,35]; @symbol_extends<1> = [ConnectionListener,13,36,54]; ]
+class Bridge extends Communications.ConnectionListener {
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 13; ]
+    <init> {
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 13; ]
+    static
+    <init> {
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 15; @position = 8; @symbol_vardef = [sent,15,8,12]; ]
+    var sent;
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 16; @position = 8; @symbol_vardef = [dropped,16,8,15]; ]
+    var dropped;
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 18; @symbol_functiondef = [initialize,18,13,23]; ]
+    function initialize() as Void {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_18_26_22_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 19 8 ]
+        symbol [ ConnectionListener %tmp.2 19 8 26 ];
+        %tmp.2 = getv ? :ConnectionListener;
+        symbol [ initialize %tmp.3 19 27 37 ];
+        %tmp.3 = getv function %tmp.2 :initialize;
+        invoke %tmp.2 %tmp.3();
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 20 8 ]
+        %tmp.4 = 0;
+        symbol [ sent ? 20 8 12 ];
+        putv self :sent %tmp.4;
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 21 8 ]
+        %tmp.5 = 0;
+        symbol [ dropped ? 21 8 15 ];
+        putv self :dropped %tmp.5;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_18_26_22_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 24; @symbol_functiondef = [send,24,13,17]; @symbol_param<0> = [payload,24,18,25]; ]
+    function send(payload) {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_24_27_26_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 25 8 ]
+        symbol [ Communications %tmp.1 25 8 22 ];
+        %tmp.1 = getm $.Toybox.Communications;
+        symbol [ transmit %tmp.2 25 23 31 ];
+        %tmp.2 = getv function %tmp.1 :transmit;
+        %tmp.3 = lgetv %payload;
+        symbol [ payload %tmp.3 25 32 39 ];
+        %tmp.4 = null;
+        %tmp.5 = self;
+        symbol [ self %tmp.5 25 47 51 ];
+        invoke %tmp.1 %tmp.2(%tmp.3, %tmp.4, %tmp.5);
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_24_27_26_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 28; @symbol_functiondef = [onComplete,28,13,23]; ]
+    function onComplete() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_28_26_30_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 29 8 ]
+        symbol [ sent %tmp.1 29 8 12 ];
+        %tmp.1 = getv self :sent;
+        %tmp.2 = 1;
+        %tmp.3 = add %tmp.1 %tmp.2;
+        symbol [ sent ? 29 8 12 ];
+        putv self :sent dup %tmp.3;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_28_26_30_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 32; @symbol_functiondef = [onError,32,13,20]; ]
+    function onError() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_32_23_34_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 33 8 ]
+        symbol [ dropped %tmp.1 33 8 15 ];
+        %tmp.1 = getv self :dropped;
+        %tmp.2 = 1;
+        %tmp.3 = add %tmp.1 %tmp.2;
+        symbol [ dropped ? 33 8 15 ];
+        putv self :dropped dup %tmp.3;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_32_23_34_4_stop:
+    }
+    [ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 38; @symbol_functiondef = [delivering,38,13,23]; ]
+    function delivering() {
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_38_26_40_4_start:
+[ "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" 39 8 ]
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_15_39_37_begin:
+        symbol [ sent %tmp.2 39 15 19 ];
+        %tmp.2 = getv ? :sent;
+        %tmp.3 = 0;
+        %tmp.4 = gt %tmp.2 %tmp.3;
+        %tmp.5 = dup %tmp.4;
+        bf %tmp.5 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_27_39_37_end;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_27_39_37_true:
+        symbol [ dropped %tmp.7 39 27 34 ];
+        %tmp.7 = getv ? :dropped;
+        %tmp.8 = 3;
+        %tmp.9 = lt %tmp.7 %tmp.8;
+        %tmp.10 = and %tmp.4 %tmp.9;
+        push %tmp.10;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_27_39_37_end:
+        %tmp.11 = phi [%tmp.5 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_15_39_37_begin] [%tmp.10 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_27_39_37_true] [%tmp.11 @_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_39_27_39_37_end];
+        ret %tmp.11;
+_Users_azizmahmud_Documents_Meditation_Manifestation_App_GarminWatch_source_Bridge_mc_38_26_40_4_stop:
+    }
+}
+[ @file = "/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc"; @line = 10; ]
+<init> {
+}

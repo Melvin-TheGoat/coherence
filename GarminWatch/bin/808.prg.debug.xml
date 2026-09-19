@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<debugInfo>
+    <manifest filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/manifest.xml"/>
+    <pcToLineNum>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="1" lineNum="4" parent="globals/SessionDelegate" pc="268435460" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/bin/gen/006-B4426-00/source/Rez.mcgen" id="2" lineNum="7" parent="globals/Rez" pc="268435472" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="3" lineNum="5" parent="globals/EightZeroEightApp" pc="268435492" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="4" lineNum="13" parent="globals/SessionView" pc="268435504" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="5" lineNum="13" parent="globals/Bridge" pc="268435516" symbol="&lt;init&gt;"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="6" lineNum="26" parent="globals/SessionDelegate" pc="268435528" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="6" lineNum="27" parent="globals/SessionDelegate" pc="268435530" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="6" lineNum="28" parent="globals/SessionDelegate" pc="268435543" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="6" lineNum="29" parent="globals/SessionDelegate" pc="268435555" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="6" lineNum="30" parent="globals/SessionDelegate" pc="268435566" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="6" lineNum="32" parent="globals/SessionDelegate" pc="268435571" symbol="onBack"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="7" lineNum="8" parent="globals/SessionDelegate" pc="268435573" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="7" lineNum="9" parent="globals/SessionDelegate" pc="268435575" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="7" lineNum="10" parent="globals/SessionDelegate" pc="268435587" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="8" lineNum="16" parent="globals/SessionDelegate" pc="268435597" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="8" lineNum="17" parent="globals/SessionDelegate" pc="268435599" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="8" lineNum="18" parent="globals/SessionDelegate" pc="268435612" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="8" lineNum="20" parent="globals/SessionDelegate" pc="268435627" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="8" lineNum="22" parent="globals/SessionDelegate" pc="268435639" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionDelegate.mc" id="8" lineNum="23" parent="globals/SessionDelegate" pc="268435650" symbol="onSelect"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="9" lineNum="14" parent="globals/EightZeroEightApp" pc="268435652" symbol="onStart"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="9" lineNum="15" parent="globals/EightZeroEightApp" pc="268435654" symbol="onStart"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="9" lineNum="16" parent="globals/EightZeroEightApp" pc="268435679" symbol="onStart"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="10" lineNum="27" parent="globals/EightZeroEightApp" pc="268435710" symbol="getInitialView"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="10" lineNum="28" parent="globals/EightZeroEightApp" pc="268435712" symbol="getInitialView"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="11" lineNum="10" parent="globals/EightZeroEightApp" pc="268435769" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="11" lineNum="11" parent="globals/EightZeroEightApp" pc="268435771" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="12" lineNum="21" parent="globals/EightZeroEightApp" pc="268435784" symbol="onStop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="12" lineNum="22" parent="globals/EightZeroEightApp" pc="268435786" symbol="onStop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/EightZeroEightApp.mc" id="12" lineNum="23" parent="globals/EightZeroEightApp" pc="268435795" symbol="onStop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="13" lineNum="23" parent="globals/SessionView" pc="268435811" symbol="onShow"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="13" lineNum="24" parent="globals/SessionView" pc="268435813" symbol="onShow"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="13" lineNum="25" parent="globals/SessionView" pc="268435842" symbol="onShow"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="14" lineNum="18" parent="globals/SessionView" pc="268435874" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="14" lineNum="19" parent="globals/SessionView" pc="268435876" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="14" lineNum="20" parent="globals/SessionView" pc="268435888" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="15" lineNum="28" parent="globals/SessionView" pc="268435898" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="15" lineNum="29" parent="globals/SessionView" pc="268435900" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="15" lineNum="30" parent="globals/SessionView" pc="268435909" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="15" lineNum="31" parent="globals/SessionView" pc="268435921" symbol="onHide"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="16" lineNum="35" parent="globals/SessionView" pc="268435933" symbol="tick"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="16" lineNum="36" parent="globals/SessionView" pc="268435935" symbol="tick"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="39" parent="globals/SessionView" pc="268435947" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="40" parent="globals/SessionView" pc="268435950" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="41" parent="globals/SessionView" pc="268435962" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="43" parent="globals/SessionView" pc="268435970" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="44" parent="globals/SessionView" pc="268435982" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="46" parent="globals/SessionView" pc="268435994" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="47" parent="globals/SessionView" pc="268436008" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="48" parent="globals/SessionView" pc="268436025" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="50" parent="globals/SessionView" pc="268436051" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="51" parent="globals/SessionView" pc="268436068" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="53" parent="globals/SessionView" pc="268436093" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="55" parent="globals/SessionView" pc="268436118" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="58" parent="globals/SessionView" pc="268436122" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="59" parent="globals/SessionView" pc="268436135" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="61" parent="globals/SessionView" pc="268436180" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="62" parent="globals/SessionView" pc="268436197" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="65" parent="globals/SessionView" pc="268436220" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="66" parent="globals/SessionView" pc="268436237" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/SessionView.mc" id="17" lineNum="68" parent="globals/SessionView" pc="268436271" symbol="onUpdate"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="18" lineNum="38" parent="globals/Bridge" pc="268436294" symbol="delivering"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="18" lineNum="39" parent="globals/Bridge" pc="268436296" symbol="delivering"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="19" lineNum="32" parent="globals/Bridge" pc="268436318" symbol="onError"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="19" lineNum="33" parent="globals/Bridge" pc="268436320" symbol="onError"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="20" lineNum="28" parent="globals/Bridge" pc="268436336" symbol="onComplete"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="20" lineNum="29" parent="globals/Bridge" pc="268436338" symbol="onComplete"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="21" lineNum="18" parent="globals/Bridge" pc="268436354" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="21" lineNum="19" parent="globals/Bridge" pc="268436356" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="21" lineNum="20" parent="globals/Bridge" pc="268436368" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="21" lineNum="21" parent="globals/Bridge" pc="268436376" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="22" lineNum="24" parent="globals/Bridge" pc="268436385" symbol="send"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Bridge.mc" id="22" lineNum="25" parent="globals/Bridge" pc="268436387" symbol="send"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="67" parent="globals/Capture" pc="268436405" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="68" parent="globals/Capture" pc="268436407" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="68" parent="globals/Capture" pc="268436415" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="69" parent="globals/Capture" pc="268436419" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="70" parent="globals/Capture" pc="268436436" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="71" parent="globals/Capture" pc="268436444" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="73" parent="globals/Capture" pc="268436452" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="78" parent="globals/Capture" pc="268436503" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="80" parent="globals/Capture" pc="268436515" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="81" parent="globals/Capture" pc="268436533" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="82" parent="globals/Capture" pc="268436559" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="23" lineNum="87" parent="globals/Capture" pc="268436642" symbol="start"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="107" parent="globals/Capture" pc="268436651" symbol="elapsedSec"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="24" lineNum="108" parent="globals/Capture" pc="268436653" symbol="elapsedSec"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="25" lineNum="117" parent="globals/Capture" pc="268436664" symbol="onSensor"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="25" lineNum="118" parent="globals/Capture" pc="268436666" symbol="onSensor"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="25" lineNum="119" parent="globals/Capture" pc="268436688" symbol="onSensor"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="123" parent="globals/Capture" pc="268436706" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="124" parent="globals/Capture" pc="268436709" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="125" parent="globals/Capture" pc="268436717" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="125" parent="globals/Capture" pc="268436723" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="127" parent="globals/Capture" pc="268436727" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="128" parent="globals/Capture" pc="268436735" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="129" parent="globals/Capture" pc="268436743" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="130" parent="globals/Capture" pc="268436751" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="130" parent="globals/Capture" pc="268436769" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="132" parent="globals/Capture" pc="268436773" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="133" parent="globals/Capture" pc="268436782" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="134" parent="globals/Capture" pc="268436786" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="136" parent="globals/Capture" pc="268436789" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="137" parent="globals/Capture" pc="268436800" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="138" parent="globals/Capture" pc="268436803" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="139" parent="globals/Capture" pc="268436806" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="141" parent="globals/Capture" pc="268436809" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="142" parent="globals/Capture" pc="268436820" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="143" parent="globals/Capture" pc="268436836" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="144" parent="globals/Capture" pc="268436852" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="146" parent="globals/Capture" pc="268436868" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="147" parent="globals/Capture" pc="268436877" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="147" parent="globals/Capture" pc="268436886" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="147" parent="globals/Capture" pc="268436895" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="148" parent="globals/Capture" pc="268436904" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="150" parent="globals/Capture" pc="268436915" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="151" parent="globals/Capture" pc="268436942" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="152" parent="globals/Capture" pc="268436969" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="157" parent="globals/Capture" pc="268436996" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="158" parent="globals/Capture" pc="268437006" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="159" parent="globals/Capture" pc="268437016" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="160" parent="globals/Capture" pc="268437026" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="163" parent="globals/Capture" pc="268437048" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="164" parent="globals/Capture" pc="268437107" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="167" parent="globals/Capture" pc="268437144" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="168" parent="globals/Capture" pc="268437171" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="169" parent="globals/Capture" pc="268437198" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="170" parent="globals/Capture" pc="268437231" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="173" parent="globals/Capture" pc="268437241" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="174" parent="globals/Capture" pc="268437245" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="175" parent="globals/Capture" pc="268437253" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="176" parent="globals/Capture" pc="268437270" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="179" parent="globals/Capture" pc="268437282" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="26" lineNum="180" parent="globals/Capture" pc="268437297" symbol="onData"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="90" parent="globals/Capture" pc="268437358" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="91" parent="globals/Capture" pc="268437360" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="91" parent="globals/Capture" pc="268437369" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="92" parent="globals/Capture" pc="268437373" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="93" parent="globals/Capture" pc="268437384" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="94" parent="globals/Capture" pc="268437398" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="95" parent="globals/Capture" pc="268437407" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="96" parent="globals/Capture" pc="268437419" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="97" parent="globals/Capture" pc="268437431" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="99" parent="globals/Capture" pc="268437442" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="27" lineNum="100" parent="globals/Capture" pc="268437450" symbol="stop"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="54" parent="globals/Capture" pc="268437484" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="55" parent="globals/Capture" pc="268437486" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="56" parent="globals/Capture" pc="268437495" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="57" parent="globals/Capture" pc="268437503" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="58" parent="globals/Capture" pc="268437511" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="59" parent="globals/Capture" pc="268437519" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="28" lineNum="60" parent="globals/Capture" pc="268437527" symbol="initialize"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="103" parent="globals/Capture" pc="268437536" symbol="elapsedMs"/>
+        <entry filename="/Users/azizmahmud/Documents/Meditation+Manifestation App/GarminWatch/source/Capture.mc" id="29" lineNum="104" parent="globals/Capture" pc="268437538" symbol="elapsedMs"/>
+    </pcToLineNum>
+    <symbolTable>
+        <entry id="8388639" module="true" symbol="Graphics"/>
+        <entry id="8388632" method="true" symbol="&lt;init&gt;"/>
+        <entry id="14" method="true" symbol="delivering"/>
+        <entry id="8388638" module="true" symbol="ActivityRecording"/>
+        <entry field="true" id="8388890" symbol="sport"/>
+        <entry field="true" id="13" symbol="ticker"/>
+        <entry field="true" id="11" symbol="bridge"/>
+        <entry field="true" id="8388611" module="true" symbol="Toybox"/>
+        <entry field="true" id="31" symbol="AppName"/>
+        <entry id="4" module="true" symbol="globals/Rez/Strings"/>
+        <entry id="8388631" module="true" symbol="Activity"/>
+        <entry id="8388648" module="true" symbol="WatchUi"/>
+        <entry id="8389081" method="true" symbol="onBack"/>
+        <entry field="true" id="15" symbol="dropped"/>
+        <entry id="2" module="true" symbol="globals/Rez"/>
+        <entry field="true" id="18" symbol="batches"/>
+        <entry id="20" method="true" symbol="elapsedSec"/>
+        <entry id="8389124" method="true" symbol="onUpdate"/>
+        <entry field="true" id="10" symbol="capture"/>
+        <entry id="8388771" module="true" object="true" symbol="Drawables"/>
+        <entry id="5" object="true" symbol="Bridge"/>
+        <entry field="true" id="23" symbol="gz"/>
+        <entry field="true" id="22" symbol="gy"/>
+        <entry field="true" id="21" symbol="gx"/>
+        <entry field="true" id="8390134" symbol="sampleRate"/>
+        <entry field="true" id="26" symbol="primed"/>
+        <entry id="8390648" symbol="accelerometer"/>
+        <entry field="true" id="8390655" symbol="heartBeatIntervals"/>
+        <entry id="12" method="true" symbol="tick"/>
+        <entry id="24" method="true" symbol="onData"/>
+        <entry id="8388637" module="true" symbol="Communications"/>
+        <entry id="3" module="true" symbol="globals/Rez/Drawables"/>
+        <entry id="8388828" method="true" symbol="onError"/>
+        <entry id="8388699" method="true" symbol="stop"/>
+        <entry id="8" object="true" symbol="SessionDelegate"/>
+        <entry field="true" id="8390438" symbol="enabled"/>
+        <entry id="8388644" module="true" symbol="System"/>
+        <entry id="8389619" method="true" symbol="onSelect"/>
+        <entry id="8388769" module="true" object="true" symbol="Rez"/>
+        <entry id="19" method="true" symbol="elapsedMs"/>
+        <entry field="true" id="27" symbol="running"/>
+        <entry id="8388640" module="true" symbol="Lang"/>
+        <entry id="25" method="true" symbol="onSensor"/>
+        <entry field="true" id="30" symbol="LauncherIcon"/>
+        <entry id="8388610" symbol="statics"/>
+        <entry id="8389123" method="true" symbol="onShow"/>
+        <entry id="8388643" module="true" symbol="Sensor"/>
+        <entry id="8389350" module="true" symbol="globals"/>
+        <entry id="8388770" module="true" object="true" symbol="Strings"/>
+        <entry field="true" id="8388960" symbol="heartRate"/>
+        <entry id="8388702" method="true" symbol="initialize"/>
+        <entry id="8389279" method="true" symbol="onStart"/>
+        <entry field="true" id="8388891" symbol="subSport"/>
+        <entry field="true" id="29" symbol="startMs"/>
+        <entry field="true" id="8388892" symbol="name"/>
+        <entry id="8389808" symbol="period"/>
+        <entry id="8388641" module="true" symbol="Math"/>
+        <entry id="9" object="true" symbol="SessionView"/>
+        <entry id="8389280" method="true" symbol="getInitialView"/>
+        <entry id="8389281" method="true" symbol="onStop"/>
+        <entry id="7" object="true" symbol="EightZeroEightApp"/>
+        <entry id="6" object="true" symbol="Capture"/>
+        <entry id="8388829" method="true" symbol="onComplete"/>
+        <entry id="8388646" module="true" object="true" symbol="Timer"/>
+        <entry id="8388698" method="true" symbol="start"/>
+        <entry field="true" id="17" symbol="sent"/>
+        <entry id="16" method="true" symbol="send"/>
+        <entry id="8389125" method="true" symbol="onHide"/>
+        <entry field="true" id="28" symbol="session"/>
+        <entry id="8388635" module="true" symbol="Application"/>
+    </symbolTable>
+    <localVars>
+        <entry arg="true" endPc="268435596" name="theCapture" stackId="1" startPc="268435573"/>
+        <entry arg="true" endPc="268435709" name="state" stackId="1" startPc="268435652"/>
+        <entry arg="true" endPc="268435810" name="state" stackId="1" startPc="268435784"/>
+        <entry arg="true" endPc="268435897" name="theCapture" stackId="1" startPc="268435874"/>
+        <entry arg="true" endPc="268436293" name="dc" stackId="1" startPc="268435947"/>
+        <entry endPc="268436292" name="cx" stackId="2" startPc="268435950"/>
+        <entry endPc="268436292" name="cy" stackId="3" startPc="268435950"/>
+        <entry endPc="268436292" name="seconds" stackId="4" startPc="268435950"/>
+        <entry endPc="268436292" name="text" stackId="5" startPc="268435950"/>
+        <entry endPc="268436292" name="status" stackId="6" startPc="268435950"/>
+        <entry arg="true" endPc="268436404" name="payload" stackId="1" startPc="268436385"/>
+        <entry arg="true" endPc="268436705" name="info" stackId="1" startPc="268436664"/>
+        <entry arg="true" endPc="268437357" name="sensorData" stackId="1" startPc="268436706"/>
+        <entry endPc="268437356" name="accel" stackId="2" startPc="268436709"/>
+        <entry endPc="268437356" name="xs" stackId="3" startPc="268436709"/>
+        <entry endPc="268437356" name="ys" stackId="4" startPc="268436709"/>
+        <entry endPc="268437356" name="zs" stackId="5" startPc="268436709"/>
+        <entry endPc="268437356" name="n" stackId="6" startPc="268436709"/>
+        <entry endPc="268437356" name="out" stackId="7" startPc="268436709"/>
+        <entry endPc="268437356" name="i" stackId="8" startPc="268436709"/>
+        <entry endPc="268437237" name="sumPitch" stackId="9" startPc="268436800"/>
+        <entry endPc="268437237" name="sumRoll" stackId="10" startPc="268436800"/>
+        <entry endPc="268437237" name="sumSquares" stackId="11" startPc="268436800"/>
+        <entry endPc="268437143" name="k" stackId="12" startPc="268436820"/>
+        <entry endPc="268437133" name="x" stackId="13" startPc="268436820"/>
+        <entry endPc="268437133" name="y" stackId="14" startPc="268436820"/>
+        <entry endPc="268437133" name="z" stackId="15" startPc="268436820"/>
+        <entry endPc="268437133" name="rx" stackId="16" startPc="268436820"/>
+        <entry endPc="268437133" name="ry" stackId="17" startPc="268436820"/>
+        <entry endPc="268437133" name="rz" stackId="18" startPc="268436820"/>
+        <entry endPc="268437356" name="rr" stackId="19" startPc="268436709"/>
+        <entry endPc="268437356" name="hrData" stackId="20" startPc="268436709"/>
+        <entry arg="true" endPc="268437535" name="theBridge" stackId="1" startPc="268437484"/>
+    </localVars>
+    <deviceInfo deviceVersion="3d0fb192a2cf01699aefd0f384af3f527e5885bd" partNumber="006-B4426-00"/>
+    <annotations>
+        <annotationEntry annotation="initialized" class="Drawables" module="globals/Rez" symbol="LauncherIcon"/>
+        <annotationEntry annotation="initialized" class="Strings" module="globals/Rez" symbol="AppName"/>
+    </annotations>
+    <dataEntryOffsetMappings>
+        <dataEntry label="globals" offset="49" parentId="" symbolId="globals" type="module"/>
+        <dataEntry label="globals/SessionDelegate" offset="134" parentId="globals" symbolId="SessionDelegate" type="class"/>
+        <dataEntry label="globals/Rez" offset="205" parentId="globals" symbolId="Rez" type="module"/>
+        <dataEntry label="globals/EightZeroEightApp" offset="249" parentId="globals" symbolId="EightZeroEightApp" type="class"/>
+        <dataEntry label="globals/SessionView" offset="338" parentId="globals" symbolId="SessionView" type="class"/>
+        <dataEntry label="globals/Bridge" offset="436" parentId="globals" symbolId="Bridge" type="class"/>
+        <dataEntry label="globals/Capture" offset="534" parentId="globals" symbolId="Capture" type="class"/>
+        <dataEntry label="globals/Rez/Drawables" offset="722" parentId="Rez" symbolId="Drawables" type="module"/>
+        <dataEntry label="globals/Rez/Strings" offset="757" parentId="Rez" symbolId="Strings" type="module"/>
+    </dataEntryOffsetMappings>
+    <functions>
+        <functionEntry accessMode="public" endPc="268435471" name="&lt;init&gt;" parent="SessionDelegate" startPc="268435460">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435491" name="&lt;init&gt;" parent="Rez" startPc="268435472">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435503" name="&lt;init&gt;" parent="EightZeroEightApp" startPc="268435492">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435515" name="&lt;init&gt;" parent="SessionView" startPc="268435504">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435527" name="&lt;init&gt;" parent="Bridge" startPc="268435516">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Capture">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435572" name="onBack" parent="SessionDelegate" startPc="268435528">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435596" name="initialize" parent="SessionDelegate" startPc="268435573">
+            <param id="theCapture"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435651" name="onSelect" parent="SessionDelegate" startPc="268435597">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Drawables">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" name="&lt;init&gt;" parent="Strings">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435709" name="onStart" parent="EightZeroEightApp" startPc="268435652">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435768" name="getInitialView" parent="EightZeroEightApp" startPc="268435710">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435783" name="initialize" parent="EightZeroEightApp" startPc="268435769">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435810" name="onStop" parent="EightZeroEightApp" startPc="268435784">
+            <param id="state"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435873" name="onShow" parent="SessionView" startPc="268435811">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435897" name="initialize" parent="SessionView" startPc="268435874">
+            <param id="theCapture"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435932" name="onHide" parent="SessionView" startPc="268435898">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268435946" name="tick" parent="SessionView" startPc="268435933">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436293" name="onUpdate" parent="SessionView" startPc="268435947">
+            <param id="dc"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436317" name="delivering" parent="Bridge" startPc="268436294">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436335" name="onError" parent="Bridge" startPc="268436318">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436353" name="onComplete" parent="Bridge" startPc="268436336">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436384" name="initialize" parent="Bridge" startPc="268436354">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436404" name="send" parent="Bridge" startPc="268436385">
+            <param id="payload"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436650" name="start" parent="Capture" startPc="268436405">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436663" name="elapsedSec" parent="Capture" startPc="268436651">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268436705" name="onSensor" parent="Capture" startPc="268436664">
+            <param id="info"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437357" name="onData" parent="Capture" startPc="268436706">
+            <param id="sensorData"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437483" name="stop" parent="Capture" startPc="268437358">
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437535" name="initialize" parent="Capture" startPc="268437484">
+            <param id="theBridge"/>
+            <documentation/>
+        </functionEntry>
+        <functionEntry accessMode="public" endPc="268437568" name="elapsedMs" parent="Capture" startPc="268437536">
+            <documentation/>
+        </functionEntry>
+    </functions>
+</debugInfo>
