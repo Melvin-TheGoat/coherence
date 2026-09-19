@@ -172,9 +172,8 @@ struct SaveSessionView: View {
 
     private func stat(label: String, value: String, unit: String?, hero: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(label.uppercased())
-                .font(.system(size: 9, weight: .bold))
-                .tracking(1.1)
+            Text(label)
+                .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.textSecondary)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)

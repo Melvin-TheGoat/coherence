@@ -67,7 +67,7 @@ struct LockPill: View {
     var body: some View {
         HStack(spacing: 4) {
             Image(systemName: "lock.fill").font(.system(size: 8, weight: .bold))
-            Text("LOCKED").font(.system(size: 8, weight: .bold)).tracking(0.8)
+            Text("Locked").font(AppFont.caption.weight(.semibold))
         }
         .foregroundStyle(AppColor.textSecondary)
         .padding(.horizontal, 8)
@@ -91,9 +91,8 @@ struct LockedGraphCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 9) {
             HStack {
-                Text(title.uppercased())
-                    .font(.system(size: 9, weight: .bold))
-                    .tracking(1.1)
+                Text(title)
+                    .font(AppFont.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary)
                 Spacer()
                 LockPill()
@@ -138,9 +137,8 @@ struct LockedTiles: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(AppColor.textSecondary.opacity(0.7))
                         .frame(height: 22)
-                    Text(label.uppercased())
-                        .font(.system(size: 8, weight: .bold))
-                        .tracking(0.6)
+                    Text(label)
+                        .font(AppFont.caption.weight(.semibold))
                         .foregroundStyle(AppColor.textSecondary)
                 }
                 .frame(maxWidth: .infinity)

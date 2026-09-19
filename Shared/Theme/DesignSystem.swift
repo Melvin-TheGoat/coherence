@@ -15,7 +15,7 @@ enum AppMetrics {
     static let gap: CGFloat = 14
     /// Soft rather than merely rounded. At 22 a card reads as a panel; at 26 it
     /// reads as an object, which is the difference being asked for.
-    static let cardRadius: CGFloat = 26
+    static let cardRadius: CGFloat = 28
     static let cardPadding: CGFloat = 18
     static let buttonRadius: CGFloat = 20
     /// How far a primary button stands off its own shadow. Pressing it closes
@@ -108,14 +108,20 @@ struct SecondaryButtonStyle: ButtonStyle {
 
 // MARK: - Small components
 
-/// A small uppercase section label.
+/// A section label, in the voice a person uses.
+///
+/// It was UPPERCASE, TRACKED AND TINY (2026-09-19, Aziz: "I don't want it to
+/// look super scientific"). Small caps with letter-spacing is the house style
+/// of dashboards and lab reports, and a dozen of them down a screen is most of
+/// why this app felt clinical: every label was shouting a field name. Sentence
+/// case at a readable size reads as somebody talking, costs nothing, and is
+/// legible to more people.
 struct SectionHeader: View {
     let title: String
     var body: some View {
-        Text(title.uppercased())
-            .font(AppFont.caption.weight(.bold))
-            .tracking(1.1)
-            .foregroundStyle(AppColor.textSecondary)
+        Text(title)
+            .font(AppFont.callout.weight(.bold))
+            .foregroundStyle(AppColor.textPrimary)
     }
 }
 
@@ -131,9 +137,8 @@ struct StatTile: View {
                 .monospacedDigit()
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
-            Text(label.uppercased())
-                .font(.system(.caption2, design: .rounded).weight(.bold))
-                .tracking(0.8)
+            Text(label)
+                .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.textSecondary)
         }
         .frame(maxWidth: .infinity)

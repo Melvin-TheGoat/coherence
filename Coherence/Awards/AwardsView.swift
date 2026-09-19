@@ -38,9 +38,8 @@ struct AwardBadge: View {
                         .monospacedDigit()
                         .minimumScaleFactor(0.5)
                         .lineLimit(1)
-                    Text(unit.uppercased())
-                        .font(.system(size: size * 0.13, weight: .semibold))
-                        .tracking(0.4)
+                    Text(unit)
+                        .font(.system(size: size * 0.14, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(earned ? AppColor.accentGoldText
                                         : AppColor.textSecondary.opacity(0.55))

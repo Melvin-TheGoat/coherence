@@ -236,9 +236,8 @@ struct ProfileTab: View {
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
-            Text(label.uppercased())
-                .font(.system(size: 8, weight: .bold))
-                .tracking(0.8)
+            Text(label)
+                .font(AppFont.caption.weight(.semibold))
                 .foregroundStyle(AppColor.textSecondary)
         }
         .frame(maxWidth: .infinity)

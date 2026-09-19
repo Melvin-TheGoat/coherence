@@ -194,11 +194,11 @@ struct FreeTierScreen: View {
             }
 
             HStack(alignment: .top, spacing: 16) {
-                column("YOURS, FREE", items: kept, tint: AppColor.accentGoldText, symbol: "checkmark")
-                column("STAYS LOCKED", items: locked, tint: AppColor.textSecondary, symbol: "lock.fill")
+                column("Yours, free", items: kept, tint: AppColor.accentGoldText, symbol: "checkmark")
+                column("Stays locked", items: locked, tint: AppColor.textSecondary, symbol: "lock.fill")
             }
 
-            LockedGraphCard(title: "Heart Rate",
+            LockedGraphCard(title: "Your heart",
                             message: "This is your session. Unlock to read it.")
 
             Spacer(minLength: 8)

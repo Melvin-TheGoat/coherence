@@ -86,10 +86,10 @@ enum SessionEvidence {
 
         var out: [EvidenceSeries] = []
         if !heartRate.isEmpty {
-            out.append(series(.heartRate, "Heart Rate", "bpm", points(heartRate)))
+            out.append(series(.heartRate, "Your heart", "bpm", points(heartRate)))
         }
         if !stillness.isEmpty {
-            out.append(series(.stillness, "Stillness", "", points(stillness)))
+            out.append(series(.stillness, "How still you were", "", points(stillness)))
         }
         if !breathing.isEmpty {
             // Zero in the breathing series means "this window could not be
@@ -100,7 +100,7 @@ enum SessionEvidence {
             // next one across the gap.
             let readable = points(breathing).filter { $0.value > 0 }
             if !readable.isEmpty {
-                out.append(series(.breathing, "Breathing", "br/min", readable))
+                out.append(series(.breathing, "Your breath", "br/min", readable))
             }
         }
         return out

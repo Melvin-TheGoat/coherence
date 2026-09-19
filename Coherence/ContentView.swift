@@ -345,22 +345,37 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let scores = sparkScores
         return VStack(alignment: .leading, spacing: 4) {
-            SectionHeader(title: "Day streak")
-            HStack(alignment: .lastTextBaseline) {
-                Text("\(streak.current)")
-                    .font(.system(size: 54, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .monospacedDigit()
-                Spacer()
+            // Otto sits on the streak, and the streak is blush (2026-09-19).
+            // Two things happen at once here. He gives the softest number on
+            // the screen somebody to belong to, which a bare "Day streak / 1"
+            // never had. And moving the streak off amber is what finally makes
+            // "one amber thing per section" hold: amber now means a score and
+            // nothing else, so the practised days in the calendar below are
+            // the only other amber on Home.
+            HStack(alignment: .center, spacing: 14) {
+                OttoMark(size: 62, pose: .meditating)
+                VStack(alignment: .leading, spacing: 0) {
+                    SectionHeader(title: "Day streak")
+                    Text("\(streak.current)")
+                        .font(.system(size: 54, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.streakBlushText)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 2) {
                     statLine(value: "\(streak.longest)", label: "longest")
                     statLine(value: "\(sessions.count)", label: "sessions")
                 }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
+            .background(AppColor.streakBlush.opacity(0.22),
+                        in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
             if let nudge {
                 Text(nudge)
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.calmAccent)
+                    .padding(.top, 2)
             }
             // The sparkline is FREE (Aziz, 2026-08-24, reversing the first
             // build). It draws overall scores, and every history row below it
@@ -448,7 +463,9 @@ struct ContentView: View {
             HStack {
                 SectionHeader(title: today.formatted(.dateTime.month(.wide)))
                 Spacer()
-                Text("\(practicedThisMonth(practiced)) practiced days")
+                Text(practicedThisMonth(practiced) == 1
+                     ? "1 day practiced"
+                     : "\(practicedThisMonth(practiced)) days practiced")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
             }

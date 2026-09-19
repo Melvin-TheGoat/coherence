@@ -35,8 +35,8 @@ extension View {
 /// Small conic progress ring with the score in the middle (0–1 → 0–100).
 struct ScoreRing: View {
     let score: Double?
-    var size: CGFloat = 38
-    var lineWidth: CGFloat = 4
+    var size: CGFloat = 42
+    var lineWidth: CGFloat = 5
 
     var body: some View {
         // Inset by half the stroke: a stroke sits centred on the path, so
@@ -45,7 +45,10 @@ struct ScoreRing: View {
         ZStack {
             Circle()
                 .inset(by: lineWidth / 2)
-                .stroke(AppColor.textSecondary.opacity(0.15), lineWidth: lineWidth)
+                // The unfilled part of the ring is warm paper, not grey. A
+                // neutral track under an amber arc is what made the ring read
+                // as a gauge rather than as a thing you earned.
+                .stroke(AppColor.hairline, lineWidth: lineWidth)
             if let score {
                 Circle()
                     .inset(by: lineWidth / 2)
@@ -54,7 +57,7 @@ struct ScoreRing: View {
                     .rotationEffect(.degrees(-90))
             }
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
-                .font(.system(size: size * 0.3, weight: .bold, design: .rounded))
+                .font(.system(size: size * 0.32, weight: .bold, design: .rounded))
                 .foregroundStyle(score != nil ? AppColor.textPrimary : AppColor.textSecondary)
                 .monospacedDigit()
         }
@@ -79,9 +82,9 @@ struct EvidenceRow: View {
     var body: some View {
         HStack(spacing: 12) {
             ScoreRing(score: score)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 Text(SessionListSupport.rowTitle(session))
-                    .font(AppFont.callout.weight(.semibold))
+                    .font(AppFont.callout.weight(.bold))
                     .foregroundStyle(AppColor.textPrimary)
                 Text(subtitle)
                     .font(AppFont.caption)
@@ -93,13 +96,13 @@ struct EvidenceRow: View {
                 Color.clear
                     .frame(width: 32, height: 42)
                     .overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             Image(systemName: "chevron.right")
                 .font(.caption)
                 .foregroundStyle(AppColor.accentGoldText)
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, 13)
     }
 }
 
@@ -191,22 +194,32 @@ struct MonthCalendar: View {
         // with none is pixel-identical to the one that shipped.
         let tall = !photos.isEmpty
         return VStack(spacing: tall ? 3 : 2) {
+            // A practised day is a filled amber chip with the date inside it,
+            // not a number with a 4.5pt dot underneath (2026-09-19). The dot
+            // was correct and unreadable: it carried the single most-looked-at
+            // fact on Home in four and a half points of gold. A filled day is
+            // legible at a glance, is the same object as the score ring's
+            // fill, and turns the month into something that visibly fills up.
             Text("\(n)")
-                .font(.system(size: 12, weight: isToday || isSelected ? .bold : .regular, design: .rounded))
-                .foregroundStyle(inMonth ? AppColor.textPrimary : AppColor.textSecondary.opacity(0.35))
+                .font(.system(size: 13,
+                              weight: done || isToday || isSelected ? .bold : .regular,
+                              design: .rounded))
+                .foregroundStyle(dayInk(done: done, inMonth: inMonth, photo: photo != nil))
+                .frame(width: 27, height: 27)
+                .background {
+                    if done && photo == nil {
+                        Circle().fill(AppColor.accentGold)
+                    }
+                }
             if let photo {
                 Color.clear
                     .frame(width: 24, height: 26)
                     .overlay(Image(uiImage: photo).resizable().scaledToFill())
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            } else {
-                Circle()
-                    // Informational, not decorative: at fill-gold it reads 1.78
-                    // against the card and stops being a signal.
-                    .fill(done ? AppColor.accentGoldText : .clear)
-                    .frame(width: 4.5, height: 4.5)
-                    // Keeps the number row aligned with photo days.
-                    .frame(height: tall ? 26 : 4.5, alignment: .top)
+            } else if tall {
+                // Holds the row's height so a month with photos in it keeps
+                // every number on the same line.
+                Color.clear.frame(height: 26)
             }
         }
         .frame(maxWidth: .infinity, minHeight: tall ? 46 : 32)
@@ -214,14 +227,23 @@ struct MonthCalendar: View {
         // than its centre. Centred, a photo day's taller cell dragged the ring
         // down over the picture (seen on the simulator, 2026-09-16).
         .background(alignment: tall ? .top : .center) {
-            let mark = Circle().frame(width: 26, height: 26).offset(y: tall ? -3 : -2)
+            let y: CGFloat = tall ? -3 : -2
             if isSelected {
-                mark.foregroundStyle(AppColor.accentGold.opacity(0.18))
-            } else if isToday {
-                Circle().stroke(AppColor.calmAccent, lineWidth: 1.4)
-                    .frame(width: 26, height: 26).offset(y: tall ? -3 : -2)
+                Circle().stroke(AppColor.textPrimary, lineWidth: 2)
+                    .frame(width: 31, height: 31).offset(y: y)
+            } else if isToday && !done {
+                Circle().stroke(AppColor.calmAccent, lineWidth: 1.6)
+                    .frame(width: 29, height: 29).offset(y: y)
             }
         }
+    }
+
+    /// The date's own colour. On a filled day it has to be the label colour or
+    /// it disappears into the amber.
+    private func dayInk(done: Bool, inMonth: Bool, photo: Bool) -> Color {
+        if done && !photo { return AppColor.textOnAccent }
+        if !inMonth { return AppColor.textSecondary.opacity(0.35) }
+        return AppColor.textPrimary
     }
 
     private var weekdayInitials: [String] {

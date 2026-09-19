@@ -144,9 +144,8 @@ private struct PathStop: View {
 private struct LevelChip: View {
     let level: MeditationMethod.Level
     var body: some View {
-        Text(level.label.uppercased())
-            .font(.caption2.weight(.semibold))
-            .tracking(0.8)
+        Text(level.label)
+            .font(AppFont.caption.weight(.semibold))
             .foregroundStyle(AppColor.calmAccent)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)

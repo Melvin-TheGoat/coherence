@@ -444,31 +444,38 @@ struct SessionResultsView: View {
     private func paidTiles(_ stats: MeditationStats) -> some View {
         HStack(spacing: 8) {
             ForEach(tileData(stats), id: \.label) { tile in
-                VStack(spacing: 2) {
+                VStack(spacing: 3) {
                     if tile.value.isEmpty {
                         // The unread state: the signal's own glyph, quiet, at
                         // the same optical size as the numbers beside it.
                         Image(systemName: "lungs")
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(AppColor.textSecondary.opacity(0.7))
-                            .frame(height: 22)
+                            .frame(height: 24)
                     } else {
                         Text(tile.value)
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(.system(size: 21, weight: .bold, design: .rounded))
                             .foregroundStyle(AppColor.calmAccent)
                             .monospacedDigit()
                             .minimumScaleFactor(0.7)
                             .lineLimit(1)
                     }
-                    Text(tile.label.uppercased())
-                        .font(.system(size: 8, weight: .bold))
-                        .tracking(0.6)
+                    // Sentence case, not 8pt tracked capitals. Three of those
+                    // in a row is a readout on an instrument, which is the one
+                    // thing this screen must not look like.
+                    Text(tile.label)
+                        .font(AppFont.caption.weight(.semibold))
                         .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background(AppColor.backgroundSecondary,
-                            in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .padding(.vertical, 14)
+                // Tinted in the signal's own colour rather than sitting on a
+                // white card: a filled shape reads as an object you could pick
+                // up, an outlined one reads as a field in a form.
+                .background(AppColor.calmAccentFill.opacity(0.13),
+                            in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             }
         }
     }
@@ -476,7 +483,7 @@ struct SessionResultsView: View {
     private func tileData(_ stats: MeditationStats) -> [(label: String, value: String, teal: Bool)] {
         var t: [(String, String, Bool)] = []
         // Positive = settled (hrDecline is start minus end). See ShareCard.
-        if let d = stats.hrDecline { t.append(("HR settle", String(format: "%+.0f", d), false)) }
+        if let d = stats.hrDecline { t.append(("Heart settled", String(format: "%+.0f", d), false)) }
         if let s = stats.stillnessScore { t.append(("Stillness", String(format: "%.2f", s), false)) }
         // The session average, deliberately: the curve right below this tile
         // shows the whole session, so a headline naming only the slow opening
@@ -487,9 +494,9 @@ struct SessionResultsView: View {
         // three-tile one. An unread breath shows a lungs glyph instead of a
         // number (rendered by `tiles`), and the card below the graphs says why.
         if let r = stats.meanBreathingRate {
-            t.append(("Breaths/min", String(format: "%.1f", r), true))
+            t.append(("Breaths a minute", String(format: "%.1f", r), true))
         } else {
-            t.append(("Breath not read", "", true))
+            t.append(("Breath too quiet", "", true))
         }
         return t
     }
@@ -1313,7 +1320,11 @@ private struct EvidenceGraphCard: View {
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) { value in
-                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    // Faint, and no tick marks. A grid is how you read a
+                    // measurement off a chart, and this chart is not for
+                    // reading measurements off: the number is printed above it
+                    // in words. What is left is enough to see the shape.
+                    AxisGridLine().foregroundStyle(AppColor.hairline)
                     // Sub-two-minute sessions (the onboarding demo) read in
                     // seconds: "0.3 min" gridlines were the tell that the
                     // axis was designed for sits, not samples.
@@ -1329,7 +1340,7 @@ private struct EvidenceGraphCard: View {
             }
             .chartYAxis {
                 AxisMarks(values: .automatic(desiredCount: 3)) { _ in
-                    AxisGridLine().foregroundStyle(AppColor.textSecondary.opacity(0.12))
+                    AxisGridLine().foregroundStyle(AppColor.hairline)
                     AxisValueLabel().foregroundStyle(AppColor.textSecondary).font(.caption2)
                 }
             }
