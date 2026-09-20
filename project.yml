@@ -24,6 +24,9 @@ packages:
   PostHog:
     url: https://github.com/PostHog/posthog-ios
     from: 3.0.0
+  RiveRuntime:
+    url: https://github.com/rive-app/rive-ios
+    from: 6.27.0
 
 targets:
   Coherence:
@@ -45,6 +48,7 @@ targets:
       - target: CoherenceWatch
         embed: true
       - package: PostHog
+      - package: RiveRuntime
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808

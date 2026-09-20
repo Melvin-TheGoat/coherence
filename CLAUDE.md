@@ -1736,6 +1736,60 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
   the upload through `head`:** it closes the pipe at N lines and can kill
   xcodebuild mid-upload. Log to a file and grep after.
 
+## OTTO IS RIGGED IN RIVE (2026-09-20): `Coherence/Otto/Otto.riv`
+
+Built through the Rive editor's MCP from this session, on the file Melvin
+created (editor.rive.app/file/otto/2597495, cloud only, no path on disk).
+The runtime is `RiveRuntime` 6.27 via SPM in project.yml. `OttoRive.swift`
+holds `OttoRig` (loads the file, binds the view model, exposes `wave()` and
+`talking`), `OttoRiveView` (the rig, or the PNG with the SwiftUI pulse when
+the file is missing or fails to load: a bad export costs motion, never a
+screen) and `BreathHaptics` (a CoreHaptics swell on the same 5 s period,
+off by default, for onboarding's breath screen only; Home never buzzes).
+
+- **Shape of the rig.** Artboard `Otto` 400x470, transparent. Node `Nod`
+  at the feet (200, 460) > node `Body` > Solo `Pose` holding the talk and
+  wave PNGs, each offset so its bottom edge sits on the node. Timelines:
+  `Breathe` (300 frames, loop, Body scale 100 to 103.5 percent from the
+  feet), `Wave` (72 frames, one shot: Solo flips to the wave PNG, Body
+  rocks -5/3/-2 degrees with a scale bump, flips back at frame 66), `Talk`
+  (48 frames, loop: Nod rocks 1.5 degrees and dips 3 pt), `Still` (empty).
+  State machine `Otto`, two layers so they mix: `Body` (Entry > Breathe,
+  Breathe > Wave on the `wave` trigger, Wave > Breathe at 100 percent exit
+  time) and `Head` (Entry > Idle, Idle <> Talk on `talking`). View model
+  `Otto`: `wave` trigger, `talking` boolean, bound to the artboard; the
+  runtime's `enableAutoBind` hands the instance to Swift.
+- **The MCP cannot create bones** (its own words), so the arm does not
+  bend: the wave is a pose swap plus body motion, Duolingo's cheaper trick.
+  If a bending arm is wanted, draw three bones on him by hand in the editor
+  and the MCP can bind and weight the mesh.
+- **Things that cost a round each, so they are not re-learned:**
+  `createLinearAnimations` takes duration in SECONDS (72 became 4320
+  frames); set frames afterwards on property 57. Scale keyframes are in
+  percent (100, not 1). Exit time only works as a percentage here: flags
+  (152) = 12 (enableExitTime 4 + exitTimeIsPercentage 8) and exitTime (160)
+  = 100; in frames or seconds it fired at once. Uploaded images default to
+  hosted and excluded from export; set exporttypevalue (358) = 0 and
+  includeinexport (801) = true or the .riv ships without pixels. The
+  editor is sandboxed: it can neither read the PNGs from the repo nor
+  write the export anywhere, so upload as data URIs and export with
+  `inline_base64: true` over `curl -N` (without `-N` the body came back
+  empty). New artboards carry a grey fill; delete it. The session's
+  transport carries no session id; every call works stateless.
+- **Verified:** `simulateStateMachine` shows Entry > Breathe, Breathe >
+  Wave at the trigger, back at frame +72, Idle <> Talk on the boolean; the
+  simulator shows the rig on Home and tapping Otto waves. The first build
+  crashed because the runtime's convenience init is `try!`; the rig now
+  loads through the throwing inits and logs "Otto rig:" on failure.
+- **Redesign pending (Melvin, same day: "too childish, slightly more
+  realistic and furry").** `mockups/otto-redesign.md` is the brief and
+  prompt. The rig survives the swap: same pose names, same framing,
+  replace the two image assets in Rive, export over the file.
+- **Onboarding v3 is approved except the breathing screen**, which now
+  reads: Otto sits and breathes, nothing rises (the mockup is updated). The
+  Swift build of the nine screens waits for the redesigned art, because
+  every screen is built around his face.
+
 ## ONBOARDING, ROUND 3 (2026-09-19, Melvin): two questions and the Watch screen go
 
 - **`aloneWithThoughts` and `you` left `InterviewStep`** (the `doingNothing`

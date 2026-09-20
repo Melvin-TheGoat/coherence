@@ -28,6 +28,7 @@ struct ContentView: View {
     @State private var tab: MainTab = .home
     /// Which of Otto's lines is showing on Home; a tap on him advances it.
     @State private var ottoLineIndex = 0
+    @StateObject private var ottoRig = OttoRigHolder()
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
     @State private var profileDay: Date?
@@ -342,11 +343,13 @@ struct ContentView: View {
                 // He breathes at the Watch orb's pace and talks on a tap.
                 // Pulled 22pt past the leading edge so he is leaning in, not
                 // standing on a ledge.
-                OttoMark(size: 104, pose: .talking)
-                    .ottoBreathing()
+                OttoRiveView(size: 104, pose: .talking, rig: ottoRig)
                     .padding(.leading, -22)
                     .contentShape(Rectangle())
-                    .onTapGesture { ottoLineIndex += 1 }
+                    .onTapGesture {
+                        ottoLineIndex += 1
+                        ottoRig.wave()
+                    }
                     .accessibilityLabel("Otto")
                     .accessibilityHint("Says something about today")
                 OttoBubble(text: ottoLines[ottoLineIndex % ottoLines.count])

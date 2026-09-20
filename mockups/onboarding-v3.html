@@ -100,10 +100,10 @@
     <div class="body" style="align-items:center;text-align:center;">
       <div class="h" style="margin-top:30px;font-size:26px;">Breathe in</div>
       <div class="count" style="margin-top:6px;">1 of 3</div>
-      <img class="rise" src="otto/otto-head.png" alt="" style="width:270px;position:absolute;bottom:-40px;left:50%;margin-left:-135px;">
+      <img class="breathe" src="otto/otto-sit.png" alt="" style="width:230px;margin-top:70px;position:relative;">
     </div>
   </div></div>
-  <h3>3. Breathe in, breathe out</h3><p>Otto's head rises from the bottom of the screen on the inhale and settles on the exhale, five seconds each, the way Headspace's orange half does. A soft haptic at the top of each inhale, a softer one at the start of each exhale, on the animation's own clock.</p></div>
+  <h3>3. Breathe in, breathe out</h3><p>Otto sits and breathes. His body swells on the inhale and settles on the exhale, five seconds each, from his seat, and nothing else on the screen moves. The Rive rig's Breathe state, the same one Home runs. A soft haptic swell rides the same five second clock (Melvin, 2026-09-20: the rising head looked off; just let him breathe).</p></div>
 
   <!-- 4 question, multi -->
   <div class="shot"><div class="phone"><div class="screen">
@@ -220,7 +220,7 @@
 <h2>Otto in the corner: how it actually gets built</h2>
 <div class="note">
   <b>The breath.</b>
-  A ten second cycle, five in, five out, six a minute: the same pace the Watch orb breathes at and the same pace the score's doorway is built around, so the app breathes one way everywhere. On the question screens it is a scale pulse on his head, top left, from a base at his chin. On the breath screen it is his whole head rising and settling.
+  A ten second cycle, five in, five out, six a minute: the same pace the Watch orb breathes at and the same pace the score's doorway is built around, so the app breathes one way everywhere. On the question screens it is a scale pulse on his head, top left, from a base at his chin. On the breath screen it is his whole body breathing from his seat, and nothing rises: the earlier head-rising version was cut (Melvin, 2026-09-20).
 </div>
 <div class="note">
   <b>The haptics.</b>
@@ -228,7 +228,7 @@
 </div>
 <div class="note">
   <b>Rive, and why.</b>
-  The wave on screen 1, the talk on screen 4, the breath everywhere: that is a character with states the app drives, not a clip that plays. Rive is built for exactly that (a state machine with <code>breathing</code>, <code>wave</code>, <code>talk</code> inputs set from Swift), it rigs the PNGs Aziz already drew through a mesh instead of asking for new art, and Duolingo uses it for its characters. Cost: Rive's Cadet plan at $9 a month for one seat, needed only to export the file; the runtime is free and adds about 4.7 MB. Rive ships an official MCP served by its desktop editor, so the rig can be built and iterated from here once the editor is installed and signed in.
+  The wave on screen 1, the talk on screen 4, the breath everywhere: that is a character with states the app drives, not a clip that plays. Rive is built for exactly that (a state machine with <code>breathing</code>, <code>wave</code>, <code>talk</code> inputs set from Swift), it rigs the PNGs Aziz already drew through a mesh instead of asking for new art, and Duolingo uses it for its characters. Cost: Rive's Cadet plan at $9 a month for one seat, needed only to export the file; the runtime is free and adds about 4.7 MB. Rive ships an official MCP served by its desktop editor, and the rig is BUILT (2026-09-20): <code>Coherence/Otto/Otto.riv</code>, artboard Otto, state machine Otto, view model Otto with <code>wave</code> (trigger) and <code>talking</code> (boolean). Home runs it. Onboarding screens 1, 3 and 4 use the same file.
 </div>
 <div class="note">
   <b>What ships without Rive.</b>

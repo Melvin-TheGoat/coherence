@@ -58,6 +58,23 @@ internal testers Melvin + Aziz, run the round trip in CLOUDKIT_SETUP.md.
 Walk RELEASE_CHECKLIST.md's ALWAYS list before the archive (it is the same
 archive that would go to review if the round trip passes).
 
+## Otto rig BUILT in Rive; redesign and onboarding v3 build next (2026-09-20)
+
+Done: `Coherence/Otto/Otto.riv` (breathe, wave, talk), RiveRuntime linked,
+Home runs it, tap Otto to wave, fallback to the PNG pulse if the file fails.
+Details in CLAUDE.md "OTTO IS RIGGED IN RIVE". Bones cannot be made from
+the MCP, so the arm is a pose swap; three hand-drawn bones would upgrade it.
+
+Open, in order:
+1. **Otto redesign** (Melvin: "too childish, slightly more realistic and
+   furry"). Brief and prompt in `mockups/otto-redesign.md`; needs whoever
+   generated the current poses to run it. Drop-in: same names, same framing.
+2. **Onboarding v3 in Swift** (Melvin approved `mockups/onboarding-v3.html`
+   with one change: the breath screen is Otto sitting and breathing, no
+   rising head). Starts once the new art exists.
+3. Breath haptics on the onboarding breath screen (`BreathHaptics`, built,
+   unused until 2).
+
 ## Home v3 and Onboarding v3 mockups, Otto in a tree (Melvin, 2026-09-20): HOME B BUILT, ONBOARDING AWAITING A PICK, RIVE CHOSEN
 
 Melvin, later that day: "Go with B for home, build it. And ok lets go with
