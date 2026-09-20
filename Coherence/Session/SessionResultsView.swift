@@ -971,13 +971,7 @@ struct SessionResultsView: View {
                 .foregroundStyle(AppColor.textSecondary)
 
             Menu {
-                Button("Unreported") { setTechnique(nil) }
-                Divider()
-                ForEach(MeditationMethod.loggable, id: \.id) { item in
-                    Button(item.label) { setTechnique(item.id) }
-                }
-                Divider()
-                Button("Something else") { setTechnique(MeditationMethod.ownID) }
+                TechniqueOptions(select: setTechnique)
             } label: {
                 HStack {
                     Text(MeditationMethod.label(for: technique) ?? "Unreported")

@@ -80,22 +80,47 @@ this release needs a NEW archive.
 
 ## OPEN for 1.1 (Friends), before that build is submitted
 
-- [ ] **CloudKit Console, `iCloud.com.lockout.meditate808`:** the six PUBLIC
-  record types (Profile, FriendEdge, Post, Reaction, Block, Report) with
-  queryable indexes on `username`, `from`, `to`, `author`, `post`,
-  `practicedAt`, `createdAt`; security roles `_world` read / `_creator`
-  write on each; AND the four new `CD_Preferences` fields
+**Branch `social-1.1` (2026-09-18).** Melvin: ship the social update first,
+on its own, because it is what people want and it does not wait on the
+privacy work Otto and camera vision need. That branch carries Friends ON
+(`friendsInRelease = true`), Otto OFF, version 1.1, follower and following
+counts, and the technique picker matching the self-log. Camera vision is not
+on it.
+
+**Done on that branch, in code:**
+- [x] `FeatureFlags.friendsInRelease = true`; `FeatureFlagTests` rewritten to
+  assert it (and that Otto stays off).
+- [x] `MARKETING_VERSION` 1.1.
+- [x] `PrivacyInfo.xcprivacy`: Photos or Videos, Other User Content, Name,
+  all LINKED, App Functionality. The labels in App Store Connect must match.
+- [x] Privacy policy: a "Friends and posts" section, and the short version no
+  longer claims we cannot see anything.
+- [x] Terms: section 6a, user content and no tolerance for objectionable
+  content, with the report/block/remove path spelled out (guideline 1.2).
+
+**The rest is not code and none of it can be skipped:**
+
+- [ ] **CloudKit Console: follow `CLOUDKIT_SETUP.md`**, which has the exact
+  types, fields, indexes and roles derived from the code, plus the round trip
+  to run before promoting. Summary, `iCloud.com.lockout.meditate808`: the six PUBLIC
+  **SEVEN** public record types (Profile, Username, FriendEdge, Post,
+  Reaction, Block, Report: the earlier count of six missed Username, and
+  without it no handle can be claimed) and exactly SEVEN indexes, which are
+  fewer and different from what this line used to claim: QUERYABLE on
+  `FriendEdge.from`, `FriendEdge.to`, `Post.author`, `Reaction.post`,
+  `Block.from`, `Block.to`, and SORTABLE on `Post.practicedAt`. Profile and
+  Username are fetched by record name and never queried, so they need no
+  index. Security roles `_world` read / `_creator` write on each; AND the
+  four new `CD_Preferences` fields
   (`evidenceGrantRemaining`, `evidenceGrantSince`, `rewardedFriends`,
   `grantedSessionIDs`). Run the schema primer on a dev build, then deploy
   Development → Production. A promotion is a release step (the 1.0 lesson).
 - [ ] **Age rating questionnaire:** UGC and Social both flip to **Yes**.
 - [ ] **App Privacy label:** add Photos or Videos, User Content, Name, User
-  ID (linked, not tracking, App Functionality). `PrivacyInfo.xcprivacy`
-  matches in the same build.
-- [ ] **Privacy policy, both copies:** a "Friends and posts" section; the
-  "we transmit nothing we can read" line is no longer true.
-- [ ] **Terms of use:** a user-content section (no tolerance for
-  objectionable content; repeat offenders removed).
+  ID (linked, not tracking, App Functionality), to match the manifest.
+- [ ] **Redeploy the website** so `privacy.html` and `terms.html` carry the
+  new sections. The bundled copies are updated; Cloudflare Pages is a manual
+  drag-and-drop and the App Store links point at the website, not the bundle.
 - [ ] **Report email path:** create the "808 friends reports" sheet, deploy
   `tools/community-reports.gs` (steps in its header), paste the /exec URL
   into `ReportClient.endpoint` (empty today, so nothing is sent), and file
@@ -112,6 +137,18 @@ this release needs a NEW archive.
 - [ ] **Store screenshots:** the Search tab is now Friends; re-shoot any
   screenshot showing the tab bar.
 - [ ] **TestFlight with the founders plus five friends** before the store.
+
+**The two that would break Friends on day one, so do them first:**
+
+1. **The Production schema.** Friends has never run against real iCloud
+   (only the username claim has). The six public record types need their
+   QUERYABLE INDEXES, and indexes are never created lazily the way fields
+   are: without them every feed, search and request query fails on a real
+   install while working perfectly in the simulator's fake. This is the 1.0
+   failure exactly, on a feature whose whole value is the server.
+2. **One real round trip on two phones** before submitting: claim a
+   username, add each other, post a session, see it appear, report and block.
+   Fifteen minutes, and it is the only thing that proves the above.
 
 ## ALWAYS: every submission
 

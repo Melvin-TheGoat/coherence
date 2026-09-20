@@ -1650,6 +1650,76 @@ Mockup `mockups/otto.html` came first (Aziz's rule).
   session, on sign-out, on account deletion and on credential revocation.
   The ellipsis menu offers "Start a new chat".
 
+## 1.1 IS THE SOCIAL RELEASE, ON BRANCH `social-1.1` (2026-09-18)
+
+Melvin: ship the social update on its own and ASAP, because it is what
+users want, and Otto and camera vision would hold it up over privacy work.
+So the release branch is **`social-1.1`**, not `mvp`: Friends ON
+(`friendsInRelease = true`), Otto OFF, camera vision not on it, version 1.1.
+
+- **Followers and following, with no new data.** The friend edge has always
+  been directional (`from` asked, `to` was asked), so following is who a
+  person added and followers is who added them; a mutual pair is the
+  friendship that already existed. `CommunityStore.follows(of:)` reads both
+  for anyone; for MY profile `CommunityModel.follow` does the arithmetic on
+  the lists already loaded and queries nothing. `FollowLine` sits under the
+  handle on Profile and on a person page, and each half opens its list in
+  its OWN sheet (both screens already present sheets; stacking them on one
+  view is the only-one-presents trap). The friend-count stat tile came off
+  the row, which was five wide and is now four.
+- **ONE technique list, in `TechniqueOptions`** (Melvin: "the options need
+  to be the same as when you log it for yourself. This is obvious."). Save
+  session offered `loggable` and stopped; the results card also offered
+  "Something else" with a free-text field. Both now render the same menu
+  content and Save session carries the field, so a technique added anywhere
+  appears in both. `SessionStore.saveSession` gained `techniqueNote`
+  (nil keeps what is stored, so a caller without the field cannot wipe it).
+- **Silence and Breath work lead the picker.** `breathworkID` joins
+  `silenceID` and `guidedID` as loggable-but-not-a-guide-entry: the guide
+  teaches specific patterns inside its methods, and this is the plain
+  category people reach for. Silence lost its "/ my own practice" tail,
+  which overlapped with "Something else".
+- **The code-side release work is done**: the privacy manifest declares
+  Photos or Videos, Other User Content and Name, all LINKED (the public
+  database is one we CAN read, which is what Apple's "collect" means); the
+  privacy policy has a "Friends and posts" section and its short version no
+  longer claims we see nothing; the terms have section 6a, user content and
+  no tolerance for objectionable content, with report, block and removal
+  spelled out for guideline 1.2.
+- **NOTHING IS SUBMITTED UNTIL THE CONSOLE WORK AND A REAL ROUND TRIP ARE
+  DONE WITH AZIZ** (Melvin's call, same day). Friends has never run against
+  real iCloud beyond the username claim, and the public record types need
+  their QUERYABLE INDEXES in Production: indexes are never created lazily
+  the way fields are, so without them every feed, search and request fails
+  on a real install while the simulator's fake works perfectly. That is the
+  1.0 failure exactly, on the one feature whose value is the server. The
+  rest of the list is RELEASE_CHECKLIST.md "OPEN for 1.1".
+
+## ONBOARDING, ROUND 3 (2026-09-19, Melvin): two questions and the Watch screen go
+
+- **`aloneWithThoughts` and `you` left `InterviewStep`** (the `doingNothing`
+  precedent: the `Step` case and the answer field stay, the model never asks,
+  the view routes past). The name is asked on Create your profile beside the
+  handle, so `you` asked for it twice, and its age was read by nothing.
+  `nextAfter` returns `.calculating` for a Step not in `interviewPairs`, so a
+  cut step must route to the LAST ASKED step before it (`aloneWithThoughts`
+  and `doingNothing` go to `nextAfter(.stress)`), not to `nextAfter(self)`.
+- **The tour is the whole tutorial.** Continue on its last note calls
+  `finish()`; `watchConnect` ("Put your Watch on") is routed past and
+  `OnboardingHandoff.requestSetup()` is no longer called, so Home opens with
+  nothing asked and the first session starts at the plus. Melvin: "let them
+  explore the app on their own". Resume fallback is `tourHome`.
+- **The tour's spotlight on the plus was 18pt low and full width.** The
+  `.begin` anchor sat after `.offset(y: -18)` and `.frame(maxWidth:)`, so it
+  measured the un-offset slot, and the top of the raised circle fell outside
+  the lit window. It now sits on the button itself, before both. Verified on
+  the simulator: the whole circle is inside the window.
+- **The bar had too much air under it.** `MainTabBar` had 8 over the icons
+  and 2 under the labels on top of the home-indicator inset; now 6 and 0.
+  The feed's bottom spacer was 72 to "clear the bar", but the bar is a
+  safe-area inset and the scroll already clears it; 24 clears the raised half
+  of the plus and nothing more.
+
 ## OTTO IS DRAWN; FRIENDS AND PROFILE GET THEIR AIR BACK (2026-09-18)
 
 - **Otto the sloth ships as vector, drawn in Swift** (`Coherence/Otto/

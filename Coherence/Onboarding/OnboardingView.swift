@@ -101,12 +101,10 @@ struct OnboardingView: View {
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.referral, .referral),
         (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
-        (.aloneWithThoughts, .aloneWithThoughts),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
         (.bodyCuriosity, .bodyCuriosity),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot), (.watchGate, .watchGate),
-        (.you, .you),
     ]
 
     /// The interview's first screen, read from the model's order rather than
@@ -233,16 +231,12 @@ struct OnboardingView: View {
             StressScreen(stress: $answers.stress,
                          progress: interviewProgress) { go(nextAfter(.stress)) }
 
-        case .aloneWithThoughts:
-            guarded(.aloneWithThoughts) {
-                AloneWithThoughtsScreen(answer: $answers.aloneWithThoughts,
-                                        progress: interviewProgress) { go(nextAfter(.aloneWithThoughts)) }
-            }
-
-        // Cut 2026-09-15. The Step case stays so resume records and
-        // ONBOARDING_STEP indices hold; anyone landing here moves on.
-        case .doingNothing:
-            Color.clear.onAppear { go(nextAfter(.aloneWithThoughts)) }
+        // Cut 2026-09-15 (doingNothing) and 2026-09-19 (aloneWithThoughts,
+        // Melvin). The Step cases stay so resume records and ONBOARDING_STEP
+        // indices hold; anyone landing here moves on from the stress screen,
+        // which is the last question still asked before this point.
+        case .aloneWithThoughts, .doingNothing:
+            Color.clear.onAppear { go(nextAfter(.stress)) }
 
         case .restarts:
             guarded(.restarts) {
@@ -313,11 +307,11 @@ struct OnboardingView: View {
         case .anchor:
             Color.clear.onAppear { go(nextAfter(.watchGate)) }
 
+        // Cut 2026-09-19 (Melvin): the name is asked on Create your profile
+        // beside the handle, and the age was never used. Anyone resuming
+        // here goes straight to the sum.
         case .you:
-            NameScreen(firstName: $answers.firstName,
-                       username: $answers.username,
-                       ageBracket: $answers.ageBracket,
-                       progress: interviewProgress) { go(nextAfter(.you)) }
+            Color.clear.onAppear { go(.calculating) }
 
         case .referral:
             ReferralScreen(referral: $answers.referral,
@@ -405,17 +399,18 @@ struct OnboardingView: View {
 
         // MARK: The walkthrough (see OnboardingWalkthrough.swift)
 
+        // The tour is the whole tutorial now (Melvin, 2026-09-19: "I don't
+        // want them forced to put their Watch on immediately, let them
+        // explore the app on their own"). Continue on the last note finishes
+        // onboarding and Home opens with nothing else asked of them; the
+        // first session starts when they press the plus.
         case .tourHome:
-            TourHomeScreen { go(.watchConnect) }
+            TourHomeScreen { finish() }
 
-        // The tour ends here (Melvin, 2026-09-15: "don't make them do the
-        // sit"). Begin finishes onboarding and asks Home to open the setup
-        // sheet, so their first real session is the first score they see.
-        // The practice sit and its demo results lost two thirds of the people
-        // who reached them; they are no longer routed to.
+        // Cut 2026-09-19, one day after replacing the practice sit. The Step
+        // case stays for resume records; anyone landing here is done.
         case .watchConnect:
-            WatchConnectScreen(onReady: { OnboardingHandoff.requestSetup(); finish() },
-                               onSkip: { finish() })
+            Color.clear.onAppear { finish() }
 
         case .breathe:
             Color.clear.onAppear { finish() }
@@ -510,7 +505,7 @@ struct OnboardingView: View {
         guard !resumed, let saved = OnboardingResume.load() else { return }
         resumed = true
         let point = saved.resumePoint(unresumable: Set(Self.unresumable.map(\.rawValue)),
-                                      fallback: Step.watchConnect.rawValue)
+                                      fallback: Step.tourHome.rawValue)
         guard var target = Step(rawValue: point.step), target != .relief else { return }
         if target == .paywall, store.entitled { target = .signIn }
         answers = saved.answers

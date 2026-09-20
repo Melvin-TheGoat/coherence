@@ -71,8 +71,35 @@ redistribute, or provide the App as a service to others.
 You own your data. Our handling of your information is described in our
 [Privacy Policy](https://meditate808.com/privacy). In short: your health results stay only on
 your device; your account and session log sync through your own private iCloud;
-we operate no servers that store your data; and you can delete everything from
+we operate no servers of our own; and you can delete everything from
 Settings → Delete Account.
+
+## 6a. Friends: what you post, and what we will not tolerate
+
+Friends is optional. If you create a profile and post a session, that post,
+its photo and your profile become visible to other people using 808. You keep
+ownership of what you post. You give us permission to store it, show it to
+the people you share it with, and remove it, for as long as you keep it in
+the app.
+
+**By posting you confirm** that the content is yours to post, that any person
+in a photo is you, and that it does not infringe anyone's rights.
+
+**There is no tolerance for objectionable content.** Do not post anything
+that is unlawful, hateful, harassing, threatening, sexually explicit,
+violent, or that shows or targets another person without their consent, and
+do not impersonate anyone or spam other users.
+
+**How this is enforced.** Text is filtered before it is accepted. Every post
+and every person can be reported from the app, and you can block someone,
+which hides you from each other in both directions. We review reports and
+act on them, normally within 24 hours: content that breaks these rules is
+removed, and accounts that break them repeatedly are removed with it. We may
+remove content or an account without notice where the rules are plainly
+broken.
+
+**Reports go to us**, not to the person reported. Blocking is between you and
+them and is not announced.
 
 ## 7. Intellectual property
 

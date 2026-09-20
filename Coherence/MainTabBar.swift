@@ -27,8 +27,10 @@ struct MainTabBar: View {
             }
             item(.profile, icon: "person.crop.circle", label: "Profile")
         }
-        .padding(.top, 8)
-        .padding(.bottom, 2)
+        // 6 over the icons and nothing under the labels: the home indicator's
+        // own inset is the air below (Melvin, 2026-09-19: "the bottom is
+        // raised slightly too high, too much white space at the bottom").
+        .padding(.top, 6)
         .background(
             AppColor.backgroundSecondary
                 .overlay(alignment: .top) {
@@ -72,9 +74,14 @@ struct MainTabBar: View {
                 .shadow(color: AppColor.accentGold.opacity(0.35), radius: 12, y: 6)
         }
         .buttonStyle(.plain)
+        // The tour's anchor sits on the circle, BEFORE the offset and the
+        // full-width frame. It used to sit after both, so the spotlight was
+        // the whole slot's width and 18pt lower than the drawn button: the
+        // top of the plus was outside the lit window (Melvin, 2026-09-19:
+        // "the plus is cut off").
+        .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
         .offset(y: -18)
         .frame(maxWidth: .infinity)
         .accessibilityLabel("Begin session")
-        .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
     }
 }
