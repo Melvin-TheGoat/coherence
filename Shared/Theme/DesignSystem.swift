@@ -26,16 +26,19 @@ enum AppMetrics {
 }
 
 enum AppFont {
-    static let hero = Font.system(size: 40, weight: .bold, design: .rounded)
-    static let title = Font.system(size: 24, weight: .semibold, design: .rounded)
-    static let headline = Font.system(.headline, design: .rounded)
+    // The three display sizes are Baloo 2; everything under them is SF
+    // Rounded. See `DisplayFont` at the foot of this file for why the line is
+    // drawn where it is.
+    static let hero = DisplayFont.display(40, .heavy)
+    static let title = DisplayFont.display(24)
+    static let headline = DisplayFont.display(17)
     static let body = Font.system(.body, design: .rounded)
     static let callout = Font.system(.callout, design: .rounded)
     /// Reading size for user-written text (session notes, and later, comments) —
     /// a step down from callout so a long note stays comfortable at full width.
     static let note = Font.system(.subheadline, design: .rounded)
     static let caption = Font.system(.caption, design: .rounded)
-    static let statNumber = Font.system(size: 40, weight: .bold, design: .rounded)
+    static let statNumber = DisplayFont.display(40, .heavy)
 }
 
 // MARK: - Modifiers
@@ -120,7 +123,7 @@ struct SectionHeader: View {
     let title: String
     var body: some View {
         Text(title)
-            .font(AppFont.callout.weight(.bold))
+            .font(DisplayFont.display(17))
             .foregroundStyle(AppColor.textPrimary)
     }
 }
@@ -142,5 +145,81 @@ struct StatTile: View {
                 .foregroundStyle(AppColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+/// A capsule that fits its own words.
+///
+/// The third button shape, and the one for actions that sit beside each other
+/// under something rather than at the bottom of a screen: Edit profile, Share
+/// profile. `SecondaryButtonStyle` stretches to full width, which is right at
+/// the foot of a sheet and wrong under a portrait, where two full-width slabs
+/// turn a profile into a settings screen.
+struct PillButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(AppFont.callout.weight(.bold))
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(
+                Capsule()
+                    .fill(AppColor.backgroundSecondary)
+                    .shadow(color: AppColor.hairline, radius: 0, y: 2)
+            )
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}
+
+// MARK: - The display face
+
+/// **Baloo 2 for the big text, SF Rounded for everything small** (Aziz,
+/// 2026-09-19, choosing it out of `mockups/fonts.html`).
+///
+/// The problem it solves is that SF Rounded is the correct first move for a
+/// friendly iOS app and is also what every friendly iOS app reaches for, so
+/// 808 sounded like all of them. Baloo 2 is chunky, warm and unmistakable, and
+/// it matches the shapes the rest of this redesign is made of.
+///
+/// **It is deliberately not used below about fifteen points**, and that is the
+/// whole design of this type:
+///
+/// - SF is hinted for these screens at small sizes and a bundled web face is
+///   not. Baloo's lowercase in particular gets loose and a little wild small,
+///   which is charming in a headline and costs legibility in a stat label.
+/// - SF carries every weight and every language the app ships in. Three
+///   bundled TTFs carry three weights of Latin.
+/// - SF scales with Dynamic Type for free. A fixed-size custom face does not,
+///   so every string set in Baloo has to be one whose layout can survive
+///   growing, which headlines can and dense rows cannot.
+///
+/// So the rule is: **a display face has a personality where there is room for
+/// one.** Headlines, the score, the big numbers. Nothing a person reads a
+/// paragraph of.
+///
+/// Registered in `Coherence/Info.plist` under `UIAppFonts`; the files and the
+/// SIL Open Font License live in `Coherence/Fonts/`. iOS only: the Watch
+/// target has its own palette and its own sizes and stays on the system face.
+enum DisplayFont {
+    /// PostScript names, which are what `Font.custom` wants and are NOT the
+    /// family names: the 800 weight's family is "Baloo 2 ExtraBold" while its
+    /// PostScript name is "Baloo2-ExtraBold". Getting this wrong fails silently
+    /// to the system font, which looks like a layout bug rather than a missing
+    /// file.
+    private static let semibold = "Baloo2-SemiBold"
+    private static let bold = "Baloo2-Bold"
+    private static let extrabold = "Baloo2-ExtraBold"
+
+    /// Baloo sits small in its own box, so a size here reads roughly a point
+    /// under the same size in SF. The 1.06 makes the two interchangeable at a
+    /// call site without every caller having to know that.
+    static func display(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
+        let name: String
+        switch weight {
+        case .semibold, .medium, .regular: name = semibold
+        case .black, .heavy: name = extrabold
+        default: name = bold
+        }
+        return .custom(name, fixedSize: size * 1.06)
     }
 }

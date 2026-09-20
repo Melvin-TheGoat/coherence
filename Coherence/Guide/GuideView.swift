@@ -25,26 +25,32 @@ struct GuideView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("How to meditate")
-                            .font(AppFont.title)
+                            .font(DisplayFont.display(24, .heavy))
                             .foregroundStyle(AppColor.textPrimary)
-                        Text("Ways to practice, easiest first.")
+                        Text("\(MeditationMethod.all.count) ways in. Any order you like.")
                             .font(AppFont.note)
                             .foregroundStyle(AppColor.textSecondary)
                     }
-                    .padding(.bottom, 2)
+                    .padding(.bottom, 8)
 
-                    ForEach(Array(MeditationMethod.all.enumerated()), id: \.element.id) { index, method in
-                        NavigationLink {
-                            MethodDetailView(method: method, onBegin: begin)
-                        } label: {
-                            PathStop(method: method,
-                                     isLast: index == MeditationMethod.all.count - 1,
-                                     loggedCount: count(for: method))
+                    ForEach(MeditationMethod.Level.allCases, id: \.self) { level in
+                        let methods = MeditationMethod.all.filter { $0.level == level }
+                        if !methods.isEmpty {
+                            SectionHeader(title: heading(for: level))
+                                .padding(.top, 14)
+                                .padding(.bottom, 4)
+                            ForEach(methods, id: \.id) { method in
+                                NavigationLink {
+                                    MethodDetailView(method: method, onBegin: begin)
+                                } label: {
+                                    MethodRow(method: method, loggedCount: count(for: method))
+                                }
+                                .buttonStyle(CardButtonStyle())
+                            }
                         }
-                        .buttonStyle(CardButtonStyle())
                     }
                 }
                 .padding(AppMetrics.screenPadding)
@@ -58,6 +64,22 @@ struct GuideView: View {
                     }
                 }
             }
+        }
+    }
+
+    /// The level, said out loud instead of drawn as a rail.
+    ///
+    /// The list used to hang off a teal line with a hollow circle per row,
+    /// which asserted "these are a progression" in the one visual language the
+    /// rest of the app has dropped, and asserted it about a list nobody has to
+    /// take in order. Three headings say the same thing in words, cost no ink,
+    /// and are the only place the level needs to appear: the outlined
+    /// `LevelChip` repeated on every row is gone with them.
+    private func heading(for level: MeditationMethod.Level) -> String {
+        switch level {
+        case .beginner: return "Start here"
+        case .intermediate: return "When you're ready"
+        case .advanced: return "Going deeper"
         }
     }
 
@@ -76,83 +98,57 @@ struct GuideView: View {
     }
 }
 
-// MARK: - One stop on the path
+// MARK: - One technique
 
-/// A row on the roadmap. The teal rail says these are a progression (each level
-/// builds, and the body scan is a stated prerequisite for manifestation) without
-/// numbering them, because nobody has to go in order.
-private struct PathStop: View {
+/// A technique, and how many times YOU have sat it.
+///
+/// **The count is a capsule on the right, and it is absent at zero.** The
+/// first cut of this put it in a 50pt token on the LEFT of every row, amber
+/// and raised when practised and an empty hollow when not, matching an earned
+/// award and a sat day. On the simulator that turned out to be wrong for the
+/// one reader who matters most: somebody who has just installed the app meets
+/// eight blank tiles down a screen whose whole job is to make them want to try
+/// something. An empty slot works on the awards shelf because an award is a
+/// thing you are meant to go and get. A technique is not a target, so an empty
+/// box beside it is only an absence.
+///
+/// So the row is clean until you have earned something to put on it, and then
+/// the capsule appears, amber, the one coloured thing in the row. Same idea,
+/// no dead state.
+private struct MethodRow: View {
     let method: MeditationMethod
-    let isLast: Bool
     let loggedCount: Int
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(spacing: 0) {
-                Circle()
-                    .strokeBorder(AppColor.calmAccent, lineWidth: 1.5)
-                    .background(Circle().fill(AppColor.calmAccent.opacity(0.12)))
-                    .frame(width: 13, height: 13)
-                    .padding(.top, 6)
-                if !isLast {
-                    Rectangle()
-                        .fill(AppColor.calmAccent.opacity(0.28))
-                        .frame(width: 1.5)
-                        .frame(maxHeight: .infinity)
-                }
-            }
-            .frame(width: 13)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(method.title)
-                        .font(AppFont.headline)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.leading)
-                    Spacer(minLength: 8)
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.textSecondary)
-                }
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(method.title)
+                    .font(DisplayFont.display(17))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.leading)
                 Text(method.oneLine)
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
-
-                HStack(spacing: 8) {
-                    LevelChip(level: method.level)
-                    Spacer(minLength: 4)
-                    // The one gold thing in the row: what you've actually done.
-                    // Hidden at zero rather than reading "0 sessions" at someone.
-                    if loggedCount > 0 {
-                        Text(loggedCount == 1 ? "1 session" : "\(loggedCount) sessions")
-                            .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGoldText)
-                            .monospacedDigit()
-                    }
-                }
-                .padding(.top, 1)
             }
-            .card(padding: 14)
-            .padding(.bottom, isLast ? 0 : 12)
+            Spacer(minLength: 4)
+            if loggedCount > 0 {
+                Text(loggedCount == 1 ? "1 sit" : "\(loggedCount) sits")
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.textOnAccent)
+                    .monospacedDigit()
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .background(Capsule().fill(AppColor.accentGold))
+            }
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppColor.textSecondary.opacity(0.5))
+                .padding(.top, 3)
         }
-    }
-}
-
-/// Teal, because the guide is guidance. Gold stays reserved for what you did.
-private struct LevelChip: View {
-    let level: MeditationMethod.Level
-    var body: some View {
-        Text(level.label)
-            .font(AppFont.caption.weight(.semibold))
-            .foregroundStyle(AppColor.calmAccent)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1)
-            )
+        .card(padding: 16)
+        .padding(.bottom, 10)
     }
 }
 
@@ -169,7 +165,16 @@ struct MethodDetailView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 VStack(alignment: .leading, spacing: 10) {
-                    LevelChip(level: method.level)
+                    // The detail screen keeps the level, because it arrives
+                    // here without the heading that grouped it on the list.
+                    // Filled tint rather than an outline, like every other
+                    // chip in the app.
+                    Text(method.level.label)
+                        .font(AppFont.caption.weight(.bold))
+                        .foregroundStyle(AppColor.calmAccent)
+                        .padding(.horizontal, 11)
+                        .padding(.vertical, 5)
+                        .background(AppColor.calmAccentFill.opacity(0.18), in: Capsule())
                     Text(method.title)
                         .font(AppFont.title)
                         .foregroundStyle(AppColor.textPrimary)

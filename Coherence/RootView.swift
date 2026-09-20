@@ -65,18 +65,20 @@ struct RootView: View {
         #endif
     }
 
-    private var colorScheme: ColorScheme? {
-        // No Preferences row exists until onboarding writes one, so the whole
-        // flow used to render in the SYSTEM scheme: on a light-mode phone every
-        // onboarding screen was light, and the app went dark the moment it
-        // finished. A tester saw exactly that (2026-09-14: "black text",
-        // "whiter backgrounds", "colours bleeding into each other", a blue
-        // caret) and read it as a design mistake. The default theme applies
-        // from the first frame; a stored choice still wins.
-        switch preferences.first?.themeValue ?? Preferences.defaultTheme {
-        case .light: return .light
-        case .dark: return .dark
-        case .system: return nil
-        }
-    }
+    /// **808 has one appearance** (2026-09-19, Aziz: "get rid of the dark
+    /// mode"). Not a default, not a preference: light, always, on every phone.
+    ///
+    /// The reason is Otto. The palette is sampled out of his artwork and the
+    /// artwork is cream, so a dark build would need a second drawing of him
+    /// and a second set of every tint, and the two would drift the moment one
+    /// of them was touched. A product with one character is allowed one room
+    /// for him to sit in. Every colour in the catalog now carries the same
+    /// value in both appearances as a belt and braces, so even a view that
+    /// escaped this override renders correctly.
+    ///
+    /// `Preferences.theme` and the `Theme` enum survive on purpose. Dropping a
+    /// stored SwiftData property is a migration hazard, the field syncs
+    /// through CloudKit to phones still running older builds, and nothing is
+    /// bought by removing it. It is simply no longer read.
+    private var colorScheme: ColorScheme? { .light }
 }

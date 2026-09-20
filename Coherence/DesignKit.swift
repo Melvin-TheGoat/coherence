@@ -57,7 +57,7 @@ struct ScoreRing: View {
                     .rotationEffect(.degrees(-90))
             }
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
-                .font(.system(size: size * 0.32, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(size * 0.34, .heavy))
                 .foregroundStyle(score != nil ? AppColor.textPrimary : AppColor.textSecondary)
                 .monospacedDigit()
         }
@@ -67,42 +67,153 @@ struct ScoreRing: View {
 
 // MARK: - Evidence row
 
-/// THE session row — the same everywhere a session is listed (home proof list,
-/// Journey log). Ring + when/what + a one-line metric reading.
+/// THE session card, identical on Home and Profile.
+///
+/// **Every entry has a picture** (Aziz, 2026-09-19, picking option C out of
+/// `mockups/recent-v1.html`): the selfie taken after the sit if there is one,
+/// and Otto if there is not. That is Letterboxd's diary, where every entry
+/// gets a poster, and it is what turns a log into something worth scrolling.
+///
+/// The aligned columns from Strava's activity card stay, inside it. A list of
+/// sessions exists to be COMPARED, so Heart, Still and Breath sit in the same
+/// three places on every card and a signal that was not read is a dash rather
+/// than a missing column. Picture on the left, facts on the right, and the
+/// columns still line up down the list because the panel is a fixed width.
+///
+/// The worry when this was drawn was three identical Ottos down one screen.
+/// Two things answer it. His pose follows the TIME somebody sat, so an early
+/// riser and a night sitter get different cards, and it varies for anyone
+/// whose life is not identical every day. And Friends is on in Release as of
+/// the social-1.1 merge, so most cards will carry a real face before long.
+/// The pose deliberately does NOT follow the score: a mascot pulling a
+/// disappointed face at a bad sit is the app judging somebody for showing up.
 struct EvidenceRow: View {
     let session: Session
     let score: Double?
-    var subtitle: String
+    /// The measurements themselves, not a pre-built sentence. The card needs
+    /// them apart so it can put each one in its own place.
+    var stats: MeditationStats? = nil
     var rating: Int? = nil
-    /// The photo taken after the sit, when there is one (mockup
-    /// `save-session-v7.html`). Portrait, small, before the chevron; a row
-    /// without one is exactly the row it always was.
+    /// The selfie taken after the sit. When it is there it takes the panel.
     var thumbnail: UIImage? = nil
 
+    private var panelWidth: CGFloat { 98 }
+
     var body: some View {
-        HStack(spacing: 12) {
-            ScoreRing(score: score)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(SessionListSupport.rowTitle(session))
-                    .font(AppFont.callout.weight(.bold))
-                    .foregroundStyle(AppColor.textPrimary)
-                Text(subtitle)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
+        HStack(spacing: 0) {
+            picture
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(SessionListSupport.rowTitle(session))
+                            .font(DisplayFont.display(16))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                        Text(SessionListSupport.duration(session.durationSec))
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    Spacer(minLength: 0)
+                    if let rating { RatingChip(rating: rating) }
+                }
+                Rectangle().fill(AppColor.hairline)
+                    .frame(height: 1)
+                    .padding(.vertical, 11)
+                HStack(spacing: 0) {
+                    ForEach(SessionListSupport.columns(stats), id: \.label) { column in
+                        VStack(spacing: 1) {
+                            Text(column.value)
+                                .font(.system(size: 15.5, weight: .bold, design: .rounded))
+                                .foregroundStyle(column.value == "—" ? AppColor.textSecondary
+                                                                     : AppColor.calmAccent)
+                                .monospacedDigit()
+                            Text(column.label)
+                                .font(AppFont.caption)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.75)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
             }
-            Spacer(minLength: 0)
-            if let rating { RatingChip(rating: rating) }
-            if let thumbnail {
-                Color.clear
-                    .frame(width: 32, height: 42)
-                    .overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            }
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(AppColor.accentGoldText)
+            .padding(14)
         }
-        .padding(.vertical, 13)
+        .frame(maxWidth: .infinity)
+        .background(AppColor.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+        .shadow(color: AppColor.hairline, radius: 0, y: 2)
+    }
+
+    /// The panel. A photo fills it; Otto sits in it on a wash of the sky.
+    private var picture: some View {
+        ZStack {
+            if let thumbnail {
+                Color.clear.overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
+            } else {
+                AppColor.sky
+                // He sits above the score badge rather than behind it: at the
+                // first size his crossed legs ran straight through the number.
+                OttoMark(size: panelWidth * 0.72, pose: pose)
+                    .padding(.bottom, 22)
+            }
+            // The score rides on the picture so the one gold object per card
+            // is also the first thing the eye lands on.
+            VStack {
+                Spacer()
+                HStack {
+                    Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
+                        .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                        .foregroundStyle(score == nil ? AppColor.textSecondary
+                                                      : AppColor.textOnAccent)
+                        .monospacedDigit()
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(score == nil ? AppColor.trace
+                                                                : AppColor.accentGold))
+                    Spacer(minLength: 0)
+                }
+            }
+            .padding(7)
+        }
+        .frame(width: panelWidth)
+        .frame(maxHeight: .infinity)
+        .clipped()
+    }
+
+    /// Otto follows the clock, not the score. Somebody who sits at dawn and
+    /// somebody who sits at midnight get different cards, which is the variety
+    /// this panel needs, and neither of them is being told how they did.
+    private var pose: OttoPose {
+        switch Calendar.current.component(.hour, from: session.startedAt) {
+        case ..<11: return .awake
+        case 11..<18: return .meditating
+        default: return .resting
+        }
+    }
+}
+
+/// The score, as the filled disc at the head of a card.
+///
+/// A ring was right when the score sat in a row of other thin things. Beside
+/// an illustrated sloth a 5pt stroke is the odd one out, and the number inside
+/// it was 12pt and unreadable at arm's length. A filled disc is the same
+/// object as a sat day in the week strip, which is the point: one shape means
+/// "this happened and it scored something".
+struct ScoreBubble: View {
+    let score: Double?
+    var size: CGFloat = 52
+
+    var body: some View {
+        ZStack {
+            Circle().fill(score == nil ? AppColor.trace : AppColor.accentGold)
+            Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
+                .font(DisplayFont.display(size * 0.38, .heavy))
+                .foregroundStyle(score == nil ? AppColor.textSecondary : AppColor.textOnAccent)
+                .monospacedDigit()
+        }
+        .frame(width: size, height: size)
     }
 }
 
@@ -137,129 +248,11 @@ struct MetaChip: View {
 }
 
 // MARK: - Month calendar
-
-/// One month, dotted on practiced days, today ringed in teal. Used on Home
-/// (current month, compact) and Journey (browsable, tappable days).
-struct MonthCalendar: View {
-    let monthAnchor: Date
-    let practiced: Set<Date>
-    /// Start-of-day → the photo taken after that day's sit (the latest one).
-    /// A day with a photo shows it where the dot was; a day without keeps
-    /// its dot. The month becomes a strip of your own face, which says
-    /// "look how much you sat" better than twelve gold dots
-    /// (mockup `save-session-v7.html`, Aziz 2026-09-15). Declared before
-    /// `onDayTap` so the trailing-closure call sites keep working.
-    var photos: [Date: UIImage] = [:]
-    var selectedDay: Date? = nil
-    var onDayTap: ((Date) -> Void)? = nil
-
-    private let calendar = Calendar.current
-
-    var body: some View {
-        // Six rows are reserved so every month fits, and most months fill
-        // five. A whole row of greyed next-month dates is filler, and on Home
-        // it is filler directly under the object people actually read, so any
-        // trailing week with nothing of this month in it is dropped.
-        let grid = SessionCalendar.monthGrid(containing: monthAnchor, calendar: calendar)
-            .filter { week in
-                week.contains { SessionCalendar.isSameMonth($0, as: monthAnchor, calendar: calendar) }
-            }
-        let today = calendar.startOfDay(for: Date())
-        VStack(spacing: 4) {
-            HStack(spacing: 0) {
-                // Keyed by position, not by the letter: S and T each appear
-                // twice in a week, and duplicate ForEach IDs are undefined
-                // behaviour (SwiftUI logs it and may reuse the wrong view).
-                ForEach(Array(weekdayInitials.enumerated()), id: \.offset) { _, d in
-                    Text(d).font(.system(size: 11, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.bottom, 2)
-                }
-            }
-            ForEach(Array(grid.enumerated()), id: \.offset) { _, week in
-                HStack(spacing: 0) {
-                    ForEach(week, id: \.self) { day in
-                        cell(day, today: today)
-                            .contentShape(Rectangle())
-                            .onTapGesture {
-                                if practiced.contains(day) { onDayTap?(day) }
-                            }
-                    }
-                }
-            }
-        }
-    }
-
-    private func cell(_ day: Date, today: Date) -> some View {
-        let n = calendar.component(.day, from: day)
-        let inMonth = SessionCalendar.isSameMonth(day, as: monthAnchor, calendar: calendar)
-        let done = practiced.contains(day)
-        let isToday = day == today
-        let isSelected = selectedDay == day
-        let photo = photos[day]
-        // Rows grow only in a month that has a photo in it, so a calendar
-        // with none is pixel-identical to the one that shipped.
-        let tall = !photos.isEmpty
-        return VStack(spacing: tall ? 3 : 2) {
-            // A practised day is a filled amber chip with the date inside it,
-            // not a number with a 4.5pt dot underneath (2026-09-19). The dot
-            // was correct and unreadable: it carried the single most-looked-at
-            // fact on Home in four and a half points of gold. A filled day is
-            // legible at a glance, is the same object as the score ring's
-            // fill, and turns the month into something that visibly fills up.
-            Text("\(n)")
-                .font(.system(size: 13,
-                              weight: done || isToday || isSelected ? .bold : .regular,
-                              design: .rounded))
-                .foregroundStyle(dayInk(done: done, inMonth: inMonth, photo: photo != nil))
-                .frame(width: 30, height: 30)
-                .background {
-                    if done && photo == nil {
-                        Circle().fill(AppColor.accentGold)
-                    }
-                }
-            if let photo {
-                Color.clear
-                    .frame(width: 24, height: 26)
-                    .overlay(Image(uiImage: photo).resizable().scaledToFill())
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            } else if tall {
-                // Holds the row's height so a month with photos in it keeps
-                // every number on the same line.
-                Color.clear.frame(height: 26)
-            }
-        }
-        .frame(maxWidth: .infinity, minHeight: tall ? 48 : 36)
-        // The ring marks the DATE, so it hangs off the top of the cell rather
-        // than its centre. Centred, a photo day's taller cell dragged the ring
-        // down over the picture (seen on the simulator, 2026-09-16).
-        .background(alignment: tall ? .top : .center) {
-            let y: CGFloat = tall ? -3 : -2
-            if isSelected {
-                Circle().stroke(AppColor.textPrimary, lineWidth: 2)
-                    .frame(width: 31, height: 31).offset(y: y)
-            } else if isToday && !done {
-                Circle().stroke(AppColor.calmAccent, lineWidth: 1.6)
-                    .frame(width: 29, height: 29).offset(y: y)
-            }
-        }
-    }
-
-    /// The date's own colour. On a filled day it has to be the label colour or
-    /// it disappears into the amber.
-    private func dayInk(done: Bool, inMonth: Bool, photo: Bool) -> Color {
-        if done && !photo { return AppColor.textOnAccent }
-        if !inMonth { return AppColor.textSecondary.opacity(0.35) }
-        return AppColor.textPrimary
-    }
-
-    private var weekdayInitials: [String] {
-        let symbols = calendar.veryShortWeekdaySymbols
-        let first = calendar.firstWeekday - 1
-        return Array(symbols[first...] + symbols[..<first])
-    }
-}
+//
+// Deleted 2026-09-19. 808 shows a week on Home and a bar per sit on Profile,
+// and no month anywhere; see the note in `SessionHistoryView`. `SessionCalendar`
+// stays: `practicedDays` still feeds the week strip, and `monthGrid` keeps its
+// tests, so the grid can come back without being re-derived.
 
 // MARK: - Shared row + formatting
 
@@ -302,6 +295,30 @@ enum SessionListSupport {
         }
         let when = relativeDay(session.startedAt)
         return what.map { "\(when) · \($0)" } ?? when
+    }
+
+    /// The three columns on a session card, always three and always in this
+    /// order. A signal that was not read is a dash, never an absent column:
+    /// see `EvidenceRow` for why the alignment is the whole point.
+    static func columns(_ stats: MeditationStats?) -> [(value: String, label: String)] {
+        // The LABEL carries the direction, never a minus sign. A card that
+        // says "-12" under the words "Heart settled" is contradicting itself,
+        // and it takes a reader who already knows which way the sign points to
+        // notice. Seen on a real card, 2026-09-19.
+        let heart: (String, String) = {
+            guard let d = stats?.hrDecline, abs(d) >= 1 else { return ("—", "Heart settled") }
+            return d > 0 ? (String(format: "%.0f", d), "Heart settled")
+                         : (String(format: "%.0f", -d), "Heart rose")
+        }()
+        let still: String = {
+            guard let s = stats?.stillnessScore else { return "—" }
+            return String(format: "%.0f%%", s * 100)
+        }()
+        let breath: String = {
+            guard let r = stats?.meanBreathingRate else { return "—" }
+            return String(format: "%.1f", r)
+        }()
+        return [(heart.0, heart.1), (still, "Still"), (breath, "Breath")]
     }
 
     /// One line under a session row: "10 min · heart settled 11 · breath 5.8".
@@ -414,22 +431,27 @@ struct WeekStrip: View {
                 } else if done {
                     Circle().fill(AppColor.accentGold)
                 } else {
-                    // An empty day is a hollow of the paper, not a grey disc.
-                    // A filled grey circle beside a filled gold one reads as a
-                    // second state that means something; a hollow reads as
-                    // nothing happened, which is what it is.
-                    Circle().fill(AppColor.backgroundPrimary)
+                    // An empty day is a shallow well, and it has to be visible
+                    // (Aziz, 2026-09-19: "we are gonna need more contrast in
+                    // the this week circles"). The first cut filled it with
+                    // the PAPER colour, reasoning that a hollow reads as
+                    // nothing happened. True on the paper and wrong here: the
+                    // strip sits on a white card, so a paper-coloured circle
+                    // on white is no circle at all and the row read as seven
+                    // floating letters. `trace` is a warm tone deep enough to
+                    // be a shape against both grounds.
+                    Circle().fill(AppColor.trace)
                 }
                 if isToday && !done {
                     Circle().stroke(AppColor.calmAccent, lineWidth: 2)
                 }
                 if done && photo == nil {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .black))
+                        .font(.system(size: 16, weight: .black))
                         .foregroundStyle(AppColor.textOnAccent)
                 }
             }
-            .frame(width: 38, height: 38)
+            .frame(width: 40, height: 40)
         }
     }
 

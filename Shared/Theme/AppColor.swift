@@ -5,6 +5,22 @@ import SwiftUI
 /// `Shared/Assets.xcassets` (each with light + dark appearance variants). The
 /// catalog compiles into both the iOS and watchOS targets.
 ///
+/// **808 has ONE appearance** (2026-09-19, Aziz: "get rid of the dark mode").
+/// Every colorset carries the same value in both light and dark, and
+/// `RootView` pins the scheme to light, so the two can never drift. The
+/// reason is Otto: the palette is sampled out of his artwork and the artwork
+/// is cream, so a dark build would need a second drawing of him and a second
+/// set of every tint. A product with one character gets one room.
+///
+/// **The fills are pastel; the text tokens are not.** Aziz asked for softer
+/// (2026-09-19) and softer is right for anything that is a shape: the score
+/// fill, the sage curves, the blush, the empty days. It is wrong for anything
+/// that is a word. Each of `textSecondary`, `accentGoldText`, `calmAccent`
+/// and `streakBlushText` was pushed back down until it cleared 4.5:1 on both
+/// the paper and a white card, because a pastel label is an illegible label
+/// and legibility is not a style choice. The first pass of this palette put
+/// four of them between 4.0 and 4.46 and every one of them looked fine.
+///
 /// **Every value here is sampled out of Otto** (2026-09-19, Aziz: the app is
 /// hard to look at, make it friendly). The paper is the cream his artwork sits
 /// on, the ink is his nose and smile, the streak is his cheeks. A mascot only
@@ -74,4 +90,9 @@ enum AppColor {
     /// it, and it is the pattern under Finch, which is the only app in this
     /// category to have made a mascot work at scale.
     static let sky = Color("Sky")
+
+    /// An empty slot: the week strip's unsat days, and any place something is
+    /// drawn before it has happened. Deep enough to be a shape on a WHITE card
+    /// rather than only on the paper, which is the mistake it was born from.
+    static let trace = Color("Trace")
 }

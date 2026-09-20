@@ -14,10 +14,22 @@ enum DocLoader {
 /// headings, paragraphs (with inline **bold**/*italic*), bullet + numbered lists,
 /// and dividers. Strips HTML comments and `<sup>` citation tags. Not a general
 /// markdown engine — just enough for these docs.
-/// `LogoMark`'s geometry as a `Shape`, so it can be trim-animated (the mark
-/// "draws itself" during onboarding).
-struct LogoShape: Shape {
-    func path(in rect: CGRect) -> Path { LogoMark.path(in: rect) }
+/// Otto arriving, rather than a line drawing itself.
+///
+/// The hero used to be the 808 flower trim-animated so the mark "drew
+/// itself", which is a lovely effect and is only available to a stroked
+/// `Shape`. Otto is art, so he cannot be trimmed; he wakes up instead, scaling
+/// from small with a little overshoot as he fades in. Same beat, same timing
+/// hooks, and `progress` still runs 0 to 1 so every caller is unchanged.
+struct WakingOtto: View {
+    var progress: Double
+    var size: CGFloat
+
+    var body: some View {
+        OttoMark(size: size, pose: .head)
+            .scaleEffect(0.55 + 0.45 * progress)
+            .opacity(progress)
+    }
 }
 
 struct MarkdownView: View {
@@ -69,11 +81,7 @@ struct MarkdownView: View {
                     BreathingGlow()
                         .frame(width: 96, height: 96)
                         .opacity(logoProgress == 1 ? 1 : 0)
-                    LogoShape()
-                        .trim(from: 0, to: logoProgress)
-                        .stroke(AppColor.accentGold,
-                                style: StrokeStyle(lineWidth: 2.1, lineCap: .round, lineJoin: .round))
-                        .frame(width: 48, height: 48)
+                    WakingOtto(progress: logoProgress, size: 54)
                 }
                 .frame(width: 56, height: 56, alignment: .center)
                 Text(s)
@@ -201,12 +209,7 @@ struct DrawnLogo: View {
             BreathingGlow()
                 .frame(width: glowSize, height: glowSize)
                 .opacity(progress >= 1 ? 1 : 0)
-            LogoShape()
-                .trim(from: 0, to: progress)
-                .stroke(AppColor.accentGold,
-                        style: StrokeStyle(lineWidth: markSize * 0.042,
-                                           lineCap: .round, lineJoin: .round))
-                .frame(width: markSize, height: markSize)
+            WakingOtto(progress: progress, size: markSize)
         }
         .onAppear {
             if reduceMotion { progress = 1; return }

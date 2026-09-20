@@ -181,8 +181,12 @@ struct WatchContentView: View {
 
     private var markRow: some View {
         HStack(spacing: 6) {
-            LogoMark(color: WatchPalette.gold, lineWidthRatio: 0.09)   // heavier stroke at watch sizes
-                .frame(width: 17, height: 17)
+            // 22, not 17. The flower was a glyph and survived being tiny; a
+            // face needs a few more points before the eyes read.
+            Image("OttoHead")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 22, height: 22)
             Text("808")
                 .font(.system(size: 12, weight: .black, design: .rounded))
                 .tracking(2.4)

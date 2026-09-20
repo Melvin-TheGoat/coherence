@@ -314,7 +314,7 @@ struct ContentView: View {
     private var ottoScene: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(greeting)
-                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(24, .heavy))
                 .foregroundStyle(AppColor.textPrimary)
             Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
                 .font(AppFont.caption)
@@ -354,11 +354,11 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         return HStack(spacing: 9) {
             Text("\(streak.current)")
-                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(25, .heavy))
                 .foregroundStyle(AppColor.streakBlushText)
                 .monospacedDigit()
             Text(streak.current == 1 ? "morning" : "mornings")
-                .font(AppFont.callout.weight(.bold))
+                .font(DisplayFont.display(16))
                 .foregroundStyle(AppColor.streakBlushText)
             Rectangle().fill(AppColor.hairline).frame(width: 1, height: 18)
             Text("best \(streak.longest)  ·  \(sessions.count) sits")
@@ -425,8 +425,9 @@ struct ContentView: View {
     // above the streak; the greeting moved into the scene and the mark left
     // Home altogether (2026-09-19). A mark identifies a company and a face
     // greets a person, and this is the screen somebody opens before they are
-    // properly awake. `LogoMark` still signs the awards screen, onboarding and
-    // the share card, which is the job it is good at.
+    // properly awake. The flower is gone from the product entirely as of
+    // 2026-09-19: Otto's head signs onboarding, the share card, the Watch and
+    // the one award whose face is the mark, and `LogoMark` is deleted.
 
     // MARK: - Streak
 
@@ -519,13 +520,12 @@ struct ContentView: View {
                 let stats = SessionListSupport.statsMap(allStats)
                 let ratings = SessionListSupport.ratingMap(reflections)
                 let thumbs = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
-                VStack(spacing: 0) {
-                    ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { i, session in
-                        if i > 0 { Divider().overlay(AppColor.textSecondary.opacity(0.12)) }
+                VStack(spacing: 12) {
+                    ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { _, session in
                         Button { sheet = .results(session.id) } label: {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
-                                        subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
+                                        stats: stats[session.id],
                                         rating: ratings[session.id],
                                         thumbnail: thumbs[session.id])
                         }

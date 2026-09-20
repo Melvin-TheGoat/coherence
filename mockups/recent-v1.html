@@ -1,0 +1,149 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · the Recent list</title>
+<style>
+:root{--paper:#FDF7ED;--card:#FFF;--ink:#3C2A1F;--soft:#6F5D4D;--faint:#9C8770;--line:#F1E7D8;
+--trace:#EADCC5;--amber:#E3A544;--amberDeep:#A9761F;--sage:#6EAFA2;--sageDeep:#3B7A6E;--blush:#F2AF91;--blushDeep:#B05C39;}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;
+padding:34px 26px 80px}
+h1{font-size:24px;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:12px;margin:40px 0 4px;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:760px;line-height:1.6;margin:0}
+.note{color:var(--soft);font-size:13.5px;max-width:330px;line-height:1.58}
+.note b{color:var(--ink)}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:18px}
+.col{width:340px;flex:none}
+.stage{background:var(--paper);border-radius:30px;padding:18px 16px}
+.sh{display:flex;align-items:baseline;justify-content:space-between;padding:0 4px 12px}
+.sh .t{font-size:17px;font-weight:800}
+.sh .a{font-size:13.5px;font-weight:700;color:var(--amberDeep)}
+
+/* A — Strava's activity card */
+.acard{background:var(--card);border-radius:26px;padding:16px;box-shadow:0 2px 0 var(--line);margin-bottom:12px}
+.ahead{display:flex;align-items:center;gap:12px}
+.abub{width:52px;height:52px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+font-weight:800;font-size:19px;color:#fff;background:var(--amber)}
+.atitle{font-size:16.5px;font-weight:800;letter-spacing:-.01em}
+.awhen{font-size:12.5px;color:var(--faint);margin-top:2px}
+.stats{display:flex;margin-top:14px;padding-top:13px;border-top:1px solid var(--line)}
+.stats div{flex:1}
+.stats .v{font-size:16px;font-weight:800}
+.stats .l{font-size:11.5px;color:var(--faint);font-weight:600;margin-top:1px}
+
+/* B — the chip row */
+.bcard{background:var(--card);border-radius:24px;padding:15px 16px;box-shadow:0 2px 0 var(--line);margin-bottom:10px;
+display:flex;align-items:center;gap:14px}
+.chips{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:#EDF6F3;color:var(--sageDeep)}
+.chip.t{background:#FBF0DC;color:var(--amberDeep)}
+
+/* C — photo forward */
+.ccard{background:var(--card);border-radius:26px;overflow:hidden;box-shadow:0 2px 0 var(--line);margin-bottom:12px;
+display:flex;gap:0}
+.cpic{width:104px;flex:none;background:linear-gradient(160deg,#FBE6D4,#F3D9C2);display:flex;align-items:flex-end;
+justify-content:center}
+.cbody{padding:15px 16px;flex:1}
+</style></head><body>
+
+<h1>The Recent list, three ways</h1>
+<p class="lede">The row you have is the generic iOS list: a small ring, a title, a run-on subtitle, a chevron. It is
+the most app-shaped thing left on Home. Each option below is lifted from somewhere that solved the same problem,
+which is <b>how do you show a thing somebody DID so it feels like an achievement rather than a log line.</b></p>
+
+<div class="row">
+
+  <div class="col">
+    <div class="stage">
+      <div class="sh"><span class="t">Recent</span><span class="a">See all</span></div>
+      <div class="acard">
+        <div class="ahead">
+          <div class="abub">84</div>
+          <div><div class="atitle">Yesterday morning</div><div class="awhen">18 minutes · Rain</div></div>
+        </div>
+        <div class="stats">
+          <div><div class="v" style="color:var(--sageDeep)">−9</div><div class="l">Heart settled</div></div>
+          <div><div class="v" style="color:var(--sageDeep)">91%</div><div class="l">Still</div></div>
+          <div><div class="v" style="color:var(--sageDeep)">6.1</div><div class="l">Breath</div></div>
+        </div>
+      </div>
+      <div class="acard">
+        <div class="ahead">
+          <div class="abub" style="background:var(--trace);color:var(--amberDeep)">71</div>
+          <div><div class="atitle">Wednesday</div><div class="awhen">12 minutes · Silence</div></div>
+        </div>
+        <div class="stats">
+          <div><div class="v" style="color:var(--sageDeep)">−4</div><div class="l">Heart settled</div></div>
+          <div><div class="v" style="color:var(--sageDeep)">74%</div><div class="l">Still</div></div>
+          <div><div class="v" style="color:var(--faint)">—</div><div class="l">Breath</div></div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px"><b>A · Strava's activity card.</b> A header that names the thing, then a
+    rule, then the numbers as three labelled columns. Strava does exactly this with Distance, Pace, Time, and the
+    reason it works is that <b>every card has the same three columns in the same places</b>, so you compare two
+    sessions by looking down rather than by reading. A missing breath is a dash, not a gap.</p>
+  </div>
+
+  <div class="col">
+    <div class="stage">
+      <div class="sh"><span class="t">Recent</span><span class="a">See all</span></div>
+      <div class="bcard">
+        <div class="abub">84</div>
+        <div style="flex:1">
+          <div class="atitle">Yesterday morning</div>
+          <div class="chips"><span class="chip t">18 min</span><span class="chip">heart −9</span>
+            <span class="chip">91% still</span><span class="chip">6.1 breath</span></div>
+        </div>
+      </div>
+      <div class="bcard">
+        <div class="abub" style="background:var(--trace);color:var(--amberDeep)">71</div>
+        <div style="flex:1">
+          <div class="atitle">Wednesday</div>
+          <div class="chips"><span class="chip t">12 min</span><span class="chip">heart −4</span>
+            <span class="chip">74% still</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px"><b>B · Hevy's workout row.</b> The same facts as chips instead of
+    columns, which fits the bubbly language better and handles a missing signal by simply not being there. The cost
+    is that nothing lines up between two cards, so it reads as a label cloud rather than a record. Prettier per
+    card, worse as a list.</p>
+  </div>
+
+  <div class="col">
+    <div class="stage">
+      <div class="sh"><span class="t">Recent</span><span class="a">See all</span></div>
+      <div class="ccard">
+        <div class="cpic"><img src="otto/otto-sit.png" style="width:92px;display:block"></div>
+        <div class="cbody">
+          <div class="atitle">Yesterday morning</div>
+          <div class="awhen">18 minutes · Rain</div>
+          <div class="chips"><span class="chip t">84</span><span class="chip">heart −9</span>
+            <span class="chip">91% still</span></div>
+        </div>
+      </div>
+      <div class="ccard">
+        <div class="cpic" style="background:linear-gradient(160deg,#EDF6F3,#DDEDE8)">
+          <img src="otto/otto-sleep.png" style="width:96px;display:block;padding-bottom:10px"></div>
+        <div class="cbody">
+          <div class="atitle">Wednesday</div>
+          <div class="awhen">12 minutes · Silence</div>
+          <div class="chips"><span class="chip t">71</span><span class="chip">heart −4</span>
+            <span class="chip">74% still</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="note" style="margin-top:14px"><b>C · Letterboxd's diary, with Otto standing in for the poster.</b>
+    Every entry gets a picture. When Friends is on that panel is the selfie you took; when it is off it is Otto in
+    a pose picked by how the sit went. <b>Charming, and it is a claim the data cannot always keep</b>: three
+    identical Ottos down the screen would be worse than no picture at all.</p>
+  </div>
+</div>
+
+<h2>What I would ship</h2>
+<p class="note" style="max-width:760px"><b>A, and it is not close.</b> The list's job is comparison: you look at it
+to find out whether this week was better than last. Aligned columns do that and a chip cloud does not, which is
+the same argument as the week strip. B's chips are prettier in isolation and I would use that shape somewhere a
+single session stands alone. C is the one to revisit when Friends ships and the picture is a real selfie rather
+than a mascot wearing the same face three times.</p>
+
+</body></html>
