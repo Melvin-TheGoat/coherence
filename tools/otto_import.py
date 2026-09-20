@@ -36,6 +36,9 @@ import shutil
 import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from otto_split import read_png, write_png  # noqa: E402
+
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(REPO, "Shared", "Assets.xcassets")
 
@@ -49,6 +52,60 @@ POSES = [
 ]
 # Longest edge in pixels per scale. @1x is 200 points; the rest follow.
 SCALES = [("", 200), ("@2x", 400), ("@3x", 600)]
+
+
+# The app icon is Otto's head on the app's own ground. Sampled off the icon
+# that shipped: a vertical gradient from Sky at the top to Paper at the
+# bottom, with the head filling the width and its chin running off the
+# bottom edge. It has to be regenerated whenever the head is redrawn, or the
+# home screen shows a different character from the app.
+ICON = os.path.join(ASSETS, "AppIcon.appiconset", "AppIcon1024.png")
+ICON_SIZE = 1024
+ICON_TOP = (253, 237, 225)
+ICON_BOTTOM = (253, 247, 237)
+ICON_HEAD_TOP = 0.065      # where the crown starts, as a fraction of height
+ICON_HEAD_WIDTH = 1.00     # head width as a fraction of the icon
+
+
+def make_icon(head_png):
+    """Compose AppIcon1024.png from the head pose. Opaque, as Apple requires."""
+    scaled = os.path.join(os.path.dirname(ICON), ".head-scaled.png")
+    subprocess.run(["sips", "--resampleWidth", str(int(ICON_SIZE * ICON_HEAD_WIDTH)),
+                    head_png, "--out", scaled], capture_output=True, check=True)
+    hw, hh, hp = read_png(scaled)
+    os.remove(scaled)
+
+    n = ICON_SIZE
+    out = bytearray(n * n * 3)
+    for y in range(n):
+        t = y / float(n - 1)
+        row = bytes(int(round(ICON_TOP[c] + (ICON_BOTTOM[c] - ICON_TOP[c]) * t))
+                    for c in range(3)) * n
+        out[y * n * 3:(y + 1) * n * 3] = row
+
+    ox = (n - hw) // 2
+    oy = int(n * ICON_HEAD_TOP)
+    for y in range(hh):
+        ty = oy + y
+        if ty < 0 or ty >= n:
+            continue
+        for x in range(hw):
+            tx = ox + x
+            if tx < 0 or tx >= n:
+                continue
+            s = (y * hw + x) * 4
+            a = hp[s + 3]
+            if not a:
+                continue
+            d = (ty * n + tx) * 3
+            if a == 255:
+                out[d:d + 3] = hp[s:s + 3]
+            else:
+                f = a / 255.0
+                for c in range(3):
+                    out[d + c] = int(round(hp[s + c] * f + out[d + c] * (1 - f)))
+    write_png(ICON, n, n, out, channels=3)
+    return hw, hh
 
 
 def dims(path):
@@ -133,6 +190,10 @@ def main():
             fh.write(contents_json(setname))
         nw, nh = dims(os.path.join(folder, setname + "@3x.png"))
         print("%-11s %gx%g  ->  %s, @3x %gx%g" % (stem + ":", w, h, setname, nw, nh))
+
+    if "otto-head" in found and dest == ASSETS and "--no-icon" not in sys.argv:
+        hw, hh = make_icon(found["otto-head"])
+        print("icon:       head at %dx%d on the app ground -> AppIcon1024.png" % (hw, hh))
 
     print("\nNext: build and look. For the ANIMATED Otto, open the Rive editor "
           "and run\n  python3 tools/otto_swap.py %s/otto-wave.png"

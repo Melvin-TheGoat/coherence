@@ -128,15 +128,20 @@ def read_png(path):
     return w, h, px
 
 
-def write_png(path, w, h, pixels):
-    """`pixels` is a bytearray of w*h*4. Written with filter 0 throughout:
-    slightly bigger than an optimised encoder and perfectly valid."""
-    stride = w * 4
+def write_png(path, w, h, pixels, channels=4):
+    """`pixels` is a bytearray of w*h*`channels`. Written with filter 0
+    throughout: slightly bigger than an optimised encoder and perfectly valid.
+
+    `channels=3` writes RGB with no alpha, which is what an app icon has to
+    be: App Store Connect rejects an icon with an alpha channel.
+    """
+    stride = w * channels
     raw = bytearray()
     for y in range(h):
         raw.append(0)
         raw += pixels[y * stride:(y + 1) * stride]
-    chunks = [(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0)),
+    chunks = [(b"IHDR", struct.pack(">IIBBBBB", w, h, 8,
+                                    6 if channels == 4 else 2, 0, 0, 0)),
               (b"IDAT", zlib.compress(bytes(raw), 9)),
               (b"IEND", b"")]
     with open(path, "wb") as fh:
