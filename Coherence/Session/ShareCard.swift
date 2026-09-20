@@ -124,11 +124,15 @@ struct SessionShareCard: View {
 
     var body: some View {
         ZStack {
-            // Fixed dark canvas so the card looks identical no matter the
-            // sharer's theme (rendered with .dark colorScheme).
-            LinearGradient(
-                colors: [AppColor.backgroundPrimary, AppColor.backgroundSecondary],
-                startPoint: .top, endPoint: .bottom)
+            // **The card is Home's sky** (2026-09-19). It was a fixed DARK
+            // canvas, rendered with `.dark` forced, so it would look the same
+            // whatever theme the sharer was in. There is one theme now, and
+            // the reason to match it is bigger than consistency: this image is
+            // the only advertising 808 has. Somebody who sees it in a story
+            // and then opens the App Store should recognise the same cream,
+            // the same amber and the same sloth. A dark card sells a dark app.
+            LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
+                           startPoint: .top, endPoint: .bottom)
 
             Group {
                 switch style {
@@ -156,7 +160,7 @@ struct SessionShareCard: View {
                 // reads the wordmark under it.
                 OttoMark(size: 46, pose: .head)
                 Text("808")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(DisplayFont.display(25, .heavy))
                     .foregroundStyle(AppColor.accentGoldText)
                     .padding(.top, 8)
                 Text(data.date.formatted(date: .abbreviated, time: .shortened))
@@ -196,9 +200,8 @@ struct SessionShareCard: View {
                     .padding(.bottom, 14)
                 }
 
-                Text("MEASURED ON APPLE WATCH")
+                Text("Measured on Apple Watch")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .tracking(2)
                     .foregroundStyle(AppColor.textSecondary)
 
                 Spacer(minLength: 40)
@@ -213,16 +216,15 @@ struct SessionShareCard: View {
         VStack(spacing: 0) {
             OttoMark(size: 38, pose: .head)
             Text("808")
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(19, .heavy))
                 .foregroundStyle(AppColor.accentGoldText)
                 .padding(.top, 6)
         }
     }
 
     private var footerLine: some View {
-        Text("MEASURED ON APPLE WATCH")
+        Text("Measured on Apple Watch")
             .font(.system(size: 10, weight: .semibold, design: .rounded))
-            .tracking(2)
             .foregroundStyle(AppColor.textSecondary)
     }
 
@@ -251,17 +253,15 @@ struct SessionShareCard: View {
                     .font(.system(size: 108, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.accentGoldText)
                     .monospacedDigit()
-                Text("PRACTICE SCORE")
+                Text("Practice score")
                     .font(.system(size: 10, weight: .semibold))
-                    .tracking(2)
                     .foregroundStyle(AppColor.textSecondary)
                 Text(minutesText)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(DisplayFont.display(31, .heavy))
                     .foregroundStyle(AppColor.textPrimary)
                     .padding(.top, 26)
-                Text("MEDITATED")
+                Text("Meditated")
                     .font(.system(size: 10, weight: .semibold))
-                    .tracking(2)
                     .foregroundStyle(AppColor.textSecondary)
             }
             Spacer()
@@ -333,10 +333,10 @@ struct SessionShareCard: View {
                     .frame(height: 1)
                 HStack(spacing: 26) {
                     if let rating = data.rating {
-                        labelled("\(rating)/10", "FELT LIKE")
+                        labelled("\(rating)/10", "Felt like")
                     }
                     if let score = data.overallScore {
-                        labelled("\(Int((score * 100).rounded()))", "MEASURED")
+                        labelled("\(Int((score * 100).rounded()))", "Measured")
                     }
                 }
             }
@@ -353,12 +353,11 @@ struct SessionShareCard: View {
     private func labelled(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(25, .heavy))
                 .foregroundStyle(AppColor.textPrimary)
                 .monospacedDigit()
             Text(label)
                 .font(.system(size: 9, weight: .semibold))
-                .tracking(1)
                 .foregroundStyle(AppColor.textSecondary)
         }
     }
@@ -380,12 +379,11 @@ struct SessionShareCard: View {
                     .foregroundStyle(AppColor.accentGold)
                     .shadow(color: AppColor.accentGold.opacity(0.45), radius: 26)
                 Text("\(data.streakDays)")
-                    .font(.system(size: 108, weight: .bold, design: .rounded))
+                    .font(DisplayFont.display(110, .heavy))
                     .foregroundStyle(AppColor.accentGoldText)
                     .monospacedDigit()
-                Text("DAY STREAK")
+                Text("Day streak")
                     .font(.system(size: 11, weight: .semibold))
-                    .tracking(2.4)
                     .foregroundStyle(AppColor.textSecondary)
             }
             Spacer()
@@ -431,13 +429,12 @@ struct SessionShareCard: View {
                         .fill(AppColor.textSecondary.opacity(0.18))
                         .frame(height: 1)
                     HStack(alignment: .lastTextBaseline) {
-                        Text("SCORE")
+                        Text("Score")
                             .font(.system(size: 10, weight: .semibold))
-                            .tracking(1.6)
                             .foregroundStyle(AppColor.textSecondary)
                         Spacer()
                         Text("\(Int((score * 100).rounded()))")
-                            .font(.system(size: 44, weight: .bold, design: .rounded))
+                            .font(DisplayFont.display(45, .heavy))
                             .foregroundStyle(AppColor.accentGoldText)
                             .monospacedDigit()
                     }
@@ -446,9 +443,8 @@ struct SessionShareCard: View {
             }
             Spacer()
             if data.streakDays > 1 {
-                Text("DAY \(data.streakDays)")
+                Text("Day \(data.streakDays)")
                     .font(.system(size: 10, weight: .semibold))
-                    .tracking(2)
                     .foregroundStyle(AppColor.accentGoldText)
                     .padding(.bottom, 6)
             }
@@ -477,18 +473,17 @@ struct SessionShareCard: View {
 
     private func scoreRing(_ score: Double) -> some View {
         ZStack {
-            Circle().stroke(AppColor.backgroundSecondary, lineWidth: 10)
+            Circle().stroke(AppColor.trace, lineWidth: 10)
             Circle()
                 .trim(from: 0, to: max(0.001, min(score, 1)))
                 .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 2) {
                 Text("\(Int((score * 100).rounded()))")
-                    .font(.system(size: 39, weight: .bold, design: .rounded))
+                    .font(DisplayFont.display(40, .heavy))
                     .foregroundStyle(AppColor.textPrimary).monospacedDigit()
-                Text("PRACTICE SCORE")
-                    .font(.system(size: 7.5, weight: .semibold))
-                    .tracking(1)
+                Text("Practice score")
+                    .font(.system(size: 9, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textSecondary)
             }
         }
@@ -503,13 +498,17 @@ struct SessionShareCard: View {
 
     private var statRow: some View {
         HStack(spacing: 10) {
-            stat(durationText, "MINUTES")
-            if let s = data.stillnessScore { stat("\(Int((s * 100).rounded()))%", "STILLNESS") }
+            stat(durationText, "Minutes")
+            if let s = data.stillnessScore { stat("\(Int((s * 100).rounded()))%", "Still") }
             // Positive = settled, the sign the label promises. It used to be
             // negated, so a heart that ROSE six beats read "+6 HR settled" on
             // a real user's card (2026-09-16) beside a "74 → 79 bpm" graph.
-            if let d = data.hrDecline { stat(String(format: "%+.0f", d), "HR SETTLED") }
-            if let r = data.meanBreathingRate { stat(String(format: "%.1f", r), "BREATHS/MIN") }
+            // The label carries the direction, never a minus sign; same rule
+            // as the session cards in the app.
+            if let d = data.hrDecline {
+                stat(String(format: "%.0f", abs(d)), d >= 0 ? "Heart settled" : "Heart rose")
+            }
+            if let r = data.meanBreathingRate { stat(String(format: "%.1f", r), "Breath") }
         }
     }
 
@@ -521,35 +520,38 @@ struct SessionShareCard: View {
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(25, .heavy))
                 .foregroundStyle(AppColor.textPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             Text(label)
-                .font(.system(size: 8.5, weight: .semibold))
-                .tracking(0.8)
+                .font(.system(size: 9.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColor.textSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 13)
-        .background(AppColor.backgroundSecondary.opacity(0.7),
-                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(AppColor.backgroundSecondary,
+                    in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
-    /// One signal's mini-graph. Colour follows the app's grammar: teal for the
-    /// body's signals (heart, breath), gold for the achieved one (stillness).
-    /// Today's card drew every hero curve gold, including heart rate.
+    /// One signal's mini-graph, in the body's colour.
+    ///
+    /// The line here read `c.isAchievement ? .accentGold : .accentGold`, a
+    /// conditional with the same answer on both sides, left behind when the
+    /// two-colour grammar was collapsed into one. The grammar the app settled
+    /// on is simpler than either: **amber is a score and sage is anything
+    /// measured off the body**, stillness included, so there is nothing to
+    /// branch on.
     private func curveCard(_ c: ShareCardData.Curve) -> some View {
-        let tint = c.isAchievement ? AppColor.accentGold : AppColor.accentGold
+        let tint = AppColor.calmAccentFill
         return VStack(alignment: .leading, spacing: 2) {
             HStack(alignment: .firstTextBaseline) {
-                Text(c.title.uppercased())
-                    .font(.system(size: 8.5, weight: .heavy))
-                    .tracking(0.8)
-                    .foregroundStyle(tint)
+                Text(c.title)
+                    .font(.system(size: 9.5, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.calmAccent)
                 Spacer(minLength: 4)
                 Text(c.reading)
                     .font(.system(size: 8.5, weight: .medium, design: .rounded))
@@ -560,7 +562,7 @@ struct SessionShareCard: View {
                     GeometryReader { geo in
                         let x = geo.size.width * h.lowerBound
                         let w = geo.size.width * (h.upperBound - h.lowerBound)
-                        AppColor.accentGold.opacity(0.16)
+                        AppColor.calmAccentFill.opacity(0.2)
                             .frame(width: max(w, 1))
                             .offset(x: x)
                     }
@@ -628,7 +630,7 @@ enum ShareCardRenderer {
     @MainActor
     static func render(_ data: ShareCardData, style: ShareCardStyle = .full) -> UIImage? {
         let renderer = ImageRenderer(content: SessionShareCard(data: data, style: style)
-            .environment(\.colorScheme, .dark))
+            .environment(\.colorScheme, .light))
         renderer.scale = 3
         return renderer.uiImage
     }
@@ -829,7 +831,7 @@ struct ShareSessionSheet: View {
                     let scale = min((geo.size.width - 88) / 360,
                                     (geo.size.height - 40) / 640)
                     SessionShareCard(data: data, style: s)
-                        .environment(\.colorScheme, .dark)
+                        .environment(\.colorScheme, .light)
                         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                         .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
                         .scaleEffect(scale)
