@@ -160,7 +160,7 @@ enum OttoBrief {
     - Time is a ceiling, never a bonus for its own sake: under 10 minutes the cap is 50 plus 5 per minute. Past 10 minutes a small length bonus, up to 8% at 40 minutes, multiplies depth. Thirty restless minutes never beat five settled ones.
     - Bands: under 40 is a restless or short sit, 40 to 69 settled, 70 and up deep and held. Each session line names its band; never invent another scale.
     - The rating out of 10 is the person's own feeling afterwards, not part of the score.
-    - NEVER do arithmetic on the score. The points are already worked out on every session line and on the SCORE CARD. Quote them. The only hypotheticals that exist are the ones the app prints: "at 10 min the same sit would score N" and "with a breath doorway it would score N". If a number is not printed, say the app does not estimate it.
+    - NEVER do arithmetic on the score. The points are already worked out on every session line and on the SCORE CARD. Quote them. The only hypotheticals that exist are the ones the app prints: "at 10 min the same session would score N" and "with a breath doorway it would score N". If a number is not printed, say the app does not estimate it.
     - What the numbers mean in plain words: a heart rate that climbs means the body did not settle; movement means it was not at rest; a doorway is the on-ramp into the settled state, which is why it is scored.
     """
 
@@ -234,7 +234,7 @@ enum OttoBrief {
         // never does arithmetic: the same depth under the 10-minute ceiling.
         // Otto once told Melvin a 5-minute sit "would have scored 100 at 10
         // minutes"; the true number was the score over its time factor.
-        if let at10 = r.scoreAtTenMinutes { parts.append("at 10 min the same sit would score \(at10)") }
+        if let at10 = r.scoreAtTenMinutes { parts.append("at 10 min the same session would score \(at10)") }
         if let s = r.startHR, let e = r.endHR {
             var heart = "heart \(Int(s.rounded())) to \(Int(e.rounded())) bpm"
             if let m = r.meanHR, m > 0 { heart += ", avg \(Int(m.rounded()))" }
@@ -258,7 +258,7 @@ enum OttoBrief {
     /// The band a score sits in, written here because the model cannot be
     /// trusted to place 13 under 40 (it called it "deep and held" once).
     static func band(_ score: Int) -> String {
-        score < 40 ? "a restless or short sit" : score < 70 ? "a sit that settled" : "deep and held"
+        score < 40 ? "a restless or short session" : score < 70 ? "a session that settled" : "deep and held"
     }
 
     // MARK: - The score card
@@ -297,14 +297,14 @@ enum OttoBrief {
                 : drop <= -1 ? "so it climbed \(Int((-drop).rounded())) beats" : "so it ended where it began"
             lines.append("- Heart: opened at \(Int(opening.rounded())) bpm, closed at \(Int(closing.rounded())) bpm, \(move). It stayed at or below the opening rate for \(Int((held * 100).rounded()))% of the sit. Heart earned \(pts(b.heartPoints)) of \(pts(b.heartMax)) points: 60% of those are for staying at or under the opening rate, 40% for the size of the drop (12 beats earns all of it).")
         } else {
-            lines.append("- Heart: not read this sit, so it earned no points and its weight went to the other signals.")
+            lines.append("- Heart: not read this session, so it earned no points and its weight went to the other signals.")
         }
 
         if let raw = b.stillnessRaw, let cubed = b.stillnessTerm {
             let read = raw >= 0.90 ? "a settled body" : raw >= 0.80 ? "ordinary small movement" : raw >= 0.60 ? "noticeable movement, more than a settled sit" : "a lot of movement"
-            lines.append("- Stillness: \(String(format: "%.2f", raw)) on a 0 to 1 scale, which reads as \(read) (settled sits read 0.80 to 0.98). Cubed for the score it is \(String(format: "%.2f", cubed)). Stillness earned \(pts(b.stillnessPoints)) of \(pts(b.stillnessMax)) points.")
+            lines.append("- Stillness: \(String(format: "%.2f", raw)) on a 0 to 1 scale, which reads as \(read) (settled sessions read 0.80 to 0.98). Cubed for the score it is \(String(format: "%.2f", cubed)). Stillness earned \(pts(b.stillnessPoints)) of \(pts(b.stillnessMax)) points.")
         } else {
-            lines.append("- Stillness: not read this sit.")
+            lines.append("- Stillness: not read this session.")
         }
 
         if b.hasDoorway, let rate = r.doorwayRate {
@@ -312,11 +312,11 @@ enum OttoBrief {
             lines.append("- Breath: a slow-breath doorway was read at \(String(format: "%.1f", rate)) per minute\(held). Breath earned \(pts(b.breathPoints)) of \(pts(b.breathMax)) points, the full credit.")
         } else {
             lines.append("- Breath: no slow-breath doorway was read (no 60 seconds of deliberate slow breathing in the first 5 minutes), so breath earned nothing and heart and stillness share the whole score 60/40. Nothing was subtracted for it.")
-            if let with = scoreWithDoorway(b) { lines.append("- With a breath doorway the same sit would score \(with).") }
+            if let with = scoreWithDoorway(b) { lines.append("- With a breath doorway the same session would score \(with).") }
         }
 
         if b.durationFactor < 1 {
-            lines.append("- Time earns no points of its own; it sets the cap. A \(r.minutes) minute sit is scored against a cap of \(Int(b.cap.rounded())) (50 plus 5 per minute, up to 100 at 10 minutes), and the points above are already scaled to that cap." + (r.scoreAtTenMinutes.map { " At 10 min the same sit would score \($0)." } ?? ""))
+            lines.append("- Time earns no points of its own; it sets the cap. A \(r.minutes) minute session is scored against a cap of \(Int(b.cap.rounded())) (50 plus 5 per minute, up to 100 at 10 minutes), and the points above are already scaled to that cap." + (r.scoreAtTenMinutes.map { " At 10 min the same session would score \($0)." } ?? ""))
         } else if b.durationFactor > 1 {
             lines.append("- Time earns no points of its own. Past 10 minutes a length bonus of \(Int(((b.durationFactor - 1) * 100).rounded()))% multiplied the depth.")
         } else {
@@ -369,7 +369,7 @@ enum OttoBrief {
             levers.append((Double(gain), "breath (\(gain) points available): open the sit with a minute or two of slow, even breathing at 4 to 7 per minute, then let it go natural"))
         }
         if b.durationFactor < 1 {
-            levers.append((b.durationFactor < 0.8 ? 12 : 4, "time: the same sit at 10 minutes lifts the cap to 100"))
+            levers.append((b.durationFactor < 0.8 ? 12 : 4, "time: the same session at 10 minutes lifts the cap to 100"))
         }
         levers.sort { $0.gap > $1.gap }
         let ranked = levers.prefix(3).map(\.text)
@@ -424,7 +424,7 @@ enum OttoBrief {
         let day = cal.isDateInToday(r.date) ? "this" : cal.isDateInYesterday(r.date) ? "yesterday" : nil
         let when = day.map { $0 == "this" ? "this \(part)'s" : "yesterday \(part)'s" }
             ?? "\(r.date.formatted(.dateTime.weekday(.wide)))'s"
-        return "\(when) \(r.minutes) minute sit"
+        return "\(when) \(r.minutes) minute session"
     }
 
     // MARK: - Suggested questions

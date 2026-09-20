@@ -122,7 +122,7 @@ public struct Award: Identifiable, Hashable {
               """),
 
         Award(id: "min20", title: "Twenty minutes",
-              blurb: "A single sit of 20 minutes.",
+              blurb: "A single session of 20 minutes.",
               group: .endurance, face: .number("20", unit: "min"),
               meaning: """
               Twenty minutes is where the score's time factor stops climbing, \
@@ -130,14 +130,14 @@ public struct Award: Identifiable, Hashable {
               """),
 
         Award(id: "min30", title: "Half an hour",
-              blurb: "A single sit of 30 minutes.",
+              blurb: "A single session of 30 minutes.",
               group: .endurance, face: .number("30", unit: "min"),
               meaning: """
               Past the point where sitting still is the hard part.
               """),
 
         Award(id: "min60", title: "One hour",
-              blurb: "A single sit of 60 minutes.",
+              blurb: "A single session of 60 minutes.",
               group: .endurance, face: .number("60", unit: "min"),
               meaning: """
               An hour on the cushion. There is no research saying an hour beats \

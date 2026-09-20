@@ -134,7 +134,7 @@ private struct MethodRow: View {
             }
             Spacer(minLength: 4)
             if loggedCount > 0 {
-                Text(loggedCount == 1 ? "1 sit" : "\(loggedCount) sits")
+                Text(loggedCount == 1 ? "1 session" : "\(loggedCount) sessions")
                     .font(.system(size: 12.5, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.textOnAccent)
                     .monospacedDigit()

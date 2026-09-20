@@ -276,7 +276,7 @@ struct ProfileTab: View {
             divider
             stat("\(streak.longest)", "longest", AppColor.streakBlushText)
             divider
-            stat("\(sessions.count)", "sits", AppColor.accentGoldText)
+            stat("\(sessions.count)", "sessions", AppColor.accentGoldText)
             divider
             stat(hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours),
                  "practiced", AppColor.accentGoldText)
@@ -352,7 +352,7 @@ struct ProfileTab: View {
                 }
             }
             if recent.count < 2 {
-                Text("Two sits and this fills in. Every bar is one morning, and the line is your average.")
+                Text("Two sessions and this fills in. Every bar is one day, and the line is your average.")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -387,7 +387,7 @@ struct ProfileTab: View {
                     divider
                     proofStat("\(Int(best.rounded()))", "best", AppColor.accentGoldText)
                     divider
-                    proofStat(SessionListSupport.duration(longestSit), "longest sit",
+                    proofStat(SessionListSupport.duration(longestSit), "longest session",
                               AppColor.accentGoldText)
                 }
                 .padding(.top, 2)

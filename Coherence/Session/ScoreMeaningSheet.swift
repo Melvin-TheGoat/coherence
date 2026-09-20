@@ -58,7 +58,7 @@ struct ScoreMeaningSheet: View {
                           "Opening with a few minutes of slow breathing earns full credit here. It is the smallest slice, and it is all or nothing.",
                           AppColor.accentGold)
                     input("clock", "Time.",
-                          "Ten settled minutes can score 100. Longer sits earn a small bonus, but thirty restless minutes never beat five settled ones.",
+                          "Ten settled minutes can score 100. Longer sessions earn a small bonus, but thirty restless minutes never beat five settled ones.",
                           AppColor.accentGold)
                 }
                 .padding(AppMetrics.screenPadding)

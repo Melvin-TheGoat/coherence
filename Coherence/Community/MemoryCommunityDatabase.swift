@@ -110,7 +110,7 @@ enum DemoCommunity {
         _ = try? await me.post(.init(score: 72, minutes: 18, streak: 4, technique: "Counting",
                                       caption: "", photoURL: fakeSelfie(UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1)),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2),
-                                      title: "Morning sit", sound: "Silence"))
+                                      title: "Morning session", sound: "Silence"))
         return me
     }
 }

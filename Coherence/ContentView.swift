@@ -269,9 +269,15 @@ struct ContentView: View {
     /// proof curve), what has this month looked like, what did the last few
     /// sessions say. Starting one is the plus on the bar.
     private var homeTab: some View {
+        // The scroll view runs up under the status bar and the scene is
+        // padded down by the inset, so the sky is the first thing on the
+        // screen. A background inside a scroll view cannot escape the safe
+        // area on its own (tried first: the band behind the clock stayed
+        // paper and the sky began under it as a hard line).
+        GeometryReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ottoScene
+                ottoScene(topInset: proxy.safeAreaInsets.top)
                 streakPill
                     .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
                 VStack(alignment: .leading, spacing: 20) {
@@ -293,6 +299,8 @@ struct ContentView: View {
             }
         }
         .scrollIndicators(.hidden)
+        .ignoresSafeArea(edges: .top)
+        }
     }
 
     // MARK: - The scene
@@ -311,7 +319,10 @@ struct ContentView: View {
     /// it stops being the greeting: a mark identifies a company and a face
     /// greets a person, and this is the screen somebody opens before they have
     /// woken up properly.
-    private var ottoScene: some View {
+    /// `topInset` is the status bar's height, padded INSIDE this view so the
+    /// sky behind it covers that band too. Padding it from outside left the
+    /// band above the gradient, which is the bug this fixes.
+    private func ottoScene(topInset: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(greeting)
                 .font(DisplayFont.display(24, .heavy))
@@ -332,10 +343,14 @@ struct ContentView: View {
                 }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 8)
+        .padding(.top, 8 + topInset)
         .padding(.bottom, 26)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
+            // Under the status bar too: `homeTab` lets the scroll view ignore
+            // the top safe area and pads the scene by the inset (Melvin,
+            // 2026-09-20: "the top of the home page is cut off, the color
+            // suddenly cuts into a whiter color").
             LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
                            startPoint: .top, endPoint: .bottom)
                 .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 38,
@@ -357,11 +372,14 @@ struct ContentView: View {
                 .font(DisplayFont.display(25, .heavy))
                 .foregroundStyle(AppColor.streakBlushText)
                 .monospacedDigit()
-            Text(streak.current == 1 ? "morning" : "mornings")
+            // "day streak", the words it had before the revamp. "mornings"
+            // counted days as mornings, which is not what a streak is and
+            // read as nonsense at 0 (Melvin, 2026-09-20).
+            Text("day streak")
                 .font(DisplayFont.display(16))
                 .foregroundStyle(AppColor.streakBlushText)
             Rectangle().fill(AppColor.hairline).frame(width: 1, height: 18)
-            Text("best \(streak.longest)  ·  \(sessions.count) sits")
+            Text("best \(streak.longest)  ·  \(sessions.count) sessions")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
                 .monospacedDigit()

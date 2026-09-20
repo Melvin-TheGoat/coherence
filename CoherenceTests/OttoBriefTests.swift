@@ -99,7 +99,7 @@ final class OttoBriefTests: XCTestCase {
         five.minutes = 5
         XCTAssertEqual(five.scoreAtTenMinutes, 80, "5 min caps at 75%, so 60 is depth 0.80")
         let text = OttoBrief.line(five, focus: true, now: now)
-        XCTAssertTrue(text.contains("at 10 min the same sit would score 80"), text)
+        XCTAssertTrue(text.contains("at 10 min the same session would score 80"), text)
 
         var ten = row(daysAgo: 0, score: 0.60)
         ten.minutes = 10
@@ -141,8 +141,8 @@ final class OttoBriefTests: XCTestCase {
         }
         XCTAssertFalse(card.contains("0.76 seconds"), "stillness is never seconds")
         // The two hypotheticals the app allows, both computed here.
-        XCTAssertTrue(card.contains("With a breath doorway the same sit would score"))
-        XCTAssertTrue(card.contains("At 10 min the same sit would score"))
+        XCTAssertTrue(card.contains("With a breath doorway the same session would score"))
+        XCTAssertTrue(card.contains("At 10 min the same session would score"))
         // The table line carries the same points, and the brief carries the card.
         XCTAssertTrue(OttoBrief.line(r, focus: true, now: now).contains("heart 0 of 45, stillness 13 of 30"))
         XCTAssertTrue(OttoBrief.instructions(sessions: [r], focus: r, now: now).contains("SCORE CARD"))

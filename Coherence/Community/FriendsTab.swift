@@ -365,7 +365,7 @@ struct InviteRewardSheet: View {
             if !store.entitlements.paid {
                 HStack(spacing: 8) {
                     Image(systemName: "person.2").foregroundStyle(AppColor.calmAccent)
-                    Text("\(news.remaining) sessions of evidence · starts with your next sit")
+                    Text("\(news.remaining) sessions of evidence · starts with your next session")
                         .font(AppFont.caption.weight(.semibold))
                         .foregroundStyle(AppColor.calmAccent)
                 }
@@ -587,7 +587,7 @@ struct PostCard: View {
             } label: {
                 HStack(spacing: 5) {
                     Text("🙏").font(.system(size: 17)).grayscale(mine ? 0 : 1).opacity(mine ? 1 : 0.7)
-                    Text("Nice sit")
+                    Text("Nice session")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
                         .foregroundStyle(mine ? AppColor.textOnAccent : AppColor.textPrimary)
                 }
