@@ -69,21 +69,24 @@ struct ScoreRing: View {
 
 /// THE session card, identical on Home and Profile.
 ///
-/// It was a list row until 2026-09-19 (Aziz: "the recent meditations tab just
-/// does not look that great, use inspiration from someone else"): a small
-/// ring, a title, a run-on subtitle, a chevron. That is the generic iOS list,
-/// and it was the most app-shaped thing left in the product.
+/// **Every entry has a picture** (Aziz, 2026-09-19, picking option C out of
+/// `mockups/recent-v1.html`): the selfie taken after the sit if there is one,
+/// and Otto if there is not. That is Letterboxd's diary, where every entry
+/// gets a poster, and it is what turns a log into something worth scrolling.
 ///
-/// **This is Strava's activity card**, and the reason that shape works is not
-/// that it is prettier. A list of sessions exists to be COMPARED: you look at
-/// it to find out whether this week went better than last. Strava puts
-/// Distance, Pace and Time in the same three places on every single card, so
-/// the comparison is made by looking down a column instead of by reading two
-/// sentences. Ours are Heart settled, Still and Breath.
+/// The aligned columns from Strava's activity card stay, inside it. A list of
+/// sessions exists to be COMPARED, so Heart, Still and Breath sit in the same
+/// three places on every card and a signal that was not read is a dash rather
+/// than a missing column. Picture on the left, facts on the right, and the
+/// columns still line up down the list because the panel is a fixed width.
 ///
-/// A signal that was not read is a dash in its column, never a missing
-/// column. A gap would make two sessions stop lining up, which is the one
-/// thing this layout is for.
+/// The worry when this was drawn was three identical Ottos down one screen.
+/// Two things answer it. His pose follows the TIME somebody sat, so an early
+/// riser and a night sitter get different cards, and it varies for anyone
+/// whose life is not identical every day. And Friends is on in Release as of
+/// the social-1.1 merge, so most cards will carry a real face before long.
+/// The pose deliberately does NOT follow the score: a mascot pulling a
+/// disappointed face at a bad sit is the app judging somebody for showing up.
 struct EvidenceRow: View {
     let session: Session
     let score: Double?
@@ -91,61 +94,103 @@ struct EvidenceRow: View {
     /// them apart so it can put each one in its own place.
     var stats: MeditationStats? = nil
     var rating: Int? = nil
-    /// The photo taken after the sit, when there is one (mockup
-    /// `save-session-v7.html`).
+    /// The selfie taken after the sit. When it is there it takes the panel.
     var thumbnail: UIImage? = nil
 
+    private var panelWidth: CGFloat { 98 }
+
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: 13) {
-                ScoreBubble(score: score)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(SessionListSupport.rowTitle(session))
-                        .font(AppFont.callout.weight(.bold))
-                        .foregroundStyle(AppColor.textPrimary)
-                        .multilineTextAlignment(.leading)
-                    Text(SessionListSupport.duration(session.durationSec))
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                Spacer(minLength: 0)
-                if let rating { RatingChip(rating: rating) }
-                if let thumbnail {
-                    Color.clear
-                        .frame(width: 38, height: 48)
-                        .overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
-                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
-                }
-            }
-            Rectangle().fill(AppColor.hairline)
-                .frame(height: 1)
-                .padding(.top, 14)
-            HStack(spacing: 0) {
-                ForEach(SessionListSupport.columns(stats), id: \.label) { column in
-                    VStack(spacing: 1) {
-                        Text(column.value)
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(column.value == "—" ? AppColor.textSecondary
-                                                                 : AppColor.calmAccent)
-                            .monospacedDigit()
-                        Text(column.label)
+        HStack(spacing: 0) {
+            picture
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(SessionListSupport.rowTitle(session))
+                            .font(AppFont.callout.weight(.bold))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .multilineTextAlignment(.leading)
+                            .lineLimit(2)
+                        Text(SessionListSupport.duration(session.durationSec))
                             .font(AppFont.caption)
                             .foregroundStyle(AppColor.textSecondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.8)
                     }
-                    .frame(maxWidth: .infinity)
+                    Spacer(minLength: 0)
+                    if let rating { RatingChip(rating: rating) }
+                }
+                Rectangle().fill(AppColor.hairline)
+                    .frame(height: 1)
+                    .padding(.vertical, 11)
+                HStack(spacing: 0) {
+                    ForEach(SessionListSupport.columns(stats), id: \.label) { column in
+                        VStack(spacing: 1) {
+                            Text(column.value)
+                                .font(.system(size: 15.5, weight: .bold, design: .rounded))
+                                .foregroundStyle(column.value == "—" ? AppColor.textSecondary
+                                                                     : AppColor.calmAccent)
+                                .monospacedDigit()
+                            Text(column.label)
+                                .font(AppFont.caption)
+                                .foregroundStyle(AppColor.textSecondary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.75)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
                 }
             }
-            .padding(.top, 11)
+            .padding(14)
         }
-        .padding(16)
         .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
-                .fill(AppColor.backgroundSecondary)
-                .shadow(color: AppColor.hairline, radius: 0, y: 2)
-        )
+        .background(AppColor.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+        .shadow(color: AppColor.hairline, radius: 0, y: 2)
+    }
+
+    /// The panel. A photo fills it; Otto sits in it on a wash of the sky.
+    private var picture: some View {
+        ZStack {
+            if let thumbnail {
+                Color.clear.overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
+            } else {
+                AppColor.sky
+                // He sits above the score badge rather than behind it: at the
+                // first size his crossed legs ran straight through the number.
+                OttoMark(size: panelWidth * 0.72, pose: pose)
+                    .padding(.bottom, 22)
+            }
+            // The score rides on the picture so the one gold object per card
+            // is also the first thing the eye lands on.
+            VStack {
+                Spacer()
+                HStack {
+                    Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
+                        .font(.system(size: 13.5, weight: .bold, design: .rounded))
+                        .foregroundStyle(score == nil ? AppColor.textSecondary
+                                                      : AppColor.textOnAccent)
+                        .monospacedDigit()
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(score == nil ? AppColor.trace
+                                                                : AppColor.accentGold))
+                    Spacer(minLength: 0)
+                }
+            }
+            .padding(7)
+        }
+        .frame(width: panelWidth)
+        .frame(maxHeight: .infinity)
+        .clipped()
+    }
+
+    /// Otto follows the clock, not the score. Somebody who sits at dawn and
+    /// somebody who sits at midnight get different cards, which is the variety
+    /// this panel needs, and neither of them is being told how they did.
+    private var pose: OttoPose {
+        switch Calendar.current.component(.hour, from: session.startedAt) {
+        case ..<11: return .awake
+        case 11..<18: return .meditating
+        default: return .resting
+        }
     }
 }
 
