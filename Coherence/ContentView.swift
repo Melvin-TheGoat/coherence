@@ -464,29 +464,31 @@ struct ContentView: View {
 
     private var calendarCard: some View {
         let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
-        let today = Date()
         let byDay = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).byDay : [:]
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 14) {
             HStack {
-                SectionHeader(title: today.formatted(.dateTime.month(.wide)))
+                SectionHeader(title: "This week")
                 Spacer()
-                Text(practicedThisMonth(practiced) == 1
-                     ? "1 day practiced"
-                     : "\(practicedThisMonth(practiced)) days practiced")
-                    .font(AppFont.caption)
+                Text("\(practicedThisWeek(practiced)) of 7")
+                    .font(AppFont.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary)
+                    .monospacedDigit()
             }
-            MonthCalendar(monthAnchor: today, practiced: practiced, photos: byDay) { day in
+            WeekStrip(practiced: practiced, photos: byDay) { day in
                 profileDay = day
                 tab = .profile
             }
         }
-        .card(padding: 14)
+        .card(padding: 18)
     }
 
-    private func practicedThisMonth(_ practiced: Set<Date>) -> Int {
+    /// Days sat in the last seven, which is the window the strip draws. Not
+    /// the calendar week, for the reason `WeekStrip` gives.
+    private func practicedThisWeek(_ practiced: Set<Date>) -> Int {
         let cal = Calendar.current
-        return practiced.filter { cal.isDate($0, equalTo: Date(), toGranularity: .month) }.count
+        let today = cal.startOfDay(for: Date())
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0 - 6, to: today) }
+            .filter { practiced.contains($0) }.count
     }
 
     // MARK: - The proof

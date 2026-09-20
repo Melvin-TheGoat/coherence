@@ -355,3 +355,89 @@ enum SessionListSupport {
         sec >= 60 ? "\(sec / 60) min" : "\(sec)s"
     }
 }
+
+// MARK: - The week
+
+/// Seven days ending today, as bubbles.
+///
+/// Home used to carry a whole month (2026-09-19, Aziz: "I think the calendar
+/// should be a weekly calendar"). A month is a grid of thirty-five small
+/// numbers, and a grid is a spreadsheet however round its corners are: it was
+/// the largest object on Home and the least like the rest of the app.
+///
+/// **Seven days ending TODAY, not the calendar week.** A Sunday-to-Saturday
+/// week shows the days that have not happened yet, and on a habit app a row of
+/// empty circles for Thursday, Friday and Saturday reads as three days you
+/// have already failed. Rolling means today is always the last bubble, the
+/// streak is the run of filled ones leading up to it, and nothing on the strip
+/// is a promise you have not had the chance to keep.
+///
+/// The month has not gone anywhere. It lives on Profile, which is where you go
+/// when you actually want to look back.
+struct WeekStrip: View {
+    let practiced: Set<Date>
+    /// Start-of-day → that day's photo, when Friends is on. A day with one
+    /// shows it inside its bubble.
+    var photos: [Date: UIImage] = [:]
+    var onDayTap: ((Date) -> Void)? = nil
+
+    private let calendar = Calendar.current
+
+    var body: some View {
+        let today = calendar.startOfDay(for: Date())
+        let days = (0..<7).compactMap {
+            calendar.date(byAdding: .day, value: $0 - 6, to: today)
+        }
+        HStack(spacing: 0) {
+            ForEach(days, id: \.self) { day in
+                bubble(day, isToday: day == today)
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture { if practiced.contains(day) { onDayTap?(day) } }
+            }
+        }
+    }
+
+    private func bubble(_ day: Date, isToday: Bool) -> some View {
+        let done = practiced.contains(day)
+        let photo = photos[day]
+        return VStack(spacing: 8) {
+            Text(letter(day))
+                .font(.system(size: 11.5, weight: .bold, design: .rounded))
+                .foregroundStyle(isToday ? AppColor.textPrimary : AppColor.textSecondary)
+            ZStack {
+                if let photo {
+                    Circle()
+                        .fill(AppColor.backgroundPrimary)
+                        .overlay(Image(uiImage: photo).resizable().scaledToFill())
+                        .clipShape(Circle())
+                } else if done {
+                    Circle().fill(AppColor.accentGold)
+                } else {
+                    // An empty day is a hollow of the paper, not a grey disc.
+                    // A filled grey circle beside a filled gold one reads as a
+                    // second state that means something; a hollow reads as
+                    // nothing happened, which is what it is.
+                    Circle().fill(AppColor.backgroundPrimary)
+                }
+                if isToday && !done {
+                    Circle().stroke(AppColor.calmAccent, lineWidth: 2)
+                }
+                if done && photo == nil {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .black))
+                        .foregroundStyle(AppColor.textOnAccent)
+                }
+            }
+            .frame(width: 38, height: 38)
+        }
+    }
+
+    /// One letter, and the day's own initial rather than a fixed S M T W T F S,
+    /// because the strip rolls: the leftmost bubble is a different weekday
+    /// every day.
+    private func letter(_ day: Date) -> String {
+        let i = calendar.component(.weekday, from: day) - 1
+        return calendar.veryShortWeekdaySymbols[i]
+    }
+}
