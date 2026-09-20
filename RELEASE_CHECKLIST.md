@@ -150,6 +150,23 @@ on it.
    username, add each other, post a session, see it appear, report and block.
    Fifteen minutes, and it is the only thing that proves the above.
 
+## 1.1 RESCORES EVERY EXISTING USER'S HISTORY. SAY SO.
+
+1.0.1 shipped score v5.2 (stillness floored). 1.1 carries v5.3 (stillness
+cubed) and migration `scoreBackfillDone.v8`, which rescores all history on
+first launch. Measured on the real engine for a 15 minute sit whose heart
+settled 8 beats: stillness 0.84 goes 61 to 76, 0.90 goes 75 to 82, 0.94 goes
+84 to 86, 0.98 goes 93 to 90. So most people's old sessions JUMP several
+points the moment they update.
+
+Melvin hit this on the first TestFlight install and read it as his history
+being overwritten with "random shit" (2026-09-19). If a founder reads it
+that way, a stranger will file a one-star review.
+
+- [ ] **What's New names it**, in one line: the score's stillness curve
+  changed, past sessions were rescored on the same scale so the history
+  graph still compares like with like, and no measurement changed.
+
 ## ALWAYS: every submission
 
 - [ ] Version number bumped (`MARKETING_VERSION` in `project.yml`) and the

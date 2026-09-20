@@ -4,6 +4,19 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## "It overrode my history" was the v5.3 rescore (2026-09-19): NOT A BUG
+
+Melvin's first TestFlight launch moved a sit from 85 to 92. Diagnosed, not
+guessed: his App Store 1.0.1 was score v5.2 (floored stillness); 1.1 is
+v5.3 (cubed) and runs `scoreBackfillDone.v8` on first launch. The migration
+writes `overallScore`, the three doorway fields and `algorithmVersion` and
+touches no measurement, and every `DemoData.seed` call sits inside
+`#if DEBUG`, so a Release build cannot have invented sessions. Verified
+against the real engine: the cube lifts a typical settled sit by +2 to +17.
+
+Consequence for the release, now on RELEASE_CHECKLIST.md: **every existing
+user's history jumps when 1.1 lands**, so What's New has to say so.
+
 ## Friends "not working" on the beta, and how it actually gets tested (2026-09-19)
 
 The beta (`.dev` bundle) is pinned to `iCloud.com.lockout.meditate808.dev`,
