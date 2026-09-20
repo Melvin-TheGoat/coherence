@@ -323,10 +323,13 @@ struct MonthCalendar: View {
                 .font(.system(size: 13,
                               weight: done || isToday || isSelected ? .bold : .regular,
                               design: .rounded))
-                .foregroundStyle(dayInk(done: done, inMonth: inMonth, photo: photo != nil))
+                .foregroundStyle(dayInk(done: done && inMonth, inMonth: inMonth, photo: photo != nil))
                 .frame(width: 30, height: 30)
                 .background {
-                    if done && photo == nil {
+                    // In-month only. A practised day from the previous month
+                    // was drawing a full amber chip in the top-left corner,
+                    // which reads as part of the month you are looking at.
+                    if done && photo == nil && inMonth {
                         Circle().fill(AppColor.accentGold)
                     }
                 }
@@ -419,9 +422,14 @@ enum SessionListSupport {
     /// order. A signal that was not read is a dash, never an absent column:
     /// see `EvidenceRow` for why the alignment is the whole point.
     static func columns(_ stats: MeditationStats?) -> [(value: String, label: String)] {
-        let heart: String = {
-            guard let d = stats?.hrDecline, abs(d) >= 1 else { return "—" }
-            return String(format: "%+.0f", d)
+        // The LABEL carries the direction, never a minus sign. A card that
+        // says "-12" under the words "Heart settled" is contradicting itself,
+        // and it takes a reader who already knows which way the sign points to
+        // notice. Seen on a real card, 2026-09-19.
+        let heart: (String, String) = {
+            guard let d = stats?.hrDecline, abs(d) >= 1 else { return ("—", "Heart settled") }
+            return d > 0 ? (String(format: "%.0f", d), "Heart settled")
+                         : (String(format: "%.0f", -d), "Heart rose")
         }()
         let still: String = {
             guard let s = stats?.stillnessScore else { return "—" }
@@ -431,7 +439,7 @@ enum SessionListSupport {
             guard let r = stats?.meanBreathingRate else { return "—" }
             return String(format: "%.1f", r)
         }()
-        return [(heart, "Heart settled"), (still, "Still"), (breath, "Breath")]
+        return [(heart.0, heart.1), (still, "Still"), (breath, "Breath")]
     }
 
     /// One line under a session row: "10 min · heart settled 11 · breath 5.8".

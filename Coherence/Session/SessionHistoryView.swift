@@ -33,24 +33,39 @@ struct ProfileTab: View {
     let openSettings: () -> Void
     /// A log row awaiting the delete confirmation.
     @State private var pendingDelete: UUID?
+    /// Which month the calendar is showing. Follows a day arriving from Home
+    /// so tapping the 3rd from the week strip cannot land on an empty month.
+    @State private var monthAnchor = Date()
 
     private let calendar = Calendar.current
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
+                VStack(alignment: .leading, spacing: 0) {
                     identity
-                    if FeatureFlags.friends { profileActions }
-                    statsRow
-                    awardsSection
-                    logSection
+                    VStack(alignment: .leading, spacing: 14) {
+                        statsRow
+                        monthCard
+                        awardsSection
+                        logSection
+                    }
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, 16)
+                    .padding(.bottom, 8)
                 }
-                .padding(AppMetrics.screenPadding)
             }
+            .scrollIndicators(.hidden)
             .screenBackground()
-            .navigationTitle("Profile")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            // The bar takes the sky's colour, otherwise there is a pale strip
+            // above the scene with the gear floating in it and the gradient
+            // starts a centimetre down the screen.
+            .toolbarBackground(AppColor.sky, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .onAppear { if let day = selectedDay { monthAnchor = day } }
+            .onChange(of: selectedDay) { _, day in if let day { monthAnchor = day } }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openSettings) {
@@ -71,6 +86,13 @@ struct ProfileTab: View {
         users.first { $0.appleUserID != "" && $0.deletedAt == nil } ?? users.first
     }
 
+    /// You, under the same sky Otto sits under on Home.
+    ///
+    /// It was a 64pt avatar on the left with three lines stacked beside it,
+    /// which is the shape of a settings row, and a settings row is not a
+    /// portrait. Centred at 86 with a white ring, everything that identifies
+    /// you in one column beneath it, on the gradient Home uses, so the two
+    /// tabs are visibly one app.
     private var identity: some View {
         let user = currentUser
         let friendsProfile = FeatureFlags.friends ? community.profile : nil
@@ -78,33 +100,44 @@ struct ProfileTab: View {
         let name = localName ?? friendsProfile.flatMap { $0.displayName.isEmpty ? nil : $0.displayName }
         // The reserved handle wins in Friends builds; the local one was cosmetic.
         let handle = Username.display(friendsProfile?.username ?? user?.username)
-        return HStack(spacing: 14) {
-            PersonAvatar(name: name, size: 64,
+        return VStack(spacing: 3) {
+            PersonAvatar(name: name, size: 86,
                          photoURL: FeatureFlags.friends ? community.profile?.avatarURL : nil)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(name ?? "Your practice")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                if let handle {
-                    Text(handle)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                if let since = user?.createdAt {
-                    Text("Practicing since \(since.formatted(.dateTime.month(.abbreviated).year()))")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                if FeatureFlags.friends, community.phase == .ready {
-                    FollowLine(followers: community.follow.followers,
-                               following: community.follow.following,
-                               personID: community.myID)
-                        .padding(.top, 2)
-                }
+                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 5))
+                .padding(.bottom, 9)
+            Text(name ?? "Your practice")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            if let handle {
+                Text(handle)
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textSecondary)
             }
-            Spacer(minLength: 0)
+            if let since = user?.createdAt {
+                Text("Practicing since \(since.formatted(.dateTime.month(.abbreviated).year()))")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.top, 4)
+            }
+            if FeatureFlags.friends, community.phase == .ready {
+                FollowLine(followers: community.follow.followers,
+                           following: community.follow.following,
+                           personID: community.myID)
+                    .padding(.top, 7)
+            }
+            if FeatureFlags.friends { profileActions.padding(.top, 13) }
         }
-        .padding(.top, 4)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 2)
+        .padding(.bottom, 24)
+        .background {
+            LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
+                           startPoint: .top, endPoint: .bottom)
+                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 38,
+                                                  bottomTrailingRadius: 38,
+                                                  style: .continuous))
+        }
     }
 
     private func initials(_ name: String?) -> String {
@@ -173,10 +206,13 @@ struct ProfileTab: View {
         let items = awardProgress
         let earned = items.filter(\.isEarned)
 
-        return VStack(alignment: .leading, spacing: 10) {
+        return VStack(alignment: .leading, spacing: 13) {
             HStack {
-                SectionHeader(title: "Awards · \(earned.count) of \(items.count)")
+                SectionHeader(title: "Awards")
                 Spacer()
+                Text("\(earned.count) of \(items.count)")
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
                 NavigationLink {
                     AwardsView(earned: items)
                 } label: {
@@ -191,10 +227,10 @@ struct ProfileTab: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(items.prefix(8)) { item in
-                        VStack(spacing: 6) {
-                            AwardBadge(award: item.award, earned: item.isEarned, size: 54)
+                        VStack(spacing: 7) {
+                            AwardBadge(award: item.award, earned: item.isEarned, size: 62)
                             Text(item.award.title)
-                                .font(.system(size: 9.5, weight: .medium))
+                                .font(.system(size: 10.5, weight: .semibold, design: .rounded))
                                 .foregroundStyle(item.isEarned
                                                  ? AppColor.textPrimary : AppColor.textSecondary)
                                 .multilineTextAlignment(.center)
@@ -214,26 +250,50 @@ struct ProfileTab: View {
             // unearned, and "See all" carries the progress for anyone who
             // wants it.
         }
+        // On a card like everything else on this screen. It was loose on the
+        // paper, which made the only row of colour on Profile read as
+        // decoration sitting behind the content rather than part of it.
+        .card(padding: 18)
     }
 
     // MARK: - Stats
 
+    /// Four numbers, one card.
+    ///
+    /// They were four separate rounded cards with gaps between them, which is
+    /// four objects saying one thing. Hairline dividers instead, and the
+    /// colours follow the app's grammar rather than all being gold: **blush is
+    /// the streak, amber is what you scored and did.**
     private var statsRow: some View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let hours = Double(sessions.reduce(0) { $0 + $1.durationSec }) / 3600
-        return HStack(spacing: 8) {
-            stat("\(streak.current)", "streak")
-            stat("\(streak.longest)", "longest")
-            stat("\(sessions.count)", "sessions")
-            stat(hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours), "practiced")
+        return HStack(spacing: 0) {
+            stat("\(streak.current)", "streak", AppColor.streakBlushText)
+            divider
+            stat("\(streak.longest)", "longest", AppColor.streakBlushText)
+            divider
+            stat("\(sessions.count)", "sits", AppColor.accentGoldText)
+            divider
+            stat(hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours),
+                 "practiced", AppColor.accentGoldText)
         }
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
+                .fill(AppColor.backgroundSecondary)
+                .shadow(color: AppColor.hairline, radius: 0, y: 2)
+        )
     }
 
-    private func stat(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 2) {
+    private var divider: some View {
+        Rectangle().fill(AppColor.hairline).frame(width: 1, height: 30)
+    }
+
+    private func stat(_ value: String, _ label: String, _ tint: Color) -> some View {
+        VStack(spacing: 1) {
             Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.accentGoldText)
+                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
@@ -242,8 +302,58 @@ struct ProfileTab: View {
                 .foregroundStyle(AppColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
+    }
+
+    // MARK: - The month
+
+    /// The month, with arrows to walk back through it.
+    ///
+    /// **This is a fix, and the mistake is worth recording.** When Home took
+    /// the week strip the commit said the month "lives on Profile". It did
+    /// not: Profile never had one, so `MonthCalendar` was left referenced by
+    /// nothing and a person lost every view of more than seven days. It is
+    /// also, deliberately, the month picker that was cut in September for
+    /// appearing twice in the app. It appears once now, so the reason for
+    /// cutting it is gone.
+    private var monthCard: some View {
+        let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
+        let byDay = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).byDay : [:]
+        let inMonth = practiced.filter {
+            Calendar.current.isDate($0, equalTo: monthAnchor, toGranularity: .month)
+        }.count
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                monthStep(-1, "chevron.left")
+                Text(monthAnchor.formatted(.dateTime.month(.wide).year()))
+                    .font(AppFont.callout.weight(.bold))
+                    .foregroundStyle(AppColor.textPrimary)
+                monthStep(1, "chevron.right")
+                Spacer(minLength: 0)
+                Text(inMonth == 1 ? "1 day" : "\(inMonth) days")
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            MonthCalendar(monthAnchor: monthAnchor, practiced: practiced, photos: byDay,
+                          selectedDay: selectedDay) { day in
+                selectedDay = selectedDay == day ? nil : day
+            }
+        }
+        .card(padding: 18)
+    }
+
+    private func monthStep(_ delta: Int, _ icon: String) -> some View {
+        Button {
+            if let next = Calendar.current.date(byAdding: .month, value: delta, to: monthAnchor) {
+                monthAnchor = next
+            }
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(AppColor.backgroundPrimary))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Log
