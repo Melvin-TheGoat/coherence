@@ -74,4 +74,9 @@ enum AppColor {
     /// it, and it is the pattern under Finch, which is the only app in this
     /// category to have made a mascot work at scale.
     static let sky = Color("Sky")
+
+    /// An empty slot: the week strip's unsat days, and any place something is
+    /// drawn before it has happened. Deep enough to be a shape on a WHITE card
+    /// rather than only on the paper, which is the mistake it was born from.
+    static let trace = Color("Trace")
 }

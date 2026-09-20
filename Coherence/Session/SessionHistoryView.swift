@@ -278,15 +278,14 @@ struct ProfileTab: View {
                     .padding(.vertical, 12)
             } else {
                 let thumbs = photoThumbs
-                VStack(spacing: 0) {
-                    ForEach(Array(visible.enumerated()), id: \.element.id) { i, session in
-                        if i > 0 { Divider().overlay(AppColor.textSecondary.opacity(0.12)) }
+                VStack(spacing: 12) {
+                    ForEach(Array(visible.enumerated()), id: \.element.id) { _, session in
                         NavigationLink {
                             SessionResultsView(sessionID: session.id)
                         } label: {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
-                                        subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
+                                        stats: stats[session.id],
                                         rating: ratings[session.id],
                                         thumbnail: thumbs[session.id])
                         }

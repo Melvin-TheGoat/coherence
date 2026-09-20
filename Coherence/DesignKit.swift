@@ -67,42 +67,108 @@ struct ScoreRing: View {
 
 // MARK: - Evidence row
 
-/// THE session row — the same everywhere a session is listed (home proof list,
-/// Journey log). Ring + when/what + a one-line metric reading.
+/// THE session card, identical on Home and Profile.
+///
+/// It was a list row until 2026-09-19 (Aziz: "the recent meditations tab just
+/// does not look that great, use inspiration from someone else"): a small
+/// ring, a title, a run-on subtitle, a chevron. That is the generic iOS list,
+/// and it was the most app-shaped thing left in the product.
+///
+/// **This is Strava's activity card**, and the reason that shape works is not
+/// that it is prettier. A list of sessions exists to be COMPARED: you look at
+/// it to find out whether this week went better than last. Strava puts
+/// Distance, Pace and Time in the same three places on every single card, so
+/// the comparison is made by looking down a column instead of by reading two
+/// sentences. Ours are Heart settled, Still and Breath.
+///
+/// A signal that was not read is a dash in its column, never a missing
+/// column. A gap would make two sessions stop lining up, which is the one
+/// thing this layout is for.
 struct EvidenceRow: View {
     let session: Session
     let score: Double?
-    var subtitle: String
+    /// The measurements themselves, not a pre-built sentence. The card needs
+    /// them apart so it can put each one in its own place.
+    var stats: MeditationStats? = nil
     var rating: Int? = nil
     /// The photo taken after the sit, when there is one (mockup
-    /// `save-session-v7.html`). Portrait, small, before the chevron; a row
-    /// without one is exactly the row it always was.
+    /// `save-session-v7.html`).
     var thumbnail: UIImage? = nil
 
     var body: some View {
-        HStack(spacing: 12) {
-            ScoreRing(score: score)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(SessionListSupport.rowTitle(session))
-                    .font(AppFont.callout.weight(.bold))
-                    .foregroundStyle(AppColor.textPrimary)
-                Text(subtitle)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
+        VStack(spacing: 0) {
+            HStack(spacing: 13) {
+                ScoreBubble(score: score)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(SessionListSupport.rowTitle(session))
+                        .font(AppFont.callout.weight(.bold))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.leading)
+                    Text(SessionListSupport.duration(session.durationSec))
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer(minLength: 0)
+                if let rating { RatingChip(rating: rating) }
+                if let thumbnail {
+                    Color.clear
+                        .frame(width: 38, height: 48)
+                        .overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
+                        .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                }
             }
-            Spacer(minLength: 0)
-            if let rating { RatingChip(rating: rating) }
-            if let thumbnail {
-                Color.clear
-                    .frame(width: 32, height: 42)
-                    .overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
-                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            Rectangle().fill(AppColor.hairline)
+                .frame(height: 1)
+                .padding(.top, 14)
+            HStack(spacing: 0) {
+                ForEach(SessionListSupport.columns(stats), id: \.label) { column in
+                    VStack(spacing: 1) {
+                        Text(column.value)
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(column.value == "—" ? AppColor.textSecondary
+                                                                 : AppColor.calmAccent)
+                            .monospacedDigit()
+                        Text(column.label)
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
-            Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundStyle(AppColor.accentGoldText)
+            .padding(.top, 11)
         }
-        .padding(.vertical, 13)
+        .padding(16)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
+                .fill(AppColor.backgroundSecondary)
+                .shadow(color: AppColor.hairline, radius: 0, y: 2)
+        )
+    }
+}
+
+/// The score, as the filled disc at the head of a card.
+///
+/// A ring was right when the score sat in a row of other thin things. Beside
+/// an illustrated sloth a 5pt stroke is the odd one out, and the number inside
+/// it was 12pt and unreadable at arm's length. A filled disc is the same
+/// object as a sat day in the week strip, which is the point: one shape means
+/// "this happened and it scored something".
+struct ScoreBubble: View {
+    let score: Double?
+    var size: CGFloat = 52
+
+    var body: some View {
+        ZStack {
+            Circle().fill(score == nil ? AppColor.trace : AppColor.accentGold)
+            Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
+                .font(.system(size: size * 0.37, weight: .bold, design: .rounded))
+                .foregroundStyle(score == nil ? AppColor.textSecondary : AppColor.textOnAccent)
+                .monospacedDigit()
+        }
+        .frame(width: size, height: size)
     }
 }
 
@@ -304,6 +370,25 @@ enum SessionListSupport {
         return what.map { "\(when) · \($0)" } ?? when
     }
 
+    /// The three columns on a session card, always three and always in this
+    /// order. A signal that was not read is a dash, never an absent column:
+    /// see `EvidenceRow` for why the alignment is the whole point.
+    static func columns(_ stats: MeditationStats?) -> [(value: String, label: String)] {
+        let heart: String = {
+            guard let d = stats?.hrDecline, abs(d) >= 1 else { return "—" }
+            return String(format: "%+.0f", d)
+        }()
+        let still: String = {
+            guard let s = stats?.stillnessScore else { return "—" }
+            return String(format: "%.0f%%", s * 100)
+        }()
+        let breath: String = {
+            guard let r = stats?.meanBreathingRate else { return "—" }
+            return String(format: "%.1f", r)
+        }()
+        return [(heart, "Heart settled"), (still, "Still"), (breath, "Breath")]
+    }
+
     /// One line under a session row: "10 min · heart settled 11 · breath 5.8".
     ///
     /// It read "HR −11" until 2026-09-19, which is a notation, not a sentence.
@@ -414,22 +499,27 @@ struct WeekStrip: View {
                 } else if done {
                     Circle().fill(AppColor.accentGold)
                 } else {
-                    // An empty day is a hollow of the paper, not a grey disc.
-                    // A filled grey circle beside a filled gold one reads as a
-                    // second state that means something; a hollow reads as
-                    // nothing happened, which is what it is.
-                    Circle().fill(AppColor.backgroundPrimary)
+                    // An empty day is a shallow well, and it has to be visible
+                    // (Aziz, 2026-09-19: "we are gonna need more contrast in
+                    // the this week circles"). The first cut filled it with
+                    // the PAPER colour, reasoning that a hollow reads as
+                    // nothing happened. True on the paper and wrong here: the
+                    // strip sits on a white card, so a paper-coloured circle
+                    // on white is no circle at all and the row read as seven
+                    // floating letters. `trace` is a warm tone deep enough to
+                    // be a shape against both grounds.
+                    Circle().fill(AppColor.trace)
                 }
                 if isToday && !done {
                     Circle().stroke(AppColor.calmAccent, lineWidth: 2)
                 }
                 if done && photo == nil {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 15, weight: .black))
+                        .font(.system(size: 16, weight: .black))
                         .foregroundStyle(AppColor.textOnAccent)
                 }
             }
-            .frame(width: 38, height: 38)
+            .frame(width: 40, height: 40)
         }
     }
 

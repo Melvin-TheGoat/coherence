@@ -519,13 +519,12 @@ struct ContentView: View {
                 let stats = SessionListSupport.statsMap(allStats)
                 let ratings = SessionListSupport.ratingMap(reflections)
                 let thumbs = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
-                VStack(spacing: 0) {
-                    ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { i, session in
-                        if i > 0 { Divider().overlay(AppColor.textSecondary.opacity(0.12)) }
+                VStack(spacing: 12) {
+                    ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { _, session in
                         Button { sheet = .results(session.id) } label: {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
-                                        subtitle: SessionListSupport.metricLine(session, stats: stats[session.id]),
+                                        stats: stats[session.id],
                                         rating: ratings[session.id],
                                         thumbnail: thumbs[session.id])
                         }
