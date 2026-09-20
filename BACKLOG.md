@@ -58,7 +58,15 @@ internal testers Melvin + Aziz, run the round trip in CLOUDKIT_SETUP.md.
 Walk RELEASE_CHECKLIST.md's ALWAYS list before the archive (it is the same
 archive that would go to review if the round trip passes).
 
-## Home v3 and Onboarding v3 mockups, Otto in a tree (Melvin, 2026-09-20): AWAITING A PICK
+## Home v3 and Onboarding v3 mockups, Otto in a tree (Melvin, 2026-09-20): HOME B BUILT, ONBOARDING AWAITING A PICK, RIVE CHOSEN
+
+Melvin, later that day: "Go with B for home, build it. And ok lets go with
+rive." Home B is on `friendly-ui` (Otto beside you with a rule-written
+speech bubble, tap to cycle, a 5 s breathing pulse). Rive waits on the
+desktop editor being installed and signed in on this Mac; then the rig
+(breathing, wave, talk), `RiveRuntime` in project.yml, and the pulse
+modifier swapped for a `RiveViewModel`. The haptic pattern rides the same
+state machine. The onboarding mockup still needs Melvin's yes.
 
 Melvin: Home's photo placement is weird; he wants Otto like Duolingo's owl,
 "hanging out on a tree and calmly talks to you"; and the onboarding rebuilt

@@ -1709,14 +1709,27 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
 - **Dark mode is gone on purpose** (Aziz, 2026-09-19, "One appearance"):
   the palette is sampled from Otto's cream art and a dark build needs a
   second Otto. `Preferences.theme` stays stored, unread.
-- **Mockups awaiting a pick:** `mockups/home-v3.html` (four placements for
-  Otto) and `mockups/onboarding-v3.html` (Headspace's nine screens, Otto's
-  face, "N of M" counter, breathing head top-left). Serve `mockups/` with
-  the launch config; data: URLs drop the images.
-- **Otto moves with Rive.** Researched and recorded in BACKLOG.md: state
-  machine driven from Swift, rigs the existing PNGs, Duolingo uses it,
-  $9/month to export, official MCP from the desktop editor. Fallback for
-  this week is a SwiftUI pulse plus CoreHaptics.
+- **Home is direction B, built (Melvin: "Go with B for home, build it").**
+  `mockups/home-v3.html` drew four placements; B is Duolingo's shape: Otto
+  (talking pose, 104pt, bleeding 22pt past the left gutter) sits beside a
+  speech bubble under the greeting, on the sky gradient with rounded bottom
+  corners, then the streak pill. `ottoScene(topInset:)` in ContentView;
+  `OttoBubble` and the `ottoBreathing()` scale pulse (5 s, anchored at the
+  feet) in OttoView. **The bubble's lines are rule-written from the streak,
+  practiced-today and rest-day state (`ottoLines`), never generated**, and
+  tapping Otto cycles them; the last line is always the breath-doorway tip.
+  A, C and D stay in the mockup. `mockups/onboarding-v3.html` (Headspace's
+  nine screens, Otto's face, "N of M" counter, breathing head top-left) is
+  still AWAITING MELVIN'S SIGN-OFF. Serve `mockups/` with the launch
+  config; data: URLs drop the images.
+- **Otto moves with Rive (Melvin: "ok lets go with rive").** Researched and
+  recorded in BACKLOG.md: state machine driven from Swift, rigs the existing
+  PNGs, Duolingo uses it, $9/month to export, official MCP from the desktop
+  editor. **Blocked on Melvin's side until the Rive desktop editor is
+  installed and signed in on this Mac** (the MCP is served by the editor
+  at 127.0.0.1:9791; `claude mcp add --transport http rive
+  http://127.0.0.1:9791/mcp`). Until then the `ottoBreathing()` pulse is
+  what ships; it is the one place to swap for a `RiveViewModel`.
 - **Uploading from this Mac works once the Apple ID is in Xcode.** The
   first "No Accounts" was timing, not a missing certificate;
   `-allowProvisioningUpdates` minted the distribution cert. **Never pipe

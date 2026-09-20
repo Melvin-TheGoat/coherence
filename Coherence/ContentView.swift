@@ -26,6 +26,8 @@ struct ContentView: View {
     @EnvironmentObject private var store: Store
 
     @State private var tab: MainTab = .home
+    /// Which of Otto's lines is showing on Home; a tap on him advances it.
+    @State private var ottoLineIndex = 0
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
     @State private var profileDay: Date?
@@ -319,9 +321,15 @@ struct ContentView: View {
     /// it stops being the greeting: a mark identifies a company and a face
     /// greets a person, and this is the screen somebody opens before they have
     /// woken up properly.
+    /// **Direction B, "beside you"** (Melvin, 2026-09-20: "Go with B for
+    /// home, build it"). Otto leans in from the left edge with one line in a
+    /// bubble, and the page is the cards. The Duolingo shape: the character
+    /// never takes the screen on Home, he stands in a corner and talks.
+    /// The earlier scene put him centred at 168pt under the greeting, which
+    /// pushed the week below the fold and read as a photo placed on a page.
+    ///
     /// `topInset` is the status bar's height, padded INSIDE this view so the
-    /// sky behind it covers that band too. Padding it from outside left the
-    /// band above the gradient, which is the bug this fixes.
+    /// sky behind it covers that band too.
     private func ottoScene(topInset: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(greeting)
@@ -330,33 +338,67 @@ struct ContentView: View {
             Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
-            OttoMark(size: 168, pose: .meditating)
-                .frame(maxWidth: .infinity)
-                .overlay(alignment: .bottom) {
-                    // What stops him floating. Fades at both ends so it reads
-                    // as ground rather than as a rule under a heading.
-                    LinearGradient(colors: [.clear, AppColor.textPrimary.opacity(0.10),
-                                            AppColor.textPrimary.opacity(0.10), .clear],
-                                   startPoint: .leading, endPoint: .trailing)
-                        .frame(height: 1)
-                        .padding(.horizontal, 26)
-                }
+            HStack(alignment: .bottom, spacing: 8) {
+                // He breathes at the Watch orb's pace and talks on a tap.
+                // Pulled 22pt past the leading edge so he is leaning in, not
+                // standing on a ledge.
+                OttoMark(size: 104, pose: .talking)
+                    .ottoBreathing()
+                    .padding(.leading, -22)
+                    .contentShape(Rectangle())
+                    .onTapGesture { ottoLineIndex += 1 }
+                    .accessibilityLabel("Otto")
+                    .accessibilityHint("Says something about today")
+                OttoBubble(text: ottoLines[ottoLineIndex % ottoLines.count])
+                    .padding(.bottom, 26)
+                    .animation(.easeOut(duration: 0.2), value: ottoLineIndex)
+                Spacer(minLength: 0)
+            }
+            .padding(.top, 10)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .padding(.top, 8 + topInset)
-        .padding(.bottom, 26)
+        .padding(.bottom, 22)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             // Under the status bar too: `homeTab` lets the scroll view ignore
-            // the top safe area and pads the scene by the inset (Melvin,
-            // 2026-09-20: "the top of the home page is cut off, the color
-            // suddenly cuts into a whiter color").
+            // the top safe area and pads the scene by the inset.
             LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
                            startPoint: .top, endPoint: .bottom)
                 .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 38,
                                                   bottomTrailingRadius: 38,
                                                   style: .continuous))
         }
+    }
+
+    /// What Otto says, written by rules from the same facts the pill and the
+    /// nudge read, never generated. The first line is the one that matters
+    /// today; a tap cycles through the rest, so he has more than one thing
+    /// to say without ever inventing a number.
+    private var ottoLines: [String] {
+        let cal = Calendar.current
+        let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
+        let practicedToday = sessions.contains { cal.isDateInToday($0.startedAt) }
+        var lines: [String] = []
+        if sessions.isEmpty {
+            lines.append("Your first session starts at the plus. I'll read it back to you after.")
+            lines.append("Put your Watch on, sit anyhow, breathe slow for a minute. That's the whole trick.")
+        } else if practicedToday {
+            lines.append(streak.current > 1 ? "Day \(streak.current). You already sat today, so today is done."
+                                             : "You sat today. That's the part most people skip.")
+            lines.append("Nothing more to do here. Come back tomorrow and we'll keep it going.")
+        } else if streak.restDayUsed {
+            lines.append("Yesterday was your rest day. Sit today and your \(streak.current)-day streak carries on.")
+        } else if streak.current > 1 {
+            lines.append("Day \(streak.current). Sit whenever you're ready, I'll be here.")
+            if streak.current == streak.longest, streak.current >= 3 {
+                lines.append("\(streak.current) in a row is your longest yet. No rush today either.")
+            }
+        } else {
+            lines.append("Whenever you're ready. A few slow breaths and a sit, that's all today asks.")
+        }
+        lines.append("Slow your breath for the first minute. That's the doorway the score looks for.")
+        return lines
     }
 
     /// The streak, as a capsule straddling the bottom edge of the scene.

@@ -503,3 +503,59 @@ struct OttoUnavailableView: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+
+// MARK: - How Otto moves on Home (direction B, 2026-09-20)
+
+/// The idle: a breath. Six a minute, the pace the Watch orb breathes at and
+/// the pace the score's doorway is built around, so the app breathes one way
+/// everywhere. Scaled from the feet, so he swells rather than floats.
+///
+/// This is the SwiftUI fallback that ships before the Rive rig (BACKLOG.md,
+/// "Otto animation, researched"): a pulse on the PNG. The wave and the talk
+/// wait for the rig; when it lands this modifier goes and `RiveViewModel`
+/// takes the same place with `breathing` on.
+struct OttoBreathing: ViewModifier {
+    @State private var swollen = false
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(swollen ? 1.035 : 1, anchor: .bottom)
+            .onAppear {
+                withAnimation(.easeInOut(duration: 5).repeatForever(autoreverses: true)) {
+                    swollen = true
+                }
+            }
+    }
+}
+
+extension View {
+    func ottoBreathing() -> some View { modifier(OttoBreathing()) }
+}
+
+/// One line from Otto, with the tail pointing at him on the left.
+struct OttoBubble: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(AppFont.callout)
+            .foregroundStyle(AppColor.textPrimary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 14).padding(.vertical, 10)
+            .background {
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(AppColor.backgroundSecondary)
+                    .shadow(color: AppColor.hairline, radius: 0, y: 3)
+            }
+            .overlay(alignment: .bottomLeading) {
+                // The tail: a small rotated square tucked under the corner
+                // nearest Otto's mouth.
+                Rectangle()
+                    .fill(AppColor.backgroundSecondary)
+                    .frame(width: 12, height: 12)
+                    .rotationEffect(.degrees(45))
+                    .offset(x: -4, y: -12)
+            }
+            .accessibilityLabel("Otto says: \(text)")
+    }
+}
