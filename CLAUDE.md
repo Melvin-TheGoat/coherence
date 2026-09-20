@@ -2150,6 +2150,47 @@ offers beside the two the app needs.
 why the original failure was invisible for a day. Anything that explains a
 silent fallback has to be legible without a debugger attached.
 
+### The wave is a separate arm layer, because bones cannot be weighted here
+
+**Melvin drew a bone chain in Rive and asked for the hand to wave. Bones
+are the right tool and they do not work through this MCP.** `bindBones`
+succeeds and `autoWeight` runs, and then `querySkin` shows **288 of 289
+vertices weighted 1.0 to the root bone** with the forearm and hand bones
+influencing nothing. Moving the root 200 units and re-weighting changes
+nothing, so it is not a placement mistake. Do not spend another afternoon
+on it: if a skinned limb is ever needed, the weights have to be painted in
+the editor by hand.
+
+**What ships instead: the arm is its own image, rotating about the elbow.**
+`tools/otto_cut_arm.py` splits `otto-wave.png` into `otto-wave-body.png`
+and `otto-wave-arm.png`. It cuts by SEVERING, not by a half plane: a half
+plane was tried first and takes the head with the arm, because the arm has
+body on one side and head on the other. So it erases a thin band along a
+line running from the gap between the hand and the cheek, down through the
+forearm, into the background below, then keeps the connected island that
+holds the hand. **The arm keeps a 26 pixel band past the cut and draws on
+top**, which is why the joint does not open when it turns, and why the
+swing has to stay under about ten degrees.
+
+The Wave timeline rotates that layer 0, -12, +10, -10, +8, -5, 0 over 72
+frames. Verified by capturing the artboard at both extremes before keying
+it, and then on the simulator.
+
+**TWO RIVE UNITS THAT COST A ROUND EACH.** An image's `originX` / `originY`
+are **PERCENTAGES, not fractions**: 50 is the centre, and passing 0.5 puts
+the origin in the top left corner, which moves the art rather than the
+pivot. And a traced mesh (`generateMesh` with `trace: true`) renders the
+image exploded and enormous; a plain subdivided rectangle (`trace: false`,
+`subdivisions: 4`) is correct and is all a deformation needs anyway.
+
+**What Melvin had done, and why none of it could work:** the pose had been
+moved into its own artboard and nested back in, so the bones and the image
+were in different artboards and bones only bend a mesh in their own. The
+old body node had been deleted with the Breathe keyframes pointing at it,
+and a second artboard had appeared, which silently breaks the export. All
+of that is rebuilt. A `.rev` backup of the state before the rebuild is in
+the session scratchpad.
+
 ### The rig as it now stands
 
 Artboard `Otto`, 400 by 520, transparent, the only artboard in the file.
