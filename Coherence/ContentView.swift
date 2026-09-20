@@ -270,19 +270,112 @@ struct ContentView: View {
     /// sessions say. Starting one is the plus on the bar.
     private var homeTab: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                streakBlock
+            VStack(alignment: .leading, spacing: 0) {
+                ottoScene
+                streakPill
                     .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
-                calendarCard
-                proofSection
-                #if DEBUG
-                debugButtons
-                #endif
+                VStack(alignment: .leading, spacing: 20) {
+                    if let nudge {
+                        Text(nudge)
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.calmAccent)
+                            .frame(maxWidth: .infinity, alignment: .center)
+                    }
+                    calendarCard
+                    proofSection
+                    #if DEBUG
+                    debugButtons
+                    #endif
+                }
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.top, 20)
+                .padding(.bottom, 8)
             }
-            .padding(AppMetrics.screenPadding)
-            .padding(.bottom, 8)
         }
+        .scrollIndicators(.hidden)
+    }
+
+    // MARK: - The scene
+
+    /// Otto, under a sky, above a horizon (2026-09-19, Aziz: Otto replaces the
+    /// flower and becomes the main thing about the app).
+    ///
+    /// The reference is Finch, the only app in this category to have made a
+    /// mascot work at scale, and the pattern under it is not "put a mascot on
+    /// the screen". **The mascot sits somewhere.** Finch's bird stands on
+    /// grass under a sky, and the interface floats around him. A character on
+    /// a flat card is a sticker; a character on a horizon is somebody's
+    /// morning. One gradient and one hairline buy the whole difference.
+    ///
+    /// The 808 mark is gone from here. It does not disappear from the product,
+    /// it stops being the greeting: a mark identifies a company and a face
+    /// greets a person, and this is the screen somebody opens before they have
+    /// woken up properly.
+    private var ottoScene: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(greeting)
+                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+            OttoMark(size: 168, pose: .meditating)
+                .frame(maxWidth: .infinity)
+                .overlay(alignment: .bottom) {
+                    // What stops him floating. Fades at both ends so it reads
+                    // as ground rather than as a rule under a heading.
+                    LinearGradient(colors: [.clear, AppColor.textPrimary.opacity(0.10),
+                                            AppColor.textPrimary.opacity(0.10), .clear],
+                                   startPoint: .leading, endPoint: .trailing)
+                        .frame(height: 1)
+                        .padding(.horizontal, 26)
+                }
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 8)
+        .padding(.bottom, 26)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background {
+            LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
+                           startPoint: .top, endPoint: .bottom)
+                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 38,
+                                                  bottomTrailingRadius: 38,
+                                                  style: .continuous))
+        }
+    }
+
+    /// The streak, as a capsule straddling the bottom edge of the scene.
+    ///
+    /// It used to be a 54pt number under a heading, which made it the loudest
+    /// thing on Home. It is not what the app is for. Sitting on the seam it
+    /// joins the scene to the content below it and gets to be small, and best
+    /// and total ride along behind a divider instead of stacking in a corner.
+    private var streakPill: some View {
+        let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
+        return HStack(spacing: 9) {
+            Text("\(streak.current)")
+                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.streakBlushText)
+                .monospacedDigit()
+            Text(streak.current == 1 ? "morning" : "mornings")
+                .font(AppFont.callout.weight(.bold))
+                .foregroundStyle(AppColor.streakBlushText)
+            Rectangle().fill(AppColor.hairline).frame(width: 1, height: 18)
+            Text("best \(streak.longest)  ·  \(sessions.count) sits")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .monospacedDigit()
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 11)
+        .background {
+            Capsule()
+                .fill(AppColor.backgroundSecondary)
+                .shadow(color: AppColor.hairline, radius: 0, y: 3)
+        }
+        .frame(maxWidth: .infinity)
+        .offset(y: -21)
+        .padding(.bottom, -21)
     }
 
     // MARK: - Awards
@@ -327,77 +420,15 @@ struct ContentView: View {
     }
 
     // MARK: - Header
+    //
+    // There isn't one any more. The greeting and the 808 mark used to stack
+    // above the streak; the greeting moved into the scene and the mark left
+    // Home altogether (2026-09-19). A mark identifies a company and a face
+    // greets a person, and this is the screen somebody opens before they are
+    // properly awake. `LogoMark` still signs the awards screen, onboarding and
+    // the share card, which is the job it is good at.
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            LogoMark()
-                .frame(width: 44, height: 44)
-            Text(greeting)
-                .font(AppFont.title)
-                .italic()
-                .foregroundStyle(AppColor.textPrimary)
-        }
-    }
-
-    // MARK: - Streak headline + proof curve
-
-    private var streakBlock: some View {
-        let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
-        let scores = sparkScores
-        return VStack(alignment: .leading, spacing: 4) {
-            // Otto sits on the streak, and the streak is blush (2026-09-19).
-            // Two things happen at once here. He gives the softest number on
-            // the screen somebody to belong to, which a bare "Day streak / 1"
-            // never had. And moving the streak off amber is what finally makes
-            // "one amber thing per section" hold: amber now means a score and
-            // nothing else, so the practised days in the calendar below are
-            // the only other amber on Home.
-            HStack(alignment: .center, spacing: 14) {
-                OttoMark(size: 62, pose: .meditating)
-                VStack(alignment: .leading, spacing: 0) {
-                    SectionHeader(title: "Day streak")
-                    Text("\(streak.current)")
-                        .font(.system(size: 54, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.streakBlushText)
-                        .monospacedDigit()
-                }
-                Spacer(minLength: 0)
-                VStack(alignment: .trailing, spacing: 2) {
-                    statLine(value: "\(streak.longest)", label: "longest")
-                    statLine(value: "\(sessions.count)", label: "sessions")
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(AppColor.streakBlush.opacity(0.22),
-                        in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
-            if let nudge {
-                Text(nudge)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.calmAccent)
-                    .padding(.top, 2)
-            }
-            // The sparkline is FREE (Aziz, 2026-08-24, reversing the first
-            // build). It draws overall scores, and every history row below it
-            // already shows each session's score to a free user, so locking
-            // the line was locking arithmetic on free numbers, not evidence.
-            // The rule survives intact: the score is free, the measurements
-            // behind it are not.
-            if scores.count >= 2 {
-                sparkline(scores)
-                    .frame(height: 46)
-                    .padding(.top, 6)
-                Text("Practice score · last \(scores.count) sessions")
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-            } else if sessions.isEmpty {
-                Text("Your first session draws the first point of your proof curve.")
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.top, 6)
-            }
-        }
-    }
+    // MARK: - Streak
 
     private func statLine(value: String, label: String) -> some View {
         HStack(spacing: 5) {
@@ -407,13 +438,16 @@ struct ContentView: View {
         }
     }
 
-    /// Overall scores of the most recent sessions, oldest → newest.
-    private var sparkScores: [Double] {
-        let map = SessionListSupport.scoreMap(allStats)
-        return sessions.prefix(11).compactMap { map[$0.id] }.reversed()
-    }
+    // The practice sparkline lived here and is gone with the old home. It
+    // drew seven scores at 46 points tall directly above a calendar drawing
+    // thirty days, so two objects were telling the same story at different
+    // resolutions and the smaller one won the better position. The calendar is
+    // the one people read without a label. Score history still lives on
+    // Profile, where somebody has gone looking for it.
 
-    /// The "streak on the line" nudge — only on days you haven't practiced yet.
+    /// The line under the pill on a day with nothing measured yet. It shows
+    /// only when there IS something to lose, so it can never read as a scold
+    /// on somebody's first morning.
     private var nudge: String? {
         let cal = Calendar.current
         let practicedToday = sessions.contains { cal.isDateInToday($0.startedAt) }
@@ -428,33 +462,6 @@ struct ContentView: View {
         return sessions.isEmpty ? nil : "Nothing measured today"
     }
 
-    private func sparkline(_ scores: [Double]) -> some View {
-        Chart(Array(scores.enumerated()), id: \.offset) { i, score in
-            AreaMark(x: .value("session", i), y: .value("score", score))
-                .foregroundStyle(LinearGradient(colors: [AppColor.accentGold.opacity(0.22),
-                                                         AppColor.accentGold.opacity(0.02)],
-                                                startPoint: .top, endPoint: .bottom))
-                .interpolationMethod(.catmullRom)
-            LineMark(x: .value("session", i), y: .value("score", score))
-                .foregroundStyle(AppColor.accentGoldText)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-                .interpolationMethod(.catmullRom)
-            if i == scores.count - 1 {
-                PointMark(x: .value("session", i), y: .value("score", score))
-                    .foregroundStyle(AppColor.accentGoldText)
-                    .symbolSize(40)
-            }
-        }
-        .chartXAxis(.hidden)
-        .chartYAxis(.hidden)
-        .chartYScale(domain: 0...1)
-    }
-
-    // MARK: - Calendar
-
-    /// This month only. Tapping a dotted day opens Profile with the log
-    /// filtered to it; the month picker that used to live on Journey is gone
-    /// because this card took its job.
     private var calendarCard: some View {
         let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
         let today = Date()

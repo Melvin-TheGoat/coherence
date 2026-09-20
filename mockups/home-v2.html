@@ -1,0 +1,175 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Otto is the app</title>
+<style>
+:root{
+  --paper:#FDF7ED; --card:#FFFFFF; --ink:#3C2A1F; --soft:#6F5D4D; --faint:#9C8770;
+  --line:#F1E7D8; --amber:#E3A544; --amberDeep:#A9761F; --amberShade:#C78A2E;
+  --sage:#6EAFA2; --sageDeep:#3B7A6E; --blush:#F2AF91; --blushDeep:#B05C39;
+  --sky:#FBE6D4;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);
+  font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif;padding:34px 26px 90px}
+h1{font-size:25px;margin:0 0 6px;letter-spacing:-.02em}
+h2{font-size:12px;margin:46px 0 4px;color:var(--faint);text-transform:uppercase;letter-spacing:.12em;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:780px;line-height:1.62;margin:0}
+.note{color:var(--soft);font-size:13.5px;max-width:740px;line-height:1.62}
+.note b{color:var(--ink)}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:20px}
+.cap{font-size:13px;color:var(--soft);margin-top:14px;width:330px;line-height:1.55}
+.cap b{color:var(--ink)}
+
+.phone{width:330px;flex:none;background:var(--paper);border-radius:40px;overflow:hidden;
+  box-shadow:0 14px 40px rgba(80,55,30,.16);display:flex;flex-direction:column;height:716px}
+
+/* THE SCENE. Otto does not float on a card, he sits somewhere. */
+.scene{background:linear-gradient(180deg,var(--sky) 0%,#FDEFE0 62%,var(--paper) 100%);
+  padding:16px 20px 0;border-bottom-left-radius:38px;border-bottom-right-radius:38px;position:relative}
+.hello{font-size:22px;font-weight:800;letter-spacing:-.025em}
+.today{font-size:12.5px;color:var(--soft);margin-top:2px}
+.otto-hero{height:158px;background:url("otto/otto-sit.png") center bottom/contain no-repeat;margin-top:2px}
+.ground{position:absolute;left:0;right:0;bottom:30px;height:1px;background:linear-gradient(90deg,
+  transparent, rgba(60,42,31,.08) 18%, rgba(60,42,31,.08) 82%, transparent)}
+.streakpill{position:relative;margin:-16px auto 0;width:max-content;display:flex;align-items:center;gap:9px;
+  background:var(--card);border-radius:999px;padding:9px 18px 10px;box-shadow:0 3px 0 var(--line)}
+.streakpill .n{font-size:22px;font-weight:800;color:var(--blushDeep);letter-spacing:-.02em}
+.streakpill .w{font-size:13.5px;font-weight:700;color:var(--blushDeep)}
+.streakpill .s{font-size:12px;color:var(--faint);border-left:1px solid var(--line);padding-left:10px;margin-left:2px}
+
+.body{padding:16px 18px 0;display:flex;flex-direction:column;gap:14px;flex:1;overflow:hidden}
+.c{background:var(--card);border-radius:28px;padding:18px;box-shadow:0 2px 0 var(--line)}
+.ch{display:flex;align-items:baseline;justify-content:space-between}
+.ch .t{font-size:16px;font-weight:800;letter-spacing:-.01em}
+.ch .m{font-size:12.5px;color:var(--faint);font-weight:600}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+.cal .d{font-size:10.5px;color:var(--faint);text-align:center;font-weight:700;padding-bottom:3px}
+.cal i{aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:12.5px;font-style:normal;color:var(--ink);font-weight:600}
+.cal i.off{color:#CFC0AE}
+.cal i.on{background:var(--amber);color:#fff;font-weight:800}
+.cal i.today{box-shadow:inset 0 0 0 1.6px var(--sage)}
+.sess{display:flex;align-items:center;gap:13px;padding:12px 0}
+.sess + .sess{border-top:1px solid var(--line)}
+.ring{width:46px;height:46px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:15px;color:var(--ink)}
+.mid{font-size:15px;font-weight:700}
+.sub{font-size:12.5px;color:var(--faint);margin-top:2px}
+.tabs{display:flex;align-items:center;justify-content:space-between;padding:10px 10px 14px;
+  background:#fff;border-top:1px solid var(--line)}
+.tabs b{flex:1;text-align:center;font-size:9.5px;font-weight:700;color:#C8B49B;display:flex;flex-direction:column;
+  align-items:center;gap:4px}
+.tabs b.on{color:var(--ink)}
+.tabs .plus{width:60px;height:60px;border-radius:22px;background:var(--amber);box-shadow:0 4px 0 var(--amberShade);
+  color:#fff;font-size:32px;font-weight:300;display:flex;align-items:center;justify-content:center;margin-top:-16px;flex:none}
+.dot{width:20px;height:20px;border-radius:7px;background:#E7DACD}
+.dot.on{background:var(--ink)}
+.icon{width:104px;height:104px;border-radius:24px;overflow:hidden;flex:none;
+  background:linear-gradient(180deg,#FBE6D4,#FDF3E6);position:relative}
+.icon div{position:absolute;inset:0;background:url("otto/otto-awake.png") 50% 8%/150% no-repeat}
+</style></head><body>
+
+<h1>Otto is the app now</h1>
+<p class="lede">Aziz: Otto replaces the flower and becomes the main thing. The reference is <b>Finch</b>, which is the
+only proof in this category that it works: 754,000 ratings, 4.9, Editors' Choice, and the bird is enormous in every
+single screenshot. The pattern underneath it is worth naming, because it is not "put a mascot on the screen":
+<b>the mascot sits somewhere.</b> Finch's bird stands on grass under a sky. He is in a place, and the interface
+floats around him. A character on a flat card is a sticker; a character on a horizon is somebody's morning.</p>
+<p class="note" style="margin-top:12px">The other half of the research was a negative and it is worth having.
+Every well-regarded meditation home screen on Dribbble is <b>dark, glassy and photographic</b>: black grounds,
+mountains, glowing rings, 82/100 in a thin circle. That is a real and popular look and it is exactly the one 808
+already had and you are moving away from. Nothing on that page is inspiration for this.</p>
+
+<h2>Home</h2>
+<div class="row">
+
+  <div>
+  <div class="phone">
+    <div class="scene">
+      <div class="hello">Good morning, Aziz</div>
+      <div class="today">Friday, 19 September</div>
+      <div class="otto-hero"></div>
+      <div class="ground"></div>
+    </div>
+    <div class="streakpill">
+      <span class="n">12</span><span class="w">mornings</span>
+      <span class="s">best 12 &nbsp;·&nbsp; 34 sits</span>
+    </div>
+    <div class="body">
+      <div class="c">
+        <div class="ch"><span class="t">September</span><span class="m">11 days practiced</span></div>
+        <div class="cal">
+          <span class="d">S</span><span class="d">M</span><span class="d">T</span><span class="d">W</span>
+          <span class="d">T</span><span class="d">F</span><span class="d">S</span>
+          <i class="off">31</i><i>1</i><i>2</i><i class="on">3</i><i class="on">4</i><i>5</i><i class="on">6</i>
+          <i class="on">7</i><i class="on">8</i><i class="on">9</i><i>10</i><i class="on">11</i><i class="on">12</i><i class="on">13</i>
+          <i class="on">14</i><i>15</i><i class="on">16</i><i class="on">17</i><i class="on">18</i><i class="on today">19</i><i>20</i>
+        </div>
+      </div>
+      <div class="c" style="padding:4px 18px">
+        <div class="sess">
+          <div class="ring" style="background:conic-gradient(var(--amber) 0 84%, #F3EADB 84% 100%)">
+            <span style="width:34px;height:34px;border-radius:50%;background:#fff;display:flex;
+              align-items:center;justify-content:center">84</span></div>
+          <div style="flex:1"><div class="mid">Yesterday</div>
+            <div class="sub">18 min · heart settled 9</div></div>
+          <span style="color:#C8B49B">›</span>
+        </div>
+        <div class="sess">
+          <div class="ring" style="background:conic-gradient(var(--amber) 0 71%, #F3EADB 71% 100%)">
+            <span style="width:34px;height:34px;border-radius:50%;background:#fff;display:flex;
+              align-items:center;justify-content:center">71</span></div>
+          <div style="flex:1"><div class="mid">Wednesday</div>
+            <div class="sub">12 min · breath 6.1 a minute</div></div>
+          <span style="color:#C8B49B">›</span>
+        </div>
+      </div>
+    </div>
+    <div class="tabs"><b class="on"><span class="dot on"></span>Home</b><b><span class="dot"></span>Guide</b>
+      <div class="plus">+</div><b><span class="dot"></span>Friends</b><b><span class="dot"></span>Profile</b></div>
+  </div>
+  <div class="cap"><b>Four things, top to bottom, and nothing else.</b> Who you are and when it is. Otto. What your
+  streak is. What you have done. The screen you have today has a logo, a greeting, a streak block, a sparkline, a
+  calendar, a list and a debug line, which is seven, and none of them is the reason you opened the app.</div>
+  </div>
+
+  <div style="max-width:420px">
+    <h2 style="margin-top:0">Why the scene, and not a card</h2>
+    <p class="note"><b>The sky is doing real work.</b> A single soft gradient from peach to paper, with a curved
+    bottom edge, turns the top third of the screen into a place rather than a panel. It is four lines of CSS here
+    and one gradient in Swift, and it is the whole difference between Otto being in the app and Otto being on it.
+    The faint horizon line under him is what stops him floating.</p>
+
+    <h2>The streak leaves its box</h2>
+    <p class="note">It is a white capsule straddling the edge of the scene, the way a price tag sits on a card.
+    That does two things: it physically joins the scene to the content below it, and it lets the streak be
+    <b>small</b>. A 54pt number was the loudest thing on Home and it is not the point of the app; Otto is. Best
+    and total sits ride along behind a divider instead of stacking in a corner.</p>
+
+    <h2>The calendar becomes round</h2>
+    <p class="note">Circles, not squares, and no card inside a card. A practised day is a solid amber disc with the
+    date in it, today is a sage outline. <b>Five weeks, not six</b>: the row of greyed next-month days at the
+    bottom was pure filler. This is the object people will look at most, since it is the only place the app shows
+    you a month of your own life, so it gets the most air on the screen.</p>
+
+    <h2>The sparkline is gone</h2>
+    <p class="note">It drew seven scores at 46 points tall next to a calendar that draws thirty days, and the two
+    were telling the same story at different resolutions. The calendar wins: it is the one people understand
+    without a label. The score history still lives on Profile, where somebody has gone looking for it.</p>
+
+    <h2>The app icon</h2>
+    <div class="row" style="margin-top:12px;align-items:center;gap:18px">
+      <div class="icon"><div></div></div>
+      <div class="note" style="width:250px;margin:0">Finch's icon is the bird's face cropped so tight it bleeds off
+      the tile, and it is why you can find it on a home screen of two hundred apps. <b>Otto's head, eyes open,
+      filling the corners</b>, on his own sky. The flower goes.</div>
+    </div>
+  </div>
+</div>
+
+<h2>What replaces the flower, everywhere it appears</h2>
+<p class="note">The mark is in more places than the home screen, so this is a list rather than a gesture: the app
+icon, the launch screen, the top of Home, the share card's corner, the onboarding screens, and the Watch's start
+screen. <b>Otto takes the first three.</b> The share card and the Watch keep a mark, because a 38pt sloth head on a
+1080-wide card and a 24pt one on a 40mm watch both turn to mud, and that is the one job line art is better at. So
+the flower does not die, it becomes the small-print signature, and Otto becomes the face.</p>
+
+</body></html>

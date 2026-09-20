@@ -67,4 +67,11 @@ enum AppColor {
     /// The warm line under a card. Replaces the old hairline border: on cream a
     /// stroke reads as a drawn box, a 2pt bottom edge reads as an object.
     static let hairline = Color("Hairline")
+
+    /// The top of the sky Otto sits under on Home. It fades into the paper, so
+    /// the top of the screen is a PLACE rather than another panel. That is the
+    /// whole difference between a mascot who is in the app and one who is on
+    /// it, and it is the pattern under Finch, which is the only app in this
+    /// category to have made a mascot work at scale.
+    static let sky = Color("Sky")
 }

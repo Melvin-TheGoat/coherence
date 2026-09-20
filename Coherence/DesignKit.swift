@@ -156,17 +156,25 @@ struct MonthCalendar: View {
     private let calendar = Calendar.current
 
     var body: some View {
+        // Six rows are reserved so every month fits, and most months fill
+        // five. A whole row of greyed next-month dates is filler, and on Home
+        // it is filler directly under the object people actually read, so any
+        // trailing week with nothing of this month in it is dropped.
         let grid = SessionCalendar.monthGrid(containing: monthAnchor, calendar: calendar)
+            .filter { week in
+                week.contains { SessionCalendar.isSameMonth($0, as: monthAnchor, calendar: calendar) }
+            }
         let today = calendar.startOfDay(for: Date())
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             HStack(spacing: 0) {
                 // Keyed by position, not by the letter: S and T each appear
                 // twice in a week, and duplicate ForEach IDs are undefined
                 // behaviour (SwiftUI logs it and may reuse the wrong view).
                 ForEach(Array(weekdayInitials.enumerated()), id: \.offset) { _, d in
-                    Text(d).font(.caption2.weight(.semibold))
+                    Text(d).font(.system(size: 11, weight: .bold, design: .rounded))
                         .foregroundStyle(AppColor.textSecondary)
                         .frame(maxWidth: .infinity)
+                        .padding(.bottom, 2)
                 }
             }
             ForEach(Array(grid.enumerated()), id: \.offset) { _, week in
@@ -205,7 +213,7 @@ struct MonthCalendar: View {
                               weight: done || isToday || isSelected ? .bold : .regular,
                               design: .rounded))
                 .foregroundStyle(dayInk(done: done, inMonth: inMonth, photo: photo != nil))
-                .frame(width: 27, height: 27)
+                .frame(width: 30, height: 30)
                 .background {
                     if done && photo == nil {
                         Circle().fill(AppColor.accentGold)
@@ -222,7 +230,7 @@ struct MonthCalendar: View {
                 Color.clear.frame(height: 26)
             }
         }
-        .frame(maxWidth: .infinity, minHeight: tall ? 46 : 32)
+        .frame(maxWidth: .infinity, minHeight: tall ? 48 : 36)
         // The ring marks the DATE, so it hangs off the top of the cell rather
         // than its centre. Centred, a photo day's taller cell dragged the ring
         // down over the picture (seen on the simulator, 2026-09-16).
@@ -296,16 +304,23 @@ enum SessionListSupport {
         return what.map { "\(when) · \($0)" } ?? when
     }
 
-    /// One-line metric reading for a row: "10 min · HR −11 · breath 5.8".
+    /// One line under a session row: "10 min · heart settled 11 · breath 5.8".
+    ///
+    /// It read "HR −11" until 2026-09-19, which is a notation, not a sentence.
+    /// A signed number needs the reader to know which direction is good before
+    /// it says anything, and on a home screen nobody is doing that work. The
+    /// words carry the direction instead, so a settling heart and a climbing
+    /// one read differently at a glance rather than by their sign.
     static func metricLine(_ session: Session, stats: MeditationStats?) -> String {
         var parts = [duration(session.durationSec)]
         if let d = stats?.hrDecline, abs(d) >= 1 {
-            parts.append(String(format: "HR %+.0f", -d))
+            parts.append(d > 0 ? String(format: "heart settled %.0f", d)
+                               : String(format: "heart rose %.0f", -d))
         }
         if let r = stats?.meanBreathingRate {
-            parts.append(String(format: "breath %.1f", r))
+            parts.append(String(format: "breath %.1f a minute", r))
         } else if let s = stats?.stillnessScore {
-            parts.append(String(format: "stillness %.2f", s))
+            parts.append(String(format: "%.0f%% still", s * 100))
         }
         return parts.joined(separator: " · ")
     }
