@@ -129,21 +129,6 @@ private struct SettingsForm: View {
                     }
                 }
 
-                SectionHeader(title: "Appearance")
-                settingsCard {
-                    row(icon: "circle.lefthalf.filled", title: "Theme") {
-                        Picker("", selection: Binding(
-                            get: { prefs.themeValue },
-                            set: { prefs.themeValue = $0 }
-                        )) {
-                            Text("System").tag(Theme.system)
-                            Text("Light").tag(Theme.light)
-                            Text("Dark").tag(Theme.dark)
-                        }
-                        .tint(AppColor.textSecondary)
-                    }
-                }
-
                 SectionHeader(title: "The foundation")
                 settingsCard {
                     membershipRow(icon: "envelope", title: "Give us feedback",
