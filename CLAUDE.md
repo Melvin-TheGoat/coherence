@@ -1790,6 +1790,54 @@ off by default, for onboarding's breath screen only; Home never buzzes).
   Swift build of the nine screens waits for the redesigned art, because
   every screen is built around his face.
 
+## ONBOARDING IS HEADSPACE'S SHAPE NOW (2026-09-20, Melvin)
+
+"Redo the onboarding by copying headspace... although the intro screen where
+the head comes up and down should instead be a good animation of Otto
+breathing." Built to `mockups/onboarding-v3.html`. The flow is now welcome,
+three breaths, the paced breathing screen, the interview, what's waiting,
+reminders, health consent, sign in, profile, tour.
+
+- **Three screens open it** (`OnboardingV3.swift`): Otto waves through the
+  Rive rig; "let's take three breaths together"; then three paced breaths
+  with a Continue after the first, because a breathing exercise with no exit
+  is a trap. They exist because of where people actually leave: sixteen
+  strangers reached the first screen in thirty days and twelve left on the
+  second.
+- **THE WHOLE PAYOFF BLOCK IS CUT**: calculating, the result, the cost, the
+  sample-session pair, the commitment and the wall. Every `Step` case and
+  answer field stays and the routing hops past, per the standing rule.
+  **The analytics said that block lost nobody**, which is why it survived the
+  09-15 cut; it goes because it is not in the shape Melvin asked for, not
+  because it was failing. **Watch `onboarding_completed` against the pre-cut
+  rate: if finishing drops, this is the first suspect.** Nothing outside
+  `Onboarding/` reads `daysPerWeek`, `primaryCost` or `PersonalPlan`, checked
+  before cutting.
+- **The progress rail is gone; Otto breathes beside a count.** The count is
+  honest per person, because the model already skips questions whose premise
+  the reader contradicted, so "3 of 8" is three of THEIR eight.
+  `InterviewCount` carries it and fifteen question screens take it.
+- **`Step` IS `Int`-BACKED, SO NEW CASES GO AT THE END. ALWAYS.** The two new
+  screens were first added after `breath`, which renumbered thirty-odd cases
+  by two, and a saved resume record would then have reopened somebody on a
+  different screen than the one they left. Caught before it shipped. The enum
+  now says so at the point of temptation.
+
+### Otto breathes at six a minute, and the rig holds two poses
+
+- **The `Breathe` timeline is ten seconds** (600 frames), not five. It was
+  five, which is twelve breaths a minute, while every piece of copy and the
+  Watch orb claim six. Home, the onboarding breath screen and the Watch now
+  agree, and the claim is true.
+- **The rig carries its own art, so `OttoRiveView(pose:)` could not change
+  what it drew.** The breathing screen asked for the cross-legged pose and
+  got the waving one, because the rig only held the wave. There is now a
+  `sitting` boolean on the view model and a `Pose` layer with `PoseWave` and
+  `PoseSit`, which cross-fade two images by opacity rather than a Solo. The
+  Swift side sets it from the pose (`pose == .meditating`).
+- The other poses (awake, head, talk) are in the Rive file as ASSETS only, so
+  they show in the editor's Assets panel without joining the export.
+
 ## ONBOARDING, ROUND 3 (2026-09-19, Melvin): two questions and the Watch screen go
 
 - **`aloneWithThoughts` and `you` left `InterviewStep`** (the `doingNothing`

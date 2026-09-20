@@ -100,21 +100,36 @@ final class OttoRig: ObservableObject {
             instance?.booleanProperty(fromPath: "talking")?.value = talking
         }
     }
+
+    /// Which pose the rig draws. **The rig carries its own art, so the `pose`
+    /// passed to `OttoRiveView` cannot change what it shows; only this can.**
+    /// The breathing screen wants him cross-legged and the welcome screen
+    /// wants him upright, and for a while both got the waving art because
+    /// nothing told the rig otherwise.
+    var sitting: Bool = false {
+        didSet {
+            instance?.booleanProperty(fromPath: "sitting")?.value = sitting
+        }
+    }
 }
 
 /// Otto at `size` points, animated when the rig is present, the still pose
 /// with the pulse when it is not. Tapping is the caller's business.
 struct OttoRiveView: View {
     var size: CGFloat
+    /// The pose to draw. The rig can hold two of them, cross-legged and
+    /// upright; anything else falls back to the still art for that pose.
     var pose: OttoPose = .talking
     /// Set once from the owner so the same rig survives re-renders.
     @ObservedObject var rig: OttoRigHolder
 
     var body: some View {
-        if let rig = rig.rig {
-            rig.viewModel.view()
+        if let live = rig.rig {
+            live.viewModel.view()
                 .frame(width: size, height: size)
                 .accessibilityHidden(true)
+                .onAppear { rig.setSitting(pose == .meditating) }
+                .onChange(of: pose) { _, new in rig.setSitting(new == .meditating) }
         } else {
             OttoMark(size: size, pose: pose)
                 .ottoBreathing()
@@ -130,6 +145,7 @@ final class OttoRigHolder: ObservableObject {
     init() { rig = OttoRig.make() }
     func wave() { rig?.wave() }
     func setTalking(_ on: Bool) { rig?.talking = on }
+    func setSitting(_ on: Bool) { rig?.sitting = on }
 }
 
 // MARK: - Breathing haptics

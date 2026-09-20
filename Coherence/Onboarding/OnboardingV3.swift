@@ -109,10 +109,13 @@ struct ThreeBreathsScreen: View {
 /// pace the Watch orb breathes at and the pace the score's doorway is built
 /// around, so the app breathes one way everywhere.
 ///
-/// **Otto sits and breathes. Nothing rises.** An earlier version had his head
-/// climb the screen on the inhale, the way Headspace's orange half does, and
-/// Melvin cut it on sight (2026-09-20: "the lying down looks very weird" was
-/// the pose; "it looks off the way his head comes up and down" was this).
+/// **Otto sits and breathes, through the Rive rig. Nothing rises.** An earlier
+/// version had his head climb the screen on the inhale, the way Headspace's
+/// orange half does, and Melvin cut it on sight; a second one pulsed a still
+/// PNG, which is a picture being scaled rather than a character breathing.
+/// This is the rig's own `Breathe` state, and the rig's timeline was stretched
+/// to ten seconds so it breathes at six a minute here, on Home, and on the
+/// Watch orb. One pace everywhere, which is what the copy has always claimed.
 ///
 /// A Continue appears after the first breath. Nobody is held in a breathing
 /// exercise they did not want by a screen with no exit.
@@ -123,6 +126,7 @@ struct BreathingScreen: View {
     private static let half: TimeInterval = 5
     private static let breaths = 3
 
+    @StateObject private var rig = OttoRigHolder()
     @State private var breath = 1
     @State private var inhaling = true
     @State private var swollen = false
@@ -144,9 +148,11 @@ struct BreathingScreen: View {
                 .monospacedDigit()
                 .padding(.top, 6)
 
-            OttoMark(size: 210, pose: .meditating)
-                .scaleEffect(swollen ? 1.07 : 0.97, anchor: .bottom)
-                .padding(.top, 42)
+            // The rig loops on its own clock; the words below ride the same
+            // ten seconds. Over three breaths any drift between them is
+            // smaller than the eye can hold.
+            OttoRiveView(size: 230, pose: .meditating, rig: rig)
+                .padding(.top, 34)
 
             Spacer()
             Spacer()

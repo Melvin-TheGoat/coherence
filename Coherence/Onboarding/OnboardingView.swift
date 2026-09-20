@@ -42,11 +42,6 @@ struct OnboardingView: View {
 
     enum Step: Int, CaseIterable {
         case relief, breath                                    // 1–2
-        /// Appended for the v3 opening (2026-09-20). New cases go at the
-        /// END: `Step` is `String`-backed but resume records and the
-        /// ONBOARDING_STEP jump both key on order, so inserting in the
-        /// middle silently moves somebody mid-flow.
-        case breathing, whatsWaiting                           // 3, 7
         case baseline                                          // where they are today
         case motivation, stress                                // 3–4
         case aloneWithThoughts, doingNothing                   // escalation, then the evidence
@@ -65,6 +60,15 @@ struct OnboardingView: View {
         case tourHome, watchConnect, breathe, sessionResults   // the walkthrough
         case paywall, signIn                                   // 23, 25
         case profile                                           // Friends: photo + @username
+        /// Added for the v3 opening (2026-09-20), screens 3 and 7.
+        ///
+        /// **THEY ARE LAST ON PURPOSE AND EVERY NEW CASE MUST BE.** `Step` is
+        /// `Int`-backed, so a case inserted in the middle renumbers every one
+        /// after it, and a saved resume record then reopens somebody on a
+        /// different screen than the one they left. They were briefly added
+        /// after `breath`, which shifted thirty-odd cases by two before this
+        /// was caught.
+        case breathing, whatsWaiting
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -322,55 +326,35 @@ struct OnboardingView: View {
         // beside the handle, and the age was never used. Anyone resuming
         // here goes straight to the sum.
         case .you:
-            Color.clear.onAppear { go(.calculating) }
+            Color.clear.onAppear { go(.whatsWaiting) }
 
         case .referral:
             ReferralScreen(referral: $answers.referral,
                            count: interviewCount) { go(nextAfter(.referral)) }
 
-        case .calculating:
-            CalculatingScreen(firstName: answers.firstName,
-                              answerCount: answeredCount) { go(.result) }
+        // CUT 2026-09-20 (Melvin: redo onboarding in Headspace's shape).
+        // The whole payoff block goes: calculating, the result, the cost, the
+        // sample-session pair, the commitment and the wall. The mockup has
+        // nine screens and this block was most of the twenty that were not in
+        // it. **The analytics said this block loses nobody**, which is why it
+        // survived the 09-15 cut; it goes now because it is not in the shape,
+        // not because it was failing. Watch `onboarding_completed` against
+        // the pre-cut rate: if finishing drops, this is the first suspect.
+        //
+        // Every Step case and answer field stays, per the standing rule, so
+        // resume records decode and ONBOARDING_STEP indices hold. Nothing
+        // outside Onboarding/ reads `daysPerWeek`, `primaryCost` or
+        // `PersonalPlan`, checked before cutting, so no other screen loses a
+        // number it was drawing.
+        case .calculating, .result, .cost, .proofBody, .sampleStart,
+             .sampleBuild, .proofYourWay, .commitment:
+            Color.clear.onAppear { go(.whatsWaiting) }
 
-        case .result:
-            // The cost screen is skipped (Melvin, 2026-08-25: another round
-            // of questions right after the interview reads as being made to
-            // work). The Step case and CostScreen stay so ONBOARDING_STEP
-            // indices hold and the screen can come back with one edit; with
-            // no costs ticked, downstream echoes (`primaryCost`) are nil and
-            // every reader already handles nil.
-            ResultScreen(answers: answers) { go(.sampleStart) }
-
-        case .cost:
-            CostScreen(costs: $answers.costs) { go(.sampleStart) }
-
-        // Cut 2026-09-15 with proofYourWay, week and rating: the payoff is
-        // the sample-session pair and the promise, nothing more.
-        case .proofBody:
-            Color.clear.onAppear { go(.sampleStart) }
-
-        // The start/build pair: the last beat of the cost arc asks "so what's
-        // possible?", and the first beat of the win answers it.
-        case .sampleStart:
-            SampleSessionScreen(phase: .start) { go(.sampleBuild) }
-
-        case .sampleBuild:
-            SampleSessionScreen(phase: .build,
-                                motivations: answers.motivations) { go(.commitment) }
-
-        case .proofYourWay:
-            Color.clear.onAppear { go(.commitment) }
-
-        // The last screen before the offer, for everyone who came through
-        // the walkthrough. Kept at Melvin's request, moved from the middle of
-        // the payoff to the end (2026-09-15).
+        // Cut with the payoff block (2026-09-20). Kept as a case for resume
+        // records; `WallScreen` stays in the file because bringing the quotes
+        // back is then one line rather than a rewrite.
         case .wall:
-            WallScreen { go(afterWall) }
-
-        case .commitment:
-            CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
-                             anchor: answers.anchor,
-                             cost: answers.primaryCost) { go(.whatsWaiting) }
+            Color.clear.onAppear { go(afterWall) }
 
         case .whatsWaiting:
             WhatsWaitingScreen { go(.permission) }
