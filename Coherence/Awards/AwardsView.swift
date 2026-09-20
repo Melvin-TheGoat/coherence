@@ -15,38 +15,63 @@ struct AwardBadge: View {
     var size: CGFloat = 56
 
     var body: some View {
-        ZStack {
-            // The disc uses the FILL gold, the ring and the number use the TEXT
-            // gold. That keeps the badge reading warm and gold while the number
-            // inside it stays legible on a light background.
-            Circle()
-                .fill(earned ? AppColor.accentGold.opacity(0.22)
-                             : AppColor.textSecondary.opacity(0.05))
-            Circle()
-                .strokeBorder(earned ? AppColor.accentGoldText
-                                     : AppColor.textSecondary.opacity(0.3),
-                              lineWidth: size > 80 ? 2 : 1.5)
-            switch award.face {
-            case .mark:
-                LogoMark()
-                    .frame(width: size * 0.46, height: size * 0.46)
-                    .opacity(earned ? 1 : 0.35)
-            case .number(let value, let unit):
-                VStack(spacing: 1) {
-                    Text(value)
-                        .font(.system(size: size * 0.29, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                    Text(unit)
-                        .font(.system(size: size * 0.14, weight: .semibold, design: .rounded))
-                }
-                .foregroundStyle(earned ? AppColor.accentGoldText
-                                        : AppColor.textSecondary.opacity(0.55))
-                .padding(.horizontal, size * 0.12)
-            }
+        // A SQUIRCLE, FILLED. It was an outlined circle with a tinted wash
+        // inside it, which is the one shape left in the app made of a thin
+        // line, and it sat three inches under a week strip of solid discs
+        // (Aziz, 2026-09-19: make the awards more in tune with what we are
+        // doing). The corner radius is the app icon's and the tab bar plus's,
+        // which is also what keeps an award from reading as a day: days are
+        // circles, awards are squircles.
+        //
+        // **Earned is raised, unearned is a hollow.** The earned tile is amber
+        // and stands on its own edge the way a button does; the unearned one
+        // is the empty-slot tone, flat, with no edge under it. So the shelf
+        // reads as things you have and spaces for things you do not, rather
+        // than as a row of the same object at two opacities.
+        let radius = size * 0.31
+        return ZStack {
+            RoundedRectangle(cornerRadius: radius, style: .continuous)
+                .fill(earned ? AppColor.accentGold : AppColor.trace)
+                .shadow(color: earned ? AppColor.accentGoldShade : .clear,
+                        radius: 0, y: earned ? max(2, size * 0.055) : 0)
+            content
         }
         .frame(width: size, height: size)
+        .padding(.bottom, earned ? max(2, size * 0.055) : 0)
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        switch award.face {
+        case .mark:
+            // `LogoMark` strokes itself in its own colour and ignores
+            // `foregroundStyle`, so on an amber plate it drew an amber mark on
+            // amber and the badge came out blank. It takes the ink explicitly,
+            // and a heavier line, because at 27pt inside a tile the brand
+            // ratio is a hairline.
+            LogoMark(color: ink, lineWidthRatio: 0.045)
+                .frame(width: size * 0.46, height: size * 0.46)
+        case .number(let value, let unit):
+            VStack(spacing: 0) {
+                Text(value)
+                    .font(.system(size: size * 0.32, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+                    .minimumScaleFactor(0.5)
+                    .lineLimit(1)
+                Text(unit)
+                    .font(.system(size: size * 0.145, weight: .bold, design: .rounded))
+                    .opacity(0.75)
+            }
+            .foregroundStyle(ink)
+            .padding(.horizontal, size * 0.1)
+        }
+    }
+
+    /// Ink on the amber, and a faded ink on the empty slot. Never a tint of
+    /// the fill itself: gold text on a gold plate is the thing that made the
+    /// old badge hard to read at 54pt.
+    private var ink: Color {
+        earned ? AppColor.textOnAccent : AppColor.textSecondary.opacity(0.55)
     }
 }
 

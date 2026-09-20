@@ -37,9 +37,7 @@ struct ProfileTab: View {
     let openSettings: () -> Void
     /// A log row awaiting the delete confirmation.
     @State private var pendingDelete: UUID?
-    /// Which month the calendar is showing. Follows a day arriving from Home
-    /// so tapping the 3rd from the week strip cannot land on an empty month.
-    @State private var monthAnchor = Date()
+
 
     private let calendar = Calendar.current
 
@@ -51,7 +49,6 @@ struct ProfileTab: View {
                     VStack(alignment: .leading, spacing: 14) {
                         statsRow
                         scoresCard
-                        monthCard
                         awardsSection
                         logSection
                     }
@@ -69,8 +66,7 @@ struct ProfileTab: View {
             // starts a centimetre down the screen.
             .toolbarBackground(AppColor.sky, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .onAppear { if let day = selectedDay { monthAnchor = day } }
-            .onChange(of: selectedDay) { _, day in if let day { monthAnchor = day } }
+
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: openSettings) {
@@ -428,56 +424,27 @@ struct ProfileTab: View {
     }
 
     // MARK: - The month
-
-    /// The month, with arrows to walk back through it.
-    ///
-    /// **This is a fix, and the mistake is worth recording.** When Home took
-    /// the week strip the commit said the month "lives on Profile". It did
-    /// not: Profile never had one, so `MonthCalendar` was left referenced by
-    /// nothing and a person lost every view of more than seven days. It is
-    /// also, deliberately, the month picker that was cut in September for
-    /// appearing twice in the app. It appears once now, so the reason for
-    /// cutting it is gone.
-    private var monthCard: some View {
-        let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
-        let byDay = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).byDay : [:]
-        let inMonth = practiced.filter {
-            Calendar.current.isDate($0, equalTo: monthAnchor, toGranularity: .month)
-        }.count
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                monthStep(-1, "chevron.left")
-                Text(monthAnchor.formatted(.dateTime.month(.wide).year()))
-                    .font(AppFont.callout.weight(.bold))
-                    .foregroundStyle(AppColor.textPrimary)
-                monthStep(1, "chevron.right")
-                Spacer(minLength: 0)
-                Text(inMonth == 1 ? "1 day" : "\(inMonth) days")
-                    .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-            MonthCalendar(monthAnchor: monthAnchor, practiced: practiced, photos: byDay,
-                          selectedDay: selectedDay) { day in
-                selectedDay = selectedDay == day ? nil : day
-            }
-        }
-        .card(padding: 18)
-    }
-
-    private func monthStep(_ delta: Int, _ icon: String) -> some View {
-        Button {
-            if let next = Calendar.current.date(byAdding: .month, value: delta, to: monthAnchor) {
-                monthAnchor = next
-            }
-        } label: {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(AppColor.textSecondary)
-                .frame(width: 30, height: 30)
-                .background(Circle().fill(AppColor.backgroundPrimary))
-        }
-        .buttonStyle(.plain)
-    }
+    //
+    // THERE ISN'T ONE ANY MORE (Aziz, 2026-09-19: "a bit cramped, get rid of
+    // the calendar"). It was restored to Profile hours earlier, so this is
+    // worth being exact about rather than quietly reverting.
+    //
+    // **808 now has no month view at all.** The week strip on Home is the
+    // only calendar in the product. That is defensible and it is a real
+    // trade: a month of dots answers "did I show up" at a resolution nobody
+    // needs, the week answers it for the days that are still winnable, and
+    // "Your scores" answers the long question better than a dot grid ever
+    // did, because it carries how the sits WENT and not only that they
+    // happened. Profile was carrying two objects about the same thirty days.
+    //
+    // The cost, named: the photo-in-the-calendar idea (Aziz, 2026-09-15,
+    // "those pictures can be shown in the calendar") loses its home here.
+    // Every photo still appears, larger, on its own session card, which is
+    // where somebody is actually looking at that sit.
+    //
+    // `MonthCalendar` is DELETED rather than left in DesignKit. An unused
+    // view rots, and this one was already orphaned once this week by a commit
+    // that moved it off Home and claimed it lived here.
 
     // MARK: - Log
 
