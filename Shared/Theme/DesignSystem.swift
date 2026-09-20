@@ -144,3 +144,26 @@ struct StatTile: View {
         .frame(maxWidth: .infinity)
     }
 }
+
+/// A capsule that fits its own words.
+///
+/// The third button shape, and the one for actions that sit beside each other
+/// under something rather than at the bottom of a screen: Edit profile, Share
+/// profile. `SecondaryButtonStyle` stretches to full width, which is right at
+/// the foot of a sheet and wrong under a portrait, where two full-width slabs
+/// turn a profile into a settings screen.
+struct PillButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(AppFont.callout.weight(.bold))
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+            .background(
+                Capsule()
+                    .fill(AppColor.backgroundSecondary)
+                    .shadow(color: AppColor.hairline, radius: 0, y: 2)
+            )
+            .opacity(configuration.isPressed ? 0.75 : 1)
+    }
+}

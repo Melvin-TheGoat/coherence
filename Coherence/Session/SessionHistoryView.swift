@@ -1,13 +1,17 @@
 import SwiftUI
 import SwiftData
+import Charts
 
-/// **Profile** — the far-right tab (2026-09-12): the person, then what they
-/// have done. Identity on top (initials, name, handle, practicing since), the
-/// four stats, the awards shelf, and the full log. Settings sits in the gear.
+/// **Profile** — the far-right tab: the person, then the proof, then what they
+/// have done. A portrait under the sky, the four totals, your scores over
+/// time, the month, the awards shelf, and the full log. Settings in the gear.
 ///
-/// This was Journey. Its month picker moved to Home, whose calendar now opens
-/// this tab filtered to the tapped day, so nothing was lost; the calendar just
-/// stopped appearing twice.
+/// **This is where the long view lives, and that is the whole division of
+/// labour between the two tabs.** Home answers "how am I doing today": one
+/// week, the last three sits, a streak. Profile answers "how am I doing", and
+/// every object on it covers more than a week. Both the month calendar and the
+/// score history were removed from Home on the understanding that they lived
+/// here, and for a while neither actually did.
 ///
 /// Reads storage independently via `@Query`, so it refreshes live when a new
 /// session lands from the Watch. Screens pass only IDs/dates; models are immutable.
@@ -46,6 +50,7 @@ struct ProfileTab: View {
                     identity
                     VStack(alignment: .leading, spacing: 14) {
                         statsRow
+                        scoresCard
                         monthCard
                         awardsSection
                         logSection
@@ -151,9 +156,12 @@ struct ProfileTab: View {
     /// Edit profile (photo, nickname, @username) and Share profile (the
     /// invite), Strava's pair under the header.
     private var profileActions: some View {
-        HStack(spacing: 8) {
+        // Capsules that fit their words, side by side and centred under the
+        // name. Full-width slabs made a portrait look like a settings screen
+        // with two rows of buttons under the avatar.
+        HStack(spacing: 9) {
             Button { editingProfile = true } label: { Label("Edit profile", systemImage: "pencil") }
-                .buttonStyle(SecondaryButtonStyle())
+                .buttonStyle(PillButtonStyle())
             // Only a reserved handle is worth sending: an empty or cosmetic
             // one would invite a friend to search for nothing.
             if let handle = community.profile?.username, !handle.isEmpty {
@@ -299,6 +307,121 @@ struct ProfileTab: View {
                 .lineLimit(1)
             Text(label)
                 .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(AppColor.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - The proof
+
+    /// Your scores, one bar per sit.
+    ///
+    /// **This is the third home for this object and the first honest one.** It
+    /// was a 46pt sparkline on Home directly above a calendar drawing thirty
+    /// days, which is two things telling the same story at different
+    /// resolutions; it was cut from there, and the commit claimed it "still
+    /// lives on Profile", which it did not. Here it has the room to be read:
+    /// twenty bars instead of seven points, with your average drawn across
+    /// them so a single bar means something.
+    ///
+    /// Bars, not a line. A line implies the value between two sits, and there
+    /// is no value between two sits: each one is a separate measurement of a
+    /// separate morning. The average is the only continuous thing on the
+    /// chart, so it is the only thing drawn as a line.
+    private var scoresCard: some View {
+        let map = SessionListSupport.scoreMap(allStats)
+        let recent: [ScorePoint] = sessions
+            .compactMap { session -> (date: Date, score: Double)? in
+                guard let score = map[session.id] else { return nil }
+                return (session.startedAt, score)
+            }
+            .prefix(16).reversed().enumerated()
+            .map { ScorePoint(index: $0.offset, score: $0.element.score * 100, date: $0.element.date) }
+        let average = recent.isEmpty ? 0 : recent.map(\.score).reduce(0, +) / Double(recent.count)
+        let best = recent.map(\.score).max() ?? 0
+        // `.ratio` sizes a bar against its category's step, and this chart's x
+        // is a NUMBER, so the step is undefined and every bar drew at zero
+        // width. Computed from the plot's own width instead, clamped so four
+        // sits do not each become a paving slab.
+        let barWidth = min(20.0, max(7.0, 286.0 / Double(max(recent.count, 1)) * 0.68))
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                SectionHeader(title: "Your scores")
+                Spacer()
+                if recent.count >= 2 {
+                    Text("last \(recent.count)")
+                        .font(AppFont.caption.weight(.semibold))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            if recent.count < 2 {
+                Text("Two sits and this fills in. Every bar is one morning, and the line is your average.")
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Chart {
+                    ForEach(recent) { point in
+                        // Fat and rounded. The default width draws hairline
+                        // bars with wide gaps, which is a statistics plot; the
+                        // rest of this app is made of solid round objects.
+                        BarMark(x: .value("Sit", point.index),
+                                y: .value("Score", point.score),
+                                width: .fixed(barWidth))
+                            .foregroundStyle(AppColor.accentGold)
+                            .cornerRadius(7)
+                    }
+                    RuleMark(y: .value("Average", average))
+                        .foregroundStyle(AppColor.calmAccent)
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                }
+                .chartYScale(domain: 0...100)
+                .chartXAxis(.hidden)
+                .chartYAxis {
+                    AxisMarks(values: [0, 50, 100]) {
+                        AxisGridLine().foregroundStyle(AppColor.hairline)
+                        AxisValueLabel().foregroundStyle(AppColor.textSecondary)
+                            .font(AppFont.caption)
+                    }
+                }
+                .frame(height: 132)
+                HStack(spacing: 0) {
+                    proofStat("\(Int(average.rounded()))", "average", AppColor.calmAccent)
+                    divider
+                    proofStat("\(Int(best.rounded()))", "best", AppColor.accentGoldText)
+                    divider
+                    proofStat(SessionListSupport.duration(longestSit), "longest sit",
+                              AppColor.accentGoldText)
+                }
+                .padding(.top, 2)
+            }
+        }
+        .card(padding: 18)
+    }
+
+    /// One bar: a single sit's score, in the order it happened.
+    private struct ScorePoint: Identifiable {
+        let index: Int
+        let score: Double
+        let date: Date
+        var id: Int { index }
+    }
+
+    private var longestSit: Int {
+        sessions.map(\.durationSec).max() ?? 0
+    }
+
+    private func proofStat(_ value: String, _ label: String, _ tint: Color) -> some View {
+        VStack(spacing: 1) {
+            Text(value)
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(tint)
+                .monospacedDigit()
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+            Text(label)
+                .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
