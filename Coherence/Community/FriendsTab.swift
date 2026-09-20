@@ -31,8 +31,13 @@ struct FriendsTab: View {
                 }
             }
             .screenBackground()
-            .navigationTitle("Friends")
+            // No nav title: the header row below it says "Friends" beside
+            // your own face, and two of the same word within an inch of each
+            // other is one of them doing nothing.
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(AppColor.backgroundPrimary, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
         }
         .task {
             Analytics.track(.friendsOpened)
@@ -217,18 +222,45 @@ struct FeedView: View {
         }
     }
 
+    /// Your face, your handle, and requests as a BUTTON.
+    ///
+    /// A waiting request used to be grey caption text floating above a search
+    /// field, which made it the most missable thing in the product: this is the
+    /// only screen in 808 where another person is waiting on the reader. It is
+    /// an amber capsule when somebody is, and a quiet one when nobody is, so
+    /// the colour itself carries the news.
     private var header: some View {
-        HStack {
-            Text(model.profile.map { "@" + $0.username } ?? "")
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.textSecondary)
-            Spacer()
+        HStack(spacing: 11) {
+            PersonAvatar(name: model.profile?.displayName, size: 40,
+                         photoURL: model.profile?.avatarURL)
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Friends")
+                    .font(DisplayFont.display(19))
+                    .foregroundStyle(AppColor.textPrimary)
+                if let handle = model.profile.map({ "@" + $0.username }), handle.count > 1 {
+                    Text(handle)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+            }
+            Spacer(minLength: 6)
             NavigationLink {
                 RequestsView(model: model)
             } label: {
-                Text(model.incoming.isEmpty ? "Requests" : "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")")
-                    .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(model.incoming.isEmpty ? AppColor.textSecondary : AppColor.accentGoldText)
+                let waiting = !model.incoming.isEmpty
+                Text(waiting
+                     ? "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")"
+                     : "Requests")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(waiting ? AppColor.textOnAccent : AppColor.textSecondary)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background {
+                        Capsule().fill(waiting ? AppColor.accentGold : AppColor.backgroundSecondary)
+                            .shadow(color: waiting ? AppColor.accentGoldShade : AppColor.hairline,
+                                    radius: 0, y: 3)
+                    }
+                    .padding(.bottom, 3)
             }
         }
     }
@@ -427,18 +459,35 @@ struct PostCard: View {
                     .padding(.horizontal, Self.inset).padding(.top, 6)
             }
 
-            HStack(alignment: .top, spacing: 22) {
-                stat("Score", "\(post.score)")
-                stat("Time", "\(post.minutes)m")
-                stat("Streak", "\(post.streak) day\(post.streak == 1 ? "" : "s")")
-                if let t = post.technique, !t.isEmpty { stat("Technique", t) }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, Self.inset).padding(.top, 16)
-
+            // PHOTO FIRST, NUMBERS AFTER (2026-09-19). The four stats used to
+            // sit in the middle of the card with the photo dangling off the
+            // bottom, so the picture (the reason anybody stops scrolling) came
+            // last and a row of figures interrupted the sentence somebody had
+            // written. Who, what they called it, what it looked like, then the
+            // numbers, then the reaction.
             if let url = post.photoURL {
                 PostPhotoView(url: url)
-                    .padding(.horizontal, Self.inset).padding(.top, 16)
+                    .overlay(alignment: .bottomLeading) {
+                        // The score rides on the photo, exactly as it does on a
+                        // session card in the app. It leaves three columns that
+                        // line up from card to card and keeps one amber object
+                        // per post.
+                        scoreCapsule.padding(11)
+                    }
+                    .padding(.horizontal, Self.inset).padding(.top, 14)
+            }
+
+            HStack(spacing: 0) {
+                if post.photoURL == nil { stat("Score", "\(post.score)") }
+                stat("Time", "\(post.minutes)m")
+                stat("Day streak", "\(post.streak)")
+                if let t = post.technique, !t.isEmpty { stat("Technique", t) }
+            }
+            .padding(.horizontal, Self.inset)
+            .padding(.top, 13)
+            .overlay(alignment: .top) {
+                Rectangle().fill(AppColor.hairline).frame(height: 1)
+                    .padding(.horizontal, Self.inset)
             }
 
             footer
@@ -498,16 +547,30 @@ struct PostCard: View {
         return [day + " at " + time, post.sound].compactMap { $0 }.joined(separator: " · ")
     }
 
+    /// One column. Value over label, centred, equal width, so two posts line
+    /// up down the feed the way two sessions line up in the app.
     private func stat(_ label: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(AppColor.textSecondary)
+        VStack(spacing: 1) {
             Text(value)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-                .lineLimit(1).minimumScaleFactor(0.7)
+                .font(DisplayFont.display(16, .heavy))
+                .foregroundStyle(AppColor.calmAccent)
+                .lineLimit(1).minimumScaleFactor(0.6)
+            Text(label)
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .lineLimit(1).minimumScaleFactor(0.8)
         }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var scoreCapsule: some View {
+        Text("\(post.score)")
+            .font(DisplayFont.display(16, .heavy))
+            .foregroundStyle(AppColor.textOnAccent)
+            .monospacedDigit()
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Capsule().fill(AppColor.accentGold))
     }
 
     private var footer: some View {
@@ -525,11 +588,21 @@ struct PostCard: View {
                 HStack(spacing: 5) {
                     Text("🙏").font(.system(size: 17)).grayscale(mine ? 0 : 1).opacity(mine ? 1 : 0.7)
                     Text("Nice sit")
-                        .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(mine ? AppColor.accentGoldText : AppColor.textSecondary)
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(mine ? AppColor.textOnAccent : AppColor.textPrimary)
                 }
-                .padding(.horizontal, 10).padding(.vertical, 6)
-                .overlay(Capsule().stroke(mine ? AppColor.accentGold : AppColor.textSecondary.opacity(0.3), lineWidth: 1))
+                .padding(.horizontal, 14).padding(.vertical, 8)
+                // Filled, like every other button in the app: amber once you
+                // have given one, paper before. An outlined capsule was the
+                // last thin-line control in the product, and it made the one
+                // thing a reader can DO on this screen the quietest object on
+                // the card.
+                .background {
+                    Capsule().fill(mine ? AppColor.accentGold : AppColor.backgroundPrimary)
+                        .shadow(color: mine ? AppColor.accentGoldShade : AppColor.hairline,
+                                radius: 0, y: 3)
+                }
+                .padding(.bottom, 3)
             }
             .buttonStyle(.plain)
             .disabled(isMine)
@@ -558,7 +631,10 @@ private struct PostPhotoView: View {
         // card rather than a band cut through it.
         AppColor.backgroundPrimary.opacity(0.4)
             .frame(maxWidth: .infinity)
-            .frame(height: 340)
+            // 270, not 340. A selfie is 3:4, so at 340 a single post filled
+            // the screen and the numbers under it were never on the same
+            // screen as the picture they belong to.
+            .frame(height: 270)
             .overlay {
                 if let image { Image(uiImage: image).resizable().scaledToFill() }
             }
