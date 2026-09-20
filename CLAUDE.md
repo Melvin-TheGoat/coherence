@@ -1695,6 +1695,31 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
   1.0 failure exactly, on the one feature whose value is the server. The
   rest of the list is RELEASE_CHECKLIST.md "OPEN for 1.1".
 
+## ONBOARDING, ROUND 3 (2026-09-19, Melvin): two questions and the Watch screen go
+
+- **`aloneWithThoughts` and `you` left `InterviewStep`** (the `doingNothing`
+  precedent: the `Step` case and the answer field stay, the model never asks,
+  the view routes past). The name is asked on Create your profile beside the
+  handle, so `you` asked for it twice, and its age was read by nothing.
+  `nextAfter` returns `.calculating` for a Step not in `interviewPairs`, so a
+  cut step must route to the LAST ASKED step before it (`aloneWithThoughts`
+  and `doingNothing` go to `nextAfter(.stress)`), not to `nextAfter(self)`.
+- **The tour is the whole tutorial.** Continue on its last note calls
+  `finish()`; `watchConnect` ("Put your Watch on") is routed past and
+  `OnboardingHandoff.requestSetup()` is no longer called, so Home opens with
+  nothing asked and the first session starts at the plus. Melvin: "let them
+  explore the app on their own". Resume fallback is `tourHome`.
+- **The tour's spotlight on the plus was 18pt low and full width.** The
+  `.begin` anchor sat after `.offset(y: -18)` and `.frame(maxWidth:)`, so it
+  measured the un-offset slot, and the top of the raised circle fell outside
+  the lit window. It now sits on the button itself, before both. Verified on
+  the simulator: the whole circle is inside the window.
+- **The bar had too much air under it.** `MainTabBar` had 8 over the icons
+  and 2 under the labels on top of the home-indicator inset; now 6 and 0.
+  The feed's bottom spacer was 72 to "clear the bar", but the bar is a
+  safe-area inset and the scroll already clears it; 24 clears the raised half
+  of the plus and nothing more.
+
 ## OTTO IS DRAWN; FRIENDS AND PROFILE GET THEIR AIR BACK (2026-09-18)
 
 - **Otto the sloth ships as vector, drawn in Swift** (`Coherence/Otto/

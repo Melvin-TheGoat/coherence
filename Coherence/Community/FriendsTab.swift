@@ -200,10 +200,11 @@ struct FeedView: View {
                     InviteButton(username: model.profile?.username ?? "", style: .quiet)
                         .padding(.top, 10)
                 }
-                // Clears the raised plus and the tab bar. The feed's last
-                // item (the invite) sat under them with nowhere left to
-                // scroll, found walking the flow in the simulator.
-                Color.clear.frame(height: 72)
+                // The bar is a safe-area inset so the scroll clears it on its
+                // own; this only clears the half of the plus that rises
+                // above it. It was 72, which read as a blank band under the
+                // last card (Melvin, 2026-09-19).
+                Color.clear.frame(height: 24)
             }
             .padding(AppMetrics.screenPadding)
         }

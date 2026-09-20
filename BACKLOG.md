@@ -4,6 +4,14 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Onboarding round 3 and the bar (Melvin, 2026-09-19): DONE, on social-1.1
+
+Cut "Can you be alone with your thoughts?" and the name-and-age screen (the
+name is asked on Create your profile); the tour ends the tutorial with no
+"put your Watch on" screen; the plus spotlight now frames the whole circle;
+the tab bar and the feed lost their extra bottom air. 359 tests. CLAUDE.md
+"ONBOARDING, ROUND 3".
+
 ## 1.1 IS THE SOCIAL RELEASE, AND IT WAITS FOR AZIZ (Melvin, 2026-09-18)
 
 Melvin: "push the social media aspect ASAP, because that seems most
