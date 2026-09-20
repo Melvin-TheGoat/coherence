@@ -72,11 +72,17 @@ bending arm. Three hand-drawn bones in the editor would upgrade it and the
 MCP can bind and weight them.
 
 Open, in order:
-1. **Onboarding v3 in Swift** (Melvin approved `mockups/onboarding-v3.html`
-   with one change: the breath screen is Otto sitting and breathing, no
-   rising head). The art it waits on now exists.
-2. Breath haptics on the onboarding breath screen (`BreathHaptics`, built,
-   unused until 1).
+1. **The rest of onboarding v3.** The opening is built (welcome with the
+   Rive wave, three breaths, the paced breathing screen) and every question
+   screen now carries the breathing Otto and an honest per-person count
+   instead of a rail. What is NOT done is the middle: `calculating`,
+   `result`, `cost`, the two proof screens, `wall` and `commitment` all
+   still run between the Watch gate and "Here's what's waiting". The v3
+   mockup has nine screens and the flow still has about twenty.
+   **Cutting that block is a decision, not a build**, because PostHog says
+   those screens lose nobody: the leak is the first two screens and the
+   stretch after onboarding. Melvin decides; the cut itself is an hour.
+2. Breath haptics on the breathing screen (`BreathHaptics`, built, unused).
 3. A second pose if Otto should ever do something other than wave. The
    redesign made `OttoTalk` and `OttoWave` the same image, so the rig's
    pose swap currently swaps like for like.

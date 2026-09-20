@@ -282,11 +282,11 @@ struct BreathScreen: View {
 struct BaselineScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var frequency: CurrentFrequency?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "How often do you\nmeditate right now?",
                          subtitle: "Honestly. This is the number we're going to move.",
                          ctaEnabled: frequency != nil,
@@ -312,13 +312,13 @@ struct BaselineScreen: View {
 struct MotivationScreen: View {
     @Binding var selected: Set<Motivation>
     @Binding var otherText: String
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     @FocusState private var otherFocused: Bool
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "What are you hoping\nmeditation gives you?",
                          subtitle: "Pick as many as are true.",
                          ctaEnabled: !selected.isEmpty,
@@ -375,7 +375,7 @@ struct MotivationScreen: View {
 /// argument anyway.
 struct StressScreen: View {
     @Binding var stress: Double
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     private var notch: Int { Int((stress * 4).rounded()) }
@@ -410,7 +410,7 @@ struct StressScreen: View {
     }
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "How stressed have you\nbeen lately?",
                          onContinue: onContinue) {
             VStack(spacing: 22) {
@@ -504,11 +504,11 @@ private struct StressWave: Shape {
 struct AloneWithThoughtsScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var answer: AloneWithThoughts?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .cost, progress: progress,
+        OnboardingScreen(section: .cost, counter: count,
                          title: "Can you be alone\nwith your thoughts?",
                          subtitle: "Compared to a few years ago.",
                          ctaEnabled: answer != nil,
@@ -542,11 +542,11 @@ struct AloneWithThoughtsScreen: View {
 struct DoingNothingScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var answer: DoingNothing?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .cost, progress: progress,
+        OnboardingScreen(section: .cost, counter: count,
                          title: "How long can you do\nnothing before you reach\nfor your phone?",
                          subtitle: "Standing in a line. Waiting for an elevator.",
                          ctaEnabled: answer != nil,
@@ -574,11 +574,11 @@ struct DoingNothingScreen: View {
 struct RestartScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var restarts: RestartCount?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .cost, progress: progress,
+        OnboardingScreen(section: .cost, counter: count,
                          title: "How many times have you\ntried to make meditation stick?",
                          subtitle: "No judgement. This is the single most common thing there is.",
                          ctaEnabled: restarts != nil,
@@ -607,11 +607,11 @@ struct RestartScreen: View {
 struct IntendedForScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var intended: IntendedFor?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .cost, progress: progress,
+        OnboardingScreen(section: .cost, counter: count,
                          title: "How long have you been\nmeaning to start?",
                          subtitle: "Not trying. Meaning to.",
                          ctaEnabled: intended != nil,
@@ -637,11 +637,11 @@ struct IntendedForScreen: View {
 struct BodyCuriosityScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var answer: BodyCuriosity?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "When you meditate, do you\never wonder what your body\nis actually doing?",
                          subtitle: "Underneath the stillness, something is happening.",
                          ctaEnabled: answer != nil,
@@ -665,11 +665,11 @@ struct BodyCuriosityScreen: View {
 struct BodyProofScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var answer: BodyProof?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "After a session, how do\nyou know it worked?",
                          subtitle: "There's no wrong answer. Most people have never had a way to check.",
                          ctaEnabled: answer != nil,
@@ -692,11 +692,11 @@ struct BodyProofScreen: View {
 
 struct BodyTrackingScreen: View {
     @Binding var tracking: Set<BodyTracking>
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "What do you already track\nabout your body?",
                          subtitle: "Pick everything that applies.",
                          ctaEnabled: !tracking.isEmpty,
@@ -893,7 +893,7 @@ private struct SensorSilhouette: Shape {
 struct WatchGateScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var hasWatch: Bool?
-    let progress: Double
+    let count: InterviewCount
     let onYes: () -> Void
     /// `notYet` is true for "Not yet": no Watch today, one in mind. Both
     /// answers land on the waitlist; the analytics outcome tells them apart,
@@ -904,7 +904,7 @@ struct WatchGateScreen: View {
     @State private var notYet = false
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "Do you have an\nApple Watch?",
                          subtitle: "808 measures from the Watch. Without one there's nothing to measure, so we'd rather tell you now.",
                          ctaEnabled: hasWatch != nil,
@@ -1117,11 +1117,11 @@ struct WaitlistScreen: View {
 struct AnchorScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var anchor: Anchor?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "When will you\nactually meditate?",
                          subtitle: "Pick something you already do every day. Attaching it to an existing habit is the single biggest predictor of sticking with it.",
                          ctaEnabled: anchor != nil,
@@ -1157,7 +1157,7 @@ struct NameScreen: View {
     @Binding var firstName: String
     @Binding var username: String
     @Binding var ageBracket: String?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     // Melvin asked for Under 18 / 18-21 / 21-25; those overlap at 21, so the
@@ -1167,7 +1167,7 @@ struct NameScreen: View {
                             "35–44", "45–54", "55+"]
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "Last thing.",
                          subtitle: "So the app can talk to you like a person, and so friends can find you later. Answer any of these, or none.",
                          onContinue: { gate.now(onContinue) }) {
@@ -1238,11 +1238,11 @@ struct NameScreen: View {
 struct ReferralScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var referral: ReferralSource?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .body, progress: progress,
+        OnboardingScreen(section: .body, counter: count,
                          title: "First, how did\nyou find us?",
                          subtitle: "It's the only way we know where to show up.",
                          ctaEnabled: referral != nil,
@@ -1274,11 +1274,11 @@ struct ReferralScreen: View {
 struct BlindSpotScreen: View {
     @StateObject private var gate = AdvanceGate()
     @Binding var blindSpot: BlindSpot?
-    let progress: Double
+    let count: InterviewCount
     let onContinue: () -> Void
 
     var body: some View {
-        OnboardingScreen(section: .cost, progress: progress,
+        OnboardingScreen(section: .cost, counter: count,
                          title: "What can't you tell\nabout your practice?",
                          subtitle: "You already sit. This is the part nobody can see.",
                          ctaEnabled: blindSpot != nil,

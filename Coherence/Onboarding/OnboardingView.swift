@@ -42,6 +42,11 @@ struct OnboardingView: View {
 
     enum Step: Int, CaseIterable {
         case relief, breath                                    // 1–2
+        /// Appended for the v3 opening (2026-09-20). New cases go at the
+        /// END: `Step` is `String`-backed but resume records and the
+        /// ONBOARDING_STEP jump both key on order, so inserting in the
+        /// middle silently moves somebody mid-flow.
+        case breathing, whatsWaiting                           // 3, 7
         case baseline                                          // where they are today
         case motivation, stress                                // 3–4
         case aloneWithThoughts, doingNothing                   // escalation, then the evidence
@@ -89,10 +94,13 @@ struct OnboardingView: View {
     }
 
     /// How far through THIS person's interview we are.
-    private var interviewProgress: Double {
+    /// This reader's position in their own interview. Nil off the interview.
+    private var interviewCount: InterviewCount {
         guard let here = Self.interviewPairs.first(where: { $0.0 == step })?.1,
-              let i = answers.interview.firstIndex(of: here) else { return 0 }
-        return Double(i + 1) / Double(answers.interview.count)
+              let i = answers.interview.firstIndex(of: here) else {
+            return InterviewCount(index: 1, total: max(1, answers.interview.count))
+        }
+        return InterviewCount(index: i + 1, total: answers.interview.count)
     }
 
     /// The interview screens, paired with their pure-Foundation counterpart in
@@ -213,23 +221,26 @@ struct OnboardingView: View {
     private var content: some View {
         switch step {
         case .relief:
-            ReliefScreen(onContinue: { go(.breath) })
+            WelcomeScreen { go(.breath) }
 
         case .breath:
-            BreathScreen { go(firstInterviewStep) }
+            ThreeBreathsScreen { go(.breathing) }
+
+        case .breathing:
+            BreathingScreen { go(firstInterviewStep) }
 
         case .baseline:
             BaselineScreen(frequency: $answers.currentFrequency,
-                           progress: interviewProgress) { go(nextAfter(.baseline)) }
+                           count: interviewCount) { go(nextAfter(.baseline)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
                              otherText: $answers.motivationOther,
-                             progress: interviewProgress) { go(nextAfter(.motivation)) }
+                             count: interviewCount) { go(nextAfter(.motivation)) }
 
         case .stress:
             StressScreen(stress: $answers.stress,
-                         progress: interviewProgress) { go(nextAfter(.stress)) }
+                         count: interviewCount) { go(nextAfter(.stress)) }
 
         // Cut 2026-09-15 (doingNothing) and 2026-09-19 (aloneWithThoughts,
         // Melvin). The Step cases stay so resume records and ONBOARDING_STEP
@@ -241,19 +252,19 @@ struct OnboardingView: View {
         case .restarts:
             guarded(.restarts) {
                 RestartScreen(restarts: $answers.restarts,
-                              progress: interviewProgress) { go(nextAfter(.restarts)) }
+                              count: interviewCount) { go(nextAfter(.restarts)) }
             }
 
         case .intendedFor:
             guarded(.intendedFor) {
                 IntendedForScreen(intended: $answers.intendedFor,
-                                  progress: interviewProgress) { go(nextAfter(.intendedFor)) }
+                                  count: interviewCount) { go(nextAfter(.intendedFor)) }
             }
 
         case .bodyCuriosity:
             guarded(.bodyCuriosity) {
                 BodyCuriosityScreen(answer: $answers.bodyCuriosity,
-                                    progress: interviewProgress) { go(nextAfter(.bodyCuriosity)) }
+                                    count: interviewCount) { go(nextAfter(.bodyCuriosity)) }
             }
 
         // Cut 2026-09-15, same arrangement.
@@ -262,7 +273,7 @@ struct OnboardingView: View {
 
         case .bodyTracking:
             BodyTrackingScreen(tracking: $answers.bodyTracking,
-                               progress: interviewProgress) { go(nextAfter(.bodyTracking)) }
+                               count: interviewCount) { go(nextAfter(.bodyTracking)) }
 
         // No longer on the path (Melvin, 2026-09-14). A tester with no Watch
         // met "$400" mid-interview and read it as an upsell aimed at someone
@@ -275,12 +286,12 @@ struct OnboardingView: View {
         case .blindSpot:
             guarded(.blindSpot) {
                 BlindSpotScreen(blindSpot: $answers.blindSpot,
-                                progress: interviewProgress) { go(nextAfter(.blindSpot)) }
+                                count: interviewCount) { go(nextAfter(.blindSpot)) }
             }
 
         case .watchGate:
             WatchGateScreen(hasWatch: $answers.hasWatch,
-                            progress: interviewProgress,
+                            count: interviewCount,
                             onYes: {
                                 Analytics.track(.watchGate(outcome: "hasWatch"))
                                 go(.watchSetup)
@@ -315,7 +326,7 @@ struct OnboardingView: View {
 
         case .referral:
             ReferralScreen(referral: $answers.referral,
-                           progress: interviewProgress) { go(nextAfter(.referral)) }
+                           count: interviewCount) { go(nextAfter(.referral)) }
 
         case .calculating:
             CalculatingScreen(firstName: answers.firstName,
@@ -359,7 +370,10 @@ struct OnboardingView: View {
         case .commitment:
             CommitmentScreen(daysPerWeek: $answers.daysPerWeek,
                              anchor: answers.anchor,
-                             cost: answers.primaryCost) { go(.permission) }
+                             cost: answers.primaryCost) { go(.whatsWaiting) }
+
+        case .whatsWaiting:
+            WhatsWaitingScreen { go(.permission) }
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,

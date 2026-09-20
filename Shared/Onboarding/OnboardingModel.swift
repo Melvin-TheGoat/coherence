@@ -905,6 +905,20 @@ extension OnboardingAnswers {
 /// The question screens, in canonical order. Separate from the view's `Step`
 /// enum so the branching is pure Foundation and can be exhaustively tested
 /// without a running app.
+
+/// A reader's position in their own interview: "3 of 7", where seven is the
+/// number of questions THIS person is asked after the model has skipped the
+/// ones whose premise they contradicted. Never the number of questions that
+/// exist.
+public struct InterviewCount: Equatable {
+    public let index: Int
+    public let total: Int
+    public init(index: Int, total: Int) {
+        self.index = index
+        self.total = total
+    }
+}
+
 public enum InterviewStep: String, CaseIterable, Codable {
     /// Attribution FIRST (Melvin, 2026-09-14). It sat last, and only 42% of
     /// installs finish the interview, so most people never told us where

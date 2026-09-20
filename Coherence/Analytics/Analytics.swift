@@ -250,8 +250,13 @@ enum Analytics {
     }
 
     private static let onboardingScreenNames: [String: String] = [
-        "relief":            "01 Relief: you're not bad at meditation",
-        "breath":            "02 One breath before we start",
+        // Renamed for the v3 opening (2026-09-20). The KEYS are unchanged, so
+        // every funnel built on them keeps working across the change; only
+        // what a human reads in the sheet moves.
+        "relief":            "01 Welcome, Otto waves",
+        "breath":            "02 Let's take three breaths",
+        "breathing":         "03 Breathe in, breathe out",
+        "whatsWaiting":      "23b Here's what's waiting",
         "baseline":          "03 How often do you meditate?",
         "motivation":        "04 What are you hoping for?",
         "stress":            "05 How stressed lately?",

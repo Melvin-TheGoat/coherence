@@ -335,6 +335,8 @@ enum OnboardingFlowTiming {
 struct OnboardingScreen<Content: View>: View {
     let section: OnboardingSection
     var progress: Double? = nil
+    /// The interview position, shown instead of the rail when present.
+    var counter: InterviewCount? = nil
     var title: String
     var subtitle: String? = nil
     var ctaTitle: String = "Continue"
@@ -378,17 +380,19 @@ struct OnboardingScreen<Content: View>: View {
             // The chevron and the rail share one row, the way every flow with
             // both does it. The rail shifting right by the width of the arrow
             // is what stops the arrow looking like it was dropped on top.
-            if back != nil || progress != nil {
+            if back != nil || progress != nil || counter != nil {
                 HStack(spacing: 10) {
                     if let back {
                         OnboardingBackButton(action: back)
                     }
-                    if let progress {
+                    if let counter {
+                        OnboardingCounter(index: counter.index, total: counter.total)
+                    } else if let progress {
                         OnboardingProgress(value: progress)
                     }
                 }
                 .frame(height: 40)
-                .padding(.bottom, progress == nil ? 6 : 20)
+                .padding(.bottom, progress == nil && counter == nil ? 6 : 20)
             }
 
             Text(title)
@@ -477,6 +481,34 @@ struct OnboardingScreen<Content: View>: View {
 
 /// A thin rail, not a percentage — the count of screens is our business, not
 /// something to make the user tally.
+/// Where you are in the interview, as a count rather than a bar.
+///
+/// **It is honest per person.** The model skips every question whose premise
+/// the reader has already contradicted, so `total` is THAT reader's total and
+/// "3 of 7" means three of their seven. A bar cannot say that; it just creeps.
+///
+/// Otto breathes beside it at the same five second pace as everywhere else,
+/// which is the only moving thing on a question screen (Melvin, 2026-09-20:
+/// Otto breathing top-left through the questions).
+struct OnboardingCounter: View {
+    let index: Int
+    let total: Int
+
+    var body: some View {
+        HStack(spacing: 8) {
+            OttoMark(size: 30, pose: .head)
+                .ottoBreathing()
+            Text("\(index) of \(total)")
+                .font(OnboardingType.sub)
+                .foregroundStyle(AppColor.textSecondary)
+                .monospacedDigit()
+            Spacer(minLength: 0)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Question \(index) of \(total)")
+    }
+}
+
 struct OnboardingProgress: View {
     let value: Double
 
