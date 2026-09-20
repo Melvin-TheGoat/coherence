@@ -359,6 +359,13 @@ enum OttoPose {
         case .meditating: return "OttoSit"
         case .awake:      return "OttoAwake"
         case .pleased:    return "OttoWave"
+        // `OttoTalk` currently holds the WAVING art (2026-09-20): the second
+        // pose set has four poses and no dedicated talking one, and the wave
+        // is the only one with an open mouth, which is the thing `talking` is
+        // for. The raised arm is the mismatch, and at 40 to 48pt in a chat
+        // bubble it reads as expressive rather than wrong. Melvin's brief
+        // (mockups/otto-redesign.md) carries the prompt line for real talking
+        // art; when it exists, this image set is the only thing to change.
         case .talking:    return "OttoTalk"
         case .resting:    return "OttoSleep"
         case .head:       return "OttoHead"
