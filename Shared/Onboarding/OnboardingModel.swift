@@ -868,14 +868,8 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .stress, .watchGate, .you, .referral:
+        case .baseline, .motivation, .stress, .watchGate, .referral:
             return true
-
-        // "Can you be alone with your thoughts?" is framed as a diagnostic of
-        // a restless mind. Asking someone who meditates most days is faintly
-        // insulting.
-        case .aloneWithThoughts:
-            return persona != .regular
 
         // Presumes previous attempts.
         case .restarts:
@@ -917,11 +911,14 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// they came from. Asked at the door, nearly everyone answers.
     case referral
     case baseline, motivation, stress
-    case aloneWithThoughts
     case restarts, intendedFor
     case bodyCuriosity, bodyTracking
     case blindSpot
-    case watchGate, you
+    case watchGate
+    // CUT 2026-09-19 (Melvin): `aloneWithThoughts` (the last escalation
+    // question, gone the way `doingNothing` went) and `you` (name and age;
+    // the nickname and handle are asked on Create your profile, so this
+    // asked twice for the name and once for an age nothing used).
     // CUT 2026-09-15 (Melvin: "too crowded"): `doingNothing` (the second
     // escalation question asked what `aloneWithThoughts` already had),
     // `bodyProof` (its sibling `bodyCuriosity` carries the idea alone), and

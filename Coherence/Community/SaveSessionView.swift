@@ -46,6 +46,9 @@ struct SaveSessionView: View {
     @State private var publicNote = ""
     @State private var privateNote = ""
     @State private var technique: String?
+    /// The words behind "Something else", kept and saved like the results
+    /// card keeps them.
+    @State private var techniqueNote: String = ""
     @State private var visibility: Visibility = .friends
     /// A shot taken on this screen and not yet saved.
     @State private var newPhoto: UIImage?
@@ -67,7 +70,7 @@ struct SaveSessionView: View {
 
     /// Which field holds the keyboard, so Done can put it away.
     @FocusState private var focused: Field?
-    private enum Field: Hashable { case title, publicNote, privateNote }
+    private enum Field: Hashable { case title, publicNote, privateNote, techniqueNote }
 
     enum Visibility: String { case friends, `private` }
 
@@ -340,16 +343,25 @@ struct SaveSessionView: View {
 
     private var techniqueRow: some View {
         inset {
-            Menu {
-                Button("Unreported") { technique = nil }
-                Divider()
-                ForEach(MeditationMethod.loggable, id: \.id) { item in
-                    Button(item.label) { technique = item.id }
+            VStack(alignment: .leading, spacing: 0) {
+                Menu {
+                    TechniqueOptions { technique = $0 }
+                } label: {
+                    rowLabel(icon: "sparkles",
+                             text: MeditationMethod.label(for: technique) ?? "What did you practice?",
+                             placeholder: technique == nil, chevron: true)
                 }
-            } label: {
-                rowLabel(icon: "sparkles",
-                         text: MeditationMethod.label(for: technique) ?? "What did you practice?",
-                         placeholder: technique == nil, chevron: true)
+                // "Something else" carries its own words, the same as it does
+                // on the results card. Without this the option could be
+                // picked here and the sentence lost.
+                if technique == MeditationMethod.ownID {
+                    TextField("What did you do?", text: $techniqueNote, axis: .vertical)
+                        .lineLimit(1...3)
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .focused($focused, equals: .techniqueNote)
+                        .padding(.top, 10)
+                }
             }
         }
     }
@@ -420,6 +432,7 @@ struct SaveSessionView: View {
             ?? SessionStore.defaultTitle(for: session?.startedAt ?? Date())
         publicNote = reflection?.publicNote ?? ""
         privateNote = reflection?.note ?? ""
+        techniqueNote = reflection?.techniqueNote ?? ""
         technique = reflection?.technique
             ?? (session?.mode == SessionMode.guided.rawValue ? MeditationMethod.guidedID : nil)
         if let kept = SessionStore.photo(for: sessionID, in: context) { storedPhoto = PhotoThumbs.full(kept) }
@@ -452,7 +465,7 @@ struct SaveSessionView: View {
             ? SessionStore.defaultTitle(for: session.startedAt) : title
         SessionStore.saveSession(sessionID: sessionID, title: finalTitle, publicNote: publicNote,
                                  privateNote: privateNote, visibility: Visibility.private.rawValue,
-                                 technique: technique, in: context)
+                                 technique: technique, techniqueNote: techniqueNote, in: context)
         persistPhotoIfTaken()
         onDone()
     }
@@ -475,7 +488,7 @@ struct SaveSessionView: View {
                 ? SessionStore.defaultTitle(for: session.startedAt) : title
             SessionStore.saveSession(sessionID: sessionID, title: finalTitle, publicNote: publicNote,
                                      privateNote: privateNote, visibility: visibility.rawValue,
-                                     technique: technique, in: context)
+                                     technique: technique, techniqueNote: techniqueNote, in: context)
             switch visibility {
             case .private:
                 persistPhotoIfTaken()
@@ -519,7 +532,7 @@ struct SaveSessionView: View {
                     // it as private so the chip on results tells the truth.
                     SessionStore.saveSession(sessionID: sessionID, title: finalTitle, publicNote: publicNote,
                                              privateNote: privateNote, visibility: Visibility.private.rawValue,
-                                             technique: technique, in: context)
+                                             technique: technique, techniqueNote: techniqueNote, in: context)
                     problem = community.errorText ?? "Couldn't reach iCloud."
                     community.errorText = nil
                     saving = false

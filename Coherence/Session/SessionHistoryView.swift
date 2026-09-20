@@ -95,6 +95,12 @@ struct ProfileTab: View {
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                 }
+                if FeatureFlags.friends, community.phase == .ready {
+                    FollowLine(followers: community.follow.followers,
+                               following: community.follow.following,
+                               personID: community.myID)
+                        .padding(.top, 2)
+                }
             }
             Spacer(minLength: 0)
         }
@@ -220,11 +226,6 @@ struct ProfileTab: View {
             stat("\(streak.longest)", "longest")
             stat("\(sessions.count)", "sessions")
             stat(hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours), "practiced")
-            // Only you see this screen, so the friend count lives here and
-            // nowhere anyone else can read it.
-            if FeatureFlags.friends, community.phase == .ready {
-                stat("\(community.friendCount)", "friends")
-            }
         }
     }
 

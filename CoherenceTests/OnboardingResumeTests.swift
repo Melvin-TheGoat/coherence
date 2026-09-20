@@ -76,12 +76,27 @@ final class OnboardingResumeTests: XCTestCase {
     }
 }
 
-/// The next App Store build must not carry the unfinished Friends feature.
+/// What this build does and does not carry to the App Store.
+///
+/// Friends is ON from 1.1 (branch `social-1.1`, Melvin 2026-09-18: ship the
+/// social update first, because it is what people want and it does not wait
+/// on the privacy work Otto and camera vision need). Otto stays OFF: it is
+/// the thing that would hold the release up, and a locked row would sell
+/// what the build does not contain.
 final class FeatureFlagTests: XCTestCase {
-    func test_friendsIsOffForTheAppStoreUntil1_1() {
+    func test_ottoIsOffForTheAppStore() {
         XCTAssertFalse(FeatureFlags.ottoInRelease,
-                       "Otto ships to the store only once the founders have read its answers")
-        XCTAssertFalse(FeatureFlags.friendsInRelease,
-                       "Friends ships in 1.1 after RELEASE_CHECKLIST's 1.1 list; flip this only in that archive")
+                       "Otto ships once the founders have read its answers and the policy names it")
+    }
+
+    /// Friends on means the 1.1 list in RELEASE_CHECKLIST.md is owed in the
+    /// SAME submission: the public CloudKit schema in Production, the UGC and
+    /// Social age answers, the privacy labels and both policy copies, and a
+    /// report path that reaches a person. None of those live in code, so this
+    /// test cannot check them; it exists to put the list in front of whoever
+    /// reads the flag.
+    func test_friendsIsOnForOnePointOne() {
+        XCTAssertTrue(FeatureFlags.friendsInRelease,
+                      "Friends ships in 1.1; walk RELEASE_CHECKLIST.md's 1.1 list before submitting")
     }
 }

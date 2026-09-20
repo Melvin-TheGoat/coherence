@@ -9,12 +9,18 @@ handles information in the **808** app for iPhone and Apple Watch.
 
 808 is built to be private by design:
 
-- **We don't run a server and we can't see your data.** Your account,
-  preferences, and session log sync through **your own private iCloud account**
-  (Apple's CloudKit). Your **health results** (heart-rate trend, stillness, breathing rate, and Apple's heart-rate-variability readings when your Watch produces them)
-  are stored **only on the device that recorded them** — the app never uploads
-  them anywhere, not even to iCloud. We have no backend that receives or stores
-  your personal or health information.
+- **We don't run a server.** Your account, preferences, and session log sync
+  through **your own private iCloud account** (Apple's CloudKit). Your
+  **health results** (heart-rate trend, stillness, breathing rate, and Apple's
+  heart-rate-variability readings when your Watch produces them) are stored
+  **only on the device that recorded them**. The app never uploads them
+  anywhere, not even to iCloud.
+- **The one thing we can see is what you post to friends.** If you use
+  Friends, your profile and the sessions you choose to post go to a shared
+  area of iCloud that other people in 808 can read, and so can we. That is
+  what makes it a feed. Nothing goes there unless you put it there, your
+  health results never do, and you can delete any of it. See "Friends and
+  posts" below.
 - **We don't sell your data, run ads, or track you.** There are no advertising
   identifiers and no cross-app tracking. We collect anonymous usage analytics
   (which features are used, not what your body measured); see "Usage
@@ -89,7 +95,7 @@ or cross-website tracking.
 
 ## Where your information lives and who can access it
 
-Your information lives in two places, by design:
+Your information lives in three places, by design:
 
 - **Health results stay on your device.** Your session measurements — the
   heart-rate trend, stillness, breathing-rate and heart-rate-variability results — are stored **only in the app's local
@@ -102,9 +108,50 @@ Your information lives in two places, by design:
   own devices. A photo is shared with other people only when you choose to
   post that session to friends.
 
-**We do not operate servers that store your data, and we cannot access the
-contents of your private iCloud database.** Apple processes this data under
+- **What you post to friends is shared.** If you set up a profile in
+  Friends, your username, display name, profile photo, the sessions you post
+  and the photos on them go to a **shared (public) area of our iCloud
+  container**. Other people using 808 can see it, and so can we. This is the
+  only information you give 808 that we are able to read.
+
+**We do not operate servers of our own, and we cannot access the contents of
+your private iCloud database.** Apple processes all of this under
 [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
+
+## Friends and posts
+
+Friends is optional. If you never create a profile, nothing in this section
+applies to you and 808 never touches the shared area.
+
+**What goes there when you use it:**
+
+- Your **profile**: the username you choose, your display name, a profile
+  photo if you add one, and the month you started practising.
+- A **post**, only for a session you set to Friends: its score, length,
+  streak, the technique you tagged, the title and description you wrote, and
+  the selfie you took. You can change a session back to Only you at any time,
+  which takes the post down.
+- **Who you have added**, so a feed can exist.
+- A **report** you file about someone, including the reason you type.
+
+**What never goes there:** your heart rate, your breathing, your stillness,
+any of the curves, and every reading behind the score. A post carries the
+same fields as the share card and nothing more. Your private notes stay
+private, and the session log in your own iCloud is separate from all of this.
+
+**Who can see it:** anyone using 808 can find your profile by your username
+and see that you exist. Your posts are shown to the people you are friends
+with. We can read everything in the shared area, because moderating it
+requires that.
+
+**Moderation.** Text you post is filtered for objectionable language before
+it is accepted. You can report a post or a person, and you can block someone,
+which hides you from each other in both directions. We remove content that
+breaks our terms and we can remove accounts that repeatedly break them.
+
+**Deleting it.** Setting a session back to Only you removes its post.
+Deleting your account removes your profile, your posts, your photos and the
+connections between you and other people from the shared area.
 
 ## How the information is used
 

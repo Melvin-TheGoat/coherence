@@ -234,6 +234,39 @@ actor CommunityStore {
         return facts
     }
 
+    /// Following and followers for ANY profile, mine or someone else's.
+    ///
+    /// No new record type and no schema change: the edge has always been
+    /// directional (`from` asked, `to` was asked), so "following" is the
+    /// edges a person wrote and "followers" the edges written at them. A
+    /// mutual pair is a friendship, which is why the two numbers differ only
+    /// by the requests either side has not answered. Blocks are honoured both
+    /// ways, as everywhere else.
+    ///
+    /// For my OWN profile the model already holds the lists and does this
+    /// arithmetic without a query (`CommunityModel.follow`).
+    func followCounts(of person: String) async throws -> (followers: Int, following: Int) {
+        let (followers, following) = try await follows(of: person)
+        return (followers.count, following.count)
+    }
+
+    /// The two lists behind `followCounts`.
+    func follows(of person: String) async throws -> (followers: [String], following: [String]) {
+        async let outRecords = db.query(CommunityQuery(type: CommunityType.edge,
+                                                       filters: [.equals("from", .reference(person))], limit: 500))
+        async let inRecords = db.query(CommunityQuery(type: CommunityType.edge,
+                                                      filters: [.equals("to", .reference(person))], limit: 500))
+        let (out, inn) = try await (outRecords, inRecords)
+        let blocked = try await blockedEitherWay()
+        // `authored` cannot vouch for someone else's edges the way it does
+        // for mine (only CloudKit's creator field proves an author, and it
+        // names the edge's own writer), so an edge counts when its writer
+        // wrote it: `from` is the author by construction of the record name.
+        let following = Set(out.compactMap(FriendEdge.init(record:)).filter { $0.from == person }.map(\.to))
+        let followers = Set(inn.compactMap(FriendEdge.init(record:)).filter { $0.to == person }.map(\.from))
+        return (followers.subtracting(blocked).sorted(), following.subtracting(blocked).sorted())
+    }
+
     /// Profile record names of everyone with edges in BOTH directions, minus
     /// anyone blocked either way.
     func friends() async throws -> [String] {

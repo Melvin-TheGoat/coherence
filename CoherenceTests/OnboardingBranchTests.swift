@@ -41,7 +41,6 @@ final class OnboardingBranchTests: XCTestCase {
             XCTAssertFalse(a.interview.contains(.intendedFor), "\(frequency): asked when they'd start")
             XCTAssertTrue(a.interview.contains(.bodyCuriosity), "\(frequency): the body questions are for practitioners")
             XCTAssertFalse(a.interview.contains(.restarts), "\(frequency): asked about restarts")
-            XCTAssertFalse(a.interview.contains(.aloneWithThoughts), "\(frequency): condescending diagnostic")
             XCTAssertTrue(a.interview.contains(.blindSpot), "\(frequency): never asked what they can't see")
         }
     }
@@ -63,7 +62,7 @@ final class OnboardingBranchTests: XCTestCase {
     /// Whatever the path, the screens that carry the product must always run.
     func test_everyPathKeepsTheLoadBearingScreens() {
         let required: [InterviewStep] = [.baseline, .motivation, .stress, .watchGate,
-                                         .you, .referral]
+                                         .referral]
         for frequency in CurrentFrequency.allCases {
             var a = OnboardingAnswers()
             a.currentFrequency = frequency

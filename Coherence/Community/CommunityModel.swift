@@ -90,6 +90,45 @@ final class CommunityModel: ObservableObject {
 
     var friendCount: Int { friends.count }
 
+    /// My own following and followers, from the lists already loaded: the
+    /// edges I wrote are my friends plus the requests I have sent, and the
+    /// edges written at me are my friends plus the requests I have not
+    /// answered. No query (Melvin, 2026-09-18: "a follower/following for
+    /// each profile").
+    var follow: (followers: Int, following: Int) {
+        (friends.count + incoming.count, friends.count + sent.count)
+    }
+
+    /// Someone else's counts, fetched once per profile and cached so a
+    /// profile page opened twice does not query twice.
+    @Published private(set) var followCounts: [String: (followers: Int, following: Int)] = [:]
+
+    /// The people behind one of the two numbers, cached the same way. For my
+    /// own id the lists are already loaded, so this is free.
+    func follows(_ list: FollowList) async -> [String] {
+        if list.person == myID {
+            let ids = list.which == .followers ? friends + incoming : friends + sent
+            await cacheIfNeeded(Set(ids))
+            return ids.sorted()
+        }
+        guard let store, phase == .ready,
+              let both = try? await store.follows(of: list.person) else { return [] }
+        let ids = list.which == .followers ? both.followers : both.following
+        followCounts[list.person] = (both.followers.count, both.following.count)
+        await cacheIfNeeded(Set(ids))
+        return ids
+    }
+
+    private func cacheIfNeeded(_ names: Set<String>) async {
+        try? await cache(names: names)
+    }
+
+    func loadFollowCounts(_ id: String) async {
+        guard let store, phase == .ready, followCounts[id] == nil else { return }
+        guard let counts = try? await store.followCounts(of: id) else { return }
+        followCounts[id] = counts
+    }
+
     /// A session finished. Stamps the profile's first session once, which is
     /// the fact the invite reward reads. Cheap after the first time: nothing
     /// is fetched when the profile already carries the date.
