@@ -391,8 +391,8 @@ struct OnboardingScreen<Content: View>: View {
                         OnboardingProgress(value: progress)
                     }
                 }
-                .frame(height: 40)
-                .padding(.bottom, progress == nil && counter == nil ? 6 : 20)
+                .frame(height: counter == nil ? 40 : 74, alignment: .bottom)
+                .padding(.bottom, progress == nil && counter == nil ? 6 : 14)
             }
 
             Text(title)
@@ -481,27 +481,30 @@ struct OnboardingScreen<Content: View>: View {
 
 /// A thin rail, not a percentage — the count of screens is our business, not
 /// something to make the user tally.
-/// Where you are in the interview, as a count rather than a bar.
+/// Otto asking, and where you are in his questions.
 ///
-/// **It is honest per person.** The model skips every question whose premise
-/// the reader has already contradicted, so `total` is THAT reader's total and
-/// "3 of 7" means three of their seven. A bar cannot say that; it just creeps.
+/// **He stands in the corner the way Duolingo's owl does** (Melvin,
+/// 2026-09-20), clipboard in hand, because the screen is him asking rather
+/// than the app collecting. A progress bar says the same thing with no one
+/// saying it.
 ///
-/// Otto breathes beside it at the same five second pace as everywhere else,
-/// which is the only moving thing on a question screen (Melvin, 2026-09-20:
-/// Otto breathing top-left through the questions).
+/// **The count is honest per person.** The model skips every question whose
+/// premise the reader has already contradicted, so `total` is THAT reader's
+/// total and "3 of 7" means three of their seven. A bar cannot say that; it
+/// just creeps.
 struct OnboardingCounter: View {
     let index: Int
     let total: Int
 
     var body: some View {
-        HStack(spacing: 8) {
-            OttoMark(size: 30, pose: .head)
+        HStack(alignment: .bottom, spacing: 10) {
+            OttoMark(size: 74, pose: .asking)
                 .ottoBreathing()
             Text("\(index) of \(total)")
                 .font(OnboardingType.sub)
                 .foregroundStyle(AppColor.textSecondary)
                 .monospacedDigit()
+                .padding(.bottom, 10)
             Spacer(minLength: 0)
         }
         .accessibilityElement(children: .combine)

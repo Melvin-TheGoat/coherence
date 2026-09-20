@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>808 UI v4: fewer things, same app</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FDF7ED; --sky:#FDEDE1; --ink:#3C2A1F; --ink2:#8A7566;
+    --card:#FFFDF9; --fur:#C99B72; --amber:#E3A544; --sage:#6EAFA2; --blush:#F2AF91;
+    --line:rgba(60,42,31,.10);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#EFE7DC;color:var(--ink);
+       font:15px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Rounded","Segoe UI",sans-serif}
+  h1,h2,h3,.disp{font-family:"Baloo 2",system-ui;font-weight:800;letter-spacing:-.01em}
+  .wrap{max-width:1280px;margin:0 auto;padding:44px 24px 90px}
+  h1{font-size:34px;margin:0 0 6px}
+  .lede{font-size:17px;color:#5d4c40;max-width:70ch;margin:0 0 6px}
+  .rule{height:1px;background:var(--line);margin:34px 0 26px}
+  h2{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--ink2);margin:0 0 20px;max-width:72ch}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .col{flex:1 1 300px;min-width:290px}
+  .note{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:14px}
+  .note b{display:block;margin-bottom:3px}
+  .note.cut{border-left:4px solid #C98C72}
+  .note.keep{border-left:4px solid var(--sage)}
+  .note.ask{border-left:4px solid var(--amber)}
+  .tag{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;
+       letter-spacing:.08em;padding:3px 9px;border-radius:99px;margin-bottom:8px}
+  .tag.now{background:#E8DFD4;color:#6d5c4f}
+  .tag.next{background:var(--amber);color:#3C2A1F}
+
+  /* phone */
+  .phone{width:300px;border-radius:38px;background:var(--paper);border:9px solid #241a13;
+         box-shadow:0 18px 40px rgba(0,0,0,.2);overflow:hidden;position:relative}
+  .screen{height:620px;position:relative;display:flex;flex-direction:column;overflow:hidden}
+  .status{height:34px;display:flex;align-items:center;justify-content:space-between;
+          padding:0 18px;font-size:11px;font-weight:700;color:var(--ink);flex:none}
+  .body{flex:1;padding:0 16px;overflow:hidden}
+  .barwrap{flex:none;border-top:1px solid var(--line);background:#fffdfa;
+           display:flex;align-items:center;justify-content:space-around;padding:8px 6px 10px;position:relative}
+  .tab{font-size:10px;color:var(--ink2);text-align:center;width:52px}
+  .tab .ic{display:block;font-size:17px;margin-bottom:2px}
+  .tab.on{color:var(--ink);font-weight:700}
+  .plus{width:52px;height:52px;border-radius:50%;background:var(--amber);color:#fff;
+        display:flex;align-items:center;justify-content:center;font-size:27px;margin-top:-20px;
+        box-shadow:0 6px 14px rgba(227,165,68,.45)}
+
+  .greet{font-size:21px;font-weight:800;font-family:"Baloo 2";margin:10px 0 0}
+  .date{font-size:12px;color:var(--ink2);margin-bottom:8px}
+  .scene{background:linear-gradient(180deg,var(--sky),var(--paper));margin:0 -16px;padding:6px 16px 14px;
+         border-radius:0 0 26px 26px}
+  .ottorow{display:flex;align-items:flex-end;gap:8px}
+  .ottorow img{width:74px;margin-left:-10px}
+  .bubble{background:#fff;border-radius:16px;padding:9px 12px;font-size:12.5px;line-height:1.35;
+          box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:12px}
+  .streak{background:#fff;border-radius:99px;padding:9px 16px;display:flex;align-items:center;gap:9px;
+          margin:12px auto 0;width:max-content;box-shadow:0 2px 8px rgba(0,0,0,.05);font-size:12.5px}
+  .streak b{font-family:"Baloo 2";font-size:19px;color:#B4552F}
+  .card{background:var(--card);border-radius:18px;padding:13px 14px;margin-top:12px;
+        box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .lastline{display:flex;align-items:center;gap:11px}
+  .num{font-family:"Baloo 2";font-size:27px;color:var(--amber);font-weight:800;line-height:1}
+  .muted{color:var(--ink2);font-size:12px}
+  .week{display:flex;justify-content:space-between;margin-top:10px}
+  .day{width:27px;text-align:center;font-size:10px;color:var(--ink2)}
+  .dot{width:24px;height:24px;border-radius:50%;background:#EFE5D8;margin:3px auto 0}
+  .dot.on{background:var(--blush)}
+  .dot.today{box-shadow:0 0 0 2px var(--amber)}
+  .sec{font-family:"Baloo 2";font-weight:700;font-size:14px;margin:16px 0 0}
+
+  .ring{width:106px;height:106px;border-radius:50%;margin:8px auto 0;
+        background:conic-gradient(var(--amber) 0 81%, #EDE3D6 81% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring i{width:82px;height:82px;border-radius:50%;background:var(--paper);display:flex;
+          align-items:center;justify-content:center;font-style:normal;
+          font-family:"Baloo 2";font-size:31px;font-weight:800}
+  .verdict{text-align:center;font-size:13px;line-height:1.45;margin:10px 4px 0}
+  .disclose{border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-top:14px;
+            display:flex;justify-content:space-between;align-items:center;font-size:12.5px;background:#fff}
+  .chev{color:var(--ink2)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:24px 24px 0 0;
+         padding:14px 16px 18px;box-shadow:0 -8px 30px rgba(0,0,0,.14)}
+  .grab{width:36px;height:4px;border-radius:9px;background:#E3D8C9;margin:0 auto 12px}
+  .opt{border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin-bottom:8px;font-size:13px;
+       display:flex;justify-content:space-between;align-items:center}
+  .opt.sel{border-color:var(--amber);background:#FEF7E9}
+  .cta{background:var(--amber);color:#3C2A1F;border-radius:99px;text-align:center;
+       padding:13px;font-weight:800;font-family:"Baloo 2";margin-top:6px}
+  .stat{display:flex;justify-content:space-between;margin-top:12px;text-align:center}
+  .stat div b{display:block;font-family:"Baloo 2";font-size:19px}
+  .stat div span{font-size:10.5px;color:var(--ink2)}
+  .bars{display:flex;align-items:flex-end;gap:4px;height:64px;margin-top:12px}
+  .bars i{flex:1;background:var(--amber);border-radius:3px 3px 0 0;opacity:.85}
+  .logrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+  .logrow img{width:30px;border-radius:8px}
+  ol{padding-left:20px} ol li{margin:7px 0}
+  code{background:#EFE7DC;padding:1px 5px;border-radius:5px;font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>808 UI v4: fewer things, the same app</h1>
+<p class="lede">Melvin, 2026-09-20: a total UI overhaul, aim for simplicity. This is the
+proposal, drawn before any Swift, per the standing rule. Nothing here changes what 808
+measures or how it scores; it changes how much of the app you have to hold in your head.</p>
+<p class="lede"><b>The thesis, and every cut below follows from it:</b> 808 is one loop.
+Sit, see the number, come back tomorrow. A screen either serves that loop or it is
+furniture. Today the loop is spread over five tabs and roughly nine blocks of Home and
+results; the same loop fits in four tabs and four blocks.</p>
+
+<div class="rule"></div>
+
+<h2>1. Four tabs, not five</h2>
+<p class="sub">Guide is eight articles behind a permanent tab. It is read once, near the
+beginning, and it is most useful in the half second before you sit rather than as a
+destination you visit. It moves into the plus sheet, where the question "what do I
+actually do?" is already being asked.</p>
+
+<div class="row">
+  <div class="col" style="flex:0 0 300px">
+    <span class="tag now">Now</span>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>oooo</span></div>
+      <div class="body" style="display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:13px;text-align:center">
+        Home &middot; Guide &middot; [+] &middot; Friends &middot; Profile<br><br>
+        Five destinations for a loop<br>with two states.
+      </div>
+      <div class="barwrap">
+        <div class="tab on"><span class="ic">&#127968;</span>Home</div>
+        <div class="tab"><span class="ic">&#128216;</span>Guide</div>
+        <div class="plus">+</div>
+        <div class="tab"><span class="ic">&#128101;</span>Friends</div>
+        <div class="tab"><span class="ic">&#128100;</span>Profile</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col" style="flex:0 0 300px">
+    <span class="tag next">Proposed</span>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>oooo</span></div>
+      <div class="body" style="display:flex;align-items:center;justify-content:center;color:var(--ink2);font-size:13px;text-align:center">
+        Home &middot; [+] &middot; Friends &middot; You<br><br>
+        Today, the people, and<br>everything you have done.
+      </div>
+      <div class="barwrap">
+        <div class="tab on"><span class="ic">&#127968;</span>Home</div>
+        <div class="tab" style="visibility:hidden">x</div>
+        <div class="plus">+</div>
+        <div class="tab"><span class="ic">&#128101;</span>Friends</div>
+        <div class="tab"><span class="ic">&#128100;</span>You</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <div class="note cut"><b>Cut: the Guide tab.</b> The eight methods move to a
+      "How to meditate" row inside the plus sheet and a link in You. Nothing is deleted;
+      `GuideView(embedded:)` already exists and already opens the setup sheet.</div>
+    <div class="note keep"><b>Kept: the plus.</b> It is still the only way to start a
+      session and still the only amber object on the bar.</div>
+    <div class="note ask"><b>Costs.</b> The tour anchors `.guide` at the Guide tab item,
+      so the walkthrough needs one edit. And anyone who opened Guide to browse now has to
+      go through the plus, which is one more tap for a page most people read once.</div>
+  </div>
+</div>
+
+<div class="rule"></div>
+
+<h2>2. Home is today, and nothing else</h2>
+<p class="sub">Home currently carries the greeting, the date, Otto and his line, the
+streak, a seven day strip and three full session cards, each with a score, a title, a
+duration and three metrics. Profile then shows the streak again, four stats, a score
+chart and the same sessions. Two screens answering the same question is the single
+biggest thing to fix.</p>
+
+<div class="row">
+  <div class="col" style="flex:0 0 300px">
+    <span class="tag next">Proposed Home</span>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>oooo</span></div>
+      <div class="body">
+        <div class="scene">
+          <div class="greet">Good evening, Melvin</div>
+          <div class="date">Sunday, September 20</div>
+          <div class="ottorow">
+            <img src="otto-v3/otto-wave.png" alt="">
+            <div class="bubble">Day 7. You already sat today, so today is done.</div>
+          </div>
+        </div>
+        <div class="streak"><b>7</b> day streak <span class="muted">&middot; best 7</span></div>
+
+        <div class="card">
+          <div class="lastline">
+            <div class="num">55</div>
+            <div>
+              <div style="font-weight:700;font-size:13px">Today, 10 min</div>
+              <div class="muted">Manifest Your Dream Life</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="week">
+          <div class="day">M<div class="dot on"></div></div>
+          <div class="day">T<div class="dot on"></div></div>
+          <div class="day">W<div class="dot on"></div></div>
+          <div class="day">T<div class="dot on"></div></div>
+          <div class="day">F<div class="dot on"></div></div>
+          <div class="day">S<div class="dot on"></div></div>
+          <div class="day">S<div class="dot on today"></div></div>
+        </div>
+      </div>
+      <div class="barwrap">
+        <div class="tab on"><span class="ic">&#127968;</span>Home</div>
+        <div class="tab" style="visibility:hidden">x</div>
+        <div class="plus">+</div>
+        <div class="tab"><span class="ic">&#128101;</span>Friends</div>
+        <div class="tab"><span class="ic">&#128100;</span>You</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <div class="note cut"><b>Cut: the Recent list.</b> Three tall cards become one line
+      for the last sit: the number, when, how long, what it was. The rest of the history
+      is one tap away in You, where it is not competing with today.</div>
+    <div class="note cut"><b>Cut: three metrics per card.</b> Heart, Still and Breath on
+      a Home card ask you to read three numbers before you have read the one number the
+      app exists to give you. They stay on the results screen, where they belong.</div>
+    <div class="note keep"><b>Kept: Otto, the streak, the seven days.</b> Otto is the
+      voice, the streak is the reason to come back, and the rolling seven days answers
+      "did I show up" for the days still winnable. Four blocks, one screen, no scrolling
+      on a phone this size.</div>
+    <div class="note ask"><b>Open question.</b> With Recent gone, the only way to reach
+      an old session from Home is through You. If you would rather keep one tap, the last
+      line can push straight to that session and the rest still lives in You.</div>
+  </div>
+</div>
+
+<div class="rule"></div>
+
+<h2>3. Results: the number, then the evidence, then you</h2>
+<p class="sub">Results is the best screen in the app and the longest: ring, "how is this
+scored", verdict, technique and sound, three metric tiles, a resonance chip, three full
+graphs, the photo, the reflection card and the share row. Everything below the verdict is
+evidence, and evidence is something you ask for.</p>
+
+<div class="row">
+  <div class="col" style="flex:0 0 300px">
+    <span class="tag next">Proposed results</span>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>oooo</span></div>
+      <div class="body">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+          <div class="muted">&#8593; Share</div><div class="muted">Done</div>
+        </div>
+        <div class="ring"><i>81</i></div>
+        <div class="verdict"><b>Your practice landed.</b><br>
+          Your heart settled 13 beats and your breath found six a minute for the first
+          three minutes.</div>
+
+        <div class="disclose"><span>Show the evidence</span><span class="chev">&#9662;</span></div>
+        <div class="disclose"><span>How is this scored?</span><span class="chev">&#9656;</span></div>
+
+        <div class="card" style="margin-top:16px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px">How was it?</div>
+          <div class="muted" style="font-size:12px">A note for yourself, if you want one.</div>
+        </div>
+      </div>
+      <div class="barwrap" style="justify-content:center">
+        <div class="cta" style="width:86%;margin:0">Save session</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col">
+    <div class="note keep"><b>Kept, and now alone above the fold: the number and the
+      sentence.</b> That is the product. On a free account the sentence loses its
+      quantities, exactly as it does today.</div>
+    <div class="note cut"><b>Folded: the three tiles, the chip and the three graphs</b>
+      into one "Show the evidence" row. Open once and it stays open, so anyone who wants
+      the curves every time keeps them. This is also where the paid lock lives, which
+      makes the offer legible instead of scattered over three panels.</div>
+    <div class="note ask"><b>The bigger question: merge Save session into this screen.</b>
+      Today a sit ends with two full screens that both talk about the same sit, Save
+      session then results. Drawn here as one screen with Save at the bottom. It is the
+      biggest simplification available and the most contentious, because Save session is
+      Aziz's Strava shape and the visibility choice has to happen before a photo is worth
+      taking. <b>Your call, not mine.</b></div>
+  </div>
+</div>
+
+<div class="rule"></div>
+
+<h2>4. The plus sheet absorbs the guide</h2>
+<p class="sub">The one place the question "what do I do for ten minutes?" is actually
+being asked.</p>
+
+<div class="row">
+  <div class="col" style="flex:0 0 300px">
+    <span class="tag next">Proposed</span>
+    <div class="phone"><div class="screen">
+      <div class="status"><span>9:41</span><span>oooo</span></div>
+      <div class="body" style="opacity:.35;display:flex;align-items:center;justify-content:center">
+        <div class="muted">Home behind</div>
+      </div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div style="font-family:'Baloo 2';font-weight:800;font-size:18px;margin-bottom:10px">Ready when you are</div>
+        <div class="opt sel"><span>Silence <span class="muted">&middot; or your own audio</span></span><span>&#10003;</span></div>
+        <div class="opt"><span>Guided &middot; Nature &middot; Frequency</span><span class="chev">&#9656;</span></div>
+        <div class="opt"><span>How to meditate <span class="muted">&middot; 8 ways in</span></span><span class="chev">&#9656;</span></div>
+        <div class="cta">Begin</div>
+      </div>
+    </div></div>
+  </div>
+  <div class="col">
+    <div class="note keep"><b>Three rows and a button.</b> Sound is one row that opens the
+      four worlds, rather than a grid plus a list. The guide is the third row, in the
+      moment it is useful.</div>
+    <div class="note keep"><b>You is where everything historical lives:</b> the score
+      chart, the full log, awards, the four stats, settings. Unchanged except that it is
+      now the only place those live, so nothing is drawn twice.</div>
+  </div>
+</div>
+
+<div class="rule"></div>
+
+<h2>What this is not</h2>
+<div class="row">
+  <div class="col">
+    <div class="note"><b>Not a repaint.</b> The friendly redesign is three days old and it
+      works. Same palette, same Baloo 2, same Otto, same cards. This is subtraction only.</div>
+    <div class="note"><b>Not a change to the score or the evidence.</b> Nothing measured
+      moves. The curves, the tiles and the verdict are all still there, one tap deeper.</div>
+    <div class="note"><b>Not a Friends change.</b> The feed was rebuilt for air on 09-18
+      and is the one screen already doing this. It gets the tab it has.</div>
+  </div>
+  <div class="col">
+    <div class="note ask"><b>Three decisions before any Swift:</b>
+      <ol>
+        <li>Guide loses its tab, yes or no.</li>
+        <li>Home keeps the last sit as one line, or keeps a short Recent list.</li>
+        <li>Save session merges into results, or the two screens stay.</li>
+      </ol>
+      Answer those three and the build is roughly a day, with the tour anchor and the
+      first-session paywall hook as the two things to re-test.</div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>

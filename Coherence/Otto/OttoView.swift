@@ -346,6 +346,10 @@ enum OttoPose {
     case pleased
     /// Mid sentence. The written verdict, and his own replies.
     case talking
+    /// Clipboard and pen, standing. **The onboarding questions only**, where
+    /// he is asking rather than answering, in the corner the way Duolingo's
+    /// owl stands beside its question (Melvin, 2026-09-20).
+    case asking
     /// His head alone. **The mark**: wherever the 808 flower used to sit next
     /// to the wordmark, and anywhere below about 40pt, where the full sitting
     /// figure is a brown smudge. It is the app icon's own crop, so the badge
@@ -358,6 +362,7 @@ enum OttoPose {
         case .awake:      return "OttoAwake"
         case .pleased:    return "OttoWave"
         case .talking:    return "OttoTalk"
+        case .asking:     return "OttoAsk"
         case .head:       return "OttoHead"
         }
     }

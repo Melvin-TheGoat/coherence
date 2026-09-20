@@ -11,6 +11,7 @@ they are scaled here. Recognised names, and every place each one is seen:
     otto-sit     the session rows, the calendar, anywhere he is meditating
     otto-awake   avatars and list rows, eyes open, looking at you
     otto-head    the mark: the chat row, and anything under about 40pt
+    otto-ask     clipboard in hand: the onboarding question screens
     otto-talk    optional. Without it the waving art stands in, which is
                  what ships today: the wave is the only open mouth we have.
 
@@ -48,6 +49,7 @@ POSES = [
     ("otto-sit", "OttoSit"),
     ("otto-awake", "OttoAwake"),
     ("otto-head", "OttoHead"),
+    ("otto-ask", "OttoAsk"),
     ("otto-talk", "OttoTalk"),
 ]
 # Longest edge in pixels per scale. @1x is 200 points; the rest follow.
