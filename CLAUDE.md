@@ -1817,28 +1817,16 @@ off by default, for onboarding's breath screen only; Home never buzzes).
 
 ## OTTO IS DRAWN; FRIENDS AND PROFILE GET THEIR AIR BACK (2026-09-18)
 
-- **Otto the sloth ships as vector, drawn in Swift** (`Coherence/Otto/
-  OttoArt.swift`). Melvin asked how to "generate" him; the answer is that a
-  generated raster is the wrong artefact here. The mark appears from 24 pt
-  (a chat row) to 160 pt (a locked state) and must recolour with the theme,
-  which a PNG cannot do, and it has to sit in the 808 mark's line-art
-  language, which an image model will not hold across three sizes.
-  **The path data is the approved mockup's `d` strings, character for
-  character** (`mockups/otto-sloth.html`), parsed by a small `SVGPath` that
-  handles the absolute M/L/H/V/C/Q those drawings use. A revised drawing is
-  therefore a changed string, not a rewritten view, and what ships is what
-  was reviewed. `OttoMark` is the head badge (the "O" in a circle is gone);
-  `OttoSlothSitting` carries the locked and unavailable screens. Stroke
-  ratios come from the brief: 5% of diameter for the badge (an optical size
-  for 24 to 56 pt), 1.5% of the artboard for the figure. The eye mask is the
-  one fill, 26% of the tint, because outlining it turns to mud at 24 pt.
-  `OttoArtTests` lock the parser (including that a minus starts a new
-  number, the classic way a hand-rolled path parser silently loses a
-  curve), that every string in the art parses, that the figure stays inside
-  its 240 box, and that the twelve hand-written arm paths really are
-  mirrored about the middle. **If more character is wanted than a glyph,
-  the illustrator brief in `mockups/otto-sloth.md` is written and still
-  valid**; nothing about this rules that out, it replaces a placeholder.
+- **SUPERSEDED 2026-09-19. Otto is ART now, not a drawing.** He shipped as
+  vector paths parsed at runtime from `mockups/otto-sloth.html` by a small
+  `SVGPath`, which was the right call while he was a one-colour line glyph
+  that had to take the theme's tint. He became a full-colour character in
+  the friendly redesign, and a character is art: `OttoArt.swift`, `SVGPath`
+  and `OttoArtTests` are DELETED and the poses ship as image sets. The
+  reasoning that put him in code (a raster cannot recolour, an image model
+  will not hold a line-art language across three sizes) was sound and stopped
+  applying the moment he stopped being line art. See the Rive section below
+  for how he is animated, and `mockups/otto-redesign.md` for the art brief.
 - **The Friends feed was too dense** (Melvin: "look at strava, much more
   spaced out, and it has padding around the images and the text"). The post
   card bled to both screen edges with the photo running wall to wall and
@@ -2118,6 +2106,87 @@ lists.** Do not press "Add for Review" with an OPEN item unticked unless the
 user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
 items at the end of every run. Anything learned mid-session that must happen
 at submission goes into OPEN the moment it's learned, not into a summary.
+
+## OTTO.RIV IS BROKEN AND THE APP IS HIDING IT (2026-09-20, for Melvin)
+
+**The Rive rig has never run.** Not once since it landed. Every screen that
+asks for an animated Otto has been drawing the still PNG through
+`OttoRiveView`'s fallback, which is silent by design and looks correct,
+which is exactly why a day went by without anyone noticing.
+
+**The cause is the export, not the app.** `Otto.riv` ships the Rive editor's
+DEFAULT names, artboard `iPhone 16 - 1` and state machine `State Machine 1`,
+while `OttoRig.make()` asks for `"Otto"` for both, so `setArtboard` throws on
+every launch.
+
+**Do not "fix" it by accepting whatever artboard the file has. That was
+tried.** Loaded as `iPhone 16 - 1`, the app renders a BLACK RECTANGLE where
+Otto belongs, because that artboard is a phone-screen-sized frame with a dark
+ground rather than a character. A broken animation beats a broken picture, so
+the loader refuses an artboard that is not ours and falls back, loudly.
+
+**The failure message existed the whole time and was unreadable.** It was a
+`print`, and a `print` from an app launched by simctl never reaches
+`log show`. It is `NSLog` now and on a mismatch it names the artboards the
+file DOES offer beside the two names the app needs, so nobody has to take a
+352 KB binary apart to find out. **Anything explaining a silent fallback has
+to be legible without a debugger attached.**
+
+### What the next export needs, all of it in Rive
+
+1. **Artboard named `Otto`, state machine named `Otto`.** The editor's
+   defaults are what broke this.
+2. **Sized to the character on a transparent ground**, not a device frame.
+3. **A view model named `Otto` exposing `wave` (trigger) and `talking`
+   (boolean).** `enableAutoBind` never fired on this file either, so those
+   two would have done nothing even had the artboard loaded. The app writes
+   them through `OttoRig.wave()` and `OttoRig.talking`.
+4. **The new furry art.** The file EMBEDS two PNGs of the old Otto, named
+   `otto-talk` and `otto-wave`, so it cannot pick up the image sets by
+   swapping them, which `mockups/otto-redesign.md` assumed it could.
+
+Nothing in Swift needs to change when that export lands: the loader already
+asks for those names and the fallback disappears on its own.
+
+**Otto is not motionless meanwhile.** `ottoBreathing()` runs on the fallback,
+so Home breathes. What is missing is the wave and the talking head.
+
+## THE FRIENDLY REDESIGN (2026-09-19/20): what changed, in one screen
+
+Aziz: "the app is just hard to look at, think duolingo esque, just real
+friendly looking." Every screen was rebuilt over two days and it is all on
+`mvp`. The reasoning for each decision is in the commit messages; this is the
+map.
+
+- **Every colour is sampled out of Otto's artwork** (`AppColor`): paper is his
+  cream, ink is his nose, blush is his cheeks. The three meanings are
+  unchanged and finally separable: **amber is a measured score, sage is
+  anything measured off the body, blush is the streak.** Gold used to mean
+  both "you scored this" and "you showed up", which is why one-gold-per-
+  section could never hold.
+- **One appearance. Dark mode is deleted**, `RootView` pins light, and every
+  colorset carries the same value in both so they cannot drift.
+  `Preferences.theme` stays in the schema (dropping a synced property is a
+  migration hazard) and is simply never read.
+- **Baloo 2 for display text, SF Rounded under about 15pt** (`DisplayFont`).
+  The split is deliberate: SF is hinted small, carries every language, and
+  scales with Dynamic Type. `Font.custom` wants the POSTSCRIPT name.
+- **The 808 flower is gone from the product.** `LogoMark.swift` and
+  `tools/logo_lab.swift` are deleted; Otto's head is the mark and the icon.
+- **Home** is a scene (Otto under a sky, on a horizon), a streak capsule on
+  the seam, a rolling **seven days ending today** (never the calendar week: a
+  Sunday-to-Saturday strip draws days that have not happened as failures),
+  and Strava-style session cards.
+- **808 has no month view anywhere.** `MonthCalendar` is deleted. The week
+  answers "did I show up" for the days still winnable and Profile's score
+  chart answers the long question better than a dot grid.
+- **Profile** is a portrait under the same sky, one stats card, **Your
+  scores** (one bar per sit, average as the only line, because there is no
+  value between two sits), and awards as filled squircles: earned is raised,
+  unearned is a hollow.
+- **The share card is the app now**: Home's sky, sage curves, Otto's head,
+  sentence case throughout. It is the only organic advertising 808 has, and a
+  dark card sells a dark app.
 
 ## RESUME HERE (end of 2026-09-14): state of play in one screen
 
