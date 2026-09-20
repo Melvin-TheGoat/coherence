@@ -183,14 +183,15 @@ struct EvidenceRow: View {
     }
 
     /// Otto follows the clock, not the score. Somebody who sits at dawn and
-    /// somebody who sits at midnight get different cards, which is the variety
-    /// this panel needs, and neither of them is being told how they did.
+    /// somebody who sits later get different cards, and neither of them is
+    /// being told how they did.
+    ///
+    /// It was three poses until the lying-down one was cut (Melvin,
+    /// 2026-09-20: "the lying down looks very weird"), so an evening sit now
+    /// shows him settled rather than asleep, which is closer to what the
+    /// person actually did anyway.
     private var pose: OttoPose {
-        switch Calendar.current.component(.hour, from: session.startedAt) {
-        case ..<11: return .awake
-        case 11..<18: return .meditating
-        default: return .resting
-        }
+        Calendar.current.component(.hour, from: session.startedAt) < 11 ? .awake : .meditating
     }
 }
 

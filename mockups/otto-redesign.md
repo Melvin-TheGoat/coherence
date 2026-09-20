@@ -1,32 +1,95 @@
 # Otto: how to draw him again, and how to get the result into the app
 
-Standing brief. Otto has been redrawn twice (the generated set, then the
-furrier one on 2026-09-20) and Melvin still does not like how he looks, so
-this is written for a loop that runs again rather than for one more round.
+Standing brief, rewritten 2026-09-20 for the third attempt. Two halves: the
+prompt, which is Melvin's side, and the import, which is one command each.
 
-Two halves: the prompt, which is Melvin's side, and the import, which is one
-command each.
+## Where this has got to, so the same ground is not walked again
 
-## The import, so the generating side knows what to aim at
+- **The generated set (September).** Sticker-cute. Rejected: "too
+  childish."
+- **The furrier, more realistic set (09-20).** Answered "furrier, older,
+  more realistic proportions" and still read childish, because realism went
+  into the FUR and never into the face. Rejected.
+- **The lying-down pose, same set.** Rejected outright, Melvin: "the lying
+  down looks very weird." It is gone from the app as well as the brief.
+  Evening sessions now show him settled instead of asleep.
 
-**Hand over one PNG per pose, transparent background, any resolution.**
-Name them exactly:
+**The target is now Duolingo's owl** (Melvin: "more similar to the duolingo
+bird, like slightly more 3D, shrunk but still old and wise"). That means a
+compact, rounded, softly dimensional character with a clean silhouette, not
+a textured animal. The previous brief argued the opposite way, toward
+realistic proportions and fur breaking the outline. **Ignore it; it is
+superseded.**
+
+**The tension to hold, and it is the whole job:** chunky and simple almost
+always reads young, which is exactly why Duo reads as a child's character.
+**Age has to come from the face and the posture, never from the
+proportions.** So: keep him short, round and heavy, and put every year of
+him into heavy lids, a brow, a closed mouth and a settled weight. A big
+round body with big round eyes is a toddler. A big round body with lowered
+lids and a level brow is an elder.
+
+## The five poses
 
     otto-wave.png    Home, and the pose the Rive rig animates
     otto-sit.png     session rows, the calendar, anywhere he is meditating
     otto-awake.png   avatars and rows, eyes open, looking at you
-    otto-sleep.png   lying down, wider than it is tall
     otto-head.png    the mark: chat rows, anything under about 40pt
     otto-talk.png    optional; without it the waving art stands in
 
-Drop them in `mockups/otto-v3/` (or v4, v5) and run:
+There is no lying-down pose and nothing in the app asks for one.
+
+## Prompt to paste, one run per pose
+
+Swap only the pose line between runs. Everything else has to stay identical
+or the set will not look like one character.
+
+    A wise old three-toed sloth character for a meditation app, in the style
+    of a modern mobile game mascot: bold rounded shapes, clean silhouette,
+    soft volumetric shading and gentle gradients that give it dimension
+    without being a photoreal render, matte finish, no outlines, no fur
+    texture noise. Compact chunky proportions, short limbs, a heavy settled
+    body. Warm caramel fur with a cream chest and muzzle, a dark brown
+    facial mask. He is OLD AND WISE, and that is carried entirely in the
+    face: heavy half-lowered eyelids over small calm eyes, a level brow
+    ridge above them, a small closed mouth, and paler grizzled cream around
+    the muzzle and brows. Serene, unhurried, grounded. POSE HERE. Facing the
+    viewer, centred, feet at the bottom edge of the frame, the whole
+    character inside the frame. Transparent background, no ground, no
+    shadow on the ground, no props, no text. Must read clearly at 40 pixels
+    tall.
+
+    Pose lines:
+      wave    sitting upright, one arm raised in a small calm wave
+      sit     sitting cross-legged, hands resting on the knees, eyes fully closed, serene
+      awake   sitting, hands on the knees, eyes open under heavy lids, looking at the viewer
+      head    head and shoulders only, eyes open, the faintest smile
+      talk    sitting, one hand raised beside the head, mouth slightly open, mid sentence
+
+    Negative: cute, chibi, baby, cartoon sticker, thick outlines, big glossy
+    eyes, wide open smile, blush cheeks, toy, plastic, photorealistic,
+    background, ground shadow, text, watermark, extra limbs.
+
+**If it is still wrong, change one thing per run.** The levers, in order of
+how much each moves the result: the eyes (lid height), the brow, the mouth,
+then the body mass. A prompt that moves all four at once produces a
+different animal rather than a better one.
+
+**The one thing that cannot change: the palette.** Every colour on every
+screen was sampled out of Otto, so a grey or green-brown sloth, however
+true to life, means repainting the whole app. He can get older. He cannot
+get grey.
+
+## The import
+
+Drop the files in `mockups/otto-v3/` (or v4, v5) named exactly as above,
+then:
 
     python3 tools/otto_import.py mockups/otto-v3
 
-That writes every image set at the sizes the app already uses. **Every pose
-is normalised to a longest edge of 200 points**, so they sit together as one
-character instead of a character and some friends. Then, with the Rive
-editor open on the Otto file:
+That writes every image set at the sizes the app already uses, normalising
+each pose to a longest edge of 200 points so they sit together as one
+character. Then, with the Rive editor open on the Otto file:
 
     python3 tools/otto_swap.py mockups/otto-v3/otto-wave.png
 
@@ -36,71 +99,8 @@ which puts the new art inside the animated rig and writes
 **Transparency is the one thing the repo cannot fix.** This Mac has no
 ImageMagick and no PIL, so nothing here cuts a background out; the importer
 refuses a file that arrives on white rather than shipping a white box. Ask
-the image model for a transparent background. A flat single-colour
-background can be stripped by hand if it comes to that, but it is a step
-nobody should be doing twice a week.
+for a transparent background and check it before running the import.
 
-**A sheet of four poses in one image is how the last round arrived**
-(`mockups/otto-v2/sheet.png`, 1254 square, opaque). It then had to be cut
-and alpha'd by hand before any of it was usable. One pose per image, with
-transparency, skips all of that.
-
-## What is wrong with the current one, and the levers
-
-The 09-20 set is soft, caramel, fuzzy-edged, sitting cross-legged with a
-wide open smile. It answered "furrier, more realistic, older" and still
-reads childish. The things actually carrying that, in rough order of how
-much each one costs:
-
-1. **The face is a mascot's.** Big closed-arc smile, blush ovals on the
-   cheeks, eyes drawn as large glossy dots. Real sloths have a small mouth
-   line, a long snout with visible nostrils, and small eyes set deep in the
-   dark mask.
-2. **The head is too big for the body**, which is the single strongest
-   childishness cue in any drawn character. A real three-toed sloth's head
-   is about a third of its standing height, not a half.
-3. **The edges are sticker edges.** An even silhouette with a uniform fuzzy
-   rim reads as a die-cut. Fur that breaks the outline unevenly, longer at
-   the crown and shoulders, reads as an animal.
-4. **The shading is flat.** One soft top light with real form shadow under
-   the chin, the belly and the arms is most of the difference between a
-   sticker and an illustration.
-
-**What must NOT change, because the app is built on it:** the caramel and
-cream palette. Every colour on every screen was sampled out of Otto, so a
-grey or green-brown sloth, however true to life, means repainting the whole
-app. Keep him warm. Keep him kind: this is a meditation app and the point of
-him is that he is calm, not that he is accurate.
-
-## Prompt to paste, one run per pose
-
-Swap the pose line each time and keep everything else identical, or the set
-will not look like one character.
-
-    A calm three-toed sloth, illustrated for an adult audience. Soft dense
-    fur with uneven strands breaking the silhouette, longer at the crown and
-    shoulders. Warm caramel and cream colouring, a dark brown facial mask
-    with soft edges, small eyes set inside the mask, a long snout with small
-    nostrils, a small closed mouth. Realistic sloth proportions: the head
-    about a third of the body height, long slim arms, three visible claws.
-    One soft light from above with gentle form shadow under the chin and
-    belly. Painterly picture-book illustration, no outlines, no cel shading.
-    POSE HERE. Full body, facing the viewer, centred, feet at the bottom
-    edge of the frame. Transparent background, no ground, no shadow on the
-    ground, no props, no text.
-
-    Pose lines:
-      wave    sitting upright, one arm raised in a small wave, calm and awake
-      sit     sitting cross-legged, hands resting on the knees, eyes closed, serene
-      awake   sitting, hands on the knees, eyes open, looking at the viewer
-      sleep   lying on one side asleep, one arm tucked under the head
-      head    head and shoulders only, eyes open, a faint smile
-      talk    sitting, one hand raised beside the head, mouth slightly open, mid sentence
-
-    Negative: cartoon sticker, thick outlines, big glossy eyes, blush
-    cheeks, chibi, toy, plastic, 3D render, photograph, background, text,
-    watermark, extra limbs.
-
-**If it is still not right, change one thing at a time.** The four levers
-above are separable, and a prompt that moves all of them at once produces a
-different animal rather than a better one.
+**One pose per image, not a sheet.** The 09-20 set arrived as one opaque
+1254 square (`mockups/otto-v2/sheet.png`) and every pose had to be cut and
+alpha'd by hand before any of it was usable.

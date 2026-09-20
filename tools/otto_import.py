@@ -10,16 +10,15 @@ they are scaled here. Recognised names, and every place each one is seen:
     otto-wave    Home, and the waving art the Rive rig animates
     otto-sit     the session rows, the calendar, anywhere he is meditating
     otto-awake   avatars and list rows, eyes open, looking at you
-    otto-sleep   the lying-down pose, wider than it is tall
     otto-head    the mark: the chat row, and anything under about 40pt
     otto-talk    optional. Without it the waving art stands in, which is
                  what ships today: the wave is the only open mouth we have.
 
 Output: the Otto image sets in Shared/Assets.xcassets, at the sizes the app
 already uses. **Every pose is normalised to a longest edge of 200 points**,
-so a tall pose is 200 tall and the sleeping one is 200 wide, and @2x and
-@3x follow. That is what makes a row of different poses look like one
-character rather than a character and some friends.
+so they stand the same height, and @2x and @3x follow. That is what makes
+a row of different poses look like one character rather than a character
+and some friends.
 
 It does NOT touch Otto.riv. The rig embeds its own copy of the art, so the
 animated Otto is a separate step: tools/otto_swap.py, which wants the Rive
@@ -45,7 +44,6 @@ POSES = [
     ("otto-wave", "OttoWave"),
     ("otto-sit", "OttoSit"),
     ("otto-awake", "OttoAwake"),
-    ("otto-sleep", "OttoSleep"),
     ("otto-head", "OttoHead"),
     ("otto-talk", "OttoTalk"),
 ]
@@ -127,8 +125,8 @@ def main():
         os.makedirs(folder, exist_ok=True)
         for suffix, edge in SCALES:
             out = os.path.join(folder, "%s%s.png" % (setname, suffix))
-            # -Z fits the LONGEST edge, so a tall pose gets its height and the
-            # sleeping one gets its width, which is the existing convention.
+            # -Z fits the LONGEST edge, which for an upright pose is its
+            # height. That is the existing convention for these sets.
             subprocess.run(["sips", "-Z", str(edge), source, "--out", out],
                            capture_output=True, check=True)
         with open(os.path.join(folder, "Contents.json"), "w") as fh:

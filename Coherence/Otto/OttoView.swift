@@ -346,8 +346,6 @@ enum OttoPose {
     case pleased
     /// Mid sentence. The written verdict, and his own replies.
     case talking
-    /// Lying down.
-    case resting
     /// His head alone. **The mark**: wherever the 808 flower used to sit next
     /// to the wordmark, and anywhere below about 40pt, where the full sitting
     /// figure is a brown smudge. It is the app icon's own crop, so the badge
@@ -367,7 +365,6 @@ enum OttoPose {
         // (mockups/otto-redesign.md) carries the prompt line for real talking
         // art; when it exists, this image set is the only thing to change.
         case .talking:    return "OttoTalk"
-        case .resting:    return "OttoSleep"
         case .head:       return "OttoHead"
         }
     }
