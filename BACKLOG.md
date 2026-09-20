@@ -4,6 +4,22 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## TestFlight REPLACES the App Store app, and deleting it costs the curves (2026-09-19)
+
+Melvin: "the TestFlight build seems to have overwrote the live App Store
+version". It did, and it always will: one bundle id, one app per device.
+TestFlight is not a second copy, it is the same app updated.
+
+**Do not delete it to get 1.0.1 back.** `MeditationStats` is device-local by
+the 5.1.3 split, so deleting the app deletes every curve, heart trace and
+stillness series ever recorded on that phone. CloudKit brings the sessions
+back and cannot bring those back, and the results screen would show the
+missing-stats card forever.
+
+Side by side is the `.dev` beta: a different bundle id, so it installs
+BESIDE whatever is under `com.lockout.meditate808`, and with `WITH_ICLOUD=1`
+its Friends work against the real container's Development environment.
+
 ## "It overrode my history" was the v5.3 rescore (2026-09-19): NOT A BUG
 
 Melvin's first TestFlight launch moved a sit from 85 to 92. Diagnosed, not
@@ -19,11 +35,16 @@ user's history jumps when 1.1 lands**, so What's New has to say so.
 
 ## Friends "not working" on the beta, and how it actually gets tested (2026-09-19)
 
-The beta (`.dev` bundle) is pinned to `iCloud.com.lockout.meditate808.dev`,
-and that container is not in the Lock Out Inc. Console at all (the picker
-lists only `iCloud.com.lockout.coherence` and `iCloud.com.lockout.meditate808`).
-So every Friends query on the beta hits a database with no schema and no
-indexes. Aziz's dev builds hit `iCloud.com.azizmahmud.808`, a third one.
+The beta's DEFAULT entitlement is `iCloud.$(CFBundleIdentifier)`, which for
+the `.dev` bundle names `iCloud.com.lockout.meditate808.dev`, a container
+that does not exist in the Lock Out Inc. Console at all (the picker lists
+only `iCloud.com.lockout.coherence` and `iCloud.com.lockout.meditate808`).
+So a plain beta install has no schema and no indexes to query.
+**`WITH_ICLOUD=1` pins it to the real `iCloud.com.lockout.meditate808`
+instead**, which since 2026-09-19 has the full Friends schema in
+Development, so the side-by-side beta CAN do Friends. It talks to
+DEVELOPMENT while TestFlight talks to PRODUCTION, so the two never see each
+other's friends or posts. Aziz's dev builds hit `iCloud.com.azizmahmud.808`, a third one.
 **Nobody's cable build talks to the container that was set up.**
 
 The main container is done: Development has the 14 fields, 7 indexes and
