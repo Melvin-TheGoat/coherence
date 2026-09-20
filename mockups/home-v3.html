@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Home v3: Otto in a tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:#FDF7ED; --ink:#3C2A1F; --fur:#C99B72; --amber:#E3A544; --sage:#6EAFA2;
+    --blush:#F2AF91; --sky:#FDEDE1; --card:#FFFDF9; --muted:#8C7A6B; --hair:#EFE4D6;
+    --branch:#B9895F; --leaf:#9CC7B5;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#F3E9DC; color:var(--ink); font:15px/1.5 -apple-system, "SF Pro Rounded", ui-rounded, system-ui, sans-serif; padding:32px 24px 80px; }
+  h1,h2,h3,.d { font-family:"Baloo 2", ui-rounded, sans-serif; }
+  h1 { font-size:30px; margin:0 0 6px; font-weight:800; }
+  h2 { font-size:19px; margin:34px 0 10px; font-weight:800; }
+  p.lead { max-width:760px; margin:0 0 6px; color:#5B4A3D; }
+  .row { display:flex; flex-wrap:wrap; gap:28px; align-items:flex-start; margin-top:18px; }
+  .dir { width:330px; }
+  .dir h3 { font-size:17px; margin:14px 0 4px; }
+  .dir p { margin:0 0 8px; font-size:13.5px; color:#5B4A3D; }
+  .dir p b { color:var(--ink); }
+  .phone { width:330px; height:715px; background:var(--paper); border-radius:44px; border:8px solid #2A2422; overflow:hidden; position:relative; box-shadow:0 20px 50px rgba(60,42,31,.18); }
+  .screen { position:absolute; inset:0; overflow:hidden; }
+  .status { height:44px; display:flex; align-items:center; justify-content:space-between; padding:0 24px; font-size:13px; font-weight:700; position:relative; z-index:3; }
+  .content { padding:0 18px; }
+  .greet { font-size:22px; font-weight:800; margin:6px 0 0; }
+  .date { font-size:12px; color:var(--muted); }
+  .pill { display:flex; align-items:center; gap:8px; background:var(--card); border-radius:999px; padding:9px 16px; box-shadow:0 3px 0 var(--hair); width:max-content; margin:0 auto; font-size:13px; }
+  .pill .n { font-size:20px; font-weight:800; color:#C7683A; }
+  .pill .l { font-weight:700; color:#C7683A; }
+  .pill .s { color:var(--muted); border-left:1px solid var(--hair); padding-left:8px; }
+  .card { background:var(--card); border-radius:22px; padding:14px 16px; box-shadow:0 3px 0 var(--hair); margin-top:14px; }
+  .card h4 { margin:0 0 10px; font-size:16px; font-weight:800; display:flex; justify-content:space-between; }
+  .card h4 span { font-weight:600; color:var(--muted); font-size:12px; }
+  .week { display:flex; justify-content:space-between; }
+  .day { text-align:center; font-size:10px; color:var(--muted); font-weight:700; }
+  .dot { width:30px; height:30px; border-radius:50%; background:#EFC978; margin:4px auto 0; display:grid; place-items:center; color:var(--ink); font-size:14px; }
+  .dot.off { background:#F5EEE2; }
+  .recent { display:flex; gap:12px; align-items:center; }
+  .recent .chip { width:46px; height:46px; border-radius:14px; background:#F8E6D8; display:grid; place-items:center; font-weight:800; color:#B37F2F; font-size:15px; }
+  .recent .t { font-size:14px; font-weight:800; }
+  .recent .m { font-size:12px; color:var(--muted); }
+  .bubble { position:relative; background:var(--card); border-radius:18px; padding:10px 14px; font-size:13.5px; box-shadow:0 3px 0 var(--hair); max-width:230px; }
+  .bubble:after { content:""; position:absolute; width:12px; height:12px; background:var(--card); transform:rotate(45deg); }
+  .bubble.up:after { top:-6px; left:26px; }
+  .bubble.left:after { left:-5px; top:18px; }
+  .tab { position:absolute; left:0; right:0; bottom:0; height:76px; background:var(--card); border-top:1px solid var(--hair); display:flex; justify-content:space-around; align-items:center; font-size:10px; color:var(--muted); }
+  .tab .plus { width:52px; height:52px; border-radius:50%; background:var(--amber); color:#fff; font-size:30px; display:grid; place-items:center; margin-top:-30px; box-shadow:0 8px 18px rgba(227,165,68,.35); }
+  .otto { display:block; }
+  /* Otto breathes in every direction: this is the idle. */
+  @keyframes breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.035); } }
+  .breathe { animation:breathe 10s ease-in-out infinite; transform-origin:50% 90%; }
+  .note { background:#FFF8EC; border:1px solid #F0DFC4; border-radius:14px; padding:14px 18px; max-width:760px; margin-top:16px; font-size:14px; }
+  .note b { display:block; margin-bottom:4px; }
+  code { background:#F6ECDD; padding:1px 5px; border-radius:5px; font-size:12.5px; }
+</style>
+</head>
+<body>
+
+<h1>Home v3: Otto in a tree</h1>
+<p class="lead">Melvin, 2026-09-20: "I'm not loving the home screen, the photo placement is weird. I do want to include Otto kind of like the Duolingo bird. I want him kinda hanging out on a tree and calmly talks to you."</p>
+<p class="lead">Four directions below, same palette, same cards, same art. What changes is <b>where Otto lives and how much of the screen is his</b>. Every one keeps the three things Home is for: the streak, this week, the last sessions. Otto breathes in all four (the idle loop, six a minute, the same pace the Watch orb breathes at). Tap him and he says one line about today.</p>
+
+<div class="row">
+
+  <!-- A: on the branch -->
+  <div class="dir">
+    <div class="phone"><div class="screen">
+      <div style="position:absolute;inset:0;height:330px;background:linear-gradient(var(--sky),var(--paper));"></div>
+      <div class="status"><span>9:41</span><span>● ● ●</span></div>
+      <div class="content" style="position:relative;">
+        <div class="greet">Good morning, Melvin</div>
+        <div class="date">Sunday, September 20</div>
+        <svg viewBox="0 0 300 150" width="300" height="150" style="position:absolute;left:0;top:76px;overflow:visible">
+          <path d="M-20 92 C 60 80, 120 96, 200 84 S 300 70, 330 78" stroke="var(--branch)" stroke-width="13" fill="none" stroke-linecap="round"/>
+          <path d="M-20 92 C 60 80, 120 96, 200 84 S 300 70, 330 78" stroke="#D9A97C" stroke-width="5" fill="none" stroke-linecap="round" opacity=".55"/>
+          <ellipse cx="248" cy="62" rx="16" ry="9" fill="var(--leaf)" transform="rotate(-25 248 62)"/>
+          <ellipse cx="270" cy="96" rx="14" ry="8" fill="var(--leaf)" transform="rotate(20 270 96)"/>
+          <ellipse cx="40" cy="70" rx="13" ry="8" fill="var(--leaf)" transform="rotate(-40 40 70)"/>
+        </svg>
+        <img class="otto breathe" src="otto/otto-sit.png" alt="" style="width:118px;position:absolute;left:96px;top:62px;">
+        <div class="bubble up" style="margin:200px 0 0 84px;">Seven days. That's the longest you've kept it going.</div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="pill"><span class="n">7</span><span class="l">day streak</span><span class="s">best 7 · 19 sessions</span></div>
+      <div class="content">
+        <div class="card"><h4>This week <span>7 of 7</span></h4>
+          <div class="week"><div class="day">M<div class="dot">✓</div></div><div class="day">T<div class="dot">✓</div></div><div class="day">W<div class="dot">✓</div></div><div class="day">T<div class="dot">✓</div></div><div class="day">F<div class="dot">✓</div></div><div class="day">S<div class="dot">✓</div></div><div class="day">S<div class="dot">✓</div></div></div>
+        </div>
+        <div class="card recent"><div class="chip">84</div><div><div class="t">Yesterday · Rain</div><div class="m">18 min · heart settled 9</div></div></div>
+      </div>
+      <div class="tab"><span>Home</span><span>Guide</span><span class="plus">+</span><span>Friends</span><span>Profile</span></div>
+    </div></div>
+    <h3>A. On the branch</h3>
+    <p><b>The literal ask.</b> A branch runs across the sky and Otto sits on it, under the greeting. His line hangs below him in a bubble, so he is the one who tells you the streak. Everything under the streak pill is the Home that exists today.</p>
+    <p><b>Needs:</b> one new pose, Otto sitting or hanging on a branch. The sit pose is stood in here. The branch is drawn in the app, not in the art, so it can change with the season.</p>
+  </div>
+
+  <!-- B: beside you -->
+  <div class="dir">
+    <div class="phone"><div class="screen">
+      <div style="position:absolute;inset:0;height:210px;background:linear-gradient(var(--sky),var(--paper));"></div>
+      <div class="status"><span>9:41</span><span>● ● ●</span></div>
+      <div class="content" style="position:relative;">
+        <div style="display:flex;align-items:flex-end;gap:10px;margin-top:8px;">
+          <img class="otto breathe" src="otto/otto-talk.png" alt="" style="width:92px;margin-left:-22px;">
+          <div>
+            <div class="greet" style="font-size:20px;">Morning, Melvin.</div>
+            <div class="bubble left" style="margin-top:8px;">Day seven. Sit whenever you're ready, I'll be here.</div>
+          </div>
+        </div>
+      </div>
+      <div style="height:18px"></div>
+      <div class="pill"><span class="n">7</span><span class="l">day streak</span><span class="s">best 7 · 19 sessions</span></div>
+      <div class="content">
+        <div class="card"><h4>This week <span>7 of 7</span></h4>
+          <div class="week"><div class="day">M<div class="dot">✓</div></div><div class="day">T<div class="dot">✓</div></div><div class="day">W<div class="dot">✓</div></div><div class="day">T<div class="dot">✓</div></div><div class="day">F<div class="dot">✓</div></div><div class="day">S<div class="dot">✓</div></div><div class="day">S<div class="dot">✓</div></div></div>
+        </div>
+        <div class="card recent"><div class="chip">84</div><div><div class="t">Yesterday · Rain</div><div class="m">18 min · heart settled 9</div></div></div>
+        <div class="card recent"><div class="chip">71</div><div><div class="t">Wednesday · Silence</div><div class="m">12 min · breath 6.1 a minute</div></div></div>
+      </div>
+      <div class="tab"><span>Home</span><span>Guide</span><span class="plus">+</span><span>Friends</span><span>Profile</span></div>
+    </div></div>
+    <h3>B. Beside you</h3>
+    <p><b>The Duolingo shape.</b> Duo never takes the whole screen on Home. He stands in a corner with a speech bubble and the lesson list is the page. Here Otto leans in from the left edge, talks, and the cards get the room back: the week and two sessions fit above the fold.</p>
+    <p><b>Needs:</b> nothing new. The talk pose exists. Cheapest to ship.</p>
+  </div>
+
+  <!-- C: the tree -->
+  <div class="dir">
+    <div class="phone"><div class="screen">
+      <div style="position:absolute;inset:0;background:linear-gradient(var(--sky) 0,var(--paper) 45%);"></div>
+      <svg viewBox="0 0 90 715" width="90" height="715" style="position:absolute;left:-6px;top:0;">
+        <path d="M34 715 C 30 560, 26 420, 30 300 C 33 200, 28 120, 36 40" stroke="var(--branch)" stroke-width="22" fill="none" stroke-linecap="round"/>
+        <path d="M34 715 C 30 560, 26 420, 30 300 C 33 200, 28 120, 36 40" stroke="#D9A97C" stroke-width="7" fill="none" stroke-linecap="round" opacity=".5"/>
+        <path d="M32 250 C 60 240, 80 225, 108 232" stroke="var(--branch)" stroke-width="12" fill="none" stroke-linecap="round"/>
+        <path d="M30 430 C 55 425, 70 418, 96 424" stroke="var(--branch)" stroke-width="10" fill="none" stroke-linecap="round"/>
+        <ellipse cx="70" cy="215" rx="14" ry="8" fill="var(--leaf)" transform="rotate(-30 70 215)"/>
+        <ellipse cx="86" cy="410" rx="12" ry="7" fill="var(--leaf)" transform="rotate(-20 86 410)"/>
+        <ellipse cx="50" cy="60" rx="15" ry="9" fill="var(--leaf)" transform="rotate(-50 50 60)"/>
+      </svg>
+      <div class="status"><span>9:41</span><span>● ● ●</span></div>
+      <div style="padding:0 16px 0 88px;position:relative;">
+        <div class="greet" style="font-size:20px;">Good morning</div>
+        <div class="date">Sunday, September 20</div>
+      </div>
+      <img class="otto breathe" src="otto/otto-look.png" alt="" style="width:74px;position:absolute;left:22px;top:150px;">
+      <div style="padding:0 16px 0 100px;position:relative;margin-top:14px;">
+        <div class="bubble left" style="max-width:200px;">Seven in a row. Same time as yesterday?</div>
+        <div class="pill" style="margin:16px 0 0;"><span class="n">7</span><span class="l">day streak</span></div>
+        <div class="card"><h4>This week <span>7 of 7</span></h4>
+          <div class="week" style="gap:2px;"><div class="day">M<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div><div class="day">T<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div><div class="day">W<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div><div class="day">T<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div><div class="day">F<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div><div class="day">S<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div><div class="day">S<div class="dot" style="width:24px;height:24px;font-size:11px">✓</div></div></div>
+        </div>
+        <div class="card recent"><div class="chip">84</div><div><div class="t">Yesterday</div><div class="m">18 min · settled 9</div></div></div>
+        <div class="card recent"><div class="chip">71</div><div><div class="t">Wednesday</div><div class="m">12 min · 6.1 a minute</div></div></div>
+      </div>
+      <div class="tab"><span>Home</span><span>Guide</span><span class="plus">+</span><span>Friends</span><span>Profile</span></div>
+    </div></div>
+    <h3>C. The tree</h3>
+    <p><b>The tree is the page.</b> A trunk runs down the left edge and stays put while the content scrolls beside it. Otto sits on a branch at eye level and the cards are his neighbours. The most "somewhere" of the four, and the one that would make Home unmistakably 808.</p>
+    <p><b>Costs:</b> every card loses about 70 points of width, so the week's dots shrink and long titles wrap. Needs a branch-sitting pose drawn facing right.</p>
+  </div>
+
+  <!-- D: the clearing -->
+  <div class="dir">
+    <div class="phone"><div class="screen">
+      <div style="position:absolute;inset:0;height:470px;background:linear-gradient(#FBE6D6,var(--sky) 60%,var(--paper));"></div>
+      <svg viewBox="0 0 330 260" width="330" height="260" style="position:absolute;left:0;top:0;overflow:visible">
+        <path d="M340 30 C 280 40, 230 70, 190 110 C 160 140, 140 150, 100 148" stroke="var(--branch)" stroke-width="16" fill="none" stroke-linecap="round"/>
+        <path d="M340 30 C 280 40, 230 70, 190 110 C 160 140, 140 150, 100 148" stroke="#D9A97C" stroke-width="6" fill="none" stroke-linecap="round" opacity=".5"/>
+        <ellipse cx="250" cy="52" rx="22" ry="12" fill="var(--leaf)" transform="rotate(-35 250 52)"/>
+        <ellipse cx="290" cy="22" rx="18" ry="10" fill="var(--leaf)" transform="rotate(-15 290 22)"/>
+        <ellipse cx="140" cy="128" rx="18" ry="10" fill="var(--leaf)" transform="rotate(25 140 128)"/>
+        <ellipse cx="205" cy="94" rx="16" ry="9" fill="#B6D8C8" transform="rotate(-60 205 94)"/>
+      </svg>
+      <div class="status"><span>9:41</span><span>● ● ●</span></div>
+      <div class="content" style="position:relative;">
+        <div class="greet">Good morning,<br>Melvin</div>
+        <img class="otto breathe" src="otto/otto-sit.png" alt="" style="width:150px;position:absolute;right:6px;top:98px;">
+        <div class="bubble up" style="margin:196px 0 0 20px;max-width:190px;">You've sat every day this week. No rush today either.</div>
+      </div>
+      <div style="height:22px"></div>
+      <div class="pill"><span class="n">7</span><span class="l">day streak</span><span class="s">best 7 · 19 sessions</span></div>
+      <div class="content">
+        <div class="card"><h4>This week <span>7 of 7</span></h4>
+          <div class="week"><div class="day">M<div class="dot">✓</div></div><div class="day">T<div class="dot">✓</div></div><div class="day">W<div class="dot">✓</div></div><div class="day">T<div class="dot">✓</div></div><div class="day">F<div class="dot">✓</div></div><div class="day">S<div class="dot">✓</div></div><div class="day">S<div class="dot">✓</div></div></div>
+        </div>
+      </div>
+      <div class="tab"><span>Home</span><span>Guide</span><span class="plus">+</span><span>Friends</span><span>Profile</span></div>
+    </div></div>
+    <h3>D. Otto's clearing</h3>
+    <p><b>Character first.</b> The top half is a place: a bough comes in from the corner, Otto sits under it, the greeting shares the sky with him. Everything measured lives below the streak and you scroll for it. Closest to Finch, the one mascot app in this category that worked.</p>
+    <p><b>Trade:</b> the week is the only card above the fold. Right if Home is a greeting; wrong if Home is a dashboard. That question decides between B and D.</p>
+  </div>
+
+</div>
+
+<h2>How Otto moves, in every one of these</h2>
+<div class="note">
+  <b>Three clips, one rig.</b>
+  Idle is a breath: a slow scale from the base, six a minute, matching the Watch orb, so the two pace the same thing. Wave plays once when Home opens. Talk plays while his bubble is on screen (mouth only; the body keeps breathing). A tap on him replays talk with a fresh line.
+</div>
+<div class="note">
+  <b>Rive, not Lottie, not hand-coded.</b>
+  Duolingo animates its characters with Rive (their engineering blog, November 2022). Rive rigs the existing PNG through a mesh with bones, so Aziz's drawings are reused rather than redrawn, and the app drives it as a state machine: <code>breathing</code> on and off, <code>wave</code> and <code>talk</code> as triggers, the inhale sent from Swift so the haptic fires on the same clock. It costs $9 a month for one seat to export and about 4.7 MB of app size. Rive publishes an official MCP served by its desktop editor, so the rig can be built from here. The fallback that ships this week with zero dependencies is a SwiftUI scale pulse on the PNG: a good breath, no wave, no talk.
+</div>
+<div class="note">
+  <b>What to decide.</b>
+  Is Home a greeting or a dashboard? B keeps it a dashboard with a friend in the corner. D makes it his. A and C are in between and both need one new drawing. Pick one and the next mockup is that one at full fidelity with real copy for every hour of the day.
+</div>
+
+</body>
+</html>

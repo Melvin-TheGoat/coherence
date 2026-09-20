@@ -58,6 +58,42 @@ internal testers Melvin + Aziz, run the round trip in CLOUDKIT_SETUP.md.
 Walk RELEASE_CHECKLIST.md's ALWAYS list before the archive (it is the same
 archive that would go to review if the round trip passes).
 
+## Home v3 and Onboarding v3 mockups, Otto in a tree (Melvin, 2026-09-20): AWAITING A PICK
+
+Melvin: Home's photo placement is weird; he wants Otto like Duolingo's owl,
+"hanging out on a tree and calmly talks to you"; and the onboarding rebuilt
+in Headspace's shape with Otto animated on top, cream, question count
+shown, Otto breathing top-left with haptics.
+
+- `mockups/home-v3.html`: four directions, same palette and cards, Otto in
+  a different place in each. A on the branch (the literal ask; needs a
+  branch pose), B beside you (Duolingo's shape, ships with today's art), C
+  the tree down the left edge (cards lose 70pt), D Otto's clearing
+  (character first, Finch). The decision is one question: is Home a
+  greeting or a dashboard.
+- `mockups/onboarding-v3.html`: Headspace's nine screens in 808's words:
+  welcome with a wave, "three breaths together", breathe in and out with
+  Otto's head rising, the question template with "N of M" and a breathing
+  Otto top-left, the Watch gate, "here's what's waiting", reminders with
+  Otto holding the clock, the trial timeline. Two repo rules kept: no
+  sign-in on screen one, and the trial screen is drawn as the
+  after-first-session paywall's face, not an onboarding step.
+- Serve `mockups/` with the "mockups" launch config (port 8991); opening
+  the files as data: URLs drops the relative Otto images.
+
+**Otto animation, researched (agent, 2026-09-20):** Rive, not Lottie, not
+hand-coded. Duolingo animates its characters with Rive (their blog,
+2022-11). Rive rigs the existing PNGs through a mesh with bones (no new
+art), and Swift drives a state machine (`breathing`, `wave`, `talk`) so the
+haptic can fire on the same clock. Cadet plan $9/month for one seat to
+export; runtime MIT, about 4.7 MB. Official Rive MCP served by the desktop
+editor at 127.0.0.1:9791, plus a CLI with a text format, so the rig can be
+built from Claude Code. Headspace uses Lottie. The Substack article's
+Duolingo and Headspace case studies are behind its paywall; the free part
+is principles only. Fallback that ships this week: a SwiftUI scale pulse on
+the PNG head with a CoreHaptics pattern (transient at inhale, softer at
+exhale, engine prepared before the screen and after each cycle).
+
 ## Onboarding round 3 and the bar (Melvin, 2026-09-19): DONE, on social-1.1
 
 Cut "Can you be alone with your thoughts?" and the name-and-age screen (the

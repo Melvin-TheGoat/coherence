@@ -1695,6 +1695,34 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
   1.0 failure exactly, on the one feature whose value is the server. The
   rest of the list is RELEASE_CHECKLIST.md "OPEN for 1.1".
 
+## HOME FIXES, MOCKUPS FOR OTTO IN A TREE, AND THE ANIMATION ANSWER (2026-09-20)
+
+- **The sky runs under the status bar.** A `.background` inside a
+  `ScrollView` cannot escape the safe area, and padding the scene from
+  outside leaves the band above its background. The fix that works: the
+  scroll view ignores the top safe area and the scene pads ITSELF by the
+  inset (`ottoScene(topInset:)`) before its background. Two wrong attempts
+  are in the git history; do not repeat them.
+- "0 mornings" is "day streak" again, and **sessions replaces sits** in
+  every user-facing noun (Otto's brief, the guide count, Profile's stats,
+  the awards, the score sheet, "Nice session"). Verbs stay ("how to sit").
+- **Dark mode is gone on purpose** (Aziz, 2026-09-19, "One appearance"):
+  the palette is sampled from Otto's cream art and a dark build needs a
+  second Otto. `Preferences.theme` stays stored, unread.
+- **Mockups awaiting a pick:** `mockups/home-v3.html` (four placements for
+  Otto) and `mockups/onboarding-v3.html` (Headspace's nine screens, Otto's
+  face, "N of M" counter, breathing head top-left). Serve `mockups/` with
+  the launch config; data: URLs drop the images.
+- **Otto moves with Rive.** Researched and recorded in BACKLOG.md: state
+  machine driven from Swift, rigs the existing PNGs, Duolingo uses it,
+  $9/month to export, official MCP from the desktop editor. Fallback for
+  this week is a SwiftUI pulse plus CoreHaptics.
+- **Uploading from this Mac works once the Apple ID is in Xcode.** The
+  first "No Accounts" was timing, not a missing certificate;
+  `-allowProvisioningUpdates` minted the distribution cert. **Never pipe
+  the upload through `head`:** it closes the pipe at N lines and can kill
+  xcodebuild mid-upload. Log to a file and grep after.
+
 ## ONBOARDING, ROUND 3 (2026-09-19, Melvin): two questions and the Watch screen go
 
 - **`aloneWithThoughts` and `you` left `InterviewStep`** (the `doingNothing`

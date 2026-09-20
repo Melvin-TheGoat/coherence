@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Onboarding v3: the Headspace shape, Otto's face</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:#FDF7ED; --ink:#3C2A1F; --fur:#C99B72; --amber:#E3A544; --sage:#6EAFA2;
+    --blush:#F2AF91; --sky:#FDEDE1; --card:#FFFDF9; --muted:#8C7A6B; --hair:#EFE4D6; --leaf:#9CC7B5;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#F3E9DC; color:var(--ink); font:15px/1.5 -apple-system, "SF Pro Rounded", ui-rounded, system-ui, sans-serif; padding:32px 24px 80px; }
+  h1,h2,h3,.d { font-family:"Baloo 2", ui-rounded, sans-serif; }
+  h1 { font-size:30px; margin:0 0 6px; font-weight:800; }
+  h2 { font-size:19px; margin:34px 0 10px; font-weight:800; }
+  p.lead { max-width:780px; margin:0 0 6px; color:#5B4A3D; }
+  .row { display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; margin-top:18px; }
+  .shot { width:300px; }
+  .shot h3 { font-size:15px; margin:12px 0 2px; }
+  .shot p { margin:0; font-size:13px; color:#5B4A3D; }
+  .phone { width:300px; height:650px; background:var(--paper); border-radius:40px; border:8px solid #2A2422; overflow:hidden; position:relative; box-shadow:0 20px 50px rgba(60,42,31,.18); }
+  .screen { position:absolute; inset:0; overflow:hidden; display:flex; flex-direction:column; }
+  .status { height:40px; display:flex; align-items:center; justify-content:space-between; padding:0 22px; font-size:12px; font-weight:700; position:relative; z-index:3; }
+  .body { padding:0 20px; flex:1; display:flex; flex-direction:column; position:relative; }
+  .h { font-size:24px; font-weight:800; line-height:1.15; margin:0; }
+  .sub { color:var(--muted); font-size:14px; margin-top:8px; }
+  .cta { background:var(--amber); color:#fff; border-radius:999px; padding:14px; text-align:center; font-weight:800; font-size:16px; box-shadow:0 4px 0 #C98F2E; font-family:"Baloo 2", sans-serif; }
+  .ghost { text-align:center; color:var(--muted); font-size:14px; font-weight:700; padding:12px; }
+  .foot { padding:0 20px 24px; }
+  .opt { background:var(--card); border-radius:999px; padding:13px 16px; display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:14.5px; box-shadow:0 3px 0 var(--hair); margin-top:10px; }
+  .opt .r { width:20px; height:20px; border-radius:50%; border:2px solid #D9C7B2; }
+  .opt.on { outline:2px solid var(--amber); }
+  .opt.on .r { background:var(--amber); border-color:var(--amber); }
+  .corner { position:absolute; left:18px; top:6px; display:flex; align-items:center; gap:8px; z-index:4; }
+  .corner img { width:44px; }
+  .count { font-size:12px; color:var(--muted); font-weight:700; }
+  .bar { height:5px; background:#F0E4D3; border-radius:999px; margin:14px 0 0; overflow:hidden; }
+  .bar i { display:block; height:100%; background:var(--amber); border-radius:999px; }
+  .cloud { position:absolute; background:#fff; border-radius:50%; opacity:.9; }
+  @keyframes breathe { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+  .breathe { animation:breathe 10s ease-in-out infinite; transform-origin:50% 100%; }
+  @keyframes rise { 0%,100% { transform:translateY(120px) scale(.86); } 50% { transform:translateY(0) scale(1); } }
+  .rise { animation:rise 10s ease-in-out infinite; transform-origin:50% 100%; }
+  .row-item { display:flex; align-items:center; gap:12px; background:var(--card); border-radius:18px; padding:12px 14px; box-shadow:0 3px 0 var(--hair); margin-top:10px; font-size:13.5px; }
+  .row-item b { display:block; font-size:14px; }
+  .row-item img { width:44px; }
+  .tl { position:relative; padding-left:38px; margin-top:22px; }
+  .tl:before { content:""; position:absolute; left:11px; top:6px; bottom:6px; width:4px; background:linear-gradient(var(--amber), #F0E4D3); border-radius:2px; }
+  .tl .step { position:relative; margin-bottom:18px; }
+  .tl .step:before { content:""; position:absolute; left:-33px; top:2px; width:16px; height:16px; border-radius:50%; background:var(--amber); }
+  .tl .step b { display:block; font-size:15px; }
+  .tl .step span { color:var(--muted); font-size:13px; }
+  .note { background:#FFF8EC; border:1px solid #F0DFC4; border-radius:14px; padding:14px 18px; max-width:780px; margin-top:16px; font-size:14px; }
+  .note b { display:block; margin-bottom:4px; }
+  code { background:#F6ECDD; padding:1px 5px; border-radius:5px; font-size:12.5px; }
+</style>
+</head>
+<body>
+
+<h1>Onboarding v3: the Headspace shape, Otto's face</h1>
+<p class="lead">Melvin, 2026-09-20: copy the Headspace onboarding from the screenshots, cream background, peaceful, with Otto animated on top and the question count shown. This page is that flow, screen for screen, in 808's own words and colours. The structure is theirs to borrow (a flow is not anyone's property); the sentences, the art and the features are ours.</p>
+<p class="lead">Two rules from this repo survive the copy: <b>no sign-in on the first screen</b> (every person who used it skipped the whole flow), and <b>the paywall comes after the first session</b>, so the trial timeline is drawn here as that screen's new face, not as an onboarding step. Flip it into the flow if you want Headspace's order; it is one constant.</p>
+
+<div class="row">
+
+  <!-- 1 welcome -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div style="position:absolute;inset:0;height:60%;background:linear-gradient(#FBE6D6,var(--sky));"></div>
+    <div class="cloud" style="width:150px;height:90px;left:-40px;top:70px;"></div>
+    <div class="cloud" style="width:190px;height:110px;right:-60px;top:130px;"></div>
+    <div class="status"><span>9:41</span><span>● ● ●</span></div>
+    <div class="body" style="align-items:center;text-align:center;">
+      <img class="breathe" src="otto/otto-wave.png" alt="" style="width:190px;margin-top:40px;position:relative;">
+      <div class="h" style="margin-top:26px;">Welcome to 808</div>
+      <div class="sub">Your Watch sees what your practice does. I'll read it back to you.</div>
+    </div>
+    <div class="foot"><div class="cta">Let's begin</div></div>
+  </div></div>
+  <h3>1. Welcome</h3><p>Otto waves once when the screen lands, then breathes. One button. No account link: that is the door people used to skip everything.</p></div>
+
+  <!-- 2 three breaths -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div style="position:absolute;inset:0;background:linear-gradient(#FBE6D6,var(--sky) 70%,var(--paper));"></div>
+    <div class="cloud" style="width:200px;height:120px;left:-70px;bottom:40px;"></div>
+    <div class="cloud" style="width:170px;height:100px;right:-60px;bottom:90px;"></div>
+    <div class="status"><span>9:41</span><span style="width:30px;height:30px;border-radius:50%;background:#fff;display:grid;place-items:center;color:#7A5C3E">×</span></div>
+    <div class="body" style="align-items:center;justify-content:center;text-align:center;">
+      <div class="h" style="font-size:26px;">Let's take three<br>breaths together.</div>
+    </div>
+  </div></div>
+  <h3>2. The invitation</h3><p>Headspace's line, in our voice. Three seconds, then it fades into the breath.</p></div>
+
+  <!-- 3 breathe in -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div style="position:absolute;inset:0;background:var(--sky);"></div>
+    <div class="status"><span>9:41</span><span></span></div>
+    <div class="body" style="align-items:center;text-align:center;">
+      <div class="h" style="margin-top:30px;font-size:26px;">Breathe in</div>
+      <div class="count" style="margin-top:6px;">1 of 3</div>
+      <img class="rise" src="otto/otto-head.png" alt="" style="width:270px;position:absolute;bottom:-40px;left:50%;margin-left:-135px;">
+    </div>
+  </div></div>
+  <h3>3. Breathe in, breathe out</h3><p>Otto's head rises from the bottom of the screen on the inhale and settles on the exhale, five seconds each, the way Headspace's orange half does. A soft haptic at the top of each inhale, a softer one at the start of each exhale, on the animation's own clock.</p></div>
+
+  <!-- 4 question, multi -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div class="status"><span>9:41</span><span class="count">2 of 7</span></div>
+    <div class="corner"><img class="breathe" src="otto/otto-head.png" alt=""></div>
+    <div class="body" style="padding-top:34px;">
+      <div class="bar"><i style="width:28%"></i></div>
+      <div class="h" style="margin-top:22px;">What are you here for?</div>
+      <div class="sub">Pick every one that's true.</div>
+      <div style="margin-top:14px;">
+        <div class="opt on">Feel calmer<span class="r"></span></div>
+        <div class="opt">Sleep better<span class="r"></span></div>
+        <div class="opt on">Focus<span class="r"></span></div>
+        <div class="opt">Keep a habit going<span class="r"></span></div>
+        <div class="opt">Something else<span class="r"></span></div>
+      </div>
+    </div>
+    <div class="foot"><div class="cta">Continue</div></div>
+  </div></div>
+  <h3>4. The questions</h3><p>The template for every interview screen. The count in the corner is honest per person: the model already skips questions whose premise you've contradicted, so "2 of 7" is that person's seven. Otto's head breathes top-left the whole way through; tapping him gets one line about why we ask.</p></div>
+
+  <!-- 5 question, single -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div class="status"><span>9:41</span><span class="count">3 of 7</span></div>
+    <div class="corner"><img class="breathe" src="otto/otto-head.png" alt=""></div>
+    <div class="body" style="padding-top:34px;">
+      <div class="bar"><i style="width:43%"></i></div>
+      <div class="h" style="margin-top:22px;">How often do you meditate right now?</div>
+      <div style="margin-top:16px;">
+        <div class="opt">Never, meaning to start<span class="r"></span></div>
+        <div class="opt on">I've tried and stopped<span class="r"></span></div>
+        <div class="opt">Some weeks<span class="r"></span></div>
+        <div class="opt">Most days<span class="r"></span></div>
+      </div>
+    </div>
+    <div class="foot"></div>
+  </div></div>
+  <h3>5. Single choice</h3><p>Tap advances after a short dwell, as today. The answer decides which of the next questions exist, which is why the count can change between screens and why it must never be hardcoded.</p></div>
+
+  <!-- 6 watch gate -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div class="status"><span>9:41</span><span class="count">6 of 7</span></div>
+    <div class="corner"><img class="breathe" src="otto/otto-head.png" alt=""></div>
+    <div class="body" style="padding-top:34px;">
+      <div class="bar"><i style="width:86%"></i></div>
+      <div class="h" style="margin-top:22px;">Do you have an Apple Watch?</div>
+      <div class="sub">It's what reads your heart and stillness while you sit.</div>
+      <img class="breathe" src="otto/otto-look.png" alt="" style="width:120px;margin:10px auto 0;">
+      <div style="margin-top:6px;">
+        <div class="opt">Yes<span class="r"></span></div>
+        <div class="opt">Not yet<span class="r"></span></div>
+        <div class="opt">No<span class="r"></span></div>
+      </div>
+    </div>
+    <div class="foot"></div>
+  </div></div>
+  <h3>6. The Watch gate</h3><p>Unchanged in substance, dressed the same as the rest. Not skippable, because the answer routes the person.</p></div>
+
+  <!-- 7 what's inside -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div style="position:absolute;inset:0;height:34%;background:linear-gradient(var(--sky),var(--paper));"></div>
+    <div class="cloud" style="width:140px;height:80px;left:-30px;top:60px;"></div>
+    <div class="cloud" style="width:180px;height:100px;right:-50px;top:110px;"></div>
+    <div class="status"><span>9:41</span><span></span></div>
+    <div class="body" style="padding-top:44px;">
+      <div class="h" style="text-align:center;">Here's what's waiting</div>
+      <div class="row-item"><img src="otto/otto-sit.png" alt=""><div><b>Your Watch measures every session.</b>Heart, stillness, breath. Nothing to hold.</div></div>
+      <div class="row-item"><div style="width:44px;height:44px;border-radius:50%;background:#F5DFA3;display:grid;place-items:center;font-weight:800;color:#8A6A1F;">84</div><div><b>A score, and the story behind it.</b>What your body did while you sat.</div></div>
+      <div class="row-item"><img src="otto/otto-heart.png" alt=""><div><b>Friends see you sit.</b>A selfie and a score, Strava style.</div></div>
+      <div class="row-item"><img src="otto/otto-talk.png" alt=""><div><b>Otto reads it back.</b>Ask him why a session scored what it did.</div></div>
+    </div>
+    <div class="foot"><div class="cta">Continue</div></div>
+  </div></div>
+  <h3>7. What's inside</h3><p>Headspace's activity list, but ours: every row is a thing the app does today, and Otto is in three of them because he is the thing that's new.</p></div>
+
+  <!-- 8 reminders -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div class="status"><span>9:41</span><span></span></div>
+    <div class="body" style="align-items:center;text-align:center;padding-top:20px;">
+      <div class="h">Keep it going with a gentle nudge</div>
+      <div class="sub">One reminder a day, at a time you pick. Otto does the asking.</div>
+      <div style="position:relative;margin-top:26px;">
+        <img class="breathe" src="otto/otto-look.png" alt="" style="width:200px;">
+        <div style="position:absolute;right:-6px;top:10px;width:72px;height:54px;background:#FBDCE0;border-radius:14px;display:flex;align-items:center;gap:6px;padding:8px;box-shadow:0 3px 0 #F0C6CB;"><div style="width:24px;height:24px;border-radius:50%;background:var(--amber);"></div><div style="flex:1"><div style="height:6px;background:#F3A9B3;border-radius:3px;margin-bottom:5px;"></div><div style="height:6px;width:60%;background:#F3A9B3;border-radius:3px;"></div></div></div>
+      </div>
+      <div style="margin-top:18px;width:100%;">
+        <div class="opt" style="justify-content:center;">8:00 AM<span></span></div>
+      </div>
+    </div>
+    <div class="foot"><div class="cta">Remind me</div><div class="ghost">Maybe later</div></div>
+  </div></div>
+  <h3>8. Reminders</h3><p>Headspace's reminder screen with Otto holding the notification. The time picker stays (it was moved here when the anchor question was cut). Consent still means the OS dialog, not this screen.</p></div>
+
+  <!-- 9 trial -->
+  <div class="shot"><div class="phone"><div class="screen">
+    <div style="position:absolute;inset:0;height:36%;background:linear-gradient(#FBE6D6,var(--sky));"></div>
+    <div class="status"><span>9:41</span><span style="color:#7A5C3E">×</span></div>
+    <div class="body" style="padding-top:8px;">
+      <img class="breathe" src="otto/otto-heart.png" alt="" style="width:150px;margin:0 auto;position:relative;">
+      <div class="h" style="text-align:center;margin-top:8px;">How your free week works</div>
+      <div class="sub" style="text-align:center;">7 days free, then $29.99 a year, or $7.99 a month.</div>
+      <div class="tl">
+        <div class="step"><b>Today</b><span>Every curve and reading opens, for every session.</span></div>
+        <div class="step"><b>Day 5</b><span>We remind you the week is ending.</span></div>
+        <div class="step"><b>Day 7</b><span>You're charged. Cancel any time before.</span></div>
+      </div>
+    </div>
+    <div class="foot"><div class="cta">Start my free week</div><div class="ghost">Not right now</div></div>
+  </div></div>
+  <h3>9. The trial, explained</h3><p>Headspace's timeline is the clearest trial screen in the category and 808's paywall should look like it. Under the current rule this appears after the first session, once the person has their own score on screen.</p></div>
+
+</div>
+
+<h2>Otto in the corner: how it actually gets built</h2>
+<div class="note">
+  <b>The breath.</b>
+  A ten second cycle, five in, five out, six a minute: the same pace the Watch orb breathes at and the same pace the score's doorway is built around, so the app breathes one way everywhere. On the question screens it is a scale pulse on his head, top left, from a base at his chin. On the breath screen it is his whole head rising and settling.
+</div>
+<div class="note">
+  <b>The haptics.</b>
+  A CoreHaptics pattern per cycle: one soft transient at the top of the inhale, a softer one at the start of the exhale, played by a player started on the same clock as the animation so they cannot drift. The engine is prepared before the screen appears and prepared again after each cycle, because the Taptic Engine idles after a few seconds and an unprepared tick lands late. Onboarding is the one place the app is allowed haptics at all; the Watch still has none.
+</div>
+<div class="note">
+  <b>Rive, and why.</b>
+  The wave on screen 1, the talk on screen 4, the breath everywhere: that is a character with states the app drives, not a clip that plays. Rive is built for exactly that (a state machine with <code>breathing</code>, <code>wave</code>, <code>talk</code> inputs set from Swift), it rigs the PNGs Aziz already drew through a mesh instead of asking for new art, and Duolingo uses it for its characters. Cost: Rive's Cadet plan at $9 a month for one seat, needed only to export the file; the runtime is free and adds about 4.7 MB. Rive ships an official MCP served by its desktop editor, so the rig can be built and iterated from here once the editor is installed and signed in.
+</div>
+<div class="note">
+  <b>What ships without Rive.</b>
+  The breath, on every screen, as a SwiftUI scale pulse on the PNG with the haptic pattern above. That is one afternoon and covers screens 3 through 6 fully. The wave and the talk wait for the rig.
+</div>
+
+</body>
+</html>
