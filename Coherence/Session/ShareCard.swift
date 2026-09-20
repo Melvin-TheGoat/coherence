@@ -151,11 +151,10 @@ struct SessionShareCard: View {
             VStack(spacing: 0) {
                 Spacer(minLength: 44)
 
-                // Brand
-                // Default weight — the mark reads the same here as in the header
-                // and the app icon. Don't re-specify a ratio; it drifts.
-                LogoMark()
-                    .frame(width: 42, height: 42)
+                // Brand. Otto's head, the app icon's own crop, so a card in
+                // somebody's story is recognisable as this app before anyone
+                // reads the wordmark under it.
+                OttoMark(size: 46, pose: .head)
                 Text("808")
                     .font(.system(size: 24, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.accentGoldText)
@@ -212,8 +211,7 @@ struct SessionShareCard: View {
     /// post is recognisable as 808 before anyone reads a number.
     private var brandBlock: some View {
         VStack(spacing: 0) {
-            LogoMark()
-                .frame(width: 34, height: 34)
+            OttoMark(size: 38, pose: .head)
             Text("808")
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColor.accentGoldText)

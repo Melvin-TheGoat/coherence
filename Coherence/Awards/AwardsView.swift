@@ -44,13 +44,11 @@ struct AwardBadge: View {
     private var content: some View {
         switch award.face {
         case .mark:
-            // `LogoMark` strokes itself in its own colour and ignores
-            // `foregroundStyle`, so on an amber plate it drew an amber mark on
-            // amber and the badge came out blank. It takes the ink explicitly,
-            // and a heavier line, because at 27pt inside a tile the brand
-            // ratio is a hairline.
-            LogoMark(color: ink, lineWidthRatio: 0.045)
-                .frame(width: size * 0.46, height: size * 0.46)
+            // Otto's head on the plate. The award whose face is "the mark"
+            // used to be the flower, which drew amber on amber and came out
+            // blank; his head is full-colour art and needs no tint at all.
+            OttoMark(size: size * 0.62, pose: .head)
+                .opacity(earned ? 1 : 0.4)
         case .number(let value, let unit):
             VStack(spacing: 0) {
                 Text(value)

@@ -54,12 +54,12 @@ struct ReliefScreen: View {
         VStack(spacing: 0) {
             Spacer()
 
-            // The first thing anyone ever sees of 808. Centred mark over one
-            // sentence reads as a title card rather than a form, and the mark
-            // is the real LogoMark geometry so it matches the icon exactly.
+            // The first thing anyone ever sees of 808, and it is now a face
+            // rather than a glyph: the same crop as the app icon they just
+            // tapped, so the app introduces itself as the thing on their home
+            // screen.
             VStack(spacing: 9) {
-                LogoMark()
-                    .frame(width: 68, height: 68)
+                OttoMark(size: 78, pose: .head)
                 Text("808")
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
                     .tracking(3.3)

@@ -348,6 +348,11 @@ enum OttoPose {
     case talking
     /// Lying down.
     case resting
+    /// His head alone. **The mark**: wherever the 808 flower used to sit next
+    /// to the wordmark, and anywhere below about 40pt, where the full sitting
+    /// figure is a brown smudge. It is the app icon's own crop, so the badge
+    /// in the app and the icon on the home screen are visibly one object.
+    case head
 
     var asset: String {
         switch self {
@@ -356,6 +361,7 @@ enum OttoPose {
         case .pleased:    return "OttoWave"
         case .talking:    return "OttoTalk"
         case .resting:    return "OttoSleep"
+        case .head:       return "OttoHead"
         }
     }
 }

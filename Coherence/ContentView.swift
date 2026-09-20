@@ -425,8 +425,9 @@ struct ContentView: View {
     // above the streak; the greeting moved into the scene and the mark left
     // Home altogether (2026-09-19). A mark identifies a company and a face
     // greets a person, and this is the screen somebody opens before they are
-    // properly awake. `LogoMark` still signs the awards screen, onboarding and
-    // the share card, which is the job it is good at.
+    // properly awake. The flower is gone from the product entirely as of
+    // 2026-09-19: Otto's head signs onboarding, the share card, the Watch and
+    // the one award whose face is the mark, and `LogoMark` is deleted.
 
     // MARK: - Streak
 
