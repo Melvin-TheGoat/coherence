@@ -2107,49 +2107,65 @@ user explicitly says to ship without it. `tools/archive.sh` prints the OPEN
 items at the end of every run. Anything learned mid-session that must happen
 at submission goes into OPEN the moment it's learned, not into a summary.
 
-## OTTO.RIV IS BROKEN AND THE APP IS HIDING IT (2026-09-20, for Melvin)
+## THE RIVE EXPORT ONLY EVER EMITTED THE FIRST ARTBOARD (2026-09-20, FIXED)
 
-**The Rive rig has never run.** Not once since it landed. Every screen that
-asks for an animated Otto has been drawing the still PNG through
-`OttoRiveView`'s fallback, which is silent by design and looks correct,
-which is exactly why a day went by without anyone noticing.
+**The rig ran on the second attempt and the diagnosis in between was wrong,
+so the correction is worth more than the fix.** The previous note said
+`Otto.riv` shipped the editor's default names because the rig had been built
+on the default artboard. It had not. The editor's file always held an
+artboard `Otto` and a state machine `Otto`, exactly as asked for. The EXPORT
+is what dropped them.
 
-**The cause is the export, not the app.** `Otto.riv` ships the Rive editor's
-DEFAULT names, artboard `iPhone 16 - 1` and state machine `State Machine 1`,
-while `OttoRig.make()` asks for `"Otto"` for both, so `setArtboard` throws on
-every launch.
+**What the export actually does here: it emits the FIRST artboard in the
+file and nothing else.** The file carried the editor's leftover
+`iPhone 16 - 1` from the day it was created, so every export returned that
+and the rig never left the editor. Measured, not guessed:
 
-**Do not "fix" it by accepting whatever artboard the file has. That was
-tried.** Loaded as `iPhone 16 - 1`, the app renders a BLACK RECTANGLE where
-Otto belongs, because that artboard is a phone-screen-sized frame with a dark
-ground rather than a character. A broken animation beats a broken picture, so
-the loader refuses an artboard that is not ours and falls back, loudly.
+- Renaming the leftover artboard changed the next export immediately, and by
+  exactly the difference in name length, so the export is live rather than
+  cached.
+- An artboard CREATED through the tool never appeared in any export, and one
+  DELETED through the tool kept appearing. Seven exports, byte identical
+  across property edits.
+- `includeinexport` (key 802 on an artboard, 801 on an asset) is not the
+  gate. Setting it both ways changed nothing either direction.
 
-**The failure message existed the whole time and was unreadable.** It was a
-`print`, and a `print` from an app launched by simctl never reaches
-`log show`. It is `NSLog` now and on a mismatch it names the artboards the
-file DOES offer beside the two names the app needs, so nobody has to take a
-352 KB binary apart to find out. **Anything explaining a silent fallback has
-to be legible without a debugger attached.**
+**The fix is to leave exactly one artboard in the file.** Delete the
+editor's default artboard and any unused image assets, then export. The
+result went from 352 KB of the wrong thing to 212 KB containing `Otto`,
+`Breathe`, `Wave`, `Talk`, `Still`, the `Body` and `Head` layers and the
+`wave` / `talking` view model properties. **A Rive file that is meant for a
+runtime should hold one artboard.** If a second is ever needed, expect to
+prove it exports rather than assuming it does.
 
-### What the next export needs, all of it in Rive
+**Verify from the binary, then from the runtime, never from the editor.**
+The editor's own `listArtboards` reported the rig correctly the entire time
+the export was empty of it, so the editor cannot confirm its own export.
+Counting name bytes in the `.riv` takes a second and would have caught this
+on day one. The runtime is the second check: the loader NSLogs
+`Otto rig: bound` on success, and on failure names the artboards the file
+offers beside the two the app needs.
 
-1. **Artboard named `Otto`, state machine named `Otto`.** The editor's
-   defaults are what broke this.
-2. **Sized to the character on a transparent ground**, not a device frame.
-3. **A view model named `Otto` exposing `wave` (trigger) and `talking`
-   (boolean).** `enableAutoBind` never fired on this file either, so those
-   two would have done nothing even had the artboard loaded. The app writes
-   them through `OttoRig.wave()` and `OttoRig.talking`.
-4. **The new furry art.** The file EMBEDS two PNGs of the old Otto, named
-   `otto-talk` and `otto-wave`, so it cannot pick up the image sets by
-   swapping them, which `mockups/otto-redesign.md` assumed it could.
+**`print` from an app launched by simctl never reaches `log show`.** That is
+why the original failure was invisible for a day. Anything that explains a
+silent fallback has to be legible without a debugger attached.
 
-Nothing in Swift needs to change when that export lands: the loader already
-asks for those names and the fallback disappears on its own.
+### The rig as it now stands
 
-**Otto is not motionless meanwhile.** `ottoBreathing()` runs on the fallback,
-so Home breathes. What is missing is the wave and the talking head.
+Artboard `Otto`, 400 by 520, transparent, the only artboard in the file.
+Node `Nod` at (200, 510) holds node `Body` holds Solo `Pose`. **An image sits
+its feet on its parent node at `y = -height / 2`**, which is the one number
+to recompute when the art changes size. State machine `Otto`, layers `Body`
+(Entry to Breathe, Breathe to Wave on the `wave` trigger, back at 100 percent
+exit time) and `Head` (Idle and Talk on the `talking` boolean), verified with
+`simulateStateMachine` and then on the simulator.
+
+**The redesign left one pose, so the Solo swap inside `Wave` is a no-op.**
+`OttoTalk` and `OttoWave` are the same image now, and the file embeds one
+asset, `otto-v2-wave` at 384 by 505. The swap is kept because it costs
+nothing and a second pose would use it. **Swapping the art later means
+replacing that embedded asset in Rive and exporting again**; the image sets
+in the app are a separate copy and the `.riv` cannot read them.
 
 ## THE FRIENDLY REDESIGN (2026-09-19/20): what changed, in one screen
 

@@ -58,22 +58,28 @@ internal testers Melvin + Aziz, run the round trip in CLOUDKIT_SETUP.md.
 Walk RELEASE_CHECKLIST.md's ALWAYS list before the archive (it is the same
 archive that would go to review if the round trip passes).
 
-## Otto rig BUILT in Rive; redesign and onboarding v3 build next (2026-09-20)
+## Otto rig RUNS, on the redesigned art (2026-09-20)
 
-Done: `Coherence/Otto/Otto.riv` (breathe, wave, talk), RiveRuntime linked,
-Home runs it, tap Otto to wave, fallback to the PNG pulse if the file fails.
-Details in CLAUDE.md "OTTO IS RIGGED IN RIVE". Bones cannot be made from
-the MCP, so the arm is a pose swap; three hand-drawn bones would upgrade it.
+Done: `Coherence/Otto/Otto.riv` breathes, waves and talks, RiveRuntime
+linked, Home runs it, tapping Otto waves, and the PNG pulse still stands in
+if the file ever fails to load. The furry redesign is the art inside it.
+The export bug that kept it from ever running is diagnosed and fixed in
+CLAUDE.md "THE RIVE EXPORT ONLY EVER EMITTED THE FIRST ARTBOARD"; the short
+version is that a runtime Rive file should hold exactly one artboard.
+
+Bones cannot be made from the MCP, so the wave is a body rock rather than a
+bending arm. Three hand-drawn bones in the editor would upgrade it and the
+MCP can bind and weight them.
 
 Open, in order:
-1. **Otto redesign** (Melvin: "too childish, slightly more realistic and
-   furry"). Brief and prompt in `mockups/otto-redesign.md`; needs whoever
-   generated the current poses to run it. Drop-in: same names, same framing.
-2. **Onboarding v3 in Swift** (Melvin approved `mockups/onboarding-v3.html`
+1. **Onboarding v3 in Swift** (Melvin approved `mockups/onboarding-v3.html`
    with one change: the breath screen is Otto sitting and breathing, no
-   rising head). Starts once the new art exists.
-3. Breath haptics on the onboarding breath screen (`BreathHaptics`, built,
-   unused until 2).
+   rising head). The art it waits on now exists.
+2. Breath haptics on the onboarding breath screen (`BreathHaptics`, built,
+   unused until 1).
+3. A second pose if Otto should ever do something other than wave. The
+   redesign made `OttoTalk` and `OttoWave` the same image, so the rig's
+   pose swap currently swaps like for like.
 
 ## Home v3 and Onboarding v3 mockups, Otto in a tree (Melvin, 2026-09-20): HOME B BUILT, ONBOARDING AWAITING A PICK, RIVE CHOSEN
 
