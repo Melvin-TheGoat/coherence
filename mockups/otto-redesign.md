@@ -96,11 +96,21 @@ character. Then, with the Rive editor open on the Otto file:
 which puts the new art inside the animated rig and writes
 `Coherence/Otto/Otto.riv`. The rig itself never changes.
 
-**Transparency is the one thing the repo cannot fix.** This Mac has no
-ImageMagick and no PIL, so nothing here cuts a background out; the importer
-refuses a file that arrives on white rather than shipping a white box. Ask
-for a transparent background and check it before running the import.
+**A sheet is fine now.** Image models return the whole set as one picture
+and the first two rounds were cut up by hand, so `tools/otto_split.py` does
+it: it finds the poses by their transparency, splits on the gaps between
+them, and writes one cropped PNG per pose in reading order.
 
-**One pose per image, not a sheet.** The 09-20 set arrived as one opaque
-1254 square (`mockups/otto-v2/sheet.png`) and every pose had to be cut and
-alpha'd by hand before any of it was usable.
+    python3 tools/otto_split.py ~/Downloads/sheet.png --dry-run
+    python3 tools/otto_split.py ~/Downloads/sheet.png
+
+It is pure Python, since this Mac has no PIL and no ImageMagick, and it
+refuses to write a set whose cell count does not match the names rather
+than guessing. `--dry-run` prints the cells first, and `--gap` widens or
+narrows what counts as a break between poses if a cut comes out wrong.
+
+**Transparency is still the one thing nothing here can fix.** Alpha is how
+the poses are found and how they sit on the app's cream, so a sheet on a
+white background is unusable: the splitter would see one big rectangle and
+the importer refuses it anyway. Ask for it up front and check before
+running either command.
