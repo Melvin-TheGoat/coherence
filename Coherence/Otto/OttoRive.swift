@@ -19,6 +19,8 @@ import RiveRuntime
 @MainActor
 final class OttoRig: ObservableObject {
     static let fileName = "Otto"
+    /// The names we PREFER. If the export does not carry them, the rig uses
+    /// whatever the file actually contains (see `make`).
     static let artboard = "Otto"
     static let stateMachine = "Otto"
 
@@ -27,30 +29,63 @@ final class OttoRig: ObservableObject {
 
     /// Nil when the rig is not in the bundle or will not load. A rig that
     /// fails to load is logged and costs the animation, never the screen.
+    ///
+    /// **The rig must be the artboard we asked for, and nothing else.**
+    ///
+    /// The bug, 2026-09-20: `Otto.riv` ships the Rive editor's DEFAULTS,
+    /// `iPhone 16 - 1` / `State Machine 1`, while this code asked for "Otto"
+    /// for both. So `setArtboard` threw on every launch since the rig landed
+    /// and every screen quietly drew the still PNG. Nobody noticed for a day,
+    /// because the fallback is silent and the PNG looks correct. That is the
+    /// hazard of a silent fallback and the reason the log line below is NSLog
+    /// and not `print`: a `print` from an app launched by simctl never reaches
+    /// `log show`, so the original message existed and was unreadable.
+    ///
+    /// **Accepting whatever artboard the file happens to have was tried and
+    /// is worse.** `iPhone 16 - 1` is a phone-screen-sized frame with a dark
+    /// ground, so the app rendered a BLACK RECTANGLE where Otto belongs: a
+    /// broken animation beats a broken picture every time. An arbitrary
+    /// artboard is not Otto, so an export without our names falls back, loudly.
     static func make() -> OttoRig? {
         guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return nil }
         do {
             let model = try RiveModel(fileName: fileName, extension: ".riv", in: .main, loadCdn: false)
             try model.setArtboard(artboard)
             try model.setStateMachine(stateMachine)
-            return OttoRig(model: model)
+            return OttoRig(model: model, artboard: artboard, stateMachine: stateMachine)
         } catch {
-            print("Otto rig: \(error)")
+            // NSLog, not print: a `print` from an app launched by simctl does
+            // not reach `log show`, so the original failure message existed and
+            // was invisible for a day. Anything that explains a silent fallback
+            // has to be readable without a debugger attached.
+            NSLog("Otto rig failed to load: %@", String(describing: error))
+            if let file = try? RiveFile(name: fileName, extension: ".riv", in: .main, loadCdn: false) {
+                // Says exactly what the export would need renaming to, so the
+                // next person does not have to take the file apart to find out.
+                NSLog("Otto rig: the file offers artboards [%@]; this app needs one called '%@' with a state machine called '%@'",
+                      file.artboardNames().joined(separator: ", "), artboard, stateMachine)
+            }
             return nil
         }
     }
 
-    private init(model: RiveModel) {
+    private init(model: RiveModel, artboard: String, stateMachine: String) {
         viewModel = RiveViewModel(
             model,
-            stateMachineName: Self.stateMachine,
+            stateMachineName: stateMachine,
             fit: .contain,
             alignment: .bottomLeft,
             autoPlay: true,
-            artboardName: Self.artboard
+            artboardName: artboard
         )
         viewModel.riveModel?.enableAutoBind { [weak self] instance in
             self?.instance = instance
+            // `wave()` and `talking` write through this instance and fail
+            // quietly when it never arrives, which is the same class of silence
+            // that hid the artboard-name bug. One line, once, so a rig that
+            // animates but ignores the app is distinguishable from one that
+            // works.
+            NSLog("Otto rig: bound")
         }
     }
 
