@@ -4,6 +4,26 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Friends "not working" on the beta, and how it actually gets tested (2026-09-19)
+
+The beta (`.dev` bundle) is pinned to `iCloud.com.lockout.meditate808.dev`,
+and that container is not in the Lock Out Inc. Console at all (the picker
+lists only `iCloud.com.lockout.coherence` and `iCloud.com.lockout.meditate808`).
+So every Friends query on the beta hits a database with no schema and no
+indexes. Aziz's dev builds hit `iCloud.com.azizmahmud.808`, a third one.
+**Nobody's cable build talks to the container that was set up.**
+
+The main container is done: Development has the 14 fields, 7 indexes and
+roles (Melvin, 2026-09-19), and Production shows all seven Friends types.
+
+**Therefore the Friends test is TestFlight, not the beta.** A TestFlight build
+is the production bundle id, talks to Production, and reaches both phones
+with no signing gymnastics. It is also the checklist's own gate. Archive
+from `friendly-ui` (which now carries the social branch merged in), upload,
+internal testers Melvin + Aziz, run the round trip in CLOUDKIT_SETUP.md.
+Walk RELEASE_CHECKLIST.md's ALWAYS list before the archive (it is the same
+archive that would go to review if the round trip passes).
+
 ## Onboarding round 3 and the bar (Melvin, 2026-09-19): DONE, on social-1.1
 
 Cut "Can you be alone with your thoughts?" and the name-and-age screen (the
