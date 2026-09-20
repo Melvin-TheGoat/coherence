@@ -314,7 +314,7 @@ struct ContentView: View {
     private var ottoScene: some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(greeting)
-                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(24, .heavy))
                 .foregroundStyle(AppColor.textPrimary)
             Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
                 .font(AppFont.caption)
@@ -354,11 +354,11 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         return HStack(spacing: 9) {
             Text("\(streak.current)")
-                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(25, .heavy))
                 .foregroundStyle(AppColor.streakBlushText)
                 .monospacedDigit()
             Text(streak.current == 1 ? "morning" : "mornings")
-                .font(AppFont.callout.weight(.bold))
+                .font(DisplayFont.display(16))
                 .foregroundStyle(AppColor.streakBlushText)
             Rectangle().fill(AppColor.hairline).frame(width: 1, height: 18)
             Text("best \(streak.longest)  ·  \(sessions.count) sits")

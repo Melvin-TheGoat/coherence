@@ -107,7 +107,7 @@ struct ProfileTab: View {
                 .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 5))
                 .padding(.bottom, 9)
             Text(name ?? "Your practice")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(23, .heavy))
                 .foregroundStyle(AppColor.textPrimary)
             if let handle {
                 Text(handle)
@@ -296,7 +296,7 @@ struct ProfileTab: View {
     private func stat(_ value: String, _ label: String, _ tint: Color) -> some View {
         VStack(spacing: 1) {
             Text(value)
-                .font(.system(size: 23, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(24, .heavy))
                 .foregroundStyle(tint)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
@@ -411,7 +411,7 @@ struct ProfileTab: View {
     private func proofStat(_ value: String, _ label: String, _ tint: Color) -> some View {
         VStack(spacing: 1) {
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(19, .heavy))
                 .foregroundStyle(tint)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)

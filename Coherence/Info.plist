@@ -20,6 +20,12 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Baloo2-600.ttf</string>
+		<string>Baloo2-700.ttf</string>
+		<string>Baloo2-800.ttf</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>808</string>
 	<key>CFBundlePackageType</key>

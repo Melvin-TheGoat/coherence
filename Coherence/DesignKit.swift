@@ -57,7 +57,7 @@ struct ScoreRing: View {
                     .rotationEffect(.degrees(-90))
             }
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
-                .font(.system(size: size * 0.32, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(size * 0.34, .heavy))
                 .foregroundStyle(score != nil ? AppColor.textPrimary : AppColor.textSecondary)
                 .monospacedDigit()
         }
@@ -106,7 +106,7 @@ struct EvidenceRow: View {
                 HStack(alignment: .top, spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(SessionListSupport.rowTitle(session))
-                            .font(AppFont.callout.weight(.bold))
+                            .font(DisplayFont.display(16))
                             .foregroundStyle(AppColor.textPrimary)
                             .multilineTextAlignment(.leading)
                             .lineLimit(2)
@@ -209,7 +209,7 @@ struct ScoreBubble: View {
         ZStack {
             Circle().fill(score == nil ? AppColor.trace : AppColor.accentGold)
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
-                .font(.system(size: size * 0.37, weight: .bold, design: .rounded))
+                .font(DisplayFont.display(size * 0.38, .heavy))
                 .foregroundStyle(score == nil ? AppColor.textSecondary : AppColor.textOnAccent)
                 .monospacedDigit()
         }
