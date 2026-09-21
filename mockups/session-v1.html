@@ -1,0 +1,118 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · the session screen</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#FEF9F2;--ink:#413024;--soft:#877160;--line:#F6EDE1;--amber:#F0C47B;--amberSh:#D9A957;
+--sage:#93C9BE;--dusk:#3A2C22;--night:#241B15;}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 70px;
+font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:24px;margin:0 0 6px;font-family:"Baloo 2",sans-serif}
+.lede{color:var(--soft);font-size:14.5px;max-width:820px;line-height:1.62;margin:0}
+.note{color:var(--soft);font-size:13.5px;line-height:1.6;width:300px;margin-top:13px}
+.note b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:24px}
+.col{width:300px;flex:none}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.p{width:300px;height:620px;border-radius:38px;overflow:hidden;position:relative;flex:none;
+box-shadow:0 12px 34px rgba(80,55,30,.16);display:flex;flex-direction:column;align-items:center}
+.day{background:linear-gradient(180deg,#FDEDE1 0%,var(--paper) 60%)}
+.dim{background:linear-gradient(180deg,#5A4433 0%,#2E2219 70%)}
+.night{background:linear-gradient(180deg,#2B2018 0%,#1A130E 70%)}
+.otto{width:190px;height:190px;background-size:contain;background-repeat:no-repeat;background-position:center bottom;
+background-image:url("otto-v3/otto-sit.png");margin-top:auto}
+.otto.d{filter:brightness(.62) saturate(.8)}
+.otto.n{filter:brightness(.5) saturate(.7)}
+.ring{position:absolute;top:150px;left:50%;transform:translateX(-50%);width:236px;height:236px;border-radius:50%}
+.ground{width:100%;height:92px;background:#C9A47B;opacity:.35;margin-top:-10px}
+.ground.d{background:#1D1510;opacity:.55}
+.quit{position:absolute;bottom:26px;font-size:13.5px;font-weight:700}
+.line{position:absolute;top:54px;width:100%;text-align:center;font-size:15px;font-weight:700;
+font-family:"Baloo 2",sans-serif}
+.sub{position:absolute;top:82px;width:100%;text-align:center;font-size:12.5px}
+.num{position:absolute;top:250px;width:100%;text-align:center;font-size:40px;font-weight:800;
+font-family:"Baloo 2",sans-serif}
+.chip{position:absolute;top:118px;font-size:12.5px;padding:8px 16px;border-radius:999px;
+box-shadow:0 3px 0 var(--amberSh)}
+</style></head><body>
+
+<h1>The session screen</h1>
+<p class="lede">Every other screen in this app is Duolingo. <b>This one is the practice</b>, and it is the only place
+the product has to shut up. It also carries a constraint nothing else does: the timer only counts while the app is
+open, so the screen is ON, in somebody's hand, in a dark room, at ten at night.</p>
+
+<div class="row">
+
+  <div class="col">
+    <div class="tag"><b>0:00</b> &nbsp;arrive</div>
+    <div class="p day">
+      <div class="line">Ten minutes</div>
+      <div class="sub" style="color:var(--soft)">Put the phone down. It keeps time.</div>
+      <div class="otto"></div>
+      <div class="ground"></div>
+      <div class="quit" style="color:var(--soft)">End</div>
+    </div>
+    <p class="note"><b>One instruction, once.</b> Put it down. That is the only thing the person has to know, and it
+    is also the sentence that makes the foreground rule feel like care rather than surveillance.</p>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>0:20</b> &nbsp;the light goes</div>
+    <div class="p dim">
+      <svg class="ring" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1.5"/>
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#93C9BE" stroke-width="1.5" stroke-linecap="round"
+          stroke-dasharray="52 289" transform="rotate(-90 50 50)" opacity=".55"/></svg>
+      <div class="otto d"></div>
+      <div class="ground d"></div>
+      <div class="quit" style="color:rgba(255,255,255,.28)">End</div>
+    </div>
+    <p class="note"><b>The screen darkens itself over about twenty seconds.</b> We deleted dark mode and this is the
+    one place it was load-bearing: a cream screen at 10pm is a lamp in your face. Not a theme, a fade, and it reads
+    as dusk falling rather than a setting. Otto dims with it.</p>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>4:12</b> &nbsp;you tapped</div>
+    <div class="p night">
+      <svg class="ring" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="1.5"/>
+        <circle cx="50" cy="50" r="46" fill="none" stroke="#93C9BE" stroke-width="1.5" stroke-linecap="round"
+          stroke-dasharray="121 289" transform="rotate(-90 50 50)" opacity=".7"/></svg>
+      <div class="num" style="color:rgba(255,255,255,.62)">5:48</div>
+      <div class="otto n"></div>
+      <div class="ground d"></div>
+      <div class="quit" style="color:rgba(255,255,255,.28)">End</div>
+    </div>
+    <p class="note"><b>No number unless you ask.</b> A visible countdown is a thing to watch, and watching it is the
+    opposite of the exercise. Tap anywhere, it appears for three seconds, it goes. The ring is there the whole time
+    for anyone who wants to know roughly without knowing exactly.</p>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>10:00</b> &nbsp;he opens his eyes</div>
+    <div class="p day">
+      <div class="line" style="color:var(--ink)">That's ten</div>
+      <div class="sub" style="color:var(--soft)">Otto's fine for today.</div>
+      <div class="otto"></div>
+      <div class="ground"></div>
+      <div class="chip" style="background:var(--amber);color:var(--ink);font-weight:700">Instagram is open again</div>
+      <div class="quit" style="color:var(--ink);font-weight:800">Done</div>
+    </div>
+    <p class="note"><b>The light comes back up</b> and Otto opens his eyes, which is the only animation that matters
+    in the whole app. And the shield lifting is said out loud, because that is the thing the person traded for and
+    they should be told they got it.</p>
+  </div>
+</div>
+
+<div style="max-width:820px;margin-top:30px">
+<p class="note" style="width:auto"><b>What happens if they leave the app.</b> It pauses, it does not fail. Come back
+inside a couple of minutes and it picks up where it stopped; do not come back and the sit simply never finished.
+The only way to fail is to not return, and that is a decision rather than an accident. A session that punishes you
+for answering a text is a session people learn to be afraid of.</p>
+<p class="note" style="width:auto"><b>What is deliberately absent.</b> No breathing pacer orb: Otto's chest is the
+pacer now that the rig breathes, and two things to follow is one too many. No live heart rate, ever, which is the
+oldest rule in this app. No music picker, no technique picker, no settings: every decision belongs before the
+timer starts, because each one is a dropout point and this screen is past the point of deciding.</p>
+</div>
+</body></html>
