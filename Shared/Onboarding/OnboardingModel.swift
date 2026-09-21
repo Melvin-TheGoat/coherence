@@ -900,6 +900,25 @@ extension OnboardingAnswers {
     public var interview: [InterviewStep] {
         InterviewStep.allCases.filter(asks)
     }
+
+    /// The most questions any reader is asked, over every path the branching
+    /// can take. **Not `InterviewStep.allCases.count`**, which counts the
+    /// questions that EXIST: nobody is ever asked all of them, because the
+    /// model skips any question whose premise this person has contradicted.
+    ///
+    /// Onboarding declares this number before the first question (Duolingo's
+    /// move, Melvin 2026-09-20), so it has to be a ceiling that is true on
+    /// every path rather than a promise of a fixed count: a newcomer is asked
+    /// seven and everyone else eight. Derived from the model rather than
+    /// typed into a screen, so cutting a question moves the copy with it.
+    public static var longestInterview: Int {
+        let paths: [CurrentFrequency?] = CurrentFrequency.allCases.map { Optional($0) } + [nil]
+        return paths.map { frequency in
+            var answers = OnboardingAnswers()
+            answers.currentFrequency = frequency
+            return answers.interview.count
+        }.max() ?? 0
+    }
 }
 
 /// The question screens, in canonical order. Separate from the view's `Step`

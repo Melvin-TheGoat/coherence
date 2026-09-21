@@ -343,7 +343,11 @@ struct ContentView: View {
                 // He breathes at the Watch orb's pace and talks on a tap.
                 // Pulled 22pt past the leading edge so he is leaning in, not
                 // standing on a ledge.
-                OttoRiveView(size: 104, pose: .talking, rig: ottoRig)
+                // `width` holds Home's old square frame on purpose. The rig
+                // view now takes the artboard's proportions by default, which
+                // would have pulled the bubble 20pt left here; Home is the one
+                // screen Melvin asked to leave exactly as it was.
+                OttoRiveView(size: 104, pose: .talking, width: 104, rig: ottoRig)
                     .padding(.leading, -22)
                     .contentShape(Rectangle())
                     .onTapGesture {

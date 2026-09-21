@@ -4,6 +4,37 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Otto's second pass, and the revamp is parked (2026-09-20, Melvin)
+
+His list, in his words: "The sloth isnt breathing in the onboarding, make it
+seem like hes breathing naturally from his chest using rive, and is off center
+in that screen. and he also isnt even talking... And in the onboarding hes a
+bit too small... make a screen that declares how many questions its going to
+be like duolingo did. Hes also not waving. in the start. I also want him on a
+branch somehow. some kind of greenery."
+
+**DONE, all of it, on `friendly-ui`:** the breath is a feathered chest patch
+that swells while the body barely moves; he blinks every five seconds; the
+Talk timeline opens a mouth and his lines are typed into a bubble while it
+moves; the wave fires (it never did: the data binding had not landed when the
+trigger was sent); he is drawn the full width of the screen on a branch with
+leaves running off both edges; and a new screen before the interview declares
+"Eight at most, about a minute", with the ceiling derived from the model so a
+cut question moves the copy. Detail in CLAUDE.md, "OTTO BREATHES FROM THE
+CHEST".
+
+**PARKED by the same message:** "Keep it as it was before and ill critique it.
+Slow down with this UI revamp. Keep it to 5 tabs." So `mockups/ui-v4.html`
+stays a drawing, Guide keeps its tab, and Home is untouched. Its three
+questions (Guide's tab, Home's Recent list, Save session merging into results)
+wait for Melvin.
+
+**Still open on Otto:** more animations if he wants them (a tail flick, a
+reaction when an answer is tapped, leaves that move when he waves); the branch
+is vector drawn in Rive, so a generated branch asset could replace it; and the
+breath haptic (`BreathHaptics`) is built and still unused on the breathing
+screen.
+
 ## TestFlight REPLACES the App Store app, and deleting it costs the curves (2026-09-19)
 
 Melvin: "the TestFlight build seems to have overwrote the live App Store

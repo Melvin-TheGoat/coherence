@@ -256,6 +256,7 @@ enum Analytics {
         "relief":            "01 Welcome, Otto waves",
         "breath":            "02 Let's take three breaths",
         "breathing":         "03 Breathe in, breathe out",
+        "questionCount":     "03b A few questions, here is how many",
         "whatsWaiting":      "23b Here's what's waiting",
         "baseline":          "03 How often do you meditate?",
         "motivation":        "04 What are you hoping for?",

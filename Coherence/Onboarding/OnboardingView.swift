@@ -69,6 +69,9 @@ struct OnboardingView: View {
         /// after `breath`, which shifted thirty-odd cases by two before this
         /// was caught.
         case breathing, whatsWaiting
+        /// Added 2026-09-20: how many questions are coming, declared before
+        /// the first one. Last in the enum, for the reason above.
+        case questionCount
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -231,7 +234,10 @@ struct OnboardingView: View {
             ThreeBreathsScreen { go(.breathing) }
 
         case .breathing:
-            BreathingScreen { go(firstInterviewStep) }
+            BreathingScreen { go(.questionCount) }
+
+        case .questionCount:
+            QuestionCountScreen { go(firstInterviewStep) }
 
         case .baseline:
             BaselineScreen(frequency: $answers.currentFrequency,

@@ -2256,6 +2256,96 @@ nothing and a second pose would use it. **Swapping the art later means
 replacing that embedded asset in Rive and exporting again**; the image sets
 in the app are a separate copy and the `.riv` cannot read them.
 
+## OTTO BREATHES FROM THE CHEST, BLINKS, TALKS, AND SITS ON A BRANCH (2026-09-20, second pass)
+
+Melvin, on the first rig: he is not breathing, he is off centre, he is not
+talking, he is too small, he is not waving, and "I want him on a branch
+somehow. some kind of greenery". Everything below is that list. The rig is
+still `Coherence/Otto/Otto.riv`, still ONE artboard, now 425 x 522 with five
+state machine layers: Body, Head, Pose, Branch, Blink.
+
+- **The breath is a CHEST PATCH, not a whole-body scale.** The old Breathe
+  timeline scaled the entire body 3.5 percent from the feet, which reads as
+  the picture zooming, which is why he "wasn't breathing". `tools/otto_chest.py`
+  cuts a feathered ellipse of his chest out of each pose, keeping the FULL
+  canvas so it lines up with no arithmetic, and the rig draws that patch on
+  top of the art and swells it 5 to 6 percent about its own centre while the
+  body underneath moves under 2 percent. **The feather is the whole trick**: a
+  hard-edged patch shows its rim as a seam, and alpha falling off over 46
+  pixels hides the handover. Verified by scaling it to 112 percent and
+  capturing: no seam anywhere. Still 600 frames at 60fps, so still six breaths
+  a minute.
+- **Two poses, two patches.** `ChestWave` lives inside the WavePose group and
+  rides its opacity; `ChestSit` is a sibling of `SitPose` and is keyed in the
+  `PoseWave` / `PoseSit` timelines by hand, because it has no group to inherit
+  from.
+- **He blinks.** A `Blink` layer loops a five second timeline: two lid shapes
+  (ellipses in the mask brown with a radial gradient, plus a curved lash path)
+  scale down over the eyes for about 240ms. **A straight rectangle lash read as
+  a glitch; a crescent reads as a closed eye.** The lids live inside WavePose,
+  so the meditating art, whose eyes are already closed, never blinks twice.
+- **Talking moves a mouth.** The `Talk` timeline now opens and closes a dark
+  shape hung from a pivot at the smile line, on top of the head bob. At rest
+  its parent node is scaled to zero, so a mouth only exists while he is
+  speaking.
+- **`OttoSpeech` is what makes it read as speech.** Otto's lines arrive in a
+  bubble typed a character at a time, and the rig's `talking` is true for
+  exactly as long as the typing lasts. A line that faded in was text near a
+  mascot; the same words typed while his mouth moves are something he said.
+- **The branch is a `branch` boolean, and Home never sets it.** Otto's feet sit
+  at the bottom of the artboard, so a branch needs room that is not there. A
+  new `Stand` node between the artboard and `Nod` carries the whole figure, and
+  the `BranchOn` timeline shrinks it to 72 percent and lifts it onto the limb
+  while the branch group fades in and sways. **Growing the artboard was the
+  obvious move and it is wrong**: every screen that draws Otto without a branch
+  would have got smaller. Keyframes that referenced `Nod`'s old absolute y had
+  to move with it (Talk keyed 512; Nod is now 0 inside Stand).
+- **`OttoOnBranch` draws him the full width of the screen**, past the screen
+  padding, so the limb runs off both edges instead of ending in mid air. The
+  artboard's proportions make that frame 483pt tall on a 393pt phone, most of
+  it empty sky, so the view shows only the bottom 360 to 420 of it and clips
+  the rest.
+- **He was never waving, and the reason is worth keeping.** `enableAutoBind` is
+  asynchronous; the welcome screen fires its wave 0.45s after appear, and on a
+  cold launch the data-binding instance does not exist yet, so the trigger went
+  nowhere. `OttoRig` now holds a pending wave and fires it on bind, and re-sends
+  `talking`, `sitting` and `branch` there too, since `onAppear` routinely beats
+  the binding.
+- **"Off centre" was a square frame.** The view framed itself `size` by `size`
+  while the artboard is 425 x 522, so `.contain` letterboxed him and
+  `.bottomLeft` pushed him to one side. `OttoRiveView` now takes the artboard's
+  aspect by default. **Home passes an explicit `width` to keep its old square
+  frame**, because it is the one screen Melvin asked to leave alone.
+
+### Rive things that each cost a round
+
+- **`group_editor` ignores the `x` / `y` it is given** and places the group at
+  the artboard origin. Set the position afterwards with `set_property_values`
+  (13 and 14), in the parent's local space.
+- **`createParametricShapes` honours a `paints` array; `addPaints` on a shape
+  that already has a fill does nothing.** A parametric shape is born with a
+  grey fill, so recolouring one later means `setPaints` on the existing Fill
+  id, which is the shape id plus two for these.
+- **A container's child list is front to back.** A newly added child lands at
+  the END, which is BEHIND everything: the chest patch was invisible at 112
+  percent until `bringForward`. Test draw order by exaggerating, not by reading
+  the list.
+- **`export_file` still requires `destination` even with `inline_base64`**,
+  although nothing is written there when the editor is sandboxed.
+- Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
+  ellipse reads as a blob, and a lens with two pointed tips reads as a leaf.
+
+## THE UI REVAMP IS PARKED, AND HOME STAYS AS IT IS (2026-09-20, Melvin)
+
+"The home tab i dont even know what to do with. Keep it as it was before and
+ill critique it. Slow down with this UI revamp. Keep it to 5 tabs."
+
+So `mockups/ui-v4.html` is a drawing and nothing more: **the four-tab layout is
+not happening**, Guide keeps its tab, and Home is exactly the Direction B scene
+from earlier that day. The three decisions the mockup asks for are parked until
+Melvin has critiqued the Home he already has. Nothing in that mockup is to be
+built without him saying so.
+
 ## THE FRIENDLY REDESIGN (2026-09-19/20): what changed, in one screen
 
 Aziz: "the app is just hard to look at, think duolingo esque, just real

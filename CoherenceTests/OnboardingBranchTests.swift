@@ -169,4 +169,22 @@ final class OnboardingBranchTests: XCTestCase {
                        * RestartCount.allCases.count
                        * IntendedFor.allCases.count)
     }
+
+    /// The number onboarding declares before the first question ("Eight at
+    /// most") has to hold on EVERY path, including the one the reader is on
+    /// before they have answered anything. A screen that promises fewer
+    /// questions than it then asks is the one way this copy can lie.
+    func test_declaredCeilingCoversEveryPath() {
+        let ceiling = OnboardingAnswers.longestInterview
+        for frequency in CurrentFrequency.allCases {
+            var a = OnboardingAnswers()
+            a.currentFrequency = frequency
+            XCTAssertLessThanOrEqual(a.interview.count, ceiling,
+                                     "\(frequency) is asked more questions than onboarding declares")
+        }
+        // The unanswered state is a path too: it is what the declaring screen
+        // itself is looking at.
+        XCTAssertLessThanOrEqual(OnboardingAnswers().interview.count, ceiling)
+        XCTAssertGreaterThan(ceiling, 0)
+    }
 }

@@ -391,7 +391,7 @@ struct OnboardingScreen<Content: View>: View {
                         OnboardingProgress(value: progress)
                     }
                 }
-                .frame(height: counter == nil ? 40 : 74, alignment: .bottom)
+                .frame(height: counter == nil ? 40 : 88, alignment: .bottom)
                 .padding(.bottom, progress == nil && counter == nil ? 6 : 14)
             }
 
@@ -498,7 +498,7 @@ struct OnboardingCounter: View {
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 10) {
-            OttoMark(size: 74, pose: .asking)
+            OttoMark(size: 88, pose: .asking)
                 .ottoBreathing()
             Text("\(index) of \(total)")
                 .font(OnboardingType.sub)

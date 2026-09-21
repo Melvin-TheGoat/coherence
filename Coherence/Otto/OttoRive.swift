@@ -24,8 +24,21 @@ final class OttoRig: ObservableObject {
     static let artboard = "Otto"
     static let stateMachine = "Otto"
 
+    /// The artboard's own proportions (425 x 522). The view frames itself to
+    /// this, so `.contain` fits exactly and Otto is never letterboxed inside a
+    /// square frame with his own art pushed to one side. He was, on the
+    /// breathing screen, which is what Melvin saw as "off center".
+    static let aspect: CGFloat = 425.0 / 522.0
+
     let viewModel: RiveViewModel
     private var instance: RiveDataBindingViewModel.Instance?
+    /// A wave asked for before the data binding landed. `enableAutoBind` is
+    /// asynchronous, and the welcome screen fires its wave 0.45 s after the
+    /// screen appears, which on a cold launch is routinely too early: the
+    /// trigger went to a nil instance and Otto simply never waved (Melvin,
+    /// 2026-09-20: "Hes also not waving. in the start"). Anything the app says
+    /// to a rig that has not bound yet is remembered and said again on bind.
+    private var pendingWave = false
 
     /// Nil when the rig is not in the bundle or will not load. A rig that
     /// fails to load is logged and costs the animation, never the screen.
@@ -79,7 +92,18 @@ final class OttoRig: ObservableObject {
             artboardName: artboard
         )
         viewModel.riveModel?.enableAutoBind { [weak self] instance in
-            self?.instance = instance
+            guard let self else { return }
+            self.instance = instance
+            // Re-say everything the app said while this was nil. `sitting` is
+            // set from `onAppear`, which routinely beats the binding, so
+            // without this the breathing screen could open on the wrong pose.
+            instance.booleanProperty(fromPath: "talking")?.value = self.talking
+            instance.booleanProperty(fromPath: "sitting")?.value = self.sitting
+            instance.booleanProperty(fromPath: "branch")?.value = self.branch
+            if self.pendingWave {
+                self.pendingWave = false
+                instance.triggerProperty(fromPath: "wave")?.trigger()
+            }
             // `wave()` and `talking` write through this instance and fail
             // quietly when it never arrives, which is the same class of silence
             // that hid the artboard-name bug. One line, once, so a rig that
@@ -89,9 +113,11 @@ final class OttoRig: ObservableObject {
         }
     }
 
-    /// The wave, once. Safe to call before binding finishes: it is dropped.
+    /// The wave, once. Safe to call before the binding finishes: it is held
+    /// and fired the moment the instance arrives.
     func wave() {
-        instance?.triggerProperty(fromPath: "wave")?.trigger()
+        guard let instance else { pendingWave = true; return }
+        instance.triggerProperty(fromPath: "wave")?.trigger()
     }
 
     /// Mid-sentence head movement while `true`.
@@ -111,25 +137,56 @@ final class OttoRig: ObservableObject {
             instance?.booleanProperty(fromPath: "sitting")?.value = sitting
         }
     }
+
+    /// Whether he is standing on the branch, with the leaves around him
+    /// (Melvin, 2026-09-20: "I want him on a branch somehow. some kind of
+    /// greenery"). **Off by default, and Home never turns it on**, because
+    /// Home already stands him on its own horizon under a sky.
+    ///
+    /// The branch is not only scenery: the same state shrinks him to 88% and
+    /// lifts him onto the limb, so the artboard makes room for it without
+    /// growing. Growing the artboard would have shrunk him on every screen
+    /// that does not ask for a branch.
+    var branch: Bool = false {
+        didSet {
+            instance?.booleanProperty(fromPath: "branch")?.value = branch
+        }
+    }
 }
 
 /// Otto at `size` points, animated when the rig is present, the still pose
 /// with the pulse when it is not. Tapping is the caller's business.
 struct OttoRiveView: View {
+    /// The drawn HEIGHT. The width follows the artboard unless one is given.
     var size: CGFloat
     /// The pose to draw. The rig can hold two of them, cross-legged and
     /// upright; anything else falls back to the still art for that pose.
     var pose: OttoPose = .talking
+    /// Mouth and head move while this is true, so a line of copy reads as
+    /// something he is saying rather than something printed near him.
+    var talking: Bool = false
+    /// Stand him on the branch. See `OttoRig.branch`.
+    var branch: Bool = false
+    /// An explicit frame width. Home passes its old square frame so that
+    /// screen is untouched by the aspect fix; everything else takes the
+    /// artboard's own proportions.
+    var width: CGFloat? = nil
     /// Set once from the owner so the same rig survives re-renders.
     @ObservedObject var rig: OttoRigHolder
 
     var body: some View {
         if let live = rig.rig {
             live.viewModel.view()
-                .frame(width: size, height: size)
+                .frame(width: width ?? size * OttoRig.aspect, height: size)
                 .accessibilityHidden(true)
-                .onAppear { rig.setSitting(pose == .meditating) }
+                .onAppear {
+                    rig.setSitting(pose == .meditating)
+                    rig.setBranch(branch)
+                    rig.setTalking(talking)
+                }
                 .onChange(of: pose) { _, new in rig.setSitting(new == .meditating) }
+                .onChange(of: branch) { _, new in rig.setBranch(new) }
+                .onChange(of: talking) { _, new in rig.setTalking(new) }
         } else {
             OttoMark(size: size, pose: pose)
                 .ottoBreathing()
@@ -146,6 +203,7 @@ final class OttoRigHolder: ObservableObject {
     func wave() { rig?.wave() }
     func setTalking(_ on: Bool) { rig?.talking = on }
     func setSitting(_ on: Bool) { rig?.sitting = on }
+    func setBranch(_ on: Bool) { rig?.branch = on }
 }
 
 // MARK: - Breathing haptics
@@ -158,8 +216,9 @@ final class OttoRigHolder: ObservableObject {
 /// the caller, which decides whether to start it at all.
 @MainActor
 final class BreathHaptics {
-    /// Matches the Breathe timeline in Otto.riv: 2.5 s in, 2.5 s out.
-    static let period: TimeInterval = 5
+    /// Matches the Breathe timeline in Otto.riv: 5 s in, 5 s out, which is
+    /// six breaths a minute, the pace every other part of 808 claims.
+    static let period: TimeInterval = 10
 
     private var engine: CHHapticEngine?
     private var player: CHHapticAdvancedPatternPlayer?
