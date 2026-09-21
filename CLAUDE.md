@@ -2361,6 +2361,22 @@ state machine layers: Body, Head, Pose, Branch, Blink.
 - Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
   ellipse reads as a blob, and a lens with two pointed tips reads as a leaf.
 
+## THE WEBSITE CARRIES A GOOGLE "PREFERRED SOURCE" BADGE (2026-09-21, Melvin)
+
+In the footer, its own row above the copyright: the Google G and "Add us as a
+preferred source on Google", linking to
+`https://www.google.com/preferences/source?q=meditate808.com`, the deeplink
+Google documents for sites that do not load its script
+(developers.google.com/search/docs/appearance/preferred-sources). **Deliberately
+the link and not Google's `publisher.js` button**, so the site still loads
+nothing from a third party. What it does is modest: a reader who adds 808 sees
+it favoured in Top Stories and AI Overviews, which an app landing page rarely
+appears in. Whether meditate808.com is even listed in Google's source tool
+needs a signed-in Google account to check, so that is Melvin's to click.
+**Live only after the manual Cloudflare Pages redeploy.** The footer still
+says "Meditation, measured on your Apple Watch" under the retired flower mark,
+both left alone as out of scope.
+
 ## THE QUESTIONS ARE DUOLINGO'S SCREEN, AND 808 IS NOT A WATCH APP ANY MORE (2026-09-21, Melvin)
 
 Melvin, with Duolingo's "What would you like to learn?" and "Just 7 quick
@@ -2400,6 +2416,43 @@ reference screen, build that screen.** Not a reading of it.
   count screen and 400 shaved his tuft on the welcome screen.
 - **No delay before Otto speaks.** The welcome line waited 1.4 s for the
   wave; Melvin read it as the screen lagging.
+- **THE BREATH, FOURTH PASS: the sitting pose is a MESH** (Melvin, same day:
+  "still not breathing ... it doesnt progress past the first breathe in").
+  Two separate failures. (1) The chest patch was real but too faint to see
+  on a phone. The sitting image now carries a 9 x 9 mesh (`generateMesh`,
+  `trace: false`, `subdivisions: 3`, 81 vertices in the image's centred local
+  space) and `Breathe` keys 285 vertex positions: the lap and hands never
+  move, the chest widens about 15 percent, the shoulders and head rise about
+  6 units. It warps the one image, so there is no seam to hide, and
+  `ChestSit` is DELETED. The displacement lives in one function (rows by
+  height, widening capped at the torso's edge) and was previewed at the peak
+  before any keying. **Vertices are keyable through `modifyKeyFrames` on
+  property keys 24 (x) and 25 (y); re-adding a key at an existing frame
+  replaces it.** The standing pose keeps its chest patch, because its arm and
+  eyelids are separate layers a mesh would slide out from under.
+  (2) **The screen never advanced because its breaths ran on a
+  `Timer.publish` built inside `body`.** A publisher made there is made again
+  on every redraw, the resubscription restarts its countdown, and the screen
+  redraws whenever onboarding's parent does, so the five-second tick could be
+  pushed back indefinitely. The breaths now run from one `.task` (cancelled
+  with the screen), and `OttoSpeech` types from a `.task` too. **Never drive
+  a sequence from a Timer made in `body`.**
+- **The invitation fades into the breathing**, no slide: `OnboardingView`
+  carries a `Motion` (forward, back, fade) and Otto is pinned to the same
+  spot above the button on both screens, so only the words change.
+- **Back slides the other way.** A change of direction has to re-render the
+  outgoing screen with its new transition BEFORE it is removed (SwiftUI
+  takes a removal transition from the view as last drawn), so `show` sets
+  `motion` and moves on the next turn of the run loop. Verified from a
+  screen recording, frame by frame: the question exits right and the count
+  screen enters from the left.
+- **Back from What's waiting did nothing**, found while testing Back: the
+  last question routes through the cut `.calculating`, which went into the
+  history, so Back landed there and it sent the reader straight forward
+  again. Pass-through screens (`Step.onlyPassesThrough`) never enter the
+  history now.
+- **What's waiting is centred**, bigger rows, and says "Meditate your way",
+  "See how it went", "Do it with friends".
 - **THE BREATH, THIRD PASS: only the chest moves.** Melvin: "it just looks
   like his whole body is floating up and down". Three causes, all removed:
   the Body scaled 1.8 percent taller and leaned on every breath; the branch

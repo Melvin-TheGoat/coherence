@@ -88,6 +88,23 @@ struct OnboardingView: View {
         /// chevron: reversing out of a price into the interview turns a
         /// decision into something to be negotiated around, which is the same
         /// reason the thirty-day exit offer is gone.
+        /// Screens that were cut and now only pass the reader on (`Color.clear`
+        /// that calls `go` on appear). They never enter the Back history:
+        /// the last question routes through `.calculating` on its way to
+        /// What's waiting, so Back from there landed on `.calculating`, which
+        /// immediately sent the reader forward again, and Back did nothing.
+        var onlyPassesThrough: Bool {
+            switch self {
+            case .aloneWithThoughts, .doingNothing, .bodyProof, .anchor, .you,
+                 .calculating, .result, .cost, .proofBody, .sampleStart,
+                 .sampleBuild, .proofYourWay, .commitment, .wall, .week,
+                 .rating, .watchConnect, .breathe, .sessionResults, .paywall:
+                return true
+            default:
+                return false
+            }
+        }
+
         var allowsBack: Bool {
             switch self {
             case .paywall, .signIn, .profile: return false
@@ -172,6 +189,28 @@ struct OnboardingView: View {
     /// sends people to the waitlist, and back from there has to mean the gate.
     @State private var history: [Step] = []
 
+    /// Which way the next screen change slides. **Back slides the other
+    /// way** (Melvin, 2026-09-21: Back looked like progressing): the screen
+    /// you return to comes in from the left and the one you leave exits
+    /// right. And the invitation to breathe hands over to the breathing by
+    /// fading in place, because Otto sits in the same spot on both and a
+    /// slide made him leave and come back.
+    enum Motion { case forward, back, fade }
+    @State private var motion: Motion = .forward
+
+    private var screenTransition: AnyTransition {
+        switch motion {
+        case .forward:
+            return .asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity),
+                               removal: .move(edge: .leading).combined(with: .opacity))
+        case .back:
+            return .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
+                               removal: .move(edge: .trailing).combined(with: .opacity))
+        case .fade:
+            return .opacity
+        }
+    }
+
     var body: some View {
         // The step haptic hangs off the ZStack, NOT off `content`.
         //
@@ -187,9 +226,7 @@ struct OnboardingView: View {
         ZStack {
             content
                 .id(step)
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .leading).combined(with: .opacity)))
+                .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: step)
         }
             .environment(\.onboardingBack,
@@ -478,12 +515,31 @@ struct OnboardingView: View {
         // when a purchase completed ON the paywall, advancing twice.
         let next: Step = (requested == .paywall && store.entitled) ? .signIn : requested
         guard next != step else { return }
-        history.append(step)
+        if !step.onlyPassesThrough { history.append(step) }
         // One line covers the whole 26-screen funnel: the step being LEFT is
         // the one that was completed.
         Analytics.track(.onboardingStep(id: String(describing: step)))
-        withAnimation { step = next }
-        saveProgress()
+        show(next, motion: step == .breath && next == .breathing ? .fade : .forward)
+    }
+
+    /// Changes the screen with the given motion.
+    ///
+    /// **When the motion changes, the outgoing screen has to be drawn with
+    /// the new transition BEFORE it is removed**, or it leaves the way the
+    /// previous change did: SwiftUI takes a removal transition from the view
+    /// as it was last rendered. So a change of direction sets `motion`, lets
+    /// that render happen, and moves on the next turn of the run loop.
+    private func show(_ target: Step, motion wanted: Motion) {
+        let apply = {
+            withAnimation { step = target }
+            saveProgress()
+        }
+        if motion != wanted {
+            motion = wanted
+            DispatchQueue.main.async(execute: apply)
+        } else {
+            apply()
+        }
     }
 
     // MARK: - Resume
@@ -560,8 +616,7 @@ struct OnboardingView: View {
 
     private func goBack() {
         guard let previous = history.popLast() else { return }
-        withAnimation { step = previous }
-        saveProgress()
+        show(previous, motion: .back)
     }
 
     // MARK: - Side effects

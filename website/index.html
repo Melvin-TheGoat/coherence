@@ -251,6 +251,17 @@
   .footgrid a{ color:var(--muted); font-size:14.5px; padding:4px 0; display:inline-block; }
   .footgrid a:hover{ color:var(--fg); text-decoration:none; }
   .footbrand p{ color:var(--dim); font-size:13.5px; max-width:30ch; margin:12px 0 0; }
+  /* Google's "preferred source" badge, as the plain deeplink Google offers for
+     sites that do not load its script. A link, not Google's publisher.js, so
+     the site still loads nothing from a third party. */
+  .prefrow{ padding:0 0 26px; }
+  .prefsource{ display:inline-flex; align-items:center; gap:9px;
+    padding:9px 14px 9px 11px; border:1px solid var(--border); border-radius:999px;
+    color:var(--fg); font-size:13px; line-height:1.2; }
+  .prefsource:hover{ border-color:var(--muted); text-decoration:none; }
+  .prefsource svg{ width:18px; height:18px; flex:none; }
+  .prefsource b{ font-weight:600; }
+  .prefsource span{ white-space:nowrap; }
   .footnote{ display:flex; flex-wrap:wrap; gap:8px 20px; padding:0 0 34px;
     font-family:var(--mono); font-size:11.5px; color:var(--dim); }
 
@@ -686,6 +697,18 @@
           <li><a href="https://tiktok.com/@808meditate">TikTok</a></li>
         </ul>
       </div>
+    </div>
+    <div class="prefrow">
+    <a class="prefsource" href="https://www.google.com/preferences/source?q=meditate808.com"
+       target="_blank" rel="noopener" aria-label="Add 808 as a preferred source on Google">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/>
+        <path fill="#34A853" d="M12 23c3 0 5.4-1 7.2-2.7l-3.5-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.2v2.8A11 11 0 0 0 12 23z"/>
+        <path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.2a11 11 0 0 0 0 9.9l3.6-2.8z"/>
+        <path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.1-3.1A11 11 0 0 0 2.2 7.1l3.6 2.8C6.7 7.3 9.1 5.4 12 5.4z"/>
+      </svg>
+      <span>Add us as a <b>preferred source</b> on Google</span>
+    </a>
     </div>
     <div class="footnote">
       <span>&copy; 2026 Lock Out Inc.</span>

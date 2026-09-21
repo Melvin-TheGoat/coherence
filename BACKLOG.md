@@ -4,6 +4,21 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Breathing that works, Back that goes back, and a website badge (2026-09-21, Melvin)
+
+**DONE:** the sitting Otto breathes through a mesh (chest widens, shoulders
+rise, lap still); the breathing screen advances through all three breaths
+(its timer was being reset by redraws); the invitation fades into the
+breathing with Otto in place; Back slides the other way; Back from What's
+waiting works again; What's waiting is centred with bigger rows; the website
+footer has Google's preferred-source badge.
+
+**OWED BY MELVIN:** redeploy `website/` to Cloudflare Pages for the badge to go
+live, and click it while signed in to Google to see whether meditate808.com is
+listed. **Worth a look next:** the website footer still says "Meditation,
+measured on your Apple Watch" beside the retired flower mark, which the pivot
+makes stale.
+
 ## Question screens rebuilt to Duolingo's, and the pivot (2026-09-21, Melvin)
 
 **DONE:** no pause before Otto speaks; the breath moves only his chest (the

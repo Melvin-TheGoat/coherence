@@ -57,11 +57,9 @@ struct OttoSpeech: View {
     @Binding var speaking: Bool
 
     @State private var shown = 0
-    @State private var elapsed: TimeInterval = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// One frame at a time, five characters a frame: about 300 a second.
-    private static let tick: TimeInterval = 1.0 / 60
+    /// Five characters a frame at 60 frames a second: about 300 a second.
     private static let perTick = 5
     private static let tailSize: CGFloat = 11
 
@@ -100,17 +98,24 @@ struct OttoSpeech: View {
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(String(parsed.characters))")
-            .onAppear {
-                guard reduceMotion else { return }
-                shown = total
-            }
-            .onReceive(Timer.publish(every: Self.tick, on: .main, in: .common).autoconnect()) { _ in
-                guard !reduceMotion, shown < total else { return }
-                elapsed += Self.tick
-                guard elapsed >= delay else { return }
-                if shown == 0 { speaking = true }
-                shown = min(total, shown + Self.perTick)
-                if shown == total { speaking = false }
+            // A task, not a Timer built in `body`: a publisher made there is
+            // made again on every redraw, and the resubscription restarts its
+            // countdown, so a busy parent can starve it. That is exactly what
+            // froze the breathing screen on its first "Breathe in".
+            .task(id: text) {
+                shown = 0
+                if reduceMotion { shown = total; return }
+                if delay > 0 {
+                    try? await Task.sleep(for: .seconds(delay))
+                    guard !Task.isCancelled else { return }
+                }
+                speaking = true
+                while shown < total {
+                    try? await Task.sleep(for: .milliseconds(16))
+                    guard !Task.isCancelled else { speaking = false; return }
+                    shown = min(total, shown + Self.perTick)
+                }
+                speaking = false
             }
     }
 }
@@ -265,6 +270,8 @@ struct WelcomeScreen: View {
 /// anything is asked.
 struct ThreeBreathsScreen: View {
     let onContinue: () -> Void
+    /// Shared with `BreathingScreen`, which must put Otto in the same place.
+    static let ottoGap: CGFloat = 20
 
     @StateObject private var rig = OttoRigHolder()
     @State private var appeared = false
@@ -279,10 +286,12 @@ struct ThreeBreathsScreen: View {
 
             Spacer(minLength: 8)
 
+            // Pinned just above the button, exactly where the breathing
+            // screen pins him, so the fade between the two leaves him where
+            // he is and only the words change.
             OttoOnBranch(pose: .meditating, talking: speaking, rig: rig)
+                .padding(.bottom, Self.ottoGap)
                 .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -303,13 +312,15 @@ struct ThreeBreathsScreen: View {
 /// pace the Watch orb breathes at and the pace the score's doorway is built
 /// around, so the app breathes one way everywhere.
 ///
-/// **He breathes from the chest, through the rig.** An earlier version had his
-/// head climb the screen on the inhale, the way Headspace's orange half does,
-/// and Melvin cut it on sight; the next one scaled his whole body 3.5 percent
-/// from the feet, which reads as the picture zooming rather than a body
-/// breathing, and Melvin's verdict was that he was not breathing at all. The
-/// rig now carries a feathered cut of his chest as its own layer and swells
-/// that (see `tools/otto_chest.py`), with the body barely moving under it.
+/// **He breathes with his torso, through the rig, and nothing else moves.**
+/// Three tries got here. Scaling the whole body from the feet read as the
+/// picture zooming; a feathered chest patch was too faint to see ("still not
+/// breathing"); the body stretching plus the branch bobbing read as him
+/// floating. The sitting pose now carries a 9 by 9 MESH in the rig, and the
+/// Breathe timeline moves its vertices: the lap and hands stay planted, the
+/// chest widens about ten percent, and the shoulders and head ride up a few
+/// points on top of it. That is a deep breath, and the lap staying put is
+/// what keeps it from reading as floating.
 ///
 /// A Continue appears after the first breath. Nobody is held in a breathing
 /// exercise they did not want by a screen with no exit.
@@ -317,7 +328,7 @@ struct BreathingScreen: View {
     let onContinue: () -> Void
 
     /// Five in, five out.
-    private static let half: TimeInterval = 5
+    private static let half: Duration = .seconds(5)
     private static let breaths = 3
 
     @StateObject private var rig = OttoRigHolder()
@@ -349,12 +360,11 @@ struct BreathingScreen: View {
 
             Spacer(minLength: 8)
 
-            // The rig loops on its own clock; the words above ride the same
-            // ten seconds. Over three breaths any drift between them is
-            // smaller than the eye can hold.
+            // The rig loops on its own ten-second clock and the words ride
+            // the same ten seconds. Over three breaths any drift between them
+            // is smaller than the eye can hold.
             OttoOnBranch(pose: .meditating, rig: rig)
-
-            Spacer(minLength: 0)
+                .padding(.bottom, ThreeBreathsScreen.ottoGap)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -379,27 +389,30 @@ struct BreathingScreen: View {
             .padding(.bottom, 10)
             .animation(.easeOut(duration: 0.3), value: canContinue)
         }
-        .onAppear { haptics.start() }
-        .onDisappear { haptics.stop() }
-        .onReceive(Timer.publish(every: Self.half, on: .main, in: .common).autoconnect()) { _ in
-            advance()
-        }
-    }
-
-    private func advance() {
-        if inhaling {
-            inhaling = false
-            // One full breath is in and out, so the count and the exit both
-            // move on the exhale.
-            canContinue = true
-        } else {
-            if breath >= Self.breaths {
-                haptics.stop()
-                onContinue()
-                return
+        // THE BREATHS RUN FROM ONE TASK. They used to advance on a
+        // `Timer.publish` made inside `body`, which is rebuilt, and its
+        // countdown restarted, every time the view redraws. The screen
+        // redraws whenever onboarding's parent does, so the five-second tick
+        // could be pushed back forever and the screen sat on its first
+        // "Breathe in" (Melvin, 2026-09-21: "it doesnt progress past the
+        // first breathe in"). A task belongs to the view's lifetime, is
+        // cancelled when the screen goes, and cannot be reset by a redraw.
+        .task {
+            haptics.start()
+            defer { haptics.stop() }
+            for n in 1...Self.breaths {
+                breath = n
+                inhaling = true
+                try? await Task.sleep(for: Self.half)
+                guard !Task.isCancelled else { return }
+                inhaling = false
+                // One full breath is in and out; the way on appears once the
+                // first one is under way.
+                canContinue = true
+                try? await Task.sleep(for: Self.half)
+                guard !Task.isCancelled else { return }
             }
-            breath += 1
-            inhaling = true
+            onContinue()
         }
     }
 }
@@ -476,43 +489,51 @@ struct WhatsWaitingScreen: View {
     private let rows = [
         Row(pose: .meditating, title: "Meditate your way.",
             detail: "Guided sessions, calming sounds, or silence."),
-        Row(pose: .awake, title: "You get a score you can trust.",
-            detail: "Built from what your body did, with the working shown."),
-        Row(pose: .talking, title: "It adds up.",
-            detail: "A streak, a history, and friends who sit too."),
+        Row(pose: .awake, title: "See how it went.",
+            detail: "A score after every session, with the working shown."),
+        Row(pose: .talking, title: "Do it with friends.",
+            detail: "A streak, your history, and friends who meditate too."),
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        // The block sits in the middle of the screen with the headline on it,
+        // not pinned to the top with the rest of the screen left empty
+        // (Melvin, 2026-09-21: "three tiles at the top with a bunch of
+        // whitespace below"). Bigger rows, bigger Otto in each, and the space
+        // shared above and below.
+        VStack(spacing: 0) {
+            Spacer(minLength: 16)
+
             Text("Here's what's waiting")
                 .font(OnboardingType.question)
                 .foregroundStyle(AppColor.textPrimary)
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 8)
+                .multilineTextAlignment(.center)
 
             VStack(spacing: 14) {
                 ForEach(rows) { row in
-                    HStack(alignment: .center, spacing: 14) {
-                        OttoMark(size: 54, pose: row.pose)
-                        VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .center, spacing: 16) {
+                        OttoMark(size: 78, pose: row.pose)
+                        VStack(alignment: .leading, spacing: 4) {
                             Text(row.title)
-                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .font(.system(size: 19, weight: .bold, design: .rounded))
                                 .foregroundStyle(AppColor.textPrimary)
                             Text(row.detail)
-                                .font(OnboardingType.sub)
+                                .font(AppFont.body)
                                 .foregroundStyle(AppColor.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }
                         Spacer(minLength: 0)
                     }
-                    .padding(14)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 18)
                     .background(AppColor.backgroundSecondary,
                                 in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                 }
             }
-            .padding(.top, 26)
+            .padding(.top, 28)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 16)
+            Spacer(minLength: 16)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
