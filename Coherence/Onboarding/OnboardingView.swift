@@ -192,11 +192,15 @@ struct OnboardingView: View {
     /// Which way the next screen change slides. **Back slides the other
     /// way** (Melvin, 2026-09-21: Back looked like progressing): the screen
     /// you return to comes in from the left and the one you leave exits
-    /// right. And the invitation to breathe hands over to the breathing by
-    /// fading in place, because Otto sits in the same spot on both and a
-    /// slide made him leave and come back.
-    enum Motion { case forward, back, fade }
+    /// right.
+    enum Motion { case forward, back }
     @State private var motion: Motion = .forward
+
+    /// The identity each step is drawn under. The invitation to breathe and
+    /// the breaths are one screen, so they share one identity and changing
+    /// between them is not a transition at all.
+    private var screenIdentity: Step { Self.identity(of: step) }
+    private static func identity(of step: Step) -> Step { step == .breathing ? .breath : step }
 
     private var screenTransition: AnyTransition {
         switch motion {
@@ -206,8 +210,6 @@ struct OnboardingView: View {
         case .back:
             return .asymmetric(insertion: .move(edge: .leading).combined(with: .opacity),
                                removal: .move(edge: .trailing).combined(with: .opacity))
-        case .fade:
-            return .opacity
         }
     }
 
@@ -225,9 +227,9 @@ struct OnboardingView: View {
         // of this needs a device.
         ZStack {
             content
-                .id(step)
+                .id(screenIdentity)
                 .transition(screenTransition)
-                .animation(.easeInOut(duration: 0.32), value: step)
+                .animation(.easeInOut(duration: 0.32), value: screenIdentity)
         }
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
@@ -267,11 +269,14 @@ struct OnboardingView: View {
         case .relief:
             WelcomeScreen { go(.breath) }
 
-        case .breath:
-            ThreeBreathsScreen { go(.breathing) }
-
-        case .breathing:
-            BreathingScreen { go(.questionCount) }
+        // ONE case for both steps, so SwiftUI sees one view: "I'm ready"
+        // moves the step (analytics and resume stay exactly as they were)
+        // and the screen simply starts breathing. Two cases would be two
+        // views, and the change between them would be a transition.
+        case .breath, .breathing:
+            BreathExerciseScreen(breathing: step == .breathing,
+                                 onReady: { go(.breathing) },
+                                 onContinue: { go(.questionCount) })
 
         case .questionCount:
             QuestionCountScreen { go(firstInterviewStep) }
@@ -519,7 +524,7 @@ struct OnboardingView: View {
         // One line covers the whole 26-screen funnel: the step being LEFT is
         // the one that was completed.
         Analytics.track(.onboardingStep(id: String(describing: step)))
-        show(next, motion: step == .breath && next == .breathing ? .fade : .forward)
+        show(next, motion: .forward)
     }
 
     /// Changes the screen with the given motion.
@@ -531,7 +536,13 @@ struct OnboardingView: View {
     /// that render happen, and moves on the next turn of the run loop.
     private func show(_ target: Step, motion wanted: Motion) {
         let apply = {
-            withAnimation { step = target }
+            // Within one screen (I'm ready starting the breaths) nothing
+            // animates: the words change and Otto breathes, that is all.
+            if Self.identity(of: target) == screenIdentity {
+                step = target
+            } else {
+                withAnimation { step = target }
+            }
             saveProgress()
         }
         if motion != wanted {

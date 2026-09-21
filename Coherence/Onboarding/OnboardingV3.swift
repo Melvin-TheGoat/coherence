@@ -266,120 +266,85 @@ struct WelcomeScreen: View {
     }
 }
 
-/// Screen 2. The invitation, in his own voice, held for a moment before
-/// anything is asked.
-struct ThreeBreathsScreen: View {
-    let onContinue: () -> Void
-    /// Shared with `BreathingScreen`, which must put Otto in the same place.
-    static let ottoGap: CGFloat = 20
-
-    @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
-    @State private var speaking = false
-
-    var body: some View {
-        VStack(spacing: 0) {
-            OttoSpeech(text: "Before anything else, let's take three breaths together.",
-                       speaking: $speaking)
-                .padding(.top, 16)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 8)
-
-            // Pinned just above the button, exactly where the breathing
-            // screen pins him, so the fade between the two leaves him where
-            // he is and only the words change.
-            OttoOnBranch(pose: .meditating, talking: speaking, rig: rig)
-                .padding(.bottom, Self.ottoGap)
-                .opacity(appeared ? 1 : 0)
-        }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
-        .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "I'm ready", action: onContinue)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
-                .opacity(appeared ? 1 : 0)
-        }
-        .onAppear { withAnimation(.easeOut(duration: 0.6)) { appeared = true } }
-    }
-}
-
-/// Screen 3. Three breaths, paced, with Otto breathing beside the reader.
+/// Screens 2 and 3 are ONE screen: the invitation, then the three breaths,
+/// with nothing between them (Melvin, 2026-09-21, twice: "IT SHOULD JUST
+/// START BREATHING, NO TRANSITION"). They were two screens joined by a slide,
+/// then by a fade, and either way the screen changed under Otto when the
+/// reader had just said they were ready. Now "I'm ready" changes the words
+/// and starts his breath, and nothing else moves.
 ///
-/// **Ten seconds a breath, five in and five out.** That is six a minute, the
-/// pace the Watch orb breathes at and the pace the score's doorway is built
-/// around, so the app breathes one way everywhere.
+/// **His first inhale starts ON "I'm ready".** The rig's breath runs on its
+/// own ten-second clock, so a reader who taps mid-cycle used to see "Breathe
+/// in" over a chest that was already falling. Here the rig settles into the
+/// sitting pose on the branch and is held still (`OttoRigHolder(
+/// holdUntilReleased:)`); the tap releases it, and the words are paced from
+/// where his breath actually is, never from a separate stopwatch.
 ///
-/// **He breathes with his torso, through the rig, and nothing else moves.**
-/// Three tries got here. Scaling the whole body from the feet read as the
-/// picture zooming; a feathered chest patch was too faint to see ("still not
-/// breathing"); the body stretching plus the branch bobbing read as him
-/// floating. The sitting pose now carries a 9 by 9 MESH in the rig, and the
-/// Breathe timeline moves its vertices: the lap and hands stay planted, the
-/// chest widens about ten percent, and the shoulders and head ride up a few
-/// points on top of it. That is a deep breath, and the lap staying put is
-/// what keeps it from reading as floating.
+/// **Three full breaths, then Continue.** A Continue after the first breath
+/// read as the exercise ending after one ("it only happens ONCE and then the
+/// continue button appears"), so the only button during the breaths is none.
 ///
-/// A Continue appears after the first breath. Nobody is held in a breathing
-/// exercise they did not want by a screen with no exit.
-struct BreathingScreen: View {
+/// Five in, five out: six a minute, the pace the rig, the haptic and the
+/// Watch orb all share.
+///
+/// The router shows this for both `.breath` and `.breathing`, from ONE switch
+/// case under ONE identity, so moving between the two steps (which keeps the
+/// analytics funnel and resume records exactly as they were) redraws this view
+/// rather than replacing it.
+struct BreathExerciseScreen: View {
+    /// True once the reader has said they are ready (`Step.breathing`).
+    let breathing: Bool
+    let onReady: () -> Void
     let onContinue: () -> Void
 
-    /// Five in, five out.
-    private static let half: Duration = .seconds(5)
+    private static let half: Double = 5
     private static let breaths = 3
 
-    @StateObject private var rig = OttoRigHolder()
-    /// The breath on the Taptic Engine: a swell in, a softer fall out, on the
-    /// same ten seconds the rig and the words are on (Melvin, 2026-09-20:
-    /// "turn on the breath haptic for the breathing screen"). Onboarding is
-    /// one of the two places 808 buzzes at all, and this is the one where a
-    /// pulse is the instruction rather than an interruption. **The simulator
-    /// plays no haptics**, so this can only be judged on a phone.
+    @StateObject private var rig: OttoRigHolder
     @State private var haptics = BreathHaptics()
+    @State private var appeared = false
+    @State private var speaking = false
     @State private var breath = 1
     @State private var inhaling = true
-    @State private var canContinue = false
+    @State private var finished = false
+
+    init(breathing: Bool, onReady: @escaping () -> Void, onContinue: @escaping () -> Void) {
+        self.breathing = breathing
+        self.onReady = onReady
+        self.onContinue = onContinue
+        // Resuming straight into the breaths has no invitation to wait on.
+        _rig = StateObject(wrappedValue: OttoRigHolder(holdUntilReleased: !breathing))
+    }
 
     var body: some View {
         VStack(spacing: 0) {
-            Text(inhaling ? "Breathe in" : "Breathe out")
-                .font(OnboardingType.question)
-                .foregroundStyle(AppColor.textPrimary)
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.4), value: inhaling)
+            header
+                .frame(minHeight: 96, alignment: .top)
                 .padding(.top, 8)
-
-            Text("\(breath) of \(Self.breaths)")
-                .font(OnboardingType.sub)
-                .foregroundStyle(AppColor.textSecondary)
-                .monospacedDigit()
-                .padding(.top, 6)
 
             Spacer(minLength: 8)
 
-            // The rig loops on its own ten-second clock and the words ride
-            // the same ten seconds. Over three breaths any drift between them
-            // is smaller than the eye can hold.
-            OttoOnBranch(pose: .meditating, rig: rig)
-                .padding(.bottom, ThreeBreathsScreen.ottoGap)
+            // Pinned above the button and never moved: the words change,
+            // Otto does not.
+            OttoOnBranch(pose: .meditating, talking: speaking, rig: rig)
+                .padding(.bottom, 20)
+                .opacity(appeared ? 1 : 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onboardingGround(.body)
         .safeAreaInset(edge: .bottom) {
-            // The button is always laid out and only fades in. Swapping a
-            // 54 pt line for the taller lifted button changed the inset's
-            // height after the first breath, and every view above it shifted:
-            // Otto, the branch, all of it, in one jump that read as him
-            // floating.
+            // One slot, one height, whatever sits in it. A slot that changes
+            // height shifts every view above it, which is the jump that read
+            // as Otto floating.
             ZStack {
+                OnboardingCTA(title: "I'm ready", action: onReady)
+                    .opacity(breathing ? 0 : 1)
+                    .allowsHitTesting(!breathing)
                 OnboardingCTA(title: "Continue", action: onContinue)
-                    .opacity(canContinue ? 1 : 0)
-                    .allowsHitTesting(canContinue)
-                if !canContinue {
+                    .opacity(finished ? 1 : 0)
+                    .allowsHitTesting(finished)
+                if breathing && !finished {
                     Text("Follow along")
                         .font(OnboardingType.sub)
                         .foregroundStyle(AppColor.textSecondary)
@@ -387,33 +352,72 @@ struct BreathingScreen: View {
             }
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.bottom, 10)
-            .animation(.easeOut(duration: 0.3), value: canContinue)
         }
-        // THE BREATHS RUN FROM ONE TASK. They used to advance on a
-        // `Timer.publish` made inside `body`, which is rebuilt, and its
-        // countdown restarted, every time the view redraws. The screen
-        // redraws whenever onboarding's parent does, so the five-second tick
-        // could be pushed back forever and the screen sat on its first
-        // "Breathe in" (Melvin, 2026-09-21: "it doesnt progress past the
-        // first breathe in"). A task belongs to the view's lifetime, is
-        // cancelled when the screen goes, and cannot be reset by a redraw.
-        .task {
-            haptics.start()
-            defer { haptics.stop() }
-            for n in 1...Self.breaths {
-                breath = n
-                inhaling = true
-                try? await Task.sleep(for: Self.half)
-                guard !Task.isCancelled else { return }
-                inhaling = false
-                // One full breath is in and out; the way on appears once the
-                // first one is under way.
-                canContinue = true
-                try? await Task.sleep(for: Self.half)
-                guard !Task.isCancelled else { return }
+        .onAppear { withAnimation(.easeOut(duration: 0.4)) { appeared = true } }
+        .task(id: breathing) { await runBreaths() }
+        .onDisappear { haptics.stop() }
+    }
+
+    @ViewBuilder private var header: some View {
+        if !breathing {
+            OttoSpeech(text: "Before anything else, let's take three breaths together.",
+                       speaking: $speaking)
+        } else if finished {
+            VStack(spacing: 6) {
+                Text("Nicely done")
+                    .font(OnboardingType.question)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("Three slow breaths")
+                    .font(OnboardingType.sub)
+                    .foregroundStyle(AppColor.textSecondary)
             }
-            onContinue()
+        } else {
+            VStack(spacing: 6) {
+                Text(inhaling ? "Breathe in" : "Breathe out")
+                    .font(OnboardingType.question)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("\(breath) of \(Self.breaths)")
+                    .font(OnboardingType.sub)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .monospacedDigit()
+            }
         }
+    }
+
+    /// The three breaths, paced from Otto's own breath.
+    private func runBreaths() async {
+        guard breathing else {
+            breath = 1; inhaling = true; finished = false
+            haptics.stop()
+            return
+        }
+        // Where his breath is the moment he is released: about half a second
+        // into an inhale when he was held on the invitation.
+        var phase = rig.release()
+        haptics.start()
+        defer { haptics.stop() }
+        // If he happens to be breathing out, wait for his next inhale so the
+        // words never contradict his chest.
+        if phase >= Self.half {
+            inhaling = false
+            await pause(10 - phase)
+            guard !Task.isCancelled else { return }
+            phase = 0
+        }
+        for n in 1...Self.breaths {
+            breath = n
+            inhaling = true
+            await pause(n == 1 ? Self.half - phase : Self.half)
+            guard !Task.isCancelled else { return }
+            inhaling = false
+            await pause(Self.half)
+            guard !Task.isCancelled else { return }
+        }
+        finished = true
+    }
+
+    private func pause(_ seconds: Double) async {
+        try? await Task.sleep(for: .milliseconds(Int(max(0, seconds) * 1000)))
     }
 }
 

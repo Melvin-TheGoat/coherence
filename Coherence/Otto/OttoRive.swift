@@ -14,6 +14,21 @@ import RiveRuntime
 // bad export), `OttoRiveView` falls back to the PNG with the SwiftUI pulse,
 // so a broken rig costs motion, never a screen.
 
+/// `RiveViewModel`, telling the rig how far it has advanced each frame.
+///
+/// The rig's timelines run on their own clock from the moment the state
+/// machine starts, and the runtime offers no way to seek one. Counting the
+/// advances is what lets a screen know exactly where Otto is in his breath,
+/// and hold him still until the reader is ready.
+final class OttoRiveViewModel: RiveViewModel {
+    var onAdvance: ((Double) -> Void)?
+
+    override func player(didAdvanceby seconds: Double, riveModel: RiveModel?) {
+        super.player(didAdvanceby: seconds, riveModel: riveModel)
+        onAdvance?(seconds)
+    }
+}
+
 /// One rig instance: owns the Rive view model and the bound data-binding
 /// instance, and exposes the two things the app is allowed to say to Otto.
 @MainActor
@@ -30,8 +45,24 @@ final class OttoRig: ObservableObject {
     /// breathing screen, which is what Melvin saw as "off center".
     static let aspect: CGFloat = 425.0 / 522.0
 
-    let viewModel: RiveViewModel
+    let viewModel: OttoRiveViewModel
     private var instance: RiveDataBindingViewModel.Instance?
+
+    /// Seconds the state machine has advanced since it started. The `Body`
+    /// layer enters `Breathe` on the very first advance and, on any screen
+    /// that never waves, stays there, so this modulo ten seconds IS where
+    /// Otto is in his breath: 0 to 5 breathing in, 5 to 10 breathing out.
+    private(set) var advanced: Double = 0
+    /// `advanced` at the moment the data binding landed, so a hold waits for
+    /// the pose and the branch to settle AFTER the app's values reach him.
+    private var advancedAtBind: Double?
+    /// Hold still once settled, until `release()`. The breathing exercise
+    /// uses it so his first inhale starts on "I'm ready", not before.
+    var holdWhenSettled = false
+    private var held = false
+
+    /// Where he is in his ten-second breath, in seconds.
+    var breathPhase: Double { advanced.truncatingRemainder(dividingBy: 10) }
     /// A wave asked for before the data binding landed. `enableAutoBind` is
     /// asynchronous, and the welcome screen fires its wave 0.45 s after the
     /// screen appears, which on a cold launch is routinely too early: the
@@ -83,7 +114,7 @@ final class OttoRig: ObservableObject {
     }
 
     private init(model: RiveModel, artboard: String, stateMachine: String) {
-        viewModel = RiveViewModel(
+        viewModel = OttoRiveViewModel(
             model,
             stateMachineName: stateMachine,
             fit: .contain,
@@ -91,9 +122,11 @@ final class OttoRig: ObservableObject {
             autoPlay: true,
             artboardName: artboard
         )
+        viewModel.onAdvance = { [weak self] seconds in self?.didAdvance(seconds) }
         viewModel.riveModel?.enableAutoBind { [weak self] instance in
             guard let self else { return }
             self.instance = instance
+            self.advancedAtBind = self.advanced
             // Re-say everything the app said while this was nil. `sitting` is
             // set from `onAppear`, which routinely beats the binding, so
             // without this the breathing screen could open on the wrong pose.
@@ -111,6 +144,29 @@ final class OttoRig: ObservableObject {
             // works.
             NSLog("Otto rig: bound")
         }
+    }
+
+    private func didAdvance(_ seconds: Double) {
+        advanced += seconds
+        // The sitting pose and the branch both switch in on the frames after
+        // the binding lands (the branch over 0.3 s), so hold only once those
+        // have settled; holding earlier freezes him half onto the branch.
+        guard holdWhenSettled, !held, let bound = advancedAtBind,
+              advanced - bound >= 0.45 else { return }
+        held = true
+        viewModel.pause()
+    }
+
+    /// Let him go on breathing. Returns where he is in his breath at that
+    /// moment, so a screen can pace its words to him rather than to itself.
+    @discardableResult
+    func release() -> Double {
+        holdWhenSettled = false
+        if held {
+            held = false
+            viewModel.play()
+        }
+        return breathPhase
     }
 
     /// The wave, once. Safe to call before the binding finishes: it is held
@@ -199,7 +255,16 @@ struct OttoRiveView: View {
 @MainActor
 final class OttoRigHolder: ObservableObject {
     let rig: OttoRig?
-    init() { rig = OttoRig.make() }
+    /// `holdUntilReleased`: he settles into his pose and then keeps still
+    /// until `release()`, so the first breath can begin on the reader's cue.
+    init(holdUntilReleased: Bool = false) {
+        rig = OttoRig.make()
+        rig?.holdWhenSettled = holdUntilReleased
+    }
+    /// Starts him breathing if he was held; returns his breath phase in
+    /// seconds (0 when there is no rig, so a caller's pacing still runs).
+    @discardableResult
+    func release() -> Double { rig?.release() ?? 0 }
     func wave() { rig?.wave() }
     func setTalking(_ on: Bool) { rig?.talking = on }
     func setSitting(_ on: Bool) { rig?.sitting = on }

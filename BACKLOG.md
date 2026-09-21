@@ -4,12 +4,22 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## The breaths start on I'm ready, and there are three (2026-09-21, Melvin)
+
+**DONE:** the invitation and the breaths are one screen, so I'm ready swaps
+the words in a single frame with no slide and no fade; Continue appears only
+after the third breath (30 s), not after the first; Otto holds still on the
+invitation and the words follow his own chest once released. Verified from a
+screen recording at 0.1 s per frame. **Not judgeable on the simulator:** the
+breath haptic, which needs a phone.
+
 ## Breathing that works, Back that goes back, and a website badge (2026-09-21, Melvin)
 
 **DONE:** the sitting Otto breathes through a mesh (chest widens, shoulders
 rise, lap still); the breathing screen advances through all three breaths
 (its timer was being reset by redraws); the invitation fades into the
-breathing with Otto in place; Back slides the other way; Back from What's
+breathing with Otto in place (SUPERSEDED the same day: no fade at all, see
+above); Back slides the other way; Back from What's
 waiting works again; What's waiting is centred with bigger rows; the website
 footer has Google's preferred-source badge.
 

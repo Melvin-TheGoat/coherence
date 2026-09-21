@@ -2437,9 +2437,23 @@ reference screen, build that screen.** Not a reading of it.
   pushed back indefinitely. The breaths now run from one `.task` (cancelled
   with the screen), and `OttoSpeech` types from a `.task` too. **Never drive
   a sequence from a Timer made in `body`.**
-- **The invitation fades into the breathing**, no slide: `OnboardingView`
-  carries a `Motion` (forward, back, fade) and Otto is pinned to the same
-  spot above the button on both screens, so only the words change.
+- **The invitation and the breaths are ONE screen** (`BreathExerciseScreen`),
+  after Melvin rejected both a slide and a fade: "IT SHOULD JUST START
+  BREATHING, NO TRANSITION". `.breath` and `.breathing` stay separate `Step`
+  cases (resume, analytics) but share one view identity (`screenIdentity`),
+  and a step change inside one identity is applied with no animation at all.
+  Verified at 0.1 s per frame: invite to "Breathe in 1 of 3" in one frame.
+- **Continue appears only after the THIRD breath.** It used to appear after
+  the first ("a breathing exercise with no exit is a trap"), and Melvin read
+  that as the exercise stopping after one breath. Thirty seconds is not a
+  trap. Verified: Continue at 30.2 s after I'm ready, with in / out 1, 2, 3
+  of 3 in between.
+- **Otto waits on the invitation and the words follow his chest.**
+  `OttoRig` counts Rive's own advance (`OttoRiveViewModel` overrides
+  `player(didAdvanceby:)`), pauses the rig 0.45 s after bind when
+  `holdWhenSettled`, and `release()` resumes it and returns where in the
+  ten-second breath he is, so "Breathe in" starts on his inhale rather than
+  on a clock that has drifted from him.
 - **Back slides the other way.** A change of direction has to re-render the
   outgoing screen with its new transition BEFORE it is removed (SwiftUI
   takes a removal transition from the view as last drawn), so `show` sets
