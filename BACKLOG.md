@@ -4,6 +4,22 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Question screens rebuilt to Duolingo's, and the pivot (2026-09-21, Melvin)
+
+**DONE:** no pause before Otto speaks; the breath moves only his chest (the
+floating came from a whole-body stretch, a branch bob, and a layout jump when
+Continue appeared); his head no longer clips; the count screen is just the
+bubble and Otto; the background wave is gone; question screens are Duo's
+layout (arrow + progress bar, Otto under the arrow, the question in his
+bubble, no "1 of 8", no subtitle); answers look like the profile screen's
+fields; every onboarding button is the lifted gold one.
+
+**THE PIVOT, standing:** 808 is a meditation app with many features, social
+first, camera session coming. Not a Watch data app. Copy touched today no
+longer leans on the Watch. **Still Watch-first and worth his call:** the
+Watch gate question and its no-Watch waitlist, the health-consent screen,
+and the tour.
+
 ## Duolingo's bubble and font (2026-09-21, Melvin)
 
 **DONE:** Otto's onboarding lines type about ten times faster (300 characters

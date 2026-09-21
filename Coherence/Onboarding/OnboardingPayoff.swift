@@ -357,11 +357,6 @@ struct ProofScreen: View {
     var body: some View {
         OnboardingScreen(section: .win, title: title, subtitle: subtitle,
                          ctaTitle: beat == .yourWay ? "That's what I want" : "Go on",
-                         // The mechanism beat is the one screen with no
-                         // ambient wave: a moving line next to a claim about
-                         // the nervous system starts to look like a reading,
-                         // and this screen exists to admit we can't take one.
-                         ambient: beat != .body,
                          onContinue: onContinue) {
             illustration.frame(maxWidth: .infinity).padding(.vertical, 10)
         }

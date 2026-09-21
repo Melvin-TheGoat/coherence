@@ -43,15 +43,17 @@ enum OnboardingSection {
     }
 }
 
-/// The ground every onboarding screen sits on: near-black with a slow radial
-/// wash in the section's colour, and a signal drifting across the lower third.
-/// One modifier so no screen hand-rolls a background and drifts.
+/// The ground every onboarding screen sits on: the app's paper with a slow
+/// warm wash behind the top third. One modifier so no screen hand-rolls a
+/// background and drifts.
+///
+/// **The drifting wave across the bottom is gone** (Melvin, 2026-09-21: "its
+/// not on theme anymore"). It belonged to the dark, instrument-panel
+/// onboarding, where a travelling signal said "measurement"; on a friendly
+/// cream ground with a character on a branch it was a stray line.
+/// `AmbientSignal` stays in this file for anything that wants it back.
 struct OnboardingBackground: ViewModifier {
     let section: OnboardingSection
-    /// Off for the mechanism screen only. A second moving line next to a
-    /// nervous-system claim starts to look like a live reading, and that
-    /// screen's entire job is admitting we cannot take one.
-    var ambient: Bool = true
     @State private var breathe = false
 
     func body(content: Content) -> some View {
@@ -65,13 +67,6 @@ struct OnboardingBackground: ViewModifier {
                                    startRadius: 8,
                                    endRadius: breathe ? 520 : 430)
                     .blur(radius: 42)
-                    if ambient {
-                        AmbientSignal(tint: near)
-                            .frame(height: 150)
-                            .frame(maxHeight: .infinity, alignment: .bottom)
-                            .padding(.bottom, 64)
-                            .allowsHitTesting(false)
-                    }
                 }
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 1.1), value: section)
@@ -86,8 +81,8 @@ struct OnboardingBackground: ViewModifier {
 }
 
 extension View {
-    func onboardingGround(_ section: OnboardingSection, ambient: Bool = true) -> some View {
-        modifier(OnboardingBackground(section: section, ambient: ambient))
+    func onboardingGround(_ section: OnboardingSection) -> some View {
+        modifier(OnboardingBackground(section: section))
     }
 }
 
@@ -174,21 +169,16 @@ struct OnboardingCTA: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Button(action: action) {
-                Text(title)
-                    .font(.system(size: 17, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textOnAccent)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 17)
-                    .background(
-                        LinearGradient(colors: [AppColor.accentGold,
-                                                AppColor.accentGold.opacity(0.82)],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing),
-                        in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-            }
-            .buttonStyle(PressReleaseHapticStyle())
-            .disabled(!enabled)
-            .opacity(enabled ? 1 : 0.4)
+            // The same lifted gold button as Create your profile (Melvin,
+            // 2026-09-21: the buttons should look the way they do there), and
+            // Duolingo's CONTINUE: a plate standing on its own edge that
+            // sinks when pressed. The flat gradient it replaces was the one
+            // button in the app that looked different.
+            Button(action: action) { Text(title) }
+                .buttonStyle(OnboardingPrimaryButtonStyle())
+                .disabled(!enabled)
+                .saturation(enabled ? 1 : 0.2)
+                .brightness(enabled ? 0 : -0.25)
 
             if let footnote {
                 Text(footnote)
@@ -197,6 +187,17 @@ struct OnboardingCTA: View {
                     .multilineTextAlignment(.center)
             }
         }
+    }
+}
+
+/// `PrimaryButtonStyle`, plus the onboarding's press-and-release pulse.
+struct OnboardingPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        PrimaryButtonStyle().makeBody(configuration: configuration)
+            .onAppear { PressHaptic.prepare() }
+            .onChange(of: configuration.isPressed) { _, pressed in
+                PressHaptic.fire(pressed: pressed)
+            }
     }
 }
 
@@ -209,28 +210,36 @@ struct OnboardingCTA: View {
 /// UIKit generators rather than .sensoryFeedback because SwiftUI's trigger
 /// fires on state change, and press state never changes for a cancelled tap.
 struct PressReleaseHapticStyle: ButtonStyle {
-    /// Two generators kept alive and PREPARED. A generator created on the
-    /// tap and fired at once can miss: the Taptic Engine spins up in a few
-    /// milliseconds and an unprepared request that arrives first is dropped.
-    /// A tester on 2026-09-14 lost the pulse on some taps and not others,
-    /// which is exactly that failure. Prepared generators fire every time.
-    private static let press = UIImpactFeedbackGenerator(style: .heavy)
-    private static let release = UIImpactFeedbackGenerator(style: .rigid)
-
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.55 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
-            .onAppear {
-                Self.press.prepare()
-                Self.release.prepare()
-            }
+            .onAppear { PressHaptic.prepare() }
             .onChange(of: configuration.isPressed) { _, pressed in
-                let gen = pressed ? Self.press : Self.release
-                gen.impactOccurred(intensity: 1.0)
-                gen.prepare()
+                PressHaptic.fire(pressed: pressed)
             }
+    }
+}
+
+/// Two generators kept alive and PREPARED. A generator created on the tap
+/// and fired at once can miss: the Taptic Engine spins up in a few
+/// milliseconds and an unprepared request that arrives first is dropped. A
+/// tester on 2026-09-14 lost the pulse on some taps and not others, which is
+/// exactly that failure. Prepared generators fire every time.
+enum PressHaptic {
+    private static let press = UIImpactFeedbackGenerator(style: .heavy)
+    private static let release = UIImpactFeedbackGenerator(style: .rigid)
+
+    static func prepare() {
+        press.prepare()
+        release.prepare()
+    }
+
+    static func fire(pressed: Bool) {
+        let gen = pressed ? press : release
+        gen.impactOccurred(intensity: 1.0)
+        gen.prepare()
     }
 }
 
@@ -238,45 +247,48 @@ struct OnboardingOption: View {
     let label: String
     var icon: String? = nil
     let selected: Bool
-    /// Multi-select rows draw a square, single-select rows a circle: the
-    /// convention every form uses, and the one cue that tells someone whether
-    /// tapping a second answer will replace the first (2026-09-14 tester).
+    /// Multi-select rows draw a square, because that is the one cue that says
+    /// tapping a second answer adds rather than replaces (2026-09-14 tester).
+    /// Single-select rows draw nothing: the whole row lights up when chosen.
     var multi: Bool = false
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 13) {
+            HStack(spacing: 14) {
                 if let icon {
                     Image(systemName: icon)
-                        .font(.system(size: 13))
+                        .font(.system(size: 17))
                         .foregroundStyle(selected ? AppColor.accentGold : AppColor.textSecondary)
-                        .frame(width: 22)
+                        .frame(width: 24)
                 }
                 Text(label)
-                    .font(OnboardingType.option)
+                    .font(AppFont.body.weight(.medium))
                     .foregroundStyle(AppColor.textPrimary)
                     .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
-                Image(systemName: selected ? (multi ? "checkmark.square.fill" : "checkmark.circle.fill")
-                                           : (multi ? "square" : "circle"))
-                    .font(.system(size: 16))
-                    .foregroundStyle(selected ? AppColor.accentGold
-                                              : AppColor.textSecondary.opacity(0.5))
+                if multi {
+                    Image(systemName: selected ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 18))
+                        .foregroundStyle(selected ? AppColor.accentGold
+                                                  : AppColor.textSecondary.opacity(0.5))
+                }
             }
             .padding(.horizontal, 16)
-            // 18, not 15: the taller row is half of why a five-option screen
-            // stopped looking like a list floating in a void.
-            .padding(.vertical, 18)
-            // Full-strength surface and a hairline. At 0.75 opacity the rows
-            // bled into the ground (2026-09-14 tester: "too close in colour").
-            .background(selected ? AppColor.accentGold.opacity(0.12)
+            .padding(.vertical, 16)
+            // The same field as Create your profile (Melvin, 2026-09-21):
+            // a white rounded plate on the paper with no outline, radius 12.
+            // Chosen is the plate outlined in gold with a faint gold wash.
+            .background(selected ? AppColor.accentGold.opacity(0.10)
                                  : AppColor.backgroundSecondary,
-                        in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .stroke(selected ? AppColor.accentGold : AppColor.textSecondary.opacity(0.22),
-                        lineWidth: selected ? 1.5 : 1))
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay {
+                if selected {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .strokeBorder(AppColor.accentGold, lineWidth: 2)
+                }
+            }
         }
         .buttonStyle(PressReleaseHapticStyle())
     }
@@ -342,8 +354,6 @@ struct OnboardingScreen<Content: View>: View {
     var ctaTitle: String = "Continue"
     var ctaFootnote: String? = nil
     var ctaEnabled: Bool = true
-    /// See `OnboardingBackground.ambient`. Off for the mechanism screen only.
-    var ambient: Bool = true
     /// Single-select questions advance on the answer tap and therefore show NO
     /// Continue button at all. Keeping a button next to tap-to-advance was
     /// worse than either choice alone: Aziz met it as a user and read the
@@ -377,35 +387,63 @@ struct OnboardingScreen<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // The chevron and the rail share one row, the way every flow with
-            // both does it. The rail shifting right by the width of the arrow
-            // is what stops the arrow looking like it was dropped on top.
-            if back != nil || progress != nil || counter != nil {
-                HStack(spacing: 10) {
+            if let counter {
+                // THE QUESTION SCREENS ARE DUOLINGO'S (Melvin, 2026-09-21,
+                // with its "What would you like to learn?" screenshot): the
+                // back arrow and a progress bar share the top row, Otto
+                // stands under the arrow with his clipboard, and the question
+                // is HIS line, in his bubble, pointing at him. No "3 of 8"
+                // and no subtitle: the bar says where you are and the
+                // question says the rest.
+                HStack(spacing: 14) {
                     if let back {
                         OnboardingBackButton(action: back)
                     }
-                    if let counter {
-                        OnboardingCounter(index: counter.index, total: counter.total)
-                    } else if let progress {
-                        OnboardingProgress(value: progress)
-                    }
+                    OnboardingProgress(from: Double(counter.index - 1) / Double(max(counter.total, 1)),
+                                       to: Double(counter.index) / Double(max(counter.total, 1)))
                 }
-                .frame(height: counter == nil ? 40 : 88, alignment: .bottom)
-                .padding(.bottom, progress == nil && counter == nil ? 6 : 14)
-            }
+                .frame(height: 40)
 
-            Text(title)
-                .font(OnboardingType.question)
-                .foregroundStyle(AppColor.textPrimary)
-                .fixedSize(horizontal: false, vertical: true)
+                HStack(alignment: .top, spacing: 8) {
+                    // Still. He is asking, not performing; a pulsing figure
+                    // beside a question read as fidgeting.
+                    Image(OttoPose.asking.asset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 124)
+                        .accessibilityHidden(true)
+                    OttoSpeech(text: title, tail: .leading, size: 19, speaking: .constant(false))
+                        .padding(.top, 14)
+                }
+                .padding(.top, 14)
+            } else {
+                // The chevron and the rail share one row, the way every flow
+                // with both does it.
+                if back != nil || progress != nil {
+                    HStack(spacing: 10) {
+                        if let back {
+                            OnboardingBackButton(action: back)
+                        }
+                        if let progress {
+                            OnboardingProgress(from: progress, to: progress)
+                        }
+                    }
+                    .frame(height: 40, alignment: .bottom)
+                    .padding(.bottom, progress == nil ? 6 : 14)
+                }
 
-            if let subtitle {
-                Text(subtitle)
-                    .font(OnboardingType.sub)
-                    .foregroundStyle(AppColor.textSecondary)
+                Text(title)
+                    .font(OnboardingType.question)
+                    .foregroundStyle(AppColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 8)
+
+                if let subtitle {
+                    Text(subtitle)
+                        .font(OnboardingType.sub)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+                }
             }
 
             // Content shorter than the band centres itself; longer content
@@ -433,7 +471,9 @@ struct OnboardingScreen<Content: View>: View {
                         // placed; everything else falls to the bottom, where
                         // the ambient signal lives.
                         Spacer(minLength: 0)
-                            .frame(maxHeight: 60)
+                            // Under Otto's bubble the answers belong close,
+                            // as they are under Duo's.
+                            .frame(maxHeight: counter == nil ? 60 : 12)
                         content
                             .padding(.top, 22)
                             .padding(.bottom, 8)
@@ -474,59 +514,51 @@ struct OnboardingScreen<Content: View>: View {
         .padding(.top, 12)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .onboardingGround(section, ambient: ambient)
+        .onboardingGround(section)
         .onAppear { answeredOnAppear = autoAdvances && ctaEnabled }
     }
 }
 
-/// A thin rail, not a percentage — the count of screens is our business, not
-/// something to make the user tally.
-/// Otto asking, and where you are in his questions.
+/// Duolingo's progress bar: a thick rounded track with the filled part
+/// growing into it as you answer (Melvin, 2026-09-21). It replaced "3 of 8"
+/// beside a corner Otto, which read as a form counting at you.
 ///
-/// **He stands in the corner the way Duolingo's owl does** (Melvin,
-/// 2026-09-20), clipboard in hand, because the screen is him asking rather
-/// than the app collecting. A progress bar says the same thing with no one
-/// saying it.
-///
-/// **The count is honest per person.** The model skips every question whose
-/// premise the reader has already contradicted, so `total` is THAT reader's
-/// total and "3 of 7" means three of their seven. A bar cannot say that; it
-/// just creeps.
-struct OnboardingCounter: View {
-    let index: Int
-    let total: Int
-
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 10) {
-            OttoMark(size: 88, pose: .asking)
-                .ottoBreathing()
-            Text("\(index) of \(total)")
-                .font(OnboardingType.sub)
-                .foregroundStyle(AppColor.textSecondary)
-                .monospacedDigit()
-                .padding(.bottom, 10)
-            Spacer(minLength: 0)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("Question \(index) of \(total)")
-    }
-}
-
+/// It opens at `from` (the questions already answered) and grows to `to`
+/// (this one) as the screen arrives, so every question visibly moves it. The
+/// fraction is of THIS reader's questions: the model skips any whose premise
+/// they have contradicted, so the bar fills exactly at their last one.
 struct OnboardingProgress: View {
-    let value: Double
+    let from: Double
+    let to: Double
+
+    @State private var value: Double = 0
 
     var body: some View {
         GeometryReader { geo in
+            let height = geo.size.height
             ZStack(alignment: .leading) {
-                Capsule().fill(AppColor.textSecondary.opacity(0.18))
+                Capsule().fill(AppColor.textSecondary.opacity(0.16))
                 Capsule()
-                    .fill(LinearGradient(colors: [AppColor.accentGold.opacity(0.7),
-                                                  AppColor.accentGold],
-                                         startPoint: .leading, endPoint: .trailing))
-                    .frame(width: max(6, geo.size.width * min(max(value, 0), 1)))
-                    .animation(.easeOut(duration: 0.35), value: value)
+                    .fill(AppColor.accentGold)
+                    // The lit strip along the top of the fill, which is what
+                    // makes a flat bar read as a filled tube.
+                    .overlay(alignment: .top) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.35))
+                            .frame(height: height * 0.22)
+                            .padding(.horizontal, height * 0.45)
+                            .padding(.top, height * 0.2)
+                    }
+                    .frame(width: max(height, geo.size.width * min(max(value, 0), 1)))
             }
         }
-        .frame(height: 4)
+        .frame(height: 14)
+        .onAppear {
+            value = from
+            withAnimation(.easeOut(duration: 0.5).delay(0.15)) { value = to }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Progress")
+        .accessibilityValue("\(Int((to * 100).rounded())) percent")
     }
 }

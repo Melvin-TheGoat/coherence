@@ -538,7 +538,7 @@ struct GuidedBreathScreen: View {
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body, ambient: false)
+        .onboardingGround(.body)
         // The payload landed and was persisted: this is the real sessionID.
         // Land on Done rather than jumping: the results are a reveal the user
         // taps into, not a redirect.

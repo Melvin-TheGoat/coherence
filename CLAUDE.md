@@ -2361,6 +2361,59 @@ state machine layers: Body, Head, Pose, Branch, Blink.
 - Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
   ellipse reads as a blob, and a lens with two pointed tips reads as a leaf.
 
+## THE QUESTIONS ARE DUOLINGO'S SCREEN, AND 808 IS NOT A WATCH APP ANY MORE (2026-09-21, Melvin)
+
+Melvin, with Duolingo's "What would you like to learn?" and "Just 7 quick
+questions" screenshots, after raising the corner-Otto layout twice: "LOOKS
+UGLY ... can you lock in". The standard this sets: **when he sends a
+reference screen, build that screen.** Not a reading of it.
+
+- **The pivot, to hold everywhere:** 808 is becoming a meditation app with
+  many features, social first, with a camera session coming. Stop writing as
+  if the Watch is the product. The welcome line is now "Hi there! I'm Otto.
+  Let's meditate together." and What's waiting leads with "Meditate your
+  way." Any new copy that is only true for Watch owners needs a reason.
+- **Question screens** (`OnboardingScreen` whenever it has a `counter`): the
+  back arrow and Duolingo's thick progress bar share the top row; Otto with
+  the clipboard stands under the arrow, still (no pulse); the QUESTION is
+  his line, typed into a bubble whose tail points left at his face; the
+  answers sit close under him. **No "N of M" and no subtitle** on these
+  screens. `OnboardingCounter` is deleted. The bar opens at the answered
+  fraction and grows into this question as the screen arrives, and it fills
+  at THIS reader's last question because the fraction is of their own list.
+- **Answers look like Create your profile's fields**: a white plate, radius
+  12, no outline; chosen is a 2pt gold outline over a faint gold wash.
+  Single-select rows draw no radio circle (the whole row lights); multi-select
+  keeps its square, the one cue that a second tap adds.
+- **Every onboarding CTA is the profile screen's lifted gold button**
+  (`OnboardingPrimaryButtonStyle` = `PrimaryButtonStyle` + the two-pulse
+  haptic, which now lives in `PressHaptic`). The flat gradient is gone.
+- **The question-count screen is only the bubble and Otto**: "Just **8 quick
+  questions** before your first session!" The number is still the derived
+  ceiling (a newcomer answers 7), and the bold runs come from markdown in
+  `OttoSpeech`.
+- **Bubbles hug their words** and read left-aligned, like Duo's.
+- **The drifting wave behind onboarding is deleted** ("not on theme"), and
+  with it the `ambient` switch on the ground and the scaffold.
+- **`OttoOnBranch` derives its window from its width** (`aspect / 0.86`)
+  instead of a height per screen. A hand-picked 360 cut his head off on the
+  count screen and 400 shaved his tuft on the welcome screen.
+- **No delay before Otto speaks.** The welcome line waited 1.4 s for the
+  wave; Melvin read it as the screen lagging.
+- **THE BREATH, THIRD PASS: only the chest moves.** Melvin: "it just looks
+  like his whole body is floating up and down". Three causes, all removed:
+  the Body scaled 1.8 percent taller and leaned on every breath; the branch
+  state bobbed the whole figure 3 units; and on the breathing screen the
+  bottom inset swapped a 54 pt "Follow along" for the taller lifted button
+  after the first breath, which shifted EVERY view above it in one jump. The
+  button is now always laid out and only fades in. The chest patches scale
+  from low in the belly (origin moved down, positions rebased so rest is
+  pixel-identical), so an inhale lifts the chest toward the chin and widens
+  it while the lap stays put: 110 x 114 percent sitting, 107 x 111 standing.
+  **Verified the way it should always be verified: a difference map of two
+  screenshots half a breath apart shows the chest lit and Otto's outline
+  black.** Before the fix the same map outlined his whole body.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body

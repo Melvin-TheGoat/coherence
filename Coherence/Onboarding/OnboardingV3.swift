@@ -46,8 +46,13 @@ import SwiftUI
 /// Under Reduce Motion the whole line is there at once.
 struct OttoSpeech: View {
     let text: String
-    /// A beat before he starts, so the wave reads as a greeting and the line
-    /// as the thing he says after it.
+    /// Which side the point is on: under the bubble when Otto stands below
+    /// it, on its left when he stands beside it (the question screens).
+    var tail: SpeechBubbleShape.Edge = .bottom
+    var size: CGFloat = 19
+    /// A beat before he starts. Zero everywhere now: the welcome screen had
+    /// 1.4 s so the line would follow the wave, and Melvin read it as a lag
+    /// between the screen arriving and the words arriving (2026-09-21).
     var delay: TimeInterval = 0
     @Binding var speaking: Bool
 
@@ -58,61 +63,79 @@ struct OttoSpeech: View {
     /// One frame at a time, five characters a frame: about 300 a second.
     private static let tick: TimeInterval = 1.0 / 60
     private static let perTick = 5
-    private static let tailHeight: CGFloat = 11
+    private static let tailSize: CGFloat = 11
+
+    /// The line with its `**bold**` runs, parsed once.
+    private var parsed: AttributedString {
+        (try? AttributedString(markdown: text)) ?? AttributedString(text)
+    }
+
+    private var total: Int { parsed.characters.count }
 
     private var typed: AttributedString {
-        var arrived = AttributedString(String(text.prefix(shown)))
-        arrived.foregroundColor = AppColor.textPrimary
-        var pending = AttributedString(String(text.dropFirst(shown)))
-        pending.foregroundColor = .clear
-        return arrived + pending
+        var line = parsed
+        let cut = line.index(line.startIndex, offsetByCharacters: min(shown, total))
+        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return line
     }
 
     var body: some View {
         Text(typed)
-            .font(.system(size: 18, weight: .regular, design: .rounded))
-            .multilineTextAlignment(.center)
+            .font(.system(size: size, weight: .regular, design: .rounded))
+            .lineSpacing(3)
+            .multilineTextAlignment(.leading)
+            // Hugs its words, the way Duo's does: a short line gets a short
+            // bubble. The clear-ink layout means the width is the finished
+            // line's from the first frame, so it never grows while typing.
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 18)
-            .padding(.vertical, 14)
-            // Room for the tail inside the frame, so the bubble's layout
-            // accounts for its own point.
-            .padding(.bottom, Self.tailHeight)
+            .padding(.vertical, 15)
+            // Room for the point inside the frame, so layout counts it.
+            .padding(tail == .bottom ? .bottom : .leading, Self.tailSize)
             .background {
-                SpeechBubbleShape(tailWidth: 22, tailHeight: Self.tailHeight)
+                SpeechBubbleShape(edge: tail, tailWidth: 22, tailDepth: Self.tailSize)
                     .stroke(AppColor.textSecondary.opacity(0.4),
                             style: StrokeStyle(lineWidth: 2, lineJoin: .round))
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Otto says: \(text)")
+            .accessibilityLabel("Otto says: \(String(parsed.characters))")
             .onAppear {
                 guard reduceMotion else { return }
-                shown = text.count
+                shown = total
             }
             .onReceive(Timer.publish(every: Self.tick, on: .main, in: .common).autoconnect()) { _ in
-                guard !reduceMotion, shown < text.count else { return }
+                guard !reduceMotion, shown < total else { return }
                 elapsed += Self.tick
                 guard elapsed >= delay else { return }
                 if shown == 0 { speaking = true }
-                shown = min(text.count, shown + Self.perTick)
-                if shown == text.count { speaking = false }
+                shown = min(total, shown + Self.perTick)
+                if shown == total { speaking = false }
             }
     }
 }
 
-/// A rounded rectangle with a point at the middle of its bottom edge, as one
-/// continuous outline. The point sits inside the shape's frame: the body is
-/// the frame minus `tailHeight`, and the tip touches the frame's bottom.
+/// A rounded rectangle with a point, as one continuous outline, the way
+/// Duolingo draws Duo's bubble. The point sits inside the shape's frame: the
+/// body is the frame minus `tailDepth` on the point's side.
+///
+/// `.bottom` points down at a character standing under the bubble.
+/// `.leading` points left at a character standing beside it, at the height of
+/// his head rather than the bubble's middle, which is where a two-line
+/// question would otherwise aim it.
 struct SpeechBubbleShape: Shape {
+    enum Edge { case bottom, leading }
+
+    var edge: Edge = .bottom
     var cornerRadius: CGFloat = 16
     var tailWidth: CGFloat
-    var tailHeight: CGFloat
+    var tailDepth: CGFloat
 
     func path(in rect: CGRect) -> Path {
-        let body = CGRect(x: rect.minX, y: rect.minY,
-                          width: rect.width, height: rect.height - tailHeight)
+        let body: CGRect = edge == .bottom
+            ? CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height - tailDepth)
+            : CGRect(x: rect.minX + tailDepth, y: rect.minY, width: rect.width - tailDepth, height: rect.height)
         let r = min(cornerRadius, body.height / 2, body.width / 2)
-        let mid = body.midX
         var p = Path()
         p.move(to: CGPoint(x: body.minX + r, y: body.minY))
         p.addLine(to: CGPoint(x: body.maxX - r, y: body.minY))
@@ -121,12 +144,21 @@ struct SpeechBubbleShape: Shape {
         p.addLine(to: CGPoint(x: body.maxX, y: body.maxY - r))
         p.addArc(center: CGPoint(x: body.maxX - r, y: body.maxY - r), radius: r,
                  startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
-        p.addLine(to: CGPoint(x: mid + tailWidth / 2, y: body.maxY))
-        p.addLine(to: CGPoint(x: mid, y: rect.maxY))
-        p.addLine(to: CGPoint(x: mid - tailWidth / 2, y: body.maxY))
+        if edge == .bottom {
+            p.addLine(to: CGPoint(x: body.midX + tailWidth / 2, y: body.maxY))
+            p.addLine(to: CGPoint(x: body.midX, y: rect.maxY))
+            p.addLine(to: CGPoint(x: body.midX - tailWidth / 2, y: body.maxY))
+        }
         p.addLine(to: CGPoint(x: body.minX + r, y: body.maxY))
         p.addArc(center: CGPoint(x: body.minX + r, y: body.maxY - r), radius: r,
                  startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        if edge == .leading {
+            // Aim at the top third, where Otto's face is.
+            let mid = min(body.minY + 34, body.midY)
+            p.addLine(to: CGPoint(x: body.minX, y: mid + tailWidth / 2))
+            p.addLine(to: CGPoint(x: rect.minX, y: mid))
+            p.addLine(to: CGPoint(x: body.minX, y: mid - tailWidth / 2))
+        }
         p.addLine(to: CGPoint(x: body.minX, y: body.minY + r))
         p.addArc(center: CGPoint(x: body.minX + r, y: body.minY + r), radius: r,
                  startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
@@ -139,20 +171,29 @@ struct SpeechBubbleShape: Shape {
 /// limb runs off both edges instead of ending in mid air.
 ///
 /// The artboard is 425 x 522 and the rig view keeps those proportions, so a
-/// full-bleed branch means a frame 483 pt tall on a 393 pt phone. Most of
-/// that is empty sky above his head, so the view shows only the bottom
-/// `height` of it. **That is why the branch state also shrinks him to 72%**:
-/// the composition has to fit a window shorter than the artboard.
+/// full-bleed frame is taller than the phone has room for, and most of that
+/// height is empty sky above his head. So the view shows a window onto the
+/// bottom of the drawing, and **the window's height is derived from the
+/// width, never picked per screen.** It used to be a number per screen, and
+/// 360 cut the top of his head off on the questions screen (Melvin,
+/// 2026-09-21) while 400 shaved his tuft on the welcome screen.
+///
+/// The arithmetic: on the branch he is scaled to 72 percent with his feet at
+/// artboard y 452, so the top of his head is at 452 - 0.72 x 507 = 87 of 522,
+/// 16.7 percent down the drawing. The window keeps everything below 14
+/// percent, which leaves a little air over his head on any phone width.
 struct OttoOnBranch: View {
     var pose: OttoPose = .talking
     var talking: Bool = false
-    /// How much of the drawing to show, measured up from the bottom.
-    var height: CGFloat = 400
     @ObservedObject var rig: OttoRigHolder
+
+    /// The share of the drawing's height kept, measured up from the bottom.
+    private static let kept: CGFloat = 0.86
 
     var body: some View {
         GeometryReader { geo in
-            OttoRiveView(size: geo.size.width / OttoRig.aspect,
+            let drawn = geo.size.width / OttoRig.aspect
+            OttoRiveView(size: drawn,
                          pose: pose,
                          talking: talking,
                          branch: true,
@@ -161,7 +202,8 @@ struct OttoOnBranch: View {
                 .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
                 .clipped()
         }
-        .frame(height: height)
+        // width / (width / aspect x kept) = aspect / kept
+        .aspectRatio(OttoRig.aspect / Self.kept, contentMode: .fit)
         // Out past the screen padding, so the limb reaches both edges.
         .padding(.horizontal, -AppMetrics.screenPadding)
     }
@@ -184,14 +226,18 @@ struct WelcomeScreen: View {
                 .padding(.top, 8)
                 .opacity(appeared ? 1 : 0)
 
-            OttoSpeech(text: "I'm Otto. Your Watch reads what your practice does, and I read it back to you.",
-                       delay: 1.4, speaking: $speaking)
+            // Nothing Watch-specific (Melvin, 2026-09-21): 808 is becoming a
+            // meditation app with friends and a camera session, not a
+            // sensor readout, and the first thing Otto says should be true
+            // of all of it.
+            OttoSpeech(text: "Hi there! I'm Otto. Let's meditate together.",
+                       speaking: $speaking)
                 .padding(.top, 18)
                 .opacity(appeared ? 1 : 0)
 
             Spacer(minLength: 8)
 
-            OttoOnBranch(pose: .talking, talking: speaking, height: 400, rig: rig)
+            OttoOnBranch(pose: .talking, talking: speaking, rig: rig)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
 
@@ -227,13 +273,13 @@ struct ThreeBreathsScreen: View {
     var body: some View {
         VStack(spacing: 0) {
             OttoSpeech(text: "Before anything else, let's take three breaths together.",
-                       delay: 0.5, speaking: $speaking)
+                       speaking: $speaking)
                 .padding(.top, 16)
                 .opacity(appeared ? 1 : 0)
 
             Spacer(minLength: 8)
 
-            OttoOnBranch(pose: .meditating, talking: speaking, height: 400, rig: rig)
+            OttoOnBranch(pose: .meditating, talking: speaking, rig: rig)
                 .opacity(appeared ? 1 : 0)
 
             Spacer(minLength: 0)
@@ -306,7 +352,7 @@ struct BreathingScreen: View {
             // The rig loops on its own clock; the words above ride the same
             // ten seconds. Over three breaths any drift between them is
             // smaller than the eye can hold.
-            OttoOnBranch(pose: .meditating, height: 420, rig: rig)
+            OttoOnBranch(pose: .meditating, rig: rig)
 
             Spacer(minLength: 0)
         }
@@ -314,14 +360,19 @@ struct BreathingScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onboardingGround(.body)
         .safeAreaInset(edge: .bottom) {
-            Group {
-                if canContinue {
-                    OnboardingCTA(title: "Continue", action: onContinue)
-                } else {
+            // The button is always laid out and only fades in. Swapping a
+            // 54 pt line for the taller lifted button changed the inset's
+            // height after the first breath, and every view above it shifted:
+            // Otto, the branch, all of it, in one jump that read as him
+            // floating.
+            ZStack {
+                OnboardingCTA(title: "Continue", action: onContinue)
+                    .opacity(canContinue ? 1 : 0)
+                    .allowsHitTesting(canContinue)
+                if !canContinue {
                     Text("Follow along")
                         .font(OnboardingType.sub)
                         .foregroundStyle(AppColor.textSecondary)
-                        .frame(height: 54)
                 }
             }
             .padding(.horizontal, AppMetrics.screenPadding)
@@ -355,83 +406,56 @@ struct BreathingScreen: View {
 
 /// Screen 4. How many questions are coming, before a single one is asked.
 ///
-/// Duolingo's move, and Melvin's ask (2026-09-20): a person who knows the
-/// shape of what they are agreeing to finishes it. Ours is an interview that
-/// branches, so the number is a CEILING, not a promise of exactly eight: the
-/// model skips any question whose premise this reader has already
-/// contradicted, which is why a newcomer is asked seven and everyone else
-/// eight. "Eight at most" is the one number that is true for every path, and
-/// the counter beside Otto on each question then reads N of THEIR total.
+/// **Duolingo's screen, nearly exactly** (Melvin, 2026-09-21, with its
+/// screenshot): the back arrow, Otto's bubble, Otto under it, Continue. No
+/// headline and no row of dots; the bubble is the whole screen.
+///
+/// The number is a CEILING that holds on every path: the interview skips any
+/// question whose premise the reader has contradicted, so a newcomer answers
+/// seven and everyone else eight, and "Just 8" is kept for both.
+/// `OnboardingAnswers.longestInterview` derives it and a test pins that no
+/// path exceeds it.
 struct QuestionCountScreen: View {
-    /// The largest number of questions any path is asked, from the model
-    /// itself, so cutting or adding a question moves this line with it.
     static let most = OnboardingAnswers.longestInterview
 
     let onContinue: () -> Void
 
+    @Environment(\.onboardingBack) private var back
     @StateObject private var rig = OttoRigHolder()
     @State private var appeared = false
     @State private var speaking = false
-    @State private var litPips = 0
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("First, a few questions")
-                .font(OnboardingType.question)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
-                .opacity(appeared ? 1 : 0)
-
-            OttoSpeech(text: "\(Self.mostSpelled) at most, about a minute. Your answers decide what 808 shows you.",
-                       delay: 0.5, speaking: $speaking)
-                .padding(.top, 16)
-                .opacity(appeared ? 1 : 0)
-
-            HStack(spacing: 9) {
-                ForEach(0..<Self.most, id: \.self) { i in
-                    Circle()
-                        .fill(i < litPips ? AppColor.accentGold : AppColor.textSecondary.opacity(0.22))
-                        .frame(width: 11, height: 11)
-                        .scaleEffect(i < litPips ? 1 : 0.8)
-                }
+            HStack {
+                if let back { OnboardingBackButton(action: back) }
+                Spacer()
             }
-            .padding(.top, 22)
-            .accessibilityHidden(true)
+            .frame(height: 40)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 12)
 
-            OttoOnBranch(pose: .talking, talking: speaking, height: 360, rig: rig)
+            OttoSpeech(text: "Just **\(Self.most) quick questions** before your first session!",
+                       speaking: $speaking)
+                .opacity(appeared ? 1 : 0)
+
+            OttoOnBranch(pose: .talking, talking: speaking, rig: rig)
+                .padding(.top, 6)
                 .opacity(appeared ? 1 : 0)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onboardingGround(.body)
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Let's go", action: onContinue)
+            OnboardingCTA(title: "Continue", action: onContinue)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
-                .opacity(appeared ? 1 : 0)
         }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.5)) { appeared = true }
-            for i in 0..<Self.most {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6 + Double(i) * 0.07) {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) { litPips = i + 1 }
-                }
-            }
-        }
+        .onAppear { withAnimation(.easeOut(duration: 0.3)) { appeared = true } }
     }
-
-    /// Numbers under ten are words in a spoken line.
-    private static let mostSpelled: String = {
-        let words = ["zero", "one", "two", "three", "four", "five",
-                     "six", "seven", "eight", "nine", "ten"]
-        let word = most < words.count ? words[most] : "\(most)"
-        return word.prefix(1).uppercased() + word.dropFirst()
-    }()
 }
 
 /// Screen 7. What the app is, once, before it asks for a notification.
@@ -450,8 +474,8 @@ struct WhatsWaitingScreen: View {
     }
 
     private let rows = [
-        Row(pose: .meditating, title: "Every session is measured.",
-            detail: "Heart, stillness and breath, read from your wrist while you sit."),
+        Row(pose: .meditating, title: "Meditate your way.",
+            detail: "Guided sessions, calming sounds, or silence."),
         Row(pose: .awake, title: "You get a score you can trust.",
             detail: "Built from what your body did, with the working shown."),
         Row(pose: .talking, title: "It adds up.",

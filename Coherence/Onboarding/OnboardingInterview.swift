@@ -103,7 +103,7 @@ struct ReliefScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // No ambient wave: this is a title card, and the space around the mark
         // is what makes it read as one.
-        .onboardingGround(.relief, ambient: false)
+        .onboardingGround(.relief)
         .onAppear { withAnimation(.easeOut(duration: 0.7)) { appeared = true } }
     }
 }
@@ -205,7 +205,7 @@ struct BreathScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Emptiness is this screen's whole point. A drifting line behind the
         // orb would compete with the one thing the user is meant to follow.
-        .onboardingGround(.relief, ambient: false)
+        .onboardingGround(.relief)
         .task { await breathe() }
     }
 
