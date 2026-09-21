@@ -4,9 +4,18 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
-## A soul mascot whose aura follows your practice, and how to A/B it (2026-09-21, Melvin)
+## Otto's aura follows your practice, and how to A/B it (2026-09-21, Melvin)
 
-**DECIDING, not started.** Melvin and Aziz are considering replacing Otto with
+**MOCKUP BUILT, awaiting three calls: `mockups/otto-aura.html`.** Melvin kept
+the sloth ("you know what I like the sloth") and sent the same six-stage
+progression drawn with him. The mockup is Brainrot's "See for yourself!"
+slider screen with Otto (stages cut from the sheet; 80 and 100 draw the aura
+over the 60 sloth, as Rive would), plus a proposed rule: start at 40, +10 per
+day meditated, -20 per missed day with the streak's one rest day a week free,
+derived from session dates, consistency only. The calls: does he get sad,
+where he lives (Home is frozen), and three new transparent poses of today's
+Otto (lying, frustrated, curious). Earlier the same day the idea arrived as a
+soul character instead: Melvin and Aziz were considering replacing Otto with
 a glowing "soul" character that grows brighter and gains aura with
 consistent practice and shrinks and looks sad when neglected (six stages,
 0 to 100 percent; Brainrot's melting brain is the reference, including its
