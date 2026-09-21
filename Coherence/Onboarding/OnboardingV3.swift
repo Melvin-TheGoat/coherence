@@ -307,6 +307,9 @@ struct BreathExerciseScreen: View {
     @State private var breath = 1
     @State private var inhaling = true
     @State private var finished = false
+    /// When his current breath began, set the moment he is released. The
+    /// circle reads its size off this clock, the same one the words run on.
+    @State private var breathStart: Date?
 
     init(breathing: Bool, onReady: @escaping () -> Void, onContinue: @escaping () -> Void) {
         self.breathing = breathing
@@ -322,12 +325,24 @@ struct BreathExerciseScreen: View {
                 .frame(minHeight: 96, alignment: .top)
                 .padding(.top, 8)
 
-            Spacer(minLength: 8)
+            Spacer(minLength: 0)
+
+            // The pacer (Melvin: his chest alone "barely looks like hes
+            // breathing"). Already there on the invitation, so I'm ready
+            // adds nothing to the screen: the circle just starts to swell.
+            BreathCircle(start: finished ? nil : breathStart)
+                .frame(maxWidth: .infinity, maxHeight: BreathCircle.diameter)
+                .padding(.bottom, 24)
+                .opacity(appeared ? 1 : 0)
+
+            Spacer(minLength: 0)
 
             // Pinned above the button and never moved: the words change,
-            // Otto does not.
+            // Otto does not. The top of his frame is empty sky, so it may
+            // run up under the circle.
             OttoOnBranch(pose: .meditating, talking: speaking, rig: rig)
-                .padding(.bottom, 20)
+                .padding(.top, -60)
+                .padding(.bottom, -8)
                 .opacity(appeared ? 1 : 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
@@ -387,13 +402,14 @@ struct BreathExerciseScreen: View {
     /// The three breaths, paced from Otto's own breath.
     private func runBreaths() async {
         guard breathing else {
-            breath = 1; inhaling = true; finished = false
+            breath = 1; inhaling = true; finished = false; breathStart = nil
             haptics.stop()
             return
         }
         // Where his breath is the moment he is released: about half a second
         // into an inhale when he was held on the invitation.
         var phase = rig.release()
+        breathStart = Date().addingTimeInterval(-phase)
         haptics.start()
         defer { haptics.stop() }
         // If he happens to be breathing out, wait for his next inhale so the
@@ -418,6 +434,48 @@ struct BreathExerciseScreen: View {
 
     private func pause(_ seconds: Double) async {
         try? await Task.sleep(for: .milliseconds(Int(max(0, seconds) * 1000)))
+    }
+}
+
+/// The breathing circle from the old breath screen and the walkthrough: a
+/// sage glow inside a sage ring, swelling on the inhale and settling on the
+/// exhale. Its size is read off `start` every frame rather than animated, so
+/// it can never drift from the words or from Otto's ten-second breath. With
+/// no `start` it rests at its smallest.
+struct BreathCircle: View {
+    let start: Date?
+
+    static let diameter: CGFloat = 180
+    private static let period: Double = 10
+    private static let rest: CGFloat = 0.5
+
+    var body: some View {
+        TimelineView(.animation(paused: start == nil)) { context in
+            GeometryReader { geo in
+                let d = min(geo.size.width, geo.size.height, Self.diameter)
+                ZStack {
+                    Circle()
+                        .fill(RadialGradient(colors: [Color.onboardingSage.opacity(0.55),
+                                                      Color.onboardingSage.opacity(0.05)],
+                                             center: .center, startRadius: 6, endRadius: d * 0.56))
+                    Circle()
+                        .stroke(Color.onboardingSage.opacity(0.45), lineWidth: 1.5)
+                }
+                .frame(width: d, height: d)
+                .scaleEffect(scale(at: context.date))
+                .frame(width: geo.size.width, height: geo.size.height)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// Smallest at the start of an inhale, largest five seconds in.
+    private func scale(at now: Date) -> CGFloat {
+        guard let start else { return Self.rest }
+        let t = max(0, now.timeIntervalSince(start))
+        let p = t.truncatingRemainder(dividingBy: Self.period) / Self.period
+        let fill = 0.5 - 0.5 * cos(2 * .pi * p)
+        return Self.rest + (1 - Self.rest) * CGFloat(fill)
     }
 }
 

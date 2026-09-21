@@ -4,13 +4,34 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## A soul mascot whose aura follows your practice, and how to A/B it (2026-09-21, Melvin)
+
+**DECIDING, not started.** Melvin and Aziz are considering replacing Otto with
+a glowing "soul" character that grows brighter and gains aura with
+consistent practice and shrinks and looks sad when neglected (six stages,
+0 to 100 percent; Brainrot's melting brain is the reference, including its
+onboarding "See for yourself!" slider). Open questions: the drive should be
+consistency (derived from sessions like the streak, with rest days), never
+the measured score, or it collides with "the gold ring means a measured
+score"; a sad mascot is a guilt mechanic, which sits awkwardly beside the
+never-tell-the-reader-what-they-lack rule, so it is a founders' call; the
+concept art is on a dark ground and the app is one cream appearance.
+**A/B:** PostHog's iOS SDK is already in, so a feature flag plus a PostHog
+Experiment can split onboarding by mascot; at about 20 installs a week an
+in-app test cannot reach significance on retention for months. App Store
+Product Page Optimization (icon and screenshots per mascot) and small paid
+creative tests answer "which mascot do people pick" in days.
+
 ## The breaths start on I'm ready, and there are three (2026-09-21, Melvin)
 
 **DONE:** the invitation and the breaths are one screen, so I'm ready swaps
 the words in a single frame with no slide and no fade; Continue appears only
 after the third breath (30 s), not after the first; Otto holds still on the
 invitation and the words follow his own chest once released. Verified from a
-screen recording at 0.1 s per frame. **Not judgeable on the simulator:** the
+screen recording at 0.1 s per frame. Same day, second ask ("he still barely
+looks like hes breathing"): Otto sits about 28 pt lower and the old sage
+breathing circle is back above his head, 90 to 180 pt, swelling on each inhale
+on the same clock as the words. **Not judgeable on the simulator:** the
 breath haptic, which needs a phone.
 
 ## Breathing that works, Back that goes back, and a website badge (2026-09-21, Melvin)

@@ -2448,6 +2448,13 @@ reference screen, build that screen.** Not a reading of it.
   that as the exercise stopping after one breath. Thirty seconds is not a
   trap. Verified: Continue at 30.2 s after I'm ready, with in / out 1, 2, 3
   of 3 in between.
+- **A breathing circle does the pacing, not his chest** (Melvin: "he still
+  barely looks like hes breathing"). `BreathCircle` is the old breath screen's
+  sage orb, above his head, 90 to 180 pt. Its size is computed every frame
+  from `breathStart` (set at release, minus his phase), never animated, so it
+  cannot drift from the words; it rests on the invitation and after the third
+  breath. Otto sits about 28 pt lower to make room. Verified by recording:
+  peaks every 10 s, three times, with the word swap on each peak.
 - **Otto waits on the invitation and the words follow his chest.**
   `OttoRig` counts Rive's own advance (`OttoRiveViewModel` overrides
   `player(didAdvanceby:)`), pauses the rig 0.45 s after bind when
