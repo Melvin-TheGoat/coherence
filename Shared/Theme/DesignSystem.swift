@@ -26,9 +26,8 @@ enum AppMetrics {
 }
 
 enum AppFont {
-    // The three display sizes are Baloo 2; everything under them is SF
-    // Rounded. See `DisplayFont` at the foot of this file for why the line is
-    // drawn where it is.
+    // ONE rounded family for everything, display and body alike. See
+    // `DisplayFont` at the foot of this file for which family and why.
     static let hero = DisplayFont.display(40, .heavy)
     static let title = DisplayFont.display(24)
     static let headline = DisplayFont.display(17)
@@ -173,53 +172,35 @@ struct PillButtonStyle: ButtonStyle {
 
 // MARK: - The display face
 
-/// **Baloo 2 for the big text, SF Rounded for everything small** (Aziz,
-/// 2026-09-19, choosing it out of `mockups/fonts.html`).
+/// **One rounded family everywhere, Duolingo's way** (Melvin, 2026-09-21:
+/// "use their font everywhere, i think its DIN Next Rounded").
 ///
-/// The problem it solves is that SF Rounded is the correct first move for a
-/// friendly iOS app and is also what every friendly iOS app reaches for, so
-/// 808 sounded like all of them. Baloo 2 is chunky, warm and unmistakable, and
-/// it matches the shapes the rest of this redesign is made of.
+/// **What ships today is SF Pro Rounded, standing in for DIN Next Rounded.**
+/// DIN Next Rounded is Monotype's, and putting a font inside an app needs an
+/// app-embedding licence bought for that app; a desktop licence or an Adobe
+/// Fonts activation does not cover it, and an unlicensed copy is not going in
+/// a shipped binary. SF Pro Rounded is Apple's, ships on every iPhone, carries
+/// every weight and language, scales with Dynamic Type, and is the closest
+/// shape to DIN Next Rounded available without a licence: the same rounded
+/// terminals on a plain grotesque skeleton.
 ///
-/// **It is deliberately not used below about fifteen points**, and that is the
-/// whole design of this type:
+/// **How it reaches everything:** display text comes through here, the body
+/// sizes come through `AppFont`, and `CoherenceApp` sets `.fontDesign(.rounded)`
+/// on the root so every other `.system(size:)` and every text style (`.body`,
+/// `.caption`...) in the app resolves to the rounded design too.
 ///
-/// - SF is hinted for these screens at small sizes and a bundled web face is
-///   not. Baloo's lowercase in particular gets loose and a little wild small,
-///   which is charming in a headline and costs legibility in a stat label.
-/// - SF carries every weight and every language the app ships in. Three
-///   bundled TTFs carry three weights of Latin.
-/// - SF scales with Dynamic Type for free. A fixed-size custom face does not,
-///   so every string set in Baloo has to be one whose layout can survive
-///   growing, which headlines can and dense rows cannot.
+/// **SUPERSEDED: Baloo 2** for display (Aziz, 2026-09-19, out of
+/// `mockups/fonts.html`). Its TTFs and OFL are still in `Coherence/Fonts/` and
+/// registered under `UIAppFonts`, unread, so going back is one line here.
 ///
-/// So the rule is: **a display face has a personality where there is room for
-/// one.** Headlines, the score, the big numbers. Nothing a person reads a
-/// paragraph of.
-///
-/// Registered in `Coherence/Info.plist` under `UIAppFonts`; the files and the
-/// SIL Open Font License live in `Coherence/Fonts/`. iOS only: the Watch
-/// target has its own palette and its own sizes and stays on the system face.
+/// **When the DIN Next Rounded app licence is bought:** add the files to
+/// `Coherence/Fonts/`, list them under `UIAppFonts`, and return
+/// `Font.custom(<PostScript name>, size:)` below and from `AppFont`. The root
+/// `fontDesign` cannot carry a custom family, so the app's raw `.system(...)`
+/// call sites (about two hundred) would move to `AppFont` in the same pass.
+/// iOS only: the Watch keeps the system face.
 enum DisplayFont {
-    /// PostScript names, which are what `Font.custom` wants and are NOT the
-    /// family names: the 800 weight's family is "Baloo 2 ExtraBold" while its
-    /// PostScript name is "Baloo2-ExtraBold". Getting this wrong fails silently
-    /// to the system font, which looks like a layout bug rather than a missing
-    /// file.
-    private static let semibold = "Baloo2-SemiBold"
-    private static let bold = "Baloo2-Bold"
-    private static let extrabold = "Baloo2-ExtraBold"
-
-    /// Baloo sits small in its own box, so a size here reads roughly a point
-    /// under the same size in SF. The 1.06 makes the two interchangeable at a
-    /// call site without every caller having to know that.
     static func display(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
-        let name: String
-        switch weight {
-        case .semibold, .medium, .regular: name = semibold
-        case .black, .heavy: name = extrabold
-        default: name = bold
-        }
-        return .custom(name, fixedSize: size * 1.06)
+        .system(size: size, weight: weight, design: .rounded)
     }
 }

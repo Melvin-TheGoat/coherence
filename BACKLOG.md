@@ -4,6 +4,20 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Duolingo's bubble and font (2026-09-21, Melvin)
+
+**DONE:** Otto's onboarding lines type about ten times faster (300 characters
+a second), in a see-through outlined bubble whose tail is part of the same
+line; the whole app is on one rounded family (SF Pro Rounded) through the root
+`fontDesign`, with Baloo 2 retired from the display sizes.
+
+**DECISION FOR MELVIN: buy DIN Next Rounded or keep SF Pro Rounded.** DIN Next
+Rounded is Monotype's and needs an APP licence to ship inside 808 (MyFonts /
+Monotype sell them per app; a desktop or Adobe Fonts licence does not cover
+it). If bought, the swap is recorded in CLAUDE.md "ONE ROUNDED FONT
+EVERYWHERE". Also open: whether Home's filled bubble should become the
+outlined one, which waits for his Home critique.
+
 ## Otto's second pass, and the revamp is parked (2026-09-20, Melvin)
 
 His list, in his words: "The sloth isnt breathing in the onboarding, make it

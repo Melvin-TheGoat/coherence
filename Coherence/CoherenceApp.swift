@@ -53,6 +53,9 @@ struct CoherenceApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // One rounded family everywhere (see `DisplayFont`): every
+                // `.system(size:)` and text style below resolves to it.
+                .fontDesign(.rounded)
                 .environmentObject(coordinator)
                 .environmentObject(store)
                 .environmentObject(community)

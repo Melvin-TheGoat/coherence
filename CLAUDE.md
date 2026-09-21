@@ -2296,11 +2296,16 @@ state machine layers: Body, Head, Pose, Branch, Blink.
   state stay wired so a future idea has somewhere to land, and what makes his
   lines read as speech is `OttoSpeech`: the words arrive typed, one character
   at a time, out of a bubble whose tail points at him.
-- **`OttoSpeech` is what makes it read as speech.** Otto's lines arrive in a
-  bubble typed a character at a time, and the rig's `talking` is true for
-  exactly as long as the typing lasts. A line that faded in is text near a
-  mascot; the same line arriving a character at a time out of his own bubble
-  is something he is saying.
+- **`OttoSpeech` is what makes it read as speech**, and it is Duolingo's
+  bubble now (Melvin, 2026-09-21, with a screenshot of "Hi there! I'm Duo!"):
+  **see-through, an outline and nothing else**, text centred, and the tail
+  drawn as part of ONE path (`SpeechBubbleShape`) so the line runs unbroken
+  into the point. It types at **about 300 characters a second** ("make the
+  text appear like 10x quicker"; it was 30), so a two-line line lands in a
+  quarter second. **Unarrived characters are laid out in clear ink**, which
+  keeps line breaks where the finished line puts them; revealing a growing
+  prefix reflowed centred text as it typed. Home's `OttoBubble` is still the
+  filled one, because Home is frozen for Melvin's critique.
 - **The breathing screen buzzes, and it is the only screen that does.**
   `BreathHaptics` (built earlier, unused until now) plays a swell on the
   inhale and a softer fall on the exhale on the rig's own ten seconds, started
@@ -2355,6 +2360,33 @@ state machine layers: Body, Head, Pose, Branch, Blink.
   although nothing is written there when the editor is sandboxed.
 - Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
   ellipse reads as a blob, and a lens with two pointed tips reads as a leaf.
+
+## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
+
+"use their font everywhere, i think its DIN Next Rounded". Duolingo's body
+face is DIN Next Rounded (their headlines are their own Feather). **It is a
+Monotype font, and embedding a font in an app needs an app licence bought for
+that app**: a desktop licence or an Adobe Fonts activation does not cover it,
+and an unlicensed copy does not go in a shipped binary. It is not on this Mac
+either.
+
+**What ships is SF Pro Rounded, everywhere, as the stand-in.** Closest shape
+available without a licence (rounded terminals on a plain grotesque), built
+into every iPhone, every weight and language, Dynamic Type for free.
+`DisplayFont.display` returns it, `AppFont` already did for body sizes, and
+**`CoherenceApp` sets `.fontDesign(.rounded)` on the root**, which reaches
+every `.system(size:)` with no design and every text style (verified on the
+simulator: onboarding's non-rounded subtitles and options came out rounded).
+Two `.monospaced` call sites in `OnboardingInterview` keep their digits. The
+Watch keeps the system face.
+
+**Baloo 2 is superseded** (Aziz's pick, 2026-09-19). Its TTFs, OFL and
+`UIAppFonts` entries are left in place, unread, so going back is one line.
+
+**If the DIN Next Rounded app licence is bought:** files into
+`Coherence/Fonts/`, names under `UIAppFonts`, `Font.custom` in `DisplayFont`
+and `AppFont`. The root `fontDesign` cannot carry a custom family, so the
+~200 raw `.system(...)` call sites move to `AppFont` in the same pass.
 
 ## THE UI REVAMP IS PARKED, AND HOME STAYS AS IT IS (2026-09-20, Melvin)
 

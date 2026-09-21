@@ -19,16 +19,31 @@ import SwiftUI
 
 // MARK: - Otto speaking
 
-/// One line from Otto, typed out, with the tail pointing down at him.
+/// One line from Otto, typed out, in an outlined bubble whose tail points
+/// down at him.
 ///
-/// `speaking` is reported back so the screen can drive the rig: it turns true
-/// with the first character and false with the last. **The rig answers by
-/// holding his mouth open and moving nothing else** (Melvin, 2026-09-20: "just
-/// show the still with his mouth open when hes talking, and dont animate him
-/// like moving"): a chattering mouth over a bobbing head read as a puppet. He
-/// still breathes, because that runs on its own layer and is the point.
-/// Under Reduce Motion the whole line is there at once and the mouth opens for
-/// one short beat, because a typewriter is motion and someone asked us not to.
+/// **The bubble is see-through, an outline and nothing else** (Melvin,
+/// 2026-09-21, pointing at Duolingo's "Hi there! I'm Duo!"). A filled card
+/// reads as a panel sitting on the screen; an outline on the screen's own
+/// ground reads as words coming out of the character, which is the point.
+/// The outline and the tail are ONE path (`SpeechBubbleShape`), so the line
+/// runs unbroken down into the point instead of a rotated square being
+/// tucked under a box.
+///
+/// **It types at about three hundred characters a second** (Melvin, same
+/// message: "make the text appear like 10x quicker"). A two-line line lands
+/// in about a quarter of a second, so it reads as arriving rather than as a
+/// wait, and nobody taps Continue before the sentence is there.
+///
+/// **The words that have not arrived yet are laid out in clear ink.** That
+/// keeps every line break exactly where the finished line will put it, so
+/// centred text stays centred while it types and nothing below the bubble
+/// moves. Revealing a growing prefix instead reflows the lines as they fill.
+///
+/// `speaking` is reported back so a screen can drive the rig while the line
+/// types; the rig no longer draws anything for it (there is no mouth, by
+/// Melvin's call), but the wiring stays so a future idea has somewhere to land.
+/// Under Reduce Motion the whole line is there at once.
 struct OttoSpeech: View {
     let text: String
     /// A beat before he starts, so the wave reads as a greeting and the line
@@ -40,54 +55,83 @@ struct OttoSpeech: View {
     @State private var elapsed: TimeInterval = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// About thirty characters a second: fast enough not to be a wait, slow
-    /// enough that the mouth has something to do.
-    private static let tick: TimeInterval = 0.033
+    /// One frame at a time, five characters a frame: about 300 a second.
+    private static let tick: TimeInterval = 1.0 / 60
+    private static let perTick = 5
+    private static let tailHeight: CGFloat = 11
 
-    private var visible: String { String(text.prefix(shown)) }
+    private var typed: AttributedString {
+        var arrived = AttributedString(String(text.prefix(shown)))
+        arrived.foregroundColor = AppColor.textPrimary
+        var pending = AttributedString(String(text.dropFirst(shown)))
+        pending.foregroundColor = .clear
+        return arrived + pending
+    }
 
     var body: some View {
-        // The full line, invisible, holds the bubble at its final size, so
-        // nothing below it moves while the words arrive.
-        Text(text)
-            .font(AppFont.callout)
-            .opacity(0)
-            .overlay(alignment: .topLeading) {
-                Text(visible)
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textPrimary)
-            }
-            .multilineTextAlignment(.leading)
+        Text(typed)
+            .font(.system(size: 18, weight: .regular, design: .rounded))
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 14)
+            // Room for the tail inside the frame, so the bubble's layout
+            // accounts for its own point.
+            .padding(.bottom, Self.tailHeight)
             .background {
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(AppColor.backgroundSecondary)
-            }
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(AppColor.backgroundSecondary)
-                    .frame(width: 16, height: 16)
-                    .rotationEffect(.degrees(45))
-                    .offset(y: 8)
+                SpeechBubbleShape(tailWidth: 22, tailHeight: Self.tailHeight)
+                    .stroke(AppColor.textSecondary.opacity(0.4),
+                            style: StrokeStyle(lineWidth: 2, lineJoin: .round))
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(text)")
             .onAppear {
                 guard reduceMotion else { return }
                 shown = text.count
-                speaking = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { speaking = false }
             }
             .onReceive(Timer.publish(every: Self.tick, on: .main, in: .common).autoconnect()) { _ in
                 guard !reduceMotion, shown < text.count else { return }
                 elapsed += Self.tick
                 guard elapsed >= delay else { return }
                 if shown == 0 { speaking = true }
-                shown += 1
+                shown = min(text.count, shown + Self.perTick)
                 if shown == text.count { speaking = false }
             }
+    }
+}
+
+/// A rounded rectangle with a point at the middle of its bottom edge, as one
+/// continuous outline. The point sits inside the shape's frame: the body is
+/// the frame minus `tailHeight`, and the tip touches the frame's bottom.
+struct SpeechBubbleShape: Shape {
+    var cornerRadius: CGFloat = 16
+    var tailWidth: CGFloat
+    var tailHeight: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        let body = CGRect(x: rect.minX, y: rect.minY,
+                          width: rect.width, height: rect.height - tailHeight)
+        let r = min(cornerRadius, body.height / 2, body.width / 2)
+        let mid = body.midX
+        var p = Path()
+        p.move(to: CGPoint(x: body.minX + r, y: body.minY))
+        p.addLine(to: CGPoint(x: body.maxX - r, y: body.minY))
+        p.addArc(center: CGPoint(x: body.maxX - r, y: body.minY + r), radius: r,
+                 startAngle: .degrees(-90), endAngle: .degrees(0), clockwise: false)
+        p.addLine(to: CGPoint(x: body.maxX, y: body.maxY - r))
+        p.addArc(center: CGPoint(x: body.maxX - r, y: body.maxY - r), radius: r,
+                 startAngle: .degrees(0), endAngle: .degrees(90), clockwise: false)
+        p.addLine(to: CGPoint(x: mid + tailWidth / 2, y: body.maxY))
+        p.addLine(to: CGPoint(x: mid, y: rect.maxY))
+        p.addLine(to: CGPoint(x: mid - tailWidth / 2, y: body.maxY))
+        p.addLine(to: CGPoint(x: body.minX + r, y: body.maxY))
+        p.addArc(center: CGPoint(x: body.minX + r, y: body.maxY - r), radius: r,
+                 startAngle: .degrees(90), endAngle: .degrees(180), clockwise: false)
+        p.addLine(to: CGPoint(x: body.minX, y: body.minY + r))
+        p.addArc(center: CGPoint(x: body.minX + r, y: body.minY + r), radius: r,
+                 startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
+        p.closeSubpath()
+        return p
     }
 }
 
