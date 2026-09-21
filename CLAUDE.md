@@ -2284,14 +2284,25 @@ state machine layers: Body, Head, Pose, Branch, Blink.
   scale down over the eyes for about 240ms. **A straight rectangle lash read as
   a glitch; a crescent reads as a closed eye.** The lids live inside WavePose,
   so the meditating art, whose eyes are already closed, never blinks twice.
-- **Talking moves a mouth.** The `Talk` timeline now opens and closes a dark
-  shape hung from a pivot at the smile line, on top of the head bob. At rest
-  its parent node is scaled to zero, so a mouth only exists while he is
-  speaking.
+- **Talking is a HELD OPEN MOUTH and nothing else** (Melvin, same day: "The
+  talking looks weird, just show the still with his mouth open when hes
+  talking, and dont animate him like moving"). The first version chattered the
+  mouth through nine keyframes over a nodding head, and a mascot working its
+  jaw at you reads as a puppet. The `Talk` timeline now holds one dark shape
+  open at the smile line and keys nothing on the head; at rest its parent node
+  is scaled to zero, so a mouth only exists while he is speaking. He still
+  breathes, because that is the Body layer and it is the point.
 - **`OttoSpeech` is what makes it read as speech.** Otto's lines arrive in a
   bubble typed a character at a time, and the rig's `talking` is true for
   exactly as long as the typing lasts. A line that faded in was text near a
-  mascot; the same words typed while his mouth moves are something he said.
+  mascot; the same words arriving while his mouth is open are something he
+  said.
+- **The breathing screen buzzes, and it is the only screen that does.**
+  `BreathHaptics` (built earlier, unused until now) plays a swell on the
+  inhale and a softer fall on the exhale on the rig's own ten seconds, started
+  on appear and stopped on disappear and before the hand-off. The Watch still
+  plays nothing, Home still plays nothing, and the simulator plays nothing at
+  all, so this can only be judged on a phone.
 - **The branch is a `branch` boolean, and Home never sets it.** Otto's feet sit
   at the bottom of the artboard, so a branch needs room that is not there. A
   new `Stand` node between the artboard and `Nod` carries the whole figure, and

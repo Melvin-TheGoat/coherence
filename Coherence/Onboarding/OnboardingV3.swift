@@ -22,9 +22,13 @@ import SwiftUI
 /// One line from Otto, typed out, with the tail pointing down at him.
 ///
 /// `speaking` is reported back so the screen can drive the rig: it turns true
-/// with the first character and false with the last. Under Reduce Motion the
-/// whole line is there at once and he says it with one short beat of mouth
-/// movement, because a typewriter is motion and someone asked us not to.
+/// with the first character and false with the last. **The rig answers by
+/// holding his mouth open and moving nothing else** (Melvin, 2026-09-20: "just
+/// show the still with his mouth open when hes talking, and dont animate him
+/// like moving"): a chattering mouth over a bobbing head read as a puppet. He
+/// still breathes, because that runs on its own layer and is the point.
+/// Under Reduce Motion the whole line is there at once and the mouth opens for
+/// one short beat, because a typewriter is motion and someone asked us not to.
 struct OttoSpeech: View {
     let text: String
     /// A beat before he starts, so the wave reads as a greeting and the line
@@ -227,6 +231,13 @@ struct BreathingScreen: View {
     private static let breaths = 3
 
     @StateObject private var rig = OttoRigHolder()
+    /// The breath on the Taptic Engine: a swell in, a softer fall out, on the
+    /// same ten seconds the rig and the words are on (Melvin, 2026-09-20:
+    /// "turn on the breath haptic for the breathing screen"). Onboarding is
+    /// one of the two places 808 buzzes at all, and this is the one where a
+    /// pulse is the instruction rather than an interruption. **The simulator
+    /// plays no haptics**, so this can only be judged on a phone.
+    @State private var haptics = BreathHaptics()
     @State private var breath = 1
     @State private var inhaling = true
     @State private var canContinue = false
@@ -273,6 +284,8 @@ struct BreathingScreen: View {
             .padding(.bottom, 10)
             .animation(.easeOut(duration: 0.3), value: canContinue)
         }
+        .onAppear { haptics.start() }
+        .onDisappear { haptics.stop() }
         .onReceive(Timer.publish(every: Self.half, on: .main, in: .common).autoconnect()) { _ in
             advance()
         }
@@ -286,6 +299,7 @@ struct BreathingScreen: View {
             canContinue = true
         } else {
             if breath >= Self.breaths {
+                haptics.stop()
                 onContinue()
                 return
             }
