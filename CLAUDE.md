@@ -2269,8 +2269,9 @@ state machine layers: Body, Head, Pose, Branch, Blink.
   the picture zooming, which is why he "wasn't breathing". `tools/otto_chest.py`
   cuts a feathered ellipse of his chest out of each pose, keeping the FULL
   canvas so it lines up with no arithmetic, and the rig draws that patch on
-  top of the art and swells it 5 to 6 percent about its own centre while the
-  body underneath moves under 2 percent. **The feather is the whole trick**: a
+  top of the art and swells it about 6 percent on the standing pose and 9 on
+  the sitting one (his sitting belly is smaller, so the same percentage reads
+  as less) while the body underneath moves under 2 percent. **The feather is the whole trick**: a
   hard-edged patch shows its rim as a seam, and alpha falling off over 46
   pixels hides the handover. Verified by scaling it to 112 percent and
   capturing: no seam anywhere. Still 600 frames at 60fps, so still six breaths
@@ -2284,19 +2285,22 @@ state machine layers: Body, Head, Pose, Branch, Blink.
   scale down over the eyes for about 240ms. **A straight rectangle lash read as
   a glitch; a crescent reads as a closed eye.** The lids live inside WavePose,
   so the meditating art, whose eyes are already closed, never blinks twice.
-- **Talking is a HELD OPEN MOUTH and nothing else** (Melvin, same day: "The
-  talking looks weird, just show the still with his mouth open when hes
-  talking, and dont animate him like moving"). The first version chattered the
-  mouth through nine keyframes over a nodding head, and a mascot working its
-  jaw at you reads as a puppet. The `Talk` timeline now holds one dark shape
-  open at the smile line and keys nothing on the head; at rest its parent node
-  is scaled to zero, so a mouth only exists while he is speaking. He still
-  breathes, because that is the Body layer and it is the point.
+- **THERE IS NO MOUTH. The art's own face is the face.** Two rounds were spent
+  on one: first a mouth that chattered through nine keyframes over a nodding
+  head ("looks weird, just show the still with his mouth open"), then a single
+  dark shape held open at the smile line, which Melvin read for what it was:
+  "theres an oval over his lips, get rid of that". A shape laid over a face
+  that was painted with lighting and shading reads as a sticker, whatever it
+  is doing. `MouthOpen` and `MouthHole` are DELETED and the `Talk` timeline
+  keys nothing. **Do not draw another one.** The `talking` boolean and its
+  state stay wired so a future idea has somewhere to land, and what makes his
+  lines read as speech is `OttoSpeech`: the words arrive typed, one character
+  at a time, out of a bubble whose tail points at him.
 - **`OttoSpeech` is what makes it read as speech.** Otto's lines arrive in a
   bubble typed a character at a time, and the rig's `talking` is true for
-  exactly as long as the typing lasts. A line that faded in was text near a
-  mascot; the same words arriving while his mouth is open are something he
-  said.
+  exactly as long as the typing lasts. A line that faded in is text near a
+  mascot; the same line arriving a character at a time out of his own bubble
+  is something he is saying.
 - **The breathing screen buzzes, and it is the only screen that does.**
   `BreathHaptics` (built earlier, unused until now) plays a swell on the
   inhale and a softer fall on the exhale on the rig's own ten seconds, started
@@ -2337,10 +2341,16 @@ state machine layers: Body, Head, Pose, Branch, Blink.
   that already has a fill does nothing.** A parametric shape is born with a
   grey fill, so recolouring one later means `setPaints` on the existing Fill
   id, which is the shape id plus two for these.
-- **A container's child list is front to back.** A newly added child lands at
-  the END, which is BEHIND everything: the chest patch was invisible at 112
-  percent until `bringForward`. Test draw order by exaggerating, not by reading
-  the list.
+- **A container's child list is front to back, and this cost TWO rounds.** A
+  newly added child lands at the END, which is BEHIND everything. The wave
+  pose's chest patch was invisible until `bringForward`, the fix was applied
+  there and only there, and the SIT pose's patch sat behind the sit art for a
+  day: Melvin's "im not seeing him breath at all on the second screen" was
+  exactly that, and the small motion left on those screens was the branch
+  swaying, not a breath. **When a fix is a draw-order fix, apply it to every
+  sibling that was added the same way, and prove each one by exaggerating the
+  scale and capturing.** A diff of two screenshots a half-breath apart shows
+  the belly's outline lit up when it works.
 - **`export_file` still requires `destination` even with `inline_base64`**,
   although nothing is written there when the editor is sandboxed.
 - Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
