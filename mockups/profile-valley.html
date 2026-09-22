@@ -1,13 +1,12 @@
-<!doctype html><html><head><meta charset="utf-8"><title>808 · Profile, in the valley</title>
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Profile v2</title>
 <style>
 :root{--paper:#FEF9F2;--ink:#413024;--soft:#877160;--amber:#F0C47B;--amberSh:#D9A957;
- --amberText:#9B6B19;--sage:#3E8175;--sageFill:#93C9BE;--trace:#F0E3D0;--blush:#F7C4AC;
- --blushText:#AB5834;--skyInk:#24414F}
+ --amberText:#9B6B19;--sage:#3E8175;--trace:#F0E3D0;--hair:#EFE4D5;--blushText:#AB5834;--skyInk:#24414F}
 *{box-sizing:border-box}
 body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 80px;
  font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
 h1{font-size:25px;margin:0 0 7px;font-weight:800}
-h2{font-size:15px;margin:38px 0 4px;font-weight:800}
+h2{font-size:15px;margin:36px 0 4px;font-weight:800}
 .lede{color:var(--soft);font-size:14.5px;max-width:880px;line-height:1.62;margin:0}
 .lede b{color:var(--ink)}
 .row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:26px}
@@ -16,318 +15,260 @@ h2{font-size:15px;margin:38px 0 4px;font-weight:800}
 .note{color:var(--soft);font-size:13.4px;line-height:1.62;width:300px;margin-top:13px}
 .note b{color:var(--ink)}
 .wide{width:auto;max-width:880px}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:880px;margin-top:14px}
+.flag b{color:var(--blushText)}
 
 .p{width:300px;height:640px;border-radius:38px;overflow:hidden;position:relative;flex:none;
- box-shadow:0 12px 34px rgba(80,55,30,.16);
- background:linear-gradient(180deg,#8CBBD4 0%,#BBD8E4 46%,#E3E8DA 70%,#EFE0C9 100%)}
-.sun{position:absolute;left:9%;bottom:54%;width:44px;height:44px;border-radius:50%;
- background:#FFE9B8;box-shadow:0 0 44px 18px rgba(255,233,184,.55)}
-.cloud{position:absolute}
-.mt{position:absolute;left:0;width:100%;bottom:38%;height:28%}
-.field{position:absolute;left:0;width:100%;bottom:0;height:42%;
- background:linear-gradient(180deg,#7FA87E,#9CBC85)}
-.fl{position:absolute;transform-origin:50% 100%}
+ background:var(--paper);box-shadow:0 12px 34px rgba(80,55,30,.16)}
 
+/* --- the valley, as a band you can actually see --- */
+.band{position:absolute;left:0;top:0;width:100%;height:262px;overflow:hidden;
+ background:linear-gradient(180deg,#8CBBD4 0%,#B3D3E2 52%,#D8E4DC 84%,#E3E8DA 100%)}
+.sun{position:absolute;left:12%;top:30%;width:40px;height:40px;border-radius:50%;
+ background:#FFE9B8;box-shadow:0 0 40px 16px rgba(255,233,184,.5)}
+.cl{position:absolute}
+.mt{position:absolute;left:0;bottom:44px;width:100%;height:78px}
+.grass{position:absolute;left:0;bottom:0;width:100%;height:52px;
+ background:linear-gradient(180deg,#7FA87E,#93B683)}
+.seat{position:absolute;left:50%;transform:translateX(-50%);bottom:34px;width:120px;height:30px;
+ border-radius:50%;background:linear-gradient(180deg,#D98B6E,#B96A50);
+ box-shadow:inset 0 4px 0 rgba(255,220,200,.28)}
+.otto{position:absolute;left:50%;transform:translateX(-50%);bottom:40px;width:132px;height:132px;
+ background:url("otto-v3/otto-sit.png") center bottom/contain no-repeat}
 .gear{position:absolute;top:16px;right:16px;width:34px;height:34px;border-radius:50%;
  background:rgba(254,249,242,.92);display:flex;align-items:center;justify-content:center;
- font-size:15px;box-shadow:0 2px 8px rgba(40,25,15,.14)}
-.ask{position:absolute;top:44px;left:14px;right:60px;display:flex;align-items:center;gap:6px}
-.ask .him{width:84px;height:84px;flex:none;margin-left:-12px;
- background:url("otto-v3/otto-sit.png") center bottom/contain no-repeat}
-.bub{flex:1;border:2px solid rgba(28,62,78,.4);background:rgba(254,249,242,.74);border-radius:16px;
- padding:9px 12px;font-size:13px;font-weight:600;color:var(--skyInk);position:relative;line-height:1.35}
-.bub:before{content:"";position:absolute;left:-11px;top:22px;width:0;height:0;
- border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:11px solid rgba(28,62,78,.4)}
-.bub:after{content:"";position:absolute;left:-8px;top:22px;width:0;height:0;
- border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:9px solid rgba(254,249,242,.74)}
+ font-size:15px;box-shadow:0 2px 8px rgba(40,25,15,.14);z-index:3}
+.says{position:absolute;top:24px;left:16px;font-size:13px;font-weight:700;color:var(--skyInk);
+ background:rgba(254,249,242,.78);border:2px solid rgba(28,62,78,.3);border-radius:14px;
+ padding:7px 11px;z-index:3;max-width:170px;line-height:1.3}
 
-.scroll{position:absolute;left:0;right:0;top:140px;bottom:0;padding:0 16px 80px;overflow:hidden;
- -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 22px,#000 calc(100% - 92px),transparent calc(100% - 58px));
- mask-image:linear-gradient(180deg,transparent 0,#000 22px,#000 calc(100% - 92px),transparent calc(100% - 58px))}
-.card{background:rgba(254,249,242,.94);border-radius:18px;padding:13px;margin-bottom:9px;
- box-shadow:0 2px 8px rgba(40,25,15,.14)}
+/* --- ONE page, hairlines inside it, no boxes --- */
+.page{position:absolute;left:0;right:0;top:232px;bottom:0;background:var(--paper);
+ border-radius:26px 26px 0 0;box-shadow:0 -6px 20px rgba(40,25,15,.10);overflow:hidden;
+ padding:0 18px}
+.grip{width:36px;height:4px;border-radius:2px;background:var(--trace);margin:9px auto 4px}
+.sec{padding:14px 0;border-bottom:1px solid var(--hair)}
+.sec:last-child{border-bottom:none}
+.sec.tight{padding-top:10px}
 
 .me{display:flex;align-items:center;gap:12px}
-.me .av{width:52px;height:52px;border-radius:50%;flex:none;border:2px solid #fff;
- background:linear-gradient(150deg,#F7DDBE,#EBBE94);box-shadow:0 2px 6px rgba(40,25,15,.15)}
-.me .nm{font-size:16px;font-weight:800;line-height:1.15}
+.me .av{width:48px;height:48px;border-radius:50%;flex:none;border:2px solid #fff;
+ background:linear-gradient(150deg,#F7DDBE,#EBBE94);box-shadow:0 2px 6px rgba(40,25,15,.14)}
+.me .nm{font-size:18px;font-weight:800;line-height:1.1}
 .me .hd{font-size:11.5px;color:var(--soft);margin-top:2px}
-.me .ed{font-size:11px;font-weight:800;color:var(--amberText);flex:none}
-.follow{display:flex;gap:16px;margin-top:9px;padding-top:9px;border-top:1px solid #F3E9DC}
-.follow div{font-size:11.5px;color:var(--soft)}
-.follow b{color:var(--ink);font-size:13px;font-weight:800;margin-right:3px}
+.me .ed{font-size:12px;font-weight:800;color:var(--amberText);flex:none}
 
 .stats{display:flex}
-.stats div{flex:1;text-align:center}
-.stats b{display:block;font-size:19px;font-weight:800;color:var(--blushText);line-height:1}
-.stats span{display:block;font-size:10px;color:var(--soft);margin-top:3px}
-.stats i{width:1px;background:#F0E3D0;flex:none;margin:2px 0}
+.stats div{flex:1}
+.stats b{display:block;font-size:20px;font-weight:800;color:var(--blushText);line-height:1}
+.stats span{display:block;font-size:10px;color:var(--soft);margin-top:4px}
 
-.ch{display:flex;align-items:flex-end;gap:3px;height:62px;margin-top:9px;position:relative}
+.h{font-size:15px;font-weight:800}
+.sub{font-size:11.5px;color:var(--soft);margin-top:2px;line-height:1.45}
+.ch{display:flex;align-items:flex-end;gap:3px;height:58px;margin-top:11px;position:relative}
 .ch .bar{flex:1;background:var(--amber);border-radius:3px 3px 0 0}
-.ch:after{content:"";position:absolute;left:0;right:0;bottom:44%;border-top:1.5px dashed rgba(155,107,25,.5)}
-.h{font-size:14px;font-weight:800}
-.sub{font-size:11px;color:var(--soft);margin-top:2px}
+.ch:after{content:"";position:absolute;left:0;right:0;bottom:44%;border-top:1.5px dashed rgba(155,107,25,.45)}
 
-.shelf{display:flex;gap:6px;margin-top:10px}
+.shelf{display:flex;gap:7px;margin-top:11px}
 .aw{flex:1;text-align:center}
-.aw>:first-child{display:block;height:46px;border-radius:14px;background:var(--trace);color:var(--soft);
- font-size:15px;font-weight:800;line-height:46px}
-.aw.on>:first-child{background:var(--amber);color:var(--ink);box-shadow:0 3px 0 var(--amberSh)}
-.aw span{display:block;font-size:8px;color:var(--soft);margin-top:4px;line-height:1.15;
- height:19px;overflow:hidden}
+.aw .face{display:block;height:44px;border-radius:14px;background:var(--trace);color:var(--soft);
+ font-size:15px;font-weight:800;line-height:44px}
+.aw.on .face{background:var(--amber);color:var(--ink);box-shadow:0 3px 0 var(--amberSh)}
+.aw .cap{display:block;font-size:8px;color:var(--soft);margin-top:5px;line-height:1.2;height:20px;overflow:hidden}
 
-.lab{display:inline-block;font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;
- color:var(--soft);background:rgba(254,249,242,.9);border-radius:999px;padding:4px 9px;margin:14px 0 8px 2px}
-.sess{display:flex;align-items:center;gap:11px;background:rgba(254,249,242,.94);border-radius:18px;
- padding:11px 13px;margin-bottom:8px;box-shadow:0 2px 8px rgba(40,25,15,.14)}
-.sess .thumb{width:38px;height:44px;border-radius:11px;flex:none;
- background:linear-gradient(160deg,#FDEDE1,#EBD9C6)}
-.sess .sx{flex:1}
-.sess .sx b{display:block;font-size:14px;font-weight:800}
-.sess .sx i{display:block;font-style:normal;font-size:11px;color:var(--soft);margin-top:1px}
-.sess .sc{font-size:17px;font-weight:800;color:var(--amberText)}
+.srow{display:flex;align-items:center;gap:11px;padding:11px 0}
+.srow.hr{border-bottom:1px solid var(--hair)}
+.srow .thumb{width:34px;height:40px;border-radius:10px;flex:none;
+ background:linear-gradient(160deg,#FDEDE1,#E8D5C0)}
+.srow .sx{flex:1}
+.srow .sx b{display:block;font-size:14px;font-weight:800}
+.srow .sx i{display:block;font-style:normal;font-size:11px;color:var(--soft);margin-top:1px}
+.srow .sc{font-size:17px;font-weight:800;color:var(--amberText)}
+.right{float:right;font-size:11.5px;color:var(--soft);font-weight:600}
+.right b{color:var(--amberText)}
 </style></head><body>
 
-<h1>Profile, in the valley</h1>
-<p class="lede">Same grammar as the sit and the sound picker: <b>one scene that does not move, cream
-pills floating on it, Otto saying the sentence that would otherwise be a title, and one gold thing per
-decision.</b> Profile today is cream cards on a cream page with a flat gradient at the top; this is the
-same content standing in the same place as the rest of the app.</p>
+<h1>Profile, second pass</h1>
+<p class="lede">You were right that something was off, and the answer was already written down in this
+repo. <b>The fourteen-app research behind Save session says: no boxes, bare text on a hairline, full
+bleed between sections, section headers bold sentence case, one filled object.</b> The last mockup was
+four floating boxes in a stack.</p>
+
+<div class="flag">
+<p class="note wide" style="margin-top:0"><b>The rule I had been applying wrongly.</b> A cream pill
+floating on the valley is a <b>control you press</b>: Sound, Silence notifications, a track, Begin.
+Profile is almost entirely <b>content you read</b>, and four identical floating boxes turn reading
+matter into a row of buttons, which is exactly the "five slabs" the research rejected. Same app, two
+different jobs, two different objects.</p>
+</div>
+
+<p class="lede" style="margin-top:14px"><b>So: one page, not four boxes.</b> The valley is a band you
+can actually see, with Otto sitting in it, and your practice is a single sheet resting on it with
+hairlines between the sections. It also fixes the other thing that was wrong: the last version buried
+the scene behind content from the first pixel, so the "valley style" was a strip of sky.</p>
 
 <div class="row">
 
   <div class="col">
     <div class="tag"><b>1</b> &nbsp;top of the page</div>
     <div class="p">
-      <div class="sun"></div>
-      <div class="cloud" style="left:-9%;top:7%;width:126px;height:65px">
-        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
-        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
-        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g>
-        <ellipse cx="60" cy="23" rx="23" ry="11" fill="#FFFFFF" opacity="0.6"/></svg></div>
-      <div class="cloud" style="right:-11%;top:19%;width:150px;height:78px">
-        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
-        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
-        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg></div>
-      <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none">
-        <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
-        <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
-        <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/>
-      </svg>
-      <div class="field"></div>
-<div class="fl" style="left:12.8%;bottom:41.0%;width:7px;height:14px;transform:rotate(7deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:19.4%;bottom:40.9%;width:7px;height:14px;transform:rotate(6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:5.1%;bottom:40.8%;width:7px;height:14px;transform:rotate(-6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:79.8%;bottom:40.5%;width:7px;height:16px;transform:rotate(4deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:84.7%;bottom:40.3%;width:7px;height:16px;transform:rotate(8deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:90.0%;bottom:39.2%;width:9px;height:19px;transform:rotate(0deg);opacity:0.85"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:17.4%;bottom:38.9%;width:9px;height:19px;transform:rotate(3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:76.7%;bottom:38.8%;width:9px;height:20px;transform:rotate(-5deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:24.0%;bottom:38.5%;width:10px;height:20px;transform:rotate(-3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:4.1%;bottom:38.1%;width:11px;height:22px;transform:rotate(4deg);opacity:0.87"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:11.6%;bottom:37.2%;width:11px;height:24px;transform:rotate(4deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:83.1%;bottom:37.2%;width:11px;height:24px;transform:rotate(-7deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:23.2%;bottom:36.2%;width:12px;height:27px;transform:rotate(-4deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:76.0%;bottom:36.0%;width:13px;height:27px;transform:rotate(-2deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:5.7%;bottom:35.8%;width:13px;height:28px;transform:rotate(-5deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:14.8%;bottom:35.3%;width:14px;height:29px;transform:rotate(5deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:90.5%;bottom:35.3%;width:14px;height:29px;transform:rotate(-1deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:81.6%;bottom:33.6%;width:16px;height:33px;transform:rotate(-2deg);opacity:0.94"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:52.1%;bottom:32.8%;width:17px;height:35px;transform:rotate(-7deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:90.8%;bottom:32.7%;width:17px;height:36px;transform:rotate(-4deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:70.5%;bottom:32.1%;width:18px;height:37px;transform:rotate(6deg);opacity:0.96"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:26.4%;bottom:30.5%;width:20px;height:42px;transform:rotate(4deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:40.5%;bottom:30.0%;width:20px;height:43px;transform:rotate(-2deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:81.7%;bottom:29.8%;width:20px;height:43px;transform:rotate(-1deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:11.4%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:58.0%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-      <div class="gear">&#9881;</div>
-      <div class="ask"><div class="him" style="background-image:url('otto-v3/otto-sit.png')"></div>
-        <div class="bub">Day three. Your longest is eleven.</div></div>
-      <div class="scroll">
-        <div class="card me">
+      <div class="band">
+        <div class="sun"></div>
+        <div class="cl" style="left:-6%;top:12%;width:104px;height:54px">
+          <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
+          <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+          <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
+        </div>
+        <div class="cl" style="right:-10%;top:26%;width:126px;height:65px">
+          <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.9">
+          <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+          <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
+        </div>
+        <svg class="mt" viewBox="0 0 300 120" preserveAspectRatio="none">
+          <path d="M0 64 L46 28 L88 58 L134 20 L188 56 L234 32 L300 62 L300 120 L0 120 Z" fill="#AFC6CE"/>
+          <path d="M0 84 L50 56 L106 82 L158 50 L214 80 L300 60 L300 120 L0 120 Z" fill="#8FAFB4"/>
+        </svg>
+        <div class="grass"></div>
+        <div class="seat"></div>
+        <div class="otto"></div>
+      </div>      <div class="gear">&#9881;</div>
+      <div class="says">Day three. Your longest is eleven.</div>
+      <div class="page" style="top:232px">
+        <div class="grip"></div>
+        <div class="sec tight me">
           <div class="av"></div>
-          <div style="flex:1"><div class="nm">Aziz</div><div class="hd">@aziz &middot; practising since September</div></div>
+          <div style="flex:1"><div class="nm">Aziz</div>
+            <div class="hd">@aziz &middot; practising since September</div></div>
           <div class="ed">Edit</div>
         </div>
-        <div class="card" style="padding-top:11px;padding-bottom:11px">
-          <div class="stats">
-            <div><b>3</b><span>day streak</span></div><i></i>
-            <div><b>11</b><span>longest</span></div><i></i>
-            <div><b>16</b><span>sessions</span></div><i></i>
-            <div><b>4.2h</b><span>practised</span></div>
-          </div>
+        <div class="sec stats">
+          <div><b>3</b><span>day streak</span></div>
+          <div><b>11</b><span>longest</span></div>
+          <div><b>16</b><span>sessions</span></div>
+          <div><b>4.2h</b><span>practised</span></div>
         </div>
-        <div class="card">
+        <div class="sec">
           <div class="h">Your scores</div>
           <div class="sub">One bar per session. The line is your average.</div>
           <div class="ch"><div class="bar" style="height:34%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:41%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:77%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:83%"></div><div class="bar" style="height:71%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:64%"></div><div class="bar" style="height:88%"></div><div class="bar" style="height:79%"></div><div class="bar" style="height:95%"></div><div class="bar" style="height:86%"></div><div class="bar" style="height:74%"></div></div>
         </div>
-        <div class="card">
-          <div style="display:flex;align-items:baseline"><div class="h" style="flex:1">Awards</div>
-            <div class="sub">2 of 18 &nbsp;<b style="color:var(--amberText)">See all</b></div></div>
-          <div class="shelf"><div class="aw on">&#127774;<span>First step</span></div><div class="aw on">1<span>First session</span></div><div class="aw ">3<span>Three days</span></div><div class="aw ">5<span>Five days</span></div><div class="aw ">10<span>Ten days</span></div></div>
-        </div></div>
+        <div class="sec">
+          <div class="h">Awards <span class="right">2 of 18 &nbsp;<b>See all</b></span></div>
+          <div class="shelf"><div class="aw on"><span class="face">&#127774;</span><span class="cap">First<br>step</span></div><div class="aw on"><span class="face">1</span><span class="cap">First<br>session</span></div><div class="aw "><span class="face">3</span><span class="cap">Three<br>days</span></div><div class="aw "><span class="face">5</span><span class="cap">Five<br>days</span></div><div class="aw "><span class="face">10</span><span class="cap">Ten<br>days</span></div></div>
+        </div>
+      </div>
     </div>
-    <p class="note"><b>The title is gone because he says it.</b> "Your practice" was a heading over a
-      page that is obviously yours. His line is rule-written from the streak and the record, the way
-      Home's is, and it reports rather than congratulates.</p>
+    <p class="note"><b>One surface, four sections, no nesting.</b> Nothing is boxed inside the sheet,
+      so the eye reads down instead of hopping between slabs, and the hairlines carry the structure
+      that four shadows were carrying badly.</p>
   </div>
 
   <div class="col">
-    <div class="tag"><b>2</b> &nbsp;scrolled to the log</div>
+    <div class="tag"><b>2</b> &nbsp;pulled up to the log</div>
     <div class="p">
-      <div class="sun"></div>
-      <div class="cloud" style="left:-9%;top:7%;width:126px;height:65px">
-        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
-        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
-        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g>
-        <ellipse cx="60" cy="23" rx="23" ry="11" fill="#FFFFFF" opacity="0.6"/></svg></div>
-      <div class="cloud" style="right:-11%;top:19%;width:150px;height:78px">
-        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
-        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
-        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg></div>
-      <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none">
-        <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
-        <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
-        <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/>
-      </svg>
-      <div class="field"></div>
-<div class="fl" style="left:12.8%;bottom:41.0%;width:7px;height:14px;transform:rotate(7deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:19.4%;bottom:40.9%;width:7px;height:14px;transform:rotate(6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:5.1%;bottom:40.8%;width:7px;height:14px;transform:rotate(-6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:79.8%;bottom:40.5%;width:7px;height:16px;transform:rotate(4deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:84.7%;bottom:40.3%;width:7px;height:16px;transform:rotate(8deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:90.0%;bottom:39.2%;width:9px;height:19px;transform:rotate(0deg);opacity:0.85"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:17.4%;bottom:38.9%;width:9px;height:19px;transform:rotate(3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:76.7%;bottom:38.8%;width:9px;height:20px;transform:rotate(-5deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:24.0%;bottom:38.5%;width:10px;height:20px;transform:rotate(-3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:4.1%;bottom:38.1%;width:11px;height:22px;transform:rotate(4deg);opacity:0.87"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:11.6%;bottom:37.2%;width:11px;height:24px;transform:rotate(4deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:83.1%;bottom:37.2%;width:11px;height:24px;transform:rotate(-7deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:23.2%;bottom:36.2%;width:12px;height:27px;transform:rotate(-4deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:76.0%;bottom:36.0%;width:13px;height:27px;transform:rotate(-2deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:5.7%;bottom:35.8%;width:13px;height:28px;transform:rotate(-5deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:14.8%;bottom:35.3%;width:14px;height:29px;transform:rotate(5deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:90.5%;bottom:35.3%;width:14px;height:29px;transform:rotate(-1deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:81.6%;bottom:33.6%;width:16px;height:33px;transform:rotate(-2deg);opacity:0.94"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:52.1%;bottom:32.8%;width:17px;height:35px;transform:rotate(-7deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:90.8%;bottom:32.7%;width:17px;height:36px;transform:rotate(-4deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:70.5%;bottom:32.1%;width:18px;height:37px;transform:rotate(6deg);opacity:0.96"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:26.4%;bottom:30.5%;width:20px;height:42px;transform:rotate(4deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:40.5%;bottom:30.0%;width:20px;height:43px;transform:rotate(-2deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:81.7%;bottom:29.8%;width:20px;height:43px;transform:rotate(-1deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:11.4%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:58.0%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-      <div class="gear">&#9881;</div>
-      <div class="ask"><div class="him" style="background-image:url('otto-v3/otto-sit.png')"></div>
-        <div class="bub">Day three. Your longest is eleven.</div></div>
-      <div class="scroll">
-        <div class="card">
-          <div style="display:flex;align-items:baseline"><div class="h" style="flex:1">Awards</div>
-            <div class="sub">2 of 18 &nbsp;<b style="color:var(--amberText)">See all</b></div></div>
-          <div class="shelf"><div class="aw on">&#127774;<span>First step</span></div><div class="aw on">1<span>First session</span></div><div class="aw ">3<span>Three days</span></div><div class="aw ">5<span>Five days</span></div><div class="aw ">10<span>Ten days</span></div></div>
+      <div class="band">
+        <div class="sun"></div>
+        <div class="cl" style="left:-6%;top:12%;width:104px;height:54px">
+          <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
+          <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+          <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
         </div>
-        <div class="lab">All sessions</div>
-        <div class="sess"><div class="thumb"></div><div class="sx"><b>Tonight</b><i>12 min &middot; Breath work</i></div><div class="sc">74</div></div><div class="sess"><div class="thumb"></div><div class="sx"><b>Yesterday</b><i>20 min &middot; Silence</i></div><div class="sc">81</div></div><div class="sess"><div class="thumb"></div><div class="sx"><b>Friday</b><i>9 min &middot; Guided</i></div><div class="sc">66</div></div></div>
+        <div class="cl" style="right:-10%;top:26%;width:126px;height:65px">
+          <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.9">
+          <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+          <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
+        </div>
+        <svg class="mt" viewBox="0 0 300 120" preserveAspectRatio="none">
+          <path d="M0 64 L46 28 L88 58 L134 20 L188 56 L234 32 L300 62 L300 120 L0 120 Z" fill="#AFC6CE"/>
+          <path d="M0 84 L50 56 L106 82 L158 50 L214 80 L300 60 L300 120 L0 120 Z" fill="#8FAFB4"/>
+        </svg>
+        <div class="grass"></div>
+        <div class="seat"></div>
+        <div class="otto"></div>
+      </div>      <div class="gear">&#9881;</div>
+      <div class="says">Day three. Your longest is eleven.</div>
+      <div class="page" style="top:150px">
+        <div class="grip"></div>
+        <div class="sec">
+          <div class="h">Awards <span class="right">2 of 18 &nbsp;<b>See all</b></span></div>
+          <div class="shelf"><div class="aw on"><span class="face">&#127774;</span><span class="cap">First<br>step</span></div><div class="aw on"><span class="face">1</span><span class="cap">First<br>session</span></div><div class="aw "><span class="face">3</span><span class="cap">Three<br>days</span></div><div class="aw "><span class="face">5</span><span class="cap">Five<br>days</span></div><div class="aw "><span class="face">10</span><span class="cap">Ten<br>days</span></div></div>
+        </div>
+        <div class="sec">
+          <div class="h" style="margin-bottom:2px">All sessions</div>
+          <div class="srow hr"><div class="thumb"></div><div class="sx"><b>Tonight</b><i>12 min &middot; Breath work</i></div><div class="sc">74</div></div><div class="srow hr"><div class="thumb"></div><div class="sx"><b>Yesterday</b><i>20 min &middot; Silence</i></div><div class="sc">81</div></div><div class="srow"><div class="thumb"></div><div class="sx"><b>Friday</b><i>9 min &middot; Guided</i></div><div class="sc">66</div></div>
+        </div>
+      </div>
     </div>
-    <p class="note"><b>The sessions keep their own card</b>, the one Home already uses, so a sit looks
-      the same wherever you meet it. The label rides a cream capsule because it scrolls over the
-      meadow, which is the lesson the sound list taught.</p>
+    <p class="note"><b>The sheet rises as you scroll</b> and the valley stays behind it, so the page
+      can be dragged up to read history and let back down to see where you are. Otto does not move,
+      because he is not a control.</p>
   </div>
 
   <div class="col">
     <div class="tag"><b>3</b> &nbsp;nothing sat yet</div>
     <div class="p">
-      <div class="sun"></div>
-      <div class="cloud" style="left:-9%;top:7%;width:126px;height:65px">
-        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
-        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
-        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g>
-        <ellipse cx="60" cy="23" rx="23" ry="11" fill="#FFFFFF" opacity="0.6"/></svg></div>
-      <div class="cloud" style="right:-11%;top:19%;width:150px;height:78px">
-        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
-        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
-        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg></div>
-      <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none">
-        <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
-        <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
-        <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/>
-      </svg>
-      <div class="field"></div>
-<div class="fl" style="left:12.8%;bottom:41.0%;width:7px;height:14px;transform:rotate(7deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:19.4%;bottom:40.9%;width:7px;height:14px;transform:rotate(6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:5.1%;bottom:40.8%;width:7px;height:14px;transform:rotate(-6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:79.8%;bottom:40.5%;width:7px;height:16px;transform:rotate(4deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:84.7%;bottom:40.3%;width:7px;height:16px;transform:rotate(8deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:90.0%;bottom:39.2%;width:9px;height:19px;transform:rotate(0deg);opacity:0.85"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:17.4%;bottom:38.9%;width:9px;height:19px;transform:rotate(3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:76.7%;bottom:38.8%;width:9px;height:20px;transform:rotate(-5deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:24.0%;bottom:38.5%;width:10px;height:20px;transform:rotate(-3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:4.1%;bottom:38.1%;width:11px;height:22px;transform:rotate(4deg);opacity:0.87"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:11.6%;bottom:37.2%;width:11px;height:24px;transform:rotate(4deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:83.1%;bottom:37.2%;width:11px;height:24px;transform:rotate(-7deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:23.2%;bottom:36.2%;width:12px;height:27px;transform:rotate(-4deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:76.0%;bottom:36.0%;width:13px;height:27px;transform:rotate(-2deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:5.7%;bottom:35.8%;width:13px;height:28px;transform:rotate(-5deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:14.8%;bottom:35.3%;width:14px;height:29px;transform:rotate(5deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:90.5%;bottom:35.3%;width:14px;height:29px;transform:rotate(-1deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:81.6%;bottom:33.6%;width:16px;height:33px;transform:rotate(-2deg);opacity:0.94"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:52.1%;bottom:32.8%;width:17px;height:35px;transform:rotate(-7deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:90.8%;bottom:32.7%;width:17px;height:36px;transform:rotate(-4deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:70.5%;bottom:32.1%;width:18px;height:37px;transform:rotate(6deg);opacity:0.96"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-<div class="fl" style="left:26.4%;bottom:30.5%;width:20px;height:42px;transform:rotate(4deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:40.5%;bottom:30.0%;width:20px;height:43px;transform:rotate(-2deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:81.7%;bottom:29.8%;width:20px;height:43px;transform:rotate(-1deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
-<div class="fl" style="left:11.4%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
-<div class="fl" style="left:58.0%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
-      <div class="gear">&#9881;</div>
-      <div class="ask"><div class="him" style="background-image:url('otto-v3/otto-sit.png')"></div>
-        <div class="bub">This page fills in as you sit. The plus is where it starts.</div></div>
-      <div class="scroll">
-        <div class="card me">
+      <div class="band">
+        <div class="sun"></div>
+        <div class="cl" style="left:-6%;top:12%;width:104px;height:54px">
+          <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
+          <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+          <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
+        </div>
+        <div class="cl" style="right:-10%;top:26%;width:126px;height:65px">
+          <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.9">
+          <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+          <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
+        </div>
+        <svg class="mt" viewBox="0 0 300 120" preserveAspectRatio="none">
+          <path d="M0 64 L46 28 L88 58 L134 20 L188 56 L234 32 L300 62 L300 120 L0 120 Z" fill="#AFC6CE"/>
+          <path d="M0 84 L50 56 L106 82 L158 50 L214 80 L300 60 L300 120 L0 120 Z" fill="#8FAFB4"/>
+        </svg>
+        <div class="grass"></div>
+        <div class="seat"></div>
+        <div class="otto"></div>
+      </div>      <div class="gear">&#9881;</div>
+      <div class="says">This page fills in as you sit. The plus is where it starts.</div>
+      <div class="page" style="top:232px">
+        <div class="grip"></div>
+        <div class="sec tight me">
           <div class="av"></div>
-          <div style="flex:1"><div class="nm">Aziz</div><div class="hd">@aziz &middot; joined today</div></div>
+          <div style="flex:1"><div class="nm">Aziz</div>
+            <div class="hd">@aziz &middot; joined today</div></div>
           <div class="ed">Edit</div>
         </div>
-        <div class="card" style="padding-top:11px;padding-bottom:11px">
-          <div class="stats">
-            <div><b>0</b><span>day streak</span></div><i></i>
-            <div><b>0</b><span>longest</span></div><i></i>
-            <div><b>0</b><span>sessions</span></div><i></i>
-            <div><b>0h</b><span>practised</span></div>
-          </div>
+        <div class="sec stats">
+          <div><b>0</b><span>day streak</span></div>
+          <div><b>0</b><span>longest</span></div>
+          <div><b>0</b><span>sessions</span></div>
+          <div><b>0h</b><span>practised</span></div>
         </div>
-        <div class="card">
+        <div class="sec">
           <div class="h">Your scores</div>
           <div class="sub">Two sessions and this fills in. Every bar is one, and the line is your average.</div>
-        </div></div>
+        </div>
+      </div>
     </div>
-    <p class="note"><b>The empty state states the positive.</b> No "you have no sessions", no greyed
-      shelf of everything undone: the numbers are honestly zero, the scores card says what will fill
-      it, and Otto points at the plus. The awards shelf is simply not drawn yet.</p>
+    <p class="note"><b>The empty state states the positive.</b> Honest zeroes, the scores line saying
+      what will fill it, and Otto pointing at the plus. No awards shelf: eighteen grey squares is a
+      list of everything you have not done.</p>
   </div>
 
 </div>
 
-<h2>What changed, and why each one</h2>
-<p class="note wide"><b>The 84pt circle and the three stacked lines are gone.</b> A big empty avatar
-over a centred name is a settings screen's idea of a profile. Identity is one pill: portrait, name,
-handle, and when you started, with Edit as a quiet gold word rather than a bordered button.</p>
-<p class="note wide"><b>Four stats stay in one pill</b> and keep blush, because the streak is the
-blush colour everywhere else in the app. Amber stays reserved for measured scores, which is why the
-bars and the session numbers are amber and these are not.</p>
-<p class="note wide"><b>The gear is a cream circle on the sky</b>, the same material as every other
-control. It was floating unattached over the gradient.</p>
-<p class="note wide"><b>Otto is the meditating pose here, not the greeting one.</b> He is sitting in
-your valley rather than waving you into a session: this page is not a door to anything.</p>
-
-<h2>One idea I did not build, and why</h2>
-<p class="note wide"><b>The meadow could grow with your practice</b>, one flower per session, so your
-valley visibly fills in. It is honest (a count, not a claim), it costs nothing (the flower field is
-already a list), and it is the kind of thing people screenshot. <b>It does not work on this screen</b>:
-the content covers the meadow from the first scroll, so nobody would see it. It belongs on Home, where
-the scene is the whole screen. Say the word and it goes in the backlog for Melvin's Home pass.</p>
+<h2>The four decisions</h2>
+<p class="note wide"><b>Sessions are rows here and cards on Home, deliberately.</b> A card inside a
+sheet is a box inside a box, which is the thing being fixed. Strava does the same: cards in the feed,
+rows on the profile. The content is identical, only the container differs.</p>
+<p class="note wide"><b>The shelf keeps its squircles</b> because an award IS an object, and the one
+place a filled shape belongs on a page of text is the thing meant to be collected. That is the page's
+one filled object, and there is no other, since Profile has no primary action.</p>
+<p class="note wide"><b>Blush for the stats, amber for the scores.</b> The streak is blush everywhere
+in 808 and amber means a measured number, so the four counters and the bars are deliberately
+different colours rather than a wall of gold.</p>
+<p class="note wide"><b>Otto keeps his line but loses the tail.</b> A speech bubble pointing at him
+across a band he is centred in would cross the scene; the line reads as his because he is the only
+one there. He is the meditating pose, sitting in your valley, not the greeting one waving you
+somewhere.</p>
 
 </body></html>
