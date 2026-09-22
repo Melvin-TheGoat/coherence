@@ -437,7 +437,10 @@ private struct FaceTimeScene: View {
                 Text("Otto")
                     .font(.system(size: 30, weight: .bold))
                     .foregroundStyle(.white)
-                Text("FaceTime Video")
+                // Not "FaceTime Video": Apple's trademark and a copy of its
+                // own call screen are an App Review 5.2.5 risk. Otto's call
+                // is his own.
+                Text("Video call")
                     .font(.system(size: 16))
                     .foregroundStyle(.white.opacity(0.7))
                 Spacer()

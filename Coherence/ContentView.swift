@@ -488,13 +488,17 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let practicedToday = sessions.contains { cal.isDateInToday($0.startedAt) }
         var lines: [String] = []
+        // Holding apps is the most useful thing he can say (Block, 2026-09-22).
+        if FeatureFlags.block, !block.holding().isEmpty {
+            lines.append("I'm holding your apps. A short session and they're yours.")
+        }
         // His mood leads when it is the news: a sad Otto who says nothing
         // about it reads as a bug, and a glowing one has earned a word.
         switch auraStage {
         case .low where !practicedToday:
-            lines.append("I've been feeling a bit flat. One sit today and I'll perk right up.")
+            lines.append("I've been feeling a bit flat. One session today and I'll perk right up.")
         case .frustrated where !practicedToday:
-            lines.append("It's been a few days. A short sit is all it takes to get me going again.")
+            lines.append("It's been a few days. A short session is all it takes to get me going again.")
         case .inFlow:
             lines.append("Feel that? You keep showing up, and it shows on me.")
         case .enlightened:
@@ -507,7 +511,7 @@ struct ContentView: View {
             lines.append("Sit anyhow you like and breathe slow for a minute. That's the whole trick.")
         } else if practicedToday {
             lines.append(streak.current > 1 ? "Day \(streak.current). You already sat today, so today is done."
-                                             : "You sat today. That's the part most people skip.")
+                                             : "You meditated today. That's the part that counts.")
             lines.append("Nothing more to do here. Come back tomorrow and we'll keep it going.")
         } else if streak.restDayUsed {
             lines.append("Yesterday was your rest day. Sit today and your \(streak.current)-day streak carries on.")

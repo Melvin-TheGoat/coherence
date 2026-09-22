@@ -58,9 +58,13 @@ this release needs a NEW archive.
 - [ ] Signing for App Store: the three extension App IDs
       (`com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`) carry
       Family Controls (Distribution, approved 2026-09-22) and the App Group
-      `group.com.lockout.meditate808`; the app and the shield-action
-      extension carry Time Sensitive Notifications. Automatic signing adds
-      the capabilities; confirm in the archive (`tools/archive.sh`).
+      `group.com.lockout.meditate808`, and the app carries Time Sensitive
+      Notifications (an extension cannot: signing refuses it). Automatic
+      signing adds the capabilities but **cannot create an App Group**: the
+      group must first exist in Certificates, Identifiers & Profiles >
+      Identifiers > App Groups (done by the Account Holder; the beta needs
+      `group.com.lockout.meditate808.dev` too). Confirm in the archive
+      (`tools/archive.sh`).
 - [ ] Privacy policy, both copies: 808 uses Apple's Screen Time to hold the
       apps the person picks; the picks are opaque tokens even to 808; nothing
       from Screen Time leaves the phone or reaches analytics. Redeploy the

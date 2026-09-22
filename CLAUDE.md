@@ -2999,6 +2999,15 @@ are in `CONSISTENCY.md` > Build status and RELEASE_CHECKLIST.md.
   unchanged.
 - **Font names are PostScript**: `MarkerFelt-Wide`, not "Marker Felt", which
   silently fell back to the rounded system face.
+- **Signing, learned from the first phone build (2026-09-22):** automatic
+  signing (`-allowProvisioningUpdates`) registered the beta's `.dev` App
+  IDs and gave them Family Controls, but **it cannot create an App Group**:
+  every profile came back with `application-groups: []` and the build
+  failed until the group exists in the developer portal (Identifiers > App
+  Groups, the Account Holder's step). Production needs
+  `group.com.lockout.meditate808`, the beta `group.com.lockout.meditate808.dev`.
+  And **Time Sensitive Notifications is refused on an app extension**
+  ("not a valid entitlement"); it lives on the app only.
 - The camera usage string now also names Otto's FaceTime screen (live
   preview, nothing recorded), and the reminder screen stopped promising
   "nothing else, ever" on Block builds.
