@@ -32,6 +32,14 @@ struct ValleyScene: View {
     /// him rather than cutting to a different picture.
     var pose: OttoPose = .meditating
 
+    /// Move him up to the corner, small, so a list can have the meadow.
+    ///
+    /// **It is a placement on the SAME view, not a second Otto.** Swapping
+    /// in a separate small figure would tear down the Rive rig and build
+    /// another, which costs a frame of nothing and restarts his wave; moving
+    /// and resizing one view is a spring the rig plays straight through.
+    var ottoInCorner: Bool = false
+
     /// The rig, so he actually breathes while you do.
     ///
     /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
@@ -147,6 +155,12 @@ struct ValleyScene: View {
     /// taller to put the sloth himself at the same size on screen.
     private func ottoHeight(scale s: CGFloat) -> CGFloat { 186 * s * 1.17 }
 
+    /// Where he stands when a list needs the meadow. He bleeds a little past
+    /// the left gutter, the way he does on Home.
+    private static let cornerHeight: CGFloat = 104
+    private static let cornerX: CGFloat = 52
+    private static let cornerY: CGFloat = 132
+
     // MARK: - The ground and the sitter
 
     private func life(size: CGSize, scale s: CGFloat) -> some View {
@@ -160,13 +174,17 @@ struct ValleyScene: View {
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
                           y: size.height * (1 - 0.215) - 22 * s)
+                .opacity(ottoInCorner ? 0 : 1)
 
             // The artboard carries headroom above his tuft that the cutout
             // PNG does not, so it is drawn taller to put the sloth himself at
             // the same size, and hung from its own bottom edge.
-            OttoRiveView(size: ottoHeight(scale: s), pose: pose, rig: rig)
-                .position(x: size.width / 2,
-                          y: size.height * (1 - 0.24) - ottoHeight(scale: s) / 2)
+            let seated = ottoHeight(scale: s)
+            let tall = ottoInCorner ? Self.cornerHeight : seated
+            OttoRiveView(size: tall, pose: pose, rig: rig)
+                .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
+                          y: ottoInCorner ? Self.cornerY
+                                          : size.height * (1 - 0.24) - seated / 2)
         }
         .frame(width: size.width, height: size.height)
     }
