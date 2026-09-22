@@ -48,9 +48,11 @@ h2{font-size:15px;margin:36px 0 4px;font-weight:800}
 .card{background:var(--card);border-radius:20px;padding:14px;margin-bottom:10px;
  box-shadow:0 2px 8px rgba(40,25,15,.10)}
 .card.first{margin-top:44px;padding-top:44px;position:relative}
+/* Otto's head IS the portrait. No photo of you anywhere on this page. */
 .av{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);width:78px;height:78px;
- border-radius:50%;border:4px solid var(--card);z-index:3;
- background:linear-gradient(150deg,#F7DDBE,#EBBE94);box-shadow:0 3px 9px rgba(40,25,15,.18)}
+ border-radius:50%;border:4px solid var(--card);z-index:3;overflow:hidden;
+ background:#D6E8F0 url("otto-v3/otto-head.png") center 62% / 108% no-repeat;
+ box-shadow:0 3px 9px rgba(40,25,15,.18)}
 .nm{font-size:21px;font-weight:800;text-align:center;line-height:1.1}
 .hd{font-size:11.5px;color:var(--soft);text-align:center;margin-top:3px}
 .edit{display:block;text-align:center;font-size:12.5px;font-weight:800;color:var(--amberText);margin-top:9px}
@@ -100,8 +102,8 @@ h2{font-size:15px;margin:36px 0 4px;font-weight:800}
 .plain{position:absolute;inset:0;background:var(--grass);padding:46px 14px 0}
 .ptop{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:20px;padding:14px;
  box-shadow:0 2px 8px rgba(40,25,15,.10)}
-.ptop .pav{width:54px;height:54px;border-radius:50%;flex:none;
- background:linear-gradient(150deg,#F7DDBE,#EBBE94)}
+.ptop .pav{width:54px;height:54px;border-radius:50%;flex:none;overflow:hidden;
+ background:#D6E8F0 url("otto-v3/otto-head.png") center 62% / 108% no-repeat}
 .tiles{display:flex;gap:8px;margin-top:10px}
 .tile{flex:1;background:var(--card);border-radius:18px;padding:12px 6px;text-align:center;
  box-shadow:0 2px 8px rgba(40,25,15,.10)}
@@ -117,9 +119,10 @@ h2{font-size:15px;margin:36px 0 4px;font-weight:800}
 </style></head><body>
 
 <h1>Profile: baseline, and on theme</h1>
-<p class="lede">Two fixes. <b>Every measured number is gone</b>, because the baseline has no Watch to
-measure with. And <b>the page is grass with white cards</b>, which is the decision Melvin already made
-for Home tonight, not a cream sheet with pale accents.</p>
+<p class="lede">Three fixes. <b>Every measured number is gone</b>, because the baseline has no Watch
+to measure with. <b>The page is grass with white cards</b>, which is the decision Melvin already made
+for Home tonight, not a cream sheet with pale accents. And <b>there is no profile photo anywhere:
+Otto's head is the portrait</b>, on your page and on everyone else's.</p>
 
 <div class="flag">
 <p class="note wide" style="margin-top:0"><b>The pastel was cream on cream.</b> My page ground was
@@ -151,13 +154,12 @@ Friends and Profile are still the cream pages", so this is the page he was point
         <div class="grass"></div>
         <div class="fl" style="left:6%"></div><div class="fl" style="left:22%;bottom:6px"></div>
         <div class="fl" style="right:14%"></div><div class="fl" style="right:30%;bottom:7px"></div>
-        <div class="otto"></div>
       </div>      <div class="gear">&#9881;</div>
       <div class="page">
         <div class="card first">
           <div class="av"></div>
           <div class="nm">Aziz</div>
-          <div class="hd">@aziz &middot; practising since September</div>
+          <div class="hd">@aziz &middot; practicing since September</div>
           <div class="edit">Edit profile</div>
           <div class="seen"><div class="e">&#128065;</div>
             <div class="t">Friends see your name, your streak and the sessions you post.
@@ -168,13 +170,14 @@ Friends and Profile are still the cream pages", so this is the page he was point
           <div><div class="ic" style="color:var(--blushText)">&#128293;</div><b>3</b><span>day streak</span></div>
           <div><div class="ic" style="color:var(--amberText)">&#127942;</div><b>11</b><span>longest</span></div>
           <div><div class="ic" style="color:var(--sage)">&#129496;</div><b>16</b><span>sessions</span></div>
-          <div><div class="ic" style="color:var(--soft)">&#128337;</div><b>4.2h</b><span>practised</span></div>
+          <div><div class="ic" style="color:var(--soft)">&#128337;</div><b>4.2h</b><span>practiced</span></div>
         </div>
       </div>
     </div>
-    <p class="note"><b>Your portrait sits on the first card, not on the scene.</b> On grass it needs a
-      white edge to be a portrait rather than a hole, and the card gives it one. Otto stays 60pt at
-      the far left of the band.</p>
+    <p class="note"><b>Otto is the portrait, and there is only one of him.</b> He was going to appear
+      twice, small in the band and again in the circle, so the band lost him: the circle is where he
+      lives on this page. It sits on the first card because on grass a circle needs a white edge to
+      read as a portrait rather than a hole.</p>
   </div>
 
   <div class="col">
@@ -220,7 +223,7 @@ Friends and Profile are still the cream pages", so this is the page he was point
         <div class="tiles">
           <div class="tile"><div class="ic">&#128293;</div><b>3</b><span>Streak</span></div>
           <div class="tile"><div class="ic">&#128247;</div><b>9</b><span>Posts</span></div>
-          <div class="tile"><div class="ic">&#128337;</div><b>4.2h</b><span>Practised</span></div>
+          <div class="tile"><div class="ic">&#128337;</div><b>4.2h</b><span>Practiced</span></div>
         </div>
         <div class="post"><b>Tonight</b><i>12 min &middot; Breath work</i><div class="ph"></div></div>
         <div class="post"><b>Friday</b><i>9 min &middot; Guided</i><div class="ph"></div></div>
@@ -233,6 +236,17 @@ Friends and Profile are still the cream pages", so this is the page he was point
   </div>
 
 </div>
+
+<h2>What losing the photo takes with it</h2>
+<p class="note wide"><b>The profile photo leaves the baseline entirely</b>, not just this screen:
+`setAvatar`, the photo step in Create your profile, and `CameraPicker`, which survives today only to
+take it. The selfie on a post is untouched, and it is a different thing: that is you meditating, and
+`SelfieCamera` is front-camera-only for that reason.</p>
+<p class="note wide"><b>The cost, stated plainly: every avatar in the Friends feed is the same
+sloth.</b> Name and handle carry identity instead, and each post still carries your face. If the feed
+starts reading as anonymous, the fix is sitting right there already: draw each person's Otto at THEIR
+aura stage, which `OttoAura` computes from session dates and which Melvin shipped tonight. A circle
+that shows whether someone is practicing is more use than a photo, and it costs one parameter.</p>
 
 <h2>What the Watch took with it</h2>
 <p class="note wide"><b>The awards shelf is 15, not 18.</b> It landed at 50, Deep at 75 and Rare air
