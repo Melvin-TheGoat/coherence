@@ -209,6 +209,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
         phoneFinishTask?.cancel()
         phoneFinishTask = nil
         stopAudio(reason: "phone session ended")
+        // The silence was for the meditation and the meditation is over.
+        // `restoreIfOurs` is the guard that matters: a Focus the user had on
+        // before they sat down is theirs, and 808 must not switch it off.
+        Task { await FocusShortcut.shared.restoreIfOurs() }
         active = nil
         currentAttemptID = nil
 
@@ -431,6 +435,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // stop the phone audio now. For timed sessions the parallel timer may
             // have already stopped it; stopAudio() is idempotent.
             stopAudio(reason: "payload landed")
+            Task { await FocusShortcut.shared.restoreIfOurs() }
             // The session is over — take down the mid-session screen.
             active = nil
             currentAttemptID = nil

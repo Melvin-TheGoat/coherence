@@ -60,7 +60,21 @@
 	<array>
 		<string>instagram-stories</string>
 		<string>instagram</string>
+		<string>shortcuts</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.lockout.meditate808</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>coherence808</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSFocusStatusUsageDescription</key>
+	<string>808 checks whether a Focus is already on so the switch on the session screen tells you the truth about your phone.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

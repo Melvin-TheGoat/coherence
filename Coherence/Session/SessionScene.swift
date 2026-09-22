@@ -26,6 +26,15 @@ struct ValleyScene: View {
     /// 0 when the sit begins, 1 when it ends. Everything below reads this.
     var progress: Double
 
+    /// The rig, so he actually breathes while you do.
+    ///
+    /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
+    /// model has to survive every redraw of the scene, and the scene redraws
+    /// once a second for the clock. If the .riv is missing or refuses to
+    /// load, `OttoRiveView` falls back to the still art with a scale pulse,
+    /// so a bad export costs motion and never a screen.
+    @StateObject private var rig = OttoRigHolder()
+
     private var day: DayLight { DayLight.at(progress) }
 
     var body: some View {
@@ -80,12 +89,26 @@ struct ValleyScene: View {
                 fill: day.sun, glow: day.glow, scale: s)
     }
 
+    /// The clouds drift, slowly, and they drift off `progress` rather than
+    /// off a timer.
+    ///
+    /// Two reasons. One number already drives everything else on this screen,
+    /// so the sky cannot come adrift from the sun. And a ten minute sit is
+    /// long enough that a completely static sky starts to read as a
+    /// screenshot; a cloud that has visibly moved when you next look up is
+    /// the cheapest possible proof that time is passing. They cross about a
+    /// fifth of the screen over a whole session, which is under a pixel a
+    /// second: findable if you look for it, invisible if you do not.
     private func clouds(scale s: CGFloat, size: CGSize) -> some View {
-        ZStack(alignment: .topLeading) {
-            cloud(w: 132 * s, h: 68 * s, x: -0.09 * size.width, y: 0.06 * size.height)
-            cloud(w: 158 * s, h: 82 * s, x: size.width - 158 * s + 0.11 * size.width,
+        let drift = progress * 0.20 * size.width
+        return ZStack(alignment: .topLeading) {
+            cloud(w: 132 * s, h: 68 * s,
+                  x: -0.09 * size.width + drift, y: 0.06 * size.height)
+            cloud(w: 158 * s, h: 82 * s,
+                  x: size.width - 158 * s + 0.11 * size.width + drift * 0.62,
                   y: 0.17 * size.height)
-            cloud(w: 96 * s, h: 50 * s, x: 0.12 * size.width, y: 0.31 * size.height)
+            cloud(w: 96 * s, h: 50 * s,
+                  x: 0.12 * size.width + drift * 1.35, y: 0.31 * size.height)
                 .opacity(progress > 0.35 ? 1 : 0)
         }
         .frame(width: size.width, height: size.height, alignment: .topLeading)
@@ -112,6 +135,12 @@ struct ValleyScene: View {
         .opacity(day.starOpacity)
     }
 
+    /// The drawn height of the rig. `SitLayout` measures Otto as 186 units
+    /// because that is what the flat cutout occupies; the artboard carries
+    /// roughly a sixth again in empty sky above his tuft, so it is drawn
+    /// taller to put the sloth himself at the same size on screen.
+    private func ottoHeight(scale s: CGFloat) -> CGFloat { 186 * s * 1.17 }
+
     // MARK: - The ground and the sitter
 
     private func life(size: CGSize, scale s: CGFloat) -> some View {
@@ -126,12 +155,12 @@ struct ValleyScene: View {
                 .position(x: size.width / 2,
                           y: size.height * (1 - 0.215) - 22 * s)
 
-            Image("OttoSit")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 186 * s, height: 186 * s)
+            // The artboard carries headroom above his tuft that the cutout
+            // PNG does not, so it is drawn taller to put the sloth himself at
+            // the same size, and hung from its own bottom edge.
+            OttoRiveView(size: ottoHeight(scale: s), pose: .meditating, rig: rig)
                 .position(x: size.width / 2,
-                          y: size.height * (1 - 0.24) - 93 * s)
+                          y: size.height * (1 - 0.24) - ottoHeight(scale: s) / 2)
         }
         .frame(width: size.width, height: size.height)
     }

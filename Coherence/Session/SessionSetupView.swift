@@ -34,66 +34,125 @@ struct SessionSetupView: View {
     @State private var countdown: Int?
     @State private var countdownTask: Task<Void, Never>?
 
+    @ObservedObject private var focus = FocusShortcut.shared
+    @State private var showFocusSetup = false
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
+        GeometryReader { geo in
+            ZStack {
+                // The same valley, at the top of its day. Begin does not
+                // change scenes: the controls clear, the ring fades up, and
+                // the sun starts moving. Otto sits exactly where he will be
+                // sitting a second later.
+                ValleyScene(progress: 0)
 
-            Text("Ready when\nyou are.")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
+                let day = DayLight.at(0)
+
+                VStack(spacing: 6) {
+                    Text("Ready when you are.")
+                        .font(DisplayFont.display(24, .heavy))
+                        .foregroundStyle(day.ink)
+                    Text("Start your YouTube or Spotify audio first. 808 stays open the whole time.")
+                        .font(AppFont.caption)
+                        .foregroundStyle(day.inkSoft)
+                }
                 .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 24)
+                .position(x: geo.size.width / 2, y: geo.size.height * 0.175)
 
-            Text("Sit for as long as you like. End it whenever you're done.")
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 12)
+                VStack(spacing: 8) {
+                    Spacer()
+                    Button { showOptions = true } label: {
+                        SitPill(glyph: "\u{266A}", label: "Sound") {
+                            HStack(spacing: 2) {
+                                Text(SoundCatalog.title(for: soundID.isEmpty ? nil : soundID) ?? "Silence")
+                                    .font(AppFont.caption.weight(.semibold))
+                                    .foregroundStyle(AppColor.textSecondary)
+                                Text("\u{203A}")
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(AppColor.textSecondary)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
 
-            // iOS gives apps no way to switch on Do Not Disturb, so the best
-            // the app can do is say where the switch is (asked for by the
-            // first testers, 2026-09-12).
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "moon.fill")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AppColor.calmAccent)
-                    .padding(.top, 2)
-                Text("Nothing should interrupt. Swipe down from the top right and turn on Do Not Disturb.")
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .multilineTextAlignment(.leading)
+                    silenceControl(ink: day.ink)
+
+                    Button("Begin", action: begin)
+                        .buttonStyle(PrimaryButtonStyle())
+                        .padding(.top, 4)
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 22)
             }
-            .padding(.horizontal, 14).padding(.vertical, 10)
-            .background(AppColor.backgroundSecondary.opacity(0.7),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .padding(.top, 18)
-
-            Spacer()
-
-            Button("Begin", action: begin)
-                .buttonStyle(PrimaryButtonStyle())
-
-            // The defaults, stated rather than asked. Tap to change them.
-            Button { showOptions = true } label: {
-                Text(defaultsLine)
-                    .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.vertical, 12)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.plain)
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-        .padding(AppMetrics.screenPadding)
-        .padding(.bottom, 6)
-        .screenBackground()
+        .ignoresSafeArea()
         .overlay { if countdown != nil { countdownOverlay } }
-        .overlay(alignment: .topTrailing) {
-            Button("Cancel") { dismiss() }
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(AppMetrics.screenPadding)
+        .overlay(alignment: .topLeading) {
+            Button("Cancel") { cancel() }
+                .font(AppFont.callout.weight(.semibold))
+                .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
+                .padding(.horizontal, 20).padding(.top, 14)
         }
         .sheet(isPresented: $showOptions) { SessionOptionsView(soundID: $soundID) }
+        .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
+        // NOT a permission prompt on appear. Somebody who opened this screen
+        // is about to close their eyes, and a system dialog is the single
+        // worst thing to put in front of them. The prompt comes when they
+        // reach for the switch, which is the moment it is about anything.
+        .onAppear { focus.refreshStatus() }
+        // They can change Focus from Control Center while this screen is up,
+        // so the switch is re-read rather than remembered.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { focus.refreshStatus() }
+        }
+    }
+
+    /// The switch, or the sentence, depending on whether the shortcut that
+    /// makes a switch possible exists on this build. See `FocusShortcut`:
+    /// no app can turn on Do Not Disturb, and a switch that cannot work must
+    /// not be drawn.
+    @ViewBuilder
+    private func silenceControl(ink: Color) -> some View {
+        if FocusShortcut.isConfigured {
+            Button {
+                Task {
+                    guard focus.installed else { showFocusSetup = true; return }
+                    await focus.requestStatusAccess()
+                    if focus.silenced { await focus.restoreIfOurs() }
+                    else { await focus.silence() }
+                }
+            } label: {
+                SitPill(glyph: "\u{263E}",
+                        label: focus.silenced ? "Notifications off" : "Silence notifications",
+                        tint: focus.silenced ? AppColor.calmAccent : AppColor.textPrimary) {
+                    Toggle("", isOn: .constant(focus.silenced))
+                        .labelsHidden()
+                        .tint(AppColor.calmAccent)
+                        .allowsHitTesting(false)
+                        .scaleEffect(0.82)
+                        .frame(width: 42)
+                }
+            }
+            .buttonStyle(.plain)
+        } else {
+            Text("Turn on Do Not Disturb first, from Control Center.")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(ink.opacity(0.75))
+                .multilineTextAlignment(.center)
+                .padding(.top, 2)
+        }
+    }
+
+    /// Cancelling with 808's own silence still on would leave the phone quiet
+    /// for a sit that never happened.
+    private func cancel() {
+        Task {
+            await focus.restoreIfOurs()
+            dismiss()
+        }
     }
 
     /// "Open · Silence ›" — exactly what happens if you just tap Begin.
@@ -418,6 +477,99 @@ struct SessionOptionsView: View {
             tone.playNature(np)
         } else if let gp = GuidedCatalog.preset(id: id) {
             tone.playGuided(gp)
+        }
+    }
+}
+
+/// One control on the meadow: a glyph, a label, and whatever the row owns on
+/// the right. Cream rather than clear, because the meadow underneath is a
+/// mid-tone green with flowers in it and text has to survive that.
+struct SitPill<Trailing: View>: View {
+    let glyph: String
+    let label: String
+    var tint: Color = AppColor.textPrimary
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(glyph)
+                .font(.system(size: 15))
+                .foregroundStyle(tint.opacity(0.65))
+                .frame(width: 18)
+            Text(label)
+                .font(DisplayFont.display(14.5))
+                .foregroundStyle(tint)
+            Spacer(minLength: 0)
+            trailing
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
+        .background(AppColor.backgroundPrimary.opacity(0.94),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+    }
+}
+
+/// The one-time add.
+///
+/// Two taps rather than the four-step app automation an earlier draft asked
+/// for: a shortcut published to a signed iCloud link installs from the link
+/// itself, with no Allow Untrusted Shortcuts detour. The sheet never appears
+/// again afterwards.
+struct FocusSetupSheet: View {
+    @ObservedObject private var focus = FocusShortcut.shared
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("One-time setup")
+                .font(DisplayFont.display(22, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+            Text("Apple only lets Shortcuts switch Do Not Disturb. Add ours once and this button works from then on.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 10)
+
+            VStack(alignment: .leading, spacing: 12) {
+                step(1, "Tap Add shortcut below.")
+                step(2, "Shortcuts opens. Tap Add. Do it for both.")
+                step(3, "You land back here, silenced.")
+            }
+            .padding(.top, 18)
+
+            Spacer()
+
+            Button("Add shortcut") {
+                Task {
+                    await focus.openInstall(FocusShortcut.silenceInstallURL)
+                    focus.markInstalled()
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+
+            Button("Not now") { dismiss() }
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+        }
+        .padding(AppMetrics.screenPadding)
+        .screenBackground()
+        .presentationDetents([.height(380)])
+    }
+
+    private func step(_ n: Int, _ text: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(n)")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.accentGoldText)
+                .frame(width: 20, height: 20)
+                .background(Circle().fill(AppColor.trace))
+            Text(text)
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
