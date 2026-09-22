@@ -6,11 +6,17 @@ import SwiftUI
 /// Built from `mockups/session-v3.html`. Three decisions carry the screen and
 /// all three are deliberate:
 ///
-/// **The ring is always on screen** — empty on arrival, filling through the
-/// sit, closed at the end. **The figure lives at its centre**, and it appears
-/// only on arrival and on a tap, because a countdown you cannot look away
-/// from is the opposite of the thing being sold. **No biometrics, ever**, on
-/// this screen: evidence comes after, not during.
+/// **The clock is on the whole time** (Aziz, 2026-09-21), inside a ring that
+/// closes over the sit. It used to hide itself after the opening and come
+/// back for three seconds on a tap, on the argument that a countdown you
+/// cannot look away from is the opposite of the thing being sold. It is not:
+/// a timer you have to go looking for is a timer you keep touching the screen
+/// for, which is worse. **No biometrics, ever**, on this screen: evidence
+/// comes after, not during.
+///
+/// **The ring is a medallion in the sky, not a hoop around him.** At 79% of
+/// the width it ran 88pt into Otto's face on a tall phone and 137pt on a
+/// short one. `SitLayout` hangs it off the top of his head instead.
 ///
 /// The sun does what a progress bar would, and cannot be read precisely,
 /// which is exactly right for somebody mid-sit.
@@ -26,8 +32,6 @@ struct SessionActiveView: View {
     var onEnd: () -> Void
 
     @State private var now = Date()
-    /// The number is showing until this moment, then it goes back to sleep.
-    @State private var revealedUntil: Date?
 
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -39,8 +43,6 @@ struct SessionActiveView: View {
     /// enough to read two lines and the plan chip without hurrying, short
     /// enough that nobody is still reading a minute in.
     private static let arrivalSec = 9.0
-    /// How long a tap buys you.
-    private static let revealSec = 3.0
 
     private var elapsed: Int { max(0, Int(now.timeIntervalSince(startedAt))) }
 
@@ -61,24 +63,12 @@ struct SessionActiveView: View {
     /// The clock has run out. Whatever is measuring is wrapping up.
     private var finishing: Bool { plannedDurationSec != nil && displaySeconds == 0 }
 
-    private var showingNumber: Bool {
-        // Nothing at the end. The closing line is the whole message, and a
-        // 0:00 under it would be the screen counting something that is over.
-        if finishing { return false }
-        // An open-ended sit arrives at 0:00, which reads as a stopped clock
-        // rather than a fresh one. It has nothing to count toward, so it
-        // opens with an empty ring and shows its count only when asked.
-        if arriving, plannedDurationSec != nil { return true }
-        if let until = revealedUntil { return now < until }
-        return false
-    }
-
     private var day: DayLight { DayLight.at(progress) }
 
     var body: some View {
         GeometryReader { geo in
-            let ring = geo.size.width * 0.79
-            let ringCentreY = geo.size.height * 0.395
+            let ring = SitLayout.ringDiameter(in: geo.size)
+            let ringCentreY = SitLayout.ringCentreY(in: geo.size)
 
             ZStack {
                 ValleyScene(progress: progress)
@@ -91,13 +81,13 @@ struct SessionActiveView: View {
                     .frame(width: ring, height: ring)
                     .position(x: geo.size.width / 2, y: ringCentreY)
 
+                // The figure scales with its ring so it never crowds the
+                // stroke on a small screen.
                 Text(timeString(displaySeconds))
-                    .font(DisplayFont.display(46, .heavy))
+                    .font(DisplayFont.display(ring * 0.26, .heavy))
                     .monospacedDigit()
                     .foregroundStyle(day.ink)
                     .position(x: geo.size.width / 2, y: ringCentreY)
-                    .opacity(showingNumber ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.45), value: showingNumber)
 
                 VStack(spacing: 5) {
                     Text(headline)
@@ -117,7 +107,7 @@ struct SessionActiveView: View {
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppMetrics.screenPadding)
-                .position(x: geo.size.width / 2, y: geo.size.height * 0.125)
+                .position(x: geo.size.width / 2, y: SitLayout.headlineY(in: geo.size))
                 .opacity(arriving || finishing ? 1 : 0)
                 .animation(.easeInOut(duration: 0.7), value: arriving)
                 .animation(.easeInOut(duration: 0.7), value: finishing)
@@ -131,10 +121,6 @@ struct SessionActiveView: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
-            .contentShape(Rectangle())
-            // Tap anywhere for the time. Nothing else on this screen is
-            // interactive, so the whole valley is the button.
-            .onTapGesture { revealedUntil = Date().addingTimeInterval(Self.revealSec) }
         }
         .ignoresSafeArea()
         .statusBarHidden()

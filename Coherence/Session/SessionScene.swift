@@ -32,9 +32,7 @@ struct ValleyScene: View {
         GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
-            // The mockup is a 300pt-wide panel; every pixel size below is in
-            // its units, so one scale factor ports all of them.
-            let s = w / 300
+            let s = SitLayout.scale(in: geo.size)
 
             ZStack {
                 LinearGradient(colors: day.sky,
@@ -349,6 +347,67 @@ private struct Meadow: View {
         .init(left: 0.114, bottom: 0.032, w: 33, h: 70, rotation: 8, opacity: 1.00, petal: honey, centre: rust),
         .init(left: 0.580, bottom: 0.032, w: 33, h: 70, rotation: 8, opacity: 1.00, petal: pink, centre: rose)
     ]
+}
+
+// MARK: - Layout
+
+/// Where the pieces of the sit sit, shared by the scene and the screen on top
+/// of it so the two can never disagree about how big Otto is or where his
+/// head ends.
+///
+/// The mockup is a 300 x 620 panel and every size in it is in those units, so
+/// one scale factor ports all of them. It takes the SMALLER of the two ratios:
+/// scaling by width alone made Otto eat a short phone, because he is sized by
+/// width and placed by height, and on a 667pt screen that put the top of his
+/// head 130pt higher up the frame than the composition intends.
+enum SitLayout {
+    static func scale(in size: CGSize) -> CGFloat {
+        min(size.width / 300, size.height / 620)
+    }
+
+    /// The top of Otto's head. His face is roughly the third of him below it,
+    /// and nothing may be drawn across it.
+    static func ottoTop(in size: CGSize) -> CGFloat {
+        size.height - (size.height * 0.24 + 186 * scale(in: size))
+    }
+
+    /// The clock's ring.
+    ///
+    /// It was 79% of the width, centred at 39.5% of the height, which is a
+    /// hoop AROUND him: measured, it ran 88pt into his face on a tall phone
+    /// and 137pt on a short one. It is a medallion in the sky above him now,
+    /// sized off both axes so it survives a short screen, and hung from the
+    /// top of his head rather than pinned to a fraction of the frame, so the
+    /// clearance is the same 12pt on every device.
+    static func ringDiameter(in size: CGSize) -> CGFloat {
+        min(size.width * 0.40, size.height * 0.175)
+    }
+
+    static func ringCentreY(in size: CGSize) -> CGFloat {
+        ottoTop(in: size) - 12 - ringDiameter(in: size) / 2
+    }
+
+    static func ringTop(in size: CGSize) -> CGFloat {
+        ringCentreY(in: size) - ringDiameter(in: size) / 2
+    }
+
+    /// Roughly where the Dynamic Island stops. Read as a fraction rather than
+    /// from the safe area, because the scene deliberately ignores it: the sky
+    /// has to run under the island or the band above it paints in the wrong
+    /// colour.
+    static func skyTop(in size: CGSize) -> CGFloat { size.height * 0.075 }
+
+    /// The headline block's centre: the middle of the band between the island
+    /// and the ring.
+    ///
+    /// It was a flat 12.5% of the height, which put it in the island's shadow
+    /// with nothing above it and the ring crowding it from below. Centring it
+    /// in the space it actually has drops it about 45pt on a tall phone and
+    /// still clears the ring on a short one, which a second fixed fraction
+    /// could not have done for both.
+    static func headlineY(in size: CGSize) -> CGFloat {
+        (skyTop(in: size) + ringTop(in: size)) / 2
+    }
 }
 
 // MARK: - The light

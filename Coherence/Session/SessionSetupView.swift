@@ -8,10 +8,11 @@ import SwiftData
 /// defaults, stated on one tappable line so nobody has to decide and nobody
 /// feels trapped.
 ///
-/// **No Watch is required and the screen no longer says one is.** A Watch
-/// adds the measurements; without one the sit runs here, is timed here, and
-/// is written here. The old subtitle promised hardware half the people who
-/// install 808 do not own.
+/// **Begin does not mention a Watch because Begin does not involve one.** The
+/// sit runs here, is timed here and is written here. The subtitle used to
+/// promise hardware half the people who install 808 do not own, and then
+/// promised it as an optional extra, which was still a sentence about a
+/// wristwatch on the screen somebody reads with their eyes closing.
 ///
 /// Everything this screen used to ask (belly breathing, the pulse read, the
 /// method guide, a length picker) was cut in the MVP focus pass. The tag
@@ -43,7 +44,7 @@ struct SessionSetupView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("The sit is the whole thing. Wear a Watch and 808 measures it too.")
+            Text("Sit for as long as you like. End it whenever you're done.")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)

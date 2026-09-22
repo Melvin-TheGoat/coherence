@@ -2379,18 +2379,35 @@ measures you when it can.
 - **It ends at dusk, not at dawn.** A sunrise would be a brighter screen at
   the moment somebody is most settled, and by the middle of a sit the screen
   has to be dark enough to sit with in a room at night.
-- **The ring is always on screen; the number is not.** Empty track on arrival,
-  filling through, closed at the end. The figure lives at the ring's centre
-  and appears on arrival and on a tap (three seconds), nowhere else. Tabular
+- **The clock is on the whole time** (Aziz, same day, revising the first
+  build). It used to hide after the opening and come back for three seconds
+  on a tap, on the argument that a countdown you cannot look away from is the
+  opposite of the thing being sold. It is not: a timer you have to go looking
+  for is a timer you keep touching the screen for, which is worse. Tabular
   digits, because a countdown redrawing every second must not shuffle
   sideways past 9:59.
-- **An open-ended sit gets the track and NO arc, and no number on arrival.**
-  The arc is a proportion of something and there is nothing for it to be a
-  proportion of; "0:00" on arrival reads as a stopped clock. The sun still
-  moves, over a nominal twenty minutes, as atmosphere. Nothing claims
-  otherwise.
-- **No number on the closing frame either.** "That's ten minutes" is the whole
-  message and a 0:00 under it is the screen counting something that is over.
+- **The ring is a MEDALLION IN THE SKY, not a hoop around him.** At 79% of the
+  width centred at 39.5% of the height it ran **88pt into Otto's face on a
+  tall phone and 137pt on a short one**, measured. `SitLayout` now hangs it
+  off the top of his head with a fixed 12pt clearance on every device, and
+  sizes it off BOTH axes (`min(w * 0.40, h * 0.175)`) so a short screen does
+  not have to choose between the ring and the headline. The figure scales
+  with its ring rather than sitting at a fixed 46pt.
+- **`SitLayout` is the one place the geometry lives**, shared by the scene and
+  the screen on top of it, because both need to know how big Otto is and
+  where his head ends. Its scale is `min(w / 300, h / 620)`: scaling by width
+  alone made him eat a short phone, since he is sized by width and placed by
+  height, and on a 667pt screen that put the top of his head 130pt higher up
+  the frame than the composition intends.
+- **The headline is centred in the band between the island and the ring**,
+  not pinned to a fraction of the height. A flat 12.5% sat in the Dynamic
+  Island's shadow; a second flat fraction low enough to fix that collided
+  with the ring on a short phone. Centring it in the space it actually has
+  drops it about 45pt on a tall phone and still clears on a short one.
+- **An open-ended sit gets the track and NO arc.** The arc is a proportion of
+  something and there is nothing for it to be a proportion of. Its clock
+  counts up. The sun still moves, over a nominal twenty minutes, as
+  atmosphere. Nothing claims otherwise.
 - **Composition numbers are ported as fractions, not pixels** (horizon 34%,
   Otto 24%, ring centre 39.5%, ring 79% of the width). The mockup is a 300pt
   panel, so one scale factor ports every size in the file.
@@ -2408,19 +2425,33 @@ measures you when it can.
 - `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at any moment of its
   arc, so the whole day can be reviewed without waiting ten minutes.
 
-### The Watch is optional everywhere
+### Begin never asks about a Watch
 
 **A meditation app that refuses to time a meditation because of missing
-hardware has stopped being a meditation app.** The measurements were always
-the bonus on top of sitting down and they are now exactly that.
+hardware has stopped being a meditation app.** The first pass made the Watch
+optional, checking for one and falling back. Aziz cut the check too: "dont
+even ask if a watch is there."
 
-- `SessionCoordinator.ActiveSession.engine` is `.watch` or `.phone`.
-  `watchIsReady()` decides at Begin; `beginOnPhone` runs the whole sit here
-  (clock, sound, write). `startWatchApp` failing **falls back to the phone**
-  instead of raising `PermissionBlockedView`, and the 45-second start watchdog
-  **hands the running sit over** (`convertToPhoneSession`) rather than ending
-  it: somebody has been sitting for the length of the watchdog and losing that
-  is worse than losing the readings.
+**So `begin` runs the sit on the phone, unconditionally, in the same runloop
+turn.** Gone from it: the WatchConnectivity pairing probe, `startWatchApp`,
+the workout authorization, and the 45-second watchdog that waited for a wrist
+to confirm it began (`armStartWatchdog` and `convertToPhoneSession` are
+deleted with it).
+
+**What that costs, so nobody rediscovers it: a phone-started sit is not
+measured, even for somebody wearing a Watch.** Heart, stillness and breath all
+come off the wrist and the wrist is not being launched. A Watch owner who
+wants readings starts from the Watch, which still composes its own params,
+runs the full pipeline and ships its payload here; `persist` writes it exactly
+as before. Two paths now, nothing in between: **phone starts a timer, wrist
+starts a measured session.** The asymmetry is deliberate. The phone's Begin
+belongs to the person sitting down, and it was spending up to forty-five
+seconds, a permissions screen and a whole failure vocabulary on hardware most
+people do not own.
+
+- `SessionCoordinator.ActiveSession.engine` is `.watch` or `.phone`;
+  `beginOnPhone` runs the sit here (clock, sound, write). `.watch` is now
+  reached only by `adoptRunningSession`, when the wrist announces its own.
 - `Session.source` (`"watch"` / `"phone"`, defaulted, CloudKit-safe) exists
   because **a phone sit and a session synced from another device look
   identical in storage and need opposite sentences.**
@@ -2435,7 +2466,8 @@ the bonus on top of sitting down and they are now exactly that.
   SwiftData enforces no uniqueness, by design, so nothing would have
   complained. Same reason `sessionFailedToStart` ignores a Watch refusal while
   `active?.engine == .phone`.
-- **The first-session paywall is skipped for a phone sit.** The offer is "you
+- **The first-session paywall is skipped for a phone sit**, which is now
+  every sit started here. The offer is "you
   have just seen your evidence, here is how to keep seeing it", and that sit
   produced none.
 - Copy swept of hardware it no longer needs: the Begin screen, Otto's first
