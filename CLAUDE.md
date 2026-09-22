@@ -1717,7 +1717,8 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
   `OttoBubble` and the `ottoBreathing()` scale pulse (5 s, anchored at the
   feet) in OttoView. **The bubble's lines are rule-written from the streak,
   practiced-today and rest-day state (`ottoLines`), never generated**, and
-  tapping Otto cycles them; the last line is always the breath-doorway tip.
+  tapping Otto cycles them. (The breath-doorway tip that always closed the
+  list is gone since 2026-09-22; see "OTTO JIGGLES" below.)
   A, C and D stay in the mockup. `mockups/onboarding-v3.html` (Headspace's
   nine screens, Otto's face, "N of M" counter, breathing head top-left) is
   still AWAITING MELVIN'S SIGN-OFF. Serve `mockups/` with the launch
@@ -2837,7 +2838,7 @@ Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
   kept apart from the score's gold, and it is never a closed ring with a
   number in it.
 - **He no longer waves on a tap on Home**: the wave belongs to the standing
-  pose and every stage sits. A tap still cycles his lines, and his mood leads
+  pose and every stage sits. (He jiggles instead, since 2026-09-22.) A tap still cycles his lines, and his mood leads
   them at Low, Frustrated (only if today is not yet practised), In flow and
   Enlightened.
 - **There is no lying-down Otto** (Melvin, twice now). At his lowest he sits
@@ -3022,9 +3023,9 @@ left beside a bubble).
   pinned by its bottom above his head, exactly as the Ready screen pins
   its line. A tap on him still cycles the line.
 - **The cards rise onto the near meadow** (`-17%` of the scene) rather than
-  waiting under a field of empty grass. First the aura card: "Otto is
-  curious" and a bar, with **no number on purpose**, since a second 0 to 100
-  on Home would be read as the score. Then Brainrot's three tiles in 808's
+  waiting under a field of empty grass. First the aura card: "Otto's glow",
+  its percentage and a bar. (It was "Otto is curious" with no number until
+  2026-09-22, so it could not be read as the score; see "OTTO JIGGLES".) Then Brainrot's three tiles in 808's
   facts (best streak, sessions, time meditated), This week, and Recent, now
   one card so its header is not text on a painting.
 - **The page is grass**: the background is the meadow's near colour, and the
@@ -3177,6 +3178,46 @@ are in `CONSISTENCY.md` > Build status and RELEASE_CHECKLIST.md.
 - The camera usage string now also names Otto's FaceTime screen (live
   preview, nothing recorded), and the reminder screen stopped promising
   "nothing else, ever" on Block builds.
+
+## OTTO JIGGLES, HAS TWENTY-FIVE MORE THINGS TO SAY, AND HIS GLOW IS A PERCENTAGE (2026-09-22, Melvin)
+
+- **A tap jiggles him** (`OttoJiggle`, in `OttoAuraFigure.swift`): a squash
+  from his feet and a wobble that dies away, about 0.55 s, as SwiftUI
+  keyframes on the FIGURE, so the rig and the still drawings react the same
+  and his glow and orbits hold still. Anchored at the bottom so his feet stay
+  planted; skipped under Reduce Motion. Home and the Block tab. The sit and
+  the Ready screen never jiggle: `ValleyScene.jiggle` defaults to 0 and only
+  Home bumps it. Verified from a screen recording, frame by frame, with
+  `tools/motion_strip.swift` (there is no ffmpeg on this Mac).
+- **`OttoSayings`** (`Shared/Engine/OttoAura.swift`, next to the aura, the
+  way `VerdictEngine` keeps its phrase bank): 25 lines after today's state
+  line, twelve famous meditators and thirteen of his own, alternating, started
+  at a different line each day. `OttoAuraTests` pins the rules: nothing about
+  a score, a doorway or a Watch; no em dashes; **74 characters at most**,
+  because that is two lines in his bubble on a 375pt phone and a third line
+  on Home runs into the Guide circle.
+- **The doorway line is deleted, and so is "breathe slow for a minute"**
+  (Melvin: there are endless ways to meditate, so forcing one technique on
+  people was wrong). Where he gives advice he offers several ways in.
+- **Every famous line was checked against its source first**, and several
+  famous ones are fake. Refused, so nobody adds them back: "It does not
+  matter how slowly you go as long as you do not stop" (in no edition of the
+  Analects; the real Book IX passage is the mound raised one basket of earth
+  at a time, which he says instead); "Sleep is the best meditation" (credited
+  to the Dalai Lama everywhere, sourced nowhere); sloths holding their breath
+  for forty minutes (about fifteen, per the Sloth Conservation Foundation);
+  sloths sleeping twenty hours (captive animals; wild ones sleep eight to
+  ten, which he says). Sources for the twelve that stayed are in the doc
+  comment on `OttoSayings`.
+- **The aura card says "Otto's glow" and a percentage.** Melvin: "Otto is
+  curious" did not say anything. It carried no number only so it could not
+  be read as a session's score, and the score is on its way out. The stage
+  names still drive his mood lines and his VoiceOver label. The nudge under
+  the bar lost "Nothing measured today", since a phone session measures
+  nothing and the line told people what they lacked.
+- **The Block tab's Otto matches Home by head width**, about 125pt on an
+  iPhone 17 Pro (the clipboard pose was 91pt), so the scene grew from 46 to
+  56 percent of the height to keep his line above him.
 
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 

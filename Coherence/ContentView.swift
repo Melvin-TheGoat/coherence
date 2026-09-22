@@ -35,6 +35,8 @@ struct ContentView: View {
     @State private var tab: MainTab = .home
     /// Which of Otto's lines is showing on Home; a tap on him advances it.
     @State private var ottoLineIndex = 0
+    /// Bumped by every tap on Otto, which jiggles him (`OttoJiggle`).
+    @State private var ottoPokes = 0
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
     @State private var profileDay: Date?
@@ -415,7 +417,7 @@ struct ContentView: View {
         let ottoTop = SitLayout.ottoTop(in: size)
         let ottoSize = 186 * SitLayout.scale(in: size)
         return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, aura: auraStage)
+            ValleyScene(progress: 0, aura: auraStage, jiggle: ottoPokes)
                 .frame(width: width, height: height)
 
             // The greeting, centred, where Brainrot writes its name. The
@@ -460,15 +462,18 @@ struct ContentView: View {
             .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - (topInset + 72)))
             .padding(.top, topInset + 72)
 
-            // Tapping him changes what he says.
+            // Tapping him jiggles him and changes what he says.
             Color.clear
                 .contentShape(Rectangle())
                 .frame(width: ottoSize, height: ottoSize)
                 .position(x: width / 2, y: ottoTop + ottoSize / 2)
-                .onTapGesture { ottoLineIndex += 1 }
+                .onTapGesture {
+                    ottoLineIndex += 1
+                    ottoPokes += 1
+                }
                 .accessibilityElement()
                 .accessibilityLabel("Otto")
-                .accessibilityHint("Says something about today")
+                .accessibilityHint("Says something new")
                 .accessibilityAddTraits(.isButton)
         }
         .frame(width: width, height: height)
@@ -482,8 +487,13 @@ struct ContentView: View {
 
     /// What Otto says, written by rules from the same facts the pill and the
     /// nudge read, never generated. The first line is the one that matters
-    /// today; a tap cycles through the rest, so he has more than one thing
-    /// to say without ever inventing a number.
+    /// today; a tap cycles through the rest, then through `OttoSayings`,
+    /// twenty-five lines of his own and of famous meditators, started at a
+    /// different one each day.
+    ///
+    /// Nothing here mentions a score, a doorway or a Watch (Melvin,
+    /// 2026-09-22): a session on the phone is the product, and there are
+    /// endless ways to meditate, so he never prescribes one.
     private var ottoLines: [String] {
         let cal = Calendar.current
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
@@ -499,7 +509,7 @@ struct ContentView: View {
         case .low where !practicedToday:
             lines.append("I've been feeling a bit flat. One session today and I'll perk right up.")
         case .frustrated where !practicedToday:
-            lines.append("It's been a few days. A short session is all it takes to get me going again.")
+            lines.append("It's been a few days. One short session and I'll be back on my feet.")
         case .inFlow:
             lines.append("Feel that? You keep showing up, and it shows on me.")
         case .enlightened:
@@ -508,24 +518,22 @@ struct ContentView: View {
             break
         }
         if sessions.isEmpty {
-            lines.append("Your first session starts at the plus. I'll read it back to you after.")
-            lines.append("Sit anyhow you like and breathe slow for a minute. That's the whole trick.")
+            lines.append("Your first session starts at the plus. I'll be right here.")
         } else if practicedToday {
             lines.append(streak.current > 1 ? "Day \(streak.current). You already sat today, so today is done."
                                              : "You meditated today. That's the part that counts.")
             lines.append("Nothing more to do here. Come back tomorrow and we'll keep it going.")
         } else if streak.restDayUsed {
-            lines.append("Yesterday was your rest day. Sit today and your \(streak.current)-day streak carries on.")
+            lines.append("Rest day yesterday. Sit today and your \(streak.current)-day streak carries on.")
         } else if streak.current > 1 {
             lines.append("Day \(streak.current). Sit whenever you're ready, I'll be here.")
             if streak.current == streak.longest, streak.current >= 3 {
                 lines.append("\(streak.current) in a row is your longest yet. No rush today either.")
             }
         } else {
-            lines.append("Whenever you're ready. A few slow breaths and a sit, that's all today asks.")
+            lines.append("Whenever you're ready. One session is all today asks.")
         }
-        lines.append("Slow your breath for the first minute. That's the doorway the score looks for.")
-        return lines
+        return lines + OttoSayings.forDay(Date())
     }
 
     /// Otto's stage today, from the same session dates as the streak.
@@ -592,17 +600,27 @@ struct ContentView: View {
         .accessibilityLabel("How to meditate guide")
     }
 
-    /// How Otto is doing, and the bar that fills as the practice keeps up.
+    /// How bright Otto is, as a percentage, and the bar that fills as the
+    /// practice keeps up.
     ///
-    /// **No number on it, on purpose.** The score is already a 0 to 100 on
-    /// every session, and a second 0 to 100 on Home would be read as that
-    /// one. His name for the stage and a bar say the same thing without
-    /// borrowing the score's shape.
+    /// **A percentage, not a mood** (Melvin, 2026-09-22: "Otto is curious"
+    /// did not say anything). It carried no number at first so it could not
+    /// be read as a session's score; the score is on its way out, and a
+    /// number says plainly how much glow there is to keep. The stage names
+    /// still steer what he says and what VoiceOver calls him.
     private var auraCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(Self.auraTitle(auraStage))
-                .font(DisplayFont.display(20, .heavy))
-                .foregroundStyle(AppColor.textPrimary)
+            HStack(alignment: .firstTextBaseline) {
+                Text("Otto's glow")
+                    .font(DisplayFont.display(20, .heavy))
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer(minLength: 8)
+                Text("\(auraLevel)%")
+                    .font(DisplayFont.display(22, .heavy))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+            }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(AppColor.trace)
@@ -620,17 +638,6 @@ struct ContentView: View {
         }
         .card(padding: 18)
         .accessibilityElement(children: .combine)
-    }
-
-    static func auraTitle(_ stage: OttoAura.Stage) -> String {
-        switch stage {
-        case .low: return "Otto is feeling low"
-        case .frustrated: return "Otto is a little grumpy"
-        case .curious: return "Otto is curious"
-        case .progressing: return "Otto is settling in"
-        case .inFlow: return "Otto is in flow"
-        case .enlightened: return "Otto is glowing"
-        }
     }
 
     /// Brainrot's three tiles, in 808's facts: the best streak (the current
@@ -760,12 +767,12 @@ struct ContentView: View {
         guard !practicedToday else { return nil }
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         if streak.restDayUsed {
-            return "Yesterday was your rest day. Sit today and your \(streak.current)-day streak carries on."
+            return "Rest day yesterday. Sit today and your \(streak.current)-day streak carries on."
         }
         if streak.current > 1 {
-            return "Nothing measured today. Your \(streak.current)-day streak is on the line."
+            return "Meditate today and your \(streak.current)-day streak keeps going."
         }
-        return sessions.isEmpty ? nil : "Nothing measured today"
+        return nil
     }
 
     private var calendarCard: some View {

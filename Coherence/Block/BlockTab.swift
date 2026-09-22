@@ -18,6 +18,8 @@ struct BlockTab: View {
 
     @State private var editing: EditRequest?
     @State private var accessDenied = false
+    /// Bumped by a tap on Otto, which jiggles him (`OttoJiggle`), as on Home.
+    @State private var ottoPokes = 0
 
     /// The editor, for an existing blocker or one made from a preset.
     struct EditRequest: Identifiable {
@@ -33,7 +35,7 @@ struct BlockTab: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.46
+            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.56
             ScrollView {
                 VStack(spacing: 0) {
                     scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
@@ -99,10 +101,16 @@ struct BlockTab: View {
 
     // MARK: - The scene
 
+    /// Otto stands as big here as he sits on Home (Melvin, 2026-09-22: "make
+    /// him a bit bigger, like the size he is in the homescreen"). Matched by
+    /// HEAD width, measured on an iPhone 17 Pro, the way the aura drawings
+    /// are matched to the rig: about 125pt on both. The clipboard pose is
+    /// taller than the seated one for the same face, so the scene grew to
+    /// keep his line above him.
     private func scene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
         let ink = Self.day.ink
-        let ottoHeight = min(200, height * 0.42)
-        let ottoBottom = height * 0.80
+        let ottoHeight = min(250, height * 0.49)
+        let ottoBottom = height * 0.85
         return ZStack(alignment: .top) {
             ValleyScene(progress: 0, showsFigure: false)
                 .frame(width: width, height: height)
@@ -110,8 +118,12 @@ struct BlockTab: View {
                 .resizable()
                 .scaledToFit()
                 .frame(height: ottoHeight)
+                .ottoJiggle(ottoPokes)
+                .contentShape(Rectangle())
+                .onTapGesture { ottoPokes += 1 }
                 .position(x: width / 2, y: ottoBottom - ottoHeight / 2)
                 .accessibilityLabel("Otto, holding his clipboard")
+                .accessibilityAddTraits(.isButton)
             VStack {
                 Spacer(minLength: 0)
                 OttoSpeech(text: ottoLine, tail: .bottom, size: 17,

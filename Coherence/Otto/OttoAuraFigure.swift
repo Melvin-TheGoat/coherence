@@ -21,11 +21,15 @@ struct OttoAuraFigure: View {
     /// The square frame Home gives him.
     var size: CGFloat
     @ObservedObject var rig: OttoRigHolder
+    /// Bumped by a tap on him: he jiggles (`OttoJiggle`). His glow and
+    /// orbits hold still, because it is Otto being poked, not the light.
+    var jiggle: Int = 0
 
     @State private var lifted = false
 
     var body: some View {
         figure
+            .ottoJiggle(jiggle)
             .frame(width: size, height: size, alignment: .bottom)
             .background { if stage >= .inFlow { glow } }
             .background { if stage >= .inFlow { AuraOrbits(size: size, half: .back, stage: stage) } }
@@ -108,6 +112,56 @@ struct OttoAuraFigure: View {
         case .enlightened: return "glowing and floating"
         }
     }
+}
+
+/// A tap on Otto jiggles him (Melvin, 2026-09-22): a quick squash from his
+/// feet and a wobble that dies away, like poking something soft. It is plain
+/// SwiftUI on the figure's frame, so the Rive rig and the still drawings
+/// react the same way, and the rig keeps breathing underneath it.
+///
+/// Anchored at the BOTTOM: he is sitting or standing on something, so his
+/// feet stay put and the top of him does the moving. Skipped under Reduce
+/// Motion, where a tap still does whatever else it does.
+struct OttoJiggle: ViewModifier {
+    let trigger: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    private struct Wobble {
+        /// Vertical scale; the width takes the opposite, so he keeps his bulk.
+        var squash: CGFloat = 1
+        /// Degrees, about his feet.
+        var tilt: Double = 0
+    }
+
+    func body(content: Content) -> some View {
+        if reduceMotion {
+            content
+        } else {
+            content.keyframeAnimator(initialValue: Wobble(), trigger: trigger) { view, wobble in
+                view
+                    .scaleEffect(x: 2 - wobble.squash, y: wobble.squash, anchor: .bottom)
+                    .rotationEffect(.degrees(wobble.tilt), anchor: .bottom)
+            } keyframes: { _ in
+                KeyframeTrack(\.squash) {
+                    CubicKeyframe(0.91, duration: 0.09)
+                    SpringKeyframe(1.05, duration: 0.16, spring: Spring(duration: 0.3, bounce: 0.4))
+                    SpringKeyframe(1.0, duration: 0.4, spring: Spring(duration: 0.35, bounce: 0.5))
+                }
+                KeyframeTrack(\.tilt) {
+                    CubicKeyframe(-4.5, duration: 0.10)
+                    CubicKeyframe(3.5, duration: 0.13)
+                    CubicKeyframe(-2.2, duration: 0.12)
+                    CubicKeyframe(1.0, duration: 0.11)
+                    CubicKeyframe(0, duration: 0.12)
+                }
+            }
+        }
+    }
+}
+
+extension View {
+    /// Jiggle when `trigger` changes. See `OttoJiggle`.
+    func ottoJiggle(_ trigger: Int) -> some View { modifier(OttoJiggle(trigger: trigger)) }
 }
 
 /// One or two tilted orbits of light around his middle. Drawn twice, once

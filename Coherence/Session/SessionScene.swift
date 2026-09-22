@@ -37,6 +37,11 @@ struct ValleyScene: View {
     /// is the sit and the Ready screen, which draw `pose`.
     var aura: OttoAura.Stage? = nil
 
+    /// Bumped by a tap on him on Home: the aura figure jiggles
+    /// (`OttoJiggle`). Nothing else sets it, so the sit and the Ready screen
+    /// never move this way.
+    var jiggle: Int = 0
+
     /// Draw the valley with nobody in it.
     ///
     /// Profile's band needs the place without the character: Otto is the
@@ -200,7 +205,7 @@ struct ValleyScene: View {
                 if !showsFigure {
                     EmptyView()
                 } else if let aura {
-                    OttoAuraFigure(stage: aura, size: tall, rig: rig)
+                    OttoAuraFigure(stage: aura, size: tall, rig: rig, jiggle: jiggle)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }
