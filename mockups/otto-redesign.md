@@ -139,11 +139,11 @@ then one run per pose in the same chat, swapping only the pose line:
     Transparent background (PNG with alpha). No ground, no shadow, no glow,
     no sparkles, no props, no text. One character only.
 
-    otto-low         Flopped forward on his belly, lying flat and deflated,
-                     chin resting on his folded arms, legs splayed behind him.
-                     Droopy half-closed eyes, brows tilted up in the middle, a
-                     small frown. Sad in a sympathetic, cute way, never
-                     distressing.
+    otto-low         Sitting slumped on the ground, cross-legged, back
+                     rounded, head drooping forward, arms hanging limp with
+                     his hands resting on the ground beside him. Heavy
+                     half-closed eyes looking down, brows tilted up in the
+                     middle, a clear frown. Tired and defeated.
     otto-frustrated  Sitting cross-legged but slouched, shoulders hunched and
                      rounded forward, arms hanging limp in his lap. Eyes half
                      open under lowered brows, glancing to one side, a small
@@ -152,6 +152,5 @@ then one run per pose in the same chat, swapping only the pose line:
                      lap. Big round eyes wide open, looking up and to one
                      side, a small hopeful smile. Curious and a little eager.
 
-A lying-down Otto was rejected once already ("looks very weird"), but that
-one was asleep. If `otto-low` reads wrong as well, the fallback for 0 percent
-is a slumped sit.
+Melvin, same day: no lying down at all. At his lowest he is still sitting,
+slumped and defeated, head drooping.
