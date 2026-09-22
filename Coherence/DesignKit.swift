@@ -117,6 +117,12 @@ struct EvidenceRow: View {
                     Spacer(minLength: 0)
                     if let rating { RatingChip(rating: rating) }
                 }
+                // Three em dashes under the words Heart, Still and Breath is
+                // a row of things that did not happen, and printing it would
+                // be the card telling somebody what they are missing. A sit
+                // nobody measured is title, length and nothing else, which is
+                // all there is to say and is not an apology.
+                if !session.isPhoneOnly {
                 Rectangle().fill(AppColor.hairline)
                     .frame(height: 1)
                     .padding(.vertical, 11)
@@ -136,6 +142,7 @@ struct EvidenceRow: View {
                         }
                         .frame(maxWidth: .infinity)
                     }
+                }
                 }
             }
             .padding(14)
@@ -159,7 +166,9 @@ struct EvidenceRow: View {
                     .padding(.bottom, 22)
             }
             // The score rides on the picture so the one gold object per card
-            // is also the first thing the eye lands on.
+            // is also the first thing the eye lands on. A sit nothing measured
+            // gets no capsule at all: an empty one is a slot waiting to be
+            // filled, and nothing is coming to fill it.
             VStack {
                 Spacer()
                 HStack {
@@ -176,6 +185,7 @@ struct EvidenceRow: View {
                 }
             }
             .padding(7)
+            .opacity(session.isPhoneOnly ? 0 : 1)
         }
         .frame(width: panelWidth)
         .frame(maxHeight: .infinity)

@@ -199,6 +199,16 @@ enum SessionStore {
         if let existing = try? context.fetch(statsDescriptor), !existing.isEmpty {
             return nil
         }
+        // And bail if the SESSION is already written, which stats alone does
+        // not catch: a sit the phone finished on its own (the Watch never
+        // answered, the watchdog handed it over) has a Session row and no
+        // stats, and a payload arriving late would otherwise insert a second
+        // row under the same id. SwiftData enforces no uniqueness, by design
+        // here, so nothing downstream would have complained.
+        let sessionDescriptor = FetchDescriptor<Session>(predicate: #Predicate { $0.id == sid })
+        if let existing = try? context.fetch(sessionDescriptor), !existing.isEmpty {
+            return nil
+        }
 
         let user = currentUser(in: context)
 
@@ -242,6 +252,47 @@ enum SessionStore {
         )
         context.insert(session)
         context.insert(stats)
+        try? context.save()
+        return session
+    }
+
+    /// Persists a session the **phone** ran on its own, with no Watch and so
+    /// no measurements at all.
+    ///
+    /// It writes a `Session` and deliberately **no `MeditationStats`**. An
+    /// empty stats row would say "we measured and found nothing", which is a
+    /// different and untrue claim: nothing was measuring. Everything derived
+    /// (the streak, the awards, the calendar, the session count) reads
+    /// Sessions, so a phone sit counts everywhere it should and simply has no
+    /// score.
+    ///
+    /// Idempotent on the session id, like `persist`, but keyed on the
+    /// `Session` rather than its stats, because there are none.
+    @discardableResult
+    static func persistPhoneSession(id: UUID,
+                                    startedAt: Date,
+                                    mode: String,
+                                    frequencyID: String? = nil,
+                                    durationSec: Int,
+                                    in context: ModelContext) -> Session? {
+        guard durationSec >= minDurationSec else { return nil }
+
+        let descriptor = FetchDescriptor<Session>(predicate: #Predicate { $0.id == id })
+        if let existing = try? context.fetch(descriptor), !existing.isEmpty { return nil }
+
+        let user = currentUser(in: context)
+        let session = Session(
+            id: id,
+            userID: user.id,
+            trackID: nil,
+            mode: mode,
+            bellyBreathing: false,
+            frequencyID: frequencyID,
+            startedAt: startedAt,
+            durationSec: durationSec,
+            source: "phone"
+        )
+        context.insert(session)
         try? context.save()
         return session
     }

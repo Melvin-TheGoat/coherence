@@ -147,7 +147,11 @@ struct SessionResultsView: View {
                             if FeatureFlags.friends { tourDim(visibilityChip, lit: nil) }
                         } else {
                             header(session)
-                            missingStatsCard
+                            // Two very different absences that look identical
+                            // in storage: nothing was measuring, or something
+                            // was and it lives on another phone.
+                            if session.isPhoneOnly { phoneSessionCard }
+                            else { missingStatsCard }
                         }
                         if FeatureFlags.friends, let photo { tourDim(photoCard(photo), lit: nil) }
                         tourDim(reflectionCard, lit: nil)
@@ -697,6 +701,30 @@ struct SessionResultsView: View {
 
     // MARK: Missing measurements
 
+    /// Shown after a sit the phone ran on its own.
+    ///
+    /// It does not apologise and it does not sell. The sit is the product;
+    /// the measurements are what a Watch adds to it, stated once, as a fact
+    /// rather than a nag, with no upgrade button under it. Telling somebody
+    /// what they lack is the failure mode this copy exists to avoid.
+    private var phoneSessionCard: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: "checkmark.seal.fill")
+                .font(.title3)
+                .foregroundStyle(AppColor.calmAccent)
+            VStack(alignment: .leading, spacing: 5) {
+                Text("You sat, and it counts.")
+                    .font(AppFont.headline)
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("It's in your streak and your history. An Apple Watch adds the heart and stillness readings on top.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .card()
+    }
+
     /// Shown when the session row exists (it syncs) but its measurements don't
     /// live on this device — results stay on the device that recorded them
     /// (they are never uploaded, by design).
@@ -954,7 +982,12 @@ struct SessionResultsView: View {
             // Leaving the unlocked first results is the moment of the offer.
             // Never inside the onboarding tour (there is no tour session any
             // more, but the environment guard is free), never for a payer.
-            if firstUnlocked, !store.entitlements.paid, tourStage == nil {
+            // A phone-only sit is exempt. The whole offer is "you have just
+            // seen your evidence, here is how to keep seeing it", and a sit
+            // with no Watch produced none: the screen behind the paywall
+            // would be selling curves this person has never been shown.
+            if firstUnlocked, !store.entitlements.paid, tourStage == nil,
+               session?.isPhoneOnly != true {
                 firstOffer.requestPaywall()
             }
         }

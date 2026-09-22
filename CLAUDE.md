@@ -2361,6 +2361,155 @@ state machine layers: Body, Head, Pose, Branch, Blink.
 - Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
   ellipse reads as a blob, and a lens with two pointed tips reads as a leaf.
 
+## THE SIT IS THE PRODUCT: A VALLEY, NO WATCH, NO ONBOARDING (2026-09-21, Aziz)
+
+Three asks in one line, and they are one change: 808 stops being an
+instrument you need hardware for and starts being a meditation app that
+measures you when it can.
+
+### The session screen is `mockups/session-v3.html`, built
+
+`Coherence/Session/SessionScene.swift` (the valley) and a rewritten
+`SessionActiveView` (the clock, the lines, End). The breathing orb is gone.
+
+- **The sun does what a progress bar would.** One number, `progress`, drives
+  the sky gradient, the sun's height and size, the mountains, the meadow, the
+  cloud colour, the stars and the light on everything alive. It cannot be read
+  precisely, which is the point.
+- **It ends at dusk, not at dawn.** A sunrise would be a brighter screen at
+  the moment somebody is most settled, and by the middle of a sit the screen
+  has to be dark enough to sit with in a room at night.
+- **The clock is on the whole time** (Aziz, same day, revising the first
+  build). It used to hide after the opening and come back for three seconds
+  on a tap, on the argument that a countdown you cannot look away from is the
+  opposite of the thing being sold. It is not: a timer you have to go looking
+  for is a timer you keep touching the screen for, which is worse. Tabular
+  digits, because a countdown redrawing every second must not shuffle
+  sideways past 9:59.
+- **The ring is a MEDALLION IN THE SKY, not a hoop around him.** At 79% of the
+  width centred at 39.5% of the height it ran **88pt into Otto's face on a
+  tall phone and 137pt on a short one**, measured. `SitLayout` now hangs it
+  off the top of his head with a fixed 12pt clearance on every device, and
+  sizes it off BOTH axes (`min(w * 0.40, h * 0.175)`) so a short screen does
+  not have to choose between the ring and the headline. The figure scales
+  with its ring rather than sitting at a fixed 46pt.
+- **`SitLayout` is the one place the geometry lives**, shared by the scene and
+  the screen on top of it, because both need to know how big Otto is and
+  where his head ends. Its scale is `min(w / 300, h / 620)`: scaling by width
+  alone made him eat a short phone, since he is sized by width and placed by
+  height, and on a 667pt screen that put the top of his head 130pt higher up
+  the frame than the composition intends.
+- **The headline is centred in the band between the island and the ring**,
+  not pinned to a fraction of the height. A flat 12.5% sat in the Dynamic
+  Island's shadow; a second flat fraction low enough to fix that collided
+  with the ring on a short phone. Centring it in the space it actually has
+  drops it about 45pt on a tall phone and still clears on a short one.
+- **An open-ended sit gets the track and NO arc.** The arc is a proportion of
+  something and there is nothing for it to be a proportion of. Its clock
+  counts up. The sun still moves, over a nominal twenty minutes, as
+  atmosphere. Nothing claims otherwise.
+- **Composition numbers are ported as fractions, not pixels** (horizon 34%,
+  Otto 24%, ring centre 39.5%, ring 79% of the width). The mockup is a 300pt
+  panel, so one scale factor ports every size in the file.
+- **The meadow is ONE `Canvas`, not 26 view hierarchies**, drawn back to
+  front: smaller and paler toward the ridge, bigger and brighter at the
+  bottom edge, which is what makes a flat field read as ground going away
+  from you. **Never reorder `Meadow.flowers`: the draw order is the depth.**
+- **The palette is hex literals and that is correct here.** The house rule
+  ("never hardcode a hex") protects themeable tokens from drifting. These are
+  keyframes of a painting interpolated every frame, an asset catalog hands
+  back a `Color` whose components cannot be read, and dusk is dusk on every
+  phone. `DayLight.at(progress)` is the one place they live.
+- Not built: the "Instagram is open again" chip. The blocker does not exist
+  yet and a screen must not advertise a feature the build does not contain.
+- `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at any moment of its
+  arc, so the whole day can be reviewed without waiting ten minutes.
+
+### Begin never asks about a Watch
+
+**A meditation app that refuses to time a meditation because of missing
+hardware has stopped being a meditation app.** The first pass made the Watch
+optional, checking for one and falling back. Aziz cut the check too: "dont
+even ask if a watch is there."
+
+**So `begin` runs the sit on the phone, unconditionally, in the same runloop
+turn.** Gone from it: the WatchConnectivity pairing probe, `startWatchApp`,
+the workout authorization, and the 45-second watchdog that waited for a wrist
+to confirm it began (`armStartWatchdog` and `convertToPhoneSession` are
+deleted with it).
+
+**What that costs, so nobody rediscovers it: a phone-started sit is not
+measured, even for somebody wearing a Watch.** Heart, stillness and breath all
+come off the wrist and the wrist is not being launched. A Watch owner who
+wants readings starts from the Watch, which still composes its own params,
+runs the full pipeline and ships its payload here; `persist` writes it exactly
+as before. Two paths now, nothing in between: **phone starts a timer, wrist
+starts a measured session.** The asymmetry is deliberate. The phone's Begin
+belongs to the person sitting down, and it was spending up to forty-five
+seconds, a permissions screen and a whole failure vocabulary on hardware most
+people do not own.
+
+- `SessionCoordinator.ActiveSession.engine` is `.watch` or `.phone`;
+  `beginOnPhone` runs the sit here (clock, sound, write). `.watch` is now
+  reached only by `adoptRunningSession`, when the wrist announces its own.
+- `Session.source` (`"watch"` / `"phone"`, defaulted, CloudKit-safe) exists
+  because **a phone sit and a session synced from another device look
+  identical in storage and need opposite sentences.**
+- **`SessionStore.persistPhoneSession` writes a Session and NO
+  `MeditationStats`.** An empty stats row claims we looked and found nothing,
+  and nothing was looking. Everything derived (streak, awards, calendar,
+  counts) reads Sessions, so a phone sit counts everywhere and simply has no
+  score.
+- **`SessionStore.persist` now bails on an existing SESSION too**, not only
+  existing stats. The watchdog handover can leave a Session with no stats, and
+  a payload landing afterwards would insert a second row under the same id;
+  SwiftData enforces no uniqueness, by design, so nothing would have
+  complained. Same reason `sessionFailedToStart` ignores a Watch refusal while
+  `active?.engine == .phone`.
+- **The first-session paywall is skipped for a phone sit**, which is now
+  every sit started here. The offer is "you
+  have just seen your evidence, here is how to keep seeing it", and that sit
+  produced none.
+- Copy swept of hardware it no longer needs: the Begin screen, Otto's first
+  Home line, the "First meditation" award, the results card ("You sat, and it
+  counts"), Save session (Time becomes the hero when there is no score).
+- **`EvidenceRow` prints no stat columns for a phone sit and no empty score
+  capsule.** Three em dashes under Heart, Still and Breath is the card telling
+  somebody what they are missing, which is the one thing this product's copy
+  never does.
+- **Still Watch-gated, and Aziz should know:** posting to Friends carries a
+  score, so a phone sit cannot be posted (Friends is off in Release anyway),
+  and the share card is built from measurements. Both need their own pass.
+- `PhoneSessionTests` locks the write path, the streak, the floor, the
+  idempotency and the late-payload case.
+
+### Onboarding is gone
+
+`RootView` shows `ContentView` on the first launch and every launch after it.
+Nothing is asked before the first sit: no interview, no projection, no Watch
+gate, no account, no tour hand-off.
+
+The numbers were the argument: of sixteen strangers who reached the first
+screen in thirty days, twelve left on the second, and two of the twelve who
+finished the whole flow ever pressed Begin. **A flow that loses three quarters
+of the people it meets before they have done the thing is not an introduction
+to the product, it is a wall in front of it.**
+
+- `Preferences.onboardingComplete` is still written, on first launch, and
+  again if sign-out clears it. Several places read it as "this install is set
+  up" (`ReviewPrompt`, the Watch's own Begin gate), and dropping a synced
+  property is a migration hazard.
+- **The screens under `Coherence/Onboarding/` are kept but unrouted.** The
+  tour anchors (`TourTargetKey`), the paywall ladder and `FirstSessionOffer`
+  still live among them and are still used. Deleting the directory is a
+  separate job and needs those three lifted out first.
+- Sign in with Apple now exists only in Settings. A returning subscriber
+  restores through Apple's own entitlement, which never needed our account.
+- **Watch `onboarding_completed` and the day-zero funnel.** Every onboarding
+  analytics screen stops firing, so the PostHog tiles built on
+  `onboarding_step` go quiet by design. The number that matters now is
+  install to first `session_completed`, which is what the flow was costing.
+
 ## THE WEBSITE CARRIES A GOOGLE "PREFERRED SOURCE" BADGE (2026-09-21, Melvin)
 
 In the footer, its own row above the copyright: the Google G and "Add us as a
@@ -2523,6 +2672,161 @@ Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
 - `OTTO_AURA=<0...100>` (DEBUG) shows any stage on a simulator with no
   history. Not built yet: the onboarding "See for yourself" slider screen from
   the mockup.
+
+## THE RIG DID NOT CONTAIN THE BREATH FIXES THE NOTES CLAIM (2026-09-21, fixed)
+
+**Read this before trusting any Rive paragraph above.** Two of them describe
+work that is not in `Otto.riv` and was not in it when the app shipped today.
+
+Measured from the editor, not inferred. `queryKeyFrames` on `Breathe` returns
+keys for exactly three objects: `ChestWave`, `ChestSit` and **`Body`**. So:
+
+- **There is no mesh.** `SitPose` is a plain `Image` with no children and no
+  vertex keys anywhere. The "THE BREATH, FOURTH PASS: the sitting pose is a
+  MESH" paragraph describes 285 vertex keyframes that do not exist.
+- **`ChestSit` is not deleted.** The same paragraph says it is. It is alive at
+  `0-2874` and it is the only thing moving the sitting chest.
+- **The third pass is not in either.** "only the chest moves" says the Body's
+  scale and lean were removed. `Body` was still keyed `sy 101.8` (literally
+  the "1.8 percent taller" the note says it removed) and `r` swinging plus and
+  minus 0.55 degrees.
+
+So the app was shipping the breath Melvin rejected twice, while the file said
+it had been fixed. **A difference map of the running app is what caught it:
+his whole outline lit up.** It had been read once as edge antialiasing, which
+is how a whole-body scale disguises itself at 1.8 percent.
+
+**The fix is the third pass, applied for real:** the eleven `Body` keyframes
+(sx, sy, r) are DELETED from `Breathe`, so the body is perfectly still, and
+the two chest patches carry the whole breath at the documented amplitudes,
+sitting 110 x 114 and standing 107 x 111. Verified the prescribed way: the
+difference map now lights the belly ellipse alone, with his head, arms, hands
+and outline black.
+
+**The lesson, which is the reason this section exists.** A note saying a fix
+shipped is not evidence that it shipped. The Rive file is cloud-only and
+mutable by anyone with the link, the export is a separate act from the edit,
+and the repo's `.riv` is a third copy. **Before building on any rig
+behaviour, query the keyframes and read the binary.** The editor cannot
+confirm its own export, and CLAUDE.md cannot confirm the editor.
+
+## OTTO GREETS YOU SEATED, AND THE ART WAS ALREADY ON THE SHEET (2026-09-21)
+
+Aziz asked for the pre-sit screen to show him "seated, daytime, smiling and
+waving". I had told him that needed a new generation. **It did not: the fifth
+figure on `mockups/otto-v3/sheet.png` is exactly that pose and had never been
+sliced out.** Check the sheet before asking for art.
+
+- `mockups/otto-v3/otto-sit-wave.png`, 418 x 434, cut from the sheet's
+  bottom-right figure by alpha bbox. Its flourish marks were BLUE, which is
+  invisible against the valley's blue sky, so they are recoloured to the amber
+  the standing wave uses, mapping each pixel's luminance onto the amber rather
+  than flooding it flat, which keeps the shading and the antialiasing.
+- **`greeting` is its own boolean, not a third value of `sitting`.** The two
+  answer different questions: `sitting` is posture, `greeting` is what he is
+  doing. The Pose layer reads both, so leaving the greeting routes to Sitting
+  or to Waving depending on `sitting`, and tapping Begin settles him into the
+  meditation posture instead of cutting to it. Verified with
+  `simulateStateMachine`: Entry to Waving, Waving to Greeting on the flag,
+  Greeting to Sitting when the sit starts.
+- Rig: asset `otto-sit-wave`, image node `GreetPose` in `Body` at
+  `y = -height / 2`, timeline `PoseGreet`, state `Greeting`, four transitions.
+  **Both traps in the notes bit again and were caught by them:** an uploaded
+  asset defaults to hosted and excluded (set 358 = 0 and 801 = true or the
+  .riv ships with no pixels), and a new child lands at the END of the list,
+  which is BEHIND everything, so `GreetPose` needed `sendToFront`.
+- Swift: `OttoPose.greeting`, `OttoRig.greeting` re-sent on bind like the
+  others, `ValleyScene(progress:pose:)`, and `OttoGreet` as the still fallback.
+- **Open: he does not breathe on the Ready screen.** `Breathe` keys only
+  `ChestWave` and `ChestSit`, and the greet pose has no chest patch yet.
+  `tools/otto_chest.py` cuts one; it is a feathered ellipse, an image node and
+  three keyframes.
+
+## THE SEATED WAVE ACTUALLY WAVES (2026-09-21, Aziz)
+
+"the sloth isnt waving at all", "i dont like him with the little yellow
+lines", "theres a white space between his moving arm and his head". All
+three were real and all three are fixed.
+
+- **The white space was baked into the art.** Not a rendering bug: an opaque
+  white wedge of 204 pixels sat in the crevice between his raised arm and his
+  cheek, and a second sliver above it. Found by connected-component labelling
+  the pale pixels, because the eye whites and the teeth match any plain
+  threshold. Filled with the median of the fur ringing it, darkened 10
+  percent so it reads as the shadow that belongs there, then blurred only
+  over that patch. **Verified by re-measuring to zero, not by looking**: the
+  first two attempts each looked plausible in a zoom and had done nothing.
+- **The flourish is gone**, marks and all. It was blue in the source, which
+  is why it was recoloured amber an hour earlier; Aziz did not want it in
+  either colour. Removed by fading alpha with blueness so no fringe is left.
+- **The arm waves**, because it is now its own layer rotating about the
+  elbow. `tools/otto_cut_arm.py` grew two things for it:
+  - **A POLYLINE cut.** The standing pose could be severed with one straight
+    line because its arm is held away from the body. The seated arm is
+    against the torso and enclosed by it, so no straight line both follows
+    the arm's contour and reaches background. The cut is four points now,
+    down the arm and out at the bottom left.
+  - **A FEATHERED overlap.** The hard-edged band is invisible at rest and
+    then swings out from behind the head as a straight diagonal lip the
+    moment the arm turns, which is exactly what it did at 12 degrees. Fading
+    the outer 70 percent of the band hands those pixels to the body beneath,
+    which is the same fur, so the join reads as shading. Checked at five
+    angles: clean through about plus or minus 8.
+  - The wave is 7 keys over 80 frames, minus 8 to plus 7 degrees, inside a
+    240-frame looping `PoseGreet`, so he waves and then rests before waving
+    again.
+- **The arm's placement cost one wrong capture, and the lesson generalises.**
+  An image's origin is where the node's position lands ON the image, so
+  moving the origin to the pivot means recomputing the position in the
+  PARENT's frame: top-left must stay at `(-w/2, -h)`, giving
+  `x = -w/2 + pivotX`, `y = -h + pivotY`. Computing it against the pose's own
+  frame instead dropped the arm on the floor.
+- **Delete the superseded asset before exporting.** The single-image
+  `otto-sit-wave` stayed embedded after its node was deleted, 185 KB of a
+  679 KB file, for art nothing draws.
+
+## THE READY SCREEN'S HEADLINE IS OTTO SAYING IT (2026-09-21, Aziz)
+
+"make the readypage like a bubble text box of the brain guy saying it". The
+headline and subtitle are gone; `OttoSpeech` carries the line instead, with
+the tail pointing down at him, so the screen has one voice rather than a
+caption above a character.
+
+- **`OttoSpeech` gained `ink`, `stroke` and `fill`, all defaulted to what it
+  did before**, so onboarding is untouched. Two reasons the session screen
+  needs them. Its warm brown ink is a different palette on a blue sky, so the
+  bubble takes the valley's own ink. And **an outline-only bubble is
+  unreadable over a painted scene**: the morning sun rose straight through
+  the glass and sat behind the word YouTube. Duolingo's see-through bubble is
+  right over onboarding's flat ground and wrong over a landscape.
+- **The bubble is pinned by its BOTTOM to just above his head**
+  (`SitLayout.ottoTop - 8`), not centred at a fraction of the screen.
+  Anchoring the centre leaves the tail short of him on a small phone and
+  buried in his tuft on a large one.
+- **The copy lost its second half and that is deliberate.** It said "808
+  stays open the whole time"; the sit screen's own arrival frame already says
+  "Keep 808 open to ensure you are meditating", which is where that matters.
+  Each screen carries the line that is actionable on it, and the bubble stays
+  two lines instead of four.
+
+## THE GREETING POSE BREATHES TOO (2026-09-21)
+
+`tools/otto_chest.py` gained the seated greeting, cut from
+`otto-sit-wave-body.png` rather than the whole pose: the arm is its own
+image that rotates, and a patch carrying part of it would swell the arm on
+every breath.
+
+`ChestGreet` is placed the way `ChestSit` is, and the arithmetic is worth
+keeping because it is not obvious. The tool prints the ellipse centre as a
+percentage, which goes straight into `originx`/`originy`; the position is
+then `(-w/2 + centreX, -h + centreY)`, which puts the patch's pixels exactly
+on top of the pose's. Same amplitude as the sitting pose, 110 by 114 with a
+3 unit lift, so the two never drift apart.
+
+**Verified with the difference map, and the first run measured a peak of 2
+because the tap had opened the setup sheet rather than the screen.** Always
+confirm which screen is actually up before reading a diff: a static sheet
+and a broken animation look identical in the numbers.
 
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 

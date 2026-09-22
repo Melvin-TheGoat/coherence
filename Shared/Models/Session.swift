@@ -18,8 +18,20 @@ final class Session {
     var frequencyID: String?
     var startedAt: Date = Date()
     var durationSec: Int = 0
+    /// What ran the session: `"phone"` or `"watch"`. Defaulted to `"watch"`
+    /// so every session written before the phone could run one on its own
+    /// still reads correctly, and so the property is CloudKit-safe.
+    ///
+    /// It is not decoration. A phone session has no `MeditationStats` at all,
+    /// and the results screen has to tell that apart from a session that
+    /// synced from another device with its measurements left behind. Those
+    /// two look identical in storage and need opposite sentences.
+    var source: String = "watch"
     var createdAt: Date = Date()
     // NO updatedAt — sessions are immutable.
+
+    /// Nothing measured this sit. The sit still happened.
+    var isPhoneOnly: Bool { source == "phone" }
 
     /// Computed accessor over the String-backed `mode`.
     var modeValue: SessionMode {
@@ -36,6 +48,7 @@ final class Session {
         frequencyID: String? = nil,
         startedAt: Date = Date(),
         durationSec: Int = 0,
+        source: String = "watch",
         createdAt: Date = Date()
     ) {
         self.id = id
@@ -46,6 +59,7 @@ final class Session {
         self.frequencyID = frequencyID
         self.startedAt = startedAt
         self.durationSec = durationSec
+        self.source = source
         self.createdAt = createdAt
     }
 }

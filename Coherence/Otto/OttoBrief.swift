@@ -411,7 +411,7 @@ enum OttoBrief {
             return "\(lead)\(sitName(focus)): \(sentence) Ask me anything about it, or what to try next time."
         }
         if sessionCount == 0 {
-            return "I'm Otto. Once you've sat with your Watch on, I can read your sessions back to you and explain the score. Until then, ask me anything about how to start."
+            return "I'm Otto. Once you've sat with a Watch on, I can read your sessions back to you and explain the score. Until then, ask me anything about how to start."
         }
         let n = min(sessionCount, maxSessions)
         return "I'm Otto. I can read your last \(n == 1 ? "session" : "\(n) sessions") back to you, explain how the score is built, and help with the basics of sitting. Everything stays on your phone."

@@ -1,0 +1,110 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · the session screen, on the branch</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#413024;--soft:#877160;--amber:#F0C47B;--amberSh:#D9A957;--sage:#93C9BE;
+ --limb:#7A5B43;--limbTop:#9C7A5D;--leaf:#66A98C;}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 70px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:24px;margin:0 0 6px;font-family:"Baloo 2",sans-serif}
+.lede{color:var(--soft);font-size:14.5px;max-width:830px;line-height:1.62;margin:0}
+.note{color:var(--soft);font-size:13.5px;line-height:1.6;width:300px;margin-top:13px}
+.note b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:24px}
+.col{width:300px;flex:none}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.p{width:300px;height:620px;border-radius:38px;overflow:hidden;position:relative;flex:none;
+ box-shadow:0 12px 34px rgba(80,55,30,.16)}
+/* the sky, three times of day, all sampled to sit beside the leaves */
+.sky-day  {background:linear-gradient(180deg,#8FBFD6 0%,#B7D6E3 42%,#DCE9E4 72%,#EFE3D2 100%)}
+.sky-dusk {background:linear-gradient(180deg,#5C7490 0%,#8E8AA0 38%,#C89C87 72%,#D9A379 100%)}
+.sky-night{background:linear-gradient(180deg,#1B2836 0%,#26313E 45%,#39383C 78%,#4A4038 100%)}
+.cloud{position:absolute;border-radius:999px;background:rgba(255,255,255,.55);filter:blur(1px)}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:rgba(255,255,255,.85)}
+/* the limb, edge to edge so it never ends in mid air */
+.limb{position:absolute;left:-6%;width:112%;height:46px;bottom:96px;background:var(--limb);
+ border-radius:50%/26px;box-shadow:inset 0 5px 0 var(--limbTop)}
+.leaf{position:absolute;width:34px;height:20px;background:var(--leaf);border-radius:60% 10% 60% 10%}
+.stem{position:absolute;height:2px;background:var(--limbTop);opacity:.8}
+.otto{position:absolute;left:50%;transform:translateX(-50%);bottom:120px;width:196px;height:196px;
+ background:url("otto-v3/otto-sit.png") center bottom/contain no-repeat}
+.otto.dusk {filter:brightness(.74) saturate(.88)}
+.otto.night{filter:brightness(.52) saturate(.72)}
+.ring{position:absolute;top:120px;left:50%;transform:translateX(-50%);width:244px;height:244px}
+.line{position:absolute;top:50px;width:100%;text-align:center;font-size:16px;font-weight:700;
+ font-family:"Baloo 2",sans-serif}
+.sub{position:absolute;top:80px;width:100%;text-align:center;font-size:12.5px}
+.num{position:absolute;top:228px;width:100%;text-align:center;font-size:42px;font-weight:800;
+ font-family:"Baloo 2",sans-serif}
+.quit{position:absolute;bottom:28px;width:100%;text-align:center;font-size:13.5px;font-weight:700}
+.chip{position:absolute;top:112px;left:50%;transform:translateX(-50%);font-size:12.5px;font-weight:700;
+ padding:8px 16px;border-radius:999px;background:var(--amber);color:var(--ink);box-shadow:0 3px 0 var(--amberSh)}
+</style></head><body>
+
+<h1>The session screen, on the branch</h1>
+<p class="lede">Otto sits where he already lives, and <b>the sky carries the time</b> so no number has to. It opens on
+a blue morning, the light goes as you settle, it is night in the middle of the sit, and the day comes back when he
+opens his eyes. The blues are picked against the leaf green that is already in the art, so it reads as the same
+world rather than a different app.</p>
+
+<div class="row">
+  <div class="col">
+    <div class="tag"><b>0:00</b> &nbsp;arrive</div>
+    <div class="p sky-day">
+      <div class="cloud" style="left:8%;top:14%;width:86px;height:22px"></div><div class="cloud" style="left:54%;top:9%;width:110px;height:26px;opacity:.7"></div><div class="cloud" style="left:32%;top:24%;width:64px;height:16px;opacity:.5"></div>
+      
+      <div class="limb"></div>
+      <div class="stem" style="left:6%;bottom:138px;width:52px;transform:rotate(-16deg)"></div><div class="leaf" style="left:2%;bottom:146px;transform:rotate(-24deg)"></div><div class="leaf" style="left:13%;bottom:132px;transform:rotate(8deg);opacity:.9"></div><div class="stem" style="right:7%;bottom:140px;width:58px;transform:rotate(14deg)"></div><div class="leaf" style="right:1%;bottom:150px;transform:rotate(22deg)"></div><div class="leaf" style="right:14%;bottom:134px;transform:rotate(-6deg);opacity:.9"></div>
+      <div class="otto "></div>
+      <div class="line" style="color:#2E4553">Ten minutes</div><div class="sub" style="color:#4E6B78">Put the phone down. It keeps time.</div><div class="quit" style="color:rgba(20,40,50,.45)">End</div>
+    </div>
+    <p class="note"><b>Morning.</b> One instruction, once: put it down. That is the sentence that makes the foreground rule feel like care rather than surveillance.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>0:20</b> &nbsp;the light goes</div>
+    <div class="p sky-dusk">
+      
+      <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.6"/><circle cx="50" cy="50" r="46" fill="none" stroke="#3E8175" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="17 289" transform="rotate(-90 50 50)" opacity=".55"/></svg>
+      <div class="limb"></div>
+      <div class="stem" style="left:6%;bottom:138px;width:52px;transform:rotate(-16deg)"></div><div class="leaf" style="left:2%;bottom:146px;transform:rotate(-24deg)"></div><div class="leaf" style="left:13%;bottom:132px;transform:rotate(8deg);opacity:.9"></div><div class="stem" style="right:7%;bottom:140px;width:58px;transform:rotate(14deg)"></div><div class="leaf" style="right:1%;bottom:150px;transform:rotate(22deg)"></div><div class="leaf" style="right:14%;bottom:134px;transform:rotate(-6deg);opacity:.9"></div>
+      <div class="otto dusk"></div>
+      <div class="quit" style="color:rgba(255,255,255,.32)">End</div>
+    </div>
+    <p class="note"><b>The sky turns itself down</b> over about twenty seconds. We deleted dark mode and this is the one place it was load-bearing: a bright screen at 10pm is a lamp in your face. It reads as dusk falling rather than a setting.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>4:12</b> &nbsp;you tapped</div>
+    <div class="p sky-night">
+      <div class="star" style="left:45%;top:13%;opacity:0.6"></div><div class="star" style="left:87%;top:7%;opacity:0.4"></div><div class="star" style="left:72%;top:10%;opacity:0.6"></div><div class="star" style="left:78%;top:7%;opacity:0.85"></div><div class="star" style="left:31%;top:6%;opacity:0.4"></div><div class="star" style="left:59%;top:30%;opacity:0.4"></div><div class="star" style="left:34%;top:9%;opacity:0.85"></div><div class="star" style="left:58%;top:7%;opacity:0.85"></div><div class="star" style="left:19%;top:18%;opacity:0.85"></div><div class="star" style="left:84%;top:41%;opacity:0.4"></div><div class="star" style="left:77%;top:41%;opacity:0.6"></div><div class="star" style="left:10%;top:18%;opacity:0.4"></div><div class="star" style="left:75%;top:12%;opacity:0.6"></div><div class="star" style="left:57%;top:13%;opacity:0.85"></div><div class="star" style="left:19%;top:40%;opacity:0.6"></div><div class="star" style="left:75%;top:15%;opacity:0.4"></div><div class="star" style="left:78%;top:40%;opacity:0.85"></div><div class="star" style="left:28%;top:27%;opacity:0.4"></div><div class="star" style="left:74%;top:8%;opacity:0.85"></div><div class="star" style="left:11%;top:43%;opacity:0.4"></div><div class="star" style="left:67%;top:38%;opacity:0.6"></div><div class="star" style="left:44%;top:33%;opacity:0.85"></div><div class="star" style="left:62%;top:27%;opacity:0.6"></div><div class="star" style="left:35%;top:15%;opacity:0.85"></div><div class="star" style="left:35%;top:9%;opacity:0.85"></div><div class="star" style="left:42%;top:37%;opacity:0.6"></div>
+      <svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="rgba(255,255,255,.16)" stroke-width="1.6"/><circle cx="50" cy="50" r="46" fill="none" stroke="#93C9BE" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="121 289" transform="rotate(-90 50 50)" opacity=".75"/></svg>
+      <div class="limb"></div>
+      <div class="stem" style="left:6%;bottom:138px;width:52px;transform:rotate(-16deg)"></div><div class="leaf" style="left:2%;bottom:146px;transform:rotate(-24deg)"></div><div class="leaf" style="left:13%;bottom:132px;transform:rotate(8deg);opacity:.9"></div><div class="stem" style="right:7%;bottom:140px;width:58px;transform:rotate(14deg)"></div><div class="leaf" style="right:1%;bottom:150px;transform:rotate(22deg)"></div><div class="leaf" style="right:14%;bottom:134px;transform:rotate(-6deg);opacity:.9"></div>
+      <div class="otto night"></div>
+      <div class="num" style="color:rgba(255,255,255,.66)">5:48</div><div class="quit" style="color:rgba(255,255,255,.28)">End</div>
+    </div>
+    <p class="note"><b>No number unless you ask.</b> A countdown is a thing to watch and watching it is the opposite of the exercise. The ring is there the whole time; a tap shows the figure for three seconds.</p>
+  </div>
+  <div class="col">
+    <div class="tag"><b>10:00</b> &nbsp;he opens his eyes</div>
+    <div class="p sky-day">
+      <div class="cloud" style="left:8%;top:14%;width:86px;height:22px"></div><div class="cloud" style="left:54%;top:9%;width:110px;height:26px;opacity:.7"></div><div class="cloud" style="left:32%;top:24%;width:64px;height:16px;opacity:.5"></div>
+      
+      <div class="limb"></div>
+      <div class="stem" style="left:6%;bottom:138px;width:52px;transform:rotate(-16deg)"></div><div class="leaf" style="left:2%;bottom:146px;transform:rotate(-24deg)"></div><div class="leaf" style="left:13%;bottom:132px;transform:rotate(8deg);opacity:.9"></div><div class="stem" style="right:7%;bottom:140px;width:58px;transform:rotate(14deg)"></div><div class="leaf" style="right:1%;bottom:150px;transform:rotate(22deg)"></div><div class="leaf" style="right:14%;bottom:134px;transform:rotate(-6deg);opacity:.9"></div>
+      <div class="otto "></div>
+      <div class="line" style="color:#2E4553">That’s ten</div><div class="sub" style="color:#4E6B78">Otto’s fine for today.</div><div class="chip">Instagram is open again</div><div class="quit" style="color:#23404E;font-weight:800">Done</div>
+    </div>
+    <p class="note"><b>The day comes back</b> and Otto opens his eyes, the only animation in the app that has to land. The shield lifting is said out loud, because that is what the ten minutes bought.</p>
+  </div>
+</div>
+<div style="max-width:830px;margin-top:26px">
+<p class="note" style="width:auto"><b>Why blue is allowed here and nowhere else.</b> The app is cream and amber and
+that does not change. This screen is scenery rather than interface: it is the one place the person is looking at a
+place instead of a product, and the sky is how the time is told. The blues were chosen against the leaf green
+already in the art, so it is Otto's world at a different hour, not a second theme.</p>
+<p class="note" style="width:auto"><b>What the sky replaces.</b> A progress bar, a countdown, and the pacer orb.
+Three pieces of interface become one thing that is also nice to look at, and none of them can be watched anxiously,
+which is the entire point.</p>
+</div>
+</body></html>

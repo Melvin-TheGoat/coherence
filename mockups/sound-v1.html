@@ -1,0 +1,150 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Sound</title>
+<style>
+:root{--paper:#FEF9F2;--ink:#413024;--soft:#877160;--amber:#F0C47B;--amberSh:#D9A957;
+ --amberText:#9B6B19;--sage:#3E8175;--trace:#F0E3D0;--hair:#F3E9DC;--card:#FFFFFF;--blushText:#AB5834}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 80px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:880px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:26px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.4px;line-height:1.62;width:330px;margin-top:13px}
+.note b{color:var(--ink)}
+.wide{width:auto;max-width:880px}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;padding:14px 18px;max-width:880px;margin-top:14px}
+.flag b{color:var(--blushText)}
+
+.p{width:330px;height:680px;border-radius:34px;overflow:hidden;position:relative;flex:none;
+ background:var(--paper);box-shadow:0 12px 34px rgba(80,55,30,.16);display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;flex:none}
+.bar .t{font-size:19px;font-weight:800}
+.bar .done{font-size:15px;font-weight:800;color:var(--amberText)}
+.scroll{flex:1;overflow:hidden;padding:0 18px 18px}
+
+.hero{display:flex;gap:13px;align-items:center;background:var(--card);border-radius:20px;padding:14px;
+ box-shadow:0 2px 7px rgba(80,55,30,.07)}
+.hero .art{width:58px;height:58px;border-radius:15px;flex:none;
+ background:linear-gradient(150deg,#F5D9A6,#E9B979);display:flex;align-items:center;justify-content:center;font-size:24px}
+.hero .k{font-size:9.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--amberText)}
+.hero .n{font-size:15.5px;font-weight:800;line-height:1.2;margin-top:2px}
+.hero .s{font-size:11.5px;color:var(--soft);margin-top:3px}
+.hero .lock{font-size:10px;font-weight:800;color:var(--soft);background:var(--trace);
+ border-radius:999px;padding:4px 9px;flex:none}
+
+.sil{display:flex;align-items:center;gap:11px;background:var(--card);border-radius:18px;padding:13px 14px;
+ margin-top:10px;border:2px solid var(--amber);box-shadow:0 2px 7px rgba(80,55,30,.07)}
+.sil .n{font-size:15px;font-weight:800;flex:1}
+.sil .s{font-size:11.5px;color:var(--soft);font-weight:600}
+.sil .badge{font-size:9.5px;font-weight:800;letter-spacing:.08em;background:var(--amber);color:var(--ink);
+ border-radius:999px;padding:4px 9px}
+
+.h{font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:var(--soft);
+ margin:18px 0 9px 2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:var(--card);border-radius:18px;padding:13px 13px 12px;position:relative;
+ border:2px solid transparent;box-shadow:0 2px 7px rgba(80,55,30,.07);min-height:86px}
+.tile.sel{border-color:var(--amber);background:#FFFBF2}
+.tile .nm{font-size:14px;font-weight:800;margin-top:7px;line-height:1.15}
+.tile .sb{font-size:10.5px;color:var(--soft);margin-top:2px;line-height:1.25}
+.tile .hz{font-size:21px;font-weight:800;color:var(--amberText);letter-spacing:-.02em;line-height:1}
+.eq{position:absolute;top:11px;right:11px;display:flex;gap:2px;align-items:flex-end;height:13px}
+.eq i{width:3px;background:var(--sage);border-radius:2px;display:block}
+.eq i:nth-child(1){height:6px}.eq i:nth-child(2){height:13px}.eq i:nth-child(3){height:9px}
+</style></head><body>
+
+<h1>Sound</h1>
+<p class="lede">Twelve sounds in one scrolling column of rows was a list to get through.
+<b>They are tiles now</b>, two across, grouped and scannable, and the tones lead with the number
+because the number is what they are.</p>
+
+<div class="flag">
+<p class="note wide" style="margin-top:0"><b>One copy fix that is not cosmetic.</b> Silence read
+"Just the measurement, or your own audio". <b>A phone sit measures nothing</b>, so that sentence is
+now false for every session started from this screen. It says "Just you, or bring your own audio".</p>
+</div>
+
+<div class="row">
+
+  <div class="col">
+    <div class="tag"><b>1</b> &nbsp;how it opens</div>
+    <div class="p">
+      <div class="bar"><div class="t">Sound</div><div class="done">Done</div></div>
+      <div class="scroll">
+        <div class="hero">
+          <div class="art">&#10024;</div>
+          <div style="flex:1">
+            <div class="k">Guided journey</div>
+            <div class="n">Manifest Your Dream Life</div>
+            <div class="s">Identity shift &middot; 25 min</div>
+          </div>
+          <div class="lock">&#128274; Locked</div>
+        </div>
+        <div class="sil">
+          <div><div class="n">Silence</div><div class="s">Just you, or bring your own audio</div></div>
+          <div class="badge">DEFAULT</div>
+        </div>
+        <div class="h">Nature</div>
+        <div class="grid"><div class="tile sel"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M8 15a5 5 0 0 1 1-9.9A6 6 0 0 1 20.5 7 4.2 4.2 0 0 1 20 15z"/><path d="M9 19l-1 3M14 19l-1 3M19 19l-1 3" stroke-linecap="round"/></svg><div class="nm">Rain</div><div class="sb">Gentle rainfall</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M2 10c3 0 3 2.6 6 2.6S11 10 14 10s3 2.6 6 2.6M2 16c3 0 3 2.6 6 2.6S11 16 14 16s3 2.6 6 2.6" stroke-linecap="round"/></svg><div class="nm">Ocean</div><div class="sb">Rolling waves</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M12 3l5 7h-3l4 6H6l4-6H7z"/><path d="M12 16v5" stroke-linecap="round"/></svg><div class="nm">Forest</div><div class="sb">Morning birds</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M12 3c1 3.5-2.5 4.5-2.5 8A2.5 2.5 0 0 0 12 13.5 2.5 2.5 0 0 0 14.5 11c0-1.2-.6-2-1-2.7C16.5 9.6 18 12 18 14a6 6 0 1 1-12 0c0-4.4 4-6.6 6-11z"/></svg><div class="nm">Campfire</div><div class="sb">Crackling fire</div></div></div>
+        <div class="h">Brainwave &middot; deepest first</div>
+        <div class="grid"><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9B6B19" stroke-width="1.7"><path d="M19 14.5A8 8 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><div class="nm">Deep Rest</div><div class="sb">Delta · 2.5 Hz</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9B6B19" stroke-width="1.7"><ellipse cx="12" cy="12" rx="9" ry="5.5"/><path d="M6 12h12" stroke-linecap="round"/></svg><div class="nm">Deep Meditation</div><div class="sb">Theta · 6 Hz</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9B6B19" stroke-width="1.7"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" stroke-linecap="round"/></svg><div class="nm">Calm</div><div class="sb">Alpha · 8 Hz</div></div></div>
+      </div>
+    </div>
+    <p class="note"><b>A tile can be read at a glance; a row has to be read.</b> Same twelve sounds,
+      but the eye lands on a shape and a word instead of scanning a column. The guided journey keeps
+      the full width because it is the only piece of content 808 owns.</p>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>2</b> &nbsp;scrolled, and one previewing</div>
+    <div class="p">
+      <div class="bar"><div class="t">Sound</div><div class="done">Done</div></div>
+      <div class="scroll">
+        <div class="h" style="margin-top:2px">Nature</div>
+        <div class="grid"><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M8 15a5 5 0 0 1 1-9.9A6 6 0 0 1 20.5 7 4.2 4.2 0 0 1 20 15z"/><path d="M9 19l-1 3M14 19l-1 3M19 19l-1 3" stroke-linecap="round"/></svg><div class="nm">Rain</div><div class="sb">Gentle rainfall</div></div><div class="tile"><span class="eq"><i></i><i></i><i></i></span><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M2 10c3 0 3 2.6 6 2.6S11 10 14 10s3 2.6 6 2.6M2 16c3 0 3 2.6 6 2.6S11 16 14 16s3 2.6 6 2.6" stroke-linecap="round"/></svg><div class="nm">Ocean</div><div class="sb">Rolling waves</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M12 3l5 7h-3l4 6H6l4-6H7z"/><path d="M12 16v5" stroke-linecap="round"/></svg><div class="nm">Forest</div><div class="sb">Morning birds</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#3E8175" stroke-width="1.7"><path d="M12 3c1 3.5-2.5 4.5-2.5 8A2.5 2.5 0 0 0 12 13.5 2.5 2.5 0 0 0 14.5 11c0-1.2-.6-2-1-2.7C16.5 9.6 18 12 18 14a6 6 0 1 1-12 0c0-4.4 4-6.6 6-11z"/></svg><div class="nm">Campfire</div><div class="sb">Crackling fire</div></div></div>
+        <div class="h">Brainwave &middot; deepest first</div>
+        <div class="grid"><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9B6B19" stroke-width="1.7"><path d="M19 14.5A8 8 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><div class="nm">Deep Rest</div><div class="sb">Delta · 2.5 Hz</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9B6B19" stroke-width="1.7"><ellipse cx="12" cy="12" rx="9" ry="5.5"/><path d="M6 12h12" stroke-linecap="round"/></svg><div class="nm">Deep Meditation</div><div class="sb">Theta · 6 Hz</div></div><div class="tile"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#9B6B19" stroke-width="1.7"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" stroke-linecap="round"/></svg><div class="nm">Calm</div><div class="sb">Alpha · 8 Hz</div></div></div>
+        <div class="h">Tones &middot; low to high</div>
+        <div class="grid"><div class="tile"><div class="hz">432</div><div class="nm">Harmony</div><div class="sb">natural tuning</div></div><div class="tile"><div class="hz">528</div><div class="nm">Manifest</div><div class="sb">transformation</div></div><div class="tile"><div class="hz">852</div><div class="nm">Visualize</div><div class="sb">intuition</div></div><div class="tile"><div class="hz">963</div><div class="nm">Awaken</div><div class="sb">higher self</div></div></div>
+      </div>
+    </div>
+    <p class="note"><b>Tapping a tile previews it and selects it</b>, which is what the rows already
+      did. The three sage bars say which one is sounding, so the grey play buttons go: a control that
+      appears twelve times is furniture, and the state it was reporting fits in a corner.</p>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>3</b> &nbsp;the tones</div>
+    <div class="p">
+      <div class="bar"><div class="t">Sound</div><div class="done">Done</div></div>
+      <div class="scroll">
+        <div class="h" style="margin-top:2px">Tones &middot; low to high</div>
+        <div class="grid"><div class="tile"><div class="hz">432</div><div class="nm">Harmony</div><div class="sb">natural tuning</div></div><div class="tile sel"><div class="hz">528</div><div class="nm">Manifest</div><div class="sb">transformation</div></div><div class="tile"><div class="hz">852</div><div class="nm">Visualize</div><div class="sb">intuition</div></div><div class="tile"><div class="hz">963</div><div class="nm">Awaken</div><div class="sb">higher self</div></div></div>
+        <div class="note" style="width:auto;margin-top:16px">
+          The frequency is the identity of these four, so it is the biggest thing on the tile and the
+          name sits under it. Ordering is still derived from the carrier, so a new preset lands in the
+          right place with no edit here.
+        </div>
+      </div>
+    </div>
+    <p class="note"><b>Selected is the profile screen's field, not a new idea:</b> a 2pt gold outline
+      over a faint gold wash, the same object the onboarding answers use. Nothing else on the sheet is
+      gold except the guided card's art and Done.</p>
+  </div>
+
+</div>
+
+<h2 style="font-size:15px;margin:38px 0 4px;font-weight:800">What I changed and why</h2>
+<p class="note wide"><b>The intro paragraph is gone.</b> It said sessions run open-ended and that
+audio from another app keeps playing. The first half now lives on the Ready screen, which is where
+somebody is deciding, and the second half is the one line Otto says. A sheet that opens with two
+sentences of explanation is a settings page.</p>
+<p class="note wide"><b>Play buttons removed, one indicator added.</b> Twelve identical grey circles
+were the loudest thing on the screen and every one of them did what tapping the row already did.</p>
+<p class="note wide"><b>Not changed:</b> the ordering rules (nature by familiarity, brainwave deepest
+first, tones low to high) are derived from the catalog and stay exactly as they are, so adding a
+preset still needs no UI edit.</p>
+
+</body></html>

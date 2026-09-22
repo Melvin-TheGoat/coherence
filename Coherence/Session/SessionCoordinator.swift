@@ -4,12 +4,20 @@ import HealthKit
 import WatchConnectivity
 import os
 
-/// iOS-side session pipeline. Sends `SessionParams` to the Watch, launches the
-/// watch workout via `startWatchApp`, receives the finished `SessionPayload`, and
-/// persists it via `SessionStore`.
+/// iOS-side session pipeline.
 ///
-/// iOS uses HealthKit ONLY to authorize + issue `startWatchApp` — it reads no
-/// biometric data. All analysis happens on the Watch; all persistence here.
+/// **`begin` runs the sit on the phone and never asks about a Watch** (Aziz,
+/// 2026-09-21). The wrist is no longer launched, waited for, or reported on
+/// when somebody taps Begin here.
+///
+/// The Watch half of this class is not dead, it is just no longer something
+/// the phone initiates: a session started ON the Watch still composes its own
+/// params, runs the full measuring pipeline, and ships a `SessionPayload`
+/// back, which `persist` writes exactly as it always did. So the two paths
+/// are now phone-starts-a-timer and wrist-starts-a-measured-session, and
+/// nothing in between.
+///
+/// iOS still holds the HealthKit entitlement and reads no biometric data.
 @MainActor
 final class SessionCoordinator: NSObject, ObservableObject {
 
@@ -60,7 +68,24 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let plannedDurationSec: Int?
         /// Human title of the sound playing, for the plan chip ("Deep Meditation").
         var soundTitle: String? = nil
+        /// Who is running the sit. Defaulted to `.watch` so every existing
+        /// construction below reads the same.
+        var engine: Engine = .watch
     }
+
+    /// **The Watch is optional.** 808 runs the sit on the phone unless a Watch
+    /// is actually there to measure it, and a Watch that fails to answer hands
+    /// the sit back rather than ending it.
+    ///
+    /// The reasoning is the product's, not the plumbing's: a meditation app
+    /// that refuses to time a meditation because of missing hardware has
+    /// stopped being a meditation app. The measurements were always the bonus
+    /// on top of sitting down, and they stay exactly that.
+    enum Engine: String { case watch, phone }
+
+    /// Finishes a timed phone sit on its own clock, since there is no wrist to
+    /// fire the authoritative end.
+    private var phoneFinishTask: Task<Void, Never>?
 
     /// Sound preset chosen at Begin, keyed by sessionID — the Watch never
     /// carries it, so the phone holds it until the payload lands.
@@ -108,115 +133,115 @@ final class SessionCoordinator: NSObject, ObservableObject {
         try? await healthStore.requestAuthorization(toShare: [workout], read: [workout])
     }
 
-    /// Begins a session: sends params to the Watch and launches its workout. If a
-    /// `soundID` is given, the phone plays that frequency tone+bed OR nature sound
-    /// during the session.
+    /// Begins a session. **It runs here. The Watch is not asked about**
+    /// (Aziz, 2026-09-21: "dont even ask if a watch is there").
+    ///
+    /// Everything that used to happen first is gone: no WatchConnectivity
+    /// pairing check, no `startWatchApp`, no workout authorization, no
+    /// forty-five second watchdog waiting for a wrist to confirm it began.
+    /// Tapping Begin starts the sit in the same runloop turn, every time, on
+    /// every phone.
+    ///
+    /// What that costs, stated plainly because nobody should rediscover it:
+    /// **a phone-started sit is no longer measured, even for somebody wearing
+    /// a Watch.** Heart rate, stillness and breath all come off the wrist, and
+    /// the wrist is not being launched. A Watch owner who wants the readings
+    /// starts from the Watch itself, which still runs the full pipeline and
+    /// still ships its payload here (`persist`). The asymmetry is deliberate:
+    /// the phone's Begin belongs to the person sitting down, and it was
+    /// spending up to forty-five seconds, a permissions screen and a whole
+    /// failure vocabulary on hardware most people do not own.
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?,
                hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
-        Task {
-            // Ask WatchConnectivity what it knows before asking HealthKit to
-            // launch anything. `startWatchApp` fails the same way whether no
-            // Watch is paired, the app was never installed on it, or it is
-            // simply out of range, and the one message we had covered all
-            // three by sending people to check permissions. These two cases
-            // are knowable up front, so name them.
-            guard WCSession.isSupported() else {
-                // No WatchConnectivity on this device at all — an iPad running
-                // the iPhone app in compatibility mode, which is a real way
-                // reviewers test. Falling through used to reach startWatchApp,
-                // fail, and show "Your Watch didn't answer" with advice to
-                // bring the Watch closer, on hardware that can never pair one.
-                // "No Watch is paired" is the honest screen we have.
-                await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
-                return
-            }
-            let wc = WCSession.default
-            // Wait for activation before reading `isPaired`, rather than
-            // skipping the check when it has not settled. Activation is async
-            // and routinely unsettled on the first Begin after launch (the
-            // same race `invitePhone` documents), and skipping meant a phone
-            // with no Watch fell through to `startWatchApp` and reported
-            // "Your Watch didn't answer" — advice to bring a Watch closer,
-            // given to someone who does not have one. Two seconds is far
-            // longer than activation takes and still invisible next to the
-            // Watch app launching.
-            if wc.activationState != .activated {
-                wc.activate()
-                for _ in 0..<20 where wc.activationState != .activated {
-                    try? await Task.sleep(for: .milliseconds(100))
-                }
-            }
-            if wc.activationState == .activated {
-                if !wc.isPaired {
-                    await MainActor.run { self.sessionFailedToStart(.watchNotPaired) }
-                    return
-                }
-                if !wc.isWatchAppInstalled {
-                    await MainActor.run { self.sessionFailedToStart(.watchAppNotInstalled) }
-                    return
-                }
-            }
+        let params = SessionParams(
+            sessionID: UUID(),
+            mode: mode,
+            trackID: trackID,
+            plannedDurationSec: plannedDurationSec,
+            bellyBreathing: false,
+            hapticsEnabled: hapticsEnabled,
+            sentAt: Date()
+        )
+        currentAttemptID = params.sessionID
+        startAcked = false
+        if let soundID { pendingSoundIDs[params.sessionID] = soundID }
+        Analytics.track(.sessionStarted(source: "phone", sound: soundID ?? "silence"))
+        beginOnPhone(params: params, soundID: soundID,
+                     headphones: headphones, reason: "phone Begin")
+    }
 
-            await requestWorkoutAuthorization()
+    /// Runs the whole sit here: the phone keeps the clock, plays the sound,
+    /// and writes the session when it ends.
+    ///
+    /// Nothing is measured, so nothing is scored, and the session is stored
+    /// with no `MeditationStats` rather than an empty one. The difference
+    /// matters: an empty row claims we looked and found nothing, and nothing
+    /// was looking.
+    private func beginOnPhone(params: SessionParams, soundID: String?,
+                              headphones: Bool, reason: String) {
+        log.info("Running session \(params.sessionID) on the phone (\(reason))")
+        startAcked = true
+        startFailure = nil
+        active = ActiveSession(id: params.sessionID,
+                               startedAt: Date(),
+                               plannedDurationSec: params.plannedDurationSec,
+                               soundTitle: SoundCatalog.title(for: soundID),
+                               engine: .phone)
+        startAudio(soundID: soundID, headphones: headphones,
+                   plannedDurationSec: params.plannedDurationSec)
+        status = "Meditating."
 
-            let params = SessionParams(
-                sessionID: UUID(),
-                mode: mode,
-                trackID: trackID,
-                plannedDurationSec: plannedDurationSec,
-                bellyBreathing: false,
-                hapticsEnabled: hapticsEnabled,
-                sentAt: Date()
-            )
-            currentAttemptID = params.sessionID
-            await MainActor.run { self.startAcked = false }
-            if let soundID { pendingSoundIDs[params.sessionID] = soundID }
-            Analytics.track(.sessionStarted(source: "phone", sound: soundID ?? "silence"))
-
-            // Deliver params over every available channel: queued user-info
-            // always; a message if reachable now; and application-context so a
-            // cold-launching watch app picks it up on activation (dedup'd by
-            // sessionID on the watch).
-            if let data = try? JSONEncoder().encode(params) {
-                let wc = WCSession.default
-                wc.transferUserInfo([WCKeys.params: data])
-                if wc.isReachable {
-                    wc.sendMessage([WCKeys.params: data], replyHandler: nil, errorHandler: nil)
-                }
-                if wc.activationState == .activated {
-                    try? wc.updateApplicationContext([WCKeys.params: data,
-                                                      WCKeys.onboarded: true])
-                }
-            }
-
-            // Launch / foreground the watch workout.
-            let config = HKWorkoutConfiguration()
-            config.activityType = .mindAndBody
-            config.locationType = .unknown
-            healthStore.startWatchApp(with: config) { [weak self] success, error in
-                Task { @MainActor in
-                    guard let self else { return }
-                    if success {
-                        self.status = "Watch launched. Meditate, then End on the Watch."
-                        // The session is live: show the phone's mid-session screen.
-                        self.active = ActiveSession(id: params.sessionID,
-                                                    startedAt: Date(),
-                                                    plannedDurationSec: plannedDurationSec,
-                                                    soundTitle: SoundCatalog.title(for: soundID))
-                        // Play the chosen sound on the phone while the Watch measures.
-                        self.startAudio(soundID: soundID, headphones: headphones,
-                                        plannedDurationSec: plannedDurationSec)
-                        self.armStartWatchdog(for: params.sessionID)
-                    } else {
-                        // Previously silent — the user tapped Begin and nothing
-                        // visibly happened. Now it's a first-class refusal.
-                        self.log.error("startWatchApp failed: \(String(describing: error))")
-                        self.sessionFailedToStart(.watchUnreachable)
-                    }
-                }
-            }
-            status = "Starting on your Watch…"
+        phoneFinishTask?.cancel()
+        guard let planned = params.plannedDurationSec else { return }
+        phoneFinishTask = Task { @MainActor [weak self] in
+            // A cancelled sleep THROWS and `try?` swallows it, which would run
+            // the finish immediately on the cancel. Bitten three times here.
+            try? await Task.sleep(for: .seconds(planned))
+            guard !Task.isCancelled else { return }
+            self?.finishPhoneSession()
         }
+    }
+
+    /// Ends and writes a phone-run sit. Mirrors what `persist` does for a
+    /// Watch payload, minus everything there is no instrument for.
+    private func finishPhoneSession() {
+        guard let current = active, current.engine == .phone else { return }
+        phoneFinishTask?.cancel()
+        phoneFinishTask = nil
+        stopAudio(reason: "phone session ended")
+        // The silence was for the meditation and the meditation is over.
+        // `restoreIfOurs` is the guard that matters: a Focus the user had on
+        // before they sat down is theirs, and 808 must not switch it off.
+        Task { await FocusShortcut.shared.restoreIfOurs() }
+        active = nil
+        currentAttemptID = nil
+
+        let duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
+        let soundID = pendingSoundIDs.removeValue(forKey: current.id)
+        let context = container.mainContext
+        guard let session = SessionStore.persistPhoneSession(
+            id: current.id,
+            startedAt: current.startedAt,
+            mode: SoundCatalog.mode(for: soundID),
+            frequencyID: soundID,
+            durationSec: duration,
+            in: context) else {
+            // Under the floor. A Begin-then-End by accident is not a broken
+            // session and must not read as one.
+            status = "Session discarded (too short)"
+            lastDiscardedID = current.id
+            lastDiscard = Discard(id: current.id, durationSec: duration)
+            Analytics.track(.sessionDiscarded(reason: "too_short",
+                                              durationBand: Analytics.durationBand(seconds: duration)))
+            return
+        }
+        lastSessionID = session.id
+        PendingSave.set(session.id)
+        status = "Saved ✓"
+        let dates = ((try? context.fetch(FetchDescriptor<Session>())) ?? []).map(\.startedAt)
+        Analytics.track(.sessionCompleted(
+            durationBand: Analytics.durationBand(seconds: session.durationSec),
+            streakBand: Analytics.streakBand(days: StreakCalculator.streak(from: dates).current)))
     }
 
     /// Starts the selected tone + bed, and (for timed sessions) schedules a phone-side
@@ -248,49 +273,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
     }
 
-    /// How long to wait for the Watch to confirm it really started.
-    ///
-    /// Generous on purpose. It has to cold-launch the app, clear HealthKit, and
-    /// spin up a workout, and on a fresh install the user may be tapping an
-    /// Allow prompt on their wrist while this runs. Firing early costs a wrong
-    /// error message; firing late costs someone a whole meditation. Neither
-    /// costs data: the Watch keeps recording either way and `persist` is
-    /// idempotent, so a session that started slowly still lands.
-    private static let startAckTimeoutSec = 45.0
-
-    /// Cancelled the instant the Watch confirms it began. See armStartWatchdog.
-    private var startWatchdog: Task<Void, Never>?
-
-    /// `startWatchApp` reporting success means iOS accepted the launch request,
-    /// not that anything is measuring.
-    ///
-    /// The phone treated it as proof: it raised the mid-session screen and
-    /// started the track, so a launch that never actually reached the Watch
-    /// looked exactly like a running session, for as long as the user sat
-    /// there. The Watch announces a genuine start with `WCKeys.started` over
-    /// both channels, so the absence of that ack is the thing to watch for.
-    private func armStartWatchdog(for sessionID: UUID) {
-        startWatchdog?.cancel()
-        startWatchdog = Task { @MainActor [weak self] in
-            try? await Task.sleep(for: .seconds(Self.startAckTimeoutSec))
-            // A cancelled sleep throws and `try?` swallows it, which would run
-            // the failure path immediately on the ack we were waiting for.
-            guard !Task.isCancelled, let self else { return }
-            guard self.currentAttemptID == sessionID else { return }
-            self.log.error("no start ack from the Watch after \(Self.startAckTimeoutSec)s")
-            self.sessionFailedToStart(.watchUnreachable, sessionID: sessionID)
-        }
-    }
-
     /// The Watch reported its ACTUAL workout start. Re-anchor the mid-session
     /// clock and the audio-stop timer to it — `startWatchApp`'s callback fires
     /// seconds before the Watch really begins (params delivery + HealthKit
     /// check + workout spin-up), which made the phone's countdown reach 0:00
     /// while the Watch still had time left.
     private func watchStarted(sessionID: UUID, at startedAt: Date) {
-        // Cancel before the guard: this ack is the proof the watchdog waits
-        // for, and it counts even if `active` has already moved on.
-        if sessionID == currentAttemptID { startWatchdog?.cancel() }
         // The ack arrived for a session the phone is not showing. Either it
         // gave up (the watchdog fired while the Watch was locked and could not
         // reach us) or the Watch is telling us it is already running something
@@ -337,10 +325,6 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
 
         log.info("Adopting the Watch's running session \(sessionID)")
-        // A different attempt may be in flight (they pressed Begin again while
-        // the Watch was still busy). Its watchdog would otherwise fire and tear
-        // down the session we just adopted.
-        startWatchdog?.cancel()
         startFailure = nil
         currentAttemptID = sessionID
         startAcked = true
@@ -375,6 +359,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// payload lands, so we never claim a result we don't have yet.
     func endActiveSession() {
         guard let active else { return }
+        // No wrist involved: this screen owns the whole session, so ending it
+        // here is the end of it.
+        if active.engine == .phone {
+            finishPhoneSession()
+            return
+        }
         stopAudio(reason: "user ended on phone")
         let wc = WCSession.default
         let msg = [WCKeys.end: active.id.uuidString]
@@ -396,6 +386,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
     private func sessionFailedToStart(_ failure: StartFailure, sessionID: UUID? = nil) {
         if let sessionID, sessionID != currentAttemptID {
             log.info("Stale start-failure for \(sessionID) ignored")
+            return
+        }
+        // The Watch is reporting a refusal for a sit that is already running
+        // here, because the watchdog gave up on it and handed it over. The
+        // session is real and somebody is in the middle of it; a blocking
+        // screen about Watch permissions would end it.
+        if active?.engine == .phone {
+            log.info("Ignoring \(failure.rawValue): this sit is running on the phone")
             return
         }
         stopAudio(reason: "start failure: \(failure.rawValue)")
@@ -437,6 +435,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // stop the phone audio now. For timed sessions the parallel timer may
             // have already stopped it; stopAudio() is idempotent.
             stopAudio(reason: "payload landed")
+            Task { await FocusShortcut.shared.restoreIfOurs() }
             // The session is over — take down the mid-session screen.
             active = nil
             currentAttemptID = nil
@@ -569,10 +568,6 @@ extension SessionCoordinator: WCSessionDelegate {
     @MainActor
     private func watchEnding(sessionID: UUID) {
         guard sessionID == currentAttemptID else { return }   // stale-safe
-        // A session that is ending obviously started. Unlike the other terminal
-        // paths this one keeps `currentAttemptID` (the payload is still coming),
-        // so the watchdog's own guard would not stop it firing mid-handover.
-        startWatchdog?.cancel()
         stopAudio(reason: "watch ending")
         active = nil
         receivingFromWatch = true
