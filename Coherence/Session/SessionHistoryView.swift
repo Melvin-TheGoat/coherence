@@ -39,6 +39,12 @@ struct ProfileTab: View {
     @State private var pendingDelete: UUID?
     /// Set one frame after the page arrives, which is what the cards rise on.
     @State private var settled = false
+    /// The week the log is showing. Starts on the one today is in.
+    @State private var weekStart = SessionCalendar.weekStart(for: Date())
+    /// Set while the week picker is up.
+    @State private var pickingWeek = false
+    /// Which way the next week arrives from. Set BEFORE the week changes.
+    @State private var back = false
 
 
     private let calendar = Calendar.current
@@ -107,6 +113,16 @@ struct ProfileTab: View {
         .onAppear {
             guard !settled else { return }
             DispatchQueue.main.async { settled = true }
+        }
+        // **A day tapped on Home opens the week it is in**, rather than
+        // filtering the log to that one day as it used to. The log is a week
+        // now, so a one-day filter inside it would be a second, invisible
+        // scope on top of the visible one. The day is consumed: Home's tap
+        // chooses a week and the week's own controls take it from there.
+        .onChange(of: selectedDay) { _, day in
+            guard let day else { return }
+            go(to: SessionCalendar.weekStart(for: day, calendar: calendar))
+            selectedDay = nil
         }
     }
 
@@ -220,7 +236,7 @@ struct ProfileTab: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(AppColor.calmAccent)
                 .padding(.top, 1)
-            Text("Friends see your name, your streak and the sessions you post. Everything marked Only you stays here.")
+            Text("Friends see your name, your streak and the sessions you post. Everything else stays here.")
                 .font(.system(size: 11, design: .rounded))
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -582,15 +598,34 @@ struct ProfileTab: View {
     // view rots, and this one was already orphaned once this week by a commit
     // that moved it off Home and claimed it lived here.
 
-    // MARK: - Log
+    // MARK: - The log, one week at a time
 
+    /// The sessions in the week on screen, newest first.
+    private var weekSessions: [Session] {
+        sessions.filter { SessionCalendar.isIn(week: weekStart, $0.startedAt, calendar: calendar) }
+    }
+
+    /// True when the week on screen is the one today is in, which is as far
+    /// forward as the log can go.
+    private var atCurrentWeek: Bool {
+        weekStart >= SessionCalendar.weekStart(for: Date(), calendar: calendar)
+    }
+
+    /// **The card IS the week** (Aziz, 2026-09-21: "the list but you see it
+    /// based off a weekly basis and then theres a calendar option to change
+    /// the specifc week seamlessly").
+    ///
+    /// It replaced a stack of nineteen full-width cards, each with a 98pt
+    /// picture panel that drew Otto whenever there was no selfie. Nineteen
+    /// identical sloths down a page is wallpaper: nothing is scannable
+    /// because every row weighs exactly what every other row weighs.
+    ///
+    /// A week rather than a month because a week is the unit this product
+    /// already thinks in (one rest day per seven, Home's seven-day strip),
+    /// and because a week of sessions fits on a screen without scrolling.
     private var logSection: some View {
-        let visible = selectedDay.map { day in
-            sessions.filter { calendar.isDate($0.startedAt, inSameDayAs: day) }
-        } ?? sessions
+        let visible = weekSessions
         let scores = SessionListSupport.scoreMap(allStats)
-        let stats = SessionListSupport.statsMap(allStats)
-        let ratings = SessionListSupport.ratingMap(reflections)
         // Reach, read off the reflection each session carries. Only when
         // there is somebody to share with: "Only you" on every row of a
         // build with no Friends tab is a label answering nobody's question.
@@ -600,77 +635,412 @@ struct ProfileTab: View {
                 return (id, r.visibility == "friends")
               }, uniquingKeysWith: { a, _ in a })
             : [:]
+        let thumbs = photoThumbs
 
-        return VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                SectionHeader(title: selectedDay.map { SessionListSupport.dayTitle($0) } ?? "All sessions")
-                    .contentTransition(.opacity)
-                    .id(selectedDay ?? .distantPast)
-                    .transition(.opacity)
-                Spacer()
-                if selectedDay != nil {
-                    Button {
-                        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
-                            selectedDay = nil
-                        }
-                    } label: {
-                        Text("Clear")
-                            .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGoldText)
-                            .padding(.horizontal, 8).padding(.vertical, 6)
-                    }
-                    .buttonStyle(CardButtonStyle())
-                }
-            }
-            if visible.isEmpty {
-                Text(sessions.isEmpty
-                     ? "No sessions yet. Tap the plus to start one."
-                     : "No sessions that day.")
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.vertical, 12)
-            } else {
-                let thumbs = photoThumbs
-                VStack(spacing: 12) {
-                    ForEach(Array(visible.enumerated()), id: \.element.id) { _, session in
-                        NavigationLink {
-                            SessionResultsView(sessionID: session.id)
-                        } label: {
-                            EvidenceRow(session: session,
-                                        score: scores[session.id],
-                                        stats: stats[session.id],
-                                        rating: ratings[session.id],
-                                        thumbnail: thumbs[session.id],
-                                        shared: FeatureFlags.friends
-                                            ? (reach[session.id] ?? false) : nil)
-                        }
-                        .buttonStyle(CardButtonStyle())
-                        .contextMenu {
-                            Button(role: .destructive) { pendingDelete = session.id } label: {
-                                Label("Delete session", systemImage: "trash")
+        return VStack(spacing: 0) {
+            weekHeader(count: visible.count,
+                       minutes: visible.reduce(0) { $0 + $1.durationSec } / 60)
+
+            // **One block, sliding as one thing.** The rows are given the
+            // week's identity so SwiftUI replaces them wholesale instead of
+            // diffing Tuesday against Tuesday, and the ZStack lets the
+            // outgoing week leave across the incoming one rather than being
+            // stacked under it. The card's height animates with them.
+            //
+            // NOT a paging `TabView`, which is the obvious tool and the
+            // wrong one: paging forces every page to a single height, and a
+            // week of one session is a fifth the height of a week of six.
+            ZStack(alignment: .top) {
+                VStack(spacing: 0) {
+                    if visible.isEmpty {
+                        // Four words and no advice. An empty week is a week
+                        // you asked to see, not a failing, and the arrows
+                        // are right there. No summary line either: "0
+                        // sessions, 0 min" is a scoreboard of nothing.
+                        Text(sessions.isEmpty
+                             ? "No sessions yet. Tap the plus to start one."
+                             : "No sessions this week.")
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 30)
+                            .overlay(alignment: .top) { rowRule }
+                    } else {
+                        ForEach(visible) { session in
+                            NavigationLink {
+                                SessionResultsView(sessionID: session.id)
+                            } label: {
+                                MinutesRow(session: session,
+                                           score: scores[session.id],
+                                           thumbnail: thumbs[session.id],
+                                           // **Only the shared ones are
+                                           // marked.** Every row carried
+                                           // "Only you" at first, which is
+                                           // nine identical capsules down
+                                           // one card: the same repetition
+                                           // that got Otto taken off these
+                                           // rows. A chip earns its space
+                                           // when it marks the exception,
+                                           // and posting is the exception.
+                                           shared: reach[session.id] == true ? true : nil)
+                                    .overlay(alignment: .top) { rowRule }
+                            }
+                            .buttonStyle(CardButtonStyle())
+                            .contextMenu {
+                                Button(role: .destructive) { pendingDelete = session.id } label: {
+                                    Label("Delete session", systemImage: "trash")
+                                }
                             }
                         }
-                        // A deleted sit closes the gap it leaves instead of
-                        // the list snapping shut under the finger.
-                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                     }
                 }
-                .padding(.horizontal, 14)
-                .background(AppColor.backgroundSecondary,
-                            in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
-                .deleteSessionDialog(pending: $pendingDelete)
-                // Filtering to a day, and clearing it, is a change of
-                // CONTENTS rather than a change of screen: the rows that
-                // stay keep their place and the rest fade out around them.
-                // A slide here would read as navigation to somewhere else.
-                .transition(.opacity)
+                .id(weekStart)
+                .transition(.asymmetric(
+                    insertion: .move(edge: back ? .leading : .trailing).combined(with: .opacity),
+                    removal: .move(edge: back ? .trailing : .leading).combined(with: .opacity)))
             }
+            // Clipped to the card, or a week slides out across the grass.
+            .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+            // **The animation is named here, on the week, not left to the
+            // `withAnimation` that changes it.** This card already sits
+            // inside `rising`, whose `.animation(_:value: settled)` governs
+            // the subtree, and the transition arrived with no animation at
+            // all: three screenshots across a deliberately three-second
+            // spring were byte-identical. An inner scope keyed to the week
+            // wins back its own motion.
+            .animation(Self.weekSpring, value: weekStart)
         }
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: selectedDay)
-        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: visible.count)
+        .background(AppColor.backgroundSecondary,
+                    in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
+        .shadow(color: AppColor.hairline, radius: 0, y: 2)
+        .deleteSessionDialog(pending: $pendingDelete)
+        // The whole card swipes, because it is the gesture anybody tries
+        // first and the arrows are small. Committed past a third of the
+        // width so a diagonal scroll never changes the week under you.
+        .highPriorityGesture(
+            DragGesture(minimumDistance: 24)
+                .onEnded { value in
+                    guard abs(value.translation.width) > abs(value.translation.height) * 1.4 else { return }
+                    if value.translation.width < -60 { step(1) }
+                    if value.translation.width > 60 { step(-1) }
+                }
+        )
+        .sheet(isPresented: $pickingWeek) {
+            WeekPicker(selected: weekStart,
+                       practiced: SessionCalendar.practicedDays(from: sessions.map(\.startedAt),
+                                                                calendar: calendar),
+                       calendar: calendar) { picked in
+                go(to: picked)
+            }
+            .presentationDetents([.height(352)])
+            .presentationDragIndicator(.visible)
+        }
+    }
+
+    /// A hairline between rows, drawn as an overlay on the row rather than a
+    /// divider between them, so a row that leaves takes its own line with it
+    /// and the list never flashes a double rule mid-animation.
+    private var rowRule: some View {
+        Rectangle().fill(AppColor.hairline).frame(height: 1)
+    }
+
+    /// Arrows, the week's name, and the two numbers a week is worth.
+    private func weekHeader(count: Int, minutes: Int) -> some View {
+        HStack(spacing: 8) {
+            weekArrow("chevron.left", enabled: true) { step(-1) }
+
+            Button { pickingWeek = true } label: {
+                // **The name travels with its rows.** It cross-faded at
+                // first, and a cross-fade between two pieces of TEXT is two
+                // weeks legible on top of each other for the length of the
+                // animation, which reads as a rendering fault rather than a
+                // change. Given the same identity and the same transition as
+                // the list, the whole card moves as one object.
+                //
+                // The fixed height is what keeps the arrows still: without
+                // it the middle grows and shrinks as the summary line comes
+                // and goes, and the two buttons bob with it.
+                VStack(spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text(SessionCalendar.weekTitle(weekStart, calendar: calendar))
+                            .font(DisplayFont.display(16, .heavy))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    if count > 0 {
+                        // The only two numbers a week is worth, and the line
+                        // the chart above is made of.
+                        (Text("\(count) session\(count == 1 ? "" : "s") · ")
+                            .foregroundStyle(AppColor.textSecondary)
+                         + Text("\(minutes) min").foregroundStyle(AppColor.accentGoldText).bold())
+                            .font(AppFont.caption)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .id(weekStart)
+                .transition(.asymmetric(
+                    insertion: .move(edge: back ? .leading : .trailing).combined(with: .opacity),
+                    removal: .move(edge: back ? .trailing : .leading).combined(with: .opacity)))
+                .frame(height: 38)
+                .clipped()
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(CardButtonStyle())
+
+            // Dimmed on the current week because there is nothing ahead of
+            // today, and awake the moment you step back.
+            weekArrow("chevron.right", enabled: !atCurrentWeek) { step(1) }
+        }
+        .padding(.horizontal, 12)
+        .padding(.top, 13)
+        .padding(.bottom, 11)
+        .animation(Self.weekSpring, value: weekStart)
+    }
+
+    private func weekArrow(_ symbol: String, enabled: Bool, _ tap: @escaping () -> Void) -> some View {
+        Button(action: tap) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 30, height: 30)
+                .background(AppColor.backgroundPrimary, in: Circle())
+        }
+        .buttonStyle(CardButtonStyle())
+        .disabled(!enabled)
+        .opacity(enabled ? 1 : 0.32)
+    }
+
+    /// The one spring the week travels on, named once so the header, the
+    /// rows and the card's height cannot disagree about how fast a week
+    /// changes.
+    static let weekSpring = Animation.spring(response: 0.38, dampingFraction: 0.86)
+
+    /// One week forward or back.
+    private func step(_ weeks: Int) {
+        guard weeks < 0 || !atCurrentWeek else { return }
+        go(to: SessionCalendar.week(weeks, from: weekStart, calendar: calendar))
+    }
+
+    /// Land on a week, sliding from the direction travelled.
+    ///
+    /// The direction is set BEFORE the week changes, so a jump three months
+    /// back through the picker still reads as going backwards rather than as
+    /// a cut. `selectedDay` is cleared on the way: a day highlighted inside
+    /// a week you have left is a filter nobody can see.
+    private func go(to start: Date) {
+        guard start != weekStart else { return }
+        back = start < weekStart
+        withAnimation(Self.weekSpring) {
+            weekStart = start
+            selectedDay = nil
+        }
     }
 }
 
+/// A session as a length, first (Aziz, 2026-09-22: "implement c").
+///
+/// The amber puck stands where the repeated Otto used to, so the row still
+/// has an object on the left but it is the one fact a phone sit can report.
+/// **It is the soft amber, not the accent**: seven saturated gold pucks down
+/// a page would spend the one-gold-per-section rule seven times and leave
+/// nothing on the screen emphasised. A tint is a material; the accent is a
+/// decision.
+private struct MinutesRow: View {
+    let session: Session
+    let score: Double?
+    var thumbnail: UIImage? = nil
+    var shared: Bool? = nil
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(spacing: 1) {
+                Text("\(max(1, session.durationSec / 60))")
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                Text("MIN")
+                    .font(.system(size: 8.5, weight: .heavy, design: .rounded))
+                    .tracking(0.6)
+                    .opacity(0.75)
+            }
+            .foregroundStyle(AppColor.accentGoldText)
+            .frame(width: 44, height: 44)
+            .background(AppColor.accentGold.opacity(0.28),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(SessionListSupport.relativeDay(session.startedAt))
+                        .font(DisplayFont.display(15))
+                        .foregroundStyle(AppColor.textPrimary)
+                    if let shared { ReachChip(shared: shared) }
+                }
+                Text(subtitle)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 0)
+
+            if let thumbnail {
+                Image(uiImage: thumbnail)
+                    .resizable().scaledToFill()
+                    .frame(width: 34, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 9, style: .continuous))
+            }
+        }
+        .padding(.horizontal, 15)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+    }
+
+    /// What was playing, and the score if the session has one. **A phone sit
+    /// is simply short a clause**, never "no score": naming the absence would
+    /// be the row telling somebody what they are missing.
+    private var subtitle: String {
+        var parts: [String] = [SoundCatalog.title(for: session.frequencyID) ?? "Silence"]
+        if let score { parts.append("scored \(Int(score * 100))") }
+        return parts.joined(separator: " · ")
+    }
+}
+
+/// Pick a WEEK, not a day.
+///
+/// **This is a picker, not a month view.** The repo deleted `MonthCalendar`
+/// on purpose and the rule stands: a grid of dots as a STATUS display answers
+/// "did I show up" at a resolution nobody needs, and it draws days that have
+/// not happened yet. This grid exists only while you are choosing, it selects
+/// rows rather than days, and its dots are there to answer the one question a
+/// person actually arrives with, which is "which week was that".
+private struct WeekPicker: View {
+    let selected: Date
+    let practiced: Set<Date>
+    let calendar: Calendar
+    let pick: (Date) -> Void
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var month: Date = Date()
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(monthTitle)
+                    .font(DisplayFont.display(17, .heavy))
+                    .foregroundStyle(AppColor.textPrimary)
+                Spacer()
+                arrow("chevron.left") { shiftMonth(-1) }
+                arrow("chevron.right") { shiftMonth(1) }
+            }
+            .padding(.bottom, 12)
+
+            HStack(spacing: 0) {
+                ForEach(Array(weekdayInitials.enumerated()), id: \.offset) { _, letter in
+                    Text(letter)
+                        .font(.system(size: 9.5, weight: .heavy, design: .rounded))
+                        .tracking(0.5)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.bottom, 4)
+
+            ForEach(Array(SessionCalendar.monthGrid(containing: month, calendar: calendar)
+                            .enumerated()), id: \.offset) { _, week in
+                weekRow(week)
+            }
+
+            Button {
+                pick(SessionCalendar.weekStart(for: Date(), calendar: calendar))
+                dismiss()
+            } label: {
+                Text("Jump to this week")
+                    .font(AppFont.callout.weight(.bold))
+                    .foregroundStyle(AppColor.accentGoldText)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            }
+            .buttonStyle(CardButtonStyle())
+            .padding(.top, 6)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 14)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        .onAppear { month = selected }
+    }
+
+    /// The whole row is one target, and it lights as one object, because the
+    /// thing being chosen is the week and not a day inside it.
+    private func weekRow(_ week: [Date]) -> some View {
+        let start = week[0]
+        let isSelected = start == selected
+        return Button {
+            pick(start)
+            dismiss()
+        } label: {
+            HStack(spacing: 0) {
+                ForEach(Array(week.enumerated()), id: \.offset) { _, day in
+                    VStack(spacing: 3) {
+                        Text("\(calendar.component(.day, from: day))")
+                            .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                            .foregroundStyle(calendar.isDateInToday(day)
+                                             ? AppColor.accentGoldText : AppColor.textPrimary)
+                        Circle()
+                            .fill(practiced.contains(day) ? AppColor.accentGold : .clear)
+                            .frame(width: 5, height: 5)
+                    }
+                    .opacity(SessionCalendar.isSameMonth(day, as: month, calendar: calendar) ? 1 : 0.3)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(isSelected ? AppColor.backgroundSecondary : .clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .strokeBorder(isSelected ? AppColor.accentGold : .clear, lineWidth: 2)
+                    )
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(CardButtonStyle())
+    }
+
+    private func arrow(_ symbol: String, _ tap: @escaping () -> Void) -> some View {
+        Button(action: tap) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 28, height: 28)
+                .background(AppColor.backgroundSecondary, in: Circle())
+        }
+        .buttonStyle(CardButtonStyle())
+    }
+
+    private func shiftMonth(_ by: Int) {
+        withAnimation(.easeOut(duration: 0.2)) {
+            month = calendar.date(byAdding: .month, value: by, to: month) ?? month
+        }
+    }
+
+    private var monthTitle: String {
+        let f = DateFormatter()
+        f.dateFormat = calendar.isDate(month, equalTo: Date(), toGranularity: .year)
+            ? "MMMM" : "MMMM yyyy"
+        return f.string(from: month)
+    }
+
+    /// Ordered from the calendar's own first weekday, so the letters sit over
+    /// the columns they name in every locale.
+    private var weekdayInitials: [String] {
+        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        let first = calendar.firstWeekday - 1
+        return (0..<7).map { symbols[($0 + first) % 7] }
+    }
+}
 
 /// Cards come up out of the grass, one after another.
 ///
