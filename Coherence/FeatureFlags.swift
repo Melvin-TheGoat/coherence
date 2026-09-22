@@ -42,6 +42,23 @@ enum FeatureFlags {
         #endif
     }
 
+    /// **Block (2026-09-22) is OFF in Release** until it has run on a phone:
+    /// the simulator cannot show a shield, so nothing about the holding has
+    /// been seen working yet. DEBUG builds (the simulator and the side-by-side
+    /// beta) keep it on. Off means the Guide tab where Block would be, and no
+    /// Block screen in onboarding. The extensions and the Family Controls
+    /// entitlement are compiled in either way; Apple approved the entitlement
+    /// for all four App IDs on 2026-09-22.
+    static let blockInRelease = false
+
+    static var block: Bool {
+        #if DEBUG
+        return true
+        #else
+        return blockInRelease
+        #endif
+    }
+
     /// Award ids that belong to a switched-off feature.
     static var hiddenAwardIDs: Set<String> {
         friends ? [] : ["friendBrought"]

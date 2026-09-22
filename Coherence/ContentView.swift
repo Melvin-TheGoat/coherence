@@ -24,6 +24,13 @@ struct ContentView: View {
     @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
     @EnvironmentObject private var store: Store
+    /// Block (2026-09-22): the blockers, the passes, and the "Ask Otto" that
+    /// opens one of his screens.
+    @ObservedObject private var block = BlockController.shared
+    /// "Okay, let's meditate" on one of Otto's screens starts a session the
+    /// moment his screen is down, so two covers never overlap. nil: nothing
+    /// waiting; 0: open-ended; otherwise a timed session of that many minutes.
+    @State private var startAfterOtto: Int?
 
     @State private var tab: MainTab = .home
     /// Which of Otto's lines is showing on Home; a tap on him advances it.
@@ -72,6 +79,10 @@ struct ContentView: View {
         /// The offer, after the first meditation (2026-09-15). Opens when a
         /// free user leaves the first results screen.
         case paywall
+        /// One of Otto's twenty screens, from "Otto wants a word".
+        case intervention(InterventionKind)
+        /// The free-week offer, from switching a blocker on. Block is paid.
+        case blockPaywall
 
         var id: String {
             switch self {
@@ -82,6 +93,8 @@ struct ContentView: View {
             case .save(let id): return "save-\(id)"
             case .discarded(let d): return "discarded-\(d.id)"
             case .paywall: return "paywall"
+            case .intervention(let kind): return "intervention-\(kind.rawValue)"
+            case .blockPaywall: return "blockPaywall"
             }
         }
     }
@@ -104,6 +117,8 @@ struct ContentView: View {
             case .guide:
                 GuideView(embedded: true) { sheet = .setup }
                     .onAppear { Analytics.track(.guideOpened) }
+            case .block:
+                BlockTab(block: block, entitlements: store.entitlements) { present(.blockPaywall) }
             case .friends:
                 if FeatureFlags.friends { FriendsTab() } else { SearchTab() }
             case .profile:
@@ -156,6 +171,13 @@ struct ContentView: View {
                                resumeSessionID: resumeSave) { id in
             if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
         })
+        .modifier(BlockHooks(block: block,
+                             sessionActive: coordinator.active != nil,
+                             lastSessionID: coordinator.lastSessionID,
+                             sessions: sessions,
+                             scenePhase: scenePhase,
+                             pick: { InterventionPicker.pick(interventionContext, recent: block.recentInterventions) },
+                             present: { present(.intervention($0)) }))
         // Picking the phone up after a sit IS the moment to grade it, and by
         // then the app has usually been suspended or killed, so nothing is
         // left in memory to act on. Read the waiting session off disk instead.
@@ -191,6 +213,11 @@ struct ContentView: View {
         // destination carries its own Done or Cancel, so nothing needs the
         // swipe-down affordance.
         .fullScreenCover(item: $sheet, onDismiss: {
+            if let minutes = startAfterOtto {
+                startAfterOtto = nil
+                beginFromOtto(minutes: minutes == 0 ? nil : minutes)
+                return
+            }
             if let next = pendingSheet { pendingSheet = nil; sheet = next }
         }) { which in
             switch which {
@@ -223,8 +250,55 @@ struct ContentView: View {
                     firstOffer.markShown()
                     sheet = nil
                 }
+            case .intervention(let kind):
+                InterventionView(kind: kind, context: interventionContext, block: block,
+                                 onMeditate: { minutes in
+                                     startAfterOtto = minutes ?? 0
+                                     sheet = nil
+                                 },
+                                 onClose: { sheet = nil })
+                    .onAppear { block.noteInterventionShown(kind) }
+            case .blockPaywall:
+                PaywallScreen(placement: "block", plan: $paywallPlan) { _ in sheet = nil }
             }
         }
+    }
+
+    /// What Otto knows when he asks: the hour, the streak, his own glow, and
+    /// a friend who meditated today, so each of his screens only says what is
+    /// true.
+    private var interventionContext: InterventionContext {
+        let dates = sessions.map(\.startedAt)
+        let friend: String? = {
+            guard FeatureFlags.friends else { return nil }
+            let today = community.feed.first {
+                Calendar.current.isDateInToday($0.practicedAt) && $0.author != community.myID
+            }
+            guard let author = today?.author,
+                  let name = community.person(author)?.displayName,
+                  let first = name.split(separator: " ").first else { return nil }
+            return String(first)
+        }()
+        return InterventionContext(hour: Calendar.current.component(.hour, from: Date()),
+                                   streak: StreakCalculator.streak(from: dates).current,
+                                   aura: auraStage,
+                                   friendWhoSat: friend)
+    }
+
+    /// "Okay, let's meditate": the session starts at once, with the sound
+    /// they last chose on the Ready screen (Melvin, 2026-09-22: straight into
+    /// the session, one less tap between them and their apps).
+    private func beginFromOtto(minutes: Int?) {
+        var soundID = UserDefaults.standard.string(forKey: "sessionSoundID") ?? ""
+        // The guided journey is paid; a free person starts in silence rather
+        // than being handed a track the Ready screen would have locked.
+        if GuidedCatalog.preset(id: soundID) != nil, !store.entitlements.guidedTrack { soundID = "" }
+        let id = soundID.isEmpty ? nil : soundID
+        coordinator.begin(mode: SoundCatalog.mode(for: id),
+                          trackID: nil,
+                          plannedDurationSec: minutes.map { $0 * 60 },
+                          hapticsEnabled: prefsRows.first?.hapticsEnabled ?? true,
+                          soundID: id)
     }
 
     #if DEBUG
@@ -263,8 +337,15 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_FIRST_PAYWALL"] == "1", sheet == nil {
                 sheet = .paywall
             }
+            // PREVIEW_INTERVENTION=<kind> (e.g. faceTime) opens that one of
+            // Otto's screens; any other value opens a picked one.
+            if let raw = ProcessInfo.processInfo.environment["PREVIEW_INTERVENTION"], sheet == nil {
+                sheet = .intervention(InterventionKind(rawValue: raw)
+                                      ?? InterventionPicker.pick(interventionContext, recent: []))
+            }
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
+                case "block": tab = FeatureFlags.block ? .block : .guide
                 case "guide": tab = .guide
                 case "friends", "search": tab = .friends
                 case "profile": tab = .profile
@@ -450,7 +531,7 @@ struct ContentView: View {
             return OttoAura.Stage(level: level)
         }
         #endif
-        return OttoAura.stage(from: sessions.map(\.startedAt))
+        return OttoAura.Stage(level: auraLevel)
     }
 
     /// Otto's level today, 0 to 100, for the bar under his name.
@@ -460,7 +541,11 @@ struct ContentView: View {
             return min(max(level, 0), 100)
         }
         #endif
-        return OttoAura.level(from: sessions.map(\.startedAt))
+        // A "Not now" that went unanswered costs glow (Melvin, 2026-09-22).
+        // The windows come from the phone's own Screen Time state and are
+        // never sent anywhere.
+        return OttoAura.level(from: sessions.map(\.startedAt),
+                              notNow: FeatureFlags.block ? block.notNowWindows : [])
     }
 
     /// The streak in the corner, Brainrot's flame and number, on the same

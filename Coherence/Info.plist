@@ -53,7 +53,7 @@
 	     the same rule means the string must go again if the composer ever
 	     loses its camera button. App Privacy labels: Photos or Videos. -->
 	<key>NSCameraUsageDescription</key>
-	<string>808 uses the camera for the selfie you take when you post a meditation to friends.</string>
+	<string>808 uses the front camera for the selfie you take when you post a meditation to friends, and to show you on Otto's FaceTime screen. Nothing from that screen is recorded or saved.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>808 saves your share card to your photo library so you can post it to your Instagram story.</string>
 	<key>LSApplicationQueriesSchemes</key>

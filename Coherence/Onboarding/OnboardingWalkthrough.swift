@@ -19,7 +19,7 @@ import WatchConnectivity
 /// The home screen's tour targets, published as anchor preferences by
 /// `ContentView` and read here. Harmless in the real app: nothing outside the
 /// tour ever reads the key.
-enum TourTarget: Hashable { case streak, guide, begin }
+enum TourTarget: Hashable { case streak, guide, begin, block }
 
 struct TourTargetKey: PreferenceKey {
     static var defaultValue: [TourTarget: SwiftUI.Anchor<CGRect>] = [:]
@@ -60,20 +60,28 @@ struct TourHomeScreen: View {
         let target: TourTarget
     }
 
-    private let notes: [Note] = [
-        // Rewritten 2026-09-22 with onboarding's return: the calendar is gone
-        // from Home, a session no longer needs a Watch, and the guide moved
-        // from its tab to a circle under the streak.
-        .init(title: "This is home.",
-              body: "Your streak sits up here. Every day you meditate it grows, and so does Otto's glow.",
-              target: .streak),
-        .init(title: "One button starts everything.",
-              body: "The plus starts a session. Play any audio you like from any app, or nothing at all.",
-              target: .begin),
-        .init(title: "The guide is always here.",
-              body: "How to meditate, plainly explained, easiest first.",
-              target: .guide),
-    ]
+    // Rewritten 2026-09-22 with onboarding's return: the calendar is gone
+    // from Home, a session no longer needs a Watch, and the guide moved from
+    // its tab to a circle under the streak. Block builds add its tab.
+    private var notes: [Note] {
+        var notes: [Note] = [
+            .init(title: "This is home.",
+                  body: "Your streak sits up here. Every day you meditate it grows, and so does Otto's glow.",
+                  target: .streak),
+            .init(title: "One button starts everything.",
+                  body: "The plus starts a session. Play any audio you like from any app, or nothing at all.",
+                  target: .begin),
+        ]
+        if FeatureFlags.block {
+            notes.append(.init(title: "Otto holds your apps.",
+                               body: "Pick the apps that pull you in on the Block tab, and he keeps them closed until you've meditated.",
+                               target: .block))
+        }
+        notes.append(.init(title: "The guide is always here.",
+                           body: "How to meditate, plainly explained, easiest first.",
+                           target: .guide))
+        return notes
+    }
 
     var body: some View {
         ContentView()

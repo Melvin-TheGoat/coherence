@@ -57,6 +57,10 @@ struct Entitlements {
     /// back in words, so it sorts with the evidence. The invite grant does
     /// not open it, the same way it opens no guided track and no skin.
     var otto: Bool { paid }
+    /// Block, Otto holding the apps you picked (Melvin, 2026-09-22: "Paid").
+    /// A free person finds Mindful day set up and waiting; switching it on
+    /// opens the free-week offer.
+    var block: Bool { paid }
 
     func canUse(_ skin: CardSkin) -> Bool { paid || skin == .free }
 

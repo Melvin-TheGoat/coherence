@@ -179,6 +179,30 @@ Each is one screen in 808 after the notification. Some read the moment
   com.apple.developer.family-controls entitlement".)
 - **The simulator cannot show shields.** Block is tested on a phone.
 
+## Build status (branch `block`, 2026-09-22 overnight)
+
+**Built:** the Block tab (Mindful day waiting for everyone, presets, the
+editor with all six settings), Apple's app picker, Screen Time authorization,
+the shields (one named store per blocker), the schedules and daily limits
+(DeviceActivity), the three extensions (monitor, shield look, shield
+buttons), the "Otto wants a word" notification and its route into the app,
+all twenty of Otto's screens, Firm's ten-second breath, the "how long"
+screen and its passes, sessions releasing the window, the glow rule reading
+skipped windows, onboarding's explain-only Block screen, the tour's Block
+note, and the paywall when a free person switches a blocker on. Behind
+`FeatureFlags.block`: on in development builds, off for the App Store.
+
+**Verified on the simulator:** the tab, the editor, every one of the twenty
+screens, "Not now" taking a pass (the card then reads "Open for 10 more
+min"), and "Okay, let's meditate" starting a session at once.
+
+**Not verified, because only a phone can show it:** a shield appearing on a
+held app, Ask Otto's notification, a pass closing the apps again on time
+(the fifteen-minute DeviceActivity floor and the start-in-the-past trick),
+the daily limit's threshold, Strict holding with no way past. That is the
+first thing to test with `tools/beta_install.sh` (808 Beta, its own
+`.dev` bundle IDs and App Group, beside the App Store app).
+
 ## What else has to change
 
 - `PURPOSE.md` and `SCIENCE.md`: lead with consistency and Otto; the

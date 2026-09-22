@@ -73,6 +73,9 @@ struct OnboardingView: View {
         /// Added 2026-09-20: how many questions are coming, declared before
         /// the first one. Last in the enum, for the reason above.
         case questionCount
+        /// Added 2026-09-22: what Block does, on Block builds, after what's
+        /// waiting. Last, for the same reason.
+        case blockIntro
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -427,7 +430,12 @@ struct OnboardingView: View {
             Color.clear.onAppear { go(afterWall) }
 
         case .whatsWaiting:
-            WhatsWaitingScreen { go(.permission) }
+            WhatsWaitingScreen { go(FeatureFlags.block ? .blockIntro : .permission) }
+
+        case .blockIntro:
+            // Explain only (Melvin, 2026-09-22): setting it up, and the offer,
+            // happen on the Block tab, where Mindful day is waiting.
+            BlockIntroScreen { go(.permission) }
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,

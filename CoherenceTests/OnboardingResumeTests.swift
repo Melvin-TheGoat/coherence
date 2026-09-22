@@ -84,6 +84,13 @@ final class OnboardingResumeTests: XCTestCase {
 /// the thing that would hold the release up, and a locked row would sell
 /// what the build does not contain.
 final class FeatureFlagTests: XCTestCase {
+    /// Block holds apps through Screen Time, which the simulator cannot show,
+    /// so it ships only once it has been seen working on a phone.
+    func test_blockIsOffForTheAppStoreUntilItRunsOnAPhone() {
+        XCTAssertFalse(FeatureFlags.blockInRelease,
+                       "Block ships once shields, passes and the notification are verified on a phone")
+    }
+
     func test_ottoIsOffForTheAppStore() {
         XCTAssertFalse(FeatureFlags.ottoInRelease,
                        "Otto ships once the founders have read its answers and the policy names it")

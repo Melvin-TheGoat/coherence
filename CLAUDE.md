@@ -2948,6 +2948,61 @@ stays, as a feature, not the headline.
 - Aziz's areas are not touched by this: the plus's session screens and
   Profile.
 
+## BLOCK IS BUILT, ON BRANCH `block` (2026-09-22, overnight)
+
+The whole feature, behind `FeatureFlags.block` (ON in DEBUG, OFF in Release
+until `blockInRelease` flips; tripwire in `FeatureFlagTests`). Off means the
+Guide tab and no Block screen in onboarding. Status and the phone test list
+are in `CONSISTENCY.md` > Build status and RELEASE_CHECKLIST.md.
+
+- **Where it lives.** `Shared/Block/BlockModel.swift` is the rules, pure and
+  tested (`BlockRulesTests`, `InterventionPickerTests`); the extensions list
+  that one file. `BlockKit/` is the Screen Time half (App Group store,
+  shields, DeviceActivity schedules), compiled into the app and the
+  extensions. `BlockExtensions/{Monitor,Shield,ShieldAction}` are the three
+  app-extension targets in project.yml. `Coherence/Block/` is the app side:
+  `BlockController`, `BlockTab`, `BlockerEditor`, `InterventionView` (the
+  twenty screens, Firm's breath, the how-long screen), `BlockHooks`,
+  `BlockIntroScreen`.
+- **Each process writes only its own App Group keys**: the app the state,
+  the shield action the asks, the monitor the daily-limit hits. A shared
+  read-modify-write would lose a tap on the shield to the app saving a
+  moment later.
+- **Every change goes through `BlockController.commit`**: save, re-register
+  the schedules when the blockers changed, reconcile the shields. The
+  monitor reconciles on every wake, judging a second ahead so a window
+  Screen Time opens a hair early is not judged closed.
+- **One DeviceActivity schedule per blocker, daily**; the weekday rule lives
+  in `BlockRules`, which every wake asks. A pass end is its own activity,
+  started in the past when shorter than Screen Time's fifteen-minute floor.
+  **That trick is unverified: test it on a phone first.**
+- **"Not now" opens every holding blocker with a pass left**; Strict and
+  spent ones stay held. A session opens the rest of the window it started or
+  ended in, if it meets the blocker's shortest session, idempotently, on
+  every new session and every return to the foreground.
+- **"Okay, let's meditate" starts the session straight away** (Melvin),
+  after Otto's cover is fully down (`startAfterOtto` in `onDismiss`), with
+  the Ready screen's last sound; the guided track only if paid.
+- **The shield cannot open the app**, so Ask Otto posts a Time Sensitive
+  notification; the delegate (`BlockNotifications`, the first notification
+  delegate 808 has had) routes the tap. Opening 808 by hand within three
+  minutes of an unanswered ask shows Otto too, in case the notification never
+  arrived. A presentation is claimed once per fifteen seconds, because the
+  tap and the foreground both ask.
+- **Paid**: `Entitlements.block`; `BlockAccess` allows everyone in DEBUG
+  (the beta loads no products), and `BLOCK_PAYWALL=1` puts the paywall back.
+- **DEBUG hooks:** `PREVIEW_BLOCK=1` (Mindful day set up and holding,
+  Screen Time treated as allowed, no Screen Time calls), `PREVIEW_BLOCK=empty`,
+  `PREVIEW_TAB=block`, `PREVIEW_INTERVENTION=<kind>` (e.g. `faceTime`).
+- **`ValleyScene(showsOtto: false)`** draws the valley alone, for the screens
+  that stand their own pose in it. Default true, so Aziz's screens are
+  unchanged.
+- **Font names are PostScript**: `MarkerFelt-Wide`, not "Marker Felt", which
+  silently fell back to the rounded system face.
+- The camera usage string now also names Otto's FaceTime screen (live
+  preview, nothing recorded), and the reminder screen stopped promising
+  "nothing else, ever" on Block builds.
+
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
 "the sound screen button looks terrible", then on the first redesign: "no

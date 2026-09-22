@@ -47,6 +47,36 @@ this release needs a NEW archive.
       earlier answers true).
 - [ ] Melvin and Aziz have read a dozen of Otto's answers on a phone.
 
+## OPEN for the build that flips `FeatureFlags.blockInRelease` (Block, 2026-09-22)
+
+- [ ] **Seen working on a phone** (the simulator cannot draw a shield):
+      a held app shows Otto's shield; Ask Otto sends "Otto wants a word";
+      tapping it opens one of Otto's screens; a 5 minute pass closes the apps
+      again on time (the 15-minute DeviceActivity floor, see CONSISTENCY.md);
+      a session releases the window; Strict offers no pass; a daily limit
+      holds after its minutes. `tools/beta_install.sh` installs 808 Beta.
+- [ ] Signing for App Store: the three extension App IDs
+      (`com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`) carry
+      Family Controls (Distribution, approved 2026-09-22) and the App Group
+      `group.com.lockout.meditate808`; the app and the shield-action
+      extension carry Time Sensitive Notifications. Automatic signing adds
+      the capabilities; confirm in the archive (`tools/archive.sh`).
+- [ ] Privacy policy, both copies: 808 uses Apple's Screen Time to hold the
+      apps the person picks; the picks are opaque tokens even to 808; nothing
+      from Screen Time leaves the phone or reaches analytics. Redeploy the
+      website.
+- [ ] App Privacy labels: no change needed if nothing from Block is
+      collected (it is not); confirm, and keep PostHog free of Block events
+      (Apple's Family Controls terms).
+- [ ] Review notes: how to try Block (the Block tab, Mindful day, Ask Otto
+      on a held app), that it is individual Screen Time authorization and not
+      parental control, and that Block is part of 808 Premium.
+- [ ] Camera usage string now also names Otto's FaceTime screen (live
+      preview only, nothing recorded). A changed usage string is reviewed.
+- [ ] Store description, screenshots and the website lead with consistency
+      and Block (the app's primary purpose must be Apple's purpose 2 for
+      Family Controls; see CONSISTENCY.md).
+
 ## OPEN: must be done in the submission that ships the next build
 
 - [ ] **CloudKit Console: promote the schema Development → Production

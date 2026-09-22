@@ -13,6 +13,9 @@ struct CoherenceApp: App {
 
     init() {
         Analytics.start()   // no-op until a provider key is set
+        // Block's "Otto wants a word": set before launch finishes, so a tap
+        // that opened the app is still delivered.
+        if FeatureFlags.block { BlockNotifications.shared.install() }
         // One-time rescue of pre-split health stats — the extract MUST run
         // before the split container first opens the main store.
         let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()

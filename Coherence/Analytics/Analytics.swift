@@ -258,6 +258,7 @@ enum Analytics {
         "breathing":         "03 Breathe in, breathe out",
         "questionCount":     "03b A few questions, here is how many",
         "whatsWaiting":      "23b Here's what's waiting",
+        "blockIntro":        "23c Otto can hold your apps (Block builds)",
         "baseline":          "03 How often do you meditate?",
         "motivation":        "04 What are you hoping for?",
         "stress":            "05 How stressed lately?",

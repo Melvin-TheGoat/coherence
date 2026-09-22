@@ -45,6 +45,11 @@ struct ValleyScene: View {
     /// and resizing one view is a spring the rig plays straight through.
     var ottoInCorner: Bool = false
 
+    /// Draw the seated Otto and his cushion. The Block tab and Otto's
+    /// screens draw their own pose (clipboard, waving, slumped) standing in
+    /// the meadow, so they ask for the valley alone (2026-09-22).
+    var showsOtto: Bool = true
+
     /// The rig, so he actually breathes while you do.
     ///
     /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
@@ -175,6 +180,7 @@ struct ValleyScene: View {
 
             // The cushion gives him somewhere to be rather than floating on
             // grass, and it is the one warm object in a cool frame.
+            if showsOtto {
             Cushion()
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
@@ -196,6 +202,7 @@ struct ValleyScene: View {
             .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
                       y: ottoInCorner ? Self.cornerY
                                       : size.height * (1 - 0.24) - seated / 2)
+            }
         }
         .frame(width: size.width, height: size.height)
     }
