@@ -3257,6 +3257,53 @@ own row, and Save session is still Aziz's screen, cut from this path only.
   see it, all on one page. Awaiting Melvin's pick. Until then a session is
   filled in from its row.
 
+### The prompt and the session page, built (same day, Melvin's picks)
+
+From `mockups/after-session.html`: **option B, the toast above the tab bar**,
+and **screen 1**, with four changes.
+
+- **The toast never fades.** "Make it never fade, just always there unless
+  they like click on an X in the top left corner." So it is state, not a
+  timer: `SessionDetails` in UserDefaults, raised when the glow finishes,
+  cleared by the X or by saving the session, and read back on every launch.
+  A toast that disappears is one most people would never once use, which is
+  the whole reason a fading one was rejected.
+- **`SaveSessionView` is rewritten as the session's page**: the valley's sky
+  band with the length as the one big number, the title, and Otto's head on
+  its edge; then how it felt, what you did, what friends read (Friends only),
+  private notes, photo or video, who can see it. The band is PINNED, because
+  scrolling it ran the length and the X through the status bar.
+- **How it felt is a slider out of ten** (Melvin: "should be a scroll bar,
+  not emojis, make it out of 10 still"). It shows "Not rated" and a grey
+  track until it is touched, because a slider parked at five would file every
+  unrated session as middling.
+- **What did you do lists every sound 808 offers**, not just the practices
+  (Melvin: "thats something ive been meaning to tell you for awhile").
+  `MeditationMethod.loggable` is now `techniques + sounds`, the sounds coming
+  from `SoundMenu`, which is already the one list of them, so a sound added
+  there appears in the picker, on the results card and in the labels at once.
+  The session's own sound is preselected: it is known, and it is the likeliest
+  answer.
+- **Any photo and any video, for friends and for yourself.** The BeReal rule
+  (front camera only, no library, no selfie no post) is gone, on Melvin's
+  call. `SessionPhoto` gains a `video`, exported to 540p and half a minute
+  before it is stored, with its first frame kept in `jpeg` so the calendar,
+  the rows and the results screen draw it without knowing there is film
+  behind it. **The feed still posts the still**: a video in a post is its own
+  piece of work.
+- **Otto reflects, he does not thank.** "It's not like youre doing him a
+  favor by taking care of him. It should be assumed." His line after a
+  session is "That's today done. I'm brighter for it."
+- **The sloth is off the session rows** (Melvin: "the sloth looks weird as
+  fuck if hes there on every meditation"). `EvidenceRow` draws its picture
+  panel only when there IS a picture; the score moved up beside the rating.
+  Same note that took him off Aziz's log a day earlier.
+- **A session row opens its page**, and the measurements are one tap further
+  in ("See the measurements", only when something measured them).
+- **Still open, both flagged in the mockup:** a Friends post carries a score,
+  so a phone session cannot be posted; and the results screen still has its
+  own rating card, which is now a duplicate of the slider.
+
 ### Block can be tested without Screen Time (same day)
 
 Melvin: "make it so i can test the block thing, screentime is password

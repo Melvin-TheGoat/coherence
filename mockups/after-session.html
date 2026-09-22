@@ -118,10 +118,13 @@ h2{font-size:16px;margin:46px 0 4px;font-weight:800}
 </style></head><body>
 
 <h1>After a session</h1>
-<p class="lede">The Save session screen is gone. A finished session takes you <b>straight to Home</b>, where
-Otto's glow climbs with a burst of light and a <b>+10%</b> (built, on the simulator now). This page is the
-next two pieces: <b>where the prompt to fill in the session lives</b>, and <b>the one screen it opens</b>.
-Nothing here is built yet. Pick a prompt (A to D) and a screen (1 or 2).</p>
+<p class="lede"><b>Decided and built, 2026-09-22.</b> A finished session takes you straight to Home, where
+Otto's glow climbs with a burst of light and a <b>+10%</b>. Then <b>option B</b>, the toast above the tab
+bar, which <b>never fades</b>: the only ways out are its X and filling the session in. It opens
+<b>screen 1</b>, with Melvin's four changes: how it felt is a <b>slider out of ten</b>, not emojis; what you
+did lists <b>every sound 808 offers</b> as well as the techniques; the title defaults to
+<b>"Morning / Afternoon / Evening / Night meditation"</b>; and photos are <b>any photo or any video</b>,
+for friends and for yourself. The rest of this page is the record of what was considered.</p>
 
 <h2>The moment before it: Otto gains his glow</h2>
 <div class="row">
@@ -259,20 +262,24 @@ feature most people will never once use.</div>
           <div class="big">12 min</div><div class="small">Today, 12:48 · Silence</div>
           <div class="face"><img src="otto-v3/otto-head.png" alt=""></div></div>
         <div class="sbody">
-          <div class="field-h">How did it feel?</div>
-          <div class="faces"><div class="face-b">😵‍💫</div><div class="face-b">😕</div><div class="face-b on">🙂</div>
-            <div class="face-b">😌</div><div class="face-b">🤩</div></div>
+          <div class="field-h">How did it feel? <span style="float:right;color:var(--amberText)">8 / 10</span></div>
+          <div style="height:10px;border-radius:10px;background:var(--trace);margin:10px 0 4px;position:relative">
+            <i style="display:block;height:100%;width:78%;border-radius:10px;background:var(--amber)"></i>
+            <span style="position:absolute;left:74%;top:-6px;width:22px;height:22px;border-radius:50%;
+              background:#fff;box-shadow:0 1px 4px rgba(40,25,15,.3)"></span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--soft)">
+            <span>Rough</span><span>The best</span></div>
 
           <div class="field-h">What did you do?</div>
-          <div class="chiprow" style="justify-content:flex-start;flex-wrap:wrap">
-            <div class="chip on">Silence</div><div class="chip">Breath work</div><div class="chip">Guided</div>
-            <div class="chip">Body scan</div><div class="chip">Something else</div></div>
+          <div class="rowline"><span>Nature · Rain</span><span>⌄</span></div>
+          <div class="note" style="margin-top:6px">Every technique, then every sound: Guided, Nature,
+            Brainwave, Tones.</div>
 
           <div class="field-h">Notes</div>
           <div class="input">Anything you want to remember. Only you can see this.</div>
 
-          <div class="field-h">Photos</div>
-          <div class="tiles"><div class="tile shot"></div><div class="tile">＋<br>Add</div></div>
+          <div class="field-h">Photo or video</div>
+          <div class="tiles"><div class="tile shot"></div><div class="tile">＋<br>Any photo<br>or video</div></div>
 
           <div class="field-h">Who can see it</div>
           <div class="vis"><div class="on">🔒 Only you</div><div>👋 Friends</div></div>
@@ -315,13 +322,10 @@ feature most people will never once use.</div>
   </div>
 </div>
 
-<div class="flag ask"><b>Three things to decide with the screen:</b>
-(1) <b>Photos.</b> Friends posts today need a front-camera selfie, no library, which was Aziz's rule so a
-post is always you, meditating. Strava lets you add anything. Keep the selfie rule for Friends and allow
-any photo for Only you?
-(2) <b>A title.</b> Strava has one and our feed card shows one. Worth a line, or one field less?
-(3) <b>Feeling scale.</b> Five faces here; the old screen had a number out of ten. Faces are faster and
-carry no arithmetic.</div>
+<div class="flag pick"><b>Answered:</b> (1) photos are any photo and any video, for friends and for
+yourself, so the front-camera-only rule is gone; (2) the title stays and defaults to the time of day;
+(3) the feeling is a slider out of ten. <b>Still open:</b> a Friends post carries a score, so a phone
+session cannot be posted yet, and the results screen still has its own rating card.</div>
 
 <div class="flag"><b>What is already gone:</b> the Save session screen no longer opens after a sit, and the
 results screen with its "How did it feel?" card no longer opens either. Until one of these is built, a

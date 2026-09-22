@@ -51,3 +51,36 @@ public enum PendingSave {
         return id
     }
 }
+
+/// The session the toast on Home is offering to fill in (Melvin, 2026-09-22:
+/// "a toast above the bar, make it never fade, just always there unless they
+/// like click on an X").
+///
+/// So it is not a timer, it is a piece of state with two ways out: the X, or
+/// saving the session. Kept in UserDefaults for the same reason
+/// `PendingSave` is: it is something the app owes a person, not a fact about
+/// the meditation, and it has to survive the app being killed between the sit
+/// and them picking the phone up.
+///
+/// **No age limit, on purpose.** One that fades is one most people would
+/// never once use, which is the whole reason this replaced a fading toast.
+public enum SessionDetails {
+    static let key = "session.details.v1"
+
+    public static func set(_ id: UUID, in defaults: UserDefaults = .standard) {
+        defaults.set(id.uuidString, forKey: key)
+    }
+
+    public static func read(in defaults: UserDefaults = .standard) -> UUID? {
+        guard let raw = defaults.string(forKey: key) else { return nil }
+        return UUID(uuidString: raw)
+    }
+
+    /// Clears the toast, for the X and for a save. Passing the id means a
+    /// save of some OTHER session never takes down the prompt for this one.
+    public static func clear(_ id: UUID? = nil, in defaults: UserDefaults = .standard) {
+        if let id, read(in: defaults) != id { return }
+        defaults.removeObject(forKey: key)
+    }
+}
+

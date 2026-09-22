@@ -20,8 +20,19 @@ struct TechniqueOptions: View {
     var body: some View {
         Button("Unreported") { select(nil) }
         Divider()
-        ForEach(MeditationMethod.loggable, id: \.id) { item in
+        ForEach(MeditationMethod.techniques, id: \.id) { item in
             Button(item.label) { select(item.id) }
+        }
+        Divider()
+        // Every sound 808 offers, in the picker's own groups (Melvin,
+        // 2026-09-22). Submenus, because twenty more flat rows would bury
+        // the practices above them.
+        ForEach(SoundMenu.groups) { group in
+            Menu(group.name) {
+                ForEach(group.entries) { entry in
+                    Button(entry.title) { select(entry.id) }
+                }
+            }
         }
         Divider()
         Button("Something else") { select(MeditationMethod.ownID) }

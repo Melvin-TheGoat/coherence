@@ -63,6 +63,8 @@ struct ContentView: View {
     /// The level the card shows while that plays, counting up to the real
     /// one. nil is the real one.
     @State private var auraCount: Int?
+    /// The session the toast above the tab bar is offering to fill in.
+    @State private var detailsFor: UUID?
     #if DEBUG
     /// `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at that moment, so
     /// the valley's whole arc can be reviewed without waiting ten minutes for
@@ -147,9 +149,11 @@ struct ContentView: View {
                     .background(AppColor.backgroundSecondary.opacity(0.92), in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+                if tab == .home, let id = detailsFor, auraGain == nil { detailsToast(id) }
                 MainTabBar(selection: $tab) { sheet = .setup }
             }
             .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
+            .animation(.easeOut(duration: 0.25), value: detailsFor)
         }
         .screenBackground()
         .fullScreenCover(item: Binding(
@@ -187,9 +191,9 @@ struct ContentView: View {
         // then the app has usually been suspended or killed, so nothing is
         // left in memory to act on. Read the waiting session off disk instead.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { readLandedSession() }
+            if phase == .active { readLandedSession(); readDetailsPrompt() }
         }
-        .onAppear { readLandedSession() }
+        .onAppear { readLandedSession(); readDetailsPrompt() }
         .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(item: Binding(get: { sitPreviewElapsed.map { SitPreview(elapsed: $0) } },
@@ -236,10 +240,9 @@ struct ContentView: View {
             case .results(let id):
                 SessionResultsView(sessionID: id)
             case .save(let id):
-                SaveSessionView(sessionID: id, mode: .new) {
-                    PendingSave.clear()
-                    landedWhileAway = nil
-                    pendingSheet = .results(id)
+                SaveSessionView(sessionID: id, mode: .edit) {
+                    SessionDetails.clear(id)
+                    detailsFor = nil
                     sheet = nil
                 }
             case .discarded(let discard):
@@ -323,6 +326,11 @@ struct ContentView: View {
                     ottoLineIndex = 0
                     ottoPokes += 1
                     auraGain = AuraGain(sessionID: UUID(), from: from, to: to)
+                    // The toast the real flow raises, on the newest session.
+                    if FeatureFlags.friends, let newest = sessions.first {
+                        SessionDetails.set(newest.id)
+                        detailsFor = newest.id
+                    }
                     await countGlow(from: from, to: to)
                 }
             }
@@ -531,7 +539,7 @@ struct ContentView: View {
             } else if gain.to > gain.from {
                 lines.append(OttoAura.Stage(level: gain.to) > OttoAura.Stage(level: gain.from)
                              ? "Look at me now. That's what showing up does."
-                             : "Thank you for that. I'm brighter already.")
+                             : "That's today done. I'm brighter for it.")
             } else {
                 lines.append("Twice in one day. I'm already glowing from the first.")
             }
@@ -576,6 +584,55 @@ struct ContentView: View {
     /// The level the card is showing: the real one, or the one climbing to it
     /// after a sit.
     private var shownAuraLevel: Int { auraCount ?? auraLevel }
+
+    /// The prompt that replaces the screen a session used to open into
+    /// (Melvin, 2026-09-22, picking B from `mockups/after-session.html`):
+    /// above the tab bar, and **it never fades**. The only ways out are the
+    /// X and filling the session in, because a toast that disappears is one
+    /// most people would never once use.
+    private func detailsToast(_ id: UUID) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Add how that felt")
+                    .font(.system(size: 14.5, weight: .bold))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text("Photos, notes, and who can see it")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(AppColor.accentGoldText)
+        }
+        .padding(.leading, 16)
+        .padding(.trailing, 14)
+        .padding(.vertical, 11)
+        .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
+        .overlay(alignment: .topLeading) {
+            Button {
+                SessionDetails.clear(id)
+                detailsFor = nil
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(width: 22, height: 22)
+                    .background(AppColor.backgroundSecondary, in: Circle())
+                    .overlay(Circle().strokeBorder(AppColor.backgroundPrimary, lineWidth: 2))
+            }
+            .buttonStyle(.plain)
+            .offset(x: -7, y: -7)
+            .accessibilityLabel("Dismiss")
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .contentShape(Rectangle())
+        .onTapGesture { present(.save(id)) }
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
 
     /// Otto's stage today, from the same session dates as the streak. It
     /// follows the climbing level during a celebration, so he brightens as
@@ -761,6 +818,12 @@ struct ContentView: View {
         landedWhileAway = nil
         tab = .home
         guard let landed = sessions.first(where: { $0.id == id }) else { return }
+        // The prompt to fill it in waits for the glow to finish; the toast
+        // itself is hidden while `auraGain` is set.
+        if FeatureFlags.friends {
+            SessionDetails.set(id)
+            detailsFor = id
+        }
         let windows = FeatureFlags.block ? block.notNowWindows : []
         let dates = sessions.map(\.startedAt)
         let before = OttoAura.level(from: dates.filter { $0 != landed.startedAt }, notNow: windows)
@@ -786,6 +849,18 @@ struct ContentView: View {
         guard !Task.isCancelled else { return }
         auraCount = nil
         auraGain = nil
+    }
+
+    /// The toast's session, if there still is one. A deleted session clears
+    /// it, the same check `readLandedSession` does.
+    private func readDetailsPrompt() {
+        guard FeatureFlags.friends, let id = SessionDetails.read() else { detailsFor = nil; return }
+        guard sessions.contains(where: { $0.id == id }) else {
+            SessionDetails.clear(id)
+            detailsFor = nil
+            return
+        }
+        detailsFor = id
     }
 
     private func refreshAwards() {
@@ -915,7 +990,10 @@ struct ContentView: View {
                 let thumbs = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
                 VStack(spacing: 12) {
                     ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { _, session in
-                        Button { sheet = .results(session.id) } label: {
+                        // The session's own page, which is where everything
+                        // about it is said now. Its measurements, when a
+                        // Watch took any, are one tap further in.
+                        Button { sheet = FeatureFlags.friends ? .save(session.id) : .results(session.id) } label: {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
                                         stats: stats[session.id],

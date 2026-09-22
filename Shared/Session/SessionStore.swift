@@ -363,16 +363,18 @@ enum SessionStore {
     /// resizing lives in the iOS app (`PostPhoto`). Retaking replaces in
     /// place, so a session never carries two.
     @discardableResult
-    static func savePhoto(sessionID: UUID, jpeg: Data, thumbnail: Data, takenAt: Date = Date(),
-                          in context: ModelContext) -> SessionPhoto {
+    static func savePhoto(sessionID: UUID, jpeg: Data, thumbnail: Data, video: Data? = nil,
+                          takenAt: Date = Date(), in context: ModelContext) -> SessionPhoto {
         if let existing = photo(for: sessionID, in: context) {
             existing.jpeg = jpeg
             existing.thumbnail = thumbnail
+            existing.video = video
             existing.takenAt = takenAt
             try? context.save()
             return existing
         }
-        let row = SessionPhoto(sessionID: sessionID, takenAt: takenAt, jpeg: jpeg, thumbnail: thumbnail)
+        let row = SessionPhoto(sessionID: sessionID, takenAt: takenAt, jpeg: jpeg,
+                               thumbnail: thumbnail, video: video)
         context.insert(row)
         try? context.save()
         return row
