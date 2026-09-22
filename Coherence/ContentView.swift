@@ -347,14 +347,13 @@ struct ContentView: View {
                 // view now takes the artboard's proportions by default, which
                 // would have pulled the bubble 20pt left here; Home is the one
                 // screen Melvin asked to leave exactly as it was.
-                OttoRiveView(size: 104, pose: .talking, width: 104, rig: ottoRig)
+                // As bright as the practice has kept him (`OttoAura`). He no
+                // longer waves on a tap: the wave belongs to the standing
+                // pose, and every aura stage sits.
+                OttoAuraFigure(stage: auraStage, size: 104, rig: ottoRig)
                     .padding(.leading, -22)
                     .contentShape(Rectangle())
-                    .onTapGesture {
-                        ottoLineIndex += 1
-                        ottoRig.wave()
-                    }
-                    .accessibilityLabel("Otto")
+                    .onTapGesture { ottoLineIndex += 1 }
                     .accessibilityHint("Says something about today")
                 OttoBubble(text: ottoLines[ottoLineIndex % ottoLines.count])
                     .padding(.bottom, 26)
@@ -387,6 +386,20 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let practicedToday = sessions.contains { cal.isDateInToday($0.startedAt) }
         var lines: [String] = []
+        // His mood leads when it is the news: a sad Otto who says nothing
+        // about it reads as a bug, and a glowing one has earned a word.
+        switch auraStage {
+        case .low where !practicedToday:
+            lines.append("I've been feeling a bit flat. One sit today and I'll perk right up.")
+        case .frustrated where !practicedToday:
+            lines.append("It's been a few days. A short sit is all it takes to get me going again.")
+        case .inFlow:
+            lines.append("Feel that? You keep showing up, and it shows on me.")
+        case .enlightened:
+            lines.append("I'm glowing. That's what showing up day after day does.")
+        default:
+            break
+        }
         if sessions.isEmpty {
             lines.append("Your first session starts at the plus. I'll read it back to you after.")
             lines.append("Put your Watch on, sit anyhow, breathe slow for a minute. That's the whole trick.")
@@ -406,6 +419,17 @@ struct ContentView: View {
         }
         lines.append("Slow your breath for the first minute. That's the doorway the score looks for.")
         return lines
+    }
+
+    /// Otto's stage today, from the same session dates as the streak.
+    private var auraStage: OttoAura.Stage {
+        #if DEBUG
+        // OTTO_AURA=<0...100> shows a stage on a simulator with no history.
+        if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
+            return OttoAura.Stage(level: level)
+        }
+        #endif
+        return OttoAura.stage(from: sessions.map(\.startedAt))
     }
 
     /// The streak, as a capsule straddling the bottom edge of the scene.

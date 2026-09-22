@@ -2488,6 +2488,42 @@ reference screen, build that screen.** Not a reading of it.
   screenshots half a breath apart shows the chest lit and Otto's outline
   black.** Before the fix the same map outlined his whole body.
 
+## OTTO'S AURA: HE GLOWS WITH PRACTICE AND SLUMPS WITHOUT IT (2026-09-21, Melvin)
+
+Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
+
+- **The rule is `OttoAura` (`Shared/Engine/`), derived from session dates
+  like the streak, never stored.** Start 40, +10 per day meditated, -20 per
+  missed day, with one rest day a week free through
+  `StreakCalculator.restAvailable`, so the two rules cannot disagree. An
+  unfinished today costs nothing. Consistency only, never the score. Stages:
+  Low 0-9, Frustrated 10-29, Curious 30-49 (a new person), Progressing 50-69,
+  In flow 70-89, Enlightened 90-100. `OttoAuraTests` pins the mockup's
+  promises: first session lifts him to Progressing, five days in a row reach
+  Enlightened, a week away from Enlightened brings him to Low.
+- **`OttoAuraFigure` draws him on Home.** Low, Frustrated and Curious are
+  still drawings (`OttoLow`, `OttoFrustrated`, `OttoCurious`, from
+  `mockups/otto-v3/`), deliberately motionless. From Progressing up he is the
+  Rive rig sitting, breathing through the mesh; In flow adds a glow and one
+  orbit, Enlightened a second orbit, sparks, ground ripples and a slow lift.
+  **The aura is drawn in SwiftUI, not baked into art**: painted glow cannot
+  move, and glow cut off a dark background turned to mud on the cream when
+  tried for the mockup. Its colours are `AppColor.auraGlow` / `auraRing`,
+  kept apart from the score's gold, and it is never a closed ring with a
+  number in it.
+- **He no longer waves on a tap on Home**: the wave belongs to the standing
+  pose and every stage sits. A tap still cycles his lines, and his mood leads
+  them at Low, Frustrated (only if today is not yet practised), In flow and
+  Enlightened.
+- **There is no lying-down Otto** (Melvin, twice now). At his lowest he sits
+  slumped with his head drooping.
+- The new drawings carry a smaller head than the rig's sitting Otto, so
+  matched by height they read a size smaller; Curious stands at 1.04 of the
+  frame and overflows upward into the sky.
+- `OTTO_AURA=<0...100>` (DEBUG) shows any stage on a simulator with no
+  history. Not built yet: the onboarding "See for yourself" slider screen from
+  the mockup.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body
