@@ -1,7 +1,11 @@
-<!doctype html><html><head><meta charset="utf-8"><title>808 · Profile v3</title>
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Profile, baseline</title>
 <style>
-:root{--paper:#FEF9F2;--ink:#413024;--soft:#877160;--amber:#F0C47B;--amberSh:#D9A957;
- --amberText:#9B6B19;--sage:#3E8175;--trace:#F0E3D0;--hair:#EFE4D5;--blushText:#AB5834;--skyInk:#24414F}
+:root{
+  /* Sampled off Melvin's Home, not invented. */
+  --grass:#9CBC85; --card:#FFFFFF; --ink:#413024; --soft:#877160;
+  --amber:#F7B143; --track:#F0E3D0; --amberText:#9B6B19; --sage:#3E8175;
+  --blushText:#AB5834; --trace:#F0E3D0; --hair:#EFE4D5; --paper:#FEF9F2;
+}
 *{box-sizing:border-box}
 body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 80px;
  font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
@@ -15,69 +19,72 @@ h2{font-size:15px;margin:36px 0 4px;font-weight:800}
 .note{color:var(--soft);font-size:13.4px;line-height:1.62;width:300px;margin-top:13px}
 .note b{color:var(--ink)}
 .wide{width:auto;max-width:880px}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:880px;margin-top:14px}
+.flag b{color:var(--blushText)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;
+ border:1px solid rgba(0,0,0,.08)}
 
+/* ---------- the phone: grass page, white cards ---------- */
 .p{width:300px;height:640px;border-radius:38px;overflow:hidden;position:relative;flex:none;
- background:var(--paper);box-shadow:0 12px 34px rgba(80,55,30,.16)}
-
-.band{position:absolute;left:0;top:0;width:100%;height:168px;overflow:hidden;
- background:linear-gradient(180deg,#8CBBD4 0%,#B6D5E2 58%,#DCE6DC 100%)}
-.sun{position:absolute;left:14%;top:26%;width:34px;height:34px;border-radius:50%;
- background:#FFE9B8;box-shadow:0 0 34px 13px rgba(255,233,184,.5)}
+ background:var(--grass);box-shadow:0 12px 34px rgba(80,55,30,.16)}
+.band{position:absolute;left:0;top:0;width:100%;height:158px;overflow:hidden;
+ background:linear-gradient(180deg,#8CBBD4 0%,#B6D5E2 58%,#D6E3DA 100%)}
+.sun{position:absolute;left:15%;top:24%;width:32px;height:32px;border-radius:50%;
+ background:#FFE9B8;box-shadow:0 0 32px 12px rgba(255,233,184,.5)}
 .cl{position:absolute}
-.mt{position:absolute;left:0;bottom:26px;width:100%;height:58px}
-.grass{position:absolute;left:0;bottom:0;width:100%;height:32px;
- background:linear-gradient(180deg,#7FA87E,#93B683)}
-/* Otto is small here and off to the side: this page is yours, not his. */
-.otto{position:absolute;left:14px;bottom:24px;width:62px;height:62px;
+.mt{position:absolute;left:0;bottom:30px;width:100%;height:56px}
+.grass{position:absolute;left:0;bottom:0;width:100%;height:34px;
+ background:linear-gradient(180deg,#7FA87E,#9CBC85)}
+.fl{position:absolute;bottom:11px;width:7px;height:7px;border-radius:50%;background:#FFF3D6;
+ box-shadow:0 0 0 2px rgba(245,166,35,.55)}
+.otto{position:absolute;left:16px;bottom:22px;width:60px;height:60px;
  background:url("otto-v3/otto-sit.png") center bottom/contain no-repeat}
 .gear{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;
- background:rgba(254,249,242,.92);display:flex;align-items:center;justify-content:center;
- font-size:14px;box-shadow:0 2px 8px rgba(40,25,15,.14);z-index:4}
+ background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;
+ font-size:14px;box-shadow:0 2px 8px rgba(40,25,15,.16);z-index:4}
 
-/* Your portrait straddles the seam, the way every profile does. */
-.av{position:absolute;left:50%;top:168px;transform:translate(-50%,-50%);width:80px;height:80px;
- border-radius:50%;border:4px solid var(--paper);z-index:3;
+.page{position:absolute;left:0;right:0;top:158px;bottom:0;padding:0 14px;overflow:hidden}
+.card{background:var(--card);border-radius:20px;padding:14px;margin-bottom:10px;
+ box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.card.first{margin-top:44px;padding-top:44px;position:relative}
+.av{position:absolute;left:50%;top:0;transform:translate(-50%,-50%);width:78px;height:78px;
+ border-radius:50%;border:4px solid var(--card);z-index:3;
  background:linear-gradient(150deg,#F7DDBE,#EBBE94);box-shadow:0 3px 9px rgba(40,25,15,.18)}
-
-.page{position:absolute;left:0;right:0;top:168px;bottom:0;background:var(--paper);overflow:hidden;
- padding:46px 18px 0}
 .nm{font-size:21px;font-weight:800;text-align:center;line-height:1.1}
 .hd{font-size:11.5px;color:var(--soft);text-align:center;margin-top:3px}
 .edit{display:block;text-align:center;font-size:12.5px;font-weight:800;color:var(--amberText);margin-top:9px}
-
-.seen{display:flex;gap:7px;align-items:flex-start;background:rgba(147,201,190,.16);
+.seen{display:flex;gap:7px;align-items:flex-start;background:rgba(62,129,117,.10);
  border-radius:12px;padding:8px 11px;margin-top:13px}
 .seen .e{font-size:12px;color:var(--sage);flex:none;line-height:1.35}
 .seen .t{font-size:11px;color:var(--soft);line-height:1.4}
 .seen .t b{color:var(--ink)}
-
 .follow{display:flex;justify-content:center;gap:18px;margin-top:12px}
 .follow div{font-size:11.5px;color:var(--soft)}
 .follow b{color:var(--ink);font-size:13.5px;font-weight:800;margin-right:3px}
 
-.sec{padding:14px 0;border-bottom:1px solid var(--hair)}
-.sec:last-child{border-bottom:none}
-.stats{display:flex}
+.stats{display:flex;text-align:center}
 .stats div{flex:1}
-.stats b{display:block;font-size:19px;font-weight:800;color:var(--blushText);line-height:1}
-.stats span{display:block;font-size:9.5px;color:var(--soft);margin-top:4px}
+.stats .ic{font-size:13px;line-height:1}
+.stats b{display:block;font-size:20px;font-weight:800;color:var(--ink);line-height:1;margin-top:5px}
+.stats span{display:block;font-size:9px;color:var(--soft);margin-top:4px}
 
 .hrow{display:flex;align-items:center}
-.h{font-size:15px;font-weight:800;flex:1}
-.sub{font-size:11.5px;color:var(--soft);margin-top:2px;line-height:1.45}
-.mk{font-size:8.5px;font-weight:800;letter-spacing:.05em;color:var(--soft);background:var(--trace);
+.h{font-size:15.5px;font-weight:800;flex:1}
+.sub{font-size:11.5px;color:var(--soft);margin-top:3px;line-height:1.45}
+.mk{font-size:8.5px;font-weight:800;letter-spacing:.05em;color:var(--soft);background:var(--track);
  border-radius:999px;padding:3px 7px;margin-left:6px;white-space:nowrap}
-.mk.friends{color:var(--sage);background:rgba(147,201,190,.26)}
+.mk.friends{color:#2C6A5F;background:rgba(62,129,117,.16)}
 
-.ch{display:flex;align-items:flex-end;gap:3px;height:56px;margin-top:11px;position:relative}
+.ch{display:flex;align-items:flex-end;gap:3px;height:58px;margin-top:12px;position:relative}
 .ch .bar{flex:1;background:var(--amber);border-radius:3px 3px 0 0}
-.ch:after{content:"";position:absolute;left:0;right:0;bottom:44%;border-top:1.5px dashed rgba(155,107,25,.45)}
+.ch:after{content:"";position:absolute;left:0;right:0;bottom:52%;border-top:1.5px dashed rgba(155,107,25,.55)}
 
-.shelf{display:flex;gap:6px;margin-top:11px}
+.shelf{display:flex;gap:6px;margin-top:12px}
 .aw{flex:1;text-align:center}
-.aw .face{display:block;height:42px;border-radius:13px;background:var(--trace);color:var(--soft);
- font-size:14px;font-weight:800;line-height:42px}
-.aw.on .face{background:var(--amber);color:var(--ink);box-shadow:0 3px 0 var(--amberSh)}
+.aw .face{display:block;height:44px;border-radius:14px;background:var(--track);color:var(--soft);
+ font-size:15px;font-weight:800;line-height:44px}
+.aw.on .face{background:var(--amber);color:#4A3312;box-shadow:0 3px 0 #D9992E}
 .aw .cap{display:block;font-size:8px;color:var(--soft);margin-top:5px;line-height:1.2;height:20px;overflow:hidden}
 
 .srow{display:flex;align-items:center;gap:10px;padding:10px 0}
@@ -87,33 +94,43 @@ h2{font-size:15px;margin:36px 0 4px;font-weight:800}
 .srow .sx{flex:1}
 .srow .sx b{display:block;font-size:13.5px;font-weight:800}
 .srow .sx i{display:block;font-style:normal;font-size:10.5px;color:var(--soft);margin-top:2px}
-.srow .sc{font-size:16px;font-weight:800;color:var(--amberText)}
+.srow .sc{font-size:17px;font-weight:800;color:var(--ink)}
+.srow .sc span{font-size:9.5px;color:var(--soft);font-weight:700;margin-left:2px}
 
-/* the friend's-eye page */
-.plain{position:absolute;inset:0;background:var(--paper);padding:52px 18px 0}
-.ptop{display:flex;gap:12px;align-items:center}
-.ptop .pav{width:56px;height:56px;border-radius:50%;flex:none;
+.plain{position:absolute;inset:0;background:var(--grass);padding:46px 14px 0}
+.ptop{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:20px;padding:14px;
+ box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.ptop .pav{width:54px;height:54px;border-radius:50%;flex:none;
  background:linear-gradient(150deg,#F7DDBE,#EBBE94)}
-.tiles{display:flex;gap:7px;margin-top:14px}
-.tile{flex:1;background:#fff;border-radius:14px;padding:10px 6px;text-align:center;
- box-shadow:0 1px 4px rgba(80,55,30,.07)}
-.tile b{display:block;font-size:17px;font-weight:800}
+.tiles{display:flex;gap:8px;margin-top:10px}
+.tile{flex:1;background:var(--card);border-radius:18px;padding:12px 6px;text-align:center;
+ box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.tile .ic{font-size:13px}
+.tile b{display:block;font-size:18px;font-weight:800;margin-top:5px}
 .tile span{display:block;font-size:9px;color:var(--soft);margin-top:3px}
-.post{background:#fff;border-radius:16px;padding:11px;margin-top:10px;box-shadow:0 1px 4px rgba(80,55,30,.07)}
-.post .ph{height:78px;border-radius:11px;background:linear-gradient(160deg,#FDEDE1,#E3CDB6);margin-top:8px}
+.post{background:var(--card);border-radius:20px;padding:12px;margin-top:10px;box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.post .ph{height:74px;border-radius:12px;background:linear-gradient(160deg,#FDEDE1,#E3CDB6);margin-top:8px}
 .post b{font-size:13.5px;font-weight:800}
 .post i{display:block;font-style:normal;font-size:10.5px;color:var(--soft);margin-top:2px}
-.miss{font-size:11.5px;color:var(--soft);line-height:1.5;margin-top:16px;
- border-top:1px dashed var(--trace);padding-top:12px}
-.miss b{color:var(--ink)}
+.miss{font-size:11px;color:#31502E;line-height:1.5;margin-top:12px;padding:0 4px}
+.miss b{color:#1F3A1D}
 </style></head><body>
 
-<h1>Profile: your page, and what friends see</h1>
-<p class="lede">Two changes. <b>Otto shrinks to 62pt and stands aside</b>, because this page is yours
-and he was taking the hero slot. <b>Your portrait straddles the seam</b> between the valley and the
-page, which is the shape every profile in the world uses and the one the current screen was reaching
-for with its big centred circle. And the page now answers the question it never answered: who can see
-this.</p>
+<h1>Profile: baseline, and on theme</h1>
+<p class="lede">Two fixes. <b>Every measured number is gone</b>, because the baseline has no Watch to
+measure with. And <b>the page is grass with white cards</b>, which is the decision Melvin already made
+for Home tonight, not a cream sheet with pale accents.</p>
+
+<div class="flag">
+<p class="note wide" style="margin-top:0"><b>The pastel was cream on cream.</b> My page ground was
+<span class="sw" style="background:#FEF9F2"></span><code>#FEF9F2</code> with
+<span class="sw" style="background:#F0C47B"></span><code>#F0C47B</code> bars, so nothing had anything
+to push against. Sampled off Melvin's Home instead: ground
+<span class="sw" style="background:#9CBC85"></span><code>#9CBC85</code>, cards
+<span class="sw" style="background:#FFFFFF"></span><code>#FFFFFF</code>, bars
+<span class="sw" style="background:#F7B143"></span><code>#F7B143</code>. His own note ends "Guide,
+Friends and Profile are still the cream pages", so this is the page he was pointing at.</p>
+</div>
 
 <div class="row">
 
@@ -122,7 +139,7 @@ this.</p>
     <div class="p">
       <div class="band">
         <div class="sun"></div>
-        <div class="cl" style="right:2%;top:16%;width:96px;height:50px">
+        <div class="cl" style="right:2%;top:14%;width:96px;height:50px">
           <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.9">
           <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
           <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>
@@ -132,101 +149,105 @@ this.</p>
           <path d="M0 66 L52 44 L108 66 L160 40 L216 64 L300 48 L300 90 L0 90 Z" fill="#8FAFB4"/>
         </svg>
         <div class="grass"></div>
+        <div class="fl" style="left:6%"></div><div class="fl" style="left:22%;bottom:6px"></div>
+        <div class="fl" style="right:14%"></div><div class="fl" style="right:30%;bottom:7px"></div>
         <div class="otto"></div>
       </div>      <div class="gear">&#9881;</div>
-      <div class="av"></div>
-      <div class="page" style="padding-top:46px">
-        <div class="nm">Aziz</div>
-        <div class="hd">@aziz &middot; practising since September</div>
-        <div class="edit">Edit profile</div>
-        <div class="seen"><div class="e">&#128065;</div>
-          <div class="t">Friends see your name, your streak and the sessions you post.
-            <b>Everything marked Only you stays here.</b></div></div>
-        <div class="follow"><div><b>8</b>followers</div><div><b>12</b>following</div></div>
-        <div class="sec stats" style="margin-top:6px">
-          <div><b>3</b><span>day streak</span></div>
-          <div><b>11</b><span>longest</span></div>
-          <div><b>16</b><span>sessions</span></div>
-          <div><b>4.2h</b><span>practised</span></div>
+      <div class="page">
+        <div class="card first">
+          <div class="av"></div>
+          <div class="nm">Aziz</div>
+          <div class="hd">@aziz &middot; practising since September</div>
+          <div class="edit">Edit profile</div>
+          <div class="seen"><div class="e">&#128065;</div>
+            <div class="t">Friends see your name, your streak and the sessions you post.
+              <b>Everything marked Only you stays here.</b></div></div>
+          <div class="follow"><div><b>8</b>followers</div><div><b>12</b>following</div></div>
+        </div>
+        <div class="card stats">
+          <div><div class="ic" style="color:var(--blushText)">&#128293;</div><b>3</b><span>day streak</span></div>
+          <div><div class="ic" style="color:var(--amberText)">&#127942;</div><b>11</b><span>longest</span></div>
+          <div><div class="ic" style="color:var(--sage)">&#129496;</div><b>16</b><span>sessions</span></div>
+          <div><div class="ic" style="color:var(--soft)">&#128337;</div><b>4.2h</b><span>practised</span></div>
         </div>
       </div>
     </div>
-    <p class="note"><b>The valley became a cover.</b> It is the same sky, mountains and meadow as the
-      sit, 168pt of it, with Otto sitting small at the far left. He is still there, still breathing,
-      and no longer the first thing you meet on your own profile.</p>
+    <p class="note"><b>Your portrait sits on the first card, not on the scene.</b> On grass it needs a
+      white edge to be a portrait rather than a hole, and the card gives it one. Otto stays 60pt at
+      the far left of the band.</p>
   </div>
 
   <div class="col">
     <div class="tag"><b>2</b> &nbsp;scrolled</div>
     <div class="p">
-      <div class="band" style="height:104px"><div class="sun" style="top:14%"></div><svg class="mt" viewBox="0 0 300 90" preserveAspectRatio="none"><path d="M0 50 L44 20 L86 46 L132 14 L186 44 L232 24 L300 48 L300 90 L0 90 Z" fill="#AFC6CE"/><path d="M0 66 L52 44 L108 66 L160 40 L216 64 L300 48 L300 90 L0 90 Z" fill="#8FAFB4"/></svg><div class="grass"></div></div>
+      <div class="band" style="height:88px"><div class="sun" style="top:8%"></div>
+        <svg class="mt" viewBox="0 0 300 90" preserveAspectRatio="none">
+        <path d="M0 50 L44 20 L86 46 L132 14 L186 44 L232 24 L300 48 L300 90 L0 90 Z" fill="#AFC6CE"/>
+        <path d="M0 66 L52 44 L108 66 L160 40 L216 64 L300 48 L300 90 L0 90 Z" fill="#8FAFB4"/></svg>
+        <div class="grass"></div></div>
       <div class="gear">&#9881;</div>
-      <div class="page" style="top:104px;padding-top:10px">
-        <div class="sec">
-          <div class="hrow"><div class="h">Your scores</div><span class="mk">Only you</span></div>
+      <div class="page" style="top:88px">
+        <div class="card">
+          <div class="hrow"><div class="h">Your minutes</div><span class="mk">Only you</span></div>
           <div class="sub">One bar per session. The line is your average.</div>
-          <div class="ch"><div class="bar" style="height:34%"></div><div class="bar" style="height:52%"></div><div class="bar" style="height:41%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:60%"></div><div class="bar" style="height:77%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:83%"></div><div class="bar" style="height:71%"></div><div class="bar" style="height:90%"></div><div class="bar" style="height:64%"></div><div class="bar" style="height:88%"></div><div class="bar" style="height:79%"></div><div class="bar" style="height:95%"></div><div class="bar" style="height:86%"></div><div class="bar" style="height:74%"></div></div>
+          <div class="ch"><div class="bar" style="height:18%"></div><div class="bar" style="height:37%"></div><div class="bar" style="height:28%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:43%"></div><div class="bar" style="height:68%"></div><div class="bar" style="height:31%"></div><div class="bar" style="height:78%"></div><div class="bar" style="height:56%"></div><div class="bar" style="height:93%"></div><div class="bar" style="height:37%"></div><div class="bar" style="height:81%"></div><div class="bar" style="height:62%"></div><div class="bar" style="height:100%"></div><div class="bar" style="height:75%"></div><div class="bar" style="height:46%"></div></div>
         </div>
-        <div class="sec">
+        <div class="card">
           <div class="hrow"><div class="h">Awards</div><span class="mk">Only you</span>
-            <span class="sub" style="margin:0 0 0 8px">2 of 18</span></div>
-          <div class="shelf"><div class="aw on"><span class="face">&#127774;</span><span class="cap">First<br>step</span></div><div class="aw on"><span class="face">1</span><span class="cap">First<br>session</span></div><div class="aw "><span class="face">3</span><span class="cap">Three<br>days</span></div><div class="aw "><span class="face">5</span><span class="cap">Five<br>days</span></div><div class="aw "><span class="face">10</span><span class="cap">Ten<br>days</span></div></div>
+            <span class="sub" style="margin:0 0 0 8px">2 of 15</span></div>
+          <div class="shelf"><div class="aw on"><span class="face">&#127774;</span><span class="cap">First<br>step</span></div><div class="aw on"><span class="face">1</span><span class="cap">First<br>session</span></div><div class="aw "><span class="face">3</span><span class="cap">Three<br>days</span></div><div class="aw "><span class="face">20</span><span class="cap">Twenty<br>minutes</span></div><div class="aw "><span class="face">7</span><span class="cap">One<br>week</span></div></div>
         </div>
-        <div class="sec">
-          <div class="hrow"><div class="h">All sessions</div></div>
-          <div class="srow hr"><div class="thumb"></div><div class="sx"><b>Tonight <span class="mk friends">Friends</span></b><i>12 min &middot; Breath work</i></div><div class="sc">74</div></div><div class="srow hr"><div class="thumb"></div><div class="sx"><b>Yesterday <span class="mk">Only you</span></b><i>20 min &middot; Silence</i></div><div class="sc">81</div></div><div class="srow"><div class="thumb"></div><div class="sx"><b>Friday <span class="mk friends">Friends</span></b><i>9 min &middot; Guided</i></div><div class="sc">66</div></div>
+        <div class="card">
+          <div class="h" style="margin-bottom:2px">All sessions</div>
+          <div class="srow hr"><div class="thumb"></div><div class="sx"><b>Tonight <span class="mk friends">Friends</span></b><i>Breath work</i></div><div class="sc">12<span>min</span></div></div><div class="srow hr"><div class="thumb"></div><div class="sx"><b>Yesterday <span class="mk">Only you</span></b><i>Silence</i></div><div class="sc">20<span>min</span></div></div><div class="srow"><div class="thumb"></div><div class="sx"><b>Friday <span class="mk friends">Friends</span></b><i>Guided</i></div><div class="sc">9<span>min</span></div></div>
         </div>
       </div>
     </div>
-    <p class="note"><b>Only you is a fact, not a warning.</b> The chip sits on the two sections that
-      never leave the phone, and each session says whether it went to friends. That is the whole
-      answer to "what can other people see", given in the place you would ask it.</p>
+    <p class="note"><b>Your scores became Your minutes.</b> Same shape, honest source, and the bars
+      take Home's saturated amber rather than the pale one. The dashed line is still your average.</p>
   </div>
 
   <div class="col">
-    <div class="tag"><b>3</b> &nbsp;what a friend actually sees</div>
+    <div class="tag"><b>3</b> &nbsp;what a friend sees</div>
     <div class="p">      <div class="plain">
         <div class="ptop">
           <div class="pav"></div>
           <div><div style="font-size:19px;font-weight:800">Aziz</div>
-            <div class="hd" style="text-align:left;margin-top:2px">@aziz &middot; practising since September</div>
-            <div style="font-size:11px;color:var(--soft);margin-top:3px"><b style="color:var(--ink)">8</b> followers &nbsp;
+            <div style="font-size:11px;color:var(--soft);margin-top:2px">@aziz &middot; since September</div>
+            <div style="font-size:11px;color:var(--soft);margin-top:4px"><b style="color:var(--ink)">8</b> followers &nbsp;
               <b style="color:var(--ink)">12</b> following</div></div>
         </div>
         <div class="tiles">
-          <div class="tile"><b>3</b><span>Streak</span></div>
-          <div class="tile"><b>9</b><span>Posts</span></div>
-          <div class="tile"><b>76</b><span>Avg score</span></div>
+          <div class="tile"><div class="ic">&#128293;</div><b>3</b><span>Streak</span></div>
+          <div class="tile"><div class="ic">&#128247;</div><b>9</b><span>Posts</span></div>
+          <div class="tile"><div class="ic">&#128337;</div><b>4.2h</b><span>Practised</span></div>
         </div>
-        <div class="post"><b>Tonight</b><i>12 min &middot; Breath work &middot; 74</i><div class="ph"></div></div>
-        <div class="post"><b>Friday</b><i>9 min &middot; Guided &middot; 66</i><div class="ph"></div></div>
-        <div class="miss"><b>Not here:</b> your scores chart, your awards, the sessions you
-          kept to yourself, your private notes, and every heart, breath and stillness reading.</div>
+        <div class="post"><b>Tonight</b><i>12 min &middot; Breath work</i><div class="ph"></div></div>
+        <div class="post"><b>Friday</b><i>9 min &middot; Guided</i><div class="ph"></div></div>
+        <div class="miss"><b>Not here:</b> your minutes chart, your awards, the sessions you kept to
+          yourself, and your private notes.</div>
       </div></div>
-    <p class="note"><b>Drawn from `PersonView`, not imagined.</b> Name, handle, since, follow counts,
-      and for friends the streak, post count and average score, then your posts. The dashed line lists
-      what is not there, and it is the list the chips on your own page promise.</p>
+    <p class="note"><b>Avg score became Practised.</b> The third tile averaged your posts' scores;
+      hours sat is the same kind of fact with no instrument behind it. The tiles are Home's three
+      tiles, same shape and same icons.</p>
   </div>
 
 </div>
 
-<h2>Why the chips say what they say</h2>
-<p class="note wide"><b>A post carries the free share card and nothing measured</b>, which
-`test_postCarriesOnlyTheFreeCardFields` locks: score, minutes, streak, technique, title, sound,
-caption, photo. No heart, breath or stillness, ever, for anyone. So "Only you" on the scores chart is
-literally true, and so is the last line of the friend's page.</p>
-<p class="note wide"><b>Awards are marked Only you because that is the truth today</b>, not because it
-is the right answer. They are the most postable thing in the app and they are not shared. Worth a
-decision: making the shelf public is a small change to `Profile` and would give the Friends tab
-something to show on a day nobody posted.</p>
-<p class="note wide"><b>With Friends off in Release, the chips and the follow line do not draw.</b>
-There is no public anything, so a page explaining who can see what would be answering a question the
-build does not raise.</p>
-
-<h2>Still open</h2>
-<p class="note wide"><b>The friend's page is not in the valley yet.</b> Panel 3 is drawn as it is
-today, on plain cream. If the valley is the app's vibe then someone else's page should get the same
-band with THEIR portrait on the seam, which is the same code twice. Worth doing in the same pass, and
-it is Friends-tab work rather than Profile work.</p>
+<h2>What the Watch took with it</h2>
+<p class="note wide"><b>The awards shelf is 15, not 18.</b> It landed at 50, Deep at 75 and Rare air
+at 90 are score awards, and with no Watch they can never be earned, so leaving them on the shelf puts
+three permanently unreachable squares in front of somebody through no fault of theirs. They are
+filtered the way "Brought a friend" is filtered when Friends is off. <b>`AwardEngine` keeps them</b>,
+so a wrist session still earns them.</p>
+<p class="note wide"><b>Line by line:</b> the scores chart is minutes; each session row shows its
+duration where the score was; a friend's Avg score is Practised; posts lose their score line.</p>
+<p class="note wide"><b>Amber still means the measured quantity of a session</b>, which in the
+baseline is its length and with a Watch is its score. That is why the bars keep it rather than moving
+to sage: the colour's meaning did not change, only the instrument. Blush still carries the streak,
+and the one gold object on the page is an earned award.</p>
+<p class="note wide"><b>Nothing is deleted from the engine.</b> `MeditationStats`, the score, the
+three awards and the curves all still exist and still fill in for a wrist session. This is the
+baseline's page, not a smaller product.</p>
 
 </body></html>
