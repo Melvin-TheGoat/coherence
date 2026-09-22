@@ -28,29 +28,22 @@ final class BlockShieldConfiguration: ShieldConfigurationDataSource {
         make(named: webDomain.domain)
     }
 
-    /// With notifications off the notification never comes, so the shield
-    /// sends the person to 808 by hand, where an unanswered ask opens Otto.
-    private func subtitle(asked: Bool) -> String {
-        guard asked else { return "Meditate first, or ask him for a few minutes." }
-        return BlockStore.notificationsAllowed
-            ? "Otto's on his way. Tap the notification up top."
-            : "Open 808 and Otto will meet you there."
-    }
-
     private func make(named name: String?) -> ShieldConfiguration {
         // Asked within the last two minutes: the notification is on its way.
         let asked = BlockStore.load().asks.last.map { Date().timeIntervalSince($0) < 120 } ?? false
         let ink = UIColor(named: "ShieldTextPrimary") ?? .darkText
         let soft = UIColor(named: "ShieldTextSecondary") ?? .gray
-        let title = name.map { "Otto's holding \($0)" } ?? "Otto's holding this one"
+        let title = BlockShieldWords.title(for: name)
         return ShieldConfiguration(
             backgroundBlurStyle: .systemUltraThinMaterialLight,
             backgroundColor: UIColor(named: "ShieldBackgroundPrimary"),
             icon: UIImage(named: "OttoShield"),
             title: .init(text: title, color: ink),
-            subtitle: .init(text: subtitle(asked: asked), color: soft),
-            primaryButtonLabel: .init(text: asked ? "Send it again" : "Ask Otto", color: ink),
+            subtitle: .init(text: BlockShieldWords.subtitle(asked: asked,
+                                                            notificationsAllowed: BlockStore.notificationsAllowed),
+                            color: soft),
+            primaryButtonLabel: .init(text: BlockShieldWords.primary(asked: asked), color: ink),
             primaryButtonBackgroundColor: UIColor(named: "ShieldAccentGold"),
-            secondaryButtonLabel: .init(text: "Close", color: soft))
+            secondaryButtonLabel: .init(text: BlockShieldWords.secondary, color: soft))
     }
 }

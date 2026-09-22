@@ -1,6 +1,7 @@
 import Foundation
 import FamilyControls
 import ManagedSettings
+import UserNotifications
 
 // BlockKit: the Screen Time half of Block, compiled into the app and all three
 // extensions (the DeviceActivity monitor, the shield's look, the shield's
@@ -186,3 +187,44 @@ enum BlockShields {
         }
     }
 }
+
+/// "Ask Otto": the tap is recorded and "Otto wants a word" is sent, because a
+/// shield cannot open an app. The shield's button and the app's DEBUG test
+/// mode both come through here, so a rehearsal on the simulator sends exactly
+/// what the phone will.
+enum BlockAsk {
+    static let notificationID = "808.block.ask"
+
+    static func post(completion: @escaping () -> Void = {}) {
+        BlockStore.appendAsk()
+        let content = UNMutableNotificationContent()
+        content.title = "Otto wants a word"
+        content.body = "Tap to talk it through."
+        content.sound = .default
+        // Through Focus, which is when it matters most.
+        content.interruptionLevel = .timeSensitive
+        content.userInfo = ["block": "ask"]
+        let request = UNNotificationRequest(identifier: notificationID, content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request) { _ in completion() }
+    }
+}
+
+/// What a held app's shield says, shared with the test mode's stand-in for it.
+enum BlockShieldWords {
+    static func title(for name: String?) -> String {
+        name.map { "Otto's holding \($0)" } ?? "Otto's holding this one"
+    }
+
+    /// With notifications off the notification never comes, so the shield
+    /// sends the person to 808 by hand, where an unanswered ask opens Otto.
+    static func subtitle(asked: Bool, notificationsAllowed: Bool) -> String {
+        guard asked else { return "Meditate first, or ask him for a few minutes." }
+        return notificationsAllowed
+            ? "Otto's on his way. Tap the notification up top."
+            : "Open 808 and Otto will meet you there."
+    }
+
+    static func primary(asked: Bool) -> String { asked ? "Send it again" : "Ask Otto" }
+    static let secondary = "Close"
+}
+

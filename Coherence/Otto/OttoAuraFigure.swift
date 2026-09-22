@@ -54,7 +54,10 @@ struct OttoAuraFigure: View {
                 .scaledToFit()
                 .frame(height: size * Self.drawnHeight(stage))
         case .progressing, .inFlow, .enlightened:
-            OttoRiveView(size: size, pose: .meditating, width: size, rig: rig)
+            // No explicit width: a square frame letterboxes the 425 x 522
+            // artboard and hangs it bottom LEFT, which drew him a thumb's
+            // width left of his own cushion (Melvin, 2026-09-22).
+            OttoRiveView(size: size, pose: .meditating, rig: rig)
         }
     }
 
@@ -111,6 +114,97 @@ struct OttoAuraFigure: View {
         case .inFlow: return "glowing"
         case .enlightened: return "glowing and floating"
         }
+    }
+}
+
+/// The glow Otto gains when a session lands: light swelling off him, a few
+/// sparks rising, and what he gained (Melvin, 2026-09-22: the first thing
+/// after meditating should be Otto gaining aura, with a nice animation).
+///
+/// One animated `phase` drives all of it, so the whole burst is a single
+/// curve and nothing can drift apart. It plays once, on appear, because it is
+/// put on screen by the session landing.
+struct AuraGainBurst: View {
+    /// Points of glow gained. 0 draws the light and no number, which is a
+    /// second session on a day already counted.
+    let gain: Int
+    /// Otto's height, which the burst is drawn around.
+    let size: CGFloat
+
+    /// Bumped on appear, because a keyframe animation plays when its trigger
+    /// changes and this view is put on screen by the session landing.
+    @State private var go = 0
+
+    private static let sparkCount = 11
+
+    var body: some View {
+        Color.clear
+            .frame(width: size * 2, height: size * 2)
+            .keyframeAnimator(initialValue: 0.0, trigger: go) { view, phase in
+                view.overlay { burst(phase) }
+            } keyframes: { _ in
+                CubicKeyframe(1.0, duration: 2.1)
+            }
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .onAppear { go += 1 }
+    }
+
+    /// **The phase is passed in, not derived from animated state.** An
+    /// `.opacity(f(phase))` under `withAnimation` interpolates between its
+    /// first and last values only, and this curve rises and falls, so both
+    /// ends are invisible and the whole burst never appeared (2026-09-22).
+    /// A keyframe animator re-runs this for every frame.
+    @ViewBuilder private func burst(_ phase: Double) -> some View {
+        let fade: Double = sin(.pi * min(1, phase))
+        ZStack {
+            glow(phase, fade: fade)
+            ForEach(0..<Self.sparkCount, id: \.self) { spark($0, phase, fade: fade) }
+            if gain > 0 { plus(phase) }
+        }
+    }
+
+    private func glow(_ phase: Double, fade: Double) -> some View {
+        Circle()
+            .fill(RadialGradient(colors: [AppColor.auraGlow.opacity(0.85),
+                                          AppColor.auraGlow.opacity(0.35),
+                                          AppColor.auraGlow.opacity(0)],
+                                 center: .center, startRadius: 0, endRadius: size * 0.95))
+            .frame(width: size * 1.9, height: size * 1.9)
+            .scaleEffect(0.45 + 0.75 * phase)
+            .opacity(fade * 0.85)
+    }
+
+    /// Sparks lift off him and spread as they go, the way embers do.
+    private func spark(_ i: Int, _ phase: Double, fade: Double) -> some View {
+        let fraction: Double = Double(i) / Double(Self.sparkCount - 1)
+        let angle: Double = -Double.pi / 2 + (fraction - 0.5) * 2.4
+        let eased: Double = 1 - pow(1 - phase, 2.4)
+        let distance: Double = Double(size) * (0.2 + 0.8 * eased)
+        let wobble: Double = (fraction * 7).truncatingRemainder(dividingBy: 1)
+        let dot: CGFloat = size * CGFloat(0.04 + 0.025 * wobble)
+        let dx: CGFloat = CGFloat(cos(angle) * distance)
+        let dy: CGFloat = CGFloat(sin(angle) * distance) - size * 0.1
+        let colour: Color = i.isMultiple(of: 3) ? AppColor.auraRing : AppColor.auraGlow
+        return Circle()
+            .fill(colour)
+            .frame(width: dot, height: dot)
+            .offset(x: dx, y: dy)
+            .opacity(fade)
+            .scaleEffect(0.6 + 0.9 * (1 - phase))
+    }
+
+    /// Beside his head, not above it: above is where his bubble is.
+    private func plus(_ phase: Double) -> some View {
+        let lift: CGFloat = size * CGFloat(0.02 - 0.37 * phase)
+        let arriving: Double = min(1, phase / 0.12)
+        let leaving: Double = 1 - max(0, (phase - 0.5) / 0.5)
+        return Text("+\(gain)%")
+            .font(DisplayFont.display(26, .heavy))
+            .foregroundStyle(AppColor.auraRing)
+            .shadow(color: AppColor.auraGlow.opacity(0.7), radius: 8)
+            .offset(x: size * 0.48, y: lift)
+            .opacity(min(arriving, leaving))
     }
 }
 

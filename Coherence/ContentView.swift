@@ -54,11 +54,15 @@ struct ContentView: View {
     /// Awards earned but not yet celebrated, oldest first. Announced one at a
     /// time: two unlock screens racing each other would cheapen both.
     @State private var unlockQueue: [AwardEngine.Earned] = []
-    /// A session that finished while the app was away and still owes the
-    /// person a Save session screen (`PendingSave`). Recomputed on every
-    /// return to the foreground, because that is the moment they picked the
-    /// phone up after sitting.
-    @State private var resumeSave: UUID?
+    /// A session that finished while the app was away (`PendingSave`).
+    /// Recomputed on every return to the foreground, because that is the
+    /// moment they picked the phone up after sitting.
+    @State private var landedWhileAway: UUID?
+    /// The glow a landed session just earned, playing on Home.
+    @State private var auraGain: AuraGain?
+    /// The level the card shows while that plays, counting up to the real
+    /// one. nil is the real one.
+    @State private var auraCount: Int?
     #if DEBUG
     /// `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at that moment, so
     /// the valley's whole arc can be reviewed without waiting ten minutes for
@@ -165,14 +169,12 @@ struct ContentView: View {
         .firstSessionHooks(offer: firstOffer, paid: store.entitlements.paid,
                            onOpenSetup: { present(.setup) },
                            onPaywallDue: { present(.paywall) })
-        .modifier(FriendsHooks(community: community,
-                               users: users,
-                               sessionActive: coordinator.active != nil,
-                               awardShowing: !unlockQueue.isEmpty,
-                               lastSessionID: coordinator.lastSessionID,
-                               resumeSessionID: resumeSave) { id in
-            if sheet == nil { sheet = .save(id) } else { pendingSheet = .save(id) }
-        })
+        .modifier(RootHooks(community: community, users: users,
+                            sessionActive: coordinator.active != nil,
+                            awardShowing: !unlockQueue.isEmpty,
+                            lastSessionID: coordinator.lastSessionID,
+                            resumedID: landedWhileAway,
+                            onLanded: celebrate))
         .modifier(BlockHooks(block: block,
                              sessionActive: coordinator.active != nil,
                              awardShowing: !unlockQueue.isEmpty,
@@ -185,9 +187,9 @@ struct ContentView: View {
         // then the app has usually been suspended or killed, so nothing is
         // left in memory to act on. Read the waiting session off disk instead.
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { readPendingSave() }
+            if phase == .active { readLandedSession() }
         }
-        .onAppear { readPendingSave() }
+        .onAppear { readLandedSession() }
         .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
         #if DEBUG
         .fullScreenCover(item: Binding(get: { sitPreviewElapsed.map { SitPreview(elapsed: $0) } },
@@ -236,7 +238,7 @@ struct ContentView: View {
             case .save(let id):
                 SaveSessionView(sessionID: id, mode: .new) {
                     PendingSave.clear()
-                    resumeSave = nil
+                    landedWhileAway = nil
                     pendingSheet = .results(id)
                     sheet = nil
                 }
@@ -309,6 +311,21 @@ struct ContentView: View {
     /// than an inline closure: as one expression on the body's chain it sent
     /// the type checker over its time limit (2026-09-15).
     private func debugPreviewHooks() {
+            // PREVIEW_AURA=<from>:<to> replays a landed session's glow on
+            // Home, without waiting a day for a real one to earn it.
+            if let raw = ProcessInfo.processInfo.environment["PREVIEW_AURA"] {
+                let parts = raw.split(separator: ":").compactMap { Int($0) }
+                let from = parts.first ?? 40
+                let to = parts.count > 1 ? parts[1] : from + 10
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(700))
+                    tab = .home
+                    ottoLineIndex = 0
+                    ottoPokes += 1
+                    auraGain = AuraGain(sessionID: UUID(), from: from, to: to)
+                    await countGlow(from: from, to: to)
+                }
+            }
             if let name = ProcessInfo.processInfo.environment["DEMO_NAME"] {
                 let u = SessionStore.currentUser(in: context)
                 if (u.displayName ?? "").isEmpty { u.displayName = name; try? context.save() }
@@ -448,6 +465,14 @@ struct ContentView: View {
             .padding(.trailing, AppMetrics.screenPadding)
             .padding(.top, topInset + 6)
 
+            // The glow a landed session just earned. Under his bubble, so
+            // the sparks pass behind the words rather than across them.
+            if let gain = auraGain {
+                AuraGainBurst(gain: max(0, gain.to - gain.from), size: ottoSize)
+                    .position(x: width / 2, y: ottoTop + ottoSize * 0.42)
+                    .id(gain.sessionID)
+            }
+
             // What he says, pinned by its bottom to just above his head, the
             // way the Ready screen pins its line, so the tail lands on him on
             // every phone.
@@ -499,6 +524,18 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let practicedToday = sessions.contains { cal.isDateInToday($0.startedAt) }
         var lines: [String] = []
+        // A sit has just landed and his glow is climbing: that is the news.
+        if let gain = auraGain {
+            if sessions.count <= 1 {
+                lines.append("That's your first one. Look what it did to me.")
+            } else if gain.to > gain.from {
+                lines.append(OttoAura.Stage(level: gain.to) > OttoAura.Stage(level: gain.from)
+                             ? "Look at me now. That's what showing up does."
+                             : "Thank you for that. I'm brighter already.")
+            } else {
+                lines.append("Twice in one day. I'm already glowing from the first.")
+            }
+        }
         // Holding apps is the most useful thing he can say (Block, 2026-09-22).
         if FeatureFlags.block, !block.holding().isEmpty {
             lines.append("I'm holding your apps. A short session and they're yours.")
@@ -536,7 +573,13 @@ struct ContentView: View {
         return lines + OttoSayings.forDay(Date())
     }
 
-    /// Otto's stage today, from the same session dates as the streak.
+    /// The level the card is showing: the real one, or the one climbing to it
+    /// after a sit.
+    private var shownAuraLevel: Int { auraCount ?? auraLevel }
+
+    /// Otto's stage today, from the same session dates as the streak. It
+    /// follows the climbing level during a celebration, so he brightens as
+    /// the bar fills rather than a moment later.
     private var auraStage: OttoAura.Stage {
         #if DEBUG
         // OTTO_AURA=<0...100> shows a stage on a simulator with no history.
@@ -544,7 +587,7 @@ struct ContentView: View {
             return OttoAura.Stage(level: level)
         }
         #endif
-        return OttoAura.Stage(level: auraLevel)
+        return OttoAura.Stage(level: shownAuraLevel)
     }
 
     /// Otto's level today, 0 to 100, for the bar under his name.
@@ -615,7 +658,7 @@ struct ContentView: View {
                     .font(DisplayFont.display(20, .heavy))
                     .foregroundStyle(AppColor.textPrimary)
                 Spacer(minLength: 8)
-                Text("\(auraLevel)%")
+                Text("\(shownAuraLevel)%")
                     .font(DisplayFont.display(22, .heavy))
                     .foregroundStyle(AppColor.textPrimary)
                     .monospacedDigit()
@@ -627,7 +670,8 @@ struct ContentView: View {
                     Capsule()
                         .fill(LinearGradient(colors: [AppColor.auraGlow, AppColor.auraRing],
                                              startPoint: .leading, endPoint: .trailing))
-                        .frame(width: max(14, geo.size.width * CGFloat(auraLevel) / 100))
+                        .frame(width: max(14, geo.size.width * CGFloat(shownAuraLevel) / 100))
+                        .animation(.easeOut(duration: 0.12), value: shownAuraLevel)
                 }
             }
             .frame(height: 12)
@@ -694,17 +738,54 @@ struct ContentView: View {
 
     /// Derived from history on every check, so nothing needs backfilling: a
     /// user with months of sessions simply has the awards those sessions earned.
-    /// The session waiting to be graded, if it is still there. A session can
-    /// be deleted from its results screen, so the stored id is checked against
-    /// storage before a sheet is opened on it; a dangling id clears itself.
-    private func readPendingSave() {
-        guard FeatureFlags.friends, let id = PendingSave.read() else { resumeSave = nil; return }
+    /// A session that landed while 808 was closed, if it is still there. A
+    /// session can be deleted, so the stored id is checked against storage
+    /// first; a dangling id clears itself.
+    private func readLandedSession() {
+        guard let id = PendingSave.read() else { landedWhileAway = nil; return }
         guard sessions.contains(where: { $0.id == id }) else {
             PendingSave.clear()
-            resumeSave = nil
+            landedWhileAway = nil
             return
         }
-        resumeSave = id
+        landedWhileAway = id
+    }
+
+    // MARK: - A session landed
+
+    /// What happens after a sit (Melvin, 2026-09-22): Home, and Otto's glow
+    /// rising, with no screen to fill in first. The Save session screen and
+    /// the results screen used to open here, one after the other.
+    private func celebrate(_ id: UUID) {
+        PendingSave.clear()
+        landedWhileAway = nil
+        tab = .home
+        guard let landed = sessions.first(where: { $0.id == id }) else { return }
+        let windows = FeatureFlags.block ? block.notNowWindows : []
+        let dates = sessions.map(\.startedAt)
+        let before = OttoAura.level(from: dates.filter { $0 != landed.startedAt }, notNow: windows)
+        let after = OttoAura.level(from: dates, notNow: windows)
+        ottoLineIndex = 0
+        ottoPokes += 1
+        auraGain = AuraGain(sessionID: id, from: before, to: after)
+        Task { await countGlow(from: before, to: after) }
+    }
+
+    /// The bar and its number climb to what the sit earned, then the card
+    /// goes back to reading the real level.
+    @MainActor private func countGlow(from: Int, to: Int) async {
+        auraCount = from
+        try? await Task.sleep(for: .milliseconds(260))
+        let steps = 22
+        for step in 1...steps {
+            try? await Task.sleep(for: .milliseconds(45))
+            guard !Task.isCancelled else { return }
+            auraCount = from + Int((Double(to - from) * Double(step) / Double(steps)).rounded())
+        }
+        try? await Task.sleep(for: .milliseconds(1800))
+        guard !Task.isCancelled else { return }
+        auraCount = nil
+        auraGain = nil
     }
 
     private func refreshAwards() {
@@ -913,20 +994,6 @@ private struct FriendsHooks: ViewModifier {
     let users: [User]
     let sessionActive: Bool
     let awardShowing: Bool
-    let lastSessionID: UUID?
-    /// A session read back off disk because the app was not running when it
-    /// landed. Same destination as `lastSessionID`, different road in.
-    let resumeSessionID: UUID?
-    let openSave: (UUID) -> Void
-
-    /// A landed session waiting for the screen to be free. Presenting while
-    /// the live-session cover is still animating away, or while an award
-    /// unlock (which fires on the same new session) is up, makes SwiftUI drop
-    /// the presentation, and a dropped item presentation can leave the root's
-    /// sheet stuck. So it waits for both, plus the dismissal animation.
-    @State private var pendingSave: UUID?
-
-    private struct Gate: Equatable { let pending: UUID?; let busy: Bool }
 
     func body(content: Content) -> some View {
         if FeatureFlags.friends {
@@ -944,27 +1011,78 @@ private struct FriendsHooks: ViewModifier {
                                      suggested: users.first?.username ?? "",
                                      nickname: users.first?.displayName ?? "") {}
                 }
-                // Strava's flow: the session ends on Save session, then results.
-                .onChange(of: lastSessionID) { _, id in
-                    if let id { pendingSave = id }
-                }
-                // The same sheet, for a session that finished while the app
-                // was suspended or dead. Both roads meet at the gate below,
-                // so the presentation rules are stated once.
-                .onChange(of: resumeSessionID) { _, id in
-                    if let id { pendingSave = id }
-                }
-                .onAppear { if let resumeSessionID { pendingSave = resumeSessionID } }
-                .task(id: Gate(pending: pendingSave, busy: sessionActive || awardShowing)) {
-                    guard let id = pendingSave, !sessionActive, !awardShowing else { return }
-                    try? await Task.sleep(nanoseconds: 700_000_000)
-                    guard !Task.isCancelled, pendingSave == id else { return }
-                    pendingSave = nil
-                    openSave(id)
-                }
         } else {
             content
         }
+    }
+}
+
+/// Friends and the end of a session, in ONE modifier on the root.
+///
+/// Not two: ContentView's chain is at the type checker's limit, and adding a
+/// second `.modifier(...)` to it is what tipped it over (2026-09-22).
+private struct RootHooks: ViewModifier {
+    @ObservedObject var community: CommunityModel
+    let users: [User]
+    let sessionActive: Bool
+    let awardShowing: Bool
+    let lastSessionID: UUID?
+    let resumedID: UUID?
+    let onLanded: (UUID) -> Void
+
+    func body(content: Content) -> some View {
+        content
+            .modifier(FriendsHooks(community: community, users: users,
+                                   sessionActive: sessionActive, awardShowing: awardShowing))
+            .modifier(SessionLandedHooks(sessionActive: sessionActive,
+                                         awardShowing: awardShowing,
+                                         lastSessionID: lastSessionID,
+                                         resumedID: resumedID,
+                                         onLanded: onLanded))
+    }
+}
+
+/// What a landed session earned, while Home is showing it.
+struct AuraGain: Equatable {
+    let sessionID: UUID
+    let from: Int
+    let to: Int
+}
+
+/// A sit has landed and the screen is free: Home, and Otto's glow rising
+/// (Melvin, 2026-09-22). Nothing opens after a session any more. The Save
+/// session screen and the results screen used to, one behind the other, which
+/// put two forms between a person and the thing they just did.
+///
+/// **It waits for the covers.** Acting while the live-session cover is still
+/// animating away, or while an award unlock (which fires on the same new
+/// session) is up, means the celebration plays behind a full-screen cover
+/// where nobody sees it.
+private struct SessionLandedHooks: ViewModifier {
+    let sessionActive: Bool
+    let awardShowing: Bool
+    let lastSessionID: UUID?
+    /// A session read back off disk because the app was not running when it
+    /// landed. Same destination, different road in.
+    let resumedID: UUID?
+    let onLanded: (UUID) -> Void
+
+    @State private var pending: UUID?
+
+    private struct Gate: Equatable { let pending: UUID?; let busy: Bool }
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: lastSessionID) { _, id in if let id { pending = id } }
+            .onChange(of: resumedID) { _, id in if let id { pending = id } }
+            .onAppear { if let resumedID { pending = resumedID } }
+            .task(id: Gate(pending: pending, busy: sessionActive || awardShowing)) {
+                guard let id = pending, !sessionActive, !awardShowing else { return }
+                try? await Task.sleep(nanoseconds: 700_000_000)
+                guard !Task.isCancelled, pending == id else { return }
+                pending = nil
+                onLanded(id)
+            }
     }
 }
 

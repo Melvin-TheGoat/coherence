@@ -34,11 +34,17 @@ final class BlockController: ObservableObject {
         state = BlockStore.load()
         authorization = AuthorizationCenter.shared.authorizationStatus
         #if DEBUG
-        if ProcessInfo.processInfo.environment["PREVIEW_BLOCK"] != nil { previewMode = true }
+        #if targetEnvironment(simulator)
+        let testByDefault = true
+        #else
+        let testByDefault = false
+        #endif
+        testMode = ProcessInfo.processInfo.environment["PREVIEW_BLOCK"] != nil
+            || (UserDefaults.standard.object(forKey: Self.testModeKey) as? Bool ?? testByDefault)
         #endif
         seedDefaultIfNeeded()
         #if DEBUG
-        if previewMode { seedPreview() }
+        seedPreview()
         #endif
         // Screen Time access can be granted, revoked and granted again from
         // Settings at any time (the review of 2026-09-22). A revoke drops the
@@ -52,7 +58,7 @@ final class BlockController: ObservableObject {
         let was = authorization
         authorization = status
         #if DEBUG
-        if previewMode { return }
+        if testMode { return }
         #endif
         if status == .approved && was != .approved {
             commit(reschedule: true)
@@ -62,15 +68,36 @@ final class BlockController: ObservableObject {
     }
 
     #if DEBUG
-    /// `PREVIEW_BLOCK=1` (simulator review): Mindful day set up and holding,
-    /// with Screen Time treated as allowed. The simulator can neither grant
-    /// Screen Time nor draw a shield, so without this the tab is only ever its
-    /// "allow Screen Time" card there. `PREVIEW_BLOCK=empty` keeps the fresh
-    /// state.
-    private(set) var previewMode = false
+    /// Block without Screen Time (Melvin, 2026-09-22: on the simulator,
+    /// allowing Screen Time asks for a passcode nobody has, and a simulator
+    /// cannot draw a shield anyway). Screen Time is treated as allowed and
+    /// never called, a blocker switched on counts as having apps, and the
+    /// Block tab plays the shield's part with a stand-in whose "Ask Otto"
+    /// sends the real notification. On by default in the simulator, off on a
+    /// phone, and switchable on the Block tab in any development build.
+    @Published private(set) var testMode = false
+    private static let testModeKey = "block.testMode.v1"
 
+    func setTestMode(_ on: Bool) {
+        testMode = on
+        UserDefaults.standard.set(on, forKey: Self.testModeKey)
+        refresh()
+    }
+
+    /// Test mode: forget today's releases and passes, so the apps are held
+    /// again without waiting for tomorrow.
+    func holdAgain(now: Date = Date()) {
+        guard testMode else { return }
+        state.releases.removeAll { now.timeIntervalSince($0.at) < 36 * 3600 }
+        state.passes.removeAll { now.timeIntervalSince($0.start) < 36 * 3600 }
+        commit(reschedule: false)
+    }
+
+    /// `PREVIEW_BLOCK=1` (simulator review) turns test mode on with Mindful
+    /// day already set up and holding. `PREVIEW_BLOCK=empty` keeps the fresh
+    /// state.
     private func seedPreview() {
-        guard ProcessInfo.processInfo.environment["PREVIEW_BLOCK"] != "empty",
+        guard let preview = ProcessInfo.processInfo.environment["PREVIEW_BLOCK"], preview != "empty",
               let i = state.blockers.firstIndex(where: { $0.kind == .mindfulDay }) else { return }
         state.blockers[i].hasApps = true
         state.blockers[i].isOn = true
@@ -79,7 +106,7 @@ final class BlockController: ObservableObject {
 
     var authorized: Bool {
         #if DEBUG
-        if previewMode { return true }
+        if testMode { return true }
         #endif
         return authorization == .approved
     }
@@ -154,7 +181,16 @@ final class BlockController: ObservableObject {
         if let selection {
             BlockStore.setSelection(selection, for: saved.id)
             saved.hasApps = !selection.isEmptySelection
+            #if DEBUG
+            // The simulator's picker has no real apps to offer.
+            if testMode { saved.hasApps = true }
+            #endif
         }
+        #if DEBUG
+        // The simulator's picker has no real apps, so switching it on in the
+        // editor counts as having them, the way the card's switch does.
+        if testMode && saved.isOn { saved.hasApps = true }
+        #endif
         if !saved.hasApps { saved.isOn = false }
         if let i = state.blockers.firstIndex(where: { $0.id == saved.id }) {
             state.blockers[i] = saved
@@ -166,6 +202,9 @@ final class BlockController: ObservableObject {
 
     func setOn(_ id: UUID, _ on: Bool) {
         guard let i = state.blockers.firstIndex(where: { $0.id == id }) else { return }
+        #if DEBUG
+        if testMode && on { state.blockers[i].hasApps = true }
+        #endif
         state.blockers[i].isOn = on && state.blockers[i].hasApps
         commit(reschedule: true)
     }
@@ -190,7 +229,7 @@ final class BlockController: ObservableObject {
     func takePass(minutes: Int, now: Date = Date()) -> [UUID] {
         var opened = BlockRules.takePass(minutes: minutes, in: &state, at: now)
         #if DEBUG
-        if previewMode { commit(reschedule: false); return opened }
+        if testMode { commit(reschedule: false); return opened }
         #endif
         guard authorized else {
             state.passes.removeAll { pass in opened.contains(pass.blockerID) && pass.start == now }
@@ -223,7 +262,7 @@ final class BlockController: ObservableObject {
     /// "Otto wants a word" lingers in Notification Center after the apps are
     /// open, and tapping it later would open Otto about nothing.
     func clearDeliveredAsk() {
-        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["808.block.ask"])
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [BlockAsk.notificationID])
     }
 
     /// Sessions that ended while 808 was closed (a Watch session delivered
@@ -262,7 +301,7 @@ final class BlockController: ObservableObject {
         }
         if authorized {
             #if DEBUG
-            if previewMode { return }
+            if testMode { return }
             #endif
             BlockShields.reconcile(now: now)
         }
@@ -290,7 +329,7 @@ final class BlockController: ObservableObject {
         BlockRules.prune(&state, now: Date())
         BlockStore.save(state)
         #if DEBUG
-        if previewMode { return }
+        if testMode { return }
         #endif
         guard authorized else { return }
         if reschedule {

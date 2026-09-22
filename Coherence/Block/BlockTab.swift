@@ -18,6 +18,9 @@ struct BlockTab: View {
 
     @State private var editing: EditRequest?
     @State private var accessDenied = false
+    #if DEBUG
+    @State private var testShield = false
+    #endif
     /// Bumped by a tap on Otto, which jiggles him (`OttoJiggle`), as on Home.
     @State private var ottoPokes = 0
 
@@ -35,11 +38,14 @@ struct BlockTab: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.56
+            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.52
             ScrollView {
                 VStack(spacing: 0) {
                     scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
                     VStack(alignment: .leading, spacing: 14) {
+                        #if DEBUG
+                        testCard
+                        #endif
                         if !block.authorized { accessCard }
                         if let problem = block.problem { noticeCard(problem, settings: false) }
                         if block.authorized, !block.notificationsAllowed,
@@ -101,15 +107,16 @@ struct BlockTab: View {
 
     // MARK: - The scene
 
-    /// Otto stands as big here as he sits on Home (Melvin, 2026-09-22: "make
-    /// him a bit bigger, like the size he is in the homescreen"). Matched by
-    /// HEAD width, measured on an iPhone 17 Pro, the way the aura drawings
-    /// are matched to the rig: about 125pt on both. The clipboard pose is
-    /// taller than the seated one for the same face, so the scene grew to
-    /// keep his line above him.
+    /// Otto stands bigger here than he did, between the 91pt face he had and
+    /// the 125pt one he has on Home (Melvin, 2026-09-22: bigger, "like the
+    /// size he is in the homescreen", then "a bit smaller" again). Measured
+    /// on an iPhone 17 Pro by HEAD width, the way the aura drawings are
+    /// matched to the rig. The clipboard pose is taller than the seated one
+    /// for the same face, so the scene is taller too, to keep his line above
+    /// him.
     private func scene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
         let ink = Self.day.ink
-        let ottoHeight = min(250, height * 0.49)
+        let ottoHeight = min(215, height * 0.43)
         let ottoBottom = height * 0.85
         return ZStack(alignment: .top) {
             ValleyScene(progress: 0, showsFigure: false)
@@ -256,6 +263,11 @@ struct BlockTab: View {
                 guard await block.requestAuthorization() else { accessDenied = true; return }
             }
             await block.requestNotificationsIfNeeded()
+            #if DEBUG
+            // The simulator's picker has no real apps to offer, so test mode
+            // skips it and holds the stand-in.
+            if block.testMode { block.setOn(blocker.id, true); return }
+            #endif
             if blocker.hasApps {
                 block.setOn(blocker.id, true)
             } else {
@@ -282,6 +294,105 @@ struct BlockTab: View {
         }
     }
 }
+
+#if DEBUG
+extension BlockTab {
+    /// Block on a simulator, where Screen Time cannot be granted (it asks for
+    /// a passcode) and a shield cannot be drawn. Development builds only.
+    var testCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Toggle(isOn: Binding(get: { block.testMode }, set: { block.setTestMode($0) })) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Test mode")
+                        .font(DisplayFont.display(17))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text("Development builds only. Screen Time is skipped, so Block runs on a simulator.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .tint(AppColor.accentGold)
+            if block.testMode {
+                if block.holding().isEmpty {
+                    Text(block.state.blockers.contains(where: { $0.isOn })
+                         ? "Nothing is held right now. Hold again to try it."
+                         : "Switch a blocker on, then open a held app.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(AppColor.textSecondary)
+                    Button("Hold again") { block.holdAgain() }
+                        .buttonStyle(SecondaryButtonStyle())
+                        .disabled(!block.state.blockers.contains { $0.isOn })
+                } else {
+                    Button("Open a held app") { testShield = true }
+                        .buttonStyle(SecondaryButtonStyle())
+                }
+            }
+        }
+        .card()
+        .fullScreenCover(isPresented: $testShield) {
+            BlockTestShield(block: block) { testShield = false }
+        }
+    }
+}
+
+/// What a held app looks like, for a simulator that cannot draw the real
+/// shield. The words and the notification are the shield's own
+/// (`BlockShieldWords`, `BlockAsk`), so a rehearsal here is the phone's flow:
+/// Ask Otto, the notification, then one of Otto's screens.
+private struct BlockTestShield: View {
+    @ObservedObject var block: BlockController
+    let onClose: () -> Void
+
+    @State private var asked = false
+
+    var body: some View {
+        VStack(spacing: 18) {
+            Spacer()
+            Image("OttoHead")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 92, height: 92)
+            Text(BlockShieldWords.title(for: "Instagram"))
+                .font(DisplayFont.display(22))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(BlockShieldWords.subtitle(asked: asked, notificationsAllowed: block.notificationsAllowed))
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Button(BlockShieldWords.primary(asked: asked)) {
+                asked = true
+                BlockAsk.post {
+                    Task { @MainActor in
+                        // With notifications off there is no banner to tap,
+                        // and the phone's answer is to open 808 by hand.
+                        if !block.notificationsAllowed { block.requestIntervention() }
+                    }
+                }
+                // The real shield stays up behind the notification; this one
+                // steps aside so the banner can be tapped.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(900))
+                    onClose()
+                }
+            }
+            .buttonStyle(PrimaryButtonStyle())
+            .padding(.horizontal, 32)
+            Button(BlockShieldWords.secondary, action: onClose)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(AppColor.textSecondary)
+            Spacer()
+            Text("Stand-in shield, test mode")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                .padding(.bottom, 12)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(AppColor.backgroundSecondary.ignoresSafeArea())
+    }
+}
+#endif
 
 /// One blocker on the grass: its name, when it holds, its apps, a switch, and
 /// what it is doing right now.

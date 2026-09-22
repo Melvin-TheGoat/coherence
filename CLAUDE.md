@@ -3219,6 +3219,78 @@ are in `CONSISTENCY.md` > Build status and RELEASE_CHECKLIST.md.
   iPhone 17 Pro (the clipboard pose was 91pt), so the scene grew from 46 to
   56 percent of the height to keep his line above him.
 
+## NOTHING OPENS AFTER A SESSION EXCEPT OTTO'S GLOW (2026-09-22, Melvin)
+
+"Remove the save session screen, it looks ugly and is off theme and is a lot
+of friction. Instead, the first thing the user sees after meditating is Otto
+gaining aura." So a finished sit now goes straight to Home and plays the glow
+it earned. **The Save session screen and the results screen no longer open
+after a session**; both still exist and are still reachable from a session's
+own row, and Save session is still Aziz's screen, cut from this path only.
+
+- **`SessionLandedHooks`** (ContentView) replaces the Save-session half of
+  `FriendsHooks`: same gate (wait for the live-session cover and any award
+  unlock, then 700ms), new destination. It runs with Friends off, because the
+  glow is not a Friends feature.
+- **`celebrate(_:)`** switches to Home, works out the level before and after
+  the landed session from the session dates (the aura is derived, so "before"
+  is simply the level without that date), sets `auraGain`, jiggles him, and
+  counts the card up to the new level. `AuraGainBurst` (in
+  `OttoAuraFigure.swift`) draws the light, the sparks and the "+N%".
+- **A derived curve cannot be animated with `withAnimation`.** The burst was
+  first written as `.opacity(f(phase))` with one animated `phase`, and it
+  never appeared: SwiftUI interpolates each modifier between its start and end
+  value, and this curve rises and falls, so opacity went 0 to 0. Only
+  `keyframeAnimator` (or `TimelineView`) re-evaluates the function every
+  frame. The jiggle works for the same reason. **Animate a value, and only
+  monotonic functions of it survive.**
+- The burst is drawn UNDER his speech bubble so sparks pass behind the words,
+  and the "+N%" rises beside his head, not above it, where the bubble is.
+- **`RootHooks` wraps Friends and the landing in ONE modifier.** Adding a
+  second `.modifier(...)` to ContentView tipped the type checker over again.
+- `PREVIEW_AURA=<from>:<to>` (DEBUG) replays the whole thing on Home without
+  waiting a day to earn it.
+- **The prompt that replaces the screen is not built.** `mockups/after-session.html`
+  draws four placements for it (a card under the glow, a toast, Otto asking
+  with two chips, the session row lit with "Add details") and two versions of
+  the one screen it opens: how it felt, what you did, notes, photos, who can
+  see it, all on one page. Awaiting Melvin's pick. Until then a session is
+  filled in from its row.
+
+### Block can be tested without Screen Time (same day)
+
+Melvin: "make it so i can test the block thing, screentime is password
+protected and i dont know the password". The simulator asks for a passcode
+nobody has, and it cannot draw a shield either.
+
+- **`BlockController.testMode`** (DEBUG): Screen Time is treated as allowed
+  and never called, switching a blocker on counts as having apps (the
+  simulator's picker has none to offer), and a card on the Block tab holds the
+  switch, a "Hold again" that forgets today's releases, and "Open a held app".
+  On by default in the simulator, off on a phone, and `PREVIEW_BLOCK` still
+  turns it on with Mindful day already holding.
+- **The stand-in shield uses the real shield's words and the real
+  notification**: `BlockShieldWords` and `BlockAsk` moved into BlockKit, which
+  both the extension and the app compile, so a rehearsal on the simulator
+  sends exactly what a phone will. Verified end to end on the simulator:
+  switch on, open a held app, Ask Otto, the Time Sensitive banner, one of
+  Otto's twenty screens, meditate, apps open.
+- **A foreground banner only lasts about five seconds.** Tapping it after that
+  lands on the screen behind it and looks like the notification did nothing.
+  The fallback is the real one: opening 808 within three minutes of an
+  unanswered ask shows Otto anyway.
+
+### Two sizing fixes
+
+- **Otto on Home was drawn a thumb's width left of his own cushion** at
+  Progressing and above, where he is the Rive rig. `OttoAuraFigure` passed an
+  explicit square width, and a square frame letterboxes the 425 x 522 artboard
+  and hangs it bottom LEFT. It takes the artboard's aspect now. The note under
+  the Rive section about Home keeping its old square frame is what caused it.
+- **The Block tab's Otto** is between where he was and Home's size: about
+  104pt of face against Home's 125 and his old 91 (Melvin asked for bigger,
+  then "a bit smaller").
+
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
 "the sound screen button looks terrible", then on the first redesign: "no

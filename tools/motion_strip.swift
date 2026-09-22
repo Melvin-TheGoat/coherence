@@ -32,6 +32,17 @@ func gray(_ img: CGImage, _ w: Int, _ h: Int) -> [UInt8] {
                         space: CGColorSpaceCreateDeviceGray(), bitmapInfo: 0)!
     ctx.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h)); return buf
 }
+func write(_ picks: [(t: Double, img: CGImage, diff: Double)]) {
+    let scale = 0.4
+    let cw = Int(crop.width * scale), ch = Int(crop.height * scale)
+    let ctx = CGContext(data: nil, width: cw * max(1, picks.count), height: ch, bitsPerComponent: 8,
+                        bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(),
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    for (i, f) in picks.enumerated() { ctx.draw(f.img, in: CGRect(x: i * cw, y: 0, width: cw, height: ch)) }
+    let dest = CGImageDestinationCreateWithURL(out as CFURL, UTType.png.identifier as CFString, 1, nil)!
+    CGImageDestinationAddImage(dest, ctx.makeImage()!, nil); CGImageDestinationFinalize(dest)
+}
+
 var frames: [(t: Double, img: CGImage, diff: Double)] = []
 var base: [UInt8]? = nil
 var t = 0.0
@@ -48,16 +59,21 @@ while t < duration {
 print(String(format: "video %.2fs, %d frames, full %dx%d", duration, frames.count,
              (try? gen.copyCGImage(at: .zero, actualTime: nil))?.width ?? 0, (try? gen.copyCGImage(at: .zero, actualTime: nil))?.height ?? 0))
 let moving = frames.filter { $0.diff > 0.8 }
-print("moving frames:", moving.map { String(format: "%.2f(%.1f)", $0.t, $0.diff) }.joined(separator: " "))
+if forced == nil { print("moving frames:", moving.prefix(40).map { String(format: "%.2f", $0.t) }.joined(separator: " ")) }
+// An explicit start time (argument 7) skips the motion search, for a clip
+// where something else on screen moves more than the thing being checked.
+let forced = args.count > 7 ? Double(args[7]) : nil
+let step = args.count > 8 ? Int(args[8]) ?? 2 : 2
+if let forced {
+    let from = frames.firstIndex { $0.t >= forced } ?? 0
+    let picks = Array(frames[from...].enumerated().filter { $0.offset % step == 0 }.map(\.element).prefix(9))
+    write(picks)
+    print("strip:", picks.map { String(format: "%.2f", $0.t) }.joined(separator: " "))
+    exit(0)
+}
 guard let first = moving.first else { print("NO MOTION"); exit(1) }
 // A strip: the frame before the motion, then every 2nd frame through it.
 let startIdx = max(0, (frames.firstIndex { $0.t == first.t } ?? 0) - 1)
 let picks = Array(frames[startIdx...].enumerated().filter { $0.offset % 2 == 0 }.map(\.element).prefix(9))
-let scale = 0.4
-let cw = Int(crop.width * scale), ch = Int(crop.height * scale)
-let ctx = CGContext(data: nil, width: cw * picks.count, height: ch, bitsPerComponent: 8, bytesPerRow: 0,
-                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-for (i, f) in picks.enumerated() { ctx.draw(f.img, in: CGRect(x: i * cw, y: 0, width: cw, height: ch)) }
-let dest = CGImageDestinationCreateWithURL(out as CFURL, UTType.png.identifier as CFString, 1, nil)!
-CGImageDestinationAddImage(dest, ctx.makeImage()!, nil); CGImageDestinationFinalize(dest)
+write(picks)
 print("strip:", picks.map { String(format: "%.2f", $0.t) }.joined(separator: " "))
