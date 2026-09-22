@@ -2361,6 +2361,123 @@ state machine layers: Body, Head, Pose, Branch, Blink.
 - Leaves and limbs are freeform paths (`createShapes`), not ellipses: an
   ellipse reads as a blob, and a lens with two pointed tips reads as a leaf.
 
+## THE SIT IS THE PRODUCT: A VALLEY, NO WATCH, NO ONBOARDING (2026-09-21, Aziz)
+
+Three asks in one line, and they are one change: 808 stops being an
+instrument you need hardware for and starts being a meditation app that
+measures you when it can.
+
+### The session screen is `mockups/session-v3.html`, built
+
+`Coherence/Session/SessionScene.swift` (the valley) and a rewritten
+`SessionActiveView` (the clock, the lines, End). The breathing orb is gone.
+
+- **The sun does what a progress bar would.** One number, `progress`, drives
+  the sky gradient, the sun's height and size, the mountains, the meadow, the
+  cloud colour, the stars and the light on everything alive. It cannot be read
+  precisely, which is the point.
+- **It ends at dusk, not at dawn.** A sunrise would be a brighter screen at
+  the moment somebody is most settled, and by the middle of a sit the screen
+  has to be dark enough to sit with in a room at night.
+- **The ring is always on screen; the number is not.** Empty track on arrival,
+  filling through, closed at the end. The figure lives at the ring's centre
+  and appears on arrival and on a tap (three seconds), nowhere else. Tabular
+  digits, because a countdown redrawing every second must not shuffle
+  sideways past 9:59.
+- **An open-ended sit gets the track and NO arc, and no number on arrival.**
+  The arc is a proportion of something and there is nothing for it to be a
+  proportion of; "0:00" on arrival reads as a stopped clock. The sun still
+  moves, over a nominal twenty minutes, as atmosphere. Nothing claims
+  otherwise.
+- **No number on the closing frame either.** "That's ten minutes" is the whole
+  message and a 0:00 under it is the screen counting something that is over.
+- **Composition numbers are ported as fractions, not pixels** (horizon 34%,
+  Otto 24%, ring centre 39.5%, ring 79% of the width). The mockup is a 300pt
+  panel, so one scale factor ports every size in the file.
+- **The meadow is ONE `Canvas`, not 26 view hierarchies**, drawn back to
+  front: smaller and paler toward the ridge, bigger and brighter at the
+  bottom edge, which is what makes a flat field read as ground going away
+  from you. **Never reorder `Meadow.flowers`: the draw order is the depth.**
+- **The palette is hex literals and that is correct here.** The house rule
+  ("never hardcode a hex") protects themeable tokens from drifting. These are
+  keyframes of a painting interpolated every frame, an asset catalog hands
+  back a `Color` whose components cannot be read, and dusk is dusk on every
+  phone. `DayLight.at(progress)` is the one place they live.
+- Not built: the "Instagram is open again" chip. The blocker does not exist
+  yet and a screen must not advertise a feature the build does not contain.
+- `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at any moment of its
+  arc, so the whole day can be reviewed without waiting ten minutes.
+
+### The Watch is optional everywhere
+
+**A meditation app that refuses to time a meditation because of missing
+hardware has stopped being a meditation app.** The measurements were always
+the bonus on top of sitting down and they are now exactly that.
+
+- `SessionCoordinator.ActiveSession.engine` is `.watch` or `.phone`.
+  `watchIsReady()` decides at Begin; `beginOnPhone` runs the whole sit here
+  (clock, sound, write). `startWatchApp` failing **falls back to the phone**
+  instead of raising `PermissionBlockedView`, and the 45-second start watchdog
+  **hands the running sit over** (`convertToPhoneSession`) rather than ending
+  it: somebody has been sitting for the length of the watchdog and losing that
+  is worse than losing the readings.
+- `Session.source` (`"watch"` / `"phone"`, defaulted, CloudKit-safe) exists
+  because **a phone sit and a session synced from another device look
+  identical in storage and need opposite sentences.**
+- **`SessionStore.persistPhoneSession` writes a Session and NO
+  `MeditationStats`.** An empty stats row claims we looked and found nothing,
+  and nothing was looking. Everything derived (streak, awards, calendar,
+  counts) reads Sessions, so a phone sit counts everywhere and simply has no
+  score.
+- **`SessionStore.persist` now bails on an existing SESSION too**, not only
+  existing stats. The watchdog handover can leave a Session with no stats, and
+  a payload landing afterwards would insert a second row under the same id;
+  SwiftData enforces no uniqueness, by design, so nothing would have
+  complained. Same reason `sessionFailedToStart` ignores a Watch refusal while
+  `active?.engine == .phone`.
+- **The first-session paywall is skipped for a phone sit.** The offer is "you
+  have just seen your evidence, here is how to keep seeing it", and that sit
+  produced none.
+- Copy swept of hardware it no longer needs: the Begin screen, Otto's first
+  Home line, the "First meditation" award, the results card ("You sat, and it
+  counts"), Save session (Time becomes the hero when there is no score).
+- **`EvidenceRow` prints no stat columns for a phone sit and no empty score
+  capsule.** Three em dashes under Heart, Still and Breath is the card telling
+  somebody what they are missing, which is the one thing this product's copy
+  never does.
+- **Still Watch-gated, and Aziz should know:** posting to Friends carries a
+  score, so a phone sit cannot be posted (Friends is off in Release anyway),
+  and the share card is built from measurements. Both need their own pass.
+- `PhoneSessionTests` locks the write path, the streak, the floor, the
+  idempotency and the late-payload case.
+
+### Onboarding is gone
+
+`RootView` shows `ContentView` on the first launch and every launch after it.
+Nothing is asked before the first sit: no interview, no projection, no Watch
+gate, no account, no tour hand-off.
+
+The numbers were the argument: of sixteen strangers who reached the first
+screen in thirty days, twelve left on the second, and two of the twelve who
+finished the whole flow ever pressed Begin. **A flow that loses three quarters
+of the people it meets before they have done the thing is not an introduction
+to the product, it is a wall in front of it.**
+
+- `Preferences.onboardingComplete` is still written, on first launch, and
+  again if sign-out clears it. Several places read it as "this install is set
+  up" (`ReviewPrompt`, the Watch's own Begin gate), and dropping a synced
+  property is a migration hazard.
+- **The screens under `Coherence/Onboarding/` are kept but unrouted.** The
+  tour anchors (`TourTargetKey`), the paywall ladder and `FirstSessionOffer`
+  still live among them and are still used. Deleting the directory is a
+  separate job and needs those three lifted out first.
+- Sign in with Apple now exists only in Settings. A returning subscriber
+  restores through Apple's own entitlement, which never needed our account.
+- **Watch `onboarding_completed` and the day-zero funnel.** Every onboarding
+  analytics screen stops firing, so the PostHog tiles built on
+  `onboarding_step` go quiet by design. The number that matters now is
+  install to first `session_completed`, which is what the flow was costing.
+
 ## THE WEBSITE CARRIES A GOOGLE "PREFERRED SOURCE" BADGE (2026-09-21, Melvin)
 
 In the footer, its own row above the copyright: the Google G and "Add us as a

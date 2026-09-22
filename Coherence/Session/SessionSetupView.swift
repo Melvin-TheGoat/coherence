@@ -3,10 +3,15 @@ import SwiftData
 
 /// Begin a session. Deliberately almost empty.
 ///
-/// The MVP makes one promise — your Watch tracks the session and scores it —
-/// and asks for nothing in return. No practice type, no length, no guidance,
-/// no pre-session reading. Open-ended and silent are the defaults, stated on
-/// one tappable line so nobody has to decide and nobody feels trapped.
+/// One promise: sit down and 808 sits with you. No practice type, no length,
+/// no guidance, no pre-session reading. Open-ended and silent are the
+/// defaults, stated on one tappable line so nobody has to decide and nobody
+/// feels trapped.
+///
+/// **No Watch is required and the screen no longer says one is.** A Watch
+/// adds the measurements; without one the sit runs here, is timed here, and
+/// is written here. The old subtitle promised hardware half the people who
+/// install 808 do not own.
 ///
 /// Everything this screen used to ask (belly breathing, the pulse read, the
 /// method guide, a length picker) was cut in the MVP focus pass. The tag
@@ -21,10 +26,10 @@ struct SessionSetupView: View {
     /// Empty = silence.
     @AppStorage("sessionSoundID") private var soundID: String = ""
 
-    /// Seconds left before the Watch is told to start, or nil when not
-    /// counting. Phone-initiated sessions only: starting from the wrist means
-    /// you are already sitting, so the Watch's own Begin stays immediate
-    /// (Melvin, 2026-09-01).
+    /// Seconds left before the session starts, or nil when not counting.
+    /// Phone-initiated sessions only: starting from the wrist means you are
+    /// already sitting, so the Watch's own Begin stays immediate (Melvin,
+    /// 2026-09-01).
     @State private var countdown: Int?
     @State private var countdownTask: Task<Void, Never>?
 
@@ -38,7 +43,7 @@ struct SessionSetupView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text("Your Watch tracks the whole session.")
+            Text("The sit is the whole thing. Wear a Watch and 808 measures it too.")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -191,7 +196,7 @@ struct SessionOptionsView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("Sessions run open-ended. End yours from the Watch whenever you're done, and anything you play in another app keeps playing.")
+                    Text("Sessions run open-ended. End yours whenever you're done, and anything you play in another app keeps playing.")
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)

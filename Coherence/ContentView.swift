@@ -52,8 +52,11 @@ struct ContentView: View {
     /// phone up after sitting.
     @State private var resumeSave: UUID?
     #if DEBUG
-    @State private var showBreathingPreview =
-        ProcessInfo.processInfo.environment["PREVIEW_BREATHING"] == "1"
+    /// `PREVIEW_BREATHING=<seconds elapsed>` opens the sit at that moment, so
+    /// the valley's whole arc can be reviewed without waiting ten minutes for
+    /// the sun to set. Any non-zero value works; 1 is the arrival frame.
+    @State private var sitPreviewElapsed =
+        ProcessInfo.processInfo.environment["PREVIEW_BREATHING"].flatMap(Double.init)
     #endif
 
     private enum HomeSheet: Identifiable {
@@ -159,10 +162,11 @@ struct ContentView: View {
         .onAppear { readPendingSave() }
         .onChange(of: prefsRows.compactMap(\.evidenceGrantSince).min()) { _, _ in refreshAwards() }
         #if DEBUG
-        .fullScreenCover(isPresented: $showBreathingPreview) {
-            SessionActiveView(startedAt: Date().addingTimeInterval(-90),
+        .fullScreenCover(item: Binding(get: { sitPreviewElapsed.map { SitPreview(elapsed: $0) } },
+                                       set: { _ in sitPreviewElapsed = nil })) { preview in
+            SessionActiveView(startedAt: Date().addingTimeInterval(-preview.elapsed),
                               plannedDurationSec: 600,
-                              planChip: "10 min") { showBreathingPreview = false }
+                              planChip: "10 min · Silence") { sitPreviewElapsed = nil }
         }
         .onAppear(perform: debugPreviewHooks)
         #endif
@@ -389,7 +393,7 @@ struct ContentView: View {
         var lines: [String] = []
         if sessions.isEmpty {
             lines.append("Your first session starts at the plus. I'll read it back to you after.")
-            lines.append("Put your Watch on, sit anyhow, breathe slow for a minute. That's the whole trick.")
+            lines.append("Sit anyhow you like and breathe slow for a minute. That's the whole trick.")
         } else if practicedToday {
             lines.append(streak.current > 1 ? "Day \(streak.current). You already sat today, so today is done."
                                              : "You sat today. That's the part most people skip.")
@@ -617,7 +621,7 @@ struct ContentView: View {
     #if DEBUG
     private var debugButtons: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button("Preview breathing screen") { showBreathingPreview = true }
+            Button("Preview the sit") { sitPreviewElapsed = 1 }
                 .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
         }
     }
@@ -626,12 +630,18 @@ struct ContentView: View {
     // MARK: - Helpers
 
     /// "Belly · 10 min · Deep Meditation" for the mid-session plan chip.
-    private func planChip(_ session: SessionCoordinator.ActiveSession) -> String {
+    /// The chip on the sit's arrival frame. It states the two facts somebody
+    /// might doubt at the moment they close their eyes: how long this runs,
+    /// and what is about to play.
+    ///
+    /// nil when there is nothing worth saying. An open-ended silent sit is
+    /// the default, and a chip reading "Open" over a valley is jargon in a
+    /// gold capsule.
+    private func planChip(_ session: SessionCoordinator.ActiveSession) -> String? {
         var parts: [String] = []
         if let planned = session.plannedDurationSec { parts.append("\(planned / 60) min") }
-        else { parts.append("Open") }
         if let title = session.soundTitle { parts.append(title) }
-        return parts.joined(separator: " · ")
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     private var greeting: String {
@@ -740,3 +750,11 @@ private struct DiscardHook: ViewModifier {
         }
     }
 }
+
+#if DEBUG
+/// Identifies one moment of the sit for the simulator preview hook.
+struct SitPreview: Identifiable {
+    let elapsed: Double
+    var id: Double { elapsed }
+}
+#endif

@@ -157,9 +157,16 @@ struct SaveSessionView: View {
     /// context beside it. Gold on the score and nowhere else in this section.
     private var statsHeader: some View {
         HStack(alignment: .lastTextBaseline, spacing: 0) {
-            stat(label: "Score", value: score.map(String.init) ?? "–", unit: nil, hero: true)
-            statDivider
-            stat(label: "Time", value: "\(minutes)", unit: "min", hero: false)
+            // Nothing measured this sit, so the minutes are the fact. A hero
+            // "Score –" leads the screen with an absence, and the sit was not
+            // an absence.
+            if let score {
+                stat(label: "Score", value: String(score), unit: nil, hero: true)
+                statDivider
+                stat(label: "Time", value: "\(minutes)", unit: "min", hero: false)
+            } else {
+                stat(label: "Time", value: "\(minutes)", unit: "min", hero: true)
+            }
             statDivider
             stat(label: "Streak", value: "\(streak)", unit: streak == 1 ? "day" : "days", hero: false)
             Spacer(minLength: 0)
@@ -278,7 +285,9 @@ struct SaveSessionView: View {
         if visibility == .friends, loaded {
             Group {
                 if score == nil {
-                    caption("This session has no score on this phone, so it can't be shared. Save it as Only you.")
+                    caption(session?.isPhoneOnly == true
+                            ? "A post carries a score, and nothing measured this sit. Save it as Only you."
+                            : "This session has no score on this phone, so it can't be shared. Save it as Only you.")
                 } else {
                     switch community.phase {
                     case .needsUsername:

@@ -70,11 +70,11 @@ public struct Award: Identifiable, Hashable {
               """),
 
         Award(id: "firstSession", title: "First meditation",
-              blurb: "Your first measured session.",
+              blurb: "Your first session.",
               group: .beginning, face: .number("1", unit: "session"),
               meaning: """
-              You sat, and your Watch recorded what your body did while you were \
-              there. Everything else on this shelf is built on top of this.
+              You sat down and stayed. Everything else on this shelf is built \
+              on top of this one.
               """),
 
         Award(id: "friendBrought", title: "Brought a friend",
