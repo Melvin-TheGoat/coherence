@@ -28,7 +28,6 @@ struct ContentView: View {
     @State private var tab: MainTab = .home
     /// Which of Otto's lines is showing on Home; a tap on him advances it.
     @State private var ottoLineIndex = 0
-    @StateObject private var ottoRig = OttoRigHolder()
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
     @State private var profileDay: Date?
@@ -271,113 +270,118 @@ struct ContentView: View {
 
     // MARK: - Home
 
-    /// Top to bottom it answers the questions in the order you ask them: am I
-    /// keeping my promise (streak headline + nudge), is it working (the gold
-    /// proof curve), what has this month looked like, what did the last few
-    /// sessions say. Starting one is the plus on the bar.
+    /// Home is the valley (Melvin, 2026-09-21, with Brainrot's home screen as
+    /// the reference and Aziz's sit and Ready screens as the theme): Otto in
+    /// the middle of the meadow at his aura stage, what he has to say in a
+    /// bubble over his head, the streak in the corner, and everything else on
+    /// cream cards resting on the grass below him.
+    ///
+    /// **It is Aziz's `ValleyScene`, not a copy of it**, at the top of its
+    /// day, so Home, Ready and the sit are one place and Otto never changes
+    /// picture between them. The page under the scene is the meadow's own
+    /// bottom colour, so the grass runs on behind the cards.
     private var homeTab: some View {
-        // The scroll view runs up under the status bar and the scene is
-        // padded down by the inset, so the sky is the first thing on the
-        // screen. A background inside a scroll view cannot escape the safe
-        // area on its own (tried first: the band behind the clock stayed
-        // paper and the sky began under it as a hard line).
         GeometryReader { proxy in
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                ottoScene(topInset: proxy.safeAreaInsets.top)
-                streakPill
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
-                VStack(alignment: .leading, spacing: 20) {
-                    if let nudge {
-                        Text(nudge)
-                            .font(AppFont.callout)
-                            .foregroundStyle(AppColor.calmAccent)
-                            .frame(maxWidth: .infinity, alignment: .center)
+            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.74
+            ScrollView {
+                VStack(spacing: 0) {
+                    homeScene(width: proxy.size.width, height: sceneHeight,
+                              topInset: proxy.safeAreaInsets.top)
+                    VStack(alignment: .leading, spacing: 16) {
+                        auraCard
+                        statTiles
+                        calendarCard
+                        proofSection
+                        #if DEBUG
+                        debugButtons
+                        #endif
                     }
-                    calendarCard
-                    proofSection
-                    #if DEBUG
-                    debugButtons
-                    #endif
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    // The cards rise onto the near meadow, just under his
+                    // cushion, rather than waiting below a field of empty
+                    // grass: Brainrot puts its number straight under the brain.
+                    .padding(.top, -sceneHeight * 0.17)
+                    .padding(.bottom, 24)
                 }
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.top, 20)
-                .padding(.bottom, 8)
             }
-        }
-        .scrollIndicators(.hidden)
-        .ignoresSafeArea(edges: .top)
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            // The page is grass. The sky that shows when the top is pulled
+            // down scrolls WITH the scene (see `homeScene`): a background
+            // pinned half sky and half grass showed a band of sky behind the
+            // cards as soon as the page moved.
+            .background(Self.meadow.ignoresSafeArea())
         }
     }
 
-    // MARK: - The scene
+    /// Home is always the top of the day: the sun up, the light full.
+    private static let homeDay = DayLight.at(0)
+    /// The meadow's colour at its near edge, which the page continues.
+    private static var meadow: Color { homeDay.field[1] }
 
-    /// Otto, under a sky, above a horizon (2026-09-19, Aziz: Otto replaces the
-    /// flower and becomes the main thing about the app).
-    ///
-    /// The reference is Finch, the only app in this category to have made a
-    /// mascot work at scale, and the pattern under it is not "put a mascot on
-    /// the screen". **The mascot sits somewhere.** Finch's bird stands on
-    /// grass under a sky, and the interface floats around him. A character on
-    /// a flat card is a sticker; a character on a horizon is somebody's
-    /// morning. One gradient and one hairline buy the whole difference.
-    ///
-    /// The 808 mark is gone from here. It does not disappear from the product,
-    /// it stops being the greeting: a mark identifies a company and a face
-    /// greets a person, and this is the screen somebody opens before they have
-    /// woken up properly.
-    /// **Direction B, "beside you"** (Melvin, 2026-09-20: "Go with B for
-    /// home, build it"). Otto leans in from the left edge with one line in a
-    /// bubble, and the page is the cards. The Duolingo shape: the character
-    /// never takes the screen on Home, he stands in a corner and talks.
-    /// The earlier scene put him centred at 168pt under the greeting, which
-    /// pushed the week below the fold and read as a photo placed on a page.
-    ///
-    /// `topInset` is the status bar's height, padded INSIDE this view so the
-    /// sky behind it covers that band too.
-    private func ottoScene(topInset: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(greeting)
-                .font(DisplayFont.display(24, .heavy))
-                .foregroundStyle(AppColor.textPrimary)
-            Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.textSecondary)
-            HStack(alignment: .bottom, spacing: 8) {
-                // He breathes at the Watch orb's pace and talks on a tap.
-                // Pulled 22pt past the leading edge so he is leaning in, not
-                // standing on a ledge.
-                // `width` holds Home's old square frame on purpose. The rig
-                // view now takes the artboard's proportions by default, which
-                // would have pulled the bubble 20pt left here; Home is the one
-                // screen Melvin asked to leave exactly as it was.
-                // As bright as the practice has kept him (`OttoAura`). He no
-                // longer waves on a tap: the wave belongs to the standing
-                // pose, and every aura stage sits.
-                OttoAuraFigure(stage: auraStage, size: 104, rig: ottoRig)
-                    .padding(.leading, -22)
-                    .contentShape(Rectangle())
-                    .onTapGesture { ottoLineIndex += 1 }
-                    .accessibilityHint("Says something about today")
-                OttoBubble(text: ottoLines[ottoLineIndex % ottoLines.count])
-                    .padding(.bottom, 26)
-                    .animation(.easeOut(duration: 0.2), value: ottoLineIndex)
-                Spacer(minLength: 0)
+    /// The valley with Otto in it, and the three things laid on the sky.
+    private func homeScene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
+        let size = CGSize(width: width, height: height)
+        let ink = Self.homeDay.ink
+        let ottoTop = SitLayout.ottoTop(in: size)
+        let ottoSize = 186 * SitLayout.scale(in: size)
+        return ZStack(alignment: .top) {
+            ValleyScene(progress: 0, aura: auraStage)
+                .frame(width: width, height: height)
+
+            // The greeting, centred, where Brainrot writes its name. The
+            // streak sits in the corner beside it, a flame and a number.
+            VStack(spacing: 2) {
+                Text(greeting)
+                    .font(DisplayFont.display(24, .heavy))
+                    .foregroundStyle(ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
+                    .font(AppFont.caption)
+                    .foregroundStyle(ink.opacity(0.7))
             }
-            .padding(.top, 10)
+            .padding(.horizontal, 84)
+            .frame(maxWidth: .infinity)
+            .padding(.top, topInset + 10)
+
+            streakBadge
+                .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, AppMetrics.screenPadding)
+                .padding(.top, topInset + 6)
+
+            // What he says, pinned by its bottom to just above his head, the
+            // way the Ready screen pins its line, so the tail lands on him on
+            // every phone.
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+                OttoSpeech(text: ottoLines[ottoLineIndex % ottoLines.count],
+                           tail: .bottom, size: 17,
+                           ink: ink, stroke: ink.opacity(0.38),
+                           fill: AppColor.backgroundPrimary.opacity(0.78),
+                           speaking: .constant(false))
+            }
+            .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - (topInset + 72)))
+            .padding(.top, topInset + 72)
+
+            // Tapping him changes what he says.
+            Color.clear
+                .contentShape(Rectangle())
+                .frame(width: ottoSize, height: ottoSize)
+                .position(x: width / 2, y: ottoTop + ottoSize / 2)
+                .onTapGesture { ottoLineIndex += 1 }
+                .accessibilityElement()
+                .accessibilityLabel("Otto")
+                .accessibilityHint("Says something about today")
+                .accessibilityAddTraits(.isButton)
         }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 8 + topInset)
-        .padding(.bottom, 22)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background {
-            // Under the status bar too: `homeTab` lets the scroll view ignore
-            // the top safe area and pads the scene by the inset.
-            LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
-                           startPoint: .top, endPoint: .bottom)
-                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 38,
-                                                  bottomTrailingRadius: 38,
-                                                  style: .continuous))
+        .frame(width: width, height: height)
+        // Sky above the scene for a pull past the top.
+        .background(alignment: .top) {
+            Self.homeDay.sky[0]
+                .frame(height: 1000)
+                .offset(y: -1000)
         }
     }
 
@@ -436,41 +440,124 @@ struct ContentView: View {
         return OttoAura.stage(from: sessions.map(\.startedAt))
     }
 
-    /// The streak, as a capsule straddling the bottom edge of the scene.
-    ///
-    /// It used to be a 54pt number under a heading, which made it the loudest
-    /// thing on Home. It is not what the app is for. Sitting on the seam it
-    /// joins the scene to the content below it and gets to be small, and best
-    /// and total ride along behind a divider instead of stacking in a corner.
-    private var streakPill: some View {
+    /// Otto's level today, 0 to 100, for the bar under his name.
+    private var auraLevel: Int {
+        #if DEBUG
+        if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
+            return min(max(level, 0), 100)
+        }
+        #endif
+        return OttoAura.level(from: sessions.map(\.startedAt))
+    }
+
+    /// The streak in the corner, Brainrot's flame and number, on the same
+    /// frosted cream as the Ready screen's rows.
+    private var streakBadge: some View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
-        return HStack(spacing: 9) {
+        return VStack(spacing: 0) {
+            Image(systemName: "flame.fill")
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundStyle(AppColor.streakBlushText)
             Text("\(streak.current)")
-                .font(DisplayFont.display(25, .heavy))
+                .font(DisplayFont.display(16, .heavy))
                 .foregroundStyle(AppColor.streakBlushText)
                 .monospacedDigit()
-            // "day streak", the words it had before the revamp. "mornings"
-            // counted days as mornings, which is not what a streak is and
-            // read as nonsense at 0 (Melvin, 2026-09-20).
-            Text("day streak")
-                .font(DisplayFont.display(16))
-                .foregroundStyle(AppColor.streakBlushText)
-            Rectangle().fill(AppColor.hairline).frame(width: 1, height: 18)
-            Text("best \(streak.longest)  ·  \(sessions.count) sessions")
+        }
+        .frame(width: 54, height: 54)
+        .background(AppColor.backgroundPrimary.opacity(0.78), in: Circle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(streak.current) day streak")
+    }
+
+    /// How Otto is doing, and the bar that fills as the practice keeps up.
+    ///
+    /// **No number on it, on purpose.** The score is already a 0 to 100 on
+    /// every session, and a second 0 to 100 on Home would be read as that
+    /// one. His name for the stage and a bar say the same thing without
+    /// borrowing the score's shape.
+    private var auraCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(Self.auraTitle(auraStage))
+                .font(DisplayFont.display(20, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(AppColor.trace)
+                    Capsule()
+                        .fill(LinearGradient(colors: [AppColor.auraGlow, AppColor.auraRing],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(14, geo.size.width * CGFloat(auraLevel) / 100))
+                }
+            }
+            .frame(height: 12)
+            .accessibilityHidden(true)
+            Text(nudge ?? "Each day you meditate, his glow grows.")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
-                .monospacedDigit()
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 11)
-        .background {
-            Capsule()
-                .fill(AppColor.backgroundSecondary)
-                .shadow(color: AppColor.hairline, radius: 0, y: 3)
+        .card(padding: 18)
+        .accessibilityElement(children: .combine)
+    }
+
+    static func auraTitle(_ stage: OttoAura.Stage) -> String {
+        switch stage {
+        case .low: return "Otto is feeling low"
+        case .frustrated: return "Otto is a little grumpy"
+        case .curious: return "Otto is curious"
+        case .progressing: return "Otto is settling in"
+        case .inFlow: return "Otto is in flow"
+        case .enlightened: return "Otto is glowing"
+        }
+    }
+
+    /// Brainrot's three tiles, in 808's facts: the best streak (the current
+    /// one is in the corner), the sessions, and the time sat.
+    private var statTiles: some View {
+        let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
+        let seconds = sessions.reduce(0) { $0 + $1.durationSec }
+        return HStack(spacing: 10) {
+            statTile(icon: "trophy.fill", tint: AppColor.accentGoldText,
+                     value: "\(streak.longest)", label: streak.longest == 1 ? "best day" : "best streak")
+            statTile(icon: "figure.mind.and.body", tint: AppColor.calmAccent,
+                     value: "\(sessions.count)", label: sessions.count == 1 ? "session" : "sessions")
+            statTile(icon: "clock.fill", tint: AppColor.textSecondary,
+                     value: Self.sat(seconds), label: "meditated")
+        }
+    }
+
+    private func statTile(icon: String, tint: Color, value: String, label: String) -> some View {
+        VStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(tint)
+                .frame(height: 26)
+            Text(value)
+                .font(DisplayFont.display(22, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
-        .offset(y: -21)
-        .padding(.bottom, -21)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
+                .fill(AppColor.backgroundSecondary)
+                .shadow(color: AppColor.hairline, radius: 0, y: 2)
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    /// "45m", "2h 10m": the time sat, in the fewest characters that read.
+    static func sat(_ seconds: Int) -> String {
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m" }
+        let h = minutes / 60, m = minutes % 60
+        return m == 0 ? "\(h)h" : "\(h)h \(m)m"
     }
 
     // MARK: - Awards
@@ -632,12 +719,12 @@ struct ContentView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 14)
-                .background(AppColor.backgroundSecondary,
-                            in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
                 .deleteSessionDialog(pending: $pendingDelete)
             }
         }
+        // One card for the header and the rows: on the grass a bare header
+        // and a gold "See all" would be text on a painting.
+        .card(padding: 18)
     }
 
     // MARK: - DEBUG

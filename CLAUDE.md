@@ -2828,6 +2828,43 @@ because the tap had opened the setup sheet rather than the screen.** Always
 confirm which screen is actually up before reading a diff: a static sheet
 and a broken animation look identical in the numbers.
 
+## HOME IS THE VALLEY, WITH OTTO IN THE MIDDLE (2026-09-21, Melvin)
+
+"keep it on the same theme" as Aziz's sit and Ready screens, with Brainrot's
+home as the reference, and "make him in the center of the home screen, not
+off in the corner". This supersedes Direction B (Otto leaning in from the
+left beside a bubble).
+
+- **Home draws Aziz's `ValleyScene` itself**, at `progress: 0`, through a new
+  `aura:` parameter that seats `OttoAuraFigure` on the cushion instead of the
+  sit's rig. Home, Ready and the sit are one place, and Otto never changes
+  picture between them. The scene is 74 percent of the height under the bar
+  plus the top inset.
+- On the sky: the greeting centred where Brainrot writes its name, the streak
+  as a flame and a number in a frosted circle in the corner (the tour's
+  `.streak` anchor moved onto it), and Otto's line in an `OttoSpeech` bubble
+  pinned by its bottom above his head, exactly as the Ready screen pins
+  its line. A tap on him still cycles the line.
+- **The cards rise onto the near meadow** (`-17%` of the scene) rather than
+  waiting under a field of empty grass. First the aura card: "Otto is
+  curious" and a bar, with **no number on purpose**, since a second 0 to 100
+  on Home would be read as the score. Then Brainrot's three tiles in 808's
+  facts (best streak, sessions, time meditated), This week, and Recent, now
+  one card so its header is not text on a painting.
+- **The page is grass**: the background is the meadow's near colour, and the
+  sky that shows when the top is pulled down scrolls WITH the scene. A
+  background pinned half sky and half grass showed a band of sky behind the
+  tiles the moment the page moved.
+- The still aura drawings are matched to the rig by HEAD width in the valley
+  (Curious at 0.95 of the frame), after Aziz's rig update drew the sitting
+  Otto smaller than the 1.04 tuned on the old Home.
+- **The tab bar sits 16pt down into the home indicator's inset**
+  (`MainTabBar.intoInset`). The air Melvin kept pointing at was never above
+  the icons; it was the inset under the labels. Labels now sit about 39pt
+  off the bottom edge, where Brainrot's do.
+- Not changed, and next if wanted: Guide, Friends and Profile are still the
+  cream pages, and `OttoBubble` / `ottoScene` from the old Home are gone.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body

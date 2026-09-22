@@ -32,6 +32,11 @@ struct ValleyScene: View {
     /// him rather than cutting to a different picture.
     var pose: OttoPose = .meditating
 
+    /// Home seats Otto at his aura stage instead (`OttoAura`): the same
+    /// valley, the same cushion, with the glow the practice has earned. nil
+    /// is the sit and the Ready screen, which draw `pose`.
+    var aura: OttoAura.Stage? = nil
+
     /// The rig, so he actually breathes while you do.
     ///
     /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
@@ -164,9 +169,15 @@ struct ValleyScene: View {
             // The artboard carries headroom above his tuft that the cutout
             // PNG does not, so it is drawn taller to put the sloth himself at
             // the same size, and hung from its own bottom edge.
-            OttoRiveView(size: ottoHeight(scale: s), pose: pose, rig: rig)
-                .position(x: size.width / 2,
-                          y: size.height * (1 - 0.24) - ottoHeight(scale: s) / 2)
+            Group {
+                if let aura {
+                    OttoAuraFigure(stage: aura, size: ottoHeight(scale: s), rig: rig)
+                } else {
+                    OttoRiveView(size: ottoHeight(scale: s), pose: pose, rig: rig)
+                }
+            }
+            .position(x: size.width / 2,
+                      y: size.height * (1 - 0.24) - ottoHeight(scale: s) / 2)
         }
         .frame(width: size.width, height: size.height)
     }

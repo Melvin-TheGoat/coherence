@@ -85,12 +85,12 @@ struct OttoAuraFigure: View {
     }
 
     /// Share of the frame each still drawing stands, from its height on the
-    /// sheet (low 558, frustrated 585, curious 623 pixels). Curious runs a
-    /// little past the frame because these drawings carry a smaller head than
-    /// the rig's sitting Otto; matched by height alone they read as a size
-    /// smaller. It overflows upward only, into the sky.
+    /// sheet (low 558, frustrated 585, curious 623 pixels). Matched to the
+    /// rig's sitting Otto by HEAD width, measured in the valley on Home
+    /// (2026-09-21, after Aziz's rig update: curious 402 px against the rig's
+    /// 360 at 1.04), because a face is what people compare between stages.
     static func drawnHeight(_ stage: OttoAura.Stage) -> CGFloat {
-        let curious: CGFloat = 1.04
+        let curious: CGFloat = 0.95
         switch stage {
         case .low: return curious * 558 / 623
         case .frustrated: return curious * 585 / 623

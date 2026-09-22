@@ -38,7 +38,17 @@ struct MainTabBar: View {
                 }
                 .ignoresSafeArea(edges: .bottom)
         )
+        // Down into the home indicator's inset, which is taller than the
+        // indicator needs (Melvin, 2026-09-21, second time: "too much white
+        // space below the icons, lower it"). Taking 6 off the top on
+        // 2026-09-19 was not enough, because the air was never above the
+        // icons, it was the inset under the labels. Brainrot's labels sit
+        // about 39pt off the bottom edge; ours sat 55pt off it.
+        .padding(.bottom, -Self.intoInset)
     }
+
+    /// How far the bar sits down into the bottom safe area.
+    static let intoInset: CGFloat = 16
 
     private func item(_ tab: MainTab, icon: String, label: String) -> some View {
         let selected = selection == tab
