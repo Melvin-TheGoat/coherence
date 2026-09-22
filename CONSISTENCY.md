@@ -128,9 +128,21 @@ Each is one screen in 808 after the notification. Some read the moment
   ends 5 minutes from now. To be verified on a device.
 - **Time Sensitive notifications** need their own entitlement, so the "Otto
   wants a word" notification breaks through Focus.
-- **Nothing leaves the phone.** App choices are opaque tokens even to us.
-  The privacy policy, the App Privacy labels and the review notes must say
-  808 uses Screen Time to hold apps the person chose.
+- **Nothing Block learns from Screen Time leaves the phone.** Apple's Family
+  Controls terms (accepted with the request) allow that data only for the
+  person's own device management, and forbid sharing it beyond the person
+  and their device, for advertising, or with a data broker. So none of it
+  reaches PostHog, Friends or any server: not the apps (opaque tokens even
+  to us), not the shield taps, not the passes. Block analytics, if ever
+  wanted, is a decision checked against those terms first. The privacy
+  policy, the App Privacy labels and the review notes must say 808 uses
+  Screen Time to hold apps the person chose.
+- **The app's PRIMARY purpose has to be one of Apple's two**, and 808's is
+  the second: "offering individuals the ability to manage their devices to
+  enable focus and productivity through focus controls, timers and task
+  management, or personal device usage management." Block is that. The
+  request leads with it, and so must the App Store listing of the release
+  that ships Block: today's listing describes a Watch meditation app.
 - **GATE, Melvin's to start (it needs the Account Holder):** Family Controls
   (Distribution) is requested per App ID, in Certificates, Identifiers &
   Profiles > Identifiers > the App ID > Capability Requests > Request, for
@@ -142,7 +154,23 @@ Each is one screen in 808 after the notification. Some read the moment
   approval in anything from days to six weeks, and an extension can sit in
   "Submitted" after the app is approved, so all four go in together.
   Development builds work on a phone without it; nothing reaches TestFlight
-  or the App Store without it.
+  or the App Store without it, which is why it is requested BEFORE any
+  build with Block exists: there is no build to wait for. Apple checks
+  twice, at the request and at App Review of every build that uses it. If
+  the request is questioned, a screen recording of a development build on a
+  phone answers it. The text sent with all four requests (2026-09-22):
+
+  > 808 helps people build a daily meditation habit by managing their own
+  > phone use. Each person sets it up on their own iPhone, for themselves,
+  > with individual Screen Time authorization. They choose the apps they
+  > find distracting and when to hold them (by default, all day until they
+  > have meditated). While a hold is on, those apps show a shield.
+  > Completing a short meditation in 808 releases them for the rest of that
+  > window, and the person can switch a hold off at any time. It is not a
+  > parental control app and never manages another person's device. 808
+  > never learns which apps were chosen, uses Screen Time data only for the
+  > person's own holds, and nothing from Screen Time leaves the device or is
+  > shared, for analytics, advertising or anything else.
 - **Block is built on its own branch.** Once a target carries the Family
   Controls entitlement, every App Store archive fails ("Profile doesn't
   include the com.apple.developer.family-controls entitlement") until
@@ -171,7 +199,9 @@ Each is one screen in 808 after the notification. Some read the moment
 5. **A Live Activity during the window**: "A two minute session opens your apps"
    on the Lock Screen and Dynamic Island.
 6. **An accountability friend** (Friends): opt in, and a friend sees when your
-   Otto is low and can nudge you.
+   Otto is low and can nudge you. **Only with a glow computed from sessions
+   alone**: the skipped-window cost comes from Screen Time, and Apple's
+   terms forbid sharing that beyond the person and their device.
 7. **A weekly letter from Otto**: what the week looked like, in his voice.
 8. **Tiny sessions count**: one minute releases the apps on Chill.
 9. **Reminders at the moment you usually first unlock**, not at a fixed time.

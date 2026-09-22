@@ -2910,6 +2910,17 @@ stays, as a feature, not the headline.
   every App Store archive fail. **The simulator cannot show shields.** A
   DeviceActivity interval must span 15 minutes, so a 5-minute pass starts in
   the past; verify on a device.
+- **NEVER SEND SCREEN TIME DATA OFF THE PHONE.** Apple's Family Controls
+  terms, accepted with the request, allow it only for the person's own
+  device management and forbid sharing it beyond the person and their
+  device. So nothing Block learns (apps, shield taps, passes, skipped
+  windows) goes to PostHog, Friends or any server, the same stance as
+  "never track a biometric". Anything shown to friends, such as an
+  accountability glow, is computed from sessions alone.
+- **The app's primary purpose must be Apple's purpose 2** (individuals
+  managing their own device use for focus). The request text, recorded in
+  `CONSISTENCY.md`, leads with Block, and the App Store listing of the
+  release that ships Block must too.
 - Aziz's areas are not touched by this: the plus's session screens and
   Profile.
 
