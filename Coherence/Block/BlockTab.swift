@@ -104,7 +104,7 @@ struct BlockTab: View {
         let ottoHeight = min(200, height * 0.42)
         let ottoBottom = height * 0.80
         return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, showsOtto: false)
+            ValleyScene(progress: 0, showsFigure: false)
                 .frame(width: width, height: height)
             Image(OttoPose.asking.asset)
                 .resizable()

@@ -237,7 +237,7 @@ private struct ValleyStage<Extra: View>: View {
             let ottoBottom = size.height - 150
             let ottoTop = ottoBottom - ottoHeight
             ZStack {
-                ValleyScene(progress: progress, showsOtto: false)
+                ValleyScene(progress: progress, showsFigure: false)
                 Image(pose)
                     .resizable()
                     .scaledToFit()
@@ -597,7 +597,7 @@ private struct BreatheWithMeScene: View {
             let ottoHeight = min(210, size.height * 0.25)
             let ottoBottom = size.height - 150
             ZStack {
-                ValleyScene(progress: 0, showsOtto: false)
+                ValleyScene(progress: 0, showsFigure: false)
                 BreathCircle(start: start)
                     .frame(width: 200, height: 200)
                     .position(x: size.width / 2, y: size.height * 0.30)
@@ -747,7 +747,7 @@ private struct TwoDoorsScene: View {
             let ottoHeight = min(220, size.height * 0.27)
             let ottoBottom = size.height - 130
             ZStack {
-                ValleyScene(progress: 0, showsOtto: false)
+                ValleyScene(progress: 0, showsFigure: false)
                 Image("OttoCurious")
                     .resizable()
                     .scaledToFit()
@@ -935,7 +935,7 @@ private struct FirmBreath: View {
         let day = DayLight.at(0)
         GeometryReader { geo in
             ZStack {
-                ValleyScene(progress: 0, showsOtto: false)
+                ValleyScene(progress: 0, showsFigure: false)
                 BreathCircle(start: start)
                     .frame(width: 200, height: 200)
                     .position(x: geo.size.width / 2, y: geo.size.height * 0.34)
@@ -994,7 +994,7 @@ private struct HowLongScreen: View {
             let ottoBottom = size.height * 0.60
             let ottoTop = ottoBottom - ottoHeight
             ZStack {
-                ValleyScene(progress: 0, showsOtto: false)
+                ValleyScene(progress: 0, showsFigure: false)
                 VStack {
                     Spacer(minLength: 0)
                     OttoLine(text: "No worries. How long do you need?", ink: ink)

@@ -42,7 +42,9 @@ struct ValleyScene: View {
     /// Profile's band needs the place without the character: Otto is the
     /// portrait on that page, and drawing him in the band as well would put
     /// two of him on one screen. The cushion goes with him, since an empty
-    /// cushion reads as somebody having just left.
+    /// cushion reads as somebody having just left. The Block tab and Otto's
+    /// screens ask for it too: they stand their own pose (clipboard, waving,
+    /// slumped) in the meadow.
     var showsFigure: Bool = true
 
     /// Move him up to the corner, small, so a list can have the meadow.
@@ -52,11 +54,6 @@ struct ValleyScene: View {
     /// another, which costs a frame of nothing and restarts his wave; moving
     /// and resizing one view is a spring the rig plays straight through.
     var ottoInCorner: Bool = false
-
-    /// Draw the seated Otto and his cushion. The Block tab and Otto's
-    /// screens draw their own pose (clipboard, waving, slumped) standing in
-    /// the meadow, so they ask for the valley alone (2026-09-22).
-    var showsOtto: Bool = true
 
     /// The rig, so he actually breathes while you do.
     ///
@@ -188,7 +185,6 @@ struct ValleyScene: View {
 
             // The cushion gives him somewhere to be rather than floating on
             // grass, and it is the one warm object in a cool frame.
-            if showsOtto {
             Cushion()
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
@@ -212,7 +208,6 @@ struct ValleyScene: View {
             .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
                       y: ottoInCorner ? Self.cornerY
                                       : size.height * (1 - 0.24) - seated / 2)
-            }
         }
         .frame(width: size.width, height: size.height)
     }
