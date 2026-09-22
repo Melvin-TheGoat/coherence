@@ -2706,6 +2706,49 @@ sliced out.** Check the sheet before asking for art.
   `tools/otto_chest.py` cuts one; it is a feathered ellipse, an image node and
   three keyframes.
 
+## THE SEATED WAVE ACTUALLY WAVES (2026-09-21, Aziz)
+
+"the sloth isnt waving at all", "i dont like him with the little yellow
+lines", "theres a white space between his moving arm and his head". All
+three were real and all three are fixed.
+
+- **The white space was baked into the art.** Not a rendering bug: an opaque
+  white wedge of 204 pixels sat in the crevice between his raised arm and his
+  cheek, and a second sliver above it. Found by connected-component labelling
+  the pale pixels, because the eye whites and the teeth match any plain
+  threshold. Filled with the median of the fur ringing it, darkened 10
+  percent so it reads as the shadow that belongs there, then blurred only
+  over that patch. **Verified by re-measuring to zero, not by looking**: the
+  first two attempts each looked plausible in a zoom and had done nothing.
+- **The flourish is gone**, marks and all. It was blue in the source, which
+  is why it was recoloured amber an hour earlier; Aziz did not want it in
+  either colour. Removed by fading alpha with blueness so no fringe is left.
+- **The arm waves**, because it is now its own layer rotating about the
+  elbow. `tools/otto_cut_arm.py` grew two things for it:
+  - **A POLYLINE cut.** The standing pose could be severed with one straight
+    line because its arm is held away from the body. The seated arm is
+    against the torso and enclosed by it, so no straight line both follows
+    the arm's contour and reaches background. The cut is four points now,
+    down the arm and out at the bottom left.
+  - **A FEATHERED overlap.** The hard-edged band is invisible at rest and
+    then swings out from behind the head as a straight diagonal lip the
+    moment the arm turns, which is exactly what it did at 12 degrees. Fading
+    the outer 70 percent of the band hands those pixels to the body beneath,
+    which is the same fur, so the join reads as shading. Checked at five
+    angles: clean through about plus or minus 8.
+  - The wave is 7 keys over 80 frames, minus 8 to plus 7 degrees, inside a
+    240-frame looping `PoseGreet`, so he waves and then rests before waving
+    again.
+- **The arm's placement cost one wrong capture, and the lesson generalises.**
+  An image's origin is where the node's position lands ON the image, so
+  moving the origin to the pivot means recomputing the position in the
+  PARENT's frame: top-left must stay at `(-w/2, -h)`, giving
+  `x = -w/2 + pivotX`, `y = -h + pivotY`. Computing it against the pose's own
+  frame instead dropped the arm on the floor.
+- **Delete the superseded asset before exporting.** The single-image
+  `otto-sit-wave` stayed embedded after its node was deleted, 185 KB of a
+  679 KB file, for art nothing draws.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body
