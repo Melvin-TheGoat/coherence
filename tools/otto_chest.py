@@ -43,6 +43,10 @@ ART = os.path.join(REPO, "mockups", "otto-v3")
 POSES = [
     ("otto-wave-body.png", "otto-wave-chest.png", 247, 330, 86, 96),
     ("otto-sit.png",       "otto-sit-chest.png",  198, 296, 74, 72),
+    # The seated greeting. Cut from the BODY layer, not the whole pose: the
+    # arm is its own image that rotates, and a patch carrying part of it
+    # would swell the arm too.
+    ("otto-sit-wave-body.png", "otto-sit-wave-chest.png", 208, 312, 68, 66),
 ]
 # Alpha falls from 1 to 0 across this many pixels, inside the ellipse.
 FEATHER = 46.0

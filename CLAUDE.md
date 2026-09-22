@@ -2773,6 +2773,25 @@ caption above a character.
   Each screen carries the line that is actionable on it, and the bubble stays
   two lines instead of four.
 
+## THE GREETING POSE BREATHES TOO (2026-09-21)
+
+`tools/otto_chest.py` gained the seated greeting, cut from
+`otto-sit-wave-body.png` rather than the whole pose: the arm is its own
+image that rotates, and a patch carrying part of it would swell the arm on
+every breath.
+
+`ChestGreet` is placed the way `ChestSit` is, and the arithmetic is worth
+keeping because it is not obvious. The tool prints the ellipse centre as a
+percentage, which goes straight into `originx`/`originy`; the position is
+then `(-w/2 + centreX, -h + centreY)`, which puts the patch's pixels exactly
+on top of the pose's. Same amplitude as the sitting pose, 110 by 114 with a
+3 unit lift, so the two never drift apart.
+
+**Verified with the difference map, and the first run measured a peak of 2
+because the tap had opened the setup sheet rather than the screen.** Always
+confirm which screen is actually up before reading a diff: a static sheet
+and a broken animation look identical in the numbers.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body
