@@ -10,16 +10,25 @@ The pivot and the whole Block design are in `CONSISTENCY.md`. **DONE:** the
 guide is a circle under the streak on Home (opens "How to meditate");
 `CONSISTENCY.md` written; `mockups/block-v1.html` drawn (the Block tab, a
 blocker's settings, shield to notification to Otto to the two doors, and the
-twenty interventions). **WAITING ON MELVIN:** sign-off on the mockup and the
-five open questions at its end (rest of window or day; does "Not now" cost
-aura; Strict in v1; free or paid; Mindful morning on by default). **WAITING
-ON MELVIN OR AZIZ, start now:** request the Family Controls (Distribution)
-entitlement from Apple for the app and all three extensions; days to weeks.
-**Then:** the Guide tab becomes Block in Swift; the Screen Time build
-(FamilyControls, ManagedSettings, DeviceActivity, three extensions, App
-Group); the notification into the interventions; tested on a phone, since the
-simulator cannot show shields. **Also owed by the pivot:** PURPOSE.md,
-SCIENCE.md, the website hero, App Store copy.
+twenty interventions). **APPROVED 2026-09-22** ("they all look fire"), with
+the five answers now in `CONSISTENCY.md` > Decided: meditating releases the
+apps for the rest of the window; "Not now" costs glow only if the window
+then passes with no meditation; Strict in v1; Block is paid; the default is
+**Mindful day** (the picked apps held all day until you meditate, one switch
+off). **WAITING ON MELVIN:** yes or no on the proposed amounts (a skipped
+window costs 10, a skipped day is the normal 20 and never a rest day), and
+the free-person question (recommended: Mindful day waits on the Block tab and
+switching it on opens the free-week offer). **WAITING ON MELVIN (Account
+Holder), start now:** create the three extension App IDs
+(`com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`) and request
+Family Controls (Distribution) on all four App IDs, Capability Requests tab;
+days to six weeks. **Then:** Block in Swift on its own `block` branch (the
+entitlement breaks App Store archives until approved): the Guide tab becomes
+Block; FamilyControls, ManagedSettings, DeviceActivity, three extensions,
+App Group; the notification into the interventions; the "Not now" input to
+`OttoAura`; tested on a phone, since the simulator cannot show shields.
+**Also owed by the pivot:** PURPOSE.md, SCIENCE.md, the website hero, App
+Store copy.
 
 ## Home in Aziz's valley, Otto centred, the bar lowered (2026-09-21, Melvin)
 

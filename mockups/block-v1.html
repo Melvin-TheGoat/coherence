@@ -64,6 +64,10 @@
   .chip { display:inline-block; padding:5px 10px; border-radius:999px; background:#EFE6DA; font-size:12px; font-weight:700; color:var(--brown); margin:0 4px 4px 0; }
   .chip.on { background:#FFF4DC; box-shadow:inset 0 0 0 2px var(--gold); }
   .label { font-size:12px; font-weight:800; color:var(--muted); margin:12px 0 6px; }
+  .switch { width:44px; height:26px; border-radius:13px; background:#D8CFC2; position:relative; flex:none; display:inline-block; }
+  .switch:after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .switch.on { background:var(--goldS); }
+  .switch.on:after { left:21px; }
   .tabbar { position:absolute; left:0; right:0; bottom:0; height:62px; background:var(--cream); border-top:.5px solid rgba(60,42,31,.15); display:flex; justify-content:space-around; align-items:flex-start; padding-top:7px; z-index:8; font-size:9px; font-weight:600; color:var(--muted); }
   .tabbar div { text-align:center; width:54px; } .tabbar .sel { color:var(--brown); }
   .tabbar .ico { width:22px; height:22px; margin:0 auto 2px; border-radius:6px; background:currentColor; opacity:.9; }
@@ -107,20 +111,20 @@
       <div style="position:absolute;top:290px;left:0;right:0;bottom:62px;background:var(--f2);padding:12px 14px;overflow:hidden">
         <div class="pillcard">
           <div style="display:flex;justify-content:space-between;align-items:center">
-            <div><div style="font-weight:800;font-size:16px">Mindful morning</div>
-            <div style="font-size:12px;color:var(--muted)">6 to 10 · every day</div></div>
-            <span class="chip on" style="margin:0">Holding</span>
+            <div><div style="font-weight:800;font-size:16px">Mindful day</div>
+            <div style="font-size:12px;color:var(--muted)">All day, every day</div></div>
+            <span class="switch on"></span>
           </div>
           <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
             <div><span class="app a1">IG</span><span class="app a2">TT</span><span class="app a3">SC</span></div>
-            <span style="font-size:11px;color:var(--muted)">until you sit</span>
+            <span style="font-size:11px;color:var(--muted)">held until you meditate</span>
           </div>
         </div>
         <div class="cta" style="margin-top:12px">+ Add a blocker</div>
         <div class="label" style="color:#fff;margin-top:14px">Presets</div>
         <div style="display:flex;gap:10px">
-          <div class="pillcard" style="flex:none;width:128px;padding:10px"><div style="font-weight:800;font-size:13px">Wind down</div><div style="font-size:11px;color:var(--muted)">9 pm to midnight</div></div>
-          <div class="pillcard" style="flex:none;width:128px;padding:10px"><div style="font-weight:800;font-size:13px">Focus hours</div><div style="font-size:11px;color:var(--muted)">9 to 5, weekdays</div></div>
+          <div class="pillcard" style="flex:none;width:146px;padding:10px"><div style="font-weight:800;font-size:13px">Mindful morning</div><div style="font-size:11px;color:var(--muted)">6 to 10</div></div>
+          <div class="pillcard" style="flex:none;width:146px;padding:10px"><div style="font-weight:800;font-size:13px">Wind down</div><div style="font-size:11px;color:var(--muted)">9 pm to midnight</div></div>
         </div>
       </div>
       <div class="tabbar"><div><div class="ico"></div>Home</div><div class="sel"><div class="ico"></div>Block</div><div><div class="plus">+</div></div><div><div class="ico"></div>Friends</div><div><div class="ico"></div>Profile</div></div>
@@ -134,13 +138,14 @@
       <div style="padding:6px 18px 0;display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--muted)"><span>Cancel</span><span style="color:var(--goldS)">Delete</span></div>
       <div style="padding:8px 18px;display:flex;gap:12px;align-items:center">
         <img src="otto-v3/otto-head.png" style="height:54px">
-        <div style="font-weight:800;font-size:22px">Mindful morning</div>
+        <div style="font-weight:800;font-size:22px;flex:1">Mindful day</div>
+        <span class="switch on"></span>
       </div>
       <div style="padding:0 18px">
         <div class="label">How often</div>
         <span class="chip on">M</span><span class="chip on">T</span><span class="chip on">W</span><span class="chip on">T</span><span class="chip on">F</span><span class="chip on">S</span><span class="chip on">S</span>
         <div class="label">When</div>
-        <span class="chip on" style="font-size:14px;padding:7px 14px">6:00 AM</span> <span style="color:var(--muted)">to</span> <span class="chip on" style="font-size:14px;padding:7px 14px">10:00 AM</span>
+        <span class="chip on" style="font-size:14px;padding:7px 14px">All day</span><span class="chip" style="font-size:14px;padding:7px 14px">Set hours</span>
         <div class="label">Apps Otto holds</div>
         <div><span class="app a1">IG</span><span class="app a2">TT</span><span class="app a3">SC</span><span class="app a4">RD</span><span class="chip" style="vertical-align:top;margin-top:4px">Choose</span></div>
         <div class="label">How strict</div>
@@ -148,12 +153,12 @@
         <div style="font-size:12px;color:var(--muted)">Chill: Otto asks once, then you can have a few minutes.</div>
         <div class="label">Passes a day</div>
         <span class="chip">1</span><span class="chip">2</span><span class="chip on">3</span><span class="chip">No limit</span>
-        <div class="label">A sit that counts</div>
+        <div class="label">A session that counts</div>
         <span class="chip">1 min</span><span class="chip on">2 min</span><span class="chip">5 min</span><span class="chip">10 min</span>
       </div>
       <div class="foot"><div class="cta">Save</div></div>
     </div></div>
-    <div class="cap"><b>A blocker's settings.</b> Your three (how often, when, which apps) plus three I would add: how strict, how many passes a day, and the shortest sit that counts.</div>
+    <div class="cap"><b>A blocker's settings.</b> Your three (how often, when, which apps) plus three I would add: how strict, how many passes a day, and the shortest session that counts. The switch turns it off.</div>
   </div>
 </div>
 
@@ -233,7 +238,7 @@
     <div class="status"><span>9:41</span><span>●●●</span></div>
     <div class="hdr"><div class="avatar"><img src="otto-v3/otto-head.png" style="height:40px"></div><b style="font-size:13px">Otto</b></div>
     <div class="msg them">yo it's otto</div>
-    <div class="msg them">quick sit before the scroll?</div>
+    <div class="msg them">quick meditation before the scroll?</div>
     <div class="typing"><i></i><i></i><i></i></div>
     <div style="margin-top:auto;padding-bottom:12px">
       <div class="msg reply">ok let's go</div>
@@ -302,7 +307,7 @@
   <div><div class="mini"><div class="scr">
     <div class="valley"><div class="sky" style="background:linear-gradient(#F6C9A8,#F9E1C6 50%,#EFE0C9)"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
     <div class="status"><span>6:40</span><span>●●●</span></div>
-    <div class="bubble" style="top:110px">zzz... oh, hey.<br>Morning sit?</div>
+    <div class="bubble" style="top:110px">zzz... oh, hey.<br>Morning meditation?</div>
     <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:196px">
     <div style="position:absolute;top:170px;left:62%;font-weight:800;color:var(--inks);z-index:5">z z</div>
     <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
@@ -331,7 +336,7 @@
   <div><div class="mini"><div class="scr">
     <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
     <div class="status"><span>9:41</span><span>●●●</span></div>
-    <div class="bubble" style="top:110px">Help me glow?<br>One sit today.</div>
+    <div class="bubble" style="top:110px">Help me glow?<br>One session today.</div>
     <img class="otto" src="otto-v3/otto-frustrated.png" style="height:130px;top:196px">
     <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
   </div></div><div class="cap" style="width:220px"><b>11. His glow.</b> The tamagotchi one.</div></div>
@@ -424,15 +429,15 @@
 
 </div>
 
-<h2>4. What I need from you</h2>
+<h2>4. Decided (Melvin, 2026-09-22)</h2>
 <ol style="max-width:820px">
-  <li><b>Meditating releases the apps</b> for the rest of the window, or the rest of the day?</li>
-  <li><b>Does "Not now" cost Otto anything</b> (a little glow), or only meditating and missed days move him?</li>
-  <li><b>Strict mode</b> (no "Not now" at all): in the first version, or later?</li>
-  <li><b>Free or paid?</b> Brainrot charges for blocking.</li>
-  <li><b>Mindful morning on by default</b> for new people, or off until they set it up?</li>
+  <li><b>Meditating releases the apps for the rest of the window</b>, so someone can meditate twice a day.</li>
+  <li><b>"Not now" costs Otto only if the whole window then passes without a meditation.</b> Coming back ten minutes later costs nothing.</li>
+  <li><b>Strict</b> (no "Not now" at all) ships in the first version.</li>
+  <li><b>Block is paid.</b></li>
+  <li><b>The default is Mindful day</b>: the apps you pick are held all day until you meditate, and one switch turns it off.</li>
 </ol>
-<p class="lead"><b>One thing only you or Aziz can start, today:</b> Apple has to approve the Family Controls entitlement before Block can ship (developer.apple.com, contact, "Family Controls (Distribution)"), for the app and each of its three extensions. It takes days to weeks. I can build and test it on a phone meanwhile.</p>
+<p class="lead"><b>Before Block can ship:</b> Apple approves Family Controls (Distribution) for the app and each of its three extensions. The steps are in <code>CONSISTENCY.md</code>. I can build and test on a phone meanwhile.</p>
 
 </body>
 </html>

@@ -47,27 +47,37 @@ on Home (built 2026-09-21). Tabs: Home, Block, the plus, Friends, Profile.
    not allowed to open an app. You tap the notification and 808 opens.
 5. Otto meets you with one of about twenty interventions (below). Every one
    ends in the same two doors:
-   - **"Okay, let's meditate"**: the sit starts. Finishing it (even a short
-     one) releases the apps for the rest of the window, and feeds Otto.
+   - **"Okay, let's meditate"**: the session starts. Finishing it (even a
+     short one) releases the apps for the rest of that window, not the rest
+     of the day, so someone with a morning and an evening window meditates
+     in each. It also feeds Otto.
    - **"Not now"**: Otto asks how long, 5, 10, 15, 30 or 60 minutes, and the
-     apps open for that long. Then they are held again.
+     apps open for that long. Then they are held again. On Strict there is
+     no "Not now".
 
 ### What you can set (per blocker)
 
 1. **How often:** which days it runs (every day, weekdays, custom).
-2. **When:** the window (6 to 10 in the morning, 9 to midnight, anything).
+2. **When:** all day, or a window (6 to 10 in the morning, 9 to midnight,
+   anything).
 3. **Which apps:** Apple's own picker; apps, categories or websites.
 4. **How strict** (added, worth having): *Chill* (one screen, then either
    door), *Firm* (you breathe with Otto for ten seconds before "Not now"
    works), *Strict* (no "Not now": meditate to open).
 5. **How many passes** (added): unblocks allowed per day, e.g. three, then
    only meditating opens them.
-6. **What counts** (added): the shortest sit that releases the apps, 1, 2, 5
-   or 10 minutes.
+6. **What counts** (added): the shortest session that releases the apps, 1,
+   2, 5 or 10 minutes.
 
-Presets, like Brainrot's: **Mindful morning** (6 to 10, social apps, the
-default), **Wind down** (9 pm to midnight), **Focus hours** (9 to 5,
-weekdays), **Daily limit** (30 minutes a day, then held until you sit).
+**The default is Mindful day** (Melvin, 2026-09-22): the apps the person
+picks are held all day, every day, until they meditate, and one switch turns
+it off. Apple lets only the person choose the apps, so "on by default" means
+Mindful day is set up and waiting: the first time, 808 asks for Screen Time
+permission and the person picks their apps.
+
+Presets, like Brainrot's: **Mindful morning** (6 to 10), **Wind down** (9 pm
+to midnight), **Focus hours** (9 to 5, weekdays), **Daily limit** (30 minutes
+a day, then held until you meditate).
 
 ### The interventions (about twenty, rotated, never the same twice running)
 
@@ -75,7 +85,7 @@ Each is one screen in 808 after the notification. Some read the moment
 (morning, night, streak, Otto's mood, a friend):
 
 1. **Otto standing**, one line in his bubble: "Got two minutes for me first?"
-2. **A text thread**: "yo it's otto" / "quick sit before the scroll?" with
+2. **A text thread**: "yo it's otto" / "quick meditation before the scroll?" with
    reply chips, typing dots and all.
 3. **A FaceTime call**: Otto calling, full screen, accept and decline.
    Accept shows your front camera with Otto in the corner and his lines.
@@ -83,10 +93,10 @@ Each is one screen in 808 after the notification. Some read the moment
 5. **A voice note**: Otto left you one, waveform and transcript.
 6. **A note on the fridge**: "Sit first, scroll after. O."
 7. **Still there later**: "It will all still be here in two minutes."
-8. **Waking Otto** (morning): "zzz... oh, hey. Morning sit?"
+8. **Waking Otto** (morning): "zzz... oh, hey. Morning meditation?"
 9. **Otto's sign**: he holds up a hand-lettered sign, "Meditate first".
 10. **The streak**: "Day 6 is waiting. Two minutes keeps it going."
-11. **His glow** (tamagotchi): "Help me glow? One sit today."
+11. **His glow** (tamagotchi): "Help me glow? One session today."
 12. **Two doors, playful**: "What do you want more right now?" Calm, or the
     scroll.
 13. **The countdown**: the app opens in ten, nine... while Otto breathes.
@@ -121,11 +131,23 @@ Each is one screen in 808 after the notification. Some read the moment
 - **Nothing leaves the phone.** App choices are opaque tokens even to us.
   The privacy policy, the App Privacy labels and the review notes must say
   808 uses Screen Time to hold apps the person chose.
-- **GATE, and it is Melvin's or Aziz's to start now:** the Family Controls
-  entitlement for App Store distribution must be requested from Apple
-  (developer.apple.com, contact, "Family Controls (Distribution)"), for the
-  app and each extension. Approval takes days to weeks. Development builds
-  work on a phone without it; nothing ships without it.
+- **GATE, Melvin's to start (it needs the Account Holder):** Family Controls
+  (Distribution) is requested per App ID, in Certificates, Identifiers &
+  Profiles > Identifiers > the App ID > Capability Requests > Request, for
+  the app AND each extension (Apple: "If your app includes a Screen Time API
+  app extension, submit the same request for the extension"). The extension
+  App IDs are `com.lockout.meditate808.monitor` (DeviceActivity monitor),
+  `com.lockout.meditate808.shield` (shield configuration) and
+  `com.lockout.meditate808.shieldaction` (shield action). Developers report
+  approval in anything from days to six weeks, and an extension can sit in
+  "Submitted" after the app is approved, so all four go in together.
+  Development builds work on a phone without it; nothing reaches TestFlight
+  or the App Store without it.
+- **Block is built on its own branch.** Once a target carries the Family
+  Controls entitlement, every App Store archive fails ("Profile doesn't
+  include the com.apple.developer.family-controls entitlement") until
+  distribution is approved, so Block stays off `mvp` and `social-1.1` until
+  then.
 - **The simulator cannot show shields.** Block is tested on a phone.
 
 ## What else has to change
@@ -141,27 +163,40 @@ Each is one screen in 808 after the notification. Some read the moment
 
 1. **Otto on the Home Screen and Lock Screen** (widgets): his mood where you
    look eighty times a day. The strongest tamagotchi move there is.
-2. **Mindful morning as the default blocker**, on for new people: the first
-   scroll waits for the first sit.
+2. **Mindful day as the default** (decided 2026-09-22, see Block above).
 3. **Bedtime tied to iOS Sleep**: the wind-down window follows the Sleep
    schedule instead of a time typed in.
-4. **Sitting earns time**: a 10-minute sit opens the apps until the window
-   ends; a 2-minute sit opens them for an hour.
-5. **A Live Activity during the window**: "A two minute sit opens your apps"
+4. **Meditating earns time**: a 10-minute session opens the apps until the
+   window ends; a 2-minute session opens them for an hour.
+5. **A Live Activity during the window**: "A two minute session opens your apps"
    on the Lock Screen and Dynamic Island.
 6. **An accountability friend** (Friends): opt in, and a friend sees when your
    Otto is low and can nudge you.
 7. **A weekly letter from Otto**: what the week looked like, in his voice.
-8. **Tiny sits count**: one minute releases the apps on Chill.
+8. **Tiny sessions count**: one minute releases the apps on Chill.
 9. **Reminders at the moment you usually first unlock**, not at a fixed time.
 
-## Open questions
+## Decided (Melvin, 2026-09-22)
 
-1. Does meditating release the apps for the rest of the window, or the rest
-   of the day?
-2. Should "Not now" cost Otto anything (a little aura), or only meditating
-   and missing days move him?
-3. Strict mode: offered, or too much for a first version?
-4. Is Block part of the free app, or paid (Brainrot charges for it)?
-5. Default blocker for new people: Mindful morning on by default, or off
-   until they set it up?
+1. **Meditating releases the apps for the rest of the window**, not the rest
+   of the day, in case someone wants to meditate twice a day.
+2. **"Not now" costs Otto only if the window then passes without a
+   meditation.** "Not now" and a session ten minutes later costs nothing.
+   Amounts, proposed and waiting on Melvin's yes: a window skipped this way
+   costs 10 glow; if the whole day passes without a session it is a missed
+   day (20), and the free rest day never covers a day Otto was told "Not
+   now". The "Not now" events are stored in the App Group (the passes are
+   counted there anyway) and `OttoAura` takes them as a second input, so
+   the aura stays derived, never a stored number.
+3. **Strict ships in the first version.**
+4. **Block is paid.**
+5. **The default is Mindful day** (see Block above), easy to switch off.
+
+## Still open
+
+1. **Paid and on by default meet at a free person.** Recommended: a free
+   person finds Mindful day set up and waiting on the Block tab, and
+   switching it on opens the free-week offer, so everyone who tries paid
+   meets Block on day one.
+2. Where a new person first meets Mindful day now that onboarding is gone:
+   a card on Home, or only the Block tab.

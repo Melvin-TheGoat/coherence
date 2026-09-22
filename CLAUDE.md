@@ -2874,18 +2874,30 @@ apps you chose until you have meditated in the window you chose. Measurement
 stays, as a feature, not the headline.
 
 - **The guide is a circle under the streak on Home** (`guideBadge`,
-  `HomeSheet.guide`), built and verified. The Guide TAB is still there until
-  Block replaces it; that waits for sign-off on `mockups/block-v1.html`.
+  `HomeSheet.guide`), built and verified. The Guide TAB stays until Block
+  replaces it in Swift.
+- **`mockups/block-v1.html` is APPROVED (2026-09-22)**, with five decisions
+  recorded in `CONSISTENCY.md` > Decided: a finished session releases the
+  apps for the rest of THAT WINDOW, not the day; "Not now" costs glow only
+  when the window then passes with no session; Strict ships in v1; Block is
+  paid; **the default blocker is Mindful day**, the picked apps held all day
+  until you meditate, one switch off. Apple lets only the person pick apps
+  (tokens are opaque), so "on by default" means set up and waiting.
 - **The loop Apple allows:** shield ("Otto's holding Instagram", "Ask Otto")
   → a Time Sensitive notification, because a shield cannot open an app → 808
-  opens on one of twenty interventions → "Okay, let's meditate" (a finished
-  sit releases the apps) or "Not now" (5 to 60 minutes). The shield is only
-  an icon, a title, a line and two buttons; everything else lives in the app.
-- **GATE: the Family Controls (Distribution) entitlement**, requested from
-  Apple for the app and each of three extensions, by Melvin or Aziz. Nothing
-  ships without it; dev builds work on a phone meanwhile. **The simulator
-  cannot show shields.** A DeviceActivity interval must span 15 minutes, so a
-  5-minute pass starts in the past; verify on a device.
+  opens on one of twenty interventions → "Okay, let's meditate" or "Not now"
+  (5 to 60 minutes). The shield is only an icon, a title, a line and two
+  buttons; everything else lives in the app.
+- **GATE: Family Controls (Distribution), per App ID, requested by the
+  Account Holder (Melvin)** in Certificates, Identifiers & Profiles >
+  Identifiers > the App ID > Capability Requests, for the app AND each
+  extension: `com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`.
+  Those three bundle IDs are fixed now; build the targets with exactly them.
+  Dev builds work on a phone meanwhile. **Block lives on its own `block`
+  branch until approval**, because a target carrying the entitlement makes
+  every App Store archive fail. **The simulator cannot show shields.** A
+  DeviceActivity interval must span 15 minutes, so a 5-minute pass starts in
+  the past; verify on a device.
 - Aziz's areas are not touched by this: the plus's session screens and
   Profile.
 
