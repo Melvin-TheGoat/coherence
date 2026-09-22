@@ -3311,6 +3311,34 @@ and **screen 1**, with four changes.
 - **Still open:** a Friends post carries a score, so a phone session cannot be
   posted yet.
 
+### Friends can be tested without iCloud, and a post's score is optional (same day)
+
+- **`CommunityModel.testMode`** (DEBUG): Friends against
+  `MemoryCommunityDatabase`, seeded, so the tab works on a simulator with no
+  iCloud account (Melvin: "the friends tab has been like closed off this
+  whole time due to icloud, can you fix this so i can test it"). On by
+  default in the simulator, off on a phone; the unavailable card offers to
+  turn it on and a banner across the feed says it is on. Everything works
+  except leaving the device, and nothing survives a relaunch.
+- **A post's score is optional** (Melvin: "have the score on the friends
+  post be optional, again like we are making the watch optional"). `Post`
+  and `Draft` carry `Int?`; the card drops the capsule and the Score column
+  rather than printing a zero, and the profile's average counts only the
+  sits that have one. The session page no longer refuses to share a phone
+  sit. **Whether it is also a CHOICE is undecided**: `mockups/post-score.html`
+  draws the card both ways and three homes for a switch (none, per post, or
+  once in the profile). My recommendation is on the page: none now, a profile
+  preference later, and never a per-post switch, because the posts somebody
+  leaves the score ON for say what the hidden ones were.
+- **The profile photo is any picture again, with Otto as the default**
+  (Melvin: "either a selfie or from your library, and then can have otto be a
+  default if you dont want to pick anything"). This reverses Aziz's call of
+  2026-09-21 ("no more pfp and make the sloth in the circle"), which had
+  made Otto everybody's portrait. `ProfilePortrait` is the one view that
+  draws a face, so Profile, the feed and a person's page cannot disagree;
+  the picker in Create your profile already offered camera or library.
+  **Initials are gone**, which was the old fallback.
+
 ### Block can be tested without Screen Time (same day)
 
 Melvin: "make it so i can test the block thing, screentime is password

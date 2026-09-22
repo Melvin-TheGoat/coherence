@@ -110,7 +110,11 @@ struct FriendEdge: Identifiable, Equatable {
 struct Post: Identifiable, Equatable {
     let id: String
     let author: String
-    var score: Int
+    /// The score, when the sit had one. **Optional since 2026-09-22**
+    /// (Melvin: "have the score on the friends post be optional, again like
+    /// we are making the watch optional"): a session run on the phone
+    /// measures nothing, and it is still a session somebody did.
+    var score: Int?
     var minutes: Int
     var streak: Int
     var technique: String?
@@ -130,7 +134,7 @@ struct Post: Identifiable, Equatable {
     static let fields = ["author", "score", "minutes", "streak", "technique", "caption", "photo",
                          "practicedAt", "createdAt", "title", "sound"]
 
-    init(id: String = UUID().uuidString, author: String, score: Int, minutes: Int, streak: Int,
+    init(id: String = UUID().uuidString, author: String, score: Int? = nil, minutes: Int, streak: Int,
          technique: String? = nil, caption: String = "", photoURL: URL? = nil,
          practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil) {
         self.id = id; self.author = author; self.score = score; self.minutes = minutes
@@ -144,7 +148,7 @@ struct Post: Identifiable, Equatable {
               let author = (record["author"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
         self.init(id: record.recordID.recordName,
                   author: author,
-                  score: record["score"] as? Int ?? 0,
+                  score: record["score"] as? Int,
                   minutes: record["minutes"] as? Int ?? 0,
                   streak: record["streak"] as? Int ?? 0,
                   technique: record["technique"] as? String,

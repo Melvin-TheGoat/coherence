@@ -318,7 +318,8 @@ actor CommunityStore {
     /// The numbers a post carries, handed in by the results screen. Nothing
     /// measured beyond the score is accepted by this signature on purpose.
     struct Draft: Equatable {
-        var score: Int
+        /// nil when nothing measured the sit.
+        var score: Int?
         var minutes: Int
         var streak: Int
         var technique: String?

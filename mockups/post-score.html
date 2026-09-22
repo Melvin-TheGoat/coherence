@@ -1,0 +1,170 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · The score on a post</title>
+<style>
+:root{
+  --card:#FFFFFF; --ink:#413024; --soft:#877160; --amber:#F7B143; --amberSoft:#FBE3BE;
+  --amberText:#9B6B19; --sage:#3E8175; --blushText:#AB5834; --trace:#F0E3D0; --hair:#EFE4D5;
+  --paper:#FEF9F2; --sky1:#BFDCEF; --sky2:#DCEAF3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+h2{font-size:16px;margin:44px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:940px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:20px}
+.col{width:300px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);
+ padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13px;line-height:1.6;margin-top:11px}
+.note b{color:var(--ink)}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:940px;margin-top:16px;font-size:13.6px;line-height:1.62;color:var(--soft)}
+.flag b{color:var(--blushText)}
+.pick{border-left:3px solid var(--sage)} .pick b{color:var(--sage)}
+
+/* the post card */
+.post{background:var(--card);border-radius:20px;box-shadow:0 2px 8px rgba(40,25,15,.10);
+ overflow:hidden;padding-bottom:12px}
+.who{display:flex;align-items:center;gap:10px;padding:13px 14px 8px}
+.who .face{width:36px;height:36px;border-radius:50%;background:var(--sky1);overflow:hidden;
+ display:flex;align-items:flex-end;justify-content:center;border:1.5px solid var(--amber)}
+.who .face img{width:32px}
+.who b{font-size:14.5px;display:block}
+.who span{font-size:11.5px;color:var(--soft)}
+.title{font-size:17px;font-weight:800;padding:2px 14px 9px}
+.shot{height:150px;margin:0 14px;border-radius:14px;position:relative;
+ background:linear-gradient(160deg,#C9B49A,#8E7357)}
+.cap{position:absolute;left:10px;bottom:10px;background:var(--amber);color:#4A3312;font-weight:800;
+ font-size:15px;border-radius:14px;padding:4px 12px}
+.stats{display:flex;border-top:1px solid var(--hair);margin:12px 14px 0;padding-top:11px}
+.stats div{flex:1;text-align:center}
+.stats b{display:block;font-size:15.5px;color:var(--sage)}
+.stats span{font-size:11px;color:var(--soft)}
+.react{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 0;
+ font-size:12px;color:var(--soft)}
+.react .btn{background:var(--paper);border:1px solid var(--hair);border-radius:14px;padding:6px 12px;
+ font-weight:700;color:var(--ink)}
+
+/* the session page fragment */
+.sheet{background:var(--paper);border-radius:20px;overflow:hidden;box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.shead{height:96px;background:linear-gradient(180deg,var(--sky1),#D7E7EE);position:relative}
+.shead .big{position:absolute;left:14px;bottom:26px;font-size:26px;font-weight:800}
+.shead .small{position:absolute;left:14px;bottom:10px;font-size:11.5px;color:#5A6A72}
+.body{padding:12px 14px 16px}
+.fh{font-size:13px;font-weight:800;margin:12px 0 5px}
+.vis{display:flex;gap:8px}
+.vis div{flex:1;border-radius:14px;padding:9px 0;text-align:center;font-size:12.5px;font-weight:700;
+ background:#fff;border:1px solid var(--hair);color:var(--soft)}
+.vis div.on{border:2px solid var(--amber);color:var(--ink)}
+.toggle{display:flex;align-items:center;justify-content:space-between;padding:11px 0;
+ border-top:1px solid var(--hair);margin-top:12px}
+.toggle .k{font-size:13.5px;font-weight:700}
+.toggle .s{font-size:11.5px;color:var(--soft)}
+.sw{width:44px;height:26px;border-radius:13px;background:var(--amber);position:relative;flex:none}
+.sw:after{content:"";position:absolute;right:3px;top:3px;width:20px;height:20px;border-radius:50%;
+ background:#fff}
+.sw.off{background:#D8CDBD}
+.sw.off:after{left:3px;right:auto}
+.set{background:#fff;border-radius:16px;padding:12px 14px;box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.set .r{display:flex;align-items:center;justify-content:space-between;padding:9px 0;
+ border-bottom:1px solid var(--hair);font-size:13.5px}
+.set .r:last-child{border-bottom:0}
+</style></head><body>
+
+<h1>The score on a post</h1>
+<p class="lede"><b>Built already:</b> a post no longer needs a score. A session the Watch measured carries
+one, a session run on the phone carries none, and the card drops the capsule and the column rather than
+printing a zero. What is left to decide is <b>whether it is also a choice</b>, and where that choice
+lives. Below: the card both ways, then three homes for the switch.</p>
+
+<h2>The card, with a score and without</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag">watch session · <b>carries its score</b></div>
+    <div class="post">
+      <div class="who"><div class="face"><img src="otto-v3/otto-head.png" alt=""></div>
+        <div><b>Melvin</b><span>Today at 8:12 AM · Rain</span></div></div>
+      <div class="title">Morning meditation</div>
+      <div class="shot"><div class="cap">81</div></div>
+      <div class="stats"><div><b>10m</b><span>Time</span></div><div><b>8</b><span>Day streak</span></div>
+        <div><b>Rain</b><span>Technique</span></div></div>
+      <div class="react"><span>Be the first to give a 🙏</span><span class="btn">🙏 Nice session</span></div>
+    </div>
+    <div class="note">The amber capsule rides the photo, one gold object per post, exactly as now.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag">phone session · <b>no score, no hole</b></div>
+    <div class="post">
+      <div class="who"><div class="face"><img src="otto-v3/otto-head.png" alt=""></div>
+        <div><b>Melvin</b><span>Today at 8:12 AM · Rain</span></div></div>
+      <div class="title">Morning meditation</div>
+      <div class="shot"></div>
+      <div class="stats"><div><b>10m</b><span>Time</span></div><div><b>8</b><span>Day streak</span></div>
+        <div><b>Rain</b><span>Technique</span></div></div>
+      <div class="react"><span>Be the first to give a 🙏</span><span class="btn">🙏 Nice session</span></div>
+    </div>
+    <div class="note"><b>Nothing announces the absence.</b> No greyed capsule, no dash: the card is the
+      same card with one fewer thing on it, which is the rule the session rows already follow.</div>
+  </div>
+</div>
+
+<h2>Where the choice lives, if there is one</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag">option 1 · <b>no choice</b></div>
+    <div class="sheet">
+      <div class="shead"><div class="big">10 min</div><div class="small">Today, 8:12 AM · Rain</div></div>
+      <div class="body">
+        <div class="fh">Who can see it</div>
+        <div class="vis"><div>🔒 Only you</div><div class="on">👋 Friends</div></div>
+        <div class="note" style="margin-top:12px">Measured sits carry their score. Nothing to set.</div>
+      </div>
+    </div>
+    <div class="note"><b>What is built today.</b> One less decision at the moment somebody is deciding
+      four other things. The cost: on a rough day the only way to hide the number is Only you.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag">option 2 · <b>a switch on the session</b></div>
+    <div class="sheet">
+      <div class="shead"><div class="big">10 min</div><div class="small">Today, 8:12 AM · Rain</div></div>
+      <div class="body">
+        <div class="fh">Who can see it</div>
+        <div class="vis"><div>🔒 Only you</div><div class="on">👋 Friends</div></div>
+        <div class="toggle"><div><div class="k">Show my score</div>
+          <div class="s">81, on the post</div></div><div class="sw"></div></div>
+      </div>
+    </div>
+    <div class="note"><b>Per post, and only when there is one to show.</b> Answers the rough day without
+      going private. The old worry, recorded in September: a switch somebody turns OFF tells every friend
+      what the score was, because the ones they leave on are the good ones.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag">option 3 · <b>set once, in your profile</b></div>
+    <div class="set" style="margin-top:2px">
+      <div class="r"><span>Display name</span><span style="color:var(--soft)">Melvin</span></div>
+      <div class="r"><span>Username</span><span style="color:var(--soft)">@melvin</span></div>
+      <div class="r"><span>Photo</span><span style="color:var(--amberText);font-weight:700">Change</span></div>
+      <div class="r"><div><div style="font-weight:700">Show scores on my posts</div>
+        <div style="font-size:11.5px;color:var(--soft)">Applies to every post</div></div>
+        <div class="sw"></div></div>
+    </div>
+    <div class="note"><b>A stance, not a decision per sit.</b> Nothing to weigh after a session, and no
+      day-to-day signal: friends see scores from you always or never. The cost is that it is invisible
+      at the moment it applies, so somebody may not remember it is on.</div>
+  </div>
+</div>
+
+<div class="flag pick"><b>What I would do:</b> option 1 now, option 3 if it is wanted later. The score is
+already optional in the only way that matters, which is that a session without one posts fine. A per-post
+switch (2) is the one I would avoid: it makes every post a small announcement about the number that is
+missing, and it adds a decision to the screen at the moment somebody just wants to be done.</div>
+
+<div class="flag"><b>If the score is going away entirely</b>, as the pivot suggests, this whole question
+answers itself: the card keeps time, streak and technique, which every session has, Watch or not.</div>
+
+</body></html>

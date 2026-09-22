@@ -444,28 +444,22 @@ struct SaveSessionView: View {
     private var visibilityNote: some View {
         if visibility == .friends, loaded {
             Group {
-                if score == nil {
-                    caption(session?.isPhoneOnly == true
-                            ? "A post carries a score, and nothing measured this sit. Save it as Only you."
-                            : "This session has no score on this phone, so it can't be shared. Save it as Only you.")
-                } else {
-                    switch community.phase {
-                    case .needsUsername:
-                        Button { showClaim = true } label: {
-                            Text("Create your profile to share with friends")
-                                .font(AppFont.caption.weight(.semibold))
-                                .foregroundStyle(AppColor.accentGoldText)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, AppMetrics.screenPadding)
-                        .padding(.bottom, 8)
-                    case .unavailable:
-                        caption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
-                    case .loading:
-                        caption("Connecting to iCloud…")
-                    case .ready:
-                        EmptyView()
+                switch community.phase {
+                case .needsUsername:
+                    Button { showClaim = true } label: {
+                        Text("Create your profile to share with friends")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGoldText)
                     }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.bottom, 8)
+                case .unavailable:
+                    caption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
+                case .loading:
+                    caption("Connecting to iCloud…")
+                case .ready:
+                    EmptyView()
                 }
             }
         }
@@ -497,12 +491,13 @@ struct SaveSessionView: View {
         .background(AppColor.backgroundPrimary.ignoresSafeArea(edges: .bottom))
     }
 
-    /// Only you can always be saved; Friends needs a score and a profile,
-    /// which the note above the button explains.
+    /// Only you can always be saved; Friends needs a profile, which the note
+    /// above the button explains. **It no longer needs a score**: a post
+    /// carries one when the sit had one (Melvin, 2026-09-22).
     private var canAct: Bool {
         guard loaded else { return false }
         if visibility == .private { return true }
-        return community.phase == .ready && score != nil
+        return community.phase == .ready
     }
 
     private func tapPrimary() {
@@ -652,7 +647,7 @@ struct SaveSessionView: View {
                 if let newPhoto { photoURL = PostPhoto.prepare(newPhoto) }
                 else if let data = kept?.jpeg { photoURL = PostPhoto.prepare(data: data) }
                 let draft = CommunityStore.Draft(
-                    score: score ?? 0,
+                    score: score,
                     minutes: minutes,
                     streak: streak,
                     technique: MeditationMethod.label(for: technique),
