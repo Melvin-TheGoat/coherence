@@ -336,9 +336,20 @@ struct ProfileTab: View {
                         .frame(width: 62)
                     }
                 }
-                .padding(.vertical, 2)
+                // The card's own inset, given back to the content, so the
+                // first badge lines up with the header above it.
+                .padding(.horizontal, 18)
+                // Room for a raised badge's shadow, which the scroll view
+                // clips at its own bounds.
+                .padding(.vertical, 6)
             }
-            .scrollClipDisabled()
+            // **Bled to the card's edges, and NOT `scrollClipDisabled`.**
+            // It was, so the shelf drew straight past the card and the last
+            // badge sat on the grass outside it. A horizontal scroll has to
+            // clip somewhere, and the only honest place is the edge of the
+            // thing it lives in: badges now slide under the card's rim.
+            .padding(.horizontal, -18)
+            .padding(.vertical, -4)
 
             // The "Next: <award>" progress card was CUT (Melvin, same
             // pass): on a screen that already shows the streak, the four

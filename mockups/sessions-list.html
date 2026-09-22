@@ -1,0 +1,289 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · All sessions, three ways</title>
+<style>
+:root{
+  --grass:#9CBC85; --card:#FFFFFF; --ink:#413024; --soft:#877160;
+  --amber:#F7B143; --amberSoft:#FBE3BE; --amberText:#9B6B19; --sage:#3E8175;
+  --blushText:#AB5834; --trace:#F0E3D0; --hair:#EFE4D5; --paper:#FEF9F2;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+h2{font-size:15px;margin:40px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:900px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:24px}
+.col{width:300px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+ color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.2px;line-height:1.6;margin-top:12px}
+.note b{color:var(--ink)}
+.wide{max-width:900px}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:900px;margin-top:14px;font-size:13.6px;line-height:1.62;color:var(--soft)}
+.flag b{color:var(--blushText)}
+.pick{border-left:3px solid var(--sage)}
+.pick b{color:var(--sage)}
+
+/* ---------- the phone ---------- */
+.p{width:300px;height:600px;border-radius:34px;overflow:hidden;position:relative;flex:none;
+ background:var(--grass);box-shadow:0 12px 34px rgba(80,55,30,.16)}
+.page{position:absolute;inset:0;padding:16px 14px;overflow:hidden}
+.hdr{font-size:17px;font-weight:800;margin:2px 0 10px 4px}
+.card{background:var(--card);border-radius:20px;box-shadow:0 2px 8px rgba(40,25,15,.10);
+ overflow:hidden}
+
+/* ============ A. the list ============ */
+.mon{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;
+ color:var(--soft);padding:13px 15px 7px}
+.r{display:flex;align-items:center;gap:11px;padding:11px 15px;border-top:1px solid var(--hair)}
+.r.first{border-top:none}
+.r .txt{flex:1;min-width:0}
+.r .d{font-size:14.5px;font-weight:800;line-height:1.2}
+.r .s{font-size:11.5px;color:var(--soft);margin-top:2px;white-space:nowrap;
+ overflow:hidden;text-overflow:ellipsis}
+.r .min{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.r .min i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--soft);margin-left:2px}
+/* stands in for a selfie. Deliberately NOT Otto: the whole point is that
+   nothing draws a sloth in this list. */
+.thumb{width:34px;height:40px;border-radius:9px;flex:none;
+ background:linear-gradient(155deg,#C7D9E6 0%,#DCC9B4 60%,#C9B49C 100%)}
+.sc{display:inline-block;font-size:10.5px;font-weight:800;color:var(--amberText);
+ background:var(--amberSoft);border-radius:7px;padding:1.5px 6px;margin-left:6px;vertical-align:1px}
+.reach{font-size:9px;font-weight:800;letter-spacing:.04em;color:var(--soft);
+ background:var(--trace);border-radius:20px;padding:1.5px 6px;margin-left:5px;vertical-align:1px}
+.reach.f{color:var(--sage);background:rgba(62,129,117,.16)}
+
+/* ============ B. the spine ============ */
+.spine{position:relative;padding:6px 15px 14px 15px}
+.spine:before{content:"";position:absolute;left:36px;top:16px;bottom:16px;width:2px;
+ background:var(--hair);border-radius:2px}
+.e{display:flex;gap:14px;align-items:flex-start;padding:9px 0;position:relative}
+.e .dot{width:11px;height:11px;border-radius:50%;background:var(--amber);flex:none;
+ margin-left:16px;margin-top:5px;box-shadow:0 0 0 3px #fff}
+.e .dot.plain{background:var(--trace)}
+.e .body{flex:1;min-width:0}
+.e .d{font-size:14px;font-weight:800}
+.e .s{font-size:11.5px;color:var(--soft);margin-top:2px}
+.e .min{font-size:14.5px;font-weight:800;font-variant-numeric:tabular-nums}
+.gap{font-size:10.5px;color:var(--soft);padding:4px 0 4px 44px;font-weight:700}
+
+/* ============ C. minutes lead ============ */
+.m{display:flex;align-items:center;gap:12px;padding:10px 15px;border-top:1px solid var(--hair)}
+.m.first{border-top:none}
+.puck{width:44px;height:44px;border-radius:14px;flex:none;background:var(--amberSoft);
+ display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.puck b{font-size:16px;font-weight:800;color:var(--amberText);font-variant-numeric:tabular-nums}
+.puck i{font-style:normal;font-size:8.5px;font-weight:800;color:var(--amberText);opacity:.75;
+ letter-spacing:.06em;margin-top:1px}
+.m .txt{flex:1;min-width:0}
+.m .d{font-size:14.5px;font-weight:800}
+.m .s{font-size:11.5px;color:var(--soft);margin-top:2px}
+
+table{border-collapse:collapse;margin-top:14px;font-size:13.4px;max-width:900px}
+td,th{border-bottom:1px solid #DFD2C2;padding:8px 16px 8px 0;text-align:left;vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+td b{color:var(--ink)}
+td{color:var(--soft)}
+</style></head><body>
+
+<h1>All sessions, three ways</h1>
+<p class="lede">Aziz: <b>"the all sessions screen the way they are just all laid out isnt the best way to do it i feel
+like there a different way also i dont like the sloths on all the meditations"</b><br>
+Both notes are the same problem. Today every session is a full card with a 98pt picture panel, and when there is no
+selfie that panel draws Otto. Nineteen sessions is nineteen identical sloths down a page, which turns a log into
+wallpaper: nothing is scannable because every row weighs the same as every other. <b>The sloth is gone from all
+three of these.</b> A photo shows when there is one, and when there is not, nothing takes its place.</p>
+
+<div class="row">
+
+  <!-- ======================= A ======================= -->
+  <div class="col">
+    <div class="tag"><b>A.</b> The list &nbsp;·&nbsp; recommended</div>
+    <div class="p"><div class="page">
+      <div class="hdr">All sessions</div>
+      <div class="card">
+        <div class="mon">September</div>
+
+        <div class="r first">
+          <div class="txt">
+            <div class="d">Today <span class="sc">55</span></div>
+            <div class="s">Manifest Your Dream Life · 7:00 AM</div>
+          </div>
+          <div class="min">10<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="thumb"></div>
+          <div class="txt">
+            <div class="d">Yesterday <span class="sc">66</span></div>
+            <div class="s">Manifest · 9:13 PM</div>
+          </div>
+          <div class="min">15<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="txt">
+            <div class="d">Yesterday <span class="sc">24</span></div>
+            <div class="s">Silence · 6:40 PM</div>
+          </div>
+          <div class="min">8<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="txt">
+            <div class="d">Saturday</div>
+            <div class="s">Rain · 12:26 PM</div>
+          </div>
+          <div class="min">25<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="txt">
+            <div class="d">Friday <span class="sc">88</span></div>
+            <div class="s">Deep Meditation · 7:39 AM</div>
+          </div>
+          <div class="min">5<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="txt">
+            <div class="d">Thursday</div>
+            <div class="s">Ocean · 9:52 PM</div>
+          </div>
+          <div class="min">10<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="txt">
+            <div class="d">Wednesday <span class="sc">71</span></div>
+            <div class="s">Guided journey · 7:05 AM</div>
+          </div>
+          <div class="min">25<i>min</i></div>
+        </div>
+
+        <div class="r">
+          <div class="txt">
+            <div class="d">Monday</div>
+            <div class="s">Silence · 12:13 PM</div>
+          </div>
+          <div class="min">15<i>min</i></div>
+        </div>
+
+        <div class="mon" style="border-top:1px solid var(--hair)">August</div>
+        <div class="r first">
+          <div class="txt">
+            <div class="d">Sat, Aug 30 <span class="sc">63</span></div>
+            <div class="s">Harmony 432 · 8:00 AM</div>
+          </div>
+          <div class="min">10<i>min</i></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="note"><b>Nine sessions in the space three cards used to take.</b> One card holds the month; rows are
+    separated by a hairline, which is the repo's own 14-app finding ("no boxes, bare text on a hairline") applied to
+    the one screen that still had a box per item. The day is the headline because that is what somebody is looking
+    for, the sound and the time sit under it, and the length is the only number on the right. A score chip appears
+    only on a session that HAS one, so a phone sit is short a chip rather than short an explanation.</p>
+  </div>
+
+  <!-- ======================= B ======================= -->
+  <div class="col">
+    <div class="tag"><b>B.</b> The spine</div>
+    <div class="p"><div class="page">
+      <div class="hdr">All sessions</div>
+      <div class="card">
+        <div class="mon">September</div>
+        <div class="spine">
+          <div class="e"><div class="dot"></div><div class="body">
+            <div class="d">Today</div><div class="s">Manifest Your Dream Life · 10 min</div></div>
+            <div class="min">55</div></div>
+          <div class="e"><div class="dot"></div><div class="body">
+            <div class="d">Yesterday</div><div class="s">Manifest · 15 min</div></div>
+            <div class="min">66</div></div>
+          <div class="e"><div class="dot"></div><div class="body">
+            <div class="d">Yesterday</div><div class="s">Silence · 8 min</div></div>
+            <div class="min">24</div></div>
+          <div class="e"><div class="dot plain"></div><div class="body">
+            <div class="d">Saturday</div><div class="s">Rain · 25 min</div></div></div>
+          <div class="e"><div class="dot"></div><div class="body">
+            <div class="d">Friday</div><div class="s">Deep Meditation · 5 min</div></div>
+            <div class="min">88</div></div>
+          <div class="gap">2 days off</div>
+          <div class="e"><div class="dot plain"></div><div class="body">
+            <div class="d">Tuesday</div><div class="s">Ocean · 10 min</div></div></div>
+          <div class="e"><div class="dot"></div><div class="body">
+            <div class="d">Monday</div><div class="s">Guided journey · 25 min</div></div>
+            <div class="min">71</div></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">The same rows on a thread, with <b>the gaps drawn</b>. It is the only one of the three that says
+    anything the list does not, and what it says is "you missed two days", which is this product's one forbidden
+    sentence. It would have to lose the gap labels to ship, and then it is direction A with a decoration down the
+    left.</p>
+  </div>
+
+  <!-- ======================= C ======================= -->
+  <div class="col">
+    <div class="tag"><b>C.</b> Minutes lead</div>
+    <div class="p"><div class="page">
+      <div class="hdr">All sessions</div>
+      <div class="card">
+        <div class="mon">September</div>
+        <div class="m first"><div class="puck"><b>10</b><i>MIN</i></div><div class="txt">
+          <div class="d">Today</div><div class="s">Manifest Your Dream Life</div></div></div>
+        <div class="m"><div class="puck"><b>15</b><i>MIN</i></div><div class="txt">
+          <div class="d">Yesterday</div><div class="s">Manifest · scored 66</div></div>
+          <div class="thumb"></div></div>
+        <div class="m"><div class="puck"><b>8</b><i>MIN</i></div><div class="txt">
+          <div class="d">Yesterday</div><div class="s">Silence · scored 24</div></div></div>
+        <div class="m"><div class="puck"><b>25</b><i>MIN</i></div><div class="txt">
+          <div class="d">Saturday</div><div class="s">Rain</div></div></div>
+        <div class="m"><div class="puck"><b>5</b><i>MIN</i></div><div class="txt">
+          <div class="d">Friday</div><div class="s">Deep Meditation · scored 88</div></div></div>
+        <div class="m"><div class="puck"><b>10</b><i>MIN</i></div><div class="txt">
+          <div class="d">Thursday</div><div class="s">Ocean</div></div></div>
+        <div class="m"><div class="puck"><b>25</b><i>MIN</i></div><div class="txt">
+          <div class="d">Wednesday</div><div class="s">Guided journey · scored 71</div></div></div>
+      </div>
+    </div></div>
+    <p class="note">The length becomes the object, in an amber puck where the sloth used to be. It reads well and it
+    <b>spends the app's one gold-per-section rule seven times down a page</b>, so nothing on the screen is emphasised
+    any more. It also makes length look like the thing being graded, which is the exact reading "Your minutes"
+    was written to avoid.</p>
+  </div>
+</div>
+
+<h2>What is in a row, and what is not</h2>
+<table>
+  <tr><th>Field</th><th>Shown</th><th>Why</th></tr>
+  <tr><td><b>Day</b></td><td>Always, as the headline</td>
+      <td>"Today", "Yesterday", "Friday", then "Sat, Aug 30" past a week. What a person scans for.</td></tr>
+  <tr><td><b>Sound or technique</b></td><td>Always, small, under the day</td>
+      <td>The one thing that distinguishes two sits on the same day.</td></tr>
+  <tr><td><b>Length</b></td><td>Always, right edge</td>
+      <td>The honest measure of a phone sit, and the number the chart above is made of.</td></tr>
+  <tr><td><b>Score</b></td><td>Only when the session has one</td>
+      <td>A wrist sit scores; a phone sit does not. A blank chip would be the row apologising.</td></tr>
+  <tr><td><b>Photo</b></td><td>Only when one was taken</td>
+      <td>34 x 40, portrait, because every selfie is portrait. Nothing takes its place when absent.</td></tr>
+  <tr><td><b>Otto</b></td><td>Never</td>
+      <td>He is the portrait at the top of the page and he is on Home. Repeating him nineteen times down the
+          same screen makes him furniture.</td></tr>
+  <tr><td><b>Heart / Still / Breath</b></td><td>Not in the list</td>
+      <td>Three readings per row is a table, and the row's job is to get you to the session. They are on the
+          results screen, one tap away.</td></tr>
+</table>
+
+<div class="flag pick"><b>Recommendation: A.</b> It is the shape the repo already decided on for Save session and
+never applied here, it fits three times as many sessions on a screen, and it is the only one of the three that does
+not introduce a new visual object. B draws attention to missed days and C spends gold on every row.</div>
+
+<div class="flag"><b>The thing A gives up, stated.</b> The photo gets small. A selfie taken after a sit is currently
+the biggest thing on its card, and in a list it is a 34pt thumbnail. That is the right trade for the log, which is
+read by scrolling, and the photo is still full size on the session's own screen. If it turns out people scroll the
+log to look at their photos rather than to find a session, the answer is a separate grid, not a bigger row.</div>
+
+</body></html>
