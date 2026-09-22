@@ -412,12 +412,22 @@ private struct ReplyChip: View {
 private struct FaceTimeScene: View {
     let doors: InterventionDoors
     @State private var answered = false
+    /// Declined with no pass to fall back on: Otto takes it well, and the
+    /// camera never turns on (the review of 2026-09-22 caught Decline opening
+    /// it).
+    @State private var declined = false
     @StateObject private var camera = FrontCamera()
     @State private var said = 0
 
     var body: some View {
         ZStack {
-            if answered { answeredView } else { ringing }
+            if declined {
+                ValleyStage(pose: "OttoAwake", line: "No worries. I'm here when you're ready.", doors: doors)
+            } else if answered {
+                answeredView
+            } else {
+                ringing
+            }
         }
         .ignoresSafeArea()
         .onDisappear { camera.stop() }
@@ -446,7 +456,7 @@ private struct FaceTimeScene: View {
                 Spacer()
                 HStack {
                     callButton("Decline", systemImage: "phone.down.fill", color: Color(.systemRed)) {
-                        if doors.canPass { doors.notNow() } else { answer() }
+                        if doors.canPass { doors.notNow() } else { withAnimation { declined = true } }
                     }
                     Spacer()
                     callButton("Accept", systemImage: "video.fill", color: Color(.systemGreen)) { answer() }

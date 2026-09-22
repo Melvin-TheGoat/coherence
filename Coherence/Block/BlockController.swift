@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 import FamilyControls
 import UserNotifications
 
@@ -21,6 +22,13 @@ final class BlockController: ObservableObject {
     /// Set when an Otto screen should open (the notification was tapped, or
     /// an "Ask Otto" went unanswered). ContentView presents it.
     @Published var interventionRequest: Date?
+    /// Something Screen Time refused, in words, for the Block tab.
+    @Published var problem: String?
+    /// Whether 808 may post notifications. Without them "Ask Otto" can only
+    /// send the person to 808 by hand, so the tab says so.
+    @Published private(set) var notificationsAllowed = true
+
+    private var authorizationWatch: AnyCancellable?
 
     private init() {
         state = BlockStore.load()
@@ -32,6 +40,25 @@ final class BlockController: ObservableObject {
         #if DEBUG
         if previewMode { seedPreview() }
         #endif
+        // Screen Time access can be granted, revoked and granted again from
+        // Settings at any time (the review of 2026-09-22). A revoke drops the
+        // schedules; a grant, first or again, has to register them.
+        authorizationWatch = AuthorizationCenter.shared.$authorizationStatus
+            .receive(on: RunLoop.main)
+            .sink { [weak self] status in self?.authorizationChanged(to: status) }
+    }
+
+    private func authorizationChanged(to status: AuthorizationStatus) {
+        let was = authorization
+        authorization = status
+        #if DEBUG
+        if previewMode { return }
+        #endif
+        if status == .approved && was != .approved {
+            commit(reschedule: true)
+        } else if status != .approved && was == .approved {
+            BlockSchedule.stopAll()
+        }
     }
 
     #if DEBUG
@@ -103,7 +130,9 @@ final class BlockController: ObservableObject {
         } catch {
             NSLog("Block: Screen Time authorization failed: %@", String(describing: error))
         }
-        authorization = AuthorizationCenter.shared.authorizationStatus
+        // Through the same path as a change made in Settings, so a grant
+        // (first, or after a revoke) registers the schedules.
+        authorizationChanged(to: AuthorizationCenter.shared.authorizationStatus)
         return authorized
     }
 
@@ -150,14 +179,32 @@ final class BlockController: ObservableObject {
 
     /// "Not now" for `minutes`: every holding blocker with a pass left opens
     /// for that long, and Screen Time is told when to close them again.
+    ///
+    /// **Fails closed** (the review of 2026-09-22): a pass whose end Screen
+    /// Time refuses to schedule would leave the apps open for the rest of the
+    /// window, all day on Mindful day. Such a pass is taken back and the apps
+    /// stay held. The state is saved before asking, because an interval that
+    /// starts in the past can wake the monitor at once, and it must find the
+    /// pass.
     @discardableResult
     func takePass(minutes: Int, now: Date = Date()) -> [UUID] {
-        let opened = BlockRules.takePass(minutes: minutes, in: &state, at: now)
-        if authorized {
-            for id in opened {
-                if let pass = state.passes.last(where: { $0.blockerID == id }) {
-                    BlockSchedule.schedulePassEnd(for: id, at: pass.end, now: now)
-                }
+        var opened = BlockRules.takePass(minutes: minutes, in: &state, at: now)
+        #if DEBUG
+        if previewMode { commit(reschedule: false); return opened }
+        #endif
+        guard authorized else {
+            state.passes.removeAll { pass in opened.contains(pass.blockerID) && pass.start == now }
+            return []
+        }
+        BlockStore.save(state)
+        for id in opened {
+            guard let i = state.passes.lastIndex(where: { $0.blockerID == id && $0.start == now }) else { continue }
+            if let end = BlockSchedule.schedulePassEnd(for: id, at: state.passes[i].end, now: now) {
+                state.passes[i].end = end
+            } else {
+                state.passes.remove(at: i)
+                opened.removeAll { $0 == id }
+                problem = "Otto couldn't open your apps just now. Try again in a moment."
             }
         }
         commit(reschedule: false)
@@ -167,7 +214,16 @@ final class BlockController: ObservableObject {
     /// A session landed: it opens the rest of every window it counts for.
     func recordSession(endingAt end: Date, durationSec: Int) {
         let released = BlockRules.recordSession(endingAt: end, durationSec: durationSec, in: &state)
-        if !released.isEmpty { commit(reschedule: false) }
+        if !released.isEmpty {
+            commit(reschedule: false)
+            clearDeliveredAsk()
+        }
+    }
+
+    /// "Otto wants a word" lingers in Notification Center after the apps are
+    /// open, and tapping it later would open Otto about nothing.
+    func clearDeliveredAsk() {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["808.block.ask"])
     }
 
     /// Sessions that ended while 808 was closed (a Watch session delivered
@@ -198,7 +254,12 @@ final class BlockController: ObservableObject {
         let fresh = BlockStore.load()
         state.asks = fresh.asks
         state.limitHits = fresh.limitHits
-        authorization = AuthorizationCenter.shared.authorizationStatus
+        Task {
+            let settings = await UNUserNotificationCenter.current().notificationSettings()
+            let allowed = [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus)
+            notificationsAllowed = allowed || settings.authorizationStatus == .notDetermined
+            BlockStore.setNotificationsAllowed(allowed)
+        }
         if authorized {
             #if DEBUG
             if previewMode { return }
@@ -232,7 +293,11 @@ final class BlockController: ObservableObject {
         if previewMode { return }
         #endif
         guard authorized else { return }
-        if reschedule { BlockSchedule.sync(state) }
+        if reschedule {
+            let refused = BlockSchedule.sync(state)
+            problem = refused.isEmpty ? nil
+                : "Screen Time didn't take \(refused.joined(separator: ", ")). Try saving it again."
+        }
         BlockShields.reconcile()
     }
 

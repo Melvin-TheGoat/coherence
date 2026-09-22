@@ -56,17 +56,33 @@ struct BlockerEditor: View {
                 .padding(.bottom, 24)
             }
             .scrollIndicators(.hidden)
-            Button(isNew ? "Save blocker" : "Save", action: save)
-                .buttonStyle(PrimaryButtonStyle())
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 12)
+            VStack(spacing: 8) {
+                // Screen Time refuses a window under fifteen minutes; say so
+                // here rather than save a blocker that never holds.
+                if let problem = draft.windowProblem {
+                    Text(problem)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundStyle(AppColor.streakBlushText)
+                }
+                Button(isNew ? "Save blocker" : "Save", action: save)
+                    .buttonStyle(PrimaryButtonStyle())
+                    .disabled(draft.windowProblem != nil)
+                    .opacity(draft.windowProblem == nil ? 1 : 0.5)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 12)
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
         .familyActivityPicker(isPresented: $picking, selection: Binding(
             get: { selection },
             set: { selection = $0; selectionChanged = true }))
-        .onAppear {
-            if pickOnAppear { openPicker() }
+        // After the sheet has settled: presenting Apple's picker while this
+        // sheet is still animating in can drop it.
+        .task {
+            guard pickOnAppear else { return }
+            try? await Task.sleep(for: .milliseconds(650))
+            guard !Task.isCancelled else { return }
+            openPicker()
         }
         .confirmationDialog("Delete \(draft.name)?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete", role: .destructive) { onDelete(original.id) }
@@ -267,8 +283,10 @@ struct BlockerEditor: View {
     private func minutesBinding(_ minutes: Int, isEnd: Bool, set: @escaping (Int) -> Void) -> Binding<Date> {
         Binding(
             get: {
-                Calendar.current.date(byAdding: .minute, value: minutes % 1440,
-                                      to: Calendar.current.startOfDay(for: Date())) ?? Date()
+                // By clock time, not minutes added to midnight, for the same
+                // daylight saving reason as `Blocker.clockTime`.
+                Calendar.current.date(bySettingHour: (minutes % 1440) / 60, minute: minutes % 60,
+                                      second: 0, of: Date()) ?? Date()
             },
             set: { date in
                 let parts = Calendar.current.dateComponents([.hour, .minute], from: date)

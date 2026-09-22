@@ -1,4 +1,5 @@
 import Foundation
+import CryptoKit
 import DeviceActivity
 import FamilyControls
 
@@ -10,7 +11,7 @@ import FamilyControls
 /// One daily schedule per blocker, whatever its days: the weekday rule lives
 /// in `BlockRules`, which the monitor asks on every wake, so a weekend simply
 /// wakes it to find nothing to hold. That keeps each blocker to one activity
-/// (Screen Time caps how many an app may monitor).
+/// plus its pass (Screen Time caps how many an app may monitor).
 enum BlockSchedule {
     static let windowPrefix = "808.window."
     static let passPrefix = "808.pass."
@@ -20,30 +21,84 @@ enum BlockSchedule {
     static func passName(_ id: UUID) -> DeviceActivityName { .init(passPrefix + id.uuidString) }
     static func limitEventName(_ id: UUID) -> DeviceActivityEvent.Name { .init(limitPrefix + id.uuidString) }
 
-    /// Re-registers every blocker's window, replacing whatever was there.
-    static func sync(_ state: BlockState) {
+    /// Registers what changed and stops what is gone. Returns the names of
+    /// blockers Screen Time refused, for the Block tab to say so.
+    ///
+    /// **Only what changed is restarted** (the review of 2026-09-22):
+    /// restarting a window restarts its daily limit's count, so editing one
+    /// blocker used to hand every daily limit a fresh allowance.
+    @discardableResult
+    static func sync(_ state: BlockState) -> [String] {
         let center = DeviceActivityCenter()
-        let windows = center.activities.filter { $0.rawValue.hasPrefix(windowPrefix) }
-        if !windows.isEmpty { center.stopMonitoring(windows) }
+        var signatures = BlockStore.scheduleSignatures()
+        let wanted = state.blockers.filter { $0.isOn && $0.hasApps && $0.windowProblem == nil }
+        let wantedIDs = Set(wanted.map(\.id.uuidString))
+        let existing = Set(state.blockers.map(\.id.uuidString))
 
-        for blocker in state.blockers where blocker.isOn && blocker.hasApps {
+        // Windows of blockers that are gone or off, and passes of blockers
+        // that are gone.
+        let stale = center.activities.filter { activity in
+            let raw = activity.rawValue
+            if raw.hasPrefix(windowPrefix) { return !wantedIDs.contains(String(raw.dropFirst(windowPrefix.count))) }
+            if raw.hasPrefix(passPrefix) { return !existing.contains(String(raw.dropFirst(passPrefix.count))) }
+            return false
+        }
+        if !stale.isEmpty { center.stopMonitoring(stale) }
+        for key in signatures.keys where !wantedIDs.contains(key) { signatures[key] = nil }
+
+        let running = Set(center.activities.map(\.rawValue))
+        var refused: [String] = []
+        for blocker in wanted {
+            let key = blocker.id.uuidString
+            let signature = self.signature(blocker)
+            let name = windowName(blocker.id)
+            if signatures[key] == signature && running.contains(name.rawValue) { continue }
             let (start, end) = components(blocker.window)
             let schedule = DeviceActivitySchedule(intervalStart: start, intervalEnd: end, repeats: true)
             var events: [DeviceActivityEvent.Name: DeviceActivityEvent] = [:]
             if let minutes = blocker.dailyLimitMinutes {
-                let picked = BlockStore.selection(for: blocker.id)
-                events[limitEventName(blocker.id)] = DeviceActivityEvent(
-                    applications: picked.applicationTokens,
-                    categories: picked.categoryTokens,
-                    webDomains: picked.webDomainTokens,
-                    threshold: DateComponents(minute: minutes))
+                events[limitEventName(blocker.id)] = limitEvent(for: blocker.id, minutes: minutes)
             }
+            center.stopMonitoring([name])
             do {
-                try center.startMonitoring(windowName(blocker.id), during: schedule, events: events)
+                try center.startMonitoring(name, during: schedule, events: events)
+                signatures[key] = signature
             } catch {
                 NSLog("Block: could not schedule %@: %@", blocker.name, String(describing: error))
+                signatures[key] = nil
+                refused.append(blocker.name)
             }
         }
+        BlockStore.setScheduleSignatures(signatures)
+        return refused
+    }
+
+    /// What Screen Time was told about a blocker: its hours, its limit, and
+    /// its apps (by a hash of the selection, which is opaque tokens). Days,
+    /// strictness and passes are the rules' business, not Screen Time's.
+    static func signature(_ blocker: Blocker) -> String {
+        let picked = (try? JSONEncoder().encode(BlockStore.selection(for: blocker.id))) ?? Data()
+        let digest = SHA256.hash(data: picked).map { String(format: "%02x", $0) }.joined()
+        return "\(blocker.window)|\(blocker.dailyLimitMinutes ?? -1)|\(digest)"
+    }
+
+    /// The daily limit's threshold over the picked apps. From iOS 17.4 it
+    /// counts time already spent in the window, so a schedule registered
+    /// mid-day does not grant the day's allowance a second time.
+    private static func limitEvent(for id: UUID, minutes: Int) -> DeviceActivityEvent {
+        let picked = BlockStore.selection(for: id)
+        let threshold = DateComponents(minute: minutes)
+        if #available(iOS 17.4, *) {
+            return DeviceActivityEvent(applications: picked.applicationTokens,
+                                       categories: picked.categoryTokens,
+                                       webDomains: picked.webDomainTokens,
+                                       threshold: threshold,
+                                       includesPastActivity: true)
+        }
+        return DeviceActivityEvent(applications: picked.applicationTokens,
+                                   categories: picked.categoryTokens,
+                                   webDomains: picked.webDomainTokens,
+                                   threshold: threshold)
     }
 
     /// The hours of a window as Screen Time wants them. All day is midnight
@@ -64,31 +119,48 @@ enum BlockSchedule {
     }
 
     /// Wakes the monitor when a pass ends, so the apps close again on time.
+    /// Returns when it will actually end, or nil if Screen Time refused both
+    /// ways of asking, in which case the pass must not be taken.
     ///
     /// **Screen Time refuses an interval shorter than fifteen minutes**, so a
-    /// five minute pass starts its interval in the past and ends on time.
-    /// Written down in CONSISTENCY.md as the thing to verify on a phone first.
-    static func schedulePassEnd(for id: UUID, at end: Date, now: Date = Date()) {
-        let start = min(now, end.addingTimeInterval(-15 * 60))
+    /// five minute pass first asks with its interval starting in the past,
+    /// sixteen minutes before its end. If that is refused it runs sixteen
+    /// minutes from now instead: longer than asked, never open all day.
+    /// Which of the two a phone accepts is the first thing to check on one.
+    static func schedulePassEnd(for id: UUID, at end: Date, now: Date = Date()) -> Date? {
+        let center = DeviceActivityCenter()
+        let name = passName(id)
+        center.stopMonitoring([name])
+        let margin: TimeInterval = 16 * 60
+        let exact = DateInterval(start: min(now, end.addingTimeInterval(-margin)), end: end)
+        if start(name, exact, in: center) { return end }
+        let longer = max(end, now.addingTimeInterval(margin))
+        if start(name, DateInterval(start: now, end: longer), in: center) { return longer }
+        return nil
+    }
+
+    private static func start(_ name: DeviceActivityName, _ interval: DateInterval,
+                              in center: DeviceActivityCenter) -> Bool {
         let fields: Set<Calendar.Component> = [.year, .month, .day, .hour, .minute, .second]
         let calendar = Calendar.current
         let schedule = DeviceActivitySchedule(
-            intervalStart: calendar.dateComponents(fields, from: start),
-            intervalEnd: calendar.dateComponents(fields, from: end),
+            intervalStart: calendar.dateComponents(fields, from: interval.start),
+            intervalEnd: calendar.dateComponents(fields, from: interval.end),
             repeats: false)
-        let center = DeviceActivityCenter()
-        center.stopMonitoring([passName(id)])
         do {
-            try center.startMonitoring(passName(id), during: schedule)
+            try center.startMonitoring(name, during: schedule)
+            return true
         } catch {
-            NSLog("Block: could not schedule a pass end: %@", String(describing: error))
+            NSLog("Block: a pass end was refused: %@", String(describing: error))
+            return false
         }
     }
 
-    /// Everything off: used when Screen Time access is withdrawn.
+    /// Everything off: Screen Time access was withdrawn.
     static func stopAll() {
         let center = DeviceActivityCenter()
         let ours = center.activities.filter { $0.rawValue.hasPrefix("808.") }
         if !ours.isEmpty { center.stopMonitoring(ours) }
+        BlockStore.setScheduleSignatures([:])
     }
 }

@@ -70,6 +70,11 @@ struct Blocker: Codable, Identifiable, Equatable {
     var hasApps = false
     var createdAt = Date()
 
+    enum CodingKeys: String, CodingKey {
+        case id, kind, name, isOn, weekdays, window, strictness, passesPerDay
+        case minimumMinutes, dailyLimitMinutes, hasApps, createdAt
+    }
+
     /// Out of the box (Melvin, 2026-09-22): Chill, three passes a day, and a
     /// two minute session opens the apps.
     static func preset(_ kind: BlockerKind) -> Blocker {
@@ -101,11 +106,36 @@ struct Blocker: Codable, Identifiable, Equatable {
             guard let end = calendar.date(byAdding: .day, value: 1, to: day) else { return nil }
             return DateInterval(start: day, end: end)
         case .hours(let start, let end):
-            let finish = end > start ? end : end + 24 * 60
-            guard let open = calendar.date(byAdding: .minute, value: start, to: day),
-                  let close = calendar.date(byAdding: .minute, value: finish, to: day) else { return nil }
+            // An end at or before the start is tomorrow's clock time.
+            guard let endDay = end > start ? day : calendar.date(byAdding: .day, value: 1, to: day),
+                  let open = Self.clockTime(start, on: day, calendar: calendar),
+                  let close = Self.clockTime(end, on: endDay, calendar: calendar),
+                  close > open else { return nil }
             return DateInterval(start: open, end: close)
         }
+    }
+
+    /// `minutes` past midnight as a wall-clock time on `day`; 1440 is the
+    /// next midnight. **By clock time, not by adding minutes to midnight**:
+    /// on a daylight saving day that arithmetic put a 6:00 start at 7:00,
+    /// while Screen Time wakes the monitor at 6:00 on the clock.
+    static func clockTime(_ minutes: Int, on day: Date, calendar: Calendar) -> Date? {
+        if minutes >= 24 * 60 {
+            return calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: day))
+        }
+        return calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: day)
+    }
+
+    /// Screen Time refuses an interval shorter than fifteen minutes.
+    static let shortestWindowMinutes = 15
+
+    /// Why Screen Time would refuse these hours, in words, or nil.
+    var windowProblem: String? {
+        guard case .hours(let start, let end) = window else { return nil }
+        if start % 1440 == end % 1440 { return "Pick an end time after the start." }
+        let length = end > start ? end - start : end + 1440 - start
+        if length < Self.shortestWindowMinutes { return "A window needs at least 15 minutes." }
+        return nil
     }
 
     /// The window holding `now`, if one is open. Checks yesterday's too,
@@ -196,7 +226,56 @@ struct BlockState: Codable, Equatable {
     /// told apart from one already handled.
     var lastInterventionAt: Date?
 
+    enum CodingKeys: String, CodingKey {
+        case blockers, passes, releases, asks, limitHits, recentInterventions
+        case seededDefault, lastInterventionAt
+    }
+
     func blocker(_ id: UUID) -> Blocker? { blockers.first { $0.id == id } }
+}
+
+// MARK: - Decoding that survives the next release
+
+// **Every field is optional on the way in** (the review of 2026-09-22):
+// synthesized Codable fails the whole state when one field is missing or new,
+// the load then returned an empty state, and the next save wrote it over the
+// person's blockers while their apps stayed shielded. A missing field takes
+// its default; an unknown kind reads as a custom blocker.
+
+extension Blocker {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        let kind = (try? c.decodeIfPresent(BlockerKind.self, forKey: .kind)) ?? .custom
+        self = Blocker.preset(kind)
+        if let v = try? c.decodeIfPresent(UUID.self, forKey: .id) { id = v }
+        if let v = try? c.decodeIfPresent(String.self, forKey: .name) { name = v }
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .isOn) { isOn = v }
+        if let v = try? c.decodeIfPresent(Set<Int>.self, forKey: .weekdays), !v.isEmpty { weekdays = v }
+        if let v = try? c.decodeIfPresent(BlockWindow.self, forKey: .window) { window = v }
+        if let v = try? c.decodeIfPresent(BlockStrictness.self, forKey: .strictness) { strictness = v }
+        if c.contains(.passesPerDay) { passesPerDay = try? c.decodeIfPresent(Int.self, forKey: .passesPerDay) }
+        if let v = try? c.decodeIfPresent(Int.self, forKey: .minimumMinutes) { minimumMinutes = v }
+        if c.contains(.dailyLimitMinutes) {
+            dailyLimitMinutes = try? c.decodeIfPresent(Int.self, forKey: .dailyLimitMinutes)
+        }
+        if let v = try? c.decodeIfPresent(Bool.self, forKey: .hasApps) { hasApps = v }
+        if let v = try? c.decodeIfPresent(Date.self, forKey: .createdAt) { createdAt = v }
+    }
+}
+
+extension BlockState {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init()
+        blockers = (try? c.decodeIfPresent([Blocker].self, forKey: .blockers)) ?? []
+        passes = (try? c.decodeIfPresent([BlockPass].self, forKey: .passes)) ?? []
+        releases = (try? c.decodeIfPresent([BlockRelease].self, forKey: .releases)) ?? []
+        asks = (try? c.decodeIfPresent([Date].self, forKey: .asks)) ?? []
+        limitHits = (try? c.decodeIfPresent([BlockLimitHit].self, forKey: .limitHits)) ?? []
+        recentInterventions = (try? c.decodeIfPresent([String].self, forKey: .recentInterventions)) ?? []
+        seededDefault = (try? c.decodeIfPresent(Bool.self, forKey: .seededDefault)) ?? !blockers.isEmpty
+        lastInterventionAt = try? c.decodeIfPresent(Date.self, forKey: .lastInterventionAt)
+    }
 }
 
 /// The rules, as pure functions over `BlockState`.
@@ -219,8 +298,14 @@ enum BlockRules {
         return true
     }
 
+    /// Matched by the window's start, or by the session landing inside the
+    /// window, so a release survives the window being worked out again
+    /// (a time zone change mid-window moves its start).
     static func released(_ id: UUID, window: DateInterval, in state: BlockState) -> Bool {
-        state.releases.contains { $0.blockerID == id && $0.windowStart == window.start }
+        state.releases.contains {
+            $0.blockerID == id
+                && ($0.windowStart == window.start || (window.start <= $0.at && $0.at < window.end))
+        }
     }
 
     static func activePass(_ id: UUID, in state: BlockState, at now: Date) -> BlockPass? {
@@ -309,11 +394,17 @@ enum BlockRules {
         return windows
     }
 
-    /// Forgets what no rule reads any more: older than `days`.
+    /// Forgets what no rule reads any more.
+    ///
+    /// **Passes and releases are kept for two years, not weeks**: Otto's glow
+    /// replays the whole history, so dropping an old "Not now" would change
+    /// today's glow after the fact. They are a few bytes each. Asks and
+    /// daily-limit hits only matter for a day.
     static func prune(_ state: inout BlockState, now: Date, days: Int = 45) {
         let cutoff = now.addingTimeInterval(-TimeInterval(days) * 86_400)
-        state.passes.removeAll { $0.end < cutoff }
-        state.releases.removeAll { $0.at < cutoff }
+        let history = now.addingTimeInterval(-730 * 86_400)
+        state.passes.removeAll { $0.end < history }
+        state.releases.removeAll { $0.at < history }
         state.asks.removeAll { $0 < cutoff }
         state.limitHits.removeAll { $0.day < cutoff }
         if state.recentInterventions.count > 12 {

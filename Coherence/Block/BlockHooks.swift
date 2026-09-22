@@ -12,14 +12,22 @@ import SwiftUI
 struct BlockHooks: ViewModifier {
     @ObservedObject var block: BlockController
     let sessionActive: Bool
+    /// An award is being celebrated in its own cover: Otto waits for it, or
+    /// the second cover would be dropped (the known one-cover trap).
+    let awardShowing: Bool
     let lastSessionID: UUID?
     let sessions: [Session]
     let scenePhase: ScenePhase
     let pick: () -> InterventionKind
     let present: (InterventionKind) -> Void
 
+    @State private var waiting = false
+
     func body(content: Content) -> some View {
         content
+            .onChange(of: awardShowing) { _, showing in
+                if !showing, waiting { waiting = false; showOtto() }
+            }
             .onChange(of: block.interventionRequest) { _, request in
                 guard FeatureFlags.block, request != nil else { return }
                 block.interventionRequest = nil
@@ -44,8 +52,17 @@ struct BlockHooks: ViewModifier {
         block.catchUp(with: Array(recent))
     }
 
+    /// Otto only when something is still held once any new session has
+    /// been counted: a Watch session that landed in the background may
+    /// already have opened the apps, and Otto asking about nothing (with "No
+    /// passes left today") is worse than no Otto.
     private func showOtto() {
-        guard !sessionActive, block.claimPresentation() else { return }
+        guard !sessionActive else { return }
+        catchUp()
+        block.clearDeliveredAsk()
+        guard !block.holding().isEmpty else { return }
+        if awardShowing { waiting = true; return }
+        guard block.claimPresentation() else { return }
         present(pick())
     }
 }

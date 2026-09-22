@@ -39,6 +39,12 @@ struct BlockTab: View {
                     scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
                     VStack(alignment: .leading, spacing: 14) {
                         if !block.authorized { accessCard }
+                        if let problem = block.problem { noticeCard(problem, settings: false) }
+                        if block.authorized, !block.notificationsAllowed,
+                           block.state.blockers.contains(where: { $0.isOn }) {
+                            noticeCard("Notifications are off, so Otto can't answer from a held app. Turn them on for 808 in Settings, or open 808 when an app is held.",
+                                       settings: true)
+                        }
                         ForEach(block.state.blockers) { blocker in
                             BlockerCard(blocker: blocker, block: block,
                                         onToggle: { toggle(blocker, to: $0) },
@@ -165,6 +171,25 @@ struct BlockTab: View {
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
+        }
+        .card()
+    }
+
+    private func noticeCard(_ text: String, settings: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(text)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            if settings {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(AppColor.accentGoldText)
+            }
         }
         .card()
     }

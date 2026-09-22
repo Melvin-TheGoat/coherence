@@ -54,7 +54,11 @@ this release needs a NEW archive.
       tapping it opens one of Otto's screens; a 5 minute pass closes the apps
       again on time (the 15-minute DeviceActivity floor, see CONSISTENCY.md);
       a session releases the window; Strict offers no pass; a daily limit
-      holds after its minutes. `tools/beta_install.sh` installs 808 Beta.
+      holds after its minutes. **And pick "All Apps & Categories", then
+      check 808 itself still opens**: if Screen Time shields the app that
+      set the shield, nobody could open 808 to meditate. Also whether a
+      window that repeats overnight still closes (`intervalDidEnd`).
+      `tools/beta_install.sh` installs 808 Beta.
 - [ ] Signing for App Store: the three extension App IDs
       (`com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`) carry
       Family Controls (Distribution, approved 2026-09-22) and the App Group

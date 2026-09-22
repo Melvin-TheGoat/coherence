@@ -209,6 +209,79 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertFalse(day.isOn, "on only once apps are picked")
     }
 
+    // MARK: - From the 2026-09-22 review
+
+    /// A window keeps its clock hours on a daylight saving day. Adding
+    /// minutes to midnight put a 6:00 start at 7:00 on 8 March 2026 in New
+    /// York, while Screen Time wakes the monitor at 6:00 on the clock.
+    func test_windowsKeepTheirClockHoursAcrossDaylightSaving() {
+        var ny = Calendar(identifier: .gregorian)
+        ny.timeZone = TimeZone(identifier: "America/New_York")!
+        func local(_ month: Int, _ day: Int, _ hour: Int) -> Date {
+            ny.date(from: DateComponents(year: 2026, month: month, day: day, hour: hour))!
+        }
+        let morning = Blocker.preset(.mindfulMorning)
+        for day in [(3, 8), (11, 1)] {   // spring forward, fall back
+            let w = morning.window(openingOnDayOf: local(day.0, day.1, 12), calendar: ny)!
+            XCTAssertEqual(ny.component(.hour, from: w.start), 6, "\(day)")
+            XCTAssertEqual(ny.component(.hour, from: w.end), 10, "\(day)")
+        }
+        let windDown = Blocker.preset(.windDown)
+        let night = windDown.window(openingOnDayOf: local(11, 1, 12), calendar: ny)!
+        XCTAssertEqual(ny.component(.hour, from: night.start), 21)
+        XCTAssertEqual(night.end, ny.startOfDay(for: local(11, 2, 12)), "ends at the next midnight")
+    }
+
+    /// A window worked out again (a time zone change mid-window moves its
+    /// start) still knows the session that opened it.
+    func test_aReleaseSurvivesTheWindowBeingWorkedOutAgain() {
+        let day = on(.mindfulDay)
+        var s = state(day)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 120, in: &s, calendar: cal)
+        s.releases[0].windowStart = at(10, 1)   // as if the window's start had moved
+        XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 11), calendar: cal))
+    }
+
+    /// The next release adds a field, or drops one: the blockers survive.
+    func test_blockersSurviveMissingAndUnknownFields() throws {
+        let json = """
+        {"blockers":[{"id":"6F9619FF-8B86-D011-B42D-00C04FC964FF","kind":"mindfulMorning",
+                      "name":"Mornings","isOn":true,"hasApps":true,"somethingNew":42},
+                     {"kind":"aKindFromTheFuture","name":"Later"}],
+         "fieldFromTheFuture":{"x":1}}
+        """
+        let s = try JSONDecoder().decode(BlockState.self, from: Data(json.utf8))
+        XCTAssertEqual(s.blockers.count, 2)
+        XCTAssertEqual(s.blockers[0].name, "Mornings")
+        XCTAssertEqual(s.blockers[0].window, .hours(start: 6 * 60, end: 10 * 60), "the preset fills the gap")
+        XCTAssertEqual(s.blockers[0].passesPerDay, 3)
+        XCTAssertTrue(s.blockers[0].isOn)
+        XCTAssertEqual(s.blockers[1].kind, .custom, "an unknown kind reads as custom")
+        XCTAssertTrue(s.seededDefault, "blockers present means the default was seeded")
+    }
+
+    func test_windowsScreenTimeWouldRefuseAreCaught() {
+        var b = Blocker.preset(.custom)
+        b.window = .hours(start: 600, end: 610)
+        XCTAssertNotNil(b.windowProblem)
+        b.window = .hours(start: 600, end: 600)
+        XCTAssertNotNil(b.windowProblem)
+        b.window = .hours(start: 23 * 60 + 50, end: 10)   // 20 minutes, past midnight
+        XCTAssertNil(b.windowProblem)
+        XCTAssertNil(Blocker.preset(.mindfulDay).windowProblem)
+    }
+
+    /// Otto's glow replays the whole history, so pruning must not forget a
+    /// "Not now" it still reads.
+    func test_pruningKeepsWhatTheGlowReads() {
+        var s = state(on(.mindfulDay))
+        BlockRules.takePass(minutes: 5, in: &s, at: at(10, 9), calendar: cal)
+        BlockRules.prune(&s, now: at(10, 9).addingTimeInterval(200 * 86_400))
+        XCTAssertEqual(s.passes.count, 1)
+        BlockRules.prune(&s, now: at(10, 9).addingTimeInterval(800 * 86_400))
+        XCTAssertTrue(s.passes.isEmpty)
+    }
+
     func test_stateRoundTripsThroughJSON() throws {
         var s = state(on(.mindfulMorning), on(.focusHours))
         BlockRules.takePass(minutes: 10, in: &s, at: at(10, 7), calendar: cal)

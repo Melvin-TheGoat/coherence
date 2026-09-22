@@ -173,6 +173,7 @@ struct ContentView: View {
         })
         .modifier(BlockHooks(block: block,
                              sessionActive: coordinator.active != nil,
+                             awardShowing: !unlockQueue.isEmpty,
                              lastSessionID: coordinator.lastSessionID,
                              sessions: sessions,
                              scenePhase: scenePhase,

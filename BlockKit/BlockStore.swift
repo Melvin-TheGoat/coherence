@@ -36,11 +36,22 @@ enum BlockStore {
     private static let stateKey = "block.state.v1"
     private static let asksKey = "block.asks.v1"
     private static let limitsKey = "block.limits.v1"
+    private static let storesKey = "block.stores.v1"
+    private static let schedulesKey = "block.schedules.v1"
+    private static let notificationsKey = "block.notifications.v1"
     private static func selectionKey(_ id: UUID) -> String { "block.selection.\(id.uuidString)" }
 
     static func load() -> BlockState {
         let defaults = BlockGroup.defaults
-        var state = decode(BlockState.self, defaults?.data(forKey: stateKey)) ?? BlockState()
+        let raw = defaults?.data(forKey: stateKey)
+        var state = decode(BlockState.self, raw) ?? BlockState()
+        // The decoder takes a default for anything missing or new, so this is
+        // corruption, not a version change. Keep the bytes rather than let the
+        // next save write an empty state over them.
+        if let raw, decode(BlockState.self, raw) == nil,
+           defaults?.data(forKey: stateKey + ".unreadable") == nil {
+            defaults?.set(raw, forKey: stateKey + ".unreadable")
+        }
         state.asks = decode([Date].self, defaults?.data(forKey: asksKey)) ?? []
         state.limitHits = decode([BlockLimitHit].self, defaults?.data(forKey: limitsKey)) ?? []
         return state
@@ -53,6 +64,35 @@ enum BlockStore {
         owned.asks = []
         owned.limitHits = []
         BlockGroup.defaults?.set(try? JSONEncoder().encode(owned), forKey: stateKey)
+        // Every blocker that has ever existed, so its shield can be lifted
+        // after it is gone (or after a state that could not be read).
+        let known = Set(knownStores()).union(state.blockers.map(\.id.uuidString))
+        BlockGroup.defaults?.set(Array(known), forKey: storesKey)
+    }
+
+    static func knownStores() -> [String] {
+        BlockGroup.defaults?.stringArray(forKey: storesKey) ?? []
+    }
+
+    /// What each blocker's window was registered with, so a sync restarts
+    /// only what changed. App-owned.
+    static func scheduleSignatures() -> [String: String] {
+        (BlockGroup.defaults?.dictionary(forKey: schedulesKey) as? [String: String]) ?? [:]
+    }
+
+    static func setScheduleSignatures(_ signatures: [String: String]) {
+        BlockGroup.defaults?.set(signatures, forKey: schedulesKey)
+    }
+
+    /// Whether 808 may post notifications, written by the app on every
+    /// return to the foreground, read by the shield: with them off, "Ask
+    /// Otto" can only send the person to 808 by hand.
+    static var notificationsAllowed: Bool {
+        (BlockGroup.defaults?.object(forKey: notificationsKey) as? Bool) ?? true
+    }
+
+    static func setNotificationsAllowed(_ allowed: Bool) {
+        BlockGroup.defaults?.set(allowed, forKey: notificationsKey)
     }
 
     /// The shield's "Ask Otto".
@@ -129,7 +169,8 @@ enum BlockShields {
 
     /// Every blocker's shields brought in line with the rules at `now`. Safe
     /// to call from anywhere, any number of times: it only ever sets what
-    /// the rules say.
+    /// the rules say. A store left by a blocker that no longer exists is
+    /// lifted, so nothing stays shielded with no way to open it.
     static func reconcile(now: Date = Date()) {
         let state = BlockStore.load()
         for blocker in state.blockers {
@@ -138,6 +179,10 @@ enum BlockShields {
             } else {
                 lift(blocker.id)
             }
+        }
+        let current = Set(state.blockers.map(\.id.uuidString))
+        for raw in BlockStore.knownStores() where !current.contains(raw) {
+            if let id = UUID(uuidString: raw) { lift(id) }
         }
     }
 }
