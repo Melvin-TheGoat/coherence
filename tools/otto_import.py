@@ -14,6 +14,9 @@ they are scaled here. Recognised names, and every place each one is seen:
     otto-ask     clipboard in hand: the onboarding question screens
     otto-talk    optional. Without it the waving art stands in, which is
                  what ships today: the wave is the only open mouth we have.
+    otto-low         the aura at its lowest (0): slumped, head drooping
+    otto-frustrated  the aura at 20: slouched, grumpy
+    otto-curious     the aura at 40, and a new person's Otto: eyes wide open
 
 Output: the Otto image sets in Shared/Assets.xcassets, at the sizes the app
 already uses. **Every pose is normalised to a longest edge of 200 points**,
@@ -51,6 +54,9 @@ POSES = [
     ("otto-head", "OttoHead"),
     ("otto-ask", "OttoAsk"),
     ("otto-talk", "OttoTalk"),
+    ("otto-low", "OttoLow"),
+    ("otto-frustrated", "OttoFrustrated"),
+    ("otto-curious", "OttoCurious"),
 ]
 # Longest edge in pixels per scale. @1x is 200 points; the rest follow.
 SCALES = [("", 200), ("@2x", 400), ("@3x", 600)]

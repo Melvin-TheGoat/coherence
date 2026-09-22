@@ -2637,6 +2637,42 @@ reference screen, build that screen.** Not a reading of it.
   screenshots half a breath apart shows the chest lit and Otto's outline
   black.** Before the fix the same map outlined his whole body.
 
+## OTTO'S AURA: HE GLOWS WITH PRACTICE AND SLUMPS WITHOUT IT (2026-09-21, Melvin)
+
+Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
+
+- **The rule is `OttoAura` (`Shared/Engine/`), derived from session dates
+  like the streak, never stored.** Start 40, +10 per day meditated, -20 per
+  missed day, with one rest day a week free through
+  `StreakCalculator.restAvailable`, so the two rules cannot disagree. An
+  unfinished today costs nothing. Consistency only, never the score. Stages:
+  Low 0-9, Frustrated 10-29, Curious 30-49 (a new person), Progressing 50-69,
+  In flow 70-89, Enlightened 90-100. `OttoAuraTests` pins the mockup's
+  promises: first session lifts him to Progressing, five days in a row reach
+  Enlightened, a week away from Enlightened brings him to Low.
+- **`OttoAuraFigure` draws him on Home.** Low, Frustrated and Curious are
+  still drawings (`OttoLow`, `OttoFrustrated`, `OttoCurious`, from
+  `mockups/otto-v3/`), deliberately motionless. From Progressing up he is the
+  Rive rig sitting, breathing through the mesh; In flow adds a glow and one
+  orbit, Enlightened a second orbit, sparks, ground ripples and a slow lift.
+  **The aura is drawn in SwiftUI, not baked into art**: painted glow cannot
+  move, and glow cut off a dark background turned to mud on the cream when
+  tried for the mockup. Its colours are `AppColor.auraGlow` / `auraRing`,
+  kept apart from the score's gold, and it is never a closed ring with a
+  number in it.
+- **He no longer waves on a tap on Home**: the wave belongs to the standing
+  pose and every stage sits. A tap still cycles his lines, and his mood leads
+  them at Low, Frustrated (only if today is not yet practised), In flow and
+  Enlightened.
+- **There is no lying-down Otto** (Melvin, twice now). At his lowest he sits
+  slumped with his head drooping.
+- The new drawings carry a smaller head than the rig's sitting Otto, so
+  matched by height they read a size smaller; Curious stands at 1.04 of the
+  frame and overflows upward into the sky.
+- `OTTO_AURA=<0...100>` (DEBUG) shows any stage on a simulator with no
+  history. Not built yet: the onboarding "See for yourself" slider screen from
+  the mockup.
+
 ## THE RIG DID NOT CONTAIN THE BREATH FIXES THE NOTES CLAIM (2026-09-21, fixed)
 
 **Read this before trusting any Rive paragraph above.** Two of them describe
@@ -2791,6 +2827,43 @@ on top of the pose's. Same amplitude as the sitting pose, 110 by 114 with a
 because the tap had opened the setup sheet rather than the screen.** Always
 confirm which screen is actually up before reading a diff: a static sheet
 and a broken animation look identical in the numbers.
+
+## HOME IS THE VALLEY, WITH OTTO IN THE MIDDLE (2026-09-21, Melvin)
+
+"keep it on the same theme" as Aziz's sit and Ready screens, with Brainrot's
+home as the reference, and "make him in the center of the home screen, not
+off in the corner". This supersedes Direction B (Otto leaning in from the
+left beside a bubble).
+
+- **Home draws Aziz's `ValleyScene` itself**, at `progress: 0`, through a new
+  `aura:` parameter that seats `OttoAuraFigure` on the cushion instead of the
+  sit's rig. Home, Ready and the sit are one place, and Otto never changes
+  picture between them. The scene is 74 percent of the height under the bar
+  plus the top inset.
+- On the sky: the greeting centred where Brainrot writes its name, the streak
+  as a flame and a number in a frosted circle in the corner (the tour's
+  `.streak` anchor moved onto it), and Otto's line in an `OttoSpeech` bubble
+  pinned by its bottom above his head, exactly as the Ready screen pins
+  its line. A tap on him still cycles the line.
+- **The cards rise onto the near meadow** (`-17%` of the scene) rather than
+  waiting under a field of empty grass. First the aura card: "Otto is
+  curious" and a bar, with **no number on purpose**, since a second 0 to 100
+  on Home would be read as the score. Then Brainrot's three tiles in 808's
+  facts (best streak, sessions, time meditated), This week, and Recent, now
+  one card so its header is not text on a painting.
+- **The page is grass**: the background is the meadow's near colour, and the
+  sky that shows when the top is pulled down scrolls WITH the scene. A
+  background pinned half sky and half grass showed a band of sky behind the
+  tiles the moment the page moved.
+- The still aura drawings are matched to the rig by HEAD width in the valley
+  (Curious at 0.95 of the frame), after Aziz's rig update drew the sitting
+  Otto smaller than the 1.04 tuned on the old Home.
+- **The tab bar sits 16pt down into the home indicator's inset**
+  (`MainTabBar.intoInset`). The air Melvin kept pointing at was never above
+  the icons; it was the inset under the labels. Labels now sit about 39pt
+  off the bottom edge, where Brainrot's do.
+- Not changed, and next if wanted: Guide, Friends and Profile are still the
+  cream pages, and `OttoBubble` / `ottoScene` from the old Home are gone.
 
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 

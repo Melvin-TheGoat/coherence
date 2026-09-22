@@ -114,3 +114,43 @@ the poses are found and how they sit on the app's cream, so a sheet on a
 white background is unusable: the splitter would see one big rectangle and
 the importer refuses it anyway. Ask for it up front and check before
 running either command.
+
+## The aura poses (2026-09-21): three more of TODAY's Otto
+
+For the aura progression (`mockups/otto-aura.html`): 60 percent is today's
+`otto-sit.png` and Rive draws the glow for 80 and 100, so only three new
+poses are needed. **The previous prompt above describes an "old and wise"
+Otto that never shipped; the art in `mockups/otto-v3/` is today's Otto, so
+these runs attach it as the reference instead of describing him.**
+
+Attach `mockups/otto-v3/otto-awake.png` and `mockups/otto-v3/otto-sit.png`,
+then one run per pose in the same chat, swapping only the pose line:
+
+    The attached images are Otto, the sloth mascot of my meditation app.
+    Draw the SAME character: identical art style, colours, proportions, fur,
+    face shapes, eye mask, nose, claws and soft 3D shading. Do not redesign
+    him, do not change his colours, and do not make him more realistic or
+    more cartoony. Only his pose and expression change.
+
+    Pose: POSE LINE HERE
+
+    Full body, facing the viewer, centred, the whole character inside the
+    frame with a little space around him, lit the same way as the reference.
+    Transparent background (PNG with alpha). No ground, no shadow, no glow,
+    no sparkles, no props, no text. One character only.
+
+    otto-low         Sitting slumped on the ground, cross-legged, back
+                     rounded, head drooping forward, arms hanging limp with
+                     his hands resting on the ground beside him. Heavy
+                     half-closed eyes looking down, brows tilted up in the
+                     middle, a clear frown. Tired and defeated.
+    otto-frustrated  Sitting cross-legged but slouched, shoulders hunched and
+                     rounded forward, arms hanging limp in his lap. Eyes half
+                     open under lowered brows, glancing to one side, a small
+                     grumpy frown. Grumpy, not angry.
+    otto-curious     Sitting cross-legged and upright, hands resting in his
+                     lap. Big round eyes wide open, looking up and to one
+                     side, a small hopeful smile. Curious and a little eager.
+
+Melvin, same day: no lying down at all. At his lowest he is still sitting,
+slumped and defeated, head drooping.

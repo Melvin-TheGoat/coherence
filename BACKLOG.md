@@ -4,9 +4,24 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## Home in Aziz's valley, Otto centred, the bar lowered (2026-09-21, Melvin)
+
+**DONE:** merged Aziz's `mvp` (the valley sit, the Ready screen, no
+onboarding) into `friendly-ui`; Home rebuilt in the same valley with Otto in
+the middle at his aura stage, the streak in the corner, the aura card and
+Brainrot's three tiles on the grass; the tab bar 16pt lower. **Next, if
+wanted:** Guide, Friends and Profile in the same theme. Home is still
+Melvin's to critique.
+
 ## Otto's aura follows your practice, and how to A/B it (2026-09-21, Melvin)
 
-**MOCKUP BUILT, awaiting three calls: `mockups/otto-aura.html`.** Melvin kept
+**BUILT on Home (2026-09-21):** the rule (`OttoAura`, 12 tests), the three
+new poses from Melvin's sheet, and `OttoAuraFigure` with the glow, orbits,
+sparks and lift drawn in SwiftUI. **Next, not started:** the onboarding "See
+for yourself" slider screen from the mockup, and Melvin's critique of how the
+stages look on a phone. (Decided the same day: he gets sad, and he lives on
+Home.)
+**MOCKUP BUILT: `mockups/otto-aura.html`.** Melvin kept
 the sloth ("you know what I like the sloth") and sent the same six-stage
 progression drawn with him. The mockup is Brainrot's "See for yourself!"
 slider screen with Otto (stages cut from the sheet; 80 and 100 draw the aura

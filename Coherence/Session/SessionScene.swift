@@ -32,6 +32,11 @@ struct ValleyScene: View {
     /// him rather than cutting to a different picture.
     var pose: OttoPose = .meditating
 
+    /// Home seats Otto at his aura stage instead (`OttoAura`): the same
+    /// valley, the same cushion, with the glow the practice has earned. nil
+    /// is the sit and the Ready screen, which draw `pose`.
+    var aura: OttoAura.Stage? = nil
+
     /// Move him up to the corner, small, so a list can have the meadow.
     ///
     /// **It is a placement on the SAME view, not a second Otto.** Swapping
@@ -181,10 +186,16 @@ struct ValleyScene: View {
             // the same size, and hung from its own bottom edge.
             let seated = ottoHeight(scale: s)
             let tall = ottoInCorner ? Self.cornerHeight : seated
-            OttoRiveView(size: tall, pose: pose, rig: rig)
-                .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
-                          y: ottoInCorner ? Self.cornerY
-                                          : size.height * (1 - 0.24) - seated / 2)
+            Group {
+                if let aura {
+                    OttoAuraFigure(stage: aura, size: tall, rig: rig)
+                } else {
+                    OttoRiveView(size: tall, pose: pose, rig: rig)
+                }
+            }
+            .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
+                      y: ottoInCorner ? Self.cornerY
+                                      : size.height * (1 - 0.24) - seated / 2)
         }
         .frame(width: size.width, height: size.height)
     }

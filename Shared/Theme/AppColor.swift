@@ -95,4 +95,13 @@ enum AppColor {
     /// drawn before it has happened. Deep enough to be a shape on a WHITE card
     /// rather than only on the paper, which is the mistake it was born from.
     static let trace = Color("Trace")
+
+    /// Otto's aura: the warm light around him at In flow and Enlightened
+    /// (`OttoAura`). It is LIGHT, not a score, so it is drawn as a glow and as
+    /// orbits of light, never as a closed ring with a number in it; the gold
+    /// ring still means a measured score and nothing else.
+    static let auraGlow = Color("AuraGlow")
+    /// The orbits and sparks inside the glow, a shade deeper so they read
+    /// against it on the cream.
+    static let auraRing = Color("AuraRing")
 }
