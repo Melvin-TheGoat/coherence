@@ -45,6 +45,7 @@ h2{font-size:15px;margin:38px 0 4px;font-weight:800}
 
 /* ---- the controls, floating on the meadow ---- */
 .ctl{position:absolute;left:0;bottom:0;width:100%;padding:0 18px 22px}
+.quiet{font-size:12.2px;font-weight:600;color:#33525F;text-align:center;padding:6px 10px 0;line-height:1.45}
 .pill{display:flex;align-items:center;gap:10px;background:rgba(254,249,242,.94);
  border-radius:16px;padding:11px 14px;margin-bottom:8px;
  box-shadow:0 2px 8px rgba(40,25,15,.14)}
@@ -90,17 +91,17 @@ pre{background:#fff;border:1px solid var(--hair);border-radius:14px;padding:14px
 </style></head><body>
 
 <h1>Ready when you are</h1>
-<p class="lede">One scene, edge to edge. <b>Otto is not in a panel at the top of a settings page</b>,
-he is the screen, sitting in the daylight version of the valley you are about to be in. The controls
-float on the meadow in front of him, so tapping Begin does not change screens: the pills clear, the
-ring fades up, and the sun starts moving.</p>
+<p class="lede">One scene, edge to edge: the daylight valley you are about to sit in. The controls
+float on the meadow in front of Otto, so Begin does not change screens. The pills clear, the ring
+fades up, the sun starts moving.</p>
 
 <div class="flag">
-<p class="note wide" style="margin-top:0"><b>The notifications row, before you judge it.</b>
-<b>iOS gives apps no way to turn on Do Not Disturb.</b> No API, and the private <code>App-prefs:</code>
-deep links are a rejection, so a switch that silently does it cannot be built by anyone. What can be
-built is on panel 2: a Shortcuts automation the user makes once, which is genuinely automatic
-afterwards. The switch is drawn as a switch because after that setup it behaves like one.</p>
+<p class="note wide" style="margin-top:0"><b>The switch, and what it can honestly do.</b>
+No app can turn on Do Not Disturb directly. There is no API, and the private <code>App-prefs:</code>
+links are a rejection. <b>Shortcuts is the one thing Apple does let switch it</b>, and a shortcut can
+be installed from a link in two taps and run from a button afterwards. So the switch is real: it
+costs a one-time add, and a half-second bounce out to Shortcuts and back each time it is tapped.
+Panel 4 is what this screen looks like if we decide that is not worth it.</p>
 </div>
 
 <div class="row">
@@ -155,7 +156,7 @@ afterwards. The switch is drawn as a switch because after that setup it behaves 
       <div class="cancel">Cancel</div>
       <div class="top">
         <div class="h">Ready when you are.</div>
-        <div class="s">Using YouTube or Spotify? Start it playing now. 808 has to stay open while you sit.</div>
+        <div class="s">Start your YouTube or Spotify audio first. 808 stays open the whole time.</div>
       </div>
       <div class="ctl">
         <div class="pill"><span class="ic">&#9834;</span><span class="lbl">Sound</span>
@@ -164,9 +165,9 @@ afterwards. The switch is drawn as a switch because after that setup it behaves 
         <div class="cta">Begin</div>
       </div>
     </div>
-    <p class="note"><b>Two pills and a button, and nothing else.</b> Sound is a choice, silencing is a
-      choice, and the line under the headline is not a third choice: it is the one thing that stops
-      working the second you tap Begin, so it is the subtitle rather than a row.</p>
+    <p class="note"><b>Two pills and a button.</b> Sound and silence are choices. The audio line is
+      not: it is the one thing that stops working the second you tap Begin, so it sits with the
+      headline instead of in the list.</p>
   </div>
 
   <div class="col">
@@ -219,7 +220,7 @@ afterwards. The switch is drawn as a switch because after that setup it behaves 
       <div class="cancel">Cancel</div>
       <div class="top">
         <div class="h">Ready when you are.</div>
-        <div class="s">Using YouTube or Spotify? Start it playing now. 808 has to stay open while you sit.</div>
+        <div class="s">Start your YouTube or Spotify audio first. 808 stays open the whole time.</div>
       </div>
       <div class="ctl">
         <div class="pill"><span class="ic">&#9834;</span><span class="lbl">Sound</span>
@@ -229,21 +230,19 @@ afterwards. The switch is drawn as a switch because after that setup it behaves 
       </div>
       <div class="dim"></div>
       <div class="sheet">
-        <h3>Let's make this automatic</h3>
-        <p>Apple doesn't let 808 switch on Do Not Disturb by itself. It lets <b>you</b> switch it on
-          for 808, once, and then it happens every time.</p>
-        <div class="step"><div class="n">1</div><div class="t">Open <b>Shortcuts</b>, then Automation.</div></div>
-        <div class="step"><div class="n">2</div><div class="t">New automation &rarr; <b>App</b> &rarr; pick 808 &rarr; <b>Is Opened</b>.</div></div>
-        <div class="step"><div class="n">3</div><div class="t">Add <b>Set Focus</b> &rarr; Do Not Disturb &rarr; On. Run immediately.</div></div>
-        <div class="step"><div class="n">4</div><div class="t">Repeat for <b>Is Closed</b>, with Focus Off, so your phone comes back.</div></div>
-        <div class="cta" style="margin:18px 0 0">Open Shortcuts</div>
-        <div class="ghost">I'll do it later</div>
+        <h3>One-time setup</h3>
+        <p>Apple only lets Shortcuts switch Do Not Disturb. Add ours once and this
+          button works from then on.</p>
+        <div class="step"><div class="n">1</div><div class="t">Tap <b>Add shortcut</b> below.</div></div>
+        <div class="step"><div class="n">2</div><div class="t">Shortcuts opens. Tap <b>Add</b>.</div></div>
+        <div class="step"><div class="n">3</div><div class="t">You land back here, silenced.</div></div>
+        <div class="cta" style="margin:18px 0 0">Add shortcut</div>
+        <div class="ghost">Not now</div>
       </div>
     </div>
-    <p class="note"><b>It triggers on the app opening, not on Begin.</b> Apple's app automations have
-      no finer trigger, and it is close enough: opening 808 is something you do to meditate. The cost
-      is that checking your history at lunch also silences you until you leave, which the closing half
-      undoes.</p>
+    <p class="note"><b>Two taps, once.</b> The shortcut lives on an iCloud link and installs signed,
+      so there is no Allow Untrusted Shortcuts detour. It toggles Do Not Disturb and returns straight
+      here. After this the sheet never appears again.</p>
   </div>
 
   <div class="col">
@@ -296,7 +295,7 @@ afterwards. The switch is drawn as a switch because after that setup it behaves 
       <div class="cancel">Cancel</div>
       <div class="top">
         <div class="h">Ready when you are.</div>
-        <div class="s">Using YouTube or Spotify? Start it playing now. 808 has to stay open while you sit.</div>
+        <div class="s">Start your YouTube or Spotify audio first. 808 stays open the whole time.</div>
       </div>
       <div class="ctl">
         <div class="pill"><span class="ic">&#9834;</span><span class="lbl">Sound</span>
@@ -305,10 +304,74 @@ afterwards. The switch is drawn as a switch because after that setup it behaves 
         <div class="cta">Begin</div>
       </div>
     </div>
-    <p class="note"><b>The switch reads the phone, it does not remember a preference.</b> 808 can ask
-      iOS whether a Focus is on right now (one permission, no entitlement), so the pill states what is
-      true of the phone in your hand. A pill that says "off" while a banner slides over Otto is worse
-      than no pill.</p>
+    <p class="note"><b>The switch reads the phone, not a saved preference.</b> 808 can ask iOS
+      whether a Focus is on right now, so the pill states what is actually true. A pill claiming
+      silence while a banner slides over Otto is worse than no pill.</p>
+  </div>
+
+
+  <div class="col">
+    <div class="tag"><b>4</b> &nbsp;if we skip the button</div>
+    <div class="p">
+      <div class="sun"></div>
+      <div class="cloud" style="left:-9%;top:7%;width:126px;height:65px">
+        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
+        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g>
+        <ellipse cx="60" cy="23" rx="23" ry="11" fill="#FFFFFF" opacity="0.6"/></svg></div>
+      <div class="cloud" style="right:-11%;top:19%;width:150px;height:78px">
+        <svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92">
+        <ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/>
+        <ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg></div>
+      <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none">
+        <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
+        <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
+        <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/>
+      </svg>
+      <div class="field"></div>
+<div class="fl" style="left:12.8%;bottom:41.0%;width:7px;height:14px;transform:rotate(7deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:19.4%;bottom:40.9%;width:7px;height:14px;transform:rotate(6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:5.1%;bottom:40.8%;width:7px;height:14px;transform:rotate(-6deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
+<div class="fl" style="left:79.8%;bottom:40.5%;width:7px;height:16px;transform:rotate(4deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:84.7%;bottom:40.3%;width:7px;height:16px;transform:rotate(8deg);opacity:0.83"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:90.0%;bottom:39.2%;width:9px;height:19px;transform:rotate(0deg);opacity:0.85"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:17.4%;bottom:38.9%;width:9px;height:19px;transform:rotate(3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:76.7%;bottom:38.8%;width:9px;height:20px;transform:rotate(-5deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:24.0%;bottom:38.5%;width:10px;height:20px;transform:rotate(-3deg);opacity:0.86"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:4.1%;bottom:38.1%;width:11px;height:22px;transform:rotate(4deg);opacity:0.87"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:11.6%;bottom:37.2%;width:11px;height:24px;transform:rotate(4deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:83.1%;bottom:37.2%;width:11px;height:24px;transform:rotate(-7deg);opacity:0.88"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:23.2%;bottom:36.2%;width:12px;height:27px;transform:rotate(-4deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:76.0%;bottom:36.0%;width:13px;height:27px;transform:rotate(-2deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
+<div class="fl" style="left:5.7%;bottom:35.8%;width:13px;height:28px;transform:rotate(-5deg);opacity:0.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:14.8%;bottom:35.3%;width:14px;height:29px;transform:rotate(5deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
+<div class="fl" style="left:90.5%;bottom:35.3%;width:14px;height:29px;transform:rotate(-1deg);opacity:0.91"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:81.6%;bottom:33.6%;width:16px;height:33px;transform:rotate(-2deg);opacity:0.94"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:52.1%;bottom:32.8%;width:17px;height:35px;transform:rotate(-7deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:90.8%;bottom:32.7%;width:17px;height:36px;transform:rotate(-4deg);opacity:0.95"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:70.5%;bottom:32.1%;width:18px;height:37px;transform:rotate(6deg);opacity:0.96"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFC2A8"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+<div class="fl" style="left:26.4%;bottom:30.5%;width:20px;height:42px;transform:rotate(4deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
+<div class="fl" style="left:40.5%;bottom:30.0%;width:20px;height:43px;transform:rotate(-2deg);opacity:0.99"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFF3D6"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:81.7%;bottom:29.8%;width:20px;height:43px;transform:rotate(-1deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFFFFF"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#F5A623"/></svg></div>
+<div class="fl" style="left:11.4%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFD86B"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8862B"/></svg></div>
+<div class="fl" style="left:58.0%;bottom:29.8%;width:20px;height:43px;transform:rotate(8deg);opacity:1.0"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="#FFB3C9"><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(0 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(72 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(144 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(216 30 30)"/><ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(288 30 30)"/></g><circle cx="30" cy="30" r="7.5" fill="#E8564F"/></svg></div>
+      <div class="seat"></div>
+      <div class="otto"></div>
+      <div class="cancel">Cancel</div>
+      <div class="top">
+        <div class="h">Ready when you are.</div>
+        <div class="s">Start your YouTube or Spotify audio first. 808 stays open the whole time.</div>
+      </div>
+      <div class="ctl">
+        <div class="pill"><span class="ic">&#9834;</span><span class="lbl">Sound</span>
+          <span class="val">Silence</span><span class="chev">&rsaquo;</span></div>
+        <div class="quiet">Turn on Do Not Disturb first, from Control Center.</div>
+        <div class="cta">Begin</div>
+      </div>
+    </div>
+    <p class="note"><b>One pill, one sentence, nothing to build.</b> It is honest and it is free, and
+      it is what the screen does today. Most people will read it once and stop seeing it, which is the
+      whole argument for the button.</p>
   </div>
 
 </div>
@@ -334,12 +397,11 @@ the way he waves in the standing reference. His left hand rests on his knee.
 Transparent background, no shadow, no ground, no props.
 Centred, full figure with a little headroom, same canvas proportions as the reference.</pre>
 
-<h2>The one decision I need from you</h2>
-<p class="note wide"><b>Is the Shortcuts route worth it?</b> It is the only thing that actually
-silences a phone, it works, and it costs a one-time setup screen plus a trip out to Shortcuts that
-some people will abandon. The alternative is cutting the pill and keeping the one-line Control Center
-tip that is on the screen today. I would build it: "nothing will interrupt" is half of what this
-screen promises, and a tip is not a promise. But the pill must never sit there looking on when
-nothing is silenced, which is why panel 1 is the un-set-up state.</p>
+<h2>The decision</h2>
+<p class="note wide"><b>Button or sentence.</b> The button works and costs a one-time add plus a
+half-second bounce. The sentence costs nothing and does nothing. I would build the button, because
+a quiet phone is half of what this screen is promising and a reminder is not a promise. Whichever we
+pick, the pill can never sit there looking on while nothing is silenced, which is why panel 1 is the
+un-added state.</p>
 
 </body></html>
