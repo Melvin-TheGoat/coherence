@@ -37,48 +37,111 @@ struct ProfileTab: View {
     let openSettings: () -> Void
     /// A log row awaiting the delete confirmation.
     @State private var pendingDelete: UUID?
+    /// Set one frame after the page arrives, which is what the cards rise on.
+    @State private var settled = false
 
 
     private let calendar = Calendar.current
 
+    /// Profile is the same place as Home and the sit, from a little further
+    /// back: a short band of the valley with nobody in it, and your practice
+    /// on the grass below.
+    ///
+    /// **The scene scrolls with the page rather than staying pinned.** Home
+    /// learned this the hard way: a background half sky and half grass shows
+    /// a band of sky behind the cards the moment anything moves. The page is
+    /// grass, the band rides on top of it, and pulling down stretches the sky
+    /// instead of tearing it.
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    identity
-                    VStack(alignment: .leading, spacing: 14) {
-                        statsRow
-                        scoresCard
-                        awardsSection
-                        logSection
+            GeometryReader { proxy in
+                let band = proxy.safeAreaInsets.top + proxy.size.height * 0.20
+                ScrollView {
+                    VStack(spacing: 0) {
+                        profileScene(width: proxy.size.width, height: band,
+                                     topInset: proxy.safeAreaInsets.top)
+                            .overlay(alignment: .topTrailing) {
+                                gearButton(top: proxy.safeAreaInsets.top)
+                            }
+                        VStack(alignment: .leading, spacing: 12) {
+                            identityCard.rising(settled, 0)
+                            statsRow.rising(settled, 1)
+                            minutesCard.rising(settled, 2)
+                            awardsSection.rising(settled, 3)
+                            logSection.rising(settled, 4)
+                        }
+                        .padding(.horizontal, AppMetrics.screenPadding)
+                        .padding(.bottom, 24)
                     }
-                    .padding(.horizontal, AppMetrics.screenPadding)
-                    .padding(.top, 16)
-                    .padding(.bottom, 8)
                 }
+                .scrollIndicators(.hidden)
+                .ignoresSafeArea(edges: .top)
+                .background(Self.meadow.ignoresSafeArea())
             }
-            .scrollIndicators(.hidden)
-            .screenBackground()
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            // The bar takes the sky's colour, otherwise there is a pale strip
-            // above the scene with the gear floating in it and the gradient
-            // starts a centimetre down the screen.
-            .toolbarBackground(AppColor.sky, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: openSettings) {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(AppColor.textSecondary)
-                            .frame(width: 44, height: 44)
-                    }
-                    .accessibilityLabel("Settings")
-                }
-            }
+            .navigationBarHidden(true)
         }
+        // The page settles rather than appearing all at once: the valley is
+        // already there when the tab opens and the five cards come up out of
+        // the grass under it, 55ms apart.
+        //
+        // **Once per launch, not once per visit.** The tab keeps its state,
+        // so `settled` stays true after the first look and coming back to
+        // Profile is instant. A page that re-assembles itself every time you
+        // tap the tab is a page that feels slow by the third visit.
+        //
+        // **The sky band never moves.** A scene that slides in behind cards
+        // that are also sliding reads as the whole screen lurching; the
+        // ground is the fixed thing here and the contents are what arrive.
+        // The delay lives in each card's own animation (see `rising`), so the
+        // flag is flipped plainly: one `withAnimation` around all five would
+        // move them together, which is a screen appearing, not settling.
+        //
+        // **On the NEXT runloop turn, not inside `onAppear`.** An
+        // `.animation(value:)` animates every animatable change in its
+        // subtree at the instant the value flips, and flipping it during the
+        // first layout pass caught the cards' own width settling under the
+        // GeometryReader: the text re-wrapped as they widened, so "Only you"
+        // arrived as "Onlyyou" and the chart's axis crossed its header.
+        // Letting the layout finish first leaves the animation nothing to
+        // carry but the opacity and the offset, which is all it was for.
+        .onAppear {
+            guard !settled else { return }
+            DispatchQueue.main.async { settled = true }
+        }
+    }
+
+    /// The same daylight Home uses, so the two tabs are one place.
+    private static let day = DayLight.at(0)
+    /// The meadow at its near edge, which the page continues.
+    private static var meadow: Color { day.field[1] }
+
+    /// The valley with nobody in it. Otto is the portrait on this page, and
+    /// drawing him in the band as well would put two of him on one screen.
+    private func profileScene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
+        ValleyScene(progress: 0, showsFigure: false)
+            .frame(width: width, height: height)
+    }
+
+    /// A frosted circle on the sky, the material every floating control uses.
+    ///
+    /// **It rides on the scene rather than floating over the page.** Pinned
+    /// to the screen it sat on top of whatever card was passing under it, and
+    /// on a page of white cards on grass it collided with the stats row's
+    /// last number. A control that overlaps the content it is not about is
+    /// worse than one you scroll back up to reach, and scrolling back to the
+    /// top of your own profile is one flick.
+    private func gearButton(top: CGFloat) -> some View {
+        Button(action: openSettings) {
+            Image(systemName: "gearshape")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(AppColor.textSecondary)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(AppColor.backgroundPrimary.opacity(0.92)))
+                .shadow(color: .black.opacity(0.14), radius: 6, y: 2)
+        }
+        .padding(.trailing, AppMetrics.screenPadding)
+        .padding(.top, top + 6)
+        .accessibilityLabel("Settings")
     }
 
     // MARK: - Identity
@@ -87,70 +150,87 @@ struct ProfileTab: View {
         users.first { $0.appleUserID != "" && $0.deletedAt == nil } ?? users.first
     }
 
-    /// You, under the same sky Otto sits under on Home.
+    /// You, on a white card with Otto's head on its seam.
     ///
-    /// It was a 64pt avatar on the left with three lines stacked beside it,
-    /// which is the shape of a settings row, and a settings row is not a
-    /// portrait. Centred at 86 with a white ring, everything that identifies
-    /// you in one column beneath it, on the gradient Home uses, so the two
-    /// tabs are visibly one app.
-    private var identity: some View {
+    /// **There is no photo of you here** (Aziz, 2026-09-21: "no more pfp and
+    /// make the sloth in the circle"). Otto's head is the portrait, on your
+    /// page and on everybody else's, which means people are told apart by
+    /// name and handle and by their own face in the selfie on each post.
+    /// When that stops being enough, the fix is already built: draw each
+    /// person's Otto at THEIR aura stage.
+    ///
+    /// The circle sits on the card's edge rather than on the scene, because
+    /// on grass a circle needs a white ring to read as a portrait instead of
+    /// a hole.
+    private var identityCard: some View {
         let user = currentUser
         let friendsProfile = FeatureFlags.friends ? community.profile : nil
         let localName = user?.displayName?.isEmpty == false ? user!.displayName! : nil
         let name = localName ?? friendsProfile.flatMap { $0.displayName.isEmpty ? nil : $0.displayName }
-        // The reserved handle wins in Friends builds; the local one was cosmetic.
         let handle = Username.display(friendsProfile?.username ?? user?.username)
-        return VStack(spacing: 3) {
-            PersonAvatar(name: name, size: 86,
-                         photoURL: FeatureFlags.friends ? community.profile?.avatarURL : nil)
-                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 5))
-                .padding(.bottom, 9)
-            Text(name ?? "Your practice")
-                .font(DisplayFont.display(23, .heavy))
-                .foregroundStyle(AppColor.textPrimary)
-            if let handle {
-                Text(handle)
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-            if let since = user?.createdAt {
-                Text("Practicing since \(since.formatted(.dateTime.month(.abbreviated).year()))")
+
+        return ZStack(alignment: .top) {
+            VStack(spacing: 3) {
+                Text(name ?? "Your practice")
+                    .font(DisplayFont.display(22, .heavy))
+                    .foregroundStyle(AppColor.textPrimary)
+                Text([handle, user.map {
+                        "practicing since " + $0.createdAt.formatted(.dateTime.month(.abbreviated).year())
+                     }].compactMap { $0 }.joined(separator: " · "))
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
-                    .padding(.top, 4)
+                    .multilineTextAlignment(.center)
+
+                if FeatureFlags.friends { profileActions.padding(.top, 10) }
+                if FeatureFlags.friends { whoCanSee.padding(.top, 12) }
+                if FeatureFlags.friends, community.phase == .ready {
+                    FollowLine(followers: community.follow.followers,
+                               following: community.follow.following,
+                               personID: community.myID)
+                        .padding(.top, 11)
+                }
             }
-            if FeatureFlags.friends, community.phase == .ready {
-                FollowLine(followers: community.follow.followers,
-                           following: community.follow.following,
-                           personID: community.myID)
-                    .padding(.top, 7)
-            }
-            if FeatureFlags.friends { profileActions.padding(.top, 13) }
+            .frame(maxWidth: .infinity)
+            .padding(.top, 48)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .background(AppColor.backgroundSecondary,
+                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
+
+            OttoMark(size: 62, pose: .head)
+                .frame(width: 78, height: 78)
+                .background(Circle().fill(AppColor.sky))
+                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
+                .offset(y: -39)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 2)
-        .padding(.bottom, 24)
-        .background {
-            LinearGradient(colors: [AppColor.sky, AppColor.backgroundPrimary],
-                           startPoint: .top, endPoint: .bottom)
-                .clipShape(UnevenRoundedRectangle(bottomLeadingRadius: 38,
-                                                  bottomTrailingRadius: 38,
-                                                  style: .continuous))
-        }
+        // Room for the half of the circle that hangs into the scene.
+        .padding(.top, 39)
     }
 
-    private func initials(_ name: String?) -> String {
-        guard let name else { return "•" }
-        let parts = name.split(separator: " ").prefix(2)
-        return parts.map { String($0.prefix(1)).uppercased() }.joined()
+    /// The page answers who can see it, in the place you would ask.
+    ///
+    /// Sage rather than amber: this is a fact about the app, not a score and
+    /// not a warning. It only draws with Friends on, because with Friends off
+    /// nothing is public and the sentence would answer a question the build
+    /// does not raise.
+    private var whoCanSee: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "eye")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppColor.calmAccent)
+                .padding(.top, 1)
+            Text("Friends see your name, your streak and the sessions you post. Everything marked Only you stays here.")
+                .font(.system(size: 11, design: .rounded))
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 11).padding(.vertical, 8)
+        .background(AppColor.calmAccent.opacity(0.10),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
-    // MARK: - Profile actions (Friends)
 
-    /// Edit profile (photo, nickname, @username) and Share profile (the
-    /// invite), Strava's pair under the header.
     private var profileActions: some View {
         // Capsules that fit their words, side by side and centred under the
         // name. Full-width slabs made a portrait look like a settings screen
@@ -204,6 +284,19 @@ struct ProfileTab: View {
             accountCreatedAt: users.first?.createdAt,
             friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
+            // **An UNEARNED score award is hidden while the phone cannot
+            // score** (Aziz, 2026-09-21: "we dont wanna worry about any of
+            // the watch stuff"). A sit started here writes no stats, so the
+            // three `.depth` awards are unreachable for almost everybody
+            // now, and three permanently grey trophies on the shelf is the
+            // screen telling somebody what they are missing.
+            //
+            // Hidden, not DELETED, and the distinction is the whole point:
+            // a wrist-started session still scores, so anyone who earns one
+            // keeps it, sees the unlock, and finds it on this shelf
+            // afterwards. Nothing is taken away; an unreachable ask is
+            // simply not displayed.
+            .filter { $0.isEarned || $0.award.group != .depth }
     }
 
     private var awardsSection: some View {
@@ -268,82 +361,92 @@ struct ProfileTab: View {
     /// four objects saying one thing. Hairline dividers instead, and the
     /// colours follow the app's grammar rather than all being gold: **blush is
     /// the streak, amber is what you scored and did.**
+    /// The four facts a phone can report on its own, in Home's tile
+    /// vocabulary: a small coloured glyph, the number in ink, the word under
+    /// it. They were four coloured numbers on a cream slab, which on grass
+    /// read as a receipt.
     private var statsRow: some View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let hours = Double(sessions.reduce(0) { $0 + $1.durationSec }) / 3600
         return HStack(spacing: 0) {
-            stat("\(streak.current)", "streak", AppColor.streakBlushText)
-            divider
-            stat("\(streak.longest)", "longest", AppColor.streakBlushText)
-            divider
-            stat("\(sessions.count)", "sessions", AppColor.accentGoldText)
-            divider
-            stat(hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours),
-                 "practiced", AppColor.accentGoldText)
+            stat("flame.fill", "\(streak.current)", "day streak", AppColor.streakBlushText)
+            stat("trophy.fill", "\(streak.longest)", "longest", AppColor.accentGoldText)
+            stat("figure.mind.and.body", "\(sessions.count)", "sessions", AppColor.calmAccent)
+            stat("clock.fill",
+                 hours >= 10 ? String(format: "%.0fh", hours) : String(format: "%.1fh", hours),
+                 "practiced", AppColor.textSecondary)
         }
-        .padding(.vertical, 16)
-        .background(
-            RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
-                .fill(AppColor.backgroundSecondary)
-                .shadow(color: AppColor.hairline, radius: 0, y: 2)
-        )
+        .padding(.vertical, 14)
+        .frame(maxWidth: .infinity)
+        .background(AppColor.backgroundSecondary,
+                    in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
     }
 
     private var divider: some View {
         Rectangle().fill(AppColor.hairline).frame(width: 1, height: 30)
     }
 
-    private func stat(_ value: String, _ label: String, _ tint: Color) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(DisplayFont.display(24, .heavy))
+    private func stat(_ symbol: String, _ value: String,
+                      _ label: String, _ tint: Color) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(tint)
+            Text(value)
+                .font(DisplayFont.display(20, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
                 .monospacedDigit()
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
             Text(label)
-                .font(AppFont.caption.weight(.semibold))
+                .font(.system(size: 9.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColor.textSecondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
     }
 
     // MARK: - The proof
 
-    /// Your scores, one bar per sit.
+    // MARK: - The proof
+
+    /// Your minutes, one bar per session.
     ///
-    /// **This is the third home for this object and the first honest one.** It
-    /// was a 46pt sparkline on Home directly above a calendar drawing thirty
-    /// days, which is two things telling the same story at different
-    /// resolutions; it was cut from there, and the commit claimed it "still
-    /// lives on Profile", which it did not. Here it has the room to be read:
-    /// twenty bars instead of seven points, with your average drawn across
-    /// them so a single bar means something.
+    /// **This was Your scores until the baseline dropped the Watch** (Aziz,
+    /// 2026-09-21: "we dont wanna worry about any of the watch stuff"). A
+    /// phone sit measures nothing, so a score chart would be an empty frame
+    /// on most people's page. Length is what a phone can honestly report,
+    /// and the research this app is built on says consistency predicts
+    /// improvement while session length does not, so a chart of minutes is
+    /// a record rather than a target.
     ///
-    /// Bars, not a line. A line implies the value between two sits, and there
-    /// is no value between two sits: each one is a separate measurement of a
-    /// separate morning. The average is the only continuous thing on the
-    /// chart, so it is the only thing drawn as a line.
-    private var scoresCard: some View {
-        let map = SessionListSupport.scoreMap(allStats)
-        let recent: [ScorePoint] = sessions
-            .compactMap { session -> (date: Date, score: Double)? in
-                guard let score = map[session.id] else { return nil }
-                return (session.startedAt, score)
-            }
+    /// **Amber stays.** It has always meant the measured quantity of a
+    /// session, which with a Watch is its score and without one is its
+    /// length. The instrument changed, not the colour's meaning.
+    ///
+    /// Bars, not a line. A line implies the value between two sessions and
+    /// there is no value between two sessions: each is a separate morning.
+    /// The average is the only continuous thing here, so it is the only line.
+    private var minutesCard: some View {
+        let recent: [MinutePoint] = sessions
             .prefix(16).reversed().enumerated()
-            .map { ScorePoint(index: $0.offset, score: $0.element.score * 100, date: $0.element.date) }
-        let average = recent.isEmpty ? 0 : recent.map(\.score).reduce(0, +) / Double(recent.count)
-        let best = recent.map(\.score).max() ?? 0
-        // `.ratio` sizes a bar against its category's step, and this chart's x
-        // is a NUMBER, so the step is undefined and every bar drew at zero
+            .map { MinutePoint(index: $0.offset,
+                               minutes: Double($0.element.durationSec) / 60,
+                               date: $0.element.startedAt) }
+        let average = recent.isEmpty ? 0 : recent.map(\.minutes).reduce(0, +) / Double(recent.count)
+        let longest = recent.map(\.minutes).max() ?? 0
+        // `.ratio` sizes a bar against its category's step, and this chart's
+        // x is a NUMBER, so the step is undefined and every bar drew at zero
         // width. Computed from the plot's own width instead, clamped so four
-        // sits do not each become a paving slab.
+        // sessions do not each become a paving slab.
         let barWidth = min(20.0, max(7.0, 286.0 / Double(max(recent.count, 1)) * 0.68))
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionHeader(title: "Your scores")
+                SectionHeader(title: "Your minutes")
+                if FeatureFlags.friends { ReachChip(shared: false) }
                 Spacer()
                 if recent.count >= 2 {
                     Text("last \(recent.count)")
@@ -352,7 +455,7 @@ struct ProfileTab: View {
                 }
             }
             if recent.count < 2 {
-                Text("Two sessions and this fills in. Every bar is one day, and the line is your average.")
+                Text("Two sessions and this fills in. Every bar is one, and the line is your average.")
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -360,40 +463,62 @@ struct ProfileTab: View {
                 Chart {
                     ForEach(recent) { point in
                         // Fat and rounded. The default width draws hairline
-                        // bars with wide gaps, which is a statistics plot; the
-                        // rest of this app is made of solid round objects.
-                        BarMark(x: .value("Sit", point.index),
-                                y: .value("Score", point.score),
+                        // bars with wide gaps, which is a statistics plot;
+                        // the rest of this app is solid round objects.
+                        // Grown from the floor on arrival, which is the one
+                        // place a chart may animate: the bars are rising to
+                        // the height they will keep, not cycling. The domain
+                        // is pinned below so the axis cannot grow with them,
+                        // which would read as the numbers changing.
+                        BarMark(x: .value("Session", point.index),
+                                y: .value("Minutes", point.minutes * (settled ? 1 : 0)),
                                 width: .fixed(barWidth))
                             .foregroundStyle(AppColor.accentGold)
                             .cornerRadius(7)
                     }
                     RuleMark(y: .value("Average", average))
-                        .foregroundStyle(AppColor.calmAccent)
+                        .foregroundStyle(AppColor.calmAccent.opacity(settled ? 1 : 0))
                         .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
                 }
-                .chartYScale(domain: 0...100)
+                // The domain is pinned so the axis cannot grow with the
+                // bars, which would read as the numbers changing rather
+                // than the chart arriving.
+                .chartYScale(domain: 0...(max(longest, average) * 1.12 + 0.5))
+                // **No animation of its own.** It had one, a slightly slower
+                // spring than the card's, and an `.animation(value:)` drives
+                // every animatable change in its subtree, the position the
+                // card's own rise was already moving it to included. So the
+                // chart slid up a beat behind its card and the y-axis label
+                // crossed the header. The bars grow on the card's spring
+                // (see `rising`), which is one curve for one object.
                 .chartXAxis(.hidden)
                 .chartYAxis {
-                    AxisMarks(values: [0, 50, 100]) {
+                    AxisMarks(position: .leading, values: .automatic(desiredCount: 3)) {
                         AxisGridLine().foregroundStyle(AppColor.hairline)
                         AxisValueLabel().foregroundStyle(AppColor.textSecondary)
                             .font(AppFont.caption)
                     }
                 }
-                .frame(height: 132)
+                .frame(height: 128)
                 HStack(spacing: 0) {
-                    proofStat("\(Int(average.rounded()))", "average", AppColor.calmAccent)
+                    proofStat("\(Int(average.rounded()))m", "average", AppColor.calmAccent)
                     divider
-                    proofStat("\(Int(best.rounded()))", "best", AppColor.accentGoldText)
+                    proofStat("\(Int(longest.rounded()))m", "longest", AppColor.accentGoldText)
                     divider
-                    proofStat(SessionListSupport.duration(longestSit), "longest session",
-                              AppColor.accentGoldText)
+                    proofStat("\(sessions.count)", "in total", AppColor.textPrimary)
                 }
                 .padding(.top, 2)
             }
         }
         .card(padding: 18)
+    }
+
+    /// One bar: a single session's length, in the order it happened.
+    private struct MinutePoint: Identifiable {
+        let index: Int
+        let minutes: Double
+        let date: Date
+        var id: Int { index }
     }
 
     /// One bar: a single sit's score, in the order it happened.
@@ -455,13 +580,29 @@ struct ProfileTab: View {
         let scores = SessionListSupport.scoreMap(allStats)
         let stats = SessionListSupport.statsMap(allStats)
         let ratings = SessionListSupport.ratingMap(reflections)
+        // Reach, read off the reflection each session carries. Only when
+        // there is somebody to share with: "Only you" on every row of a
+        // build with no Friends tab is a label answering nobody's question.
+        let reach: [UUID: Bool] = FeatureFlags.friends
+            ? Dictionary(reflections.compactMap { r -> (UUID, Bool)? in
+                guard let id = r.sessionID else { return nil }
+                return (id, r.visibility == "friends")
+              }, uniquingKeysWith: { a, _ in a })
+            : [:]
 
         return VStack(alignment: .leading, spacing: 6) {
             HStack {
                 SectionHeader(title: selectedDay.map { SessionListSupport.dayTitle($0) } ?? "All sessions")
+                    .contentTransition(.opacity)
+                    .id(selectedDay ?? .distantPast)
+                    .transition(.opacity)
                 Spacer()
                 if selectedDay != nil {
-                    Button { selectedDay = nil } label: {
+                    Button {
+                        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+                            selectedDay = nil
+                        }
+                    } label: {
                         Text("Clear")
                             .font(AppFont.caption.weight(.semibold))
                             .foregroundStyle(AppColor.accentGoldText)
@@ -488,7 +629,9 @@ struct ProfileTab: View {
                                         score: scores[session.id],
                                         stats: stats[session.id],
                                         rating: ratings[session.id],
-                                        thumbnail: thumbs[session.id])
+                                        thumbnail: thumbs[session.id],
+                                        shared: FeatureFlags.friends
+                                            ? (reach[session.id] ?? false) : nil)
                         }
                         .buttonStyle(CardButtonStyle())
                         .contextMenu {
@@ -496,13 +639,42 @@ struct ProfileTab: View {
                                 Label("Delete session", systemImage: "trash")
                             }
                         }
+                        // A deleted sit closes the gap it leaves instead of
+                        // the list snapping shut under the finger.
+                        .transition(.opacity.combined(with: .scale(scale: 0.96)))
                     }
                 }
                 .padding(.horizontal, 14)
                 .background(AppColor.backgroundSecondary,
                             in: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
                 .deleteSessionDialog(pending: $pendingDelete)
+                // Filtering to a day, and clearing it, is a change of
+                // CONTENTS rather than a change of screen: the rows that
+                // stay keep their place and the rest fade out around them.
+                // A slide here would read as navigation to somewhere else.
+                .transition(.opacity)
             }
         }
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: selectedDay)
+        .animation(.spring(response: 0.42, dampingFraction: 0.86), value: visible.count)
+    }
+}
+
+
+/// Cards come up out of the grass, one after another.
+///
+/// The delay is in the ANIMATION rather than in a timer, so a card that is
+/// already up when the next one starts is never re-laid-out, and turning the
+/// page around (leaving the tab mid-flight) simply reverses whatever has run.
+/// 55ms apart is enough to read as a sequence and short enough that the last
+/// card is up in under half a second, which is the whole budget: a Profile
+/// tab that takes a beat to assemble itself is slower than one that does not.
+private extension View {
+    func rising(_ settled: Bool, _ index: Int) -> some View {
+        opacity(settled ? 1 : 0)
+            .offset(y: settled ? 0 : 16)
+            .animation(.spring(response: 0.5, dampingFraction: 0.9)
+                        .delay(Double(index) * 0.055),
+                       value: settled)
     }
 }

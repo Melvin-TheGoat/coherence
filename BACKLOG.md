@@ -1,5 +1,30 @@
 # 808 backlog
 
+## Otto is customizable, and points come from the habit (Aziz, 2026-09-21)
+
+Told to me as knowledge rather than a task, so it is recorded rather than
+started. **People earn points by meditating habitually and spend them on
+customizing their sloth.**
+
+Why it matters for what is being built now:
+
+- **Otto's head is already the avatar** on Profile and on a friend's page,
+  which is the surface a customization would show up on, so nothing there
+  has to change shape when it lands.
+- **The currency should be the habit, not the score.** Aziz said habitually,
+  and the baseline has no score anyway. `StreakCalculator` and `OttoAura`
+  already derive consistency from session dates without storing anything,
+  and points are the first thing that would have to be STORED and synced,
+  which makes them a CloudKit schema change and therefore a release step.
+- **It collides with the aura idea in a good way.** `OttoAura` already draws
+  Otto at six stages; a customized Otto has to survive being drawn at all
+  six, and both want the same thing: one figure whose appearance carries
+  meaning.
+- Not decided: whether points are spendable currency or unlocks, whether a
+  customized Otto is visible to friends, and whether awards become the
+  unlock mechanism rather than a parallel one. Eighteen awards and a points
+  economy doing the same job would be two ladders.
+
 One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")

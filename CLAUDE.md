@@ -2510,6 +2510,78 @@ to the product, it is a wall in front of it.**
   `onboarding_step` go quiet by design. The number that matters now is
   install to first `session_completed`, which is what the flow was costing.
 
+## PROFILE IS THE VALLEY TOO, AND IT COUNTS MINUTES (2026-09-21, Aziz)
+
+Built from `mockups/profile-valley.html` after four passes. The page is the
+grass Home stands on, with a 20 percent band of the valley at the top and
+nobody in it, and your practice on cards below. `ProfileTab` in
+`SessionHistoryView.swift`.
+
+- **Otto's head IS the portrait.** Aziz: "no more pfp and make the sloth in
+  the circle." He sits in a sky circle with a white ring, straddling the
+  identity card's top edge. The photo pipeline (`setAvatar`, the photo step
+  in Create your profile, `CameraPicker`) is still wired and is now unused
+  on this screen; removing it is its own job.
+  **The cost, stated:** everybody's avatar is the same sloth, so a Friends
+  feed of six people is six identical faces. The fix already exists and is
+  not built: draw each person at THEIR aura stage.
+- **"Your scores" is "Your minutes"** (Aziz: "we dont wanna worry about any
+  of the watch stuff"). A phone sit measures nothing, so a score chart would
+  be an empty frame on almost every page. Length is what a phone can report
+  honestly, and the research this app is built on says consistency predicts
+  improvement while session length does not, so a chart of minutes is a
+  record and not a target. **Amber stays**: it has always meant the measured
+  quantity of a session, which with a Watch is its score and without one is
+  its length.
+- **An UNEARNED score award is hidden, not deleted.** The three `.depth`
+  awards are unreachable from a phone, and three permanently grey trophies
+  is the shelf telling somebody what they are missing. A wrist session still
+  earns them, and an earned one appears on the shelf as normal.
+- **Pills are controls, content is bare.** The first pass drew four floating
+  boxes and Aziz said "something seems off". The repo's own 14-app research
+  answers it: no boxes, bare text on a hairline. The rule that came out of
+  that pass, and it resolves the question every new screen asks: **a cream
+  capsule is something you press; a number you read sits on the card.**
+- **Sampled from Melvin's Home, not invented.** A cream-on-cream pass was
+  rejected ("more on theme with what we have not this pastelish color"); the
+  page now uses the grass, the white cards and the amber bars that Home
+  already uses, so the two tabs are one place.
+- **"practiced", not "practised"** (Aziz). American spelling everywhere.
+
+### The transitions, and the two things that went wrong in them
+
+Aziz: "remember to do good trnasitions so everything is smooth." The valley
+never moves; the five cards rise 16pt and fade, 55ms apart, on the app's
+spring, and the chart's bars grow from the floor on the same curve.
+
+- **Flip the flag on the NEXT runloop turn, never inside `onAppear`.** An
+  `.animation(value:)` animates EVERY animatable change in its subtree at
+  the instant the value flips, and flipping it during the first layout pass
+  caught the cards' own width settling under the `GeometryReader`. The text
+  re-wrapped as they widened: "Only you" arrived as "Onlyyou" and the
+  chart's axis label crossed its header. Letting layout finish first leaves
+  the animation nothing to carry but the opacity and the offset.
+- **A child must not carry its own animation inside an animating parent.**
+  The chart had a slightly slower spring for its bars, so it also re-drove
+  the position its card was already moving it to, and slid up a beat behind
+  its own card. One object, one curve.
+- **The chart's y-domain is PINNED while the bars grow**, or the axis grows
+  with them and the arrival reads as the numbers changing.
+- Verified the way this project verifies motion: a screen recording at 20fps,
+  frame differences to find the moving window, then the frames themselves.
+  Two screenshots half a breath apart cannot resolve a half-second stagger.
+- **The gear rides the scene, not the screen.** Pinned to the top right of
+  the window it sat on top of whatever card scrolled under it and collided
+  with the stats row's last number.
+
+### Coming, so nothing is designed against it
+
+**The sloth will be customizable, and points come from habitual practice**
+(Aziz, 2026-09-21). Recorded at the top of `BACKLOG.md`. It means the
+portrait circle on this page is a fitting room later, and it means points
+have to be earned by consistency rather than by score, since a phone sit has
+no score.
+
 ## THE WEBSITE CARRIES A GOOGLE "PREFERRED SOURCE" BADGE (2026-09-21, Melvin)
 
 In the footer, its own row above the copyright: the Google G and "Add us as a
