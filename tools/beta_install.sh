@@ -68,6 +68,11 @@ if [ "${WITH_ICLOUD:-0}" = "1" ]; then
 else
   /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-container-identifiers" "$ENT" 2>/dev/null || true
   /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-services" "$ENT" 2>/dev/null || true
+  # And say so in the bundle. The profile still advertises the container the
+  # App ID may hold, so a runtime that reads the profile alone builds a
+  # CKContainer this binary cannot hold, which traps at launch (2026-09-22).
+  /usr/libexec/PlistBuddy -c "Add :CloudKitDisabled bool true" Coherence/Info.plist 2>/dev/null \
+    || /usr/libexec/PlistBuddy -c "Set :CloudKitDisabled true" Coherence/Info.plist
 fi
 for e in "$ENT" $EXT_ENTS; do
   sed -i '' 's/group\.com\.lockout\.meditate808</group.com.lockout.meditate808.dev</' "$e"

@@ -3373,6 +3373,35 @@ nobody has, and it cannot draw a shield either.
   104pt of face against Home's 125 and his old 91 (Melvin asked for bigger,
   then "a bit smaller").
 
+## THE BETA CRASHED ON LAUNCH A THIRD TIME, AND THE PROFILE WAS THE LIAR (2026-09-22)
+
+Same crash family as 2026-09-12 and 2026-09-15: **`CKContainer` traps on a
+container the process does not hold.** Both earlier fixes stand. The new road:
+
+Assigning the App Groups to the `.dev` App IDs regenerated their provisioning
+profiles, and the fresh profile lists
+`icloud-container-identifiers: [iCloud.com.lockout.meditate808]`, because the
+App ID is allowed to hold it. The beta strips iCloud from the BINARY on
+purpose. `CloudEntitlement` reads the profile, so it reported a container the
+binary does not carry, and the first `CKContainer(identifier:)` after launch
+killed the app (signal 5, about a second in, nothing in the console but the
+line before it).
+
+**The build now says so itself.** `tools/beta_install.sh` adds
+`CloudKitDisabled = true` to Info.plist in the same branch that deletes the
+iCloud entitlement keys, and `CloudEntitlement` checks that flag before
+anything else. Nothing at runtime can read its own signed entitlements
+without private API, so the build that removes them leaves the note behind.
+
+**The lesson, which is the reason this is its own section: a provisioning
+profile states what the App ID MAY hold, never what this binary DOES hold.**
+Any build that edits its own entitlements has to tell the runtime.
+
+Diagnosis, for next time: `xcrun devicectl device process launch --console
+--terminate-existing <bundle>` prints the app's stdout and names the signal,
+and reading the profile's own entitlements is one command:
+`security cms -D -i <profile> | plutil -extract Entitlements json -o - -`.
+
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
 "the sound screen button looks terrible", then on the first redesign: "no
