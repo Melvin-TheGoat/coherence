@@ -2637,6 +2637,43 @@ reference screen, build that screen.** Not a reading of it.
   screenshots half a breath apart shows the chest lit and Otto's outline
   black.** Before the fix the same map outlined his whole body.
 
+## THE RIG DID NOT CONTAIN THE BREATH FIXES THE NOTES CLAIM (2026-09-21, fixed)
+
+**Read this before trusting any Rive paragraph above.** Two of them describe
+work that is not in `Otto.riv` and was not in it when the app shipped today.
+
+Measured from the editor, not inferred. `queryKeyFrames` on `Breathe` returns
+keys for exactly three objects: `ChestWave`, `ChestSit` and **`Body`**. So:
+
+- **There is no mesh.** `SitPose` is a plain `Image` with no children and no
+  vertex keys anywhere. The "THE BREATH, FOURTH PASS: the sitting pose is a
+  MESH" paragraph describes 285 vertex keyframes that do not exist.
+- **`ChestSit` is not deleted.** The same paragraph says it is. It is alive at
+  `0-2874` and it is the only thing moving the sitting chest.
+- **The third pass is not in either.** "only the chest moves" says the Body's
+  scale and lean were removed. `Body` was still keyed `sy 101.8` (literally
+  the "1.8 percent taller" the note says it removed) and `r` swinging plus and
+  minus 0.55 degrees.
+
+So the app was shipping the breath Melvin rejected twice, while the file said
+it had been fixed. **A difference map of the running app is what caught it:
+his whole outline lit up.** It had been read once as edge antialiasing, which
+is how a whole-body scale disguises itself at 1.8 percent.
+
+**The fix is the third pass, applied for real:** the eleven `Body` keyframes
+(sx, sy, r) are DELETED from `Breathe`, so the body is perfectly still, and
+the two chest patches carry the whole breath at the documented amplitudes,
+sitting 110 x 114 and standing 107 x 111. Verified the prescribed way: the
+difference map now lights the belly ellipse alone, with his head, arms, hands
+and outline black.
+
+**The lesson, which is the reason this section exists.** A note saying a fix
+shipped is not evidence that it shipped. The Rive file is cloud-only and
+mutable by anyone with the link, the export is a separate act from the edit,
+and the repo's `.riv` is a third copy. **Before building on any rig
+behaviour, query the keyframes and read the binary.** The editor cannot
+confirm its own export, and CLAUDE.md cannot confirm the editor.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body
