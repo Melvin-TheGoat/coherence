@@ -2865,6 +2865,51 @@ left beside a bubble).
 - Not changed, and next if wanted: Guide, Friends and Profile are still the
   cream pages, and `OttoBubble` / `ottoScene` from the old Home are gone.
 
+## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
+
+"the sound screen button looks terrible", then on the first redesign: "no
+that looks terrible, i want it to be based on the current vibe we got going
+on in this screen and the next one, i basically wanna turn the vibe of the
+app into this". Mockups `sound-v1.html` (rejected) and `sound-v2.html`
+(approved).
+
+**v1 was rejected for the right reason and it is worth keeping the reason.**
+It was a tidy grid of white tiles on a cream sheet: defensible on its own,
+and a different app wearing this one's colours. The valley is not decoration
+on the session screens, it IS the screen, and a modal that slides a second
+surface over it makes two screens out of one.
+
+- **`showOptions` and its `.sheet` are gone.** `choosingSound` is a State of
+  `SessionSetupView`, and the two states share ONE `ValleyScene`. Tapping
+  Sound swaps the pills and moves Otto; Done swaps them back. Nothing else
+  moves, which is the whole effect.
+- **Otto is a PLACEMENT on one view, not a second Otto**
+  (`ValleyScene.ottoInCorner`). Cross-fading a small figure in would tear
+  down the Rive rig and build another, costing a blank frame and restarting
+  his wave; moving and resizing the same view is a spring the rig plays
+  straight through. His cushion fades with him.
+- **`SoundChoiceList` has no chrome of its own**: pills of exactly the
+  material Sound and Silence notifications use, one gold outline for chosen,
+  and a mask that fades the scroll at BOTH ends so it sits in the scene
+  rather than on a panel over it.
+- **Symbols, never emoji.** The first build used ☔🌊🌲🔥 and they arrive in
+  full colour from a palette that is not ours and cannot take the sage and
+  amber. SF Symbols tint.
+- **Section labels wear the pills' cream.** Bare ink on the scene reads on
+  the sky and vanishes into the meadow's flowers as the list scrolls, and a
+  label that is legible in one part of a scroll and not another is not a
+  label.
+- **The first pill was arriving half dissolved** inside the mask's top fade.
+  Content under a gradient mask needs padding past it.
+- Silence no longer says "Just the measurement": a phone sit measures
+  nothing, so that sentence was false for every session started here.
+
+**The rule this sets, which Aziz wants everywhere:** one scene per job and it
+does not move; every control is a cream pill floating on it; Otto says the
+sentence that would otherwise be a title; exactly one gold object per
+decision. Home is explicitly frozen for Melvin's critique, so it is NOT to be
+converted until he has looked.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body

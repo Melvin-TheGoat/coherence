@@ -22,8 +22,6 @@ struct SessionSetupView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var preferences: [Preferences]
 
-    /// The one optional decision, behind the defaults line.
-    @State private var showOptions = false
     /// Empty = silence.
     @AppStorage("sessionSoundID") private var soundID: String = ""
 
@@ -38,81 +36,61 @@ struct SessionSetupView: View {
     @State private var showFocusSetup = false
     @Environment(\.scenePhase) private var scenePhase
 
+    /// Choosing a sound is a STATE of this screen, not a sheet over it.
+    ///
+    /// The whole point of the valley is that it does not move: tapping Sound
+    /// swaps what is in the list and moves Otto up to the corner to ask, and
+    /// Done swaps it back. A sheet would slide a second surface over the
+    /// scene and make it two screens, which is exactly the settings-panel
+    /// feeling Aziz rejected.
+    @State private var choosingSound = false
+
     var body: some View {
         GeometryReader { geo in
             ZStack {
-                // The same valley, at the top of its day. Begin does not
-                // change scenes: the controls clear, the ring fades up, and
-                // the sun starts moving. Otto sits exactly where he will be
-                // sitting a second later.
-                ValleyScene(progress: 0, pose: .greeting)
+                // ONE scene, for both states. Never rebuilt, never replaced:
+                // it owns the Rive rig, and swapping it would restart him.
+                ValleyScene(progress: 0, pose: .greeting, ottoInCorner: choosingSound)
 
                 let day = DayLight.at(0)
-                // Pinned by its BOTTOM to just above his head, so the point
-                // lands on him however tall the phone is. Anchoring the
-                // bubble's centre instead would leave the tail short of him
-                // on a small screen and buried in his tuft on a large one.
-                let speaks = SitLayout.ottoTop(in: geo.size) - 8
 
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    OttoSpeech(text: "Ready when you are. Start any YouTube or Spotify audio first.",
-                               tail: .bottom, size: 17,
-                               ink: day.ink, stroke: day.ink.opacity(0.38),
-                               fill: AppColor.backgroundPrimary.opacity(0.72),
-                               speaking: .constant(false))
+                if choosingSound {
+                    asking(day: day, in: geo.size)
+                    SoundChoiceList(soundID: $soundID, top: Self.listTop)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    greeting(day: day, in: geo.size)
+                    readyControls(day: day)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                .frame(width: min(geo.size.width - 56, 320), height: max(120, speaks))
-                .position(x: geo.size.width / 2, y: max(120, speaks) / 2)
-
-                VStack(spacing: 8) {
-                    Spacer()
-                    Button { showOptions = true } label: {
-                        SitPill(glyph: "\u{266A}", label: "Sound") {
-                            HStack(spacing: 2) {
-                                Text(SoundCatalog.title(for: soundID.isEmpty ? nil : soundID) ?? "Silence")
-                                    .font(AppFont.caption.weight(.semibold))
-                                    .foregroundStyle(AppColor.textSecondary)
-                                Text("\u{203A}")
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                        }
-                    }
-                    .buttonStyle(.plain)
-
-                    silenceControl(ink: day.ink)
-
-                    Button("Begin", action: begin)
-                        .buttonStyle(PrimaryButtonStyle())
-                        .padding(.top, 4)
-                }
-                .padding(.horizontal, 18)
-                .padding(.bottom, 22)
             }
             .frame(width: geo.size.width, height: geo.size.height)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: choosingSound)
         }
         .ignoresSafeArea()
         .overlay { if countdown != nil { countdownOverlay } }
         .overlay(alignment: .topLeading) {
-            Button("Cancel") { cancel() }
-                .font(AppFont.callout.weight(.semibold))
-                .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
-                .padding(.horizontal, 20).padding(.top, 14)
+            Button(choosingSound ? "Back" : "Cancel") {
+                if choosingSound { choosingSound = false } else { cancel() }
+            }
+            .font(AppFont.callout.weight(.semibold))
+            .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
+            .padding(.horizontal, 20).padding(.top, 14)
         }
-        .sheet(isPresented: $showOptions) { SessionOptionsView(soundID: $soundID) }
         .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
         // NOT a permission prompt on appear. Somebody who opened this screen
         // is about to close their eyes, and a system dialog is the single
         // worst thing to put in front of them. The prompt comes when they
         // reach for the switch, which is the moment it is about anything.
         .onAppear { focus.refreshStatus() }
-        // They can change Focus from Control Center while this screen is up,
-        // so the switch is re-read rather than remembered.
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { focus.refreshStatus() }
         }
     }
+
+    /// Where the sound list starts. Below Otto's corner perch, so his face is
+    /// never behind a pill.
+    private static let listTop: CGFloat = 196
 
     /// The switch, or the sentence, depending on whether the shortcut that
     /// makes a switch possible exists on this build. See `FocusShortcut`:
@@ -157,6 +135,61 @@ struct SessionSetupView: View {
             await focus.restoreIfOurs()
             dismiss()
         }
+    }
+
+    // MARK: - The two states
+
+    private func greeting(day: DayLight, in size: CGSize) -> some View {
+        let speaks = SitLayout.ottoTop(in: size) - 8
+        return VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            OttoSpeech(text: "Ready when you are. Start any YouTube or Spotify audio first.",
+                       tail: .bottom, size: 17,
+                       ink: day.ink, stroke: day.ink.opacity(0.38),
+                       fill: AppColor.backgroundPrimary.opacity(0.72),
+                       speaking: .constant(false))
+        }
+        .frame(width: min(size.width - 56, 320), height: max(120, speaks))
+        .position(x: size.width / 2, y: max(120, speaks) / 2)
+    }
+
+    /// He asks the question, so the list needs no title. The point aims left
+    /// at his face, the same tail the onboarding questions use.
+    private func asking(day: DayLight, in size: CGSize) -> some View {
+        OttoSpeech(text: "What are we listening to?",
+                   tail: .leading, size: 15,
+                   ink: day.ink, stroke: day.ink.opacity(0.38),
+                   fill: AppColor.backgroundPrimary.opacity(0.72),
+                   speaking: .constant(false))
+            .frame(maxWidth: size.width - 118, alignment: .leading)
+            .position(x: 104 + (size.width - 118) / 2, y: 122)
+    }
+
+    private func readyControls(day: DayLight) -> some View {
+        VStack(spacing: 8) {
+            Spacer()
+            Button { choosingSound = true } label: {
+                SitPill(glyph: "\u{266A}", label: "Sound") {
+                    HStack(spacing: 2) {
+                        Text(SoundCatalog.title(for: soundID.isEmpty ? nil : soundID) ?? "Silence")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.textSecondary)
+                        Text("\u{203A}")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            silenceControl(ink: day.ink)
+
+            Button("Begin", action: begin)
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.top, 4)
+        }
+        .padding(.horizontal, 18)
+        .padding(.bottom, 22)
     }
 
     /// "Open · Silence ›" — exactly what happens if you just tap Begin.
@@ -222,266 +255,6 @@ struct SessionSetupView: View {
                           hapticsEnabled: preferences.first?.hapticsEnabled ?? true,
                           soundID: id)
         dismiss()
-    }
-}
-
-/// The sound sheet, opened from the "Open · Silence ›" line.
-///
-/// Ordering is the design (review 2026-08-05): the guided journey leads because
-/// it is the only original content we own and the one asset worth paying for;
-/// Silence sits under it as the stated DEFAULT, outside the scrolling list so
-/// eleven sounds can never bury it; then three groups, each internally ordered
-/// so scrolling reads as a spectrum rather than a menu — nature by familiarity,
-/// brainwave deepest-first, tones low-to-high.
-///
-/// Every row previews. Selecting a sound with no way to hear it first meant
-/// finding out mid-meditation.
-struct SessionOptionsView: View {
-    @Binding var soundID: String
-    @Environment(\.dismiss) private var dismiss
-    @StateObject private var tone = ToneEngine()
-    @EnvironmentObject private var store: Store
-    @State private var showPlans = false
-    @State private var plansPlan: SubscriptionPlan = .monthly
-
-    /// Brainwave presets, deepest first (delta 2.5 → theta 6 → alpha 8).
-    private var brainwave: [FrequencyPreset] {
-        FrequencyCatalog.all.filter { $0.hasBeat }
-            .sorted { ($0.beatHz ?? 0) < ($1.beatHz ?? 0) }
-    }
-
-    /// Pure tones, low to high (432 → 963).
-    private var tones: [FrequencyPreset] {
-        FrequencyCatalog.all.filter { !$0.hasBeat }
-            .sorted { $0.carrierHz < $1.carrierHz }
-    }
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Sessions run open-ended. End yours whenever you're done, and anything you play in another app keeps playing.")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    ForEach(GuidedCatalog.all) { guidedCard($0) }
-
-                    silenceCard
-
-                    group("Nature", NatureCatalog.all.map {
-                        (id: $0.id, title: $0.title, subtitle: $0.subtitle) })
-                    group("Brainwave · deepest first", brainwave.map {
-                        (id: $0.id, title: $0.title, subtitle: $0.subtitle) })
-                    group("Tones · low to high", tones.map {
-                        (id: $0.id, title: $0.title, subtitle: $0.subtitle) })
-                }
-                .padding(AppMetrics.screenPadding)
-            }
-            .screenBackground()
-            .navigationTitle("Sound")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { tone.stop(); dismiss() }.tint(AppColor.accentGoldText)
-                }
-            }
-            .onDisappear { tone.stop() }
-            .fullScreenCover(isPresented: $showPlans) {
-                PaywallScreen(placement: "guided_lock", plan: $plansPlan) { _ in
-                    showPlans = false
-                }
-            }
-        }
-    }
-
-    // MARK: - Guided (leads; deliberately not shaped like a sound row)
-
-    private func guidedCard(_ preset: GuidedPreset) -> some View {
-        let selected = soundID == preset.id
-        // The only content 808 owns, so the only content worth gating. Nature,
-        // frequency, silence and anything the user plays in another app all
-        // stay free.
-        let unlocked = store.entitlements.guidedTrack
-        return Button {
-            guard unlocked else {
-                Analytics.track(.lockedTapped(signal: "guided"))
-                showPlans = true
-                return
-            }
-            select(preset.id)
-        } label: {
-            HStack(spacing: 13) {
-                ZStack {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(RadialGradient(colors: [AppColor.accentGold.opacity(0.55),
-                                                      AppColor.accentGold.opacity(0.10)],
-                                             center: .init(x: 0.5, y: 0.38),
-                                             startRadius: 2, endRadius: 40))
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(AppColor.accentGold.opacity(0.5), lineWidth: 1)
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 18))
-                        .foregroundStyle(AppColor.accentGoldText)
-                }
-                .frame(width: 52, height: 52)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Guided journey")
-                        .font(.system(size: 9, weight: .heavy))
-                        .tracking(1.1)
-                        .foregroundStyle(AppColor.accentGoldText)
-                    Text(preset.title)
-                        .font(AppFont.callout.weight(.bold))
-                        .foregroundStyle(AppColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    // "narration", not "session" — the voice ends at 25:30 but
-                    // the session keeps measuring until you end it on the Watch.
-                    Text("\(preset.subtitle.replacingOccurrences(of: "· 25 min", with: "· \(preset.durationSec / 60) min narration"))")
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                Spacer(minLength: 0)
-                if unlocked {
-                    previewButton(preset.id, prominent: true)
-                    if selected { checkmark }
-                } else {
-                    LockPill()
-                }
-            }
-            .padding(14)
-            .background(
-                LinearGradient(colors: [AppColor.accentGold.opacity(0.14),
-                                        AppColor.accentGold.opacity(0.05)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing),
-                in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(AppColor.accentGold.opacity(selected ? 1 : 0.45),
-                        lineWidth: selected ? 1.8 : 1))
-        }
-        .buttonStyle(CardButtonStyle())
-    }
-
-    // MARK: - Silence (the default, pinned above the list)
-
-    private var silenceCard: some View {
-        let selected = soundID.isEmpty
-        return Button { select("") } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "speaker.slash")
-                    .font(.system(size: 14))
-                    .foregroundStyle(AppColor.accentGoldText)
-                    .frame(width: 32, height: 32)
-                    .background(AppColor.accentGold.opacity(0.16),
-                                in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Silence")
-                        .font(AppFont.callout.weight(.bold))
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text("Just the measurement, or your own audio")
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                Spacer(minLength: 0)
-                Text("DEFAULT")
-                    .font(.system(size: 9, weight: .heavy))
-                    .tracking(0.8)
-                    .foregroundStyle(AppColor.textOnAccent)
-                    .padding(.horizontal, 7).padding(.vertical, 3)
-                    .background(AppColor.accentGold, in: Capsule())
-            }
-            .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(AppColor.accentGold.opacity(selected ? 0.08 : 0),
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(selected ? AppColor.accentGold : AppColor.textSecondary.opacity(0.25),
-                        lineWidth: selected ? 1.5 : 1))
-        }
-        .buttonStyle(CardButtonStyle())
-    }
-
-    // MARK: - Groups
-
-    private func group(_ label: String,
-                       _ items: [(id: String, title: String, subtitle: String)]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            SectionHeader(title: label)
-            VStack(spacing: 0) {
-                ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                    if i > 0 { Divider().overlay(AppColor.textSecondary.opacity(0.1)) }
-                    soundRow(id: item.id, title: item.title, subtitle: item.subtitle)
-                }
-            }
-            .padding(.horizontal, 13)
-            .background(AppColor.backgroundSecondary,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        }
-    }
-
-    private func soundRow(id: String, title: String, subtitle: String) -> some View {
-        Button { select(id) } label: {
-            HStack(spacing: 12) {
-                previewButton(id, prominent: false)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text(subtitle)
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                Spacer(minLength: 0)
-                if soundID == id { checkmark }
-            }
-            .padding(.vertical, 10)
-        }
-        .buttonStyle(CardButtonStyle())
-    }
-
-    private var checkmark: some View {
-        Image(systemName: "checkmark")
-            .font(.system(size: 13, weight: .bold))
-            .foregroundStyle(AppColor.accentGoldText)
-    }
-
-    /// Audition without committing the whole session to it.
-    private func previewButton(_ id: String, prominent: Bool) -> some View {
-        let playing = tone.playingID == id
-        let lit = playing || soundID == id
-        return Button { preview(id) } label: {
-            Image(systemName: playing ? "stop.fill" : "play.fill")
-                .font(.system(size: prominent ? 11 : 10, weight: .bold))
-                .foregroundStyle(lit ? AppColor.accentGold : AppColor.textSecondary)
-                .frame(width: prominent ? 32 : 30, height: prominent ? 32 : 30)
-                .background(Circle().stroke(
-                    lit ? AppColor.accentGold : AppColor.textSecondary.opacity(0.3),
-                    lineWidth: 1.5))
-                .background(Circle().fill(playing ? AppColor.accentGold.opacity(0.12) : .clear))
-        }
-        .buttonStyle(CardButtonStyle())
-    }
-
-    // MARK: - Actions
-
-    private func select(_ id: String) {
-        tone.stop(reason: "sound picked")
-        soundID = id
-    }
-
-    /// Previewing also selects, so what you hear is what you'll get.
-    private func preview(_ id: String) {
-        if tone.playingID == id {
-            tone.stop(reason: "preview stopped")
-            return
-        }
-        soundID = id
-        if let p = FrequencyCatalog.preset(id: id) {
-            tone.play(p, method: .isochronic)
-        } else if let np = NatureCatalog.preset(id: id) {
-            tone.playNature(np)
-        } else if let gp = GuidedCatalog.preset(id: id) {
-            tone.playGuided(gp)
-        }
     }
 }
 
@@ -575,5 +348,249 @@ struct FocusSetupSheet: View {
                 .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+/// The sound list, as pills floating on the valley.
+///
+/// It is not a sheet and has no chrome of its own: the scene behind it is
+/// the same one the Ready screen is showing, and this only changes what sits
+/// on the meadow. **The list fades at both ends** rather than stopping on a
+/// hard line, so it reads as part of the scene instead of a panel over it.
+struct SoundChoiceList: View {
+    @Binding var soundID: String
+    /// Where the list starts, under Otto's corner perch.
+    var top: CGFloat
+
+    @StateObject private var tone = ToneEngine()
+    @Environment(\.dismiss) private var dismiss
+
+    /// Brainwave presets, deepest first (delta 2.5 → theta 6 → alpha 8).
+    private var brainwave: [FrequencyPreset] {
+        FrequencyCatalog.all.filter { $0.hasBeat }
+            .sorted { ($0.beatHz ?? 0) < ($1.beatHz ?? 0) }
+    }
+
+    /// Pure tones, low to high (432 → 963).
+    private var tones: [FrequencyPreset] {
+        FrequencyCatalog.all.filter { !$0.hasBeat }
+            .sorted { $0.carrierHz < $1.carrierHz }
+    }
+
+    private let ink = DayLight.at(0).ink
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 7) {
+                    ForEach(GuidedCatalog.all) { guidedPill($0) }
+                    pill(id: "", title: "Silence",
+                         subtitle: "Just you, or bring your own audio",
+                         glyph: "speaker.slash", tint: AppColor.calmAccent, badge: "DEFAULT")
+                    label("Nature")
+                    ForEach(NatureCatalog.all) {
+                        pill(id: $0.id, title: $0.title, subtitle: $0.subtitle,
+                             glyph: Self.natureGlyph($0.id), tint: AppColor.calmAccent)
+                    }
+                    label("Brainwave · deepest first")
+                    ForEach(brainwave) {
+                        pill(id: $0.id, title: $0.title, subtitle: $0.subtitle,
+                             glyph: Self.waveGlyph($0.id), tint: AppColor.accentGoldText)
+                    }
+                    label("Tones · low to high")
+                    ForEach(tones) {
+                        pill(id: $0.id, title: $0.title, subtitle: $0.subtitle,
+                             hz: String(Int($0.carrierHz)))
+                    }
+                }
+                .padding(.horizontal, 16)
+                // Clear of the mask's top fade, or the first pill arrives
+                // half dissolved and reads as a rendering fault.
+                .padding(.top, 24)
+                .padding(.bottom, 96)
+            }
+            // Soft at both ends, so the scene keeps going behind it.
+            .mask(LinearGradient(stops: [
+                .init(color: .clear, location: 0),
+                .init(color: .black, location: 0.045),
+                .init(color: .black, location: 0.86),
+                .init(color: .clear, location: 0.97)
+            ], startPoint: .top, endPoint: .bottom))
+        }
+        .padding(.top, top)
+        .overlay(alignment: .bottom) {
+            Button("Done") { tone.stop(reason: "sound chosen"); dismiss() }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.horizontal, 18)
+                .padding(.bottom, 22)
+        }
+        .onDisappear { tone.stop(reason: "left the sound list") }
+    }
+
+    // MARK: - Pieces
+
+    /// A section label, in the same cream as the pills.
+    ///
+    /// It was bare ink on the scene, which reads on the sky and disappears
+    /// into the meadow's flowers the moment the list scrolls. A label that
+    /// is legible in one part of a scroll and not another is not a label, so
+    /// it carries the smallest possible piece of the pills' own material.
+    private func label(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .kerning(1.0)
+            .foregroundStyle(AppColor.textSecondary)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(AppColor.backgroundPrimary.opacity(0.88), in: Capsule())
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.leading, 2)
+            .padding(.top, 12)
+            .padding(.bottom, 1)
+    }
+
+    @ViewBuilder
+    private func pill(id: String, title: String, subtitle: String,
+                      glyph: String? = nil, tint: Color = AppColor.calmAccent,
+                      hz: String? = nil, badge: String? = nil) -> some View {
+        let chosen = soundID == id
+        let playing = tone.playingID == id && !id.isEmpty
+        Button { choose(id) } label: {
+            HStack(spacing: 10) {
+                if let hz {
+                    Text(hz)
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.accentGoldText)
+                        .frame(width: 34, alignment: .leading)
+                } else {
+                    Image(systemName: glyph ?? "music.note")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(tint)
+                        .frame(width: 20)
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(DisplayFont.display(14.5))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text(subtitle)
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                if playing { SoundBars() }
+                if let badge {
+                    Text(badge)
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .kerning(0.6)
+                        .foregroundStyle(AppColor.textOnAccent)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background(AppColor.accentGold, in: Capsule())
+                }
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 10)
+            .background(chosen ? Color(white: 1).opacity(0.99)
+                               : AppColor.backgroundPrimary.opacity(0.94),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(chosen ? AppColor.accentGold : .clear, lineWidth: 2))
+            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func guidedPill(_ preset: GuidedPreset) -> some View {
+        let chosen = soundID == preset.id
+        return Button { choose(preset.id) } label: {
+            HStack(spacing: 11) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(AppColor.textOnAccent)
+                    .frame(width: 36, height: 36)
+                    .background(LinearGradient(colors: [Color(red: 0.961, green: 0.851, blue: 0.651),
+                                                        Color(red: 0.914, green: 0.725, blue: 0.475)],
+                                               startPoint: .topLeading, endPoint: .bottomTrailing),
+                                in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(preset.title)
+                        .font(DisplayFont.display(14.5))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .lineLimit(1)
+                    Text(preset.subtitle)
+                        .font(.system(size: 11, design: .rounded))
+                        .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                if tone.playingID == preset.id { SoundBars() }
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 10)
+            .background(LinearGradient(colors: [Color(red: 1, green: 0.965, blue: 0.894),
+                                                Color(red: 0.992, green: 0.937, blue: 0.847)],
+                                       startPoint: .topLeading, endPoint: .bottomTrailing),
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(chosen ? AppColor.accentGold : AppColor.accentGold.opacity(0.55),
+                        lineWidth: chosen ? 2 : 1))
+            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Tapping previews AND selects, which is what the rows did. There is no
+    /// separate play button: twelve identical grey circles were the loudest
+    /// thing on the old screen and every one did this.
+    private func choose(_ id: String) {
+        soundID = id
+        if id.isEmpty { tone.stop(reason: "silence chosen"); return }
+        if tone.playingID == id { tone.stop(reason: "preview stopped"); return }
+        if let p = FrequencyCatalog.preset(id: id) { tone.play(p, method: .isochronic) }
+        else if let np = NatureCatalog.preset(id: id) { tone.playNature(np) }
+        else if let gp = GuidedCatalog.preset(id: id) { tone.playGuided(gp) }
+    }
+
+    /// Symbols, not emoji. Emoji arrive in full colour from a different
+    /// palette and cannot take the sage and amber the rest of the sheet uses.
+    private static func natureGlyph(_ id: String) -> String {
+        switch id {
+        case "rain":     return "cloud.rain.fill"
+        case "ocean":    return "water.waves"
+        case "forest":   return "tree.fill"
+        case "campfire": return "flame.fill"
+        default:         return "music.note"
+        }
+    }
+
+    private static func waveGlyph(_ id: String) -> String {
+        switch id {
+        case "delta": return "moon.fill"
+        case "theta": return "circle.hexagongrid.fill"
+        case "alpha": return "sun.max.fill"
+        default:      return "music.note"
+        }
+    }
+}
+
+/// Three bars, to say which sound is playing. It replaces twelve play
+/// buttons: the control they offered is the pill itself, and the only thing
+/// they reported that the pill could not is which one is sounding.
+struct SoundBars: View {
+    @State private var up = false
+    private let heights: [CGFloat] = [6, 13, 9]
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 2) {
+            ForEach(Array(heights.enumerated()), id: \.offset) { i, h in
+                Capsule()
+                    .fill(AppColor.calmAccent)
+                    .frame(width: 3, height: up ? h : h * 0.45)
+                    .animation(.easeInOut(duration: 0.42).repeatForever()
+                        .delay(Double(i) * 0.12), value: up)
+            }
+        }
+        .frame(height: 13)
+        .onAppear { up = true }
     }
 }
