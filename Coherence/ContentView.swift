@@ -358,6 +358,7 @@ struct ContentView: View {
                 streakBadge
                     .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
                 guideBadge
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, AppMetrics.screenPadding)

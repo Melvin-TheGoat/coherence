@@ -61,14 +61,17 @@ struct TourHomeScreen: View {
     }
 
     private let notes: [Note] = [
+        // Rewritten 2026-09-22 with onboarding's return: the calendar is gone
+        // from Home, a session no longer needs a Watch, and the guide moved
+        // from its tab to a circle under the streak.
         .init(title: "This is home.",
-              body: "Your streak lives at the top, and every practiced day lands a dot on the calendar. It fills in as you show up.",
+              body: "Your streak sits up here. Every day you meditate it grows, and so does Otto's glow.",
               target: .streak),
         .init(title: "One button starts everything.",
-              body: "Begin session tells your Watch to start measuring. Play any audio you like from any app, or nothing at all. 808 measures either way.",
+              body: "The plus starts a session. Play any audio you like from any app, or nothing at all.",
               target: .begin),
         .init(title: "The guide is always here.",
-              body: "How to meditate, plainly explained, easiest first. Every session you finish comes back as a score and the story of what your body did.",
+              body: "How to meditate, plainly explained, easiest first.",
               target: .guide),
     ]
 

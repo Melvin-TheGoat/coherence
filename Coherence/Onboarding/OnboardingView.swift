@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import AuthenticationServices
+import WatchConnectivity
 
 /// The onboarding flow — the interview, the reflection, the proof, the offer.
 /// Spec and copy decisions live in `ONBOARDING.md`; the arithmetic behind the
@@ -98,7 +99,8 @@ struct OnboardingView: View {
             case .aloneWithThoughts, .doingNothing, .bodyProof, .anchor, .you,
                  .calculating, .result, .cost, .proofBody, .sampleStart,
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
-                 .rating, .watchConnect, .breathe, .sessionResults, .paywall:
+                 .rating, .watchConnect, .breathe, .sessionResults, .paywall,
+                 .watchGate, .watchSetup, .waitlist:
                 return true
             default:
                 return false
@@ -136,7 +138,7 @@ struct OnboardingView: View {
         (.restarts, .restarts), (.intendedFor, .intendedFor),
         (.bodyCuriosity, .bodyCuriosity),
         (.bodyTracking, .bodyTracking),
-        (.blindSpot, .blindSpot), (.watchGate, .watchGate),
+        (.blindSpot, .blindSpot),
     ]
 
     /// The interview's first screen, read from the model's order rather than
@@ -175,11 +177,46 @@ struct OnboardingView: View {
         Self.paywallInsideOnboarding ? .paywall : .signIn
     }
 
+    /// Whether this iPhone has an Apple Watch paired. It replaced the
+    /// question "Do you have an Apple Watch?" (2026-09-22): the phone already
+    /// knows. Only a paired Watch measures anything, so only then do the
+    /// health consent screen and the Health prompt behind it have something
+    /// to be about. `SessionCoordinator` activates the session at launch,
+    /// long before anyone reaches the screen that asks.
+    private var watchPaired: Bool {
+        WCSession.isSupported()
+            && WCSession.default.activationState == .activated
+            && WCSession.default.isPaired
+    }
+
+    /// Reminders lead to health consent on a phone with a Watch, and past it
+    /// on one without, so the skipped screen never enters the Back history.
+    private var afterPermission: Step { watchPaired ? .health : .wall }
+
+    /// Ask for Health here, on the phone, one screen after the one that
+    /// explains what is read. HealthKit authorization is SHARED with the
+    /// companion Watch app and the system can only present the sheet on the
+    /// iPhone, so asking from the Watch mid-session (what the app used to do)
+    /// put the prompt on a screen nobody was looking at: the workout ran, no
+    /// heart rate arrived, and the 30-second watchdog aborted the first
+    /// session. Four of ten start failures in the first week of live data
+    /// were exactly that.
+    private var healthConsent: some View {
+        HealthConsentScreen {
+            Task {
+                await HealthScope.request()
+                // Route after the sheet is dismissed, so the tour never
+                // starts underneath a system prompt.
+                await MainActor.run { go(.wall) }
+            }
+        }
+    }
+
     /// After the account step (sign-in, and Create your profile on Friends
-    /// builds): Watch owners get the two-screen tour that ends on Begin; a
-    /// person with no Watch is done.
+    /// builds): everyone gets the tour, since a session no longer needs a
+    /// Watch (2026-09-22).
     private func afterAccount() {
-        if answers.hasWatch != false { go(.tourHome) } else { finish() }
+        go(.tourHome)
     }
 
     @State private var resumed = false
@@ -341,34 +378,19 @@ struct OnboardingView: View {
                                 count: interviewCount) { go(nextAfter(.blindSpot)) }
             }
 
-        case .watchGate:
-            WatchGateScreen(hasWatch: $answers.hasWatch,
-                            count: interviewCount,
-                            onYes: {
-                                Analytics.track(.watchGate(outcome: "hasWatch"))
-                                go(.watchSetup)
-                            },
-                            onNo: { notYet in
-                                Analytics.track(.watchGate(outcome: notYet ? "notYet" : "waitlist"))
-                                go(.waitlist)
-                            })
-
-        case .watchSetup:
-            // Instructional only; the live paired/installed check stays in the
-            // walkthrough, where the practice actually needs the Watch.
-            WatchSetupScreen { go(nextAfter(.watchGate)) }
-
-        case .waitlist:
-            // Joining is optional either way: declining clears the email so
-            // nothing half-typed gets stored at finish.
-            WaitlistScreen(email: $waitlistEmail,
-                           onJoin: { go(nextAfter(.watchGate)) },
-                           onDecline: { waitlistEmail = ""; go(nextAfter(.watchGate)) })
+        // CUT 2026-09-22 (Melvin: "get rid of the watch screen"). A session
+        // runs on the phone with or without a Watch since Aziz's valley
+        // change, so the gate, its setup screen and the no-Watch waitlist
+        // sorted people for a difference the app no longer makes. The Step
+        // cases and screens stay for resume records; anyone landing on one
+        // goes on to what's waiting, where the interview used to end.
+        case .watchGate, .watchSetup, .waitlist:
+            Color.clear.onAppear { go(.whatsWaiting) }
 
         // Cut 2026-09-15 (Melvin: nobody wants to be made to commit to a
         // time of day). The reminder time is picked on the permission screen.
         case .anchor:
-            Color.clear.onAppear { go(nextAfter(.watchGate)) }
+            Color.clear.onAppear { go(.whatsWaiting) }
 
         // Cut 2026-09-19 (Melvin): the name is asked on Create your profile
         // beside the handle, and the age was never used. Anyone resuming
@@ -409,38 +431,22 @@ struct OnboardingView: View {
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,
-                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(.health) } },
-                             onSkip: { reminderAllowed = false; go(.health) })
+                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(afterPermission) } },
+                             onSkip: { reminderAllowed = false; go(afterPermission) })
 
         case .week:
-            Color.clear.onAppear { go(.health) }
+            Color.clear.onAppear { go(afterPermission) }
 
         case .rating:
-            Color.clear.onAppear { go(.health) }
+            Color.clear.onAppear { go(afterPermission) }
 
         case .health:
-            HealthConsentScreen {
-                // Ask for Health here, on the phone, one screen after the one
-                // that explains what is read. HealthKit authorization is
-                // SHARED with the companion Watch app and the system can only
-                // present the sheet on the iPhone, so asking from the Watch
-                // mid-session (what the app used to do) put the prompt on a
-                // screen nobody was looking at: the workout ran, no heart rate
-                // arrived, and the 30-second watchdog aborted the first
-                // session. Four of ten start failures in the first week of
-                // live data were exactly that.
-                //
-                // Only for people with a Watch: a no-Watch user gets no
-                // session to authorize for, and a permission sheet for
-                // hardware they do not own is a prompt with nothing behind it.
-                Task {
-                    if answers.hasWatch != false { await HealthScope.request() }
-                    // Route after the sheet is dismissed, so the walkthrough
-                    // never starts underneath a system prompt.
-                    await MainActor.run {
-                        go(.wall)
-                    }
-                }
+            if watchPaired {
+                healthConsent
+            } else {
+                // A resume record from before the gate went, on a phone with
+                // no Watch: nothing will be measured, so nothing to consent to.
+                Color.clear.onAppear { go(.wall) }
             }
 
         // MARK: The walkthrough (see OnboardingWalkthrough.swift)

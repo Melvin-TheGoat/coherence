@@ -868,7 +868,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .stress, .watchGate, .referral:
+        case .baseline, .motivation, .stress, .referral:
             return true
 
         // Presumes previous attempts.
@@ -947,7 +947,10 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case restarts, intendedFor
     case bodyCuriosity, bodyTracking
     case blindSpot
-    case watchGate
+    // CUT 2026-09-22 (Melvin): `watchGate`. Sessions no longer need a Watch
+    // (Aziz, 2026-09-21), so asking whether you own one sorted people for a
+    // difference the app stopped making. `OnboardingAnswers.hasWatch` stays
+    // so resume records decode; nothing asks it any more.
     // CUT 2026-09-19 (Melvin): `aloneWithThoughts` (the last escalation
     // question, gone the way `doingNothing` went) and `you` (name and age;
     // the nickname and handle are asked on Create your profile, so this

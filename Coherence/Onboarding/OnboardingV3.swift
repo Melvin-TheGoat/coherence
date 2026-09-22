@@ -562,8 +562,10 @@ struct WhatsWaitingScreen: View {
     private let rows = [
         Row(pose: .meditating, title: "Meditate your way.",
             detail: "Guided sessions, calming sounds, or silence."),
-        Row(pose: .awake, title: "See how it went.",
-            detail: "A score after every session, with the working shown."),
+        // Was "A score after every session", which stopped being true for
+        // anyone without a Watch on 2026-09-21. Otto's glow is true for all.
+        Row(pose: .awake, title: "Keep Otto glowing.",
+            detail: "He glows brighter every day you meditate."),
         Row(pose: .talking, title: "Do it with friends.",
             detail: "A streak, your history, and friends who meditate too."),
     ]

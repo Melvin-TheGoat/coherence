@@ -2,27 +2,15 @@ import SwiftUI
 import SwiftData
 import AuthenticationServices
 
-/// The app's root. Applies the one appearance and verifies the Sign in with
-/// Apple credential at launch.
+/// Gates the app on onboarding: until a User has completed onboarding (real
+/// sign-in, or the dev skip), show `OnboardingView`; otherwise the app. Also
+/// applies the one appearance and verifies the Sign in with Apple credential
+/// at launch. Reads Preferences reactively via `@Query`.
 ///
-/// **There is no onboarding any more** (Aziz, 2026-09-21). The app opens on
-/// Home, on the first launch and every launch after it. Nothing is asked
-/// before the first sit: no interview, no projection, no Watch gate, no
-/// account. The plus starts a session and the session is the app.
-///
-/// What the data said: of sixteen strangers who reached the first screen in
-/// thirty days, twelve left on the second, and two of the twelve who finished
-/// the whole flow ever pressed Begin. A flow that loses three quarters of the
-/// people it meets before they have done the thing is not an introduction to
-/// the product, it is a wall in front of it.
-///
-/// `Preferences.onboardingComplete` still exists and is still set, on first
-/// launch, by `bootstrapIfNeeded` below. Dropping a synced property is a
-/// migration hazard, several call sites read it as "this install is set up"
-/// (`ReviewPrompt`, the Watch's start gate), and it is now simply true from
-/// the beginning. The screens under `Coherence/Onboarding/` are no longer
-/// reachable from anywhere; they are kept, unrouted, because the tour anchors
-/// and the paywall ladder still live among them.
+/// **Onboarding is back** (Melvin, 2026-09-22). Aziz removed it on 2026-09-21
+/// (`d4ddbfc`), and Melvin, who had been rebuilding it that week, reversed
+/// that the next day. It returns without the Watch gate, since a session no
+/// longer needs a Watch.
 struct RootView: View {
     @Query private var preferences: [Preferences]
     @Environment(\.modelContext) private var context
@@ -40,16 +28,19 @@ struct RootView: View {
     /// to take a claim on faith. See ENTITLEMENTS.md.
 
     var body: some View {
-        ContentView()
+        Group {
+            if preferences.contains(where: { $0.onboardingComplete }) {
+                ContentView()
+            } else {
+                OnboardingView()
+            }
+        }
         .preferredColorScheme(colorScheme)
-        // First launch has no Preferences row at all, and several things read
-        // one. Write it before anything asks, and write it again if sign-out
-        // clears it: there is nothing left to send anyone back to.
+        // The Watch mirrors the onboarding fact. Reported at launch and on
+        // every change, so finishing onboarding unlocks the wrist and signing
+        // out re-locks it.
         .onChange(of: preferences.contains { $0.onboardingComplete }, initial: true) { _, done in
-            if !done { SessionStore.completeOnboardingWithoutSignIn(in: context) }
-            // The Watch gates its own Begin on this, so the wrist stays open
-            // for as long as the phone is installed.
-            coordinator.setOnboarded(true)
+            coordinator.setOnboarded(done)
         }
         .task {
             // A Sign in with Apple credential can be revoked from iOS Settings
@@ -69,6 +60,15 @@ struct RootView: View {
                 OttoChatStore.deleteAll()
             }
         }
+        #if DEBUG
+        // Headless previews (simulator automation): jump straight past onboarding.
+        .onAppear {
+            if ProcessInfo.processInfo.environment["SKIP_ONBOARDING"] == "1",
+               !preferences.contains(where: { $0.onboardingComplete }) {
+                SessionStore.completeOnboardingWithoutSignIn(in: context)
+            }
+        }
+        #endif
     }
 
 

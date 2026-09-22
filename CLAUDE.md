@@ -2483,7 +2483,7 @@ people do not own.
 - `PhoneSessionTests` locks the write path, the streak, the floor, the
   idempotency and the late-payload case.
 
-### Onboarding is gone
+### Onboarding is gone (REVERSED 2026-09-22, see "ONBOARDING IS BACK")
 
 `RootView` shows `ContentView` on the first launch and every launch after it.
 Nothing is asked before the first sit: no interview, no projection, no Watch
@@ -2874,6 +2874,30 @@ left beside a bubble).
   off the bottom edge, where Brainrot's do.
 - Not changed, and next if wanted: Guide, Friends and Profile are still the
   cream pages, and `OttoBubble` / `ottoScene` from the old Home are gone.
+
+## ONBOARDING IS BACK, WITHOUT THE WATCH (2026-09-22, Melvin)
+
+Aziz cut onboarding in `d4ddbfc` (2026-09-21); Melvin, who had rebuilt it
+that week and did not know, reversed it the next day ("Aziz definitely did
+that by mistake"). `RootView` gates on `onboardingComplete` again, the DEBUG
+`SKIP_ONBOARDING` hook is back, and `coordinator.setOnboarded(done)` mirrors
+it to the Watch again.
+
+- **The Watch question is gone** (`InterviewStep.watchGate` removed; the
+  `watchGate`, `watchSetup` and `waitlist` Step cases pass through to What's
+  waiting). A session runs on the phone with or without a Watch, so the gate
+  sorted people for a difference the app no longer makes.
+- **The phone detects the Watch instead of asking** (`watchPaired`, from
+  `WCSession.isPaired`): health consent and the Health prompt behind it
+  appear only when a Watch is paired, and are skipped (never entering Back
+  history) otherwise.
+- The tour's notes were rewritten (no calendar, no Watch, the guide is the
+  circle under the streak on Home, where its `.guide` anchor now lives).
+  What's waiting's second card is "Keep Otto glowing" (a score after every
+  session stopped being true without a Watch), and the reminder preview on
+  the permission screen now shows the real reminder's words.
+- **When merging Aziz's branch, name any cuts to Melvin before building on
+  them.** This one arrived in a merge and was repeated back as settled.
 
 ## 808 IS A CONSISTENCY APP; BLOCK REPLACES THE GUIDE TAB (2026-09-21, Melvin)
 

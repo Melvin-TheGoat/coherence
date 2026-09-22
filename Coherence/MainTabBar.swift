@@ -18,7 +18,6 @@ struct MainTabBar: View {
         HStack(alignment: .top, spacing: 0) {
             item(.home, icon: "house", label: "Home")
             item(.guide, icon: "book.closed", label: "Guide")
-                .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
             plus
             if FeatureFlags.friends {
                 item(.friends, icon: "person.2", label: "Friends")
