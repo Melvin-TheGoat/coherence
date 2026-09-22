@@ -59,4 +59,88 @@ final class SessionCalendarTests: XCTestCase {
         XCTAssertTrue(SessionCalendar.isSameMonth(date(2026, 7, 1), as: date(2026, 7, 31), calendar: cal))
         XCTAssertFalse(SessionCalendar.isSameMonth(date(2026, 6, 30), as: date(2026, 7, 1), calendar: cal))
     }
+
+    // MARK: weeks
+    //
+    // The log is read a week at a time, so these pin the two things that
+    // would be invisible until somebody's history landed in the wrong week:
+    // where a week begins, and that its end is half-open.
+
+    func test_weekStart_isTheCalendarsOwnFirstWeekday() {
+        // Sep 2026: the 20th is a Sunday, the 22nd a Tuesday.
+        let tue = date(2026, 9, 22)
+        XCTAssertEqual(SessionCalendar.weekStart(for: tue, calendar: cal),
+                       cal.startOfDay(for: date(2026, 9, 20)))
+
+        var monday = cal
+        monday.firstWeekday = 2
+        XCTAssertEqual(SessionCalendar.weekStart(for: tue, calendar: monday),
+                       monday.startOfDay(for: date(2026, 9, 21)),
+                       "a Monday-first locale must not borrow Sunday's week")
+    }
+
+    func test_weekStart_onTheFirstDayIsThatDay() {
+        let sunday = date(2026, 9, 20, 23)
+        XCTAssertEqual(SessionCalendar.weekStart(for: sunday, calendar: cal),
+                       cal.startOfDay(for: date(2026, 9, 20)))
+    }
+
+    func test_week_isSevenDaysFromItsStart() {
+        let week = SessionCalendar.week(containing: date(2026, 9, 22), calendar: cal)
+        XCTAssertEqual(week.count, 7)
+        XCTAssertEqual(week.first, cal.startOfDay(for: date(2026, 9, 20)))
+        XCTAssertEqual(week.last, cal.startOfDay(for: date(2026, 9, 26)))
+    }
+
+    func test_weekStepping_crossesAMonthBoundary() {
+        let start = SessionCalendar.weekStart(for: date(2026, 9, 3), calendar: cal)
+        XCTAssertEqual(SessionCalendar.week(-1, from: start, calendar: cal),
+                       cal.startOfDay(for: date(2026, 8, 23)))
+        XCTAssertEqual(SessionCalendar.week(1, from: start, calendar: cal),
+                       cal.startOfDay(for: date(2026, 9, 6)))
+    }
+
+    /// **Half-open, and this is the one that matters.** A session at
+    /// 23:59:59 on the last day of a week and one at 00:00:00 on the next
+    /// week's first day are a second apart and belong to different weeks; an
+    /// inclusive end built from midnight would file both under the earlier.
+    func test_isIn_week_isHalfOpen() {
+        let start = SessionCalendar.weekStart(for: date(2026, 9, 22), calendar: cal)
+        XCTAssertTrue(SessionCalendar.isIn(week: start, date(2026, 9, 20, 0), calendar: cal))
+        XCTAssertTrue(SessionCalendar.isIn(week: start, date(2026, 9, 26, 23), calendar: cal))
+        XCTAssertFalse(SessionCalendar.isIn(week: start, date(2026, 9, 27, 0), calendar: cal),
+                       "the next week's first midnight is NOT in this week")
+        XCTAssertFalse(SessionCalendar.isIn(week: start, date(2026, 9, 19, 23), calendar: cal))
+    }
+
+    func test_weekTitle_namesTheNearWeeksAndDatesTheRest() {
+        let now = date(2026, 9, 22)
+        let this = SessionCalendar.weekStart(for: now, calendar: cal)
+        XCTAssertEqual(SessionCalendar.weekTitle(this, now: now, calendar: cal), "This week")
+        XCTAssertEqual(SessionCalendar.weekTitle(SessionCalendar.week(-1, from: now, calendar: cal),
+                                                 now: now, calendar: cal), "Last week")
+        // Inside one month the month is named once, and across two it is
+        // named twice, so a week is never read as "Aug 30 to 5".
+        XCTAssertEqual(SessionCalendar.weekTitle(cal.startOfDay(for: date(2026, 9, 6)),
+                                                 now: now, calendar: cal), "Sep 6 to 12")
+        XCTAssertEqual(SessionCalendar.weekTitle(cal.startOfDay(for: date(2026, 8, 30)),
+                                                 now: now, calendar: cal), "Aug 30 to Sep 5")
+    }
+
+    func test_weekTitle_carriesTheYearOnlyWhenItIsNotThisOne() {
+        let now = date(2026, 9, 22)
+        let title = SessionCalendar.weekTitle(cal.startOfDay(for: date(2025, 9, 7)),
+                                              now: now, calendar: cal)
+        XCTAssertTrue(title.contains("2025"), "got \(title)")
+    }
+
+    /// The picker selects a ROW of `monthGrid`, so a row must be exactly the
+    /// week the log then shows. If these two ever disagree, tapping a row
+    /// lands the reader on a different seven days than the one they touched.
+    func test_monthGridRowsAreWeeks() {
+        for row in SessionCalendar.monthGrid(containing: date(2026, 9, 22), calendar: cal) {
+            XCTAssertEqual(row.first, SessionCalendar.weekStart(for: row[0], calendar: cal))
+            XCTAssertEqual(SessionCalendar.week(containing: row[3], calendar: cal), row)
+        }
+    }
 }

@@ -2510,6 +2510,172 @@ to the product, it is a wall in front of it.**
   `onboarding_step` go quiet by design. The number that matters now is
   install to first `session_completed`, which is what the flow was costing.
 
+## PROFILE IS THE VALLEY TOO, AND IT COUNTS MINUTES (2026-09-21, Aziz)
+
+Built from `mockups/profile-valley.html` after four passes. The page is the
+grass Home stands on, with a 20 percent band of the valley at the top and
+nobody in it, and your practice on cards below. `ProfileTab` in
+`SessionHistoryView.swift`.
+
+- **Otto's head IS the portrait.** Aziz: "no more pfp and make the sloth in
+  the circle." He sits in a sky circle with a white ring, straddling the
+  identity card's top edge. The photo pipeline (`setAvatar`, the photo step
+  in Create your profile, `CameraPicker`) is still wired and is now unused
+  on this screen; removing it is its own job.
+  **The cost, stated:** everybody's avatar is the same sloth, so a Friends
+  feed of six people is six identical faces. The fix already exists and is
+  not built: draw each person at THEIR aura stage.
+- **"Your scores" is "Your minutes"** (Aziz: "we dont wanna worry about any
+  of the watch stuff"). A phone sit measures nothing, so a score chart would
+  be an empty frame on almost every page. Length is what a phone can report
+  honestly, and the research this app is built on says consistency predicts
+  improvement while session length does not, so a chart of minutes is a
+  record and not a target. **Amber stays**: it has always meant the measured
+  quantity of a session, which with a Watch is its score and without one is
+  its length.
+- **An UNEARNED score award is hidden, not deleted.** The three `.depth`
+  awards are unreachable from a phone, and three permanently grey trophies
+  is the shelf telling somebody what they are missing. A wrist session still
+  earns them, and an earned one appears on the shelf as normal.
+- **Pills are controls, content is bare.** The first pass drew four floating
+  boxes and Aziz said "something seems off". The repo's own 14-app research
+  answers it: no boxes, bare text on a hairline. The rule that came out of
+  that pass, and it resolves the question every new screen asks: **a cream
+  capsule is something you press; a number you read sits on the card.**
+- **Sampled from Melvin's Home, not invented.** A cream-on-cream pass was
+  rejected ("more on theme with what we have not this pastelish color"); the
+  page now uses the grass, the white cards and the amber bars that Home
+  already uses, so the two tabs are one place.
+- **"practiced", not "practised"** (Aziz). American spelling everywhere.
+
+### The transitions, and the two things that went wrong in them
+
+Aziz: "remember to do good trnasitions so everything is smooth." The valley
+never moves; the five cards rise 16pt and fade, 55ms apart, on the app's
+spring, and the chart's bars grow from the floor on the same curve.
+
+- **Flip the flag on the NEXT runloop turn, never inside `onAppear`.** An
+  `.animation(value:)` animates EVERY animatable change in its subtree at
+  the instant the value flips, and flipping it during the first layout pass
+  caught the cards' own width settling under the `GeometryReader`. The text
+  re-wrapped as they widened: "Only you" arrived as "Onlyyou" and the
+  chart's axis label crossed its header. Letting layout finish first leaves
+  the animation nothing to carry but the opacity and the offset.
+- **A child must not carry its own animation inside an animating parent.**
+  The chart had a slightly slower spring for its bars, so it also re-drove
+  the position its card was already moving it to, and slid up a beat behind
+  its own card. One object, one curve.
+- **The chart's y-domain is PINNED while the bars grow**, or the axis grows
+  with them and the arrival reads as the numbers changing.
+- Verified the way this project verifies motion: a screen recording at 20fps,
+  frame differences to find the moving window, then the frames themselves.
+  Two screenshots half a breath apart cannot resolve a half-second stagger.
+- **The gear rides the scene, not the screen.** Pinned to the top right of
+  the window it sat on top of whatever card scrolled under it and collided
+  with the stats row's last number.
+
+### The log is a WEEK, and a session is its length (2026-09-22, Aziz)
+
+Two notes, one problem: "the all sessions screen the way they are just all
+laid out isnt the best way to do it" and "i dont like the sloths on all the
+meditations". Every session was a full-width card with a 98pt picture panel,
+and with no selfie that panel drew Otto, so nineteen sessions was nineteen
+identical sloths. **Nothing was scannable because every row weighed exactly
+what every other row weighed.** Mockups: `sessions-list.html` (three
+directions) then `sessions-week.html` (the chosen one, scoped to a week).
+
+- **The card IS the week**, Monday or Sunday by the device's own
+  `firstWeekday`, and the current one is called "This week". Arrows step,
+  the card swipes, and the label opens a picker. The header carries the only
+  two numbers a week is worth, how many times you sat and how long in total,
+  which is the line the minutes chart is made of. The forward arrow is
+  dimmed on the current week.
+- **A week, not a month, and not everything.** A week is the unit the
+  product already thinks in (one rest day per seven, Home's seven-day
+  strip), it fits on one screen without scrolling, and its two numbers are
+  small enough to mean something.
+- **A session is its length first** (Aziz picked direction C): an amber puck
+  where the repeated Otto used to be, then the day, then the sound and the
+  score if there is one. **The puck is the soft amber, never the accent.**
+  Seven saturated gold pucks down a page would spend the one-gold-per-section
+  rule seven times and leave nothing on the screen emphasised; a tint is a
+  material, the accent is a decision.
+- **A phone sit is short a clause, never told it lacks a score.** The
+  subtitle is "Silence" or "Silence · scored 66", and nothing says "no
+  score".
+- **Only SHARED sessions carry a chip.** Every row said "Only you" in the
+  first build, which is nine identical capsules down one card: the same
+  repetition that got Otto taken off these rows. A chip earns its space when
+  it marks the exception, and posting is the exception. The Friends banner
+  lost "Everything marked Only you stays here" for "Everything else stays
+  here", because the copy may not promise a marker the rows no longer draw.
+- **An empty week gets four words and no advice**, and no summary line: "0
+  sessions, 0 min" is a scoreboard of nothing. Past weeks print full dates
+  on their rows, since "Friday" is ambiguous once you are not in this week.
+- **Tapping a day on Home opens that day's WEEK** instead of filtering the
+  log to the day, which is what it used to do. A one-day filter inside a
+  week view is a second, invisible scope on top of the visible one.
+
+### The week picker, and the month-view rule it does not break
+
+`WeekPicker` is a month grid whose ROWS are the targets: the whole row
+lights, tapping anywhere in it selects that week, and a dot marks a day
+practised so the sheet answers "which week was that" before anything is
+chosen. `SessionCalendar.monthGrid` already returned rows aligned to
+`firstWeekday`, and `test_monthGridRowsAreWeeks` pins a row to the week the
+log then shows, so tapping a row can never land on a different seven days
+than the one touched.
+
+**This does not reopen "808 has no month view anywhere".** That rule is
+about a grid as a STATUS display, which answers "did I show up" at a
+resolution nobody needs and draws days that have not happened. This one
+exists only while you are choosing, selects weeks, and is gone on the tap.
+
+### Four things the animation cost, all worth keeping
+
+- **`.animation(_:value:)` governs its whole subtree, and an outer one wins.**
+  The week slide did not animate AT ALL, and the proof is that three
+  screenshots across a deliberately three-second spring came back
+  byte-identical. The card sits inside `rising(settled:)`, whose
+  `.animation(_:value: settled)` had already claimed the subtree. Naming the
+  animation again on the inner container, keyed to `weekStart`, wins it back.
+  Same family as the arrival bug earlier in the week: that modifier is
+  greedier than it looks, in both directions.
+- **A cross-fade between two pieces of TEXT is two legible weeks stacked on
+  each other.** The header label was left behind while the rows slid, and
+  mid-flight it read as a rendering fault. The label and its summary now
+  carry the same identity and transition as the list, inside a fixed 38pt
+  frame so the arrows do not bob when the summary line comes and goes.
+- **Not a paging `TabView`.** Paging forces one height on every page and a
+  week of one session is a fifth the height of a week of six. One view whose
+  contents change, a transition for the slide, and a drag gesture that
+  commits past 60pt.
+- **A DateFormatter takes the device's zone, not the calendar's.** A week
+  start is a midnight in the calendar it was computed in, so "Sep 6 to 12"
+  printed as "Sep 5 to 11" four hours west of UTC. Set `f.timeZone` and
+  ONLY that: handing the formatter the calendar too renders months as "M09"
+  whenever that calendar carries no locale, which is what a hand-built one
+  in a test is.
+
+### How to see a slow animation when the recorder is wedged
+
+`simctl io recordVideo` can leave the host recording locked with no process
+to kill, and then every later recording fails with "Host recording is
+already in progress". Slow Animations in Simulator's Debug menu did not take
+either. **What worked: build once with the animation set to
+`.linear(duration: 12)`, take single screenshots, then put the real spring
+back.** A screenshot lands somewhere between one and four seconds after the
+tap that triggered it, so nothing shorter than about eight seconds can be
+caught this way.
+
+### Coming, so nothing is designed against it
+
+**The sloth will be customizable, and points come from habitual practice**
+(Aziz, 2026-09-21). Recorded at the top of `BACKLOG.md`. It means the
+portrait circle on this page is a fitting room later, and it means points
+have to be earned by consistency rather than by score, since a phone sit has
+no score.
+
 ## THE WEBSITE CARRIES A GOOGLE "PREFERRED SOURCE" BADGE (2026-09-21, Melvin)
 
 In the footer, its own row above the copyright: the Google G and "Add us as a

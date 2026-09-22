@@ -1,0 +1,260 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · Sessions, a week at a time</title>
+<style>
+:root{
+  --grass:#9CBC85; --card:#FFFFFF; --ink:#413024; --soft:#877160;
+  --amber:#F7B143; --amberSoft:#FBE3BE; --amberText:#9B6B19; --sage:#3E8175;
+  --blushText:#AB5834; --trace:#F0E3D0; --hair:#EFE4D5; --paper:#FEF9F2;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+h2{font-size:15px;margin:42px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:920px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:24px}
+.col{width:300px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+ color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.2px;line-height:1.6;margin-top:12px}
+.note b{color:var(--ink)}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:920px;margin-top:14px;font-size:13.6px;line-height:1.62;color:var(--soft)}
+.flag b{color:var(--blushText)}
+.pick{border-left:3px solid var(--sage)} .pick b{color:var(--sage)}
+.ask{border-left:3px solid var(--amberText)} .ask b{color:var(--amberText)}
+
+/* ---------- the phone ---------- */
+.p{width:300px;height:600px;border-radius:34px;overflow:hidden;position:relative;flex:none;
+ background:var(--grass);box-shadow:0 12px 34px rgba(80,55,30,.16)}
+.page{position:absolute;inset:0;padding:16px 14px;overflow:hidden}
+.card{background:var(--card);border-radius:20px;box-shadow:0 2px 8px rgba(40,25,15,.10);
+ overflow:hidden;margin-bottom:10px}
+
+/* ---------- the week header ---------- */
+.wk{display:flex;align-items:center;gap:8px;padding:13px 12px 11px}
+.wk .arw{width:28px;height:28px;border-radius:50%;flex:none;display:flex;align-items:center;
+ justify-content:center;font-size:14px;font-weight:800;color:var(--soft);background:var(--paper)}
+.wk .arw.off{opacity:.32}
+.wk .mid{flex:1;text-align:center;line-height:1.15}
+.wk .lbl{font-size:15.5px;font-weight:800;display:inline-flex;align-items:center;gap:5px}
+.wk .lbl .cal{font-size:12px;opacity:.75}
+.wk .sub{font-size:11px;color:var(--soft);margin-top:2px}
+.wk .sub b{color:var(--amberText);font-weight:800}
+
+/* ---------- rows ---------- */
+.r{display:flex;align-items:center;gap:11px;padding:11px 15px;border-top:1px solid var(--hair)}
+.r .txt{flex:1;min-width:0}
+.r .d{font-size:14.5px;font-weight:800;line-height:1.2}
+.r .s{font-size:11.5px;color:var(--soft);margin-top:2px;white-space:nowrap;overflow:hidden;
+ text-overflow:ellipsis}
+.r .min{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.r .min i{font-style:normal;font-size:10.5px;font-weight:700;color:var(--soft);margin-left:2px}
+.thumb{width:34px;height:40px;border-radius:9px;flex:none;
+ background:linear-gradient(155deg,#C7D9E6 0%,#DCC9B4 60%,#C9B49C 100%)}
+.sc{display:inline-block;font-size:10.5px;font-weight:800;color:var(--amberText);
+ background:var(--amberSoft);border-radius:7px;padding:1.5px 6px;margin-left:6px;vertical-align:1px}
+.empty{padding:26px 18px 30px;text-align:center;border-top:1px solid var(--hair)}
+.empty .t{font-size:13.5px;color:var(--soft);line-height:1.55}
+
+/* ---------- the week picker ---------- */
+.dim{position:absolute;inset:0;background:rgba(40,25,15,.32)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);
+ border-radius:24px 24px 0 0;padding:10px 16px 22px;box-shadow:0 -8px 30px rgba(40,25,15,.2)}
+.grab{width:38px;height:4px;border-radius:3px;background:var(--trace);margin:0 auto 12px}
+.mhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mhead .t{font-size:15px;font-weight:800}
+.mhead .a{display:flex;gap:7px}
+.mhead .a span{width:26px;height:26px;border-radius:50%;background:#fff;display:flex;
+ align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--soft)}
+.dow{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:3px}
+.dow span{text-align:center;font-size:9.5px;font-weight:800;color:var(--soft);letter-spacing:.06em}
+.wrow{display:grid;grid-template-columns:repeat(7,1fr);border-radius:12px;padding:3px 2px;
+ margin-bottom:2px}
+.wrow.sel{background:#fff;box-shadow:0 0 0 2px var(--amber) inset}
+.wrow.dis span{opacity:.3}
+.wrow span{text-align:center;font-size:12.5px;font-weight:700;padding:6px 0 9px;position:relative}
+.wrow span.has:after{content:"";position:absolute;left:50%;bottom:4px;transform:translateX(-50%);
+ width:5px;height:5px;border-radius:50%;background:var(--amber)}
+.wrow span.today{color:var(--amberText)}
+.sheet .cta{margin-top:12px;text-align:center;font-size:12.5px;font-weight:800;color:var(--amberText)}
+
+/* the sliding pair, to show the transition */
+.slide{position:relative;overflow:hidden}
+.ghost{opacity:.35}
+.arrowline{display:flex;align-items:center;gap:8px;color:var(--soft);font-size:12px;
+ font-weight:800;margin:10px 0 0 2px}
+
+table{border-collapse:collapse;margin-top:14px;font-size:13.4px;max-width:920px}
+td,th{border-bottom:1px solid #DFD2C2;padding:8px 16px 8px 0;text-align:left;vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+td b{color:var(--ink)} td{color:var(--soft)}
+</style></head><body>
+
+<h1>Sessions, a week at a time</h1>
+<p class="lede">Aziz: <b>"the list but you see it based off a weekly basis and then theres a calendar option to
+change the specifc week seamlessly"</b><br>
+Direction A's rows, scoped to one week, with two ways to move: the arrows step a week, and the label opens a
+calendar that picks one. <b>Weeks run Monday to Sunday</b> and the current one is called "This week" rather than
+its dates.</p>
+
+<div class="row">
+
+  <!-- ============ 1. the week ============ -->
+  <div class="col">
+    <div class="tag"><b>1.</b> A week, at rest</div>
+    <div class="p"><div class="page">
+      <div class="card">
+        <div class="wk">
+          <div class="arw">‹</div>
+          <div class="mid">
+            <div class="lbl">This week <span class="cal">▾</span></div>
+            <div class="sub">4 sessions · <b>58 min</b></div>
+          </div>
+          <div class="arw off">›</div>
+        </div>
+
+        <div class="r">
+          <div class="txt"><div class="d">Today <span class="sc">55</span></div>
+            <div class="s">Manifest Your Dream Life · 7:00 AM</div></div>
+          <div class="min">10<i>min</i></div>
+        </div>
+        <div class="r">
+          <div class="thumb"></div>
+          <div class="txt"><div class="d">Yesterday <span class="sc">66</span></div>
+            <div class="s">Manifest · 9:13 PM</div></div>
+          <div class="min">15<i>min</i></div>
+        </div>
+        <div class="r">
+          <div class="txt"><div class="d">Yesterday <span class="sc">24</span></div>
+            <div class="s">Silence · 6:40 PM</div></div>
+          <div class="min">8<i>min</i></div>
+        </div>
+        <div class="r">
+          <div class="txt"><div class="d">Saturday</div>
+            <div class="s">Rain · 12:26 PM</div></div>
+          <div class="min">25<i>min</i></div>
+        </div>
+      </div>
+    </div></div>
+    <p class="note">The card is the week. <b>Its header carries the only two numbers a week is worth</b>, how many
+    times you sat and how long in total, which is the line the minutes chart above is made of. The right arrow is
+    dimmed on the current week because there is nothing ahead of today, and it wakes up the moment you step back.</p>
+  </div>
+
+  <!-- ============ 2. the calendar ============ -->
+  <div class="col">
+    <div class="tag"><b>2.</b> Tap the label</div>
+    <div class="p"><div class="page">
+      <div class="card">
+        <div class="wk">
+          <div class="arw">‹</div>
+          <div class="mid">
+            <div class="lbl">This week <span class="cal">▾</span></div>
+            <div class="sub">4 sessions · <b>58 min</b></div>
+          </div>
+          <div class="arw off">›</div>
+        </div>
+        <div class="r"><div class="txt"><div class="d">Today <span class="sc">55</span></div>
+          <div class="s">Manifest Your Dream Life · 7:00 AM</div></div>
+          <div class="min">10<i>min</i></div></div>
+        <div class="r"><div class="thumb"></div>
+          <div class="txt"><div class="d">Yesterday <span class="sc">66</span></div>
+          <div class="s">Manifest · 9:13 PM</div></div><div class="min">15<i>min</i></div></div>
+      </div>
+      <div class="dim"></div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="mhead"><div class="t">September 2026</div>
+          <div class="a"><span>‹</span><span>›</span></div></div>
+        <div class="dow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span>
+          <span>S</span><span>S</span></div>
+        <div class="wrow dis"><span>31</span><span class="has">1</span><span>2</span><span class="has">3</span>
+          <span>4</span><span class="has">5</span><span>6</span></div>
+        <div class="wrow"><span class="has">7</span><span>8</span><span class="has">9</span><span>10</span>
+          <span class="has">11</span><span class="has">12</span><span>13</span></div>
+        <div class="wrow"><span class="has">14</span><span class="has">15</span><span>16</span>
+          <span class="has">17</span><span class="has">18</span><span>19</span><span class="has">20</span></div>
+        <div class="wrow sel"><span class="has">21</span><span class="has today">22</span><span>23</span>
+          <span>24</span><span>25</span><span>26</span><span>27</span></div>
+        <div class="wrow dis"><span>28</span><span>29</span><span>30</span><span>1</span><span>2</span>
+          <span>3</span><span>4</span></div>
+        <div class="cta">Jump to this week</div>
+      </div>
+    </div></div>
+    <p class="note"><b>You pick a WEEK, not a day.</b> The whole row lights, tapping anywhere in it selects it, and
+    the sheet closes on the tap. A dot marks a day you practised, so the calendar answers "which week was that?"
+    before you have chosen anything. Days outside the month are dimmed but still belong to a selectable week.</p>
+  </div>
+
+  <!-- ============ 3. an empty week ============ -->
+  <div class="col">
+    <div class="tag"><b>3.</b> A week with nothing in it</div>
+    <div class="p"><div class="page">
+      <div class="card">
+        <div class="wk">
+          <div class="arw">‹</div>
+          <div class="mid">
+            <div class="lbl">Aug 24 – 30 <span class="cal">▾</span></div>
+          </div>
+          <div class="arw">›</div>
+        </div>
+        <div class="empty">
+          <div class="t">No sessions this week.</div>
+        </div>
+      </div>
+      <div class="arrowline" style="padding-left:2px">&nbsp;</div>
+      <div class="card" style="opacity:.55">
+        <div class="wk">
+          <div class="arw">‹</div>
+          <div class="mid"><div class="lbl">Sep 14 – 20 <span class="cal">▾</span></div>
+            <div class="sub">5 sessions · <b>71 min</b></div></div>
+          <div class="arw">›</div>
+        </div>
+        <div class="r"><div class="txt"><div class="d">Sun, Sep 20</div>
+          <div class="s">Ocean · 9:52 PM</div></div><div class="min">10<i>min</i></div></div>
+        <div class="r"><div class="txt"><div class="d">Fri, Sep 18 <span class="sc">88</span></div>
+          <div class="s">Deep Meditation · 7:39 AM</div></div><div class="min">5<i>min</i></div></div>
+      </div>
+    </div></div>
+    <p class="note">Four words and no advice. <b>An empty week must not be scored, coached, or apologised for</b>:
+    it is a week you can see because you asked to see it, and the arrows are right there. The summary line is
+    absent rather than reading "0 sessions · 0 min", which is a scoreboard of nothing.<br><br>
+    Underneath, a past week: once the week is not this one, rows say their date in full, because "Friday" is
+    ambiguous the moment you are looking at a week that is not the current one.</p>
+  </div>
+</div>
+
+<h2>Moving between weeks</h2>
+<table>
+  <tr><th>Gesture</th><th>What happens</th></tr>
+  <tr><td><b>Arrows</b></td><td>One week, the list sliding in from the side you came from. The header's label and
+      summary cross-fade rather than sliding, so the card does not appear to change size.</td></tr>
+  <tr><td><b>Swipe the card</b></td><td>Same as the arrows, same animation. Cheap to add and it is the gesture
+      anybody will try first.</td></tr>
+  <tr><td><b>The label</b></td><td>Opens the calendar. Picking a row closes it and the list arrives from the
+      direction of travel, so jumping back three months still reads as going backwards.</td></tr>
+  <tr><td><b>From Home</b></td><td>Tapping a day on Home's week strip opens Profile at THAT day's week with the
+      day's rows in place, instead of today's filter, which is what it does now.</td></tr>
+</table>
+
+<div class="flag pick"><b>Why a week and not a month.</b> A week is the unit this product already thinks in: the
+streak's rest day is one per seven, Home's strip is seven days, and a week of sessions fits on one screen with no
+scrolling, which a month never does. The header's two numbers then mean something you can act on.</div>
+
+<div class="flag ask"><b>One thing to decide, because the repo has a standing rule against it.</b> CLAUDE.md says
+808 has no month view anywhere, and `MonthCalendar` was deleted on purpose: a grid of dots answers "did I show up"
+at a resolution nobody needs, and it drew days that had not happened yet as blanks. The sheet here is a PICKER, not
+a status display, which is a different job: it exists to answer "which week was that", it is only on screen while
+you are choosing, and it selects rows rather than days. I think that clears the rule. If you would rather not have
+a grid at all, the alternative is a list of weeks ("Sep 14 – 20 · 5 sessions") which is honestly easier to scan and
+carries the counts, but it is not a calendar and you asked for one.</div>
+
+<div class="flag"><b>An implementation note, so the animation does not get designed twice.</b> The obvious way to
+build swipeable weeks is a paging `TabView`, and it is the wrong tool here: a paging view forces every page to one
+height, and a week of one session is a fifth the height of a week of six. The card stays a single view whose
+CONTENTS change, with the slide drawn as a transition and a drag gesture that commits past a threshold. Same look,
+no fixed height, and it still lives inside the page's own vertical scroll.</div>
+
+</body></html>

@@ -88,8 +88,17 @@ enum DemoData {
             let start = cal.date(bySettingHour: [7, 21, 12][i % 3], minute: (i * 13) % 55, second: 0, of: day)!
             let pick = sounds[i % sounds.count]
             let dur = [600, 900, 1530, 300, 600][i % 5]
+            // **Every third seeded sit is a PHONE sit**, which is what the
+            // history of a real 808 user now mostly is: Begin runs the timer
+            // here and nothing on a wrist is measuring. It writes a Session
+            // and no `MeditationStats`, exactly as `persistPhoneSession`
+            // does, so any screen previewed against this seed has to survive
+            // a session with no score in it. The seed used to be all Watch
+            // sits, which meant no preview ever showed the common case.
+            let onPhone = i % 3 == 2
             let session = Session(mode: pick.mode, bellyBreathing: pick.belly,
-                                  frequencyID: pick.id, startedAt: start, durationSec: dur)
+                                  frequencyID: pick.id, startedAt: start, durationSec: dur,
+                                  source: onPhone ? "phone" : "watch")
             // One point per hop across the WHOLE duration, or the chart's
             // x-axis ends long before the header's minutes do. Melvin caught a
             // "5 min" session whose curve stopped at 1.4 minutes.
@@ -111,7 +120,7 @@ enum DemoData {
                 overallScore: overall, windowSec: 30, hopSec: 5
             )
             context.insert(session)
-            context.insert(stats)
+            if !onPhone { context.insert(stats) }
             if i % 2 == 0 {
                 context.insert(SessionReflection(sessionID: session.id,
                                                  rating: 6 + (i * 3) % 5, note: ""))

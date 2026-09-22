@@ -37,6 +37,14 @@ struct ValleyScene: View {
     /// is the sit and the Ready screen, which draw `pose`.
     var aura: OttoAura.Stage? = nil
 
+    /// Draw the valley with nobody in it.
+    ///
+    /// Profile's band needs the place without the character: Otto is the
+    /// portrait on that page, and drawing him in the band as well would put
+    /// two of him on one screen. The cushion goes with him, since an empty
+    /// cushion reads as somebody having just left.
+    var showsFigure: Bool = true
+
     /// Move him up to the corner, small, so a list can have the meadow.
     ///
     /// **It is a placement on the SAME view, not a second Otto.** Swapping
@@ -185,7 +193,7 @@ struct ValleyScene: View {
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
                           y: size.height * (1 - 0.215) - 22 * s)
-                .opacity(ottoInCorner ? 0 : 1)
+                .opacity(ottoInCorner || !showsFigure ? 0 : 1)
 
             // The artboard carries headroom above his tuft that the cutout
             // PNG does not, so it is drawn taller to put the sloth himself at
@@ -193,7 +201,9 @@ struct ValleyScene: View {
             let seated = ottoHeight(scale: s)
             let tall = ottoInCorner ? Self.cornerHeight : seated
             Group {
-                if let aura {
+                if !showsFigure {
+                    EmptyView()
+                } else if let aura {
                     OttoAuraFigure(stage: aura, size: tall, rig: rig)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
