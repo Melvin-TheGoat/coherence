@@ -132,6 +132,7 @@ final class OttoRig: ObservableObject {
             // without this the breathing screen could open on the wrong pose.
             instance.booleanProperty(fromPath: "talking")?.value = self.talking
             instance.booleanProperty(fromPath: "sitting")?.value = self.sitting
+            instance.booleanProperty(fromPath: "greeting")?.value = self.greeting
             instance.booleanProperty(fromPath: "branch")?.value = self.branch
             if self.pendingWave {
                 self.pendingWave = false
@@ -194,6 +195,20 @@ final class OttoRig: ObservableObject {
         }
     }
 
+    /// Seated, eyes open, waving: the pose the pre-sit screen wants.
+    ///
+    /// It is its OWN flag rather than a third value of `sitting`, because the
+    /// two answer different questions. `sitting` is posture and `greeting` is
+    /// what he is doing, and the state machine reads both: leaving the
+    /// greeting hands him to Sitting or to Waving depending on `sitting`, so
+    /// tapping Begin settles him into the meditation posture instead of
+    /// cutting to it.
+    var greeting: Bool = false {
+        didSet {
+            instance?.booleanProperty(fromPath: "greeting")?.value = greeting
+        }
+    }
+
     /// Whether he is standing on the branch, with the leaves around him
     /// (Melvin, 2026-09-20: "I want him on a branch somehow. some kind of
     /// greenery"). **Off by default, and Home never turns it on**, because
@@ -223,6 +238,8 @@ struct OttoRiveView: View {
     var talking: Bool = false
     /// Stand him on the branch. See `OttoRig.branch`.
     var branch: Bool = false
+    /// Seated and waving. See `OttoRig.greeting`.
+    var greeting: Bool = false
     /// An explicit frame width. Home passes its old square frame so that
     /// screen is untouched by the aspect fix; everything else takes the
     /// artboard's own proportions.
@@ -237,10 +254,15 @@ struct OttoRiveView: View {
                 .accessibilityHidden(true)
                 .onAppear {
                     rig.setSitting(pose == .meditating)
+                    rig.setGreeting(greeting || pose == .greeting)
                     rig.setBranch(branch)
                     rig.setTalking(talking)
                 }
-                .onChange(of: pose) { _, new in rig.setSitting(new == .meditating) }
+                .onChange(of: pose) { _, new in
+                    rig.setSitting(new == .meditating)
+                    rig.setGreeting(greeting || new == .greeting)
+                }
+                .onChange(of: greeting) { _, new in rig.setGreeting(new || pose == .greeting) }
                 .onChange(of: branch) { _, new in rig.setBranch(new) }
                 .onChange(of: talking) { _, new in rig.setTalking(new) }
         } else {
@@ -269,6 +291,7 @@ final class OttoRigHolder: ObservableObject {
     func setTalking(_ on: Bool) { rig?.talking = on }
     func setSitting(_ on: Bool) { rig?.sitting = on }
     func setBranch(_ on: Bool) { rig?.branch = on }
+    func setGreeting(_ on: Bool) { rig?.greeting = on }
 }
 
 // MARK: - Breathing haptics

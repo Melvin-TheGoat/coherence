@@ -2674,6 +2674,38 @@ and the repo's `.riv` is a third copy. **Before building on any rig
 behaviour, query the keyframes and read the binary.** The editor cannot
 confirm its own export, and CLAUDE.md cannot confirm the editor.
 
+## OTTO GREETS YOU SEATED, AND THE ART WAS ALREADY ON THE SHEET (2026-09-21)
+
+Aziz asked for the pre-sit screen to show him "seated, daytime, smiling and
+waving". I had told him that needed a new generation. **It did not: the fifth
+figure on `mockups/otto-v3/sheet.png` is exactly that pose and had never been
+sliced out.** Check the sheet before asking for art.
+
+- `mockups/otto-v3/otto-sit-wave.png`, 418 x 434, cut from the sheet's
+  bottom-right figure by alpha bbox. Its flourish marks were BLUE, which is
+  invisible against the valley's blue sky, so they are recoloured to the amber
+  the standing wave uses, mapping each pixel's luminance onto the amber rather
+  than flooding it flat, which keeps the shading and the antialiasing.
+- **`greeting` is its own boolean, not a third value of `sitting`.** The two
+  answer different questions: `sitting` is posture, `greeting` is what he is
+  doing. The Pose layer reads both, so leaving the greeting routes to Sitting
+  or to Waving depending on `sitting`, and tapping Begin settles him into the
+  meditation posture instead of cutting to it. Verified with
+  `simulateStateMachine`: Entry to Waving, Waving to Greeting on the flag,
+  Greeting to Sitting when the sit starts.
+- Rig: asset `otto-sit-wave`, image node `GreetPose` in `Body` at
+  `y = -height / 2`, timeline `PoseGreet`, state `Greeting`, four transitions.
+  **Both traps in the notes bit again and were caught by them:** an uploaded
+  asset defaults to hosted and excluded (set 358 = 0 and 801 = true or the
+  .riv ships with no pixels), and a new child lands at the END of the list,
+  which is BEHIND everything, so `GreetPose` needed `sendToFront`.
+- Swift: `OttoPose.greeting`, `OttoRig.greeting` re-sent on bind like the
+  others, `ValleyScene(progress:pose:)`, and `OttoGreet` as the still fallback.
+- **Open: he does not breathe on the Ready screen.** `Breathe` keys only
+  `ChestWave` and `ChestSit`, and the greet pose has no chest patch yet.
+  `tools/otto_chest.py` cuts one; it is a feathered ellipse, an image node and
+  three keyframes.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body

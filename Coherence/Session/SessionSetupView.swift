@@ -45,7 +45,7 @@ struct SessionSetupView: View {
                 // change scenes: the controls clear, the ring fades up, and
                 // the sun starts moving. Otto sits exactly where he will be
                 // sitting a second later.
-                ValleyScene(progress: 0)
+                ValleyScene(progress: 0, pose: .greeting)
 
                 let day = DayLight.at(0)
 

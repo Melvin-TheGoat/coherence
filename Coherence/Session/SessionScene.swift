@@ -26,6 +26,12 @@ struct ValleyScene: View {
     /// 0 when the sit begins, 1 when it ends. Everything below reads this.
     var progress: Double
 
+    /// What Otto is doing in it. The pre-sit screen wants him awake and
+    /// waving; the sit itself wants him cross-legged with his eyes shut.
+    /// Both are the same rig in the same valley, so tapping Begin settles
+    /// him rather than cutting to a different picture.
+    var pose: OttoPose = .meditating
+
     /// The rig, so he actually breathes while you do.
     ///
     /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
@@ -158,7 +164,7 @@ struct ValleyScene: View {
             // The artboard carries headroom above his tuft that the cutout
             // PNG does not, so it is drawn taller to put the sloth himself at
             // the same size, and hung from its own bottom edge.
-            OttoRiveView(size: ottoHeight(scale: s), pose: .meditating, rig: rig)
+            OttoRiveView(size: ottoHeight(scale: s), pose: pose, rig: rig)
                 .position(x: size.width / 2,
                           y: size.height * (1 - 0.24) - ottoHeight(scale: s) / 2)
         }
