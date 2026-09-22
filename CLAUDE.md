@@ -2749,6 +2749,30 @@ three were real and all three are fixed.
   `otto-sit-wave` stayed embedded after its node was deleted, 185 KB of a
   679 KB file, for art nothing draws.
 
+## THE READY SCREEN'S HEADLINE IS OTTO SAYING IT (2026-09-21, Aziz)
+
+"make the readypage like a bubble text box of the brain guy saying it". The
+headline and subtitle are gone; `OttoSpeech` carries the line instead, with
+the tail pointing down at him, so the screen has one voice rather than a
+caption above a character.
+
+- **`OttoSpeech` gained `ink`, `stroke` and `fill`, all defaulted to what it
+  did before**, so onboarding is untouched. Two reasons the session screen
+  needs them. Its warm brown ink is a different palette on a blue sky, so the
+  bubble takes the valley's own ink. And **an outline-only bubble is
+  unreadable over a painted scene**: the morning sun rose straight through
+  the glass and sat behind the word YouTube. Duolingo's see-through bubble is
+  right over onboarding's flat ground and wrong over a landscape.
+- **The bubble is pinned by its BOTTOM to just above his head**
+  (`SitLayout.ottoTop - 8`), not centred at a fraction of the screen.
+  Anchoring the centre leaves the tail short of him on a small phone and
+  buried in his tuft on a large one.
+- **The copy lost its second half and that is deliberate.** It said "808
+  stays open the whole time"; the sit screen's own arrival frame already says
+  "Keep 808 open to ensure you are meditating", which is where that matters.
+  Each screen carries the line that is actionable on it, and the bubble stays
+  two lines instead of four.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body

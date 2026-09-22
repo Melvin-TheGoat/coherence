@@ -48,18 +48,22 @@ struct SessionSetupView: View {
                 ValleyScene(progress: 0, pose: .greeting)
 
                 let day = DayLight.at(0)
+                // Pinned by its BOTTOM to just above his head, so the point
+                // lands on him however tall the phone is. Anchoring the
+                // bubble's centre instead would leave the tail short of him
+                // on a small screen and buried in his tuft on a large one.
+                let speaks = SitLayout.ottoTop(in: geo.size) - 8
 
-                VStack(spacing: 6) {
-                    Text("Ready when you are.")
-                        .font(DisplayFont.display(24, .heavy))
-                        .foregroundStyle(day.ink)
-                    Text("Start your YouTube or Spotify audio first. 808 stays open the whole time.")
-                        .font(AppFont.caption)
-                        .foregroundStyle(day.inkSoft)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    OttoSpeech(text: "Ready when you are. Start any YouTube or Spotify audio first.",
+                               tail: .bottom, size: 17,
+                               ink: day.ink, stroke: day.ink.opacity(0.38),
+                               fill: AppColor.backgroundPrimary.opacity(0.72),
+                               speaking: .constant(false))
                 }
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-                .position(x: geo.size.width / 2, y: geo.size.height * 0.175)
+                .frame(width: min(geo.size.width - 56, 320), height: max(120, speaks))
+                .position(x: geo.size.width / 2, y: max(120, speaks) / 2)
 
                 VStack(spacing: 8) {
                     Spacer()

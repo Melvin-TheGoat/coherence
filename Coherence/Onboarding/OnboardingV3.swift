@@ -50,6 +50,16 @@ struct OttoSpeech: View {
     /// it, on its left when he stands beside it (the question screens).
     var tail: SpeechBubbleShape.Edge = .bottom
     var size: CGFloat = 19
+    /// The ink and the outline. Defaulted to the page colours, so onboarding
+    /// is unchanged; the session screens pass the valley's own ink, because
+    /// Otto's warm brown on a blue sky reads as a different palette.
+    var ink: Color = AppColor.textPrimary
+    var stroke: Color = AppColor.textSecondary.opacity(0.4)
+    /// What sits behind the words. Clear by default, which is Duolingo's
+    /// bubble and is right over onboarding's flat ground. **A painted scene
+    /// needs a fill**: on the session screen the morning sun rose straight
+    /// through the glass and sat behind a word.
+    var fill: Color = .clear
     /// A beat before he starts. Zero everywhere now: the welcome screen had
     /// 1.4 s so the line would follow the wave, and Melvin read it as a lag
     /// between the screen arriving and the words arriving (2026-09-21).
@@ -73,7 +83,7 @@ struct OttoSpeech: View {
     private var typed: AttributedString {
         var line = parsed
         let cut = line.index(line.startIndex, offsetByCharacters: min(shown, total))
-        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        line[line.startIndex..<cut].foregroundColor = ink
         line[cut..<line.endIndex].foregroundColor = .clear
         return line
     }
@@ -92,9 +102,10 @@ struct OttoSpeech: View {
             // Room for the point inside the frame, so layout counts it.
             .padding(tail == .bottom ? .bottom : .leading, Self.tailSize)
             .background {
-                SpeechBubbleShape(edge: tail, tailWidth: 22, tailDepth: Self.tailSize)
-                    .stroke(AppColor.textSecondary.opacity(0.4),
-                            style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+                let bubble = SpeechBubbleShape(edge: tail, tailWidth: 22,
+                                               tailDepth: Self.tailSize)
+                bubble.fill(fill)
+                bubble.stroke(stroke, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(String(parsed.characters))")
