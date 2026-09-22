@@ -6,7 +6,11 @@ record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
 ## Otto's aura follows your practice, and how to A/B it (2026-09-21, Melvin)
 
-**MOCKUP BUILT, awaiting three calls: `mockups/otto-aura.html`.** Melvin kept
+**DECIDED (Melvin, 2026-09-21): he gets sad, and he lives on Home** (Home
+stays under Melvin's critique). **Art in progress:** Melvin generates the
+three new poses of today's Otto (low, frustrated, curious) from the prompt in
+`mockups/otto-redesign.md` "The aura poses"; the rule and the Swift follow.
+**MOCKUP BUILT: `mockups/otto-aura.html`.** Melvin kept
 the sloth ("you know what I like the sloth") and sent the same six-stage
 progression drawn with him. The mockup is Brainrot's "See for yourself!"
 slider screen with Otto (stages cut from the sheet; 80 and 100 draw the aura
