@@ -37,22 +37,16 @@ struct SessionResultsView: View {
     @Query private var preferences: [Preferences]
     @State private var session: Session?
     @State private var stats: MeditationStats?
+    /// What the person said about the sit, read only: this screen shows the
+    /// measurements and nothing else since 2026-09-22, and the session's own
+    /// page owns every one of these. They are still loaded because the share
+    /// card carries them.
     @State private var rating: Double = 5
     @State private var note: String = ""
     @State private var reflectionSaved = false
-    /// True while the note is being written. A saved note renders as read-only
-    /// flowing text until tapped.
-    @State private var isEditingNote = false
-    @FocusState private var noteFocused: Bool
-    /// The debounced write behind every edit. See `markDirty`.
-    @State private var autosave: Task<Void, Never>?
     /// A MeditationMethod id, MeditationMethod.ownID, or nil = unreported.
     @State private var technique: String?
-    @State private var techniqueNote: String = ""
     @State private var streakDays = 0
-    /// The photo taken on Save session, the session's own record. Full size,
-    /// decoded once on load.
-    @State private var photo: UIImage?
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var community: CommunityModel
     /// Every modal on this screen goes through ONE `.sheet(item:)`.
@@ -144,7 +138,6 @@ struct SessionResultsView: View {
                             if covered, !store.entitlements.paid { tourDim(grantChip, lit: nil) }
                             else if firstUnlocked, !store.entitlements.paid { tourDim(firstSessionChip, lit: nil) }
                             tourDim(shareButton, lit: nil)
-                            if FeatureFlags.friends { tourDim(visibilityChip, lit: nil) }
                         } else {
                             header(session)
                             // Two very different absences that look identical
@@ -153,8 +146,6 @@ struct SessionResultsView: View {
                             if session.isPhoneOnly { phoneSessionCard }
                             else { missingStatsCard }
                         }
-                        if FeatureFlags.friends, let photo { tourDim(photoCard(photo), lit: nil) }
-                        tourDim(reflectionCard, lit: nil)
                     } else {
                         Text("No results for this session.")
                             .font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
@@ -163,6 +154,19 @@ struct SessionResultsView: View {
                 .padding(AppMetrics.screenPadding)
             }
             .screenBackground()
+            // Leaving the unlocked first results is the moment of the offer.
+            // It rode the reflection card's own onDisappear until that card
+            // was cut (2026-09-22); it belongs to the screen, not to a card.
+            // Never inside the onboarding tour, never for a payer, and never
+            // for a phone-only sit: the whole offer is "you have just seen
+            // your evidence, here is how to keep seeing it", and a sit with
+            // no Watch produced none.
+            .onDisappear {
+                if firstUnlocked, !store.entitlements.paid, tourStage == nil,
+                   session?.isPhoneOnly != true {
+                    firstOffer.requestPaywall()
+                }
+            }
             .toolbar {
                 ToolbarItemGroup(placement: .topBarLeading) {
                     if session != nil, stats != nil {
@@ -188,7 +192,6 @@ struct SessionResultsView: View {
             }
             .deleteSessionDialog(pending: $pendingDelete) { _ in
                 deleted = true
-                autosave?.cancel()
                 dismiss()
             }
             .sheet(item: $route, onDismiss: {
@@ -803,30 +806,6 @@ struct SessionResultsView: View {
         }
     }
 
-    /// Who can see this session, and the way to change it (Save session in
-    /// edit mode). Quiet, never gold: the screen's one gold object is Share
-    /// or the unlock.
-    private var visibilityChip: some View {
-        let shared = currentVisibility == "friends"
-        return Button { route = .post } label: {
-            HStack(spacing: 7) {
-                Image(systemName: shared ? "person.2" : "lock")
-                Text(shared ? "Friends can see this" : "Only you")
-                Text("· Edit").foregroundStyle(AppColor.textSecondary)
-            }
-            .font(AppFont.caption.weight(.semibold))
-            .foregroundStyle(AppColor.textPrimary)
-            .padding(.horizontal, 12).padding(.vertical, 7)
-            .overlay(Capsule().stroke(AppColor.textSecondary.opacity(0.35), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
-    }
-
-    private var currentVisibility: String {
-        SessionStore.reflection(for: sessionID, in: context)?.visibility ?? "private"
-    }
-
     /// Value snapshot for the share card — built from the rows already loaded,
     /// so the sheet never touches storage.
     private var shareData: ShareCardData? {
@@ -918,218 +897,6 @@ struct SessionResultsView: View {
 
     // MARK: Reflection
 
-    /// The photo taken on Save session, shown whole, portrait, above the
-    /// reflection because both are the person's own record of the sit.
-    /// Tapping it opens Save session, where Retake lives.
-    private func photoCard(_ image: UIImage) -> some View {
-        Button { route = .post } label: {
-            HStack(alignment: .top, spacing: 14) {
-                Color.clear
-                    .frame(width: 120, height: 160)
-                    .overlay(Image(uiImage: image).resizable().scaledToFill())
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Your photo")
-                        .font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
-                    if let session {
-                        Text(session.startedAt.formatted(date: .abbreviated, time: .shortened))
-                            .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
-                    }
-                    Spacer(minLength: 0)
-                    Text("Retake")
-                        .font(AppFont.caption.weight(.semibold))
-                        .foregroundStyle(AppColor.accentGoldText)
-                }
-                .frame(height: 160)
-                Spacer(minLength: 0)
-            }
-        }
-        .buttonStyle(CardButtonStyle())
-        .card()
-    }
-
-    private var reflectionCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("How did it feel?")
-                .font(AppFont.headline).foregroundStyle(AppColor.textPrimary)
-
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(Int(rating))")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGoldText).monospacedDigit()
-                Text("/ 10").font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
-                Spacer()
-            }
-            Slider(value: $rating, in: 0...10, step: 1)
-                .tint(AppColor.accentGoldText)
-                .onChange(of: rating) { _, _ in markDirty() }
-
-            techniqueSection
-
-            noteSection
-
-            // Gold, like Share: the first tester typed a note, never saw the
-            // grey button, and lost it. Everything here also saves itself
-            // (`markDirty`), so the button is confirmation, not the only exit.
-            Button(reflectionSaved ? "Saved ✓" : "Save reflection") { save() }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(reflectionSaved)
-                .opacity(reflectionSaved ? 0.7 : 1)
-        }
-        .card()
-        .onDisappear {
-            flushReflection()
-            // Leaving the unlocked first results is the moment of the offer.
-            // Never inside the onboarding tour (there is no tour session any
-            // more, but the environment guard is free), never for a payer.
-            // A phone-only sit is exempt. The whole offer is "you have just
-            // seen your evidence, here is how to keep seeing it", and a sit
-            // with no Watch produced none: the screen behind the paywall
-            // would be selling curves this person has never been shown.
-            if firstUnlocked, !store.entitlements.paid, tourStage == nil,
-               session?.isPhoneOnly != true {
-                firstOffer.requestPaywall()
-            }
-        }
-    }
-
-    /// Which method they practiced. Unreported is the default and stays a
-    /// legitimate answer — a session nobody labelled is still a good session,
-    /// and forcing the tag would poison the very data it exists to collect.
-    @ViewBuilder
-    private var techniqueSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("What did you practice?")
-                .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(AppColor.textSecondary)
-
-            Menu {
-                TechniqueOptions(select: setTechnique)
-            } label: {
-                HStack {
-                    Text(MeditationMethod.label(for: technique) ?? "Unreported")
-                        .font(AppFont.note)
-                        .foregroundStyle(technique == nil ? AppColor.textSecondary
-                                                          : AppColor.textPrimary)
-                    Spacer()
-                    Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption2)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-                .padding(12)
-                .background(AppColor.backgroundPrimary,
-                            in: RoundedRectangle(cornerRadius: 12))
-            }
-
-            if technique == MeditationMethod.ownID {
-                TextField("What did you do?", text: $techniqueNote, axis: .vertical)
-                    .lineLimit(2...)
-                    .font(AppFont.note)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .padding(12)
-                    .background(AppColor.backgroundPrimary,
-                                in: RoundedRectangle(cornerRadius: 12))
-                    .onChange(of: techniqueNote) { _, _ in markDirty() }
-            }
-        }
-    }
-
-    private func setTechnique(_ id: String?) {
-        technique = id
-        if id != MeditationMethod.ownID { techniqueNote = "" }
-        markDirty()
-    }
-
-    /// The note. Once written it reads as flowing full-width text — a post
-    /// caption, not a form field — so a long reflection is pleasant to read
-    /// rather than something you scroll through four lines at a time. Tapping
-    /// it returns to editing, where the field grows without limit.
-    @ViewBuilder
-    private var noteSection: some View {
-        if isEditingNote || note.isEmpty {
-            TextField(FeatureFlags.friends ? "Add a private note…" : "Add a note…", text: $note, axis: .vertical)
-                // Open-ended upper bound: the field grows with the note instead
-                // of capping and scrolling inside itself.
-                .lineLimit(3...)
-                .font(AppFont.note)
-                .foregroundStyle(AppColor.textPrimary)
-                .textInputAutocapitalization(.sentences)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(14)
-                .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 14))
-                .focused($noteFocused)
-                .onChange(of: note) { _, _ in markDirty() }
-                // Focus decides the editing state, so typing into an empty
-                // note cannot flip the field to read-only after the first
-                // character, and dismissing the keyboard saves what was typed.
-                .onChange(of: noteFocused) { _, focused in
-                    if focused { isEditingNote = true }
-                    else if !note.isEmpty { save() }
-                }
-                // Aziz, 2026-09-15: the keyboard was hard to get rid of. A
-                // multi-line field has no Return key to close it, and the
-                // interactive scroll-to-dismiss is a gesture nobody finds.
-                // An explicit Done above the keys is the affordance.
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Done") { save() }
-                            .font(AppFont.callout.weight(.semibold))
-                    }
-                }
-        } else {
-            Button {
-                isEditingNote = true
-                noteFocused = true
-            } label: {
-                Text(note)
-                    .font(AppFont.note)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .lineSpacing(3)
-                    .multilineTextAlignment(.leading)
-                    // No line cap and no inner scroll view — the whole note is
-                    // laid out, and the results screen scrolls as one page.
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(CardButtonStyle())
-        }
-    }
-
-    /// An edit happened. It persists on its own 0.8 s after the last one, and
-    /// again if the screen goes away first (`flushReflection`). Nothing typed
-    /// here depends on a button any more.
-    private func markDirty() {
-        reflectionSaved = false
-        autosave?.cancel()
-        autosave = Task { @MainActor in
-            try? await Task.sleep(for: .seconds(0.8))
-            guard !Task.isCancelled else { return }
-            persistReflection()
-        }
-    }
-
-    private func persistReflection() {
-        SessionStore.saveReflection(sessionID: sessionID, rating: Int(rating), note: note,
-                                    technique: technique, techniqueNote: techniqueNote,
-                                    in: context)
-        reflectionSaved = true
-    }
-
-    private func flushReflection() {
-        autosave?.cancel()
-        guard !deleted else { return }
-        if !reflectionSaved { persistReflection() }
-    }
-
-    /// The explicit save: persists now and ends note editing.
-    private func save() {
-        autosave?.cancel()
-        persistReflection()
-        isEditingNote = false
-        noteFocused = false
-    }
-
     // MARK: Data
 
     /// Asks for an App Store rating on the third completed session or later,
@@ -1166,7 +933,6 @@ struct SessionResultsView: View {
             rating = Double(reflection.rating ?? 5)
             note = reflection.note
             technique = reflection.technique
-            techniqueNote = reflection.techniqueNote
             // Save session creates a reflection with no rating. Treating that
             // row as a saved reflection put a 5/10 nobody gave on the share
             // card; it counts once there is a rating or a note.
@@ -1179,7 +945,6 @@ struct SessionResultsView: View {
         // Streak for the share card, derived the same way the calendar does.
         let allSessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
         streakDays = StreakCalculator.streak(from: allSessions.map(\.startedAt)).current
-        photo = FeatureFlags.friends ? SessionStore.photo(for: sid, in: context).flatMap(PhotoThumbs.full) : nil
 
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_SHARE"] == "1" { route = .share }

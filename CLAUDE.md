@@ -3300,9 +3300,16 @@ and **screen 1**, with four changes.
   Same note that took him off Aziz's log a day earlier.
 - **A session row opens its page**, and the measurements are one tap further
   in ("See the measurements", only when something measured them).
-- **Still open, both flagged in the mockup:** a Friends post carries a score,
-  so a phone session cannot be posted; and the results screen still has its
-  own rating card, which is now a duplicate of the slider.
+- **The results screen is the measurements and nothing else** (Melvin, same
+  day: "yes strip it"). Gone from it: the rating card with its slider,
+  technique picker and note, the photo card, and the "Only you / Edit" chip.
+  What is left is the ring, the verdict, Otto, the tiles, the curves, the
+  unlock and Share. The session's page owns everything a person SAYS; this
+  screen owns what was measured, and it is reached from that page.
+  **The first-session paywall moved with it**: the offer rode the reflection
+  card's own `onDisappear`, and it belongs to the screen.
+- **Still open:** a Friends post carries a score, so a phone session cannot be
+  posted yet.
 
 ### Block can be tested without Screen Time (same day)
 
