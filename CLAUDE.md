@@ -2865,6 +2865,30 @@ left beside a bubble).
 - Not changed, and next if wanted: Guide, Friends and Profile are still the
   cream pages, and `OttoBubble` / `ottoScene` from the old Home are gone.
 
+## 808 IS A CONSISTENCY APP; BLOCK REPLACES THE GUIDE TAB (2026-09-21, Melvin)
+
+**Read `CONSISTENCY.md` before writing anything a user will see.** The
+hardest part of meditation is doing it again tomorrow, so that is what 808
+sells now. Otto is someone you look after (his aura), and Block holds the
+apps you chose until you have meditated in the window you chose. Measurement
+stays, as a feature, not the headline.
+
+- **The guide is a circle under the streak on Home** (`guideBadge`,
+  `HomeSheet.guide`), built and verified. The Guide TAB is still there until
+  Block replaces it; that waits for sign-off on `mockups/block-v1.html`.
+- **The loop Apple allows:** shield ("Otto's holding Instagram", "Ask Otto")
+  → a Time Sensitive notification, because a shield cannot open an app → 808
+  opens on one of twenty interventions → "Okay, let's meditate" (a finished
+  sit releases the apps) or "Not now" (5 to 60 minutes). The shield is only
+  an icon, a title, a line and two buttons; everything else lives in the app.
+- **GATE: the Family Controls (Distribution) entitlement**, requested from
+  Apple for the app and each of three extensions, by Melvin or Aziz. Nothing
+  ships without it; dev builds work on a phone meanwhile. **The simulator
+  cannot show shields.** A DeviceActivity interval must span 15 minutes, so a
+  5-minute pass starts in the past; verify on a device.
+- Aziz's areas are not touched by this: the plus's session screens and
+  Profile.
+
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
 "the sound screen button looks terrible", then on the first redesign: "no

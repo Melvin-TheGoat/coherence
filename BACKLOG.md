@@ -4,6 +4,23 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## 808 is a consistency app: Block, and the guide moves to Home (2026-09-21, Melvin)
+
+The pivot and the whole Block design are in `CONSISTENCY.md`. **DONE:** the
+guide is a circle under the streak on Home (opens "How to meditate");
+`CONSISTENCY.md` written; `mockups/block-v1.html` drawn (the Block tab, a
+blocker's settings, shield to notification to Otto to the two doors, and the
+twenty interventions). **WAITING ON MELVIN:** sign-off on the mockup and the
+five open questions at its end (rest of window or day; does "Not now" cost
+aura; Strict in v1; free or paid; Mindful morning on by default). **WAITING
+ON MELVIN OR AZIZ, start now:** request the Family Controls (Distribution)
+entitlement from Apple for the app and all three extensions; days to weeks.
+**Then:** the Guide tab becomes Block in Swift; the Screen Time build
+(FamilyControls, ManagedSettings, DeviceActivity, three extensions, App
+Group); the notification into the interventions; tested on a phone, since the
+simulator cannot show shields. **Also owed by the pivot:** PURPOSE.md,
+SCIENCE.md, the website hero, App Store copy.
+
 ## Home in Aziz's valley, Otto centred, the bar lowered (2026-09-21, Melvin)
 
 **DONE:** merged Aziz's `mvp` (the valley sit, the Ready screen, no
