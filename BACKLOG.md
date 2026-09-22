@@ -15,10 +15,10 @@ the five answers now in `CONSISTENCY.md` > Decided: meditating releases the
 apps for the rest of the window; "Not now" costs glow only if the window
 then passes with no meditation; Strict in v1; Block is paid; the default is
 **Mindful day** (the picked apps held all day until you meditate, one switch
-off). **WAITING ON MELVIN:** yes or no on the proposed amounts (a skipped
-window costs 10, a skipped day is the normal 20 and never a rest day), and
-the free-person question (recommended: Mindful day waits on the Block tab and
-switching it on opens the free-week offer). **WAITING ON MELVIN (Account
+off). **DECIDED 2026-09-22:** a skipped window costs 20 × hours / 24
+(Melvin's formula), built into `OttoAura` with tests; a free person finds
+Mindful day waiting on the Block tab and switching it on opens the free-week
+offer. **WAITING ON MELVIN (Account
 Holder), start now:** create the three extension App IDs
 (`com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`) and request
 Family Controls (Distribution) on all four App IDs, Capability Requests tab;

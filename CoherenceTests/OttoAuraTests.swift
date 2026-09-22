@@ -78,6 +78,77 @@ final class OttoAuraTests: XCTestCase {
         XCTAssertEqual(level([1, 3, 4, 5, 8], today: 8), 50)
     }
 
+    // MARK: - "Not now" (Melvin, 2026-09-22)
+
+    /// A window Otto held apps in, opening at `h` o'clock on day `d`.
+    private func window(_ d: Int, from h: Int, hours: Double) -> DateInterval {
+        DateInterval(start: day(d, h), duration: hours * 3600)
+    }
+
+    /// "Not now", then a session ten minutes later: nothing lost.
+    func test_notNowThenMeditatingInsideTheWindowCostsNothing() {
+        let dates = [day(8), day(9), day(10, 8)]
+        let morning = [window(10, from: 6, hours: 4)]
+        XCTAssertEqual(OttoAura.level(from: dates, notNow: morning, today: day(10), calendar: cal), 70)
+    }
+
+    /// Melvin's formula: glow lost = 20 × hours held / 24.
+    func test_aSkippedWindowCostsInProportionToHowLongTheAppsWereHeld() {
+        XCTAssertEqual(OttoAura.skipCost(for: window(9, from: 0, hours: 24)), 20, accuracy: 0.0001)
+        XCTAssertEqual(OttoAura.skipCost(for: window(9, from: 0, hours: 12)), 10, accuracy: 0.0001)
+        XCTAssertEqual(OttoAura.skipCost(for: window(9, from: 0, hours: 3)), 2.5, accuracy: 0.0001)
+        XCTAssertEqual(OttoAura.skipCost(for: window(9, from: 0, hours: 1)), 20.0 / 24, accuracy: 0.0001)
+
+        // Sessions every evening, so each held window closes empty and only
+        // the window moves the number: 70 without one.
+        let evenings = [day(8, 20), day(9, 20), day(10, 20)]
+        func held(_ hours: Double) -> Int {
+            OttoAura.level(from: evenings, notNow: [window(9, from: 0, hours: hours)],
+                           today: day(10, 21), calendar: cal)
+        }
+        XCTAssertEqual(held(12), 60)
+        XCTAssertEqual(held(6), 65)
+        XCTAssertEqual(held(1), 69)
+    }
+
+    /// The whole day held and skipped costs a missed day's 20, and the rest
+    /// day does not cover it: it forgives the missed day, never the "Not now".
+    func test_aSkippedMindfulDayCostsWhatAMissedDayDoesEvenOnARestDay() {
+        XCTAssertEqual(level([7, 8, 10], today: 10), 70)
+        let mindfulDay = [window(9, from: 0, hours: 24)]
+        XCTAssertEqual(OttoAura.level(from: [day(7), day(8), day(10)], notNow: mindfulDay,
+                                      today: day(10), calendar: cal), 50)
+    }
+
+    /// Two blockers skipped on one day still cost no more than a missed day.
+    func test_noDayCostsMoreThanAMissedDay() {
+        let both = [window(9, from: 0, hours: 24), window(9, from: 21, hours: 3)]
+        // Day 8 is the rest, so day 9 is a plain missed day: 20 either way.
+        XCTAssertEqual(OttoAura.level(from: [day(7), day(10)], notNow: both, today: day(10), calendar: cal), 40)
+        // On a rest day the two windows are capped at 20 together.
+        XCTAssertEqual(OttoAura.level(from: [day(7), day(8), day(10)], notNow: both, today: day(10), calendar: cal), 50)
+    }
+
+    func test_aWindowCostsOnlyOnceItHasClosed() {
+        let morning = [window(10, from: 6, hours: 4)]
+        let before = [day(8), day(9)]
+        // 8 o'clock: still open, nothing lost yet.
+        XCTAssertEqual(OttoAura.level(from: before, notNow: morning, today: day(10, 8), calendar: cal), 60)
+        // Noon: closed with no session, 20 × 4 / 24 = 3.3 gone.
+        XCTAssertEqual(OttoAura.level(from: before, notNow: morning, today: day(10, 12), calendar: cal), 57)
+        // Meditating that evening still lifts him; the morning still cost.
+        XCTAssertEqual(OttoAura.level(from: before + [day(10, 18)], notNow: morning,
+                                      today: day(10, 19), calendar: cal), 67)
+    }
+
+    /// Someone who set Otto to hold their apps has started, meditated or not.
+    func test_aSkippedWindowCountsBeforeTheFirstSession() {
+        let level = OttoAura.level(from: [], notNow: [window(9, from: 0, hours: 24)],
+                                   today: day(10), calendar: cal)
+        XCTAssertEqual(level, 20)
+        XCTAssertEqual(OttoAura.Stage(level: level), .frustrated)
+    }
+
     func test_stageBoundaries() {
         let cases: [(Int, OttoAura.Stage)] = [
             (0, .low), (9, .low), (10, .frustrated), (29, .frustrated),

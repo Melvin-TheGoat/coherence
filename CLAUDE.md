@@ -2650,6 +2650,16 @@ Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
   In flow 70-89, Enlightened 90-100. `OttoAuraTests` pins the mockup's
   promises: first session lifts him to Progressing, five days in a row reach
   Enlightened, a week away from Enlightened brings him to Low.
+- **"Not now" windows cost in proportion (Melvin's formula, 2026-09-22):** a
+  window Otto was told "Not now" in, that closes with no session started
+  inside it, costs `20 × hours / 24` (`OttoAura.skipCost`), so a skipped
+  Mindful day costs a missed day's 20. It belongs to the day it opened and
+  counts once closed. **No day costs more than 20** (a day's windows are
+  capped, and a missed day already costs 20), **a rest day forgives the
+  missed day, never the window**, and a skipped window before the first
+  session starts the history. The level is a Double inside and rounds on the
+  way out. `level(from:notNow:)` defaults to no windows, so Home is
+  unchanged until Block supplies them.
 - **`OttoAuraFigure` draws him on Home.** Low, Frustrated and Curious are
   still drawings (`OttoLow`, `OttoFrustrated`, `OttoCurious`, from
   `mockups/otto-v3/`), deliberately motionless. From Progressing up he is the
@@ -2879,10 +2889,12 @@ stays, as a feature, not the headline.
 - **`mockups/block-v1.html` is APPROVED (2026-09-22)**, with five decisions
   recorded in `CONSISTENCY.md` > Decided: a finished session releases the
   apps for the rest of THAT WINDOW, not the day; "Not now" costs glow only
-  when the window then passes with no session; Strict ships in v1; Block is
-  paid; **the default blocker is Mindful day**, the picked apps held all day
-  until you meditate, one switch off. Apple lets only the person pick apps
-  (tokens are opaque), so "on by default" means set up and waiting.
+  when the window then passes with no session, in proportion to its length
+  (see the aura section); Strict ships in v1; Block is paid; **the default
+  blocker is Mindful day**, the picked apps held all day until you meditate,
+  one switch off. Apple lets only the person pick apps (tokens are opaque),
+  so "on by default" means set up and waiting; a free person switching it on
+  meets the free-week offer.
 - **The loop Apple allows:** shield ("Otto's holding Instagram", "Ask Otto")
   → a Time Sensitive notification, because a shield cannot open an app → 808
   opens on one of twenty interventions → "Okay, let's meditate" or "Not now"

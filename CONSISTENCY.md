@@ -181,22 +181,23 @@ Each is one screen in 808 after the notification. Some read the moment
 1. **Meditating releases the apps for the rest of the window**, not the rest
    of the day, in case someone wants to meditate twice a day.
 2. **"Not now" costs Otto only if the window then passes without a
-   meditation.** "Not now" and a session ten minutes later costs nothing.
-   Amounts, proposed and waiting on Melvin's yes: a window skipped this way
-   costs 10 glow; if the whole day passes without a session it is a missed
-   day (20), and the free rest day never covers a day Otto was told "Not
-   now". The "Not now" events are stored in the App Group (the passes are
-   counted there anyway) and `OttoAura` takes them as a second input, so
-   the aura stays derived, never a stored number.
+   meditation, in proportion to how long the apps were held** (Melvin's
+   formula): glow lost = 20 × hours / 24. A skipped Mindful day costs 20,
+   the same as a missed day; 12 hours costs 10, 3 hours 2.5, an hour under
+   1. "Not now" and a session ten minutes later costs nothing. No day costs
+   more than a missed day, and the free rest day forgives a missed day but
+   never a skipped window. It counts before a person's first session too:
+   setting Otto to hold your apps is starting. Built into `OttoAura`
+   (`notNow:` windows, tested); the Block build supplies the windows from
+   the App Group, where the passes are counted anyway.
 3. **Strict ships in the first version.**
 4. **Block is paid.**
 5. **The default is Mindful day** (see Block above), easy to switch off.
+6. **A free person finds Mindful day set up and waiting on the Block tab,
+   and switching it on opens the free-week offer**, so everyone who tries
+   paid meets Block on day one.
 
 ## Still open
 
-1. **Paid and on by default meet at a free person.** Recommended: a free
-   person finds Mindful day set up and waiting on the Block tab, and
-   switching it on opens the free-week offer, so everyone who tries paid
-   meets Block on day one.
-2. Where a new person first meets Mindful day now that onboarding is gone:
+1. Where a new person first meets Mindful day now that onboarding is gone:
    a card on Home, or only the Block tab.
