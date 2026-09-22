@@ -143,8 +143,9 @@ Each is one screen in 808 after the notification. Some read the moment
   management, or personal device usage management." Block is that. The
   request leads with it, and so must the App Store listing of the release
   that ships Block: today's listing describes a Watch meditation app.
-- **GATE, Melvin's to start (it needs the Account Holder):** Family Controls
-  (Distribution) is requested per App ID, in Certificates, Identifiers &
+- **GATE CLEARED 2026-09-22: all four requests were approved within
+  minutes of sending.** Family Controls (Distribution) is requested per App
+  ID, by the Account Holder, in Certificates, Identifiers &
   Profiles > Identifiers > the App ID > Capability Requests > Request, for
   the app AND each extension (Apple: "If your app includes a Screen Time API
   app extension, submit the same request for the extension"). The extension
@@ -171,11 +172,11 @@ Each is one screen in 808 after the notification. Some read the moment
   > never learns which apps were chosen, uses Screen Time data only for the
   > person's own holds, and nothing from Screen Time leaves the device or is
   > shared, for analytics, advertising or anything else.
-- **Block is built on its own branch.** Once a target carries the Family
-  Controls entitlement, every App Store archive fails ("Profile doesn't
-  include the com.apple.developer.family-controls entitlement") until
-  distribution is approved, so Block stays off `mvp` and `social-1.1` until
-  then.
+- **Block is built on its own branch** anyway, because it is large and
+  `mvp` and `social-1.1` are release branches. (Before approval there was a
+  harder reason: a target carrying the entitlement made every App Store
+  archive fail, "Profile doesn't include the
+  com.apple.developer.family-controls entitlement".)
 - **The simulator cannot show shields.** Block is tested on a phone.
 
 ## What else has to change
@@ -229,5 +230,7 @@ Each is one screen in 808 after the notification. Some read the moment
 
 ## Still open
 
-1. Where a new person first meets Mindful day now that onboarding is gone:
-   a card on Home, or only the Block tab.
+1. Where a new person first meets Mindful day. That depends on onboarding,
+   which Aziz cut on 2026-09-21 (`d4ddbfc`) without Melvin knowing: if it
+   returns, it asks for the apps and meets Otto there; if not, a card on
+   Home or the Block tab.

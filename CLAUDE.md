@@ -2900,16 +2900,16 @@ stays, as a feature, not the headline.
   opens on one of twenty interventions → "Okay, let's meditate" or "Not now"
   (5 to 60 minutes). The shield is only an icon, a title, a line and two
   buttons; everything else lives in the app.
-- **GATE: Family Controls (Distribution), per App ID, requested by the
-  Account Holder (Melvin)** in Certificates, Identifiers & Profiles >
+- **Family Controls (Distribution) is APPROVED (2026-09-22), all four App
+  IDs, within minutes of the request.** It is per App ID, requested by the
+  Account Holder (Melvin) in Certificates, Identifiers & Profiles >
   Identifiers > the App ID > Capability Requests, for the app AND each
   extension: `com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`.
-  Those three bundle IDs are fixed now; build the targets with exactly them.
-  Dev builds work on a phone meanwhile. **Block lives on its own `block`
-  branch until approval**, because a target carrying the entitlement makes
-  every App Store archive fail. **The simulator cannot show shields.** A
-  DeviceActivity interval must span 15 minutes, so a 5-minute pass starts in
-  the past; verify on a device.
+  Those three bundle IDs are fixed; build the targets with exactly them.
+  Block is built on its own `block` branch because it is large and `mvp` /
+  `social-1.1` are release branches. **The simulator cannot show shields.**
+  A DeviceActivity interval must span 15 minutes, so a 5-minute pass starts
+  in the past; verify on a device.
 - **NEVER SEND SCREEN TIME DATA OFF THE PHONE.** Apple's Family Controls
   terms, accepted with the request, allow it only for the person's own
   device management and forbid sharing it beyond the person and their

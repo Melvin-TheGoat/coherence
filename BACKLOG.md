@@ -18,12 +18,12 @@ then passes with no meditation; Strict in v1; Block is paid; the default is
 off). **DECIDED 2026-09-22:** a skipped window costs 20 × hours / 24
 (Melvin's formula), built into `OttoAura` with tests; a free person finds
 Mindful day waiting on the Block tab and switching it on opens the free-week
-offer. **WAITING ON MELVIN (Account
-Holder), start now:** create the three extension App IDs
-(`com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`) and request
-Family Controls (Distribution) on all four App IDs, Capability Requests tab;
-days to six weeks. **Then:** Block in Swift on its own `block` branch (the
-entitlement breaks App Store archives until approved): the Guide tab becomes
+offer. **DONE 2026-09-22:** Family Controls (Distribution) approved on all
+four App IDs (`com.lockout.meditate808` plus `.monitor`, `.shield`,
+`.shieldaction`), within minutes. **OPEN, founders' call:** onboarding was
+cut by Aziz in `d4ddbfc` (2026-09-21) and Melvin did not know; whether it
+returns, and whether it asks the Block questions, decides where a new person
+meets Mindful day. **Then:** Block in Swift on its own `block` branch: the Guide tab becomes
 Block; FamilyControls, ManagedSettings, DeviceActivity, three extensions,
 App Group; the notification into the interventions; the "Not now" input to
 `OttoAura`; tested on a phone, since the simulator cannot show shields.
