@@ -3595,6 +3595,71 @@ far half, in front on the near half, handed over out at his sides.
   `PREVIEW_UNBLOCK_GALLERY`, `PREVIEW_INTERVENTION_HOWLONG`,
   `PREVIEW_FACETIME_ANSWERED` and `PREVIEW_SETUP` open them on a simulator.
 
+## 1.1 RELEASE PREP, AND OTTO'S LAST FIXES OF THE DAY (2026-09-23, Melvin)
+
+"I really dont want to be rejected for any reason." Two agents and a
+review pass; the ordered list of what is still owed by a human is the new
+top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
+
+- **Delete account now deletes the person's public Friends data**
+  (5.1.1(v)): profile, @username reservation, posts with their media,
+  reactions given, friend edges and blocks they wrote
+  (`CommunityStore.deleteEverythingOfMine`). **Reports are kept** as
+  moderation records; edges other people wrote stay theirs (the public DB
+  only lets a creator modify a record). Best effort and resumable: a
+  failure, or no store because iCloud is unreachable, sets
+  `community.pendingAccountDeletion.v1` and a launch task retries;
+  claiming a new username clears it, so a retry can never delete a profile
+  made after coming back. **Needs a new QUERYABLE index, `Reaction.author`
+  (eight in all, `CLOUDKIT_SETUP.md`).**
+- **Every Block extension has its own privacy manifest** (App Group
+  `UserDefaults`, reason `1C8F.1`; the app declares it beside `CA92.1`).
+  Missing ones are refused at upload (ITMS-91053), and the extensions are in
+  every archive whatever `blockInRelease` says.
+- **The camera permission names "Otto's video call screen"**, not FaceTime
+  (5.2.5). **PostHog crash capture is off in code**: it only installs when
+  the app switches it on, so the App Privacy label needs no Diagnostics row.
+- Policy, terms (new 6b, Block), `APP_STORE.md` (review notes that need no
+  Watch, age rating worked answers: UGC and Social yes, 13+) all updated.
+  **Open, the founders' call:** a Friends post carries the score, which is
+  derived from heart rate, into the public iCloud database; 5.1.3(ii) says
+  health information may not be stored in iCloud and has no consent
+  exception. Recommended: keep the score on the private session page and
+  drop it from posts, the zero-risk option. Not changed without a yes.
+
+### Otto, the same day
+
+- **The editor's copy of `Otto.riv` lost the greeting's eyelid keys a
+  SECOND time**, and the sitting pose had had no chest patch since the
+  2026-09-22 rebuild, so he did not breathe during a sit. Both restored
+  (ChestSit pivots low in the belly, 110 x 114), the eight pose images
+  swapped for the defringed sources (verified pixel for pixel against what
+  the rig held), blink and breath verified from recordings. **Always export
+  the editor's copy and diff it against the repo before editing Otto.**
+- **The aura rig (`OttoAura.riv`):** the moth flies out past the left edge
+  of the screen and back in from beyond it; the thirteen bodies (562 to 610
+  canvas units) all stand 600, by scaling `Bob` about his base in each
+  look's timeline so his light and bugs scale with him; and a `snap`
+  boolean gives every look-to-look fade an instant twin, used by the
+  stress bar (`auraSnap`), while Home keeps its 500 ms crossfade.
+  **The artboard never clipped: the moth was cut by the edge of the app's
+  Rive view.** `OttoAuraFigure` draws the rig 2.6 times wider than its
+  canvas (`flightSpan`, hit testing off) so anything in the rig can leave
+  the screen.
+- **The grasshopper crosses, it never fades**: one per 45 s window, in
+  from beyond the left edge, a rest after every hop, out past the right,
+  on one feet line in the flowered grass (71 to 82% of the scene; the old
+  band began on the ridge, which was the "floating"). It passes behind Otto
+  when it crosses farther back than his cushion (`ValleyLife.meadowBehind`,
+  drawn inside the ground scene) and in front when nearer, slightly larger
+  the nearer it is.
+- **Birds never turn over**: the loop-the-loop pattern is a gentle lift.
+- **The tour switches tabs the way a tap does**: its tab is its own state,
+  changed with animations off; the spotlight still eases.
+- The Friends post card lost its rule above the numbers.
+- **The Rive MCP cannot switch the editor's file.** Ask the person to click
+  the tab, then confirm with `session_info` before any write.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in
