@@ -1,5 +1,11 @@
 # Otto's seven states: the art brief
 
+> **Delivered 2026-09-22** (CLAUDE.md "OTTO HAS SEVEN STATES"). Two things
+> below changed on delivery: the light is baked into the art and the app's
+> SwiftUI glow, orbits, sparks and ripples are deleted, so "What NOT to bake
+> into the art" no longer applies; and the sheet is cut by
+> `tools/otto_aura_cut.swift`, not `otto_split.py` after `otto_unmatte.py`.
+
 Melvin, 2026-09-22. Replaces the three aura drawings (`OttoLow`,
 `OttoFrustrated`, `OttoCurious`) and the rig's part in the top stages.
 

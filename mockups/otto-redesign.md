@@ -117,6 +117,10 @@ running either command.
 
 ## The aura poses (2026-09-21): three more of TODAY's Otto
 
+> **Superseded 2026-09-22.** The aura is seven states generated as one sheet
+> from `otto-v4/PROMPTS.md`, and `OttoLow`, `OttoFrustrated` and
+> `OttoCurious` are deleted. The import commands above still stand.
+
 For the aura progression (`mockups/otto-aura.html`): 60 percent is today's
 `otto-sit.png` and Rive draws the glow for 80 and 100, so only three new
 poses are needed. **The previous prompt above describes an "old and wise"

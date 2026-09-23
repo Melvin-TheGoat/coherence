@@ -53,10 +53,10 @@ this release needs a NEW archive.
       a held app shows Otto's shield; Ask Otto sends "Otto wants a word";
       tapping it opens one of Otto's screens; a 5 minute pass closes the apps
       again on time (the 15-minute DeviceActivity floor, see CONSISTENCY.md);
-      a session releases the window; Strict offers no pass; a daily limit
-      holds after its minutes. **And pick "All Apps & Categories", then
-      check 808 itself still opens**: if Screen Time shields the app that
-      set the shield, nobody could open 808 to meditate. Also whether a
+      a session releases the window; a daily limit holds after its minutes.
+      **And pick "All Apps & Categories", then check 808 itself still
+      opens**: if Screen Time shields the app that set the shield, nobody
+      could open 808 to meditate. Also whether a
       window that repeats overnight still closes (`intervalDidEnd`).
       `tools/beta_install.sh` installs 808 Beta.
 - [ ] Signing for App Store: the three extension App IDs
@@ -153,6 +153,17 @@ on it.
   (`evidenceGrantRemaining`, `evidenceGrantSince`, `rewardedFriends`,
   `grantedSessionIDs`). Run the schema primer on a dev build, then deploy
   Development → Production. A promotion is a release step (the 1.0 lesson).
+- [ ] **CloudKit PRIVATE schema, everything synced since the 2026-09-12
+  promotion** (added 2026-09-23: CLAUDE.md said `SessionPhoto` was on this
+  list and it was not). The new `CD_SessionPhoto` record type (`sessionID`,
+  `takenAt`, `jpeg`, `thumbnail`, `video`, `createdAt`), `CD_Session.source`
+  (2026-09-21), and check `CD_User.username` (added the morning of the
+  promotion). Production rejects what it has never seen, so photos and
+  phone sessions would stop syncing silently. Get every field into
+  Development with a DEBUG build signed in to iCloud: save a session with a
+  video and set a username, because the schema primer leaves `video` and
+  `username` nil and a nil field is never written. Deploy, then confirm
+  Production lists them.
 - [ ] **Age rating questionnaire:** UGC and Social both flip to **Yes**.
 - [ ] **App Privacy label:** add Photos or Videos, User Content, Name, User
   ID (linked, not tracking, App Functionality), to match the manifest.

@@ -1,5 +1,14 @@
 # 808 — Stage 2 Roadmap
 
+> **Superseded by `BACKLOG.md` (2026-09-23 sweep).** Written in August,
+> before launch. Phases 0 and 4 are done; Phase 1's relative verdict ("calmer
+> than 8 of your last 10") is in `VerdictEngine` and a session records its
+> `source`; Phase 3's circle became Friends; the camera PPG it builds on was
+> cut in the MVP. Every idea from it that is still open is in `BACKLOG.md` >
+> Potential features, the one running list, so do not append here. Kept for
+> the reasoning: why no leaderboards, why EEG before any claim about the
+> brain, and Meta's rules for Instagram DMs.
+
 Everything after the v1 launch push. `App_ROADMAP_v2.md` carries Phases 0–9 (the
 build); this carries what comes next. Same rules: numbered phases, explicit
 steps, and **a human verification checkpoint between every phase** — someone has

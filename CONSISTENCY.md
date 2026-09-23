@@ -22,7 +22,8 @@ headline.
 
 - **He is someone you look after.** His aura (`OttoAura`, built) rises with
   every day you meditate and sinks when you miss days, with one rest day a
-  week free. Low, Frustrated, Curious, Progressing, In flow, Enlightened.
+  week free. Seven states since 2026-09-22: Withered, Faded, Stirring,
+  Steady, Bright, Radiant, Nirvana.
 - **He keeps you accountable without nagging.** Chill but convincing. He
   asks, he never scolds, and he never tells you what you lack (the copy rules
   in CLAUDE.md still bind: state the positive, no em dashes, no invented
@@ -82,7 +83,7 @@ a day, then held until you meditate).
 Each is one screen in 808 after the notification. Some read the moment
 (morning, night, streak, Otto's mood, a friend):
 
-1. **Otto standing**, one line in his bubble: "Got two minutes for me first?"
+1. **Otto standing**, one line in his bubble: "Got five minutes for me first?"
 2. **A text thread**: "yo it's otto" / "quick meditation before the scroll?" with
    reply chips, typing dots and all.
 3. **A FaceTime call**: Otto calling, full screen, accept and decline.
@@ -90,10 +91,10 @@ Each is one screen in 808 after the notification. Some read the moment
 4. **Breathe with me**: one breath together before the choice.
 5. **A voice note**: Otto left you one, waveform and transcript.
 6. **A note on the fridge**: "Sit first, scroll after. O."
-7. **Still there later**: "It will all still be here in two minutes."
+7. **Still there later**: "It will all still be here in five minutes."
 8. **Waking Otto** (morning): "zzz... oh, hey. Morning meditation?"
 9. **Otto's sign**: he holds up a hand-lettered sign, "Meditate first".
-10. **The streak**: "Day 6 is waiting. Two minutes keeps it going."
+10. **The streak**: "Day 6 is waiting. Five minutes keeps it going."
 11. **His glow** (tamagotchi): "Help me glow? One session today."
 12. **Two doors, playful**: "What do you want more right now?" Calm, or the
     scroll.
@@ -104,7 +105,8 @@ Each is one screen in 808 after the notification. Some read the moment
 16. **A sticker**: Otto sent you a sticker of himself meditating.
 17. **The valley**: the scene, Otto waving, "It's quiet out here."
 18. **A friend** (Friends on): "Maya already sat today. Join her?"
-19. **One minute**: "Just one minute. I'll keep time."
+19. **Five minutes**: "Just 5 minutes. I'll keep time." (the shortest
+    session that counts)
 20. **Otto asks why**: "What are you opening it for?" Bored, checking
     something, habit. Then the two doors.
 
@@ -180,13 +182,14 @@ Each is one screen in 808 after the notification. Some read the moment
 ## Build status (branch `block`, 2026-09-22 overnight)
 
 **Built:** the Block tab (Mindful day waiting for everyone, presets, the
-editor with all six settings), Apple's app picker, Screen Time authorization,
+editor), Apple's app picker, Screen Time authorization,
 the shields (one named store per blocker), the schedules and daily limits
 (DeviceActivity), the three extensions (monitor, shield look, shield
 buttons), the "Otto wants a word" notification and its route into the app,
 all twenty of Otto's screens, the "how long" screen and its passes, sessions releasing the window, the glow rule reading
-skipped windows, onboarding's explain-only Block screen, the tour's Block
-note, and the paywall when a free person switches a blocker on. Behind
+skipped windows, the tour's Block note, and the paywall when a free person
+switches a blocker on (onboarding's explain-only Block screen was built and
+then cut on 2026-09-22). Behind
 `FeatureFlags.block`: on in development builds, off for the App Store.
 
 **Verified on the simulator:** the tab, the editor, every one of the twenty
@@ -206,28 +209,16 @@ first thing to test with `tools/beta_install.sh` (808 Beta, its own
   measurement becomes one of the things 808 does.
 - The website hero, the App Store description, keywords and screenshots.
 - Otto's lines on Home, notification copy, the Ready screen.
-- Onboarding, if it comes back: ask when you want to meditate and which apps
-  to hold, then meet Otto.
+- Onboarding (back since 2026-09-22): ask when you want to meditate and which
+  apps to hold, then meet Otto.
 
-## More ideas for consistency, most promising first
+## More ideas for consistency
 
-1. **Otto on the Home Screen and Lock Screen** (widgets): his mood where you
-   look eighty times a day. The strongest tamagotchi move there is.
-2. **Mindful day as the default** (decided 2026-09-22, see Block above).
-3. **Bedtime tied to iOS Sleep**: the wind-down window follows the Sleep
-   schedule instead of a time typed in.
-4. **Meditating earns time**: a 10-minute session opens the apps until the
-   window ends; a 2-minute session opens them for an hour.
-5. **A Live Activity during the window**: "A five minute session opens your apps"
-   on the Lock Screen and Dynamic Island.
-6. **An accountability friend** (Friends): opt in, and a friend sees when your
-   Otto is low and can nudge you. **Only with a glow computed from sessions
-   alone**: the skipped-window cost comes from Screen Time, and Apple's
-   terms forbid sharing that beyond the person and their device.
-7. **A weekly letter from Otto**: what the week looked like, in his voice.
-8. **Tiny sessions count**: parked. Five minutes is the floor (Aziz,
-   2026-09-22).
-9. **Reminders at the moment you usually first unlock**, not at a fixed time.
+Moved to `BACKLOG.md` > Potential features on 2026-09-23, so there is one
+running list: widgets, iOS Sleep, earning open time, a Live Activity, an
+accountability friend, Otto's weekly letter and smarter reminders. Mindful
+day as the default is built (see Decided). Tiny sessions stay parked: five
+minutes is the floor (Aziz, 2026-09-22).
 
 ## Decided (Melvin, 2026-09-22)
 
@@ -253,7 +244,7 @@ first thing to test with `tools/beta_install.sh` (808 Beta, its own
 
 ## Still open
 
-1. Where a new person first meets Mindful day. That depends on onboarding,
-   which Aziz cut on 2026-09-21 (`d4ddbfc`) without Melvin knowing: if it
-   returns, it asks for the apps and meets Otto there; if not, a card on
-   Home or the Block tab.
+1. Where a new person first meets Mindful day. Onboarding is back
+   (2026-09-22) but its explain-only Block screen was cut the same day, so
+   today it waits on the Block tab and the tour names it. A setup step in
+   onboarding is in `BACKLOG.md` > Potential features.

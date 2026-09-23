@@ -261,10 +261,6 @@ UI must coach it, and the 2-signal degrade path must stay.
   `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
   the Watch send logs encode errors). Stale application context replayed a finished
   session on cold Watch launch (the phone now clears it on payload receipt).
-- **Recent fixes.** Belly payload was silently dropped (a non-finite Double made
-  `JSONEncoder` throw; `SignalEngine.sanitized()` now guarantees finite output and
-  the Watch send logs encode errors). Stale application context replayed a finished
-  session on cold Watch launch (the phone now clears it on payload receipt).
 - **Phase 7 DONE — accounts, settings, CloudKit (v1 feature-complete).**
   - **Onboarding + Sign in with Apple** (`Coherence/Onboarding/`): full Purpose →
     Science → SIWA. The Purpose/Science pages render the **real bundled
@@ -1345,13 +1341,6 @@ UI must coach it, and the 2-signal degrade path must stay.
       onboarding, and 2 of 12 finishers ever pressed Begin. The leak is at
       the very first screens and after onboarding, not inside the payoff.
 - **STILL TO DO (picked up 2026-08-06):**
-  - **Onboarding gaps:** the cost screen is passive where the reference flow has
-    the user *select* symptoms across four lenses (we dropped the selection along
-    with the fake score — they're separable); **theta on Proof 1**; the App Store
-    **rating prompt** (Aziz approved; `SKStoreReviewController`, no setup needed).
-  - **Paywall placement — needs Melvin + Aziz.** The spec's flow puts it at screen
-    23; its own open-questions section argues for after the first session. One
-    constant either way.
   - **Onboarding answers barely change the app.** Only the anchor does (it sets the
     reminder time). Motivation, stress, restarts and causes are used once for the
     reflection screens then dropped — which is the documented "decorative
@@ -2486,30 +2475,8 @@ people do not own.
 
 ### Onboarding is gone (REVERSED 2026-09-22, see "ONBOARDING IS BACK")
 
-`RootView` shows `ContentView` on the first launch and every launch after it.
-Nothing is asked before the first sit: no interview, no projection, no Watch
-gate, no account, no tour hand-off.
-
-The numbers were the argument: of sixteen strangers who reached the first
-screen in thirty days, twelve left on the second, and two of the twelve who
-finished the whole flow ever pressed Begin. **A flow that loses three quarters
-of the people it meets before they have done the thing is not an introduction
-to the product, it is a wall in front of it.**
-
-- `Preferences.onboardingComplete` is still written, on first launch, and
-  again if sign-out clears it. Several places read it as "this install is set
-  up" (`ReviewPrompt`, the Watch's own Begin gate), and dropping a synced
-  property is a migration hazard.
-- **The screens under `Coherence/Onboarding/` are kept but unrouted.** The
-  tour anchors (`TourTargetKey`), the paywall ladder and `FirstSessionOffer`
-  still live among them and are still used. Deleting the directory is a
-  separate job and needs those three lifted out first.
-- Sign in with Apple now exists only in Settings. A returning subscriber
-  restores through Apple's own entitlement, which never needed our account.
-- **Watch `onboarding_completed` and the day-zero funnel.** Every onboarding
-  analytics screen stops firing, so the PostHog tiles built on
-  `onboarding_step` go quiet by design. The number that matters now is
-  install to first `session_completed`, which is what the flow was costing.
+This pass also removed onboarding; Melvin restored it the next day. The
+record, and what changed when it came back, is "ONBOARDING IS BACK" below.
 
 ## PROFILE IS THE VALLEY TOO, AND IT COUNTS MINUTES (2026-09-21, Aziz)
 
@@ -3293,12 +3260,6 @@ own row, and Save session is still Aziz's screen, cut from this path only.
   second `.modifier(...)` to ContentView tipped the type checker over again.
 - `PREVIEW_AURA=<from>:<to>` (DEBUG) replays the whole thing on Home without
   waiting a day to earn it.
-- **The prompt that replaces the screen is not built.** `mockups/after-session.html`
-  draws four placements for it (a card under the glow, a toast, Otto asking
-  with two chips, the session row lit with "Add details") and two versions of
-  the one screen it opens: how it felt, what you did, notes, photos, who can
-  see it, all on one page. Awaiting Melvin's pick. Until then a session is
-  filled in from its row.
 
 ### The prompt and the session page, built (same day, Melvin's picks)
 
@@ -3949,22 +3910,6 @@ still HELD. The 1.1 submission list is in `RELEASE_CHECKLIST.md`.
   cast model Coherence.Preferences"). This produced the "Coherence quit
   unexpectedly" popups on Aziz's Mac; moving `RewardLedger` to Shared fixed it.
 - A ModelContext does not retain its container in tests; hold it.
-
-**NEXT, when Aziz is back (v2 asks, 2026-09-14):** nickname and @username
-as separate things; username + profile photo in a Create your profile step
-right after Sign in; a one-time required prompt for existing users without
-a username; a Strava-style **Save session** screen that opens when a session
-lands (title, description, photos, technique, **Friends / Only you**, private
-notes) then results; feed card and profile in Strava's shape. **Open
-decisions for Aziz before building those screens:** score shown on Save
-session or saved for the results reveal; default visibility Friends or Only
-you; required username (built as required per Aziz, with the unavoidable
-no-iCloud exit, and a flagged 5.1.1(v) review risk with a one-switch "Not
-now" fallback); private notes stay separate from the public description.
-Then feature 5, moderation: caption word filter, on-device Sensitive
-Content Analysis on photos, `tools/community-reports.gs` emailing reports.
-Nothing has run on real iCloud yet: needs the Console record types and a
-TestFlight on two phones.
 
 ## FRIENDS IS BEHIND A SWITCH; THE NEXT BUILD SHIPS WITHOUT IT (2026-09-14)
 

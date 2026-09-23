@@ -1,5 +1,14 @@
 # Entitlements: the free tier and what paying unlocks
 
+> **Changed since (checked in the 2026-09-23 sweep).** The gate is now
+> `paid: entitled || state == .loading` (2026-09-12), so `.unavailable` is
+> FREE; the code sample under "Where the gate lives" shows the older rule
+> (see `Entitlements.resolve` and CLAUDE.md "FREE TIER"). The ladder is two
+> rungs, the free week and then half off the first year
+> (`com.lockout.meditate808.yearly50`, 2026-09-22). Otto's chat and Block are
+> paid, and the invite reward can open one session's evidence
+> (`evidenceGranted`).
+
 **BUILT 2026-08-24.** 198 tests green, verified on the simulator. This document
 is now the record of what shipped, not a proposal. Read `ONBOARDING.md` for the
 flow this sits inside.
