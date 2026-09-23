@@ -3033,6 +3033,21 @@ would have pinned the lids in every branch state. Plain property writes did
 not. Re-query every timeline after a reparent. `simulateStateMachine` also
 refuses to run in animation mode, so verify on the simulator instead.
 
+## END WORKS ON THE FIRST TAP: THE BOTTOM EDGE BELONGS TO iOS (2026-09-22)
+
+End on the sit screen refused five taps in a row. The device log said why:
+each finger-down reached the app and each finger-up went to the system
+(`systemGestureStateChange: 1`). The screen hides the home indicator
+(`persistentSystemOverlays(.hidden)`) and End sat 42pt from the bottom edge,
+where iOS reads a touch as the start of a swipe home. A Button fires on
+finger-up, so it never fired.
+
+Fixed three ways, all needed: `.defersSystemGestures(on: .bottom)` on the
+screen, End lifted to 44pt above the bottom inset, and a bigger hit target
+(32 by 14 padding, `contentShape(Rectangle())`). **Any control near the bottom
+edge of a screen that hides the home indicator needs the same.** A tap that
+works "sometimes" down there is this, not flakiness.
+
 ## HOME IS THE VALLEY, WITH OTTO IN THE MIDDLE (2026-09-21, Melvin)
 
 "keep it on the same theme" as Aziz's sit and Ready screens, with Brainrot's
