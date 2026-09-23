@@ -1,5 +1,4 @@
 import SwiftUI
-import AVFoundation
 
 /// One of Otto's twenty screens (`mockups/block-v1.html`, section 3, approved
 /// 2026-09-22), opened by the "Otto wants a word" notification the shield's
@@ -410,11 +409,40 @@ private struct ReplyChip: View {
 
 // MARK: - 3. A FaceTime call
 
+/// Otto "calls" you, the way an incoming FaceTime call shows your own
+/// camera live behind the ringing screen. One camera, two states: it
+/// starts the moment this screen appears (not on Accept) and keeps running
+/// underneath both, live preview only, nothing recorded or saved
+/// (`NSCameraUsageDescription`).
+///
+/// **Ringing**: your live camera fills the screen, the way iOS shows your
+/// own face behind an incoming call, with the call card on top (a soft
+/// dark gradient keeps it legible over a moving background). No camera,
+/// denied, or restricted falls back to a soft dark card instead.
+///
+/// **Answered**: Otto full screen in the valley, exactly as every other
+/// intervention screen draws him (`ValleyStage`), his lines arriving in
+/// `OttoSpeech` bubbles one after another. The camera shrinks to a small
+/// mirrored self-view in the top right, FaceTime's own shape.
 private struct FaceTimeScene: View {
     let doors: InterventionDoors
-    @State private var answered = false
+    @State private var answered: Bool
     @StateObject private var camera = FrontCamera()
     @State private var said = 0
+
+    /// `PREVIEW_FACETIME_ANSWERED=1` (DEBUG) opens straight into the
+    /// answered state, so it can be reviewed on the simulator (which has no
+    /// camera to accept a call with) without any UI automation.
+    init(doors: InterventionDoors) {
+        self.doors = doors
+        var startAnswered = false
+        #if DEBUG
+        if ProcessInfo.processInfo.environment["PREVIEW_FACETIME_ANSWERED"] == "1" {
+            startAnswered = true
+        }
+        #endif
+        _answered = State(initialValue: startAnswered)
+    }
 
     var body: some View {
         ZStack {
@@ -425,12 +453,20 @@ private struct FaceTimeScene: View {
             }
         }
         .ignoresSafeArea()
+        .task { await camera.start() }
         .onDisappear { camera.stop() }
     }
 
     private var ringing: some View {
         ZStack {
-            LinearGradient(colors: [AppColor.textPrimary.opacity(0.92), AppColor.textPrimary],
+            if camera.running {
+                FaceTimeCameraPreview(session: camera.session)
+            } else {
+                LinearGradient(colors: [AppColor.textPrimary.opacity(0.92), AppColor.textPrimary],
+                               startPoint: .top, endPoint: .bottom)
+            }
+            // Keeps the call card legible over a live, moving background.
+            LinearGradient(colors: [.black.opacity(0.55), .black.opacity(0.05), .black.opacity(0.6)],
                            startPoint: .top, endPoint: .bottom)
             VStack(spacing: 10) {
                 Image("OttoHead")
@@ -463,45 +499,9 @@ private struct FaceTimeScene: View {
     }
 
     private var answeredView: some View {
-        ZStack {
-            Color.black
-            if camera.running {
-                CameraPreview(session: camera.session)
-            } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 60))
-                        .foregroundStyle(.white.opacity(0.35))
-                    Text("Camera off")
-                        .font(.system(size: 14))
-                        .foregroundStyle(.white.opacity(0.5))
-                }
-            }
-            VStack {
-                HStack {
-                    Spacer()
-                    Image("OttoTalk")
-                        .resizable()
-                        .scaledToFit()
-                        .padding(6)
-                        .frame(width: 104, height: 140)
-                        .background(LinearGradient(colors: [AppColor.sky, AppColor.calmAccentFill],
-                                                   startPoint: .top, endPoint: .bottom))
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .padding(.trailing, 16)
-                        .padding(.top, 60)
-                }
-                Spacer()
-                VStack(alignment: .leading, spacing: 8) {
-                    if said >= 1 { ChatBubble(text: "yo, meditation o'clock") }
-                    if said >= 2 { ChatBubble(text: "five minutes, i'll stay on") }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
-                DoorButtons(doors: doors, secondary: "Hang up", ink: .white)
-                    .padding(.bottom, 20)
-            }
+        ValleyStage(pose: "OttoTalk", line: currentLine, doors: doors, secondary: "Hang up") { size, _ in
+            selfView
+                .position(x: size.width - 66, y: 128)
         }
         .task {
             for i in 1...2 {
@@ -512,9 +512,37 @@ private struct FaceTimeScene: View {
         }
     }
 
+    /// Fed to `ValleyStage`'s own `OttoSpeech` bubble, one line at a time:
+    /// changing the text (and its `.id(text)` inside `OttoLine`) is what
+    /// makes the bubble retype rather than append.
+    private var currentLine: String {
+        if said >= 2 { return "five minutes, i'll stay on" }
+        if said >= 1 { return "yo, meditation o'clock" }
+        return ""
+    }
+
+    /// The picture-in-picture self-view, top right, FaceTime's own shape:
+    /// your live mirrored camera, or a neutral placeholder when it can't run.
+    private var selfView: some View {
+        ZStack {
+            if camera.running {
+                FaceTimeCameraPreview(session: camera.session)
+            } else {
+                AppColor.backgroundSecondary
+                Image(systemName: "person.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+        }
+        .frame(width: 100, height: 136)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(.white.opacity(0.5), lineWidth: 1.5))
+        .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
+        .accessibilityHidden(true)
+    }
+
     private func answer() {
         withAnimation(.easeInOut(duration: 0.25)) { answered = true }
-        Task { await camera.start() }
     }
 
     private func callButton(_ label: String, systemImage: String, color: Color,
@@ -533,50 +561,6 @@ private struct FaceTimeScene: View {
         }
         .buttonStyle(.plain)
     }
-}
-
-/// The front camera, for the call and nothing else: shown live, never
-/// recorded or saved. Asks for the camera the first time a call is answered,
-/// which is the one moment the request explains itself.
-@MainActor
-private final class FrontCamera: ObservableObject {
-    let session = AVCaptureSession()
-    @Published var running = false
-
-    func start() async {
-        guard await AVCaptureDevice.requestAccess(for: .video),
-              let device = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front),
-              let input = try? AVCaptureDeviceInput(device: device) else { return }
-        session.beginConfiguration()
-        if session.canAddInput(input) { session.addInput(input) }
-        session.commitConfiguration()
-        let session = self.session
-        await Task.detached { session.startRunning() }.value
-        running = session.isRunning
-    }
-
-    func stop() {
-        let session = self.session
-        Task.detached { session.stopRunning() }
-    }
-}
-
-private struct CameraPreview: UIViewRepresentable {
-    let session: AVCaptureSession
-
-    final class PreviewView: UIView {
-        override class var layerClass: AnyClass { AVCaptureVideoPreviewLayer.self }
-        var preview: AVCaptureVideoPreviewLayer { layer as! AVCaptureVideoPreviewLayer }
-    }
-
-    func makeUIView(context: Context) -> PreviewView {
-        let view = PreviewView()
-        view.preview.session = session
-        view.preview.videoGravity = .resizeAspectFill
-        return view
-    }
-
-    func updateUIView(_ uiView: PreviewView, context: Context) {}
 }
 
 // MARK: - 4. Breathe with me
