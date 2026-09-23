@@ -2483,7 +2483,7 @@ people do not own.
 - `PhoneSessionTests` locks the write path, the streak, the floor, the
   idempotency and the late-payload case.
 
-### Onboarding is gone
+### Onboarding is gone (REVERSED 2026-09-22, see "ONBOARDING IS BACK")
 
 `RootView` shows `ContentView` on the first launch and every launch after it.
 Nothing is asked before the first sit: no interview, no projection, no Watch
@@ -2816,6 +2816,16 @@ Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
   In flow 70-89, Enlightened 90-100. `OttoAuraTests` pins the mockup's
   promises: first session lifts him to Progressing, five days in a row reach
   Enlightened, a week away from Enlightened brings him to Low.
+- **"Not now" windows cost in proportion (Melvin's formula, 2026-09-22):** a
+  window Otto was told "Not now" in, that closes with no session started
+  inside it, costs `20 × hours / 24` (`OttoAura.skipCost`), so a skipped
+  Mindful day costs a missed day's 20. It belongs to the day it opened and
+  counts once closed. **No day costs more than 20** (a day's windows are
+  capped, and a missed day already costs 20), **a rest day forgives the
+  missed day, never the window**, and a skipped window before the first
+  session starts the history. The level is a Double inside and rounds on the
+  way out. `level(from:notNow:)` defaults to no windows, so Home is
+  unchanged until Block supplies them.
 - **`OttoAuraFigure` draws him on Home.** Low, Frustrated and Curious are
   still drawings (`OttoLow`, `OttoFrustrated`, `OttoCurious`, from
   `mockups/otto-v3/`), deliberately motionless. From Progressing up he is the
@@ -3030,6 +3040,79 @@ left beside a bubble).
   off the bottom edge, where Brainrot's do.
 - Not changed, and next if wanted: Guide, Friends and Profile are still the
   cream pages, and `OttoBubble` / `ottoScene` from the old Home are gone.
+
+## ONBOARDING IS BACK, WITHOUT THE WATCH (2026-09-22, Melvin)
+
+Aziz cut onboarding in `d4ddbfc` (2026-09-21); Melvin, who had rebuilt it
+that week and did not know, reversed it the next day ("Aziz definitely did
+that by mistake"). `RootView` gates on `onboardingComplete` again, the DEBUG
+`SKIP_ONBOARDING` hook is back, and `coordinator.setOnboarded(done)` mirrors
+it to the Watch again.
+
+- **The Watch question is gone** (`InterviewStep.watchGate` removed; the
+  `watchGate`, `watchSetup` and `waitlist` Step cases pass through to What's
+  waiting). A session runs on the phone with or without a Watch, so the gate
+  sorted people for a difference the app no longer makes.
+- **The phone detects the Watch instead of asking** (`watchPaired`, from
+  `WCSession.isPaired`): health consent and the Health prompt behind it
+  appear only when a Watch is paired, and are skipped (never entering Back
+  history) otherwise.
+- The tour's notes were rewritten (no calendar, no Watch, the guide is the
+  circle under the streak on Home, where its `.guide` anchor now lives).
+  What's waiting's second card is "Keep Otto glowing" (a score after every
+  session stopped being true without a Watch), and the reminder preview on
+  the permission screen now shows the real reminder's words.
+- **When merging Aziz's branch, name any cuts to Melvin before building on
+  them.** This one arrived in a merge and was repeated back as settled.
+
+## 808 IS A CONSISTENCY APP; BLOCK REPLACES THE GUIDE TAB (2026-09-21, Melvin)
+
+**Read `CONSISTENCY.md` before writing anything a user will see.** The
+hardest part of meditation is doing it again tomorrow, so that is what 808
+sells now. Otto is someone you look after (his aura), and Block holds the
+apps you chose until you have meditated in the window you chose. Measurement
+stays, as a feature, not the headline.
+
+- **The guide is a circle under the streak on Home** (`guideBadge`,
+  `HomeSheet.guide`), built and verified. The Guide TAB stays until Block
+  replaces it in Swift.
+- **`mockups/block-v1.html` is APPROVED (2026-09-22)**, with five decisions
+  recorded in `CONSISTENCY.md` > Decided: a finished session releases the
+  apps for the rest of THAT WINDOW, not the day; "Not now" costs glow only
+  when the window then passes with no session, in proportion to its length
+  (see the aura section); Strict ships in v1; Block is paid; **the default
+  blocker is Mindful day**, the picked apps held all day until you meditate,
+  one switch off. Apple lets only the person pick apps (tokens are opaque),
+  so "on by default" means set up and waiting; a free person switching it on
+  meets the free-week offer.
+- **The loop Apple allows:** shield ("Otto's holding Instagram", "Ask Otto")
+  → a Time Sensitive notification, because a shield cannot open an app → 808
+  opens on one of twenty interventions → "Okay, let's meditate" or "Not now"
+  (5 to 60 minutes). The shield is only an icon, a title, a line and two
+  buttons; everything else lives in the app.
+- **Family Controls (Distribution) is APPROVED (2026-09-22), all four App
+  IDs, within minutes of the request.** It is per App ID, requested by the
+  Account Holder (Melvin) in Certificates, Identifiers & Profiles >
+  Identifiers > the App ID > Capability Requests, for the app AND each
+  extension: `com.lockout.meditate808.monitor`, `.shield`, `.shieldaction`.
+  Those three bundle IDs are fixed; build the targets with exactly them.
+  Block is built on its own `block` branch because it is large and `mvp` /
+  `social-1.1` are release branches. **The simulator cannot show shields.**
+  A DeviceActivity interval must span 15 minutes, so a 5-minute pass starts
+  in the past; verify on a device.
+- **NEVER SEND SCREEN TIME DATA OFF THE PHONE.** Apple's Family Controls
+  terms, accepted with the request, allow it only for the person's own
+  device management and forbid sharing it beyond the person and their
+  device. So nothing Block learns (apps, shield taps, passes, skipped
+  windows) goes to PostHog, Friends or any server, the same stance as
+  "never track a biometric". Anything shown to friends, such as an
+  accountability glow, is computed from sessions alone.
+- **The app's primary purpose must be Apple's purpose 2** (individuals
+  managing their own device use for focus). The request text, recorded in
+  `CONSISTENCY.md`, leads with Block, and the App Store listing of the
+  release that ships Block must too.
+- Aziz's areas are not touched by this: the plus's session screens and
+  Profile.
 
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 

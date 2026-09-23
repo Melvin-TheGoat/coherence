@@ -17,9 +17,9 @@ final class AnalyticsScreenNamesTests: XCTestCase {
     }
 
     func test_onboardingStepCarriesBothTheRoutingIDAndTheScreenName() {
-        let props = Analytics.Event.onboardingStep(id: "watchGate").properties
-        XCTAssertEqual(props["step"], "watchGate")
-        XCTAssertEqual(props["screen"], "12 Do you have an Apple Watch?")
+        let props = Analytics.Event.onboardingStep(id: "baseline").properties
+        XCTAssertEqual(props["step"], "baseline")
+        XCTAssertEqual(props["screen"], "03 How often do you meditate?")
     }
 
     func test_unknownScreenIsVisiblyUnnamed() {

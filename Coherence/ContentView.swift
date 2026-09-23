@@ -60,6 +60,9 @@ struct ContentView: View {
 
     private enum HomeSheet: Identifiable {
         case setup, settings
+        /// The how-to guide, opened from its circle under the streak on Home
+        /// (Melvin, 2026-09-21: the Guide tab makes way for Block).
+        case guide
         case results(UUID)
         /// Save session (Friends): opens when a live session lands, then
         /// chains into its results.
@@ -74,6 +77,7 @@ struct ContentView: View {
             switch self {
             case .setup: return "setup"
             case .settings: return "settings"
+            case .guide: return "guide"
             case .results(let id): return "results-\(id)"
             case .save(let id): return "save-\(id)"
             case .discarded(let d): return "discarded-\(d.id)"
@@ -194,6 +198,9 @@ struct ContentView: View {
                 SessionSetupView()
             case .settings:
                 SettingsView()
+            case .guide:
+                GuideView { pendingSheet = .setup; sheet = nil }
+                    .onAppear { Analytics.track(.guideOpened) }
             case .results(let id):
                 SessionResultsView(sessionID: id)
             case .save(let id):
@@ -345,11 +352,17 @@ struct ContentView: View {
             .frame(maxWidth: .infinity)
             .padding(.top, topInset + 10)
 
-            streakBadge
-                .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, AppMetrics.screenPadding)
-                .padding(.top, topInset + 6)
+            // The streak, and under it the guide in the same circle
+            // (Melvin, 2026-09-21: the Guide leaves the tab bar for Block).
+            VStack(spacing: 10) {
+                streakBadge
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
+                guideBadge
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.trailing, AppMetrics.screenPadding)
+            .padding(.top, topInset + 6)
 
             // What he says, pinned by its bottom to just above his head, the
             // way the Ready screen pins its line, so the tail lands on him on
@@ -464,9 +477,29 @@ struct ContentView: View {
                 .monospacedDigit()
         }
         .frame(width: 54, height: 54)
-        .background(AppColor.backgroundPrimary.opacity(0.78), in: Circle())
+        .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
+        .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(streak.current) day streak")
+    }
+
+    /// The how-to guide, in the streak's circle so the two read as a pair.
+    private var guideBadge: some View {
+        Button { sheet = .guide } label: {
+            VStack(spacing: 1) {
+                Image(systemName: "book.closed.fill")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(AppColor.calmAccent)
+                Text("Guide")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Self.homeDay.ink.opacity(0.8))
+            }
+            .frame(width: 54, height: 54)
+            .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
+            .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("How to meditate guide")
     }
 
     /// How Otto is doing, and the bar that fills as the practice keeps up.

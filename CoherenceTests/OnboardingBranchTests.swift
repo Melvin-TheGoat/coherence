@@ -61,14 +61,13 @@ final class OnboardingBranchTests: XCTestCase {
 
     /// Whatever the path, the screens that carry the product must always run.
     func test_everyPathKeepsTheLoadBearingScreens() {
-        let required: [InterviewStep] = [.baseline, .motivation, .stress, .watchGate,
-                                         .referral]
+        let required: [InterviewStep] = [.baseline, .motivation, .stress, .referral]
         for frequency in CurrentFrequency.allCases {
             var a = OnboardingAnswers()
             a.currentFrequency = frequency
             for step in required {
                 XCTAssertTrue(a.interview.contains(step),
-                              "\(frequency) lost \(step) — the Watch gate is not optional")
+                              "\(frequency) lost \(step)")
             }
         }
     }

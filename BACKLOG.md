@@ -29,6 +29,32 @@ One list, so nothing said in a session is lost between sessions. Newest at
 the top of each section. Move a line, never delete it: DONE lines are the
 record. (Melvin, 2026-09-12: "I am saying a lot and not finishing much.")
 
+## 808 is a consistency app: Block, and the guide moves to Home (2026-09-21, Melvin)
+
+The pivot and the whole Block design are in `CONSISTENCY.md`. **DONE:** the
+guide is a circle under the streak on Home (opens "How to meditate");
+`CONSISTENCY.md` written; `mockups/block-v1.html` drawn (the Block tab, a
+blocker's settings, shield to notification to Otto to the two doors, and the
+twenty interventions). **APPROVED 2026-09-22** ("they all look fire"), with
+the five answers now in `CONSISTENCY.md` > Decided: meditating releases the
+apps for the rest of the window; "Not now" costs glow only if the window
+then passes with no meditation; Strict in v1; Block is paid; the default is
+**Mindful day** (the picked apps held all day until you meditate, one switch
+off). **DECIDED 2026-09-22:** a skipped window costs 20 × hours / 24
+(Melvin's formula), built into `OttoAura` with tests; a free person finds
+Mindful day waiting on the Block tab and switching it on opens the free-week
+offer. **DONE 2026-09-22:** Family Controls (Distribution) approved on all
+four App IDs (`com.lockout.meditate808` plus `.monitor`, `.shield`,
+`.shieldaction`), within minutes. **OPEN, founders' call:** onboarding was
+cut by Aziz in `d4ddbfc` (2026-09-21) and Melvin did not know; whether it
+returns, and whether it asks the Block questions, decides where a new person
+meets Mindful day. **Then:** Block in Swift on its own `block` branch: the Guide tab becomes
+Block; FamilyControls, ManagedSettings, DeviceActivity, three extensions,
+App Group; the notification into the interventions; the "Not now" input to
+`OttoAura`; tested on a phone, since the simulator cannot show shields.
+**Also owed by the pivot:** PURPOSE.md, SCIENCE.md, the website hero, App
+Store copy.
+
 ## Home in Aziz's valley, Otto centred, the bar lowered (2026-09-21, Melvin)
 
 **DONE:** merged Aziz's `mvp` (the valley sit, the Ready screen, no

@@ -1181,7 +1181,9 @@ private struct LockScreenBanner: View {
                     Text("808")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(AppColor.textPrimary)
-                    Text("Two minutes. Your Watch is ready.")
+                    // The real reminder's words (NotificationScheduler), so the preview
+                    // promises exactly what arrives.
+                    Text("A few minutes of stillness. Your practice is waiting.")
                         .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
                 }

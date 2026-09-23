@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Block with Otto</title>
+<style>
+  :root {
+    --sky1:#8CBBD4; --sky2:#BBD8E4; --sky3:#E3E8DA; --sky4:#EFE0C9;
+    --r1:#AFC6CE; --r2:#8FAFB4; --r3:#6E9078; --f1:#7FA87E; --f2:#9CBC85;
+    --ink:#26404E; --inks:#47697A; --cream:#FDF7ED; --pill:rgba(253,247,237,.9);
+    --gold:#F0C47B; --goldS:#D9A24E; --brown:#3C2A1F; --muted:#8C7A6B; --chat:#3F7FA3;
+    --blush:#E8957C; --sage:#5E8F74;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#EAF0EC; color:var(--brown); font:15px/1.45 -apple-system, "SF Pro Rounded", ui-rounded, system-ui, sans-serif; padding:32px 24px 90px; }
+  h1 { font-size:30px; margin:0 0 6px; font-weight:800; }
+  h2 { font-size:20px; margin:44px 0 6px; font-weight:800; }
+  p.lead { max-width:820px; margin:0 0 6px; color:#44504A; }
+  .row { display:flex; flex-wrap:wrap; gap:26px; align-items:flex-start; margin-top:16px; }
+  .cap { width:300px; font-size:13px; color:#44504A; margin-top:8px; }
+  .cap b { color:var(--brown); }
+
+  .phone { width:300px; height:650px; border-radius:42px; border:8px solid #22262A; overflow:hidden; position:relative; background:var(--cream); box-shadow:0 18px 44px rgba(30,50,40,.18); flex:none; }
+  .mini { width:220px; height:476px; border-radius:32px; border:6px solid #22262A; overflow:hidden; position:relative; background:var(--cream); box-shadow:0 12px 30px rgba(30,50,40,.16); flex:none; }
+  .scr { position:absolute; inset:0; display:flex; flex-direction:column; }
+  .status { height:34px; display:flex; justify-content:space-between; align-items:center; padding:0 20px; font-size:11px; font-weight:700; position:relative; z-index:5; }
+  .mini .status { height:26px; font-size:9px; padding:0 16px; }
+
+  /* the valley */
+  .valley { position:absolute; inset:0; overflow:hidden; }
+  .valley .sky { position:absolute; inset:0; background:linear-gradient(var(--sky1), var(--sky2) 40%, var(--sky3) 62%, var(--sky4)); }
+  .valley .rg { position:absolute; left:-5%; right:-5%; }
+  .valley .rg.a { bottom:30%; height:22%; background:var(--r1); clip-path:polygon(0 70%,18% 20%,34% 62%,52% 8%,70% 55%,86% 22%,100% 60%,100% 100%,0 100%); }
+  .valley .rg.b { bottom:30%; height:15%; background:var(--r2); clip-path:polygon(0 60%,22% 18%,40% 70%,60% 30%,78% 72%,100% 36%,100% 100%,0 100%); }
+  .valley .rg.c { bottom:30%; height:8%; background:var(--r3); clip-path:polygon(0 40%,30% 0,60% 50%,100% 10%,100% 100%,0 100%); }
+  .valley .field { position:absolute; left:0; right:0; bottom:0; height:31%; background:linear-gradient(var(--f1), var(--f2)); }
+  .valley .sun { position:absolute; width:34px; height:34px; border-radius:50%; background:#FFE9B8; left:26%; bottom:52%; box-shadow:0 0 30px 12px rgba(255,233,184,.55); }
+  .valley .cloud { position:absolute; background:#fff; border-radius:40px; opacity:.92; }
+  .fl { position:absolute; width:9px; height:9px; border-radius:50%; box-shadow:0 0 0 3px rgba(255,255,255,.95); }
+  .night .sky { background:linear-gradient(#141E33, #24293F 45%, #453447 70%, #6B4740); }
+  .night .rg.a { background:#2A3348; } .night .rg.b { background:#212736; } .night .rg.c { background:#171B1C; }
+  .night .field { background:linear-gradient(#171F1C, #212823); }
+  .star { position:absolute; width:2px; height:2px; background:#fff; border-radius:50%; }
+
+  .otto { position:absolute; left:50%; transform:translateX(-50%); z-index:3; }
+  .cushion { position:absolute; left:50%; transform:translateX(-50%); background:linear-gradient(#D98B6E,#B96A50); border-radius:50%; z-index:2; box-shadow:0 3px 5px rgba(0,0,0,.2); }
+
+  .bubble { position:absolute; left:50%; transform:translateX(-50%); z-index:4; background:rgba(253,247,237,.9); border:1.5px solid rgba(38,64,78,.35); color:var(--ink); border-radius:16px; padding:10px 14px; font-size:14px; line-height:1.35; text-align:left; width:max-content; max-width:84%; }
+  .bubble:after { content:""; position:absolute; left:50%; bottom:-9px; transform:translateX(-50%) rotate(45deg); width:14px; height:14px; background:rgba(253,247,237,.95); border-right:1.5px solid rgba(38,64,78,.35); border-bottom:1.5px solid rgba(38,64,78,.35); }
+  .mini .bubble { font-size:11.5px; padding:8px 11px; border-radius:13px; }
+  .mini .bubble:after { width:11px; height:11px; bottom:-7px; }
+
+  .pillcard { background:var(--pill); border-radius:18px; padding:13px 14px; box-shadow:0 2px 0 rgba(60,42,31,.08); }
+  .cta { background:var(--gold); color:var(--brown); border-radius:16px; padding:13px; text-align:center; font-weight:800; font-size:16px; box-shadow:0 4px 0 var(--goldS); }
+  .mini .cta { font-size:12.5px; padding:10px; border-radius:13px; box-shadow:0 3px 0 var(--goldS); }
+  .ghost { text-align:center; font-weight:700; font-size:14px; color:var(--ink); opacity:.75; padding:10px 0 2px; }
+  .mini .ghost { font-size:11.5px; padding:7px 0 0; }
+  .foot { position:absolute; left:14px; right:14px; bottom:16px; z-index:6; }
+  .mini .foot { left:11px; right:11px; bottom:12px; }
+
+  .app { width:30px; height:30px; border-radius:8px; display:inline-grid; place-items:center; color:#fff; font-size:11px; font-weight:800; margin-right:4px; }
+  .a1 { background:linear-gradient(135deg,#F58529,#DD2A7B,#8134AF); } .a2 { background:#111; } .a3 { background:#FFD400; color:#222; } .a4 { background:#FF4500; } .a5 { background:#1DA1F2; }
+  .chip { display:inline-block; padding:5px 10px; border-radius:999px; background:#EFE6DA; font-size:12px; font-weight:700; color:var(--brown); margin:0 4px 4px 0; }
+  .chip.on { background:#FFF4DC; box-shadow:inset 0 0 0 2px var(--gold); }
+  .label { font-size:12px; font-weight:800; color:var(--muted); margin:12px 0 6px; }
+  .switch { width:44px; height:26px; border-radius:13px; background:#D8CFC2; position:relative; flex:none; display:inline-block; }
+  .switch:after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .switch.on { background:var(--goldS); }
+  .switch.on:after { left:21px; }
+  .tabbar { position:absolute; left:0; right:0; bottom:0; height:62px; background:var(--cream); border-top:.5px solid rgba(60,42,31,.15); display:flex; justify-content:space-around; align-items:flex-start; padding-top:7px; z-index:8; font-size:9px; font-weight:600; color:var(--muted); }
+  .tabbar div { text-align:center; width:54px; } .tabbar .sel { color:var(--brown); }
+  .tabbar .ico { width:22px; height:22px; margin:0 auto 2px; border-radius:6px; background:currentColor; opacity:.9; }
+  .tabbar .plus { width:48px; height:48px; border-radius:50%; background:var(--gold); margin-top:-18px; color:#fff; font-size:28px; line-height:46px; }
+
+  .chat { background:#fff; }
+  .chat .hdr { text-align:center; padding:6px 0 10px; border-bottom:.5px solid #eee; }
+  .avatar { width:46px; height:46px; border-radius:50%; background:#DCEBF3; margin:0 auto 4px; overflow:hidden; display:grid; place-items:end center; }
+  .msg { max-width:78%; padding:8px 12px; border-radius:18px; font-size:13.5px; margin:6px 12px; width:max-content; }
+  .mini .msg { font-size:11px; padding:7px 10px; border-radius:15px; margin:5px 9px; }
+  .them { background:var(--chat); color:#fff; }
+  .me { background:#ECECEC; color:#222; margin-left:auto; }
+  .reply { border:1.5px solid #A9C7DA; color:var(--chat); background:#fff; margin-left:auto; font-weight:700; }
+  .typing { background:#ECECEC; width:46px; height:26px; border-radius:14px; margin:6px 12px; display:flex; gap:4px; align-items:center; justify-content:center; }
+  .typing i { width:6px; height:6px; border-radius:50%; background:#999; }
+
+  .dark { background:#1E1F22; color:#fff; }
+  .note { background:#FFF4B8; transform:rotate(-3deg); box-shadow:0 8px 18px rgba(0,0,0,.15); font-family:"Marker Felt","Chalkboard SE",cursive; color:#3a3200; }
+  .sign { background:#FFFDF6; border:2.5px solid #7A5A3A; border-radius:6px; font-family:"Marker Felt","Chalkboard SE",cursive; color:#7A3E22; text-align:center; }
+</style>
+</head>
+<body>
+
+<h1>Block, with Otto</h1>
+<p class="lead">Melvin, 2026-09-21: 808 is about consistency. The Guide tab becomes <b>Block</b> (the guide moved to a circle under the streak on Home, already built). You pick when you want to meditate and which apps pull you away; Otto holds them in that window until you have sat. Opening one shows Apple's shield, "Ask Otto" sends a notification, and tapping it opens 808 to one of twenty ways Otto asks you to sit first. Every one ends in the same two doors: meditate now, or ask him for 5 to 60 minutes. The full brief is <code>CONSISTENCY.md</code>.</p>
+
+<h2>1. The Block tab</h2>
+<div class="row">
+  <div>
+    <div class="phone"><div class="scr">
+      <div class="valley" style="height:290px; bottom:auto">
+        <div class="sky"></div><div class="sun"></div>
+        <div class="cloud" style="width:92px;height:36px;left:-18px;top:44px"></div>
+        <div class="cloud" style="width:110px;height:40px;right:-30px;top:96px"></div>
+        <div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div>
+      </div>
+      <div class="status"><span>9:41</span><span>●●●</span></div>
+      <div class="bubble" style="top:40px">Tell me when you want to sit.<br>I'll hold your apps till you do.</div>
+      <div class="cushion" style="width:112px;height:24px;top:254px"></div>
+      <img class="otto" src="otto-v3/otto-ask.png" style="height:160px;top:110px">
+      <div style="position:absolute;top:290px;left:0;right:0;bottom:62px;background:var(--f2);padding:12px 14px;overflow:hidden">
+        <div class="pillcard">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><div style="font-weight:800;font-size:16px">Mindful day</div>
+            <div style="font-size:12px;color:var(--muted)">All day, every day</div></div>
+            <span class="switch on"></span>
+          </div>
+          <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
+            <div><span class="app a1">IG</span><span class="app a2">TT</span><span class="app a3">SC</span></div>
+            <span style="font-size:11px;color:var(--muted)">held until you meditate</span>
+          </div>
+        </div>
+        <div class="cta" style="margin-top:12px">+ Add a blocker</div>
+        <div class="label" style="color:#fff;margin-top:14px">Presets</div>
+        <div style="display:flex;gap:10px">
+          <div class="pillcard" style="flex:none;width:146px;padding:10px"><div style="font-weight:800;font-size:13px">Mindful morning</div><div style="font-size:11px;color:var(--muted)">6 to 10</div></div>
+          <div class="pillcard" style="flex:none;width:146px;padding:10px"><div style="font-weight:800;font-size:13px">Wind down</div><div style="font-size:11px;color:var(--muted)">9 pm to midnight</div></div>
+        </div>
+      </div>
+      <div class="tabbar"><div><div class="ico"></div>Home</div><div class="sel"><div class="ico"></div>Block</div><div><div class="plus">+</div></div><div><div class="ico"></div>Friends</div><div><div class="ico"></div>Profile</div></div>
+    </div></div>
+    <div class="cap"><b>Block tab.</b> The valley on top, Otto with his clipboard saying the title, the blockers as cream cards on the grass. Presets underneath, like Brainrot's.</div>
+  </div>
+
+  <div>
+    <div class="phone"><div class="scr" style="background:var(--cream)">
+      <div class="status"><span>9:41</span><span>●●●</span></div>
+      <div style="padding:6px 18px 0;display:flex;justify-content:space-between;font-weight:700;font-size:14px;color:var(--muted)"><span>Cancel</span><span style="color:var(--goldS)">Delete</span></div>
+      <div style="padding:8px 18px;display:flex;gap:12px;align-items:center">
+        <img src="otto-v3/otto-head.png" style="height:54px">
+        <div style="font-weight:800;font-size:22px;flex:1">Mindful day</div>
+        <span class="switch on"></span>
+      </div>
+      <div style="padding:0 18px">
+        <div class="label">How often</div>
+        <span class="chip on">M</span><span class="chip on">T</span><span class="chip on">W</span><span class="chip on">T</span><span class="chip on">F</span><span class="chip on">S</span><span class="chip on">S</span>
+        <div class="label">When</div>
+        <span class="chip on" style="font-size:14px;padding:7px 14px">All day</span><span class="chip" style="font-size:14px;padding:7px 14px">Set hours</span>
+        <div class="label">Apps Otto holds</div>
+        <div><span class="app a1">IG</span><span class="app a2">TT</span><span class="app a3">SC</span><span class="app a4">RD</span><span class="chip" style="vertical-align:top;margin-top:4px">Choose</span></div>
+        <div class="label">How strict</div>
+        <span class="chip on">Chill</span><span class="chip">Firm</span><span class="chip">Strict</span>
+        <div style="font-size:12px;color:var(--muted)">Chill: Otto asks once, then you can have a few minutes.</div>
+        <div class="label">Passes a day</div>
+        <span class="chip">1</span><span class="chip">2</span><span class="chip on">3</span><span class="chip">No limit</span>
+        <div class="label">A session that counts</div>
+        <span class="chip">1 min</span><span class="chip on">2 min</span><span class="chip">5 min</span><span class="chip">10 min</span>
+      </div>
+      <div class="foot"><div class="cta">Save</div></div>
+    </div></div>
+    <div class="cap"><b>A blocker's settings.</b> Your three (how often, when, which apps) plus three I would add: how strict, how many passes a day, and the shortest session that counts. The switch turns it off.</div>
+  </div>
+</div>
+
+<h2>2. What happens when you open a held app</h2>
+<div class="row">
+  <div>
+    <div class="phone"><div class="scr" style="background:linear-gradient(#DDE3E8,#C9D1D8)">
+      <div class="status"><span>7:12</span><span>●●●</span></div>
+      <div style="margin:120px 22px 0;background:rgba(255,255,255,.82);border-radius:26px;padding:26px 20px;text-align:center">
+        <img src="otto-v3/otto-head.png" style="height:70px">
+        <div style="font-weight:800;font-size:19px;margin-top:8px">Otto's holding Instagram</div>
+        <div style="font-size:13.5px;color:#555;margin-top:6px">Meditate first, or ask him for a few minutes.</div>
+        <div class="cta" style="margin-top:18px">Ask Otto</div>
+        <div class="ghost" style="color:#555">Close</div>
+      </div>
+    </div></div>
+    <div class="cap"><b>Apple's shield.</b> The one screen Apple draws: an icon, a title, a line and two buttons, nothing else. This is as rich as it is allowed to be.</div>
+  </div>
+  <div>
+    <div class="phone"><div class="scr dark">
+      <div class="status"><span>7:12</span><span>●●●</span></div>
+      <div style="margin:4px 10px 0;background:rgba(60,60,64,.95);border-radius:18px;padding:10px 12px;display:flex;gap:10px;align-items:center">
+        <img src="otto-v3/otto-head.png" style="height:34px;background:#DCEBF3;border-radius:8px;padding:2px">
+        <div style="font-size:12px"><div style="opacity:.7;font-weight:700;font-size:10px">TIME SENSITIVE · 808</div><b>Otto wants a word</b><div style="opacity:.85">Tap to talk it through</div></div>
+      </div>
+      <img src="otto-v3/otto-wave.png" style="height:150px;margin:120px auto 0;display:block">
+      <div style="text-align:center;font-weight:800;font-size:20px;margin-top:12px">Otto's on his way</div>
+      <div style="text-align:center;opacity:.7;margin-top:4px">Tap the notification up top</div>
+      <div class="foot"><div class="cta">I don't see it</div></div>
+    </div></div>
+    <div class="cap"><b>The notification.</b> A shield cannot open an app, so its button sends a notification. Brainrot does exactly this. Needs the Time Sensitive entitlement to break through Focus.</div>
+  </div>
+  <div>
+    <div class="phone"><div class="scr">
+      <div class="valley"><div class="sky"></div><div class="sun"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+      <div class="status"><span>7:12</span><span>●●●</span></div>
+      <div class="bubble" style="top:170px">Got two minutes for me<br>before Instagram?</div>
+      <div class="cushion" style="width:130px;height:28px;top:432px"></div>
+      <img class="otto" src="otto-v3/otto-sit-wave.png" style="height:190px;top:254px">
+      <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+    </div></div>
+    <div class="cap"><b>Otto.</b> One of the twenty below, chosen so it is never the same twice running. Meditating releases the apps for the rest of the window and feeds his glow.</div>
+  </div>
+  <div>
+    <div class="phone"><div class="scr">
+      <div class="valley"><div class="sky"></div><div class="sun"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+      <div class="status"><span>7:12</span><span>●●●</span></div>
+      <div class="bubble" style="top:96px">No worries. How long do you need?</div>
+      <img class="otto" src="otto-v3/otto-awake.png" style="height:140px;top:160px">
+      <div style="position:absolute;left:14px;right:14px;top:318px;z-index:6" class="pillcard">
+        <div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">
+          <span class="chip" style="font-size:13px;padding:7px 11px;margin:0">5 min</span><span class="chip on" style="font-size:13px;padding:7px 11px;margin:0">10 min</span><span class="chip" style="font-size:13px;padding:7px 11px;margin:0">15 min</span><span class="chip" style="font-size:13px;padding:7px 11px;margin:0">30 min</span><span class="chip" style="font-size:13px;padding:7px 11px;margin:0">1 hour</span>
+        </div>
+        <div style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px">2 passes left today</div>
+      </div>
+      <div class="foot"><div class="cta">Open Instagram for 10 min</div><div class="ghost">Actually, let's meditate</div></div>
+    </div></div>
+    <div class="cap"><b>Not now.</b> Otto takes it well and asks how long. After that the apps are held again. On Strict this screen does not exist.</div>
+  </div>
+</div>
+
+<h2>3. Twenty ways Otto asks</h2>
+<p class="lead">All end in the same two doors. Chill but convincing: he asks, he never scolds. The ones marked with a moment (morning, night, streak, friend) only show when they are true.</p>
+<div class="row" style="gap:20px">
+
+  <!-- 1 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="sun"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:120px">Got two minutes<br>for me first?</div>
+    <img class="otto" src="otto-v3/otto-wave.png" style="height:150px;top:190px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>1. Otto standing.</b> One line.</div></div>
+
+  <!-- 2 -->
+  <div><div class="mini"><div class="scr chat">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="hdr"><div class="avatar"><img src="otto-v3/otto-head.png" style="height:40px"></div><b style="font-size:13px">Otto</b></div>
+    <div class="msg them">yo it's otto</div>
+    <div class="msg them">quick meditation before the scroll?</div>
+    <div class="typing"><i></i><i></i><i></i></div>
+    <div style="margin-top:auto;padding-bottom:12px">
+      <div class="msg reply">ok let's go</div>
+      <div class="msg reply">later, open it</div>
+    </div>
+  </div></div><div class="cap" style="width:220px"><b>2. A text thread.</b> Typing dots, then reply chips.</div></div>
+
+  <!-- 3 -->
+  <div><div class="mini"><div class="scr dark" style="background:linear-gradient(#2B3A44,#16191C)">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div style="text-align:center;margin-top:40px"><div class="avatar" style="width:84px;height:84px"><img src="otto-v3/otto-head.png" style="height:76px"></div>
+    <div style="font-weight:800;font-size:20px;margin-top:6px">Otto</div><div style="opacity:.7;font-size:12px">FaceTime Video</div></div>
+    <div style="position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:space-around;font-size:10px;text-align:center">
+      <div><div style="width:54px;height:54px;border-radius:50%;background:#E5484D;margin:0 auto 4px"></div>Decline</div>
+      <div><div style="width:54px;height:54px;border-radius:50%;background:#30A46C;margin:0 auto 4px"></div>Accept</div>
+    </div>
+  </div></div><div class="cap" style="width:220px"><b>3. Otto FaceTimes you.</b> Full screen, ringing.</div></div>
+
+  <!-- 3b -->
+  <div><div class="mini"><div class="scr dark" style="background:radial-gradient(circle at 50% 40%,#6E6A64,#3A3936)">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div style="text-align:center;margin-top:120px;opacity:.55;font-size:11px">your front camera</div>
+    <div style="position:absolute;right:10px;top:36px;width:70px;height:100px;border-radius:14px;overflow:hidden;background:linear-gradient(var(--sky1),var(--f2));display:grid;place-items:end center"><img src="otto-v3/otto-talk.png" style="height:80px"></div>
+    <div class="msg them" style="position:absolute;left:0;bottom:120px">yo, meditation o'clock</div>
+    <div class="msg them" style="position:absolute;left:0;bottom:86px">two minutes, i'll stay on</div>
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost" style="color:#fff">Hang up</div></div>
+  </div></div><div class="cap" style="width:220px"><b>3, answered.</b> You on the front camera, Otto in the corner.</div></div>
+
+  <!-- 4 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div style="position:absolute;top:70px;left:50%;transform:translateX(-50%);width:120px;height:120px;border-radius:50%;background:radial-gradient(rgba(94,143,116,.55),rgba(94,143,116,.05));border:1.5px solid rgba(94,143,116,.5)"></div>
+    <div style="position:absolute;top:118px;width:100%;text-align:center;font-weight:800;color:var(--ink)">Breathe in</div>
+    <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:222px">
+    <div class="foot"><div class="cta">One more, then sit</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>4. Breathe with me.</b> One breath before the choice.</div></div>
+
+  <!-- 5 -->
+  <div><div class="mini"><div class="scr chat">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="hdr"><div class="avatar"><img src="otto-v3/otto-head.png" style="height:40px"></div><b style="font-size:13px">Otto</b></div>
+    <div class="msg them" style="display:flex;gap:6px;align-items:center">▶︎ <span style="letter-spacing:1px">▂▅▇▃▆▂▅</span> 0:07</div>
+    <div style="font-size:11px;color:#777;margin:4px 12px">"hey, it's me. two minutes, then it's all yours. promise."</div>
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>5. A voice note.</b> Waveform and what he said.</div></div>
+
+  <!-- 6 -->
+  <div><div class="mini"><div class="scr" style="background:#E9E4DA">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="note" style="margin:70px 26px 0;padding:22px 16px;font-size:20px;text-align:center">Sit first,<br>scroll after.<br><span style="font-size:16px">O.</span></div>
+    <img src="otto-v3/otto-head.png" style="height:60px;position:absolute;right:26px;top:214px;transform:rotate(8deg)">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>6. A note on the fridge.</b></div></div>
+
+  <!-- 7 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">It'll all still be here<br>in two minutes.</div>
+    <img class="otto" src="otto-v3/otto-awake.png" style="height:140px;top:178px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>7. Still there later.</b></div></div>
+
+  <!-- 8 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky" style="background:linear-gradient(#F6C9A8,#F9E1C6 50%,#EFE0C9)"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>6:40</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">zzz... oh, hey.<br>Morning meditation?</div>
+    <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:196px">
+    <div style="position:absolute;top:170px;left:62%;font-weight:800;color:var(--inks);z-index:5">z z</div>
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>8. Waking Otto.</b> Morning only.</div></div>
+
+  <!-- 9 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="sign" style="position:absolute;top:84px;left:50%;transform:translateX(-50%) rotate(-4deg);padding:12px 16px;font-size:18px;z-index:5">Meditate<br>first :)</div>
+    <img class="otto" src="otto-v3/otto-wave.png" style="height:150px;top:178px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>9. Otto's sign.</b></div></div>
+
+  <!-- 10 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div style="position:absolute;top:60px;width:100%;text-align:center;z-index:5"><div style="display:inline-block;background:var(--pill);border-radius:999px;padding:8px 16px;font-weight:800;color:#B5563B">🔥 Day 6</div></div>
+    <div class="bubble" style="top:116px">Day 6 is waiting.<br>Two minutes keeps it going.</div>
+    <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:196px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>10. The streak.</b> Only when there is one.</div></div>
+
+  <!-- 11 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">Help me glow?<br>One session today.</div>
+    <img class="otto" src="otto-v3/otto-frustrated.png" style="height:130px;top:196px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>11. His glow.</b> The tamagotchi one.</div></div>
+
+  <!-- 12 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">What do you want<br>more right now?</div>
+    <img class="otto" src="otto-v3/otto-curious.png" style="height:130px;top:196px">
+    <div class="foot" style="display:flex;gap:8px"><div class="cta" style="flex:1">Calm</div><div class="pillcard" style="flex:1;text-align:center;font-weight:800;font-size:12.5px;padding:10px">The scroll</div></div>
+  </div></div><div class="cap" style="width:220px"><b>12. Two doors, playful.</b></div></div>
+
+  <!-- 13 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div style="position:absolute;top:74px;width:100%;text-align:center;font-size:52px;font-weight:800;color:var(--ink);z-index:5">7</div>
+    <div style="position:absolute;top:140px;width:100%;text-align:center;font-size:12px;color:var(--inks);z-index:5">Instagram opens in 7 seconds</div>
+    <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:196px">
+    <div class="foot"><div class="cta">Sit instead</div><div class="ghost">Wait it out</div></div>
+  </div></div><div class="cap" style="width:220px"><b>13. The countdown.</b> Firm mode's friction.</div></div>
+
+  <!-- 14 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky" style="background:linear-gradient(#F6C9A8,#F9E1C6 50%,#EFE0C9)"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>7:02</span><span>●●●</span></div>
+    <div class="pillcard" style="position:absolute;top:70px;left:16px;right:16px;text-align:center;z-index:5"><div style="font-size:10px;font-weight:800;color:var(--muted)">TODAY'S LINE</div><div style="font-weight:800;font-size:17px;margin-top:4px">I start my day<br>on purpose.</div></div>
+    <img class="otto" src="otto-v3/otto-sit-wave.png" style="height:130px;top:200px">
+    <div class="foot"><div class="cta">Sit with it, 2 min</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>14. An affirmation.</b> Morning.</div></div>
+
+  <!-- 15 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley night"><div class="sky"></div><div class="star" style="left:20%;top:12%"></div><div class="star" style="left:70%;top:8%"></div><div class="star" style="left:48%;top:20%"></div><div class="star" style="left:84%;top:26%"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div style="position:absolute;right:30px;top:44px;width:26px;height:26px;border-radius:50%;box-shadow:-6px 4px 0 0 #F3E7D8;z-index:2"></div>
+    <div class="status" style="color:#fff"><span>10:48</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">Wind down with me?<br>Five minutes, then sleep.</div>
+    <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:196px;filter:brightness(.8)">
+    <div class="foot"><div class="cta">Okay, let's wind down</div><div class="ghost" style="color:#F3E7D8">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>15. Bedtime.</b> Night only.</div></div>
+
+  <!-- 16 -->
+  <div><div class="mini"><div class="scr chat">
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="hdr"><div class="avatar"><img src="otto-v3/otto-head.png" style="height:40px"></div><b style="font-size:13px">Otto</b></div>
+    <img src="otto-v3/otto-sit.png" style="height:120px;margin:10px 12px;display:block;align-self:flex-start;filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))">
+    <div class="msg them">sent you a sticker. join me?</div>
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>16. A sticker.</b></div></div>
+
+  <!-- 17 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="sun"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div>
+      <div class="fl" style="left:12%;bottom:20%;background:#FFD86B"></div><div class="fl" style="left:80%;bottom:14%;background:#FFB3C9"></div><div class="fl" style="left:30%;bottom:8%;background:#FFF"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">It's quiet out here.<br>Come sit a minute.</div>
+    <img class="otto" src="otto-v3/otto-sit-wave.png" style="height:130px;top:200px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>17. The valley.</b></div></div>
+
+  <!-- 18 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="pillcard" style="position:absolute;top:56px;left:16px;right:16px;display:flex;gap:10px;align-items:center;z-index:5"><div style="width:34px;height:34px;border-radius:50%;background:#D9C2A8"></div><div style="font-size:12px"><b>Maya</b> sat 12 min<br><span style="color:var(--muted)">this morning</span></div></div>
+    <div class="bubble" style="top:130px">Maya already sat.<br>Join her?</div>
+    <img class="otto" src="otto-v3/otto-awake.png" style="height:130px;top:198px">
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>18. A friend.</b> Friends on only.</div></div>
+
+  <!-- 19 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:110px">Just one minute.<br>I'll keep time.</div>
+    <img class="otto" src="otto-v3/otto-sit.png" style="height:130px;top:196px">
+    <div class="foot"><div class="cta">One minute, go</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>19. One minute.</b> The smallest ask.</div></div>
+
+  <!-- 20 -->
+  <div><div class="mini"><div class="scr">
+    <div class="valley"><div class="sky"></div><div class="rg a"></div><div class="rg b"></div><div class="rg c"></div><div class="field"></div></div>
+    <div class="status"><span>9:41</span><span>●●●</span></div>
+    <div class="bubble" style="top:96px">What are you opening<br>it for?</div>
+    <img class="otto" src="otto-v3/otto-ask.png" style="height:140px;top:170px">
+    <div style="position:absolute;top:326px;left:8px;right:8px;z-index:5;text-align:center;white-space:nowrap"><span class="chip" style="background:var(--pill);font-size:11px;padding:5px 9px">Bored</span><span class="chip" style="background:var(--pill);font-size:11px;padding:5px 9px">Checking</span><span class="chip" style="background:var(--pill);font-size:11px;padding:5px 9px">Habit</span></div>
+    <div class="foot"><div class="cta">Okay, let's meditate</div><div class="ghost">Not now</div></div>
+  </div></div><div class="cap" style="width:220px"><b>20. Otto asks why.</b> Then the two doors.</div></div>
+
+</div>
+
+<h2>4. Decided (Melvin, 2026-09-22)</h2>
+<ol style="max-width:820px">
+  <li><b>Meditating releases the apps for the rest of the window</b>, so someone can meditate twice a day.</li>
+  <li><b>"Not now" costs Otto only if the whole window then passes without a meditation</b>, and then 20 × hours held / 24: a skipped Mindful day costs 20, a 3 hour window 2.5. Coming back ten minutes later costs nothing.</li>
+  <li><b>Strict</b> (no "Not now" at all) ships in the first version.</li>
+  <li><b>Block is paid.</b></li>
+  <li><b>The default is Mindful day</b>: the apps you pick are held all day until you meditate, and one switch turns it off.</li>
+  <li><b>A free person finds Mindful day waiting</b> on the Block tab, and switching it on opens the free-week offer.</li>
+</ol>
+<p class="lead"><b>Before Block can ship:</b> Apple approves Family Controls (Distribution) for the app and each of its three extensions. The steps are in <code>CONSISTENCY.md</code>. I can build and test on a phone meanwhile.</p>
+
+</body>
+</html>
