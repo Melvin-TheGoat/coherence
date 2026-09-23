@@ -39,10 +39,14 @@ one is an error:
    researcher, or an institution. If you are not confident a number is real,
    write the slide without a number.
 2. Opinion, tradition, and personal experience are all allowed, and are often
-   more interesting than research. Just say which it is, on the slide itself.
-   A subtitle ending "traditional practice, not peer reviewed" or "that is a
-   read, not a finding" is enough. Never let an opinion wear the costume of
-   evidence.
+   more interesting than research. Just be honest about which it is, IN THE
+   SENTENCE ITSELF, by how the claim is phrased. Write "most teachers will tell
+   you" or "in practice, people find" or "no tradition actually asks for this".
+   Do NOT bolt a label onto the end: a caption closing with "that is a read,
+   not a finding" or "opinion, not peer reviewed" reads as legal boilerplate
+   and makes no sense to someone meeting the slide cold. Never let an opinion
+   wear the costume of evidence, and never let a disclaimer do the work that
+   honest phrasing should.
 3. Hedged health claims are fine when the evidence behind them is real.
    "Can help with anxiety" and "is associated with lower stress" are honest and
    worth saying. A cure claim is not. Never say a practice cures, treats,

@@ -3454,6 +3454,54 @@ state by state.**
   (one artboard, see the export note) stays untouched. The stills stay as the
   fallback when the rig cannot load.
 
+## OTTO'S AURA RIG IN RIVE: `Coherence/Otto/OttoAura.riv` (2026-09-23)
+
+Melvin: "the bugs should come and go periodically. The aura should swirl
+around. He should be floating up and down a little bit when hes floating.
+Use rive obviously." Built through the editor MCP over HTTP (curl, no
+session id needed after `initialize`), in its OWN Rive file (the editor's
+"Untitled" tab, file 2603863; rename it OttoAura in Rive), never in the Otto
+file, because that export only ever carried its first artboard.
+
+- **One artboard, `OttoAura`, 664 x 744: the stills' canvas exactly**, so
+  `OttoAuraFigure` frames the rig and the fallback stills identically. His
+  body's bottom centre is (332, 649). Node tree: Figure (at the baseline) >
+  Shadow + Lift (per-stage height) > Bob (the float) > Back (glow, mandala,
+  the rings' back arcs, leaves) / Stages (S1..S7, each a clean body plus a
+  feathered chest patch) / Bugs (moth, beetle, fly) / Front (the rings'
+  front arcs, three groups of motes).
+- **One view model property, `stage` (1 to 7)**, and it defaults to 0 so
+  the Stage layer waits in Entry until the app speaks; Entry to S_k is
+  instant, S_j to S_k crossfades in 500 ms (42 transitions, one condition
+  each). Layers run together: Stage, Float (from 6 up: lifted and bobbing,
+  a shadow shrinking under him), Breath (chest patches on a 10 s breath),
+  Aura (9.6 s loop: glow pulse, comets round two tilted rings via trim
+  paths, twinkling motes, leaves spiralling up BEHIND him since one crossed
+  his face in front), Bugs (11 s loop: the moth rests, flies off at 5 s,
+  comes back; the fly circles and lands; the beetle crawls his forearm) and
+  Halo (the mandala turns a quarter every 38.4 s, which is seamless because
+  it is four-fold).
+- **The art:** bodies from a CLEAN sheet (same chat, "remove the bugs and
+  the light"), cut with `tools/otto_aura_cut.swift --normalize 490 --canvas
+  664,744,649` so they land on the first sheet's grid; bugs, mandala, birds
+  and grasshopper cut with `tools/sprite_cut.swift` (flood the paper for
+  creatures, colour-to-alpha for light, frames aligned on the beak).
+  `tools/otto_aura_rig_build.py` is the recorded first-pass build.
+
+**Rive MCP lessons from this build, each of which cost a round:**
+- **Insertion order depends on the tool.** New groups and shapes land IN
+  FRONT of their siblings; new images land BEHIND them. The old note that
+  "a new child lands at the END, behind everything" is only true for images.
+- **group_editor ignores x/y, and a group made under a moved parent is
+  offset to cancel the move** (Lift came out at -332, -649). Write positions
+  after creating, and zero the children.
+- **Deleting a view model broke that file's data panel**: every view model
+  made afterwards was unlisted and silently left out of the export. The fix
+  was a truly blank file. Make the view model FIRST in a new file, check
+  `listViewModels` shows it, and check the exported bytes contain `stage`.
+- `upload_rev` with target `current_project` can create a file, but nothing
+  can open it for you; the person has to.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in

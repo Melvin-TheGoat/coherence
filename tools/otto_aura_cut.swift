@@ -148,6 +148,10 @@ let grid = (option("--grid") ?? "4,3").split(separator: ",").compactMap { Int($0
 let seedMin = Int(option("--seed") ?? "178")!
 let closeRadius = Int(option("--close") ?? "3")!
 let normalizeTarget = option("--normalize").flatMap(Double.init)
+/// `--canvas W,H,baseline`: force the canvas instead of fitting it to this
+/// sheet, so a later sheet (the clean bodies for the Rive rig) lands on
+/// exactly the grid the first one set: 664,744,649.
+let fixedCanvas = option("--canvas").map { $0.split(separator: ",").compactMap { Double($0) } }
 guard args.count >= 2 else {
     print("usage: otto_aura_cut sheet.png out-dir [--names …] [--grid 4,3]"); exit(1)
 }
@@ -373,9 +377,12 @@ if let target = normalizeTarget {
     }
     let left = placed.map { $0.bodyCX }.max()!
     let right = placed.map { $0.w - $0.bodyCX }.max()!
-    let half = max(left, right).rounded(.up) + 4
-    let up = (placed.map { $0.bodyBottom }.max()! + 4).rounded(.up)
-    let down = (placed.map { $0.h - $0.bodyBottom }.max()! + 4).rounded(.up)
+    var half = max(left, right).rounded(.up) + 4
+    var up = (placed.map { $0.bodyBottom }.max()! + 4).rounded(.up)
+    var down = (placed.map { $0.h - $0.bodyBottom }.max()! + 4).rounded(.up)
+    if let c = fixedCanvas, c.count == 3 {
+        half = c[0] / 2; up = c[2]; down = c[1] - c[2]
+    }
     let cw = Int(half * 2), chh = Int(up + down)
     for (k, name) in names.enumerated() {
         let p = placed[k]
