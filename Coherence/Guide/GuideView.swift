@@ -4,9 +4,15 @@ import SwiftData
 /// The how-to guide. Answers the question every beginner actually asks, which
 /// 808 had no answer to: "ok, but what do I *do*?"
 ///
-/// **Every word on these screens comes from `Shared/Guide/MeditationMethod.swift`.**
-/// Nothing here hardcodes copy, so editing the instructions never touches a view
-/// and adding a method needs no UI change at all.
+/// **It stands in the valley** (Aziz, 2026-09-22: "revamp all the how to
+/// meditate guides in there so it fits our current theme";
+/// `mockups/guide-valley.html`). It was the last pair of screens still on the
+/// cream page with brown ink. Now: a band of sky and meadow, grass below,
+/// white cards, sky blue for anything you pick or follow, and one gold Begin.
+///
+/// **Every word on these screens comes from `Shared/Guide/MeditationMethod.swift`**,
+/// symbols included. Nothing here hardcodes copy, so editing the instructions
+/// never touches a view and adding a method needs no UI change at all.
 ///
 /// This is reference you read beforehand, not cues during a session. The old
 /// "Method" was the second thing and it fought the promise that you can meditate
@@ -25,56 +31,77 @@ struct GuideView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("How to meditate")
-                            .font(DisplayFont.display(24, .heavy))
-                            .foregroundStyle(AppColor.textPrimary)
-                        Text("\(MeditationMethod.all.count) ways in. Any order you like.")
-                            .font(AppFont.note)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
-                    .padding(.bottom, 8)
-
-                    ForEach(MeditationMethod.Level.allCases, id: \.self) { level in
-                        let methods = MeditationMethod.all.filter { $0.level == level }
-                        if !methods.isEmpty {
-                            SectionHeader(title: heading(for: level))
-                                .padding(.top, 14)
-                                .padding(.bottom, 4)
-                            ForEach(methods, id: \.id) { method in
-                                NavigationLink {
-                                    MethodDetailView(method: method, onBegin: begin)
-                                } label: {
-                                    MethodRow(method: method, loggedCount: count(for: method))
+                VStack(alignment: .leading, spacing: 0) {
+                    band
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(MeditationMethod.Level.allCases, id: \.self) { level in
+                            let methods = MeditationMethod.all.filter { $0.level == level }
+                            if !methods.isEmpty {
+                                GuideHeading(title: heading(for: level))
+                                ForEach(methods, id: \.id) { method in
+                                    NavigationLink {
+                                        MethodDetailView(method: method, onBegin: begin)
+                                    } label: {
+                                        MethodRow(method: method, loggedCount: count(for: method))
+                                    }
+                                    .buttonStyle(CardButtonStyle())
+                                    .padding(.bottom, 8)
                                 }
-                                .buttonStyle(CardButtonStyle())
                             }
                         }
                     }
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, 6)
+                    .padding(.bottom, 32)
                 }
-                .padding(AppMetrics.screenPadding)
             }
-            .screenBackground()
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .modifier(NoTopEdgeHaze())
+            .background(GuideGround.meadow.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.hidden, for: .navigationBar)
             .toolbar {
                 if !embedded {
                     ToolbarItem(placement: .confirmationAction) {
-                        Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
+                        Button("Done") { dismiss() }.tint(AppColor.textPrimary)
                     }
                 }
             }
         }
+        .tint(AppColor.textPrimary)
     }
 
-    /// The level, said out loud instead of drawn as a rail.
-    ///
-    /// The list used to hang off a teal line with a hollow circle per row,
-    /// which asserted "these are a progression" in the one visual language the
-    /// rest of the app has dropped, and asserted it about a list nobody has to
-    /// take in order. Three headings say the same thing in words, cost no ink,
-    /// and are the only place the level needs to appear: the outlined
-    /// `LevelChip` repeated on every row is gone with them.
+    /// The valley with Otto in it, saying the title. The house rule from the
+    /// Ready screen: Otto says the sentence that would otherwise be a heading.
+    private var band: some View {
+        ValleyScene(progress: 0, showsFigure: false)
+            .frame(height: 228)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .overlay(alignment: .bottomTrailing) {
+                // 118 rather than taller: in the sheet the Done button sits
+                // top right, and at 132 it landed on his head.
+                Image(OttoPose.asking.asset)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 118)
+                    .padding(.trailing, 22)
+                    .padding(.bottom, 4)
+                    .accessibilityHidden(true)
+            }
+            .overlay(alignment: .bottomLeading) {
+                GuideBubble(title: "How to meditate",
+                            line: "\(MeditationMethod.all.count) ways in. Any order you like.")
+                    .frame(maxWidth: 200, alignment: .leading)
+                    .padding(.leading, AppMetrics.screenPadding)
+                    .padding(.bottom, 58)
+            }
+    }
+
+    /// The level, said out loud instead of drawn as a rail. Three headings
+    /// say "these go roughly in this order" in words, and are the only place
+    /// the level needs to appear on the list.
     private func heading(for level: MeditationMethod.Level) -> String {
         switch level {
         case .beginner: return "Start here"
@@ -98,32 +125,114 @@ struct GuideView: View {
     }
 }
 
+// MARK: - The ground and its pieces
+
+/// iOS 26 blurs scrolling content under the navigation bar, fading it toward
+/// the page's background. The page here is the meadow, so the valley's sky
+/// came out hazed green under the back button. The band is meant to be seen
+/// clearly, so the effect is off at the top.
+private struct NoTopEdgeHaze: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.scrollEdgeEffectHidden(true, for: .top)
+        } else {
+            content
+        }
+    }
+}
+
+private enum GuideGround {
+    /// The meadow at its near edge, which the page continues under the band.
+    static let meadow = DayLight.at(0).field[1]
+    /// Dividers inside a white card. Not the app's `hairline`, which is cream
+    /// and on white reads as the brown these screens were moved off.
+    static let quiet = AppColor.meadowInk.opacity(0.11)
+}
+
+/// A section title on the grass, white, as the blocker editor's are.
+private struct GuideHeading: View {
+    let title: String
+    var body: some View {
+        Text(title)
+            .font(DisplayFont.display(15, .heavy))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.18), radius: 0, y: 1)
+            .padding(.leading, 4)
+            .padding(.top, 14)
+            .padding(.bottom, 8)
+    }
+}
+
+/// Otto's line: a white bubble whose tail points right, at him.
+private struct GuideBubble: View {
+    let title: String
+    let line: String
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(DisplayFont.display(19, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(line)
+                .font(.system(size: 13.5, weight: .semibold))
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 11)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(alignment: .trailing) {
+            Triangle()
+                .fill(.white)
+                .frame(width: 10, height: 16)
+                .offset(x: 9)
+        }
+        .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
+    }
+
+    private struct Triangle: Shape {
+        func path(in r: CGRect) -> Path {
+            Path { p in
+                p.move(to: CGPoint(x: r.minX, y: r.minY))
+                p.addLine(to: CGPoint(x: r.maxX, y: r.midY))
+                p.addLine(to: CGPoint(x: r.minX, y: r.maxY))
+                p.closeSubpath()
+            }
+        }
+    }
+}
+
+/// A method's symbol in the pale sky circle, the object the blocker list
+/// uses, so the two lists read as one language.
+private struct MethodSymbol: View {
+    let name: String
+    var size: CGFloat = 40
+    var body: some View {
+        Image(systemName: name)
+            .font(.system(size: size * 0.44, weight: .semibold))
+            .foregroundStyle(AppColor.skyDeep)
+            .frame(width: size, height: size)
+            .background(AppColor.skyWash, in: Circle())
+    }
+}
+
 // MARK: - One technique
 
 /// A technique, and how many times YOU have sat it.
 ///
-/// **The count is a capsule on the right, and it is absent at zero.** The
-/// first cut of this put it in a 50pt token on the LEFT of every row, amber
-/// and raised when practised and an empty hollow when not, matching an earned
-/// award and a sat day. On the simulator that turned out to be wrong for the
-/// one reader who matters most: somebody who has just installed the app meets
-/// eight blank tiles down a screen whose whole job is to make them want to try
-/// something. An empty slot works on the awards shelf because an award is a
-/// thing you are meant to go and get. A technique is not a target, so an empty
-/// box beside it is only an absence.
-///
-/// So the row is clean until you have earned something to put on it, and then
-/// the capsule appears, amber, the one coloured thing in the row. Same idea,
-/// no dead state.
+/// **The count is absent at zero.** Somebody who has just installed the app
+/// should meet eight clean rows, not eight empty slots: a technique is not a
+/// target, so an empty box beside it is only an absence. Once there is a
+/// count it is SKY, not gold: it is a record of what you did, and the one gold
+/// object in the guide is Begin.
 private struct MethodRow: View {
     let method: MeditationMethod
     let loggedCount: Int
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 12) {
+            MethodSymbol(name: method.symbol)
             VStack(alignment: .leading, spacing: 3) {
                 Text(method.title)
-                    .font(DisplayFont.display(17))
+                    .font(DisplayFont.display(16))
                     .foregroundStyle(AppColor.textPrimary)
                     .multilineTextAlignment(.leading)
                 Text(method.oneLine)
@@ -135,132 +244,229 @@ private struct MethodRow: View {
             Spacer(minLength: 4)
             if loggedCount > 0 {
                 Text(loggedCount == 1 ? "1 session" : "\(loggedCount) sessions")
-                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textOnAccent)
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColor.skyDeep)
                     .monospacedDigit()
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Capsule().fill(AppColor.accentGold))
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(Capsule().fill(AppColor.skyWash))
             }
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppColor.textSecondary.opacity(0.5))
-                .padding(.top, 3)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(AppColor.meadowInk.opacity(0.6))
         }
-        .card(padding: 16)
-        .padding(.bottom, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .contentShape(Rectangle())
     }
 }
 
 // MARK: - One method
 
 /// Steps first, because that's what people came for. Why it works sits below,
-/// and where it came from stays visibly separate from it. Same two-tier rule as
-/// `SCIENCE.md`: never let a practice tradition borrow the authority of evidence.
+/// and where it came from stays visibly separate from it, under a divider.
+/// Same two-tier rule as `SCIENCE.md`: never let a practice tradition borrow
+/// the authority of evidence.
 struct MethodDetailView: View {
     let method: MeditationMethod
     var onBegin: () -> Void = {}
+    /// Non-zero when the guide is a tab: this page is pushed, so the bar's
+    /// inset does not reach it (see `tabBarClearance`).
+    @Environment(\.tabBarClearance) private var tabBarClearance
+
+    private static let circle: CGFloat = 84
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                VStack(alignment: .leading, spacing: 10) {
-                    // The detail screen keeps the level, because it arrives
-                    // here without the heading that grouped it on the list.
-                    // Filled tint rather than an outline, like every other
-                    // chip in the app.
-                    Text(method.level.label)
-                        .font(AppFont.caption.weight(.bold))
-                        .foregroundStyle(AppColor.calmAccent)
-                        .padding(.horizontal, 11)
-                        .padding(.vertical, 5)
-                        .background(AppColor.calmAccentFill.opacity(0.18), in: Capsule())
-                    Text(method.title)
-                        .font(AppFont.title)
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text(method.oneLine)
-                        .font(AppFont.note)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
+                VStack(alignment: .leading, spacing: 0) {
+                    band
+                    VStack(alignment: .leading, spacing: 0) {
+                        head.padding(.bottom, 4)
 
-                if !method.intro.isEmpty {
-                    Text(method.intro)
-                        .font(AppFont.note)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "The practice")
-                    ForEach(Array(method.steps.enumerated()), id: \.offset) { index, step in
-                        HStack(alignment: .top, spacing: 12) {
-                            Text("\(index + 1)")
-                                .font(AppFont.caption.weight(.bold))
-                                .foregroundStyle(AppColor.calmAccent)
-                                .monospacedDigit()
-                                .frame(width: 14, alignment: .trailing)
-                                .padding(.top, 2)
-                            Text(step)
-                                .font(AppFont.body)
+                        if !method.intro.isEmpty {
+                            Text(method.intro)
+                                .font(AppFont.note)
                                 .foregroundStyle(AppColor.textPrimary)
                                 .fixedSize(horizontal: false, vertical: true)
+                                .padding(14)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .padding(.top, 8)
                         }
-                    }
-                }
 
-                if !method.variants.isEmpty {
-                    VStack(alignment: .leading, spacing: 10) {
-                        SectionHeader(title: method.variants.count == 2 ? "Two ways in" : "Ways in")
-                        ForEach(method.variants) { variant in
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text(variant.title)
-                                    .font(AppFont.headline)
-                                    .foregroundStyle(AppColor.textPrimary)
-                                if !variant.origin.isEmpty {
-                                    Text(variant.origin)
-                                        .font(.caption2)
-                                        .foregroundStyle(AppColor.textSecondary)
-                                }
-                                Text(variant.body)
-                                    .font(AppFont.note)
-                                    .foregroundStyle(AppColor.textSecondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                                    .padding(.top, 2)
-                            }
-                            .card(padding: 14)
+                        GuideHeading(title: "The practice")
+                        steps
+
+                        if !method.variants.isEmpty {
+                            GuideHeading(title: method.variants.count == 2 ? "Two ways in" : "Ways in")
+                            variants
                         }
-                    }
-                }
 
-                VStack(alignment: .leading, spacing: 10) {
-                    SectionHeader(title: "What it is for")
-                    Text(method.purpose)
-                        .font(AppFont.note)
+                        GuideHeading(title: "What it is for")
+                        purpose
+                    }
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, Self.circle / 2 + 10)
+                    .padding(.bottom, 16)
+                }
+            }
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .modifier(NoTopEdgeHaze())
+            // **An inset, not a ZStack.** Floated in a ZStack, Begin sat
+            // behind the tab bar whenever the guide is a tab (the App Store
+            // build, where Block is off), because the bar is itself a bottom
+            // inset and a floating view does not stack on it. Insets do: it
+            // lands above the bar in the tab and at the edge in the sheet,
+            // and the scroll clears it for free.
+            .safeAreaInset(edge: .bottom, spacing: 0) { footer }
+        .background(GuideGround.meadow.ignoresSafeArea())
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+    }
+
+    /// The valley, with the method's symbol on the seam the way a blocker's
+    /// sits in its editor and a portrait sits on Profile.
+    private var band: some View {
+        // Tall enough that the sky clears the status bar and the back
+        // button: at 150 the top third sat under them and the band read as
+        // meadow alone.
+        ValleyScene(progress: 0, showsFigure: false)
+            .frame(height: 212)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .overlay(alignment: .bottom) {
+                MethodSymbol(name: method.symbol, size: Self.circle)
+                    .overlay(Circle().stroke(.white, lineWidth: 4))
+                    .shadow(color: .black.opacity(0.14), radius: 6, y: 3)
+                    .offset(y: Self.circle / 2)
+            }
+            .zIndex(1)
+    }
+
+    private var head: some View {
+        VStack(spacing: 6) {
+            // The detail screen keeps the level, because it arrives here
+            // without the heading that grouped it on the list.
+            Text(method.level.label)
+                .font(AppFont.caption.weight(.bold))
+                .foregroundStyle(AppColor.skyDeep)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(AppColor.skyWash, in: Capsule())
+            Text(method.title)
+                .font(DisplayFont.display(22, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+            Text(method.oneLine)
+                .font(AppFont.note)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 16)
+        .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    /// One card, numbered dots in sky, a divider between steps: a sequence to
+    /// follow rather than a paragraph to read.
+    private var steps: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(method.steps.enumerated()), id: \.offset) { index, step in
+                HStack(alignment: .top, spacing: 12) {
+                    Text("\(index + 1)")
+                        .font(.system(size: 12, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                        .frame(width: 24, height: 24)
+                        .background(AppColor.skyDeep, in: Circle())
+                    Text(step)
+                        .font(AppFont.body)
                         .foregroundStyle(AppColor.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 1)
+                }
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(alignment: .top) {
+                    if index > 0 { Rectangle().fill(GuideGround.quiet).frame(height: 1) }
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 4)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
 
-                    if !method.origin.isEmpty {
-                        HStack(alignment: .top, spacing: 10) {
-                            Rectangle()
-                                .fill(AppColor.textSecondary.opacity(0.3))
-                                .frame(width: 2)
-                            Text(method.origin)
-                                .font(AppFont.caption)
+    private var variants: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            ForEach(method.variants) { variant in
+                HStack(alignment: .top, spacing: 10) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(AppColor.skyDeep)
+                        .frame(width: 3)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(variant.title)
+                            .font(AppFont.headline)
+                            .foregroundStyle(AppColor.textPrimary)
+                        if !variant.origin.isEmpty {
+                            Text(variant.origin)
+                                .font(.caption2)
                                 .foregroundStyle(AppColor.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
                         }
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.top, 4)
+                        Text(variant.body)
+                            .font(AppFont.note)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 2)
                     }
                 }
-
-                Button("Begin a session", action: onBegin)
-                    .buttonStyle(PrimaryButtonStyle())
-                    .padding(.top, 4)
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(AppMetrics.screenPadding)
         }
-        .screenBackground()
-        .navigationBarTitleDisplayMode(.inline)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var purpose: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(method.purpose)
+                .font(AppFont.note)
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            // Where a practice comes from, kept visibly apart from what it
+            // is for: a tradition never borrows the authority of evidence.
+            if !method.origin.isEmpty {
+                Rectangle().fill(GuideGround.quiet).frame(height: 1)
+                Text(method.origin)
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    /// Begin, pinned and gold, so it is there from the first step instead of
+    /// at the end of the scroll.
+    private var footer: some View {
+        Button("Begin a session", action: onBegin)
+            .buttonStyle(PrimaryButtonStyle())
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.top, 24)
+            // Over the bar and clear of its raised plus when this is a tab.
+            .padding(.bottom, 8 + (tabBarClearance > 0 ? tabBarClearance + 14 : 0))
+            .background(
+                LinearGradient(colors: [GuideGround.meadow.opacity(0), GuideGround.meadow, GuideGround.meadow],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+            )
     }
 }

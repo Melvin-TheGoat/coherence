@@ -117,6 +117,10 @@ struct ContentView: View {
         if sheet == nil { sheet = next } else { pendingSheet = next }
     }
 
+    /// The tab bar's measured height, handed to the tabs as
+    /// `tabBarClearance` for the pages pushed inside them.
+    @State private var tabBarHeight: CGFloat = 0
+
     var body: some View {
         Group {
             switch tab {
@@ -133,6 +137,9 @@ struct ContentView: View {
                 ProfileTab(selectedDay: $profileDay) { sheet = .settings }
             }
         }
+        // On the tabs only, not on the sheets presented further down this
+        // chain: a sheet covers the bar, so its pages need no clearance.
+        .environment(\.tabBarClearance, tabBarHeight)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 8) {
                 // The Watch announced End; the payload is seconds behind. The
@@ -151,6 +158,7 @@ struct ContentView: View {
                 }
                 if tab == .home, let id = detailsFor, auraGain == nil { detailsToast(id) }
                 MainTabBar(selection: $tab) { sheet = .setup }
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
             }
             .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
             .animation(.easeOut(duration: 0.25), value: detailsFor)

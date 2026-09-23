@@ -3468,6 +3468,36 @@ Block behaves is untouched (same windows, limits, passes, strictness).
   132pt band, the symbol's circle on the seam the way Profile seats its
   portrait, grass below, white fields.
 
+## THE GUIDE IS IN THE VALLEY (2026-09-22, Aziz)
+
+"revamp all the how to meditate guides in there so it fits our current
+theme". Built to `mockups/guide-valley.html`. The guide was the last pair of
+screens on the cream page with brown ink. **No copy changed.**
+
+- **The list:** the valley band with Otto (asking pose) saying the title in
+  a white bubble, "How to meditate" over "8 ways in. Any order you like.";
+  grass below; level headings in white; each method a white card with its
+  symbol in a sky circle, the blocker list's object. The session count is
+  SKY and still absent at zero: it is a record, and gold is kept for Begin.
+- **A method:** its symbol on the seam of the band, a white head card
+  (level, title, line), steps as one card with sky number dots, variants
+  and "What it is for" as cards, the origin under a divider (the SCIENCE.md
+  two-tier rule), and **Begin pinned, gold**.
+- **Symbols live in `MeditationMethod.swift`** (`symbol`, a switch on id
+  with a leaf fallback), so a new method still needs no view change.
+- **iOS 26 hazes scrolling content under the navigation bar toward the
+  page's background.** The page is the meadow, so the sky came out green
+  under the back button. `NoTopEdgeHaze` turns the top edge effect off.
+- **A parent's `safeAreaInset` does NOT reach a page pushed onto a
+  NavigationStack inside it.** Measured, not guessed: the method page's
+  bottom inset read 34 (the home indicator alone) while the tab bar sat on
+  top of its pinned Begin. ContentView now measures the bar and hands its
+  height to the tabs as `tabBarClearance` (environment, set on the tabs
+  only, so sheets get 0); a pushed page that pins something to its bottom
+  adds it. **Any future pushed page with bottom-pinned content needs the
+  same.** The first fix, moving Begin from a ZStack into its own
+  `safeAreaInset`, was right in general and changed nothing here.
+
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
 "the sound screen button looks terrible", then on the first redesign: "no
