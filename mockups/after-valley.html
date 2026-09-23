@@ -1,0 +1,175 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>After a session, in the valley</title>
+<style>
+:root{
+  --paper:#FEF9F2; --ink:#413024; --soft:#877160;
+  --amber:#F0C47B; --amberSh:#D9A957; --amberText:#9B6B19;
+  --skyInk:#24414F; --skySoft:#47697A; --skyDeep:#3F80AD; --skyWash:#D8E8F2;
+  --meadow:#9CBC85; --quiet:rgba(94,122,85,.11); --glow:#FFD98A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 80px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:15px;margin:34px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:920px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:26px}
+.col{width:300px;flex:none}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.4px;line-height:1.62;width:300px;margin-top:13px}
+.note b{color:var(--ink)}
+ul.facts{max-width:920px;color:var(--soft);font-size:13.6px;line-height:1.65;padding-left:20px}
+ul.facts b{color:var(--ink)}
+
+.p{width:300px;height:620px;border-radius:38px;overflow:hidden;position:relative;flex:none;
+ box-shadow:0 12px 34px rgba(80,55,30,.16);background:var(--meadow)}
+.sky{position:absolute;inset:0;background:linear-gradient(180deg,#8CBBD4 0%,#BBD8E4 46%,#E3E8DA 70%,#EFE0C9 100%)}
+.band{position:relative;overflow:hidden;background:linear-gradient(180deg,#8CBBD4 0%,#BBD8E4 55%,#E3E8DA 100%)}
+.sun{position:absolute;width:30px;height:30px;border-radius:50%;background:#FFE9B8;box-shadow:0 0 34px 14px rgba(255,233,184,.55)}
+svg.mt{position:absolute;left:0;width:100%}
+.grass{position:absolute;left:0;bottom:0;width:100%;background:linear-gradient(180deg,#7FA87E,var(--meadow))}
+.x{position:absolute;left:14px;top:44px;width:30px;height:30px;border-radius:50%;background:rgba(254,249,242,.9);
+ display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--skyInk);box-shadow:0 2px 6px rgba(40,25,15,.12)}
+.big{font-size:44px;font-weight:800;color:var(--skyInk);letter-spacing:-.02em;line-height:1}
+.big small{font-size:16px;font-weight:800;color:var(--skySoft);margin-left:4px;letter-spacing:0}
+.ttl{font-size:17px;font-weight:800;color:var(--skyInk);margin-top:6px}
+.meta{font-size:10.5px;font-weight:700;color:var(--skySoft);margin-top:2px}
+.head{position:absolute;width:62px;height:62px;border-radius:50%;border:3px solid #fff;
+ background:#BBD8E4 url("otto-v3/otto-head.png") center 60%/82% no-repeat;box-shadow:0 3px 10px rgba(40,25,15,.2);z-index:2}
+.page{padding:12px 14px 90px}
+.card{background:#fff;border-radius:18px;padding:12px 14px;margin-bottom:9px;box-shadow:0 2px 8px rgba(40,25,15,.08)}
+.card h4{margin:0 0 7px;font-size:12.5px;font-weight:800}
+.card h4 span{float:right;font-weight:800;color:var(--skyDeep)}
+.track{height:8px;border-radius:9px;background:var(--quiet);position:relative;margin:10px 0 5px}
+.track i{position:absolute;left:0;top:0;bottom:0;width:70%;border-radius:9px;background:var(--skyDeep)}
+.track b{position:absolute;left:70%;top:50%;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;background:#fff;box-shadow:0 1px 5px rgba(40,25,15,.3)}
+.ends{display:flex;justify-content:space-between;font-size:9.5px;color:var(--soft)}
+.sel{display:flex;justify-content:space-between;font-size:13px;color:var(--ink)}
+.sel span{color:var(--skyDeep);font-weight:800}
+.ph{font-size:12px;color:#B7AEA2}
+.pills{display:flex;gap:7px}
+.pill{flex:1;background:var(--skyWash);color:var(--skyInk);font-size:11.5px;font-weight:800;border-radius:12px;padding:10px 0;text-align:center}
+.seg{display:flex;background:var(--quiet);border-radius:13px;padding:3px}
+.seg div{flex:1;text-align:center;font-size:12px;font-weight:800;padding:8px 0;border-radius:10px;color:#5E7A55}
+.seg .on{background:var(--skyDeep);color:#fff}
+.dock{position:absolute;left:14px;right:14px;bottom:18px;z-index:4}
+.cta{background:var(--amber);color:var(--ink);font-size:15px;font-weight:800;text-align:center;padding:13px 0;border-radius:18px;box-shadow:0 4px 0 var(--amberSh)}
+.skip{text-align:center;font-size:11.5px;font-weight:800;color:#fff;margin-top:9px;text-shadow:0 1px 2px rgba(30,50,30,.4)}
+.fade{position:absolute;left:0;right:0;bottom:0;height:110px;background:linear-gradient(180deg,rgba(156,188,133,0),var(--meadow) 45%);z-index:3}
+
+/* full-scene screens */
+.otto{position:absolute;left:50%;transform:translateX(-50%);background-position:center bottom;background-size:contain;background-repeat:no-repeat}
+.seat{position:absolute;left:50%;transform:translateX(-50%);border-radius:50%;background:linear-gradient(180deg,#D98B6E,#B96A50)}
+.bub{position:absolute;left:50%;transform:translateX(-50%);border:2px solid rgba(28,62,78,.38);background:rgba(254,249,242,.84);
+ border-radius:16px;padding:10px 13px;font-size:13px;font-weight:600;color:var(--skyInk);line-height:1.38;text-align:center}
+.bub b{display:block;font-size:16px;font-weight:800;margin-bottom:3px}
+.bub:after{content:"";position:absolute;left:50%;bottom:-10px;margin-left:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid rgba(28,62,78,.38)}
+.bot{position:absolute;left:18px;right:18px;bottom:22px}
+.ghost{background:rgba(254,249,242,.94);border-radius:999px;text-align:center;padding:11px 0;font-size:13.5px;font-weight:800;color:var(--ink);margin-top:10px;box-shadow:0 2px 6px rgba(40,25,15,.12)}
+.badge{position:absolute;left:50%;transform:translateX(-50%);width:112px;height:112px;border-radius:30px;
+ background:linear-gradient(150deg,#F7D58E,#E3A94E);box-shadow:0 0 0 6px rgba(255,255,255,.55),0 0 40px 14px rgba(255,217,138,.7);
+ display:flex;align-items:center;justify-content:center;font-size:48px}
+.kick{position:absolute;left:0;right:0;text-align:center;font-size:10px;font-weight:800;letter-spacing:.14em;color:var(--skySoft)}
+.atitle{position:absolute;left:0;right:0;text-align:center;font-size:22px;font-weight:800;color:var(--skyInk)}
+.amean{position:absolute;left:30px;right:30px;text-align:center;font-size:12px;color:var(--skySoft);line-height:1.5}
+</style></head><body>
+
+<h1>After a session, in the valley</h1>
+<p class="lede">What happens after you meditate is already right: you land on Home and Otto's glow rises.
+The screens around it are not. <b>The session's page, the "Too short" screen and the award card are
+still flat cream.</b> These put all three in the valley you just sat in. No field, rule or step moves.</p>
+
+<div class="row">
+
+ <!-- 1. The session's page -->
+ <div class="col"><div class="tag"><b>1</b> &nbsp;the session's page</div>
+ <div class="p">
+  <div class="band" style="height:188px">
+   <div class="sun" style="right:22%;top:66px"></div>
+   <svg class="mt" viewBox="0 0 300 70" preserveAspectRatio="none" style="bottom:32px;height:60px">
+    <path d="M0 40 L50 12 L90 32 L140 4 L190 30 L232 14 L300 38 L300 70 L0 70 Z" fill="#AFC6CE"/>
+    <path d="M0 52 L44 30 L96 50 L148 26 L200 48 L252 32 L300 50 L300 70 L0 70 Z" fill="#8FAFB4"/>
+    <path d="M0 62 L60 48 L114 62 L170 46 L230 60 L300 52 L300 70 L0 70 Z" fill="#6E9078"/></svg>
+   <div class="grass" style="height:40px"></div>
+   <div class="x">&#10005;</div>
+   <div style="position:absolute;left:18px;top:84px">
+    <div class="big">10<small>min</small></div>
+    <div class="ttl">Night meditation</div>
+    <div class="meta">Today, 10:55 PM &middot; Silence</div>
+   </div>
+  </div>
+  <div class="head" style="right:18px;top:112px"></div>
+  <div class="page">
+   <div class="card"><h4>How did it feel? <span>7 / 10</span></h4><div class="track"><i></i><b></b></div><div class="ends"><span>Rough</span><span>The best</span></div></div>
+   <div class="card"><h4>What did you do?</h4><div class="sel">Silence <span>&#8964;</span></div></div>
+   <div class="card"><h4>Notes</h4><div class="ph">Anything you want to remember. Only you can see this.</div></div>
+   <div class="card"><h4>Photo or video</h4><div class="pills"><div class="pill">&#128444; Choose</div><div class="pill">&#128247; Selfie</div></div></div>
+   <div class="card"><h4>Who can see it</h4><div class="seg"><div class="on">&#128274; Only you</div><div>Friends</div></div></div>
+  </div>
+  <div class="fade"></div>
+  <div class="dock"><div class="cta">Save</div></div>
+ </div>
+ <p class="note"><b>The valley band from Profile and the guide</b>, with the length as the one big
+ number in the sky and Otto's head on the seam. Each question becomes a white card on the grass
+ instead of a row on cream. <b>Every choice is sky blue</b> (the slider, the picker, Only you or
+ Friends); <b>Save is the one gold thing</b>, pinned at the bottom with the grass fading under it.</p>
+ </div>
+
+ <!-- 2. Too short -->
+ <div class="col"><div class="tag"><b>2</b> &nbsp;too short to count</div>
+ <div class="p">
+  <div class="sky"></div>
+  <div class="sun" style="left:14%;top:300px"></div>
+  <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none" style="bottom:38%;height:28%">
+   <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
+   <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
+   <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/></svg>
+  <div class="grass" style="height:42%"></div>
+  <div class="seat" style="bottom:29.5%;width:160px;height:42px"></div>
+  <div class="otto" style="bottom:32%;width:180px;height:180px;background-image:url('otto-v3/otto-curious.png')"></div>
+  <div class="bub" style="top:128px;width:236px"><b>That was 13 seconds</b>Sessions count from 30. Want to go again?</div>
+  <div class="bot"><div class="cta">Start a session</div><div class="ghost">Done</div></div>
+ </div>
+ <p class="note"><b>Otto says it, in the valley</b>, the way he says everything else now. Curious, not
+ disappointed: a Begin-then-End by accident is not a failure and must not read as one. The facts are
+ the same as today's screen (13 seconds, counts from 30); the gold button starts a session; Done is a
+ cream pill.</p>
+ </div>
+
+ <!-- 3. Award -->
+ <div class="col"><div class="tag"><b>3</b> &nbsp;an award</div>
+ <div class="p">
+  <div class="sky"></div>
+  <div class="sun" style="left:50%;margin-left:-15px;top:190px;opacity:.6"></div>
+  <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none" style="bottom:38%;height:28%">
+   <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
+   <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
+   <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/></svg>
+  <div class="grass" style="height:42%"></div>
+  <div class="kick" style="top:62px">AWARD UNLOCKED</div>
+  <div class="atitle" style="top:80px">Three days</div>
+  <div class="amean" style="top:114px">Three in a row.</div>
+  <div class="badge" style="top:168px">&#127942;</div>
+  <div class="seat" style="bottom:29.5%;width:150px;height:40px"></div>
+  <div class="otto" style="bottom:32%;width:150px;height:150px;background-image:url('otto-v3/otto-sit-wave.png')"></div>
+  <div class="bot"><div class="cta">Keep going</div></div>
+ </div>
+ <p class="note"><b>The award in the sky, Otto on his cushion waving up at it.</b> The badge glows in
+ his aura light instead of sitting on a cream page. The words are the award's own, unchanged; Keep going
+ is the one gold thing.</p>
+ </div>
+</div>
+
+<h2>What stays exactly as it is</h2>
+<ul class="facts">
+ <li><b>The order of things</b>: End, then Home with the glow rising, then the "Add how that felt" note,
+ which opens the session's page. Awards still announce themselves one at a time.</li>
+ <li><b>Every field on the session's page</b>, the rules for Friends posts, and "Not rated" until the
+ slider is touched.</li>
+ <li><b>The measurements screen</b> (score, curves) is reached from the session's page as today and
+ is not part of this pass.</li>
+</ul>
+</body></html>

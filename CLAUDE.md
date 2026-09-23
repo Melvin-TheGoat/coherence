@@ -3553,6 +3553,34 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
 - Scale the tick's line and its number SEPARATELY: scaling the whole stack
   pushed the number out of the ruler's frame and clipped it under the needle.
 
+## AFTER A SESSION, EVERYTHING IS IN THE VALLEY (2026-09-22, Aziz)
+
+"revamp the screen after you meditate". Built to `mockups/after-valley.html`.
+The flow itself was already right (End, Home, the glow rising, the "Add how
+that felt" toast); three screens around it were still cream. No field, rule
+or step changed.
+
+- **The session's page** (`SaveSessionView`): the valley band with the length
+  as the one big number, the title and "Today, 10:55 PM · Silence" in the sky,
+  Otto's head on the grass at the right. Each question is its own white card
+  (`whiteCard`), every choice is sky (the slider, the picker chevron, the media
+  pills, a segmented Only you / Friends), and Save is the one gold thing, over
+  grass that fades up under it.
+  **The scene is drawn TALLER than the band and cut at its bottom**
+  (`(top + 150) / 0.53`, 0.53 being where the scene's meadow begins): at the
+  band's own height the horizon fell across the title.
+- **Too short** (`SessionTooShortView`): Otto, Curious, on his cushion in the
+  valley, saying it in his bubble ("**That was 13 seconds.** Sessions count
+  from 30 seconds. Want to go again?"); Start a session gold, Done a cream pill.
+  The Watch-unreadable case gets its own line in the same bubble.
+- **An award** (`AwardUnlockView`): the badge hangs in the sky with an aura
+  glow while Otto waves up at it from the cushion; the award's own words above.
+  **Full-screen views that ignore the safe area read its insets as zero**:
+  place text from `SitLayout.skyTop`, as the sit screen does, not from
+  `safeAreaInsets.top`.
+- `PREVIEW_AWARD=<award id>` (DEBUG, e.g. `streak3`) announces an award on
+  launch; `PREVIEW_TOO_SHORT=<seconds>` and `PREVIEW_SAVE=1` already existed.
+
 ## FRIENDS IS IN THE VALLEY (2026-09-22, Aziz)
 
 "revamp the friends screen make it the same vibe as the rest". Built to

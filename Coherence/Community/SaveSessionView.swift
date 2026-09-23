@@ -84,37 +84,39 @@ struct SaveSessionView: View {
     private var hasMedia: Bool { newPhoto != nil || storedPhoto != nil }
     private var shownPhoto: UIImage? { newPhoto ?? storedPhoto }
     private var shownVideo: Data? { newVideo ?? storedVideo }
-    private var hairline: Color { AppColor.textSecondary.opacity(0.12) }
 
     var body: some View {
+        GeometryReader { proxy in
         ZStack(alignment: .bottom) {
             VStack(spacing: 0) {
                 // Pinned, not scrolled: scrolling it away ran the length and
                 // the title straight through the status bar, and the X went
                 // with them.
-                skyBand.zIndex(1)
+                skyBand(top: proxy.safeAreaInsets.top).zIndex(1)
                 ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    feelSection
-                    bleed
-                    whatSection
-                    bleed
-                    if visibility == .friends { descriptionSection; bleed }
-                    notesSection
-                    bleed
-                    mediaSection
-                    bleed
-                    visibilitySection
-                    if score != nil { bleed; measurementsRow }
-                    Color.clear.frame(height: 132)
+                // Each question its own white card on the grass (Aziz,
+                // 2026-09-22, `mockups/after-valley.html`), where they were
+                // rows on cream split by hairlines.
+                VStack(alignment: .leading, spacing: 10) {
+                    feelSection.whiteCard(radius: 18)
+                    whatSection.whiteCard(radius: 18)
+                    if visibility == .friends { descriptionSection.whiteCard(radius: 18) }
+                    notesSection.whiteCard(radius: 18)
+                    mediaSection.whiteCard(radius: 18)
+                    visibilitySection.whiteCard(radius: 18)
+                    if score != nil { measurementsRow.whiteCard(radius: 18) }
+                    Color.clear.frame(height: 110)
                 }
-                .padding(.top, 30)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.top, 16)
                 }
+                .scrollIndicators(.hidden)
                 .scrollDismissesKeyboard(.interactively)
             }
             dock
         }
-        .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        }
+        .background(ValleyGround.meadow.ignoresSafeArea())
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -156,22 +158,27 @@ struct SaveSessionView: View {
 
     /// The valley's sky, the length as the one big number, and Otto's head on
     /// the edge of it, the way Profile wears him.
-    private var skyBand: some View {
+    private func skyBand(top: CGFloat) -> some View {
         let day = DayLight.at(0)
+        // The scene is drawn taller than the band and cut off at its bottom,
+        // so the words sit in sky and only a strip of meadow shows: at the
+        // band's own height the horizon fell across the title. 0.53 is where
+        // the scene's meadow begins, as a fraction of its height.
+        let visible = top + Self.bandHeight
+        let scene = (top + 150) / 0.53
         return ZStack(alignment: .topLeading) {
-            LinearGradient(colors: [day.sky[0], day.sky[1]], startPoint: .top, endPoint: .bottom)
             VStack(alignment: .leading, spacing: 2) {
-                Spacer(minLength: 0)
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Text("\(minutes)")
-                        .font(.system(size: 42, weight: .heavy, design: .rounded))
+                        .font(.system(size: 44, weight: .heavy, design: .rounded))
                         .monospacedDigit()
                     Text("min")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(.system(size: 16, weight: .heavy, design: .rounded))
+                        .foregroundStyle(day.inkSoft)
                 }
                 .foregroundStyle(day.ink)
                 TextField("Title your session", text: $title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(DisplayFont.display(18, .heavy))
                     .foregroundStyle(day.ink)
                     .focused($focused, equals: .title)
                     .submitLabel(.done)
@@ -181,33 +188,46 @@ struct SaveSessionView: View {
                         }
                     }
                 Text(when)
-                    .font(AppFont.caption)
-                    .foregroundStyle(day.ink.opacity(0.7))
+                    .font(AppFont.caption.weight(.semibold))
+                    .foregroundStyle(day.inkSoft)
             }
             .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.bottom, 16)
+            .padding(.top, 54)
             .padding(.trailing, 74)
 
             Button(action: onDone) {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(day.ink.opacity(0.75))
+                    .foregroundStyle(day.ink)
                     .frame(width: 34, height: 34)
-                    .background(AppColor.backgroundPrimary.opacity(0.7), in: Circle())
+                    .background(AppColor.backgroundPrimary.opacity(0.9), in: Circle())
+                    .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
             }
             .padding(.leading, 12)
-            .padding(.top, 10)
+            .padding(.top, 8)
         }
-        .frame(height: 168)
+        .frame(maxWidth: .infinity, minHeight: Self.bandHeight, maxHeight: Self.bandHeight,
+               alignment: .topLeading)
+        // The valley the sit was in, running up under the status bar.
+        .background(alignment: .top) {
+            ValleyScene(progress: 0, showsFigure: false)
+                .frame(height: scene)
+                .frame(height: visible, alignment: .top)
+                .clipped()
+                .ignoresSafeArea(edges: .top)
+        }
         .overlay(alignment: .bottomTrailing) {
             OttoMark(size: 52, pose: .head)
-                .padding(9)
-                .background(AppColor.backgroundPrimary, in: Circle())
-                .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
+                .padding(7)
+                .background(AppColor.sky, in: Circle())
+                .overlay(Circle().stroke(.white, lineWidth: 3))
+                .shadow(color: .black.opacity(0.16), radius: 6, y: 3)
                 .padding(.trailing, AppMetrics.screenPadding)
-                .offset(y: 26)
+                .padding(.bottom, 8)
         }
     }
+
+    private static let bandHeight: CGFloat = 196
 
     private var minutes: Int {
         max(1, Int((Double(session?.durationSec ?? 0) / 60).rounded()))
@@ -224,15 +244,14 @@ struct SaveSessionView: View {
 
     // MARK: - Sections
 
-    private var bleed: some View {
-        Rectangle().fill(hairline).frame(height: 1)
-    }
+    /// The inset inside every card on this page.
+    private static let inset: CGFloat = 16
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 15, weight: .bold))
             .foregroundStyle(AppColor.textPrimary)
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.horizontal, Self.inset)
             .padding(.top, 15)
             .padding(.bottom, 2)
     }
@@ -246,7 +265,7 @@ struct SaveSessionView: View {
                 Spacer()
                 Text(rating.map { "\($0) / 10" } ?? "Not rated")
                     .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundStyle(rating == nil ? AppColor.textSecondary : AppColor.accentGoldText)
+                    .foregroundStyle(rating == nil ? AppColor.textSecondary : AppColor.skyDeep)
                     .monospacedDigit()
                     .padding(.trailing, AppMetrics.screenPadding)
                     .padding(.top, 15)
@@ -254,8 +273,9 @@ struct SaveSessionView: View {
             Slider(value: Binding(get: { Double(rating ?? 5) },
                                   set: { rating = Int($0.rounded()) }),
                    in: 0...10, step: 1)
-                .tint(rating == nil ? AppColor.trace : AppColor.accentGold)
-                .padding(.horizontal, AppMetrics.screenPadding)
+                // Sky, because rating is a choice; gold is kept for Save.
+                .tint(rating == nil ? AppColor.meadowInk.opacity(0.25) : AppColor.skyDeep)
+                .padding(.horizontal, Self.inset)
             HStack {
                 Text("Rough")
                 Spacer()
@@ -263,7 +283,7 @@ struct SaveSessionView: View {
             }
             .font(AppFont.caption)
             .foregroundStyle(AppColor.textSecondary)
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.horizontal, Self.inset)
             .padding(.bottom, 14)
         }
     }
@@ -284,11 +304,11 @@ struct SaveSessionView: View {
                     Spacer(minLength: 0)
                     Image(systemName: "chevron.down")
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(AppColor.textSecondary)
+                        .foregroundStyle(AppColor.skyDeep)
                 }
                 .contentShape(Rectangle())
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.horizontal, Self.inset)
             .padding(.vertical, 12)
 
             if technique == MeditationMethod.ownID {
@@ -297,7 +317,7 @@ struct SaveSessionView: View {
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textPrimary)
                     .focused($focused, equals: .techniqueNote)
-                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.horizontal, Self.inset)
                     .padding(.bottom, 12)
             }
         }
@@ -316,7 +336,7 @@ struct SaveSessionView: View {
                         publicNote = String(new.prefix(CommunityStore.captionLimit))
                     }
                 }
-                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.horizontal, Self.inset)
                 .padding(.vertical, 12)
         }
     }
@@ -330,7 +350,7 @@ struct SaveSessionView: View {
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textPrimary)
                 .focused($focused, equals: .privateNote)
-                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.horizontal, Self.inset)
                 .padding(.vertical, 12)
         }
     }
@@ -360,17 +380,21 @@ struct SaveSessionView: View {
                     }
                     .buttonStyle(.plain)
                 }
-                VStack(alignment: .leading, spacing: 8) {
+                let pills = Group {
                     PhotosPicker(selection: $pickedItem, matching: .any(of: [.images, .videos])) {
-                        Label(hasMedia ? "Choose another" : "Choose photo or video",
-                              systemImage: "photo.on.rectangle")
-                            .font(AppFont.callout.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGoldText)
+                        mediaPill(hasMedia ? "Choose another" : "Choose", icon: "photo.on.rectangle")
                     }
                     Button { showCamera = true } label: {
-                        Label("Take a selfie", systemImage: "camera")
-                            .font(AppFont.callout.weight(.semibold))
-                            .foregroundStyle(AppColor.textSecondary)
+                        mediaPill("Selfie", icon: "camera")
+                    }
+                    .buttonStyle(.plain)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    // Side by side when there is room; stacked beside a photo.
+                    if hasMedia {
+                        VStack(spacing: 8) { pills }
+                    } else {
+                        HStack(spacing: 8) { pills }
                     }
                     if loadingMedia {
                         Text("Getting it ready…")
@@ -380,9 +404,19 @@ struct SaveSessionView: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.horizontal, Self.inset)
             .padding(.vertical, 12)
         }
+    }
+
+    /// A sky pill: something you press, a choice rather than the action.
+    private func mediaPill(_ text: String, icon: String) -> some View {
+        Label(text, systemImage: icon)
+            .font(AppFont.callout.weight(.semibold))
+            .foregroundStyle(ValleyGround.ink)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .background(AppColor.skyWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     /// A Watch session measured something; the curves are one tap in. The
@@ -393,14 +427,14 @@ struct SaveSessionView: View {
             HStack(spacing: 10) {
                 Text("See the measurements")
                     .font(AppFont.callout.weight(.semibold))
-                    .foregroundStyle(AppColor.accentGoldText)
+                    .foregroundStyle(AppColor.skyDeep)
                 Spacer(minLength: 0)
                 Image(systemName: "chevron.right")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(AppColor.accentGoldText)
+                    .foregroundStyle(AppColor.skyDeep)
             }
             .contentShape(Rectangle())
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.horizontal, Self.inset)
             .padding(.vertical, 15)
         }
         .buttonStyle(.plain)
@@ -409,11 +443,13 @@ struct SaveSessionView: View {
     private var visibilitySection: some View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader("Who can see it")
-            HStack(spacing: 10) {
+            HStack(spacing: 0) {
                 visibilityPill(.private, icon: "lock", text: "Only you")
                 visibilityPill(.friends, icon: "person.2", text: "Friends")
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(3)
+            .background(ValleyGround.quiet, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.horizontal, Self.inset)
             .padding(.vertical, 12)
             visibilityNote
         }
@@ -425,16 +461,16 @@ struct SaveSessionView: View {
             withAnimation(.easeOut(duration: 0.18)) { visibility = value }
         } label: {
             Label(text, systemImage: icon)
-                .font(AppFont.callout.weight(.semibold))
-                .foregroundStyle(visibility == value ? AppColor.textPrimary : AppColor.textSecondary)
+                .font(AppFont.callout.weight(.bold))
+                .foregroundStyle(visibility == value ? .white : AppColor.meadowInk)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 11)
-                .background(AppColor.backgroundSecondary,
-                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(visibility == value ? AppColor.accentGold : .clear, lineWidth: 2)
+                .padding(.vertical, 10)
+                .background {
+                    if visibility == value {
+                        RoundedRectangle(cornerRadius: 11, style: .continuous).fill(AppColor.skyDeep)
+                    }
                 }
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -449,10 +485,10 @@ struct SaveSessionView: View {
                     Button { showClaim = true } label: {
                         Text("Create your profile to share with friends")
                             .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGoldText)
+                            .foregroundStyle(AppColor.skyDeep)
                     }
                     .buttonStyle(.plain)
-                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.horizontal, Self.inset)
                     .padding(.bottom, 8)
                 case .unavailable:
                     caption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
@@ -469,7 +505,7 @@ struct SaveSessionView: View {
         Text(text)
             .font(AppFont.caption)
             .foregroundStyle(AppColor.textSecondary)
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.horizontal, Self.inset)
             .padding(.bottom, 8)
     }
 
@@ -486,9 +522,15 @@ struct SaveSessionView: View {
         .saturation(canAct ? 1 : 0.2)
         .brightness(canAct ? 0 : -0.25)
         .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 10)
+        .padding(.top, 26)
         .padding(.bottom, 10)
-        .background(AppColor.backgroundPrimary.ignoresSafeArea(edges: .bottom))
+        // The grass fading up under Save, so the cards slide beneath it.
+        .background(
+            LinearGradient(stops: [.init(color: ValleyGround.meadow.opacity(0), location: 0),
+                                   .init(color: ValleyGround.meadow, location: 0.4)],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
 
     /// Only you can always be saved; Friends needs a profile, which the note

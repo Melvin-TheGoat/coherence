@@ -231,48 +231,56 @@ struct AwardUnlockView: View {
     @Query private var preferences: [Preferences]
     @State private var appeared = false
 
+    /// In the valley (Aziz, 2026-09-22, `mockups/after-valley.html`): the
+    /// award hangs in the sky in Otto's aura light, and he waves up at it
+    /// from his cushion. It was a cream page with a gold wash.
     var body: some View {
-        VStack(spacing: 20) {
-            Spacer()
-
-            AwardBadge(award: item.award, earned: true, size: 132)
-                .scaleEffect(appeared ? 1 : 0.6)
+        let day = DayLight.at(0)
+        GeometryReader { geo in
+            // The screen ignores the safe area, so its insets read zero: the
+            // sky line (`SitLayout.skyTop`, roughly where the island stops)
+            // places the words instead, as it does on the sit screen.
+            let textTop = SitLayout.skyTop(in: geo.size) + 22
+            let badgeY = SitLayout.ottoTop(in: geo.size) - 88
+            ZStack {
+                ValleyScene(progress: 0, pose: .greeting)
+                VStack(spacing: 7) {
+                    Text("AWARD UNLOCKED")
+                        .font(.caption2.weight(.heavy))
+                        .tracking(1.6)
+                        .foregroundStyle(day.inkSoft)
+                    Text(item.award.title)
+                        .font(DisplayFont.display(26, .heavy))
+                        .foregroundStyle(day.ink)
+                    Text(item.award.meaning)
+                        .font(AppFont.caption)
+                        .foregroundStyle(day.inkSoft)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 30)
+                }
                 .opacity(appeared ? 1 : 0)
-                .shadow(color: AppColor.accentGold.opacity(0.35), radius: 30)
+                .frame(width: geo.size.width)
+                .frame(maxHeight: .infinity, alignment: .top)
+                .padding(.top, textTop)
 
-            VStack(spacing: 7) {
-                Text("AWARD UNLOCKED")
-                    .font(.caption2.weight(.semibold))
-                    .tracking(1.6)
-                    .foregroundStyle(AppColor.accentGoldText)
-                Text(item.award.title)
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.textPrimary)
+                AwardBadge(award: item.award, earned: true, size: 118)
+                    .shadow(color: AppColor.auraGlow.opacity(0.95), radius: 28)
+                    .scaleEffect(appeared ? 1 : 0.6)
+                    .opacity(appeared ? 1 : 0)
+                    .position(x: geo.size.width / 2, y: badgeY)
+
+                VStack {
+                    Spacer()
+                    Button("Keep going", action: onDone)
+                        .buttonStyle(PrimaryButtonStyle())
+                        .padding(.horizontal, 18)
+                        .padding(.bottom, 38)
+                }
             }
-            .opacity(appeared ? 1 : 0)
-
-            Text(item.award.meaning)
-                .font(AppFont.note)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 6)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer()
-
-            Button("Keep going", action: onDone)
-                .buttonStyle(PrimaryButtonStyle())
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-        .padding(AppMetrics.screenPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(
-            RadialGradient(colors: [AppColor.accentGold.opacity(0.18), .clear],
-                           center: .init(x: 0.5, y: 0.34),
-                           startRadius: 0, endRadius: 340)
-            .ignoresSafeArea()
-        )
-        .screenBackground()
+        .ignoresSafeArea()
         .onAppear {
             withAnimation(.spring(response: 0.55, dampingFraction: 0.62)) { appeared = true }
             if preferences.first?.hapticsEnabled ?? true {

@@ -364,6 +364,14 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
+            // PREVIEW_AWARD=<award id> (e.g. streak-3) announces that award,
+            // so the unlock screen can be reviewed without earning it.
+            if let id = ProcessInfo.processInfo.environment["PREVIEW_AWARD"],
+               let award = Award.all.first(where: { $0.id == id }) ?? Award.all.first,
+               unlockQueue.isEmpty {
+                unlockQueue = [AwardEngine.Earned(award: award, earnedAt: Date(),
+                                                  progress: 1, progressText: nil)]
+            }
             if let secs = ProcessInfo.processInfo.environment["PREVIEW_TOO_SHORT"].flatMap(Int.init), sheet == nil {
                 sheet = .discarded(.init(id: UUID(), durationSec: secs))
             }

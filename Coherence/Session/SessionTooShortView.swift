@@ -14,48 +14,58 @@ struct SessionTooShortView: View {
     let onStartAgain: () -> Void
     let onDone: () -> Void
 
+    /// In the valley, and Otto says it (Aziz, 2026-09-22,
+    /// `mockups/after-valley.html`). Curious, not let down: a Begin-then-End
+    /// by accident is not a failure and must not read as one. It was a
+    /// cream page with a timer glyph.
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            Image(systemName: discard.tooShort ? "timer" : "applewatch.slash")
-                .font(.system(size: 44, weight: .light))
-                .foregroundStyle(AppColor.accentGoldText)
-                .padding(.bottom, 22)
-
-            Text(discard.tooShort ? "Too short to score" : "Your Watch couldn't read that session")
-                .font(AppFont.title)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-
-            Text(explanation)
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 10)
-                .padding(.horizontal, 12)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer()
-
-            Button(action: onStartAgain) { Text("Start a session") }
-                .buttonStyle(PrimaryButtonStyle())
-            Button("Done", action: onDone)
-                .font(AppFont.callout.weight(.medium))
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 14)
+        let day = DayLight.at(0)
+        GeometryReader { geo in
+            ZStack {
+                ValleyScene(progress: 0, aura: .curious)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    OttoSpeech(text: line, tail: .bottom, size: 16,
+                               ink: day.ink, stroke: day.ink.opacity(0.38),
+                               fill: AppColor.backgroundPrimary.opacity(0.84),
+                               speaking: .constant(false))
+                }
+                .frame(width: min(geo.size.width - 56, 320),
+                       height: max(120, SitLayout.ottoTop(in: geo.size) - 8))
+                .position(x: geo.size.width / 2,
+                          y: max(120, SitLayout.ottoTop(in: geo.size) - 8) / 2)
+                VStack(spacing: 10) {
+                    Spacer()
+                    Button(action: onStartAgain) { Text("Start a session") }
+                        .buttonStyle(PrimaryButtonStyle())
+                    Button(action: onDone) {
+                        Text("Done")
+                            .font(DisplayFont.display(15, .bold))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+                            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 18)
+                .padding(.bottom, 30)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
-        .padding(AppMetrics.screenPadding)
-        .padding(.bottom, 8)
-        .screenBackground()
+        .ignoresSafeArea()
     }
 
-    private var explanation: String {
+    /// His line: the fact in bold, then what it means.
+    private var line: String {
         let length = discard.durationSec < 60
             ? "\(discard.durationSec) second\(discard.durationSec == 1 ? "" : "s")"
             : "\(discard.durationSec / 60) min"
         if discard.tooShort {
-            return "808 scores a session once it runs at least \(SessionStore.minDurationSec) seconds. This one was \(length), so it wasn't saved."
+            return "**That was \(length).** Sessions count from \(SessionStore.minDurationSec) seconds. Want to go again?"
         }
-        return "It ran \(length), but no readings came back from your Watch, so it wasn't saved. Keep the Watch snug on your wrist and try again."
+        return "**Your Watch couldn't read that one.** No readings came back, so it wasn't saved. Keep it snug and try again."
     }
+
 }
