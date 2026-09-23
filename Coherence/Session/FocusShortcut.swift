@@ -106,14 +106,45 @@ final class FocusShortcut: ObservableObject {
     /// (they can be deleted), which no API can tell us.
     @Published private(set) var installed: Bool
 
-    /// What we believe about the phone right now. Read from iOS where it is
-    /// allowed, otherwise only what this app turned on.
+    /// What the switch shows: on while 808's own silence is in force, or
+    /// while the phone reports a Focus of the person's own.
     @Published private(set) var silenced = false
 
-    /// True while 808 is responsible for the silence, so it knows to put the
-    /// phone back. A Focus the user switched on themselves is theirs, and
-    /// 808 must not switch it off at the end of a sit.
-    private var weSilencedIt = false
+    /// When 808 switched Do Not Disturb on, while it is still 808's to put
+    /// back; nil otherwise. A Focus the user switched on themselves is
+    /// theirs, and 808 must not switch it off at the end of a sit.
+    ///
+    /// **Stored, not held in memory.** Only the foreground can open
+    /// Shortcuts, so a timed sit that ends with the phone locked cannot put
+    /// the phone back then, and iOS may close 808 mid-sit. Either way the
+    /// phone would stay silent after the meditation with nothing left that
+    /// remembered why.
+    private var silencedAt: Date? {
+        get { defaults.object(forKey: Self.silencedAtKey) as? Date }
+        set { defaults.set(newValue, forKey: Self.silencedAtKey) }
+    }
+    private var weSilencedIt: Bool { silencedAt != nil }
+    private static let silencedAtKey = "focus.silencedAt.v1"
+
+    /// A restore is owed and has not run: the sit ended while 808 could not
+    /// reach Shortcuts, or 808 was relaunched with its silence still on.
+    /// `becameActive` pays it.
+    private var restorePending = false
+
+    /// The phone has reported a Focus on since 808 silenced it. Only then is
+    /// a later "off" believed (see `focusReading`).
+    private var statusConfirmedOn = false
+
+    /// Older than this, a silence is no longer surely the one 808 made (the
+    /// person may have switched it off and on again since), so it is
+    /// forgotten rather than switched off.
+    private static let restoreWindow: TimeInterval = 12 * 3600
+
+    /// Focus status lags a change by a moment, in both directions. Until
+    /// this passes after 808 switches the phone, what 808 just did outranks
+    /// what the status says; then the status is read again (`settle`).
+    private var settlingUntil: Date?
+    private var settleTask: Task<Void, Never>?
 
     /// Whether the Focus permission dialog has already been put in front of
     /// this person. **Nothing touches `INFocusStatusCenter` until it has.**
@@ -132,6 +163,11 @@ final class FocusShortcut: ObservableObject {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         self.installed = defaults.bool(forKey: Self.installedKey)
+        // A silence still on the books at launch belongs to a sit that ended
+        // with the last process: nothing can be running yet. The restore is
+        // owed.
+        restorePending = weSilencedIt
+        silenced = weSilencedIt
     }
 
     func markInstalled() {
@@ -161,40 +197,77 @@ final class FocusShortcut: ObservableObject {
     /// because the user can change Focus from Control Center while 808 is
     /// sitting there showing a switch.
     func refreshStatus() {
-        // Before the user has been asked, 808 reports only what 808 did. That
-        // is less than the truth but never more than it, and it costs nobody
-        // a dialog they did not go looking for.
-        guard hasAsked else {
+        if let until = settlingUntil, Date() < until {
             silenced = weSilencedIt
             return
         }
-        guard INFocusStatusCenter.default.authorizationStatus == .authorized,
-              let focused = INFocusStatusCenter.default.focusStatus.isFocused else {
-            silenced = weSilencedIt
-            return
+        let reading = focusReading()
+        if weSilencedIt {
+            if reading == true {
+                statusConfirmedOn = true
+            } else if reading == false, statusConfirmedOn {
+                // The phone has shown it reports this Focus, and now says it
+                // is off: they turned it off themselves. Not ours to put back.
+                silencedAt = nil
+                statusConfirmedOn = false
+                restorePending = false
+            }
         }
-        silenced = focused
-        // They turned their own Focus off mid-screen. It is no longer ours to
-        // put back.
-        if !focused { weSilencedIt = false }
+        silenced = weSilencedIt || reading == true
+    }
+
+    /// The phone's own answer, or nil when 808 may not ask (not asked yet,
+    /// or declined).
+    ///
+    /// **"Off" is not believed until it has said "on"** (Melvin, 2026-09-23:
+    /// the switch stayed off while the shortcut really did silence the
+    /// phone). It reads off for a moment while the Focus change lands, and
+    /// ALWAYS reads off when Share Focus Status is turned off for Do Not
+    /// Disturb (Settings, Focus, Focus Status). Taking that "off" at its word
+    /// flipped the switch back and, worse, dropped the note that 808 had
+    /// silenced the phone, so nothing switched Do Not Disturb off when the
+    /// sit ended. What 808 did itself is known for certain; the status only
+    /// ever adds to it.
+    private func focusReading() -> Bool? {
+        guard hasAsked, INFocusStatusCenter.default.authorizationStatus == .authorized
+        else { return nil }
+        return INFocusStatusCenter.default.focusStatus.isFocused
+    }
+
+    /// Called whenever 808 comes to the foreground (`CoherenceApp`), and once
+    /// at launch. Pays a restore that was owed while 808 could not reach
+    /// Shortcuts, then re-reads the phone.
+    func becameActive() async {
+        if restorePending { await restoreIfOurs() }
+        refreshStatus()
     }
 
     // MARK: - Turning it on and off
 
-    /// Runs the silence shortcut. Returns false when nothing happened, which
-    /// is how a deleted shortcut is found out: there is no API to ask whether
-    /// one is installed, so the outcome is the only evidence.
+    /// Runs the silence shortcut. Returns false when Shortcuts could not be
+    /// opened. Nothing reports whether the shortcut itself then ran, which is
+    /// why the switch is set from what 808 did rather than from the phone.
     @discardableResult
     func silence() async -> Bool {
         guard installed else { return false }
         guard await run(Self.silenceName) else { return false }
-        weSilencedIt = true
+        silencedAt = Date()
+        statusConfirmedOn = false
+        restorePending = false
         silenced = true
-        // Focus status lags the switch by a moment; ask again once it has
-        // had time to settle rather than trusting our own optimism forever.
-        try? await Task.sleep(for: .milliseconds(700))
-        refreshStatus()
-        return silenced
+        settle()
+        return true
+    }
+
+    /// The switch tapped off. An explicit ask, so it runs whether or not 808
+    /// switched the Focus on; only the end of a sit is held to
+    /// `restoreIfOurs`. Restore switches Do Not Disturb off and nothing else,
+    /// so another Focus they have on (Sleep, Work) stays on, and the switch
+    /// says so once the status settles.
+    func turnOff() async {
+        guard installed, await run(Self.restoreName) else { return }
+        forget()
+        settle()
     }
 
     /// Puts the phone back, but only if 808 is the one that silenced it.
@@ -203,10 +276,45 @@ final class FocusShortcut: ObservableObject {
     /// meditates inside their own Sleep focus must not come out of a session
     /// with their phone unsilenced at eleven at night.
     func restoreIfOurs() async {
-        guard weSilencedIt, installed else { return }
-        weSilencedIt = false
-        _ = await run(Self.restoreName)
+        guard let since = silencedAt, installed else { return }
+        guard Date().timeIntervalSince(since) < Self.restoreWindow,
+              UIApplication.shared.canOpenURL(URL(string: "shortcuts://")!)
+        else {
+            forget()
+            return
+        }
+        // Only the foreground can open Shortcuts. A timed sit that ends with
+        // the phone locked restores the next time 808 comes forward, rather
+        // than leaving the phone silent.
+        guard UIApplication.shared.applicationState == .active,
+              await run(Self.restoreName)
+        else {
+            restorePending = true
+            return
+        }
+        forget()
+        settle()
+    }
+
+    private func forget() {
+        silencedAt = nil
+        statusConfirmedOn = false
+        restorePending = false
         silenced = false
+    }
+
+    /// Starts the window in which 808's own action decides the switch, and
+    /// reads the phone again when it closes.
+    private func settle() {
+        let window: TimeInterval = 4
+        settlingUntil = Date().addingTimeInterval(window)
+        settleTask?.cancel()
+        settleTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(window + 0.3))
+            // A cancelled sleep throws and falls through: never act on it.
+            guard !Task.isCancelled else { return }
+            self?.refreshStatus()
+        }
     }
 
     private func run(_ name: String) async -> Bool {

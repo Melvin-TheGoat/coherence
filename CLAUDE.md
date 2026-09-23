@@ -3857,6 +3857,24 @@ Otto a little bit for this."
   first is refused), and while the links do not exist (DEBUG only; Release
   hides the switch) it walks through making the two by hand. The links are
   Melvin's to publish (BACKLOG.md).
+- **The switch shows what 808 DID, not what iOS's Focus status says**
+  (Melvin, same day: "the button does not toggle ... DND gets turned on").
+  `isFocused` reads off for a moment after a change and ALWAYS reads off
+  when Share Focus Status is turned off for Do Not Disturb. Believing it
+  flipped the switch back AND dropped the note that 808 had silenced the
+  phone, so nothing turned Do Not Disturb off when the sit ended. Now the
+  status only ever adds to what 808 knows: an "off" is believed only after
+  it has said "on" since 808 silenced the phone, and for 4 s after any
+  switch 808's own action outranks it in both directions (`settle`).
+- **The silence is stored** (`focus.silencedAt.v1`), because only the
+  foreground can open Shortcuts: a timed sit that ends with the phone locked,
+  or iOS closing 808 mid-sit, would otherwise leave the phone silent with
+  nothing that remembered why. The restore is owed and paid on the next
+  foreground (`becameActive`, called from `CoherenceApp` at launch and on
+  every return), within 12 hours, after which it is forgotten rather than
+  risk switching off a Focus that is no longer 808's. The end of a sit only
+  ever restores 808's own silence (`restoreIfOurs`); tapping the switch off
+  is an explicit ask and runs Restore whoever turned it on (`turnOff`).
 - `PREVIEW_SETUP=1` (DEBUG) opens the Ready screen on launch. On a fresh
   simulator Friends test mode earns "Brought a friend" and its award covers
   everything; `simctl spawn <sim> defaults write com.lockout.meditate808

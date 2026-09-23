@@ -190,7 +190,7 @@ struct SessionSetupView: View {
                 Task {
                     guard focus.installed else { showFocusSetup = true; return }
                     await focus.requestStatusAccess()
-                    if focus.silenced { await focus.restoreIfOurs() }
+                    if focus.silenced { await focus.turnOff() }
                     else { await focus.silence() }
                 }
             } label: {

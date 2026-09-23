@@ -86,9 +86,16 @@ struct CoherenceApp: App {
                 // Friends: profile, feed, and any invite reward that landed
                 // while the app was closed.
                 .task { if FeatureFlags.friends { await community.load() } }
+                // Do Not Disturb that 808 still owes back: a sit that ended
+                // with the phone locked, or iOS closing 808 mid-sit. Only the
+                // foreground can reach Shortcuts, so it is paid here.
+                .task { await FocusShortcut.shared.becameActive() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }
+                    }
+                    if phase == .active {
+                        Task { await FocusShortcut.shared.becameActive() }
                     }
                 }
         }
