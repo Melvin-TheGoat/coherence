@@ -192,7 +192,7 @@ folder order matches upload order.
 **Three captions were rewritten the same day, all for the same fault: assuming
 something about the reader.** "Watch the habit take hold" implied they had no
 practice yet, when most users already meditate. "Share the proof, not a caption"
-invented a behaviour nobody recognises and then argued against it. And the
+invented a behavior nobody recognizes and then argued against it. And the
 awards slide named thresholds ("ten straight days, a score of 90"), which read
 as chores rather than reasons. The rule these all break: **do not tell the
 reader what they lack, and never set up a loser for the copy to beat.**
@@ -252,7 +252,7 @@ Settings > Subscriptions, and on receipts.
 
 **Rank Yearly ABOVE Monthly in the group.** Rank decides upgrade versus
 downgrade: monthly to yearly then applies immediately as an upgrade, and yearly
-to monthly waits for renewal as a downgrade. That is the behaviour we want.
+to monthly waits for renewal as a downgrade. That is the behavior we want.
 
 **The introductory offer type is Free Trial, one week**, not Pay As You Go or
 Pay Up Front. StoreKit will not display a trial the product does not carry, and
@@ -282,7 +282,7 @@ Each product also needs a **review screenshot**. Use
 `marketing/appstore/01-score.png`: it shows the scored result, which is the
 thing being sold, and a reviewer can see immediately what the purchase unlocks.
 
-**Enrol in the Small Business Program** in the same sitting as the agreements.
+**Enroll in the Small Business Program** in the same sitting as the agreements.
 15% commission instead of 30%, applies while revenue is under the threshold,
 and there is no reason to defer it.
 
@@ -328,7 +328,7 @@ could reach another user. That stops being true the moment Friends ships.
 
 Apple redesigned the age-rating questionnaire in 2025 and it is now live: the
 displayed tiers are **4+, 9+, 13+, 16+, 18+** (12+ and 17+ are retired), and
-the form is organised as In-App Controls, Capabilities, Mature Themes,
+the form is organized as In-App Controls, Capabilities, Mature Themes,
 Medical or Wellness, Sexuality or Nudity, Violence, and Chance-Based
 Activities, rather than the older flat list. Source: Apple's own age-ratings
 reference, developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/.
@@ -428,14 +428,13 @@ match the manifest is a review flag by itself.
 - **No Screen Time / Block row exists, on purpose.** Nothing Block touches
   is collected by our definition (see `PRIVACY_POLICY.md`, "Block"); adding
   a row for it would be declaring a collection that does not happen.
-- **Confirm whether PostHog's own crash/exception autocapture is on.**
-  `Analytics.swift` never sets `errorTrackingConfig`, so the SDK's behavior
-  follows PostHog's OWN project dashboard setting (Error tracking →
-  autocapture), not anything in this codebase. If that project setting is
-  ON, PostHog can collect Crash Data without a line of Swift changing, and
-  this table (plus the manifest) would need a Diagnostics → Crash Data row.
-  Check the PostHog project settings before submitting; this cannot be
-  verified from the repository alone.
+- **No Diagnostics row, and the code guarantees it.** PostHog's crash
+  capture only installs when the app switches it on
+  (`errorTrackingConfig.autoCapture`, off by default); the dashboard's
+  error-tracking setting can only narrow an installed capture, never start
+  one (read in the SDK source, `PostHogConfig.getIntegrations`, 2026-09-23).
+  `Analytics.swift` now sets it off explicitly so a future SDK default cannot
+  change the label underneath us.
 
 **Nothing else changes.** Health results never leave the device (device-local
 store, excluded from CloudKit per 5.1.3(ii)); the account and session log
@@ -514,8 +513,8 @@ all. Nobody needs to reach for one during review.
 > measured reading), only when the person who posted it chooses to.
 >
 > Audio licensing: the guided narration was commissioned with a commercial
-> licence; the tones are synthesised at runtime; the ambient beds and nature
-> recordings were generated under commercial licence.
+> license; the tones are synthesized at runtime; the ambient beds and nature
+> recordings were generated under commercial license.
 
 **Superseded, kept for reference only (1.0's note, do not paste):**
 
@@ -538,8 +537,8 @@ all. Nobody needs to reach for one during review.
 > on-device, in a store excluded from CloudKit sync, per guideline 5.1.3(ii).
 >
 > Audio licensing: the guided narration was commissioned with a commercial
-> licence; the tones are synthesised at runtime; the ambient beds and nature
-> recordings were generated under commercial licence.
+> license; the tones are synthesized at runtime; the ambient beds and nature
+> recordings were generated under commercial license.
 
 ## What's New (v1.1)
 
@@ -671,7 +670,7 @@ human.
 
 ### What this changes about the earlier advice
 
-An earlier draft of this file said to enrol fresh on the web with a new
+An earlier draft of this file said to enroll fresh on the web with a new
 company-owned Apple Account. That is correct for someone with no membership and
 wrong here: it would mean paying again and abandoning a team that already holds
 the right App ID and iCloud container. The one genuine cost of converting is

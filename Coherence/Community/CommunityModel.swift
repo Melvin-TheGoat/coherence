@@ -284,6 +284,10 @@ final class CommunityModel: ObservableObject {
             profile = try await store.claimUsername(handle, displayName: displayName)
             Analytics.track(.usernameClaimed)
             phase = .ready
+            // A new profile after a deleted account is a fresh start: an
+            // unfinished deletion retrying at the next launch would take
+            // this profile down with the old one.
+            UserDefaults.standard.removeObject(forKey: Self.pendingDeletionKey)
             // Sessions sat before the profile existed (the onboarding demo,
             // weeks of practice before 1.1) still count as a first session
             // for whoever invited this person.
@@ -484,7 +488,14 @@ final class CommunityModel: ObservableObject {
     /// launch task — tries again on every later launch until one run
     /// finishes clean.
     func deleteAccountData() async {
-        guard FeatureFlags.friends, let store else { return }
+        guard FeatureFlags.friends else { return }
+        // No store yet this launch (iCloud unavailable, or not loaded): the
+        // request is remembered rather than dropped, and a later launch that
+        // reaches iCloud deletes whatever is there.
+        guard let store else {
+            UserDefaults.standard.set(true, forKey: Self.pendingDeletionKey)
+            return
+        }
         do {
             try await store.deleteEverythingOfMine()
             UserDefaults.standard.removeObject(forKey: Self.pendingDeletionKey)

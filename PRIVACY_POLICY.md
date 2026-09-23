@@ -161,7 +161,7 @@ applies to you and 808 never touches the shared area.
 **What goes there when you use it:**
 
 - Your **profile**: the username you choose, your display name, a profile
-  photo if you add one, and the month you started practising.
+  photo if you add one, and the month you started practicing.
 - A **post**, only for a session you set to Friends: its score if the
   session had one, length, streak, the technique you tagged, the title and
   description you wrote, and the photos or videos you chose to include. You

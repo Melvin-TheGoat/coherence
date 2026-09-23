@@ -197,6 +197,11 @@ enum Analytics {
         // feed. The policy promises named behavioral events only; every
         // capture path that invents its own events stays off.
         config.captureElementInteractions = false
+        // No crash reports either. Off is the SDK's default, and PostHog's
+        // own dashboard can only narrow it further, never switch it on; set
+        // here so the App Privacy label ("no diagnostics") rests on this
+        // line rather than on a default that could change in an update.
+        config.errorTrackingConfig.autoCapture = false
         PostHogSDK.shared.setup(config)
         applyTeamDevice()
         sink = { event in

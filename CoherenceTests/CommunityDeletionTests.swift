@@ -33,7 +33,8 @@ final class CommunityDeletionTests: XCTestCase {
 
     private func draft(score: Int = 70) -> CommunityStore.Draft {
         .init(score: score, minutes: 12, streak: 3, technique: "Counting", caption: "",
-              photoURL: selfie, practicedAt: Date())
+              media: [.init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie)],
+              practicedAt: Date())
     }
 
     // MARK: The deleted person disappears

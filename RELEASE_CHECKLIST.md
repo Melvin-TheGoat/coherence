@@ -38,27 +38,16 @@ corrected to match. Do every step below it before returning here.
      Either is defensible; ship the decision, not silence. This is a
      Swift/entitlements change, out of scope for this document's owner to
      make.
-   - [ ] **New, found in this pass: each of the three Block app extensions
-     (BlockMonitor, BlockShield, BlockShieldAction) reads and writes the
-     shared App Group's `UserDefaults` through `BlockKit/BlockStore.swift`
-     (`BlockGroup.defaults`), and as of this pass NONE of the three has its
-     own `PrivacyInfo.xcprivacy`.** Apple's privacy-manifest rule is that
-     every target using a required-reason API needs its own manifest; App
-     Group-shared `UserDefaults` takes reason code `1C8F.1` (not `CA92.1`,
-     which only covers a target's own private prefs). The main app target
-     ALSO reads/writes the same App Group store (via `BlockController` and
-     friends), so `Coherence/PrivacyInfo.xcprivacy` likely needs `1C8F.1`
-     ADDED alongside its existing `CA92.1`, not replacing it. Missing or
-     incomplete manifests are rejected automatically at upload (ITMS-91053),
-     before any human reviewer sees the build. This only matters for the
-     build that ships Block (`blockInRelease = true`); a Friends-only build
-     with Block still behind the DEBUG-only flag does not need it yet,
-     because the extension targets are not part of that archive's active
-     feature set, but they ARE compiled into every archive regardless of the
-     flag, so confirm whether App Review's static analysis inspects extension
-     binaries even when the extensions are dormant. Treat this as OPEN until
-     confirmed either way. This is a `.xcprivacy` change and is out of scope
-     for this document's owner to make.
+   - [x] **Privacy manifests for Block's three app extensions: DONE in code,
+     2026-09-23 (commit 7c31bcd).** Each of BlockMonitor, BlockShield and
+     BlockShieldAction reads and writes the shared App Group's `UserDefaults`
+     through `BlockKit/BlockStore.swift`, so each now carries its own
+     `PrivacyInfo.xcprivacy` declaring `NSPrivacyAccessedAPICategoryUserDefaults`
+     reason `1C8F.1`, and the app's manifest declares `1C8F.1` beside its
+     `CA92.1`. Verified inside every `.appex` of a built product. Without them
+     an upload is refused automatically (ITMS-91053). The extensions are
+     compiled into every archive whatever `blockInRelease` says, so this
+     applies to a Friends-only build too.
 2. **CloudKit Console, in order, following `CLOUDKIT_SETUP.md` exactly**
    (that file is derived from the code and kept current; re-derive from
    `CommunityRecords.swift` / `CommunityStore.swift` if it and the code ever
@@ -66,18 +55,15 @@ corrected to match. Do every step below it before returning here.
    - [ ] PUBLIC database (`iCloud.com.lockout.meditate808`): confirm all
      seven Friends record types, add any missing fields including the four
      newer `Post` media List fields (`media`, `mediaPosters`, `mediaKinds`,
-     `mediaAspects`, replacing the single `photo` field), add the seven
+     `mediaAspects`, replacing the single `photo` field), add the eight
      documented indexes (QUERYABLE on `FriendEdge.from`/`.to`,
-     `Post.author`, `Reaction.post`, `Block.from`/`.to`; SORTABLE on
-     `Post.practicedAt`).
-   - [ ] **Add ONE more index once the account-deletion Friends-purge work
-     lands in Swift (see "Decisions only the founders can make" in the App
-     Review research report): QUERYABLE on `Reaction.author`.** Today the
-     store can only fetch reactions FOR a post (`Reaction.post`), not a
-     person's OWN reactions across every post they reacted to, which is
-     what deleting "the reactions you gave" on account deletion needs to
-     query. This index is not yet in `CLOUDKIT_SETUP.md` because the
-     feature it serves is not yet in the code; add both together.
+     `Post.author`, `Reaction.post`, `Reaction.author`, `Block.from`/`.to`;
+     SORTABLE on `Post.practicedAt`).
+   - [ ] **One more index, now in `CLOUDKIT_SETUP.md` (the account deletion
+     that needs it landed in code 2026-09-23): QUERYABLE on
+     `Reaction.author`.** Deleting an account deletes the reactions that
+     person gave, across every post, and that query needs this index. Eight
+     indexes in all.
    - [ ] Security roles `_world` read / `_creator` write confirmed on all
      seven public types.
    - [ ] PRIVATE database (the per-user CloudKit sync): confirm
@@ -98,9 +84,9 @@ corrected to match. Do every step below it before returning here.
      rating (1.1, Friends ON)" below for the worked answers and expected
      13+ tier.
    - [ ] App Privacy labels updated to match `Coherence/PrivacyInfo.xcprivacy`
-     exactly: see the "App Privacy (nutrition labels)" table below. Confirm
-     PostHog's OWN project setting for crash/exception autocapture before
-     finalizing (see that section); if it is on, add a Diagnostics row.
+     exactly: see the "App Privacy (nutrition labels)" table below. No
+     Diagnostics row: PostHog crash capture is off in code
+     (`Analytics.swift`, 2026-09-23), and the dashboard cannot turn it on.
    - [ ] Description and promotional text updated in
      `marketing/APP_STORE_PASTE.md` (owned by that file, not this one) to
      lead with what 808 now is; draft copy and themes are in APP_STORE.md's
@@ -119,8 +105,9 @@ corrected to match. Do every step below it before returning here.
      this version; nothing new needs creating for Friends. If Block ships
      paid through the same subscription group, confirm its paywall entry
      point carries the same required disclosures (price, length, renewal,
-     Privacy Policy and Terms links) as the main paywall; it should, if it
-     reuses the same screen, but confirm rather than assume.
+     Privacy Policy and Terms links) as the main paywall. Checked in code
+     2026-09-23: `HomeSheet.blockPaywall` presents the same `PaywallScreen`
+     (placement "block"), so it does.
 4. **The report email pipeline** (guideline 1.2 needs a path that reaches a
    person, not just a stored record): create the "808 friends reports"
    sheet, deploy `tools/community-reports.gs`, paste its `/exec` URL into
