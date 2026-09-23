@@ -1,13 +1,14 @@
 # Terms of Service
 
-**Last updated: August 25, 2026**
+**Last updated: September 23, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
 **Lock Out Inc. ("we," "us," "808")** governing your use of the **808** app
-for iPhone and Apple Watch (the "App"). By downloading or using the App, you agree
-to these Terms. If you don't agree, don't use the App.
+for iPhone, with optional support for Apple Watch (the "App"). By downloading
+or using the App, you agree to these Terms. If you don't agree, don't use the
+App.
 
-## 1. Health and wellness disclaimer — please read
+## 1. Health and wellness disclaimer: please read
 
 **808 is a wellness and self-reflection tool. It is not a medical device and does
 not provide medical advice, diagnosis, or treatment.** The heart-rate and
@@ -28,10 +29,13 @@ unwell.
 
 ## 2. The service
 
-The App runs meditation sessions and, using your Apple Watch, shows you
-evidence of how your body responded — a heart-rate trend and a measure of how
-still you were — **after** the session, not as a live score. Features may change
-over time.
+The App runs meditation sessions. An Apple Watch is optional: when you use one,
+the App shows you evidence of how your body responded, a heart-rate trend and
+a measure of how still you were, generated **after** the session, not as a
+live score. A session started on your iPhone alone runs a plain timer and
+measures nothing about your body. If you use Block, the App can also hold
+apps you find distracting until you've meditated. Features may change over
+time.
 
 **Sessions run in the background.** So that you can listen to whatever you like
 while you practice, a session continues measuring on your Apple Watch after you
@@ -61,8 +65,8 @@ non-commercial use, subject to these Terms and the Apple App Store terms.
 
 You agree not to: reverse engineer, decompile, or attempt to extract source code
 except as permitted by law; **record, capture, rip, extract, download, or
-redistribute any audio content from the App — including guided meditations,
-music, tones, and soundscapes — or make any of it available outside the App**;
+redistribute any audio content from the App, including guided meditations,
+music, tones, and soundscapes, or make any of it available outside the App**;
 interfere with or disrupt the App; use the App unlawfully; or resell,
 redistribute, or provide the App as a service to others.
 
@@ -77,13 +81,13 @@ Settings → Delete Account.
 ## 6a. Friends: what you post, and what we will not tolerate
 
 Friends is optional. If you create a profile and post a session, that post,
-its photo and your profile become visible to other people using 808. You keep
-ownership of what you post. You give us permission to store it, show it to
-the people you share it with, and remove it, for as long as you keep it in
-the app.
+its photos or videos and your profile become visible to other people using
+808. You keep ownership of what you post. You give us permission to store
+it, show it to the people you share it with, and remove it, for as long as
+you keep it in the app.
 
 **By posting you confirm** that the content is yours to post, that any person
-in a photo is you, and that it does not infringe anyone's rights.
+in a photo or video is you, and that it does not infringe anyone's rights.
 
 **There is no tolerance for objectionable content.** Do not post anything
 that is unlawful, hateful, harassing, threatening, sexually explicit,
@@ -101,11 +105,42 @@ broken.
 **Reports go to us**, not to the person reported. Blocking is between you and
 them and is not announced.
 
+**Deleting your account** removes your Friends profile, your posts, and the
+connections and blocks you created, as described in our
+[Privacy Policy](https://meditate808.com/privacy). Reports you filed are
+kept as moderation records so we can continue acting on them.
+
+## 6b. Block: managing your own device use
+
+Block is an optional part of 808's paid membership. It uses Apple's own
+Screen Time tools so you can hold apps you find distracting on your own
+iPhone until you've meditated. It is a self-management feature: it manages
+only the device you set it up on, for you, and it is not a parental control
+and cannot manage anyone else's device.
+
+**You are always in control.** You choose which apps, categories, or
+websites to hold and when, through Apple's own picker, and you can switch
+any blocker off or change it at any time. 808 never learns which apps you
+picked; Apple hands the app a sealed token that identifies what to shield
+without identifying it to us.
+
+**Block depends on iOS working as expected.** We are not responsible for a
+notification, shield, or reminder that Apple's operating system delays,
+suppresses, or fails to deliver, for a Focus, Do Not Disturb setting, or
+permission on your phone that changes how or whether Block or its
+notifications behave, or for any consequence of an app being held or
+released. Block is a tool to help you build a practice, not a guarantee that
+a particular app will or will not be reachable at a particular moment.
+
+Our handling of Block-related information, including the fact that none of
+it ever leaves your phone, is described in our
+[Privacy Policy](https://meditate808.com/privacy).
+
 ## 7. Intellectual property
 
-The App, its design, text, graphics, and audio — **including the guided
-meditations, their scripts and narration, and all music, tones, and soundscapes**
-— the logos, and the "808" name are owned by us or our licensors and protected by
+The App, its design, text, graphics, and audio, **including the guided
+meditations, their scripts and narration, and all music, tones, and soundscapes**,
+the logos, and the "808" name are owned by us or our licensors and protected by
 copyright and other intellectual-property law. Recording, extracting, copying,
 or redistributing any of the App's audio content, in whole or in part, is
 prohibited. These Terms grant you no rights in any of the foregoing except the
@@ -113,11 +148,11 @@ license above.
 
 ## 8. Third-party services
 
-The App relies on Apple services (Sign in with Apple, HealthKit, iCloud/CloudKit,
-the App Store), which are governed by Apple's own terms. As described in Section
-2, you may also play media from other apps or services while the App measures;
-those services are independent of us. We're not responsible for third-party
-services or their content.
+The App relies on Apple services (Sign in with Apple, HealthKit, Screen Time,
+iCloud/CloudKit, the App Store), which are governed by Apple's own terms. As
+described in Section 2, you may also play media from other apps or services
+while the App measures; those services are independent of us. We're not
+responsible for third-party services or their content.
 
 ## 9. Disclaimers
 
@@ -152,7 +187,7 @@ survive termination (e.g., disclaimers, limitation of liability) survive.
 We may update these Terms; we'll revise the "Last updated" date and, for material
 changes, provide notice in the App. Continued use means you accept the changes.
 
-## 14. Dispute resolution — binding arbitration and class-action waiver
+## 14. Dispute resolution: binding arbitration and class-action waiver
 
 **Please read this section carefully. It affects your legal rights.**
 
@@ -192,7 +227,7 @@ other part of these Terms.
 These Terms are governed by the laws of the State of **Delaware**, without
 regard to conflict-of-laws rules.
 
-## 16. Apple App Store — additional terms (EULA)
+## 16. Apple App Store: additional terms (EULA)
 
 These Terms are between you and us only, **not** with Apple; Apple is not
 responsible for the App or its content. To the extent these Terms serve as the

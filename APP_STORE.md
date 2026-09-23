@@ -1,4 +1,4 @@
-# App Store metadata — 808 (v1.0)
+# App Store metadata: 808 (v1.0)
 
 Everything App Store Connect asks for, pre-written, with character limits
 checked. Rewritten 2026-08-24 for launch: the Aug 11 draft predated awards, the
@@ -29,7 +29,7 @@ rejected: "Proof your meditation worked" (28), "Meditation for manifestation"
 
 ## Name (30 max)
 
-**`808 Meditate`** — REGISTERED 2026-08-30, this is the live App Store Connect
+**`808 Meditate`**, REGISTERED 2026-08-30: this is the live App Store Connect
 record. No colon: **`808: Meditate` was rejected as already in use**, and
 dropping the colon cleared it, because Apple checks the exact string.
 
@@ -89,6 +89,43 @@ auto-renewables (title, length, price, renewal statement, and a functional
 Terms of Use link in the metadata itself). It is one of the most-rejected 3.1.2
 items. The prices there must match App Store Connect exactly; change both or
 neither.
+
+### 1.1 rewrite still owed in `marketing/APP_STORE_PASTE.md`
+
+**The live paste sheet still pitches the 1.0 app** (Watch-first, no Friends,
+no Block) and has not been touched for this release. Whoever edits it next
+should lead with what the app now is (a habit and consistency app people
+meditate with together, per `CONSISTENCY.md`), not what it measures, and the
+subscription block, Terms/Privacy links and pricing must carry over
+unchanged. Draft opening and theme bullets below, to be dropped into that
+file and adjusted to the paste sheet's own house style, not pasted into
+Connect from here.
+
+**If Block ships in this version, lead with it** (its own App Review
+purpose, per `CONSISTENCY.md`, requires the listing to describe device-usage
+management as a real part of the app, not a footnote):
+
+> Meditation is easy to start and hard to keep doing. 808 helps you build the
+> habit: Otto, your companion in the app, keeps you company and holds your
+> most distracting apps until you've sat down to meditate. Pick your apps,
+> pick your window, and get on with your day the moment you're done.
+
+**If Block is not in this version, lead with Friends and the evidence
+pitch together:**
+
+> Meditation is easy to start and hard to keep doing. 808 helps you build
+> the habit and share it: meditate your way, see what your body actually
+> did, and post it to friends who are doing the same thing.
+
+**Themes to keep, whichever version ships:** the streak and Otto's mood as
+daily reasons to return; an Apple Watch as something that adds evidence, not
+something required to begin; Friends as a place to post a session and see
+friends' sessions, never framed as a public feed of strangers; the same
+honesty rules as every other surface (no invented numbers, no "first app"
+claim, never telling the reader what they lack). Do not describe Block as
+parental control anywhere in the listing; it is self-management, and the
+wrong word here is the kind of thing App Review checks the copy against the
+binary for.
 
 ### Optional testimonial block
 
@@ -251,6 +288,12 @@ and there is no reason to defer it.
 
 ## Age rating
 
+**SUPERSEDED for 1.1 by the section below.** Kept for the record: this is
+what shipped for 1.0, when there was no Friends and no Block, and it is
+still the right reasoning for a build with the flag off. The questionnaire
+itself has since changed shape (Apple's 2025 redesign, live 2026); the
+CONTENT reasoning below still holds, the exact question names do not.
+
 **The four answers, and why** (2026-09-01):
 
 | Question | Answer |
@@ -278,46 +321,126 @@ description states 808 is a wellness app and not a medical device, and the
 bundled Science page says the cited research is about meditation rather than
 about 808.
 
-Both are No because nothing a user creates in 808 can reach another user. The
-reflection note is private (device plus the user's own private CloudKit); the
-share card leaves only through the system share sheet, to a destination the
-user picks, after the sheet shows them the finished image. There is no feed, no
-follows, no comments, no discovery, and no server of ours for content to pass
-through.
+Both UGC and Social Media were No for 1.0 because nothing a user created
+could reach another user. That stops being true the moment Friends ships.
 
-**Answering Yes would be worse than wrong, not safer.** Yes invokes Guideline
-1.2, which requires content filtering, a reporting mechanism, the ability to
-block abusive users, and published moderation contact details. 808 implements
-none of that because it has nothing to moderate, so a Yes is a rejection in the
-other direction, and it raises the age rating for nothing.
+## Age rating (1.1, Friends ON): the questionnaire itself changed shape
 
-**Both answers flip the day a community ships.** "The social network for those
-who breathe" means a feed, and a feed means Yes to both plus the whole 1.2
-moderation stack built BEFORE submission. Scope it as a real feature, never as
-an addition to a release.
+Apple redesigned the age-rating questionnaire in 2025 and it is now live: the
+displayed tiers are **4+, 9+, 13+, 16+, 18+** (12+ and 17+ are retired), and
+the form is organised as In-App Controls, Capabilities, Mature Themes,
+Medical or Wellness, Sexuality or Nudity, Violence, and Chance-Based
+Activities, rather than the older flat list. Source: Apple's own age-ratings
+reference, developer.apple.com/help/app-store-connect/reference/app-information/age-ratings-values-and-definitions/.
+**Answer every question in App Store Connect fresh at submission**; the table
+below is our worked answer, not a substitute for reading the live form once
+more, since Apple can add questions between now and the day this ships.
 
-## Age rating
+| Question | Answer | Why |
+|---|---|---|
+| Parental Controls | **No** | Block manages only the device it is set up on, for the person using it. See the note below; this is the one answer worth a second look. |
+| Age Assurance | **No** | 808 has no age-verification mechanism. |
+| Unrestricted Web Access | **No** | No in-app browser shows arbitrary web content. Links to our own site open in Safari, which does not count. Block's web-domain picking RESTRICTS sites the person already chose; it does not provide access to any. |
+| User-Generated Content | **Yes** | Friends posts: titles, descriptions, technique tags, and photos or videos the person adds. |
+| Social Media | **Yes** | Friends is a feed of friends' posts with reactions, which is Apple's own definition of this capability. |
+| Social Media Disabled for Users Under 13 | **No** | 808 has no age gate, so it cannot truthfully claim a technical safeguard it does not have. The app already requires being 13+ by the Terms of Service (Section 3); that is a policy floor, not an in-app control. |
+| Messaging and Chat | **No** | Friends has posts and one-tap reactions only. There is no direct messaging, no comments, and no chat between users, by design (see `COMMUNITY.md`, "What ships in v1, and what does not"). |
+| Advertising | **No** | No ad SDK, no ad serving, anywhere in the app. |
+| Profanity or Crude Humor | **No** | |
+| Horror or Fear Themes | **No** | |
+| Alcohol, Tobacco, or Drug Use or References | **No** | |
+| Health or Wellness Topics | **Yes** | The guide's meditation techniques: self-care and lifestyle content, not diagnosis or treatment. Per Apple's own tier definitions this stays at 9+ on its own. |
+| Medical or Treatment Information | **None** | Nothing in 808 diagnoses a condition or tells anyone how to manage one. Becomes Infrequent the moment any guide entry is written for a named condition; none is today. |
+| Sexuality or Nudity (all three levels) | **No** | |
+| Violence (all four levels) | **No** | |
+| Chance-Based Activities (all four kinds) | **No** | |
 
-Apple's 2025 questionnaire is answered at submission. Honest answers: wellness
-content without medical advice, no unrestricted web, no user-generated content,
-no gambling. Expect the lowest tier. The questionnaire cross-references the
-metadata, so nothing above may claim a health outcome.
+**Expected resulting tier: 13+.** User-Generated Content and Social Media
+are the only Yeses, everything else in Apple's higher tiers is No or None,
+and moderation (filter, report, block, a 24-hour response target) is
+already built, which is what keeps an unmoderated social feed from being
+rated higher still. Confirm the exact computed tier when the form is
+actually filled in; Apple's algorithm is not published closely enough to
+guarantee 13+ over 9+ with total certainty from outside the form, but
+nothing in 808 should push it past 13+.
 
-## App Privacy (nutrition labels) — CHANGED, do not copy the old answer
+**Parental Controls deserves one explicit note in the submission, not just
+here.** Block is built on Apple's own Family Controls framework, which
+share a name with "parental controls" in casual conversation. It is not
+one: Block only ever manages the device it is installed on, set up by and
+for the person using it, exactly the way Screen Time's own "Screen Time
+Passcode for yourself" option works. Say so in the Review Notes (see
+below) so a reviewer who notices the entitlement in the binary is not left
+to guess.
 
-**Product Interaction must now be declared, linked to nothing, not used for
-tracking.** PostHog went live 2026-08-17, so the previous "Data Not Collected"
-answer is no longer true. Declare:
+**Both the UGC and Social Media answers, and the resulting tier, flip back**
+if `FeatureFlags.friendsInRelease` is ever turned off again for a build.
+Re-answer the questionnaire for that build; do not leave a stale Yes sitting
+on a build that cannot produce any user content.
 
-- **Usage Data → Product Interaction**: collected, NOT linked to identity, NOT
-  used for tracking.
-- Nothing else. Health results never leave the device (device-local store,
-  excluded from CloudKit per 5.1.3(ii)); the account and session log sync only
-  to the user's private CloudKit database, which we cannot read.
+## App Privacy (nutrition labels): CHANGED for 1.1, do not copy the old answer
 
-`PrivacyInfo.xcprivacy` in both targets already declares
-ProductInteraction/Analytics/not-linked/not-tracking, so the manifest and the
-labels agree. If they ever disagree, that is the rejection.
+**Eight data types, all present in `Coherence/PrivacyInfo.xcprivacy` today.**
+The manifest is the source of truth; this table is a paste-ready mirror of
+it for App Store Connect → App Privacy → Edit. If the manifest ever changes,
+update this table in the same commit, and vice versa: a label that doesn't
+match the manifest is a review flag by itself.
+
+| Category | Linked to you | Used to track you | Purpose |
+|---|---|---|---|
+| Usage Data → Product Interaction | No | No | Analytics |
+| Identifiers → User ID (analytics) | No | No | Analytics |
+| Purchases → Purchase History | No | No | Analytics |
+| Contact Info → Email Address | **Yes** | No | Developer's Advertising or Marketing |
+| User Content → Photos or Videos | **Yes** | No | App Functionality |
+| User Content → Other User Content | **Yes** | No | App Functionality |
+| Contact Info → Name | **Yes** | No | App Functionality |
+| Identifiers → User ID (Friends @username) | **Yes** | No | App Functionality |
+
+**Notes on rows that are easy to get wrong:**
+
+- **Two different "User ID" rows exist and they are linked oppositely.**
+  The analytics install-scoped UUID is anonymous and NOT linked; the Friends
+  `@username` is a public, chosen, persistent handle tied to a real profile
+  and IS linked, by Apple's own definition of the category ("screen name,
+  handle, account ID... that can be used to identify a particular user").
+  App Store Connect lets Photos/Videos, Other User Content, Name, and User ID
+  each be added once with one linkage answer; if the form does not let two
+  different reasons live under one type, add the Friends username as its own
+  User ID entry alongside the analytics one rather than merging them.
+- **Photos or Videos and Other User Content now cover MORE than one photo.**
+  Friends posts can carry several photos and videos per post (`Post.media`,
+  `mediaPosters`, `mediaKinds`, `mediaAspects` in `CommunityRecords.swift`).
+  The category doesn't change with the count; the manifest and this table
+  already say "Photos or Videos," singular category, any number of items.
+- **Health & Fitness is correctly ABSENT.** Heart rate, breathing, stillness,
+  scores, and every curve stay device-local (5.1.3(ii); see `ENTITLEMENTS.md`
+  and the 5.1.3 store split in `CLAUDE.md`). A Friends post's optional score
+  is declared as "Other User Content"/App Functionality rather than Health &
+  Fitness, the same free-share-card number a user already hand-types into
+  Instagram. **This is a founder judgment call, not a settled fact**:
+  guideline 5.1.3(ii) bars storing personal health information in iCloud
+  with no written consent exception, and whether a coarse 0-100 practice
+  score derived from heart rate counts as "personal health information" is
+  genuinely arguable either way. Revisit before shipping if either founder
+  is not comfortable with the current answer; the zero-risk alternative is
+  dropping the score field from posts entirely.
+- **No Screen Time / Block row exists, on purpose.** Nothing Block touches
+  is collected by our definition (see `PRIVACY_POLICY.md`, "Block"); adding
+  a row for it would be declaring a collection that does not happen.
+- **Confirm whether PostHog's own crash/exception autocapture is on.**
+  `Analytics.swift` never sets `errorTrackingConfig`, so the SDK's behavior
+  follows PostHog's OWN project dashboard setting (Error tracking →
+  autocapture), not anything in this codebase. If that project setting is
+  ON, PostHog can collect Crash Data without a line of Swift changing, and
+  this table (plus the manifest) would need a Diagnostics → Crash Data row.
+  Check the PostHog project settings before submitting; this cannot be
+  verified from the repository alone.
+
+**Nothing else changes.** Health results never leave the device (device-local
+store, excluded from CloudKit per 5.1.3(ii)); the account and session log
+sync only to the user's private CloudKit database, which we cannot read;
+Block and Screen Time data never leave the device at all.
 
 ## Export compliance
 
@@ -325,6 +448,76 @@ labels agree. If they ever disagree, that is the rejection.
 not ask. If it does: standard Apple encryption only, exempt.
 
 ## Review notes (paste into the App Review notes field)
+
+**Rewritten for 1.1.** The old note below (kept for the record, do not
+paste it) told reviewers an Apple Watch was required and to jump through a
+"Check again x3" trick. Neither is true any more: as of "THE SIT IS THE
+PRODUCT" (`CLAUDE.md`, 2026-09-21), Begin never asks about a Watch, and a
+session run on the phone alone times a sit with no biometric measurement at
+all. Nobody needs to reach for one during review.
+
+> 808 is a meditation app for iPhone. An Apple Watch is entirely optional: if
+> you start a session from the phone, it times the sit; if you have a paired
+> Apple Watch and start from it (or the Watch app), it also measures heart
+> rate and motion and shows evidence of how your body responded, after the
+> session, never as a live score. No part of the review needs an Apple
+> Watch.
+>
+> Sign in with Apple is the only sign-in and it is optional; no demo account
+> exists or is needed for the core app or for any in-app purchase.
+>
+> **Friends (new in 1.1).** This is a social feature backed by Apple's public
+> CloudKit database, not our own server. To review it, the test device needs
+> to be signed in to iCloud (Settings → [name] at the top of the Settings
+> app); most review devices already are. Open the Friends tab, claim a
+> username, and you can: post a session (photos or videos are optional; a
+> phone-only session posts with no score, which is expected), search for and
+> add another account, react to a post, report a post or a profile, and
+> block a person. Every post and profile has Report in its menu; reports
+> reach us at support@meditate808.com, normally within 24 hours (Terms of
+> Service, section 6a). Settings → Delete Account removes the Friends
+> profile, posts, and connections created from that account, in addition to
+> the rest of the account.
+>
+> **Block (new in 1.1, part of 808 Premium; only present if this build has
+> `FeatureFlags.blockInRelease` turned on; delete this paragraph from the
+> notes if it does not).** Block uses Apple's Family Controls framework with
+> INDIVIDUAL authorization: it is self-management, not a parental control,
+> and it never manages a device other than the one it is set up on. In the
+> Block tab, Screen Time authorization is requested on first use (Face ID or
+> Touch ID, standard Apple prompt), then the person picks apps or categories
+> to hold with Apple's own picker. Opening a held app shows Apple's shield;
+> tapping "Ask Otto" sends a local notification, and tapping it opens one of
+> around twenty short in-app screens from Otto, ending in either starting a
+> meditation (a session of five minutes or more releases the held apps for
+> the rest of that window) or asking for a set number of minutes before the
+> hold returns. Block is part of the paid membership; the free trial in
+> Settings → Membership, or the paywall shown when a free account turns a
+> blocker on, reaches the same sandbox purchase flow as the rest of the app.
+> **Screen Time behavior is difficult to exercise in a review environment
+> unfamiliar with the device, so we can provide a short screen recording on
+> request** in addition to these notes; please let us know if one would
+> help.
+>
+> **Silence notifications (session screen, optional).** If shown, this
+> switch runs two Shortcuts the person installs themselves from a link we
+> publish, to turn Do Not Disturb on and off around a sit; 808 cannot turn
+> Do Not Disturb on directly (no such API exists) and never claims to. If
+> the two shortcut links are not yet published in this build, the switch is
+> replaced by a plain sentence pointing at Control Center instead, and nothing
+> related to Shortcuts or Focus is exercised.
+>
+> Health data: session results measured from a paired Apple Watch are
+> computed on-device and stored only on-device, in a store excluded from
+> CloudKit sync, per guideline 5.1.3(ii). A Friends post may include the
+> session's overall score (never a heart-rate value, curve, or any other
+> measured reading), only when the person who posted it chooses to.
+>
+> Audio licensing: the guided narration was commissioned with a commercial
+> licence; the tones are synthesised at runtime; the ambient beds and nature
+> recordings were generated under commercial licence.
+
+**Superseded, kept for reference only (1.0's note, do not paste):**
 
 > 808 measures meditation sessions using Apple Watch (heart rate and motion via
 > a .mindAndBody workout). A paired physical Apple Watch is required to record
@@ -347,6 +540,40 @@ not ask. If it does: standard Apple encryption only, exempt.
 > Audio licensing: the guided narration was commissioned with a commercial
 > licence; the tones are synthesised at runtime; the ambient beds and nature
 > recordings were generated under commercial licence.
+
+## What's New (v1.1)
+
+**Two variants below: pick the one that matches what actually shipped**, per
+`FeatureFlags.blockInRelease` in the build being submitted. Both name the
+score change, because `scoreBackfillDone.v8` runs on every 1.1 install
+regardless of Block (see `RELEASE_CHECKLIST.md`, "1.1 RESCORES EVERY EXISTING
+USER'S HISTORY").
+
+**If Block is OFF (Friends only, the more likely 1.1):**
+
+> Meditate with friends. Create a profile, post a session with photos or
+> videos, and see what your friends are up to, all from the new Friends tab.
+> Sessions now start right from your phone too, with or without an Apple
+> Watch.
+>
+> We also refined how the stillness part of your score is calculated, so
+> past sessions may show a different number than before. Nothing about what
+> was measured has changed, only how it adds up, and every session compares
+> to every other on the same scale again.
+
+**If Block is also ON:**
+
+> Meditate with friends, and let Otto hold your most distracting apps until
+> you do. Create a profile, post a session with photos or videos, and see
+> what your friends are up to in the new Friends tab. Block, part of 808
+> Premium, holds the apps you choose until you've meditated, using Apple's
+> own Screen Time tools; you always choose which apps and when. Sessions now
+> start right from your phone too, with or without an Apple Watch.
+>
+> We also refined how the stillness part of your score is calculated, so
+> past sessions may show a different number than before. Nothing about what
+> was measured has changed, only how it adds up, and every session compares
+> to every other on the same scale again.
 
 ## What's New (v1.0)
 
