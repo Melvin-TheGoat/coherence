@@ -54,9 +54,24 @@ enum OnboardingSection {
 /// `AmbientSignal` stays in this file for anything that wants it back.
 struct OnboardingBackground: ViewModifier {
     let section: OnboardingSection
+    /// Inside onboarding the valley is drawn ONCE, behind every screen, by
+    /// `OnboardingView` (Melvin, 2026-09-22: "more on theme, like in a green
+    /// forest area like the home menu but its in the background"). A screen
+    /// there draws nothing of its own, so it slides across a world that stays
+    /// put instead of carrying a copy of the sky with it. Anywhere else (the
+    /// paywall opened from Home) the paper stays.
+    @Environment(\.onboardingSharedGround) private var shared
     @State private var breathe = false
 
     func body(content: Content) -> some View {
+        if shared {
+            content
+        } else {
+            paper(content)
+        }
+    }
+
+    private func paper(_ content: Content) -> some View {
         let (near, far) = section.glow
         return content
             .background {
@@ -77,6 +92,29 @@ struct OnboardingBackground: ViewModifier {
                     breathe = true
                 }
             }
+    }
+}
+
+private struct OnboardingSharedGroundKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True under `OnboardingView`, which draws the valley behind every
+    /// screen itself. See `OnboardingBackground`.
+    var onboardingSharedGround: Bool {
+        get { self[OnboardingSharedGroundKey.self] }
+        set { self[OnboardingSharedGroundKey.self] = newValue }
+    }
+}
+
+/// Type drawn straight onto the meadow rather than onto a card: white with a
+/// faint shadow, like `GrassHeading`, because the grass's green swallows the
+/// brown ink the paper used.
+extension View {
+    func onMeadow() -> some View {
+        foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.28), radius: 2, y: 1)
     }
 }
 
@@ -183,9 +221,22 @@ struct OnboardingCTA: View {
             if let footnote {
                 Text(footnote)
                     .font(.caption2)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .modifier(FootnoteInk())
                     .multilineTextAlignment(.center)
             }
+        }
+    }
+}
+
+/// Brown on the paper, white on the meadow: the line under a button sits on
+/// grass once the valley is behind the flow.
+struct FootnoteInk: ViewModifier {
+    @Environment(\.onboardingSharedGround) private var shared
+    func body(content: Content) -> some View {
+        if shared {
+            content.onMeadow()
+        } else {
+            content.foregroundStyle(AppColor.textSecondary)
         }
     }
 }
@@ -280,9 +331,19 @@ struct OnboardingOption: View {
             // The same field as Create your profile (Melvin, 2026-09-21):
             // a white rounded plate on the paper with no outline, radius 12.
             // Chosen is the plate outlined in gold with a faint gold wash.
-            .background(selected ? AppColor.accentGold.opacity(0.10)
-                                 : AppColor.backgroundSecondary,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            // Opaque under the wash: over the valley a see-through plate
+            // would show the ridge through a chosen answer.
+            .background {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(AppColor.backgroundSecondary)
+                    if selected {
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(AppColor.accentGold.opacity(0.10))
+                    }
+                }
+                .shadow(color: .black.opacity(0.07), radius: 6, y: 2)
+            }
             .overlay {
                 if selected {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -492,7 +553,7 @@ struct OnboardingScreen<Content: View>: View {
                 // bottom from reading as unfinished and teaches the model once.
                 Text(autoAdvanceHint)
                     .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary.opacity(0.55))
+                    .modifier(FootnoteInk())
                     .frame(maxWidth: .infinity)
                     .padding(.top, 14)
                     .padding(.bottom, 6)
@@ -503,11 +564,12 @@ struct OnboardingScreen<Content: View>: View {
             }
 
             if let onSkip {
-                Button(skipTitle, action: onSkip)
-                    .font(.footnote)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 12)
+                Button(action: onSkip) {
+                    Text(skipTitle).modifier(FootnoteInk())
+                }
+                .font(.footnote.weight(.semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.top, 12)
             }
         }
         .padding(.horizontal, 24)

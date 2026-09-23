@@ -18,19 +18,20 @@ final class OttoAuraTests: XCTestCase {
         OttoAura.level(from: days.map { day($0) }, today: day(today), calendar: cal)
     }
 
-    func test_aNewPersonMeetsCuriousOttoNotASadOne() {
+    func test_aNewPersonMeetsStirringOttoNotAWitheredOne() {
         XCTAssertEqual(OttoAura.level(from: [], today: day(10), calendar: cal), 40)
-        XCTAssertEqual(OttoAura.stage(from: [], today: day(10), calendar: cal), .curious)
+        XCTAssertEqual(OttoAura.stage(from: [], today: day(10), calendar: cal), .stirring)
     }
 
-    func test_theFirstSessionLiftsHimToProgressing() {
+    /// The first session is the one that brings his colour back.
+    func test_theFirstSessionLiftsHimToSteady() {
         XCTAssertEqual(level([10], today: 10), 50)
-        XCTAssertEqual(OttoAura.Stage(level: 50), .progressing)
+        XCTAssertEqual(OttoAura.Stage(level: 50), .steady)
     }
 
-    func test_fiveDaysInARowReachEnlightened() {
+    func test_fiveDaysInARowReachNirvana() {
         XCTAssertEqual(level([6, 7, 8, 9, 10], today: 10), 90)
-        XCTAssertEqual(OttoAura.Stage(level: 90), .enlightened)
+        XCTAssertEqual(OttoAura.Stage(level: 90), .nirvana)
     }
 
     func test_itNeverPassesOneHundred() {
@@ -51,11 +52,11 @@ final class OttoAuraTests: XCTestCase {
         XCTAssertEqual(level([7, 10], today: 10), 40)
     }
 
-    func test_aWeekAwayFromEnlightenedBringsHimToLow() {
-        // Enlightened by the 5th, then seven days missed (one rest, six at 20).
+    func test_aWeekAwayFromNirvanaBringsHimToWithered() {
+        // Nirvana by the 5th, then seven days missed (one rest, six at 20).
         let away = level([1, 2, 3, 4, 5], today: 13)
         XCTAssertEqual(away, 0)
-        XCTAssertEqual(OttoAura.Stage(level: away), .low)
+        XCTAssertEqual(OttoAura.Stage(level: away), .withered)
     }
 
     func test_itNeverFallsBelowZero() {
@@ -146,18 +147,25 @@ final class OttoAuraTests: XCTestCase {
         let level = OttoAura.level(from: [], notNow: [window(9, from: 0, hours: 24)],
                                    today: day(10), calendar: cal)
         XCTAssertEqual(level, 20)
-        XCTAssertEqual(OttoAura.Stage(level: level), .frustrated)
+        XCTAssertEqual(OttoAura.Stage(level: level), .faded)
     }
 
     func test_stageBoundaries() {
         let cases: [(Int, OttoAura.Stage)] = [
-            (0, .low), (9, .low), (10, .frustrated), (29, .frustrated),
-            (30, .curious), (49, .curious), (50, .progressing), (69, .progressing),
-            (70, .inFlow), (89, .inFlow), (90, .enlightened), (100, .enlightened),
+            (0, .withered), (14, .withered), (15, .faded), (29, .faded),
+            (30, .stirring), (44, .stirring), (45, .steady), (59, .steady),
+            (60, .bright), (74, .bright), (75, .radiant), (89, .radiant),
+            (90, .nirvana), (100, .nirvana),
         ]
         for (value, stage) in cases {
             XCTAssertEqual(OttoAura.Stage(level: value), stage, "level \(value)")
         }
+    }
+
+    /// Seven drawings, numbered in order, and he floats only at the top two.
+    func test_sevenStagesInOrder() {
+        XCTAssertEqual(OttoAura.Stage.allCases.map(\.rawValue), Array(1...7))
+        XCTAssertEqual(OttoAura.Stage.allCases.filter(\.floats), [.radiant, .nirvana])
     }
 
     // MARK: - What he says when you tap him (Melvin, 2026-09-22)

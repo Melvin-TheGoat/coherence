@@ -1113,26 +1113,30 @@ struct PermissionScreen: View {
                 // floating in 440 pt of dark.
                 LockScreenBanner(hour: pickedHour)
 
-                HStack(spacing: 12) {
-                    Text("Remind me at")
-                        .font(AppFont.callout)
+                // The caption lives on the card: over the valley, grey type on
+                // the ridge behind it could not be read.
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(spacing: 12) {
+                        Text("Remind me at")
+                            .font(AppFont.callout)
+                            .foregroundStyle(AppColor.textSecondary)
+                        Spacer(minLength: 0)
+                        DatePicker("Reminder time",
+                                   selection: Binding(get: { reminderTime ?? Self.eightAM },
+                                                      set: { reminderTime = $0 }),
+                                   displayedComponents: .hourAndMinute)
+                            .labelsHidden()
+                            .tint(AppColor.accentGold)
+                    }
+                    Text("One a day. Change it any time in Settings.")
+                        .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
-                    Spacer(minLength: 0)
-                    DatePicker("Reminder time",
-                               selection: Binding(get: { reminderTime ?? Self.eightAM },
-                                                  set: { reminderTime = $0 }),
-                               displayedComponents: .hourAndMinute)
-                        .labelsHidden()
-                        .tint(AppColor.accentGold)
                 }
                 .padding(.horizontal, 16)
                 .padding(.vertical, 10)
                 .background(AppColor.backgroundSecondary,
                             in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-
-                Text("One a day. Change it any time in Settings.")
-                    .font(.caption)
-                    .foregroundStyle(AppColor.textSecondary)
+                .shadow(color: .black.opacity(0.07), radius: 6, y: 2)
             }
             .frame(maxWidth: .infinity)
         }

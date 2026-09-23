@@ -361,22 +361,43 @@ struct MotivationScreen: View {
 
 // MARK: - 4 · Q2 Stress (slider)
 
-/// The input type changes here on purpose: six tap-lists in a row is where
-/// drop-off lives.
+/// **The stress question, answered on Otto** (Melvin, 2026-09-22: "'how
+/// stressed are you' should show the sloth slider, combine it with that
+/// screen instead of them being separate"). It absorbed the aura demo, which
+/// was a screen of its own for a day.
 ///
-/// The waveform is driven by the slider, so the answer is drawn as well as
-/// named: slow and even at Fine, fast and ragged at Fried. It replaced roughly
-/// 420 pt of black, the emptiest screen in the flow.
+/// Otto sits on his cushion in the valley, exactly where he sits on Home,
+/// and asks the question in the same bubble. As the answer is dragged he
+/// changes with it: Fine is Otto at his brightest, floating in light; Burnt
+/// out is Otto withered and gray with a moth on him. So the question also
+/// shows what 808 is, without a word about it: his state is a picture of
+/// yours, and meditating is what brings him back.
 ///
-/// **Teal to red, never gold.** Gold means a chosen or achieved thing, and it
-/// is what the results screen spends on the one number this whole product is
-/// selling. Spending it here on someone's stress level would both misuse the
-/// grammar and blunt the payoff. Watching your own line go red is the better
-/// argument anyway.
+/// **He is drawn by `OnboardingView`, not here**, in the valley behind every
+/// screen, so he does not slide in with the screen as a second copy of the
+/// sky would. This screen places the bubble on his head and the controls on
+/// the grass, using the same `SitLayout` the valley uses.
+///
+/// **Teal to red, never gold**, still: gold is the score's colour, and
+/// someone's stress is not an achievement.
 struct StressScreen: View {
     @Binding var stress: Double
     let count: InterviewCount
+    /// Poke Otto: he jiggles, as he does on Home.
+    var onPoke: () -> Void = {}
     let onContinue: () -> Void
+
+    @Environment(\.onboardingBack) private var back
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The bar sweeps once on arrival so the reader sees the range of him,
+    /// the aura demo's trick: discovered rather than explained.
+    @State private var demoed = false
+    @State private var touched = false
+
+    /// Calm draws him at his brightest, burnt out at his lowest.
+    static func stage(for stress: Double) -> OttoAura.Stage {
+        OttoAura.Stage(level: Int(((1 - min(max(stress, 0), 1)) * 100).rounded()))
+    }
 
     private var notch: Int { Int((stress * 4).rounded()) }
 
@@ -390,19 +411,14 @@ struct StressScreen: View {
         }
     }
 
-    /// Calm teal, through the relief section's amber, to the cost section's
-    /// red. Three stops rather than two: interpolating teal straight to red in
-    /// RGB passes through a washed-out pink, which looked like a mistake at
+    /// Calm sage, through orange, to red. Three stops rather than two:
+    /// straight from green to red in RGB passes through a washed-out brown at
     /// exactly the midpoint most people leave the slider on.
     private var tint: Color {
         let t = min(max(stress, 0), 1)
         let calm  = (r: 0.486, g: 0.659, b: 0.431)   // Color.onboardingSage
-        // A warm orange, pushed deliberately off the gold. The obvious midpoint
-        // sits so close to AccentGold that the wave and the Continue button
-        // below it read as the same colour, which is both flat to look at and
-        // the exact borrowing of gold this screen is avoiding.
         let amber = (r: 0.88, g: 0.50, b: 0.18)
-        let hot   = (r: 0.78, g: 0.26, b: 0.22)   // .cost
+        let hot   = (r: 0.78, g: 0.26, b: 0.22)
         let (from, to, k) = t < 0.5 ? (calm, amber, t * 2) : (amber, hot, (t - 0.5) * 2)
         return Color(red:   from.r + (to.r - from.r) * k,
                      green: from.g + (to.g - from.g) * k,
@@ -410,82 +426,117 @@ struct StressScreen: View {
     }
 
     var body: some View {
-        OnboardingScreen(section: .body, counter: count,
-                         title: "How stressed have you\nbeen lately?",
-                         onContinue: onContinue) {
-            VStack(spacing: 22) {
-                StressWave(level: stress, closed: true)
-                    .fill(LinearGradient(colors: [tint.opacity(0.22), tint.opacity(0.0)],
-                                         startPoint: .top, endPoint: .bottom))
-                    .overlay {
-                        StressWave(level: stress, closed: false)
-                            .stroke(tint, style: StrokeStyle(lineWidth: 2.4, lineCap: .round))
+        GeometryReader { outer in
+            let inset = outer.safeAreaInsets
+            GeometryReader { geo in
+                let size = geo.size
+                let ottoTop = SitLayout.ottoTop(in: size)
+                let ottoSize = 186 * SitLayout.scale(in: size)
+                let ink = DayLight.at(0).ink
+                let top = inset.top + 12
+                ZStack(alignment: .top) {
+                    HStack(spacing: 14) {
+                        if let back {
+                            OnboardingBackButton(action: back)
+                        }
+                        OnboardingProgress(from: Double(count.index - 1) / Double(max(count.total, 1)),
+                                           to: Double(count.index) / Double(max(count.total, 1)))
                     }
-                    .frame(height: 150)
-                    .animation(.easeOut(duration: 0.18), value: stress)
+                    .frame(height: 40)
+                    .padding(.horizontal, 24)
+                    .padding(.top, top)
 
-                Text(readout)
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
-                    .foregroundStyle(tint)
-                    .animation(.easeOut(duration: 0.2), value: readout)
-                    .frame(maxWidth: .infinity)
-
-                VStack(spacing: 8) {
-                    Slider(value: $stress, in: 0...1)
-                        .tint(tint)
-                    HStack {
-                        Text("Fine")
-                        Spacer()
-                        Text("Burnt out")
+                    // His question, pinned by its bottom to just above his
+                    // head, the way Home pins his line.
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        OttoSpeech(text: "How stressed have you been lately?",
+                                   tail: .bottom, size: 19,
+                                   ink: ink, stroke: ink.opacity(0.38),
+                                   fill: AppColor.backgroundPrimary.opacity(0.85),
+                                   speaking: .constant(false))
                     }
-                    .font(.caption)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(width: min(size.width - 56, 330),
+                           height: max(0, ottoTop - 8 - (top + 56)))
+                    .padding(.top, top + 56)
+
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .frame(width: ottoSize, height: ottoSize)
+                        .position(x: size.width / 2, y: ottoTop + ottoSize / 2)
+                        .onTapGesture(perform: onPoke)
+                        .accessibilityHidden(true)
+
+                    // Everything below his cushion, which leaves about 140pt
+                    // on the smallest phone: the words, the bar, the button.
+                    VStack(spacing: 6) {
+                        Spacer(minLength: 0)
+                        Text(readout)
+                            .font(.system(size: 22, weight: .heavy, design: .rounded))
+                            .onMeadow()
+                            .contentTransition(.opacity)
+                            .animation(.easeOut(duration: 0.2), value: readout)
+                        scrubber
+                        OnboardingCTA(title: "Continue", action: onContinue)
+                            .padding(.top, 2)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, inset.bottom + 4)
                 }
+                .frame(width: size.width, height: size.height)
             }
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: notch)
+            .ignoresSafeArea()
+        }
+        .sensoryFeedback(.selection, trigger: Self.stage(for: stress))
+        .task {
+            // Only a fresh screen sweeps: coming back to an answer already
+            // given leaves it where it was put.
+            guard !demoed, !reduceMotion, stress == OnboardingAnswers().stress else { return }
+            demoed = true
+            try? await Task.sleep(for: .milliseconds(500))
+            for (target, seconds) in [(0.02, 0.9), (0.98, 1.3), (0.5, 0.8)] {
+                guard !touched, !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: seconds)) { stress = target }
+                try? await Task.sleep(for: .milliseconds(Int(seconds * 1000) + 150))
+            }
         }
     }
-}
 
-/// The stress line. Frequency and amplitude both climb with `level`, and a
-/// deterministic wobble is added on top that only becomes visible near the
-/// upper end — so "Fried" is genuinely ragged while "Fine" is a clean sine.
-///
-/// The wobble is a fixed function of x rather than random, so the line stays
-/// still while the user drags instead of shimmering under their thumb.
-private struct StressWave: Shape {
-    /// 0 calm, 1 fried.
-    let level: Double
-    /// Closed down to the baseline for the gradient fill; open for the stroke,
-    /// so the fill's bottom edge never gets drawn as part of the line.
-    let closed: Bool
-
-    func path(in rect: CGRect) -> Path {
-        let t = min(max(level, 0), 1)
-        let mid = rect.midY
-        let cycles = 1.6 + t * 5.5
-        let amp = rect.height * (0.08 + t * 0.23)
-        let jag = t * t * rect.height * 0.16
-
-        var p = Path()
-        var x: CGFloat = 0
-        while x <= rect.width {
-            let phase = (x / rect.width) * cycles * 2 * .pi
-            // Low frequency on purpose. A fast wobble renders as static, which
-            // reads as a broken graphic; a slow one reads as an uneven beat,
-            // which is what being wound up actually looks like.
-            let wobble = jag * sin(x * 0.31) * cos(x * 0.11)
-            let y = mid - sin(phase) * amp - wobble
-            if x == 0 { p.move(to: CGPoint(x: x, y: y)) }
-            else { p.addLine(to: CGPoint(x: x, y: y)) }
-            x += 2
+    /// Home's glow bar made draggable, in the stress colours. The ends are not
+    /// labelled: the words above it name where it is, and Otto shows it.
+    private var scrubber: some View {
+        VStack(spacing: 0) {
+            GeometryReader { geo in
+                let width = geo.size.width
+                let x = max(0, min(width, width * stress))
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.85))
+                    Capsule()
+                        .fill(tint)
+                        .frame(width: max(18, x))
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 30, height: 30)
+                        .shadow(color: .black.opacity(0.22), radius: 4, y: 2)
+                        .overlay(Circle().strokeBorder(tint, lineWidth: 3))
+                        .offset(x: max(0, min(width - 30, x - 15)))
+                }
+                .frame(height: 30)
+                .contentShape(Rectangle())
+                .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                    touched = true
+                    stress = max(0, min(1, value.location.x / width))
+                })
+            }
+            .frame(height: 30)
         }
-        if closed {
-            p.addLine(to: CGPoint(x: rect.width, y: rect.maxY))
-            p.addLine(to: CGPoint(x: 0, y: rect.maxY))
-            p.closeSubpath()
+        .accessibilityElement()
+        .accessibilityLabel("How stressed have you been lately?")
+        .accessibilityValue(readout)
+        .accessibilityAdjustableAction { direction in
+            touched = true
+            stress = max(0, min(1, stress + (direction == .increment ? 0.25 : -0.25)))
         }
-        return p
     }
 }
 

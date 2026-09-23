@@ -259,7 +259,7 @@ enum Analytics {
         "questionCount":     "03b A few questions, here is how many",
         "whatsWaiting":      "23b Here's what's waiting (cut 2026-09-22)",
         "blockIntro":        "23c Otto can hold your apps (cut 2026-09-22)",
-        "auraDemo":          "23d Drag to see Otto brighten",
+        "auraDemo":          "23d Drag to see Otto brighten (cut 2026-09-22, now the stress screen)",
         "baseline":          "03 How often do you meditate?",
         "motivation":        "04 What are you hoping for?",
         "stress":            "05 How stressed lately?",

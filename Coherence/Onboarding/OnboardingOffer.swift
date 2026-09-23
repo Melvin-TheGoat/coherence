@@ -601,7 +601,9 @@ struct SignInScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Spacer()
+            // A third of the way down rather than centred: in the valley the
+            // middle of the screen is the ridge, and the words belong on sky.
+            Spacer(minLength: 40)
 
             Image(systemName: "flame.fill")
                 .font(.system(size: 40))
@@ -630,6 +632,7 @@ struct SignInScreen: View {
             }
 
             Spacer()
+            Spacer()
 
             SignInWithAppleButton(.signIn) { request in
                 request.requestedScopes = [.fullName, .email]
@@ -652,10 +655,11 @@ struct SignInScreen: View {
             .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
 
             if let onSkip {
-                Button("Not now", action: onSkip)
-                    .font(.footnote)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.top, 14)
+                Button(action: onSkip) {
+                    Text("Not now").modifier(FootnoteInk())
+                }
+                .font(.footnote.weight(.semibold))
+                .padding(.top, 14)
             }
         }
         .padding(.horizontal, 24)

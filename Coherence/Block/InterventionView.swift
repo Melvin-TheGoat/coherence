@@ -141,7 +141,7 @@ private struct InterventionScene: View {
                     .position(x: size.width / 2, y: 72)
             }
         case .glow:
-            ValleyStage(pose: "OttoFrustrated", line: "Help me glow? One session today.", doors: doors)
+            ValleyStage(pose: OttoAuraFigure.asset(.faded), line: "Help me glow? One session today.", doors: doors)
         case .twoDoors:
             TwoDoorsScene(doors: doors)
         case .countdown:
@@ -219,12 +219,18 @@ private struct ValleyStage<Extra: View>: View {
             let ottoTop = ottoBottom - ottoHeight
             ZStack {
                 ValleyScene(progress: progress, showsFigure: false)
+                // The aura drawings share one padded canvas (light around him,
+                // room under him), so they are drawn taller to put the sloth
+                // himself at `ottoHeight`, with his baseline on `ottoBottom`.
+                let aura = pose.hasPrefix("OttoAura")
+                let drawn = aura ? ottoHeight / OttoAuraFigure.bodyShare : ottoHeight
+                let bottom = aura ? ottoBottom + drawn * (1 - OttoAuraFigure.baseline) : ottoBottom
                 Image(pose)
                     .resizable()
                     .scaledToFit()
-                    .frame(height: ottoHeight)
+                    .frame(height: drawn)
                     .brightness(dim < 1 ? -(1 - dim) * 0.5 : 0)
-                    .position(x: size.width / 2, y: ottoBottom - ottoHeight / 2)
+                    .position(x: size.width / 2, y: bottom - drawn / 2)
                     .accessibilityHidden(true)
                 if !line.isEmpty {
                     VStack {
@@ -719,11 +725,13 @@ private struct TwoDoorsScene: View {
             let ottoBottom = size.height - 130
             ZStack {
                 ValleyScene(progress: 0, showsFigure: false)
-                Image("OttoCurious")
+                let drawn = ottoHeight / OttoAuraFigure.bodyShare
+                Image(OttoAuraFigure.asset(.steady))
                     .resizable()
                     .scaledToFit()
-                    .frame(height: ottoHeight)
-                    .position(x: size.width / 2, y: ottoBottom - ottoHeight / 2)
+                    .frame(height: drawn)
+                    .position(x: size.width / 2,
+                              y: ottoBottom + drawn * (1 - OttoAuraFigure.baseline) - drawn / 2)
                 VStack {
                     Spacer(minLength: 0)
                     OttoLine(text: "What do you want more right now?", ink: day.ink)

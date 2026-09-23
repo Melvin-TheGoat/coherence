@@ -309,7 +309,7 @@ final class BlockRulesTests: XCTestCase {
 /// Otto's twenty screens: only the true ones, and never the same twice running.
 final class InterventionPickerTests: XCTestCase {
 
-    private func context(hour: Int = 14, streak: Int = 0, aura: OttoAura.Stage = .curious,
+    private func context(hour: Int = 14, streak: Int = 0, aura: OttoAura.Stage = .stirring,
                          friend: String? = nil) -> InterventionContext {
         InterventionContext(hour: hour, streak: streak, aura: aura, friendWhoSat: friend)
     }
@@ -337,7 +337,7 @@ final class InterventionPickerTests: XCTestCase {
     }
 
     func test_noGlowAskWhenHeIsAlreadyEnlightened() {
-        XCTAssertFalse(InterventionPicker.eligible(context(aura: .enlightened)).contains(.glow))
+        XCTAssertFalse(InterventionPicker.eligible(context(aura: .nirvana)).contains(.glow))
     }
 
     func test_neverTheSameScreenTwiceRunning() {

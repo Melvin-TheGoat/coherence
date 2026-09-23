@@ -37,7 +37,7 @@ enum InterventionPicker {
             case .wakingOtto, .affirmation: return context.isMorning
             case .bedtime: return context.isNight
             case .streak: return context.streak >= 2
-            case .glow: return context.aura < .enlightened
+            case .glow: return context.aura < .nirvana
             case .friend: return context.friendWhoSat != nil
             default: return true
             }

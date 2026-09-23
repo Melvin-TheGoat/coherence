@@ -3446,6 +3446,70 @@ nobody has, and it cannot draw a shield either.
   everywhere the number appears. `PaywallLadderTests` pins all of it,
   including that the ladder never grows past two rungs.
 
+## OTTO HAS SEVEN STATES, DRAWN AS ONE SHEET (2026-09-22, Melvin: "Yessir this is fire")
+
+`mockups/otto-v4/sheet.png`, generated in ONE ChatGPT run from
+`mockups/otto-v4/PROMPTS.md`. One state per chat drifted (the stage 3 run
+arrived with dust around him that no other stage had, and patchier fur than
+stage 2), so the rule is: **a progression is generated as one image, never
+state by state.**
+
+- **`OttoAura.Stage` is seven cases whose raw values are the DRAWING NUMBER,
+  1 to 7, not a level**: withered, faded, stirring, steady, bright, radiant,
+  nirvana, in bands of fifteen (0-14 ... 90-100). Everyone starts at 40, in
+  Stirring (half gray), so the first session is the one that brings his
+  colour back (Steady). `floats` is true from Radiant up. `OttoAuraTests`
+  pins the bands and the three promises.
+- **`tools/otto_aura_cut.swift` cuts the sheet**, and it is Swift because
+  this Mac has no numpy or PIL. The figure is found by DARKNESS (every
+  channel under 178), closed by 3 px so the cream claws join the fur, then
+  hole-filled so the face and belly come in. Everything else is
+  **un-composited off the white** (colour to alpha), which turns the drawn
+  haze, motes and halo into real translucent light that glows over the sky
+  instead of a pale blob. The printed numbers are found and erased first;
+  rows split at the gap between bodies so a mote is never handed to the row
+  above. `--normalize 490` scales every state to the same BODY WIDTH (the
+  model drew the second row 12% bigger) and seats them on one baseline in
+  one 664 x 744 canvas (`mockups/otto-v4/canvas.json`).
+- **`OttoAuraFigure` draws the seven stills** (`OttoAura1` to `OttoAura7`),
+  with the light baked in, so the SwiftUI glow, orbits, sparks and ripples
+  are deleted. Canvas constants: baseline 0.872, Steady's body 0.82 of the
+  height; anything placing an aura still (the Block interventions do) must
+  scale by `bodyShare` and hang it on `baseline`. Radiant and Nirvana float
+  and bob. `OttoLow`, `OttoFrustrated` and `OttoCurious` are deleted.
+- **Next, and asked for: the Rive rig** (Melvin: "the bugs should come and
+  go periodically. The aura should swirl around. He should be floating up
+  and down"). It needs a CLEAN sheet (no bugs, no light) and a sheet of the
+  bits (moth open and folded, beetle, fly, the mandala alone), asked for in
+  the same ChatGPT chat, and its own Rive file `OttoAura` so the session rig
+  (one artboard, see the export note) stays untouched. The stills stay as the
+  fallback when the rig cannot load.
+
+## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
+
+"More on theme, like in a green forest area like the home menu but its in
+the background."
+
+- **The valley is drawn ONCE, by `OnboardingView`**, behind the screen
+  ZStack, and `.environment(\.onboardingSharedGround, true)` turns every
+  screen's `onboardingGround` transparent. So screens slide across a world
+  that stays put rather than each carrying a copy of the sky. Outside
+  onboarding (the paywall from Home) `onboardingGround` still draws the paper.
+- **Type on the meadow is white with a shadow** (`onMeadow()`; `FootnoteInk`
+  picks it under the shared ground): the hint, "Not now", footnotes. Grey
+  captions over the ridge could not be read, so the permission screen's
+  caption moved onto its card and sign-in's words moved up onto the sky.
+  Answer plates are opaque white with a soft shadow; the chosen one's gold
+  wash sits ON the plate, since a 10% wash over the valley showed the ridge
+  through it.
+- **"How stressed have you been lately?" is answered on Otto** ("should show
+  the sloth slider, combine it with that screen"). He sits on his cushion in
+  the shared valley (`OnboardingValley` shows him only on this step) and asks
+  it in his bubble; dragging the bar changes his state, Fine his brightest
+  and Burnt out withered (`StressScreen.stage(for:)`). It sweeps once on a
+  fresh screen, never over an answer already given. The aura demo screen is
+  cut the day it was built and routes past like the others.
+
 ## THE BETA CRASHED ON LAUNCH A THIRD TIME, AND THE PROFILE WAS THE LIAR (2026-09-22)
 
 Same crash family as 2026-09-12 and 2026-09-15: **`CKContainer` traps on a

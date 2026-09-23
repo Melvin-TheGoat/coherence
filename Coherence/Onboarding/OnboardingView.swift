@@ -106,7 +106,8 @@ struct OnboardingView: View {
                  .calculating, .result, .cost, .proofBody, .sampleStart,
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
                  .rating, .watchConnect, .breathe, .sessionResults, .paywall,
-                 .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro:
+                 .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
+                 .auraDemo:
                 return true
             default:
                 return false
@@ -175,6 +176,9 @@ struct OnboardingView: View {
 
     /// The session the walkthrough's breathing practice produced.
     @State private var walkthroughSessionID: UUID?
+
+    /// Taps on Otto on the stress screen: he jiggles, as he does on Home.
+    @State private var ottoPokes = 0
 
     /// After the wall: sign-in (optional), then the tour for Watch owners.
     /// The wall sits between health consent and sign-in for everyone: the
@@ -269,11 +273,19 @@ struct OnboardingView: View {
         // Note for testing: the Simulator plays no haptics at all. Judging any
         // of this needs a device.
         ZStack {
+            // The valley, drawn once behind every screen (Melvin, 2026-09-22),
+            // so the screens slide across a world that stays where it is.
+            // Otto sits in it on the stress screen, where the answer is drawn
+            // on him.
+            OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress) : nil,
+                             jiggle: ottoPokes)
+
             content
                 .id(screenIdentity)
                 .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: screenIdentity)
         }
+            .environment(\.onboardingSharedGround, true)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
             .onAppear {
@@ -333,9 +345,12 @@ struct OnboardingView: View {
                              otherText: $answers.motivationOther,
                              count: interviewCount) { go(nextAfter(.motivation)) }
 
+        // The stress question and the aura slider are one screen (Melvin,
+        // 2026-09-22): the answer is drawn on Otto as it is dragged.
         case .stress:
             StressScreen(stress: $answers.stress,
-                         count: interviewCount) { go(nextAfter(.stress)) }
+                         count: interviewCount,
+                         onPoke: { ottoPokes += 1 }) { go(nextAfter(.stress)) }
 
         // Cut 2026-09-15 (doingNothing) and 2026-09-19 (aloneWithThoughts,
         // Melvin). The Step cases stay so resume records and ONBOARDING_STEP
@@ -438,13 +453,17 @@ struct OnboardingView: View {
         // app TELLING somebody what it does. The screen that replaced them
         // hands them the thing instead. Kept as cases for resume records.
         case .whatsWaiting:
-            Color.clear.onAppear { go(.auraDemo) }
+            Color.clear.onAppear { go(.permission) }
 
         case .blockIntro:
-            Color.clear.onAppear { go(.auraDemo) }
+            Color.clear.onAppear { go(.permission) }
 
+        // Folded into the stress question the day after it was built
+        // (Melvin, 2026-09-22: "'how stressed are you' should show the sloth
+        // slider, combine it with that screen instead of them being
+        // separate"). Kept as a case for resume records.
         case .auraDemo:
-            AuraDemoScreen { go(.permission) }
+            Color.clear.onAppear { go(.permission) }
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,
@@ -803,5 +822,20 @@ struct HealthConsentScreen: View {
         .padding(14)
         .background(AppColor.backgroundSecondary.opacity(0.7),
                     in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+/// The valley every onboarding screen stands in, from the top of the day, the
+/// same place Home is. Nobody sits in it except on the stress screen, where
+/// Otto's cushion and Otto fade in and his state follows the answer.
+private struct OnboardingValley: View {
+    let stage: OttoAura.Stage?
+    let jiggle: Int
+
+    var body: some View {
+        ValleyScene(progress: 0, aura: stage ?? .steady, jiggle: jiggle,
+                    showsFigure: stage != nil)
+            .animation(.easeInOut(duration: 0.35), value: stage != nil)
+            .accessibilityHidden(stage == nil)
     }
 }

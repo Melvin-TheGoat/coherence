@@ -10,8 +10,9 @@ import Foundation
 /// (`StreakCalculator.restAvailable`), so the two can never disagree. Today
 /// only counts once it is practised: an unfinished day is not a missed one.
 ///
-/// So the first session lifts him from Curious to Progressing, five days in a
-/// row reaches Enlightened, and a week away from Enlightened brings him to Low.
+/// So the first session lifts him from Stirring to Steady (his colour comes
+/// back), five days in a row reaches Nirvana, and a week away from Nirvana
+/// brings him to Withered.
 ///
 /// **"Not now" (Melvin, 2026-09-22).** Telling Otto "Not now" costs nothing if
 /// a session follows inside the same window. If the window closes with no
@@ -33,20 +34,31 @@ enum OttoAura {
     static let dayGain = 10
     static let missCost = 20
 
-    /// The six drawings, by the level they stand for.
+    /// The seven drawings, worst to best (Melvin, 2026-09-22, drawn as one
+    /// sheet: `mockups/otto-v4/sheet.png`). **His state is physical, never a
+    /// mood**: near dead, gray and carrying bugs at the bottom, levitating in
+    /// light at the top, and calm in every one of them. Raw values are the
+    /// drawing's number, 1 to 7, NOT a level.
     enum Stage: Int, CaseIterable, Comparable {
-        case low = 0, frustrated = 20, curious = 40, progressing = 60, inFlow = 80, enlightened = 100
+        case withered = 1, faded, stirring, steady, bright, radiant, nirvana
 
+        /// Seven bands of fifteen, the top one a point wider. Everyone starts
+        /// at 40, in Stirring, so the first session is the one that brings
+        /// his colour back.
         init(level: Int) {
             switch level {
-            case ..<10: self = .low
-            case ..<30: self = .frustrated
-            case ..<50: self = .curious
-            case ..<70: self = .progressing
-            case ..<90: self = .inFlow
-            default:    self = .enlightened
+            case ..<15: self = .withered
+            case ..<30: self = .faded
+            case ..<45: self = .stirring
+            case ..<60: self = .steady
+            case ..<75: self = .bright
+            case ..<90: self = .radiant
+            default:    self = .nirvana
             }
         }
+
+        /// He has left the ground from here up.
+        var floats: Bool { self >= .radiant }
 
         static func < (a: Stage, b: Stage) -> Bool { a.rawValue < b.rawValue }
     }
