@@ -73,6 +73,12 @@ struct OnboardingView: View {
         /// Added 2026-09-20: how many questions are coming, declared before
         /// the first one. Last in the enum, for the reason above.
         case questionCount
+        /// Added 2026-09-22: what Block does, on Block builds, after what's
+        /// waiting. Last, for the same reason.
+        case blockIntro
+        /// Added 2026-09-22, replacing both of the screens above: Otto's glow,
+        /// dragged by hand. Last in the enum, for the reason above.
+        case auraDemo
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -100,7 +106,7 @@ struct OnboardingView: View {
                  .calculating, .result, .cost, .proofBody, .sampleStart,
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
                  .rating, .watchConnect, .breathe, .sessionResults, .paywall,
-                 .watchGate, .watchSetup, .waitlist:
+                 .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro:
                 return true
             default:
                 return false
@@ -426,8 +432,19 @@ struct OnboardingView: View {
         case .wall:
             Color.clear.onAppear { go(afterWall) }
 
+        // Both cut the same day they were questioned (Melvin, 2026-09-22:
+        // "they look AI generated you know, maybe just get rid of them"). A
+        // list of three features and a paragraph about Block were both the
+        // app TELLING somebody what it does. The screen that replaced them
+        // hands them the thing instead. Kept as cases for resume records.
         case .whatsWaiting:
-            WhatsWaitingScreen { go(.permission) }
+            Color.clear.onAppear { go(.auraDemo) }
+
+        case .blockIntro:
+            Color.clear.onAppear { go(.auraDemo) }
+
+        case .auraDemo:
+            AuraDemoScreen { go(.permission) }
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,

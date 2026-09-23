@@ -21,13 +21,29 @@ struct FriendsTab: View {
                     ProgressView().tint(AppColor.calmAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .unavailable:
+                    #if DEBUG
+                    ScrollView {
+                        VStack(spacing: 14) {
+                            testModeCard
+                            UnavailableCard(model: model)
+                        }
+                    }
+                    #else
                     UnavailableCard(model: model)
+                    #endif
                 case .needsUsername:
                     CreateProfileView(model: model,
                                       suggested: user?.username ?? "",
                                       nickname: user?.displayName ?? "") { _ in }
                 case .ready:
+                    #if DEBUG
+                    VStack(spacing: 0) {
+                        if model.testMode { testModeBanner }
+                        FeedView(model: model, myDisplayName: user?.displayName ?? "")
+                    }
+                    #else
                     FeedView(model: model, myDisplayName: user?.displayName ?? "")
+                    #endif
                 }
             }
             .screenBackground()
@@ -49,6 +65,41 @@ struct FriendsTab: View {
             Text(model.errorText ?? "")
         }
     }
+
+    #if DEBUG
+    /// Friends with no iCloud, for a simulator. Development builds only.
+    private var testModeCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Test mode")
+                .font(DisplayFont.display(17))
+                .foregroundStyle(AppColor.textPrimary)
+            Text("Development builds only. Friends runs on a fake database kept on this device, so the tab works without iCloud. Nothing leaves the phone and nothing is kept between launches.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Turn test mode on") { Task { await model.setTestMode(true) } }
+                .buttonStyle(PrimaryButtonStyle())
+        }
+        .card()
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 8)
+    }
+
+    private var testModeBanner: some View {
+        HStack(spacing: 8) {
+            Text("Test mode: a fake database on this device")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(AppColor.textSecondary)
+            Spacer(minLength: 0)
+            Button("Turn off") { Task { await model.setTestMode(false) } }
+                .font(AppFont.caption.weight(.bold))
+                .foregroundStyle(AppColor.accentGoldText)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.vertical, 7)
+        .background(AppColor.backgroundSecondary)
+    }
+    #endif
 }
 
 // MARK: - Unavailable
@@ -472,13 +523,13 @@ struct PostCard: View {
                         // session card in the app. It leaves three columns that
                         // line up from card to card and keeps one amber object
                         // per post.
-                        scoreCapsule.padding(11)
+                        if post.score != nil { scoreCapsule.padding(11) }
                     }
                     .padding(.horizontal, Self.inset).padding(.top, 14)
             }
 
             HStack(spacing: 0) {
-                if post.photoURL == nil { stat("Score", "\(post.score)") }
+                if post.photoURL == nil, let score = post.score { stat("Score", "\(score)") }
                 stat("Time", "\(post.minutes)m")
                 stat("Day streak", "\(post.streak)")
                 if let t = post.technique, !t.isEmpty { stat("Technique", t) }
@@ -564,7 +615,7 @@ struct PostCard: View {
     }
 
     private var scoreCapsule: some View {
-        Text("\(post.score)")
+        Text(post.score.map(String.init) ?? "")
             .font(DisplayFont.display(16, .heavy))
             .foregroundStyle(AppColor.textOnAccent)
             .monospacedDigit()
@@ -648,8 +699,22 @@ private struct PostPhotoView: View {
 struct PersonAvatar: View {
     let name: String?
     var size: CGFloat = 30
-    /// The profile photo when there is one; initials otherwise.
+    /// Their picture, when they have picked one. Otto otherwise.
     var photoURL: URL? = nil
+
+    var body: some View {
+        ProfilePortrait(photoURL: photoURL, size: size)
+            .overlay(Circle().stroke(AppColor.accentGold, lineWidth: size > 40 ? 2 : 1.5))
+    }
+}
+
+/// A person's picture, or Otto (Melvin, 2026-09-22: "can have otto be a
+/// default if you dont want to pick anything"). One view, so a face is drawn
+/// the same way on Profile, in the feed and on a person's page.
+struct ProfilePortrait: View {
+    var photoURL: URL?
+    var size: CGFloat = 30
+
     @State private var photo: UIImage?
 
     var body: some View {
@@ -657,23 +722,15 @@ struct PersonAvatar: View {
             if let photo {
                 Image(uiImage: photo).resizable().scaledToFill()
             } else {
-                AppColor.accentGold.opacity(0.18)
-                Text(initials)
-                    .font(.system(size: size * 0.36, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGoldText)
+                AppColor.sky
+                OttoMark(size: size * 0.8, pose: .head)
             }
         }
         .frame(width: size, height: size)
         .clipShape(Circle())
-        .overlay(Circle().stroke(AppColor.accentGold, lineWidth: size > 40 ? 2 : 1.5))
         .task(id: photoURL) {
             photo = photoURL.flatMap { UIImage(contentsOfFile: $0.path) }
         }
-    }
-
-    private var initials: String {
-        guard let name, !name.isEmpty else { return "•" }
-        return name.split(separator: " ").prefix(2).map { String($0.prefix(1)).uppercased() }.joined()
     }
 }
 
@@ -929,7 +986,11 @@ struct PersonView: View {
                         statTile(posts.first.flatMap { Date().timeIntervalSince($0.practicedAt) < 36 * 3600 ? "\($0.streak)" : nil } ?? "–",
                                  "Streak")
                         statTile("\(posts.count)", "Posts")
-                        statTile(posts.isEmpty ? "–" : "\(posts.map(\.score).reduce(0, +) / posts.count)", "Avg score")
+                        // Only the sits something measured: a phone session
+                        // has no score, and counting it as a zero would drag
+                        // an average nobody earned.
+                        let scores = posts.compactMap(\.score)
+                        statTile(scores.isEmpty ? "–" : "\(scores.reduce(0, +) / scores.count)", "Avg score")
                     }
                 }
 

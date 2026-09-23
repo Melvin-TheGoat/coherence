@@ -37,12 +37,19 @@ struct ValleyScene: View {
     /// is the sit and the Ready screen, which draw `pose`.
     var aura: OttoAura.Stage? = nil
 
+    /// Bumped by a tap on him on Home: the aura figure jiggles
+    /// (`OttoJiggle`). Nothing else sets it, so the sit and the Ready screen
+    /// never move this way.
+    var jiggle: Int = 0
+
     /// Draw the valley with nobody in it.
     ///
     /// Profile's band needs the place without the character: Otto is the
     /// portrait on that page, and drawing him in the band as well would put
     /// two of him on one screen. The cushion goes with him, since an empty
-    /// cushion reads as somebody having just left.
+    /// cushion reads as somebody having just left. The Block tab and Otto's
+    /// screens ask for it too: they stand their own pose (clipboard, waving,
+    /// slumped) in the meadow.
     var showsFigure: Bool = true
 
     /// Move him up to the corner, small, so a list can have the meadow.
@@ -198,7 +205,7 @@ struct ValleyScene: View {
                 if !showsFigure {
                     EmptyView()
                 } else if let aura {
-                    OttoAuraFigure(stage: aura, size: tall, rig: rig)
+                    OttoAuraFigure(stage: aura, size: tall, rig: rig, jiggle: jiggle)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }

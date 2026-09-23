@@ -106,6 +106,21 @@ struct ReachChip: View {
     }
 }
 
+/// A measured session's score, on the row or on its picture.
+private struct ScoreCapsule: View {
+    let score: Double?
+
+    var body: some View {
+        Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
+            .font(.system(size: 13.5, weight: .bold, design: .rounded))
+            .foregroundStyle(score == nil ? AppColor.textSecondary : AppColor.textOnAccent)
+            .monospacedDigit()
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(score == nil ? AppColor.trace : AppColor.accentGold))
+    }
+}
+
 struct EvidenceRow: View {
     let session: Session
     let score: Double?
@@ -144,6 +159,9 @@ struct EvidenceRow: View {
                         }
                     }
                     Spacer(minLength: 0)
+                    if thumbnail == nil, !session.isPhoneOnly, score != nil {
+                        ScoreCapsule(score: score)
+                    }
                     if let rating { RatingChip(rating: rating) }
                 }
                 // Three em dashes under the words Heart, Still and Breath is
@@ -183,42 +201,34 @@ struct EvidenceRow: View {
     }
 
     /// The panel. A photo fills it; Otto sits in it on a wash of the sky.
-    private var picture: some View {
-        ZStack {
-            if let thumbnail {
+    /// **No picture panel without a picture** (Melvin, 2026-09-22: "get rid
+    /// of the sloth images in recent, the sloth looks weird as fuck if hes
+    /// there on every meditation"). He was the panel's filler, and a column
+    /// of identical sloths is wallpaper, the same note that took him off the
+    /// log. A photo still takes the panel; without one the row is its words,
+    /// and the score moves up beside the rating.
+    @ViewBuilder private var picture: some View {
+        if let thumbnail {
+            ZStack {
                 Color.clear.overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
-            } else {
-                AppColor.sky
-                // He sits above the score badge rather than behind it: at the
-                // first size his crossed legs ran straight through the number.
-                OttoMark(size: panelWidth * 0.72, pose: pose)
-                    .padding(.bottom, 22)
-            }
-            // The score rides on the picture so the one gold object per card
-            // is also the first thing the eye lands on. A sit nothing measured
-            // gets no capsule at all: an empty one is a slot waiting to be
-            // filled, and nothing is coming to fill it.
-            VStack {
-                Spacer()
-                HStack {
-                    Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
-                        .font(.system(size: 13.5, weight: .bold, design: .rounded))
-                        .foregroundStyle(score == nil ? AppColor.textSecondary
-                                                      : AppColor.textOnAccent)
-                        .monospacedDigit()
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
-                        .background(Capsule().fill(score == nil ? AppColor.trace
-                                                                : AppColor.accentGold))
-                    Spacer(minLength: 0)
+                // The score rides on the picture so the one gold object per
+                // card is also the first thing the eye lands on. A sit
+                // nothing measured gets no capsule at all: an empty one is a
+                // slot waiting to be filled, and nothing is coming to fill it.
+                VStack {
+                    Spacer()
+                    HStack {
+                        ScoreCapsule(score: score)
+                        Spacer(minLength: 0)
+                    }
                 }
+                .padding(7)
+                .opacity(session.isPhoneOnly ? 0 : 1)
             }
-            .padding(7)
-            .opacity(session.isPhoneOnly ? 0 : 1)
+            .frame(width: panelWidth)
+            .frame(maxHeight: .infinity)
+            .clipped()
         }
-        .frame(width: panelWidth)
-        .frame(maxHeight: .infinity)
-        .clipped()
     }
 
     /// Otto follows the clock, not the score. Somebody who sits at dawn and

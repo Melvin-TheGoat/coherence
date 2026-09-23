@@ -159,4 +159,44 @@ final class OttoAuraTests: XCTestCase {
             XCTAssertEqual(OttoAura.Stage(level: value), stage, "level \(value)")
         }
     }
+
+    // MARK: - What he says when you tap him (Melvin, 2026-09-22)
+
+    func test_sayings_areTwentyFiveAndNeverRepeat() {
+        XCTAssertGreaterThanOrEqual(OttoSayings.all.count, 25)
+        XCTAssertEqual(Set(OttoSayings.all).count, OttoSayings.all.count)
+    }
+
+    /// The score and the Watch-only mechanism are on their way out, and the
+    /// doorway prescribed one technique out of endless ones.
+    func test_sayings_neverMentionAScoreADoorwayOrAWatch() {
+        for line in OttoSayings.all {
+            let lower = line.lowercased()
+            for banned in ["score", "doorway", "watch", "heart rate", "measure"] {
+                XCTAssertFalse(lower.contains(banned), "\"\(line)\" mentions \(banned)")
+            }
+        }
+    }
+
+    func test_sayings_carryNoEmDashesAndFitTwoLinesOfHisBubble() {
+        for line in OttoSayings.all {
+            XCTAssertFalse(line.contains("\u{2014}") || line.contains("\u{2013}"), line)
+            // Two lines in his bubble on a 375pt phone; a third runs into
+            // the Guide circle on Home.
+            XCTAssertLessThanOrEqual(line.count, 74, line)
+        }
+    }
+
+    /// Each day starts him on a different line, the same one all day, and
+    /// every line still comes round.
+    func test_sayings_startSomewhereNewEachDayAndKeepEveryLine() {
+        let day = cal.date(from: DateComponents(year: 2026, month: 9, day: 22, hour: 9))!
+        let later = cal.date(byAdding: .hour, value: 10, to: day)!
+        let tomorrow = cal.date(byAdding: .day, value: 1, to: day)!
+        let today = OttoSayings.forDay(day, calendar: cal)
+        XCTAssertEqual(today, OttoSayings.forDay(later, calendar: cal))
+        XCTAssertNotEqual(today.first, OttoSayings.forDay(tomorrow, calendar: cal).first)
+        XCTAssertEqual(today.sorted(), OttoSayings.all.sorted())
+    }
 }
+

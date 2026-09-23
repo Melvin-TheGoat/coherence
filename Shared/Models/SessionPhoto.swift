@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-/// The photo taken on the Save session screen, one per session at most.
+/// The photo or video kept with a session, one per session at most.
 ///
 /// Aziz, 2026-09-15: "you should still have an option to take pictures after
 /// the meditation even if its a private one and then those pictures can be
@@ -28,15 +28,22 @@ final class SessionPhoto {
     @Attribute(.externalStorage) var jpeg: Data?
     /// About 240 px on the long side. Drawn on the calendar and in rows.
     var thumbnail: Data?
+    /// A video, when they picked one (Melvin, 2026-09-22: any photo and any
+    /// video, shared or private). `jpeg` then holds its first frame, so the
+    /// calendar, the rows and the results screen draw it without knowing
+    /// there is a film behind it. Exported small before it is stored.
+    @Attribute(.externalStorage) var video: Data?
     var createdAt: Date = Date()
 
     init(id: UUID = UUID(), sessionID: UUID? = nil, takenAt: Date = Date(),
-         jpeg: Data? = nil, thumbnail: Data? = nil, createdAt: Date = Date()) {
+         jpeg: Data? = nil, thumbnail: Data? = nil, video: Data? = nil,
+         createdAt: Date = Date()) {
         self.id = id
         self.sessionID = sessionID
         self.takenAt = takenAt
         self.jpeg = jpeg
         self.thumbnail = thumbnail
+        self.video = video
         self.createdAt = createdAt
     }
 }

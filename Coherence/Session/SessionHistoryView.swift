@@ -166,14 +166,14 @@ struct ProfileTab: View {
         users.first { $0.appleUserID != "" && $0.deletedAt == nil } ?? users.first
     }
 
-    /// You, on a white card with Otto's head on its seam.
+    /// You, on a white card with your picture on its seam.
     ///
-    /// **There is no photo of you here** (Aziz, 2026-09-21: "no more pfp and
-    /// make the sloth in the circle"). Otto's head is the portrait, on your
-    /// page and on everybody else's, which means people are told apart by
-    /// name and handle and by their own face in the selfie on each post.
-    /// When that stops being enough, the fix is already built: draw each
-    /// person's Otto at THEIR aura stage.
+    /// **Any picture you like, and Otto when you have not picked one**
+    /// (Melvin, 2026-09-22: "the profile photo just a picture of whatever you
+    /// want, either a selfie or from your library, and then can have otto be
+    /// a default"). It was Otto for everybody for a day (Aziz, 2026-09-21:
+    /// "no more pfp and make the sloth in the circle"), which told people
+    /// apart by name and handle alone.
     ///
     /// The circle sits on the card's edge rather than on the scene, because
     /// on grass a circle needs a white ring to read as a portrait instead of
@@ -214,9 +214,7 @@ struct ProfileTab: View {
                         in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
 
-            OttoMark(size: 62, pose: .head)
-                .frame(width: 78, height: 78)
-                .background(Circle().fill(AppColor.sky))
+            ProfilePortrait(photoURL: friendsProfile?.avatarURL, size: 78)
                 .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
                 .offset(y: -39)
         }

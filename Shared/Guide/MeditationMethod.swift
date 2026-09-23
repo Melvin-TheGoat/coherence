@@ -59,11 +59,25 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
     /// Every method a session can be tagged with, including variants, flattened
     /// for the picker.
     public static var loggable: [(id: String, label: String)] {
+        techniques + sounds
+    }
+
+    /// The practices: what you did with your attention.
+    public static var techniques: [(id: String, label: String)] {
         [(silenceID, "Silence"),
          (breathworkID, "Breath work"),
          (guidedID, "Guided meditation")] + all.flatMap { method -> [(String, String)] in
             guard !method.variants.isEmpty else { return [(method.id, method.title)] }
             return method.variants.map { (($0.id), "\(method.title) · \($0.title)") }
+        }
+    }
+
+    /// Every sound 808 offers, as something you can say you did (Melvin,
+    /// 2026-09-22). `SoundMenu` is the one list of them, so a sound added
+    /// there appears here, on the results card and on Save session at once.
+    public static var sounds: [(id: String, label: String)] {
+        SoundMenu.groups.flatMap { group in
+            group.entries.map { (id: $0.id, label: "\(group.name) · \($0.title)") }
         }
     }
 

@@ -18,6 +18,15 @@ enum CloudEntitlement {
     /// The first iCloud container identifier the binary is entitled to, or
     /// nil when a profile is present and lists none.
     static var container: String? {
+        // The build says so itself: the side-by-side beta strips the iCloud
+        // entitlement from the BINARY, while its provisioning profile still
+        // advertises the container its App ID may hold. Reading the profile
+        // alone then hands back a container the process does not carry, and
+        // `CKContainer(identifier:)` traps on exactly that (2026-09-22, the
+        // third time this crash has arrived by a new road). Nothing at
+        // runtime can read our own signed entitlements without private API,
+        // so the build that removes them leaves this flag behind.
+        if Bundle.main.object(forInfoDictionaryKey: "CloudKitDisabled") as? Bool == true { return nil }
         if let value = Bundle.main.object(forInfoDictionaryKey: "CloudKitContainerOverride") as? String,
            !value.isEmpty {
             return value
@@ -32,6 +41,7 @@ enum CloudEntitlement {
     /// Whether constructing a `CKContainer` is safe in this process: a
     /// profile that names a container, or no profile at all (store build).
     static var mayHoldContainer: Bool {
+        if Bundle.main.object(forInfoDictionaryKey: "CloudKitDisabled") as? Bool == true { return false }
         guard hasProfile else { return true }
         return container != nil
     }

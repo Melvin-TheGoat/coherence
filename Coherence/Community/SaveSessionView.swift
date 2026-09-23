@@ -1,28 +1,26 @@
 import SwiftUI
 import SwiftData
+import PhotosUI
+import AVFoundation
+import AVKit
+import UniformTypeIdentifiers
 
-/// **Save session**: Strava's iOS screen in Letterboxd's skin.
+/// **The session screen**: everything you might say about a sit, on one page
+/// (`mockups/after-session.html`, screen 1, Melvin's pick 2026-09-22).
 ///
-/// Mockups, in order: `mockups/save-session-v4.html` (Strava's real iOS
-/// anatomy: Cancel-style exit top left, nothing top right, one filled button
-/// pinned at the bottom), `v5` (the senior review: one big number, visibility
-/// first, a portrait selfie tile, a button that names the block), `v6` (skin B,
-/// bare text on hairlines, Aziz's pick 2026-09-15) and `v7` (a photo for every
-/// sit, optional when private, shown on the calendar).
+/// It no longer opens itself after a session. A finished sit goes to Home and
+/// plays Otto's glow; a toast above the tab bar opens this when they want it.
+/// So this screen is somewhere you choose to be, and it may take its time.
 ///
-/// Top to bottom: the score as the one big thing, then who can see it, which
-/// comes first because it decides whether the description and the selfie
-/// exist at all (cause above effect), the title, the description friends
-/// read, the photo tile, then Details: technique and private notes. Nothing
-/// is boxed. Rules run edge to edge between sections and start at the text
-/// within one. Gold lands three times, once per section: the score, the tile
-/// when sharing needs a selfie, the button.
+/// Top to bottom: the sky band with the length as the one big number and
+/// Otto's head as the mark, then how it felt (a slider out of ten, not
+/// emojis), what you did (every technique AND every sound 808 offers), the
+/// description friends read, private notes, photos or video, and who can see
+/// it. Nothing is required. Gold lands twice: the slider's fill and Save.
 ///
-/// The button is never dead. While Friends is chosen and there is no selfie
-/// it reads "Take your selfie" and opens the camera; once the shot exists it
-/// reads "Save session". Skip (new sessions) keeps the session as Only you
-/// with the default title, because the session is already stored and a
-/// screen you cannot leave is hostile.
+/// The old version of this screen was Strava's, with visibility first and a
+/// front-camera selfie required before anything could be posted. Both are
+/// gone (Melvin: any photo, any video, for friends and for yourself).
 ///
 /// Friends-gated: only reachable when `FeatureFlags.friends` is on.
 struct SaveSessionView: View {
@@ -49,23 +47,32 @@ struct SaveSessionView: View {
     /// The words behind "Something else", kept and saved like the results
     /// card keeps them.
     @State private var techniqueNote: String = ""
-    @State private var visibility: Visibility = .friends
-    /// A shot taken on this screen and not yet saved.
+    /// Out of ten. nil until the slider is touched, because a slider parked
+    /// at five would file every unrated session as middling.
+    @State private var rating: Int?
+    @State private var visibility: Visibility = .private
+    /// Media taken or picked on this screen and not yet saved.
     @State private var newPhoto: UIImage?
-    /// The photo already kept with the session. A retake replaces it.
+    @State private var newVideo: Data?
+    /// What the session already keeps. Picking again replaces it.
     @State private var storedPhoto: UIImage?
+    @State private var storedVideo: Data?
+    @State private var pickedItem: PhotosPickerItem?
+    @State private var loadingMedia = false
     @State private var loaded = false
-    /// What the session was saved as before this sheet opened, so an Only-you
-    /// save only reaches iCloud when there is a post to take down.
+    /// What the session was saved as before this screen opened, so an
+    /// Only-you save only reaches iCloud when there is a post to take down.
     @State private var savedVisibility: Visibility = .private
-    /// Set once the person taps the visibility menu, so iCloud finishing its
-    /// load late never overrides their choice.
+    /// Set once they choose, so iCloud finishing its load late never
+    /// overrides the choice.
     @State private var userPicked = false
 
     @State private var saving = false
     @State private var showCamera = false
     @State private var showRules = false
     @State private var showClaim = false
+    @State private var playing = false
+    @State private var showResults = false
     @State private var problem: String?
 
     /// Which field holds the keyboard, so Done can put it away.
@@ -74,137 +81,148 @@ struct SaveSessionView: View {
 
     enum Visibility: String { case friends, `private` }
 
-    private var hasPhoto: Bool { newPhoto != nil || storedPhoto != nil }
+    private var hasMedia: Bool { newPhoto != nil || storedPhoto != nil }
     private var shownPhoto: UIImage? { newPhoto ?? storedPhoto }
-    /// Friends needs a selfie (the BeReal rule) and there is none yet.
-    private var needsSelfie: Bool { visibility == .friends && !hasPhoto }
+    private var shownVideo: Data? { newVideo ?? storedVideo }
     private var hairline: Color { AppColor.textSecondary.opacity(0.12) }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
+        ZStack(alignment: .bottom) {
+            VStack(spacing: 0) {
+                // Pinned, not scrolled: scrolling it away ran the length and
+                // the title straight through the status bar, and the X went
+                // with them.
+                skyBand.zIndex(1)
+                ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    statsHeader
+                    feelSection
                     bleed
-                    visibilityRow
-                    visibilityNote
-                    titleRow(last: visibility == .private)
-                    if visibility == .friends { descriptionRow }
+                    whatSection
                     bleed
-                    PhotoTile(shown: shownPhoto, required: visibility == .friends,
-                              onTap: { showCamera = true },
-                              onSimulatorPick: { newPhoto = $0 })
-                        .padding(.horizontal, AppMetrics.screenPadding)
-                        .padding(.vertical, 12)
+                    if visibility == .friends { descriptionSection; bleed }
+                    notesSection
                     bleed
-                    sectionHeader("Details")
-                    techniqueRow
-                    privateNotesRow
-                    Color.clear.frame(height: 110)
+                    mediaSection
+                    bleed
+                    visibilitySection
+                    if score != nil { bleed; measurementsRow }
+                    Color.clear.frame(height: 132)
                 }
-                // The camera is presented from here, one level below the
-                // sheets on the stack, so it never competes with them.
-                .fullScreenCover(isPresented: $showCamera) {
-                    SelfieCamera { newPhoto = $0 }
+                .padding(.top, 30)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
-            .scrollDismissesKeyboard(.interactively)
-            .screenBackground()
-            .safeAreaInset(edge: .bottom) { dock }
-            .navigationTitle("Save session")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    switch mode {
-                    case .new:  Button("Skip") { skip() }.disabled(saving)
-                    case .edit: Button("Cancel") { onDone() }
-                    }
-                }
-                ToolbarItemGroup(placement: .keyboard) {
-                    Spacer()
-                    Button("Done") { focused = nil }
-                        .font(AppFont.callout.weight(.semibold))
-                }
-            }
-            .sheet(isPresented: $showRules) {
-                CommunityRulesSheet {
-                    rulesAgreed = true
-                    showRules = false
-                    save()
-                }
-                .presentationDetents([.height(260)])
-            }
-            .sheet(isPresented: $showClaim) {
-                NavigationStack {
-                    CreateProfileView(model: community,
-                                      suggested: users.first?.username ?? "",
-                                      nickname: users.first?.displayName ?? "") { _ in showClaim = false }
-                    .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showClaim = false } } }
-                }
-            }
-            .alert("Couldn't share that", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
-                Button("OK") { problem = nil }
-            } message: { Text(problem ?? "") }
-            .task { await load() }
+            dock
         }
-        .interactiveDismissDisabled(mode == .new)
+        .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { focused = nil }
+                    .font(AppFont.callout.weight(.semibold))
+            }
+        }
+        .fullScreenCover(isPresented: $showCamera) { SelfieCamera { newPhoto = $0; newVideo = nil } }
+        .sheet(isPresented: $showRules) {
+            CommunityRulesSheet {
+                rulesAgreed = true
+                showRules = false
+                save()
+            }
+            .presentationDetents([.height(260)])
+        }
+        .sheet(isPresented: $showClaim) {
+            NavigationStack {
+                CreateProfileView(model: community,
+                                  suggested: users.first?.username ?? "",
+                                  nickname: users.first?.displayName ?? "") { _ in showClaim = false }
+                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showClaim = false } } }
+            }
+        }
+        .sheet(isPresented: $playing) {
+            if let data = shownVideo { VideoSheet(data: data) }
+        }
+        .fullScreenCover(isPresented: $showResults) {
+            SessionResultsView(sessionID: sessionID)
+        }
+        .alert("Couldn't share that", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
+            Button("OK") { problem = nil }
+        } message: { Text(problem ?? "") }
+        .onChange(of: pickedItem) { _, item in Task { await take(item) } }
+        .task { await load() }
     }
 
-    // MARK: - Header
+    // MARK: - The sky band
 
-    /// One big number, two small facts. The screen exists to grade the sit,
-    /// so the grade is the only thing at hero size; time and streak are the
-    /// context beside it. Gold on the score and nowhere else in this section.
-    private var statsHeader: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 0) {
-            // Nothing measured this sit, so the minutes are the fact. A hero
-            // "Score –" leads the screen with an absence, and the sit was not
-            // an absence.
-            if let score {
-                stat(label: "Score", value: String(score), unit: nil, hero: true)
-                statDivider
-                stat(label: "Time", value: "\(minutes)", unit: "min", hero: false)
-            } else {
-                stat(label: "Time", value: "\(minutes)", unit: "min", hero: true)
+    /// The valley's sky, the length as the one big number, and Otto's head on
+    /// the edge of it, the way Profile wears him.
+    private var skyBand: some View {
+        let day = DayLight.at(0)
+        return ZStack(alignment: .topLeading) {
+            LinearGradient(colors: [day.sky[0], day.sky[1]], startPoint: .top, endPoint: .bottom)
+            VStack(alignment: .leading, spacing: 2) {
+                Spacer(minLength: 0)
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    Text("\(minutes)")
+                        .font(.system(size: 42, weight: .heavy, design: .rounded))
+                        .monospacedDigit()
+                    Text("min")
+                        .font(.system(size: 15, weight: .bold))
+                }
+                .foregroundStyle(day.ink)
+                TextField("Title your session", text: $title)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(day.ink)
+                    .focused($focused, equals: .title)
+                    .submitLabel(.done)
+                    .onChange(of: title) { _, new in
+                        if new.count > CommunityStore.titleLimit {
+                            title = String(new.prefix(CommunityStore.titleLimit))
+                        }
+                    }
+                Text(when)
+                    .font(AppFont.caption)
+                    .foregroundStyle(day.ink.opacity(0.7))
             }
-            statDivider
-            stat(label: "Streak", value: "\(streak)", unit: streak == 1 ? "day" : "days", hero: false)
-            Spacer(minLength: 0)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 16)
+            .padding(.trailing, 74)
+
+            Button(action: onDone) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(day.ink.opacity(0.75))
+                    .frame(width: 34, height: 34)
+                    .background(AppColor.backgroundPrimary.opacity(0.7), in: Circle())
+            }
+            .padding(.leading, 12)
+            .padding(.top, 10)
         }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 6)
-        .padding(.bottom, 18)
+        .frame(height: 168)
+        .overlay(alignment: .bottomTrailing) {
+            OttoMark(size: 52, pose: .head)
+                .padding(9)
+                .background(AppColor.backgroundPrimary, in: Circle())
+                .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
+                .padding(.trailing, AppMetrics.screenPadding)
+                .offset(y: 26)
+        }
     }
 
     private var minutes: Int {
         max(1, Int((Double(session?.durationSec ?? 0) / 60).rounded()))
     }
 
-    private func stat(label: String, value: String, unit: String?, hero: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(label)
-                .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(AppColor.textSecondary)
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(hero ? .system(size: 40, weight: .heavy, design: .rounded)
-                               : .system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(hero ? AppColor.accentGold : AppColor.textPrimary)
-                    .monospacedDigit()
-                if let unit {
-                    Text(unit)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-            }
-        }
+    /// "Today, 12:48 · Rain", which is the sit in one line.
+    private var when: String {
+        let date = session?.startedAt ?? Date()
+        let day = Calendar.current.isDateInToday(date) ? "Today"
+            : Calendar.current.isDateInYesterday(date) ? "Yesterday"
+            : date.formatted(.dateTime.weekday(.wide).day().month())
+        return "\(day), \(date.formatted(date: .omitted, time: .shortened)) · \(sound)"
     }
 
-    private var statDivider: some View {
-        Rectangle().fill(hairline).frame(width: 1, height: 34).padding(.horizontal, 14)
-    }
-
-    // MARK: - Rows
+    // MARK: - Sections
 
     private var bleed: some View {
         Rectangle().fill(hairline).frame(height: 1)
@@ -212,71 +230,213 @@ struct SaveSessionView: View {
 
     private func sectionHeader(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 17, weight: .bold))
+            .font(.system(size: 15, weight: .bold))
             .foregroundStyle(AppColor.textPrimary)
             .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.top, 14)
-            .padding(.bottom, 4)
+            .padding(.top, 15)
+            .padding(.bottom, 2)
     }
 
-    /// A bare row: content on the page, a hairline under it that starts at
-    /// the text, none under the last row of a section (the bleed follows).
-    private func inset<Content: View>(last: Bool = false, @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(spacing: 0) {
-            content()
-                .padding(.vertical, 13)
-                .padding(.trailing, AppMetrics.screenPadding)
-            if !last { Rectangle().fill(hairline).frame(height: 1) }
-        }
-        .padding(.leading, AppMetrics.screenPadding)
-    }
-
-    private func rowLabel(icon: String?, text: String, placeholder: Bool, chevron: Bool) -> some View {
-        HStack(spacing: 10) {
-            if let icon {
-                Image(systemName: icon)
-                    .font(.system(size: 13))
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(width: 16)
+    /// A slider out of ten (Melvin: a scroll bar, not emojis). It starts in
+    /// the middle and greyed, and only becomes a rating once it is touched.
+    private var feelSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                sectionHeader("How did it feel?")
+                Spacer()
+                Text(rating.map { "\($0) / 10" } ?? "Not rated")
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(rating == nil ? AppColor.textSecondary : AppColor.accentGoldText)
+                    .monospacedDigit()
+                    .padding(.trailing, AppMetrics.screenPadding)
+                    .padding(.top, 15)
             }
-            Text(text)
-                .font(AppFont.callout)
-                .foregroundStyle(placeholder ? AppColor.textSecondary : AppColor.textPrimary)
-                .lineLimit(1)
-            Spacer(minLength: 0)
-            if chevron {
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(AppColor.textSecondary)
+            Slider(value: Binding(get: { Double(rating ?? 5) },
+                                  set: { rating = Int($0.rounded()) }),
+                   in: 0...10, step: 1)
+                .tint(rating == nil ? AppColor.trace : AppColor.accentGold)
+                .padding(.horizontal, AppMetrics.screenPadding)
+            HStack {
+                Text("Rough")
+                Spacer()
+                Text("The best")
             }
+            .font(AppFont.caption)
+            .foregroundStyle(AppColor.textSecondary)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 14)
         }
-        .contentShape(Rectangle())
     }
 
-    /// First, because it governs the rows under it. Each option says what it
-    /// means in a few words, so no caption is needed beneath the row.
-    private var visibilityRow: some View {
-        inset {
+    /// Every technique and every sound (Melvin, 2026-09-22). The sounds are
+    /// grouped the way the picker groups them, so the list stays walkable.
+    private var whatSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("What did you do?")
             Menu {
-                Button { pick(.friends) } label: {
-                    Text("Friends")
-                    Text("selfie, title, score, time, streak")
-                }
-                Button { pick(.private) } label: {
-                    Text("Only you")
-                    Text("nothing leaves your phone")
-                }
+                TechniqueOptions { technique = $0 }
             } label: {
-                rowLabel(icon: visibility == .friends ? "person.2" : "lock",
-                         text: visibility == .friends ? "Friends can see this" : "Only you can see this",
-                         placeholder: false, chevron: true)
+                HStack(spacing: 10) {
+                    Text(MeditationMethod.label(for: technique) ?? "Pick a practice or a sound")
+                        .font(AppFont.callout)
+                        .foregroundStyle(technique == nil ? AppColor.textSecondary : AppColor.textPrimary)
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(AppColor.textSecondary)
+                }
+                .contentShape(Rectangle())
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.vertical, 12)
+
+            if technique == MeditationMethod.ownID {
+                TextField("What did you do?", text: $techniqueNote, axis: .vertical)
+                    .lineLimit(1...3)
+                    .font(AppFont.callout)
+                    .foregroundStyle(AppColor.textPrimary)
+                    .focused($focused, equals: .techniqueNote)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.bottom, 12)
             }
         }
     }
 
-    private func pick(_ value: Visibility) {
-        userPicked = true
-        withAnimation(.easeOut(duration: 0.18)) { visibility = value }
+    private var descriptionSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("What friends will read")
+            TextField("How did it go?", text: $publicNote, axis: .vertical)
+                .lineLimit(2...5)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textPrimary)
+                .focused($focused, equals: .publicNote)
+                .onChange(of: publicNote) { _, new in
+                    if new.count > CommunityStore.captionLimit {
+                        publicNote = String(new.prefix(CommunityStore.captionLimit))
+                    }
+                }
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.vertical, 12)
+        }
+    }
+
+    private var notesSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("Notes")
+            TextField("Anything you want to remember. Only you can see this.",
+                      text: $privateNote, axis: .vertical)
+                .lineLimit(3...8)
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textPrimary)
+                .focused($focused, equals: .privateNote)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.vertical, 12)
+        }
+    }
+
+    /// Any photo, any video, shared or not. The tile is portrait, because a
+    /// portrait shot in a landscape slot loses the face every time.
+    private var mediaSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("Photo or video")
+            HStack(spacing: 12) {
+                if let shot = shownPhoto {
+                    Button { if shownVideo != nil { playing = true } } label: {
+                        Image(uiImage: shot)
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: 78, height: 104)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(alignment: .bottomLeading) {
+                                if shownVideo != nil {
+                                    Image(systemName: "play.circle.fill")
+                                        .font(.system(size: 20))
+                                        .foregroundStyle(.white)
+                                        .shadow(radius: 3)
+                                        .padding(7)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    PhotosPicker(selection: $pickedItem, matching: .any(of: [.images, .videos])) {
+                        Label(hasMedia ? "Choose another" : "Choose photo or video",
+                              systemImage: "photo.on.rectangle")
+                            .font(AppFont.callout.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGoldText)
+                    }
+                    Button { showCamera = true } label: {
+                        Label("Take a selfie", systemImage: "camera")
+                            .font(AppFont.callout.weight(.semibold))
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                    if loadingMedia {
+                        Text("Getting it ready…")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                    }
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.vertical, 12)
+        }
+    }
+
+    /// A Watch session measured something; the curves are one tap in. The
+    /// page itself is what you SAY about the sit, which is true of every
+    /// session; measurements are true of some.
+    private var measurementsRow: some View {
+        Button { showResults = true } label: {
+            HStack(spacing: 10) {
+                Text("See the measurements")
+                    .font(AppFont.callout.weight(.semibold))
+                    .foregroundStyle(AppColor.accentGoldText)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(AppColor.accentGoldText)
+            }
+            .contentShape(Rectangle())
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.vertical, 15)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var visibilitySection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            sectionHeader("Who can see it")
+            HStack(spacing: 10) {
+                visibilityPill(.private, icon: "lock", text: "Only you")
+                visibilityPill(.friends, icon: "person.2", text: "Friends")
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.vertical, 12)
+            visibilityNote
+        }
+    }
+
+    private func visibilityPill(_ value: Visibility, icon: String, text: String) -> some View {
+        Button {
+            userPicked = true
+            withAnimation(.easeOut(duration: 0.18)) { visibility = value }
+        } label: {
+            Label(text, systemImage: icon)
+                .font(AppFont.callout.weight(.semibold))
+                .foregroundStyle(visibility == value ? AppColor.textPrimary : AppColor.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 11)
+                .background(AppColor.backgroundSecondary,
+                            in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(visibility == value ? AppColor.accentGold : .clear, lineWidth: 2)
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     /// Only when something stands between Friends and sharing.
@@ -284,28 +444,22 @@ struct SaveSessionView: View {
     private var visibilityNote: some View {
         if visibility == .friends, loaded {
             Group {
-                if score == nil {
-                    caption(session?.isPhoneOnly == true
-                            ? "A post carries a score, and nothing measured this sit. Save it as Only you."
-                            : "This session has no score on this phone, so it can't be shared. Save it as Only you.")
-                } else {
-                    switch community.phase {
-                    case .needsUsername:
-                        Button { showClaim = true } label: {
-                            Text("Create your profile to share with friends")
-                                .font(AppFont.caption.weight(.semibold))
-                                .foregroundStyle(AppColor.accentGoldText)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, AppMetrics.screenPadding)
-                        .padding(.vertical, 8)
-                    case .unavailable:
-                        caption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
-                    case .loading:
-                        caption("Connecting to iCloud…")
-                    case .ready:
-                        EmptyView()
+                switch community.phase {
+                case .needsUsername:
+                    Button { showClaim = true } label: {
+                        Text("Create your profile to share with friends")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.accentGoldText)
                     }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.bottom, 8)
+                case .unavailable:
+                    caption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
+                case .loading:
+                    caption("Connecting to iCloud…")
+                case .ready:
+                    EmptyView()
                 }
             }
         }
@@ -316,87 +470,14 @@ struct SaveSessionView: View {
             .font(AppFont.caption)
             .foregroundStyle(AppColor.textSecondary)
             .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.vertical, 8)
-    }
-
-    /// Bold rather than boxed, which is how Hevy and Nike mark the title.
-    /// Prefilled with Strava's default ("Afternoon meditation"), so the
-    /// placeholder is rarely seen.
-    private func titleRow(last: Bool) -> some View {
-        inset(last: last) {
-            TextField("Title your session", text: $title)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(AppColor.textPrimary)
-                .focused($focused, equals: .title)
-                .submitLabel(.done)
-                .onChange(of: title) { _, new in
-                    if new.count > CommunityStore.titleLimit { title = String(new.prefix(CommunityStore.titleLimit)) }
-                }
-        }
-    }
-
-    private var descriptionRow: some View {
-        inset(last: true) {
-            TextField("How'd it go? Friends will see this.", text: $publicNote, axis: .vertical)
-                .lineLimit(2...5)
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textPrimary)
-                .focused($focused, equals: .publicNote)
-                .onChange(of: publicNote) { _, new in
-                    if new.count > CommunityStore.captionLimit {
-                        publicNote = String(new.prefix(CommunityStore.captionLimit))
-                    }
-                }
-        }
-    }
-
-    private var techniqueRow: some View {
-        inset {
-            VStack(alignment: .leading, spacing: 0) {
-                Menu {
-                    TechniqueOptions { technique = $0 }
-                } label: {
-                    rowLabel(icon: "sparkles",
-                             text: MeditationMethod.label(for: technique) ?? "What did you practice?",
-                             placeholder: technique == nil, chevron: true)
-                }
-                // "Something else" carries its own words, the same as it does
-                // on the results card. Without this the option could be
-                // picked here and the sentence lost.
-                if technique == MeditationMethod.ownID {
-                    TextField("What did you do?", text: $techniqueNote, axis: .vertical)
-                        .lineLimit(1...3)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .focused($focused, equals: .techniqueNote)
-                        .padding(.top, 10)
-                }
-            }
-        }
-    }
-
-    private var privateNotesRow: some View {
-        inset(last: true) {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "lock")
-                    .font(.system(size: 13))
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(width: 16)
-                    .padding(.top, 3)
-                TextField("Private notes. Only you can see these.", text: $privateNote, axis: .vertical)
-                    .lineLimit(3...8)
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .focused($focused, equals: .privateNote)
-            }
-        }
+            .padding(.bottom, 8)
     }
 
     // MARK: - The button
 
     private var dock: some View {
         Button { tapPrimary() } label: {
-            Text(saving ? "Saving…" : (needsSelfie ? "Take your selfie" : "Save session"))
+            Text(saving ? "Saving…" : "Save")
         }
         .buttonStyle(PrimaryButtonStyle())
         .disabled(!canAct || saving)
@@ -406,23 +487,69 @@ struct SaveSessionView: View {
         .brightness(canAct ? 0 : -0.25)
         .padding(.horizontal, AppMetrics.screenPadding)
         .padding(.top, 10)
-        .padding(.bottom, 8)
+        .padding(.bottom, 10)
         .background(AppColor.backgroundPrimary.ignoresSafeArea(edges: .bottom))
     }
 
-    /// The button acts whenever acting helps. Missing selfie: it opens the
-    /// camera. Only you: nothing can stop a local save. Friends with a selfie:
-    /// it needs a score and a profile, which the note above explains.
+    /// Only you can always be saved; Friends needs a profile, which the note
+    /// above the button explains. **It no longer needs a score**: a post
+    /// carries one when the sit had one (Melvin, 2026-09-22).
     private var canAct: Bool {
         guard loaded else { return false }
-        if needsSelfie { return true }
         if visibility == .private { return true }
-        return community.phase == .ready && score != nil
+        return community.phase == .ready
     }
 
     private func tapPrimary() {
-        if needsSelfie { showCamera = true; return }
         if visibility == .friends, !rulesAgreed { showRules = true } else { save() }
+    }
+
+    // MARK: - Media
+
+    /// A movie handed over by the picker, as a file we can read.
+    private struct Movie: Transferable {
+        let url: URL
+        static var transferRepresentation: some TransferRepresentation {
+            FileRepresentation(contentType: .movie) { movie in
+                SentTransferredFile(movie.url)
+            } importing: { received in
+                let copy = FileManager.default.temporaryDirectory
+                    .appendingPathComponent("808-pick-\(UUID().uuidString).mov")
+                try? FileManager.default.removeItem(at: copy)
+                try FileManager.default.copyItem(at: received.file, to: copy)
+                return Movie(url: copy)
+            }
+        }
+    }
+
+    private func take(_ item: PhotosPickerItem?) async {
+        guard let item else { return }
+        loadingMedia = true
+        defer { loadingMedia = false }
+        // A still first: most picks are photos, and a video's poster frame
+        // goes in the same place, so everything that draws a photo keeps
+        // working without knowing there is a film behind it.
+        if let data = try? await item.loadTransferable(type: Data.self),
+           let image = UIImage(data: data) {
+            newPhoto = image
+            newVideo = nil
+            return
+        }
+        guard let movie = try? await item.loadTransferable(type: Movie.self) else {
+            problem = "That one couldn't be read. Try another."
+            return
+        }
+        defer { try? FileManager.default.removeItem(at: movie.url) }
+        guard let exported = await SessionVideo.export(movie.url) else {
+            problem = "That video couldn't be saved. Try a shorter one."
+            return
+        }
+        newVideo = exported
+        newPhoto = SessionVideo.posterFrame(movie.url) ?? newPhoto
+        if newPhoto == nil {
+            problem = "That video couldn't be saved. Try a shorter one."
+            newVideo = nil
+        }
     }
 
     // MARK: - Load and save
@@ -442,20 +569,24 @@ struct SaveSessionView: View {
         publicNote = reflection?.publicNote ?? ""
         privateNote = reflection?.note ?? ""
         techniqueNote = reflection?.techniqueNote ?? ""
+        rating = reflection?.rating
         technique = reflection?.technique
+            // Whatever played is the likeliest answer to "what did you do",
+            // and it is already known, so it starts there.
+            ?? session?.frequencyID
             ?? (session?.mode == SessionMode.guided.rawValue ? MeditationMethod.guidedID : nil)
-        if let kept = SessionStore.photo(for: sessionID, in: context) { storedPhoto = PhotoThumbs.full(kept) }
+            ?? (session?.mode == SessionMode.silence.rawValue ? MeditationMethod.silenceID : nil)
+        if let kept = SessionStore.photo(for: sessionID, in: context) {
+            storedPhoto = PhotoThumbs.full(kept)
+            storedVideo = kept.video
+        }
 
         savedVisibility = Visibility(rawValue: reflection?.visibility ?? "private") ?? .private
-        switch mode {
-        case .edit: visibility = savedVisibility
-        case .new:  visibility = score == nil ? .private : .friends
-        }
+        visibility = savedVisibility
         // Usable BEFORE iCloud answers. Only you never needs the network.
         loaded = true
 
         await community.load()
-        if mode == .new, !userPicked, community.phase == .unavailable { visibility = .private }
         // A post made before photos were kept with the session: show its
         // picture, so an edit does not look like the selfie went missing.
         if storedPhoto == nil, savedVisibility == .friends,
@@ -465,26 +596,13 @@ struct SaveSessionView: View {
         }
     }
 
-    /// Leave without grading. The session is already stored; this records it
-    /// as Only you under the default title and keeps anything already typed
-    /// or shot, so nothing is lost and it can be shared later from results.
-    private func skip() {
-        guard let session else { onDone(); return }
-        let finalTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            ? SessionStore.defaultTitle(for: session.startedAt) : title
-        SessionStore.saveSession(sessionID: sessionID, title: finalTitle, publicNote: publicNote,
-                                 privateNote: privateNote, visibility: Visibility.private.rawValue,
-                                 technique: technique, techniqueNote: techniqueNote, in: context)
-        persistPhotoIfTaken()
-        onDone()
-    }
-
-    /// Writes a fresh shot to the session's photo row (a retake replaces in
+    /// Writes fresh media to the session's photo row (a new pick replaces in
     /// place) and returns whatever row the session now has.
     @discardableResult
-    private func persistPhotoIfTaken() -> SessionPhoto? {
+    private func persistMediaIfPicked() -> SessionPhoto? {
         if let newPhoto, let jpeg = PostPhoto.jpeg(newPhoto), let thumb = PostPhoto.thumbnail(newPhoto) {
-            return SessionStore.savePhoto(sessionID: sessionID, jpeg: jpeg, thumbnail: thumb, in: context)
+            return SessionStore.savePhoto(sessionID: sessionID, jpeg: jpeg, thumbnail: thumb,
+                                          video: newVideo, in: context)
         }
         return SessionStore.photo(for: sessionID, in: context)
     }
@@ -495,12 +613,18 @@ struct SaveSessionView: View {
         Task { @MainActor in
             let finalTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? SessionStore.defaultTitle(for: session.startedAt) : title
-            SessionStore.saveSession(sessionID: sessionID, title: finalTitle, publicNote: publicNote,
-                                     privateNote: privateNote, visibility: visibility.rawValue,
-                                     technique: technique, techniqueNote: techniqueNote, in: context)
+            let row = SessionStore.saveSession(sessionID: sessionID, title: finalTitle,
+                                               publicNote: publicNote, privateNote: privateNote,
+                                               visibility: visibility.rawValue,
+                                               technique: technique, techniqueNote: techniqueNote,
+                                               in: context)
+            // `saveSession` keeps whatever rating was there; this screen owns
+            // it now, so it writes it after.
+            row.rating = rating
+            try? context.save()
             switch visibility {
             case .private:
-                persistPhotoIfTaken()
+                persistMediaIfPicked()
                 if savedVisibility == .friends { await community.unpost(session: sessionID) }
             case .friends:
                 guard ContentFilter.check([finalTitle, publicNote]) == .ok else {
@@ -513,20 +637,17 @@ struct SaveSessionView: View {
                     saving = false
                     return
                 }
-                let kept = persistPhotoIfTaken()
+                let kept = persistMediaIfPicked()
                 // Always send the bytes when there are any: about 200 KB, and
-                // it means a photo taken privately and shared later, or a
-                // post whose picture was lost, both come out right.
+                // it means a photo kept privately and shared later, or a post
+                // whose picture was lost, both come out right. A video's
+                // poster frame is what goes up for now; the feed cannot play
+                // film yet.
                 var photoURL: URL?
                 if let newPhoto { photoURL = PostPhoto.prepare(newPhoto) }
                 else if let data = kept?.jpeg { photoURL = PostPhoto.prepare(data: data) }
-                if photoURL == nil, newPhoto != nil {
-                    problem = "That selfie couldn't be read. Take another."
-                    saving = false
-                    return
-                }
                 let draft = CommunityStore.Draft(
-                    score: score ?? 0,
+                    score: score,
                     minutes: minutes,
                     streak: streak,
                     technique: MeditationMethod.label(for: technique),
@@ -549,7 +670,72 @@ struct SaveSessionView: View {
                 }
             }
             saving = false
+            SessionDetails.clear(sessionID)
             onDone()
         }
+    }
+}
+
+/// Keeping a video with a session: small enough to ride the same private
+/// iCloud the sessions do, so half a minute at 540p and nothing more.
+enum SessionVideo {
+    static let maxSeconds: Double = 30
+
+    static func export(_ url: URL, limit: Double = maxSeconds) async -> Data? {
+        let asset = AVURLAsset(url: url)
+        guard let session = AVAssetExportSession(asset: asset,
+                                                 presetName: AVAssetExportPreset960x540) else { return nil }
+        let out = FileManager.default.temporaryDirectory
+            .appendingPathComponent("808-video-\(UUID().uuidString).mp4")
+        session.outputURL = out
+        session.outputFileType = .mp4
+        let duration = (try? await asset.load(.duration)) ?? .zero
+        if CMTimeGetSeconds(duration) > limit {
+            session.timeRange = CMTimeRange(start: .zero,
+                                            duration: CMTime(seconds: limit, preferredTimescale: 600))
+        }
+        await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+            session.exportAsynchronously { done.resume() }
+        }
+        defer { try? FileManager.default.removeItem(at: out) }
+        guard session.status == .completed else { return nil }
+        return try? Data(contentsOf: out)
+    }
+
+    /// The first readable frame, which becomes the session's still.
+    static func posterFrame(_ url: URL) -> UIImage? {
+        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceBefore = CMTime(seconds: 0.5, preferredTimescale: 600)
+        generator.requestedTimeToleranceAfter = CMTime(seconds: 1.5, preferredTimescale: 600)
+        guard let cg = try? generator.copyCGImage(at: CMTime(seconds: 0.3, preferredTimescale: 600),
+                                                  actualTime: nil) else { return nil }
+        return UIImage(cgImage: cg)
+    }
+}
+
+/// Plays a kept video. Written to a temp file first, because AVPlayer reads
+/// files and the video lives in the store as bytes.
+private struct VideoSheet: View {
+    let data: Data
+
+    @State private var url: URL?
+
+    var body: some View {
+        Group {
+            if let url {
+                VideoPlayer(player: AVPlayer(url: url))
+            } else {
+                ProgressView().tint(AppColor.calmAccent)
+            }
+        }
+        .background(Color.black.ignoresSafeArea())
+        .onAppear {
+            let file = FileManager.default.temporaryDirectory
+                .appendingPathComponent("808-play-\(UUID().uuidString).mp4")
+            try? data.write(to: file)
+            url = file
+        }
+        .onDisappear { if let url { try? FileManager.default.removeItem(at: url) } }
     }
 }

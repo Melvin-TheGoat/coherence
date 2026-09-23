@@ -36,6 +36,8 @@ targets:
     sources:
       - Coherence
       - Shared
+      # Block's Screen Time half, shared with the three extensions below.
+      - BlockKit
       - path: PURPOSE.md
         buildPhase: resources
       - path: SCIENCE.md
@@ -46,6 +48,14 @@ targets:
         buildPhase: resources
     dependencies:
       - target: CoherenceWatch
+        embed: true
+      # Block (2026-09-22): Screen Time wakes the monitor on schedule, and the
+      # two shield extensions draw a held app's screen and answer its buttons.
+      - target: BlockMonitor
+        embed: true
+      - target: BlockShield
+        embed: true
+      - target: BlockShieldAction
         embed: true
       - package: PostHog
       - package: RiveRuntime
@@ -85,6 +95,64 @@ targets:
             /usr/libexec/PlistBuddy -c "Set :NSMotionUsageDescription ${TEXT}" "${PLIST}" 2>/dev/null \
               || /usr/libexec/PlistBuddy -c "Add :NSMotionUsageDescription string ${TEXT}" "${PLIST}"
           fi
+
+  # BLOCK'S THREE SCREEN TIME EXTENSIONS (2026-09-22). Their bundle IDs were
+  # registered and approved for Family Controls (Distribution) under Lock Out
+  # Inc. the same day; do not rename them. `tools/beta_install.sh` swaps them
+  # to `.dev.*` for the side-by-side beta, along with the App Group.
+  BlockMonitor:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - BlockExtensions/Monitor
+      - BlockKit
+      - Shared/Block/BlockModel.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.monitor
+        INFOPLIST_FILE: BlockExtensions/Monitor/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BlockExtensions/Monitor/BlockMonitor.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.10"
+        APPLICATION_EXTENSION_API_ONLY: YES
+
+  BlockShield:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - BlockExtensions/Shield
+      - BlockKit/BlockStore.swift
+      - Shared/Block/BlockModel.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.shield
+        INFOPLIST_FILE: BlockExtensions/Shield/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BlockExtensions/Shield/BlockShield.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.10"
+        APPLICATION_EXTENSION_API_ONLY: YES
+
+  BlockShieldAction:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - BlockExtensions/ShieldAction
+      - BlockKit/BlockStore.swift
+      - Shared/Block/BlockModel.swift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lockout.meditate808.shieldaction
+        INFOPLIST_FILE: BlockExtensions/ShieldAction/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BlockExtensions/ShieldAction/BlockShieldAction.entitlements
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.10"
+        APPLICATION_EXTENSION_API_ONLY: YES
 
   CoherenceWatch:
     type: application

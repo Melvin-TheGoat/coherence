@@ -45,10 +45,18 @@ off). **DECIDED 2026-09-22:** a skipped window costs 20 × hours / 24
 Mindful day waiting on the Block tab and switching it on opens the free-week
 offer. **DONE 2026-09-22:** Family Controls (Distribution) approved on all
 four App IDs (`com.lockout.meditate808` plus `.monitor`, `.shield`,
-`.shieldaction`), within minutes. **OPEN, founders' call:** onboarding was
-cut by Aziz in `d4ddbfc` (2026-09-21) and Melvin did not know; whether it
-returns, and whether it asks the Block questions, decides where a new person
-meets Mindful day. **Then:** Block in Swift on its own `block` branch: the Guide tab becomes
+`.shieldaction`), within minutes. **RESOLVED 2026-09-22:** onboarding, cut
+by Aziz in `d4ddbfc` without Melvin knowing, is back (Melvin: "Aziz
+definitely did that by mistake"), without the Watch screen, and with an
+explain-only Block screen. **DONE 2026-09-22 (overnight), branch `block`:** onboarding
+is back without the Watch question (on `friendly-ui`), and Block is built
+behind `FeatureFlags.block` (on in DEBUG): the tab, the editor, all twenty
+Otto screens, passes, Strict and Firm, releases, the glow rule, onboarding's
+explain-only Block screen, the tour note, the extensions and the
+notification. Simulator-verified; **NOT yet seen on a phone** (shields,
+Ask Otto's notification, pass ends, daily limits). **Next:** install 808
+Beta on Melvin's phone (`tools/beta_install.sh`) and walk RELEASE_CHECKLIST's
+Block list. **Was the plan:** Block in Swift on its own `block` branch: the Guide tab becomes
 Block; FamilyControls, ManagedSettings, DeviceActivity, three extensions,
 App Group; the notification into the interventions; the "Not now" input to
 `OttoAura`; tested on a phone, since the simulator cannot show shields.

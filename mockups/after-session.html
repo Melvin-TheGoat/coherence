@@ -1,0 +1,334 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · After a session</title>
+<style>
+:root{
+  --grass:#9CBC85; --grassDeep:#8FB178; --card:#FFFFFF; --ink:#413024; --soft:#877160;
+  --amber:#F7B143; --amberSoft:#FBE3BE; --amberText:#9B6B19; --sage:#3E8175;
+  --blushText:#AB5834; --trace:#F0E3D0; --hair:#EFE4D5; --paper:#FEF9F2;
+  --sky1:#BFDCEF; --sky2:#DCEAF3;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+h2{font-size:16px;margin:46px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:940px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:22px}
+.col{width:300px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+ color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13px;line-height:1.6;margin-top:11px}
+.note b{color:var(--ink)}
+.flag{border-left:3px solid var(--blushText);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:940px;margin-top:16px;font-size:13.6px;line-height:1.62;color:var(--soft)}
+.flag b{color:var(--blushText)}
+.pick{border-left:3px solid var(--sage)} .pick b{color:var(--sage)}
+.ask{border-left:3px solid var(--amberText)} .ask b{color:var(--amberText)}
+
+/* ---------- the phone ---------- */
+.p{width:300px;height:640px;border-radius:34px;overflow:hidden;position:relative;flex:none;
+ background:var(--grass);box-shadow:0 12px 34px rgba(80,55,30,.16)}
+.scene{position:absolute;left:0;right:0;top:0;height:330px;
+ background:linear-gradient(180deg,var(--sky1) 0%,var(--sky2) 62%,#C9DFB4 62%,#A6C68D 100%)}
+.sun{position:absolute;left:64px;top:132px;width:44px;height:44px;border-radius:50%;
+ background:#FBE6A8;opacity:.9}
+.ridge{position:absolute;left:0;right:0;top:170px;height:70px;
+ background:linear-gradient(180deg,#B9CFE0,#A9C3D6);clip-path:polygon(0 60%,18% 22%,34% 58%,52% 14%,72% 52%,88% 26%,100% 58%,100% 100%,0 100%)}
+.field{position:absolute;left:0;right:0;top:206px;bottom:0;background:linear-gradient(180deg,#B9D3A0,#9CBC85)}
+.otto{position:absolute;left:50%;transform:translateX(-50%);bottom:0;width:132px}
+.otto img{width:100%;display:block}
+.bub{position:absolute;left:18px;right:18px;top:56px;background:rgba(255,249,242,.88);
+ border:1px solid rgba(65,48,36,.34);border-radius:16px;padding:9px 12px;font-size:12.6px;
+ line-height:1.35;color:#24313A}
+.bub:after{content:"";position:absolute;left:50%;bottom:-8px;margin-left:-8px;width:16px;height:9px;
+ background:rgba(255,249,242,.88);clip-path:polygon(0 0,100% 0,50% 100%);
+ border-left:1px solid rgba(65,48,36,.2)}
+.plus{position:absolute;right:58px;top:196px;color:var(--amberText);font-weight:800;font-size:15px}
+.spark{position:absolute;border-radius:50%;background:var(--amber);opacity:.75}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:62px;background:#fff;
+ display:flex;align-items:center;justify-content:space-around;font-size:9.5px;color:var(--soft);
+ border-top:1px solid var(--hair)}
+.tabs .mid{width:44px;height:44px;border-radius:50%;background:var(--amber);color:#fff;
+ display:flex;align-items:center;justify-content:center;font-size:22px;margin-top:-16px}
+.sheetwrap{position:absolute;left:12px;right:12px;top:300px;bottom:70px;overflow:hidden}
+.card{background:var(--card);border-radius:20px;box-shadow:0 2px 8px rgba(40,25,15,.10);
+ padding:13px 14px;margin-bottom:10px}
+.glowcard .t{display:flex;align-items:baseline;justify-content:space-between;font-weight:800;font-size:15px}
+.bar{height:9px;border-radius:9px;background:var(--trace);margin-top:9px;overflow:hidden}
+.bar i{display:block;height:100%;width:50%;background:linear-gradient(90deg,var(--amber),#E7A04B)}
+.sub{color:var(--soft);font-size:11.5px;margin-top:8px}
+
+/* prompts */
+.prompt{display:flex;align-items:center;gap:10px;background:#fff;border-radius:18px;padding:11px 12px;
+ box-shadow:0 2px 10px rgba(40,25,15,.12)}
+.prompt .h{width:38px;height:38px;border-radius:50%;background:var(--paper);flex:none;overflow:hidden;
+ display:flex;align-items:flex-end;justify-content:center}
+.prompt .h img{width:34px}
+.prompt .txt{flex:1;line-height:1.3}
+.prompt .txt b{font-size:13.4px}
+.prompt .txt span{display:block;color:var(--soft);font-size:11.5px;margin-top:2px}
+.prompt .go{color:var(--amberText);font-weight:800;font-size:12.5px}
+.ring{box-shadow:0 0 0 2px var(--amber),0 2px 10px rgba(40,25,15,.12)}
+.toast{position:absolute;left:24px;right:24px;bottom:78px;background:#fff;border-radius:22px;
+ padding:11px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 8px 24px rgba(40,25,15,.22)}
+.chiprow{display:flex;gap:8px;margin-top:9px;justify-content:center}
+.chip{background:var(--paper);border:1px solid var(--hair);border-radius:14px;padding:6px 12px;
+ font-size:12px;font-weight:700}
+.chip.on{background:var(--amber);border-color:var(--amber);color:#fff}
+.rowline{display:flex;align-items:center;justify-content:space-between;padding:10px 0;
+ border-bottom:1px solid var(--hair);font-size:13px}
+.rowline:last-child{border-bottom:0}
+.rowline .k{color:var(--soft)}
+.badge{background:var(--amberSoft);color:var(--amberText);border-radius:10px;padding:3px 8px;
+ font-size:10.5px;font-weight:800}
+
+/* the one screen */
+.sheet{position:absolute;inset:0;background:var(--paper);display:flex;flex-direction:column}
+.shead{height:116px;background:linear-gradient(180deg,var(--sky1),#D7E7EE);position:relative;flex:none}
+.shead .x{position:absolute;left:12px;top:12px;font-size:13px;color:var(--ink);opacity:.7}
+.shead .big{position:absolute;left:16px;bottom:30px;font-size:27px;font-weight:800}
+.shead .small{position:absolute;left:16px;bottom:12px;font-size:12px;color:#5A6A72}
+.shead .face{position:absolute;right:14px;bottom:-18px;width:56px;height:56px;border-radius:50%;
+ background:#fff;box-shadow:0 2px 8px rgba(40,25,15,.16);overflow:hidden;display:flex;
+ align-items:flex-end;justify-content:center}
+.shead .face img{width:50px}
+.sbody{flex:1;overflow:hidden;padding:14px 16px 78px}
+.field-h{font-size:13px;font-weight:800;margin:11px 0 5px}
+.input{border-bottom:1px solid var(--hair);padding:8px 0 10px;font-size:14px;color:var(--soft)}
+.input.filled{color:var(--ink);font-weight:700}
+.faces{display:flex;gap:8px;margin-top:4px}
+.face-b{flex:1;height:38px;border-radius:14px;background:#fff;border:1px solid var(--hair);
+ display:flex;align-items:center;justify-content:center;font-size:19px}
+.face-b.on{border:2px solid var(--amber);background:#FFF6E6}
+.tiles{display:flex;gap:9px;margin-top:6px}
+.tile{width:56px;height:72px;border-radius:14px;background:#fff;border:1px dashed var(--hair);
+ display:flex;align-items:center;justify-content:center;color:var(--soft);font-size:11px;text-align:center}
+.tile.shot{background:linear-gradient(160deg,#CBB79E,#A68B6D);border:0}
+.vis{display:flex;gap:8px;margin-top:6px}
+.vis div{flex:1;border-radius:14px;padding:9px 0;text-align:center;font-size:12.5px;font-weight:700;
+ background:#fff;border:1px solid var(--hair);color:var(--soft)}
+.vis div.on{background:#fff;border:2px solid var(--amber);color:var(--ink)}
+.save{position:absolute;left:16px;right:16px;bottom:14px;height:48px;border-radius:16px;
+ background:var(--amber);color:#4A3312;font-weight:800;display:flex;align-items:center;
+ justify-content:center;font-size:15px;box-shadow:0 4px 0 #E09A34}
+.bare .input{background:transparent}
+.bare .sbody{padding-top:8px}
+.hr{height:1px;background:var(--hair);margin:14px -16px}
+</style></head><body>
+
+<h1>After a session</h1>
+<p class="lede"><b>Decided and built, 2026-09-22.</b> A finished session takes you straight to Home, where
+Otto's glow climbs with a burst of light and a <b>+10%</b>. Then <b>option B</b>, the toast above the tab
+bar, which <b>never fades</b>: the only ways out are its X and filling the session in. It opens
+<b>screen 1</b>, with Melvin's four changes: how it felt is a <b>slider out of ten</b>, not emojis; what you
+did lists <b>every sound 808 offers</b> as well as the techniques; the title defaults to
+<b>"Morning / Afternoon / Evening / Night meditation"</b>; and photos are <b>any photo or any video</b>,
+for friends and for yourself. The rest of this page is the record of what was considered.</p>
+
+<h2>The moment before it: Otto gains his glow</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag">built · <b>home, right after the session</b></div>
+    <div class="p">
+      <div class="scene"><div class="sun"></div><div class="ridge"></div><div class="field"></div>
+        <div class="bub">Thank you for that. I'm brighter already.</div>
+        <div class="spark" style="left:96px;top:150px;width:7px;height:7px"></div>
+        <div class="spark" style="left:210px;top:140px;width:6px;height:6px"></div>
+        <div class="spark" style="left:150px;top:112px;width:5px;height:5px"></div>
+        <div class="spark" style="left:186px;top:178px;width:8px;height:8px"></div>
+        <div class="plus">+10%</div>
+        <div class="otto"><img src="otto-v3/otto-curious.png" alt=""></div>
+      </div>
+      <div class="sheetwrap">
+        <div class="card glowcard"><div class="t"><span>Otto's glow</span><span>50%</span></div>
+          <div class="bar"><i></i></div>
+          <div class="sub">Each day you meditate, his glow grows.</div>
+        </div>
+      </div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="mid">+</span><span>Friends</span><span>Profile</span></div>
+    </div>
+    <div class="note">The number counts up, the bar fills, sparks rise behind his bubble, and he jiggles.
+      About two seconds. Then the prompt below arrives.</div>
+  </div>
+</div>
+
+<h2>A. The prompt lives under the glow card</h2>
+<div class="row">
+  <div class="col">
+    <div class="tag">option a · <b>a card on Home</b></div>
+    <div class="p">
+      <div class="scene"><div class="sun"></div><div class="ridge"></div><div class="field"></div>
+        <div class="bub">Thank you for that. I'm brighter already.</div>
+        <div class="otto"><img src="otto-v3/otto-curious.png" alt=""></div>
+      </div>
+      <div class="sheetwrap">
+        <div class="card glowcard"><div class="t"><span>Otto's glow</span><span>50%</span></div>
+          <div class="bar"><i></i></div></div>
+        <div class="prompt ring"><div class="h"><img src="otto-v3/otto-head.png" alt=""></div>
+          <div class="txt"><b>12 minutes, just now</b><span>How did it feel? Add a photo?</span></div>
+          <div class="go">Add</div></div>
+        <div class="card"><div class="rowline"><span>Best streak</span><b>4</b></div>
+          <div class="rowline"><span>Sessions</span><b>18</b></div></div>
+      </div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="mid">+</span><span>Friends</span><span>Profile</span></div>
+    </div>
+    <div class="note"><b>It waits.</b> Nothing vanishes, so nobody misses it, and it is gone the moment the
+      session is filled in. Costs one more card on a Home that already has five.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag">option b · <b>a toast above the bar</b></div>
+    <div class="p">
+      <div class="scene"><div class="sun"></div><div class="ridge"></div><div class="field"></div>
+        <div class="bub">Thank you for that. I'm brighter already.</div>
+        <div class="otto"><img src="otto-v3/otto-curious.png" alt=""></div>
+      </div>
+      <div class="sheetwrap">
+        <div class="card glowcard"><div class="t"><span>Otto's glow</span><span>50%</span></div>
+          <div class="bar"><i></i></div></div>
+        <div class="card"><div class="rowline"><span>Best streak</span><b>4</b></div>
+          <div class="rowline"><span>Sessions</span><b>18</b></div></div>
+      </div>
+      <div class="toast"><div class="h" style="width:32px"><img src="otto-v3/otto-head.png" style="width:30px" alt=""></div>
+        <div class="txt" style="flex:1;font-size:12.8px;font-weight:700">Add how that felt
+          <span style="display:block;color:var(--soft);font-size:11px;font-weight:400">Tap to open your session</span></div>
+        <div class="go">›</div></div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="mid">+</span><span>Friends</span><span>Profile</span></div>
+    </div>
+    <div class="note"><b>Strava's shape.</b> Floats in, fades after about six seconds, leaves Home untouched.
+      The cost is that a missed toast is a session nobody ever fills in.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag">option c · <b>otto just asks</b></div>
+    <div class="p">
+      <div class="scene"><div class="sun"></div><div class="ridge"></div><div class="field"></div>
+        <div class="bub">That's 12 minutes. Want to tell me how it went?</div>
+        <div class="otto"><img src="otto-v3/otto-curious.png" alt=""></div>
+        <div class="chiprow" style="position:absolute;left:0;right:0;top:118px">
+          <div class="chip on">Tell him</div><div class="chip">Later</div></div>
+      </div>
+      <div class="sheetwrap">
+        <div class="card glowcard"><div class="t"><span>Otto's glow</span><span>50%</span></div>
+          <div class="bar"><i></i></div></div>
+        <div class="card"><div class="rowline"><span>Best streak</span><b>4</b></div>
+          <div class="rowline"><span>Sessions</span><b>18</b></div></div>
+      </div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="mid">+</span><span>Friends</span><span>Profile</span></div>
+    </div>
+    <div class="note"><b>One voice.</b> The ask is his line, straight after the glow, with two chips under him.
+      Most on theme, and it adds nothing to the page. The cost: it is a moment, not a place, so "Later"
+      needs somewhere to come back to (option D does that job).</div>
+  </div>
+
+  <div class="col">
+    <div class="tag">option d · <b>the session row, lit</b></div>
+    <div class="p">
+      <div class="scene"><div class="sun"></div><div class="ridge"></div><div class="field"></div>
+        <div class="bub">Thank you for that. I'm brighter already.</div>
+        <div class="otto"><img src="otto-v3/otto-curious.png" alt=""></div>
+      </div>
+      <div class="sheetwrap">
+        <div class="card glowcard"><div class="t"><span>Otto's glow</span><span>50%</span></div>
+          <div class="bar"><i></i></div></div>
+        <div style="font-size:12.5px;font-weight:800;margin:2px 2px 7px">Recent</div>
+        <div class="prompt ring"><div class="h"><img src="otto-v3/otto-head.png" alt=""></div>
+          <div class="txt"><b>Today · 12 min</b><span>Silence</span></div>
+          <div class="badge">Add details</div></div>
+        <div class="prompt" style="opacity:.85"><div class="h"><img src="otto-v3/otto-head.png" alt=""></div>
+          <div class="txt"><b>Yesterday · 8 min</b><span>Breath work · Only you</span></div></div>
+      </div>
+      <div class="tabs"><span>Home</span><span>Block</span><span class="mid">+</span><span>Friends</span><span>Profile</span></div>
+    </div>
+    <div class="note"><b>It teaches where sessions live.</b> The row you just earned is ringed and carries
+      "Add details" until it is filled in, on Home and on Profile. Quietest of the four, and the only one
+      that still works a day later.</div>
+  </div>
+</div>
+
+<div class="flag pick"><b>What I would build:</b> C and D together. C is the moment, in his voice, with no new
+furniture on Home, and D is where "Later" goes, so a session can be filled in tomorrow just as easily.
+A is the safe single answer if you want only one. B is the one I would not: a toast that fades is a
+feature most people will never once use.</div>
+
+<h2>The screen it opens, all on one page</h2>
+<div class="row">
+  <div class="col" style="width:320px">
+    <div class="tag">screen 1 · <b>recommended</b></div>
+    <div class="p" style="width:320px">
+      <div class="sheet">
+        <div class="shead"><div class="x">✕</div>
+          <div class="big">12 min</div><div class="small">Today, 12:48 · Silence</div>
+          <div class="face"><img src="otto-v3/otto-head.png" alt=""></div></div>
+        <div class="sbody">
+          <div class="field-h">How did it feel? <span style="float:right;color:var(--amberText)">8 / 10</span></div>
+          <div style="height:10px;border-radius:10px;background:var(--trace);margin:10px 0 4px;position:relative">
+            <i style="display:block;height:100%;width:78%;border-radius:10px;background:var(--amber)"></i>
+            <span style="position:absolute;left:74%;top:-6px;width:22px;height:22px;border-radius:50%;
+              background:#fff;box-shadow:0 1px 4px rgba(40,25,15,.3)"></span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--soft)">
+            <span>Rough</span><span>The best</span></div>
+
+          <div class="field-h">What did you do?</div>
+          <div class="rowline"><span>Nature · Rain</span><span>⌄</span></div>
+          <div class="note" style="margin-top:6px">Every technique, then every sound: Guided, Nature,
+            Brainwave, Tones.</div>
+
+          <div class="field-h">Notes</div>
+          <div class="input">Anything you want to remember. Only you can see this.</div>
+
+          <div class="field-h">Photo or video</div>
+          <div class="tiles"><div class="tile shot"></div><div class="tile">＋<br>Any photo<br>or video</div></div>
+
+          <div class="field-h">Who can see it</div>
+          <div class="vis"><div class="on">🔒 Only you</div><div>👋 Friends</div></div>
+        </div>
+        <div class="save">Save</div>
+      </div>
+    </div>
+    <div class="note">Sky band, the length as the one big number, Otto's head as the mark, then five
+      questions in the order they cost effort. <b>Nothing is required.</b> Save is the only gold thing, and
+      closing without saving keeps the session exactly as it is.</div>
+  </div>
+
+  <div class="col" style="width:320px">
+    <div class="tag">screen 2 · <b>bare, who-sees-it first</b></div>
+    <div class="p bare" style="width:320px">
+      <div class="sheet">
+        <div class="shead" style="height:92px"><div class="x">✕</div>
+          <div class="big" style="bottom:26px">12 min</div>
+          <div class="small" style="bottom:10px">Today, 12:48</div></div>
+        <div class="sbody">
+          <div class="vis" style="margin-top:10px"><div class="on">🔒 Only you</div><div>👋 Friends</div></div>
+          <div class="hr"></div>
+          <div class="input filled">Morning sit</div>
+          <div class="input">How did it go? Friends will read this.</div>
+          <div class="hr"></div>
+          <div class="field-h">Felt like</div>
+          <div class="faces"><div class="face-b">😵‍💫</div><div class="face-b">😕</div><div class="face-b on">🙂</div>
+            <div class="face-b">😌</div><div class="face-b">🤩</div></div>
+          <div class="field-h">Technique</div>
+          <div class="rowline"><span class="k">Silence</span><span class="go" style="color:var(--amberText);font-weight:800">Change</span></div>
+          <div class="rowline"><span class="k">Private notes</span><span>＋</span></div>
+          <div class="rowline"><span class="k">Photos</span><span>＋</span></div>
+        </div>
+        <div class="save">Save</div>
+      </div>
+    </div>
+    <div class="note">The repo's own fourteen-app research, applied: no boxes, bare text on hairlines, and
+      <b>who can see it first</b>, because that decides whether a description is even worth writing. Denser,
+      and it reads more like a form.</div>
+  </div>
+</div>
+
+<div class="flag pick"><b>Answered:</b> (1) photos are any photo and any video, for friends and for
+yourself, so the front-camera-only rule is gone; (2) the title stays and defaults to the time of day;
+(3) the feeling is a slider out of ten. <b>Still open:</b> a Friends post carries a score, so a phone
+session cannot be posted yet, and the results screen still has its own rating card.</div>
+
+<div class="flag"><b>What is already gone:</b> the Save session screen no longer opens after a sit, and the
+results screen with its "How did it feel?" card no longer opens either. Until one of these is built, a
+session can still be filled in from its row on Profile.</div>
+
+</body></html>

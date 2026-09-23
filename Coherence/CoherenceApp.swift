@@ -13,6 +13,20 @@ struct CoherenceApp: App {
 
     init() {
         Analytics.start()   // no-op until a provider key is set
+        // Block's "Otto wants a word": set before launch finishes, so a tap
+        // that opened the app is still delivered.
+        if FeatureFlags.block {
+            BlockNotifications.shared.install()
+            // Every saved session, phone or Watch, even with 808 in the
+            // background: Block opens the rest of the windows it counts for.
+            SessionCoordinator.onSessionSaved = { startedAt, durationSec in
+                Task { @MainActor in
+                    BlockController.shared.recordSession(
+                        endingAt: startedAt.addingTimeInterval(TimeInterval(durationSec)),
+                        durationSec: durationSec)
+                }
+            }
+        }
         // One-time rescue of pre-split health stats — the extract MUST run
         // before the split container first opens the main store.
         let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()

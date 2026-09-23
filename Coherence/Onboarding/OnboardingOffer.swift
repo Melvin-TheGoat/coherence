@@ -17,14 +17,33 @@ import StoreKit
 
 enum SubscriptionPlan: String, CaseIterable, Identifiable {
     case monthly, yearly, lifetime
+    /// The year at half price for the first year, and the ONLY discount 808
+    /// offers (Melvin, 2026-09-22: "can we offer a half off of a year for
+    /// users that deny both times? Otherwise thats just money on the table").
+    ///
+    /// **Its own product, because a product carries exactly one introductory
+    /// offer.** Selling this as the yearly product would promise a discount
+    /// the purchase sheet then contradicts, which is the mistake the deleted
+    /// half-off-month rung made. It renews at the full yearly price, and
+    /// every screen that shows it says so.
+    case yearHalf
 
     var id: String { rawValue }
+
+    /// The cards the paywall shows. `yearHalf` is not among them until
+    /// somebody has been offered it, and then it takes the year's place
+    /// rather than sitting beside it, because two yearly cards at different
+    /// prices is a shell game.
+    static func cards(selecting plan: SubscriptionPlan) -> [SubscriptionPlan] {
+        plan == .yearHalf ? [.monthly, .yearHalf, .lifetime] : [.monthly, .yearly, .lifetime]
+    }
 
     var title: String {
         switch self {
         case .monthly:  return "Monthly"
         case .yearly:   return "Yearly"
         case .lifetime: return "Lifetime"
+        case .yearHalf: return "First year"
         }
     }
 
@@ -33,6 +52,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .monthly:  return "$7.99"
         case .yearly:   return "$29.99"
         case .lifetime: return "$99.99"
+        case .yearHalf: return "$14.99"
         }
     }
 
@@ -55,6 +75,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .monthly:  return nil
         case .yearly:   return "$59.99"
         case .lifetime: return "$199"
+        // The year's real price, which this is genuinely half of, so the
+        // strikethrough is a true reference price and not a fake one.
+        case .yearHalf: return "$29.99"
         }
     }
 
@@ -63,6 +86,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .monthly:  return "per month"
         case .yearly:   return "per year"
         case .lifetime: return "once"
+        // The renewal price rides the cadence, so it is beside the number
+        // everywhere the number appears (3.1.2, and plain honesty).
+        case .yearHalf: return "first year, then $29.99 a year"
         }
     }
 
@@ -87,6 +113,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearly:   return "$2.50 a month"
         // $99.99 against $7.99 a month is 12.5 months.
         case .lifetime: return "A year of monthly, then never again"
+        // $14.99 over 12 months, the same arithmetic as the year above it.
+        case .yearHalf: return "$1.25 a month for the first year"
         }
     }
 }
@@ -209,19 +237,11 @@ struct PaywallScreen: View {
     }
 
     enum PaywallRoute: Identifiable {
-        /// The first thing a "no" meets: what this wish costs as hardware,
-        /// then 808's price. It was an interview screen until 2026-09-14,
-        /// where a tester with no Watch read it as an upsell aimed past him.
-        /// Here it is aimed at exactly the person it is for, and it sells
-        /// nothing itself: both exits lead to screens that carry the
-        /// disclosures.
-        case anchor
         case rung(DownsellRung)
         case freeTier
 
         var id: String {
             switch self {
-            case .anchor:      return "anchor"
             case .rung(let r): return "rung-\(r.rawValue)"
             case .freeTier:    return "free"
             }
@@ -334,7 +354,7 @@ struct PaywallScreen: View {
                          onSkip: selling ? { restore() } : nil,
                          onContinue: { advance() }) {
             VStack(spacing: 11) {
-                ForEach(SubscriptionPlan.allCases) { p in
+                ForEach(SubscriptionPlan.cards(selecting: plan)) { p in
                     Button { plan = p } label: {
                         HStack(spacing: 13) {
                             Image(systemName: plan == p ? "largecircle.fill.circle" : "circle")
@@ -423,7 +443,12 @@ struct PaywallScreen: View {
                 if selling || ProcessInfo.processInfo.isPreviewingDownsell {
                     Button("Not right now") {
                         Analytics.track(.paywallDismissed)
-                        route = .anchor
+                        // One follow-up, then the discount (Melvin,
+                        // 2026-09-22: "there are too many, and they arent
+                        // convincing"). The hardware anchor that used to open
+                        // the ladder is gone from it; `HardwareScreen` stays
+                        // for the onboarding step that still jumps to it.
+                        route = .rung(offerTrial ? .trial : .halfYear)
                     }
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.textSecondary)
@@ -432,18 +457,6 @@ struct PaywallScreen: View {
             }
             .fullScreenCover(item: $route) { destination in
                 switch destination {
-                case .anchor:
-                    HardwareScreen(priceLine: anchorPriceLine,
-                                   ctaTitle: "See the plans",
-                                   declineTitle: "Not for me",
-                                   onContinue: { route = nil },
-                                   onDecline: {
-                                       // No free-week rung for someone who
-                                       // already used the intro offer: it
-                                       // would promise a trial the purchase
-                                       // sheet contradicts.
-                                       route = .rung(offerTrial ? .trial : .yearReframe)
-                                   })
                 case .rung(let current):
                     DownsellSheet(rung: current, plan: plan,
                                   yearlyPrice: store.displayPrice(for: .yearly)

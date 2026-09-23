@@ -55,7 +55,7 @@ final class CommunityModel: ObservableObject {
 
     private(set) var store: CommunityStore?
     private(set) var myID: String?
-    private let demo: Bool
+    private var demo: Bool
     var ledger: RewardLedger?
     /// The earliest session on this phone, supplied by the app (the model
     /// has no SwiftData access of its own).
@@ -76,17 +76,54 @@ final class CommunityModel: ObservableObject {
     }
 
     /// The one instance the app injects: the live CloudKit model, or the
-    /// seeded demo when `PREVIEW_FRIENDS` is set (DEBUG).
+    /// seeded in-memory one when test mode is on (DEBUG).
     static func app(ledger: RewardLedger? = nil) -> CommunityModel {
         #if DEBUG
-        if ProcessInfo.processInfo.environment["PREVIEW_FRIENDS"] != nil {
-            return CommunityModel(store: nil, demo: true, ledger: ledger)
+        if testModeWanted {
+            let model = CommunityModel(store: nil, demo: true, ledger: ledger)
+            model.testMode = true
+            return model
         }
         #endif
         let model = live()
         model.ledger = ledger
         return model
     }
+
+    #if DEBUG
+    /// Friends against a fake database kept in memory, for a simulator with
+    /// no iCloud account (Melvin, 2026-09-22: "the friends tab has been like
+    /// closed off this whole time due to icloud, can you fix this so i can
+    /// test it"). Everything works except leaving the device: profiles,
+    /// search, requests, posts, reactions, reports.
+    ///
+    /// On by default in the simulator, off on a phone, and switchable in the
+    /// tab. `PREVIEW_FRIENDS` still forces it on, and `=claim` leaves the
+    /// handle unclaimed so the first-run screen shows.
+    @Published private(set) var testMode = false
+    static let testModeKey = "community.testMode.v1"
+
+    static var testModeWanted: Bool {
+        if ProcessInfo.processInfo.environment["PREVIEW_FRIENDS"] != nil { return true }
+        #if targetEnvironment(simulator)
+        let byDefault = true
+        #else
+        let byDefault = false
+        #endif
+        return UserDefaults.standard.object(forKey: testModeKey) as? Bool ?? byDefault
+    }
+
+    func setTestMode(_ on: Bool) async {
+        testMode = on
+        UserDefaults.standard.set(on, forKey: Self.testModeKey)
+        demo = on
+        store = on ? nil : CloudKitCommunityDatabase.ifEntitled().map { CommunityStore(database: $0) }
+        profile = nil
+        myID = nil
+        phase = .loading
+        await load()
+    }
+    #endif
 
     var friendCount: Int { friends.count }
 

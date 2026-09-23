@@ -1717,7 +1717,8 @@ So the release branch is **`social-1.1`**, not `mvp`: Friends ON
   `OttoBubble` and the `ottoBreathing()` scale pulse (5 s, anchored at the
   feet) in OttoView. **The bubble's lines are rule-written from the streak,
   practiced-today and rest-day state (`ottoLines`), never generated**, and
-  tapping Otto cycles them; the last line is always the breath-doorway tip.
+  tapping Otto cycles them. (The breath-doorway tip that always closed the
+  list is gone since 2026-09-22; see "OTTO JIGGLES" below.)
   A, C and D stay in the mockup. `mockups/onboarding-v3.html` (Headspace's
   nine screens, Otto's face, "N of M" counter, breathing head top-left) is
   still AWAITING MELVIN'S SIGN-OFF. Serve `mockups/` with the launch
@@ -2837,7 +2838,7 @@ Decided from `mockups/otto-aura.html`: he gets sad, and he lives on Home.
   kept apart from the score's gold, and it is never a closed ring with a
   number in it.
 - **He no longer waves on a tap on Home**: the wave belongs to the standing
-  pose and every stage sits. A tap still cycles his lines, and his mood leads
+  pose and every stage sits. (He jiggles instead, since 2026-09-22.) A tap still cycles his lines, and his mood leads
   them at Low, Frustrated (only if today is not yet practised), In flow and
   Enlightened.
 - **There is no lying-down Otto** (Melvin, twice now). At his lowest he sits
@@ -3022,9 +3023,9 @@ left beside a bubble).
   pinned by its bottom above his head, exactly as the Ready screen pins
   its line. A tap on him still cycles the line.
 - **The cards rise onto the near meadow** (`-17%` of the scene) rather than
-  waiting under a field of empty grass. First the aura card: "Otto is
-  curious" and a bar, with **no number on purpose**, since a second 0 to 100
-  on Home would be read as the score. Then Brainrot's three tiles in 808's
+  waiting under a field of empty grass. First the aura card: "Otto's glow",
+  its percentage and a bar. (It was "Otto is curious" with no number until
+  2026-09-22, so it could not be read as the score; see "OTTO JIGGLES".) Then Brainrot's three tiles in 808's
   facts (best streak, sessions, time meditated), This week, and Recent, now
   one card so its header is not text on a painting.
 - **The page is grass**: the background is the meadow's near colour, and the
@@ -3113,6 +3114,323 @@ stays, as a feature, not the headline.
   release that ships Block must too.
 - Aziz's areas are not touched by this: the plus's session screens and
   Profile.
+
+## BLOCK IS BUILT, ON BRANCH `block` (2026-09-22, overnight)
+
+The whole feature, behind `FeatureFlags.block` (ON in DEBUG, OFF in Release
+until `blockInRelease` flips; tripwire in `FeatureFlagTests`). Off means the
+Guide tab and no Block screen in onboarding. Status and the phone test list
+are in `CONSISTENCY.md` > Build status and RELEASE_CHECKLIST.md.
+
+- **Where it lives.** `Shared/Block/BlockModel.swift` is the rules, pure and
+  tested (`BlockRulesTests`, `InterventionPickerTests`); the extensions list
+  that one file. `BlockKit/` is the Screen Time half (App Group store,
+  shields, DeviceActivity schedules), compiled into the app and the
+  extensions. `BlockExtensions/{Monitor,Shield,ShieldAction}` are the three
+  app-extension targets in project.yml. `Coherence/Block/` is the app side:
+  `BlockController`, `BlockTab`, `BlockerEditor`, `InterventionView` (the
+  twenty screens, Firm's breath, the how-long screen), `BlockHooks`,
+  `BlockIntroScreen`.
+- **Each process writes only its own App Group keys**: the app the state,
+  the shield action the asks, the monitor the daily-limit hits. A shared
+  read-modify-write would lose a tap on the shield to the app saving a
+  moment later.
+- **Every change goes through `BlockController.commit`**: save, re-register
+  the schedules when the blockers changed, reconcile the shields. The
+  monitor reconciles on every wake, judging a second ahead so a window
+  Screen Time opens a hair early is not judged closed.
+- **One DeviceActivity schedule per blocker, daily**; the weekday rule lives
+  in `BlockRules`, which every wake asks. A pass end is its own activity,
+  started in the past when shorter than Screen Time's fifteen-minute floor.
+  **That trick is unverified: test it on a phone first.**
+- **"Not now" opens every holding blocker with a pass left**; Strict and
+  spent ones stay held. A session opens the rest of the window it started or
+  ended in, if it meets the blocker's shortest session, idempotently, on
+  every new session and every return to the foreground.
+- **"Okay, let's meditate" starts the session straight away** (Melvin),
+  after Otto's cover is fully down (`startAfterOtto` in `onDismiss`), with
+  the Ready screen's last sound; the guided track only if paid.
+- **The shield cannot open the app**, so Ask Otto posts a Time Sensitive
+  notification; the delegate (`BlockNotifications`, the first notification
+  delegate 808 has had) routes the tap. Opening 808 by hand within three
+  minutes of an unanswered ask shows Otto too, in case the notification never
+  arrived. A presentation is claimed once per fifteen seconds, because the
+  tap and the foreground both ask.
+- **Paid**: `Entitlements.block`; `BlockAccess` allows everyone in DEBUG
+  (the beta loads no products), and `BLOCK_PAYWALL=1` puts the paywall back.
+- **DEBUG hooks:** `PREVIEW_BLOCK=1` (Mindful day set up and holding,
+  Screen Time treated as allowed, no Screen Time calls), `PREVIEW_BLOCK=empty`,
+  `PREVIEW_TAB=block`, `PREVIEW_INTERVENTION=<kind>` (e.g. `faceTime`).
+- **`ValleyScene(showsOtto: false)`** draws the valley alone, for the screens
+  that stand their own pose in it. Default true, so Aziz's screens are
+  unchanged.
+- **Font names are PostScript**: `MarkerFelt-Wide`, not "Marker Felt", which
+  silently fell back to the rounded system face.
+- **Signing, learned from the first phone build (2026-09-22):** automatic
+  signing (`-allowProvisioningUpdates`) registered the beta's `.dev` App
+  IDs and gave them Family Controls, but **it cannot create an App Group**:
+  every profile came back with `application-groups: []` and the build
+  failed until the group exists in the developer portal (Identifiers > App
+  Groups, the Account Holder's step). Production needs
+  `group.com.lockout.meditate808`, the beta `group.com.lockout.meditate808.dev`.
+  And **Time Sensitive Notifications is refused on an app extension**
+  ("not a valid entitlement"); it lives on the app only.
+- The camera usage string now also names Otto's FaceTime screen (live
+  preview, nothing recorded), and the reminder screen stopped promising
+  "nothing else, ever" on Block builds.
+
+## OTTO JIGGLES, HAS TWENTY-FIVE MORE THINGS TO SAY, AND HIS GLOW IS A PERCENTAGE (2026-09-22, Melvin)
+
+- **A tap jiggles him** (`OttoJiggle`, in `OttoAuraFigure.swift`): a squash
+  from his feet and a wobble that dies away, about 0.55 s, as SwiftUI
+  keyframes on the FIGURE, so the rig and the still drawings react the same
+  and his glow and orbits hold still. Anchored at the bottom so his feet stay
+  planted; skipped under Reduce Motion. Home and the Block tab. The sit and
+  the Ready screen never jiggle: `ValleyScene.jiggle` defaults to 0 and only
+  Home bumps it. Verified from a screen recording, frame by frame, with
+  `tools/motion_strip.swift` (there is no ffmpeg on this Mac).
+- **`OttoSayings`** (`Shared/Engine/OttoAura.swift`, next to the aura, the
+  way `VerdictEngine` keeps its phrase bank): 25 lines after today's state
+  line, twelve famous meditators and thirteen of his own, alternating, started
+  at a different line each day. `OttoAuraTests` pins the rules: nothing about
+  a score, a doorway or a Watch; no em dashes; **74 characters at most**,
+  because that is two lines in his bubble on a 375pt phone and a third line
+  on Home runs into the Guide circle.
+- **The doorway line is deleted, and so is "breathe slow for a minute"**
+  (Melvin: there are endless ways to meditate, so forcing one technique on
+  people was wrong). Where he gives advice he offers several ways in.
+- **Every famous line was checked against its source first**, and several
+  famous ones are fake. Refused, so nobody adds them back: "It does not
+  matter how slowly you go as long as you do not stop" (in no edition of the
+  Analects; the real Book IX passage is the mound raised one basket of earth
+  at a time, which he says instead); "Sleep is the best meditation" (credited
+  to the Dalai Lama everywhere, sourced nowhere); sloths holding their breath
+  for forty minutes (about fifteen, per the Sloth Conservation Foundation);
+  sloths sleeping twenty hours (captive animals; wild ones sleep eight to
+  ten, which he says). Sources for the twelve that stayed are in the doc
+  comment on `OttoSayings`.
+- **The aura card says "Otto's glow" and a percentage.** Melvin: "Otto is
+  curious" did not say anything. It carried no number only so it could not
+  be read as a session's score, and the score is on its way out. The stage
+  names still drive his mood lines and his VoiceOver label. The nudge under
+  the bar lost "Nothing measured today", since a phone session measures
+  nothing and the line told people what they lacked.
+- **The Block tab's Otto matches Home by head width**, about 125pt on an
+  iPhone 17 Pro (the clipboard pose was 91pt), so the scene grew from 46 to
+  56 percent of the height to keep his line above him.
+
+## NOTHING OPENS AFTER A SESSION EXCEPT OTTO'S GLOW (2026-09-22, Melvin)
+
+"Remove the save session screen, it looks ugly and is off theme and is a lot
+of friction. Instead, the first thing the user sees after meditating is Otto
+gaining aura." So a finished sit now goes straight to Home and plays the glow
+it earned. **The Save session screen and the results screen no longer open
+after a session**; both still exist and are still reachable from a session's
+own row, and Save session is still Aziz's screen, cut from this path only.
+
+- **`SessionLandedHooks`** (ContentView) replaces the Save-session half of
+  `FriendsHooks`: same gate (wait for the live-session cover and any award
+  unlock, then 700ms), new destination. It runs with Friends off, because the
+  glow is not a Friends feature.
+- **`celebrate(_:)`** switches to Home, works out the level before and after
+  the landed session from the session dates (the aura is derived, so "before"
+  is simply the level without that date), sets `auraGain`, jiggles him, and
+  counts the card up to the new level. `AuraGainBurst` (in
+  `OttoAuraFigure.swift`) draws the light, the sparks and the "+N%".
+- **A derived curve cannot be animated with `withAnimation`.** The burst was
+  first written as `.opacity(f(phase))` with one animated `phase`, and it
+  never appeared: SwiftUI interpolates each modifier between its start and end
+  value, and this curve rises and falls, so opacity went 0 to 0. Only
+  `keyframeAnimator` (or `TimelineView`) re-evaluates the function every
+  frame. The jiggle works for the same reason. **Animate a value, and only
+  monotonic functions of it survive.**
+- The burst is drawn UNDER his speech bubble so sparks pass behind the words,
+  and the "+N%" rises beside his head, not above it, where the bubble is.
+- **`RootHooks` wraps Friends and the landing in ONE modifier.** Adding a
+  second `.modifier(...)` to ContentView tipped the type checker over again.
+- `PREVIEW_AURA=<from>:<to>` (DEBUG) replays the whole thing on Home without
+  waiting a day to earn it.
+- **The prompt that replaces the screen is not built.** `mockups/after-session.html`
+  draws four placements for it (a card under the glow, a toast, Otto asking
+  with two chips, the session row lit with "Add details") and two versions of
+  the one screen it opens: how it felt, what you did, notes, photos, who can
+  see it, all on one page. Awaiting Melvin's pick. Until then a session is
+  filled in from its row.
+
+### The prompt and the session page, built (same day, Melvin's picks)
+
+From `mockups/after-session.html`: **option B, the toast above the tab bar**,
+and **screen 1**, with four changes.
+
+- **The toast never fades.** "Make it never fade, just always there unless
+  they like click on an X in the top left corner." So it is state, not a
+  timer: `SessionDetails` in UserDefaults, raised when the glow finishes,
+  cleared by the X or by saving the session, and read back on every launch.
+  A toast that disappears is one most people would never once use, which is
+  the whole reason a fading one was rejected.
+- **`SaveSessionView` is rewritten as the session's page**: the valley's sky
+  band with the length as the one big number, the title, and Otto's head on
+  its edge; then how it felt, what you did, what friends read (Friends only),
+  private notes, photo or video, who can see it. The band is PINNED, because
+  scrolling it ran the length and the X through the status bar.
+- **How it felt is a slider out of ten** (Melvin: "should be a scroll bar,
+  not emojis, make it out of 10 still"). It shows "Not rated" and a grey
+  track until it is touched, because a slider parked at five would file every
+  unrated session as middling.
+- **What did you do lists every sound 808 offers**, not just the practices
+  (Melvin: "thats something ive been meaning to tell you for awhile").
+  `MeditationMethod.loggable` is now `techniques + sounds`, the sounds coming
+  from `SoundMenu`, which is already the one list of them, so a sound added
+  there appears in the picker, on the results card and in the labels at once.
+  The session's own sound is preselected: it is known, and it is the likeliest
+  answer.
+- **Any photo and any video, for friends and for yourself.** The BeReal rule
+  (front camera only, no library, no selfie no post) is gone, on Melvin's
+  call. `SessionPhoto` gains a `video`, exported to 540p and half a minute
+  before it is stored, with its first frame kept in `jpeg` so the calendar,
+  the rows and the results screen draw it without knowing there is film
+  behind it. **The feed still posts the still**: a video in a post is its own
+  piece of work.
+- **Otto reflects, he does not thank.** "It's not like youre doing him a
+  favor by taking care of him. It should be assumed." His line after a
+  session is "That's today done. I'm brighter for it."
+- **The sloth is off the session rows** (Melvin: "the sloth looks weird as
+  fuck if hes there on every meditation"). `EvidenceRow` draws its picture
+  panel only when there IS a picture; the score moved up beside the rating.
+  Same note that took him off Aziz's log a day earlier.
+- **A session row opens its page**, and the measurements are one tap further
+  in ("See the measurements", only when something measured them).
+- **The results screen is the measurements and nothing else** (Melvin, same
+  day: "yes strip it"). Gone from it: the rating card with its slider,
+  technique picker and note, the photo card, and the "Only you / Edit" chip.
+  What is left is the ring, the verdict, Otto, the tiles, the curves, the
+  unlock and Share. The session's page owns everything a person SAYS; this
+  screen owns what was measured, and it is reached from that page.
+  **The first-session paywall moved with it**: the offer rode the reflection
+  card's own `onDisappear`, and it belongs to the screen.
+- **Still open:** a Friends post carries a score, so a phone session cannot be
+  posted yet.
+
+### Friends can be tested without iCloud, and a post's score is optional (same day)
+
+- **`CommunityModel.testMode`** (DEBUG): Friends against
+  `MemoryCommunityDatabase`, seeded, so the tab works on a simulator with no
+  iCloud account (Melvin: "the friends tab has been like closed off this
+  whole time due to icloud, can you fix this so i can test it"). On by
+  default in the simulator, off on a phone; the unavailable card offers to
+  turn it on and a banner across the feed says it is on. Everything works
+  except leaving the device, and nothing survives a relaunch.
+- **A post's score is optional** (Melvin: "have the score on the friends
+  post be optional, again like we are making the watch optional"). `Post`
+  and `Draft` carry `Int?`; the card drops the capsule and the Score column
+  rather than printing a zero, and the profile's average counts only the
+  sits that have one. The session page no longer refuses to share a phone
+  sit. **Whether it is also a CHOICE is undecided**: `mockups/post-score.html`
+  draws the card both ways and three homes for a switch (none, per post, or
+  once in the profile). My recommendation is on the page: none now, a profile
+  preference later, and never a per-post switch, because the posts somebody
+  leaves the score ON for say what the hidden ones were.
+- **The profile photo is any picture again, with Otto as the default**
+  (Melvin: "either a selfie or from your library, and then can have otto be a
+  default if you dont want to pick anything"). This reverses Aziz's call of
+  2026-09-21 ("no more pfp and make the sloth in the circle"), which had
+  made Otto everybody's portrait. `ProfilePortrait` is the one view that
+  draws a face, so Profile, the feed and a person's page cannot disagree;
+  the picker in Create your profile already offered camera or library.
+  **Initials are gone**, which was the old fallback.
+
+### Block can be tested without Screen Time (same day)
+
+Melvin: "make it so i can test the block thing, screentime is password
+protected and i dont know the password". The simulator asks for a passcode
+nobody has, and it cannot draw a shield either.
+
+- **`BlockController.testMode`** (DEBUG): Screen Time is treated as allowed
+  and never called, switching a blocker on counts as having apps (the
+  simulator's picker has none to offer), and a card on the Block tab holds the
+  switch, a "Hold again" that forgets today's releases, and "Open a held app".
+  On by default in the simulator, off on a phone, and `PREVIEW_BLOCK` still
+  turns it on with Mindful day already holding.
+- **The stand-in shield uses the real shield's words and the real
+  notification**: `BlockShieldWords` and `BlockAsk` moved into BlockKit, which
+  both the extension and the app compile, so a rehearsal on the simulator
+  sends exactly what a phone will. Verified end to end on the simulator:
+  switch on, open a held app, Ask Otto, the Time Sensitive banner, one of
+  Otto's twenty screens, meditate, apps open.
+- **A foreground banner only lasts about five seconds.** Tapping it after that
+  lands on the screen behind it and looks like the notification did nothing.
+  The fallback is the real one: opening 808 within three minutes of an
+  unanswered ask shows Otto anyway.
+
+### Two sizing fixes
+
+- **Otto on Home was drawn a thumb's width left of his own cushion** at
+  Progressing and above, where he is the Rive rig. `OttoAuraFigure` passed an
+  explicit square width, and a square frame letterboxes the 425 x 522 artboard
+  and hangs it bottom LEFT. It takes the artboard's aspect now. The note under
+  the Rive section about Home keeping its old square frame is what caused it.
+- **The Block tab's Otto** is between where he was and Home's size: about
+  104pt of face against Home's 125 and his old 91 (Melvin asked for bigger,
+  then "a bit smaller").
+
+## SHOW THEM, DO NOT TELL THEM; AND THE LADDER IS TWO RUNGS (2026-09-22, Melvin)
+
+- **Two onboarding screens are cut**: "Here's what's waiting" (three feature
+  rows) and the Block explainer. Melvin: "they look AI generated you know,
+  maybe just get rid of them." Both were the app describing itself.
+- **`AuraDemoScreen` replaces them**: "I get brighter every day you meditate
+  / See for yourself. Drag the bar." A drag bar moves Otto through his
+  states live, and a caption names what each position costs in days, which
+  is the real rule in `OttoAura`. It moves itself once on appear, so the
+  affordance is discovered rather than captioned.
+- **The rule this sets, and it applies to every screen that sells
+  something: hand them the thing, do not describe it.** The remaining places
+  telling rather than showing, worth the same treatment: the guide's method
+  list (let them try a breath instead of reading about it) and the sound
+  library (a tap should play three seconds of it).
+- **The downsell ladder is two rungs**: the free week, then **half off the
+  first year**, then the free tier. Melvin: "there are too many, and they
+  arent convincing ... unless it includes a discount, which i actually do
+  want to do." The hardware anchor left the ladder, and the year's price
+  restated in smaller words is gone, because restating a price concedes
+  nothing.
+- **The discount is its own product**, `com.lockout.meditate808.yearly50`:
+  the full yearly price with a first-year introductory offer at $14.99. A
+  product carries exactly one introductory offer, which is why this cannot
+  be the yearly product, and is the same rule that killed the half-off-month
+  rung in August. On the paywall it REPLACES the yearly card rather than
+  sitting beside it, and its cadence line carries the renewal price
+  everywhere the number appears. `PaywallLadderTests` pins all of it,
+  including that the ladder never grows past two rungs.
+
+## THE BETA CRASHED ON LAUNCH A THIRD TIME, AND THE PROFILE WAS THE LIAR (2026-09-22)
+
+Same crash family as 2026-09-12 and 2026-09-15: **`CKContainer` traps on a
+container the process does not hold.** Both earlier fixes stand. The new road:
+
+Assigning the App Groups to the `.dev` App IDs regenerated their provisioning
+profiles, and the fresh profile lists
+`icloud-container-identifiers: [iCloud.com.lockout.meditate808]`, because the
+App ID is allowed to hold it. The beta strips iCloud from the BINARY on
+purpose. `CloudEntitlement` reads the profile, so it reported a container the
+binary does not carry, and the first `CKContainer(identifier:)` after launch
+killed the app (signal 5, about a second in, nothing in the console but the
+line before it).
+
+**The build now says so itself.** `tools/beta_install.sh` adds
+`CloudKitDisabled = true` to Info.plist in the same branch that deletes the
+iCloud entitlement keys, and `CloudEntitlement` checks that flag before
+anything else. Nothing at runtime can read its own signed entitlements
+without private API, so the build that removes them leaves the note behind.
+
+**The lesson, which is the reason this is its own section: a provisioning
+profile states what the App ID MAY hold, never what this binary DOES hold.**
+Any build that edits its own entitlements has to tell the runtime.
+
+Diagnosis, for next time: `xcrun devicectl device process launch --console
+--terminate-existing <bundle>` prints the app's stdout and names the signal,
+and reading the profile's own entitlements is one command:
+`security cms -D -i <profile> | plutil -extract Entitlements json -o - -`.
 
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
@@ -3981,7 +4299,7 @@ reappear, then delete the "sync doesn't work" line from What to Test.
    address to match the IRS record).** **Nothing in the app carries or needs banking info.**
    Enroll in the **Small Business Program** the same sitting (15% vs 30%).
 7. Create the products EXACTLY as compiled:
-   `com.lockout.meditate808.{monthly,yearly,lifetime}`, monthly + yearly as
+   `com.lockout.meditate808.{monthly,yearly,lifetime,yearly50}`, monthly + yearly as
    auto-renewables in ONE subscription group at **$7.99 / $29.99**, both
    carrying the **7-day free intro**; lifetime as a non-consumable at
    **$99.99**, no intro (its CTA says "charged today" on purpose). The app
@@ -4149,7 +4467,7 @@ CloudKit, and Sign in with Apple are unavailable under free provisioning.
 - iOS app: `com.lockout.meditate808`
 - Watch app: `com.lockout.meditate808.watchkitapp`
 - iCloud container (Phase 7): `iCloud.com.lockout.meditate808`
-- StoreKit products: `com.lockout.meditate808.{monthly,yearly,lifetime}`
+- StoreKit products: `com.lockout.meditate808.{monthly,yearly,lifetime,yearly50}`
 
 **Renamed from `com.lockout.coherence` on 2026-08-11, before anything was
 registered.** Chosen over `com.lockout.808` because Apple documents the

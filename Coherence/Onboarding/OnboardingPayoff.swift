@@ -1088,7 +1088,12 @@ struct PermissionScreen: View {
     var body: some View {
         OnboardingScreen(section: .win,
                          title: "One nudge,\nat your time.",
-                         subtitle: "One reminder a day, at the time you pick. Nothing else, ever.",
+                         // "Nothing else, ever" stopped being true with Block: its
+                         // "Otto wants a word" arrives when the person taps Ask
+                         // Otto on a held app (2026-09-22).
+                         subtitle: FeatureFlags.block
+                            ? "One reminder a day, at the time you pick. Otto also answers when you ask him from a held app."
+                            : "One reminder a day, at the time you pick. Nothing else, ever.",
                          ctaTitle: "Turn on my reminder",
                          // Not a skip either: both buttons continue the flow.
                          // This one declines the iOS permission, and iOS gives

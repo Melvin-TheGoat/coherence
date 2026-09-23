@@ -36,14 +36,20 @@ final class Store: ObservableObject {
         static let monthly  = "com.lockout.meditate808.monthly"
         static let yearly   = "com.lockout.meditate808.yearly"
         static let lifetime = "com.lockout.meditate808.lifetime"
+        /// The year at half price for the first year: its own product in the
+        /// same subscription group, priced at the full yearly rate and
+        /// carrying a first-year introductory offer. A product holds exactly
+        /// one intro offer, which is why this cannot be the yearly one.
+        static let yearHalf = "com.lockout.meditate808.yearly50"
 
-        static let all = [monthly, yearly, lifetime]
+        static let all = [monthly, yearly, lifetime, yearHalf]
 
         static func of(_ plan: SubscriptionPlan) -> String {
             switch plan {
             case .monthly:  return monthly
             case .yearly:   return yearly
             case .lifetime: return lifetime
+            case .yearHalf: return yearHalf
             }
         }
     }

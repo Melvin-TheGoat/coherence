@@ -2,7 +2,9 @@ import SwiftUI
 
 /// The five destinations.
 enum MainTab: Hashable {
-    case home, guide, friends, profile
+    /// `guide` is the tab only while Block is switched off; with Block on the
+    /// guide lives in its circle under the streak on Home (2026-09-21).
+    case home, guide, block, friends, profile
 }
 
 /// The bottom bar (2026-09-12, Melvin): the layout most apps use, so the app
@@ -17,7 +19,13 @@ struct MainTabBar: View {
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             item(.home, icon: "house", label: "Home")
-            item(.guide, icon: "book.closed", label: "Guide")
+            if FeatureFlags.block {
+                // Block replaces the Guide tab (Melvin, 2026-09-21).
+                item(.block, icon: "hand.raised", label: "Block")
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.block: $0] }
+            } else {
+                item(.guide, icon: "book.closed", label: "Guide")
+            }
             plus
             if FeatureFlags.friends {
                 item(.friends, icon: "person.2", label: "Friends")

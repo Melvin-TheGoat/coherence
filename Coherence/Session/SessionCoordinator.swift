@@ -151,6 +151,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// the phone's Begin belongs to the person sitting down, and it was
     /// spending up to forty-five seconds, a permissions screen and a whole
     /// failure vocabulary on hardware most people do not own.
+    /// Every session written, phone or Watch, current or stale: Block opens
+    /// the rest of the windows it counts for (2026-09-22). Set once at launch
+    /// by the app. A hook rather than a view's `onChange`, so a Watch
+    /// session landing while 808 is in the background still opens the apps.
+    static var onSessionSaved: ((_ startedAt: Date, _ durationSec: Int) -> Void)?
+
     func begin(mode: String, trackID: UUID?, plannedDurationSec: Int?,
                hapticsEnabled: Bool, soundID: String? = nil, headphones: Bool = false) {
         let params = SessionParams(
@@ -236,6 +242,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             return
         }
         lastSessionID = session.id
+        Self.onSessionSaved?(session.startedAt, session.durationSec)
         PendingSave.set(session.id)
         status = "Saved ✓"
         let dates = ((try? context.fetch(FetchDescriptor<Session>())) ?? []).map(\.startedAt)
@@ -468,6 +475,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             }
             return
         }
+        Self.onSessionSaved?(session.startedAt, session.durationSec)
         guard isCurrent else { return }
         lastSessionID = session.id
         // Survives the app being suspended or killed between the Watch
