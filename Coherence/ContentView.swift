@@ -71,6 +71,11 @@ struct ContentView: View {
     /// the sun to set. Any non-zero value works; 1 is the arrival frame.
     @State private var sitPreviewElapsed =
         ProcessInfo.processInfo.environment["PREVIEW_BREATHING"].flatMap(Double.init)
+    /// `PREVIEW_UNBLOCK_GALLERY=1` opens the unblock-screens gallery, and
+    /// `PREVIEW_INTERVENTION_HOWLONG=1` opens the how-long ("Not now")
+    /// screen directly, both without a tap: a way to reach either from a
+    /// cabled DEBUG install with no Simulator UI automation.
+    @State private var unblockPreview: UnblockDebugPreview?
     #endif
 
     private enum HomeSheet: Identifiable {
@@ -209,6 +214,31 @@ struct ContentView: View {
             SessionActiveView(startedAt: Date().addingTimeInterval(-preview.elapsed),
                               plannedDurationSec: 600,
                               planChip: "10 min · Silence") { sitPreviewElapsed = nil }
+        }
+        .fullScreenCover(item: $unblockPreview) { which in
+            switch which {
+            case .gallery:
+                NavigationStack { InterventionGalleryView() }
+            case .howLong:
+                // Otto's own "Not now" flow, jumped straight to the how-long
+                // step: nothing here is real, same as the gallery's rows.
+                InterventionView(kind: .standing, context: InterventionContext(hour: 9, streak: 6,
+                                                                                aura: .progressing,
+                                                                                friendWhoSat: nil),
+                                 block: block,
+                                 onMeditate: { _ in unblockPreview = nil },
+                                 onClose: { unblockPreview = nil },
+                                 rehearsal: true, startOnHowLong: true)
+            case .kind(let kind):
+                // Exactly what tapping that kind's row in the gallery opens.
+                InterventionView(kind: kind, context: InterventionContext(hour: 9, streak: 6,
+                                                                           aura: .progressing,
+                                                                           friendWhoSat: "Sam"),
+                                 block: block,
+                                 onMeditate: { _ in unblockPreview = nil },
+                                 onClose: { unblockPreview = nil },
+                                 rehearsal: true)
+            }
         }
         .onAppear(perform: debugPreviewHooks)
         #endif
@@ -386,6 +416,23 @@ struct ContentView: View {
             if let raw = ProcessInfo.processInfo.environment["PREVIEW_INTERVENTION"], sheet == nil {
                 sheet = .intervention(InterventionKind(rawValue: raw)
                                       ?? InterventionPicker.pick(interventionContext, recent: []))
+            }
+            // PREVIEW_UNBLOCK_GALLERY=1 opens the unblock-screens gallery
+            // (Settings > DEBUG) directly; PREVIEW_INTERVENTION_HOWLONG=1
+            // opens the how-long ("Not now") screen directly. Both a way in
+            // with no tap, for a cabled DEBUG install with no UI automation.
+            if ProcessInfo.processInfo.environment["PREVIEW_UNBLOCK_GALLERY"] == "1", unblockPreview == nil {
+                unblockPreview = .gallery
+            }
+            if ProcessInfo.processInfo.environment["PREVIEW_INTERVENTION_HOWLONG"] == "1", unblockPreview == nil {
+                unblockPreview = .howLong
+            }
+            // PREVIEW_UNBLOCK_KIND=<kind> opens that kind exactly as tapping
+            // its row in the gallery would (rehearsal mode): a way to prove
+            // any one of the twenty renders correctly with no tap.
+            if let raw = ProcessInfo.processInfo.environment["PREVIEW_UNBLOCK_KIND"], unblockPreview == nil,
+               let kind = InterventionKind(rawValue: raw) {
+                unblockPreview = .kind(kind)
             }
             if let which = ProcessInfo.processInfo.environment["PREVIEW_TAB"] {
                 switch which {
@@ -1209,5 +1256,22 @@ private struct DiscardHook: ViewModifier {
 struct SitPreview: Identifiable {
     let elapsed: Double
     var id: Double { elapsed }
+}
+
+/// `PREVIEW_UNBLOCK_GALLERY` / `PREVIEW_INTERVENTION_HOWLONG` /
+/// `PREVIEW_UNBLOCK_KIND=<kind>`: which of Otto's unblock screens to open
+/// with no tap. `.kind` opens one intervention kind exactly the way tapping
+/// its row in the gallery would (rehearsal mode, no tap needed to prove it).
+enum UnblockDebugPreview: Identifiable {
+    case gallery, howLong
+    case kind(InterventionKind)
+
+    var id: String {
+        switch self {
+        case .gallery: return "gallery"
+        case .howLong: return "howLong"
+        case .kind(let kind): return "kind-\(kind.rawValue)"
+        }
+    }
 }
 #endif

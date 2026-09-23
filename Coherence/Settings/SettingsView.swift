@@ -157,6 +157,7 @@ private struct SettingsForm: View {
                 freeTierDebugSection
                 cloudKitDebugSection
                 airPodsDebugSection
+                blockDebugSection
                 #endif
 
                 accountFooter
@@ -284,6 +285,19 @@ private struct SettingsForm: View {
                 navRow(icon: "airpodspro", title: "AirPods capture probe", teal: true) {
                     AirPodsProbeView()
                 }
+            }
+        }
+    }
+
+    /// Every screen "Ask Otto" can lead to (the twenty intervention kinds
+    /// plus the how-long screen), so it can be demoed on a phone with
+    /// nothing real happening (`InterventionGalleryView`).
+    @ViewBuilder
+    private var blockDebugSection: some View {
+        SectionHeader(title: "Block (debug)")
+        settingsCard {
+            navRow(icon: "bell.badge", title: "Otto's unblock screens", teal: true) {
+                InterventionGalleryView()
             }
         }
     }

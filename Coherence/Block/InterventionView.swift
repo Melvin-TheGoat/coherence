@@ -18,9 +18,26 @@ struct InterventionView: View {
     let onMeditate: (Int?) -> Void
     /// Done: a pass was taken, or they closed it.
     let onClose: () -> Void
+    /// The unblock-screens gallery (Settings > DEBUG, so every screen can be
+    /// rehearsed on a phone with nothing real happening): tells
+    /// `HowLongScreen` to skip `BlockController.takePass`, so it never
+    /// touches Screen Time. Defaults to the real flow.
+    let rehearsal: Bool
 
     private enum Step { case ask, howLong }
-    @State private var step: Step = .ask
+    @State private var step: Step
+
+    init(kind: InterventionKind, context: InterventionContext, block: BlockController,
+         onMeditate: @escaping (Int?) -> Void, onClose: @escaping () -> Void,
+         rehearsal: Bool = false, startOnHowLong: Bool = false) {
+        self.kind = kind
+        self.context = context
+        self.block = block
+        self.onMeditate = onMeditate
+        self.onClose = onClose
+        self.rehearsal = rehearsal
+        _step = State(initialValue: startOnHowLong ? .howLong : .ask)
+    }
 
     var body: some View {
         ZStack {
@@ -28,7 +45,8 @@ struct InterventionView: View {
             case .ask:
                 InterventionScene(kind: kind, context: context, doors: doors)
             case .howLong:
-                HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose)
+                HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose,
+                              rehearsal: rehearsal)
                     .transition(.opacity)
             }
         }
@@ -896,12 +914,14 @@ private struct AskWhyScene: View {
 
 // MARK: - Not now
 
-/// "No worries. How long do you need?" (`mockups/block-v1.html`, section 2,
-/// last screen). The apps open for that long, then Otto holds them again.
+/// "Fine. How long do you need?" (`mockups/block-v1.html`, section 2, last
+/// screen). The apps open for that long, then Otto holds them again.
 private struct HowLongScreen: View {
     @ObservedObject var block: BlockController
     let onMeditate: () -> Void
     let onClose: () -> Void
+    /// The unblock-screens gallery: skip the real pass and Screen Time call.
+    var rehearsal = false
 
     @State private var minutes = 10
     private static let options = [5, 10, 15, 30, 60]
@@ -918,7 +938,7 @@ private struct HowLongScreen: View {
                 ValleyScene(progress: 0, showsFigure: false)
                 VStack {
                     Spacer(minLength: 0)
-                    OttoLine(text: "No worries. How long do you need?", ink: ink)
+                    OttoLine(text: "Fine. How long do you need?", ink: ink)
                 }
                 .frame(width: min(size.width - 56, 330), height: max(0, ottoTop - 8 - 110))
                 .position(x: size.width / 2, y: 110 + max(0, ottoTop - 8 - 110) / 2)
@@ -958,15 +978,18 @@ private struct HowLongScreen: View {
                 .position(x: size.width / 2, y: ottoBottom + 12 + 70)
                 VStack(spacing: 6) {
                     Spacer()
+                    Button("Actually, let's meditate", action: onMeditate)
+                        .buttonStyle(PrimaryButtonStyle())
                     Button(minutes == 60 ? "Open my apps for an hour" : "Open my apps for \(minutes) min") {
-                        block.takePass(minutes: minutes)
+                        // The unblock-screens gallery rehearses this screen
+                        // with nothing real happening: skip the real pass so
+                        // it can never touch a real blocker or Screen Time.
+                        if !rehearsal { block.takePass(minutes: minutes) }
                         onClose()
                     }
-                    .buttonStyle(PrimaryButtonStyle())
-                    Button("Actually, let's meditate", action: onMeditate)
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(ink.opacity(0.8))
-                        .frame(maxWidth: .infinity, minHeight: 44)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(ink.opacity(0.8))
+                    .frame(maxWidth: .infinity, minHeight: 44)
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 12)
