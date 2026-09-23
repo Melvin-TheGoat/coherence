@@ -829,7 +829,9 @@ private struct OnboardingValley: View {
     let jiggle: Int
 
     var body: some View {
-        ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, jiggle: jiggle,
+        // Snap: the stress bar drags him through his looks, and a fade into
+        // each one left him half a second behind the thumb.
+        ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
                     showsFigure: stage != nil)
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)

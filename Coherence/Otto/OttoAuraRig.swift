@@ -37,6 +37,18 @@ final class OttoAuraRig {
         }
     }
 
+    /// Change drawing at once instead of cross-fading into it. The fade is
+    /// right on Home, where the look changes once when a session lands, and
+    /// wrong under a finger: dragging the stress bar through thirteen looks
+    /// left him half a second behind the thumb (Melvin, 2026-09-23: "make it
+    /// like instant as you scroll through").
+    var snap = false {
+        didSet {
+            guard snap != oldValue else { return }
+            instance?.booleanProperty(fromPath: "snap")?.value = snap
+        }
+    }
+
     /// Nil when the file is not in the bundle or will not load; the figure
     /// then draws the still for its stage, so a bad export costs motion and
     /// never a picture. Logged with NSLog for the reason `OttoRig.make` gives.
@@ -67,6 +79,7 @@ final class OttoAuraRig {
         viewModel.riveModel?.enableAutoBind { [weak self] instance in
             guard let self else { return }
             self.instance = instance
+            instance.booleanProperty(fromPath: "snap")?.value = self.snap
             instance.numberProperty(fromPath: "stage")?.value = Float(self.stage)
             NSLog("Otto aura rig: bound")
         }

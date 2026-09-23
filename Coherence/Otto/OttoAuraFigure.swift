@@ -27,6 +27,9 @@ struct OttoAuraFigure: View {
     @ObservedObject var rig: OttoRigHolder
     /// Bumped by a tap on him: he jiggles (`OttoJiggle`).
     var jiggle: Int = 0
+    /// Change look at once rather than cross-fading (`OttoAuraRig.snap`),
+    /// for a screen where a finger drags him through his looks.
+    var snap: Bool = false
 
     @State private var bob = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -58,14 +61,33 @@ struct OttoAuraFigure: View {
             .accessibilityLabel("Otto, \(Self.mood(stage))")
     }
 
+    /// How much wider than his canvas the rig is drawn. The moth that visits
+    /// the three lowest looks flies in from beyond the left edge of the
+    /// screen and away past the right (Melvin, 2026-09-23: it "disappears at
+    /// a cut off"), and a Rive view cannot draw outside its own bounds. So
+    /// the view is this much wider, centred on him; the artboard does not
+    /// clip, and `.contain` still sizes him by height, so he is exactly where
+    /// and as big as he was. Only the layout footprint stays the canvas.
+    static let flightSpan: CGFloat = 2.6
+
     /// The rig when it loaded, else the still for this stage. Both are the
     /// same 664 x 744 canvas, so they frame identically.
     @ViewBuilder private var drawing: some View {
         if let rig = aura.rig {
-            rig.viewModel.view()
-                .onAppear { rig.stage = look ?? stage.look }
-                .onChange(of: stage) { _, new in rig.stage = look ?? new.look }
-                .onChange(of: look) { _, new in rig.stage = new ?? stage.look }
+            GeometryReader { geo in
+                rig.viewModel.view()
+                    .frame(width: geo.size.width * Self.flightSpan, height: geo.size.height)
+                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+            }
+            // Only the drawing is wider: taps belong to whatever is on top.
+            .allowsHitTesting(false)
+            .onAppear {
+                rig.snap = snap
+                rig.stage = look ?? stage.look
+            }
+            .onChange(of: snap) { _, new in rig.snap = new }
+            .onChange(of: stage) { _, new in rig.stage = look ?? new.look }
+            .onChange(of: look) { _, new in rig.stage = new ?? stage.look }
         } else {
             Image(Self.asset(stage))
                 .resizable()

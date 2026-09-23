@@ -39,6 +39,9 @@ struct ValleyScene: View {
     /// Which of the aura rig's thirteen drawings Home shows
     /// (`OttoAura.look(level:)`); nil is the stage's own.
     var auraLook: Int? = nil
+    /// Change look at once instead of cross-fading, where a finger drags him
+    /// through his looks (onboarding's stress bar).
+    var auraSnap: Bool = false
 
     /// Bumped by a tap on him on Home: the aura figure jiggles
     /// (`OttoJiggle`). Nothing else sets it, so the sit and the Ready screen
@@ -164,14 +167,15 @@ struct ValleyScene: View {
 
                 // Everything alive takes the hour's light as one group, so
                 // the cushion, the sloth and the flowers can never disagree
-                // about what time it is.
-                groundScene(size: geo.size, scale: s)
+                // about what time it is. A grasshopper crossing farther back
+                // than his cushion is drawn in here, behind him.
+                groundScene(size: geo.size, scale: s, life: showLife)
                     .colorMultiply(Color(white: day.light))
 
-                // Grasshoppers ride on top of the meadow and the sitter, but
-                // their lanes are chosen beside `avoidRect`, never inside it.
+                // And one crossing nearer than his cushion, in front of him.
                 if showLife {
-                    ValleyLife(layer: .meadow, size: geo.size, scale: s, seed: lifeSeed, avoid: avoidRect)
+                    ValleyLife(layer: .meadowFront, size: geo.size, scale: s, seed: lifeSeed,
+                               avoid: avoidRect, depthSplit: grasshopperSplit(size: geo.size))
                 }
             }
             .frame(width: w, height: h)
@@ -195,6 +199,14 @@ struct ValleyScene: View {
         let halfWidth = max(168 * s, seated * 0.85) / 2 + 24
         return CGRect(x: size.width / 2 - halfWidth, y: top,
                       width: halfWidth * 2, height: max(20, bottom - top))
+    }
+
+    /// The feet line that decides whether a grasshopper passes behind Otto
+    /// or in front of him: the bottom of his cushion, where he meets the
+    /// grass. Nil with nobody sitting in the middle of the meadow.
+    private func grasshopperSplit(size: CGSize) -> CGFloat? {
+        guard showsFigure, !ottoInCorner else { return nil }
+        return SitLayout.cushionBottom(in: size) - ottoLift
     }
 
     // MARK: - Sky furniture
@@ -269,10 +281,15 @@ struct ValleyScene: View {
 
     // MARK: - The ground and the sitter
 
-    private func groundScene(size: CGSize, scale s: CGFloat) -> some View {
+    private func groundScene(size: CGSize, scale s: CGFloat, life: Bool) -> some View {
         ZStack(alignment: .bottomLeading) {
             Meadow(scale: s)
                 .frame(width: size.width, height: size.height)
+
+            if life {
+                ValleyLife(layer: .meadowBehind, size: size, scale: s, seed: lifeSeed,
+                           avoid: nil, depthSplit: grasshopperSplit(size: size))
+            }
 
             // The cushion gives him somewhere to be rather than floating on
             // grass, and it is the one warm object in a cool frame.
@@ -291,7 +308,8 @@ struct ValleyScene: View {
                 if !showsFigure {
                     EmptyView()
                 } else if let aura {
-                    OttoAuraFigure(stage: aura, look: auraLook, size: tall, rig: rig, jiggle: jiggle)
+                    OttoAuraFigure(stage: aura, look: auraLook, size: tall, rig: rig, jiggle: jiggle,
+                                   snap: auraSnap)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }

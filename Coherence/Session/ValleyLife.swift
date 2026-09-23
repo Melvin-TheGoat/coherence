@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Small wildlife drifting through the valley while nobody is meditating:
-/// birds crossing the sky, grasshoppers hopping through the meadow.
+/// birds crossing the sky, and now and then one grasshopper hopping slowly
+/// across the grass from the left edge to the right.
 ///
 /// Both are pure functions of wall-clock time, the same recipe as
 /// `AuraOrbits` / `AuraSparks` in `OttoAuraFigure.swift`: a `TimelineView
@@ -26,19 +27,27 @@ import SwiftUI
 /// shows while actually airborne. Any missing frame in a set falls back to
 /// the drawn placeholder for that one creature, not the whole layer.
 struct ValleyLife: View {
-    enum Layer { case sky, meadow }
+    enum Layer { case sky, meadowBehind, meadowFront }
 
-    /// Sky draws birds; meadow draws grasshoppers. Two instances, two
-    /// places in `ValleyScene`'s z-order, so birds sit in front of the
-    /// clouds and ridges while grasshoppers sit in front of the meadow.
+    /// Sky draws birds; the two meadow layers draw the grasshopper, one
+    /// behind Otto and one in front of him. Separate places in
+    /// `ValleyScene`'s z-order: birds in front of the clouds and ridges, the
+    /// grasshopper behind the sitter when it crosses farther back in the
+    /// grass and in front of him when it crosses nearer. Both meadow layers
+    /// compute the same crossing, and each draws it only on its own side of
+    /// `depthSplit`, so it can never be in both or flicker between them.
     var layer: Layer
     var size: CGSize
     var scale: CGFloat
     var seed: UInt64
-    /// Otto and his cushion, in this view's local space. Nothing is ever
-    /// drawn inside it. `nil` when there is nothing to avoid: no figure on
-    /// screen, or Otto tucked in a corner well clear of the meadow.
+    /// Otto and his cushion, in this view's local space. Birds stay above
+    /// it. `nil` when there is nothing to avoid: no figure on screen, or
+    /// Otto tucked in a corner well clear of the meadow.
     var avoid: CGRect?
+    /// Where Otto's cushion meets the grass. A grasshopper whose feet land
+    /// above this line is farther away and passes behind him. `nil` when
+    /// there is no one sitting, and everything is drawn in front.
+    var depthSplit: CGFloat? = nil
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -51,7 +60,8 @@ struct ValleyLife: View {
                     ZStack {
                         switch layer {
                         case .sky: birds(at: context.date.timeIntervalSinceReferenceDate)
-                        case .meadow: hoppers(at: context.date.timeIntervalSinceReferenceDate)
+                        case .meadowBehind: hoppers(at: context.date.timeIntervalSinceReferenceDate, behind: true)
+                        case .meadowFront: hoppers(at: context.date.timeIntervalSinceReferenceDate, behind: false)
                         }
                     }
                 }
@@ -92,57 +102,37 @@ struct ValleyLife: View {
 
     // MARK: - Grasshoppers
 
-    /// One grasshopper appears roughly every 8s, jittered ±2s (6 to 10s).
-    fileprivate static let hopperSlot: Double = 8
+    /// One crossing starts in each window of this many seconds, a few
+    /// seconds in, and is over well before the next window: never two at
+    /// once, and a quiet stretch of grass between them.
+    fileprivate static let hopperSlot: Double = 45
 
-    /// How long a grasshopper takes to fade in where it appears, and to
-    /// fade out once it has landed for the last time. Half a second each
-    /// way reads as an animal settling into view and drifting off rather
-    /// than a single-frame pop.
-    fileprivate static let hopperFadeSeconds: Double = 0.5
-
-    /// Two lanes in the meadow, one either side of Otto and his cushion,
-    /// clear of the very bottom of the frame where a card can rise over
-    /// the scene on Home. `nil` avoid (no figure) leaves one full-width lane.
-    private var meadowLanes: [ClosedRange<CGFloat>] {
-        let marginX = max(10, size.width * 0.05)
-        guard let avoid, avoid.width > 0, avoid.height > 0 else {
-            return marginX < size.width - marginX ? [marginX...(size.width - marginX)] : []
-        }
-        var lanes: [ClosedRange<CGFloat>] = []
-        let leftHi = avoid.minX - 16
-        if leftHi - marginX > 44 { lanes.append(marginX...leftHi) }
-        let rightLo = avoid.maxX + 16
-        if (size.width - marginX) - rightLo > 44 { lanes.append(rightLo...(size.width - marginX)) }
-        return lanes
-    }
-
-    /// Within the meadow, but above the lowest sliver of the frame.
-    private var meadowYRange: ClosedRange<CGFloat> {
-        let top = size.height * 0.58
-        let bottom = size.height * 0.87
+    /// The grass with the flowers in it, as a band of feet lines. The
+    /// field starts 66% of the way down the scene and the farthest flowers
+    /// stand at 69%, so the top of the band is just below them: the old
+    /// band started at 58%, on the ridge, which is why a grasshopper could
+    /// be seen hopping in the air above the grass (Melvin, 2026-09-23). The
+    /// bottom stays clear of the cards that rise over the near meadow on
+    /// Home (the lowest 17% of the scene).
+    private var grassBand: ClosedRange<CGFloat> {
+        let top = size.height * 0.71
+        let bottom = size.height * 0.82
         return min(top, bottom)...max(top, bottom)
     }
 
-    private func hoppers(at t: Double) -> some View {
+    private func hoppers(at t: Double, behind: Bool) -> some View {
         let slot = Int((t / Self.hopperSlot).rounded(.down))
-        let lanes = meadowLanes
-        let yr = meadowYRange
-        // Three slots, not two. A flight's jittered start can land up to
-        // 2s before its OWN slot's boundary (`slot * hopperSlot`), so
-        // while `t` is still nominally in the previous slot, `slot + 1`'s
-        // flight can already be live. Considering only `[slot - 1, slot]`
-        // silently dropped that flight's opening seconds — sometimes all
-        // of it — so a grasshopper would either pop in already mid-hop or
-        // never appear at all; this, not the fade curve alone, was most
-        // of "fades in and out of existence super quickly" (it hit
-        // roughly 4 in 10 flights, measured offline against the real
-        // hash/jitter).
-        let flights = [slot - 1, slot, slot + 1].compactMap {
-            HopperFlight.make(seed: seed, slot: $0, lanes: lanes, yRange: yr, scale: scale)
+        let band = grassBand
+        // The previous window too: a crossing that started late in it can
+        // still be on its way across.
+        let crossings = [slot - 1, slot].compactMap {
+            HopperCrossing.make(seed: seed, slot: $0, sceneWidth: size.width, band: band, scale: scale)
+        }.filter { crossing in
+            guard let split = depthSplit else { return !behind }
+            return (crossing.feetY < split) == behind
         }
-        return ForEach(flights) { flight in
-            if let pose = flight.pose(at: t) {
+        return ForEach(crossings) { crossing in
+            if let pose = crossing.pose(at: t) {
                 HopperGlyph(pose: pose)
             }
         }
@@ -222,11 +212,16 @@ private func flapState(elapsed: Double, rate: Double) -> (wingLift: Double, fram
 
 /// About ten flight patterns, chosen per flight: a straight glide, a gentle
 /// wave, a swoop down and up, a high slow arc, a zigzag, a V of three, a
-/// pair at two heights, a loop once, a quick dart, and a glide that fades
+/// pair at two heights, a gentle lift, a quick dart, and a glide that fades
 /// out as if landing beyond the ridge.
+///
+/// **No bird ever turns over.** The eighth pattern was a loop-the-loop whose
+/// tilt ran a full turn and snapped to upside down the frame the loop began,
+/// which read as a glitch (Melvin, 2026-09-23: birds "do a full spin"). It is
+/// a lift now, and every tilt stays within a few tens of degrees of level.
 private enum BirdPattern: Int, CaseIterable {
     case straightGlide, gentleWave, swoopDownUp, highSlowArc, zigzag
-    case vOfThree, pairAtTwoHeights, loopOnce, quickDart, glideAndLand
+    case vOfThree, pairAtTwoHeights, gentleLift, quickDart, glideAndLand
 
     /// `vOfThree` and `pairAtTwoHeights` name their own flock size; every
     /// other pattern gets one to three birds, chosen by the caller.
@@ -261,7 +256,7 @@ private enum BirdPattern: Int, CaseIterable {
         case .zigzag: return 3.6 + unit * 1.0
         case .vOfThree: return 4.6 + unit * 0.8
         case .pairAtTwoHeights: return 4.2 + unit * 1.0
-        case .loopOnce: return 4.8 + unit * 0.8
+        case .gentleLift: return 4.8 + unit * 0.8
         case .quickDart: return 1.6 + unit * 0.5
         case .glideAndLand: return 5.2 + unit * 1.0
         }
@@ -285,8 +280,9 @@ private enum BirdPattern: Int, CaseIterable {
             return (x < 0.5 ? (x * 4 - 1) : (3 - x * 4)) * 0.55
         case .vOfThree, .pairAtTwoHeights:
             return sin(p * .pi * 1.3) * 0.16
-        case .loopOnce:
-            return sin(p * .pi * 1.05) * 0.3
+        case .gentleLift:
+            // Rises a little through the middle of the crossing and settles.
+            return -sin(p * .pi) * 0.45
         case .glideAndLand:
             // Flat, then a committed descent for the back third of the
             // flight — landing, rather than crossing the far edge.
@@ -294,18 +290,6 @@ private enum BirdPattern: Int, CaseIterable {
             let q = (p - 0.55) / 0.45
             return q * q * 2.1
         }
-    }
-
-    /// A small loop layered on top of `yOffset`, only for `.loopOnce`, eased
-    /// in and out so it never kinks the surrounding glide.
-    func loopOffset(at p: Double) -> (dx: Double, dy: Double) {
-        guard self == .loopOnce else { return (0, 0) }
-        let window = 0.42...0.62
-        guard window.contains(p) else { return (0, 0) }
-        let local = (p - window.lowerBound) / (window.upperBound - window.lowerBound)
-        let ease = sin(local * .pi)
-        let angle = local * 2 * .pi
-        return (cos(angle - .pi / 2) * 0.4 * ease, (sin(angle - .pi / 2) + 1) * 0.4 * ease)
     }
 
     /// Authored to roughly track `yOffset`'s slope rather than computed
@@ -326,11 +310,8 @@ private enum BirdPattern: Int, CaseIterable {
             return (x < 0.5 ? 1.0 : -1.0) * 22
         case .vOfThree, .pairAtTwoHeights:
             return cos(p * .pi * 1.3) * 6
-        case .loopOnce:
-            let window = 0.42...0.62
-            guard window.contains(p) else { return 0 }
-            let local = (p - window.lowerBound) / (window.upperBound - window.lowerBound)
-            return local * 360 - 180
+        case .gentleLift:
+            return -cos(p * .pi) * 10
         case .glideAndLand:
             guard p > 0.55 else { return 0 }
             return min(30, (p - 0.55) / 0.45 * 30)
@@ -423,12 +404,10 @@ private struct BirdFlight: Identifiable {
 
         let travel = sceneWidth + width * 3
         let startX: CGFloat = direction > 0 ? -width * 1.5 : sceneWidth + width * 1.5
-        var x = startX + CGFloat(p) * travel * direction
+        let x = startX + CGFloat(p) * travel * direction
 
         let amp = 22 * sceneScale
-        let loop = pattern.loopOffset(at: p)
-        let dy = (pattern.yOffset(at: p) + loop.dy) * Double(amp)
-        x += CGFloat(loop.dx * Double(amp))
+        let dy = pattern.yOffset(at: p) * Double(amp)
 
         let flap = flapState(elapsed: t + flapSeed, rate: pattern.flapRate)
         return BirdPose(x: x, y: baseY + laneY + CGFloat(dy),
@@ -545,118 +524,100 @@ private struct HopperPose {
     var bodyLength: CGFloat
 }
 
-/// One grasshopper: fades in where it lands, two to four hops in
-/// parabolic arcs, then fades out once it has settled from the last one.
-private struct HopperFlight: Identifiable {
+/// One grasshopper crossing the grass: it comes in from beyond the left
+/// edge, hops slowly across with a rest after every hop, and leaves beyond
+/// the right edge (Melvin, 2026-09-23: "it should come in on screen from the
+/// left and slowly hop across periodically, until it disappears on the
+/// right"). It is never faded: it starts and ends off screen, so there is
+/// nothing to fade, and nothing can pop.
+///
+/// It keeps one feet line the whole way (every hop lands where the last one
+/// took off), picked inside the grass band, and is drawn a little larger the
+/// nearer that line is, the way the flowers are.
+private struct HopperCrossing: Identifiable {
+    struct Hop {
+        let start: Double        // seconds into the crossing
+        let duration: Double
+        let fromX: CGFloat
+        let toX: CGFloat
+        let height: CGFloat
+    }
+
     let id: Int
     let startTime: Double
-    let hops: Int
-    let hopLength: CGFloat
-    let hopHeight: CGFloat
-    let hopDuration: Double
-    let pauseDuration: Double
-    let appearDuration: Double
-    let fadeOutDuration: Double
-    let startX: CGFloat
-    let baseY: CGFloat
-    let direction: CGFloat
+    let feetY: CGFloat
     let bodyLength: CGFloat
+    let startX: CGFloat
+    let hops: [Hop]
 
-    /// Time actually spent hopping: `hops` hops with a pause between
-    /// each, ending right as the last one lands (no trailing pause).
-    var hopsSpan: Double {
-        Double(hops) * (hopDuration + pauseDuration) - pauseDuration
-    }
+    var totalDuration: Double { (hops.last.map { $0.start + $0.duration } ?? 0) + 0.2 }
 
-    /// Arrive (fading in, sitting still) → hop → fade out once landed.
-    var totalDuration: Double {
-        appearDuration + hopsSpan + fadeOutDuration
-    }
+    static func make(seed: UInt64, slot: Int, sceneWidth: CGFloat,
+                      band: ClosedRange<CGFloat>, scale: CGFloat) -> HopperCrossing? {
+        guard sceneWidth > 30, band.upperBound >= band.lowerBound else { return nil }
+        let depth = valleyLifeUnit(seed, slot, 28)
+        let feetY = band.lowerBound + CGFloat(depth) * (band.upperBound - band.lowerBound)
+        // Nearer is bigger, from 85% at the back of the band to 115% at the front.
+        let near = 0.85 + 0.30 * CGFloat(depth)
+        let bodyLength = CGFloat(valleyLifeRange(seed, slot, 29, 12, 15)) * scale * near
+        // Its drawn box is 1.7 body lengths wide; start and finish a whole
+        // box beyond each edge so it is fully off screen at both ends.
+        let box = bodyLength * 1.7
+        let startX = -box
+        let endX = sceneWidth + box
 
-    static func make(seed: UInt64, slot: Int, lanes: [ClosedRange<CGFloat>],
-                      yRange: ClosedRange<CGFloat>, scale: CGFloat) -> HopperFlight? {
-        guard !lanes.isEmpty else { return nil }
-        let lane = lanes[valleyLifeInt(seed, slot, 20, lanes.count)]
-        let laneWidth = lane.upperBound - lane.lowerBound
-        guard laneWidth > 30 else { return nil }
-
-        let jitter = valleyLifeRange(seed, slot, 21, -2, 2)
-        let start = Double(slot) * ValleyLife.hopperSlot + jitter
-        let hops = 2 + valleyLifeInt(seed, slot, 22, 3)
-        let hopLength = min(CGFloat(valleyLifeRange(seed, slot, 23, 14, 24)) * scale, laneWidth / CGFloat(hops))
-        let hopHeight = CGFloat(valleyLifeRange(seed, slot, 24, 8, 14)) * scale
-        let hopDuration = valleyLifeRange(seed, slot, 25, 0.32, 0.46)
-        let direction: CGFloat = valleyLifeUnit(seed, slot, 26) > 0.5 ? 1 : -1
-
-        let travel = hopLength * CGFloat(hops)
-        let boxLo = lane.lowerBound
-        let boxHiMax = max(boxLo, lane.upperBound - travel)
-        let boxStart = boxLo + CGFloat(valleyLifeUnit(seed, slot, 27)) * (boxHiMax - boxLo)
-        let startX = direction > 0 ? boxStart : boxStart + travel
-        let baseY = yRange.lowerBound + CGFloat(valleyLifeUnit(seed, slot, 28)) * (yRange.upperBound - yRange.lowerBound)
-        let bodyLength = CGFloat(valleyLifeRange(seed, slot, 29, 12, 16)) * scale
-
-        return HopperFlight(id: slot, startTime: start, hops: hops, hopLength: hopLength,
-                             hopHeight: hopHeight, hopDuration: hopDuration, pauseDuration: 0.14,
-                             appearDuration: ValleyLife.hopperFadeSeconds,
-                             fadeOutDuration: ValleyLife.hopperFadeSeconds,
-                             startX: startX, baseY: baseY, direction: direction,
-                             bodyLength: bodyLength)
+        var hops: [Hop] = []
+        var x = startX
+        var time = valleyLifeRange(seed, slot, 21, 0.2, 0.8)
+        var i: UInt64 = 0
+        while x < endX, hops.count < 80 {
+            let length = CGFloat(valleyLifeRange(seed, slot, 100 &+ i, 16, 24)) * scale * near
+            let duration = valleyLifeRange(seed, slot, 200 &+ i, 0.34, 0.46)
+            let height = CGFloat(valleyLifeRange(seed, slot, 300 &+ i, 8, 14)) * scale * near
+            hops.append(Hop(start: time, duration: duration, fromX: x, toX: x + length, height: height))
+            x += length
+            // A rest after every hop, now and then a longer one, so it reads
+            // as an animal crossing in its own time rather than a metronome.
+            let long = valleyLifeUnit(seed, slot, 400 &+ i) < 0.15
+            time += duration + (long ? valleyLifeRange(seed, slot, 500 &+ i, 1.8, 2.8)
+                                     : valleyLifeRange(seed, slot, 600 &+ i, 0.5, 1.2))
+            i += 1
+        }
+        let start = Double(slot) * ValleyLife.hopperSlot + valleyLifeRange(seed, slot, 22, 2, 9)
+        return HopperCrossing(id: slot, startTime: start, feetY: feetY, bodyLength: bodyLength,
+                              startX: startX, hops: hops)
     }
 
     func pose(at t: Double) -> HopperPose? {
         let local = t - startTime
-        guard local >= 0, local <= totalDuration else { return nil }
-
-        // Continuous the whole way: 0 → 1 while arriving, held at 1
-        // through every hop, 1 → 0 once it has landed for the last time.
-        // Each ramp meets the hold at opacity 1 on both sides, so there is
-        // no instant on this curve where opacity jumps — the fade itself
-        // used to BE the flicker (opacity snapped straight to 1 with no
-        // fade in at all, then fell to 0 over just 0.18s).
-        let opacity: Double
-        if local < appearDuration {
-            opacity = local / appearDuration
-        } else {
-            let sinceLanded = local - (appearDuration + hopsSpan)
-            opacity = sinceLanded > 0 ? max(0, 1 - sinceLanded / fadeOutDuration) : 1
+        guard local >= 0, local <= totalDuration, let first = hops.first else { return nil }
+        // Sitting before its first hop (off screen), or resting after one.
+        var x = startX
+        var frame = 1
+        var lift: CGFloat = 0
+        var legs = 1.0
+        if local >= first.start {
+            for hop in hops where local >= hop.start {
+                let into = local - hop.start
+                if into <= hop.duration {
+                    let u = into / hop.duration
+                    let arc = 4 * u * (1 - u)
+                    x = hop.fromX + (hop.toX - hop.fromX) * CGFloat(u)
+                    lift = hop.height * CGFloat(arc)
+                    legs = max(0, 1 - arc * 1.15)
+                    // Crouched right at takeoff, landing right at touchdown,
+                    // mid-jump for the whole stretch between.
+                    frame = u < 0.12 ? 2 : (u > 0.85 ? 4 : 3)
+                } else {
+                    x = hop.toX
+                    lift = 0
+                    legs = 1
+                    frame = 1
+                }
+            }
         }
-
-        let hopLocal = local - appearDuration
-        guard hopLocal > 0 else {
-            // Still arriving: sitting at the takeoff spot, not hopping yet.
-            return HopperPose(x: startX, y: baseY, legExtend: 1, spriteFrame: 1,
-                               facingRight: direction > 0, opacity: opacity, bodyLength: bodyLength)
-        }
-
-        let cycle = hopDuration + pauseDuration
-        let hopIndex = min(hops - 1, Int(hopLocal / cycle))
-        let intoCycle = hopLocal - Double(hopIndex) * cycle
-        let inHop = intoCycle <= hopDuration
-        let u = inHop ? intoCycle / hopDuration : 1
-        let arc = 4 * u * (1 - u)
-        let hopsDone = CGFloat(hopIndex) + (inHop ? CGFloat(u) : 1)
-
-        // Sitting between hops (and once landed for good, fading out);
-        // crouched right at takeoff; landing right at touchdown; mid-jump
-        // for the whole stretch between, which is deliberately the widest
-        // window — "show frame 3 while airborne".
-        let spriteFrame: Int
-        if !inHop {
-            spriteFrame = 1
-        } else if u < 0.12 {
-            spriteFrame = 2
-        } else if u > 0.85 {
-            spriteFrame = 4
-        } else {
-            spriteFrame = 3
-        }
-
-        return HopperPose(x: startX + direction * hopLength * hopsDone,
-                           y: baseY - hopHeight * CGFloat(arc),
-                           legExtend: inHop ? max(0, 1 - arc * 1.15) : 1,
-                           spriteFrame: spriteFrame,
-                           facingRight: direction > 0, opacity: opacity, bodyLength: bodyLength)
+        return HopperPose(x: x, y: feetY - lift, legExtend: legs, spriteFrame: frame,
+                          facingRight: true, opacity: 1, bodyLength: bodyLength)
     }
 }
 
