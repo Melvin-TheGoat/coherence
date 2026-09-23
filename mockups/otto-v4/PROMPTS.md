@@ -55,3 +55,55 @@ Ask in the same chat, so the other six stay put:
 - Not linear: "Figure N looks worse than figure N-1. Make it one step
   healthier than N-1 and one step less healthy than N+1."
 - Washed out: "Make the caramel on figures 4 to 7 deeper and richer."
+
+# Thirteen states: the six in-betweens (2026-09-23)
+
+Melvin: "Can we actually have 13 different Otto state screens, i want it to
+be super granular, so like between 6 and 7 you should be able to see the
+wheel super faintly, he should have like 1 or 2 leaves, and like 6 comets.
+And then between 1 and 2 he should have like one of those scabs on his head,
+one extra bug etc."
+
+The seven approved states stay exactly as they are. Only six new BODIES are
+needed, one halfway between each pair, drawn CLEAN (no bugs, no light): in the
+rig the bugs, motes, comets, rings, leaves and the wheel are their own layers,
+so each in-between gets its share of them in Rive, not in the art. One image
+for all six, per the rule above; two rows of three keeps each sloth sharper
+than the seven-up sheet did.
+
+## Steps
+
+1. Open the ChatGPT chat where you made the CLEAN seven (no bugs, no light).
+   If it is gone, start a new one and attach both sheets: the lit seven
+   (`sheet.png`) and the clean seven.
+2. Paste the prompt below.
+3. Download the result. Claude cuts it (`--grid 3,3`), cleans the edges
+   (`tools/otto_defringe.swift`) and puts them in the rig between their
+   neighbours.
+
+## The prompt
+
+```text
+Make ONE landscape image of this same sloth: six NEW states that each sit exactly halfway between two of the seven you already drew. Same art style, same camera, straight on, seated cross-legged facing the viewer, every figure the same size as in the seven-state sheet. Plain solid white background. Two rows of three, plenty of white space so nothing touches. A small gray letter under each figure, A to F. No other text.
+
+Draw them CLEAN, exactly like the clean sheet: no bugs, no motes, no sparkles, no rings, no halo, no wheel, no leaves, no ribbons of light, no shadow, no ground. Just the sloth.
+
+A. Halfway between 1 and 2. Figure 2's ash-gray fur, whole and dusty, but with ONE small bald scab on top of his head like the patches on figure 1. Slumped a little more than figure 2, head low. Eyes open, round, looking down at the floor in front of him.
+B. Halfway between 2 and 3. Still mostly gray, with the caramel warmth spreading further out from his chest than on figure 2. Back a little straighter than 2, head a little higher. Eyes open, round and clear, looking just below the viewer.
+C. Halfway between 3 and 4. Mostly warm caramel, with only a trace of gray at the edges of his fur. Upright, head level. Eyes open, round and clear, looking at the viewer. Small closed smile.
+D. Halfway between 4 and 5. Figure 4's rich caramel, a touch glossier, the faintest warm rim light along the top of his head. Sitting tall. Eyes open, round and clear, looking at the viewer. Small closed smile.
+E. Halfway between 5 and 6. Glossier still, a warm rim light along his head and shoulders, a soft warm glow deep in his chest fur. Eyes fully closed in two smooth curved lines, serene, a small smile.
+F. Halfway between 6 and 7. Figure 7's body and glowing fur, very slightly less luminous than 7. Eyes fully closed in two smooth curved lines, serene, a faint smile.
+
+THE RULE THAT MATTERS MOST: each letter is healthier than the state before it and less healthy than the state after it, by the same small step, in every respect. His state shows in his body, never in his mood. Every eye is either properly open (round, the whites showing) or properly closed (a smooth curved line), never half-closed.
+```
+
+## What Rive adds to each in-between (no art needed)
+
+- **1.5**: figure A's scab is in his body; the rig gives him the moth AND the
+  fly (stage 2 has the moth alone, stage 1 all three).
+- **5.5 to 6.5**: comets, rings, leaves and the wheel step up in between their
+  neighbours: at 6.5 the wheel shows faintly, one or two leaves circle him and
+  about six comets run the rings.
+- The stills that stand in when the rig cannot load use the nearest of the
+  seven lit stills.
