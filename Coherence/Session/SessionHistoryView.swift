@@ -34,6 +34,13 @@ struct ProfileTab: View {
 
     /// A practiced day tapped on Home — filters the log below.
     @Binding var selectedDay: Date?
+    /// A week row tapped in the log below. Opens exactly what Home's own
+    /// Recent rows open, through ContentView's single sheet presenter
+    /// (Melvin, 2026-09-23: "when i tap on one of my meditations from there,
+    /// it should show me the same screen it shows me when i tap on it from
+    /// home"), rather than pushing its own `SessionResultsView` on this
+    /// tab's `NavigationStack`.
+    let openSession: (UUID) -> Void
     let openSettings: () -> Void
     /// A log row awaiting the delete confirmation.
     @State private var pendingDelete: UUID?
@@ -665,8 +672,8 @@ struct ProfileTab: View {
                             .overlay(alignment: .top) { rowRule }
                     } else {
                         ForEach(visible) { session in
-                            NavigationLink {
-                                SessionResultsView(sessionID: session.id)
+                            Button {
+                                openSession(session.id)
                             } label: {
                                 MinutesRow(session: session,
                                            score: scores[session.id],
@@ -845,6 +852,10 @@ struct ProfileTab: View {
 /// a page would spend the one-gold-per-section rule seven times and leave
 /// nothing on the screen emphasised. A tint is a material; the accent is a
 /// decision.
+///
+/// **`MinutesPuck` (DesignKit) so Home's evidence rows draw the identical
+/// object** (Melvin, 2026-09-23: the photo that used to sit on Home's rows
+/// is gone, replaced by this same puck, "so the two lists match").
 private struct MinutesRow: View {
     let session: Session
     let score: Double?
@@ -853,19 +864,7 @@ private struct MinutesRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            VStack(spacing: 1) {
-                Text("\(max(1, session.durationSec / 60))")
-                    .font(.system(size: 16, weight: .heavy, design: .rounded))
-                    .monospacedDigit()
-                Text("MIN")
-                    .font(.system(size: 8.5, weight: .heavy, design: .rounded))
-                    .tracking(0.6)
-                    .opacity(0.75)
-            }
-            .foregroundStyle(AppColor.accentGoldText)
-            .frame(width: 44, height: 44)
-            .background(AppColor.accentGold.opacity(0.28),
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            MinutesPuck(durationSec: session.durationSec)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {

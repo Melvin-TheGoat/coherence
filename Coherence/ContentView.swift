@@ -153,7 +153,14 @@ struct ContentView: View {
             case .friends:
                 if FeatureFlags.friends { FriendsTab() } else { SearchTab() }
             case .profile:
-                ProfileTab(selectedDay: $profileDay) { sheet = .settings }
+                // Same destination Home's own rows open, through this
+                // view's single sheet presenter (Melvin, 2026-09-23: a
+                // session opened from Profile's week list must show the
+                // same screen Home shows for it).
+                ProfileTab(selectedDay: $profileDay,
+                           openSession: { id in sheet = FeatureFlags.friends ? .save(id) : .results(id) }) {
+                    sheet = .settings
+                }
             }
         }
         // On the tabs only, not on the sheets presented further down this
@@ -1038,7 +1045,6 @@ struct ContentView: View {
                 let scores = SessionListSupport.scoreMap(allStats)
                 let stats = SessionListSupport.statsMap(allStats)
                 let ratings = SessionListSupport.ratingMap(reflections)
-                let thumbs = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).bySession : [:]
                 VStack(spacing: 12) {
                     ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { _, session in
                         // The session's own page, which is where everything
@@ -1048,8 +1054,7 @@ struct ContentView: View {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
                                         stats: stats[session.id],
-                                        rating: ratings[session.id],
-                                        thumbnail: thumbs[session.id])
+                                        rating: ratings[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
                         .contextMenu {

@@ -36,6 +36,16 @@ struct CreateProfileView: View {
     @State private var photo: UIImage?
     @State private var pick: PhotosPickerItem?
     @State private var showCamera = false
+    /// **A `PhotosPicker` placed AS a `Menu` item does not reliably present**
+    /// (verified on-device and in the simulator, 2026-09-23: "choose from
+    /// library doesn't work"). The Menu dismisses itself the instant an item
+    /// is tapped, and that teardown races the picker's own presentation, so
+    /// the system sheet silently never appears. "Take a photo" beside it
+    /// never had this problem because it only sets a flag and lets a
+    /// `.fullScreenCover` outside the Menu do the presenting. Same fix here:
+    /// the Menu row only flips this, and `.photosPicker(isPresented:)` below
+    /// (also outside the Menu) does the showing.
+    @State private var showLibraryPicker = false
     @State private var suggestions: [String] = []
     @FocusState private var focused: Bool
 
@@ -126,6 +136,7 @@ struct CreateProfileView: View {
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker(device: .front) { photo = $0 }.ignoresSafeArea()
         }
+        .photosPicker(isPresented: $showLibraryPicker, selection: $pick, matching: .images)
         .onChange(of: pick) { _, item in
             guard let item else { return }
             Task {
@@ -165,7 +176,10 @@ struct CreateProfileView: View {
             if UIImagePickerController.isSourceTypeAvailable(.camera) {
                 Button { showCamera = true } label: { Label("Take a photo", systemImage: "camera") }
             }
-            PhotosPicker(selection: $pick, matching: .images) {
+            // A plain Button, not a `PhotosPicker` menu item — see
+            // `showLibraryPicker`'s doc comment for why the latter doesn't
+            // reliably present.
+            Button { showLibraryPicker = true } label: {
                 Label("Choose from library", systemImage: "photo.on.rectangle")
             }
             if photo != nil {
