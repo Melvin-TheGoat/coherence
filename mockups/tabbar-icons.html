@@ -1,0 +1,502 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>808 · tab bar icons</title>
+<style>
+:root{
+  --paper:#FEF9F2; --ink:#413024; --soft:#877160;
+  --amber:#F7B143; --amberSh:#D9962A; --softAmber:#FBE3BE;
+  --sage:#3E8175; --meadow:#8BB573; --meadowDeep:#6B9A54; --sky:#BFDCEF; --skyDeep:#8CBBD4;
+  --line: rgba(65,48,36,.13); --card:#ffffff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE6D8;color:var(--ink);padding:34px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:26px;margin:0 0 8px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:16px;margin:0 0 4px;font-weight:800}
+h3{font-size:12px;margin:0;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:var(--soft)}
+.lede{color:var(--soft);font-size:14.5px;max-width:920px;line-height:1.62;margin:0 0 6px}
+.lede b{color:var(--ink)}
+.quote{border-left:3px solid var(--amber);background:var(--card);border-radius:0 14px 14px 0;
+ padding:13px 18px;max-width:900px;margin:16px 0 30px;font-size:13.6px;line-height:1.6;color:var(--soft);
+ box-shadow:0 2px 8px rgba(65,48,36,.06)}
+.quote b{color:var(--ink)}
+section{margin-top:46px}
+section.first{margin-top:6px}
+.head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.head .num{font-size:11px;font-weight:800;color:#fff;background:var(--sage);border-radius:999px;
+ padding:3px 10px;letter-spacing:.04em}
+.style{color:var(--soft);font-size:13.5px;max-width:760px;line-height:1.55;margin:2px 0 0}
+
+/* icon canvas */
+.icon{display:block}
+
+/* bar strip */
+.strips{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+.strip{width:393px;flex:none;border-radius:0 0 26px 26px;overflow:hidden;
+ box-shadow:0 10px 26px rgba(65,48,36,.18);background:var(--meadow)}
+.strip .peek{height:46px;background:linear-gradient(180deg,var(--meadowDeep),var(--meadow));position:relative}
+.strip .peek .cap{position:absolute;left:14px;top:10px;font-size:10.5px;font-weight:800;color:#fff;
+ text-shadow:0 1px 2px rgba(30,45,25,.4);letter-spacing:.02em}
+.bar{height:86px;background:var(--paper);border-top:1px solid var(--line);
+ display:flex;align-items:flex-start;justify-content:space-around;padding-top:9px;position:relative}
+.tab{width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--soft)}
+.tab.on{color:var(--ink)}
+.tab .ic{width:26px;height:26px}
+.tab .lbl{font-size:9.6px;font-weight:700;letter-spacing:.01em}
+.plusSlot{width:64px;display:flex;justify-content:center}
+.plusBtn{width:56px;height:56px;border-radius:50%;background:var(--amber);display:flex;align-items:center;
+ justify-content:center;margin-top:-25px;box-shadow:0 8px 18px rgba(217,150,42,.4);position:relative}
+.plusBtn:before,.plusBtn:after{content:"";position:absolute;background:var(--paper);border-radius:2px}
+.plusBtn:before{width:22px;height:3.4px} .plusBtn:after{width:3.4px;height:22px}
+
+/* zoom row */
+.zoomRow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+.zc{width:98px;background:var(--card);border-radius:16px;padding:12px 6px 10px;text-align:center;
+ box-shadow:0 2px 8px rgba(65,48,36,.09)}
+.zc .ic{width:52px;height:52px;margin:0 auto 8px;color:var(--soft)}
+.zc.on .ic{color:var(--ink)}
+.zc .nm{font-size:10.8px;font-weight:800}
+.zc .st{font-size:9px;color:var(--soft);margin-top:1px;text-transform:uppercase;letter-spacing:.06em}
+.zc.on .st{color:var(--sage);font-weight:800}
+
+/* verdict */
+.verdict{max-width:900px;margin-top:16px;font-size:13.4px;line-height:1.6;color:var(--soft)}
+.verdict p{margin:0 0 7px}
+.verdict b{color:var(--ink)}
+.verdict .risk b{color:#9B5A2E}
+
+.reco{max-width:900px;background:var(--card);border-radius:18px;padding:22px 24px;margin-top:16px;
+ box-shadow:0 3px 14px rgba(65,48,36,.10)}
+.reco b.pick{color:var(--sage)}
+.reco p{font-size:14px;line-height:1.65;margin:0 0 10px;color:var(--ink)}
+.reco p:last-child{margin-bottom:0}
+.reco .lbl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--soft);margin-bottom:6px}
+</style></head><body>
+
+<h1>Tab bar icons</h1>
+<p class="lede">Today's bar uses four stock SF Symbols (<b>house</b>, <b>hand.raised</b>, <b>person.2</b>,
+<b>person.crop.circle</b>) around the one gold plus. Melvin's read:</p>
+<div class="quote">"Speaking of the icons, i actually dont like these, they seem bland/generic/AI generated. Im
+wondering if we can make some more creative ones that are more on theme for this app."</div>
+<p class="lede">Three directions below, drawn as inline SVG at the size they would actually render (24 to 28pt),
+so the path data can be carried straight into SwiftUI <code>Shape</code>s later. In every direction the
+selected tab reads in <b>ink brown, never gold</b> (gold stays the plus's alone), and the shift from
+unselected to selected is either a fill swap or an added tint, the same grammar the app already uses for
+"chosen" versus "shown."</p>
+
+<!-- ============ TODAY ============ -->
+<section class="first">
+<div class="head"><h2>Today</h2><span style="color:var(--soft);font-size:12.5px">for comparison, Home selected</span></div>
+<div class="strips">
+<div class="strip">
+  <div class="peek"><span class="cap">current · SF Symbols</span></div>
+  <div class="bar">
+    <div class="tab on">
+      <svg class="ic" viewBox="0 0 28 28"><path d="M14 5 L24 13.4 L24 22.3 A1 1 0 0 1 23 23.3 L17 23.3 L17 16.2 L11 16.2 L11 23.3 L5 23.3 A1 1 0 0 1 4 22.3 L4 13.4 Z" fill="currentColor"/></svg>
+      <div class="lbl">Home</div>
+    </div>
+    <div class="tab">
+      <svg class="ic" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="15" width="10" height="9" rx="4"/>
+        <rect x="9.3" y="8" width="2.2" height="9" rx="1.1"/>
+        <rect x="12" y="6.5" width="2.2" height="10.5" rx="1.1"/>
+        <rect x="14.7" y="6" width="2.2" height="11" rx="1.1"/>
+        <rect x="17.4" y="7" width="2.2" height="10" rx="1.1"/>
+        <rect x="5.6" y="14.3" width="2.2" height="8" rx="1.1" transform="rotate(-25 6.7 18.3)"/>
+      </svg>
+      <div class="lbl">Block</div>
+    </div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab">
+      <svg class="ic" viewBox="0 0 28 28">
+        <circle cx="9.6" cy="11" r="3.6" fill="currentColor"/>
+        <path d="M4.6 24 Q4.6 16.5 9.6 16.5 Q14.6 16.5 14.6 24 Z" fill="currentColor"/>
+        <circle cx="18.2" cy="11" r="3.6" fill="currentColor" opacity=".55"/>
+        <path d="M13.2 24 Q13.2 16.5 18.2 16.5 Q23.2 16.5 23.2 24 Z" fill="currentColor" opacity=".55"/>
+      </svg>
+      <div class="lbl">Friends</div>
+    </div>
+    <div class="tab">
+      <svg class="ic" viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="1.7">
+        <circle cx="14" cy="14" r="9.4"/>
+        <circle cx="14" cy="11" r="3" fill="currentColor" stroke="none"/>
+        <path d="M7.6 21.6 Q7.6 15.6 14 15.6 Q20.4 15.6 20.4 21.6" fill="currentColor" stroke="none"/>
+      </svg>
+      <div class="lbl">Profile</div>
+    </div>
+  </div>
+</div>
+</div>
+<p class="verdict" style="margin-top:14px">Clean, familiar, and exactly what a thousand other apps ship. Nothing
+here says <b>808</b>, and a raised hand for "Block" reads as a generic permission icon before it reads as
+"Otto is holding your apps."</p>
+</section>
+
+<!-- ============================================================ -->
+<!-- SYMBOL DEFS -->
+<!-- ============================================================ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+
+<mask id="mk-d1-friends-f" maskUnits="userSpaceOnUse" x="-4" y="-4" width="36" height="36">
+  <rect x="-4" y="-4" width="36" height="36" fill="#fff"/>
+  <circle cx="8.6" cy="15" r="1" fill="#000"/>
+  <circle cx="20.4" cy="15" r="1" fill="#000"/>
+</mask>
+<mask id="mk-d1-profile-f" maskUnits="userSpaceOnUse" x="-4" y="-4" width="36" height="36">
+  <rect x="-4" y="-4" width="36" height="36" fill="#fff"/>
+  <circle cx="10.5" cy="14" r="1.1" fill="#000"/>
+  <circle cx="17.5" cy="14" r="1.1" fill="#000"/>
+</mask>
+<mask id="mk-d3-block-f" maskUnits="userSpaceOnUse" x="-4" y="-4" width="36" height="36">
+  <rect x="-4" y="-4" width="36" height="36" fill="#fff"/>
+  <path d="M11 13 L11 18.5" stroke="#000" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M14 12 L14 18.5" stroke="#000" stroke-width="2.1" stroke-linecap="round"/>
+  <path d="M17 13 L17 18.5" stroke="#000" stroke-width="2.1" stroke-linecap="round"/>
+</mask>
+<mask id="mk-d3-profile-f" maskUnits="userSpaceOnUse" x="-4" y="-4" width="36" height="36">
+  <rect x="-4" y="-4" width="36" height="36" fill="#fff"/>
+  <ellipse cx="10.3" cy="14" rx="3.1" ry="2.5" fill="#000"/>
+  <ellipse cx="17.7" cy="14" rx="3.1" ry="2.5" fill="#000"/>
+  <path d="M12.6 13.3 Q14 12.5 15.4 13.3" stroke="#000" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+</mask>
+
+<!-- ============ DIRECTION 1 — MEADOW (playful, illustrated) ============ -->
+<!-- Home: sun over the hill -->
+<symbol id="d1-home-o" viewBox="0 0 28 28">
+  <circle cx="18" cy="9" r="4" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <path d="M3 22 Q8.5 11 14 10.5 Q19.5 11 25 22 Z" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>
+</symbol>
+<symbol id="d1-home-f" viewBox="0 0 28 28">
+  <circle cx="18" cy="9" r="4" fill="currentColor"/>
+  <path d="M3 22 Q8.5 11 14 10.5 Q19.5 11 25 22 Z" fill="currentColor"/>
+</symbol>
+<!-- Block: upright leaf, raised like a hand -->
+<symbol id="d1-block-o" viewBox="0 0 28 28">
+  <path d="M14 5 C19 5 21 10 20 15 C19 20 16 23 14 26 C12 23 9 20 8 15 C7 10 9 5 14 5 Z"
+    fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round"/>
+  <path d="M14 8 L14 22" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>
+</symbol>
+<symbol id="d1-block-f" viewBox="0 0 28 28">
+  <path d="M14 5 C19 5 21 10 20 15 C19 20 16 23 14 26 C12 23 9 20 8 15 C7 10 9 5 14 5 Z" fill="currentColor"/>
+</symbol>
+<!-- Friends: two sloth heads -->
+<symbol id="d1-friends-o" viewBox="0 0 28 28">
+  <circle cx="10" cy="15" r="6.3" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="19" cy="15" r="6.3" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="5.3" cy="9.2" r="2.1" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="23.7" cy="9.2" r="2.1" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="8.6" cy="15" r="1" fill="currentColor"/>
+  <circle cx="20.4" cy="15" r="1" fill="currentColor"/>
+</symbol>
+<symbol id="d1-friends-f" viewBox="0 0 28 28">
+  <g mask="url(#mk-d1-friends-f)">
+    <circle cx="10" cy="15" r="6.3" fill="currentColor"/>
+    <circle cx="19" cy="15" r="6.3" fill="currentColor"/>
+    <circle cx="5.3" cy="9.2" r="2.1" fill="currentColor"/>
+    <circle cx="23.7" cy="9.2" r="2.1" fill="currentColor"/>
+  </g>
+</symbol>
+<!-- Profile: Otto's face -->
+<symbol id="d1-profile-o" viewBox="0 0 28 28">
+  <circle cx="14" cy="14" r="9" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="7" cy="6.5" r="2.4" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="21" cy="6.5" r="2.4" fill="none" stroke="currentColor" stroke-width="2.1"/>
+  <circle cx="10.5" cy="14" r="1" fill="currentColor"/>
+  <circle cx="17.5" cy="14" r="1" fill="currentColor"/>
+</symbol>
+<symbol id="d1-profile-f" viewBox="0 0 28 28">
+  <g mask="url(#mk-d1-profile-f)">
+    <circle cx="14" cy="14" r="9" fill="currentColor"/>
+    <circle cx="7" cy="6.5" r="2.4" fill="currentColor"/>
+    <circle cx="21" cy="6.5" r="2.4" fill="currentColor"/>
+  </g>
+</symbol>
+
+<!-- ============ DIRECTION 2 — LINE (quiet, minimal) ============ -->
+<!-- Home: sky arc over the cushion -->
+<symbol id="d2-home-o" viewBox="0 0 28 28">
+  <path d="M5 10 Q14 5 23 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <rect x="6" y="17" width="16" height="7" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+</symbol>
+<symbol id="d2-home-f" viewBox="0 0 28 28">
+  <path d="M5 10 Q14 5 23 10" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+  <rect x="6" y="17" width="16" height="7" rx="3.5" fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="1.9"/>
+</symbol>
+<!-- Block: a closed bud on its stem -->
+<symbol id="d2-block-o" viewBox="0 0 28 28">
+  <path d="M14 6 C18 6 19.5 10 18.5 14.5 C17.7 18.5 16 21 14 23.5 C12 21 10.3 18.5 9.5 14.5 C8.5 10 10 6 14 6 Z"
+    fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+  <path d="M14 23.5 L14 26" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  <path d="M14 8 L14 21" stroke="currentColor" stroke-width="1" opacity=".5" stroke-linecap="round"/>
+</symbol>
+<symbol id="d2-block-f" viewBox="0 0 28 28">
+  <path d="M14 6 C18 6 19.5 10 18.5 14.5 C17.7 18.5 16 21 14 23.5 C12 21 10.3 18.5 9.5 14.5 C8.5 10 10 6 14 6 Z"
+    fill="currentColor" fill-opacity=".16" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
+  <path d="M14 23.5 L14 26" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+</symbol>
+<!-- Friends: two quiet circles, overlapping -->
+<symbol id="d2-friends-o" viewBox="0 0 28 28">
+  <circle cx="10.5" cy="14" r="6.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <circle cx="17.5" cy="14" r="6.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+</symbol>
+<symbol id="d2-friends-f" viewBox="0 0 28 28">
+  <circle cx="10.5" cy="14" r="6.4" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.9"/>
+  <circle cx="17.5" cy="14" r="6.4" fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.9"/>
+</symbol>
+<!-- Profile: a portrait framed in a flower -->
+<symbol id="d2-profile-o" viewBox="0 0 28 28">
+  <path d="M14 6.8 Q20.06 5.87 21.04 11.91 Q23.79 17.38 18.35 20.19 Q14 24.5 9.65 20.19 Q4.21 17.38 6.96 11.91 Q7.94 5.87 14 6.8 Z"
+    fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+  <circle cx="14" cy="12.5" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M9.5 20.2 Q14 15.3 18.5 20.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+</symbol>
+<symbol id="d2-profile-f" viewBox="0 0 28 28">
+  <path d="M14 6.8 Q20.06 5.87 21.04 11.91 Q23.79 17.38 18.35 20.19 Q14 24.5 9.65 20.19 Q4.21 17.38 6.96 11.91 Q7.94 5.87 14 6.8 Z"
+    fill="currentColor" fill-opacity=".14" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
+  <circle cx="14" cy="12.5" r="2.6" fill="currentColor"/>
+  <path d="M9.5 20.2 Q14 15.3 18.5 20.2 Q18.5 23.3 14 23.3 Q9.5 23.3 9.5 20.2 Z" fill="currentColor"/>
+</symbol>
+
+<!-- ============ DIRECTION 3 — OTTO (built around the mascot) ============ -->
+<!-- Home: Otto on a branch -->
+<symbol id="d3-home-o" viewBox="0 0 28 28">
+  <path d="M4 19.5 L24 19.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M20 19.4 Q22.6 16.6 25.2 17.6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M9 19.5 Q9 11 14 10 Q19 11 19 19.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="11.4" cy="9" r="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <circle cx="16.6" cy="9" r="1.7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+</symbol>
+<symbol id="d3-home-f" viewBox="0 0 28 28">
+  <path d="M4 19.5 L24 19.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M9 19.5 Q9 11 14 10 Q19 11 19 19.5 Z" fill="currentColor"/>
+  <circle cx="11.4" cy="9" r="1.7" fill="currentColor"/>
+  <circle cx="16.6" cy="9" r="1.7" fill="currentColor"/>
+</symbol>
+<!-- Block: Otto's raised paw -->
+<symbol id="d3-block-o" viewBox="0 0 28 28">
+  <path d="M9.5 24 Q8 17 9.5 13 Q11.5 9.5 14 9.5 Q16.5 9.5 18.5 13 Q20 17 18.5 24 Z"
+    fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M11 10.6 L11 7.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M14 9.4 L14 6.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M17 10.6 L17 7.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</symbol>
+<symbol id="d3-block-f" viewBox="0 0 28 28">
+  <g mask="url(#mk-d3-block-f)">
+    <path d="M9.5 24 Q8 17 9.5 13 Q11.5 9.5 14 9.5 Q16.5 9.5 18.5 13 Q20 17 18.5 24 Z" fill="currentColor"/>
+  </g>
+</symbol>
+<!-- Friends: two Otto silhouettes -->
+<symbol id="d3-friends-o" viewBox="0 0 28 28">
+  <path d="M4 22 Q4 12 10 11 Q16 12 16 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="6" cy="10.3" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <path d="M12 22 Q12 12 18 11 Q24 12 24 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+  <circle cx="22" cy="10.3" r="1.6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+</symbol>
+<symbol id="d3-friends-f" viewBox="0 0 28 28">
+  <path d="M4 22 Q4 12 10 11 Q16 12 16 22 Z" fill="currentColor"/>
+  <circle cx="6" cy="10.3" r="1.6" fill="currentColor"/>
+  <path d="M12 22 Q12 12 18 11 Q24 12 24 22 Z" fill="currentColor"/>
+  <circle cx="22" cy="10.3" r="1.6" fill="currentColor"/>
+</symbol>
+<!-- Profile: Otto's mask -->
+<symbol id="d3-profile-o" viewBox="0 0 28 28">
+  <circle cx="14" cy="14" r="9.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <ellipse cx="10.3" cy="14" rx="3.1" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <ellipse cx="17.7" cy="14" rx="3.1" ry="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  <path d="M12.6 13.3 Q14 12.5 15.4 13.3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+</symbol>
+<symbol id="d3-profile-f" viewBox="0 0 28 28">
+  <g mask="url(#mk-d3-profile-f)">
+    <circle cx="14" cy="14" r="9.5" fill="currentColor"/>
+  </g>
+</symbol>
+
+</defs>
+</svg>
+
+<!-- ============================================================ -->
+<!-- DIRECTION 1 -->
+<!-- ============================================================ -->
+<section>
+<div class="head"><span class="num">Direction 1</span><h2>Meadow — playful, illustrated</h2></div>
+<p class="style">Bold rounded shapes filled with personality: a sun behind the home hill, a leaf standing
+up like a raised palm, two sloth heads for Friends, Otto's own face for Profile. Unselected is line only;
+selected goes solid, and small "eye" dots flip from drawn-on to cut-out.</p>
+
+<div class="strips">
+<div class="strip">
+  <div class="peek"><span class="cap">Home selected</span></div>
+  <div class="bar">
+    <div class="tab on"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-home-f"/></svg><div class="lbl">Home</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-block-o"/></svg><div class="lbl">Block</div></div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-friends-o"/></svg><div class="lbl">Friends</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-profile-o"/></svg><div class="lbl">Profile</div></div>
+  </div>
+</div>
+<div class="strip">
+  <div class="peek"><span class="cap">Friends selected</span></div>
+  <div class="bar">
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-home-o"/></svg><div class="lbl">Home</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-block-o"/></svg><div class="lbl">Block</div></div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab on"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-friends-f"/></svg><div class="lbl">Friends</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-profile-o"/></svg><div class="lbl">Profile</div></div>
+  </div>
+</div>
+</div>
+
+<h3 style="margin-top:20px">2x zoom</h3>
+<div class="zoomRow">
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-home-o"/></svg><div class="nm">Home</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-home-f"/></svg><div class="nm">Home</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-block-o"/></svg><div class="nm">Block</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-block-f"/></svg><div class="nm">Block</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-friends-o"/></svg><div class="nm">Friends</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-friends-f"/></svg><div class="nm">Friends</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-profile-o"/></svg><div class="nm">Profile</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d1-profile-f"/></svg><div class="nm">Profile</div><div class="st">selected</div></div>
+</div>
+
+<div class="verdict">
+<p><b>Gets right:</b> the warmest, most immediately "808" of the three. The filled state reads at a glance
+because whole shapes go solid, not just a stroke thickening, and Otto's face is the single most ownable
+mark on the page.</p>
+<p class="risk"><b>Risks:</b> two overlapping heads and a leaf both lean toward mascot art rather than
+system chrome. Worth a real-device check that they don't compete with the gold plus for the first
+glance.</p>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DIRECTION 2 -->
+<!-- ============================================================ -->
+<section>
+<div class="head"><span class="num">Direction 2</span><h2>Line — quiet, minimal</h2></div>
+<p class="style">One weight, mostly open strokes, nothing louder than the current set. Three of the four
+icons grow out of the meadow's own five-petal flower: a closed bud for Block, a bloom framing a portrait
+for Profile, two blooms overlapping for Friends. Selected keeps the same line and adds a soft tint, the
+way a chosen row gets a wash rather than a shout.</p>
+
+<div class="strips">
+<div class="strip">
+  <div class="peek"><span class="cap">Home selected</span></div>
+  <div class="bar">
+    <div class="tab on"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-home-f"/></svg><div class="lbl">Home</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-block-o"/></svg><div class="lbl">Block</div></div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-friends-o"/></svg><div class="lbl">Friends</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-profile-o"/></svg><div class="lbl">Profile</div></div>
+  </div>
+</div>
+<div class="strip">
+  <div class="peek"><span class="cap">Friends selected</span></div>
+  <div class="bar">
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-home-o"/></svg><div class="lbl">Home</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-block-o"/></svg><div class="lbl">Block</div></div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab on"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-friends-f"/></svg><div class="lbl">Friends</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-profile-o"/></svg><div class="lbl">Profile</div></div>
+  </div>
+</div>
+</div>
+
+<h3 style="margin-top:20px">2x zoom</h3>
+<div class="zoomRow">
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-home-o"/></svg><div class="nm">Home</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-home-f"/></svg><div class="nm">Home</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-block-o"/></svg><div class="nm">Block</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-block-f"/></svg><div class="nm">Block</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-friends-o"/></svg><div class="nm">Friends</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-friends-f"/></svg><div class="nm">Friends</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-profile-o"/></svg><div class="nm">Profile</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d2-profile-f"/></svg><div class="nm">Profile</div><div class="st">selected</div></div>
+</div>
+
+<div class="verdict">
+<p><b>Gets right:</b> closest to today's weight and restraint, so it is the lowest-risk swap, and the
+flower motifs tie straight into the meadow without a single new colour or shape family entering the app.</p>
+<p class="risk"><b>Risks:</b> the tint-only selected state is the subtlest of the three and deserves a
+squint test in daylight. Two small blooms for Friends may register as decoration before they register as
+"people."</p>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- DIRECTION 3 -->
+<!-- ============================================================ -->
+<section>
+<div class="head"><span class="num">Direction 3</span><h2>Otto — built around the mascot</h2></div>
+<p class="style">Every icon is a piece of Otto's own body: the branch he lives on for Home, his raised
+three-toed paw for Block, two of his silhouettes for Friends, his eye mask alone for Profile. Unselected
+outlines the shape; selected fills it solid, with claws and mask cut back out of the fill as negative
+space rather than drawn on top.</p>
+
+<div class="strips">
+<div class="strip">
+  <div class="peek"><span class="cap">Home selected</span></div>
+  <div class="bar">
+    <div class="tab on"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-home-f"/></svg><div class="lbl">Home</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-block-o"/></svg><div class="lbl">Block</div></div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-friends-o"/></svg><div class="lbl">Friends</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-profile-o"/></svg><div class="lbl">Profile</div></div>
+  </div>
+</div>
+<div class="strip">
+  <div class="peek"><span class="cap">Friends selected</span></div>
+  <div class="bar">
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-home-o"/></svg><div class="lbl">Home</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-block-o"/></svg><div class="lbl">Block</div></div>
+    <div class="plusSlot"><div class="plusBtn"></div></div>
+    <div class="tab on"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-friends-f"/></svg><div class="lbl">Friends</div></div>
+    <div class="tab"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-profile-o"/></svg><div class="lbl">Profile</div></div>
+  </div>
+</div>
+</div>
+
+<h3 style="margin-top:20px">2x zoom</h3>
+<div class="zoomRow">
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-home-o"/></svg><div class="nm">Home</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-home-f"/></svg><div class="nm">Home</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-block-o"/></svg><div class="nm">Block</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-block-f"/></svg><div class="nm">Block</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-friends-o"/></svg><div class="nm">Friends</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-friends-f"/></svg><div class="nm">Friends</div><div class="st">selected</div></div>
+  <div class="zc"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-profile-o"/></svg><div class="nm">Profile</div><div class="st">unselected</div></div>
+  <div class="zc on"><svg class="ic" viewBox="0 0 28 28"><use href="#d3-profile-f"/></svg><div class="nm">Profile</div><div class="st">selected</div></div>
+</div>
+
+<div class="verdict">
+<p><b>Gets right:</b> only makes sense for this app. Nobody else's tab bar has a raised three-toed paw, and
+it does double duty as "stop" and "sloth" in one shape. Nothing here could be mistaken for a stock icon
+pack.</p>
+<p class="risk"><b>Risks:</b> the branch and the mask both need a beat longer to parse the first time,
+before the mascot's shapes are familiar. This is the direction to prototype on an actual phone before
+trusting it, since it is the furthest from a glance-and-go glyph.</p>
+</div>
+</section>
+
+<!-- ============================================================ -->
+<!-- RECOMMENDATION -->
+<!-- ============================================================ -->
+<section>
+<div class="head"><h2>Recommendation</h2></div>
+<div class="reco">
+<p><span class="lbl">Pick</span></p>
+<p><b class="pick">Direction 1, Meadow.</b> It answers what Melvin actually said: today's set does not
+look generic because the shapes are wrong, it looks generic because nothing in it belongs only to 808.
+Meadow fixes that (a sun, a leaf, Otto's own face) while staying fast to read, since every icon is still
+one or two big familiar silhouettes rather than a scene to decode.</p>
+<p>Worth stealing on the way there: Direction 3's raised paw is a stronger single mark than Meadow's leaf
+for Block specifically, the one tab whose job ("Otto is holding your apps") is hardest to say in a glyph.
+A mixed set, Meadow everywhere with the paw standing in for Block, is worth putting on a real phone next
+to the pure versions before anything is final.</p>
+<p>Whichever direction moves forward, check it at true 26pt on-device next to the gold plus and in direct
+sun before it goes into <code>MainTabBar.swift</code>. Nothing in this page can tell you how it feels
+under a thumb.</p>
+</div>
+</section>
+
+</body></html>
