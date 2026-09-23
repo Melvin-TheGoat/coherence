@@ -277,6 +277,7 @@ struct OnboardingView: View {
             // Otto sits in it on the stress screen, where the answer is drawn
             // on him.
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress) : nil,
+                             look: step == .stress ? StressScreen.look(for: answers.stress) : nil,
                              jiggle: ottoPokes)
 
             content
@@ -824,10 +825,11 @@ struct HealthConsentScreen: View {
 /// Otto's cushion and Otto fade in and his state follows the answer.
 private struct OnboardingValley: View {
     let stage: OttoAura.Stage?
+    var look: Int? = nil
     let jiggle: Int
 
     var body: some View {
-        ValleyScene(progress: 0, aura: stage ?? .steady, jiggle: jiggle,
+        ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, jiggle: jiggle,
                     showsFigure: stage != nil)
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)

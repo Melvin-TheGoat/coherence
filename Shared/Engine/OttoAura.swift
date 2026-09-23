@@ -60,7 +60,43 @@ enum OttoAura {
         /// He has left the ground from here up.
         var floats: Bool { self >= .radiant }
 
+        /// This stage's own drawing among the thirteen (`look(level:)`).
+        var look: Int { rawValue * 2 - 1 }
+
         static func < (a: Stage, b: Stage) -> Bool { a.rawValue < b.rawValue }
+    }
+
+    /// Which of Otto's THIRTEEN drawings shows at a level (Melvin,
+    /// 2026-09-23: "i want it to be super granular"): the seven stages (odd
+    /// numbers, `Stage.look`) and one drawing halfway between each pair
+    /// (even numbers). The stages above still decide his mood, his stills and
+    /// every promise; this only decides the picture, and it never disagrees
+    /// with them by more than half a step.
+    ///
+    /// **Laid out for the levels people actually land on.** The level moves
+    /// in tens (+10 a day, -20 a missed day), so 0, 10 ... 100 are where it
+    /// sits almost always, and each of those eleven gets its own drawing:
+    /// start (40) is Stirring and the first session (50) is Steady, exactly
+    /// as the stages promise, and 90 shows the drawing just short of Nirvana
+    /// (the faint wheel) with the full one at 100. The two in-betweens that
+    /// fall between tens (6 at 45-49, 10 at 75-79) show when a skipped
+    /// "Not now" window costs part of a day.
+    static func look(level: Int) -> Int {
+        switch level {
+        case ..<5: return 1       // Withered
+        case ..<15: return 2
+        case ..<25: return 3      // Faded
+        case ..<35: return 4
+        case ..<45: return 5      // Stirring
+        case ..<50: return 6
+        case ..<55: return 7      // Steady
+        case ..<65: return 8
+        case ..<75: return 9      // Bright
+        case ..<80: return 10
+        case ..<85: return 11     // Radiant
+        case ..<95: return 12
+        default: return 13        // Nirvana
+        }
     }
 
     /// What one window skipped after a "Not now" costs: 20 for a whole day,

@@ -19,6 +19,9 @@ import SwiftUI
 /// never moves the bubble beside him.
 struct OttoAuraFigure: View {
     let stage: OttoAura.Stage
+    /// Which of the rig's thirteen drawings (`OttoAura.look(level:)`). Nil
+    /// draws the stage's own; the stills only ever have the seven.
+    var look: Int? = nil
     /// The square frame Home gives him.
     var size: CGFloat
     @ObservedObject var rig: OttoRigHolder
@@ -60,8 +63,9 @@ struct OttoAuraFigure: View {
     @ViewBuilder private var drawing: some View {
         if let rig = aura.rig {
             rig.viewModel.view()
-                .onAppear { rig.stage = stage.rawValue }
-                .onChange(of: stage) { _, new in rig.stage = new.rawValue }
+                .onAppear { rig.stage = look ?? stage.look }
+                .onChange(of: stage) { _, new in rig.stage = look ?? new.look }
+                .onChange(of: look) { _, new in rig.stage = new ?? stage.look }
         } else {
             Image(Self.asset(stage))
                 .resizable()
@@ -241,21 +245,18 @@ extension View {
 enum DebugOtto {
     static let stageKey = "debug.ottoStage"
 
-    /// A level inside the stage's band, for the glow card beside him.
-    static func level(for stage: OttoAura.Stage) -> Int {
-        stage == .nirvana ? 95 : (stage.rawValue - 1) * 15 + 7
+    /// A level that shows this drawing (`OttoAura.look(level:)`), for the
+    /// glow card beside him and the stage his mood follows.
+    static func level(forLook look: Int) -> Int {
+        [0, 0, 10, 20, 30, 40, 47, 50, 60, 70, 77, 80, 90, 100][min(max(look, 1), 13)]
     }
 
-    static func name(_ stage: OttoAura.Stage) -> String {
-        switch stage {
-        case .withered: return "1 Withered"
-        case .faded: return "2 Faded"
-        case .stirring: return "3 Stirring"
-        case .steady: return "4 Steady"
-        case .bright: return "5 Bright"
-        case .radiant: return "6 Radiant"
-        case .nirvana: return "7 Nirvana"
-        }
+    /// The seven stages by their own names, the six drawings between them by
+    /// the pair they sit between.
+    static func name(look: Int) -> String {
+        let stages = ["Withered", "Faded", "Stirring", "Steady", "Bright", "Radiant", "Nirvana"]
+        if look % 2 == 1 { return "\(look) \(stages[(look - 1) / 2])" }
+        return "\(look) Between \(stages[look / 2 - 1]) and \(stages[look / 2])"
     }
 }
 #endif

@@ -195,8 +195,8 @@ private struct SettingsForm: View {
                     Spacer()
                     Picker("Otto's state", selection: $debugOttoStage) {
                         Text("Real history").tag(0)
-                        ForEach(OttoAura.Stage.allCases, id: \.self) { stage in
-                            Text(DebugOtto.name(stage)).tag(stage.rawValue)
+                        ForEach(1...13, id: \.self) { look in
+                            Text(DebugOtto.name(look: look)).tag(look)
                         }
                     }
                     .pickerStyle(.menu)

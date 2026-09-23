@@ -396,7 +396,17 @@ struct StressScreen: View {
 
     /// Calm draws him at his brightest, burnt out at his lowest.
     static func stage(for stress: Double) -> OttoAura.Stage {
-        OttoAura.Stage(level: Int(((1 - min(max(stress, 0), 1)) * 100).rounded()))
+        OttoAura.Stage(level: level(for: stress))
+    }
+
+    /// The same answer as one of the rig's thirteen drawings, so dragging
+    /// the bar moves him through every one of them.
+    static func look(for stress: Double) -> Int {
+        OttoAura.look(level: level(for: stress))
+    }
+
+    private static func level(for stress: Double) -> Int {
+        Int(((1 - min(max(stress, 0), 1)) * 100).rounded())
     }
 
     /// Where the thumb sits, 0 at the left (burnt out) to 1 at the right

@@ -12,7 +12,9 @@ import RiveRuntime
 /// "OttoAura", 664 x 744, which is exactly the canvas the stills are cut to
 /// (`mockups/otto-v4/canvas.json`), so the rig and the stills frame the same
 /// and either can stand in for the other. One state machine, "OttoAura", and
-/// one view model property the app writes: `stage`, 1 to 7.
+/// one view model property the app writes: `stage`, 1 to 13 (the seven
+/// stages at the odd numbers, a drawing halfway between each pair at the
+/// even ones; `OttoAura.look(level:)`).
 ///
 /// The machine does everything else by itself: which drawing shows, the
 /// bugs coming and going at the bottom, the light swirling at the top, and
@@ -26,9 +28,9 @@ final class OttoAuraRig {
     let viewModel: RiveViewModel
     private var instance: RiveDataBindingViewModel.Instance?
 
-    /// Which drawing, 1 to 7. Safe to set before the binding lands: it is
+    /// Which drawing, 1 to 13. Safe to set before the binding lands: it is
     /// said again on bind, as `OttoRig` does for its flags.
-    var stage: Int = OttoAura.Stage.steady.rawValue {
+    var stage: Int = OttoAura.Stage.steady.look {
         didSet {
             guard stage != oldValue else { return }
             instance?.numberProperty(fromPath: "stage")?.value = Float(stage)

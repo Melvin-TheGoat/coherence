@@ -206,5 +206,34 @@ final class OttoAuraTests: XCTestCase {
         XCTAssertNotEqual(today.first, OttoSayings.forDay(tomorrow, calendar: cal).first)
         XCTAssertEqual(today.sorted(), OttoSayings.all.sorted())
     }
+
+    // MARK: - The thirteen drawings (Melvin, 2026-09-23)
+
+    /// The level moves in tens, so 0, 10 ... 100 are where it sits; each gets
+    /// a drawing of its own.
+    func test_everyLevelPeopleLandOnGetsItsOwnDrawing() {
+        let grid = stride(from: 0, through: 100, by: 10).map { OttoAura.look(level: $0) }
+        XCTAssertEqual(grid, [1, 2, 3, 4, 5, 7, 8, 9, 11, 12, 13])
+    }
+
+    func test_theDrawingKeepsTheStagesPromises() {
+        XCTAssertEqual(OttoAura.look(level: 40), OttoAura.Stage.stirring.look, "everyone starts in Stirring")
+        XCTAssertEqual(OttoAura.look(level: 50), OttoAura.Stage.steady.look, "the first session brings his colour back")
+        XCTAssertEqual(OttoAura.look(level: 0), OttoAura.Stage.withered.look)
+        XCTAssertEqual(OttoAura.look(level: 100), OttoAura.Stage.nirvana.look)
+    }
+
+    func test_allThirteenDrawingsAreReachableInOrder() {
+        let looks = (0...100).map { OttoAura.look(level: $0) }
+        XCTAssertEqual(looks, looks.sorted())
+        XCTAssertEqual(Set(looks), Set(1...13))
+    }
+
+    func test_theDrawingIsNeverMoreThanHalfAStepFromTheStage() {
+        for level in 0...100 {
+            let own = OttoAura.Stage(level: level).look
+            XCTAssertLessThanOrEqual(abs(OttoAura.look(level: level) - own), 1, "level \(level)")
+        }
+    }
 }
 

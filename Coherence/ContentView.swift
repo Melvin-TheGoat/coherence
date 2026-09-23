@@ -42,7 +42,7 @@ struct ContentView: View {
     @State private var ottoLineIndex = 0
     /// Bumped by every tap on Otto, which jiggles him (`OttoJiggle`).
     #if DEBUG
-    /// Settings > Testing > Otto's state: 0 follows the real history, 1 to 7
+    /// Settings > Testing > Otto's state: 0 follows the real history, 1 to 13
     /// shows that drawing, so every state can be looked at on a phone.
     @AppStorage(DebugOtto.stageKey) private var debugOttoStage = 0
     #endif
@@ -518,7 +518,7 @@ struct ContentView: View {
         let ottoTop = SitLayout.ottoTop(in: size)
         let ottoSize = 186 * SitLayout.scale(in: size)
         return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, aura: auraStage, jiggle: ottoPokes, clock: true)
+            ValleyScene(progress: 0, aura: auraStage, auraLook: auraLook, jiggle: ottoPokes, clock: true)
                 .frame(width: width, height: height)
 
             // The greeting, centred, where Brainrot writes its name. The
@@ -728,11 +728,13 @@ struct ContentView: View {
         if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
             return OttoAura.Stage(level: level)
         }
-        // Settings > Testing > Otto's state, for a phone with a real history.
-        if let forced = OttoAura.Stage(rawValue: debugOttoStage) { return forced }
         #endif
         return OttoAura.Stage(level: shownAuraLevel)
     }
+
+    /// Which of the rig's thirteen drawings shows at that level. Follows the
+    /// climbing level during a celebration, like the stage.
+    private var auraLook: Int { OttoAura.look(level: shownAuraLevel) }
 
     /// Otto's level today, 0 to 100, for the bar under his name.
     private var auraLevel: Int {
@@ -740,7 +742,9 @@ struct ContentView: View {
         if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
             return min(max(level, 0), 100)
         }
-        if let forced = OttoAura.Stage(rawValue: debugOttoStage) { return DebugOtto.level(for: forced) }
+        // Settings > Testing > Otto's state (one of the thirteen drawings),
+        // for a phone with a real history.
+        if (1...13).contains(debugOttoStage) { return DebugOtto.level(forLook: debugOttoStage) }
         #endif
         // A "Not now" that went unanswered costs glow (Melvin, 2026-09-22).
         // The windows come from the phone's own Screen Time state and are

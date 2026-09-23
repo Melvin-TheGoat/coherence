@@ -36,6 +36,9 @@ struct ValleyScene: View {
     /// valley, the same cushion, with the glow the practice has earned. nil
     /// is the sit and the Ready screen, which draw `pose`.
     var aura: OttoAura.Stage? = nil
+    /// Which of the aura rig's thirteen drawings Home shows
+    /// (`OttoAura.look(level:)`); nil is the stage's own.
+    var auraLook: Int? = nil
 
     /// Bumped by a tap on him on Home: the aura figure jiggles
     /// (`OttoJiggle`). Nothing else sets it, so the sit and the Ready screen
@@ -288,7 +291,7 @@ struct ValleyScene: View {
                 if !showsFigure {
                     EmptyView()
                 } else if let aura {
-                    OttoAuraFigure(stage: aura, size: tall, rig: rig, jiggle: jiggle)
+                    OttoAuraFigure(stage: aura, look: auraLook, size: tall, rig: rig, jiggle: jiggle)
                 } else {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }
