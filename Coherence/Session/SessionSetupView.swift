@@ -58,18 +58,40 @@ struct SessionSetupView: View {
 
     var body: some View {
         GeometryReader { geo in
+            let day = DayLight.at(0)
             ZStack {
+                // A patch of meadow behind the scene, in the exact colour
+                // the valley's own ground ends in at rest (`progress` is
+                // always 0 here). Raising Otto (below) lifts the whole
+                // painted scene by `Self.ottoRaise` so the bigger pills have
+                // room under him; without this patch that same amount would
+                // open as a bare gap at the very bottom of the screen, since
+                // the scene's own ground would rise clear of the edge it
+                // used to reach.
+                if !choosingSound {
+                    Rectangle()
+                        .fill(day.field.last ?? day.field[0])
+                }
+
                 // ONE scene, for both states. Never rebuilt, never replaced:
                 // it owns the Rive rig, and swapping it would restart him.
+                //
+                // Raised while not choosing a sound (Melvin, 2026-09-23): the
+                // Sound / Silence pills grew to Home's card size and would
+                // otherwise run into his cushion. Not raised in the
+                // sound-choosing state, where he is already a small corner
+                // figure next to the question bubble — lifting him there too
+                // would crowd it instead of helping anything.
                 ValleyScene(progress: 0, pose: settling ? .meditating : .greeting,
                             ottoInCorner: choosingSound)
-
-                let day = DayLight.at(0)
+                    .offset(y: choosingSound ? 0 : -Self.ottoRaise)
 
                 if choosingSound {
                     asking(day: day, in: geo.size)
-                    SoundChoiceList(soundID: $soundID, top: Self.listTop)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    SoundChoiceList(soundID: $soundID, top: Self.listTop) {
+                        choosingSound = false
+                    }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     greeting(day: day, in: geo.size)
                     if let countdown {
@@ -133,10 +155,34 @@ struct SessionSetupView: View {
     /// never behind a pill.
     private static let listTop: CGFloat = 196
 
+    /// How much the bigger Sound / Silence pills need Otto lifted clear of
+    /// them (Melvin, 2026-09-23: "gonna have to raise Otto a little bit for
+    /// this, which is ok, make sure it doesnt clash with the scroll bar").
+    /// Applied to the whole scene, not a layer of just him, since he is
+    /// painted rather than composited — see the filler patch in `body`.
+    ///
+    /// **Measured, not guessed, and small on purpose.** `lengthY` already
+    /// centres the tape in the gap between the sky top and an ASSUMED 84pt
+    /// bubble — on a tall phone that leaves the tape's own numbers a few
+    /// tens of points clear of the bubble, but on iPhone SE the two are
+    /// already only about 9pt apart at rest (measured from a cropped
+    /// screenshot: the "5" label sits ~18px, or 9pt at SE's @2x, above the
+    /// bubble's top edge). The gap was never generous; it was tuned to just
+    /// clear. A first attempt at 28pt raised Otto (and his bubble) straight
+    /// through that gap and the tape's numbers rendered inside the bubble
+    /// on SE, confirmed on-device. 6pt keeps a visible margin on the
+    /// smallest phone in the lineup while still lifting him on every phone;
+    /// larger phones had tens of points to spare either way, so the ceiling
+    /// here is set by SE, not by how much the pills grew.
+    private static let ottoRaise: CGFloat = 6
+
     /// The switch, or the sentence, depending on whether the shortcut that
-    /// makes a switch possible exists on this build. See `FocusShortcut`:
+    /// makes a switch possible on THIS device exists. See `FocusShortcut`:
     /// no app can turn on Do Not Disturb, and a switch that cannot work must
-    /// not be drawn.
+    /// not be drawn. `isConfigured` only decides whether the switch's LOOK
+    /// can be shown (forced on in DEBUG so it can be previewed); `installed`
+    /// is what actually gates ever running a shortcut, and stays false until
+    /// the two real ones exist.
     @ViewBuilder
     private func silenceControl(ink: Color) -> some View {
         if FocusShortcut.isConfigured {
@@ -150,13 +196,15 @@ struct SessionSetupView: View {
             } label: {
                 SitPill(glyph: "\u{263E}",
                         label: focus.silenced ? "Notifications off" : "Silence notifications",
+                        subtitle: focus.silenced ? "Do Not Disturb is on for this sit"
+                                                  : "Turns on Do Not Disturb while you sit",
                         tint: focus.silenced ? AppColor.calmAccent : AppColor.textPrimary) {
                     Toggle("", isOn: .constant(focus.silenced))
                         .labelsHidden()
                         .tint(AppColor.calmAccent)
                         .allowsHitTesting(false)
-                        .scaleEffect(0.82)
-                        .frame(width: 42)
+                        .scaleEffect(0.92)
+                        .frame(width: 46)
                 }
             }
             .buttonStyle(.plain)
@@ -181,7 +229,10 @@ struct SessionSetupView: View {
     // MARK: - The two states
 
     private func greeting(day: DayLight, in size: CGSize) -> some View {
-        let speaks = SitLayout.ottoTop(in: size) - 8
+        // Minus `ottoRaise` too: his head is that much higher than
+        // `SitLayout.ottoTop` says, since the whole scene is lifted in
+        // `body`, and the bubble has to stay pinned just above it.
+        let speaks = SitLayout.ottoTop(in: size) - 8 - Self.ottoRaise
         return VStack(spacing: 0) {
             Spacer(minLength: 0)
             OttoSpeech(text: countdown == nil
@@ -209,18 +260,14 @@ struct SessionSetupView: View {
     }
 
     private func readyControls(day: DayLight) -> some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Spacer()
             Button { choosingSound = true } label: {
-                SitPill(glyph: "\u{266A}", label: "Sound") {
-                    HStack(spacing: 2) {
-                        Text(SoundCatalog.title(for: soundID.isEmpty ? nil : soundID) ?? "Silence")
-                            .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.textSecondary)
-                        Text("\u{203A}")
-                            .font(AppFont.caption)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
+                SitPill(glyph: "\u{266A}", label: "Sound",
+                        subtitle: SoundCatalog.title(for: soundID.isEmpty ? nil : soundID) ?? "Silence") {
+                    Text("\u{203A}")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(AppColor.textSecondary)
                 }
             }
             .buttonStyle(.plain)
@@ -328,31 +375,49 @@ struct SessionSetupView: View {
     }
 }
 
-/// One control on the meadow: a glyph, a label, and whatever the row owns on
-/// the right. Cream rather than clear, because the meadow underneath is a
-/// mid-tone green with flowers in it and text has to survive that.
+/// One control on the meadow: a glyph in a roundel, a title with an optional
+/// line under it, and whatever the row owns on the right. Cream rather than
+/// clear, because the meadow underneath is a mid-tone green with flowers in
+/// it and text has to survive that.
+///
+/// **Sized to Home's cards** (Melvin, 2026-09-23: "we want the buttons
+/// 'sound' and 'silence notifications' to be a bit bigger, like closer to
+/// the size of the banners in the home screen"). It was one compact line,
+/// barely bigger than its own text — the material was right, the scale was
+/// not, next to everything else 808 shows a wrist-free session. `Self
+/// .ottoRaise` in `SessionSetupView` is the room this made for itself.
 struct SitPill<Trailing: View>: View {
     let glyph: String
     let label: String
+    var subtitle: String? = nil
     var tint: Color = AppColor.textPrimary
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 14) {
             Text(glyph)
-                .font(.system(size: 15))
-                .foregroundStyle(tint.opacity(0.65))
-                .frame(width: 18)
-            Text(label)
-                .font(DisplayFont.display(14.5))
+                .font(.system(size: 19))
                 .foregroundStyle(tint)
+                .frame(width: 42, height: 42)
+                .background(tint.opacity(0.12), in: Circle())
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(DisplayFont.display(16.5, .semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .lineLimit(1)
+                }
+            }
             Spacer(minLength: 0)
             trailing
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 15)
         .background(AppColor.backgroundPrimary.opacity(0.94),
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
     }
 }
@@ -389,8 +454,14 @@ struct FocusSetupSheet: View {
 
             Button("Add shortcut") {
                 Task {
-                    await focus.openInstall(FocusShortcut.silenceInstallURL)
-                    focus.markInstalled()
+                    // Both, "Do it for both" above. Only claim the setup is
+                    // done when both truly opened — a nil link (unconfigured)
+                    // or Shortcuts refusing to open must never be recorded as
+                    // installed, since that is exactly what once sent 808 on
+                    // to run a shortcut that was never really there.
+                    let silenceOpened = await focus.openInstall(FocusShortcut.silenceInstallURL)
+                    let restoreOpened = await focus.openInstall(FocusShortcut.restoreInstallURL)
+                    if silenceOpened && restoreOpened { focus.markInstalled() }
                 }
             }
             .buttonStyle(PrimaryButtonStyle())
@@ -431,9 +502,18 @@ struct SoundChoiceList: View {
     @Binding var soundID: String
     /// Where the list starts, under Otto's corner perch.
     var top: CGFloat
+    /// Called when Done is tapped. **Never the environment's `dismiss`**:
+    /// this view carries no `.sheet`/`.fullScreenCover` of its own, so that
+    /// would resolve to whatever presented the Ready screen itself — a
+    /// fullScreenCover from Home — and Done would close the entire Ready
+    /// screen instead of just leaving the sound list. That was the bug
+    /// behind "choosing a sound sends you to the home page": picking a
+    /// sound and tapping Done ended the whole session-setup flow. `onDone`
+    /// is owned by `SessionSetupView`, which sets `choosingSound = false`,
+    /// exactly like its own Back button already does.
+    var onDone: () -> Void
 
     @StateObject private var tone = ToneEngine()
-    @Environment(\.dismiss) private var dismiss
 
     /// Brainwave presets, deepest first (delta 2.5 → theta 6 → alpha 8).
     private var brainwave: [FrequencyPreset] {
@@ -489,7 +569,7 @@ struct SoundChoiceList: View {
         }
         .padding(.top, top)
         .overlay(alignment: .bottom) {
-            Button("Done") { tone.stop(reason: "sound chosen"); dismiss() }
+            Button("Done") { tone.stop(reason: "sound chosen"); onDone() }
                 .buttonStyle(PrimaryButtonStyle())
                 .padding(.horizontal, 18)
                 .padding(.bottom, 22)

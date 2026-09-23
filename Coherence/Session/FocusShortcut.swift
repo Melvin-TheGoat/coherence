@@ -56,26 +56,60 @@ final class FocusShortcut: ObservableObject {
     /// **These are empty until somebody with the Apple ID publishes them.**
     /// Making a shortcut and sharing it to iCloud is a human step in the
     /// Shortcuts app; there is no way to generate the link from here. Until
-    /// they are filled in, `isConfigured` is false and the screen shows its
-    /// Control Center line instead, so the build never offers a switch that
-    /// cannot work.
+    /// they are filled in, `installed` can never become true (see below), so
+    /// the switch always routes to setup instead of attempting a shortcut
+    /// that cannot exist.
     ///
-    /// Each shortcut is one action: Set Focus, Do Not Disturb, On (or Off).
+    /// **What to create, exactly (two shortcuts, in the Shortcuts app):**
+    /// 1. Name it **`808 Silence`** (must match `silenceName` exactly, since
+    ///    that is the string `run-shortcut?name=` looks up). One action:
+    ///    Set Focus > Do Not Disturb > Turn On.
+    /// 2. Name it **`808 Restore`** (must match `restoreName`). One action:
+    ///    Set Focus > Do Not Disturb > Turn Off.
+    /// 3. Share each one (the ••• menu > Share > Copy iCloud Link) and paste
+    ///    the two resulting `https://www.icloud.com/shortcuts/...` links in
+    ///    below, one per constant. Nothing else in the app needs to change:
+    ///    `installed` (below) starts working the moment both are non-nil.
     static let silenceInstallURL: URL? = nil
     static let restoreInstallURL: URL? = nil
 
-    /// Whether the feature can work at all on this build.
+    /// Whether the SWITCH can be shown at all on this build — not whether it
+    /// can actually run a shortcut yet, which `installed` below decides.
+    /// Forced true in DEBUG so the switch's look can be previewed and sized
+    /// before the two links exist; safe to force, because `installed` (the
+    /// thing that gates ever calling `run-shortcut`) does not trust this and
+    /// checks the real links itself.
     static var isConfigured: Bool {
         #if DEBUG
-        return true          // so the flow can be walked before the links exist
+        return true
         #else
         return silenceInstallURL != nil && restoreInstallURL != nil
         #endif
     }
 
-    /// The user has been through the setup. Not proof the shortcuts survived
-    /// (they can be deleted), which is why `silence()` checks the outcome.
-    @Published private(set) var installed: Bool
+    /// The setup screen was completed, as last persisted. Advisory only —
+    /// see `installed` below, which is what the rest of the app must read.
+    @Published private var rawInstalled: Bool
+
+    /// The user has been through setup AND the setup was for shortcuts that
+    /// can actually exist.
+    ///
+    /// **Why this is derived rather than the stored flag itself (the bug
+    /// behind "shortcut not found"):** `isConfigured` forces itself true in
+    /// DEBUG so the switch can be previewed before the two iCloud links
+    /// exist, and the old "Add shortcut" button called `markInstalled()`
+    /// unconditionally, even when `openInstall` had nothing to open (a nil
+    /// URL). That left `rawInstalled = true` saved in UserDefaults with no
+    /// shortcut behind it, so the next tap skipped straight to `run()`,
+    /// which built `shortcuts://x-callback-url/run-shortcut?name=808%20
+    /// Silence...` for a shortcut nobody had installed — the exact "Shortcut
+    /// not found" iOS reports. Requiring both links here means a stale
+    /// `true` left over from that build reads as false again the moment
+    /// this ships, with no reinstall needed, and a future bug in the setup
+    /// path can never again mark this true without a real shortcut to run.
+    var installed: Bool {
+        rawInstalled && Self.silenceInstallURL != nil && Self.restoreInstallURL != nil
+    }
 
     /// What we believe about the phone right now. Read from iOS where it is
     /// allowed, otherwise only what this app turned on.
@@ -102,12 +136,12 @@ final class FocusShortcut: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.installed = defaults.bool(forKey: Self.installedKey)
+        self.rawInstalled = defaults.bool(forKey: Self.installedKey)
     }
 
     func markInstalled() {
         defaults.set(true, forKey: Self.installedKey)
-        installed = true
+        rawInstalled = true
     }
 
     // MARK: - Reading the phone
@@ -194,9 +228,12 @@ final class FocusShortcut: ObservableObject {
         return opened
     }
 
-    /// Opens the iCloud link so Shortcuts can offer to add it.
-    func openInstall(_ url: URL?) async {
-        guard let url else { return }
-        _ = await UIApplication.shared.open(url)
+    /// Opens the iCloud link so Shortcuts can offer to add it. Returns
+    /// whether it actually opened anything, so a nil (unconfigured) link is
+    /// reported honestly rather than treated as a completed step.
+    @discardableResult
+    func openInstall(_ url: URL?) async -> Bool {
+        guard let url else { return false }
+        return await UIApplication.shared.open(url)
     }
 }
