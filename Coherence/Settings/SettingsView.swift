@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Query private var users: [User]
     @Query private var preferences: [Preferences]
+    @EnvironmentObject private var community: CommunityModel
 
     var body: some View {
         NavigationStack {
@@ -20,7 +21,15 @@ struct SettingsView: View {
                                  onSignOut: { SessionStore.signOut(in: context); OttoChatStore.deleteAll(); dismiss() },
                                  onDelete: {
                                      Analytics.track(.accountDeleted)
-                                     SessionStore.softDeleteCurrentUser(in: context); OttoChatStore.deleteAll(); dismiss() })
+                                     SessionStore.softDeleteCurrentUser(in: context); OttoChatStore.deleteAll()
+                                     // Friends: the public profile, posts and
+                                     // reactions go too, not just the local
+                                     // sign-out (5.1.1(v)). Fire-and-forget —
+                                     // a slow or offline delete must not hold
+                                     // up the sheet dismissing, and a failure
+                                     // retries on the next launch.
+                                     Task { await community.deleteAccountData() }
+                                     dismiss() })
                 } else {
                     Text("No account").foregroundStyle(AppColor.textSecondary)
                 }
@@ -168,7 +177,12 @@ private struct SettingsForm: View {
             Button("Delete account", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Your account and sessions are removed after 30 days. Sign back in before then to restore them.")
+            // The 30-day grace period is real, but it only covers the local
+            // account; a public Friends profile is not something we can
+            // leave sitting around in the meantime for other people to see.
+            Text(FeatureFlags.friends
+                 ? "Your account and sessions are removed after 30 days. Sign back in before then to restore them. Your Friends profile and posts are deleted right away."
+                 : "Your account and sessions are removed after 30 days. Sign back in before then to restore them.")
         }
     }
 

@@ -149,10 +149,11 @@ record name, never queried**, which is why they need no index at all.
 | Post | `author` | QUERYABLE |
 | Post | `practicedAt` | SORTABLE |
 | Reaction | `post` | QUERYABLE |
+| Reaction | `author` | QUERYABLE |
 | Block | `from` | QUERYABLE |
 | Block | `to` | QUERYABLE |
 
-Seven indexes, five record types. Where they come from, so you can check the
+Eight indexes, five record types. Where they come from, so you can check the
 reasoning rather than trust the table:
 
 - `FriendEdge.from` / `.to`: every friends, followers, following, requests
@@ -161,6 +162,12 @@ reasoning rather than trust the table:
 - `Post.practicedAt`: the feed sorts on it, descending. Sorting needs
   SORTABLE, which is a different box from QUERYABLE.
 - `Reaction.post`: reactions are fetched for a batch of posts.
+- `Reaction.author` (NEW, 2026-09-23): account deletion queries every
+  reaction I gave, across every post, so it can delete them — the only
+  reader of this index is `CommunityStore.deleteEverythingOfMine()`, not the
+  feed. Add it in Development and deploy it the same way as the rest of this
+  table; without it, deleting an account leaves the person's reactions
+  visible on other people's posts forever.
 - `Block.from` / `.to`: blocks are checked in both directions on every read
   and every write.
 

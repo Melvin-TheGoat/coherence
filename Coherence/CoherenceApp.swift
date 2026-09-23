@@ -86,6 +86,11 @@ struct CoherenceApp: App {
                 // Friends: profile, feed, and any invite reward that landed
                 // while the app was closed.
                 .task { if FeatureFlags.friends { await community.load() } }
+                // An account deletion whose Friends cleanup could not finish
+                // (no network, no iCloud, at the exact moment somebody left)
+                // retries here until it does. See
+                // CommunityModel.retryPendingDeletion.
+                .task { await CommunityModel.retryPendingDeletion() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }
