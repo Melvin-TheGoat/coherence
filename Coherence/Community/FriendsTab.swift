@@ -825,10 +825,11 @@ struct PostCard: View {
             Button {
                 Task { await model.toggleReaction(post.id) }
             } label: {
+                // Full colour whether or not you have given one (Melvin,
+                // 2026-09-23: faded, it read as unclickable). The pill's fill
+                // says the state: sky before, gold once given.
                 Text("🙏")
                     .font(.system(size: 17))
-                    .grayscale(mine ? 0 : 1)
-                    .opacity(mine ? 1 : 0.7)
                     .padding(.horizontal, 14).padding(.vertical, 8)
                     // Filled, like every other button in the app: amber once
                     // you have given one, paper before. An outlined capsule

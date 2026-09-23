@@ -124,9 +124,6 @@ private struct ScoreCapsule: View {
 struct EvidenceRow: View {
     let session: Session
     let score: Double?
-    /// The measurements themselves, not a pre-built sentence. The card needs
-    /// them apart so it can put each one in its own place.
-    var stats: MeditationStats? = nil
     var rating: Int? = nil
     /// Who can see this one, when the screen is somebody's own page.
     ///
@@ -166,33 +163,11 @@ struct EvidenceRow: View {
                     }
                     if let rating { RatingChip(rating: rating) }
                 }
-                // Three em dashes under the words Heart, Still and Breath is
-                // a row of things that did not happen, and printing it would
-                // be the card telling somebody what they are missing. A sit
-                // nobody measured is title, length and nothing else, which is
-                // all there is to say and is not an apology.
-                if !session.isPhoneOnly {
-                Rectangle().fill(AppColor.hairline)
-                    .frame(height: 1)
-                    .padding(.vertical, 11)
-                HStack(spacing: 0) {
-                    ForEach(SessionListSupport.columns(stats), id: \.label) { column in
-                        VStack(spacing: 1) {
-                            Text(column.value)
-                                .font(.system(size: 15.5, weight: .bold, design: .rounded))
-                                .foregroundStyle(column.value == "—" ? AppColor.textSecondary
-                                                                     : AppColor.calmAccent)
-                                .monospacedDigit()
-                            Text(column.label)
-                                .font(AppFont.caption)
-                                .foregroundStyle(AppColor.textSecondary)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.75)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-                }
+                // No measurement columns (Melvin, 2026-09-23: "it should not
+                // show 'heart settled' and 'still' in the recent tab on home,
+                // clutters everything too much"). A row is its length, its
+                // title and its day; the measurements, when a Watch took
+                // any, are one tap in, on the session's own page.
             }
         }
         .padding(14)

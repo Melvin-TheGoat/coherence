@@ -16,9 +16,8 @@ what it waits on.
 
 Not listed, because they are built and waiting on a release: Otto's
 on-device chat (`FeatureFlags.ottoInRelease` is off), Block
-(`blockInRelease` is off) and Friends (1.1). Being built right now: Otto's
-seven aura states animated in Rive (`OttoAuraRig` is on `block`;
-`OttoAura.riv` is not committed yet).
+(`blockInRelease` is off) and Friends (1.1). Otto's seven aura states
+animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
 ### Friends and social
 
@@ -263,6 +262,10 @@ seven aura states animated in Rive (`OttoAuraRig` is on `block`;
 
 ### Other
 
+- **Tab bar icons, drawn by Melvin.** He will generate new ones himself
+  (2026-09-23): none of the three directions in `mockups/tabbar-icons.html`
+  (Meadow, Line, Otto) were taken. The bar keeps its SF Symbols until the
+  art lands; the icons already sit 6pt lower in a bar of unchanged height.
 - **Accessibility.** Dynamic Type (282 fixed-size fonts and no
   `@ScaledMetric`, counted 2026-09-23), VoiceOver labels on the custom
   drawing (29 labels today) and a contrast check. The App Store
@@ -277,6 +280,14 @@ seven aura states animated in Rive (`OttoAuraRig` is on `block`;
 
 ## Open threads
 
+- **The real time of day on every valley screen.** Home follows the clock
+  since 2026-09-23 (`ValleyScene(clock: true)`, `DayLight.clockProgress`,
+  `VALLEY_HOUR` in DEBUG). Onboarding, Block, Friends, Profile, the Guide,
+  the Ready screen and the interventions still draw the top of the day,
+  because their type on the sky uses daytime ink (`ValleyGround.ink`,
+  `DayLight.at(0)`) and would vanish against a night sky. Turning them on
+  means checking each one's text for night. The status bar also stays dark
+  over a night sky; it needs a light style after dusk.
 - **Block: see it work on a phone.** Built and checked on the simulator
   (`block`, behind `FeatureFlags.block`), but only a phone shows a shield,
   Ask Otto's notification, a pass closing the apps on time (the fifteen

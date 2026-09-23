@@ -1046,7 +1046,6 @@ struct ContentView: View {
                     .padding(.vertical, 14)
             } else {
                 let scores = SessionListSupport.scoreMap(allStats)
-                let stats = SessionListSupport.statsMap(allStats)
                 let ratings = SessionListSupport.ratingMap(reflections)
                 VStack(spacing: 12) {
                     ForEach(Array(sessions.prefix(3).enumerated()), id: \.element.id) { _, session in
@@ -1056,7 +1055,6 @@ struct ContentView: View {
                         Button { sheet = FeatureFlags.friends ? .save(session.id) : .results(session.id) } label: {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
-                                        stats: stats[session.id],
                                         rating: ratings[session.id])
                         }
                         .buttonStyle(CardButtonStyle())
