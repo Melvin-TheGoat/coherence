@@ -74,8 +74,8 @@ enum BlockSchedule {
     }
 
     /// What Screen Time was told about a blocker: its hours, its limit, and
-    /// its apps (by a hash of the selection, which is opaque tokens). Days,
-    /// strictness and passes are the rules' business, not Screen Time's.
+    /// its apps (by a hash of the selection, which is opaque tokens). Days and
+    /// passes are the rules' business, not Screen Time's.
     static func signature(_ blocker: Blocker) -> String {
         let picked = (try? JSONEncoder().encode(BlockStore.selection(for: blocker.id))) ?? Data()
         let digest = SHA256.hash(data: picked).map { String(format: "%02x", $0) }.joined()

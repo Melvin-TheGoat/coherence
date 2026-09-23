@@ -3486,9 +3486,8 @@ Block behaves is untouched (same windows, limits, passes, strictness).
   Day / Schedule / Daily Limit** as one control, Blocked apps, the timeframe
   or the limit (15m, 30m, 1h, 2h, Custom on a wheel), Active days as
   Weekdays / Weekends / All over seven circles, Save, Delete.
-- **808's three extras are one card**, "When Otto lets you in": strictness,
-  passes a day (hidden on Strict), the session that opens the apps. They were
-  three sections, which was most of why the screen felt long.
+- ~~808's three extras were one card, "When Otto lets you in"~~: REMOVED the
+  same day. See "BLOCK HAS NO STRICTNESS AND NO PASS LIMIT" above.
 - **The mode is DERIVED, not stored**: a daily limit set means Daily Limit,
   else `.allDay` means All Day, else Schedule. So a blocker saved by the old
   editor opens on the right segment. A daily limit forces the window to all
@@ -3510,6 +3509,28 @@ Block behaves is untouched (same windows, limits, passes, strictness).
 - The page is the valley: `ValleyScene(progress: 0, showsFigure: false)` as a
   132pt band, the symbol's circle on the seam the way Profile seats its
   portrait, grass below, white fields.
+
+## BLOCK HAS NO STRICTNESS AND NO PASS LIMIT; FIVE MINUTES OPENS THE APPS (2026-09-22, Aziz)
+
+"get rid of the passes and the intensity and the when otto lets you in
+thing. also the minimum length for a session that open your apps is 5
+minutes". The editor's "When Otto lets you in" card is gone, and with it
+three per-blocker settings: strictness (Chill / Firm / Strict), passes a
+day, and the shortest session that counts.
+
+- **"Not now" always works.** No strict mode, no daily cap, no Firm
+  ten-second breath (`FirmBreath` deleted), no "N passes left today". Its
+  only price is the glow rule: a window that closes with no session after a
+  "Not now" costs glow, unchanged.
+- **`Blocker.sessionMinutes = 5`** for every blocker, checked once in
+  `BlockRules.recordSession`. Otto's screens that said "two minutes" now say
+  five, since two would open nothing.
+- `BlockStrictness`, `passesPerDay`, `minimumMinutes`, `passesLeft`,
+  `canTakePass`, `passesLeftNow` and `strictnessNow` are deleted. **Blockers
+  saved with the old keys still load** (the decoder ignores unknown keys);
+  `test_blockersSavedWithStrictnessStillLoadAndTakeNotNow` pins it.
+- `InterventionDoors.canPass` survives for one screen only: the countdown
+  hides "Not now" until it reaches zero.
 
 ## THE GUIDE IS IN THE VALLEY (2026-09-22, Aziz)
 

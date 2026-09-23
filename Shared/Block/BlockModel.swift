@@ -19,32 +19,6 @@ enum BlockWindow: Codable, Equatable, Hashable {
     case hours(start: Int, end: Int)
 }
 
-/// How hard Otto holds (CONSISTENCY.md, "What you can set").
-enum BlockStrictness: String, Codable, CaseIterable {
-    /// He asks once, then "Not now" works.
-    case chill
-    /// A ten second breath with Otto before "Not now" works.
-    case firm
-    /// No "Not now" at all. Meditating is the only way in.
-    case strict
-
-    var label: String {
-        switch self {
-        case .chill: return "Chill"
-        case .firm: return "Firm"
-        case .strict: return "Strict"
-        }
-    }
-
-    var explanation: String {
-        switch self {
-        case .chill: return "Otto asks once, then you can have a few minutes."
-        case .firm: return "Breathe with Otto for ten seconds before you can have a few minutes."
-        case .strict: return "No passes. A session is the only way in."
-        }
-    }
-}
-
 enum BlockerKind: String, Codable, CaseIterable {
     case mindfulDay, mindfulMorning, windDown, focusHours, dailyLimit, custom
 
@@ -70,11 +44,6 @@ struct Blocker: Codable, Identifiable, Equatable {
     /// Calendar weekdays it runs on: 1 is Sunday, 7 is Saturday.
     var weekdays: Set<Int> = Set(1...7)
     var window: BlockWindow = .allDay
-    var strictness: BlockStrictness = .chill
-    /// "Not now" passes a day. nil is no limit. Strict takes none.
-    var passesPerDay: Int? = 3
-    /// The shortest session that opens the apps, in minutes.
-    var minimumMinutes = 2
     /// Daily limit only: minutes of the held apps allowed first.
     var dailyLimitMinutes: Int?
     /// Whether apps have been picked. The picks themselves are tokens in
@@ -87,15 +56,19 @@ struct Blocker: Codable, Identifiable, Equatable {
     var symbol: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, kind, name, isOn, weekdays, window, strictness, passesPerDay
-        case minimumMinutes, dailyLimitMinutes, hasApps, createdAt, symbol
+        case id, kind, name, isOn, weekdays, window
+        case dailyLimitMinutes, hasApps, createdAt, symbol
     }
 
     /// The symbol to draw: the one picked, else the kind's.
     var displaySymbol: String { symbol ?? kind.defaultSymbol }
 
-    /// Out of the box (Melvin, 2026-09-22): Chill, three passes a day, and a
-    /// two minute session opens the apps.
+    /// The shortest session that opens held apps, for every blocker (Aziz,
+    /// 2026-09-22). It was a per-blocker setting beside strictness and a
+    /// daily pass limit; all three left the editor, and blockers saved with
+    /// them simply ignore the old keys.
+    static let sessionMinutes = 5
+
     static func preset(_ kind: BlockerKind) -> Blocker {
         switch kind {
         case .mindfulDay:
@@ -271,9 +244,6 @@ extension Blocker {
         if let v = try? c.decodeIfPresent(Bool.self, forKey: .isOn) { isOn = v }
         if let v = try? c.decodeIfPresent(Set<Int>.self, forKey: .weekdays), !v.isEmpty { weekdays = v }
         if let v = try? c.decodeIfPresent(BlockWindow.self, forKey: .window) { window = v }
-        if let v = try? c.decodeIfPresent(BlockStrictness.self, forKey: .strictness) { strictness = v }
-        if c.contains(.passesPerDay) { passesPerDay = try? c.decodeIfPresent(Int.self, forKey: .passesPerDay) }
-        if let v = try? c.decodeIfPresent(Int.self, forKey: .minimumMinutes) { minimumMinutes = v }
         if c.contains(.dailyLimitMinutes) {
             dailyLimitMinutes = try? c.decodeIfPresent(Int.self, forKey: .dailyLimitMinutes)
         }
@@ -337,31 +307,15 @@ enum BlockRules {
         state.blockers.filter { holds($0, in: state, at: now, calendar: calendar) }
     }
 
-    /// Passes left today. nil is no limit; Strict has none.
-    static func passesLeft(_ blocker: Blocker, in state: BlockState, at now: Date,
-                           calendar: Calendar = .current) -> Int? {
-        if blocker.strictness == .strict { return 0 }
-        guard let perDay = blocker.passesPerDay else { return nil }
-        let used = state.passes.filter {
-            $0.blockerID == blocker.id && calendar.isDate($0.start, inSameDayAs: now)
-        }.count
-        return max(0, perDay - used)
-    }
-
-    static func canTakePass(_ blocker: Blocker, in state: BlockState, at now: Date,
-                            calendar: Calendar = .current) -> Bool {
-        guard blocker.strictness != .strict else { return false }
-        return (passesLeft(blocker, in: state, at: now, calendar: calendar) ?? 1) > 0
-    }
-
-    /// "Not now" for `minutes`: a pass for every holding blocker that has one
-    /// left. Returns the ids that opened; Strict ones and spent ones stay held.
+    /// "Not now" for `minutes`: every holding blocker opens for that long.
+    /// There is no daily limit and no strict mode (Aziz, 2026-09-22): a
+    /// "Not now" costs glow when its window closes with no session, and that
+    /// is the whole price. Returns the ids that opened.
     @discardableResult
     static func takePass(minutes: Int, in state: inout BlockState, at now: Date,
                          calendar: Calendar = .current) -> [UUID] {
         var opened: [UUID] = []
-        for blocker in holding(state, at: now, calendar: calendar)
-        where canTakePass(blocker, in: state, at: now, calendar: calendar) {
+        for blocker in holding(state, at: now, calendar: calendar) {
             guard let window = blocker.openWindow(at: now, calendar: calendar) else { continue }
             let end = min(now.addingTimeInterval(TimeInterval(minutes * 60)), window.end)
             state.passes.append(BlockPass(blockerID: blocker.id, start: now, end: end, window: window))
@@ -371,8 +325,8 @@ enum BlockRules {
     }
 
     /// A session ended at `end`, lasting `durationSec`. Every blocker whose
-    /// window holds the session, and whose shortest counting session it
-    /// meets, is released for the rest of that window (Melvin, 2026-09-22:
+    /// window holds the session is released, when the session lasted at least
+    /// `Blocker.sessionMinutes`, for the rest of that window (Melvin, 2026-09-22:
     /// the window, not the day, so two windows mean two sessions). A window
     /// holds a session that started or ended inside it. Idempotent.
     @discardableResult
@@ -380,7 +334,8 @@ enum BlockRules {
                               calendar: Calendar = .current) -> [UUID] {
         let start = end.addingTimeInterval(-TimeInterval(durationSec))
         var released: [UUID] = []
-        for blocker in state.blockers where durationSec >= blocker.minimumMinutes * 60 {
+        guard durationSec >= Blocker.sessionMinutes * 60 else { return [] }
+        for blocker in state.blockers {
             let window = blocker.openWindow(at: end, calendar: calendar)
                 ?? blocker.openWindow(at: start, calendar: calendar)
             guard let window, !BlockRules.released(blocker.id, window: window, in: state) else { continue }

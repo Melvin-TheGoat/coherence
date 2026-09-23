@@ -126,26 +126,6 @@ final class BlockController: ObservableObject {
     /// The windows a "Not now" went unanswered in, for Otto's glow.
     var notNowWindows: [DateInterval] { BlockRules.notNowWindows(state) }
 
-    /// Passes left today across whatever is holding: the most generous one,
-    /// since "Not now" opens every holding blocker that has one. nil is no
-    /// limit.
-    func passesLeftNow(at now: Date = Date()) -> Int? {
-        let open = holding(at: now).filter { $0.strictness != .strict }
-        guard !open.isEmpty else { return 0 }
-        let counts = open.map { BlockRules.passesLeft($0, in: state, at: now) }
-        if counts.contains(where: { $0 == nil }) { return nil }
-        return counts.compactMap { $0 }.max() ?? 0
-    }
-
-    /// The strictest thing holding: Strict hides "Not now" only when every
-    /// holding blocker is Strict; Firm asks for a breath when any is Firm.
-    func strictnessNow(at now: Date = Date()) -> BlockStrictness {
-        let held = holding(at: now)
-        if !held.isEmpty && held.allSatisfy({ $0.strictness == .strict }) { return .strict }
-        if held.contains(where: { $0.strictness == .firm }) { return .firm }
-        return .chill
-    }
-
     // MARK: - Access
 
     /// Screen Time, for the person themselves (`.individual`): the system
@@ -216,7 +196,7 @@ final class BlockController: ObservableObject {
         commit(reschedule: true)
     }
 
-    /// "Not now" for `minutes`: every holding blocker with a pass left opens
+    /// "Not now" for `minutes`: every holding blocker opens
     /// for that long, and Screen Time is told when to close them again.
     ///
     /// **Fails closed** (the review of 2026-09-22): a pass whose end Screen

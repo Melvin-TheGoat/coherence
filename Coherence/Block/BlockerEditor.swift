@@ -9,9 +9,10 @@ import FamilyControls
 /// Top to bottom, Brainrot's order: the blocker's symbol in a circle with a
 /// pencil, its name, **All Day / Schedule / Daily Limit** as one control, the
 /// apps, the hours or the limit, and Active Days as presets over seven circles.
-/// Then one card for the three things only 808 has (how strict Otto is,
-/// passes a day, the shortest session that opens the apps), which were three
-/// separate sections before and most of why the old screen felt long.
+/// Nothing else: the "When Otto lets you in" card (strictness, passes a day,
+/// the shortest session) is gone (Aziz, 2026-09-22). Every blocker takes
+/// "Not now" freely and opens after a five minute session
+/// (`Blocker.sessionMinutes`).
 ///
 /// **The ground is the valley**, the sky and grass Profile and Home stand in,
 /// not the cream page with gold-tinted chips that read as pastel brown. Every
@@ -78,11 +79,10 @@ struct BlockerEditor: View {
                         heading("Active days")
                         dayPresets.padding(.bottom, 10)
                         dayCircles.padding(.bottom, 20)
-                        rulesCard
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
                     .padding(.top, Self.circle / 2 + 14)
-                    // Room for the pinned footer, so the rules card can be
+                    // Room for the pinned footer, so the day circles can be
                     // scrolled clear of Save.
                     .padding(.bottom, isNew ? 120 : 150)
                     .animation(.spring(response: 0.36, dampingFraction: 0.88), value: mode)
@@ -310,63 +310,6 @@ struct BlockerEditor: View {
                 .frame(maxWidth: .infinity)
                 .accessibilityLabel(Calendar.current.weekdaySymbols[weekday - 1])
                 .accessibilityAddTraits(on ? .isSelected : [])
-            }
-        }
-    }
-
-    // MARK: - 808's own three
-
-    private var rulesCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("When Otto lets you in")
-                .font(DisplayFont.display(15, .heavy))
-                .foregroundStyle(AppColor.textPrimary)
-            Segmented(options: BlockStrictness.allCases, selected: draft.strictness,
-                      label: \.label, compact: true, track: BlockerEditor.quiet) {
-                draft.strictness = $0
-            }
-            Text(draft.strictness.explanation)
-                .font(.system(size: 12))
-                .foregroundStyle(AppColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            // Strict takes no passes, so the row would be a setting for
-            // nothing.
-            if draft.strictness != .strict {
-                ruleRow("Passes a day", value: draft.passesPerDay.map(String.init) ?? "No limit") {
-                    ForEach([1, 2, 3], id: \.self) { n in
-                        Button("\(n)") { draft.passesPerDay = n }
-                    }
-                    Button("No limit") { draft.passesPerDay = nil }
-                }
-            }
-            ruleRow("A session that opens them", value: "\(draft.minimumMinutes) min") {
-                ForEach([1, 2, 5, 10], id: \.self) { n in
-                    Button("\(n) min") { draft.minimumMinutes = n }
-                }
-            }
-        }
-        .padding(14)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .animation(.easeOut(duration: 0.2), value: draft.strictness)
-    }
-
-    private func ruleRow<Items: View>(_ title: String, value: String,
-                                      @ViewBuilder items: () -> Items) -> some View {
-        VStack(spacing: 0) {
-            Rectangle().fill(Self.quiet).frame(height: 1).padding(.bottom, 10)
-            HStack {
-                Text(title)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(AppColor.textPrimary)
-                Spacer()
-                Menu { items() } label: {
-                    HStack(spacing: 4) {
-                        Text(value)
-                        Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .bold))
-                    }
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(AppColor.skyDeep)
-                }
             }
         }
     }
