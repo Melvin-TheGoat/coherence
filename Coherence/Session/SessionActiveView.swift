@@ -114,10 +114,24 @@ struct SessionActiveView: View {
 
                 VStack {
                     Spacer()
-                    Button(finishing ? "Done" : "End", action: onEnd)
-                        .font(DisplayFont.display(13.5, finishing ? .heavy : .bold))
-                        .foregroundStyle(finishing ? day.ink : day.ink.opacity(0.45))
-                        .padding(.bottom, 42)
+                    // **Out of the home-indicator zone, with a real target.**
+                    // At 42pt from the bottom, on a screen that hides the home
+                    // indicator, iOS read a tap on End as the start of its
+                    // swipe home: the finger-down reached the app and the
+                    // finger-up went to the system (`systemGestureStateChange`
+                    // in the log), and a Button fires on finger-up, so End
+                    // did nothing. Found on the simulator 2026-09-22 after a
+                    // first session refused to end through five taps.
+                    Button(action: onEnd) {
+                        Text(finishing ? "Done" : "End")
+                            .font(DisplayFont.display(13.5, finishing ? .heavy : .bold))
+                            .foregroundStyle(finishing ? day.ink : day.ink.opacity(0.45))
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 14)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 44)
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
@@ -125,6 +139,10 @@ struct SessionActiveView: View {
         .ignoresSafeArea()
         .statusBarHidden()
         .persistentSystemOverlays(.hidden)
+        // With the indicator hidden, the app gets the first touch at the
+        // bottom edge and a swipe home needs a second one. Without this the
+        // system claims the edge first and End's tap is lost to it.
+        .defersSystemGestures(on: .bottom)
         .onReceive(clock) { now = $0 }
     }
 
