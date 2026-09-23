@@ -1,11 +1,20 @@
 # Friends: the community feature (design, 2026-09-14)
 
+> **Built, and changed since (checked in the 2026-09-23 sweep).** Friends is
+> built behind `FeatureFlags.friends` (see "Build status" at the end), and
+> CLAUDE.md records what moved after this was written: follower and
+> following counts (2026-09-18); the invite reward is 3 sessions, capped at
+> 15 (2026-09-15); the selfie rule is gone, so a post takes any photo and a
+> session can hold a video (2026-09-22); a post's score is optional
+> (2026-09-22); the tab is in the valley (2026-09-22). Ideas still open are
+> in `BACKLOG.md` > Potential features.
+
 Aziz's ask: after a meditation, post the session with a photo to your
 friends, the way a Strava run goes to your feed. Friends, not followers.
 Use it to get people inviting each other, and reward the inviting.
 
 This file is the decision record. The mockup is `mockups/friends.html` and
-must be reviewed before any Swift (standing rule). Nothing here is built yet.
+must be reviewed before any Swift (standing rule).
 
 ## What ships in v1, and what does not
 

@@ -1,5 +1,12 @@
 # Coherence — v1 Development Roadmap (v2)
 
+> **Historical (2026-09-23 sweep).** The v1 build plan. Phases 0 to 7 are
+> built, Phase 8 shipped as 1.0 on 2026-09-10, and Phase 9 (camera PPG) was
+> built and then cut in the MVP (the code is on `full-feature-set`). The
+> current state is CLAUDE.md; open work and potential features are in
+> `BACKLOG.md`. Section 8a.2 (accessibility) is still current and is linked
+> from `marketing/APP_STORE_PASTE.md`.
+
 Motion-based guided-meditation app · iPhone + Apple Watch · Swift / SwiftUI / SwiftData / HealthKit / CoreMotion
 Execution model: instructions pasted into **Claude Code in a terminal** (no IDE integration). Project defined via **XcodeGen** so Claude Code can edit `project.yml` and regenerate the `.xcodeproj` with one command.
 

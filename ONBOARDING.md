@@ -1,7 +1,13 @@
 # 808 Onboarding — design spec
 
+> **Superseded (2026-09-23 sweep).** This flow was built in August and has
+> been replaced since: the payoff screens are cut and onboarding is now
+> Headspace's shape, in the valley, without the Watch question. The current
+> record is CLAUDE.md ("ONBOARDING IS HEADSPACE'S SHAPE NOW", "ONBOARDING IS
+> BACK"). Kept for the quote roster, the research, and what not to copy from
+> QUITTR.
+
 Modelled on QUITTR's flow (teardown from three screen recordings, 2026-08-05).
-Nothing here is built yet. Design and copy only — no Swift written.
 
 **One-line product promise for the MVP:** your Watch tracks your meditation and
 scores it. Onboarding may motivate *why* someone meditates, but must not

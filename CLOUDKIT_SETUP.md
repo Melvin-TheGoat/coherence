@@ -11,6 +11,14 @@ this page.
 **Database:** PUBLIC (not Private)
 **Console:** https://icloud.developer.apple.com/dashboard
 
+**Status (2026-09-19, Melvin; moved here from `BACKLOG.md` in the
+2026-09-23 sweep):** steps 1 to 4 are done. Development has the 14 fields,
+the seven indexes and the roles, and Production lists all seven Friends
+types, so the table below shows the state before that work. Step 5, the
+round trip on two real phones, is still owed. TestFlight talks to
+Production; a beta install reaches this container only with
+`WITH_ICLOUD=1` (see `BACKLOG.md` > Standing notes).
+
 ## Why this is the blocking step
 
 Fields appear in the Development schema **lazily**, the first time the app
