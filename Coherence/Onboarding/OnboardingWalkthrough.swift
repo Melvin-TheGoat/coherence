@@ -163,6 +163,12 @@ struct TourHomeScreen: View {
     @State private var changedAt = Date.distantPast
     /// Set by the last tap: the dim lifts off Home, then onboarding finishes.
     @State private var leaving = false
+    /// The tab under the dim. Its own state, changed with animations off, so
+    /// moving to the next stop switches tabs the way a tap on the bar does:
+    /// at once. Inside the stop's animation the new tab cross-faded in with
+    /// its layout animating, which read as a swipe and a flash (Melvin,
+    /// 2026-09-23: "should just look like you tapped on the icons").
+    @State private var shownTab: MainTab = .home
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let stops = TourStop.all(block: FeatureFlags.block, friends: FeatureFlags.friends)
@@ -174,7 +180,7 @@ struct TourHomeScreen: View {
 
     var body: some View {
         ContentView()
-            .environment(\.tourTab, current.tab)
+            .environment(\.tourTab, shownTab)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
             .overlayPreferenceValue(TourTargetKey.self) { anchors in
@@ -272,9 +278,17 @@ struct TourHomeScreen: View {
         guard !leaving, Date().timeIntervalSince(changedAt) > Self.pace else { return }
         changedAt = Date()
         if stop < stops.count - 1 {
-            withAnimation(reduceMotion ? nil : .easeInOut(duration: Self.pace)) { stop += 1 }
-            // A bubble changing is silent to VoiceOver, so the new line is read.
-            AccessibilityNotification.Announcement("Otto says: \(current.line)").post()
+            var instant = Transaction()
+            instant.disablesAnimations = true
+            withTransaction(instant) { shownTab = stops[stop + 1].tab }
+            // The window and the line still ease to the next stop, a turn of
+            // the run loop later, so their animation cannot carry the tab
+            // switch with it.
+            DispatchQueue.main.async {
+                withAnimation(reduceMotion ? nil : .easeInOut(duration: Self.pace)) { stop += 1 }
+                // A bubble changing is silent to VoiceOver, so the new line is read.
+                AccessibilityNotification.Announcement("Otto says: \(current.line)").post()
+            }
         } else if reduceMotion {
             leaving = true
             onContinue()
