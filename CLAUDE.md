@@ -3295,6 +3295,14 @@ and **screen 1**, with four changes.
   the rows and the results screen draw it without knowing there is film
   behind it. **The feed still posts the still**: a video in a post is its own
   piece of work.
+  - **The UI dropped the requirement here, but `CommunityStore.post` still
+    threw `.selfieRequired` for a photo-less Friends post until 2026-09-23.**
+    Save session never forced a camera, so a Friends post with no photo would
+    silently fail at the store layer with "Take your selfie to post."
+    `CommunityStore.post` no longer guards on a photo at all; a post with
+    none simply carries none, same as an optional score. `CommunityError
+    .selfieRequired` is deleted. The reaction pill on a post card was
+    restyled the same day, see "FRIENDS IS IN THE VALLEY" below.
 - **Otto reflects, he does not thank.** "It's not like youre doing him a
   favor by taking care of him. It should be assumed." His line after a
   session is "That's today done. I'm brighter for it."
@@ -3623,7 +3631,10 @@ a sent request, the same `model.remove` a person's page already used).
   search capsule, then posts as white cards on the grass.
 - **Post cards** are white (`whiteCard`), numbers in the sky's ink,
   hairlines `ValleyGround.quiet`, and "Nice session" is a sky pill that turns
-  gold once given.
+  gold once given. **Restyled 2026-09-23 (Melvin): the pill is the emoji
+  alone, on the left, with who gave one reading to its right** (where the
+  pill used to sit) — "Nice session" survives only as the button's
+  accessibility label, since the card no longer prints it.
 - **Requests**: a short band, the title in the toolbar's PRINCIPAL slot (a
   leading toolbar item is wrapped in an iOS 26 glass capsule and reads as a
   button), one white card per group of people, Accept gold.

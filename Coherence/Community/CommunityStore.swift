@@ -351,9 +351,6 @@ actor CommunityStore {
         let caption = String(draft.caption.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.captionLimit))
         let id = draft.sessionID.map(Self.postID(forSession:)) ?? UUID().uuidString
         let existing = try await db.fetch(id)
-        // BeReal rule: no selfie, no post. An edit to a post that already has
-        // one may leave it out and keeps the one it has.
-        guard draft.photoURL != nil || existing?["photo"] != nil else { throw CommunityError.selfieRequired }
         guard ContentFilter.check([draft.title, draft.caption]) == .ok else { throw CommunityError.contentBlocked }
         let post = Post(id: id, author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
                         technique: draft.technique, caption: caption, photoURL: draft.photoURL,
