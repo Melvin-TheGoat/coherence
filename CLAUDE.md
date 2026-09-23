@@ -3005,6 +3005,49 @@ because the tap had opened the setup sheet rather than the screen.** Always
 confirm which screen is actually up before reading a diff: a static sheet
 and a broken animation look identical in the numbers.
 
+## THE GREETING BLINKS; THE EDITOR'S COPY HAD LOST A DAY (2026-09-22, Aziz)
+
+"make sure on the begin meditation page otto is blinking". The standing
+wave's lids (`BlinkL` / `BlinkR`) live inside `WavePose`, so they faded out
+with it and the seated greeting never blinked. Two new lids, `GreetBlinkL` /
+`GreetBlinkR`, are duplicates of those, reparented into `Body` behind
+`GreetArm` and in front of the greet art, placed at Body-space (-65.4, -315.6)
+and (52.4, -349.1), r = -15, over the greet eye centres (144.5, 146) and
+(275, 113.5) of the 418 x 434 art. `Blink` keys their sy exactly like the
+originals (closed at 234 to 237 of 300 frames); `PoseGreet` keys their opacity
+100, `PoseWave` and `PoseSit` key it 0. Verified by recording: the eyes shut
+twice, five seconds apart, clean, and the sit after Begin shows no lids.
+
+**The editor's cloud copy of Otto was older than the repo's `.riv`.** The
+2026-09-21 greeting work (the `greeting` view model property, the Greeting
+state and its transitions, the pose keys) was in `Otto.riv` and not in the
+editor; restoring version history twice brought back the same older copy.
+It was rebuilt in the editor before the lids went on, and the export now
+contains both. **Before editing Otto in Rive, export the editor's copy and
+compare it to `Coherence/Otto/Otto.riv` (size and names); never assume the
+editor holds what shipped.**
+
+**Reparenting while a timeline is open writes keyframes into it.** Moving the
+lids with the editor sitting in `BranchOff` added position keys there, which
+would have pinned the lids in every branch state. Plain property writes did
+not. Re-query every timeline after a reparent. `simulateStateMachine` also
+refuses to run in animation mode, so verify on the simulator instead.
+
+## END WORKS ON THE FIRST TAP: THE BOTTOM EDGE BELONGS TO iOS (2026-09-22)
+
+End on the sit screen refused five taps in a row. The device log said why:
+each finger-down reached the app and each finger-up went to the system
+(`systemGestureStateChange: 1`). The screen hides the home indicator
+(`persistentSystemOverlays(.hidden)`) and End sat 42pt from the bottom edge,
+where iOS reads a touch as the start of a swipe home. A Button fires on
+finger-up, so it never fired.
+
+Fixed three ways, all needed: `.defersSystemGestures(on: .bottom)` on the
+screen, End lifted to 44pt above the bottom inset, and a bigger hit target
+(32 by 14 padding, `contentShape(Rectangle())`). **Any control near the bottom
+edge of a screen that hides the home indicator needs the same.** A tap that
+works "sometimes" down there is this, not flakiness.
+
 ## HOME IS THE VALLEY, WITH OTTO IN THE MIDDLE (2026-09-21, Melvin)
 
 "keep it on the same theme" as Aziz's sit and Ready screens, with Brainrot's
@@ -3431,6 +3474,194 @@ Diagnosis, for next time: `xcrun devicectl device process launch --console
 --terminate-existing <bundle>` prints the app's stdout and names the signal,
 and reading the profile's own entitlements is one command:
 `security cms -D -i <profile> | plutil -extract Entitlements json -o - -`.
+
+## THE BLOCKER EDITOR IS BRAINROT'S, IN THE VALLEY (2026-09-22, Aziz)
+
+Aziz, with three Brainrot screenshots: "make it more like this and also just
+use current theme i dont like the current pastel brown in here". Built to
+`mockups/blocker-editor-v2.html`. `BlockerEditor.swift` is rewritten; how
+Block behaves is untouched (same windows, limits, passes, strictness).
+
+- **Brainrot's order:** a symbol in a circle with a pencil, the name, **All
+  Day / Schedule / Daily Limit** as one control, Blocked apps, the timeframe
+  or the limit (15m, 30m, 1h, 2h, Custom on a wheel), Active days as
+  Weekdays / Weekends / All over seven circles, Save, Delete.
+- ~~808's three extras were one card, "When Otto lets you in"~~: REMOVED the
+  same day. See "BLOCK HAS NO STRICTNESS AND NO PASS LIMIT" above.
+- **The mode is DERIVED, not stored**: a daily limit set means Daily Limit,
+  else `.allDay` means All Day, else Schedule. So a blocker saved by the old
+  editor opens on the right segment. A daily limit forces the window to all
+  day, because it counts the whole day and its screen shows no hours.
+- **The editor has no on/off switch** (Brainrot's has none); the list keeps
+  it. A NEW blocker therefore saves switched ON, and `BlockTab.save` still
+  routes a free person to the paywall.
+- **`Blocker.symbol`** (optional SF Symbol, nil draws `kind.defaultSymbol`)
+  is the one new field. It decodes absent for every blocker saved before it;
+  `test_symbolDefaultsToTheKindsAndSurvivesASave` pins that. The list row
+  draws it too, or the pencil would change nothing anyone sees. SF Symbols
+  only, never emoji.
+- **Colour: blue for choosing, gold for doing.** Every choice lights in
+  `AppColor.skyDeep`, the valley's midday sky deepened for white text; the
+  one gold object is Save. Unchosen labels are `meadowInk`, and tracks and
+  dividers use `BlockerEditor.quiet` (meadowInk at 11%). **Do not use the
+  app's `hairline` on these white fields**: it is cream, and the first build
+  that did read as the pastel brown this screen was rebuilt to lose.
+- The page is the valley: `ValleyScene(progress: 0, showsFigure: false)` as a
+  132pt band, the symbol's circle on the seam the way Profile seats its
+  portrait, grass below, white fields.
+
+## THE READY SCREEN HAS A TIMER AGAIN: A TAPE, AND TAP TO TYPE (2026-09-22, Aziz)
+
+"on the meditate screen i want it so theres a timer on there and we can do a
+cool scroll animation", then "also do it where you can tap and you can just
+say the specific amount of time". Built to `mockups/ready-timer.html`
+(direction 1, the tape; the drum and the ring stay in the mockup).
+
+- **A big clock in the sky and a ruler under it** (`SessionLengthPicker` and
+  `LengthTape`, `Coherence/Session/LengthTape.swift`). The ruler slides under a
+  fixed amber needle: a tick a minute, a number every five, ∞ (Open) at the
+  left end. Ticks swell toward the needle, the clock rolls to the new number,
+  and a selection haptic marks every minute. **Tapping the clock turns it into
+  a number field** (empty, the current length as placeholder) with a Done
+  pill; 0 means Open, 1 to 4 means 5, the ceiling is 600.
+- **Five minutes is the shortest timed session** (Aziz, same day: "minimum is
+  five and if you go beyond 5 its infinite"). The tape runs ∞, 5, 6, 7..., so
+  sliding left past 5 lands on Open, and typing 1 to 4 gives 5. Five is also
+  what opens Block's apps, so a timed sit always counts
+  (`test_theShortestTimedSessionOpensBlock` ties the two). A 2 minute default
+  saved earlier opens on 5; Settings' lengths are now Open, 5, 10, 15, 20, 30.
+- **`SessionLength` (Shared, tested) holds the rules**: Open, then every
+  minute from 5 to 120, evenly. It first jumped 60, 75, 90, 120 on
+  consecutive ticks and the four labels piled into one smear (Aziz: "this
+  looks weird"); **every labelled tick must be the same distance apart.** A
+  typed 300 is kept as 300 while the tape rests on its nearest tick (120) and
+  only moving the tape off that tick writes back.
+- **The length is remembered** in `Preferences.defaultDurationSec`, which the
+  Settings "Default length" picker also edits (it now lists a custom value
+  rather than showing blank). Begin passes it as `plannedDurationSec`, and the
+  phone path already ends a timed sit by itself.
+- **Reading the tape cost two wrong attempts, both worth knowing.**
+  `scrollPosition(id:anchor: .center)` reported the tick BEFORE the one the
+  ruler settled on (clock 9:00 over a needle on 10). A GeometryReader in the
+  scroll content fired once at rest and never while scrolling. What works:
+  `onScrollGeometryChange` (iOS 18), `contentOffset.x + contentInsets.leading`
+  divided by the tick spacing. iOS 17 falls back to the scroll position id.
+- **Programmatic moves never animate** (`scrollTo` bare): a slide would pass
+  every tick on the way and write each one back. Offsets before the first
+  placement are ignored for the same reason (they would write Open over the
+  remembered length).
+- Scale the tick's line and its number SEPARATELY: scaling the whole stack
+  pushed the number out of the ruler's frame and clipped it under the needle.
+
+## FRIENDS IS IN THE VALLEY (2026-09-22, Aziz)
+
+"revamp the friends screen make it the same vibe as the rest". Built to
+`mockups/friends-valley.html`. It was the last tab on plain cream with brown
+ink. **No wording, action or rule changed**; one small addition (Withdraw on
+a sent request, the same `model.remove` a person's page already used).
+
+- **The feed**: a band of valley (`FriendsSky`, the scene with nobody in it)
+  carrying "Friends", your @ and the requests pill (gold only when someone is
+  waiting, the one gold thing in the sky), and **your friends standing on the
+  meadow** (`FriendsOnTheMeadow`): tap a face for their page, the last face is
+  Invite. **Anyone who posted a session today glows** in Otto's aura light.
+  It reads only `model.friends` and the feed, the only evidence 808 has that a
+  friend sat; nothing from Block or Screen Time reaches it. Below: a cream
+  search capsule, then posts as white cards on the grass.
+- **Post cards** are white (`whiteCard`), numbers in the sky's ink,
+  hairlines `ValleyGround.quiet`, and "Nice session" is a sky pill that turns
+  gold once given.
+- **Requests**: a short band, the title in the toolbar's PRINCIPAL slot (a
+  leading toolbar item is wrapped in an iOS 26 glass capsule and reads as a
+  button), one white card per group of people, Accept gold.
+- **A person's page** is your own Profile's shape: portrait on the seam, one
+  white identity card with the follow line and the one relationship button,
+  one stats card, then their posts.
+- **Shared pieces now in `DesignKit`**: `ValleyGround` (meadow, ink,
+  inkSoft, quiet), `GrassHeading`, `.whiteCard(radius:)`. `NoTopEdgeHaze` is
+  internal (was private to the guide).
+- **A page with NO navigation bar has no top edge for iOS to fade**, so
+  scrolled content ran under the clock with nothing behind it.
+  `scrollEdgeEffectHidden(false)` did nothing there. `StatusBarScrim` fades a
+  band of meadow in behind the status bar once the band has scrolled away
+  (`onScrollGeometryChange`, iOS 18+).
+
+## A TIMED SESSION ENDS WITH A NOTIFICATION; "GET COMFORTABLE" IS IN THE VALLEY (2026-09-22, Aziz)
+
+- **`SessionEndNotice`** (`Coherence/Session/`): a timed phone sit schedules a
+  local notification for its planned end ("That's 10 minutes" / "Your session
+  is done. Take a breath before you get up."), **Time Sensitive** because it
+  is a timer the person set and the Ready screen's own Silence switch turns on
+  Do Not Disturb. With 808 on screen it plays only its sound
+  (`BlockNotifications.willPresent`), since the sit screen already says it is
+  over. `BlockNotifications` is now installed on EVERY build, not only
+  Block's, or the foreground chime would never play in Release.
+- **Taken back only on an EARLY end** (`finishPhoneSession(early:)`): on time,
+  the notification is firing at that same moment and IS the chime.
+- **Permission is asked on Begin of a timed sit, before the countdown**, only
+  if never asked. Never on appear.
+- **A late finish is capped at the planned length.** A silent timed sit lets
+  iOS suspend 808, so the finish can run when the phone is next picked up;
+  the session is the length that was set, not the length of the wait.
+- **The countdown is direction A of `mockups/ready-countdown.html`**: nothing
+  new appears, things leave. The pills slide into the meadow, the tape goes,
+  the clock counts 5 to 1 in its own place and face, Otto says "Get
+  comfortable.", one Cancel pill sits where Begin was (the corner Cancel hides
+  so there are never two), and at zero he settles from waving into sitting for
+  0.7 s before the sit takes over. The old cream wash with a brown number is
+  deleted.
+
+## BLOCK HAS NO STRICTNESS AND NO PASS LIMIT; FIVE MINUTES OPENS THE APPS (2026-09-22, Aziz)
+
+"get rid of the passes and the intensity and the when otto lets you in
+thing. also the minimum length for a session that open your apps is 5
+minutes". The editor's "When Otto lets you in" card is gone, and with it
+three per-blocker settings: strictness (Chill / Firm / Strict), passes a
+day, and the shortest session that counts.
+
+- **"Not now" always works.** No strict mode, no daily cap, no Firm
+  ten-second breath (`FirmBreath` deleted), no "N passes left today". Its
+  only price is the glow rule: a window that closes with no session after a
+  "Not now" costs glow, unchanged.
+- **`Blocker.sessionMinutes = 5`** for every blocker, checked once in
+  `BlockRules.recordSession`. Otto's screens that said "two minutes" now say
+  five, since two would open nothing.
+- `BlockStrictness`, `passesPerDay`, `minimumMinutes`, `passesLeft`,
+  `canTakePass`, `passesLeftNow` and `strictnessNow` are deleted. **Blockers
+  saved with the old keys still load** (the decoder ignores unknown keys);
+  `test_blockersSavedWithStrictnessStillLoadAndTakeNotNow` pins it.
+- `InterventionDoors.canPass` survives for one screen only: the countdown
+  hides "Not now" until it reaches zero.
+
+## THE GUIDE IS IN THE VALLEY (2026-09-22, Aziz)
+
+"revamp all the how to meditate guides in there so it fits our current
+theme". Built to `mockups/guide-valley.html`. The guide was the last pair of
+screens on the cream page with brown ink. **No copy changed.**
+
+- **The list:** the valley band with Otto (asking pose) saying the title in
+  a white bubble, "How to meditate" over "8 ways in. Any order you like.";
+  grass below; level headings in white; each method a white card with its
+  symbol in a sky circle, the blocker list's object. The session count is
+  SKY and still absent at zero: it is a record, and gold is kept for Begin.
+- **A method:** its symbol on the seam of the band, a white head card
+  (level, title, line), steps as one card with sky number dots, variants
+  and "What it is for" as cards, the origin under a divider (the SCIENCE.md
+  two-tier rule), and **Begin pinned, gold**.
+- **Symbols live in `MeditationMethod.swift`** (`symbol`, a switch on id
+  with a leaf fallback), so a new method still needs no view change.
+- **iOS 26 hazes scrolling content under the navigation bar toward the
+  page's background.** The page is the meadow, so the sky came out green
+  under the back button. `NoTopEdgeHaze` turns the top edge effect off.
+- **A parent's `safeAreaInset` does NOT reach a page pushed onto a
+  NavigationStack inside it.** Measured, not guessed: the method page's
+  bottom inset read 34 (the home indicator alone) while the tab bar sat on
+  top of its pinned Begin. ContentView now measures the bar and hands its
+  height to the tabs as `tabBarClearance` (environment, set on the tabs
+  only, so sheets get 0); a pushed page that pins something to its bottom
+  adds it. **Any future pushed page with bottom-pinned content needs the
+  same.** The first fix, moving Begin from a ZStack into its own
+  `safeAreaInset`, was right in general and changed nothing here.
 
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 

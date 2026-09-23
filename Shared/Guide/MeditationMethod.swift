@@ -347,3 +347,25 @@ public struct MeditationMethod: Identifiable, Hashable, Codable {
             ]),
     ]
 }
+
+// MARK: - Symbols
+
+extension MeditationMethod {
+    /// The SF Symbol drawn in the method's sky circle, on the guide's list and
+    /// on its own page (Aziz, 2026-09-22, the guide moved into the valley).
+    /// Kept here beside the copy, so adding a method still needs no view
+    /// change: an id with no entry draws the leaf.
+    public var symbol: String {
+        switch id {
+        case "firstTime": return "leaf.fill"
+        case "countdown": return "10.circle.fill"
+        case "bodyScan": return "figure.stand"
+        case "blueSky": return "cloud.sun.fill"
+        case "dualAwareness": return "circle.circle.fill"
+        case "energyCenters": return "sparkles"
+        case "reconditioning": return "arrow.triangle.2.circlepath"
+        case "manifestation": return "wand.and.stars"
+        default: return "leaf.fill"
+        }
+    }
+}

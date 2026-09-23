@@ -1,0 +1,188 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · How to meditate, in the valley</title>
+<style>
+:root{
+  --sky1:#8CBBD4; --sky2:#BBD8E4; --sky3:#E3E8DA;
+  --grass:#9CBC85; --grassDeep:#7FA87E;
+  --pick:#3F80AD; --pickEdge:#2E6A93; --wash:#D8E8F2;
+  --ink:#413024; --soft:#877160; --mInk:#5E7A55; --quiet:rgba(94,122,85,.11);
+  --gold:#F0C47B; --goldEdge:#D9A24E; --goldText:#6B4A12;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EEF2EA;color:var(--ink);padding:32px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+h2{font-size:15px;margin:40px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:940px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start;margin-top:24px}
+.col{width:300px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.2px;line-height:1.6;margin-top:12px}
+.note b{color:var(--ink)}
+.flag{border-left:3px solid var(--pick);background:#fff;border-radius:0 14px 14px 0;
+ padding:14px 18px;max-width:940px;margin-top:14px;font-size:13.6px;line-height:1.62;color:var(--soft)}
+.flag b{color:var(--pick)}
+
+.p{width:300px;height:640px;border-radius:34px;overflow:hidden;position:relative;flex:none;
+ background:var(--grass);box-shadow:0 12px 34px rgba(60,80,50,.18)}
+.page{position:absolute;inset:0;overflow:hidden}
+/* the valley band, Home's and Profile's */
+.band{position:relative;height:190px;background:linear-gradient(180deg,var(--sky1),var(--sky2) 62%,var(--sky3) 80%,var(--grassDeep) 94%,var(--grass))}
+.band.short{height:120px}
+.ridge{position:absolute;left:0;right:0;bottom:30px;height:34px;
+ background:linear-gradient(180deg,#A9BFC9,#8FA9AE);clip-path:polygon(0 70%,14% 30%,28% 55%,44% 18%,60% 50%,76% 22%,90% 45%,100% 35%,100% 100%,0 100%)}
+.band.short .ridge{bottom:22px;height:26px}
+.sun{position:absolute;left:18%;top:22%;width:22px;height:22px;border-radius:50%;background:#FFE9B8;
+ box-shadow:0 0 22px 8px rgba(255,233,184,.5)}
+.otto{position:absolute;right:26px;bottom:6px;width:92px;height:118px;
+ background:url("otto-v3/otto-ask.png") center bottom/contain no-repeat}
+.bubble{position:absolute;left:16px;top:44px;width:160px;background:#fff;border-radius:16px;padding:10px 12px;
+ font-size:12.5px;font-weight:700;line-height:1.35;box-shadow:0 2px 6px rgba(40,60,30,.12)}
+.bubble:after{content:"";position:absolute;right:-8px;top:24px;border:8px solid transparent;border-left-color:#fff;border-right:0}
+.bubble b{display:block;font-size:17px;font-weight:800;margin-bottom:2px}
+.back{position:absolute;left:14px;top:14px;width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.82);
+ display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;z-index:3}
+.body{padding:4px 14px 0}
+.h{font-size:13.5px;font-weight:800;margin:14px 0 7px 3px;color:#fff;text-shadow:0 1px 0 rgba(40,70,30,.25)}
+.h:first-child{margin-top:4px}
+.m{display:flex;align-items:center;gap:11px;background:#fff;border-radius:16px;padding:11px 12px;margin-bottom:8px}
+.sym{width:38px;height:38px;border-radius:50%;background:var(--wash);color:var(--pick);flex:none;
+ display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800}
+.m .t{flex:1;min-width:0}
+.m .t b{display:block;font-size:14px;font-weight:800;line-height:1.2}
+.m .t span{display:block;font-size:11px;color:var(--soft);margin-top:2px;line-height:1.3}
+.count{font-size:10.5px;font-weight:800;color:var(--pick);background:var(--wash);border-radius:10px;padding:3px 7px;white-space:nowrap}
+.chev{color:var(--mInk);opacity:.6;font-weight:800;font-size:13px}
+/* detail */
+.circle{position:absolute;left:50%;bottom:-40px;transform:translateX(-50%);width:80px;height:80px;border-radius:50%;
+ background:var(--wash);border:4px solid #fff;box-shadow:0 3px 9px rgba(40,60,30,.18);display:flex;align-items:center;
+ justify-content:center;color:var(--pick);font-size:30px;font-weight:800;z-index:2}
+.head{background:#fff;border-radius:18px;margin:52px 0 12px;padding:14px 14px 13px;text-align:center}
+.lvl{display:inline-block;font-size:10px;font-weight:800;color:var(--pick);background:var(--wash);padding:3px 9px;border-radius:10px;margin-bottom:6px}
+.head b{display:block;font-size:19px;font-weight:800;line-height:1.15}
+.head span{display:block;font-size:11.5px;color:var(--soft);margin-top:4px}
+.head .lvl{display:inline-block;margin-top:0}
+.card{background:#fff;border-radius:16px;padding:12px 13px;margin-bottom:10px}
+.step{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--quiet)}
+.step:first-child{border-top:0;padding-top:2px}
+.step i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--pick);color:#fff;flex:none;
+ display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;margin-top:1px}
+.step span{font-size:12.5px;line-height:1.4}
+.purpose{font-size:12px;line-height:1.5}
+.origin{margin-top:9px;padding-top:8px;border-top:1px solid var(--quiet);font-size:10.5px;color:var(--soft);line-height:1.45}
+.var{border-left:3px solid var(--pick);padding-left:9px;margin:4px 0 10px}
+.var b{font-size:12.5px;font-weight:800;display:block}
+.var small{font-size:9.5px;color:var(--soft);display:block;margin:1px 0 3px}
+.var span{font-size:11.5px;color:var(--soft);line-height:1.4;display:block}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:22px 14px 14px;
+ background:linear-gradient(180deg,rgba(156,188,133,0),var(--grass) 35%)}
+.go{background:var(--gold);color:var(--goldText);font-weight:800;font-size:15px;text-align:center;padding:13px 0;
+ border-radius:18px;box-shadow:0 3px 0 var(--goldEdge)}
+.tabbar{position:absolute;left:0;right:0;bottom:0;height:56px;background:#fff;display:flex;justify-content:space-around;
+ align-items:center;font-size:9px;color:var(--soft);font-weight:700;border-top:1px solid #eee}
+.tabbar .plus{width:44px;height:44px;border-radius:50%;background:var(--gold);margin-top:-22px;box-shadow:0 3px 0 var(--goldEdge)}
+
+table{border-collapse:collapse;margin-top:14px;font-size:13.4px;max-width:940px}
+td,th{border-bottom:1px solid #D5DDCF;padding:8px 16px 8px 0;text-align:left;vertical-align:top}
+th{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)}
+td{color:var(--soft)} td b{color:var(--ink)}
+</style></head><body>
+
+<h1>How to meditate, in the valley</h1>
+<p class="lede">Aziz: <b>"revamp all the how to meditate guides in there so it fits our current theme"</b><br>
+Both guide screens were still the cream page with brown ink, the look the rest of the app left behind. Now they
+stand in the same valley as Home, Profile and the blocker editor: a band of sky and meadow at the top, grass below,
+white cards, <b>sky blue for anything you pick or follow</b>, and one gold button. <b>Every word stays exactly as it
+is</b>; the copy lives in `MeditationMethod.swift` and none of it changes.</p>
+
+<div class="row">
+
+<!-- ============ 1. THE LIST ============ -->
+<div class="col">
+  <div class="tag"><b>1.</b> The guide</div>
+  <div class="p"><div class="page">
+    <div class="band"><div class="sun"></div><div class="ridge"></div><div class="otto"></div>
+      <div class="bubble"><b>How to meditate</b>8 ways in. Any order you like.</div></div>
+    <div class="body">
+      <div class="h">Start here</div>
+      <div class="m"><div class="sym">❋</div><div class="t"><b>First time meditating</b><span>Start here. What it is, and what to actually do.</span></div><span class="count">2 sessions</span><span class="chev">›</span></div>
+      <div class="m"><div class="sym">10</div><div class="t"><b>Counting Down From Ten</b><span>Ten slow numbers, sinking deeper on each.</span></div><span class="chev">›</span></div>
+      <div class="m"><div class="sym">⌇</div><div class="t"><b>Body Scan</b><span>Release the body one part at a time.</span></div><span class="chev">›</span></div>
+      <div class="h">When you're ready</div>
+      <div class="m"><div class="sym">☁</div><div class="t"><b>Blue Sky</b><span>Watch your thoughts pass like clouds.</span></div><span class="chev">›</span></div>
+      <div class="m"><div class="sym">◎</div><div class="t"><b>Dual Awareness</b><span>Hold the breath and the whole room at once.</span></div><span class="chev">›</span></div>
+    </div>
+    <div class="tabbar"><span>Home</span><span>Block</span><span class="plus"></span><span>Friends</span><span>Profile</span></div>
+  </div></div>
+  <p class="note"><b>Otto says the title</b>, the way he says the Ready screen's line: "How to meditate", and under it
+  the count. Each method gets its own symbol in a sky circle, the same object the blocker list uses, so a method is
+  recognisable before its name is read. The session count stays absent at zero and is <b>sky, not gold</b> now: it is a
+  record, and gold is kept for Begin.</p>
+</div>
+
+<!-- ============ 2. A METHOD ============ -->
+<div class="col">
+  <div class="tag"><b>2.</b> A method</div>
+  <div class="p"><div class="page">
+    <div class="band short"><div class="sun"></div><div class="ridge"></div><div class="back">‹</div>
+      <div class="circle">⌇</div></div>
+    <div class="body">
+      <div class="head"><span class="lvl">Beginner</span><b>Body Scan</b><span>Release the body one part at a time.</span></div>
+      <div class="h">The practice</div>
+      <div class="card">
+        <div class="step"><i>1</i><span>Start at the top of your head.</span></div>
+        <div class="step"><i>2</i><span>Walk your attention down: skull, eyebrows, eyes, nose, tongue, cheeks, jaw.</span></div>
+        <div class="step"><i>3</i><span>Neck, shoulders, biceps, triceps, elbows, forearms, hands.</span></div>
+        <div class="step"><i>4</i><span>Chest, abdomen, lower abdomen.</span></div>
+      </div>
+    </div>
+    <div class="foot"><div class="go">Begin a session</div></div>
+  </div></div>
+  <p class="note">The method's symbol sits on the seam, as a blocker's does in its editor. <b>The steps are a numbered
+  card with sky number dots</b>, which reads as a sequence to follow rather than a paragraph to read.
+  "Begin a session" is pinned at the bottom, gold, so it is there from the first step instead of at the end of the
+  scroll.</p>
+</div>
+
+<!-- ============ 3. FURTHER DOWN ============ -->
+<div class="col">
+  <div class="tag"><b>3.</b> Further down a method</div>
+  <div class="p"><div class="page">
+    <div class="body" style="padding-top:14px">
+      <div class="h" style="margin-top:0">Two ways in</div>
+      <div class="card">
+        <div class="var"><b>Inner conversation</b><small>Neville Goddard</small><span>Hear the conversation you would have once it is true, as if it already happened.</span></div>
+        <div class="var"><b>Mental movie</b><small>Joe Dispenza</small><span>Run a short scene of the life you want, in the first person, and feel it.</span></div>
+      </div>
+      <div class="h">What it is for</div>
+      <div class="card"><div class="purpose">Good for stress and good before sleep. It is also the on-ramp to the manifestation practice:
+        a relaxed body settles first, and that is the state the rest is done from.</div>
+        <div class="origin">Clinical mindfulness practice (MBSR).</div></div>
+    </div>
+    <div class="foot"><div class="go">Begin a session</div></div>
+  </div></div>
+  <p class="note">Variants and "What it is for" are white cards with headings on the grass. <b>Where a practice
+  comes from stays visibly apart from what it is for</b>, under a divider, the two-tier rule SCIENCE.md holds: a
+  tradition never borrows the authority of evidence. (Variant text here is placeholder; the real copy is unchanged.)</p>
+</div>
+</div>
+
+<h2>What changes</h2>
+<table>
+  <tr><th>Part</th><th>Before</th><th>Now</th></tr>
+  <tr><td><b>Ground</b></td><td>Cream page</td><td>The valley band, then grass, white cards</td></tr>
+  <tr><td><b>Title</b></td><td>"How to meditate" in brown on cream</td><td>Otto says it, in a bubble, beside him</td></tr>
+  <tr><td><b>Rows</b></td><td>Title and line, chevron</td><td>A symbol in a sky circle first, then the same title and line</td></tr>
+  <tr><td><b>Session count</b></td><td>A gold capsule</td><td>A sky capsule, still absent at zero</td></tr>
+  <tr><td><b>Steps</b></td><td>Small teal numbers beside loose text</td><td>One white card, sky number dots, a divider between steps</td></tr>
+  <tr><td><b>Begin</b></td><td>At the bottom of the scroll</td><td>Pinned, gold, always there</td></tr>
+  <tr><td><b>Words</b></td><td colspan="2">Unchanged, all of them. The copy lives in `MeditationMethod.swift`.</td></tr>
+</table>
+
+<div class="flag"><b>Symbols, one per method</b>, SF Symbols in the app (the glyphs drawn here are placeholders):
+First time, leaf; Counting down, a descending number; Body scan, a standing figure; Blue sky, a cloud and sun; Dual
+awareness, concentric circles; Energy centers, sparkles; Reconditioning, a circling arrow; Manifestation, a wand
+with stars. They are stored on each method beside its copy, so adding a method still needs no view change.</div>
+
+</body></html>

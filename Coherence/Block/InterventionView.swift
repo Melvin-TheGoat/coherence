@@ -19,7 +19,7 @@ struct InterventionView: View {
     /// Done: a pass was taken, or they closed it.
     let onClose: () -> Void
 
-    private enum Step { case ask, breath, howLong }
+    private enum Step { case ask, howLong }
     @State private var step: Step = .ask
 
     var body: some View {
@@ -27,9 +27,6 @@ struct InterventionView: View {
             switch step {
             case .ask:
                 InterventionScene(kind: kind, context: context, doors: doors)
-            case .breath:
-                FirmBreath { withAnimation(.easeInOut(duration: 0.3)) { step = .howLong } }
-                    .transition(.opacity)
             case .howLong:
                 HowLongScreen(block: block, onMeditate: { onMeditate(nil) }, onClose: onClose)
                     .transition(.opacity)
@@ -50,37 +47,26 @@ struct InterventionView: View {
         .statusBarHidden(false)
     }
 
-    /// What "Not now" does here: nothing on Strict, a breath first on Firm.
+    /// "Not now" always goes straight to how long: there is no strict mode,
+    /// no ten-second breath and no daily limit on it (Aziz, 2026-09-22).
     private var doors: InterventionDoors {
-        let strictness = block.strictnessNow()
-        let left = block.passesLeftNow()
-        let canPass = strictness != .strict && (left ?? 1) > 0
-        let note: String? = {
-            if strictness == .strict { return "Strict: a session is the way in." }
-            if left == 0 { return "No passes left today." }
-            return nil
-        }()
-        let shortest = block.holding().map(\.minimumMinutes).max() ?? 2
-        return InterventionDoors(
-            canPass: canPass,
-            note: note,
-            shortest: shortest,
+        InterventionDoors(
+            canPass: true,
             meditate: { onMeditate(nil) },
             meditateFor: { onMeditate($0) },
             notNow: {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    step = strictness == .firm ? .breath : .howLong
-                }
+                withAnimation(.easeInOut(duration: 0.3)) { step = .howLong }
             })
     }
 }
 
 /// The two doors, handed to each scene so the scenes can label them.
 struct InterventionDoors {
+    /// Whether "Not now" shows. Always, except while the countdown screen is
+    /// still counting.
     let canPass: Bool
-    let note: String?
     /// The shortest session that opens what is held, in minutes.
-    var shortest = 2
+    var shortest = Blocker.sessionMinutes
     let meditate: () -> Void
     /// A timed session, for the screens that say they will keep time.
     var meditateFor: (Int) -> Void = { _ in }
@@ -104,11 +90,6 @@ private struct DoorButtons: View {
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundStyle(ink.opacity(0.8))
                     .frame(maxWidth: .infinity, minHeight: 44)
-            } else if let note = doors.note {
-                Text(note)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(ink.opacity(0.7))
-                    .frame(minHeight: 44)
             }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
@@ -126,7 +107,7 @@ private struct InterventionScene: View {
     var body: some View {
         switch kind {
         case .standing:
-            ValleyStage(pose: "OttoWave", line: "Got two minutes for me first?", doors: doors)
+            ValleyStage(pose: "OttoWave", line: "Got five minutes for me first?", doors: doors)
         case .textThread:
             TextThreadScene(doors: doors)
         case .faceTime:
@@ -138,7 +119,7 @@ private struct InterventionScene: View {
         case .fridgeNote:
             FridgeNoteScene(doors: doors)
         case .stillThere:
-            ValleyStage(pose: "OttoAwake", line: "It'll all still be there in two minutes.", doors: doors)
+            ValleyStage(pose: "OttoAwake", line: "It'll all still be there in five minutes.", doors: doors)
         case .wakingOtto:
             ValleyStage(pose: "OttoSit", line: "Zzz... oh, hey. Morning meditation?", doors: doors) { size, ottoTop in
                 Text("z z")
@@ -150,7 +131,7 @@ private struct InterventionScene: View {
             SignScene(doors: doors)
         case .streak:
             ValleyStage(pose: "OttoSit",
-                        line: "Your streak is at \(context.streak) days. Two minutes keeps it going.",
+                        line: "Your streak is at \(context.streak) days. Five minutes keeps it going.",
                         doors: doors) { size, _ in
                 Label("\(context.streak)", systemImage: "flame.fill")
                     .font(.system(size: 20, weight: .heavy, design: .rounded))
@@ -314,11 +295,7 @@ private struct TextThreadScene: View {
             if shown >= lines.count {
                 VStack(alignment: .trailing, spacing: 8) {
                     ReplyChip(text: "ok let's go", action: doors.meditate)
-                    if doors.canPass {
-                        ReplyChip(text: "later, open it", action: doors.notNow)
-                    } else if let note = doors.note {
-                        Text(note).font(.system(size: 14)).foregroundStyle(AppColor.textSecondary)
-                    }
+                    ReplyChip(text: "later, open it", action: doors.notNow)
                 }
                 .frame(maxWidth: .infinity, alignment: .trailing)
                 .padding(.horizontal, 16)
@@ -412,18 +389,12 @@ private struct ReplyChip: View {
 private struct FaceTimeScene: View {
     let doors: InterventionDoors
     @State private var answered = false
-    /// Declined with no pass to fall back on: Otto takes it well, and the
-    /// camera never turns on (the review of 2026-09-22 caught Decline opening
-    /// it).
-    @State private var declined = false
     @StateObject private var camera = FrontCamera()
     @State private var said = 0
 
     var body: some View {
         ZStack {
-            if declined {
-                ValleyStage(pose: "OttoAwake", line: "No worries. I'm here when you're ready.", doors: doors)
-            } else if answered {
+            if answered {
                 answeredView
             } else {
                 ringing
@@ -456,7 +427,7 @@ private struct FaceTimeScene: View {
                 Spacer()
                 HStack {
                     callButton("Decline", systemImage: "phone.down.fill", color: Color(.systemRed)) {
-                        if doors.canPass { doors.notNow() } else { withAnimation { declined = true } }
+                        doors.notNow()
                     }
                     Spacer()
                     callButton("Accept", systemImage: "video.fill", color: Color(.systemGreen)) { answer() }
@@ -499,7 +470,7 @@ private struct FaceTimeScene: View {
                 Spacer()
                 VStack(alignment: .leading, spacing: 8) {
                     if said >= 1 { ChatBubble(text: "yo, meditation o'clock") }
-                    if said >= 2 { ChatBubble(text: "two minutes, i'll stay on") }
+                    if said >= 2 { ChatBubble(text: "five minutes, i'll stay on") }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 16)
@@ -665,7 +636,7 @@ private struct VoiceNoteScene: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Otto's voice note")
-                Text("\"hey, it's me. two minutes, then it's all yours. promise.\"")
+                Text("\"hey, it's me. five minutes, then it's all yours. promise.\"")
                     .font(.system(size: 15))
                     .italic()
                     .foregroundStyle(AppColor.textSecondary)
@@ -790,8 +761,7 @@ private struct CountdownScene: View {
             let left = max(0, Self.seconds - Int(context.date.timeIntervalSince(start)))
             let done = left == 0
             ValleyStage(pose: "OttoSit", line: done ? "Still want it? Up to you." : "Breathe with me while it counts.",
-                        doors: InterventionDoors(canPass: done && doors.canPass, note: done ? doors.note : nil,
-                                                 shortest: doors.shortest, meditate: doors.meditate,
+                        doors: InterventionDoors(canPass: done, shortest: doors.shortest, meditate: doors.meditate,
                                                  meditateFor: doors.meditateFor, notNow: doors.notNow),
                         primary: "Sit instead", secondary: "Open my apps") { size, _ in
                 VStack(spacing: 4) {
@@ -827,9 +797,9 @@ private struct AffirmationScene: View {
     }
 
     var body: some View {
-        let n = max(2, doors.shortest)
+        let n = doors.shortest
         ValleyStage(pose: "OttoGreet", line: "",
-                    doors: InterventionDoors(canPass: doors.canPass, note: doors.note, shortest: n,
+                    doors: InterventionDoors(canPass: doors.canPass, shortest: n,
                                              meditate: { doors.meditateFor(n) },
                                              meditateFor: doors.meditateFor, notNow: doors.notNow),
                     primary: "Sit with it, \(n) min") { size, ottoTop in
@@ -885,7 +855,7 @@ private struct OneMinuteScene: View {
         let n = doors.shortest
         let line = n == 1 ? "Just one minute. I'll keep time." : "Just \(n) minutes. I'll keep time."
         ValleyStage(pose: "OttoSit", line: line,
-                    doors: InterventionDoors(canPass: doors.canPass, note: doors.note, shortest: n,
+                    doors: InterventionDoors(canPass: doors.canPass, shortest: n,
                                              meditate: { doors.meditateFor(n) },
                                              meditateFor: doors.meditateFor, notNow: doors.notNow),
                     primary: n == 1 ? "One minute, go" : "\(n) minutes, go")
@@ -899,7 +869,7 @@ private struct AskWhyScene: View {
     @State private var answer: String?
 
     private static let replies: [(String, String)] = [
-        ("Bored", "Bored is a good time to sit. Two minutes?"),
+        ("Bored", "Bored is a good time to sit. Five minutes?"),
         ("Checking something", "It'll still be there after a short session."),
         ("Habit", "Habits are why I'm here. One quick session?"),
     ]
@@ -926,54 +896,6 @@ private struct AskWhyScene: View {
 
 // MARK: - Not now
 
-/// Firm: ten seconds of breathing with Otto before a pass (CONSISTENCY.md).
-private struct FirmBreath: View {
-    let onDone: () -> Void
-    @State private var start = Date()
-
-    var body: some View {
-        let day = DayLight.at(0)
-        GeometryReader { geo in
-            ZStack {
-                ValleyScene(progress: 0, showsFigure: false)
-                BreathCircle(start: start)
-                    .frame(width: 200, height: 200)
-                    .position(x: geo.size.width / 2, y: geo.size.height * 0.34)
-                TimelineView(.periodic(from: start, by: 0.25)) { context in
-                    let t = context.date.timeIntervalSince(start)
-                    VStack(spacing: 6) {
-                        Text(t < 5 ? "Breathe in" : "Breathe out")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
-                        Text("\(max(0, 10 - Int(t)))")
-                            .font(.system(size: 15, weight: .semibold))
-                            .monospacedDigit()
-                    }
-                    .foregroundStyle(day.ink)
-                    .position(x: geo.size.width / 2, y: geo.size.height * 0.34)
-                }
-                VStack {
-                    Text("Ten seconds with me first.")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(day.ink)
-                        .padding(.top, 80)
-                    Spacer()
-                    Image("OttoSit")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: min(210, geo.size.height * 0.25))
-                        .padding(.bottom, 120)
-                }
-            }
-        }
-        .ignoresSafeArea(edges: .top)
-        .task {
-            try? await Task.sleep(for: .seconds(10))
-            guard !Task.isCancelled else { return }
-            onDone()
-        }
-    }
-}
-
 /// "No worries. How long do you need?" (`mockups/block-v1.html`, section 2,
 /// last screen). The apps open for that long, then Otto holds them again.
 private struct HowLongScreen: View {
@@ -986,7 +908,6 @@ private struct HowLongScreen: View {
 
     var body: some View {
         let ink = DayLight.at(0).ink
-        let left = block.passesLeftNow()
         GeometryReader { geo in
             let size = geo.size
             let ottoHeight = min(170, size.height * 0.19)
@@ -1027,11 +948,6 @@ private struct HowLongScreen: View {
                             }
                             .buttonStyle(.plain)
                         }
-                    }
-                    if let left {
-                        Text(left == 1 ? "1 pass left today" : "\(left) passes left today")
-                            .font(.system(size: 13))
-                            .foregroundStyle(AppColor.textSecondary)
                     }
                 }
                 .padding(16)

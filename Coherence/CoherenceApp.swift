@@ -13,10 +13,11 @@ struct CoherenceApp: App {
 
     init() {
         Analytics.start()   // no-op until a provider key is set
-        // Block's "Otto wants a word": set before launch finishes, so a tap
-        // that opened the app is still delivered.
+        // Set before launch finishes, so a tap that opened the app is still
+        // delivered. Installed on every build, not only Block's: it is also
+        // what plays the timed session's end chime with 808 on screen.
+        BlockNotifications.shared.install()
         if FeatureFlags.block {
-            BlockNotifications.shared.install()
             // Every saved session, phone or Watch, even with 808 in the
             // background: Block opens the rest of the windows it counts for.
             SessionCoordinator.onSessionSaved = { startedAt, durationSec in

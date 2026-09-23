@@ -31,18 +31,21 @@ final class BlockRulesTests: XCTestCase {
         let day = on(.mindfulDay)
         var s = state(day)
         XCTAssertTrue(BlockRules.holds(day, in: s, at: at(10, 9), calendar: cal))
-        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 120, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 300, in: &s, calendar: cal)
         XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 10, 1), calendar: cal))
         XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 23), calendar: cal))
         // A new day is a new window.
         XCTAssertTrue(BlockRules.holds(day, in: s, at: at(11, 1), calendar: cal))
     }
 
-    func test_aSessionShorterThanTheMinimumDoesNotCount() {
+    /// Aziz, 2026-09-22: five minutes opens the apps, for every blocker.
+    func test_fiveMinutesOpensTheAppsAndLessDoesNot() {
         let day = on(.mindfulDay)
         var s = state(day)
-        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 60, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 299, in: &s, calendar: cal)
         XCTAssertTrue(BlockRules.holds(day, in: s, at: at(10, 11), calendar: cal))
+        BlockRules.recordSession(endingAt: at(10, 12), durationSec: 300, in: &s, calendar: cal)
+        XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 13), calendar: cal))
     }
 
     /// Melvin: the rest of the window, not the day, "in case they want to
@@ -57,8 +60,8 @@ final class BlockRulesTests: XCTestCase {
 
     func test_recordingTheSameSessionTwiceReleasesOnce() {
         var s = state(on(.mindfulDay))
-        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 120, in: &s, calendar: cal)
-        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 120, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 300, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 300, in: &s, calendar: cal)
         XCTAssertEqual(s.releases.count, 1)
     }
 
@@ -108,34 +111,14 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertTrue(BlockRules.holds(day, in: s, at: at(10, 9, 11), calendar: cal))
     }
 
-    func test_passesRunOutForTheDay() {
+    /// No daily pass limit and no strict mode (Aziz, 2026-09-22): "Not now"
+    /// works every time it is asked.
+    func test_notNowHasNoDailyLimit() {
         let day = on(.mindfulDay)
         var s = state(day)
-        for hour in [9, 11, 13] {
-            BlockRules.takePass(minutes: 5, in: &s, at: at(10, hour), calendar: cal)
+        for hour in 8...20 {
+            XCTAssertEqual(BlockRules.takePass(minutes: 5, in: &s, at: at(10, hour), calendar: cal), [day.id])
         }
-        XCTAssertEqual(BlockRules.passesLeft(day, in: s, at: at(10, 15), calendar: cal), 0)
-        XCTAssertTrue(BlockRules.takePass(minutes: 5, in: &s, at: at(10, 15), calendar: cal).isEmpty)
-        XCTAssertTrue(BlockRules.holds(day, in: s, at: at(10, 15, 1), calendar: cal))
-        XCTAssertEqual(BlockRules.passesLeft(day, in: s, at: at(11, 9), calendar: cal), 3)
-    }
-
-    func test_strictTakesNoPasses() {
-        var strict = on(.mindfulDay)
-        strict.strictness = .strict
-        var s = state(strict)
-        XCTAssertEqual(BlockRules.passesLeft(strict, in: s, at: at(10, 9), calendar: cal), 0)
-        XCTAssertTrue(BlockRules.takePass(minutes: 10, in: &s, at: at(10, 9), calendar: cal).isEmpty)
-        XCTAssertTrue(BlockRules.holds(strict, in: s, at: at(10, 9, 5), calendar: cal))
-    }
-
-    func test_noLimitMeansNoLimit() {
-        var loose = on(.mindfulDay)
-        loose.passesPerDay = nil
-        var s = state(loose)
-        for hour in 8...20 { BlockRules.takePass(minutes: 5, in: &s, at: at(10, hour), calendar: cal) }
-        XCTAssertNil(BlockRules.passesLeft(loose, in: s, at: at(10, 21), calendar: cal))
-        XCTAssertTrue(BlockRules.canTakePass(loose, in: s, at: at(10, 21), calendar: cal))
     }
 
     func test_aPassNeverOutlastsItsWindow() {
@@ -155,7 +138,7 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertEqual(BlockRules.notNowWindows(s), [DateInterval(start: at(10, 6), end: at(10, 10))],
                        "one window, however many passes")
         // Coming back to meditate inside the window costs nothing.
-        BlockRules.recordSession(endingAt: at(10, 9), durationSec: 180, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 9), durationSec: 300, in: &s, calendar: cal)
         XCTAssertTrue(BlockRules.notNowWindows(s).isEmpty)
     }
 
@@ -199,12 +182,9 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertEqual(odd.scheduleLine(calendar: cal), "7:30 am to noon, Mon, Wed, Sun")
     }
 
-    /// Melvin's defaults: Chill, three passes, two minutes.
-    func test_theDefaultsAreChillThreePassesTwoMinutes() {
+    func test_theDefaults() {
         let day = Blocker.preset(.mindfulDay)
-        XCTAssertEqual(day.strictness, .chill)
-        XCTAssertEqual(day.passesPerDay, 3)
-        XCTAssertEqual(day.minimumMinutes, 2)
+        XCTAssertEqual(Blocker.sessionMinutes, 5)
         XCTAssertEqual(day.window, .allDay)
         XCTAssertFalse(day.isOn, "on only once apps are picked")
     }
@@ -237,9 +217,22 @@ final class BlockRulesTests: XCTestCase {
     func test_aReleaseSurvivesTheWindowBeingWorkedOutAgain() {
         let day = on(.mindfulDay)
         var s = state(day)
-        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 120, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: at(10, 10), durationSec: 300, in: &s, calendar: cal)
         s.releases[0].windowStart = at(10, 1)   // as if the window's start had moved
         XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 11), calendar: cal))
+    }
+
+    /// A blocker saved with the settings that left the editor on 2026-09-22
+    /// (strictness, passes a day, its own shortest session) still loads, and
+    /// takes "Not now" like any other.
+    func test_blockersSavedWithStrictnessStillLoadAndTakeNotNow() throws {
+        let json = """
+        {"blockers":[{"kind":"mindfulDay","name":"Mindful day","isOn":true,"hasApps":true,
+                      "strictness":"strict","passesPerDay":0,"minimumMinutes":10}]}
+        """
+        var s = try JSONDecoder().decode(BlockState.self, from: Data(json.utf8))
+        XCTAssertEqual(s.blockers.count, 1)
+        XCTAssertEqual(BlockRules.takePass(minutes: 5, in: &s, at: at(10, 9), calendar: cal).count, 1)
     }
 
     /// The next release adds a field, or drops one: the blockers survive.
@@ -254,10 +247,33 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertEqual(s.blockers.count, 2)
         XCTAssertEqual(s.blockers[0].name, "Mornings")
         XCTAssertEqual(s.blockers[0].window, .hours(start: 6 * 60, end: 10 * 60), "the preset fills the gap")
-        XCTAssertEqual(s.blockers[0].passesPerDay, 3)
         XCTAssertTrue(s.blockers[0].isOn)
         XCTAssertEqual(s.blockers[1].kind, .custom, "an unknown kind reads as custom")
         XCTAssertTrue(s.seededDefault, "blockers present means the default was seeded")
+    }
+
+    /// The symbol under the editor's pencil arrived on 2026-09-22. Every
+    /// blocker saved before it has no such key and must draw its kind's own,
+    /// and a picked one must survive a save.
+    func test_symbolDefaultsToTheKindsAndSurvivesASave() throws {
+        let json = """
+        {"blockers":[{"kind":"windDown","name":"Evenings"}]}
+        """
+        let old = try JSONDecoder().decode(BlockState.self, from: Data(json.utf8)).blockers[0]
+        XCTAssertNil(old.symbol, "a blocker from before the pencil has no symbol of its own")
+        XCTAssertEqual(old.displaySymbol, "moon.stars.fill", "and draws its kind's")
+
+        var s = state(on(.focusHours))
+        s.blockers[0].symbol = "book.fill"
+        let back = try JSONDecoder().decode(BlockState.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(back.blockers[0].displaySymbol, "book.fill")
+    }
+
+    /// Every kind names a symbol, so no blocker ever draws an empty circle.
+    func test_everyKindHasASymbol() {
+        for kind in BlockerKind.allCases {
+            XCTAssertFalse(kind.defaultSymbol.isEmpty, "\(kind) has no symbol")
+        }
     }
 
     func test_windowsScreenTimeWouldRefuseAreCaught() {

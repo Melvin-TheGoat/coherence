@@ -47,13 +47,13 @@ on Home (built 2026-09-21). Tabs: Home, Block, the plus, Friends, Profile.
    not allowed to open an app. You tap the notification and 808 opens.
 5. Otto meets you with one of about twenty interventions (below). Every one
    ends in the same two doors:
-   - **"Okay, let's meditate"**: the session starts. Finishing it (even a
-     short one) releases the apps for the rest of that window, not the rest
+   - **"Okay, let's meditate"**: the session starts. Finishing it (five
+     minutes or longer, `Blocker.sessionMinutes`) releases the apps for the rest of that window, not the rest
      of the day, so someone with a morning and an evening window meditates
      in each. It also feeds Otto.
    - **"Not now"**: Otto asks how long, 5, 10, 15, 30 or 60 minutes, and the
-     apps open for that long. Then they are held again. On Strict there is
-     no "Not now".
+     apps open for that long. Then they are held again. There is no daily
+     limit on it (Aziz, 2026-09-22).
 
 ### What you can set (per blocker)
 
@@ -61,13 +61,11 @@ on Home (built 2026-09-21). Tabs: Home, Block, the plus, Friends, Profile.
 2. **When:** all day, or a window (6 to 10 in the morning, 9 to midnight,
    anything).
 3. **Which apps:** Apple's own picker; apps, categories or websites.
-4. **How strict** (added, worth having): *Chill* (one screen, then either
-   door), *Firm* (you breathe with Otto for ten seconds before "Not now"
-   works), *Strict* (no "Not now": meditate to open).
-5. **How many passes** (added): unblocks allowed per day, e.g. three, then
-   only meditating opens them.
-6. **What counts** (added): the shortest session that releases the apps, 1,
-   2, 5 or 10 minutes.
+**Removed 2026-09-22 (Aziz):** how strict (Chill / Firm / Strict), how many
+passes a day, and the shortest session that counts. They were one editor
+card, "When Otto lets you in". Every blocker now takes "Not now" freely, with
+no ten-second breath, and opens after a five minute session. Blockers saved
+with the old settings load and ignore them.
 
 **The default is Mindful day** (Melvin, 2026-09-22): the apps the person
 picks are held all day, every day, until they meditate, and one switch turns
@@ -186,8 +184,7 @@ editor with all six settings), Apple's app picker, Screen Time authorization,
 the shields (one named store per blocker), the schedules and daily limits
 (DeviceActivity), the three extensions (monitor, shield look, shield
 buttons), the "Otto wants a word" notification and its route into the app,
-all twenty of Otto's screens, Firm's ten-second breath, the "how long"
-screen and its passes, sessions releasing the window, the glow rule reading
+all twenty of Otto's screens, the "how long" screen and its passes, sessions releasing the window, the glow rule reading
 skipped windows, onboarding's explain-only Block screen, the tour's Block
 note, and the paywall when a free person switches a blocker on. Behind
 `FeatureFlags.block`: on in development builds, off for the App Store.
@@ -199,7 +196,7 @@ min"), and "Okay, let's meditate" starting a session at once.
 **Not verified, because only a phone can show it:** a shield appearing on a
 held app, Ask Otto's notification, a pass closing the apps again on time
 (the fifteen-minute DeviceActivity floor and the start-in-the-past trick),
-the daily limit's threshold, Strict holding with no way past. That is the
+the daily limit's threshold. That is the
 first thing to test with `tools/beta_install.sh` (808 Beta, its own
 `.dev` bundle IDs and App Group, beside the App Store app).
 
@@ -221,14 +218,15 @@ first thing to test with `tools/beta_install.sh` (808 Beta, its own
    schedule instead of a time typed in.
 4. **Meditating earns time**: a 10-minute session opens the apps until the
    window ends; a 2-minute session opens them for an hour.
-5. **A Live Activity during the window**: "A two minute session opens your apps"
+5. **A Live Activity during the window**: "A five minute session opens your apps"
    on the Lock Screen and Dynamic Island.
 6. **An accountability friend** (Friends): opt in, and a friend sees when your
    Otto is low and can nudge you. **Only with a glow computed from sessions
    alone**: the skipped-window cost comes from Screen Time, and Apple's
    terms forbid sharing that beyond the person and their device.
 7. **A weekly letter from Otto**: what the week looked like, in his voice.
-8. **Tiny sessions count**: one minute releases the apps on Chill.
+8. **Tiny sessions count**: parked. Five minutes is the floor (Aziz,
+   2026-09-22).
 9. **Reminders at the moment you usually first unlock**, not at a fixed time.
 
 ## Decided (Melvin, 2026-09-22)
@@ -245,7 +243,8 @@ first thing to test with `tools/beta_install.sh` (808 Beta, its own
    setting Otto to hold your apps is starting. Built into `OttoAura`
    (`notNow:` windows, tested); the Block build supplies the windows from
    the App Group, where the passes are counted anyway.
-3. **Strict ships in the first version.**
+3. **Strict ships in the first version.** Reversed 2026-09-22 (Aziz):
+   there is no Strict, and no pass limit.
 4. **Block is paid.**
 5. **The default is Mindful day** (see Block above), easy to switch off.
 6. **A free person finds Mindful day set up and waiting on the Block tab,

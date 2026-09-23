@@ -1,5 +1,25 @@
 import SwiftUI
 
+/// How much of the bottom of the screen the tab bar covers, for pages PUSHED
+/// inside a tab.
+///
+/// **The bar is a `safeAreaInset` on the tab's root, and that inset does not
+/// reach a page pushed onto a NavigationStack inside the tab.** Measured on
+/// the guide's method page (2026-09-22): its bottom inset read 34, the home
+/// indicator alone, so a Begin button pinned to its bottom sat behind the
+/// bar. The root screens never noticed because they scroll under the bar by
+/// design. A pushed page that pins something to its bottom adds this.
+private struct TabBarClearanceKey: EnvironmentKey {
+    static let defaultValue: CGFloat = 0
+}
+
+extension EnvironmentValues {
+    var tabBarClearance: CGFloat {
+        get { self[TabBarClearanceKey.self] }
+        set { self[TabBarClearanceKey.self] = newValue }
+    }
+}
+
 /// The five destinations.
 enum MainTab: Hashable {
     /// `guide` is the tab only while Block is switched off; with Block on the

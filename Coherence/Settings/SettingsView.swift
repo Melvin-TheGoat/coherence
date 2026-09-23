@@ -58,8 +58,16 @@ private struct SettingsForm: View {
     #endif
 
     private let durationOptions: [(String, Int?)] = [
-        ("Open", nil), ("2 min", 120), ("5 min", 300), ("10 min", 600), ("15 min", 900)
+        ("Open", nil), ("5 min", 300), ("10 min", 600), ("15 min", 900), ("20 min", 1200), ("30 min", 1800)
     ]
+
+    /// The fixed choices, plus whatever length the Ready screen's tape or
+    /// typed field last set, so a 37-minute default is not shown as blank.
+    private var lengthOptions: [(String, Int?)] {
+        guard let current = prefs.defaultDurationSec,
+              !durationOptions.contains(where: { $0.1 == current }) else { return durationOptions }
+        return durationOptions + [("\(current / 60) min", current)]
+    }
 
     var body: some View {
         ScrollView {
@@ -73,7 +81,7 @@ private struct SettingsForm: View {
                             get: { prefs.defaultDurationSec },
                             set: { prefs.defaultDurationSec = $0 }
                         )) {
-                            ForEach(durationOptions, id: \.0) { label, value in
+                            ForEach(lengthOptions, id: \.0) { label, value in
                                 Text(label).tag(value)
                             }
                         }
