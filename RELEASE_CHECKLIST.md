@@ -6,6 +6,143 @@ Claude session asked to submit must go through it with you first.
 
 Tick an item by moving it to DONE with the date. Never delete a line.
 
+## NEXT RELEASE: 1.1 (Friends, and Block if verified)
+
+**Added 2026-09-23, App Review prep pass.** This section is the ORDER the
+remaining human steps happen in, for whichever build actually ships next
+(Friends alone, or Friends plus Block once `blockInRelease` is verified on
+a phone and flipped). It points at the detailed sections below and at
+`CLOUDKIT_SETUP.md` rather than repeating them; when the two disagree, the
+detailed section and the code are the truth, and this list should be
+corrected to match. Do every step below it before returning here.
+
+1. **Developer portal (Certificates, Identifiers & Profiles), done once, by
+   the Account Holder:**
+   - [x] Family Controls (Distribution) approved on all four App IDs
+     (the app, `.monitor`, `.shield`, `.shieldaction`), 2026-09-22. Nothing
+     to redo unless a new extension is added.
+   - [x] App Group `group.com.lockout.meditate808` exists (production) and
+     `group.com.lockout.meditate808.dev` (beta).
+   - [ ] Time Sensitive Notifications capability confirmed present on the
+     APP's App ID only (an extension cannot carry it; the entitlement file
+     already declares it, confirm the portal and the archived profile agree,
+     via `tools/archive.sh`'s checks).
+   - [ ] Decide and act on Sensitive Content Analysis: either add
+     `com.apple.developer.sensitivecontentanalysis.client` to
+     `Coherence/Coherence.entitlements` and enable it on the App ID (so
+     `PhotoScreen` actually screens photos on devices with Sensitive Content
+     Warning on), or consciously ship without it, relying on the text
+     filter plus report and block as the guideline 1.2 moderation path
+     (this is allowed; automated image screening is not required by 1.2,
+     only "a method for filtering," and captions are already filtered).
+     Either is defensible; ship the decision, not silence. This is a
+     Swift/entitlements change, out of scope for this document's owner to
+     make.
+   - [ ] **New, found in this pass: each of the three Block app extensions
+     (BlockMonitor, BlockShield, BlockShieldAction) reads and writes the
+     shared App Group's `UserDefaults` through `BlockKit/BlockStore.swift`
+     (`BlockGroup.defaults`), and as of this pass NONE of the three has its
+     own `PrivacyInfo.xcprivacy`.** Apple's privacy-manifest rule is that
+     every target using a required-reason API needs its own manifest; App
+     Group-shared `UserDefaults` takes reason code `1C8F.1` (not `CA92.1`,
+     which only covers a target's own private prefs). The main app target
+     ALSO reads/writes the same App Group store (via `BlockController` and
+     friends), so `Coherence/PrivacyInfo.xcprivacy` likely needs `1C8F.1`
+     ADDED alongside its existing `CA92.1`, not replacing it. Missing or
+     incomplete manifests are rejected automatically at upload (ITMS-91053),
+     before any human reviewer sees the build. This only matters for the
+     build that ships Block (`blockInRelease = true`); a Friends-only build
+     with Block still behind the DEBUG-only flag does not need it yet,
+     because the extension targets are not part of that archive's active
+     feature set, but they ARE compiled into every archive regardless of the
+     flag, so confirm whether App Review's static analysis inspects extension
+     binaries even when the extensions are dormant. Treat this as OPEN until
+     confirmed either way. This is a `.xcprivacy` change and is out of scope
+     for this document's owner to make.
+2. **CloudKit Console, in order, following `CLOUDKIT_SETUP.md` exactly**
+   (that file is derived from the code and kept current; re-derive from
+   `CommunityRecords.swift` / `CommunityStore.swift` if it and the code ever
+   disagree):
+   - [ ] PUBLIC database (`iCloud.com.lockout.meditate808`): confirm all
+     seven Friends record types, add any missing fields including the four
+     newer `Post` media List fields (`media`, `mediaPosters`, `mediaKinds`,
+     `mediaAspects`, replacing the single `photo` field), add the seven
+     documented indexes (QUERYABLE on `FriendEdge.from`/`.to`,
+     `Post.author`, `Reaction.post`, `Block.from`/`.to`; SORTABLE on
+     `Post.practicedAt`).
+   - [ ] **Add ONE more index once the account-deletion Friends-purge work
+     lands in Swift (see "Decisions only the founders can make" in the App
+     Review research report): QUERYABLE on `Reaction.author`.** Today the
+     store can only fetch reactions FOR a post (`Reaction.post`), not a
+     person's OWN reactions across every post they reacted to, which is
+     what deleting "the reactions you gave" on account deletion needs to
+     query. This index is not yet in `CLOUDKIT_SETUP.md` because the
+     feature it serves is not yet in the code; add both together.
+   - [ ] Security roles `_world` read / `_creator` write confirmed on all
+     seven public types.
+   - [ ] PRIVATE database (the per-user CloudKit sync): confirm
+     `CD_SessionPhoto` (including the newer `order` and `video` fields),
+     `CD_Session.source`, and `CD_User.username` are all present in
+     Development with every field, including the ones that only appear
+     after an app actually writes them (save a session with a video and a
+     custom order from a DEBUG build signed in to iCloud first).
+   - [ ] Run the real round trip on two phones, per `CLOUDKIT_SETUP.md`
+     Step 5, in Development, BEFORE deploying.
+   - [ ] Deploy Development → Production. Read the diff before confirming;
+     it is additive and one-way.
+   - [ ] Verify Production lists every type, field and index from the
+     Development side.
+3. **App Store Connect:**
+   - [ ] Age rating questionnaire, answered fresh in the live form (do not
+     assume the shape hasn't changed since this was written): see "Age
+     rating (1.1, Friends ON)" below for the worked answers and expected
+     13+ tier.
+   - [ ] App Privacy labels updated to match `Coherence/PrivacyInfo.xcprivacy`
+     exactly: see the "App Privacy (nutrition labels)" table below. Confirm
+     PostHog's OWN project setting for crash/exception autocapture before
+     finalizing (see that section); if it is on, add a Diagnostics row.
+   - [ ] Description and promotional text updated in
+     `marketing/APP_STORE_PASTE.md` (owned by that file, not this one) to
+     lead with what 808 now is; draft copy and themes are in APP_STORE.md's
+     "1.1 rewrite still owed" note.
+   - [ ] Subscription block inside the description still present, prices
+     matching Connect exactly.
+   - [ ] Review notes replaced with the 1.1 version in `APP_STORE.md`
+     (Watch is optional, how to test Friends, how to test Block if it
+     ships, offer to provide a screen recording for the Screen Time parts).
+   - [ ] What's New set to the matching 1.1 variant in `APP_STORE.md`,
+     including the one-line note that past scores were rescored (see "1.1
+     RESCORES EVERY EXISTING USER'S HISTORY" below).
+   - [ ] Store screenshots re-shot wherever the tab bar shows (Search is
+     now Friends) and wherever Block appears, if it ships.
+   - [ ] Confirm the existing IAP/subscription products are attached to
+     this version; nothing new needs creating for Friends. If Block ships
+     paid through the same subscription group, confirm its paywall entry
+     point carries the same required disclosures (price, length, renewal,
+     Privacy Policy and Terms links) as the main paywall; it should, if it
+     reuses the same screen, but confirm rather than assume.
+4. **The report email pipeline** (guideline 1.2 needs a path that reaches a
+   person, not just a stored record): create the "808 friends reports"
+   sheet, deploy `tools/community-reports.gs`, paste its `/exec` URL into
+   `ReportClient.endpoint` (a Swift change, out of scope here), file one
+   real test report and confirm the email arrives.
+5. **Website redeploy** (manual, Cloudflare Pages, drag the `website`
+   folder in): both `website/privacy.html` and `website/terms.html` now
+   carry the Friends media-plural wording, the Block section, and the
+   September 23, 2026 date; they must go live the same day the build does,
+   never before the build and preferably not long after.
+6. **The two-phone TestFlight round trip**, Friends: claim a username on
+   each, add each other, post a session with a couple of photos or a video,
+   confirm it appears on the other phone, react, report, block, unblock,
+   delete an account and confirm the profile and posts vanish from the
+   other phone's view.
+7. **On-phone Block verification**, only if this build flips
+   `blockInRelease`: everything already listed under "OPEN for the build
+   that flips `FeatureFlags.blockInRelease`" below, unchanged by this pass.
+
+Nothing above is a substitute for reading the rest of this file; it is the
+order to read it in.
+
 ## HOLD
 
 - **1.0.2 (build 202609141719) is uploaded and NOT submitted. Do not create
@@ -170,7 +307,7 @@ on it.
 - [ ] **CloudKit PRIVATE schema, everything synced since the 2026-09-12
   promotion** (added 2026-09-23: CLAUDE.md said `SessionPhoto` was on this
   list and it was not). The new `CD_SessionPhoto` record type (`sessionID`,
-  `takenAt`, `jpeg`, `thumbnail`, `video`, `order`, `createdAt` — `order`
+  `takenAt`, `jpeg`, `thumbnail`, `video`, `order`, `createdAt`. `order`
   added 2026-09-23, several photos per session, defaulted to 0 so every row
   saved before it existed still sorts first), `CD_Session.source`
   (2026-09-21), and check `CD_User.username` (added the morning of the
