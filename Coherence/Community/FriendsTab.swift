@@ -676,8 +676,13 @@ struct PostCard: View {
     /// `PostMediaStrip`. Seeded at a plausible size so the first frame is
     /// never a sliver before the real measurement lands.
     @State private var headerHeight: CGFloat = 190
-    @State private var showViewer = false
-    @State private var viewerIndex = 0
+    /// The item the viewer opens on, nil while it is closed. One optional
+    /// rather than a Bool plus an index: with `isPresented:` the cover's
+    /// closure kept the index from the last time `body` ran, so tapping the
+    /// second photo opened the first.
+    @State private var viewerStart: ViewerStart?
+
+    private struct ViewerStart: Identifiable { let id: Int }
 
     private var author: Profile? { model.person(post.author) }
     private var isMine: Bool { post.author == model.myID }
@@ -731,8 +736,7 @@ struct PostCard: View {
 
             if !post.media.isEmpty {
                 PostMediaStrip(media: post.media, height: stripHeight) { index in
-                    viewerIndex = index
-                    showViewer = true
+                    viewerStart = ViewerStart(id: index)
                 }
                 .padding(.bottom, 14)
             }
@@ -743,17 +747,19 @@ struct PostCard: View {
         }
         // White on the grass, like every card on the valley pages.
         .whiteCard(radius: 20)
-        .fullScreenCover(isPresented: $showViewer) {
-            PostMediaViewer(media: post.media, startIndex: viewerIndex)
+        .fullScreenCover(item: $viewerStart) { start in
+            PostMediaViewer(media: post.media, startIndex: start.id)
         }
         #if DEBUG
-        // PREVIEW_MEDIA_VIEWER=1 opens the viewer on the seeded three-item
-        // post, so it can be reviewed with no tap and no UI automation.
+        // PREVIEW_MEDIA_VIEWER=1 opens the viewer on the first seeded
+        // three-item post, once per launch, so it can be reviewed with no
+        // tap. Once: the card appears again when the cover closes, and two
+        // seeded posts qualify.
         .task {
             if ProcessInfo.processInfo.environment["PREVIEW_MEDIA_VIEWER"] == "1",
-               post.media.count >= 3, !showViewer {
-                viewerIndex = 0
-                showViewer = true
+               post.media.count >= 3, !Self.previewedViewer {
+                Self.previewedViewer = true
+                viewerStart = ViewerStart(id: 0)
             }
         }
         #endif
@@ -763,6 +769,10 @@ struct PostCard: View {
     /// edge than anything else. `fileprivate` so the media strip below can
     /// align to the same edge.
     fileprivate static let inset: CGFloat = 18
+
+    #if DEBUG
+    @MainActor private static var previewedViewer = false
+    #endif
 
     /// The strip's fixed height: about the header block's own height
     /// (Melvin, 2026-09-23: "the same, or maybe slightly taller, than
@@ -970,7 +980,7 @@ private struct PostMediaViewer: View {
             Color.black.ignoresSafeArea()
             TabView(selection: $index) {
                 ForEach(media) { item in
-                    MediaPage(item: item).tag(item.index)
+                    MediaPage(item: item, isCurrent: item.index == index).tag(item.index)
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: media.count > 1 ? .always : .never))
@@ -990,6 +1000,10 @@ private struct PostMediaViewer: View {
 
 private struct MediaPage: View {
     let item: Post.PostMedia
+    /// Whether this is the page on screen. A paged TabView keeps its
+    /// neighbours alive, so a video swiped past would otherwise keep playing,
+    /// sound and all, behind the photo you moved on to.
+    let isCurrent: Bool
     @State private var image: UIImage?
 
     var body: some View {
@@ -1003,7 +1017,7 @@ private struct MediaPage: View {
                 }
             case .video:
                 if let url = item.url {
-                    VideoPlayer(player: AVPlayer(url: url))
+                    VideoPage(url: url, isCurrent: isCurrent)
                 } else {
                     ProgressView().tint(.white)
                 }
@@ -1014,6 +1028,38 @@ private struct MediaPage: View {
                 image = UIImage(contentsOfFile: url.path)
             }
         }
+    }
+}
+
+/// One player per video, made once and kept (an `AVPlayer` built in `body`
+/// is a new player on every redraw), looping like a clip in any feed, and
+/// playing only while its page is the one on screen.
+private struct VideoPage: View {
+    let url: URL
+    let isCurrent: Bool
+    @State private var player: AVQueuePlayer?
+    @State private var looper: AVPlayerLooper?
+
+    var body: some View {
+        Group {
+            if let player {
+                VideoPlayer(player: player)
+            } else {
+                ProgressView().tint(.white)
+            }
+        }
+        .task {
+            if player == nil {
+                let queue = AVQueuePlayer()
+                looper = AVPlayerLooper(player: queue, templateItem: AVPlayerItem(url: url))
+                player = queue
+            }
+            if isCurrent { player?.play() }
+        }
+        .onChange(of: isCurrent) { _, current in
+            if current { player?.play() } else { player?.pause() }
+        }
+        .onDisappear { player?.pause() }
     }
 }
 

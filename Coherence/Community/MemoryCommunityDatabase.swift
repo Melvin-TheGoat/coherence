@@ -2,6 +2,7 @@
 import Foundation
 import CloudKit
 import UIKit
+import AVFoundation
 
 /// An in-memory public database: a dictionary of records keyed by name, the
 /// way CloudKit's default zone is (so a name collision between types shows up
@@ -63,27 +64,70 @@ enum DemoCommunity {
         return PostPhoto.prepare(image)
     }
 
-    /// A stand-in for an uploaded video: CKAsset does not care what is
-    /// inside the file, and the demo only needs the strip and the viewer to
-    /// open on a `.video` item, not to actually decode one.
-    private static func fakeVideo() -> URL? {
+    /// A real three-second clip of the same gradient with a light drifting
+    /// across it. It used to be four bytes, which the viewer showed as a
+    /// broken video, so a review of the demo read as a playback bug.
+    private static func fakeVideo(_ top: UIColor, _ bottom: UIColor, aspect: Double) async -> URL? {
+        let width = 480, height = Int((480 / aspect / 2).rounded()) * 2
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("demo-video-\(UUID().uuidString).mp4")
-        do { try Data([0x00, 0x00, 0x00, 0x18]).write(to: url) } catch { return nil }
-        return url
+        guard let writer = try? AVAssetWriter(outputURL: url, fileType: .mp4) else { return nil }
+        let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
+            AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height,
+        ])
+        let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: [
+            kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
+            kCVPixelBufferWidthKey as String: width, kCVPixelBufferHeightKey as String: height,
+        ])
+        guard writer.canAdd(input) else { return nil }
+        writer.add(input)
+        guard writer.startWriting() else { return nil }
+        writer.startSession(atSourceTime: .zero)
+
+        let space = CGColorSpaceCreateDeviceRGB()
+        let ground = CGGradient(colorsSpace: space, colors: [top.cgColor, bottom.cgColor] as CFArray, locations: [0, 1])!
+        let light = CGGradient(colorsSpace: space, colors: [UIColor(white: 1, alpha: 0.3).cgColor,
+                                                            UIColor(white: 1, alpha: 0).cgColor] as CFArray, locations: [0, 1])!
+        let frames = 45, fps: Int32 = 15
+        for i in 0..<frames {
+            while !input.isReadyForMoreMediaData { try? await Task.sleep(nanoseconds: 5_000_000) }
+            var buffer: CVPixelBuffer?
+            guard let pool = adaptor.pixelBufferPool,
+                  CVPixelBufferPoolCreatePixelBuffer(nil, pool, &buffer) == kCVReturnSuccess,
+                  let buffer else { return nil }
+            CVPixelBufferLockBaseAddress(buffer, [])
+            if let ctx = CGContext(data: CVPixelBufferGetBaseAddress(buffer), width: width, height: height,
+                                   bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), space: space,
+                                   bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue) {
+                // Quartz's y runs up, so the top colour starts at y = height.
+                ctx.drawLinearGradient(ground, start: CGPoint(x: 0, y: height), end: .zero, options: [])
+                let t = CGFloat(i) / CGFloat(frames - 1)
+                let centre = CGPoint(x: CGFloat(width) * (0.15 + 0.7 * t), y: CGFloat(height) * 0.5)
+                ctx.drawRadialGradient(light, startCenter: centre, startRadius: 0, endCenter: centre,
+                                       endRadius: CGFloat(min(width, height)) * 0.45, options: [])
+            }
+            CVPixelBufferUnlockBaseAddress(buffer, [])
+            adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(i), timescale: fps))
+        }
+        input.markAsFinished()
+        await writer.finishWriting()
+        return writer.status == .completed ? url : nil
     }
 
     /// One or several items for a seeded post, mixing photos and videos so
     /// the feed's strip can be reviewed with 1, 3, and a mixed set (Melvin,
     /// 2026-09-23). `spec` is (top colour, bottom colour, aspect, isVideo).
-    static func media(_ spec: [(UIColor, UIColor, Double, Bool)]) -> [CommunityStore.DraftMedia] {
-        spec.compactMap { top, bottom, aspect, isVideo in
-            guard let poster = fakeSelfie(top, bottom, aspect: aspect) else { return nil }
+    static func media(_ spec: [(UIColor, UIColor, Double, Bool)]) async -> [CommunityStore.DraftMedia] {
+        var items: [CommunityStore.DraftMedia] = []
+        for (top, bottom, aspect, isVideo) in spec {
+            guard let poster = fakeSelfie(top, bottom, aspect: aspect) else { continue }
             if isVideo {
-                guard let video = fakeVideo() else { return nil }
-                return CommunityStore.DraftMedia(kind: .video, aspect: aspect, fileURL: video, posterURL: poster)
+                guard let video = await fakeVideo(top, bottom, aspect: aspect) else { continue }
+                items.append(.init(kind: .video, aspect: aspect, fileURL: video, posterURL: poster))
+            } else {
+                items.append(.init(kind: .photo, aspect: aspect, fileURL: poster, posterURL: poster))
             }
-            return CommunityStore.DraftMedia(kind: .photo, aspect: aspect, fileURL: poster, posterURL: poster)
         }
+        return items
     }
 
     static func store() async -> CommunityStore {

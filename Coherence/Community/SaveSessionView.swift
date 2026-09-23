@@ -359,9 +359,10 @@ struct SaveSessionView: View {
     /// Any photo, any video, shared or not, as a scrollable row of everything
     /// the session keeps (Melvin, 2026-09-23: "you should be able to share
     /// multiple photos or videos... should be scrollable"), plus two small
-    /// add tiles. Every tile is portrait, because a portrait shot in a
-    /// landscape slot loses the face every time.
-    private static let mediaTile = CGSize(width: 78, height: 104)
+    /// add tiles. Every tile is one height and its OWN shape, the rule the
+    /// feed follows ("do not change the aspect ratio at all"), so what you
+    /// add here is what your friends see.
+    private static let mediaTileHeight: CGFloat = 104
 
     private var mediaSection: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -400,11 +401,13 @@ struct SaveSessionView: View {
     /// tile, its own button so it never fights the play tap underneath it.
     private func mediaThumb(_ item: SessionPhoto) -> some View {
         let shot = PhotoThumbs.image(for: item)
+        // A portrait shot's shape until the thumbnail has decoded.
+        let aspect = shot.map { $0.size.width / max($0.size.height, 1) } ?? 0.75
         return Button {
             if item.video != nil { playingItem = item }
         } label: {
             Color.clear
-                .frame(width: Self.mediaTile.width, height: Self.mediaTile.height)
+                .frame(width: Self.mediaTileHeight * aspect, height: Self.mediaTileHeight)
                 .overlay { if let shot { Image(uiImage: shot).resizable().scaledToFill() } }
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 .overlay(alignment: .bottomLeading) {
@@ -437,7 +440,7 @@ struct SaveSessionView: View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
             .foregroundStyle(AppColor.textSecondary.opacity(0.35))
-            .frame(width: 56, height: Self.mediaTile.height)
+            .frame(width: 56, height: Self.mediaTileHeight)
             .overlay {
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .regular))
