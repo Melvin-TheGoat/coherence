@@ -145,6 +145,10 @@ struct SelfieCamera: View {
             .padding(.horizontal, 16)
         } else {
             Button {
+                // Nothing here waits on the session: `capture` fires at once
+                // when it can, and queues itself when it can't yet (see
+                // `SelfieCameraModel.capture`), so this closure never has to
+                // know whether the camera has finished starting.
                 Task {
                     if let image = await camera.capture(flash: flashOn) { captured = image }
                 }
@@ -153,13 +157,25 @@ struct SelfieCamera: View {
                     .stroke(.white, lineWidth: 4)
                     .frame(width: 70, height: 70)
                     .overlay {
-                        // The ring fills for the instant the shutter is held,
-                        // which is the only feedback a silent camera gives.
+                        // The ring fills once the shutter is actually
+                        // exposing. `PressReleaseHapticStyle` below gives the
+                        // instant touch-down feedback a silent camera needs.
                         if camera.capturing { Circle().fill(.white).padding(4) }
                     }
+                    // A generous hit area past the drawn ring (Melvin: taps
+                    // sometimes read as missed), matched by the content
+                    // shape the button style below adds.
+                    .padding(13)
             }
-            .buttonStyle(.plain)
-            .disabled(camera.state != .running || camera.capturing)
+            // Prepared UIKit generators, fired on touch-down AND release, plus
+            // an immediate opacity dip: the same style onboarding's answer
+            // rows use, chosen because it already solved "some taps felt like
+            // nothing happened" there (2026-09-14, an unprepared generator
+            // missing the Taptic Engine's spin-up window).
+            .buttonStyle(PressReleaseHapticStyle())
+            // Capturing only: a session still starting is a valid target for
+            // a tap (it queues), but denied/unavailable never will be.
+            .disabled(camera.capturing || camera.state == .denied || camera.state == .unavailable)
             .opacity(camera.state == .running ? 1 : 0.35)
         }
     }
@@ -212,10 +228,16 @@ final class SelfieCameraModel: ObservableObject {
     private let queue = DispatchQueue(label: "com.lockout.meditate808.selfie")
     private var configured = false
     private var delegate: PhotoDelegate?
+    /// A shutter tap that lands before the session finishes starting waits
+    /// here instead of the button silently swallowing it (`capture`, below).
+    /// Woken with `true` once running, `false` if the camera will never be
+    /// usable this launch (denied, unavailable, or the screen closing).
+    private var readyWaiters: [CheckedContinuation<Bool, Never>] = []
 
     func start() {
         #if targetEnvironment(simulator)
         state = .unavailable
+        resolveWaiters(ready: false)
         return
         #else
         switch AVCaptureDevice.authorizationStatus(for: .video) {
@@ -224,11 +246,15 @@ final class SelfieCameraModel: ObservableObject {
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 Task { @MainActor in
-                    if granted { self.configureAndRun() } else { self.state = .denied }
+                    if granted { self.configureAndRun() } else {
+                        self.state = .denied
+                        self.resolveWaiters(ready: false)
+                    }
                 }
             }
         default:
             state = .denied
+            resolveWaiters(ready: false)
         }
         #endif
     }
@@ -237,6 +263,26 @@ final class SelfieCameraModel: ObservableObject {
         let session = self.session
         queue.async { if session.isRunning { session.stopRunning() } }
         state = .idle
+        // The screen is going away: nothing will ever make a queued tap
+        // ready, so let it return nil rather than leak a suspended task.
+        resolveWaiters(ready: false)
+    }
+
+    private func resolveWaiters(ready: Bool) {
+        guard !readyWaiters.isEmpty else { return }
+        let waiters = readyWaiters
+        readyWaiters.removeAll()
+        waiters.forEach { $0.resume(returning: ready) }
+    }
+
+    /// Suspends until the session is running, or returns immediately once
+    /// it's clear it never will be (denied, unavailable).
+    private func waitUntilReady() async -> Bool {
+        if state == .running { return true }
+        if state == .denied || state == .unavailable { return false }
+        return await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
+            readyWaiters.append(continuation)
+        }
     }
 
     private func configureAndRun() {
@@ -268,7 +314,14 @@ final class SelfieCameraModel: ObservableObject {
                         device.isSubjectAreaChangeMonitoringEnabled = true
                         device.unlockForConfiguration()
                     }
-                    output.maxPhotoQualityPrioritization = .quality
+                    // .balanced, not .quality: quality prioritization pulls
+                    // in multi-frame fusion that can add the better part of
+                    // a second before the shutter returns anything, which is
+                    // most of what read as "there's a delay" (Melvin, a
+                    // longstanding complaint). The shot is stored at 1080px
+                    // with a 240px thumbnail (SessionPhoto), so the extra
+                    // fidelity .quality buys is never actually seen.
+                    output.maxPhotoQualityPrioritization = .balanced
                     if let connection = output.connection(with: .video) {
                         if connection.isVideoRotationAngleSupported(90) { connection.videoRotationAngle = 90 }
                         // NOT mirrored here. Rotation and mirroring on the same
@@ -295,16 +348,28 @@ final class SelfieCameraModel: ObservableObject {
                 self?.configured = ok
                 self?.canFlash = flash
                 self?.state = ok ? .running : .unavailable
+                self?.resolveWaiters(ready: ok)
             }
         }
     }
 
     func capture(flash: Bool) async -> UIImage? {
-        guard state == .running, !capturing else { return nil }
+        guard !capturing else { return nil }
+        // The common case for a dropped-feeling tap: the session hasn't
+        // finished `configureAndRun` yet because the screen only just
+        // appeared. Wait for it instead of bailing, so an impatient first
+        // tap still takes the photo the moment the camera can.
+        if state != .running {
+            guard await waitUntilReady() else { return nil }
+            // Another tap may have already started and finished capturing
+            // while this one was queued; don't fire a second exposure.
+            guard !capturing else { return nil }
+        }
         capturing = true
         defer { capturing = false }
         let settings = AVCapturePhotoSettings()
-        settings.photoQualityPrioritization = .quality
+        // .balanced: see the note by maxPhotoQualityPrioritization above.
+        settings.photoQualityPrioritization = .balanced
         if canFlash { settings.flashMode = flash ? .on : .off }
         return await withCheckedContinuation { (continuation: CheckedContinuation<UIImage?, Never>) in
             let delegate = PhotoDelegate { image in

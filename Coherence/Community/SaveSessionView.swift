@@ -270,11 +270,7 @@ struct SaveSessionView: View {
                     .padding(.trailing, AppMetrics.screenPadding)
                     .padding(.top, 15)
             }
-            Slider(value: Binding(get: { Double(rating ?? 5) },
-                                  set: { rating = Int($0.rounded()) }),
-                   in: 0...10, step: 1)
-                // Sky, because rating is a choice; gold is kept for Save.
-                .tint(rating == nil ? AppColor.meadowInk.opacity(0.25) : AppColor.skyDeep)
+            RatingSlider(rating: $rating, range: 0...10)
                 .padding(.horizontal, Self.inset)
             HStack {
                 Text("Rough")
@@ -715,6 +711,110 @@ struct SaveSessionView: View {
             SessionDetails.clear(sessionID)
             onDone()
         }
+    }
+}
+
+// MARK: - Rating
+
+/// A 1-to-10 rating control that starts unrated (a flat grey track, no
+/// value implied) and answers to a tap ANYWHERE on the track as well as a
+/// drag, which is the whole reason this isn't the system `Slider`.
+///
+/// **Why the system `Slider` read as "doesn't work at all":** a `UISlider`
+/// (what SwiftUI's `Slider` is on iOS) only starts tracking a touch that
+/// lands on its thumb, so a tap anywhere else on the track does nothing;
+/// and a drag begun on it can still lose to the enclosing `ScrollView`'s own
+/// pan gesture, a documented UIKit gotcha for sliders inside scroll views.
+/// Neither failure is silent-but-stiff, it's silent-but-NOTHING, which is
+/// exactly "doesn't work at all" from the tapping side.
+///
+/// `DragGesture(minimumDistance: 0)` sidesteps both: `onChanged` fires the
+/// instant a finger touches down (so a tap moves the thumb there) and again
+/// on every move after (so it also drags), and because it is SwiftUI's own
+/// gesture attached directly to this view rather than routed through a
+/// UIKit control, the descendant gesture wins against the scroll view by
+/// default, with nothing extra to ask for.
+private struct RatingSlider: View {
+    @Binding var rating: Int?
+    let range: ClosedRange<Int>
+
+    private let trackHeight: CGFloat = 6
+    private let thumbDiameter: CGFloat = 26
+    private let rowHeight: CGFloat = 32
+
+    var body: some View {
+        GeometryReader { geo in
+            let travel = max(geo.size.width - thumbDiameter, 1)
+            let center = thumbDiameter / 2 + travel * fraction
+
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(AppColor.meadowInk.opacity(0.16))
+                    .frame(height: trackHeight)
+                Capsule()
+                    // Sky, because rating is a choice; gold is kept for Save.
+                    .fill(rating == nil ? AppColor.meadowInk.opacity(0.16) : AppColor.skyDeep)
+                    .frame(width: center, height: trackHeight)
+                Circle()
+                    .fill(.white)
+                    .overlay {
+                        Circle().stroke(rating == nil ? AppColor.meadowInk.opacity(0.35) : AppColor.skyDeep,
+                                       lineWidth: 2)
+                    }
+                    .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
+                    .frame(width: thumbDiameter, height: thumbDiameter)
+                    .offset(x: center - thumbDiameter / 2)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            // The whole row is tappable, not just the thin drawn track: a
+            // generous hit area, same reasoning as the selfie shutter's.
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { drag in set(from: drag.location.x, in: geo.size.width) }
+            )
+        }
+        .frame(height: rowHeight)
+        .sensoryFeedback(.selection, trigger: rating)
+        .accessibilityRepresentation {
+            Slider(value: Binding(get: { Double(rating ?? midpoint) },
+                                  set: { rating = Int($0.rounded()) }),
+                   in: Double(range.lowerBound)...Double(range.upperBound), step: 1)
+        }
+    }
+
+    private var midpoint: Int { (range.lowerBound + range.upperBound) / 2 }
+
+    /// Where the thumb sits: the real rating once there is one, otherwise
+    /// the midpoint, purely for the "slide me" affordance. Never written
+    /// back until the person actually touches the control.
+    private var fraction: CGFloat {
+        let span = range.upperBound - range.lowerBound
+        guard span > 0 else { return 0 }
+        let value = rating ?? midpoint
+        return CGFloat(value - range.lowerBound) / CGFloat(span)
+    }
+
+    private func set(from x: CGFloat, in width: CGFloat) {
+        rating = RatingSliderMath.value(atX: x, width: width,
+                                        thumbDiameter: thumbDiameter, range: range)
+    }
+}
+
+/// The position-to-value arithmetic behind `RatingSlider`, pulled out of the
+/// view so it can be unit tested directly: the view itself only exercises
+/// correctly under a live touch (a device, or an XCUITest), but the mapping
+/// from a touch location to a 0-to-10 value is a pure function and this is
+/// the binding the drag gesture writes through.
+enum RatingSliderMath {
+    static func value(atX x: CGFloat, width: CGFloat, thumbDiameter: CGFloat,
+                      range: ClosedRange<Int>) -> Int {
+        let travel = max(width - thumbDiameter, 1)
+        let clamped = min(max(x - thumbDiameter / 2, 0), travel)
+        let span = range.upperBound - range.lowerBound
+        let raw = Double(clamped / travel) * Double(span)
+        let value = range.lowerBound + Int(raw.rounded())
+        return min(max(value, range.lowerBound), range.upperBound)
     }
 }
 
