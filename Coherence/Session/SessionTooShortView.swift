@@ -16,13 +16,14 @@ struct SessionTooShortView: View {
 
     /// In the valley, and Otto says it (Aziz, 2026-09-22,
     /// `mockups/after-valley.html`). Curious, not let down: a Begin-then-End
-    /// by accident is not a failure and must not read as one. It was a
+    /// by accident is not a failure and must not read as one (Steady, the open-eyed
+    /// calm Otto, since the seven stages replaced Curious). It was a
     /// cream page with a timer glyph.
     var body: some View {
         let day = DayLight.at(0)
         GeometryReader { geo in
             ZStack {
-                ValleyScene(progress: 0, aura: .curious)
+                ValleyScene(progress: 0, aura: .steady)
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     OttoSpeech(text: line, tail: .bottom, size: 16,
