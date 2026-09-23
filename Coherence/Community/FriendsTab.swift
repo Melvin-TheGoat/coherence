@@ -813,44 +813,49 @@ struct PostCard: View {
             .background(Capsule().fill(AppColor.accentGold))
     }
 
+    /// The pill on the left, just the emoji (Melvin, 2026-09-23: "It should
+    /// not say 'nice session'. It should just show the prayer emoji inside
+    /// the button, no text."); who gave one reads to its right, where the
+    /// button used to sit. The button's job is now spoken through
+    /// `accessibilityLabel` rather than read off the card.
     private var footer: some View {
         let who = model.reactions[post.id] ?? []
         let mine = model.hasReacted(to: post.id)
         return HStack(spacing: 10) {
+            Button {
+                Task { await model.toggleReaction(post.id) }
+            } label: {
+                Text("🙏")
+                    .font(.system(size: 17))
+                    .grayscale(mine ? 0 : 1)
+                    .opacity(mine ? 1 : 0.7)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    // Filled, like every other button in the app: amber once
+                    // you have given one, paper before. An outlined capsule
+                    // was the last thin-line control in the product, and it
+                    // made the one thing a reader can DO on this screen the
+                    // quietest object on the card.
+                    // Sky before (a choice), gold once given (the one gold
+                    // thing on the card besides the score).
+                    .background {
+                        if mine {
+                            Capsule().fill(AppColor.accentGold)
+                                .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
+                        } else {
+                            Capsule().fill(AppColor.skyWash)
+                        }
+                    }
+                    .padding(.bottom, 3)
+            }
+            .buttonStyle(.plain)
+            .disabled(isMine)
+            .accessibilityLabel("Nice session")
+
             Text(reactorLine(who))
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
                 .lineLimit(1)
             Spacer()
-            Button {
-                Task { await model.toggleReaction(post.id) }
-            } label: {
-                HStack(spacing: 5) {
-                    Text("🙏").font(.system(size: 17)).grayscale(mine ? 0 : 1).opacity(mine ? 1 : 0.7)
-                    Text("Nice session")
-                        .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(mine ? AppColor.textOnAccent : ValleyGround.ink)
-                }
-                .padding(.horizontal, 14).padding(.vertical, 8)
-                // Filled, like every other button in the app: amber once you
-                // have given one, paper before. An outlined capsule was the
-                // last thin-line control in the product, and it made the one
-                // thing a reader can DO on this screen the quietest object on
-                // the card.
-                // Sky before (a choice), gold once given (the one gold
-                // thing on the card besides the score).
-                .background {
-                    if mine {
-                        Capsule().fill(AppColor.accentGold)
-                            .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
-                    } else {
-                        Capsule().fill(AppColor.skyWash)
-                    }
-                }
-                .padding(.bottom, 3)
-            }
-            .buttonStyle(.plain)
-            .disabled(isMine)
         }
     }
 

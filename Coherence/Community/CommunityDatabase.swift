@@ -76,8 +76,6 @@ enum CommunityError: Error, Equatable {
     case noProfile
     case blocked
     case alreadyExists
-    /// A post needs its selfie (Aziz, 2026-09-14: "like BeReal").
-    case selfieRequired
     /// Text the on-device filter refused (guideline 1.2).
     case contentBlocked
     /// A photo Sensitive Content Analysis flagged.
@@ -93,7 +91,6 @@ extension CommunityError: LocalizedError {
         case .noProfile:       return "Create your profile first."
         case .blocked:         return "You can't do that with this person."
         case .alreadyExists:   return "That already exists."
-        case .selfieRequired:  return "Take your selfie to post."
         case .contentBlocked:  return "That has words 808 doesn't allow. Change it and try again."
         case .photoBlocked:    return "That photo can't be shared on 808. Take another."
         }

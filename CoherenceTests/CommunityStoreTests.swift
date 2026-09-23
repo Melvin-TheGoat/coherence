@@ -165,16 +165,15 @@ final class CommunityStoreTests: XCTestCase {
               photoURL: selfie, practicedAt: Date())
     }
 
-    func test_noSelfieNoPost() async throws {
+    func test_photoIsOptionalOnAPost() async throws {
+        // A photo is not mandatory to share a session (Melvin, 2026-09-23:
+        // "again like we are making the watch optional"). A post with no
+        // photo must save cleanly, with no photo on the saved record.
         var d = draft()
         d.photoURL = nil
-        do {
-            try await aziz.post(d)
-            XCTFail("a post without a selfie must be refused")
-        } catch let e as CommunityError {
-            XCTAssertEqual(e, .selfieRequired)
-        }
-        XCTAssertTrue(db.records.values.filter { $0.recordType == CommunityType.post }.isEmpty)
+        let post = try await aziz.post(d)
+        XCTAssertNil(post.photoURL)
+        XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.post }.count, 1)
     }
 
     func test_editingAPostKeepsItsSelfie() async throws {
