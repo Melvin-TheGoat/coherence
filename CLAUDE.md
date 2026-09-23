@@ -3005,6 +3005,34 @@ because the tap had opened the setup sheet rather than the screen.** Always
 confirm which screen is actually up before reading a diff: a static sheet
 and a broken animation look identical in the numbers.
 
+## THE GREETING BLINKS; THE EDITOR'S COPY HAD LOST A DAY (2026-09-22, Aziz)
+
+"make sure on the begin meditation page otto is blinking". The standing
+wave's lids (`BlinkL` / `BlinkR`) live inside `WavePose`, so they faded out
+with it and the seated greeting never blinked. Two new lids, `GreetBlinkL` /
+`GreetBlinkR`, are duplicates of those, reparented into `Body` behind
+`GreetArm` and in front of the greet art, placed at Body-space (-65.4, -315.6)
+and (52.4, -349.1), r = -15, over the greet eye centres (144.5, 146) and
+(275, 113.5) of the 418 x 434 art. `Blink` keys their sy exactly like the
+originals (closed at 234 to 237 of 300 frames); `PoseGreet` keys their opacity
+100, `PoseWave` and `PoseSit` key it 0. Verified by recording: the eyes shut
+twice, five seconds apart, clean, and the sit after Begin shows no lids.
+
+**The editor's cloud copy of Otto was older than the repo's `.riv`.** The
+2026-09-21 greeting work (the `greeting` view model property, the Greeting
+state and its transitions, the pose keys) was in `Otto.riv` and not in the
+editor; restoring version history twice brought back the same older copy.
+It was rebuilt in the editor before the lids went on, and the export now
+contains both. **Before editing Otto in Rive, export the editor's copy and
+compare it to `Coherence/Otto/Otto.riv` (size and names); never assume the
+editor holds what shipped.**
+
+**Reparenting while a timeline is open writes keyframes into it.** Moving the
+lids with the editor sitting in `BranchOff` added position keys there, which
+would have pinned the lids in every branch state. Plain property writes did
+not. Re-query every timeline after a reparent. `simulateStateMachine` also
+refuses to run in animation mode, so verify on the simulator instead.
+
 ## HOME IS THE VALLEY, WITH OTTO IN THE MIDDLE (2026-09-21, Melvin)
 
 "keep it on the same theme" as Aziz's sit and Ready screens, with Brainrot's
