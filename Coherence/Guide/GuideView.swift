@@ -79,23 +79,29 @@ struct GuideView: View {
             .frame(height: 228)
             .frame(maxWidth: .infinity)
             .clipped()
+            // **One unit, the bubble against Otto.** They were two overlays,
+            // the bubble pinned to the left edge and Otto to the right, so
+            // on a phone the bubble floated a thumb's width away from him
+            // and its tail pointed at the meadow (Aziz, 2026-09-22: "the
+            // little speech bubble is not next to otto"). Side by side in
+            // one stack, the tail lands on him on every width.
             .overlay(alignment: .bottomTrailing) {
-                // 118 rather than taller: in the sheet the Done button sits
-                // top right, and at 132 it landed on his head.
-                Image(OttoPose.asking.asset)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 118)
-                    .padding(.trailing, 22)
-                    .padding(.bottom, 4)
-                    .accessibilityHidden(true)
-            }
-            .overlay(alignment: .bottomLeading) {
-                GuideBubble(title: "How to meditate",
-                            line: "\(MeditationMethod.all.count) ways in. Any order you like.")
-                    .frame(maxWidth: 200, alignment: .leading)
-                    .padding(.leading, AppMetrics.screenPadding)
-                    .padding(.bottom, 58)
+                HStack(alignment: .top, spacing: 2) {
+                    GuideBubble(title: "How to meditate",
+                                line: "\(MeditationMethod.all.count) ways in. Any order you like.")
+                        .frame(maxWidth: 196, alignment: .trailing)
+                        // Down to his face, so the tail points at it.
+                        .padding(.top, 10)
+                    // 118 rather than taller: in the sheet the Done button
+                    // sits top right, and at 132 it landed on his head.
+                    Image(OttoPose.asking.asset)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 118)
+                        .accessibilityHidden(true)
+                }
+                .padding(.trailing, 16)
+                .padding(.bottom, 4)
             }
     }
 
