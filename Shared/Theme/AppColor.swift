@@ -104,4 +104,24 @@ enum AppColor {
     /// The orbits and sparks inside the glow, a shade deeper so they read
     /// against it on the cream.
     static let auraRing = Color("AuraRing")
+
+    /// What is CHOSEN on a settings screen that stands in the valley: the
+    /// segment that is on, the lit day, the picked limit (Aziz, 2026-09-22,
+    /// from Brainrot's blocker editor). It is the valley's midday sky
+    /// (`DayLight.at(0)`) deepened until bold white text reads on it.
+    ///
+    /// **Why not gold here.** The old editor lit its choices with a gold wash
+    /// on cream, which read as the pastel brown Aziz asked to lose, and on a
+    /// screen of choices it spent gold on every one. Blue is for choosing,
+    /// and the one gold object is the button that commits the choice.
+    static let skyDeep = Color("SkyDeep")
+    /// The lip under a lit `skyDeep` segment, so it reads as pressed-in the
+    /// way the gold primary button does.
+    static let skyDeepEdge = Color("SkyDeepEdge")
+    /// The pale sky behind a blocker's symbol.
+    static let skyWash = Color("SkyWash")
+    /// An option that is NOT chosen, on a white field in the valley: a muted
+    /// green from the meadow, so a screen of unpicked choices does not read
+    /// as the brown-on-cream Aziz asked to lose.
+    static let meadowInk = Color("MeadowInk")
 }

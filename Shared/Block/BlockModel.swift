@@ -47,6 +47,18 @@ enum BlockStrictness: String, Codable, CaseIterable {
 
 enum BlockerKind: String, Codable, CaseIterable {
     case mindfulDay, mindfulMorning, windDown, focusHours, dailyLimit, custom
+
+    /// What a blocker of this kind draws until somebody picks another.
+    var defaultSymbol: String {
+        switch self {
+        case .mindfulDay: return "sun.max.fill"
+        case .mindfulMorning: return "sunrise.fill"
+        case .windDown: return "moon.stars.fill"
+        case .focusHours: return "briefcase.fill"
+        case .dailyLimit: return "hourglass"
+        case .custom: return "hand.raised.fill"
+        }
+    }
 }
 
 /// One blocker. Its apps are kept separately, as Screen Time tokens.
@@ -69,11 +81,18 @@ struct Blocker: Codable, Identifiable, Equatable {
     /// BlockKit, never here.
     var hasApps = false
     var createdAt = Date()
+    /// The SF Symbol drawn in the blocker's circle, picked under the pencil
+    /// (Aziz, 2026-09-22, from Brainrot's editor). nil draws the kind's own,
+    /// which is what every blocker saved before this field existed shows.
+    var symbol: String?
 
     enum CodingKeys: String, CodingKey {
         case id, kind, name, isOn, weekdays, window, strictness, passesPerDay
-        case minimumMinutes, dailyLimitMinutes, hasApps, createdAt
+        case minimumMinutes, dailyLimitMinutes, hasApps, createdAt, symbol
     }
+
+    /// The symbol to draw: the one picked, else the kind's.
+    var displaySymbol: String { symbol ?? kind.defaultSymbol }
 
     /// Out of the box (Melvin, 2026-09-22): Chill, three passes a day, and a
     /// two minute session opens the apps.
@@ -260,6 +279,7 @@ extension Blocker {
         }
         if let v = try? c.decodeIfPresent(Bool.self, forKey: .hasApps) { hasApps = v }
         if let v = try? c.decodeIfPresent(Date.self, forKey: .createdAt) { createdAt = v }
+        symbol = try? c.decodeIfPresent(String.self, forKey: .symbol)
     }
 }
 

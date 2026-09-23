@@ -3432,6 +3432,42 @@ Diagnosis, for next time: `xcrun devicectl device process launch --console
 and reading the profile's own entitlements is one command:
 `security cms -D -i <profile> | plutil -extract Entitlements json -o - -`.
 
+## THE BLOCKER EDITOR IS BRAINROT'S, IN THE VALLEY (2026-09-22, Aziz)
+
+Aziz, with three Brainrot screenshots: "make it more like this and also just
+use current theme i dont like the current pastel brown in here". Built to
+`mockups/blocker-editor-v2.html`. `BlockerEditor.swift` is rewritten; how
+Block behaves is untouched (same windows, limits, passes, strictness).
+
+- **Brainrot's order:** a symbol in a circle with a pencil, the name, **All
+  Day / Schedule / Daily Limit** as one control, Blocked apps, the timeframe
+  or the limit (15m, 30m, 1h, 2h, Custom on a wheel), Active days as
+  Weekdays / Weekends / All over seven circles, Save, Delete.
+- **808's three extras are one card**, "When Otto lets you in": strictness,
+  passes a day (hidden on Strict), the session that opens the apps. They were
+  three sections, which was most of why the screen felt long.
+- **The mode is DERIVED, not stored**: a daily limit set means Daily Limit,
+  else `.allDay` means All Day, else Schedule. So a blocker saved by the old
+  editor opens on the right segment. A daily limit forces the window to all
+  day, because it counts the whole day and its screen shows no hours.
+- **The editor has no on/off switch** (Brainrot's has none); the list keeps
+  it. A NEW blocker therefore saves switched ON, and `BlockTab.save` still
+  routes a free person to the paywall.
+- **`Blocker.symbol`** (optional SF Symbol, nil draws `kind.defaultSymbol`)
+  is the one new field. It decodes absent for every blocker saved before it;
+  `test_symbolDefaultsToTheKindsAndSurvivesASave` pins that. The list row
+  draws it too, or the pencil would change nothing anyone sees. SF Symbols
+  only, never emoji.
+- **Colour: blue for choosing, gold for doing.** Every choice lights in
+  `AppColor.skyDeep`, the valley's midday sky deepened for white text; the
+  one gold object is Save. Unchosen labels are `meadowInk`, and tracks and
+  dividers use `BlockerEditor.quiet` (meadowInk at 11%). **Do not use the
+  app's `hairline` on these white fields**: it is cream, and the first build
+  that did read as the pastel brown this screen was rebuilt to lose.
+- The page is the valley: `ValleyScene(progress: 0, showsFigure: false)` as a
+  132pt band, the symbol's circle on the seam the way Profile seats its
+  portrait, grass below, white fields.
+
 ## THE SOUND PICKER IS A STATE OF THE READY SCREEN, NOT A SHEET (2026-09-21, Aziz)
 
 "the sound screen button looks terrible", then on the first redesign: "no

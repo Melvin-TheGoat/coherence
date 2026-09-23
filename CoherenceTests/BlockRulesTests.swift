@@ -260,6 +260,30 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertTrue(s.seededDefault, "blockers present means the default was seeded")
     }
 
+    /// The symbol under the editor's pencil arrived on 2026-09-22. Every
+    /// blocker saved before it has no such key and must draw its kind's own,
+    /// and a picked one must survive a save.
+    func test_symbolDefaultsToTheKindsAndSurvivesASave() throws {
+        let json = """
+        {"blockers":[{"kind":"windDown","name":"Evenings"}]}
+        """
+        let old = try JSONDecoder().decode(BlockState.self, from: Data(json.utf8)).blockers[0]
+        XCTAssertNil(old.symbol, "a blocker from before the pencil has no symbol of its own")
+        XCTAssertEqual(old.displaySymbol, "moon.stars.fill", "and draws its kind's")
+
+        var s = state(on(.focusHours))
+        s.blockers[0].symbol = "book.fill"
+        let back = try JSONDecoder().decode(BlockState.self, from: JSONEncoder().encode(s))
+        XCTAssertEqual(back.blockers[0].displaySymbol, "book.fill")
+    }
+
+    /// Every kind names a symbol, so no blocker ever draws an empty circle.
+    func test_everyKindHasASymbol() {
+        for kind in BlockerKind.allCases {
+            XCTAssertFalse(kind.defaultSymbol.isEmpty, "\(kind) has no symbol")
+        }
+    }
+
     func test_windowsScreenTimeWouldRefuseAreCaught() {
         var b = Blocker.preset(.custom)
         b.window = .hours(start: 600, end: 610)

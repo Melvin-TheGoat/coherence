@@ -406,7 +406,15 @@ private struct BlockerCard: View {
         // Not a Button: a switch inside a button's label loses its taps to
         // the button. The card opens on a tap anywhere but the switch.
         VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .top) {
+                HStack(alignment: .top, spacing: 12) {
+                    // The symbol picked under the editor's pencil, so a
+                    // blocker is recognisable in the list before its name
+                    // is read.
+                    Image(systemName: blocker.displaySymbol)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppColor.skyDeep)
+                        .frame(width: 42, height: 42)
+                        .background(AppColor.skyWash, in: Circle())
                     VStack(alignment: .leading, spacing: 3) {
                         Text(blocker.name)
                             .font(DisplayFont.display(18))
