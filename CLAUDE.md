@@ -3523,8 +3523,14 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
   left end. Ticks swell toward the needle, the clock rolls to the new number,
   and a selection haptic marks every minute. **Tapping the clock turns it into
   a number field** (empty, the current length as placeholder) with a Done
-  pill; 0 means Open, the ceiling is 600.
-- **`SessionLength` (Shared, tested) holds the rules**: Open, 1 to 60, 75, 90,
+  pill; 0 means Open, 1 to 4 means 5, the ceiling is 600.
+- **Five minutes is the shortest timed session** (Aziz, same day: "minimum is
+  five and if you go beyond 5 its infinite"). The tape runs ∞, 5, 6, 7..., so
+  sliding left past 5 lands on Open, and typing 1 to 4 gives 5. Five is also
+  what opens Block's apps, so a timed sit always counts
+  (`test_theShortestTimedSessionOpensBlock` ties the two). A 2 minute default
+  saved earlier opens on 5; Settings' lengths are now Open, 5, 10, 15, 20, 30.
+- **`SessionLength` (Shared, tested) holds the rules**: Open, 5 to 60, 75, 90,
   120; a typed 100 is kept as 100 while the tape rests on its nearest tick (90)
   and only moving the tape off that tick writes back.
 - **The length is remembered** in `Preferences.defaultDurationSec`, which the
@@ -3543,8 +3549,6 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
   remembered length).
 - Scale the tick's line and its number SEPARATELY: scaling the whole stack
   pushed the number out of the ruler's frame and clipped it under the needle.
-- Open: whether the screen should say that under 5 minutes does not open
-  Block's apps. Asked, not decided.
 
 ## BLOCK HAS NO STRICTNESS AND NO PASS LIMIT; FIVE MINUTES OPENS THE APPS (2026-09-22, Aziz)
 

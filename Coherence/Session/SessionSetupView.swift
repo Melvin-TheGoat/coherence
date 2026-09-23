@@ -97,7 +97,7 @@ struct SessionSetupView: View {
             focus.refreshStatus()
             if !lengthLoaded {
                 lengthLoaded = true
-                lengthMinutes = preferences.first?.defaultDurationSec.map { max(1, $0 / 60) }
+                lengthMinutes = SessionLength.clamped(preferences.first?.defaultDurationSec.map { $0 / 60 })
             }
         }
         .onChange(of: scenePhase) { _, phase in

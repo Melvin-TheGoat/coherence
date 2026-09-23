@@ -7,20 +7,34 @@ import Foundation
 /// session was before the timer came back. It sits at the left end of the
 /// tape as ∞ so nobody is made to choose a length.
 ///
+/// **Five minutes is the shortest timed session** (Aziz, 2026-09-22): the
+/// tape runs ∞, 5, 6, 7..., so sliding left past 5 lands on ∞. Five is also
+/// what opens Block's held apps (`Blocker.sessionMinutes`), so a timed sit
+/// always counts.
+///
 /// Pure Foundation, so the rules are tested without a screen.
 enum SessionLength {
-    /// Open, then every minute to an hour, then the long ones.
-    static let values: [Int?] = [nil] + Array(1...60) + [75, 90, 120]
+    static let shortest = 5
 
-    /// What the tap-to-type field accepts. The same ceiling the old custom
-    /// length field had: ten hours.
-    static let typedRange = 1...600
+    /// Open, then every minute from five to an hour, then the long ones.
+    static let values: [Int?] = [nil] + Array(shortest...60) + [75, 90, 120]
+
+    /// What the tap-to-type field accepts: five minutes to the ten hours the
+    /// old custom length field allowed.
+    static let typedRange = shortest...600
+
+    /// A stored or typed length brought into range: under five becomes five,
+    /// Open stays Open. A default saved before the floor (a 2 minute one)
+    /// reads as 5.
+    static func clamped(_ minutes: Int?) -> Int? {
+        minutes.map { min(max($0, typedRange.lowerBound), typedRange.upperBound) }
+    }
 
     /// The tape position for `minutes`: its own tick, or the nearest one for a
     /// typed length the tape does not carry (100 sits on 90).
     static func nearestIndex(for minutes: Int?) -> Int {
         guard let minutes else { return 0 }
-        var best = 1
+        var best = 1   // the first timed tick
         for (i, v) in values.enumerated() {
             guard let v else { continue }
             if abs(v - minutes) < abs((values[best] ?? 0) - minutes) { best = i }
@@ -30,11 +44,12 @@ enum SessionLength {
 
     /// A typed entry, clamped, or nil when it is not a number worth taking.
     /// Zero reads as Open: "0 minutes" is somebody who wants no timer.
+    /// Anything from 1 to 4 becomes 5.
     static func typed(_ text: String) -> (minutes: Int?, valid: Bool) {
         let digits = text.filter(\.isNumber)
         guard let n = Int(digits.prefix(4)) else { return (nil, false) }
         if n == 0 { return (nil, true) }
-        return (min(max(n, typedRange.lowerBound), typedRange.upperBound), true)
+        return (clamped(n), true)
     }
 
     /// The clock the sit screen will start from: "10:00", "90:00", or ∞.

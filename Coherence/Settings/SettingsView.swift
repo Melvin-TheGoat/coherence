@@ -58,7 +58,7 @@ private struct SettingsForm: View {
     #endif
 
     private let durationOptions: [(String, Int?)] = [
-        ("Open", nil), ("2 min", 120), ("5 min", 300), ("10 min", 600), ("15 min", 900)
+        ("Open", nil), ("5 min", 300), ("10 min", 600), ("15 min", 900), ("20 min", 1200), ("30 min", 1800)
     ]
 
     /// The fixed choices, plus whatever length the Ready screen's tape or

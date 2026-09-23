@@ -207,6 +207,9 @@ struct LengthTape: View {
                         .font(.system(size: value == nil ? 13 : 10.5, weight: .heavy, design: .rounded))
                         .foregroundStyle(ink)
                         .fixedSize()
+                        // ∞ and 5 are neighbours, one tick apart: nudged
+                        // apart so they read as two labels, not "∞5".
+                        .offset(x: value == nil ? -4 : 0)
                         .visualEffect { content, proxy in
                             let near = Self.nearness(proxy, centre: centre)
                             return content
