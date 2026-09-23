@@ -513,3 +513,36 @@ struct WeekStrip: View {
         return calendar.veryShortWeekdaySymbols[i]
     }
 }
+
+/// The ground of the valley pages (Profile, the guide, Friends): the meadow a
+/// page continues under its band of sky, the sky's own ink for type drawn on
+/// it, and the divider to use inside a white card. Not the app's `hairline`,
+/// which is cream and on white reads as the brown these pages moved off.
+enum ValleyGround {
+    static let meadow = DayLight.at(0).field[1]
+    static let ink = DayLight.at(0).ink
+    static let inkSoft = DayLight.at(0).inkSoft
+    static let quiet = AppColor.meadowInk.opacity(0.11)
+}
+
+/// A section title standing on the grass: white, with a faint shadow so it
+/// survives the flowers.
+struct GrassHeading: View {
+    let title: String
+    var body: some View {
+        Text(title)
+            .font(DisplayFont.display(15, .heavy))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
+            .padding(.horizontal, 4)
+            .padding(.top, 6)
+    }
+}
+
+extension View {
+    /// A white card standing on the grass: the valley pages' one surface.
+    func whiteCard(radius: CGFloat = 20) -> some View {
+        background(.white, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(color: .black.opacity(0.07), radius: 8, y: 2)
+    }
+}

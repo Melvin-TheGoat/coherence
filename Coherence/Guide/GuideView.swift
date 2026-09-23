@@ -137,7 +137,7 @@ struct GuideView: View {
 /// the page's background. The page here is the meadow, so the valley's sky
 /// came out hazed green under the back button. The band is meant to be seen
 /// clearly, so the effect is off at the top.
-private struct NoTopEdgeHaze: ViewModifier {
+struct NoTopEdgeHaze: ViewModifier {
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
             content.scrollEdgeEffectHidden(true, for: .top)
@@ -146,6 +146,7 @@ private struct NoTopEdgeHaze: ViewModifier {
         }
     }
 }
+
 
 private enum GuideGround {
     /// The meadow at its near edge, which the page continues under the band.

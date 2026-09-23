@@ -3553,6 +3553,39 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
 - Scale the tick's line and its number SEPARATELY: scaling the whole stack
   pushed the number out of the ruler's frame and clipped it under the needle.
 
+## FRIENDS IS IN THE VALLEY (2026-09-22, Aziz)
+
+"revamp the friends screen make it the same vibe as the rest". Built to
+`mockups/friends-valley.html`. It was the last tab on plain cream with brown
+ink. **No wording, action or rule changed**; one small addition (Withdraw on
+a sent request, the same `model.remove` a person's page already used).
+
+- **The feed**: a band of valley (`FriendsSky`, the scene with nobody in it)
+  carrying "Friends", your @ and the requests pill (gold only when someone is
+  waiting, the one gold thing in the sky), and **your friends standing on the
+  meadow** (`FriendsOnTheMeadow`): tap a face for their page, the last face is
+  Invite. **Anyone who posted a session today glows** in Otto's aura light.
+  It reads only `model.friends` and the feed, the only evidence 808 has that a
+  friend sat; nothing from Block or Screen Time reaches it. Below: a cream
+  search capsule, then posts as white cards on the grass.
+- **Post cards** are white (`whiteCard`), numbers in the sky's ink,
+  hairlines `ValleyGround.quiet`, and "Nice session" is a sky pill that turns
+  gold once given.
+- **Requests**: a short band, the title in the toolbar's PRINCIPAL slot (a
+  leading toolbar item is wrapped in an iOS 26 glass capsule and reads as a
+  button), one white card per group of people, Accept gold.
+- **A person's page** is your own Profile's shape: portrait on the seam, one
+  white identity card with the follow line and the one relationship button,
+  one stats card, then their posts.
+- **Shared pieces now in `DesignKit`**: `ValleyGround` (meadow, ink,
+  inkSoft, quiet), `GrassHeading`, `.whiteCard(radius:)`. `NoTopEdgeHaze` is
+  internal (was private to the guide).
+- **A page with NO navigation bar has no top edge for iOS to fade**, so
+  scrolled content ran under the clock with nothing behind it.
+  `scrollEdgeEffectHidden(false)` did nothing there. `StatusBarScrim` fades a
+  band of meadow in behind the status bar once the band has scrolled away
+  (`onScrollGeometryChange`, iOS 18+).
+
 ## A TIMED SESSION ENDS WITH A NOTIFICATION; "GET COMFORTABLE" IS IN THE VALLEY (2026-09-22, Aziz)
 
 - **`SessionEndNotice`** (`Coherence/Session/`): a timed phone sit schedules a

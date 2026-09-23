@@ -21,39 +21,47 @@ struct FriendsTab: View {
                     ProgressView().tint(AppColor.calmAccent)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .unavailable:
-                    #if DEBUG
                     ScrollView {
                         VStack(spacing: 14) {
+                            FriendsSky(height: 230) {
+                                VStack(alignment: .leading) {
+                                    Text("Friends")
+                                        .font(DisplayFont.display(30, .heavy))
+                                        .foregroundStyle(ValleyGround.ink)
+                                    Spacer()
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, AppMetrics.screenPadding)
+                                .padding(.top, 70)
+                            }
+                            #if DEBUG
                             testModeCard
+                            #endif
                             UnavailableCard(model: model)
+                                .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                .padding(.horizontal, AppMetrics.screenPadding)
+                                .padding(.bottom, 24)
                         }
                     }
-                    #else
-                    UnavailableCard(model: model)
-                    #endif
+                    .scrollIndicators(.hidden)
+                    .ignoresSafeArea(edges: .top)
+                    .modifier(NoTopEdgeHaze())
+                    .toolbar(.hidden, for: .navigationBar)
                 case .needsUsername:
                     CreateProfileView(model: model,
                                       suggested: user?.username ?? "",
                                       nickname: user?.displayName ?? "") { _ in }
                 case .ready:
-                    #if DEBUG
-                    VStack(spacing: 0) {
-                        if model.testMode { testModeBanner }
-                        FeedView(model: model, myDisplayName: user?.displayName ?? "")
-                    }
-                    #else
                     FeedView(model: model, myDisplayName: user?.displayName ?? "")
-                    #endif
                 }
             }
-            .screenBackground()
-            // No nav title: the header row below it says "Friends" beside
-            // your own face, and two of the same word within an inch of each
-            // other is one of them doing nothing.
+            // The valley, like Home, Profile and the guide (Aziz, 2026-09-22,
+            // `mockups/friends-valley.html`). The last page left on plain
+            // cream with brown ink.
+            .background(ValleyGround.meadow.ignoresSafeArea())
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(AppColor.backgroundPrimary, for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .task {
             Analytics.track(.friendsOpened)
@@ -85,21 +93,135 @@ struct FriendsTab: View {
         .padding(.top, 8)
     }
 
-    private var testModeBanner: some View {
-        HStack(spacing: 8) {
-            Text("Test mode: a fake database on this device")
-                .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(AppColor.textSecondary)
-            Spacer(minLength: 0)
-            Button("Turn off") { Task { await model.setTestMode(false) } }
-                .font(AppFont.caption.weight(.bold))
-                .foregroundStyle(AppColor.accentGoldText)
-        }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.vertical, 7)
-        .background(AppColor.backgroundSecondary)
-    }
     #endif
+}
+
+// MARK: - The valley
+
+/// Meadow behind the status bar once the band has scrolled away. This page
+/// has no navigation bar, so iOS has no top edge to fade, and without this
+/// the feed's cards slid under the clock with nothing behind it. Invisible
+/// while the sky is showing, which is the whole point of the band.
+private struct StatusBarScrim: ViewModifier {
+    let height: CGFloat
+    let threshold: CGFloat
+    @State private var past = false
+
+    func body(content: Content) -> some View {
+        Group {
+            if #available(iOS 18.0, *) {
+                content.onScrollGeometryChange(for: Bool.self) { geo in
+                    geo.contentOffset.y + geo.contentInsets.top > threshold
+                } action: { _, now in
+                    withAnimation(.easeOut(duration: 0.2)) { past = now }
+                }
+            } else {
+                content
+            }
+        }
+        .overlay(alignment: .top) {
+            LinearGradient(stops: [.init(color: ValleyGround.meadow, location: 0),
+                                   .init(color: ValleyGround.meadow, location: 0.7),
+                                   .init(color: ValleyGround.meadow.opacity(0), location: 1)],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: height + 16)
+                .ignoresSafeArea(edges: .top)
+                .opacity(past ? 1 : 0)
+                .allowsHitTesting(false)
+        }
+    }
+}
+
+/// The strip of valley at the top of every Friends page: sky, ridges and the
+/// near meadow, with whatever the page puts on it. The same scene Home,
+/// Profile and the guide stand in, with nobody in it.
+struct FriendsSky<Content: View>: View {
+    var height: CGFloat
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        ValleyScene(progress: 0, showsFigure: false)
+            .frame(height: height)
+            .frame(maxWidth: .infinity)
+            .clipped()
+            .overlay { content }
+    }
+}
+
+/// Your friends standing on the meadow, the ones who posted a session today
+/// glowing with Otto's own warm light (the approved mockup's one new idea).
+/// It reads only who you are friends with and whether they posted today:
+/// the feed is the only evidence 808 has that a friend sat, and nothing
+/// from Block or Screen Time ever reaches it. The last face is Invite.
+private struct FriendsOnTheMeadow: View {
+    @ObservedObject var model: CommunityModel
+
+    private var postedToday: Set<String> {
+        Set(model.feed.filter { Calendar.current.isDateInToday($0.practicedAt) }.map(\.author))
+    }
+
+    /// Today's first, then everyone else, each in the order they were added.
+    private var ordered: [String] {
+        let lit = postedToday
+        return model.friends.filter(lit.contains) + model.friends.filter { !lit.contains($0) }
+    }
+
+    var body: some View {
+        let lit = postedToday
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(alignment: .top, spacing: 12) {
+                ForEach(ordered, id: \.self) { id in
+                    NavigationLink(value: id) { face(id, lit: lit.contains(id)) }
+                        .buttonStyle(CardButtonStyle())
+                }
+                ShareLink(item: InviteButton.message(for: model.profile?.username ?? "")) {
+                    inviteFace
+                }
+                .buttonStyle(CardButtonStyle())
+                .simultaneousGesture(TapGesture().onEnded { Analytics.track(.inviteShared) })
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            // Room for the glow, which spills past the circle.
+            .padding(.vertical, 8)
+        }
+    }
+
+    private func face(_ id: String, lit: Bool) -> some View {
+        let person = model.person(id)
+        let name = person.map { $0.displayName.isEmpty ? "@" + $0.username : $0.displayName } ?? "Friend"
+        return VStack(spacing: 4) {
+            ProfilePortrait(photoURL: person?.avatarURL, size: 50)
+                .overlay(Circle().stroke(lit ? AppColor.auraGlow : .white, lineWidth: 3))
+                .shadow(color: lit ? AppColor.auraGlow.opacity(0.95) : .black.opacity(0.18),
+                        radius: lit ? 9 : 3, y: lit ? 0 : 2)
+            label(name)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(lit ? "\(name), posted a session today" : name)
+    }
+
+    private var inviteFace: some View {
+        VStack(spacing: 4) {
+            Image(systemName: "plus")
+                .font(.system(size: 20, weight: .bold))
+                .foregroundStyle(AppColor.skyDeep)
+                .frame(width: 50, height: 50)
+                .background(AppColor.backgroundPrimary.opacity(0.94), in: Circle())
+                .overlay(Circle().strokeBorder(AppColor.skyDeep.opacity(0.45),
+                                               style: StrokeStyle(lineWidth: 2, dash: [4, 3])))
+            label("Invite")
+        }
+        .accessibilityLabel("Invite a friend")
+    }
+
+    private func label(_ text: String) -> some View {
+        Text(text)
+            .font(.system(size: 11, weight: .heavy, design: .rounded))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
+            .lineLimit(1)
+            .frame(width: 60)
+    }
 }
 
 // MARK: - Unavailable
@@ -125,7 +247,7 @@ struct UnavailableCard: View {
             Image(systemName: "icloud.slash")
                 .font(.system(size: 40, weight: .light))
                 .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 40)
+                .padding(.top, 8)
             Text("Friends need iCloud")
                 .font(AppFont.headline)
                 .foregroundStyle(AppColor.textPrimary)
@@ -239,32 +361,45 @@ struct FeedView: View {
     @State private var reportTarget: ReportSheet.Target?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                header
-                searchField
-                if searched { searchResult }
-                if model.feed.isEmpty {
-                    EmptyFeed(model: model, username: model.profile?.username ?? "")
-                } else {
-                    VStack(spacing: 16) {
-                        ForEach(model.feed) { post in
-                            PostCard(post: post, model: model) { reportTarget = .post(post.id) }
+        GeometryReader { proxy in
+            let top = proxy.safeAreaInsets.top
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    band(top: top)
+                    VStack(alignment: .leading, spacing: 14) {
+                        #if DEBUG
+                        if model.testMode { testModePill }
+                        #endif
+                        searchField
+                        if searched { searchResult }
+                        if model.feed.isEmpty {
+                            EmptyFeed(model: model, username: model.profile?.username ?? "")
+                        } else {
+                            ForEach(model.feed) { post in
+                                PostCard(post: post, model: model) { reportTarget = .post(post.id) }
+                            }
+                            InviteButton(username: model.profile?.username ?? "", style: .quiet)
+                                .padding(.top, 4)
                         }
+                        // The bar is a safe-area inset so the scroll clears it
+                        // on its own; this only clears the half of the plus
+                        // that rises above it.
+                        Color.clear.frame(height: 24)
                     }
-                    .padding(.top, 2)
-                    InviteButton(username: model.profile?.username ?? "", style: .quiet)
-                        .padding(.top, 10)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, 14)
                 }
-                // The bar is a safe-area inset so the scroll clears it on its
-                // own; this only clears the half of the plus that rises
-                // above it. It was 72, which read as a blank band under the
-                // last card (Melvin, 2026-09-19).
-                Color.clear.frame(height: 24)
             }
-            .padding(AppMetrics.screenPadding)
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .modifier(NoTopEdgeHaze())
+            .modifier(StatusBarScrim(height: top, threshold: 160))
+            .refreshable { await model.refresh() }
         }
-        .refreshable { await model.refresh() }
+        .background(ValleyGround.meadow.ignoresSafeArea())
+        // The band carries the title, so this page has no bar at all; the
+        // pages pushed from it bring their own back button.
+        .toolbar(.hidden, for: .navigationBar)
         .navigationDestination(for: String.self) { id in
             PersonView(id: id, model: model)
         }
@@ -273,52 +408,86 @@ struct FeedView: View {
         }
     }
 
-    /// Your face, your handle, and requests as a BUTTON.
+    /// The title, your handle and requests in the sky; your friends standing
+    /// on the meadow below them.
+    private func band(top: CGFloat) -> some View {
+        FriendsSky(height: top + 216) {
+            VStack(spacing: 0) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Friends")
+                            .font(DisplayFont.display(30, .heavy))
+                            .foregroundStyle(ValleyGround.ink)
+                        if let handle = model.profile.map({ "@" + $0.username }), handle.count > 1 {
+                            Text(handle)
+                                .font(AppFont.caption.weight(.semibold))
+                                .foregroundStyle(ValleyGround.inkSoft)
+                        }
+                    }
+                    Spacer(minLength: 8)
+                    requestsButton.padding(.top, 6)
+                }
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.top, top + 10)
+                Spacer(minLength: 0)
+                FriendsOnTheMeadow(model: model)
+                    .padding(.bottom, 4)
+            }
+        }
+    }
+
+    #if DEBUG
+    private var testModePill: some View {
+        HStack(spacing: 8) {
+            Text("Test mode: a fake database on this device")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(ValleyGround.inkSoft)
+            Spacer(minLength: 0)
+            Button("Turn off") { Task { await model.setTestMode(false) } }
+                .font(AppFont.caption.weight(.bold))
+                .foregroundStyle(AppColor.skyDeep)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+    }
+    #endif
+
+    /// Requests as a BUTTON.
     ///
     /// A waiting request used to be grey caption text floating above a search
     /// field, which made it the most missable thing in the product: this is the
     /// only screen in 808 where another person is waiting on the reader. It is
-    /// an amber capsule when somebody is, and a quiet one when nobody is, so
-    /// the colour itself carries the news.
-    private var header: some View {
-        HStack(spacing: 11) {
-            PersonAvatar(name: model.profile?.displayName, size: 40,
-                         photoURL: model.profile?.avatarURL)
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Friends")
-                    .font(DisplayFont.display(19))
-                    .foregroundStyle(AppColor.textPrimary)
-                if let handle = model.profile.map({ "@" + $0.username }), handle.count > 1 {
-                    Text(handle)
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                }
-            }
-            Spacer(minLength: 6)
-            NavigationLink {
-                RequestsView(model: model)
-            } label: {
-                let waiting = !model.incoming.isEmpty
-                Text(waiting
-                     ? "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")"
-                     : "Requests")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(waiting ? AppColor.textOnAccent : AppColor.textSecondary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background {
-                        Capsule().fill(waiting ? AppColor.accentGold : AppColor.backgroundSecondary)
-                            .shadow(color: waiting ? AppColor.accentGoldShade : AppColor.hairline,
-                                    radius: 0, y: 3)
+    /// gold when somebody is, the one gold thing in the sky, and a cream pill
+    /// when nobody is, so the colour itself carries the news.
+    private var requestsButton: some View {
+        NavigationLink {
+            RequestsView(model: model)
+        } label: {
+            let waiting = !model.incoming.isEmpty
+            Text(waiting
+                 ? "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")"
+                 : "Requests")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(waiting ? AppColor.textOnAccent : ValleyGround.ink)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background {
+                    if waiting {
+                        Capsule().fill(AppColor.accentGold)
+                            .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
+                    } else {
+                        Capsule().fill(AppColor.backgroundPrimary.opacity(0.94))
+                            .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
                     }
-                    .padding(.bottom, 3)
-            }
+                }
+                .padding(.bottom, 3)
         }
     }
 
     private var searchField: some View {
         HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass").foregroundStyle(AppColor.textSecondary)
+            Image(systemName: "magnifyingglass").foregroundStyle(AppColor.skyDeep)
             TextField("Find a friend by @username", text: $query)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
@@ -334,22 +503,34 @@ struct FeedView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(.horizontal, 16).padding(.vertical, 14)
-        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .padding(.horizontal, 16).padding(.vertical, 13)
+        // A cream capsule: something you press, on the grass.
+        .background(AppColor.backgroundPrimary.opacity(0.96), in: Capsule())
+        .shadow(color: .black.opacity(0.10), radius: 6, y: 2)
     }
 
     @ViewBuilder
     private var searchResult: some View {
-        if let result {
-            NavigationLink(value: result.id) {
-                PersonRow(profile: result, subtitle: "@" + result.username) { EmptyView() }
+        Group {
+            if let result {
+                NavigationLink(value: result.id) {
+                    PersonRow(profile: result, subtitle: "@" + result.username) {
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(AppColor.skyDeep)
+                    }
+                }
+                .buttonStyle(CardButtonStyle())
+            } else {
+                Text("Nobody with that name yet. Check the spelling, or invite them.")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.vertical, 14)
             }
-            .buttonStyle(CardButtonStyle())
-        } else {
-            Text("Nobody with that name yet. Check the spelling, or invite them.")
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.textSecondary)
         }
+        .padding(.horizontal, 14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .whiteCard()
     }
 
     private func search() {
@@ -368,7 +549,7 @@ private struct EmptyFeed: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("🙏").font(.system(size: 40)).padding(.top, 40)
+            Text("🙏").font(.system(size: 40)).padding(.top, 8)
             Text("Nobody here yet")
                 .font(AppFont.headline)
                 .foregroundStyle(AppColor.textPrimary)
@@ -387,6 +568,8 @@ private struct EmptyFeed: View {
             InviteRewardNote().padding(.top, 14)
         }
         .frame(maxWidth: .infinity)
+        .padding(18)
+        .whiteCard()
     }
 }
 
@@ -445,10 +628,12 @@ struct InviteButton: View {
 
     static let storeLink = URL(string: "https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=invite&mt=8")!
 
-    private var message: String {
-        // Aziz's wording (2026-09-14). The App Store link stays on its own
-        // line so the message still gets a friend to the download.
-        "Add me on 808 Meditate, the social media for meditation: @\(username)\n\(Self.storeLink.absoluteString)"
+    private var message: String { Self.message(for: username) }
+
+    /// Aziz's wording (2026-09-14). The App Store link stays on its own line
+    /// so the message still gets a friend to the download.
+    static func message(for username: String) -> String {
+        "Add me on 808 Meditate, the social media for meditation: @\(username)\n\(storeLink.absoluteString)"
     }
 
     var body: some View {
@@ -537,7 +722,7 @@ struct PostCard: View {
             .padding(.horizontal, Self.inset)
             .padding(.top, 13)
             .overlay(alignment: .top) {
-                Rectangle().fill(AppColor.hairline).frame(height: 1)
+                Rectangle().fill(ValleyGround.quiet).frame(height: 1)
                     .padding(.horizontal, Self.inset)
             }
 
@@ -545,8 +730,8 @@ struct PostCard: View {
                 .padding(.horizontal, Self.inset)
                 .padding(.top, 16).padding(.bottom, Self.inset)
         }
-        .background(AppColor.backgroundSecondary,
-                    in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        // White on the grass, like every card on the valley pages.
+        .whiteCard(radius: 20)
     }
 
     /// One inset for every child of the card, so nothing sits closer to an
@@ -604,7 +789,7 @@ struct PostCard: View {
         VStack(spacing: 1) {
             Text(value)
                 .font(DisplayFont.display(16, .heavy))
-                .foregroundStyle(AppColor.calmAccent)
+                .foregroundStyle(ValleyGround.ink)
                 .lineLimit(1).minimumScaleFactor(0.6)
             Text(label)
                 .font(AppFont.caption)
@@ -640,7 +825,7 @@ struct PostCard: View {
                     Text("🙏").font(.system(size: 17)).grayscale(mine ? 0 : 1).opacity(mine ? 1 : 0.7)
                     Text("Nice session")
                         .font(.system(size: 13, weight: .bold, design: .rounded))
-                        .foregroundStyle(mine ? AppColor.textOnAccent : AppColor.textPrimary)
+                        .foregroundStyle(mine ? AppColor.textOnAccent : ValleyGround.ink)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 8)
                 // Filled, like every other button in the app: amber once you
@@ -648,10 +833,15 @@ struct PostCard: View {
                 // last thin-line control in the product, and it made the one
                 // thing a reader can DO on this screen the quietest object on
                 // the card.
+                // Sky before (a choice), gold once given (the one gold
+                // thing on the card besides the score).
                 .background {
-                    Capsule().fill(mine ? AppColor.accentGold : AppColor.backgroundPrimary)
-                        .shadow(color: mine ? AppColor.accentGoldShade : AppColor.hairline,
-                                radius: 0, y: 3)
+                    if mine {
+                        Capsule().fill(AppColor.accentGold)
+                            .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
+                    } else {
+                        Capsule().fill(AppColor.skyWash)
+                    }
                 }
                 .padding(.bottom, 3)
             }
@@ -762,73 +952,124 @@ struct RequestsView: View {
     @ObservedObject var model: CommunityModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 6) {
-                if model.incoming.isEmpty && model.sent.isEmpty && model.blocked.isEmpty {
-                    Text("No requests right now.")
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .padding(.top, 40)
-                        .frame(maxWidth: .infinity)
-                }
-                if !model.incoming.isEmpty {
-                    SectionHeader(title: "Incoming")
-                    ForEach(model.incoming, id: \.self) { id in
-                        if let p = model.person(id) {
-                            NavigationLink(value: id) {
-                                PersonRow(profile: p, subtitle: "@" + p.username) {
-                                    Button("Accept") { Task { await model.accept(id) } }
-                                        .buttonStyle(.plain)
-                                        .font(AppFont.caption.weight(.bold))
-                                        .foregroundStyle(AppColor.accentGoldText)
-                                        .padding(.horizontal, 10).padding(.vertical, 5)
-                                        .overlay(Capsule().stroke(AppColor.accentGold, lineWidth: 1))
-                                }
-                            }
-                            .buttonStyle(CardButtonStyle())
-                        }
-                    }
-                }
-                if !model.sent.isEmpty {
-                    SectionHeader(title: "Sent").padding(.top, 14)
-                    ForEach(model.sent, id: \.self) { id in
-                        if let p = model.person(id) {
-                            NavigationLink(value: id) {
-                                PersonRow(profile: p, subtitle: "@" + p.username + " · waiting") {
-                                    Text("SENT").font(.system(size: 10, weight: .bold)).tracking(0.8)
-                                        .foregroundStyle(AppColor.textSecondary)
-                                }
-                            }
-                            .buttonStyle(CardButtonStyle())
-                        }
-                    }
-                }
-                if !model.blocked.isEmpty {
-                    SectionHeader(title: "Blocked").padding(.top, 14)
-                    ForEach(model.blocked, id: \.self) { id in
-                        HStack {
-                            Text(model.person(id).map { $0.displayName.isEmpty ? "@" + $0.username : $0.displayName } ?? "Someone")
-                                .font(AppFont.callout.weight(.semibold))
-                                .foregroundStyle(AppColor.textPrimary)
-                            Spacer()
-                            Button("Unblock") { Task { await model.unblock(id) } }
-                                .buttonStyle(.plain)
-                                .font(AppFont.caption.weight(.bold))
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    // Sky behind the back button; the title rides beside it.
+                    FriendsSky(height: proxy.safeAreaInsets.top + 56) { EmptyView() }
+                    VStack(alignment: .leading, spacing: 8) {
+                        if model.incoming.isEmpty && model.sent.isEmpty && model.blocked.isEmpty {
+                            Text("No requests right now.")
+                                .font(AppFont.callout)
                                 .foregroundStyle(AppColor.textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 22)
+                                .whiteCard()
                         }
-                        .padding(.vertical, 12)
+                        if !model.incoming.isEmpty {
+                            GrassHeading(title: "Asking to be your friend")
+                            group(model.incoming) { id in
+                                smallButton("Accept", gold: true) { Task { await model.accept(id) } }
+                            }
+                        }
+                        if !model.sent.isEmpty {
+                            GrassHeading(title: "Sent").padding(.top, 6)
+                            group(model.sent, subtitle: " \u{00B7} waiting") { id in
+                                Button("Withdraw") { Task { await model.remove(id) } }
+                                    .buttonStyle(.plain)
+                                    .font(AppFont.caption.weight(.bold))
+                                    .foregroundStyle(AppColor.textSecondary)
+                            }
+                        }
+                        if !model.blocked.isEmpty {
+                            GrassHeading(title: "Blocked").padding(.top, 6)
+                            VStack(spacing: 0) {
+                                ForEach(Array(model.blocked.enumerated()), id: \.element) { i, id in
+                                    if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
+                                    HStack {
+                                        Text(model.person(id).map { $0.displayName.isEmpty ? "@" + $0.username : $0.displayName } ?? "Someone")
+                                            .font(AppFont.callout.weight(.semibold))
+                                            .foregroundStyle(AppColor.textPrimary)
+                                        Spacer()
+                                        Button("Unblock") { Task { await model.unblock(id) } }
+                                            .buttonStyle(.plain)
+                                            .font(AppFont.caption.weight(.bold))
+                                            .foregroundStyle(AppColor.textSecondary)
+                                    }
+                                    .padding(.vertical, 14)
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .whiteCard()
+                        }
+                        InviteButton(username: model.profile?.username ?? "", style: .quiet)
+                            .padding(.top, 10)
                     }
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, 14)
+                    .padding(.bottom, 24)
                 }
             }
-            .padding(AppMetrics.screenPadding)
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .modifier(NoTopEdgeHaze())
         }
-        .screenBackground()
-        .navigationTitle("Requests")
+        .background(ValleyGround.meadow.ignoresSafeArea())
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar {
+            // The title slot, not a leading item: iOS 26 wraps leading
+            // toolbar items in a glass capsule, and a title in a button's
+            // clothes reads as something to tap.
+            ToolbarItem(placement: .principal) {
+                Text("Requests")
+                    .font(DisplayFont.display(19, .heavy))
+                    .foregroundStyle(ValleyGround.ink)
+            }
+        }
         // No navigationDestination here: FeedView's, further up the same
         // stack, already routes profile ids. A second one for the same type
         // makes SwiftUI pick one arbitrarily.
         .task { await model.loadBlocked() }
+    }
+
+    /// One white card per group of people, rows on hairlines, rather than a
+    /// card per person.
+    private func group<Trailing: View>(_ ids: [String], subtitle: String = "",
+                                       @ViewBuilder trailing: @escaping (String) -> Trailing) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(ids.enumerated()), id: \.element) { i, id in
+                if let p = model.person(id) {
+                    if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
+                    NavigationLink(value: id) {
+                        PersonRow(profile: p, subtitle: "@" + p.username + subtitle) { trailing(id) }
+                    }
+                    .buttonStyle(CardButtonStyle())
+                }
+            }
+        }
+        .padding(.horizontal, 14)
+        .whiteCard()
+    }
+
+    private func smallButton(_ title: String, gold: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(gold ? AppColor.textOnAccent : ValleyGround.ink)
+                .padding(.horizontal, 14).padding(.vertical, 7)
+                .background {
+                    if gold {
+                        Capsule().fill(AppColor.accentGold)
+                            .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
+                    } else {
+                        Capsule().fill(AppColor.skyWash)
+                    }
+                }
+                .padding(.bottom, gold ? 3 : 0)
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -955,62 +1196,59 @@ struct PersonView: View {
     private var profile: Profile? { model.person(id) }
     private var isMe: Bool { id == model.myID }
 
+    private static let portrait: CGFloat = 92
+
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                HStack(spacing: 12) {
-                    PersonAvatar(name: profile?.displayName, size: 56, photoURL: profile?.avatarURL)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(profile?.displayName.isEmpty == false ? profile!.displayName : "@" + (profile?.username ?? ""))
-                            .font(AppFont.title)
-                            .foregroundStyle(AppColor.textPrimary)
-                        Text(["@" + (profile?.username ?? ""),
-                              profile.map { "practicing since " + $0.createdAt.formatted(.dateTime.month(.abbreviated).year()) }]
-                            .compactMap { $0 }.joined(separator: " · "))
-                            .font(AppFont.caption)
-                            .foregroundStyle(AppColor.textSecondary)
-                        if let counts = model.followCounts[id] {
-                            FollowLine(followers: counts.followers,
-                                       following: counts.following, personID: id)
-                                .padding(.top, 1)
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Their portrait on the seam of the valley, the way your
+                    // own sits on Profile.
+                    FriendsSky(height: proxy.safeAreaInsets.top + 86) { EmptyView() }
+                        .overlay(alignment: .bottom) {
+                            ProfilePortrait(photoURL: profile?.avatarURL, size: Self.portrait)
+                                .overlay(Circle().stroke(.white, lineWidth: 4))
+                                .shadow(color: .black.opacity(0.16), radius: 7, y: 3)
+                                .offset(y: Self.portrait / 2 - 6)
+                        }
+                        .zIndex(1)
+                    VStack(spacing: 12) {
+                        identity
+                        if relationship == .friends || isMe { stats }
+                        if !posts.isEmpty {
+                            HStack { GrassHeading(title: "Posts"); Spacer() }.padding(.top, 4)
+                            ForEach(posts) { post in
+                                PostCard(post: post, model: model) { reportTarget = .post(post.id) }
+                            }
+                        } else if relationship != .friends && !isMe {
+                            VStack(spacing: 4) {
+                                Text("Posts show once you are friends")
+                                    .font(AppFont.callout.weight(.semibold))
+                                    .foregroundStyle(AppColor.textPrimary)
+                                Text("Their sessions appear here and in your feed.")
+                                    .font(AppFont.caption)
+                                    .foregroundStyle(AppColor.textSecondary)
+                            }
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                            .padding(18)
+                            .background(AppColor.backgroundPrimary.opacity(0.94),
+                                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
                         }
                     }
-                    Spacer(minLength: 0)
-                }
-                .padding(.top, 4)
-
-                if relationship == .friends || isMe {
-                    HStack(spacing: 6) {
-                        // A post's streak is the streak on the day it was sat.
-                        // Only the last day or so still describes today.
-                        statTile(posts.first.flatMap { Date().timeIntervalSince($0.practicedAt) < 36 * 3600 ? "\($0.streak)" : nil } ?? "–",
-                                 "Streak")
-                        statTile("\(posts.count)", "Posts")
-                        // Only the sits something measured: a phone session
-                        // has no score, and counting it as a zero would drag
-                        // an average nobody earned.
-                        let scores = posts.compactMap(\.score)
-                        statTile(scores.isEmpty ? "–" : "\(scores.reduce(0, +) / scores.count)", "Avg score")
-                    }
-                }
-
-                if !isMe { relationshipButton }
-
-                if !posts.isEmpty {
-                    SectionHeader(title: "Posts").padding(.top, 6)
-                    ForEach(posts) { post in
-                        PostCard(post: post, model: model) { reportTarget = .post(post.id) }
-                    }
-                } else if relationship != .friends && !isMe {
-                    Text("Posts show once you are friends.")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, -6)
+                    .padding(.bottom, 24)
                 }
             }
-            .padding(AppMetrics.screenPadding)
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .modifier(NoTopEdgeHaze())
         }
-        .screenBackground()
+        .background(ValleyGround.meadow.ignoresSafeArea())
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar {
             if !isMe {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -1021,7 +1259,7 @@ struct PersonView: View {
                         Button("Report", role: .destructive) { reportTarget = .profile(id) }
                         Button("Block", role: .destructive) { confirmBlock = true }
                     } label: {
-                        Image(systemName: "ellipsis").foregroundStyle(AppColor.textSecondary)
+                        Image(systemName: "ellipsis").foregroundStyle(ValleyGround.ink)
                     }
                 }
             }
@@ -1043,14 +1281,59 @@ struct PersonView: View {
         posts = await model.posts(by: id)
     }
 
-    private func statTile(_ value: String, _ label: String) -> some View {
-        VStack(spacing: 3) {
-            Text(value).font(.system(size: 20, weight: .bold, design: .rounded)).foregroundStyle(AppColor.textPrimary)
-            Text(label.uppercased()).font(.system(size: 9, weight: .semibold)).tracking(0.9).foregroundStyle(AppColor.textSecondary)
+    /// One white card, as on your own Profile: name, handle and since, the
+    /// follow line, and the one button this relationship calls for.
+    private var identity: some View {
+        VStack(spacing: 5) {
+            Text(profile?.displayName.isEmpty == false ? profile!.displayName : "@" + (profile?.username ?? ""))
+                .font(DisplayFont.display(22, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(["@" + (profile?.username ?? ""),
+                  profile.map { "practicing since " + $0.createdAt.formatted(.dateTime.month(.abbreviated).year()) }]
+                .compactMap { $0 }.joined(separator: " \u{00B7} "))
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+            if let counts = model.followCounts[id] {
+                FollowLine(followers: counts.followers, following: counts.following, personID: id)
+                    .padding(.top, 2)
+            }
+            if !isMe { relationshipButton.padding(.top, 8) }
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 16)
+        .padding(.top, Self.portrait / 2 + 12)
+        .padding(.bottom, 16)
+        .whiteCard(radius: 22)
+    }
+
+    /// One card, three numbers read off it, not three tiles.
+    private var stats: some View {
+        HStack(spacing: 0) {
+            // A post's streak is the streak on the day it was sat. Only the
+            // last day or so still describes today.
+            statColumn(posts.first.flatMap { Date().timeIntervalSince($0.practicedAt) < 36 * 3600 ? "\($0.streak)" : nil } ?? "\u{2013}",
+                       "streak")
+            statColumn("\(posts.count)", "posts")
+            // Only the sits something measured: a phone session has no score,
+            // and counting it as a zero would drag an average nobody earned.
+            let scores = posts.compactMap(\.score)
+            statColumn(scores.isEmpty ? "\u{2013}" : "\(scores.reduce(0, +) / scores.count)", "avg score")
+        }
+        .padding(.vertical, 12)
+        .whiteCard(radius: 18)
+    }
+
+    private func statColumn(_ value: String, _ label: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(DisplayFont.display(19, .heavy))
+                .foregroundStyle(AppColor.textPrimary)
+            Text(label)
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     @ViewBuilder
