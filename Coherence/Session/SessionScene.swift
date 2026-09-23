@@ -52,6 +52,12 @@ struct ValleyScene: View {
     /// slumped) in the meadow.
     var showsFigure: Bool = true
 
+    /// Birds and grasshoppers, every ten-ish and eight-ish seconds — only
+    /// while nobody is meditating (`progress == 0`: Home, onboarding, the
+    /// Ready screen, the Block/Friends/Profile/Guide bands). The sit itself
+    /// stays still the moment `progress` moves. See `ValleyLife.swift`.
+    var life: Bool = true
+
     /// Move him up to the corner, small, so a list can have the meadow.
     ///
     /// **It is a placement on the SAME view, not a second Otto.** Swapping
@@ -69,6 +75,13 @@ struct ValleyScene: View {
     /// so a bad export costs motion and never a screen.
     @StateObject private var rig = OttoRigHolder()
 
+    /// One seed per `ValleyScene` instance, not per redraw: Home's birds
+    /// and a Friends band's birds fly different patterns rather than
+    /// mirroring each other, and the clock ticking once a second elsewhere
+    /// on screen never reshuffles either one mid-flight.
+    @State private var lifeSeed = UInt64.random(in: UInt64.min...UInt64.max)
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     private var day: DayLight { DayLight.at(progress) }
 
     var body: some View {
@@ -76,6 +89,11 @@ struct ValleyScene: View {
             let w = geo.size.width
             let h = geo.size.height
             let s = SitLayout.scale(in: geo.size)
+            // Ambient wildlife only while nobody is meditating: `progress`
+            // starts at 0 for the Ready screen and Home alike, but moves
+            // the instant a real sit begins, and the sit stays still.
+            let showLife = life && progress == 0 && !reduceMotion
+            let avoidRect = showLife ? lifeAvoidRect(size: geo.size, scale: s) : nil
 
             ZStack {
                 LinearGradient(colors: day.sky,
@@ -101,16 +119,47 @@ struct ValleyScene: View {
                     .frame(width: w, height: h * 0.34)
                     .offset(y: h * 0.33)
 
+                // Birds sit in front of the ridges and the field wash (or
+                // the field, drawn after, would paint straight over one
+                // dipping near the ridge line) and stay well clear of
+                // Otto's head by construction, via `avoidRect`.
+                if showLife {
+                    ValleyLife(layer: .sky, size: geo.size, scale: s, seed: lifeSeed, avoid: avoidRect)
+                }
+
                 // Everything alive takes the hour's light as one group, so
                 // the cushion, the sloth and the flowers can never disagree
                 // about what time it is.
-                life(size: geo.size, scale: s)
+                groundScene(size: geo.size, scale: s)
                     .colorMultiply(Color(white: day.light))
+
+                // Grasshoppers ride on top of the meadow and the sitter, but
+                // their lanes are chosen beside `avoidRect`, never inside it.
+                if showLife {
+                    ValleyLife(layer: .meadow, size: geo.size, scale: s, seed: lifeSeed, avoid: avoidRect)
+                }
             }
             .frame(width: w, height: h)
             .clipped()
         }
         .ignoresSafeArea()
+    }
+
+    /// Otto and his cushion, generously boxed, so birds and grasshoppers
+    /// have one rectangle to clear rather than needing to know his rig's
+    /// exact silhouette. `nil` when there is no figure to avoid: nothing is
+    /// drawn (`!showsFigure`), or he is tucked in the corner, well clear of
+    /// the meadow already.
+    private func lifeAvoidRect(size: CGSize, scale s: CGFloat) -> CGRect? {
+        guard showsFigure, !ottoInCorner else { return nil }
+        let seated = ottoHeight(scale: s)
+        let top = SitLayout.ottoTop(in: size) - 20
+        let cushionBottom = size.height * (1 - 0.215) + 22 * s
+        let ottoBottom = size.height * (1 - 0.24) + 12
+        let bottom = max(cushionBottom, ottoBottom)
+        let halfWidth = max(168 * s, seated * 0.85) / 2 + 24
+        return CGRect(x: size.width / 2 - halfWidth, y: top,
+                      width: halfWidth * 2, height: max(20, bottom - top))
     }
 
     // MARK: - Sky furniture
@@ -183,7 +232,7 @@ struct ValleyScene: View {
 
     // MARK: - The ground and the sitter
 
-    private func life(size: CGSize, scale s: CGFloat) -> some View {
+    private func groundScene(size: CGSize, scale s: CGFloat) -> some View {
         ZStack(alignment: .bottomLeading) {
             Meadow(scale: s)
                 .frame(width: size.width, height: size.height)
