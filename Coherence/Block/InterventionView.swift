@@ -984,20 +984,28 @@ private struct HowLongScreen: View {
                 .padding(.horizontal, 16)
                 .frame(width: size.width)
                 .position(x: size.width / 2, y: ottoBottom + 12 + 70)
-                VStack(spacing: 6) {
+                VStack(spacing: 10) {
                     Spacer()
                     Button("Actually, let's meditate", action: onMeditate)
                         .buttonStyle(PrimaryButtonStyle())
-                    Button(minutes == 60 ? "Open my apps for an hour" : "Open my apps for \(minutes) min") {
+                    // A cream pill, not bare text: bare ink sat on the
+                    // meadow's flowers and could not be read (2026-09-23).
+                    Button {
                         // The unblock-screens gallery rehearses this screen
                         // with nothing real happening: skip the real pass so
                         // it can never touch a real blocker or Screen Time.
                         if !rehearsal { block.takePass(minutes: minutes) }
                         onClose()
+                    } label: {
+                        Text(minutes == 60 ? "Open my apps for an hour" : "Open my apps for \(minutes) min")
+                            .font(DisplayFont.display(15, .bold))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 13)
+                            .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+                            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                     }
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(ink.opacity(0.8))
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 12)

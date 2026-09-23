@@ -242,31 +242,7 @@ struct ContentView: View {
                               plannedDurationSec: 600,
                               planChip: "10 min · Silence") { sitPreviewElapsed = nil }
         }
-        .fullScreenCover(item: $unblockPreview) { which in
-            switch which {
-            case .gallery:
-                NavigationStack { InterventionGalleryView() }
-            case .howLong:
-                // Otto's own "Not now" flow, jumped straight to the how-long
-                // step: nothing here is real, same as the gallery's rows.
-                InterventionView(kind: .standing, context: InterventionContext(hour: 9, streak: 6,
-                                                                                aura: .progressing,
-                                                                                friendWhoSat: nil),
-                                 block: block,
-                                 onMeditate: { _ in unblockPreview = nil },
-                                 onClose: { unblockPreview = nil },
-                                 rehearsal: true, startOnHowLong: true)
-            case .kind(let kind):
-                // Exactly what tapping that kind's row in the gallery opens.
-                InterventionView(kind: kind, context: InterventionContext(hour: 9, streak: 6,
-                                                                           aura: .progressing,
-                                                                           friendWhoSat: "Sam"),
-                                 block: block,
-                                 onMeditate: { _ in unblockPreview = nil },
-                                 onClose: { unblockPreview = nil },
-                                 rehearsal: true)
-            }
-        }
+        .modifier(UnblockPreviewHook(which: $unblockPreview, block: block))
         .onAppear(perform: debugPreviewHooks)
         #endif
         // A session is running on the Watch — take over the phone for every mode.
@@ -1312,20 +1288,4 @@ struct SitPreview: Identifiable {
     var id: Double { elapsed }
 }
 
-/// `PREVIEW_UNBLOCK_GALLERY` / `PREVIEW_INTERVENTION_HOWLONG` /
-/// `PREVIEW_UNBLOCK_KIND=<kind>`: which of Otto's unblock screens to open
-/// with no tap. `.kind` opens one intervention kind exactly the way tapping
-/// its row in the gallery would (rehearsal mode, no tap needed to prove it).
-enum UnblockDebugPreview: Identifiable {
-    case gallery, howLong
-    case kind(InterventionKind)
-
-    var id: String {
-        switch self {
-        case .gallery: return "gallery"
-        case .howLong: return "howLong"
-        case .kind(let kind): return "kind-\(kind.rawValue)"
-        }
-    }
-}
 #endif

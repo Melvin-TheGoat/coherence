@@ -101,7 +101,7 @@ struct InterventionGalleryView: View {
     /// all twenty on demand.
     private static var demoContext: InterventionContext {
         InterventionContext(hour: Calendar.current.component(.hour, from: Date()),
-                            streak: 6, aura: .progressing, friendWhoSat: "Sam")
+                            streak: 6, aura: .steady, friendWhoSat: "Sam")
     }
 }
 
@@ -159,4 +159,65 @@ private extension InterventionKind {
         }
     }
 }
+/// `PREVIEW_UNBLOCK_GALLERY` / `PREVIEW_INTERVENTION_HOWLONG` /
+/// `PREVIEW_UNBLOCK_KIND=<kind>`: which of Otto's unblock screens to open
+/// with no tap. `.kind` opens one intervention kind exactly the way tapping
+/// its row in the gallery would (rehearsal mode, no tap needed to prove it).
+enum UnblockDebugPreview: Identifiable {
+    case gallery, howLong
+    case kind(InterventionKind)
+
+    var id: String {
+        switch self {
+        case .gallery: return "gallery"
+        case .howLong: return "howLong"
+        case .kind(let kind): return "kind-\(kind.rawValue)"
+        }
+    }
+}
+
+/// The launch hooks' cover, kept off ContentView's modifier chain: that chain
+/// sits at the type checker's limit, and a `switch` inside a cover on it
+/// tipped it over (2026-09-23).
+struct UnblockPreviewHook: ViewModifier {
+    @Binding var which: UnblockDebugPreview?
+    let block: BlockController
+
+    func body(content: Content) -> some View {
+        content.fullScreenCover(item: $which) { w in
+            UnblockPreviewCover(which: w, block: block) { which = nil }
+        }
+    }
+}
+
+private struct UnblockPreviewCover: View {
+    let which: UnblockDebugPreview
+    let block: BlockController
+    let onDone: () -> Void
+
+    var body: some View {
+        switch which {
+        case .gallery:
+            NavigationStack { InterventionGalleryView() }
+        case .howLong:
+            // Otto's own "Not now" flow, jumped straight to the how-long step:
+            // nothing here is real, same as the gallery's rows.
+            InterventionView(kind: .standing,
+                             context: InterventionContext(hour: 9, streak: 6, aura: .steady, friendWhoSat: nil),
+                             block: block,
+                             onMeditate: { _ in onDone() },
+                             onClose: onDone,
+                             rehearsal: true, startOnHowLong: true)
+        case .kind(let kind):
+            // Exactly what tapping that kind's row in the gallery opens.
+            InterventionView(kind: kind,
+                             context: InterventionContext(hour: 9, streak: 6, aura: .steady, friendWhoSat: "Sam"),
+                             block: block,
+                             onMeditate: { _ in onDone() },
+                             onClose: onDone,
+                             rehearsal: true)
+        }
+    }
+}
+
 #endif
