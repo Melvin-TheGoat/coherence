@@ -61,6 +61,12 @@ enum SessionLength {
         return "\(minutes):00"
     }
 
+    /// The end-of-session notification's title: "That's 10 minutes".
+    static func endTitle(minutes: Int) -> String {
+        if minutes == 60 { return "That's an hour" }
+        return minutes == 1 ? "That's 1 minute" : "That's \(minutes) minutes"
+    }
+
     /// The line under the clock.
     static func words(_ minutes: Int?) -> String {
         guard let minutes else { return "Open, end when you like" }

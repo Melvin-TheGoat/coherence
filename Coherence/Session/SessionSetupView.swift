@@ -39,6 +39,9 @@ struct SessionSetupView: View {
     /// 2026-09-01).
     @State private var countdown: Int?
     @State private var countdownTask: Task<Void, Never>?
+    /// The count reached zero: Otto settles from waving into sitting just
+    /// before the sit screen takes over, so the hand-off is his, not a cut.
+    @State private var settling = false
 
     @ObservedObject private var focus = FocusShortcut.shared
     @State private var showFocusSetup = false
@@ -58,7 +61,8 @@ struct SessionSetupView: View {
             ZStack {
                 // ONE scene, for both states. Never rebuilt, never replaced:
                 // it owns the Rive rig, and swapping it would restart him.
-                ValleyScene(progress: 0, pose: .greeting, ottoInCorner: choosingSound)
+                ValleyScene(progress: 0, pose: settling ? .meditating : .greeting,
+                            ottoInCorner: choosingSound)
 
                 let day = DayLight.at(0)
 
@@ -68,25 +72,37 @@ struct SessionSetupView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     greeting(day: day, in: geo.size)
-                    SessionLengthPicker(minutes: $lengthMinutes, ink: day.ink, inkSoft: day.inkSoft)
-                        .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size))
-                        .transition(.opacity)
-                    readyControls(day: day)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    if let countdown {
+                        countingIn(countdown, day: day)
+                            .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size))
+                            .transition(.opacity)
+                        countdownCancel
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        SessionLengthPicker(minutes: $lengthMinutes, ink: day.ink, inkSoft: day.inkSoft)
+                            .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size))
+                            .transition(.opacity)
+                        readyControls(day: day)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: choosingSound)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: countdown == nil)
         }
         .ignoresSafeArea()
-        .overlay { if countdown != nil { countdownOverlay } }
         .overlay(alignment: .topLeading) {
-            Button(choosingSound ? "Back" : "Cancel") {
-                if choosingSound { choosingSound = false } else { cancel() }
+            // Counting in, the one way out is the Cancel pill where Begin
+            // was; two Cancels on one screen is one too many.
+            if countdown == nil {
+                Button(choosingSound ? "Back" : "Cancel") {
+                    if choosingSound { choosingSound = false } else { cancel() }
+                }
+                .font(AppFont.callout.weight(.semibold))
+                .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
+                .padding(.horizontal, 20).padding(.top, 14)
             }
-            .font(AppFont.callout.weight(.semibold))
-            .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
-            .padding(.horizontal, 20).padding(.top, 14)
         }
         .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
         // NOT a permission prompt on appear. Somebody who opened this screen
@@ -168,7 +184,9 @@ struct SessionSetupView: View {
         let speaks = SitLayout.ottoTop(in: size) - 8
         return VStack(spacing: 0) {
             Spacer(minLength: 0)
-            OttoSpeech(text: "Ready when you are. Start any YouTube or Spotify audio first.",
+            OttoSpeech(text: countdown == nil
+                            ? "Ready when you are. Start any YouTube or Spotify audio first."
+                            : "Get comfortable.",
                        tail: .bottom, size: 17,
                        ink: day.ink, stroke: day.ink.opacity(0.38),
                        fill: AppColor.backgroundPrimary.opacity(0.72),
@@ -223,35 +241,54 @@ struct SessionSetupView: View {
         return "Open · \(sound)  ›"
     }
 
-    /// Five seconds to put the phone down and sit, then the Watch is told to
-    /// start. Tapping Begin used to start measuring while you were still
-    /// getting comfortable, and the first half-minute of every phone-started
-    /// session was the motion of settling in.
-    private var countdownOverlay: some View {
-        ZStack {
-            AppColor.backgroundPrimary.opacity(0.97).ignoresSafeArea()
-            VStack(spacing: 14) {
-                Text(countdown.map(String.init) ?? "")
-                    .font(.system(size: 96, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGoldText)
-                    .monospacedDigit()
-                    .contentTransition(.numericText(countsDown: true))
-                Text("Get comfortable.")
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-                Button("Cancel") { cancelCountdown() }
-                    .font(AppFont.caption.weight(.medium))
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.top, 26)
-            }
+    /// Five seconds to put the phone down and sit (Aziz, 2026-09-22,
+    /// `mockups/ready-countdown.html`, direction A). **Nothing new appears;
+    /// things leave.** The pills slide down into the meadow, the tape goes,
+    /// and the clock counts 5 to 1 in its own place and face while Otto says
+    /// "Get comfortable." It used to wash the whole valley out to cream and
+    /// put a brown number on it: the least 808-looking screen in the app, at
+    /// the moment somebody is about to close their eyes.
+    private func countingIn(_ n: Int, day: DayLight) -> some View {
+        VStack(spacing: 4) {
+            Text("\(max(n, 1))")
+                .font(DisplayFont.display(60, .heavy))
+                .monospacedDigit()
+                .foregroundStyle(day.ink)
+                .contentTransition(.numericText(countsDown: true))
+                .frame(minWidth: 180)
+            Text("starting in")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(day.inkSoft)
         }
-        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Starting in \(max(n, 1))")
+    }
+
+    /// Where Begin was.
+    private var countdownCancel: some View {
+        VStack {
+            Spacer()
+            Button("Cancel", action: cancelCountdown)
+                .font(DisplayFont.display(15, .bold))
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(.horizontal, 30)
+                .padding(.vertical, 12)
+                .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+                .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+                .padding(.bottom, 40)
+        }
     }
 
     private func begin() {
         countdownTask?.cancel()
-        withAnimation(.easeOut(duration: 0.2)) { countdown = 5 }
+        let timed = lengthMinutes != nil
         countdownTask = Task { @MainActor in
+            // A timed sit ends with a notification, so this is the one moment
+            // asking for it is about something. Asked BEFORE the countdown, so
+            // the dialog never lands on somebody already settling in.
+            if timed { await SessionEndNotice.requestPermissionIfNeeded() }
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) { countdown = 5 }
             while let n = countdown, n > 0 {
                 // A cancelled sleep THROWS and `try?` swallows it, so without
                 // this guard cancelling would fall straight through and start
@@ -259,9 +296,13 @@ struct SessionSetupView: View {
                 // a second into a session.
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled else { return }
-                withAnimation(.easeOut(duration: 0.15)) { countdown = n - 1 }
+                withAnimation(.snappy(duration: 0.25)) { countdown = n - 1 }
             }
             guard !Task.isCancelled else { return }
+            // Zero: he settles into sitting, then the sit takes over.
+            settling = true
+            try? await Task.sleep(for: .seconds(0.7))
+            guard !Task.isCancelled else { settling = false; return }
             startNow()
         }
     }
@@ -269,6 +310,7 @@ struct SessionSetupView: View {
     private func cancelCountdown() {
         countdownTask?.cancel()
         countdownTask = nil
+        settling = false
         withAnimation(.easeOut(duration: 0.2)) { countdown = nil }
     }
 

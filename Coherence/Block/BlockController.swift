@@ -360,8 +360,15 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification,
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        let isBlock = notification.request.content.userInfo["block"] != nil
-        completionHandler(isBlock ? [.banner, .sound] : [])
+        let info = notification.request.content.userInfo
+        if info["block"] != nil {
+            completionHandler([.banner, .sound])
+        } else if info[SessionEndNotice.userInfoKey] != nil {
+            // The sit screen is already saying it is over: just the chime.
+            completionHandler([.sound])
+        } else {
+            completionHandler([])
+        }
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,

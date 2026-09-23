@@ -3553,6 +3553,31 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
 - Scale the tick's line and its number SEPARATELY: scaling the whole stack
   pushed the number out of the ruler's frame and clipped it under the needle.
 
+## A TIMED SESSION ENDS WITH A NOTIFICATION; "GET COMFORTABLE" IS IN THE VALLEY (2026-09-22, Aziz)
+
+- **`SessionEndNotice`** (`Coherence/Session/`): a timed phone sit schedules a
+  local notification for its planned end ("That's 10 minutes" / "Your session
+  is done. Take a breath before you get up."), **Time Sensitive** because it
+  is a timer the person set and the Ready screen's own Silence switch turns on
+  Do Not Disturb. With 808 on screen it plays only its sound
+  (`BlockNotifications.willPresent`), since the sit screen already says it is
+  over. `BlockNotifications` is now installed on EVERY build, not only
+  Block's, or the foreground chime would never play in Release.
+- **Taken back only on an EARLY end** (`finishPhoneSession(early:)`): on time,
+  the notification is firing at that same moment and IS the chime.
+- **Permission is asked on Begin of a timed sit, before the countdown**, only
+  if never asked. Never on appear.
+- **A late finish is capped at the planned length.** A silent timed sit lets
+  iOS suspend 808, so the finish can run when the phone is next picked up;
+  the session is the length that was set, not the length of the wait.
+- **The countdown is direction A of `mockups/ready-countdown.html`**: nothing
+  new appears, things leave. The pills slide into the meadow, the tape goes,
+  the clock counts 5 to 1 in its own place and face, Otto says "Get
+  comfortable.", one Cancel pill sits where Begin was (the corner Cancel hides
+  so there are never two), and at zero he settles from waving into sitting for
+  0.7 s before the sit takes over. The old cream wash with a brown number is
+  deleted.
+
 ## BLOCK HAS NO STRICTNESS AND NO PASS LIMIT; FIVE MINUTES OPENS THE APPS (2026-09-22, Aziz)
 
 "get rid of the passes and the intensity and the when otto lets you in

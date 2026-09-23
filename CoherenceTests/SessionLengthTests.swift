@@ -46,6 +46,11 @@ final class SessionLengthTests: XCTestCase {
         XCTAssertEqual(SessionLength.shortest, Blocker.sessionMinutes)
     }
 
+    func test_theEndNotificationTitle() {
+        XCTAssertEqual(SessionLength.endTitle(minutes: 10), "That's 10 minutes")
+        XCTAssertEqual(SessionLength.endTitle(minutes: 60), "That's an hour")
+    }
+
     func test_words() {
         XCTAssertEqual(SessionLength.clock(10), "10:00")
         XCTAssertEqual(SessionLength.clock(nil), "\u{221E}")

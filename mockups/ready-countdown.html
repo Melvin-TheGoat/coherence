@@ -1,0 +1,207 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Get comfortable</title>
+<style>
+:root{
+  --paper:#FEF9F2; --ink:#413024; --soft:#877160;
+  --amber:#F0C47B; --amberSh:#D9A957; --amberText:#9B6B19;
+  --sage:#3E8175; --trace:#F0E3D0; --skyInk:#24414F; --skySoft:#47697A;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 80px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:15px;margin:34px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:900px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;margin-top:26px}
+.col{width:300px;flex:none}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.4px;line-height:1.62;width:300px;margin-top:13px}
+.note b{color:var(--ink)}
+.rec{display:inline-block;background:var(--amber);color:var(--ink);font-size:9.5px;font-weight:800;
+ letter-spacing:.08em;border-radius:999px;padding:3px 8px;margin-left:6px;vertical-align:1px}
+ul.facts{max-width:900px;color:var(--soft);font-size:13.6px;line-height:1.65;padding-left:20px}
+ul.facts b{color:var(--ink)}
+
+/* ---- the phone ---- */
+.p{width:300px;height:620px;border-radius:38px;overflow:hidden;position:relative;flex:none;
+ box-shadow:0 12px 34px rgba(80,55,30,.16);user-select:none;-webkit-user-select:none;
+ background:linear-gradient(180deg,#8CBBD4 0%,#BBD8E4 46%,#E3E8DA 70%,#EFE0C9 100%)}
+.sun{position:absolute;left:9%;bottom:54%;width:44px;height:44px;border-radius:50%;
+ background:#FFE9B8;box-shadow:0 0 44px 18px rgba(255,233,184,.55)}
+.cloud{position:absolute}
+.mt{position:absolute;left:0;width:100%;bottom:38%;height:28%}
+.field{position:absolute;left:0;width:100%;bottom:0;height:42%;background:linear-gradient(180deg,#7FA87E,#9CBC85)}
+.fl{position:absolute;transform-origin:50% 100%}
+.seat{position:absolute;left:50%;transform:translateX(-50%);bottom:29.5%;width:176px;height:46px;
+ border-radius:50%;background:linear-gradient(180deg,#D98B6E,#B96A50);
+ box-shadow:inset 0 6px 0 rgba(255,220,200,.30),0 3px 8px rgba(40,25,15,.22)}
+.otto{position:absolute;left:50%;transform:translateX(-50%);bottom:32%;width:196px;height:196px;
+ background:url("otto-v3/otto-sit-wave.png") center bottom/contain no-repeat}
+.cancel{position:absolute;top:18px;left:20px;font-size:13.5px;font-weight:700;color:rgba(15,40,52,.5)}
+
+.bub{position:absolute;left:50%;transform:translateX(-50%);width:246px;
+ border:2px solid rgba(28,62,78,.38);background:rgba(254,249,242,.74);border-radius:16px;
+ padding:9px 13px;font-size:13px;font-weight:600;color:var(--skyInk);line-height:1.35;text-align:left}
+.bub:before,.bub:after{content:"";position:absolute;left:50%;width:0;height:0;transform:translateX(-50%)}
+.bub:before{bottom:-11px;border-left:9px solid transparent;border-right:9px solid transparent;border-top:11px solid rgba(28,62,78,.38)}
+.bub:after{bottom:-8px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid rgba(254,249,242,.9)}
+
+.ctl{position:absolute;left:0;bottom:0;width:100%;padding:0 18px 22px}
+.pill{display:flex;align-items:center;gap:10px;background:rgba(254,249,242,.94);
+ border-radius:16px;padding:11px 14px;margin-bottom:8px;box-shadow:0 2px 8px rgba(40,25,15,.14)}
+.pill .ic{font-size:15px;width:18px;text-align:center;color:var(--soft);line-height:1}
+.pill .lbl{font-size:14.5px;font-weight:700;flex:1}
+.pill .val{font-size:13.5px;color:var(--soft);font-weight:600}
+.sw{width:40px;height:24px;border-radius:999px;background:var(--trace);position:relative;flex:none}
+.sw i{position:absolute;top:2.5px;left:2.5px;width:19px;height:19px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(60,40,20,.28)}
+.cta{background:var(--amber);color:var(--ink);font-size:17px;font-weight:800;text-align:center;
+ padding:15px 0;border-radius:20px;box-shadow:0 4px 0 var(--amberSh);margin-top:12px}
+
+/* ---- the readout: the same clock the sit screen shows ---- */
+.readout{position:absolute;left:0;width:100%;text-align:center;color:var(--skyInk);pointer-events:none}
+.readout .big{font-size:54px;font-weight:800;letter-spacing:-.02em;line-height:1;
+ font-variant-numeric:tabular-nums;display:inline-block}
+.readout .big.bump{animation:bump .22s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes bump{0%{transform:translateY(5px) scale(.96);opacity:.55}100%{transform:none;opacity:1}}
+.readout .sub{font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--skySoft);margin-top:3px}
+.inf{font-size:50px;font-weight:700}
+
+/* ---- 1. the tape ---- */
+.tape{position:absolute;left:0;width:100%;height:44px;overflow-x:scroll;overflow-y:hidden;
+ scroll-snap-type:x mandatory;scrollbar-width:none;cursor:grab;touch-action:pan-x;
+ -webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);
+ mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
+.tape::-webkit-scrollbar{display:none}
+.tape .track{display:flex;align-items:flex-end;height:100%;padding:0 calc(50% - 6px)}
+.tape .t{width:12px;flex:none;height:100%;position:relative;scroll-snap-align:center}
+.tape .t i{position:absolute;bottom:14px;left:50%;width:2px;margin-left:-1px;border-radius:2px;
+ background:var(--skyInk);height:9px;opacity:.35;transform-origin:50% 100%;transition:none}
+.tape .t.maj i{height:16px;opacity:.55}
+.tape .t b{position:absolute;bottom:0;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;
+ color:var(--skySoft);white-space:nowrap}
+.needle{position:absolute;left:50%;width:4px;margin-left:-2px;height:26px;border-radius:3px;background:var(--amber);
+ box-shadow:0 0 0 2px rgba(254,249,242,.8);pointer-events:none}
+
+/* ---- 2. the drum ---- */
+.drum{position:absolute;left:50%;transform:translateX(-50%);width:210px;height:150px;overflow:hidden;
+ cursor:ns-resize;touch-action:none;
+ -webkit-mask-image:linear-gradient(180deg,transparent,#000 32%,#000 68%,transparent);
+ mask-image:linear-gradient(180deg,transparent,#000 32%,#000 68%,transparent)}
+.drum .it{position:absolute;left:0;width:100%;text-align:center;color:var(--skyInk);font-weight:800;
+ font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1;will-change:transform,opacity}
+.drum .it small{font-size:.32em;font-weight:700;color:var(--skySoft);letter-spacing:0;margin-left:3px}
+.hint{position:absolute;left:0;width:100%;text-align:center;font-size:11px;font-weight:700;color:var(--skySoft);pointer-events:none}
+
+/* ---- 3. the ring ---- */
+.ring{position:absolute;left:50%;transform:translateX(-50%);cursor:grab;touch-action:none}
+.ring .face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+ color:var(--skyInk);pointer-events:none}
+.ring .face .big{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.02em;line-height:1}
+.ring .face .sub{font-size:10px;font-weight:700;color:var(--skySoft);margin-top:4px}
+
+.count{position:absolute;left:0;width:100%;text-align:center;color:var(--skyInk);font-weight:800;
+ font-variant-numeric:tabular-nums;line-height:1;pointer-events:none}
+.count.pop{animation:pop .5s cubic-bezier(.2,.9,.3,1.25)}
+@keyframes pop{0%{transform:scale(.6);opacity:0}100%{transform:none;opacity:1}}
+.gone{opacity:0;transform:translateY(24px);transition:opacity .35s,transform .35s}
+.ctl,.readout,.tape,.needle{transition:opacity .35s,transform .35s}
+.cpill{position:absolute;left:50%;transform:translateX(-50%);bottom:34px;background:rgba(254,249,242,.94);
+ border-radius:999px;padding:10px 26px;font-size:14px;font-weight:800;color:var(--ink);box-shadow:0 2px 8px rgba(40,25,15,.14)}
+.ringc{position:absolute;left:50%;transform:translateX(-50%)}
+.otto.sit{background-image:url("otto-v3/otto-sit.png")}
+.otto{transition:opacity .4s}
+.head{position:absolute;left:0;width:100%;text-align:center;color:var(--skyInk)}
+.head b{display:block;font-size:15px;font-weight:800}
+.head i{display:block;font-style:normal;font-size:10.5px;color:var(--skySoft);margin-top:3px}
+.replay{margin-top:14px;font-size:12px;font-weight:800;color:var(--amberText);cursor:pointer;background:none;border:0;padding:0;font-family:inherit}
+</style></head><body>
+<h1>Get comfortable, in the valley</h1>
+<p class="lede">The five-second countdown between Begin and the sit. Today it washes the whole valley out to
+cream and puts a brown number on it, so the one moment before somebody closes their eyes is the least
+808-looking screen in the app. <b>All three keep the valley and never cut to a different screen.</b>
+They play on a loop; each ends where the sit screen begins.</p>
+<div class="row">
+ <div class="col"><div class="tag"><b>A</b> &nbsp;the clock counts <span class="rec">RECOMMENDED</span></div>
+  <div class="p" id="a"></div><button class="replay" data-k="a">Replay</button>
+  <p class="note"><b>Nothing new appears; things leave.</b> The pills slide down into the meadow, the tape
+  fades, and the big clock in the sky counts 5 to 1 in its own place and face. Otto's line becomes "Get
+  comfortable." At zero he settles from waving to sitting and the clock becomes the session's own. Cancel
+  is one cream pill where Begin was.</p></div>
+ <div class="col"><div class="tag"><b>B</b> &nbsp;the ring fills</div>
+  <div class="p" id="b"></div><button class="replay" data-k="b">Replay</button>
+  <p class="note"><b>The sit screen arrives at once, and its ring is the countdown.</b> The amber arc
+  fills once over five seconds with the number inside, then the ring empties into the session's clock.
+  The most seamless hand-off, but the Ready screen's clock disappears the instant Begin is tapped.</p></div>
+ <div class="col"><div class="tag"><b>C</b> &nbsp;Otto counts</div>
+  <div class="p" id="c"></div><button class="replay" data-k="c">Replay</button>
+  <p class="note"><b>He says the numbers.</b> His bubble holds a big 5, 4, 3, 2, 1 with "Get comfortable"
+  under it, as if he is counting you in. The most character, but a speech bubble is a small place for
+  the one number somebody reads with their eyes closing.</p></div>
+</div>
+<script>
+/* ---------------- the valley, shared ---------------- */
+const FL=[[12.8,41,7,14,7,"#FFFFFF","#F5A623"],[19.4,40.9,7,14,6,"#FFC2A8","#E8564F"],[5.1,40.8,7,14,-6,"#FFD86B","#E8862B"],
+[79.8,40.5,7,16,4,"#FFFFFF","#F5A623"],[84.7,40.3,7,16,8,"#FFB3C9","#E8564F"],[90,39.2,9,19,0,"#FFF3D6","#F5A623"],
+[17.4,38.9,9,19,3,"#FFFFFF","#F5A623"],[76.7,38.8,9,20,-5,"#FFFFFF","#F5A623"],[24,38.5,10,20,-3,"#FFB3C9","#E8564F"],
+[4.1,38.1,11,22,4,"#FFFFFF","#F5A623"],[11.6,37.2,11,24,4,"#FFF3D6","#F5A623"],[83.1,37.2,11,24,-7,"#FFF3D6","#F5A623"],
+[23.2,36.2,12,27,-4,"#FFB3C9","#E8564F"],[76,36,13,27,-2,"#FFD86B","#E8862B"],[6,30,15,32,5,"#FFB3C9","#E8564F"],
+[88,29,16,33,-4,"#FFFFFF","#F5A623"],[3,20,18,38,-6,"#FFD86B","#E8862B"],[93,19,18,38,6,"#FFC2A8","#E8564F"]];
+function flower(f){const [l,b,w,h,r,petal,mid]=f;let p="";for(let a=0;a<360;a+=72)p+=`<ellipse cx="30" cy="16" rx="8.5" ry="12.5" transform="rotate(${a} 30 30)"/>`;
+ return `<div class="fl" style="left:${l}%;bottom:${b}%;width:${w}px;height:${h}px;transform:rotate(${r}deg);opacity:.9"><svg viewBox="0 0 60 130" width="100%" height="100%"><path d="M30 130 C23 104 37 86 30 62" stroke="#5E9A62" stroke-width="4.5" fill="none" stroke-linecap="round"/><ellipse cx="42" cy="92" rx="10" ry="5" fill="#6BAE6E" transform="rotate(-22 42 92)"/><g fill="${petal}">${p}</g><circle cx="30" cy="30" r="7.5" fill="${mid}"/></svg></div>`}
+const CLOUD=`<svg viewBox="0 0 120 62" width="100%" height="100%"><g fill="#FFFFFF" opacity="0.92"><ellipse cx="33" cy="39" rx="26" ry="17"/><ellipse cx="62" cy="30" rx="31" ry="22"/><ellipse cx="91" cy="41" rx="23" ry="15"/><rect x="10" y="38" width="100" height="18" rx="9"/></g></svg>`;
+function valley(el, bubbleTop, bubbleText){
+ el.innerHTML=`<div class="sun"></div>
+ <div class="cloud" style="left:-9%;top:9%;width:126px;height:65px">${CLOUD}</div>
+ <div class="cloud" style="right:-11%;top:21%;width:150px;height:78px">${CLOUD}</div>
+ <svg class="mt" viewBox="0 0 300 260" preserveAspectRatio="none">
+  <path d="M0 150 L48 96 L86 132 L132 72 L186 128 L224 100 L300 148 L300 260 L0 260 Z" fill="#AFC6CE"/>
+  <path d="M0 176 L40 138 L92 172 L140 122 L192 168 L246 138 L300 174 L300 260 L0 260 Z" fill="#8FAFB4"/>
+  <path d="M0 206 L56 178 L110 204 L168 172 L228 202 L300 184 L300 260 L0 260 Z" fill="#6E9078"/></svg>
+ <div class="field"></div>${FL.map(flower).join("")}
+ <div class="seat"></div><div class="otto"></div>
+ <div class="cancel">Cancel</div>
+ ${bubbleText?`<div class="bub" style="top:${bubbleTop}px">${bubbleText}</div>`:""}
+ <div class="ctl">
+  <div class="pill"><span class="ic">&#9834;</span><span class="lbl">Sound</span><span class="val">Silence &rsaquo;</span></div>
+  <div class="pill"><span class="ic">&#9790;</span><span class="lbl">Silence notifications</span><span class="sw"><i></i></span></div>
+  <div class="cta">Begin</div></div>`;
+}
+
+
+const OTTO_LINE="Ready when you are. Start any YouTube or Spotify audio first.";
+function readyBits(p){p.insertAdjacentHTML("beforeend",`<div class="readout" style="top:36px"><div class="big">10:00</div><div class="sub">10 minutes \u00b7 tap to type</div></div>`)}
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const runs={};
+async function A(){const p=document.getElementById("a");valley(p,164,OTTO_LINE);readyBits(p);const id=runs.a=Symbol();
+ await sleep(900);if(runs.a!==id)return;
+ p.querySelector(".ctl").classList.add("gone");p.querySelector(".cancel").remove();const bub=p.querySelector(".bub");bub.textContent="Get comfortable.";bub.style.top="200px";bub.style.width="150px";
+ p.querySelector(".readout .sub").textContent="starting in";p.insertAdjacentHTML("beforeend",`<div class="cpill">Cancel</div>`);
+ const big=p.querySelector(".readout .big");
+ for(let n=5;n>=1;n--){if(runs.a!==id)return;big.textContent=n;big.classList.remove("bump");void big.offsetWidth;big.classList.add("bump");await sleep(1000)}
+ if(runs.a!==id)return;p.querySelector(".otto").classList.add("sit");bub.remove();p.querySelector(".cpill").remove();
+ big.textContent="10:00";p.querySelector(".readout .sub").textContent="";
+ p.insertAdjacentHTML("beforeend",`<div class="head" style="top:100px"><b>Let's start meditating</b><i>Keep 808 open to ensure you are meditating</i></div>`)}
+async function B(){const p=document.getElementById("b");valley(p,164,OTTO_LINE);readyBits(p);const id=runs.b=Symbol();
+ await sleep(900);if(runs.b!==id)return;p.querySelector(".ctl").classList.add("gone");p.querySelector(".cancel").remove();p.querySelector(".readout").style.opacity=0;p.querySelector(".bub").remove();
+ p.querySelector(".otto").classList.add("sit");const R=46,C=2*Math.PI*R;
+ p.insertAdjacentHTML("beforeend",`<div class="head" style="top:60px"><b>Get comfortable</b><i>Your session starts in a moment</i></div>
+ <svg class="ringc" style="top:108px" width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="${R}" fill="none" stroke="rgba(36,65,79,.18)" stroke-width="6"/>
+ <circle class="arc" cx="60" cy="60" r="${R}" fill="none" stroke="#F0C47B" stroke-width="6" stroke-linecap="round" transform="rotate(-90 60 60)" stroke-dasharray="0 ${C}" style="transition:stroke-dasharray 5s linear"/>
+ <text class="t" x="60" y="72" text-anchor="middle" font-size="36" font-weight="800" fill="#24414F" font-family="ui-rounded,system-ui">5</text></svg><div class="cpill">Cancel</div>`);
+ const arc=p.querySelector(".arc"),t=p.querySelector(".ringc .t");requestAnimationFrame(()=>requestAnimationFrame(()=>arc.style.strokeDasharray=`${C} ${C}`));
+ for(let n=5;n>=1;n--){if(runs.b!==id)return;t.textContent=n;await sleep(1000)}
+ if(runs.b!==id)return;t.textContent="10:00";t.setAttribute("font-size","26");p.querySelector(".head b").textContent="Let's start meditating";p.querySelector(".head i").textContent="Keep 808 open to ensure you are meditating";p.querySelector(".cpill").remove()}
+async function Cc(){const p=document.getElementById("c");valley(p,164,OTTO_LINE);readyBits(p);const id=runs.c=Symbol();
+ await sleep(900);if(runs.c!==id)return;p.querySelector(".ctl").classList.add("gone");p.querySelector(".cancel").remove();p.querySelector(".readout").style.opacity=0;
+ const bub=p.querySelector(".bub");bub.style.textAlign="center";bub.style.width="150px";bub.style.top="120px";p.insertAdjacentHTML("beforeend",`<div class="cpill">Cancel</div>`);
+ for(let n=5;n>=1;n--){if(runs.c!==id)return;bub.innerHTML=`<div style="font-size:44px;font-weight:800;line-height:1.05">${n}</div><div style="font-size:12px">Get comfortable</div>`;await sleep(1000)}
+ if(runs.c!==id)return;bub.remove();p.querySelector(".otto").classList.add("sit");p.querySelector(".cpill").remove();
+ p.insertAdjacentHTML("beforeend",`<div class="head" style="top:100px"><b>Let's start meditating</b><i>Keep 808 open to ensure you are meditating</i></div>`)}
+const play={a:A,b:B,c:Cc};
+async function loop(k){while(true){await play[k]();await sleep(2600)}}
+document.querySelectorAll(".replay").forEach(b=>b.onclick=()=>play[b.dataset.k]());
+["a","b","c"].forEach(loop);
+</script></body></html>

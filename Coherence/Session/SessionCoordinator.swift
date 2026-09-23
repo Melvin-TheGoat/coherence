@@ -199,19 +199,26 @@ final class SessionCoordinator: NSObject, ObservableObject {
 
         phoneFinishTask?.cancel()
         guard let planned = params.plannedDurationSec else { return }
+        // Rings at the end even with the phone locked and 808 asleep.
+        SessionEndNotice.schedule(for: params.sessionID, afterSeconds: planned)
         phoneFinishTask = Task { @MainActor [weak self] in
             // A cancelled sleep THROWS and `try?` swallows it, which would run
             // the finish immediately on the cancel. Bitten three times here.
             try? await Task.sleep(for: .seconds(planned))
             guard !Task.isCancelled else { return }
-            self?.finishPhoneSession()
+            self?.finishPhoneSession(early: false)
         }
     }
 
     /// Ends and writes a phone-run sit. Mirrors what `persist` does for a
     /// Watch payload, minus everything there is no instrument for.
-    private func finishPhoneSession() {
+    ///
+    /// `early` is End tapped before the timer ran out. Only then is the end
+    /// notification taken back: on time, it is firing at this same moment and
+    /// is the chime that says so.
+    private func finishPhoneSession(early: Bool) {
         guard let current = active, current.engine == .phone else { return }
+        if early { SessionEndNotice.cancel(for: current.id) }
         phoneFinishTask?.cancel()
         phoneFinishTask = nil
         stopAudio(reason: "phone session ended")
@@ -222,7 +229,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
         active = nil
         currentAttemptID = nil
 
-        let duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
+        var duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
+        // A silent timed sit lets iOS suspend 808, so the finish can run
+        // late, when the phone is next picked up. The session was the length
+        // that was set, not the length of the wait.
+        if let planned = current.plannedDurationSec { duration = min(duration, planned) }
         let soundID = pendingSoundIDs.removeValue(forKey: current.id)
         let context = container.mainContext
         guard let session = SessionStore.persistPhoneSession(
@@ -369,7 +380,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // No wrist involved: this screen owns the whole session, so ending it
         // here is the end of it.
         if active.engine == .phone {
-            finishPhoneSession()
+            finishPhoneSession(early: true)
             return
         }
         stopAudio(reason: "user ended on phone")
