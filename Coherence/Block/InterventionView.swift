@@ -99,14 +99,23 @@ private struct DoorButtons: View {
     var ink: Color = AppColor.textPrimary
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 10) {
             Button(primary, action: doors.meditate)
                 .buttonStyle(PrimaryButtonStyle())
             if doors.canPass {
-                Button(secondary, action: doors.notNow)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(ink.opacity(0.8))
-                    .frame(maxWidth: .infinity, minHeight: 44)
+                // A cream pill, like the how-long screen's: as bare text it
+                // sat on the meadow's flowers and could not be read
+                // (2026-09-23), and a pill reads on every scene these share.
+                Button(action: doors.notNow) {
+                    Text(secondary)
+                        .font(DisplayFont.display(15, .bold))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+                        .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+                }
+                .buttonStyle(.plain)
             }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
