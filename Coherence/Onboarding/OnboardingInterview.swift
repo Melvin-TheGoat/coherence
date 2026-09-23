@@ -390,11 +390,9 @@ struct StressScreen: View {
     let onContinue: () -> Void
 
     @Environment(\.onboardingBack) private var back
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// The bar sweeps once on arrival so the reader sees the range of him,
-    /// the aura demo's trick: discovered rather than explained.
-    @State private var demoed = false
-    @State private var touched = false
+    // It does NOT sweep itself on arrival any more (Melvin, 2026-09-23:
+    // "dont show the user the options automatically before they scroll ...
+    // let them just see it for themselves").
 
     /// Calm draws him at his brightest, burnt out at his lowest.
     static func stage(for stress: Double) -> OttoAura.Stage {
@@ -495,18 +493,6 @@ struct StressScreen: View {
             .ignoresSafeArea()
         }
         .sensoryFeedback(.selection, trigger: Self.stage(for: stress))
-        .task {
-            // Only a fresh screen sweeps: coming back to an answer already
-            // given leaves it where it was put.
-            guard !demoed, !reduceMotion, stress == OnboardingAnswers().stress else { return }
-            demoed = true
-            try? await Task.sleep(for: .milliseconds(500))
-            for (target, seconds) in [(0.02, 0.9), (0.98, 1.3), (0.5, 0.8)] {
-                guard !touched, !Task.isCancelled else { return }
-                withAnimation(.easeInOut(duration: seconds)) { stress = target }
-                try? await Task.sleep(for: .milliseconds(Int(seconds * 1000) + 150))
-            }
-        }
     }
 
     /// Home's glow bar made draggable, filling left to right toward blissful,
@@ -532,7 +518,6 @@ struct StressScreen: View {
                 .frame(height: 30)
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0).onChanged { value in
-                    touched = true
                     stress = 1 - max(0, min(1, value.location.x / width))
                 })
             }
@@ -542,7 +527,6 @@ struct StressScreen: View {
         .accessibilityLabel("How stressed have you been lately?")
         .accessibilityValue(readout)
         .accessibilityAdjustableAction { direction in
-            touched = true
             stress = max(0, min(1, stress + (direction == .increment ? -0.25 : 0.25)))
         }
     }

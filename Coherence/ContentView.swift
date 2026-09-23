@@ -477,8 +477,9 @@ struct ContentView: View {
         }
     }
 
-    /// Home is always the top of the day: the sun up, the light full.
-    private static let homeDay = DayLight.at(0)
+    /// Home follows the real time of day (Melvin, 2026-09-23), so its
+    /// greeting's ink and the grass under the cards follow it too.
+    private static var homeDay: DayLight { DayLight.now }
     /// The meadow's colour at its near edge, which the page continues.
     private static var meadow: Color { homeDay.field[1] }
 
@@ -489,7 +490,7 @@ struct ContentView: View {
         let ottoTop = SitLayout.ottoTop(in: size)
         let ottoSize = 186 * SitLayout.scale(in: size)
         return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, aura: auraStage, jiggle: ottoPokes)
+            ValleyScene(progress: 0, aura: auraStage, jiggle: ottoPokes, clock: true)
                 .frame(width: width, height: height)
 
             // The greeting, centred, where Brainrot writes its name. The
@@ -540,9 +541,10 @@ struct ContentView: View {
             if tourTab == nil {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
+                    // Dark ink at every hour: the bubble is cream even at night.
                     OttoSpeech(text: ottoLines[ottoLineIndex % ottoLines.count],
                                tail: .bottom, size: 17,
-                               ink: ink, stroke: ink.opacity(0.38),
+                               ink: DayLight.at(0).ink, stroke: DayLight.at(0).ink.opacity(0.38),
                                fill: AppColor.backgroundPrimary.opacity(0.78),
                                speaking: .constant(false))
                 }
@@ -748,7 +750,8 @@ struct ContentView: View {
                     .foregroundStyle(AppColor.calmAccent)
                 Text("Guide")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Self.homeDay.ink.opacity(0.8))
+                    // Daytime ink always: it sits on a cream circle at every hour.
+                    .foregroundStyle(DayLight.at(0).ink.opacity(0.8))
             }
             .frame(width: 54, height: 54)
             .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())

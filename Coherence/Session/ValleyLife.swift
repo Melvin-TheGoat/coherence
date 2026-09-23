@@ -187,14 +187,18 @@ private func valleyLifeInt(_ seed: UInt64, _ slot: Int, _ salt: UInt64, _ count:
 /// the hold between bursts sits on frame 4, the sprite sheet's own glide
 /// frame (also level, but the resting one, not mid-stroke).
 private func flapState(elapsed: Double, rate: Double) -> (wingLift: Double, frame: Int) {
+    // Slow and peaceful (Melvin, 2026-09-23: "the wing flapping for the birds
+    // is wayyyy too fast"). `rate` is now wingbeats per second WITHIN a burst:
+    // two unhurried beats, then a long glide, so a crossing reads as a few
+    // lazy strokes and a drift rather than a flutter.
     guard rate > 0 else { return (0, 4) }
-    let cycle = 1 / rate
-    let burst = cycle * 0.5
-    let full = cycle * 1.6
+    let beat = 1 / rate
+    let burst = beat * 2
+    let full = burst + 1.6 + beat
     var phase = elapsed.truncatingRemainder(dividingBy: full)
     if phase < 0 { phase += full }
     guard phase < burst else { return (0, 4) }
-    let u = phase / burst
+    let u = (phase / beat).truncatingRemainder(dividingBy: 1)
     return (sin(u * 2 * .pi), 1 + min(3, Int(u * 4)))
 }
 
@@ -220,10 +224,11 @@ private enum BirdPattern: Int, CaseIterable {
 
     /// Vertical separation between birds in a multi-bird pattern.
     var laneSpacing: CGFloat {
+        // Wide enough that two birds never read as one stacked shape.
         switch self {
-        case .vOfThree: return 9
-        case .pairAtTwoHeights: return 15
-        default: return 5
+        case .vOfThree: return 24
+        case .pairAtTwoHeights: return 36
+        default: return 28
         }
     }
 
@@ -323,12 +328,13 @@ private enum BirdPattern: Int, CaseIterable {
         return max(0, (1 - p) / 0.14)
     }
 
-    /// Flaps a second faster for a dart, slower for a long high arc.
+    /// Wingbeats per second inside a burst: a dart beats a little quicker,
+    /// the long high arc slowest of all.
     var flapRate: Double {
         switch self {
-        case .quickDart: return 6.5
-        case .highSlowArc: return 2.4
-        default: return 4.2
+        case .quickDart: return 2.4
+        case .highSlowArc: return 1.1
+        default: return 1.5
         }
     }
 }
@@ -374,6 +380,9 @@ private struct BirdFlight: Identifiable {
 
         return (0..<count).map { i in
             let centered = Double(i) - Double(count - 1) / 2
+            // Never stacked: every bird after the first follows a random
+            // beat behind and a random step above or below, so a flock comes
+            // out as a loose V one time and a scattered pair the next.
             // Salted per index (not just per flight), so a flock — a V of
             // three especially — can land on three different species
             // rather than all matching the flight's one draw.
@@ -381,8 +390,11 @@ private struct BirdFlight: Identifiable {
             let flapSeed = valleyLifeRange(seed, slot, 10 &+ UInt64(i), 0, 2)
             return BirdFlight(id: slot &* 8 &+ i, pattern: pattern, startTime: start, duration: duration,
                                direction: direction, baseY: baseY,
-                               laneY: CGFloat(centered) * pattern.laneSpacing,
-                               indexDelay: pattern.staggered ? abs(centered) * 0.18 : 0,
+                               laneY: CGFloat(centered) * pattern.laneSpacing
+                                   + CGFloat(valleyLifeRange(seed, slot, 20 &+ UInt64(i), -8, 8)),
+                               indexDelay: pattern.staggered
+                                   ? abs(centered) * 0.55 + valleyLifeRange(seed, slot, 30 &+ UInt64(i), 0, 0.25)
+                                   : (i == 0 ? 0 : valleyLifeRange(seed, slot, 30 &+ UInt64(i), 0.35, 1.4)),
                                flapSeed: flapSeed, species: species, width: width,
                                sceneWidth: sceneWidth, sceneScale: scale)
         }

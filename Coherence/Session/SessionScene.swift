@@ -58,6 +58,13 @@ struct ValleyScene: View {
     /// stays still the moment `progress` moves. See `ValleyLife.swift`.
     var life: Bool = true
 
+    /// Draw the real time of day instead of the top of it (Melvin,
+    /// 2026-09-23: "we want the sun and time of day to match the real time
+    /// of day"). With it on, `progress` still moves a sit toward night, but
+    /// from wherever the clock already is: a sit begun at dusk carries on
+    /// from dusk. See `DayLight.clockProgress`.
+    var clock: Bool = false
+
     /// Move him up to the corner, small, so a list can have the meadow.
     ///
     /// **It is a placement on the SAME view, not a second Otto.** Swapping
@@ -82,28 +89,42 @@ struct ValleyScene: View {
     @State private var lifeSeed = UInt64.random(in: UInt64.min...UInt64.max)
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var day: DayLight { DayLight.at(progress) }
+    /// The hour drawn, on DayLight's 0 (full day) to 1 (night) scale.
+    private func hour(at date: Date) -> Double {
+        guard clock else { return progress }
+        let start = DayLight.clockProgress(at: date)
+        return start + (1 - start) * progress
+    }
 
     var body: some View {
-        GeometryReader { geo in
+        // Once a minute is plenty for the sky to follow the clock.
+        TimelineView(.everyMinute) { context in
+            scene(hour: hour(at: context.date))
+        }
+    }
+
+    private func scene(hour p: Double) -> some View {
+        let day = DayLight.at(p)
+        return GeometryReader { geo in
             let w = geo.size.width
             let h = geo.size.height
             let s = SitLayout.scale(in: geo.size)
             // Ambient wildlife only while nobody is meditating: `progress`
             // starts at 0 for the Ready screen and Home alike, but moves
-            // the instant a real sit begins, and the sit stays still.
-            let showLife = life && progress == 0 && !reduceMotion
+            // the instant a real sit begins, and the sit stays still. And
+            // only in daylight: the birds go to roost at dusk.
+            let showLife = life && progress == 0 && p < 0.4 && !reduceMotion
             let avoidRect = showLife ? lifeAvoidRect(size: geo.size, scale: s) : nil
 
             ZStack {
                 LinearGradient(colors: day.sky,
                                startPoint: .top, endPoint: .bottom)
 
-                stars(in: geo.size)
+                stars(in: geo.size, day: day)
 
-                sun(scale: s)
+                sun(scale: s, hour: p, day: day)
 
-                clouds(scale: s, size: geo.size)
+                clouds(scale: s, size: geo.size, hour: p, day: day)
 
                 // Three rows, far to near. The band sits at 30% up the
                 // frame and is 30% tall, so the nearest ridge meets the
@@ -164,7 +185,7 @@ struct ValleyScene: View {
 
     // MARK: - Sky furniture
 
-    private func sun(scale s: CGFloat) -> some View {
+    private func sun(scale s: CGFloat, hour progress: Double, day: DayLight) -> some View {
         // Starts a little above the ridge and sets through it. Past dusk it
         // is gone and the stars carry the sky.
         SunDisc(diameter: (44 + 4 * progress) * s,
@@ -172,40 +193,42 @@ struct ValleyScene: View {
                 fill: day.sun, glow: day.glow, scale: s)
     }
 
-    /// The clouds drift, slowly, and they drift off `progress` rather than
-    /// off a timer.
-    ///
-    /// Two reasons. One number already drives everything else on this screen,
-    /// so the sky cannot come adrift from the sun. And a ten minute sit is
-    /// long enough that a completely static sky starts to read as a
-    /// screenshot; a cloud that has visibly moved when you next look up is
-    /// the cheapest possible proof that time is passing. They cross about a
-    /// fifth of the screen over a whole session, which is under a pixel a
-    /// second: findable if you look for it, invisible if you do not.
-    private func clouds(scale s: CGFloat, size: CGSize) -> some View {
-        let drift = progress * 0.20 * size.width
-        return ZStack(alignment: .topLeading) {
-            cloud(w: 132 * s, h: 68 * s,
-                  x: -0.09 * size.width + drift, y: 0.06 * size.height)
-            cloud(w: 158 * s, h: 82 * s,
-                  x: size.width - 158 * s + 0.11 * size.width + drift * 0.62,
-                  y: 0.17 * size.height)
-            cloud(w: 96 * s, h: 50 * s,
-                  x: 0.12 * size.width + drift * 1.35, y: 0.31 * size.height)
-                .opacity(progress > 0.35 ? 1 : 0)
+    /// The clouds drift slowly all the time, wrapping round, so the sky is
+    /// never a screenshot (Melvin, 2026-09-23: "i want the clouds to always
+    /// be slowly drifting"). It used to move only with `progress`, which held
+    /// every sky but the sit's perfectly still. About 4 to 7 points a second:
+    /// a cloud takes a minute or two to cross, findable if you look for it.
+    private func clouds(scale s: CGFloat, size: CGSize, hour progress: Double, day: DayLight) -> some View {
+        let specs: [(w: CGFloat, h: CGFloat, x: CGFloat, y: CGFloat, speed: Double)] = [
+            (132 * s, 68 * s, -0.09 * size.width, 0.06 * size.height, 5.0),
+            (158 * s, 82 * s, size.width - 158 * s + 0.11 * size.width, 0.17 * size.height, 3.6),
+            (96 * s, 50 * s, 0.12 * size.width, 0.31 * size.height, 6.4),
+        ]
+        return TimelineView(.animation(minimumInterval: 1.0 / 20, paused: reduceMotion)) { context in
+            let t = context.date.timeIntervalSinceReferenceDate
+            ZStack(alignment: .topLeading) {
+                ForEach(0..<specs.count, id: \.self) { i in
+                    let c = specs[i]
+                    // Wraps from just off the right edge to just off the left.
+                    let span = Double(size.width + c.w)
+                    let raw = (Double(c.x + c.w) + t * c.speed).truncatingRemainder(dividingBy: span)
+                    cloud(w: c.w, h: c.h, x: CGFloat(raw) - c.w, y: c.y, day: day)
+                        .opacity(i == 2 && progress <= 0.35 ? 0 : 1)
+                }
+            }
+            .frame(width: size.width, height: size.height, alignment: .topLeading)
         }
-        .frame(width: size.width, height: size.height, alignment: .topLeading)
         .opacity(day.cloudOpacity)
     }
 
-    private func cloud(w: CGFloat, h: CGFloat, x: CGFloat, y: CGFloat) -> some View {
+    private func cloud(w: CGFloat, h: CGFloat, x: CGFloat, y: CGFloat, day: DayLight) -> some View {
         Cloud()
             .fill(day.cloud)
             .frame(width: w, height: h)
             .offset(x: x, y: y)
     }
 
-    private func stars(in size: CGSize) -> some View {
+    private func stars(in size: CGSize, day: DayLight) -> some View {
         Canvas { ctx, _ in
             for star in DayLight.stars {
                 let r = CGRect(x: star.x * size.width - 1,
@@ -618,6 +641,31 @@ struct DayLight {
               track: 0xFFFFFF, trackA: 0.18,
               ink: 0xF3E7D8, inkSoft: 0xC3B2A4)
     ]
+
+    /// Where the real clock sits on the sit's 0 (full day) to 1 (night)
+    /// scale: full day from 8 to half past 5, sunset colours toward half past
+    /// 7, night from half past 9 to 5, and the sunset stops run backwards for
+    /// dawn. Fixed hours, not the local sunset: close enough to read as the
+    /// right time of day without asking anyone for their location.
+    static func clockProgress(at date: Date = Date(), calendar: Calendar = .current) -> Double {
+        let c = calendar.dateComponents([.hour, .minute], from: date)
+        var h = Double(c.hour ?? 12) + Double(c.minute ?? 0) / 60
+        #if DEBUG
+        // VALLEY_HOUR=<0...24> shows the valley at any hour on a simulator.
+        if let raw = ProcessInfo.processInfo.environment["VALLEY_HOUR"], let forced = Double(raw) { h = forced }
+        #endif
+        let points: [(Double, Double)] = [(0, 1), (5, 1), (6.5, 0.32), (8, 0), (17.5, 0),
+                                          (19.5, 0.32), (20.5, 0.65), (21.5, 1), (24, 1)]
+        for i in 0..<(points.count - 1) where h >= points[i].0 && h <= points[i + 1].0 {
+            let (h0, p0) = points[i], (h1, p1) = points[i + 1]
+            return p0 + (p1 - p0) * (h - h0) / (h1 - h0)
+        }
+        return 0
+    }
+
+    /// The valley as it looks at this moment, for type drawn on its sky and
+    /// for the grass a page continues under it.
+    static var now: DayLight { at(clockProgress()) }
 
     static func at(_ progress: Double) -> DayLight {
         let t = min(max(progress, 0), 1)
