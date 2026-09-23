@@ -53,10 +53,13 @@ struct MainTabBar: View {
             }
             item(.profile, icon: "person.crop.circle", label: "Profile", tour: .profile)
         }
-        // 6 over the icons and nothing under the labels: the home indicator's
-        // own inset is the air below (Melvin, 2026-09-19: "the bottom is
-        // raised slightly too high, too much white space at the bottom").
-        .padding(.top, 6)
+        // 12 over the icons and nothing under the labels: the home
+        // indicator's own inset is the air below (Melvin, 2026-09-19: "the
+        // bottom is raised slightly too high"). It was 6 until 2026-09-23
+        // ("i actually like the height but the icons are slightly too high,
+        // lower them"): the icons came down 6 and `intoInset` grew by the
+        // same 6, so the bar itself did not change height.
+        .padding(.top, 12)
         .background(
             AppColor.backgroundSecondary
                 .overlay(alignment: .top) {
@@ -74,7 +77,7 @@ struct MainTabBar: View {
     }
 
     /// How far the bar sits down into the bottom safe area.
-    static let intoInset: CGFloat = 16
+    static let intoInset: CGFloat = 22
 
     /// `tour` names the item for the onboarding tour, which lights it.
     private func item(_ tab: MainTab, icon: String, label: String,

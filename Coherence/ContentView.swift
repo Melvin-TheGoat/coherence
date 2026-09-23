@@ -434,7 +434,10 @@ struct ContentView: View {
     /// bottom colour, so the grass runs on behind the cards.
     private var homeTab: some View {
         GeometryReader { proxy in
-            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.74
+            // 80 percent, not 74 (Melvin, 2026-09-23): the bubble has to start
+            // below the guide circle, so Otto sits lower to leave it room,
+            // and the cards under him move down with him.
+            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.80
             ScrollView {
                 VStack(spacing: 0) {
                     homeScene(width: proxy.size.width, height: sceneHeight,
@@ -522,7 +525,11 @@ struct ContentView: View {
             // way the Ready screen pins its line, so the tail lands on him on
             // every phone. Not during the onboarding tour, where he is the one
             // walking the reader through, and two of his bubbles would talk
-            // over each other.
+            // over each other. Its TOP is held below the streak and guide
+            // circles (6 + 54 + 10 + 54, and 8 of air): a long line used to
+            // grow up into the corner and cover the guide (Melvin,
+            // 2026-09-23).
+            let bubbleTop = topInset + 132
             if tourTab == nil {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
@@ -532,8 +539,8 @@ struct ContentView: View {
                                fill: AppColor.backgroundPrimary.opacity(0.78),
                                speaking: .constant(false))
                 }
-                .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - (topInset + 72)))
-                .padding(.top, topInset + 72)
+                .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - bubbleTop))
+                .padding(.top, bubbleTop)
             }
 
             // Tapping him jiggles him and changes what he says.

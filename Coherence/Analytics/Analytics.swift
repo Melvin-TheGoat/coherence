@@ -267,7 +267,7 @@ enum Analytics {
         "doingNothing":      "06b How long doing nothing? (cut 1.0.2)",
         "restarts":          "07a What made you stop? (restarters)",
         "intendedFor":       "07b How long meaning to start? (newcomers)",
-        "bodyCuriosity":     "08a Wonder what your body is doing? (not newcomers)",
+        "bodyCuriosity":     "08a Wonder what your body is doing? (not newcomers) (cut 2026-09-23)",
         "bodyProof":         "08b How do you know it worked? (cut 1.0.2)",
         "bodyTracking":      "09 What do you already track?",
         "hardware":          "10 The hardware you'd otherwise need (off the path since 1.0.2)",

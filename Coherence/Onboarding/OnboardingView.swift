@@ -107,7 +107,7 @@ struct OnboardingView: View {
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
                  .rating, .watchConnect, .breathe, .sessionResults, .paywall,
                  .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
-                 .auraDemo:
+                 .auraDemo, .bodyCuriosity:
                 return true
             default:
                 return false
@@ -143,7 +143,6 @@ struct OnboardingView: View {
         (.referral, .referral),
         (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
-        (.bodyCuriosity, .bodyCuriosity),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot),
     ]
@@ -371,15 +370,10 @@ struct OnboardingView: View {
                                   count: interviewCount) { go(nextAfter(.intendedFor)) }
             }
 
-        case .bodyCuriosity:
-            guarded(.bodyCuriosity) {
-                BodyCuriosityScreen(answer: $answers.bodyCuriosity,
-                                    count: interviewCount) { go(nextAfter(.bodyCuriosity)) }
-            }
-
-        // Cut 2026-09-15, same arrangement.
-        case .bodyProof:
-            Color.clear.onAppear { go(nextAfter(.bodyCuriosity)) }
+        // Cut 2026-09-23 (Melvin), and `bodyProof` 2026-09-15. The tracking
+        // question comes next and everyone is asked it, so both hop there.
+        case .bodyCuriosity, .bodyProof:
+            Color.clear.onAppear { go(.bodyTracking) }
 
         case .bodyTracking:
             BodyTrackingScreen(tracking: $answers.bodyTracking,

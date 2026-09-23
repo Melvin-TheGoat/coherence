@@ -879,13 +879,6 @@ extension OnboardingAnswers {
         case .intendedFor:
             return persona == .newcomer
 
-        // Presumes sessions to wonder about. A newcomer has never sat, so
-        // "when you meditate…" contradicts their own baseline answer; they
-        // still get the tracking question, which is about their life, not
-        // their practice.
-        case .bodyCuriosity:
-            return persona != .newcomer
-
         // Everyone tracks something, or meaningfully doesn't.
         case .bodyTracking:
             return true
@@ -945,8 +938,12 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case referral
     case baseline, motivation, stress
     case restarts, intendedFor
-    case bodyCuriosity, bodyTracking
+    case bodyTracking
     case blindSpot
+    // CUT 2026-09-23 (Melvin): `bodyCuriosity`, "When you meditate, do you
+    // ever wonder what your body is actually doing?". A question about
+    // measurement in an app whose sessions mostly measure nothing now.
+    // `OnboardingAnswers.bodyCuriosity` stays so resume records decode.
     // CUT 2026-09-22 (Melvin): `watchGate`. Sessions no longer need a Watch
     // (Aziz, 2026-09-21), so asking whether you own one sorted people for a
     // difference the app stopped making. `OnboardingAnswers.hasWatch` stays

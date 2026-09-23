@@ -183,45 +183,40 @@ struct SpeechBubbleShape: Shape {
     }
 }
 
-/// Otto standing on his branch, drawn the full width of the screen so the
-/// limb runs off both edges instead of ending in mid air.
+/// Otto standing on the grass of the valley behind onboarding, with a soft
+/// shadow under his feet.
 ///
-/// The artboard is 425 x 522 and the rig view keeps those proportions, so a
-/// full-bleed frame is taller than the phone has room for, and most of that
-/// height is empty sky above his head. So the view shows a window onto the
-/// bottom of the drawing, and **the window's height is derived from the
-/// width, never picked per screen.** It used to be a number per screen, and
-/// 360 cut the top of his head off on the questions screen (Melvin,
-/// 2026-09-21) while 400 shaved his tuft on the welcome screen.
+/// **He used to stand on a branch** that ran off both edges of the screen,
+/// and before the valley came in behind every screen that was what gave him
+/// somewhere to be. Melvin, 2026-09-23: "get rid of the tree branch, i dont
+/// like it". The meadow is the ground now, the same one Home sits him on.
 ///
-/// The arithmetic: on the branch he is scaled to 72 percent with his feet at
-/// artboard y 452, so the top of his head is at 452 - 0.72 x 507 = 87 of 522,
-/// 16.7 percent down the drawing. The window keeps everything below 14
-/// percent, which leaves a little air over his head on any phone width.
-struct OttoOnBranch: View {
+/// The rig keeps its own proportions (425 x 522) and carries about a sixth
+/// of empty sky above his tuft, so a frame whose height is `share` of the
+/// width puts him at a steady size on every phone, standing on its bottom
+/// edge.
+struct OttoInMeadow: View {
     var pose: OttoPose = .talking
     var talking: Bool = false
     @ObservedObject var rig: OttoRigHolder
-
-    /// The share of the drawing's height kept, measured up from the bottom.
-    private static let kept: CGFloat = 0.86
+    /// His frame's height as a share of the width he is given.
+    var share: CGFloat = 0.78
 
     var body: some View {
         GeometryReader { geo in
-            let drawn = geo.size.width / OttoRig.aspect
-            OttoRiveView(size: drawn,
-                         pose: pose,
-                         talking: talking,
-                         branch: true,
-                         width: geo.size.width,
-                         rig: rig)
-                .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
-                .clipped()
+            let h = geo.size.height
+            ZStack(alignment: .bottom) {
+                // Grounds him: without it a figure on grass reads as pasted on.
+                Ellipse()
+                    .fill(RadialGradient(colors: [Color.black.opacity(0.20), Color.black.opacity(0)],
+                                         center: .center, startRadius: 0, endRadius: h * 0.24))
+                    .frame(width: h * 0.52, height: h * 0.075)
+                    .offset(y: h * 0.025)
+                OttoRiveView(size: h, pose: pose, talking: talking, branch: false, rig: rig)
+            }
+            .frame(width: geo.size.width, height: h, alignment: .bottom)
         }
-        // width / (width / aspect x kept) = aspect / kept
-        .aspectRatio(OttoRig.aspect / Self.kept, contentMode: .fit)
-        // Out past the screen padding, so the limb reaches both edges.
-        .padding(.horizontal, -AppMetrics.screenPadding)
+        .aspectRatio(1 / share, contentMode: .fit)
     }
 }
 
@@ -253,7 +248,7 @@ struct WelcomeScreen: View {
 
             Spacer(minLength: 8)
 
-            OttoOnBranch(pose: .talking, talking: speaking, rig: rig)
+            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
 
@@ -351,9 +346,9 @@ struct BreathExerciseScreen: View {
             // Pinned above the button and never moved: the words change,
             // Otto does not. The top of his frame is empty sky, so it may
             // run up under the circle.
-            OttoOnBranch(pose: .meditating, talking: speaking, rig: rig)
-                .padding(.top, -60)
-                .padding(.bottom, -8)
+            OttoInMeadow(pose: .meditating, talking: speaking, rig: rig, share: 0.66)
+                .padding(.top, -40)
+                .padding(.bottom, 6)
                 .opacity(appeared ? 1 : 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
@@ -525,7 +520,7 @@ struct QuestionCountScreen: View {
                        speaking: $speaking)
                 .opacity(appeared ? 1 : 0)
 
-            OttoOnBranch(pose: .talking, talking: speaking, rig: rig)
+            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
                 .padding(.top, 6)
                 .opacity(appeared ? 1 : 0)
 

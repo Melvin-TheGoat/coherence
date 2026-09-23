@@ -368,8 +368,10 @@ struct MotivationScreen: View {
 ///
 /// Otto sits on his cushion in the valley, exactly where he sits on Home,
 /// and asks the question in the same bubble. As the answer is dragged he
-/// changes with it: Fine is Otto at his brightest, floating in light; Burnt
-/// out is Otto withered and gray with a moth on him. So the question also
+/// changes with it: **Burnt out on the left** is Otto withered and gray with
+/// a moth on him, **Fine in the middle**, and **Blissful on the right** is
+/// Otto at his brightest, floating in light (Melvin, 2026-09-23: worst to
+/// best reads left to right, the way the glow bar fills). So the question also
 /// shows what 808 is, without a word about it: his state is a picture of
 /// yours, and meditating is what brings him back.
 ///
@@ -399,25 +401,30 @@ struct StressScreen: View {
         OttoAura.Stage(level: Int(((1 - min(max(stress, 0), 1)) * 100).rounded()))
     }
 
-    private var notch: Int { Int((stress * 4).rounded()) }
+    /// Where the thumb sits, 0 at the left (burnt out) to 1 at the right
+    /// (blissful). The stored answer keeps its meaning, 1 the most stressed,
+    /// so everything downstream (`isHighStress`) reads it as before.
+    private var position: Double { 1 - min(max(stress, 0), 1) }
+
+    private var notch: Int { Int((position * 4).rounded()) }
 
     private var readout: String {
         switch notch {
-        case 0: return "Fine"
-        case 1: return "A bit wound up"
-        case 2: return "Carrying a lot"
-        case 3: return "Close to the edge"
-        default: return "Burnt out"
+        case 0: return "Burnt out"
+        case 1: return "Carrying a lot"
+        case 2: return "Fine"
+        case 3: return "Calm"
+        default: return "Blissful"
         }
     }
 
-    /// Calm sage, through orange, to red. Three stops rather than two:
-    /// straight from green to red in RGB passes through a washed-out brown at
-    /// exactly the midpoint most people leave the slider on.
+    /// Red at burnt out, a warm sand at fine, sage at blissful. Three stops
+    /// rather than two: straight from red to green in RGB passes through a
+    /// washed-out brown at exactly the midpoint most people leave it on.
     private var tint: Color {
         let t = min(max(stress, 0), 1)
         let calm  = (r: 0.486, g: 0.659, b: 0.431)   // Color.onboardingSage
-        let amber = (r: 0.88, g: 0.50, b: 0.18)
+        let amber = (r: 0.86, g: 0.64, b: 0.36)
         let hot   = (r: 0.78, g: 0.26, b: 0.22)
         let (from, to, k) = t < 0.5 ? (calm, amber, t * 2) : (amber, hot, (t - 0.5) * 2)
         return Color(red:   from.r + (to.r - from.r) * k,
@@ -502,13 +509,14 @@ struct StressScreen: View {
         }
     }
 
-    /// Home's glow bar made draggable, in the stress colours. The ends are not
-    /// labelled: the words above it name where it is, and Otto shows it.
+    /// Home's glow bar made draggable, filling left to right toward blissful,
+    /// the way the glow bar fills. The ends are not labelled: the words above
+    /// it name where it is, and Otto shows it.
     private var scrubber: some View {
         VStack(spacing: 0) {
             GeometryReader { geo in
                 let width = geo.size.width
-                let x = max(0, min(width, width * stress))
+                let x = max(0, min(width, width * position))
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.85))
                     Capsule()
@@ -525,7 +533,7 @@ struct StressScreen: View {
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                     touched = true
-                    stress = max(0, min(1, value.location.x / width))
+                    stress = 1 - max(0, min(1, value.location.x / width))
                 })
             }
             .frame(height: 30)
@@ -535,7 +543,7 @@ struct StressScreen: View {
         .accessibilityValue(readout)
         .accessibilityAdjustableAction { direction in
             touched = true
-            stress = max(0, min(1, stress + (direction == .increment ? 0.25 : -0.25)))
+            stress = max(0, min(1, stress + (direction == .increment ? -0.25 : 0.25)))
         }
     }
 }
