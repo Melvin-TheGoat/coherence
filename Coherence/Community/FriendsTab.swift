@@ -10,6 +10,8 @@ struct FriendsTab: View {
     @Environment(\.modelContext) private var context
     @Query private var users: [User]
     @EnvironmentObject private var model: CommunityModel
+    /// Set while the onboarding tour shows this tab under its dim.
+    @Environment(\.tourTab) private var tourTab
 
     private var user: User? { users.first }
 
@@ -64,7 +66,9 @@ struct FriendsTab: View {
             .toolbarBackground(.hidden, for: .navigationBar)
         }
         .task {
-            Analytics.track(.friendsOpened)
+            // The tour passing through is not somebody opening Friends, and
+            // counting it would put every new install in the number.
+            if tourTab == nil { Analytics.track(.friendsOpened) }
             await model.load()
         }
         .alert("Friends", isPresented: Binding(get: { model.errorText != nil }, set: { if !$0 { model.errorText = nil } })) {

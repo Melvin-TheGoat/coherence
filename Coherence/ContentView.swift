@@ -33,6 +33,11 @@ struct ContentView: View {
     @State private var startAfterOtto: Int?
 
     @State private var tab: MainTab = .home
+    /// The tab the onboarding tour is showing under its dim (`TourHomeScreen`).
+    /// While it is set it stands in for `tab`, Otto's Home line steps aside
+    /// for the tour's narrator, and this view holds back the modals that could
+    /// otherwise open over the tour. Nil everywhere else.
+    @Environment(\.tourTab) private var tourTab
     /// Which of Otto's lines is showing on Home; a tap on him advances it.
     @State private var ottoLineIndex = 0
     /// Bumped by every tap on Otto, which jiggles him (`OttoJiggle`).
@@ -126,9 +131,18 @@ struct ContentView: View {
     /// `tabBarClearance` for the pages pushed inside them.
     @State private var tabBarHeight: CGFloat = 0
 
+    /// The tab on screen: the tour's while it runs, the person's otherwise.
+    private var shownTab: MainTab { tourTab ?? tab }
+
+    /// The bar reads what is on screen, so the tour's tab shows as selected;
+    /// a tap writes the person's own selection.
+    private var tabSelection: Binding<MainTab> {
+        Binding(get: { shownTab }, set: { tab = $0 })
+    }
+
     var body: some View {
         Group {
-            switch tab {
+            switch shownTab {
             case .home:
                 homeTab
             case .guide:
@@ -161,8 +175,8 @@ struct ContentView: View {
                     .background(AppColor.backgroundSecondary.opacity(0.92), in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                if tab == .home, let id = detailsFor, auraGain == nil { detailsToast(id) }
-                MainTabBar(selection: $tab) { sheet = .setup }
+                if shownTab == .home, let id = detailsFor, auraGain == nil { detailsToast(id) }
+                MainTabBar(selection: tabSelection) { sheet = .setup }
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
             }
             .animation(.easeOut(duration: 0.25), value: coordinator.receivingFromWatch)
@@ -170,7 +184,7 @@ struct ContentView: View {
         }
         .screenBackground()
         .fullScreenCover(item: Binding(
-            get: { unlockQueue.first },
+            get: { tourTab == nil ? unlockQueue.first : nil },
             set: { _ in })) { item in
             AwardUnlockView(item: item) {
                 AwardsInbox.markAnnounced(item.award.id)
@@ -189,6 +203,7 @@ struct ContentView: View {
         .modifier(RootHooks(community: community, users: users,
                             sessionActive: coordinator.active != nil,
                             awardShowing: !unlockQueue.isEmpty,
+                            touring: tourTab != nil,
                             lastSessionID: coordinator.lastSessionID,
                             resumedID: landedWhileAway,
                             onLanded: celebrate))
@@ -418,6 +433,7 @@ struct ContentView: View {
                               topInset: proxy.safeAreaInsets.top)
                     VStack(alignment: .leading, spacing: 16) {
                         auraCard
+                            .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.glow: $0] }
                         statTiles
                         calendarCard
                         proofSection
@@ -496,17 +512,21 @@ struct ContentView: View {
 
             // What he says, pinned by its bottom to just above his head, the
             // way the Ready screen pins its line, so the tail lands on him on
-            // every phone.
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
-                OttoSpeech(text: ottoLines[ottoLineIndex % ottoLines.count],
-                           tail: .bottom, size: 17,
-                           ink: ink, stroke: ink.opacity(0.38),
-                           fill: AppColor.backgroundPrimary.opacity(0.78),
-                           speaking: .constant(false))
+            // every phone. Not during the onboarding tour, where he is the one
+            // walking the reader through, and two of his bubbles would talk
+            // over each other.
+            if tourTab == nil {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    OttoSpeech(text: ottoLines[ottoLineIndex % ottoLines.count],
+                               tail: .bottom, size: 17,
+                               ink: ink, stroke: ink.opacity(0.38),
+                               fill: AppColor.backgroundPrimary.opacity(0.78),
+                               speaking: .constant(false))
+                }
+                .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - (topInset + 72)))
+                .padding(.top, topInset + 72)
             }
-            .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - (topInset + 72)))
-            .padding(.top, topInset + 72)
 
             // Tapping him jiggles him and changes what he says.
             Color.clear
@@ -1088,18 +1108,23 @@ private struct FriendsHooks: ViewModifier {
     let users: [User]
     let sessionActive: Bool
     let awardShowing: Bool
+    /// The onboarding tour is showing this screen. Both of these wait for it
+    /// to finish: the tour's Friends stop loads the tab, and a reward or the
+    /// profile prompt opening then would cover the tour.
+    let touring: Bool
 
     func body(content: Content) -> some View {
         if FeatureFlags.friends {
             content
                 // The invite reward landing: a brought friend sat once.
-                .sheet(item: $community.rewardNews) { news in
+                .sheet(item: Binding(get: { touring ? nil : community.rewardNews },
+                                     set: { community.rewardNews = $0 })) { news in
                     InviteRewardSheet(news: news).presentationDetents([.medium])
                 }
                 // People who finished onboarding before Friends: one required
                 // prompt to create a profile, whenever iCloud says they have none.
                 .fullScreenCover(isPresented: Binding(
-                    get: { community.phase == .needsUsername && !sessionActive && !awardShowing },
+                    get: { community.phase == .needsUsername && !sessionActive && !awardShowing && !touring },
                     set: { _ in })) {
                     FriendsIntroView(model: community,
                                      suggested: users.first?.username ?? "",
@@ -1120,6 +1145,8 @@ private struct RootHooks: ViewModifier {
     let users: [User]
     let sessionActive: Bool
     let awardShowing: Bool
+    /// The onboarding tour is on screen (`ContentView.tourTab`).
+    let touring: Bool
     let lastSessionID: UUID?
     let resumedID: UUID?
     let onLanded: (UUID) -> Void
@@ -1127,9 +1154,10 @@ private struct RootHooks: ViewModifier {
     func body(content: Content) -> some View {
         content
             .modifier(FriendsHooks(community: community, users: users,
-                                   sessionActive: sessionActive, awardShowing: awardShowing))
+                                   sessionActive: sessionActive, awardShowing: awardShowing,
+                                   touring: touring))
             .modifier(SessionLandedHooks(sessionActive: sessionActive,
-                                         awardShowing: awardShowing,
+                                         awardShowing: awardShowing || touring,
                                          lastSessionID: lastSessionID,
                                          resumedID: resumedID,
                                          onLanded: onLanded))

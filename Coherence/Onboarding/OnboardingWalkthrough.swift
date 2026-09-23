@@ -2,24 +2,32 @@ import SwiftUI
 import SwiftData
 import WatchConnectivity
 
-/// The walkthrough: the last stretch of onboarding. Since 2026-09-15 it is
-/// two screens: the real home screen with notes, then connect the Watch and
-/// tap Begin, which finishes onboarding and opens the setup sheet for a REAL
-/// first session. The two-minute practice sit and its demo results below are
-/// no longer routed to (two thirds of the people who reached them left); the
-/// offer now comes after that first real session, from ContentView.
+/// The walkthrough: the last stretch of onboarding, and since 2026-09-19 the
+/// whole of it is the tour. Otto walks the reader through the real app, one
+/// line a stop, and Let's go on the last stop finishes onboarding on Home. The
+/// Watch connect screen, the two-minute practice sit and its demo results
+/// further down this file are no longer routed to (two thirds of the people
+/// who reached them left); the offer comes after the first real session, from
+/// ContentView.
 ///
-/// Nothing in here is a mock. The tour shows the actual `ContentView`, the
-/// practice runs through the actual `SessionCoordinator` and Watch pipeline,
-/// and the score is whatever `SignalEngine` measured. The no-invented-numbers
-/// rule matters most at the moment of first trust.
+/// Nothing in here is a mock. The tour shows the actual `ContentView`, and the
+/// screens it moves through are the real tabs with the reader's own (empty)
+/// history in them. The no-invented-numbers rule matters most at the moment
+/// of first trust.
 
-// MARK: - 1 · The home tour
+// MARK: - 1 · The tour
 
-/// The home screen's tour targets, published as anchor preferences by
-/// `ContentView` and read here. Harmless in the real app: nothing outside the
-/// tour ever reads the key.
-enum TourTarget: Hashable { case streak, guide, begin, block }
+/// What the tour can light, published as anchor preferences by `ContentView`
+/// (Home's streak, guide and glow card) and `MainTabBar` (the plus and the
+/// tabs). Harmless in the real app: nothing outside the tour reads the key.
+enum TourTarget: Hashable {
+    case streak, guide, glow
+    case begin, block, friends, profile
+
+    /// Round things get a round window: the plus, and the streak and guide
+    /// circles stacked in the corner.
+    var isRound: Bool { self == .begin || self == .streak || self == .guide }
+}
 
 struct TourTargetKey: PreferenceKey {
     static var defaultValue: [TourTarget: SwiftUI.Anchor<CGRect>] = [:]
@@ -29,149 +37,353 @@ struct TourTargetKey: PreferenceKey {
     }
 }
 
-/// The whole screen dimmed except a rounded window over the target. Even-odd
-/// fill: the outer rect and the inner rounded rect cancel, so the target shows
-/// through at full brightness.
+/// The tab the tour is showing under its dim. `ContentView` shows it in place
+/// of its own selection and holds back its modals and Otto's Home line while
+/// it is set; `FriendsTab` does not count it as an open. Nil everywhere else.
+private struct TourTabKey: EnvironmentKey {
+    static let defaultValue: MainTab? = nil
+}
+
+extension EnvironmentValues {
+    var tourTab: MainTab? {
+        get { self[TourTabKey.self] }
+        set { self[TourTabKey.self] = newValue }
+    }
+}
+
+/// One stop of the tour: the tab it shows, what is lit, what Otto says, and
+/// where he stands while he says it.
+///
+/// **Quick is the brief** (Melvin, 2026-09-22: "quickly show the user the
+/// different screens, quickly being the name of the game, dont want to waste
+/// time"). One sentence a stop, 74 characters at most so it fits his bubble,
+/// and no more than six stops on any build. `TourStopTests` pins all of it,
+/// along with the copy rules: no em dashes, no score, no Watch, no thanks.
+struct TourStop: Equatable {
+    enum Stand {
+        /// Under the status bar, for a lit thing low on the screen.
+        case top
+        /// Just above the tab bar, and above the lit thing when that is in
+        /// the bar. He stands beside the tab he is talking about, and the top
+        /// of each screen, which is what makes it recognisable, stays clear.
+        case bottom
+    }
+
+    let tab: MainTab
+    /// Lit together, as one window.
+    let targets: [TourTarget]
+    let line: String
+    let stand: Stand
+
+    /// The stops, in order, for a build's switches. **It ends on Home**, with
+    /// the plus lit, so finishing lifts the dim off the very screen the reader
+    /// lands on instead of cutting from another tab to Home.
+    static func all(block: Bool, friends: Bool) -> [TourStop] {
+        var stops = [
+            TourStop(tab: .home, targets: [.glow],
+                     line: "This is home, where I glow brighter every day you meditate.",
+                     stand: .top),
+            TourStop(tab: .home, targets: [.streak, .guide],
+                     line: "Your streak lives up here, and under it is my guide to meditating.",
+                     stand: .bottom),
+        ]
+        if block {
+            stops.append(TourStop(tab: .block, targets: [.block],
+                                  line: "This is Block, where I hold the apps you pick until you've meditated.",
+                                  stand: .bottom))
+        }
+        if friends {
+            stops.append(TourStop(tab: .friends, targets: [.friends],
+                                  line: "Bring your friends here, and cheer on each other's sessions.",
+                                  stand: .bottom))
+        }
+        stops.append(TourStop(tab: .profile, targets: [.profile],
+                              line: "I keep every session you do right here, with your minutes and awards.",
+                              stand: .bottom))
+        stops.append(TourStop(tab: .home, targets: [.begin],
+                              line: "When you're ready, tap the plus: any length, any sound, or your own audio.",
+                              stand: .bottom))
+        return stops
+    }
+}
+
+/// The whole screen dimmed except a rounded window over what is lit. Even-odd
+/// fill: the outer rect and the window cancel, so the lit thing shows through
+/// at full brightness. Animatable, so the window slides from one stop's
+/// target to the next instead of jumping.
 private struct SpotlightDim: Shape {
-    var window: CGRect?
+    var window: CGRect
+    var radius: CGFloat
+
+    var animatableData: AnimatablePair<AnimatablePair<CGFloat, CGFloat>,
+                                       AnimatablePair<AnimatablePair<CGFloat, CGFloat>, CGFloat>> {
+        get {
+            AnimatablePair(AnimatablePair(window.origin.x, window.origin.y),
+                           AnimatablePair(AnimatablePair(window.width, window.height), radius))
+        }
+        set {
+            window = CGRect(x: newValue.first.first, y: newValue.first.second,
+                            width: newValue.second.first.first, height: newValue.second.first.second)
+            radius = newValue.second.second
+        }
+    }
+
     func path(in bounds: CGRect) -> Path {
         var p = Path()
         p.addRect(bounds)
-        if let w = window {
-            p.addRoundedRect(in: w, cornerSize: CGSize(width: 18, height: 18))
+        if window.width > 0, window.height > 0 {
+            p.addRoundedRect(in: window, cornerSize: CGSize(width: radius, height: radius),
+                             style: .continuous)
         }
         return p
     }
 }
 
-/// The real home screen, dimmed under a sequence of notes. Hit testing is off:
-/// this is show, not touch, and Begin here would start a session the flow is
-/// about to start properly anyway.
+/// The real app, dimmed, with Otto walking through it (Melvin, 2026-09-22:
+/// "it should have otto somewhere talking, as though hes explaining the app,
+/// and again should quickly show the user the different screens").
+///
+/// Each stop switches `ContentView` to the tab it is about (`tourTab`), opens
+/// a window in the dim over the thing being talked about, and puts Otto's
+/// line in his bubble. A tap anywhere moves on, and so does the Next pill,
+/// which is there so nobody has to guess that a tap will do. Hit testing on
+/// the app underneath is off: this is show, not touch.
+///
+/// **Otto never stands on what he is pointing at.** A stop names where he
+/// stands (`TourStop.Stand`), and the floor he stands on is worked out from
+/// the lit window itself, so a lit thing low on the screen always keeps him
+/// above it, and a stop that asks for the top falls back to the bottom if its
+/// target is not low. He never covers the tab bar either.
 struct TourHomeScreen: View {
     let onContinue: () -> Void
 
     @State private var stop = 0
+    /// When the stop last changed. A tap inside the change is ignored, so a
+    /// doubled tap cannot skip a screen the reader never saw.
+    @State private var changedAt = Date.distantPast
+    /// Set by the last tap: the dim lifts off Home, then onboarding finishes.
+    @State private var leaving = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private struct Note {
-        let title: String
-        let body: String
-        /// The element this note is about. The spotlight opens over it and the
-        /// card takes the opposite half of the screen.
-        let target: TourTarget
-    }
+    private let stops = TourStop.all(block: FeatureFlags.block, friends: FeatureFlags.friends)
+    private var current: TourStop { stops[stop] }
 
-    // Rewritten 2026-09-22 with onboarding's return: the calendar is gone
-    // from Home, a session no longer needs a Watch, and the guide moved from
-    // its tab to a circle under the streak. Block builds add its tab.
-    private var notes: [Note] {
-        var notes: [Note] = [
-            .init(title: "This is home.",
-                  body: "Your streak sits up here. Every day you meditate it grows, and so does Otto's glow.",
-                  target: .streak),
-            .init(title: "One button starts everything.",
-                  body: "The plus starts a session. Play any audio you like from any app, or nothing at all.",
-                  target: .begin),
-        ]
-        if FeatureFlags.block {
-            notes.append(.init(title: "Otto holds your apps.",
-                               body: "Pick the apps that pull you in on the Block tab, and he keeps them closed until you've meditated.",
-                               target: .block))
-        }
-        notes.append(.init(title: "The guide is always here.",
-                           body: "How to meditate, plainly explained, easiest first.",
-                           target: .guide))
-        return notes
-    }
+    /// Every change of stop takes this long: the window slides, the tab
+    /// cross-fades, and Otto's next line starts.
+    private static let pace = 0.28
 
     var body: some View {
         ContentView()
+            .environment(\.tourTab, current.tab)
             .allowsHitTesting(false)
-            // The dim with a hole in it. The tour's first build dimmed the
-            // whole screen flat and pinned every note to the bottom, which
-            // both hid the Begin button under the note describing it and
-            // highlighted nothing (Aziz, 2026-08-28: "make sure the box is
-            // not covering the thing it's trying to highlight, and then
-            // actually highlight that portion"). ContentView publishes the
-            // real frames, so the spotlight is on the actual element at any
-            // screen size, not a guessed rectangle.
+            .accessibilityHidden(true)
             .overlayPreferenceValue(TourTargetKey.self) { anchors in
                 GeometryReader { proxy in
-                    let target = anchors[notes[stop].target]
-                        .map { proxy[$0].insetBy(dx: -8, dy: -6) }
-                    // The dim ignores the safe area (it must cover the status
-                    // bar), which moves its origin ABOVE the reader's by the
-                    // top inset. The window is measured in reader space, so it
-                    // must shift down by that inset or the cutout lands above
-                    // the element it frames — exactly the "the lit region is
-                    // above the button" bug (Aziz, 2026-08-29).
-                    let inset = proxy.safeAreaInsets
-                    let window = target.map { $0.offsetBy(dx: inset.leading, dy: inset.top) }
-                    ZStack {
-                        SpotlightDim(window: window)
-                            .fill(Color.black.opacity(0.55), style: FillStyle(eoFill: true))
-                            .ignoresSafeArea()
-                        if let target {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(AppColor.accentGold.opacity(0.85), lineWidth: 1.5)
-                                .frame(width: target.width, height: target.height)
-                                .position(x: target.midX, y: target.midY)
-                                .shadow(color: AppColor.accentGold.opacity(0.35), radius: 10)
-                        }
-                        // The card takes whichever half the target is not in,
-                        // so it can never cover the thing it is pointing at.
-                        VStack {
-                            if let target, target.midY > proxy.size.height / 2 {
-                                noteCard
-                                Spacer()
-                            } else {
-                                Spacer()
-                                noteCard
-                            }
-                        }
-                    }
-                    .animation(.easeOut(duration: 0.25), value: stop)
+                    tourOverlay(anchors, proxy)
                 }
             }
+            .sensoryFeedback(.selection, trigger: stop)
     }
 
-    private var noteCard: some View {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(notes[stop].title)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text(notes[stop].body)
-                        .font(.system(size: 15))
-                        .foregroundStyle(AppColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+    // MARK: The overlay
 
-                    HStack(spacing: 5) {
-                        ForEach(notes.indices, id: \.self) { i in
-                            Capsule()
-                                .fill(i == stop ? AppColor.accentGold
-                                                : AppColor.textSecondary.opacity(0.3))
-                                .frame(width: i == stop ? 18 : 6, height: 6)
-                        }
-                        Spacer()
-                    }
-                    .padding(.top, 4)
+    /// The lit window in reader space, and its corner radius.
+    private struct Lit {
+        let rect: CGRect
+        let radius: CGFloat
+    }
 
-                    OnboardingCTA(title: stop < notes.count - 1 ? "Next" : "Continue") {
-                        if stop < notes.count - 1 {
-                            withAnimation(.easeOut(duration: 0.25)) { stop += 1 }
-                        } else {
-                            onContinue()
-                        }
-                    }
-                    .padding(.top, 6)
+    private func litArea(_ anchors: [TourTarget: SwiftUI.Anchor<CGRect>], _ proxy: GeometryProxy) -> Lit? {
+        let rects = current.targets.compactMap { anchors[$0].map { proxy[$0] } }
+        guard let first = rects.first else { return nil }
+        let round = current.targets.allSatisfy(\.isRound)
+        let pad: CGFloat = current.targets.contains(.glow) ? 6 : 8
+        let rect = rects.dropFirst().reduce(first) { $0.union($1) }
+            .insetBy(dx: -pad, dy: -pad)
+        let radius = round ? min(rect.width, rect.height) / 2
+                           : current.targets.contains(.glow) ? AppMetrics.cardRadius + pad : 18
+        return Lit(rect: rect, radius: radius)
+    }
+
+    @ViewBuilder
+    private func tourOverlay(_ anchors: [TourTarget: SwiftUI.Anchor<CGRect>], _ proxy: GeometryProxy) -> some View {
+        let lit = litArea(anchors, proxy)
+        // Nil until the anchors resolve, a frame after the tour appears.
+        let low = lit.map { $0.rect.midY > proxy.size.height / 2 }
+        // The top only for a lit thing that is low; otherwise the bottom,
+        // which can never cover something at the top. Before the anchors
+        // arrive the stop's own choice stands, so he does not hop on the
+        // first frame.
+        let stand: TourStop.Stand = current.stand == .top && low != false ? .top : .bottom
+        // What he stands on: the top of the plus, which is the highest thing
+        // in the tab bar, or the lit window when that is lower down.
+        let plusTop = anchors[.begin].map { proxy[$0].minY } ?? proxy.size.height
+        let ground = min(plusTop, low == true ? (lit?.rect.minY ?? plusTop) : plusTop) - 12
+        // The dim ignores the safe area (it has to cover the status bar),
+        // which puts its origin ABOVE the reader's by the top inset. The
+        // window is measured in reader space, so it shifts down by that inset
+        // or the cutout lands above the thing it frames (Aziz, 2026-08-29).
+        let inset = proxy.safeAreaInsets
+        let window = lit?.rect.offsetBy(dx: inset.leading, dy: inset.top) ?? .zero
+        // At the top of Home the streak and guide circles hold the corner, and
+        // he stops short of them: a bubble half over a circle leaves a sliver
+        // of its label peeking out from under the bubble.
+        let corner = stand == .top && !current.targets.contains(.streak)
+            ? anchors[.streak].map { max(0, proxy.size.width - proxy[$0].minX - 8) } : nil
+
+        ZStack {
+            SpotlightDim(window: window, radius: lit?.radius ?? 0)
+                .fill(Color.black.opacity(0.55), style: FillStyle(eoFill: true))
+                .ignoresSafeArea()
+
+            if let lit {
+                RoundedRectangle(cornerRadius: lit.radius, style: .continuous)
+                    .stroke(AppColor.accentGold.opacity(0.9), lineWidth: 2)
+                    .frame(width: lit.rect.width, height: lit.rect.height)
+                    .position(x: lit.rect.midX, y: lit.rect.midY)
+                    .shadow(color: AppColor.accentGold.opacity(0.45), radius: 10)
+            }
+
+            VStack(spacing: 0) {
+                if stand == .top {
+                    narrator
+                        .padding(.top, 8)
+                        .padding(.trailing, corner ?? 0)
+                    Spacer(minLength: 0)
+                } else {
+                    Spacer(minLength: 0)
+                    narrator.padding(.bottom, max(0, proxy.size.height - ground))
                 }
-                .padding(20)
-                .background(AppColor.backgroundPrimary.opacity(0.97),
-                            in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
-                    .stroke(AppColor.accentGold.opacity(0.25), lineWidth: 1))
-                .padding(.horizontal, 16)
-                .padding(.bottom, 24)
-                .padding(.top, 8)
+            }
+            .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .opacity(leaving ? 0 : 1)
+        // A tap anywhere moves on, the lit window included.
+        .contentShape(Rectangle())
+        .onTapGesture(perform: advance)
+    }
+
+    private var narrator: some View {
+        TourNarrator(line: current.line, step: stop, steps: stops.count, onNext: advance)
+            .transition(.opacity)
+    }
+
+    private func advance() {
+        guard !leaving, Date().timeIntervalSince(changedAt) > Self.pace else { return }
+        changedAt = Date()
+        if stop < stops.count - 1 {
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: Self.pace)) { stop += 1 }
+            // A bubble changing is silent to VoiceOver, so the new line is read.
+            AccessibilityNotification.Announcement("Otto says: \(current.line)").post()
+        } else if reduceMotion {
+            leaving = true
+            onContinue()
+        } else {
+            // The dim lifts first, so the last thing seen is Home itself,
+            // which is exactly where finishing lands.
+            withAnimation(.easeOut(duration: 0.25)) { leaving = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.26) { onContinue() }
+        }
+    }
+}
+
+/// Otto, small, with his line typed into his bubble, and under it where the
+/// tour has got to and the one thing to press.
+///
+/// **He is the talking art, and he jiggles as each line starts**, the same
+/// squash and wobble he gives on Home when he is tapped, so a new line reads
+/// as him saying it rather than as a caption changing beside a picture.
+private struct TourNarrator: View {
+    let line: String
+    let step: Int
+    let steps: Int
+    let onNext: () -> Void
+
+    @State private var speaking = false
+    @State private var pokes = 0
+    /// The bubble hugs its words, so the row under it takes its width from
+    /// the bubble rather than from the screen.
+    @State private var bubbleWidth: CGFloat = 0
+
+    private var isLast: Bool { step == steps - 1 }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 4) {
+            Image(OttoPose.talking.asset)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 88, height: 92)
+                .ottoJiggle(pokes)
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 12) {
+                // Cream, filled: an outline alone reads as glass over the
+                // dimmed screen, and the words would sit on whatever is behind.
+                OttoSpeech(text: line, tail: .leading, size: 17,
+                           ink: AppColor.textPrimary,
+                           stroke: AppColor.backgroundPrimary,
+                           fill: AppColor.backgroundPrimary,
+                           speaking: $speaking)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { bubbleWidth = $0 }
+
+                // Under the bubble, edge to edge with it: the dots start where
+                // its body starts, past the point, and Next ends where it ends.
+                HStack(spacing: 12) {
+                    progress
+                    Spacer(minLength: 0)
+                    next
+                }
+                .padding(.leading, 11)
+                .frame(width: max(bubbleWidth, 200))
+            }
+            .padding(.top, 4)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        // A soft shade under him. Whatever the dim leaves legible behind
+        // him (a card's label, a button's words) otherwise peeks out round
+        // his edges and reads as part of what he is saying.
+        .background {
+            RoundedRectangle(cornerRadius: 40, style: .continuous)
+                .fill(Color.black.opacity(0.6))
+                .padding(-18)
+                .blur(radius: 22)
+                .allowsHitTesting(false)
+        }
+        .task(id: line) { pokes += 1 }
+    }
+
+    /// Where the tour has got to: a dot a stop, the current one drawn long.
+    private var progress: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<steps, id: \.self) { i in
+                Capsule()
+                    .fill(Color.white.opacity(i == step ? 0.95 : 0.35))
+                    .frame(width: i == step ? 16 : 6, height: 6)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Step \(step + 1) of \(steps)")
+    }
+
+    /// A cream pill, not gold: it is a control, and the gold on this screen
+    /// is the ring around what is lit.
+    private var next: some View {
+        Button(action: onNext) {
+            HStack(spacing: 5) {
+                Text(isLast ? "Let's go" : "Next")
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .heavy))
+            }
+            .font(.system(size: 15, weight: .bold, design: .rounded))
+            .foregroundStyle(AppColor.textPrimary)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .background(AppColor.backgroundPrimary, in: Capsule())
+        }
+        .buttonStyle(CardButtonStyle())
+        .accessibilityLabel(isLast ? "Let's go" : "Next")
     }
 }
 

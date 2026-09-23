@@ -23,6 +23,8 @@ struct BlockTab: View {
     #endif
     /// Bumped by a tap on Otto, which jiggles him (`OttoJiggle`), as on Home.
     @State private var ottoPokes = 0
+    /// Set while the onboarding tour shows this tab under its dim.
+    @Environment(\.tourTab) private var tourTab
 
     /// The editor, for an existing blocker or one made from a preset.
     struct EditRequest: Identifiable {
@@ -131,17 +133,21 @@ struct BlockTab: View {
                 .position(x: width / 2, y: ottoBottom - ottoHeight / 2)
                 .accessibilityLabel("Otto, holding his clipboard")
                 .accessibilityAddTraits(.isButton)
-            VStack {
-                Spacer(minLength: 0)
-                OttoSpeech(text: ottoLine, tail: .bottom, size: 17,
-                           ink: ink, stroke: ink.opacity(0.38),
-                           fill: AppColor.backgroundPrimary.opacity(0.82),
-                           speaking: .constant(false))
-                    .id(ottoLine)
+            // Not during the onboarding tour: Otto is the one walking the
+            // reader through, and two of his bubbles would talk over each other.
+            if tourTab == nil {
+                VStack {
+                    Spacer(minLength: 0)
+                    OttoSpeech(text: ottoLine, tail: .bottom, size: 17,
+                               ink: ink, stroke: ink.opacity(0.38),
+                               fill: AppColor.backgroundPrimary.opacity(0.82),
+                               speaking: .constant(false))
+                        .id(ottoLine)
+                }
+                .frame(width: min(width - 56, 330),
+                       height: max(0, ottoBottom - ottoHeight - 6 - (topInset + 12)))
+                .padding(.top, topInset + 12)
             }
-            .frame(width: min(width - 56, 330),
-                   height: max(0, ottoBottom - ottoHeight - 6 - (topInset + 12)))
-            .padding(.top, topInset + 12)
         }
         .frame(width: width, height: height)
         .clipped()

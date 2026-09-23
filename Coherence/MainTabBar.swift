@@ -41,18 +41,17 @@ struct MainTabBar: View {
             item(.home, icon: "house", label: "Home")
             if FeatureFlags.block {
                 // Block replaces the Guide tab (Melvin, 2026-09-21).
-                item(.block, icon: "hand.raised", label: "Block")
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.block: $0] }
+                item(.block, icon: "hand.raised", label: "Block", tour: .block)
             } else {
                 item(.guide, icon: "book.closed", label: "Guide")
             }
             plus
             if FeatureFlags.friends {
-                item(.friends, icon: "person.2", label: "Friends")
+                item(.friends, icon: "person.2", label: "Friends", tour: .friends)
             } else {
                 item(.friends, icon: "magnifyingglass", label: "Search")
             }
-            item(.profile, icon: "person.crop.circle", label: "Profile")
+            item(.profile, icon: "person.crop.circle", label: "Profile", tour: .profile)
         }
         // 6 over the icons and nothing under the labels: the home indicator's
         // own inset is the air below (Melvin, 2026-09-19: "the bottom is
@@ -77,7 +76,9 @@ struct MainTabBar: View {
     /// How far the bar sits down into the bottom safe area.
     static let intoInset: CGFloat = 16
 
-    private func item(_ tab: MainTab, icon: String, label: String) -> some View {
+    /// `tour` names the item for the onboarding tour, which lights it.
+    private func item(_ tab: MainTab, icon: String, label: String,
+                      tour: TourTarget? = nil) -> some View {
         let selected = selection == tab
         return Button {
             selection = tab
@@ -88,6 +89,11 @@ struct MainTabBar: View {
                     .frame(height: 26)
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
+            }
+            // On the icon and its label, not the button's fifth of the bar,
+            // which would light the neighbours and run off the screen's edge.
+            .anchorPreference(key: TourTargetKey.self, value: .bounds) { anchor in
+                tour.map { [$0: anchor] } ?? [:]
             }
             .foregroundStyle(selected ? AppColor.textPrimary : AppColor.textSecondary)
             .frame(maxWidth: .infinity)
