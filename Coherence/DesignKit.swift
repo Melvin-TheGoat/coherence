@@ -134,7 +134,7 @@ struct EvidenceRow: View {
     var shared: Bool? = nil
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .center, spacing: 12) {
             // The puck, not the selfie (Melvin, 2026-09-23: "the photo
             // should not be there, it looks super ugly ... you only see
             // the photo if you tap on it"). A list row is not where a photo
@@ -142,33 +142,26 @@ struct EvidenceRow: View {
             // it whole. Shared with Profile's week list so the two read as
             // one visual language.
             MinutesPuck(durationSec: session.durationSec)
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top, spacing: 8) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(SessionListSupport.rowTitle(session))
-                            .font(DisplayFont.display(16))
-                            .foregroundStyle(AppColor.textPrimary)
-                            .multilineTextAlignment(.leading)
-                            .lineLimit(2)
-                        HStack(spacing: 6) {
-                            Text(SessionListSupport.duration(session.durationSec))
-                                .font(AppFont.caption)
-                                .foregroundStyle(AppColor.textSecondary)
-                            if let shared { ReachChip(shared: shared) }
-                        }
-                    }
-                    Spacer(minLength: 0)
-                    if !session.isPhoneOnly, score != nil {
-                        ScoreCapsule(score: score)
-                    }
-                    if let rating { RatingChip(rating: rating) }
-                }
-                // No measurement columns (Melvin, 2026-09-23: "it should not
-                // show 'heart settled' and 'still' in the recent tab on home,
-                // clutters everything too much"). A row is its length, its
-                // title and its day; the measurements, when a Watch took
-                // any, are one tap in, on the session's own page.
+            // No measurement columns (Melvin, 2026-09-23: "it should not
+            // show 'heart settled' and 'still' in the recent tab on home,
+            // clutters everything too much"). A row is its length, its
+            // title and its day; the measurements, when a Watch took any,
+            // are one tap in, on the session's own page. And no "10 min"
+            // under the title either: the puck already says it, and a row
+            // that states its length twice is the same clutter.
+            VStack(alignment: .leading, spacing: 4) {
+                Text(SessionListSupport.rowTitle(session))
+                    .font(DisplayFont.display(16))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                if let shared { ReachChip(shared: shared) }
             }
+            Spacer(minLength: 0)
+            if !session.isPhoneOnly, score != nil {
+                ScoreCapsule(score: score)
+            }
+            if let rating { RatingChip(rating: rating) }
         }
         .padding(14)
         .frame(maxWidth: .infinity)
