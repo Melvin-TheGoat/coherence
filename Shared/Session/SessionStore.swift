@@ -352,16 +352,30 @@ enum SessionStore {
 
     // MARK: Photos
 
-    /// The photo kept with a session, if one was taken. One per session.
-    static func photo(for sessionID: UUID, in context: ModelContext) -> SessionPhoto? {
-        try? context.fetch(FetchDescriptor<SessionPhoto>(
-            predicate: #Predicate { $0.sessionID == sessionID })).first
+    /// A session may keep up to this many photos and videos (Melvin,
+    /// 2026-09-23). Enforced in `addPhoto`, not in the schema.
+    static let maxPhotosPerSession = 10
+
+    /// Every item kept with a session, lowest `order` first. Empty when
+    /// nothing was ever taken.
+    static func photos(for sessionID: UUID, in context: ModelContext) -> [SessionPhoto] {
+        let rows = (try? context.fetch(FetchDescriptor<SessionPhoto>(
+            predicate: #Predicate { $0.sessionID == sessionID }))) ?? []
+        return rows.sorted { $0.order < $1.order }
     }
 
-    /// Saves or replaces the session's photo. Takes encoded bytes, not an
-    /// image, because Shared/ is compiled into the Watch target too and the
-    /// resizing lives in the iOS app (`PostPhoto`). Retaking replaces in
-    /// place, so a session never carries two.
+    /// The FIRST item kept with a session, for callers that only ever show
+    /// one: the calendar dot, `EvidenceRow`'s thumbnail, the results screen.
+    /// `photos(for:in:)` is every item, in order.
+    static func photo(for sessionID: UUID, in context: ModelContext) -> SessionPhoto? {
+        photos(for: sessionID, in: context).first
+    }
+
+    /// Saves or replaces the session's FIRST photo (order 0), leaving any
+    /// later items alone. Takes encoded bytes, not an image, because Shared/
+    /// is compiled into the Watch target too and the resizing lives in the
+    /// iOS app (`PostPhoto`). Kept for whoever still wants "replace the one
+    /// photo in place"; a new item is `addPhoto`.
     @discardableResult
     static func savePhoto(sessionID: UUID, jpeg: Data, thumbnail: Data, video: Data? = nil,
                           takenAt: Date = Date(), in context: ModelContext) -> SessionPhoto {
@@ -380,11 +394,36 @@ enum SessionStore {
         return row
     }
 
+    /// Appends a new item after whatever the session already keeps. Returns
+    /// nil, inserting nothing, once `maxPhotosPerSession` is reached.
+    @discardableResult
+    static func addPhoto(sessionID: UUID, jpeg: Data, thumbnail: Data, video: Data? = nil,
+                         takenAt: Date = Date(), in context: ModelContext) -> SessionPhoto? {
+        let existing = photos(for: sessionID, in: context)
+        guard existing.count < maxPhotosPerSession else { return nil }
+        let row = SessionPhoto(sessionID: sessionID, takenAt: takenAt, jpeg: jpeg,
+                               thumbnail: thumbnail, video: video,
+                               order: (existing.last?.order ?? -1) + 1)
+        context.insert(row)
+        try? context.save()
+        return row
+    }
+
+    /// Removes every photo and video a session keeps.
     static func removePhoto(for sessionID: UUID, in context: ModelContext) {
         for p in (try? context.fetch(FetchDescriptor<SessionPhoto>(
             predicate: #Predicate { $0.sessionID == sessionID }))) ?? [] {
             context.delete(p)
         }
+        try? context.save()
+    }
+
+    /// Removes ONE item by its own id, leaving the session's other photos
+    /// and videos as they were.
+    static func removePhotoItem(id: UUID, in context: ModelContext) {
+        guard let row = try? context.fetch(FetchDescriptor<SessionPhoto>(
+            predicate: #Predicate { $0.id == id })).first else { return }
+        context.delete(row)
         try? context.save()
     }
 

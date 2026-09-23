@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AVKit
 
 /// The Friends tab (COMMUNITY.md, mockup `mockups/friends.html`). Mutual
 /// friends, a feed of what they posted, one reaction per post, requests
@@ -663,12 +664,20 @@ struct InviteButton: View {
 
 /// A friend's session, in Strava's activity-card shape (mockup v2, section
 /// 4): who and when (with the sound where Strava shows a place), a bold
-/// title, the description, stats with the label above the number, the selfie
-/// full width, and a footer with who gave 🙏. Edge to edge like Strava's feed.
+/// title, the description, stats with the label above the number, then
+/// everything they kept from the sit, then a footer with who gave 🙏.
 struct PostCard: View {
     let post: Post
     @ObservedObject var model: CommunityModel
     let onReport: () -> Void
+
+    /// The header block's own height (avatar and name down through the
+    /// stats), measured live so the media strip below it can match — see
+    /// `PostMediaStrip`. Seeded at a plausible size so the first frame is
+    /// never a sliver before the real measurement lands.
+    @State private var headerHeight: CGFloat = 190
+    @State private var showViewer = false
+    @State private var viewerIndex = 0
 
     private var author: Profile? { model.person(post.author) }
     private var isMine: Bool { post.author == model.myID }
@@ -683,64 +692,85 @@ struct PostCard: View {
         // arm's length while scrolling, so the white space is what separates
         // one person's sit from the next.
         VStack(alignment: .leading, spacing: 0) {
-            header
-                .padding(.horizontal, Self.inset).padding(.top, Self.inset)
+            VStack(alignment: .leading, spacing: 0) {
+                header
+                    .padding(.horizontal, Self.inset).padding(.top, Self.inset)
 
-            Text(post.title.isEmpty ? "Meditation" : post.title)
-                .font(.system(size: 19, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(.horizontal, Self.inset).padding(.top, 14)
-
-            if !post.caption.isEmpty {
-                Text(post.caption)
-                    .font(AppFont.callout)
+                Text(post.title.isEmpty ? "Meditation" : post.title)
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, Self.inset).padding(.top, 6)
-            }
-
-            // PHOTO FIRST, NUMBERS AFTER (2026-09-19). The four stats used to
-            // sit in the middle of the card with the photo dangling off the
-            // bottom, so the picture (the reason anybody stops scrolling) came
-            // last and a row of figures interrupted the sentence somebody had
-            // written. Who, what they called it, what it looked like, then the
-            // numbers, then the reaction.
-            if let url = post.photoURL {
-                PostPhotoView(url: url)
-                    .overlay(alignment: .bottomLeading) {
-                        // The score rides on the photo, exactly as it does on a
-                        // session card in the app. It leaves three columns that
-                        // line up from card to card and keeps one amber object
-                        // per post.
-                        if post.score != nil { scoreCapsule.padding(11) }
-                    }
                     .padding(.horizontal, Self.inset).padding(.top, 14)
-            }
 
-            HStack(spacing: 0) {
-                if post.photoURL == nil, let score = post.score { stat("Score", "\(score)") }
-                stat("Time", "\(post.minutes)m")
-                stat("Day streak", "\(post.streak)")
-                if let t = post.technique, !t.isEmpty { stat("Technique", t) }
+                if !post.caption.isEmpty {
+                    Text(post.caption)
+                        .font(AppFont.callout)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, Self.inset).padding(.top, 6)
+                }
+
+                // Who, what they called it, what they said, the numbers.
+                // Everything they KEPT (photos, video) comes after, below
+                // "below the title, description, time, streak, and
+                // technique" (Melvin, 2026-09-23).
+                HStack(spacing: 0) {
+                    if let score = post.score { stat("Score", "\(score)") }
+                    stat("Time", "\(post.minutes)m")
+                    stat("Day streak", "\(post.streak)")
+                    if let t = post.technique, !t.isEmpty { stat("Technique", t) }
+                }
+                .padding(.horizontal, Self.inset)
+                .padding(.top, 13)
+                .padding(.bottom, 14)
+                .overlay(alignment: .top) {
+                    Rectangle().fill(ValleyGround.quiet).frame(height: 1)
+                        .padding(.horizontal, Self.inset)
+                }
             }
-            .padding(.horizontal, Self.inset)
-            .padding(.top, 13)
-            .overlay(alignment: .top) {
-                Rectangle().fill(ValleyGround.quiet).frame(height: 1)
-                    .padding(.horizontal, Self.inset)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
+
+            if !post.media.isEmpty {
+                PostMediaStrip(media: post.media, height: stripHeight) { index in
+                    viewerIndex = index
+                    showViewer = true
+                }
+                .padding(.bottom, 14)
             }
 
             footer
                 .padding(.horizontal, Self.inset)
-                .padding(.top, 16).padding(.bottom, Self.inset)
+                .padding(.top, post.media.isEmpty ? 2 : 0).padding(.bottom, Self.inset)
         }
         // White on the grass, like every card on the valley pages.
         .whiteCard(radius: 20)
+        .fullScreenCover(isPresented: $showViewer) {
+            PostMediaViewer(media: post.media, startIndex: viewerIndex)
+        }
+        #if DEBUG
+        // PREVIEW_MEDIA_VIEWER=1 opens the viewer on the seeded three-item
+        // post, so it can be reviewed with no tap and no UI automation.
+        .task {
+            if ProcessInfo.processInfo.environment["PREVIEW_MEDIA_VIEWER"] == "1",
+               post.media.count >= 3, !showViewer {
+                viewerIndex = 0
+                showViewer = true
+            }
+        }
+        #endif
     }
 
     /// One inset for every child of the card, so nothing sits closer to an
-    /// edge than anything else.
-    private static let inset: CGFloat = 18
+    /// edge than anything else. `fileprivate` so the media strip below can
+    /// align to the same edge.
+    fileprivate static let inset: CGFloat = 18
+
+    /// The strip's fixed height: about the header block's own height
+    /// (Melvin, 2026-09-23: "the same, or maybe slightly taller, than
+    /// however tall the pixels are for everything above it"), clamped so an
+    /// empty description never collapses it and a long one never runs away.
+    private var stripHeight: CGFloat {
+        min(360, max(160, headerHeight * 1.1))
+    }
 
     private var header: some View {
         HStack(spacing: 10) {
@@ -803,16 +833,6 @@ struct PostCard: View {
         .frame(maxWidth: .infinity)
     }
 
-    private var scoreCapsule: some View {
-        Text(post.score.map(String.init) ?? "")
-            .font(DisplayFont.display(16, .heavy))
-            .foregroundStyle(AppColor.textOnAccent)
-            .monospacedDigit()
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(AppColor.accentGold))
-    }
-
     /// The pill on the left, just the emoji (Melvin, 2026-09-23: "It should
     /// not say 'nice session'. It should just show the prayer emoji inside
     /// the button, no text."); who gave one reads to its right, where the
@@ -871,26 +891,129 @@ struct PostCard: View {
     }
 }
 
-private struct PostPhotoView: View {
-    let url: URL
-    @State private var image: UIImage?
+// MARK: - Media strip and viewer
+
+/// Every photo and video on a post, scrollable, each kept at its OWN aspect
+/// ratio and shrunk to one shared `height` (Melvin, 2026-09-23: "do not
+/// change the aspect ratio at all... just shrink it so the height is always
+/// a certain height"). One item never scrolls; it just sits there.
+private struct PostMediaStrip: View {
+    let media: [Post.PostMedia]
+    let height: CGFloat
+    let onTap: (Int) -> Void
 
     var body: some View {
-        // Same rule as the composer: the photo fills an overlay of a
-        // fixed-size frame, so a wide image can never widen the card. Rounded
-        // and inset by the caller, so it reads as one more element inside the
-        // card rather than a band cut through it.
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(media) { item in
+                    Button { onTap(item.index) } label: {
+                        PostMediaThumb(item: item, height: height)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, PostCard.inset)
+        }
+        .scrollIndicators(.hidden)
+    }
+}
+
+private struct PostMediaThumb: View {
+    let item: Post.PostMedia
+    let height: CGFloat
+    @State private var image: UIImage?
+
+    /// width from the STORED aspect ratio, so the strip lays itself out
+    /// before the poster has even downloaded. 0.75 (portrait, a selfie's
+    /// own shape) only stands in for a malformed record.
+    private var width: CGFloat { height * CGFloat(item.aspect > 0 ? item.aspect : 0.75) }
+
+    var body: some View {
         AppColor.backgroundPrimary.opacity(0.4)
-            .frame(maxWidth: .infinity)
-            // 270, not 340. A selfie is 3:4, so at 340 a single post filled
-            // the screen and the numbers under it were never on the same
-            // screen as the picture they belong to.
-            .frame(height: 270)
+            .frame(width: width, height: height)
             .overlay {
                 if let image { Image(uiImage: image).resizable().scaledToFill() }
             }
+            .overlay(alignment: .bottomLeading) {
+                if item.kind == .video {
+                    Image(systemName: "play.circle.fill")
+                        .font(.system(size: 22))
+                        .foregroundStyle(.white)
+                        .shadow(radius: 3)
+                        .padding(8)
+                }
+            }
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .task { image = UIImage(contentsOfFile: url.path) }
+            .task(id: item.posterURL) {
+                image = (item.posterURL ?? item.url).flatMap { UIImage(contentsOfFile: $0.path) }
+            }
+    }
+}
+
+/// The full-screen, paged look at everything a post kept: photos fit the
+/// screen, videos play with sound, and nothing here saves or shares — this
+/// is only for looking. Opens on whichever item was tapped.
+private struct PostMediaViewer: View {
+    let media: [Post.PostMedia]
+    let startIndex: Int
+    @Environment(\.dismiss) private var dismiss
+    @State private var index: Int
+
+    init(media: [Post.PostMedia], startIndex: Int) {
+        self.media = media
+        self.startIndex = startIndex
+        _index = State(initialValue: startIndex)
+    }
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            Color.black.ignoresSafeArea()
+            TabView(selection: $index) {
+                ForEach(media) { item in
+                    MediaPage(item: item).tag(item.index)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: media.count > 1 ? .always : .never))
+            .ignoresSafeArea()
+
+            Button { dismiss() } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 34, height: 34)
+                    .background(.black.opacity(0.45), in: Circle())
+            }
+            .padding(.top, 8).padding(.trailing, 16)
+        }
+    }
+}
+
+private struct MediaPage: View {
+    let item: Post.PostMedia
+    @State private var image: UIImage?
+
+    var body: some View {
+        Group {
+            switch item.kind {
+            case .photo:
+                if let image {
+                    Image(uiImage: image).resizable().scaledToFit()
+                } else {
+                    ProgressView().tint(.white)
+                }
+            case .video:
+                if let url = item.url {
+                    VideoPlayer(player: AVPlayer(url: url))
+                } else {
+                    ProgressView().tint(.white)
+                }
+            }
+        }
+        .task {
+            if item.kind == .photo, let url = item.url ?? item.posterURL {
+                image = UIImage(contentsOfFile: url.path)
+            }
+        }
     }
 }
 

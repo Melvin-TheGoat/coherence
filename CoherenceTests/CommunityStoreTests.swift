@@ -160,28 +160,39 @@ final class CommunityStoreTests: XCTestCase {
         return url
     }()
 
+    private lazy var testVideo: URL = {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("video-test.mp4")
+        try? Data([0x00, 0x00, 0x00, 0x18]).write(to: url)
+        return url
+    }()
+
     private func draft(score: Int = 77, caption: String = "") -> CommunityStore.Draft {
         .init(score: score, minutes: 18, streak: 4, technique: "Counting", caption: caption,
-              photoURL: selfie, practicedAt: Date())
+              media: [.init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie)],
+              practicedAt: Date())
     }
 
     func test_photoIsOptionalOnAPost() async throws {
         // A photo is not mandatory to share a session (Melvin, 2026-09-23:
         // "again like we are making the watch optional"). A post with no
-        // photo must save cleanly, with no photo on the saved record.
+        // media must save cleanly, with no media on the saved record. An
+        // EMPTY array, not nil: nil would mean "leave what's there," which
+        // is not what a brand new, deliberately photo-less post means.
         var d = draft()
-        d.photoURL = nil
+        d.media = []
         let post = try await aziz.post(d)
-        XCTAssertNil(post.photoURL)
+        XCTAssertTrue(post.media.isEmpty)
         XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.post }.count, 1)
     }
 
     func test_editingAPostKeepsItsSelfie() async throws {
         var d = draft(); d.sessionID = "S2"
         try await aziz.post(d)
-        d.photoURL = nil; d.caption = "edited"
+        // nil, not []: an edit that does not re-send media (only the caption
+        // changed) must leave the post's existing picture alone.
+        d.media = nil; d.caption = "edited"
         let edited = try await aziz.post(d)
-        XCTAssertNotNil(edited.photoURL, "an edit without a new selfie keeps the old one")
+        XCTAssertFalse(edited.media.isEmpty, "an edit without new media keeps the old one")
     }
 
     func test_postCarriesOnlyTheFreeCardFields() async throws {
@@ -192,6 +203,27 @@ final class CommunityStoreTests: XCTestCase {
         for banned in ["heart", "hr", "breath", "stillness", "curve", "bpm"] {
             XCTAssertFalse(Post.fields.contains { $0.lowercased().contains(banned) }, banned)
         }
+    }
+
+    /// Several photos and a video, in order, through the fake database the
+    /// way real CloudKit would hold them: four parallel List fields, read
+    /// back fresh rather than trusting the value `post(_:)` just handed over.
+    func test_postWithSeveralMediaRoundTripsInOrder() async throws {
+        var d = draft()
+        d.media = [
+            .init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie),
+            .init(kind: .video, aspect: 1.78, fileURL: testVideo, posterURL: selfie),
+            .init(kind: .photo, aspect: 1.0, fileURL: selfie, posterURL: selfie),
+        ]
+        let post = try await aziz.post(d)
+        XCTAssertEqual(post.media.map(\.kind), [.photo, .video, .photo])
+        XCTAssertEqual(post.media.map(\.aspect), [0.75, 1.78, 1.0])
+        XCTAssertEqual(post.media.map(\.index), [0, 1, 2])
+        XCTAssertNotNil(post.media[1].url, "the video's own file, not just its poster")
+
+        let refetched = try await aziz.post(id: post.id)
+        XCTAssertEqual(refetched?.media.map(\.kind), [.photo, .video, .photo])
+        XCTAssertEqual(refetched?.media.map(\.aspect), [0.75, 1.78, 1.0])
     }
 
     func test_savingASessionAgainUpdatesItsPostAndUnpostRemovesIt() async throws {
@@ -498,7 +530,8 @@ final class PostRemovalTests: XCTestCase {
         let selfie = FileManager.default.temporaryDirectory.appendingPathComponent("rm-test.jpg")
         try Data([0xFF, 0xD8, 0xFF]).write(to: selfie)
         let ok = await model.post(.init(score: 70, minutes: 10, streak: 1, technique: nil, caption: "",
-                                        photoURL: selfie, practicedAt: Date(), sessionID: session.uuidString))
+                                        media: [.init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie)],
+                                        practicedAt: Date(), sessionID: session.uuidString))
         XCTAssertTrue(ok)
         var told: UUID?
         model.onPostRemoved = { told = $0 }
