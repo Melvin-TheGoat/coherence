@@ -3510,6 +3510,42 @@ Block behaves is untouched (same windows, limits, passes, strictness).
   132pt band, the symbol's circle on the seam the way Profile seats its
   portrait, grass below, white fields.
 
+## THE READY SCREEN HAS A TIMER AGAIN: A TAPE, AND TAP TO TYPE (2026-09-22, Aziz)
+
+"on the meditate screen i want it so theres a timer on there and we can do a
+cool scroll animation", then "also do it where you can tap and you can just
+say the specific amount of time". Built to `mockups/ready-timer.html`
+(direction 1, the tape; the drum and the ring stay in the mockup).
+
+- **A big clock in the sky and a ruler under it** (`SessionLengthPicker` and
+  `LengthTape`, `Coherence/Session/LengthTape.swift`). The ruler slides under a
+  fixed amber needle: a tick a minute, a number every five, ∞ (Open) at the
+  left end. Ticks swell toward the needle, the clock rolls to the new number,
+  and a selection haptic marks every minute. **Tapping the clock turns it into
+  a number field** (empty, the current length as placeholder) with a Done
+  pill; 0 means Open, the ceiling is 600.
+- **`SessionLength` (Shared, tested) holds the rules**: Open, 1 to 60, 75, 90,
+  120; a typed 100 is kept as 100 while the tape rests on its nearest tick (90)
+  and only moving the tape off that tick writes back.
+- **The length is remembered** in `Preferences.defaultDurationSec`, which the
+  Settings "Default length" picker also edits (it now lists a custom value
+  rather than showing blank). Begin passes it as `plannedDurationSec`, and the
+  phone path already ends a timed sit by itself.
+- **Reading the tape cost two wrong attempts, both worth knowing.**
+  `scrollPosition(id:anchor: .center)` reported the tick BEFORE the one the
+  ruler settled on (clock 9:00 over a needle on 10). A GeometryReader in the
+  scroll content fired once at rest and never while scrolling. What works:
+  `onScrollGeometryChange` (iOS 18), `contentOffset.x + contentInsets.leading`
+  divided by the tick spacing. iOS 17 falls back to the scroll position id.
+- **Programmatic moves never animate** (`scrollTo` bare): a slide would pass
+  every tick on the way and write each one back. Offsets before the first
+  placement are ignored for the same reason (they would write Open over the
+  remembered length).
+- Scale the tick's line and its number SEPARATELY: scaling the whole stack
+  pushed the number out of the ruler's frame and clipped it under the needle.
+- Open: whether the screen should say that under 5 minutes does not open
+  Block's apps. Asked, not decided.
+
 ## BLOCK HAS NO STRICTNESS AND NO PASS LIMIT; FIVE MINUTES OPENS THE APPS (2026-09-22, Aziz)
 
 "get rid of the passes and the intensity and the when otto lets you in

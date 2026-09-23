@@ -3,10 +3,12 @@ import SwiftData
 
 /// Begin a session. Deliberately almost empty.
 ///
-/// One promise: sit down and 808 sits with you. No practice type, no length,
-/// no guidance, no pre-session reading. Open-ended and silent are the
-/// defaults, stated on one tappable line so nobody has to decide and nobody
-/// feels trapped.
+/// One promise: sit down and 808 sits with you. No practice type, no
+/// guidance, no pre-session reading. **The length came back on 2026-09-22**
+/// (Aziz, `mockups/ready-timer.html`): a clock in the sky with a tape under
+/// it, and a tap on the clock to type an exact number. Open (∞) is still at
+/// the end of the tape and silence is still the default sound, so nobody has
+/// to decide anything.
 ///
 /// **Begin does not mention a Watch because Begin does not involve one.** The
 /// sit runs here, is timed here and is written here. The subtitle used to
@@ -24,6 +26,12 @@ struct SessionSetupView: View {
 
     /// Empty = silence.
     @AppStorage("sessionSoundID") private var soundID: String = ""
+
+    /// The length on the clock, nil for Open. Starts at the last one used
+    /// (`Preferences.defaultDurationSec`, which Settings edits too), so a
+    /// daily ten-minute sitter never touches the tape.
+    @State private var lengthMinutes: Int?
+    @State private var lengthLoaded = false
 
     /// Seconds left before the session starts, or nil when not counting.
     /// Phone-initiated sessions only: starting from the wrist means you are
@@ -60,6 +68,9 @@ struct SessionSetupView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
                     greeting(day: day, in: geo.size)
+                    SessionLengthPicker(minutes: $lengthMinutes, ink: day.ink, inkSoft: day.inkSoft)
+                        .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size))
+                        .transition(.opacity)
                     readyControls(day: day)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -82,10 +93,24 @@ struct SessionSetupView: View {
         // is about to close their eyes, and a system dialog is the single
         // worst thing to put in front of them. The prompt comes when they
         // reach for the switch, which is the moment it is about anything.
-        .onAppear { focus.refreshStatus() }
+        .onAppear {
+            focus.refreshStatus()
+            if !lengthLoaded {
+                lengthLoaded = true
+                lengthMinutes = preferences.first?.defaultDurationSec.map { max(1, $0 / 60) }
+            }
+        }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { focus.refreshStatus() }
         }
+    }
+
+    /// The timer's centre: the middle of the sky between the island and
+    /// Otto's line, which is pinned to the top of his head and runs about 84pt
+    /// tall. The same band the sit screen centres its headline in.
+    private static func lengthY(in size: CGSize) -> CGFloat {
+        let bubbleTop = SitLayout.ottoTop(in: size) - 8 - 84
+        return (SitLayout.skyTop(in: size) + 14 + bubbleTop) / 2
     }
 
     /// Where the sound list starts. Below Otto's corner perch, so his face is
@@ -249,9 +274,12 @@ struct SessionSetupView: View {
 
     private func startNow() {
         let id = soundID.isEmpty ? nil : soundID
+        let planned = lengthMinutes.map { $0 * 60 }
+        // Remembered for next time. Settings shows it as the default length.
+        preferences.first?.defaultDurationSec = planned
         coordinator.begin(mode: SoundCatalog.mode(for: id),
                           trackID: nil,
-                          plannedDurationSec: nil,          // open-ended, always
+                          plannedDurationSec: planned,
                           hapticsEnabled: preferences.first?.hapticsEnabled ?? true,
                           soundID: id)
         dismiss()
