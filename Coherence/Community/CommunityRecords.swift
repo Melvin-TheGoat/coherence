@@ -10,11 +10,11 @@ import CloudKit
 /// ever needs to edit anyone else's row.
 ///
 /// **What a post may carry is a rule, not a choice:** score, minutes, streak,
-/// technique, photo, caption. Never a heart-rate, breath or stillness value,
-/// never a curve. Guideline 5.1.3(ii) forbids health data in iCloud, and the
-/// free tier locks the evidence; a post is the free share card's data and
-/// nothing more. `CommunityStoreTests.test_postCarriesOnlyTheFreeCardFields`
-/// pins the field list.
+/// technique, photos and videos, caption. Never a heart-rate, breath or
+/// stillness value, never a curve. Guideline 5.1.3(ii) forbids health data in
+/// iCloud, and the free tier locks the evidence; a post is the free share
+/// card's data and nothing more. `CommunityStoreTests
+/// .test_postCarriesOnlyTheFreeCardFields` pins the field list.
 enum CommunityType {
     static let profile  = "Profile"
     static let edge     = "FriendEdge"
@@ -108,6 +108,28 @@ struct FriendEdge: Identifiable, Equatable {
 }
 
 struct Post: Identifiable, Equatable {
+    /// One photo or video on a post, in the order it was added. Read-side
+    /// only: `CommunityStore.post(_:)` writes the four parallel record
+    /// fields directly from `CommunityStore.DraftMedia`, which is what
+    /// guarantees they stay the same length and the same order as each
+    /// other — a `PostMedia` decoded here just reflects whatever the four
+    /// arrays on the record said, index by index.
+    struct PostMedia: Identifiable, Equatable {
+        enum Kind: String, Equatable { case photo, video }
+        let index: Int
+        var kind: Kind
+        /// width / height of the ORIGINAL image or video frame, so the feed
+        /// can lay the strip out before anything downloads.
+        var aspect: Double
+        /// The full-resolution file: the photo itself, or the video
+        /// (CloudKit hands assets back as local files).
+        var url: URL?
+        /// A small JPEG for the feed's strip, so scrolling never downloads a
+        /// whole video, or a full-size photo, just to draw a thumbnail.
+        var posterURL: URL?
+        var id: Int { index }
+    }
+
     let id: String
     let author: String
     /// The score, when the sit had one. **Optional since 2026-09-22**
@@ -120,8 +142,9 @@ struct Post: Identifiable, Equatable {
     var technique: String?
     /// The public description ("How did it go?"). Never the private notes.
     var caption: String
-    /// A local file URL for the photo (CloudKit hands assets back as files).
-    var photoURL: URL?
+    /// Photos and videos, in the order they were added. Empty for a session
+    /// with none (a photo was never required, and neither is this).
+    var media: [PostMedia]
     var practicedAt: Date
     var createdAt: Date
     /// Strava's activity name: "Evening meditation", or whatever they typed.
@@ -130,22 +153,39 @@ struct Post: Identifiable, Equatable {
     var sound: String?
 
     /// The only fields a post may carry. Locked by test; if you find yourself
-    /// adding one, read the rule at the top of this file first.
-    static let fields = ["author", "score", "minutes", "streak", "technique", "caption", "photo",
+    /// adding one, read the rule at the top of this file first. The four
+    /// `media*` fields are parallel arrays, one entry per item, in order:
+    /// splitting them (rather than one array of structs) is what CloudKit's
+    /// record fields can actually hold — an Asset List, two more Lists for
+    /// the kind and the aspect ratio.
+    static let fields = ["author", "score", "minutes", "streak", "technique", "caption",
+                         "media", "mediaPosters", "mediaKinds", "mediaAspects",
                          "practicedAt", "createdAt", "title", "sound"]
 
     init(id: String = UUID().uuidString, author: String, score: Int? = nil, minutes: Int, streak: Int,
-         technique: String? = nil, caption: String = "", photoURL: URL? = nil,
+         technique: String? = nil, caption: String = "", media: [PostMedia] = [],
          practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil) {
         self.id = id; self.author = author; self.score = score; self.minutes = minutes
         self.streak = streak; self.technique = technique; self.caption = caption
-        self.photoURL = photoURL; self.practicedAt = practicedAt; self.createdAt = createdAt
+        self.media = media; self.practicedAt = practicedAt; self.createdAt = createdAt
         self.title = title; self.sound = sound
     }
 
     init?(record: CKRecord) {
         guard record.recordType == CommunityType.post,
               let author = (record["author"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
+        let assets = (record["media"] as? [CKAsset]) ?? []
+        let posters = (record["mediaPosters"] as? [CKAsset]) ?? []
+        let kinds = (record["mediaKinds"] as? [String]) ?? []
+        let aspects = (record["mediaAspects"] as? [Double]) ?? []
+        var media: [PostMedia] = []
+        for i in 0..<kinds.count {
+            guard let kind = PostMedia.Kind(rawValue: kinds[i]) else { continue }
+            media.append(PostMedia(index: i, kind: kind,
+                                   aspect: i < aspects.count ? aspects[i] : 0.75,
+                                   url: i < assets.count ? assets[i].fileURL : nil,
+                                   posterURL: i < posters.count ? posters[i].fileURL : nil))
+        }
         self.init(id: record.recordID.recordName,
                   author: author,
                   score: record["score"] as? Int,
@@ -153,13 +193,17 @@ struct Post: Identifiable, Equatable {
                   streak: record["streak"] as? Int ?? 0,
                   technique: record["technique"] as? String,
                   caption: record["caption"] as? String ?? "",
-                  photoURL: (record["photo"] as? CKAsset)?.fileURL,
+                  media: media,
                   practicedAt: record["practicedAt"] as? Date ?? Date(),
                   createdAt: record["createdAt"] as? Date ?? Date(),
                   title: record["title"] as? String ?? "",
                   sound: record["sound"] as? String)
     }
 
+    /// Every field but the media ones, which `CommunityStore.post(_:)` writes
+    /// separately: a draft with no media (an edit that only changes the
+    /// caption, say) must leave a post's existing pictures untouched, the
+    /// same rule the single-photo field followed.
     func apply(to record: CKRecord) {
         record["title"] = title
         record["sound"] = sound
@@ -169,7 +213,6 @@ struct Post: Identifiable, Equatable {
         record["streak"] = streak
         record["technique"] = technique
         record["caption"] = caption
-        record["photo"] = photoURL.map { CKAsset(fileURL: $0) }
         record["practicedAt"] = practicedAt
         record["createdAt"] = createdAt
     }

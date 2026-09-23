@@ -315,6 +315,19 @@ actor CommunityStore {
 
     // MARK: - Posts
 
+    /// One photo or video to upload, as the session's own page prepares it
+    /// (`PostMediaPrep.draft(for:)`). `fileURL` is the full-resolution file
+    /// (the prepared JPEG, or the exported movie); `posterURL` is a small
+    /// JPEG for the feed's strip, so scrolling it never has to download a
+    /// whole video, or a full-size photo, just to draw a thumbnail.
+    struct DraftMedia: Equatable {
+        var kind: Post.PostMedia.Kind
+        /// width / height of the ORIGINAL image or video frame.
+        var aspect: Double
+        var fileURL: URL
+        var posterURL: URL
+    }
+
     /// The numbers a post carries, handed in by the results screen. Nothing
     /// measured beyond the score is accepted by this signature on purpose.
     struct Draft: Equatable {
@@ -324,7 +337,12 @@ actor CommunityStore {
         var streak: Int
         var technique: String?
         var caption: String
-        var photoURL: URL?
+        /// Photos and videos, in the order they'll show. **nil leaves the
+        /// post's existing media untouched** (an edit that only changes the
+        /// caption); an EMPTY array clears it. The session's page always
+        /// knows its own full list, so it passes one or the other on purpose
+        /// rather than relying on the "untouched" default.
+        var media: [DraftMedia]? = nil
         var practicedAt: Date
         /// The session this post is. When set, the post's record name is
         /// derived from it, so saving the same session again UPDATES its post
@@ -353,16 +371,23 @@ actor CommunityStore {
         let existing = try await db.fetch(id)
         guard ContentFilter.check([draft.title, draft.caption]) == .ok else { throw CommunityError.contentBlocked }
         let post = Post(id: id, author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
-                        technique: draft.technique, caption: caption, photoURL: draft.photoURL,
+                        technique: draft.technique, caption: caption,
                         practicedAt: draft.practicedAt,
                         createdAt: existing?["createdAt"] as? Date ?? Date(),
                         title: String(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.titleLimit)),
                         sound: draft.sound)
         let record = existing ?? CKRecord(recordType: CommunityType.post, recordID: CKRecord.ID(recordName: id))
-        // An update keeps a photo it already has unless a new one is given.
-        let keptPhoto = draft.photoURL == nil ? record["photo"] : nil
         post.apply(to: record)
-        if let keptPhoto { record["photo"] = keptPhoto }
+        // An update with no media (an edit that only changes the caption,
+        // say) keeps whatever the post already has; the old single-photo
+        // field worked the same way. A non-nil, possibly empty, array always
+        // replaces all four fields together so they never drift out of sync.
+        if let media = draft.media {
+            record["media"] = media.map { CKAsset(fileURL: $0.fileURL) }
+            record["mediaPosters"] = media.map { CKAsset(fileURL: $0.posterURL) }
+            record["mediaKinds"] = media.map { $0.kind.rawValue }
+            record["mediaAspects"] = media.map { $0.aspect }
+        }
         let saved = try await db.save(record)
         return Post(record: saved) ?? post
     }

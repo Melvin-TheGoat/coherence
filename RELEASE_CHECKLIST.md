@@ -153,17 +153,34 @@ on it.
   (`evidenceGrantRemaining`, `evidenceGrantSince`, `rewardedFriends`,
   `grantedSessionIDs`). Run the schema primer on a dev build, then deploy
   Development → Production. A promotion is a release step (the 1.0 lesson).
+- [ ] **CloudKit PUBLIC schema: `Post` gained four fields (2026-09-23) and
+  lost one.** Several photos and videos per post (Melvin: "you should be
+  able to share multiple photos or videos") replaced the single `photo`
+  Asset with four parallel List fields, all the same length, in order:
+  `media` (Asset List, the full-resolution file per item), `mediaPosters`
+  (Asset List, a small thumbnail per item), `mediaKinds` (String List,
+  `"photo"` or `"video"`), `mediaAspects` (Double List, width / height, so
+  the feed can lay the strip out before anything downloads). Same rule as
+  every other field here: get them into Development first (post a session
+  with two photos and a video from a DEBUG build signed in to iCloud, since
+  the old `photo` field never had a List counterpart to inherit), then
+  deploy. The old `photo` field can stay; nothing reads it and CloudKit does
+  not require removing fields. `CLOUDKIT_SETUP.md`'s Post table has the
+  full, current list.
 - [ ] **CloudKit PRIVATE schema, everything synced since the 2026-09-12
   promotion** (added 2026-09-23: CLAUDE.md said `SessionPhoto` was on this
   list and it was not). The new `CD_SessionPhoto` record type (`sessionID`,
-  `takenAt`, `jpeg`, `thumbnail`, `video`, `createdAt`), `CD_Session.source`
+  `takenAt`, `jpeg`, `thumbnail`, `video`, `order`, `createdAt` — `order`
+  added 2026-09-23, several photos per session, defaulted to 0 so every row
+  saved before it existed still sorts first), `CD_Session.source`
   (2026-09-21), and check `CD_User.username` (added the morning of the
   promotion). Production rejects what it has never seen, so photos and
-  phone sessions would stop syncing silently. Get every field into
-  Development with a DEBUG build signed in to iCloud: save a session with a
-  video and set a username, because the schema primer leaves `video` and
-  `username` nil and a nil field is never written. Deploy, then confirm
-  Production lists them.
+  phone sessions would stop syncing silently. `order` is a non-optional Int,
+  so an ordinary photo save writes it (even at its default 0) the same as
+  every other field; `video` is the one still OPTIONAL, and a nil field is
+  never written, so get it into Development on purpose: save a session with
+  a video, and set a username, from a DEBUG build signed in to iCloud.
+  Deploy, then confirm Production lists them.
 - [ ] **Age rating questionnaire:** UGC and Social both flip to **Yes**.
 - [ ] **App Privacy label:** add Photos or Videos, User Content, Name, User
   ID (linked, not tracking, App Functionality), to match the manifest.

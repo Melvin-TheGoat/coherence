@@ -47,10 +47,13 @@ final class MemoryCommunityDatabase: CommunityDatabase {
 /// A seeded tab for design review: me (@aziz, claimed), Melvin as a friend
 /// with two posts, one incoming request, one sent request.
 enum DemoCommunity {
-    /// A soft two-tone image standing in for a selfie, so seeded posts obey
-    /// the selfie rule.
-    static func fakeSelfie(_ top: UIColor, _ bottom: UIColor) -> URL? {
-        let size = CGSize(width: 900, height: 1200)
+    /// A soft two-tone image standing in for a selfie or a video's poster
+    /// frame, so seeded posts have something to draw. `aspect` (width /
+    /// height) varies across the demo media, so the strip's "keep the
+    /// original aspect ratio" rule is actually exercised on review rather
+    /// than every tile happening to be the same shape.
+    static func fakeSelfie(_ top: UIColor, _ bottom: UIColor, aspect: Double = 0.75) -> URL? {
+        let size = CGSize(width: 900, height: (900 / aspect).rounded())
         let format = UIGraphicsImageRendererFormat.default(); format.scale = 1
         let image = UIGraphicsImageRenderer(size: size, format: format).image { ctx in
             let colors = [top.cgColor, bottom.cgColor] as CFArray
@@ -58,6 +61,29 @@ enum DemoCommunity {
             ctx.cgContext.drawLinearGradient(gradient, start: .zero, end: CGPoint(x: 0, y: size.height), options: [])
         }
         return PostPhoto.prepare(image)
+    }
+
+    /// A stand-in for an uploaded video: CKAsset does not care what is
+    /// inside the file, and the demo only needs the strip and the viewer to
+    /// open on a `.video` item, not to actually decode one.
+    private static func fakeVideo() -> URL? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("demo-video-\(UUID().uuidString).mp4")
+        do { try Data([0x00, 0x00, 0x00, 0x18]).write(to: url) } catch { return nil }
+        return url
+    }
+
+    /// One or several items for a seeded post, mixing photos and videos so
+    /// the feed's strip can be reviewed with 1, 3, and a mixed set (Melvin,
+    /// 2026-09-23). `spec` is (top colour, bottom colour, aspect, isVideo).
+    static func media(_ spec: [(UIColor, UIColor, Double, Bool)]) -> [CommunityStore.DraftMedia] {
+        spec.compactMap { top, bottom, aspect, isVideo in
+            guard let poster = fakeSelfie(top, bottom, aspect: aspect) else { return nil }
+            if isVideo {
+                guard let video = fakeVideo() else { return nil }
+                return CommunityStore.DraftMedia(kind: .video, aspect: aspect, fileURL: video, posterURL: poster)
+            }
+            return CommunityStore.DraftMedia(kind: .photo, aspect: aspect, fileURL: poster, posterURL: poster)
+        }
     }
 
     static func store() async -> CommunityStore {
@@ -73,13 +99,20 @@ enum DemoCommunity {
         try? await melvin.claimUsername("melvin", displayName: "Melvin")
         try? await melvin.markFirstSession(at: Date().addingTimeInterval(-86_400 * 40))
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
+        // One photo (the ordinary case).
         let melvinPost = try? await melvin.post(.init(score: 81, minutes: 14, streak: 9, technique: "Slow breathing",
                                                        caption: "Cold enough to see my breath.",
-                                                       photoURL: fakeSelfie(UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1)),
+                                                       media: media([(UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1), 0.75, false)]),
                                                        practicedAt: Date().addingTimeInterval(-3_600),
                                                        title: "Roof before work", sound: "Rain"))
+        // Three photos, different aspect ratios, so the strip's "shrink to
+        // one height, never crop" rule is exercised across shapes.
         _ = try? await melvin.post(.init(score: 64, minutes: 25, streak: 8, technique: "Guided",
-                                          caption: "", photoURL: fakeSelfie(UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1)),
+                                          caption: "", media: media([
+                                            (UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1), 0.75, false),
+                                            (UIColor(red: 0.20, green: 0.24, blue: 0.28, alpha: 1), UIColor(red: 0.10, green: 0.12, blue: 0.16, alpha: 1), 1.33, false),
+                                            (UIColor(red: 0.30, green: 0.28, blue: 0.20, alpha: 1), UIColor(red: 0.55, green: 0.48, blue: 0.32, alpha: 1), 1.0, false),
+                                          ]),
                                           practicedAt: Date().addingTimeInterval(-86_400 - 1_800),
                                           title: "Evening meditation", sound: "Guided"))
 
@@ -102,13 +135,24 @@ enum DemoCommunity {
         db.user = "_demo_sam"
         try? await sam.accept(CommunityNames.profile(user: "_demo_me"))
         try? await sam.markFirstSession(at: Date().addingTimeInterval(1))
+        // A phone sit: no score, and no media either, so the feed reviews
+        // "a post with no media shows no strip" alongside the optional score.
+        _ = try? await sam.post(.init(score: nil, minutes: 8, streak: 1, technique: "Silence",
+                                      caption: "", practicedAt: Date().addingTimeInterval(-7_200),
+                                      title: "Quick sit", sound: "Silence"))
 
         db.user = "_demo_me"
         try? await me.accept(CommunityNames.profile(user: "_demo_melvin"))
         try? await me.sendRequest(to: CommunityNames.profile(user: "_demo_lena"))
         if let melvinPost { try? await me.react(to: melvinPost.id) }
+        // A mix of photos and a video, so the strip's play glyph and the
+        // viewer's mixed paging both get a real post to open.
         _ = try? await me.post(.init(score: 72, minutes: 18, streak: 4, technique: "Counting",
-                                      caption: "", photoURL: fakeSelfie(UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1)),
+                                      caption: "", media: media([
+                                        (UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1), 0.75, false),
+                                        (UIColor(red: 0.18, green: 0.26, blue: 0.22, alpha: 1), UIColor(red: 0.08, green: 0.14, blue: 0.11, alpha: 1), 1.78, true),
+                                        (UIColor(red: 0.34, green: 0.28, blue: 0.40, alpha: 1), UIColor(red: 0.14, green: 0.11, blue: 0.20, alpha: 1), 0.75, false),
+                                      ]),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2),
                                       title: "Morning session", sound: "Silence"))
         return me

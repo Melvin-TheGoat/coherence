@@ -1,7 +1,10 @@
 import Foundation
 import SwiftData
 
-/// The photo or video kept with a session, one per session at most.
+/// A photo or video kept with a session. Several are allowed (Melvin,
+/// 2026-09-23: "you should be able to share multiple photos or videos"),
+/// ordered by `order`, appended by `SessionStore.addPhoto` and removed one
+/// at a time by `SessionStore.removePhotoItem`.
 ///
 /// Aziz, 2026-09-15: "you should still have an option to take pictures after
 /// the meditation even if its a private one and then those pictures can be
@@ -18,32 +21,40 @@ import SwiftData
 /// full-size image.
 ///
 /// CloudKit-safe like every model here: every property optional or defaulted,
-/// the session a plain `UUID?`, uniqueness (one per session) enforced in
-/// `SessionStore.savePhoto`, not in the schema.
+/// the session a plain `UUID?`, ordering and the 10-item cap enforced in
+/// `SessionStore`, not in the schema. `order` is defaulted so every row saved
+/// before it existed reads as 0, which is still a valid, sortable order.
 @Model
 final class SessionPhoto {
     var id: UUID = UUID()
     var sessionID: UUID?
     var takenAt: Date = Date()
     @Attribute(.externalStorage) var jpeg: Data?
-    /// About 240 px on the long side. Drawn on the calendar and in rows.
+    /// About 240 px on the long side. Drawn on the calendar and in rows, and
+    /// on the feed's media strip (a small download for a post that may carry
+    /// several).
     var thumbnail: Data?
     /// A video, when they picked one (Melvin, 2026-09-22: any photo and any
     /// video, shared or private). `jpeg` then holds its first frame, so the
     /// calendar, the rows and the results screen draw it without knowing
     /// there is a film behind it. Exported small before it is stored.
     @Attribute(.externalStorage) var video: Data?
+    /// Position among a session's items, lowest first. `SessionStore.photo`
+    /// (the single-item callers: the calendar dot, `EvidenceRow`, the results
+    /// screen) reads whichever item has the lowest order.
+    var order: Int = 0
     var createdAt: Date = Date()
 
     init(id: UUID = UUID(), sessionID: UUID? = nil, takenAt: Date = Date(),
          jpeg: Data? = nil, thumbnail: Data? = nil, video: Data? = nil,
-         createdAt: Date = Date()) {
+         order: Int = 0, createdAt: Date = Date()) {
         self.id = id
         self.sessionID = sessionID
         self.takenAt = takenAt
         self.jpeg = jpeg
         self.thumbnail = thumbnail
         self.video = video
+        self.order = order
         self.createdAt = createdAt
     }
 }

@@ -365,7 +365,7 @@ final class CommunityModel: ObservableObject {
         guard let store else { return false }
         do {
             let p = try await store.post(draft)
-            Analytics.track(.postCreated(photo: draft.photoURL != nil))
+            Analytics.track(.postCreated(photo: !(draft.media ?? []).isEmpty))
             feed.removeAll { $0.id == p.id }
             feed.insert(p, at: 0)
             return true

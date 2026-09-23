@@ -51,13 +51,15 @@ struct SaveSessionView: View {
     /// at five would file every unrated session as middling.
     @State private var rating: Int?
     @State private var visibility: Visibility = .private
-    /// Media taken or picked on this screen and not yet saved.
-    @State private var newPhoto: UIImage?
-    @State private var newVideo: Data?
-    /// What the session already keeps. Picking again replaces it.
-    @State private var storedPhoto: UIImage?
-    @State private var storedVideo: Data?
-    @State private var pickedItem: PhotosPickerItem?
+    /// Every photo and video the session currently keeps, in order. Add and
+    /// remove (`addPhoto`/`removeItem`) write straight through
+    /// `SessionStore` and refresh this list, so there is no separate
+    /// "staged" copy to merge back in on Save (Melvin, 2026-09-23: several
+    /// photos or videos, scrollable, each removable).
+    @State private var mediaItems: [SessionPhoto] = []
+    /// The library picker's own selection; consumed and cleared once each
+    /// item has been read and added.
+    @State private var pickedItems: [PhotosPickerItem] = []
     @State private var loadingMedia = false
     @State private var loaded = false
     /// What the session was saved as before this screen opened, so an
@@ -71,7 +73,8 @@ struct SaveSessionView: View {
     @State private var showCamera = false
     @State private var showRules = false
     @State private var showClaim = false
-    @State private var playing = false
+    /// The kept item whose video is playing, if any.
+    @State private var playingItem: SessionPhoto?
     @State private var showResults = false
     @State private var problem: String?
 
@@ -80,10 +83,6 @@ struct SaveSessionView: View {
     private enum Field: Hashable { case title, publicNote, privateNote, techniqueNote }
 
     enum Visibility: String { case friends, `private` }
-
-    private var hasMedia: Bool { newPhoto != nil || storedPhoto != nil }
-    private var shownPhoto: UIImage? { newPhoto ?? storedPhoto }
-    private var shownVideo: Data? { newVideo ?? storedVideo }
 
     var body: some View {
         GeometryReader { proxy in
@@ -124,7 +123,7 @@ struct SaveSessionView: View {
                     .font(AppFont.callout.weight(.semibold))
             }
         }
-        .fullScreenCover(isPresented: $showCamera) { SelfieCamera { newPhoto = $0; newVideo = nil } }
+        .fullScreenCover(isPresented: $showCamera) { SelfieCamera { image in addPhoto(image, video: nil) } }
         .sheet(isPresented: $showRules) {
             CommunityRulesSheet {
                 rulesAgreed = true
@@ -141,8 +140,8 @@ struct SaveSessionView: View {
                 .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showClaim = false } } }
             }
         }
-        .sheet(isPresented: $playing) {
-            if let data = shownVideo { VideoSheet(data: data) }
+        .sheet(item: $playingItem) { item in
+            if let data = item.video { VideoSheet(data: data) }
         }
         .fullScreenCover(isPresented: $showResults) {
             SessionResultsView(sessionID: sessionID)
@@ -150,7 +149,7 @@ struct SaveSessionView: View {
         .alert("Couldn't share that", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
             Button("OK") { problem = nil }
         } message: { Text(problem ?? "") }
-        .onChange(of: pickedItem) { _, item in Task { await take(item) } }
+        .onChange(of: pickedItems) { _, items in Task { await addPicked(items) } }
         .task { await load() }
     }
 
@@ -357,68 +356,93 @@ struct SaveSessionView: View {
         }
     }
 
-    /// Any photo, any video, shared or not. The tile is portrait, because a
-    /// portrait shot in a landscape slot loses the face every time.
+    /// Any photo, any video, shared or not, as a scrollable row of everything
+    /// the session keeps (Melvin, 2026-09-23: "you should be able to share
+    /// multiple photos or videos... should be scrollable"), plus two small
+    /// add tiles. Every tile is portrait, because a portrait shot in a
+    /// landscape slot loses the face every time.
+    private static let mediaTile = CGSize(width: 78, height: 104)
+
     private var mediaSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionHeader("Photo or video")
-            HStack(spacing: 12) {
-                if let shot = shownPhoto {
-                    Button { if shownVideo != nil { playing = true } } label: {
-                        Image(uiImage: shot)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 78, height: 104)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .overlay(alignment: .bottomLeading) {
-                                if shownVideo != nil {
-                                    Image(systemName: "play.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(.white)
-                                        .shadow(radius: 3)
-                                        .padding(7)
-                                }
-                            }
+            sectionHeader("Photos and video")
+            ScrollView(.horizontal) {
+                HStack(spacing: 10) {
+                    ForEach(mediaItems, id: \.id) { item in
+                        mediaThumb(item)
                     }
-                    .buttonStyle(.plain)
-                }
-                let pills = Group {
-                    PhotosPicker(selection: $pickedItem, matching: .any(of: [.images, .videos])) {
-                        mediaPill(hasMedia ? "Choose another" : "Choose", icon: "photo.on.rectangle")
-                    }
-                    Button { showCamera = true } label: {
-                        mediaPill("Selfie", icon: "camera")
-                    }
-                    .buttonStyle(.plain)
-                }
-                VStack(alignment: .leading, spacing: 8) {
-                    // Side by side when there is room; stacked beside a photo.
-                    if hasMedia {
-                        VStack(spacing: 8) { pills }
-                    } else {
-                        HStack(spacing: 8) { pills }
-                    }
-                    if loadingMedia {
-                        Text("Getting it ready…")
-                            .font(AppFont.caption)
-                            .foregroundStyle(AppColor.textSecondary)
+                    if mediaItems.count < SessionStore.maxPhotosPerSession {
+                        Button { showCamera = true } label: { addTileLabel("camera") }
+                            .buttonStyle(.plain)
+                        PhotosPicker(selection: $pickedItems, maxSelectionCount: remainingSlots,
+                                    matching: .any(of: [.images, .videos])) {
+                            addTileLabel("photo.on.rectangle")
+                        }
                     }
                 }
-                Spacer(minLength: 0)
+                .padding(.horizontal, Self.inset)
             }
-            .padding(.horizontal, Self.inset)
-            .padding(.vertical, 12)
+            .scrollIndicators(.hidden)
+            if loadingMedia {
+                Text("Getting it ready…")
+                    .font(AppFont.caption)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.horizontal, Self.inset)
+                    .padding(.top, 6)
+            }
+            Color.clear.frame(height: 12)
         }
     }
 
-    /// A sky pill: something you press, a choice rather than the action.
-    private func mediaPill(_ text: String, icon: String) -> some View {
-        Label(text, systemImage: icon)
-            .font(AppFont.callout.weight(.semibold))
-            .foregroundStyle(ValleyGround.ink)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 11)
-            .background(AppColor.skyWash, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+    private var remainingSlots: Int { max(1, SessionStore.maxPhotosPerSession - mediaItems.count) }
+
+    /// One kept item: a video plays on tap; a remove badge sits over every
+    /// tile, its own button so it never fights the play tap underneath it.
+    private func mediaThumb(_ item: SessionPhoto) -> some View {
+        let shot = PhotoThumbs.image(for: item)
+        return Button {
+            if item.video != nil { playingItem = item }
+        } label: {
+            Color.clear
+                .frame(width: Self.mediaTile.width, height: Self.mediaTile.height)
+                .overlay { if let shot { Image(uiImage: shot).resizable().scaledToFill() } }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(alignment: .bottomLeading) {
+                    if item.video != nil {
+                        Image(systemName: "play.circle.fill")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.white)
+                            .shadow(radius: 3)
+                            .padding(7)
+                    }
+                }
+        }
+        .buttonStyle(.plain)
+        .overlay(alignment: .topTrailing) {
+            Button { removeItem(item) } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 20, height: 20)
+                    .background(Color.black.opacity(0.55), in: Circle())
+            }
+            .buttonStyle(.plain)
+            .padding(5)
+        }
+    }
+
+    /// The dashed empty tile, same shape whether it opens the camera or the
+    /// library picker.
+    private func addTileLabel(_ icon: String) -> some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+            .foregroundStyle(AppColor.textSecondary.opacity(0.35))
+            .frame(width: 56, height: Self.mediaTile.height)
+            .overlay {
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .regular))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
     }
 
     /// A Watch session measured something; the curves are one tap in. The
@@ -572,34 +596,54 @@ struct SaveSessionView: View {
         }
     }
 
-    private func take(_ item: PhotosPickerItem?) async {
-        guard let item else { return }
+    /// Reads and adds every item the library picker returned, in order, up
+    /// to whatever room is left. Each is persisted as it is read (`addPhoto`)
+    /// rather than staged, so leaving the screen never loses one that was
+    /// already added.
+    private func addPicked(_ items: [PhotosPickerItem]) async {
+        guard !items.isEmpty else { return }
         loadingMedia = true
-        defer { loadingMedia = false }
-        // A still first: most picks are photos, and a video's poster frame
-        // goes in the same place, so everything that draws a photo keeps
-        // working without knowing there is a film behind it.
-        if let data = try? await item.loadTransferable(type: Data.self),
-           let image = UIImage(data: data) {
-            newPhoto = image
-            newVideo = nil
-            return
+        defer { loadingMedia = false; pickedItems = [] }
+        for item in items {
+            guard mediaItems.count < SessionStore.maxPhotosPerSession else { break }
+            // A still first: most picks are photos, and a video's poster
+            // frame goes in the same place, so everything that draws a photo
+            // keeps working without knowing there is a film behind it.
+            if let data = try? await item.loadTransferable(type: Data.self),
+               let image = UIImage(data: data) {
+                addPhoto(image, video: nil)
+                continue
+            }
+            guard let movie = try? await item.loadTransferable(type: Movie.self) else {
+                problem = "That one couldn't be read. Try another."
+                continue
+            }
+            defer { try? FileManager.default.removeItem(at: movie.url) }
+            guard let exported = await SessionVideo.export(movie.url),
+                  let poster = SessionVideo.posterFrame(movie.url) else {
+                problem = "That video couldn't be saved. Try a shorter one."
+                continue
+            }
+            addPhoto(poster, video: exported)
         }
-        guard let movie = try? await item.loadTransferable(type: Movie.self) else {
-            problem = "That one couldn't be read. Try another."
-            return
+    }
+
+    @discardableResult
+    private func addPhoto(_ image: UIImage, video: Data?) -> Bool {
+        guard let jpeg = PostPhoto.jpeg(image), let thumb = PostPhoto.thumbnail(image) else { return false }
+        guard let row = SessionStore.addPhoto(sessionID: sessionID, jpeg: jpeg, thumbnail: thumb,
+                                              video: video, in: context) else {
+            problem = "That's as many as a session can hold (\(SessionStore.maxPhotosPerSession))."
+            return false
         }
-        defer { try? FileManager.default.removeItem(at: movie.url) }
-        guard let exported = await SessionVideo.export(movie.url) else {
-            problem = "That video couldn't be saved. Try a shorter one."
-            return
-        }
-        newVideo = exported
-        newPhoto = SessionVideo.posterFrame(movie.url) ?? newPhoto
-        if newPhoto == nil {
-            problem = "That video couldn't be saved. Try a shorter one."
-            newVideo = nil
-        }
+        mediaItems.append(row)
+        return true
+    }
+
+    private func removeItem(_ item: SessionPhoto) {
+        SessionStore.removePhotoItem(id: item.id, in: context)
+        mediaItems.removeAll { $0.id == item.id }
+        if playingItem?.id == item.id { playingItem = nil }
     }
 
     // MARK: - Load and save
@@ -626,10 +670,7 @@ struct SaveSessionView: View {
             ?? session?.frequencyID
             ?? (session?.mode == SessionMode.guided.rawValue ? MeditationMethod.guidedID : nil)
             ?? (session?.mode == SessionMode.silence.rawValue ? MeditationMethod.silenceID : nil)
-        if let kept = SessionStore.photo(for: sessionID, in: context) {
-            storedPhoto = PhotoThumbs.full(kept)
-            storedVideo = kept.video
-        }
+        mediaItems = SessionStore.photos(for: sessionID, in: context)
 
         savedVisibility = Visibility(rawValue: reflection?.visibility ?? "private") ?? .private
         visibility = savedVisibility
@@ -637,24 +678,6 @@ struct SaveSessionView: View {
         loaded = true
 
         await community.load()
-        // A post made before photos were kept with the session: show its
-        // picture, so an edit does not look like the selfie went missing.
-        if storedPhoto == nil, savedVisibility == .friends,
-           let url = await community.post(forSession: sessionID)?.photoURL,
-           let legacy = UIImage(contentsOfFile: url.path) {
-            storedPhoto = legacy
-        }
-    }
-
-    /// Writes fresh media to the session's photo row (a new pick replaces in
-    /// place) and returns whatever row the session now has.
-    @discardableResult
-    private func persistMediaIfPicked() -> SessionPhoto? {
-        if let newPhoto, let jpeg = PostPhoto.jpeg(newPhoto), let thumb = PostPhoto.thumbnail(newPhoto) {
-            return SessionStore.savePhoto(sessionID: sessionID, jpeg: jpeg, thumbnail: thumb,
-                                          video: newVideo, in: context)
-        }
-        return SessionStore.photo(for: sessionID, in: context)
     }
 
     private func save() {
@@ -674,7 +697,6 @@ struct SaveSessionView: View {
             try? context.save()
             switch visibility {
             case .private:
-                persistMediaIfPicked()
                 if savedVisibility == .friends { await community.unpost(session: sessionID) }
             case .friends:
                 guard ContentFilter.check([finalTitle, publicNote]) == .ok else {
@@ -682,27 +704,29 @@ struct SaveSessionView: View {
                     saving = false
                     return
                 }
-                if let newPhoto, await PhotoScreen.check(newPhoto) == .sensitive {
-                    problem = CommunityError.photoBlocked.localizedDescription
-                    saving = false
-                    return
+                // Every kept item, screened before anything goes up. A video
+                // screens its poster frame, the same still `jpeg` always
+                // holds (2026-09-22: "any photo and any video, for friends
+                // and for yourself").
+                for item in mediaItems {
+                    guard let jpeg = item.jpeg, let img = UIImage(data: jpeg) else { continue }
+                    if await PhotoScreen.check(img) == .sensitive {
+                        problem = CommunityError.photoBlocked.localizedDescription
+                        saving = false
+                        return
+                    }
                 }
-                let kept = persistMediaIfPicked()
-                // Always send the bytes when there are any: about 200 KB, and
-                // it means a photo kept privately and shared later, or a post
-                // whose picture was lost, both come out right. A video's
-                // poster frame is what goes up for now; the feed cannot play
-                // film yet.
-                var photoURL: URL?
-                if let newPhoto { photoURL = PostPhoto.prepare(newPhoto) }
-                else if let data = kept?.jpeg { photoURL = PostPhoto.prepare(data: data) }
+                // Always sends the CURRENT full list, in order: a post always
+                // ends up matching exactly what this screen shows, add or
+                // remove, rather than merging against whatever it had before.
+                let media = mediaItems.compactMap { PostMediaPrep.draft(for: $0) }
                 let draft = CommunityStore.Draft(
                     score: score,
                     minutes: minutes,
                     streak: streak,
                     technique: MeditationMethod.label(for: technique),
                     caption: publicNote,
-                    photoURL: photoURL,
+                    media: media,
                     practicedAt: session.startedAt,
                     sessionID: sessionID.uuidString,
                     title: finalTitle,
@@ -854,6 +878,14 @@ enum SessionVideo {
         defer { try? FileManager.default.removeItem(at: out) }
         guard session.status == .completed else { return nil }
         return try? Data(contentsOf: out)
+    }
+
+    /// Bytes already stored on a `SessionPhoto`, written out for `CKAsset`
+    /// the same way a fresh export already is.
+    static func tempFile(_ data: Data) -> URL? {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("post-video-\(UUID().uuidString).mp4")
+        do { try data.write(to: url) } catch { return nil }
+        return url
     }
 
     /// The first readable frame, which becomes the session's still.

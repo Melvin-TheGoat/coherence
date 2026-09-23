@@ -19,6 +19,14 @@ round trip on two real phones, is still owed. TestFlight talks to
 Production; a beta install reaches this container only with
 `WITH_ICLOUD=1` (see `BACKLOG.md` > Standing notes).
 
+**2026-09-23 update, NOT reflected in the snapshot table below (it is dated
+2026-09-19 on purpose):** `Post` gained four fields and lost one — several
+photos and videos per post replaced the single `photo` Asset with `media`,
+`mediaPosters`, `mediaKinds` and `mediaAspects` (all Lists, same length, same
+order). None of these four are in Development yet. No new index: nothing
+queries them. See the **Post** field table below, which IS kept current with
+the code, and `RELEASE_CHECKLIST.md` > "OPEN for 1.1" for the promotion step.
+
 ## Why this is the blocking step
 
 Fields appear in the Development schema **lazily**, the first time the app
@@ -116,9 +124,18 @@ The full field list for every type, for checking against:
 | `score` | Int(64) |
 | `minutes` | Int(64) |
 | `streak` | Int(64) |
-| `photo` | Asset |
+| `media` | Asset List — the full-resolution file per item: the photo, or the exported video |
+| `mediaPosters` | Asset List — a small JPEG per item, for the feed's strip |
+| `mediaKinds` | String List — `"photo"` or `"video"`, one per item |
+| `mediaAspects` | Double List — width / height of each item, so the feed can lay the strip out before anything downloads |
 | `practicedAt` | Date/Time |
 | `createdAt` | Date/Time |
+
+The four `media*` fields are parallel: same length, same order, index `i`
+in one is the same item as index `i` in the others. Replaced the single
+`photo` Asset field (2026-09-23, several photos and videos per post). The
+old `photo` field can be left in Development and Production; nothing reads
+it any more.
 
 **Reaction** — record name `react-<post>-<author>`
 | Field | Type |

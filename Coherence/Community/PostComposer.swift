@@ -209,20 +209,44 @@ enum PhotoThumbs {
     }
 
     /// Session id → thumbnail, and practiced day → thumbnail (the latest sit
-    /// that day), from the rows Home and Profile already query.
+    /// that day), from the rows Home and Profile already query. A session can
+    /// now keep several photos, so this is its FIRST (lowest `order`) one.
     static func maps(photos: [SessionPhoto], sessions: [Session],
                      calendar: Calendar = .current) -> (bySession: [UUID: UIImage], byDay: [Date: UIImage]) {
         let starts = Dictionary(uniqueKeysWithValues: sessions.map { ($0.id, $0.startedAt) })
         var bySession: [UUID: UIImage] = [:]
-        var byDay: [Date: (Date, UIImage)] = [:]
-        for photo in photos {
-            guard let sid = photo.sessionID, let started = starts[sid], let img = image(for: photo) else { continue }
+        // Sorted so the first photo of a session with several wins the guard
+        // below, whatever order `@Query` itself handed them back in.
+        for photo in photos.sorted(by: { $0.order < $1.order }) {
+            guard let sid = photo.sessionID, bySession[sid] == nil, let img = image(for: photo) else { continue }
             bySession[sid] = img
+        }
+        var byDay: [Date: (Date, UIImage)] = [:]
+        for (sid, img) in bySession {
+            guard let started = starts[sid] else { continue }
             let day = calendar.startOfDay(for: started)
             if let (when, _) = byDay[day], when > started { continue }
             byDay[day] = (started, img)
         }
         return (bySession, byDay.mapValues(\.1))
+    }
+}
+
+/// Turns a kept `SessionPhoto` into what a post uploads: the full-resolution
+/// file (the photo itself, or the exported video) plus a small poster for the
+/// feed's strip, with the ORIGINAL aspect ratio so the feed can lay the strip
+/// out before anything downloads.
+enum PostMediaPrep {
+    static func draft(for item: SessionPhoto) -> CommunityStore.DraftMedia? {
+        guard let jpeg = item.jpeg, let stillSize = UIImage(data: jpeg)?.size, stillSize.height > 0 else { return nil }
+        let aspect = Double(stillSize.width / stillSize.height)
+        guard let posterURL = PostPhoto.prepare(data: item.thumbnail ?? jpeg) else { return nil }
+        if let video = item.video {
+            guard let fileURL = SessionVideo.tempFile(video) else { return nil }
+            return CommunityStore.DraftMedia(kind: .video, aspect: aspect, fileURL: fileURL, posterURL: posterURL)
+        }
+        guard let fileURL = PostPhoto.prepare(data: jpeg) else { return nil }
+        return CommunityStore.DraftMedia(kind: .photo, aspect: aspect, fileURL: fileURL, posterURL: posterURL)
     }
 }
 
