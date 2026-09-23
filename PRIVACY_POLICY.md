@@ -162,18 +162,18 @@ applies to you and 808 never touches the shared area.
 
 - Your **profile**: the username you choose, your display name, a profile
   photo if you add one, and the month you started practicing.
-- A **post**, only for a session you set to Friends: its score if the
-  session had one, length, streak, the technique you tagged, the title and
-  description you wrote, and the photos or videos you chose to include. You
-  can change a session back to Only you at any time, which takes the post
-  down.
+- A **post**, only for a session you set to Friends: its length, streak, the
+  technique you tagged, the title and description you wrote, and the photos
+  or videos you chose to include. You can change a session back to Only you
+  at any time, which takes the post down.
 - **Who you have added**, so a feed can exist, and who has added you.
 - A **report** you file about someone, including the reason you type.
 
-**What never goes there:** your heart rate, your breathing, your stillness,
-any of the curves, and every reading behind the score. A post carries the
-same fields as the free share card and nothing more. Your private notes stay
-private, and the session log in your own iCloud is separate from all of this.
+**What never goes there:** your score, your heart rate, your breathing, your
+stillness, any of the curves, or any other reading behind them. A post
+carries no health measurements and no score, on any session, whether or not
+that session had one. Your private notes stay private, and the session log
+in your own iCloud is separate from all of this.
 
 **Who can see it:** anyone using 808 can find your profile by your username
 and see that you exist. Your posts are shown to the people you are friends

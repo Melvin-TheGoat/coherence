@@ -166,8 +166,8 @@ final class CommunityStoreTests: XCTestCase {
         return url
     }()
 
-    private func draft(score: Int = 77, caption: String = "") -> CommunityStore.Draft {
-        .init(score: score, minutes: 18, streak: 4, technique: "Counting", caption: caption,
+    private func draft(caption: String = "") -> CommunityStore.Draft {
+        .init(minutes: 18, streak: 4, technique: "Counting", caption: caption,
               media: [.init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie)],
               practicedAt: Date())
     }
@@ -199,10 +199,23 @@ final class CommunityStoreTests: XCTestCase {
         let post = try await aziz.post(draft(caption: "Roof before work."))
         let record = try XCTUnwrap(db.records[post.id])
         XCTAssertEqual(Set(record.allKeys()), Set(Post.fields).subtracting(["sound"]),
-                       "a post carries the free share card's data and nothing measured: no heart, breath or stillness values, no curves (5.1.3 and the free tier)")
-        for banned in ["heart", "hr", "breath", "stillness", "curve", "bpm"] {
+                       "a post carries the free share card's data minus the score and nothing measured: no score, no heart, breath or stillness values, no curves (5.1.3(ii) and the free tier)")
+        for banned in ["heart", "hr", "breath", "stillness", "curve", "bpm", "score"] {
             XCTAssertFalse(Post.fields.contains { $0.lowercased().contains(banned) }, banned)
         }
+    }
+
+    /// A post must never carry a score, even though `Draft` no longer has a
+    /// field for one: this pins the CloudKit record itself (2026-09-23, the
+    /// founders' call), not just the Swift type, so nothing could quietly
+    /// resurrect the field on the wire. Score is derived from heart rate,
+    /// this is the PUBLIC database, and 5.1.3(ii) forbids storing personal
+    /// health information in iCloud with no consent exception.
+    func test_postNeverCarriesAScore() async throws {
+        let post = try await aziz.post(draft(caption: "no score, ever"))
+        let record = try XCTUnwrap(db.records[post.id])
+        XCTAssertNil(record["score"], "a post must never carry a score")
+        XCTAssertFalse(Post.fields.contains("score"), "the Swift-side field list must not resurrect it either")
     }
 
     /// Several photos and a video, in order, through the fake database the
@@ -242,6 +255,18 @@ final class CommunityStoreTests: XCTestCase {
         try await aziz.unpost(session: "S1")
         XCTAssertTrue(db.records.values.filter { $0.recordType == CommunityType.post }.isEmpty)
         try await aziz.unpost(session: "S1")   // already gone: no throw
+    }
+
+    /// `sessionID(forPost:)` is the inverse of `postID(forSession:)`, and
+    /// it is what Edit post reads to decide whether a post has a session
+    /// page to open at all.
+    func test_sessionIDForPostIsTheInverseOfPostIDForSession() {
+        let session = UUID()
+        let id = CommunityStore.postID(forSession: session.uuidString)
+        XCTAssertEqual(CommunityStore.sessionID(forPost: id), session)
+        XCTAssertNil(CommunityStore.sessionID(forPost: UUID().uuidString),
+                     "a post whose id isn't session-derived has nothing to open")
+        XCTAssertNil(CommunityStore.sessionID(forPost: "post-not-a-uuid"))
     }
 
     func test_avatarIsSetAndCleared() async throws {
@@ -284,10 +309,10 @@ final class CommunityStoreTests: XCTestCase {
         try await aziz.sendRequest(to: melvinID)
         try await melvin.accept(azizID)
 
-        var old = draft(score: 60); old.practicedAt = Date().addingTimeInterval(-3_600)
+        var old = draft(); old.practicedAt = Date().addingTimeInterval(-3_600)
         let mine = try await aziz.post(old)
-        let theirs = try await melvin.post(draft(score: 81))
-        try await stranger.post(draft(score: 99))
+        let theirs = try await melvin.post(draft())
+        try await stranger.post(draft())
 
         let feed = try await aziz.feed()
         XCTAssertEqual(feed.map(\.id), [theirs.id, mine.id], "most recently practiced first; the stranger's post is not in my feed")
@@ -529,7 +554,7 @@ final class PostRemovalTests: XCTestCase {
         let session = UUID()
         let selfie = FileManager.default.temporaryDirectory.appendingPathComponent("rm-test.jpg")
         try Data([0xFF, 0xD8, 0xFF]).write(to: selfie)
-        let ok = await model.post(.init(score: 70, minutes: 10, streak: 1, technique: nil, caption: "",
+        let ok = await model.post(.init(minutes: 10, streak: 1, technique: nil, caption: "",
                                         media: [.init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie)],
                                         practicedAt: Date(), sessionID: session.uuidString))
         XCTAssertTrue(ok)

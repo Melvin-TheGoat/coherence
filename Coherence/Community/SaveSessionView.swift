@@ -569,8 +569,9 @@ struct SaveSessionView: View {
     }
 
     /// Only you can always be saved; Friends needs a profile, which the note
-    /// above the button explains. **It no longer needs a score**: a post
-    /// carries one when the sit had one (Melvin, 2026-09-22).
+    /// above the button explains. **It never needs a score**: a post never
+    /// carries one, whether or not the sit had one (2026-09-22, then made
+    /// absolute 2026-09-23).
     private var canAct: Bool {
         guard loaded else { return false }
         if visibility == .private { return true }
@@ -723,8 +724,10 @@ struct SaveSessionView: View {
                 // ends up matching exactly what this screen shows, add or
                 // remove, rather than merging against whatever it had before.
                 let media = mediaItems.compactMap { PostMediaPrep.draft(for: $0) }
+                // No `score:` here (2026-09-23): a post never carries one, even
+                // though this screen still knows the sit's score for its own
+                // "See the measurements" row below.
                 let draft = CommunityStore.Draft(
-                    score: score,
                     minutes: minutes,
                     streak: streak,
                     technique: MeditationMethod.label(for: technique),
