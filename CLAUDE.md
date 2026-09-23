@@ -3373,6 +3373,36 @@ nobody has, and it cannot draw a shield either.
   104pt of face against Home's 125 and his old 91 (Melvin asked for bigger,
   then "a bit smaller").
 
+## SHOW THEM, DO NOT TELL THEM; AND THE LADDER IS TWO RUNGS (2026-09-22, Melvin)
+
+- **Two onboarding screens are cut**: "Here's what's waiting" (three feature
+  rows) and the Block explainer. Melvin: "they look AI generated you know,
+  maybe just get rid of them." Both were the app describing itself.
+- **`AuraDemoScreen` replaces them**: "I get brighter every day you meditate
+  / See for yourself. Drag the bar." A drag bar moves Otto through his
+  states live, and a caption names what each position costs in days, which
+  is the real rule in `OttoAura`. It moves itself once on appear, so the
+  affordance is discovered rather than captioned.
+- **The rule this sets, and it applies to every screen that sells
+  something: hand them the thing, do not describe it.** The remaining places
+  telling rather than showing, worth the same treatment: the guide's method
+  list (let them try a breath instead of reading about it) and the sound
+  library (a tap should play three seconds of it).
+- **The downsell ladder is two rungs**: the free week, then **half off the
+  first year**, then the free tier. Melvin: "there are too many, and they
+  arent convincing ... unless it includes a discount, which i actually do
+  want to do." The hardware anchor left the ladder, and the year's price
+  restated in smaller words is gone, because restating a price concedes
+  nothing.
+- **The discount is its own product**, `com.lockout.meditate808.yearly50`:
+  the full yearly price with a first-year introductory offer at $14.99. A
+  product carries exactly one introductory offer, which is why this cannot
+  be the yearly product, and is the same rule that killed the half-off-month
+  rung in August. On the paywall it REPLACES the yearly card rather than
+  sitting beside it, and its cadence line carries the renewal price
+  everywhere the number appears. `PaywallLadderTests` pins all of it,
+  including that the ladder never grows past two rungs.
+
 ## THE BETA CRASHED ON LAUNCH A THIRD TIME, AND THE PROFILE WAS THE LIAR (2026-09-22)
 
 Same crash family as 2026-09-12 and 2026-09-15: **`CKContainer` traps on a
@@ -4269,7 +4299,7 @@ reappear, then delete the "sync doesn't work" line from What to Test.
    address to match the IRS record).** **Nothing in the app carries or needs banking info.**
    Enroll in the **Small Business Program** the same sitting (15% vs 30%).
 7. Create the products EXACTLY as compiled:
-   `com.lockout.meditate808.{monthly,yearly,lifetime}`, monthly + yearly as
+   `com.lockout.meditate808.{monthly,yearly,lifetime,yearly50}`, monthly + yearly as
    auto-renewables in ONE subscription group at **$7.99 / $29.99**, both
    carrying the **7-day free intro**; lifetime as a non-consumable at
    **$99.99**, no intro (its CTA says "charged today" on purpose). The app
@@ -4437,7 +4467,7 @@ CloudKit, and Sign in with Apple are unavailable under free provisioning.
 - iOS app: `com.lockout.meditate808`
 - Watch app: `com.lockout.meditate808.watchkitapp`
 - iCloud container (Phase 7): `iCloud.com.lockout.meditate808`
-- StoreKit products: `com.lockout.meditate808.{monthly,yearly,lifetime}`
+- StoreKit products: `com.lockout.meditate808.{monthly,yearly,lifetime,yearly50}`
 
 **Renamed from `com.lockout.coherence` on 2026-08-11, before anything was
 registered.** Chosen over `com.lockout.808` because Apple documents the

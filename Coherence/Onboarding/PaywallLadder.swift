@@ -9,8 +9,16 @@ import SwiftUI
 ///    touching price at all. Onboarding placement accounts for roughly half of
 ///    all trial starts, because the person is at peak motivation and the trial
 ///    costs them nothing to accept.
-/// 2. **Price.** Once, and only once, restated rather than cut: the annual as
-///    its weekly cost converts without giving margin away.
+/// 2. **Money, once.** Half off the first year, on its own product with its
+///    own introductory offer, renewing at the full price and saying so.
+///
+/// **Two rungs, and the second exists only because it is a real discount**
+/// (Melvin, 2026-09-22: "you shouldnt be showing more than like 1 follow up
+/// screen, unless it includes a discount, which i actually do want to do").
+/// What was here before was three screens with nothing to give: a hardware
+/// anchor, the free week, and the year's price restated in smaller words.
+/// Restating a price is not a concession, and a third screen of it reads as
+/// nagging.
 ///
 /// Declining the last rung no longer ends the conversation. It lands on
 /// `FreeTierScreen`, because 808 stopped being a hard paywall on 2026-08-24.
@@ -30,14 +38,14 @@ import SwiftUI
 /// no "spots remaining", no "you will never see this again". A meditation app
 /// manufacturing panic contradicts the thing it sells.
 enum DownsellRung: Int, CaseIterable, Identifiable {
-    case trial, yearReframe
+    case trial, halfYear
 
     var id: Int { rawValue }
 
     var title: String {
         switch self {
-        case .trial:       return "No worries.\nTry it for a week."
-        case .yearReframe: return "Or a year, for less\nthan a coffee a month."
+        case .trial:    return "No worries.\nTry it for a week."
+        case .halfYear: return "Then have your first\nyear at half price."
         }
     }
 
@@ -48,23 +56,23 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         switch self {
         case .trial:
             return "Seven days, everything unlocked, cancel any time. If a week of measured sessions doesn't convince you, you pay nothing."
-        case .yearReframe:
-            return "A year is \(yearlyPrice). Same everything, paid once a year, and it renews until you cancel."
+        case .halfYear:
+            return "\(SubscriptionPlan.yearHalf.price) for the first year instead of \(yearlyPrice). Everything unlocked. It renews at \(yearlyPrice) a year after that, and you can cancel any time."
         }
     }
 
     var cta: String {
         switch self {
-        case .trial:       return "Start my free week"
-        case .yearReframe: return "Take the year"
+        case .trial:    return "Start my free week"
+        case .halfYear: return "Take half off my first year"
         }
     }
 
     /// Which plan this rung actually sells.
     var plan: SubscriptionPlan {
         switch self {
-        case .trial:       return .monthly
-        case .yearReframe: return .yearly
+        case .trial:    return .monthly
+        case .halfYear: return .yearHalf
         }
     }
 
@@ -248,8 +256,8 @@ extension DownsellRung {
     /// Analytics property. The rung's own name, no prices and no user data.
     var analyticsName: String {
         switch self {
-        case .trial:       return "trial"
-        case .yearReframe: return "year_reframe"
+        case .trial:    return "trial"
+        case .halfYear: return "half_year"
         }
     }
 }

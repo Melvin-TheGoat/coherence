@@ -5,13 +5,18 @@ import XCTest
 /// so its shape is asserted rather than trusted to review.
 final class PaywallLadderTests: XCTestCase {
 
-    /// Cheapest concession first: risk, then price. A ladder that opens with
+    /// Cheapest concession first: risk, then money. A ladder that opens with
     /// money has nothing left to offer and teaches people to wait for the
     /// discount.
-    func test_rungsGoRiskThenPrice() {
-        XCTAssertEqual(DownsellRung.allCases, [.trial, .yearReframe])
-        XCTAssertEqual(DownsellRung.trial.next, .yearReframe)
-        XCTAssertNil(DownsellRung.yearReframe.next, "the ladder must end")
+    ///
+    /// **Two rungs, and no more** (Melvin, 2026-09-22): a follow-up may only
+    /// exist if it concedes something, and after the discount there is
+    /// nothing left to concede.
+    func test_rungsGoRiskThenMoney() {
+        XCTAssertEqual(DownsellRung.allCases, [.trial, .halfYear])
+        XCTAssertEqual(DownsellRung.trial.next, .halfYear)
+        XCTAssertNil(DownsellRung.halfYear.next, "the ladder must end")
+        XCTAssertLessThanOrEqual(DownsellRung.allCases.count, 2)
     }
 
     /// **A rung may only sell an offer the product it buys can actually
@@ -46,11 +51,29 @@ final class PaywallLadderTests: XCTestCase {
     /// Each rung sells the plan it describes. A rung that talked about a year
     /// and charged for a month would be the deception the whole flow avoids.
     func test_eachRungSellsWhatItDescribes() {
-        XCTAssertEqual(DownsellRung.yearReframe.plan, .yearly)
+        XCTAssertEqual(DownsellRung.halfYear.plan, .yearHalf)
         XCTAssertEqual(DownsellRung.trial.plan, .monthly)
-        XCTAssertTrue(DownsellRung.yearReframe
-            .subtitle(plan: .yearly, yearlyPrice: SubscriptionPlan.yearly.price)
-            .contains(SubscriptionPlan.yearly.price))
+        let copy = DownsellRung.halfYear.subtitle(plan: .yearHalf,
+                                                  yearlyPrice: SubscriptionPlan.yearly.price)
+        XCTAssertTrue(copy.contains(SubscriptionPlan.yearHalf.price), "it must state what you pay")
+        XCTAssertTrue(copy.contains(SubscriptionPlan.yearly.price), "and what it renews at")
+    }
+
+    /// Half of the year's price, and it says what it renews at wherever the
+    /// number appears. A discount whose renewal is hidden is the 3.1.2
+    /// rejection and the lie underneath it.
+    func test_theDiscountIsRealAndSaysWhatItRenewsAt() {
+        XCTAssertEqual(SubscriptionPlan.yearHalf.price, "$14.99")
+        XCTAssertEqual(SubscriptionPlan.yearly.price, "$29.99")
+        XCTAssertTrue(SubscriptionPlan.yearHalf.cadence.contains(SubscriptionPlan.yearly.price))
+        XCTAssertEqual(SubscriptionPlan.yearHalf.anchorPrice, SubscriptionPlan.yearly.price)
+    }
+
+    /// The discounted year replaces the year on the paywall rather than
+    /// sitting beside it: two yearly cards at two prices is a shell game.
+    func test_theDiscountedYearTakesTheYearsPlace() {
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf, .lifetime])
     }
 
     /// The rules from the paywall above it apply the whole way down.
@@ -119,8 +142,8 @@ final class PaywallLadderTests: XCTestCase {
     /// price: a cents figure computed from USD is wrong in every other
     /// currency.)
     func test_theYearRungSaysItRenews() {
-        let text = DownsellRung.yearReframe
-            .subtitle(plan: .yearly, yearlyPrice: SubscriptionPlan.yearly.price)
+        let text = DownsellRung.halfYear
+            .subtitle(plan: .yearHalf, yearlyPrice: SubscriptionPlan.yearly.price)
             .lowercased()
         XCTAssertTrue(text.contains("renews"), "the year rung hides the renewal")
     }

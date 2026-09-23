@@ -620,3 +620,125 @@ struct WhatsWaitingScreen: View {
         }
     }
 }
+
+/// **Otto's glow, in your hands** (Melvin, 2026-09-22: "instead of just
+/// telling you that otto gets worse as you dont meditate, it SHOWS you, with
+/// a scrolling bar, you can scroll horizontally and it makes him grow weaker
+/// or stronger for the user to see for themselves").
+///
+/// It replaced two screens that described the app in words. The rule it sets
+/// for every screen that sells something: **hand them the thing, do not
+/// describe it.** Here the whole mechanic (sit and he brightens, skip and he
+/// fades) is learned by dragging a bar for three seconds, and the caption
+/// says what each position costs in days, which is the actual rule in
+/// `OttoAura`.
+struct AuraDemoScreen: View {
+    let onContinue: () -> Void
+
+    @State private var level: Double = 40
+    @State private var demoed = false
+    @StateObject private var rig = OttoRigHolder()
+
+    private var stage: OttoAura.Stage { OttoAura.Stage(level: Int(level.rounded())) }
+
+    /// What this much glow means in days, from the rule itself: everyone
+    /// starts at 40, a day meditated adds 10, a day missed takes 20.
+    private var caption: String {
+        switch Int(level.rounded()) {
+        case 90...:  return "Five days in a row"
+        case 70..<90: return "Three or four days in a row"
+        case 50..<70: return "A session or two"
+        case 40..<50: return "Where everyone starts"
+        case 20..<40: return "A day missed"
+        default:      return "A few days missed"
+        }
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 8)
+
+            Text("I get brighter every day you meditate")
+                .font(OnboardingType.question)
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+            Text("See for yourself. Drag the bar.")
+                .font(AppFont.body)
+                .foregroundStyle(AppColor.textSecondary)
+                .padding(.top, 6)
+
+            OttoAuraFigure(stage: stage, size: 200, rig: rig)
+                .frame(height: 210)
+                .padding(.top, 18)
+                .animation(.easeOut(duration: 0.18), value: stage)
+
+            Text(caption)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(.top, 10)
+                .contentTransition(.opacity)
+
+            scrubber
+                .padding(.top, 14)
+                .padding(.horizontal, 6)
+
+            Spacer(minLength: 12)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .onboardingGround(.body)
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+        }
+        // It moves itself once, so the bar is discovered rather than
+        // explained. A caption saying "this is draggable" would be the very
+        // thing this screen exists to stop doing.
+        .task {
+            guard !demoed else { return }
+            demoed = true
+            try? await Task.sleep(for: .milliseconds(450))
+            withAnimation(.easeInOut(duration: 1.1)) { level = 96 }
+            try? await Task.sleep(for: .milliseconds(1250))
+            withAnimation(.easeInOut(duration: 1.3)) { level = 6 }
+            try? await Task.sleep(for: .milliseconds(1450))
+            withAnimation(.easeInOut(duration: 0.8)) { level = 40 }
+        }
+    }
+
+    /// The glow bar from Home, made draggable: the same object in the same
+    /// colours, so what is learned here is recognised there.
+    private var scrubber: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let x = max(0, min(width, width * level / 100))
+            ZStack(alignment: .leading) {
+                Capsule().fill(AppColor.trace)
+                Capsule()
+                    .fill(LinearGradient(colors: [AppColor.auraGlow, AppColor.auraRing],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(18, x))
+                Circle()
+                    .fill(AppColor.backgroundPrimary)
+                    .frame(width: 30, height: 30)
+                    .shadow(color: .black.opacity(0.18), radius: 4, y: 2)
+                    .overlay(Circle().strokeBorder(AppColor.auraRing, lineWidth: 2))
+                    .offset(x: max(0, min(width - 30, x - 15)))
+            }
+            .frame(height: 30)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                level = max(0, min(100, value.location.x / width * 100))
+            })
+        }
+        .frame(height: 30)
+        .accessibilityElement()
+        .accessibilityLabel("Otto's glow")
+        .accessibilityValue(caption)
+        .accessibilityAdjustableAction { direction in
+            level = max(0, min(100, level + (direction == .increment ? 10 : -10)))
+        }
+    }
+}
+
