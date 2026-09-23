@@ -3502,6 +3502,99 @@ file, because that export only ever carried its first artboard.
 - `upload_rev` with target `current_project` can create a file, but nothing
   can open it for you; the person has to.
 
+## OTTO GETS THIRTEEN LOOKS, CLEAN EDGES, AND LEAVES OF HIS OWN (2026-09-23, Melvin)
+
+### The white paper is out of every cut: `tools/otto_defringe.swift`
+
+"You can see a little white space between his arm and his head, so its
+obvious its cropped out ... slightly around his legs, arms, top of his head in
+the tufts of his hair." Every Otto was drawn on white and cut out, and two
+things of the paper survived:
+
+- **Paper trapped inside him.** Cutters fill enclosed regions so his face and
+  belly come in, which also fills the gap between a raised arm and his head,
+  between tufts and between his legs with opaque white. The rule, MEASURED on
+  every cut: a region paper-pale (darkest channel >= 224) is a hole unless it
+  touches TRUE black (below 50: a pupil, so eye whites and catch-lights stay)
+  or is ringed by at least 40% cream (his muzzle highlight at stages 6 and 7
+  is as pale as paper). **His dark eye patch is not true black**: a looser
+  "near-black" test kept the walkthrough's arm-to-head wedge because it
+  touched the patch.
+- **A rim of paper round him.** Edge pixels half fur, half paper were kept
+  opaque. Each is un-mixed against the fur just inside it; the white share
+  becomes transparency. Only pixels that really are fur plus white: the
+  orange rim LIGHT on stages 6 and 7 is not on that line and is left alone.
+  Semi-transparent edge pixels too (scaling up the art blended the rim into
+  them). `--no-holes` for lit art (the lit Nirvana's pale wheel read as a
+  hole and was eaten on the first run), `--floor 12` clears invisible specks
+  round clean bodies.
+- **Applied to:** the pose sources in `mockups/otto-v3` and every image set
+  resampled from them (they are straight resamples, checked), the seven aura
+  stills, the seven aura bodies and chests in `OttoAura.riv` (swapped on the
+  same crop boxes, old images deleted). **NOT yet `Otto.riv`** (the session
+  Otto: welcome wave, Ready greeting, the sit): the Rive MCP cannot switch
+  files, so it waits for someone to click the Otto tab in the editor.
+- A chest patch is rebuilt from its old feather, not guessed: mask = old
+  chest alpha / old body alpha, laid on the new body (reproduces the old
+  patch at 0.01 mean difference).
+
+### Thirteen looks, seven stages
+
+`OttoAura.look(level:)` picks one of THIRTEEN drawings: the seven stages at
+the odd numbers (`Stage.look`), a body halfway between each pair at the even
+ones (`mockups/otto-v4/sheet-between.png`, Melvin's A to F). **`Stage` is
+unchanged** and still decides moods, stills and every promise; the look only
+decides the picture. The level moves in tens, so 0, 10 ... 100 are where it
+sits, and each of those eleven gets its own drawing: 40 is Stirring, 50 is
+Steady, 90 the one just short of Nirvana (the faint wheel), 100 Nirvana. C
+(45-49) and E (75-79) show only after a skipped "Not now" costs part of a
+day. `OttoAuraTests` pins the grid, the promises, reachability and that the
+look is never more than half a step from the stage.
+
+In the rig: groups M1..M6 beside S1..S7, `stage` 1..13 (S_k = 2k-1,
+M_m = 2m), all 169 transitions, Float from 9. Every effect steps between its
+neighbours. A has no chest patch: his head hangs into where it would swell
+(stage 1 has none for the same reason). **The new sheet came out about 12%
+more saturated**, which made Steady look paler than C and D; each in-between
+was scaled to its neighbours' mean saturation (hue and brightness kept).
+**The fly now sits in a wrapper** the stages switch: the bug loop keys the
+fly's own opacity, and a later layer overrides an earlier one, so it showed
+on Faded and B.
+
+### Leaves: their own orbits, counted per stage
+
+"Following too much of a straight path ... some being higher vs lower." All
+six once rose on one helix. Now each circles at its own height band, radius,
+tilt, speed and spin, rising and falling through its band, on their own
+19.2 s loop and layer ("Leaves"). Each leaf and its front twin has a wrapper,
+so a stage shows a count: E 1, Radiant 3, F 4, Nirvana 6. Behind him on the
+far half, in front on the near half, handed over out at his sides.
+
+### Rive MCP traps that cost a round each
+
+- **An upload can come back with an id that never registers** (chest-1 in
+  the first build, chest-2 here). Look assets up by name after uploading and
+  make the script resumable; do not trust the returned id.
+- The MCP cannot switch the editor's active file. `duplicate_objects`
+  returns no ids (the copies are named "X 2"); `rename_objects` takes
+  `renames: [{id, name}]`; keys are deleted with `modifyKeyFrames`'s
+  `delete`. Export a `.rev` backup before a build that deletes transitions.
+- This Mac's shell is zsh: arrays start at 1 and `set -- $x` does not split.
+  Put loops that rely on either in a `bash` script.
+
+### Also today
+
+- Otto's FaceTime screen shows your live front camera while it rings, and
+  once answered puts you top right, FaceTime's self view, with Otto in the
+  valley speaking in bubbles (`FaceTimeCamera.swift`; the session runs off the
+  main thread). The simulator has no camera, so only the fallback is checked.
+- Every one of Otto's screens puts its second choice ("Not now", "Hang up")
+  in a cream pill; as bare text it could not be read over the flowers.
+- Settings > "Otto's unblock screens" rehearses all twenty screens and the
+  how-long screen with nothing real happening. `PREVIEW_UNBLOCK_KIND`,
+  `PREVIEW_UNBLOCK_GALLERY`, `PREVIEW_INTERVENTION_HOWLONG`,
+  `PREVIEW_FACETIME_ANSWERED` and `PREVIEW_SETUP` open them on a simulator.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in
