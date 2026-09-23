@@ -27,6 +27,9 @@ struct OttoAuraFigure: View {
 
     @State private var bob = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The animated seven (`OttoAura.riv`). Nil until that file ships, and
+    /// whenever it will not load; the stills below stand in either way.
+    @StateObject private var aura = OttoAuraRigHolder()
 
     /// The shared canvas, from `mockups/otto-v4/canvas.json`: 664 x 744, his
     /// body's bottom at 87.2% of the height, and Steady's body 82% of it.
@@ -36,21 +39,34 @@ struct OttoAuraFigure: View {
 
     var body: some View {
         let canvas = size * 0.95 / Self.bodyShare
-        Image(Self.asset(stage))
-            .resizable()
-            .scaledToFit()
+        drawing
             .frame(width: canvas * Self.canvasAspect, height: canvas)
             // Hang his baseline on the bottom of the frame; the light under
             // him (Nirvana's swirl, Radiant's motes) overflows below it.
             .offset(y: canvas * (1 - Self.baseline))
             .ottoJiggle(jiggle)
-            .offset(y: stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
+            // The rig floats him itself; only the stills need lifting here.
+            .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
             .frame(width: size, height: size, alignment: .bottom)
             .animation(.spring(duration: 0.5, bounce: 0.2), value: stage)
             .onAppear { setBob() }
             .onChange(of: stage) { _, _ in setBob() }
             .accessibilityElement()
             .accessibilityLabel("Otto, \(Self.mood(stage))")
+    }
+
+    /// The rig when it loaded, else the still for this stage. Both are the
+    /// same 664 x 744 canvas, so they frame identically.
+    @ViewBuilder private var drawing: some View {
+        if let rig = aura.rig {
+            rig.viewModel.view()
+                .onAppear { rig.stage = stage.rawValue }
+                .onChange(of: stage) { _, new in rig.stage = new.rawValue }
+        } else {
+            Image(Self.asset(stage))
+                .resizable()
+                .scaledToFit()
+        }
     }
 
     /// Up and down on a slow breath once he floats, and still on the ground
@@ -219,3 +235,27 @@ extension View {
     /// Jiggle when `trigger` changes. See `OttoJiggle`.
     func ottoJiggle(_ trigger: Int) -> some View { modifier(OttoJiggle(trigger: trigger)) }
 }
+
+#if DEBUG
+/// Testing hooks for Otto's state on a real phone (Settings > Testing).
+enum DebugOtto {
+    static let stageKey = "debug.ottoStage"
+
+    /// A level inside the stage's band, for the glow card beside him.
+    static func level(for stage: OttoAura.Stage) -> Int {
+        stage == .nirvana ? 95 : (stage.rawValue - 1) * 15 + 7
+    }
+
+    static func name(_ stage: OttoAura.Stage) -> String {
+        switch stage {
+        case .withered: return "1 Withered"
+        case .faded: return "2 Faded"
+        case .stirring: return "3 Stirring"
+        case .steady: return "4 Steady"
+        case .bright: return "5 Bright"
+        case .radiant: return "6 Radiant"
+        case .nirvana: return "7 Nirvana"
+        }
+    }
+}
+#endif

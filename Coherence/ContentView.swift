@@ -36,6 +36,11 @@ struct ContentView: View {
     /// Which of Otto's lines is showing on Home; a tap on him advances it.
     @State private var ottoLineIndex = 0
     /// Bumped by every tap on Otto, which jiggles him (`OttoJiggle`).
+    #if DEBUG
+    /// Settings > Testing > Otto's state: 0 follows the real history, 1 to 7
+    /// shows that drawing, so every state can be looked at on a phone.
+    @AppStorage(DebugOtto.stageKey) private var debugOttoStage = 0
+    #endif
     @State private var ottoPokes = 0
     /// A day tapped on Home's calendar. Profile opens with its log filtered
     /// to it, which is what the old month picker was for.
@@ -651,6 +656,8 @@ struct ContentView: View {
         if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
             return OttoAura.Stage(level: level)
         }
+        // Settings > Testing > Otto's state, for a phone with a real history.
+        if let forced = OttoAura.Stage(rawValue: debugOttoStage) { return forced }
         #endif
         return OttoAura.Stage(level: shownAuraLevel)
     }
@@ -661,6 +668,7 @@ struct ContentView: View {
         if let raw = ProcessInfo.processInfo.environment["OTTO_AURA"], let level = Int(raw) {
             return min(max(level, 0), 100)
         }
+        if let forced = OttoAura.Stage(rawValue: debugOttoStage) { return DebugOtto.level(for: forced) }
         #endif
         // A "Not now" that went unanswered costs glow (Melvin, 2026-09-22).
         // The windows come from the phone's own Screen Time state and are

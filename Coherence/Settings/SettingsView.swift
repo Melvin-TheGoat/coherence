@@ -52,6 +52,7 @@ private struct SettingsForm: View {
     @EnvironmentObject private var store: Store
     #if DEBUG
     @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
     @State private var primerRows = 0
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
@@ -154,6 +155,7 @@ private struct SettingsForm: View {
                 }
 
                 #if DEBUG
+                testingDebugSection
                 freeTierDebugSection
                 cloudKitDebugSection
                 airPodsDebugSection
@@ -173,6 +175,53 @@ private struct SettingsForm: View {
     }
 
     #if DEBUG
+    // MARK: Testing (developer only, compiled out of Release)
+
+    @AppStorage(DebugOtto.stageKey) private var debugOttoStage = 0
+
+    /// Two things a phone that has finished onboarding cannot otherwise do:
+    /// go through onboarding again, and see Otto in a state its own history
+    /// has not reached.
+    @ViewBuilder
+    private var testingDebugSection: some View {
+        SectionHeader(title: "Testing (debug)")
+        settingsCard {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Otto's state")
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Spacer()
+                    Picker("Otto's state", selection: $debugOttoStage) {
+                        Text("Real history").tag(0)
+                        ForEach(OttoAura.Stage.allCases, id: \.self) { stage in
+                            Text(DebugOtto.name(stage)).tag(stage.rawValue)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .tint(AppColor.accentGoldText)
+                }
+                divider
+                Button {
+                    // The same reset sign-out does, without signing out:
+                    // RootView puts onboarding back the moment it lands.
+                    for row in (try? context.fetch(FetchDescriptor<Preferences>())) ?? [] {
+                        row.onboardingComplete = false
+                    }
+                    OnboardingResume.clear()
+                    try? context.save()
+                    dismiss()
+                } label: {
+                    Text("Replay onboarding")
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(AppColor.accentGoldText)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
     // MARK: CloudKit schema (developer only, compiled out of Release)
 
     /// Creates every field of every synced model so the Development schema is
