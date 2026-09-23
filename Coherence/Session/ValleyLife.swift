@@ -95,6 +95,12 @@ struct ValleyLife: View {
     /// One grasshopper appears roughly every 8s, jittered ±2s (6 to 10s).
     fileprivate static let hopperSlot: Double = 8
 
+    /// How long a grasshopper takes to fade in where it appears, and to
+    /// fade out once it has landed for the last time. Half a second each
+    /// way reads as an animal settling into view and drifting off rather
+    /// than a single-frame pop.
+    fileprivate static let hopperFadeSeconds: Double = 0.5
+
     /// Two lanes in the meadow, one either side of Otto and his cushion,
     /// clear of the very bottom of the frame where a card can rise over
     /// the scene on Home. `nil` avoid (no figure) leaves one full-width lane.
@@ -122,7 +128,17 @@ struct ValleyLife: View {
         let slot = Int((t / Self.hopperSlot).rounded(.down))
         let lanes = meadowLanes
         let yr = meadowYRange
-        let flights = [slot - 1, slot].compactMap {
+        // Three slots, not two. A flight's jittered start can land up to
+        // 2s before its OWN slot's boundary (`slot * hopperSlot`), so
+        // while `t` is still nominally in the previous slot, `slot + 1`'s
+        // flight can already be live. Considering only `[slot - 1, slot]`
+        // silently dropped that flight's opening seconds — sometimes all
+        // of it — so a grasshopper would either pop in already mid-hop or
+        // never appear at all; this, not the fade curve alone, was most
+        // of "fades in and out of existence super quickly" (it hit
+        // roughly 4 in 10 flights, measured offline against the real
+        // hash/jitter).
+        let flights = [slot - 1, slot, slot + 1].compactMap {
             HopperFlight.make(seed: seed, slot: $0, lanes: lanes, yRange: yr, scale: scale)
         }
         return ForEach(flights) { flight in
@@ -529,7 +545,8 @@ private struct HopperPose {
     var bodyLength: CGFloat
 }
 
-/// One grasshopper: two to four hops in parabolic arcs, then gone.
+/// One grasshopper: fades in where it lands, two to four hops in
+/// parabolic arcs, then fades out once it has settled from the last one.
 private struct HopperFlight: Identifiable {
     let id: Int
     let startTime: Double
@@ -538,14 +555,22 @@ private struct HopperFlight: Identifiable {
     let hopHeight: CGFloat
     let hopDuration: Double
     let pauseDuration: Double
-    let fadeOut: Double
+    let appearDuration: Double
+    let fadeOutDuration: Double
     let startX: CGFloat
     let baseY: CGFloat
     let direction: CGFloat
     let bodyLength: CGFloat
 
+    /// Time actually spent hopping: `hops` hops with a pause between
+    /// each, ending right as the last one lands (no trailing pause).
+    var hopsSpan: Double {
+        Double(hops) * (hopDuration + pauseDuration) - pauseDuration
+    }
+
+    /// Arrive (fading in, sitting still) → hop → fade out once landed.
     var totalDuration: Double {
-        Double(hops) * (hopDuration + pauseDuration) - pauseDuration + fadeOut
+        appearDuration + hopsSpan + fadeOutDuration
     }
 
     static func make(seed: UInt64, slot: Int, lanes: [ClosedRange<CGFloat>],
@@ -573,29 +598,49 @@ private struct HopperFlight: Identifiable {
 
         return HopperFlight(id: slot, startTime: start, hops: hops, hopLength: hopLength,
                              hopHeight: hopHeight, hopDuration: hopDuration, pauseDuration: 0.14,
-                             fadeOut: 0.18, startX: startX, baseY: baseY, direction: direction,
+                             appearDuration: ValleyLife.hopperFadeSeconds,
+                             fadeOutDuration: ValleyLife.hopperFadeSeconds,
+                             startX: startX, baseY: baseY, direction: direction,
                              bodyLength: bodyLength)
     }
 
     func pose(at t: Double) -> HopperPose? {
         let local = t - startTime
         guard local >= 0, local <= totalDuration else { return nil }
+
+        // Continuous the whole way: 0 → 1 while arriving, held at 1
+        // through every hop, 1 → 0 once it has landed for the last time.
+        // Each ramp meets the hold at opacity 1 on both sides, so there is
+        // no instant on this curve where opacity jumps — the fade itself
+        // used to BE the flicker (opacity snapped straight to 1 with no
+        // fade in at all, then fell to 0 over just 0.18s).
+        let opacity: Double
+        if local < appearDuration {
+            opacity = local / appearDuration
+        } else {
+            let sinceLanded = local - (appearDuration + hopsSpan)
+            opacity = sinceLanded > 0 ? max(0, 1 - sinceLanded / fadeOutDuration) : 1
+        }
+
+        let hopLocal = local - appearDuration
+        guard hopLocal > 0 else {
+            // Still arriving: sitting at the takeoff spot, not hopping yet.
+            return HopperPose(x: startX, y: baseY, legExtend: 1, spriteFrame: 1,
+                               facingRight: direction > 0, opacity: opacity, bodyLength: bodyLength)
+        }
+
         let cycle = hopDuration + pauseDuration
-        let hopIndex = min(hops - 1, Int(local / cycle))
-        let intoCycle = local - Double(hopIndex) * cycle
+        let hopIndex = min(hops - 1, Int(hopLocal / cycle))
+        let intoCycle = hopLocal - Double(hopIndex) * cycle
         let inHop = intoCycle <= hopDuration
         let u = inHop ? intoCycle / hopDuration : 1
         let arc = 4 * u * (1 - u)
         let hopsDone = CGFloat(hopIndex) + (inHop ? CGFloat(u) : 1)
 
-        let fadeStart = totalDuration - fadeOut
-        let opacity = local >= fadeStart ? max(0, (totalDuration - local) / fadeOut) : 1
-
-        // Sitting between hops (and while fading out, once the clamped
-        // hop index has nothing left to play); crouched right at takeoff;
-        // landing right at touchdown; mid-jump for the whole stretch
-        // between, which is deliberately the widest window — "show frame
-        // 3 while airborne".
+        // Sitting between hops (and once landed for good, fading out);
+        // crouched right at takeoff; landing right at touchdown; mid-jump
+        // for the whole stretch between, which is deliberately the widest
+        // window — "show frame 3 while airborne".
         let spriteFrame: Int
         if !inHop {
             spriteFrame = 1
