@@ -527,11 +527,17 @@ struct SaveSessionView: View {
         .padding(.top, 26)
         .padding(.bottom, 10)
         // The grass fading up under Save, so the cards slide beneath it.
+        // It must not catch touches: a gradient takes them across its whole
+        // frame, even where it is clear, so the strip above Save swallowed
+        // taps on whatever had scrolled under it, which was usually the
+        // Choose and Selfie buttons (Melvin, 2026-09-23: "the button for take
+        // a selfie ... sometimes like doesnt read that i clicked it").
         .background(
             LinearGradient(stops: [.init(color: ValleyGround.meadow.opacity(0), location: 0),
                                    .init(color: ValleyGround.meadow, location: 0.4)],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea(edges: .bottom)
+                .allowsHitTesting(false)
         )
     }
 

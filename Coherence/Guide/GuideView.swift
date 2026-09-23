@@ -474,6 +474,9 @@ struct MethodDetailView: View {
                 LinearGradient(colors: [GuideGround.meadow.opacity(0), GuideGround.meadow, GuideGround.meadow],
                                startPoint: .top, endPoint: .bottom)
                     .ignoresSafeArea()
+                    // Fades never catch touches: the clear top would swallow taps
+                    // on whatever scrolls under it.
+                    .allowsHitTesting(false)
             )
     }
 }

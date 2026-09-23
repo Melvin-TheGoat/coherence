@@ -349,6 +349,9 @@ struct BlockerEditor: View {
             LinearGradient(colors: [Self.meadow.opacity(0), Self.meadow, Self.meadow],
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
+                // Fades never catch touches: the clear top would swallow taps
+                // on whatever scrolls under it.
+                .allowsHitTesting(false)
         )
     }
 
