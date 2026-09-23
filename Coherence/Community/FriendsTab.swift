@@ -727,10 +727,8 @@ struct PostCard: View {
                 .padding(.horizontal, Self.inset)
                 .padding(.top, 13)
                 .padding(.bottom, 14)
-                .overlay(alignment: .top) {
-                    Rectangle().fill(ValleyGround.quiet).frame(height: 1)
-                        .padding(.horizontal, Self.inset)
-                }
+                // No rule above the numbers (Melvin, 2026-09-23: it sat too
+                // close under the words and did nothing the gap does not).
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
 
