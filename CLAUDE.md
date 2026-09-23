@@ -3595,6 +3595,33 @@ far half, in front on the near half, handed over out at his sides.
   `PREVIEW_UNBLOCK_GALLERY`, `PREVIEW_INTERVENTION_HOWLONG`,
   `PREVIEW_FACETIME_ANSWERED` and `PREVIEW_SETUP` open them on a simulator.
 
+## 1.1 IS PREMIUM ONLY; MISSED DAYS ESCALATE (2026-09-23, Melvin and Aziz, after a call)
+
+- **Premium only, one switch: `Monetization.premiumOnly`** (`Coherence/Store/
+  Monetization.swift`). Onboarding ends on the paywall again
+  (`paywallInsideOnboarding` follows the switch), declining both ladder
+  rungs returns to the plans, and `RootView` shows the paywall at launch to
+  anyone without a subscription, opening the app by itself on purchase or
+  restore. The 2026-08-24 free tier is still in the code, unreachable.
+  **Only a store that has its plans locks anything** (`Store.State.ready`):
+  offline, before products exist, and on the .dev beta (whose bundle owns no
+  products) the app stays open, so nobody, App Review included, is stuck on
+  a paywall that cannot sell. `HARD_PAYWALL=1` reviews the lock in DEBUG.
+- **The trial's length is App Store Connect's**, read off the monthly
+  product's introductory offer (`Store.trialDays`) and said through
+  `TrialCopy` everywhere ("Start 3 days free", "Three days free."). The
+  founders said "likely 3 days"; Connect still says 7, and the simulator,
+  which reaches the real sandbox products, shows seven. Fallback 3.
+  **Never hardcode a trial length in copy again.**
+- **Missed days escalate: 10, 15, 20, 25 ...** (`OttoAura.missCost(run:)`).
+  The weekly rest day is free but counts as a day of the run; a meditated
+  day ends it; a missed day and its skipped "Not now" windows cost the
+  larger of the two, never the sum. Gains stay a flat 10 ("maybe scales
+  similarly" is written down in BACKLOG.md, not built).
+- Open, in BACKLOG.md: the trial length, gains that grow, what 1.0 users
+  who installed free get on updating (today: the paywall), and the store
+  listing and review notes for a subscription app.
+
 ## 1.1 RELEASE PREP, AND OTTO'S LAST FIXES OF THE DAY (2026-09-23, Melvin)
 
 "I really dont want to be rejected for any reason." Two agents and a

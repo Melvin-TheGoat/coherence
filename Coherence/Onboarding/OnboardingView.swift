@@ -509,6 +509,10 @@ struct OnboardingView: View {
                 // plans, since nobody is locked out by a failure. Declining
                 // every offer comes back here: there is no free tier.
                 PaywallScreen(placement: "onboarding", plan: $plan) { _ in go(.signIn) }
+                    // Its own paper, not the shared valley: its small print,
+                    // legal links and "Not right now" are grey type that
+                    // vanished into the ridge (2026-09-23).
+                    .environment(\.onboardingSharedGround, false)
             } else {
                 // No paywall inside onboarding (2026-09-15 to 2026-09-23): a
                 // saved resume record pointing here moves on to sign-in.
