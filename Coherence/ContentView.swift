@@ -391,6 +391,11 @@ struct ContentView: View {
             if ProcessInfo.processInfo.environment["PREVIEW_RESULTS"] == "1", sheet == nil {
                 sheet = .results(DemoData.seedResults(in: context))
             }
+            // PREVIEW_SETUP=1 opens the Ready screen, so its layout can be
+            // checked on any simulator without tapping the plus.
+            if ProcessInfo.processInfo.environment["PREVIEW_SETUP"] == "1", sheet == nil {
+                sheet = .setup
+            }
             // PREVIEW_AWARD=<award id> (e.g. streak-3) announces that award,
             // so the unlock screen can be reviewed without earning it.
             if let id = ProcessInfo.processInfo.environment["PREVIEW_AWARD"],

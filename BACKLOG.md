@@ -280,6 +280,16 @@ animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
 ## Open threads
 
+- **Silence notifications needs two published shortcuts (Melvin).** No app
+  can switch Do Not Disturb; Shortcuts can, so 808 runs two by name. Make
+  `808 Silence` (Set Focus, Do Not Disturb, Turn On) and `808 Restore`
+  (Set Focus, Do Not Disturb, Turn Off) in the Shortcuts app, share each as
+  an iCloud link, and paste the links into
+  `FocusShortcut.silenceInstallURL` / `restoreInstallURL`. Until then
+  Release hides the switch, and a DEBUG build's setup sheet walks through
+  making them by hand ("I made both"), so the switch can be tested on a
+  phone first. "Shortcut not found" (2026-09-23) was 808 marking the
+  shortcuts installed when the empty links had installed nothing.
 - **The real time of day on every valley screen.** Home follows the clock
   since 2026-09-23 (`ValleyScene(clock: true)`, `DayLight.clockProgress`,
   `VALLEY_HOUR` in DEBUG). Onboarding, Block, Friends, Profile, the Guide,

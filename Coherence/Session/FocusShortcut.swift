@@ -42,7 +42,11 @@ final class FocusShortcut: ObservableObject {
 
     private let log = Logger(subsystem: "com.lockout.meditate808", category: "FocusShortcut")
     private let defaults: UserDefaults
-    private static let installedKey = "focus.shortcutsInstalled.v1"
+    /// v2 since 2026-09-23: the v1 build saved `true` from an "Add shortcut"
+    /// tap that installed nothing (the links were still nil), and every phone
+    /// that tapped it would go on trying to run a shortcut that is not there.
+    /// A new key starts everyone from "not set up", which is the truth.
+    private static let installedKey = "focus.shortcutsInstalled.v2"
     private static let askedKey = "focus.statusAsked.v1"
 
     /// The names the two shortcuts must carry. They are what `run-shortcut`
@@ -56,9 +60,9 @@ final class FocusShortcut: ObservableObject {
     /// **These are empty until somebody with the Apple ID publishes them.**
     /// Making a shortcut and sharing it to iCloud is a human step in the
     /// Shortcuts app; there is no way to generate the link from here. Until
-    /// they are filled in, `installed` can never become true (see below), so
-    /// the switch always routes to setup instead of attempting a shortcut
-    /// that cannot exist.
+    /// they are filled in, Release shows the Control Center line instead of
+    /// the switch, and a DEBUG build's setup sheet walks through making the
+    /// two by hand (which is also how the links get made).
     ///
     /// **What to create, exactly (two shortcuts, in the Shortcuts app):**
     /// 1. Name it **`808 Silence`** (must match `silenceName` exactly, since
@@ -69,47 +73,38 @@ final class FocusShortcut: ObservableObject {
     /// 3. Share each one (the ••• menu > Share > Copy iCloud Link) and paste
     ///    the two resulting `https://www.icloud.com/shortcuts/...` links in
     ///    below, one per constant. Nothing else in the app needs to change:
-    ///    `installed` (below) starts working the moment both are non-nil.
+    ///    the setup sheet switches to its two-tap install, and Release starts
+    ///    drawing the switch.
     static let silenceInstallURL: URL? = nil
     static let restoreInstallURL: URL? = nil
 
-    /// Whether the SWITCH can be shown at all on this build — not whether it
-    /// can actually run a shortcut yet, which `installed` below decides.
-    /// Forced true in DEBUG so the switch's look can be previewed and sized
-    /// before the two links exist; safe to force, because `installed` (the
-    /// thing that gates ever calling `run-shortcut`) does not trust this and
-    /// checks the real links itself.
+    /// Both links exist, so setup is two taps rather than making the
+    /// shortcuts by hand.
+    static var hasInstallLinks: Bool {
+        silenceInstallURL != nil && restoreInstallURL != nil
+    }
+
+    /// Whether the switch is drawn at all. Release waits for the links;
+    /// DEBUG draws it now, and its setup sheet has the by-hand path.
     static var isConfigured: Bool {
         #if DEBUG
         return true
         #else
-        return silenceInstallURL != nil && restoreInstallURL != nil
+        return hasInstallLinks
         #endif
     }
 
-    /// The setup screen was completed, as last persisted. Advisory only —
-    /// see `installed` below, which is what the rest of the app must read.
-    @Published private var rawInstalled: Bool
-
-    /// The user has been through setup AND the setup was for shortcuts that
-    /// can actually exist.
+    /// The person has been through setup: both links opened, or (while the
+    /// links do not exist) they made both shortcuts by hand and said so.
     ///
-    /// **Why this is derived rather than the stored flag itself (the bug
-    /// behind "shortcut not found"):** `isConfigured` forces itself true in
-    /// DEBUG so the switch can be previewed before the two iCloud links
-    /// exist, and the old "Add shortcut" button called `markInstalled()`
-    /// unconditionally, even when `openInstall` had nothing to open (a nil
-    /// URL). That left `rawInstalled = true` saved in UserDefaults with no
-    /// shortcut behind it, so the next tap skipped straight to `run()`,
-    /// which built `shortcuts://x-callback-url/run-shortcut?name=808%20
-    /// Silence...` for a shortcut nobody had installed — the exact "Shortcut
-    /// not found" iOS reports. Requiring both links here means a stale
-    /// `true` left over from that build reads as false again the moment
-    /// this ships, with no reinstall needed, and a future bug in the setup
-    /// path can never again mark this true without a real shortcut to run.
-    var installed: Bool {
-        rawInstalled && Self.silenceInstallURL != nil && Self.restoreInstallURL != nil
-    }
+    /// **"Shortcut not found" was this flag lying** (Melvin, 2026-09-23). The
+    /// old Add shortcut button set it on every tap, even with a nil link that
+    /// opened nothing, so the next tap ran `808 Silence` on a phone that had
+    /// never been given it. It is now set only by `markInstalled()`, which
+    /// the sheet calls after the step that earns it, and the key moved to v2
+    /// so the stale `true` is gone. Still not proof the shortcuts survive
+    /// (they can be deleted), which no API can tell us.
+    @Published private(set) var installed: Bool
 
     /// What we believe about the phone right now. Read from iOS where it is
     /// allowed, otherwise only what this app turned on.
@@ -136,12 +131,12 @@ final class FocusShortcut: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        self.rawInstalled = defaults.bool(forKey: Self.installedKey)
+        self.installed = defaults.bool(forKey: Self.installedKey)
     }
 
     func markInstalled() {
         defaults.set(true, forKey: Self.installedKey)
-        rawInstalled = true
+        installed = true
     }
 
     // MARK: - Reading the phone

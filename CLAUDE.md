@@ -3820,6 +3820,48 @@ sentence that would otherwise be a title; exactly one gold object per
 decision. Home is explicitly frozen for Melvin's critique, so it is NOT to be
 converted until he has looked.
 
+## THE READY SCREEN'S PILLS ARE HOME'S SIZE, AND OTTO IS LIFTED PER SCREEN (2026-09-23, Melvin)
+
+"make the buttons 'sound and silence notifications' a bit bigger, like
+closer to the size of the banners in the home screen, gonna have to raise
+Otto a little bit for this."
+
+- **`SitPill` is Home's card size** (a 42pt roundel, a title and a line under
+  it) with a `compact` one-line size for short phones (`height < 700`, the SE).
+- **Otto is lifted by exactly what each screen needs** (`ottoLift`): enough
+  to clear his cushion by 6pt above the pills, capped so the gap between the
+  timer tape and his bubble never closes under 10pt. The bubble rises with
+  him and the tape half as far, since it stays centred in the band above the
+  bubble. A 17 Pro gets about 63pt and the whole cushion shows; an SE has no
+  sky to give, so there the compact pills still sit over his lap, as they
+  always had. **A flat lift was wrong on every phone**: the first build's 6pt
+  left the pills over his legs on a 17 Pro and up to his chest on an SE.
+- **Only the sitter moves** (`ValleyScene.ottoLift`, which moves Otto and his
+  cushion and nothing else). Offsetting the whole painting moved the horizon
+  and sun with him, and would have slid the entire valley down at the
+  hand-off. The lift is 0 while counting in, so he settles to exactly where
+  the sit draws him while the pills leave.
+- **The heights are measured** (`onGeometryChange` on the controls block and
+  the tape, heights only, never positions, because the slide transitions move
+  them), seeded with the 17 Pro's values so the first frame is already right.
+- **"Choosing a sound sends you home" was `@Environment(\.dismiss)`** inside
+  `SoundChoiceList`, which has no presentation of its own, so Done dismissed
+  the fullScreenCover the Ready screen lives in. It takes an `onDone` now.
+  **A child view with no sheet of its own must never call `dismiss`.**
+- **"Shortcut not found" was 808 marking the Do Not Disturb shortcuts
+  installed when the install links were still nil**, so it ran `808 Silence`
+  on a phone that had never been given it. `FocusShortcut.installed` is set
+  only by a step that earns it, under a new key (`.v2`) so the stale `true`
+  is gone. The setup sheet opens ONE link per tap (808 is in the background
+  while Shortcuts shows its Add screen, so a second open straight after the
+  first is refused), and while the links do not exist (DEBUG only; Release
+  hides the switch) it walks through making the two by hand. The links are
+  Melvin's to publish (BACKLOG.md).
+- `PREVIEW_SETUP=1` (DEBUG) opens the Ready screen on launch. On a fresh
+  simulator Friends test mode earns "Brought a friend" and its award covers
+  everything; `simctl spawn <sim> defaults write com.lockout.meditate808
+  community.testMode.v1 -bool NO` before launching avoids it.
+
 ## ONE ROUNDED FONT EVERYWHERE; DIN NEXT ROUNDED NEEDS A LICENCE (2026-09-21, Melvin)
 
 "use their font everywhere, i think its DIN Next Rounded". Duolingo's body

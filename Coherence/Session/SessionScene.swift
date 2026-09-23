@@ -73,6 +73,17 @@ struct ValleyScene: View {
     /// and resizing one view is a spring the rig plays straight through.
     var ottoInCorner: Bool = false
 
+    /// Raise Otto and his cushion by this much, and nothing else.
+    ///
+    /// The Ready screen's Sound and Silence pills are Home's card size
+    /// (Melvin, 2026-09-23), and on most phones they would sit on his lap.
+    /// Only the sitter moves: lifting the whole painting moved the horizon
+    /// and the sun with him, and it would have to slide the entire valley
+    /// back down when the sit takes over. The sit itself passes 0, so a
+    /// Ready screen that eases this back to 0 as the countdown starts hands
+    /// over with no jump.
+    var ottoLift: CGFloat = 0
+
     /// The rig, so he actually breathes while you do.
     ///
     /// `@StateObject` rather than a fresh `OttoRig` per body: the Rive view
@@ -174,9 +185,9 @@ struct ValleyScene: View {
     private func lifeAvoidRect(size: CGSize, scale s: CGFloat) -> CGRect? {
         guard showsFigure, !ottoInCorner else { return nil }
         let seated = ottoHeight(scale: s)
-        let top = SitLayout.ottoTop(in: size) - 20
-        let cushionBottom = size.height * (1 - 0.215) + 22 * s
-        let ottoBottom = size.height * (1 - 0.24) + 12
+        let top = SitLayout.ottoTop(in: size) - 20 - ottoLift
+        let cushionBottom = SitLayout.cushionBottom(in: size) + 22 * s - ottoLift
+        let ottoBottom = size.height * (1 - 0.24) + 12 - ottoLift
         let bottom = max(cushionBottom, ottoBottom)
         let halfWidth = max(168 * s, seated * 0.85) / 2 + 24
         return CGRect(x: size.width / 2 - halfWidth, y: top,
@@ -265,7 +276,7 @@ struct ValleyScene: View {
             Cushion()
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
-                          y: size.height * (1 - 0.215) - 22 * s)
+                          y: SitLayout.cushionBottom(in: size) - 22 * s - ottoLift)
                 .opacity(ottoInCorner || !showsFigure ? 0 : 1)
 
             // The artboard carries headroom above his tuft that the cutout
@@ -284,7 +295,7 @@ struct ValleyScene: View {
             }
             .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
                       y: ottoInCorner ? Self.cornerY
-                                      : size.height * (1 - 0.24) - seated / 2)
+                                      : size.height * (1 - 0.24) - seated / 2 - ottoLift)
         }
         .frame(width: size.width, height: size.height)
     }
@@ -522,6 +533,13 @@ enum SitLayout {
     /// and nothing may be drawn across it.
     static func ottoTop(in size: CGSize) -> CGFloat {
         size.height - (size.height * 0.24 + 186 * scale(in: size))
+    }
+
+    /// The bottom edge of his cushion, a little below where he sits. The
+    /// scene draws the cushion from here, and the Ready screen reads it to
+    /// know how far to lift him clear of its pills.
+    static func cushionBottom(in size: CGSize) -> CGFloat {
+        size.height * (1 - 0.215)
     }
 
     /// The clock's ring.
