@@ -215,6 +215,12 @@ struct SaveSessionView: View {
                 .frame(height: visible, alignment: .top)
                 .clipped()
                 .ignoresSafeArea(edges: .top)
+                // Decoration only. `.clipped()` hides the scene's extra
+                // height but does not stop it catching touches, and the band
+                // sits above the list (`zIndex(1)`), so the invisible part lay
+                // over the first card and swallowed every touch on the "How did
+                // it feel?" slider (Melvin, 2026-09-23: "doesn't work at all").
+                .allowsHitTesting(false)
         }
         .overlay(alignment: .bottomTrailing) {
             OttoMark(size: 52, pose: .head)
