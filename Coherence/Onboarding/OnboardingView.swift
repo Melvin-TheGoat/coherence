@@ -36,10 +36,11 @@ struct OnboardingView: View {
     /// (screen 23), while its open-questions section argues for after the first
     /// session. Kept as one switch so moving it is a one-line change, not a
     /// re-plumb — see ONBOARDING.md "Open — needs a decision before building".
-    /// FALSE since 2026-09-15 (Melvin): the paywall comes after the first
-    /// meditation, from ContentView (`FirstSessionOffer`), once the person has
-    /// seen their own score, curves and readings. Onboarding sells nothing.
-    private static let paywallInsideOnboarding = false
+    /// FALSE from 2026-09-15 (Melvin): the paywall came after the first
+    /// meditation, from ContentView (`FirstSessionOffer`). TRUE again while
+    /// 808 is premium only (2026-09-23, `Monetization`): onboarding ends on
+    /// the paywall, and there is no free app to walk into past it.
+    private static let paywallInsideOnboarding = Monetization.premiumOnly
 
     enum Step: Int, CaseIterable {
         case relief, breath                                    // 1–2
@@ -502,10 +503,17 @@ struct OnboardingView: View {
             Color.clear.onAppear { finish() }
 
         case .paywall:
-            // No paywall inside onboarding since 2026-09-15; it opens after
-            // the first meditation from ContentView. A saved resume record
-            // pointing here moves on to sign-in.
-            Color.clear.onAppear { go(.signIn) }
+            if Self.paywallInsideOnboarding {
+                // Premium only (`Monetization`). A purchase or a restore moves
+                // on to sign-in; so does a store that could not load its
+                // plans, since nobody is locked out by a failure. Declining
+                // every offer comes back here: there is no free tier.
+                PaywallScreen(placement: "onboarding", plan: $plan) { _ in go(.signIn) }
+            } else {
+                // No paywall inside onboarding (2026-09-15 to 2026-09-23): a
+                // saved resume record pointing here moves on to sign-in.
+                Color.clear.onAppear { go(.signIn) }
+            }
 
         case .signIn:
             SignInScreen(onSignedIn: { credential in

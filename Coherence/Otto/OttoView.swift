@@ -27,7 +27,8 @@ struct OttoView: View {
                 if availability != .available {
                     OttoUnavailableView(availability: availability)
                 } else if !store.entitlements.otto {
-                    OttoLockedView(trialEligible: store.trialEligible || store.state != .ready) {
+                    OttoLockedView(trialEligible: store.trialEligible || store.state != .ready,
+                                   trialDays: store.trialDays) {
                         Analytics.track(.lockedTapped(signal: "otto"))
                         showPlans = true
                     } onDismiss: {
@@ -435,6 +436,7 @@ struct OttoRow: View {
 /// on `PaywallScreen`.
 struct OttoLockedView: View {
     var trialEligible: Bool = true
+    var trialDays: Int = SubscriptionPlan.fallbackTrialDays
     let onSeePlans: () -> Void
     let onDismiss: () -> Void
 
@@ -461,7 +463,7 @@ struct OttoLockedView: View {
             }
             Spacer(minLength: 16)
             VStack(spacing: 8) {
-                Button(trialEligible ? "Start 7 days free" : "See the plans", action: onSeePlans)
+                Button(trialEligible ? TrialCopy.startButton(trialDays) : "See the plans", action: onSeePlans)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Not now", action: onDismiss)
                     .font(AppFont.callout)

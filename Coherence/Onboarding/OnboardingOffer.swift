@@ -30,6 +30,12 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The free trial's length until the App Store says otherwise
+    /// (`Store.trialDays` reads the real one off the monthly product). Three:
+    /// the length the founders expect to set (2026-09-23, "likely with a 3
+    /// day free trial"); only a build with no products ever shows it.
+    static let fallbackTrialDays = 3
+
     /// The cards the paywall shows. `yearHalf` is not among them until
     /// somebody has been offered it, and then it takes the year's place
     /// rather than sitting beside it, because two yearly cards at different
@@ -233,7 +239,7 @@ struct PaywallScreen: View {
         let monthly = store.displayPrice(for: .monthly) ?? SubscriptionPlan.monthly.price
         let yearly = store.displayPrice(for: .yearly) ?? SubscriptionPlan.yearly.price
         let base = "808 Premium is \(monthly) a month or \(yearly) a year"
-        return offerTrial ? base + ", and the first week is free." : base + "."
+        return offerTrial ? base + ", and the first \(TrialCopy.length(store.trialDays)) are free." : base + "."
     }
 
     enum PaywallRoute: Identifiable {
@@ -307,8 +313,13 @@ struct PaywallScreen: View {
         #if DEBUG
         "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it."
         #else
-        "The App Store didn't answer just now. Everything stays open, and you can subscribe later from any locked screen."
+        "The App Store didn't answer just now. You can keep going, and the plans will be here the next time you open 808."
         #endif
+    }
+
+    /// "Three days free.", from the App Store's trial length.
+    private var trialTitle: String {
+        store.trialDays == 1 ? "One day free." : "\(TrialCopy.spelled(store.trialDays)) days free."
     }
 
     /// Whether the free week may be promised. StoreKit knows if this person
@@ -323,11 +334,11 @@ struct PaywallScreen: View {
                          // only lands here when the product fetch failed, and
                          // "free while we're testing" on a shipping app is a
                          // claim about the business, not their connection.
-                         title: selling ? (offerTrial ? "Seven days free." : "Welcome back.")
+                         title: selling ? (offerTrial ? trialTitle : "Welcome back.")
                                         : notSellingTitle,
                          subtitle: selling
                             ? (offerTrial
-                               ? "See it work first. If a week of measured sessions doesn't convince you, walk away and pay nothing."
+                               ? "Try all of 808 first. If it doesn't help you meditate more, cancel and pay nothing."
                                : "Pick a plan to keep going. Every plan unlocks everything.")
                             : notSellingSubtitle,
                          // The free week is the subscriptions' introductory
@@ -336,7 +347,7 @@ struct PaywallScreen: View {
                          // rather than promising a trial that won't happen.
                          ctaTitle: selling
                             ? (plan == .lifetime ? "Buy Lifetime"
-                               : offerTrial ? "Start my free week" : "Subscribe")
+                               : offerTrial ? "Start my free trial" : "Subscribe")
                             : "Continue",
                          // 3.1.2 wants auto-renewal SAID, not implied: "cancel
                          // any time" hints at it and reviewers reject paywalls
@@ -347,7 +358,7 @@ struct PaywallScreen: View {
                             ? (plan == .lifetime
                                ? "\(priceLine), charged today. Nothing renews."
                                : offerTrial
-                               ? "7 days free, then \(priceLine). Renews automatically until you cancel in Settings."
+                               ? "\(TrialCopy.length(store.trialDays)) free, then \(priceLine). Renews automatically until you cancel in Settings."
                                : "\(priceLine). Renews automatically until you cancel in Settings.")
                             : notSellingFootnote,
                          skipTitle: "Restore purchase",
@@ -416,7 +427,7 @@ struct PaywallScreen: View {
                 Text(selling
                      ? (plan == .lifetime || !offerTrial
                         ? "One tap on the button above shows Apple's purchase sheet before anything is charged."
-                        : "No charge today. Cancel before the week ends and you pay nothing.")
+                        : "No charge today. Cancel before the trial ends and you pay nothing.")
                      : "Planned pricing. Nothing here can be bought yet.")
                     .font(.caption2)
                     .foregroundStyle(AppColor.textSecondary)
@@ -460,7 +471,8 @@ struct PaywallScreen: View {
                 case .rung(let current):
                     DownsellSheet(rung: current, plan: plan,
                                   yearlyPrice: store.displayPrice(for: .yearly)
-                                      ?? SubscriptionPlan.yearly.price) {
+                                      ?? SubscriptionPlan.yearly.price,
+                                  trialDays: store.trialDays) {
                         // Taking a rung PRESELECTS the plan and returns to the
                         // paywall; the purchase happens there and only there.
                         // The rungs used to buy in place, which put a
@@ -471,15 +483,19 @@ struct PaywallScreen: View {
                         plan = current.plan
                         route = nil
                     } onDecline: {
-                        // Straight to the next rung, or to the free tier. No
-                        // rung repeats, and the ladder no longer dead-ends:
-                        // 808 is usable without paying, so the last thing it
-                        // says should be that.
-                        route = current.next.map { .rung($0) } ?? .freeTier
+                        // Straight to the next rung. After the last one: the
+                        // free tier, or, while 808 is premium only
+                        // (`Monetization`), back to the plans, since there is
+                        // no free 808 to settle into.
+                        if let next = current.next {
+                            route = .rung(next)
+                        } else {
+                            route = Monetization.premiumOnly ? nil : .freeTier
+                        }
                         lastRung = current
                     }
                 case .freeTier:
-                    FreeTierScreen(trialEligible: offerTrial) {
+                    FreeTierScreen(trialEligible: offerTrial, trialDays: store.trialDays) {
                         // Same rule, plus the bug it fixes: this closure used
                         // to call advance() with whatever plan was last
                         // selected, so a "Start 7 days free" button could

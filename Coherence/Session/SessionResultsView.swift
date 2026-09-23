@@ -211,7 +211,8 @@ struct SessionResultsView: View {
                         .presentationDetents([.medium, .large])
                 case .locked(let signal):
                     UnlockSheet(signal: signal,
-                                trialEligible: store.trialEligible || store.state != .ready) {
+                                trialEligible: store.trialEligible || store.state != .ready,
+                                trialDays: store.trialDays) {
                         replaceRoute(with: .plans)
                     } onDismiss: {
                         route = nil

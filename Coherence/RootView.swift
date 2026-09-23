@@ -15,22 +15,42 @@ struct RootView: View {
     @Query private var preferences: [Preferences]
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var coordinator: SessionCoordinator
-    /// **808 is no longer a hard paywall** (Aziz, 2026-08-24), reversing the
-    /// 2026-08-11 decision that paying unlocked the entire app. The app opens
-    /// for everyone; what paying unlocks is the EVIDENCE behind the score.
+    @EnvironmentObject private var store: Store
+    /// The plan the launch paywall has selected.
+    @State private var lockPlan: SubscriptionPlan = .monthly
+
+    /// **808 is premium only again** (Melvin and Aziz, 2026-09-23;
+    /// `Monetization`). A person with no subscription meets the paywall at
+    /// launch, the way they met it at the end of onboarding, and buying or
+    /// restoring opens the app by itself (the store publishes `entitled`).
     ///
-    /// The gate did not disappear, it moved down a level into `Entitlements`,
-    /// which each screen consults for the part it owns. Three reasons for the
-    /// reversal, ascending: free users cost nothing because there is no
-    /// backend; a hard paywall throttles installs by roughly 8x at median
-    /// conversion; and asking for money before anyone has seen a single
-    /// reading contradicts the one thing 808 sells, which is not being asked
-    /// to take a claim on faith. See ENTITLEMENTS.md.
+    /// History, so nobody re-derives it: the first hard paywall (2026-08-11)
+    /// was reversed for a free tier on 2026-08-24, whose reasoning is in
+    /// ENTITLEMENTS.md and whose code is still here, unreachable while
+    /// `Monetization.premiumOnly` is true.
+    ///
+    /// **Only a store that can sell locks anything.** Offline, or before the
+    /// products exist, the app stays open; see `Monetization`.
+    private var premiumLock: Bool {
+        guard Monetization.premiumOnly else { return false }
+        #if DEBUG
+        // Review the lock on a build with no products: HARD_PAYWALL=1. The
+        // paywall's button then simulates the purchase, which opens the app.
+        if ProcessInfo.processInfo.environment["HARD_PAYWALL"] == "1" {
+            return !store.entitled && !store.previewEntitled
+        }
+        #endif
+        return store.state == .ready && !store.entitled
+    }
 
     var body: some View {
         Group {
             if preferences.contains(where: { $0.onboardingComplete }) {
-                ContentView()
+                if premiumLock {
+                    PaywallScreen(placement: "root_lock", plan: $lockPlan) { _ in }
+                } else {
+                    ContentView()
+                }
             } else {
                 OnboardingView()
             }
