@@ -3530,9 +3530,12 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
   what opens Block's apps, so a timed sit always counts
   (`test_theShortestTimedSessionOpensBlock` ties the two). A 2 minute default
   saved earlier opens on 5; Settings' lengths are now Open, 5, 10, 15, 20, 30.
-- **`SessionLength` (Shared, tested) holds the rules**: Open, 5 to 60, 75, 90,
-  120; a typed 100 is kept as 100 while the tape rests on its nearest tick (90)
-  and only moving the tape off that tick writes back.
+- **`SessionLength` (Shared, tested) holds the rules**: Open, then every
+  minute from 5 to 120, evenly. It first jumped 60, 75, 90, 120 on
+  consecutive ticks and the four labels piled into one smear (Aziz: "this
+  looks weird"); **every labelled tick must be the same distance apart.** A
+  typed 300 is kept as 300 while the tape rests on its nearest tick (120) and
+  only moving the tape off that tick writes back.
 - **The length is remembered** in `Preferences.defaultDurationSec`, which the
   Settings "Default length" picker also edits (it now lists a custom value
   rather than showing blank). Begin passes it as `plannedDurationSec`, and the

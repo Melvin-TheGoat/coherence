@@ -146,7 +146,8 @@ Scroll all three: they are live. <b>Open</b> (the ∞ end) keeps today's behavio
 <ul class="facts">
   <li><b>Tap the clock to type an exact length</b> (added after review): the clock becomes a number
   field with a Done pill; 0 is Open, 600 minutes at most.</li>
-  <li><b>Range:</b> Open, 1 to 60 minutes in single minutes, then 75, 90 and 120.</li>
+  <li><b>Range:</b> Open, then every minute from 5 to 120 (built: five is the shortest, and the
+  ruler is even all the way so its labels never pile up). Longer is typed.</li>
   <li><b>It remembers your last choice</b> (the stored default length, which Settings already edits), so a
   daily 10-minute sitter never touches it.</li>
   <li><b>A timed session ends itself</b> at zero: the phone already knows how, the sit screen's ring
@@ -186,7 +187,7 @@ function valley(el, bubbleTop, bubbleText){
 }
 
 /* the values every design shares */
-const VALUES=[0]; for(let m=1;m<=60;m++)VALUES.push(m); VALUES.push(75,90,120);
+const VALUES=[0]; for(let m=5;m<=120;m++)VALUES.push(m);
 const START=VALUES.indexOf(10);
 const clock=m=>m===0?"∞":(m>=60&&m%60===0?`${m/60}:00:00`:`${m}:00`);
 const sub=m=>m===0?"Open · end when you like":`${m} minute${m===1?"":"s"}`;

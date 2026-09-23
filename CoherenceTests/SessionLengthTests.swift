@@ -4,12 +4,13 @@ import XCTest
 final class SessionLengthTests: XCTestCase {
 
     /// Aziz, 2026-09-22: five is the shortest, and left of five is ∞.
-    func test_theTapeRunsOpenThenFiveToAnHourThenTheLongOnes() {
+    func test_theTapeRunsOpenThenEveryMinuteFromFiveToTwoHours() {
         XCTAssertNil(SessionLength.values.first!, "Open sits at the left end")
         XCTAssertEqual(SessionLength.values[1], 5, "left of five is Open")
         XCTAssertEqual(SessionLength.values.compactMap { $0 }.min(), 5)
         XCTAssertEqual(SessionLength.values[56], 60)
-        XCTAssertEqual(Array(SessionLength.values.suffix(3)), [75, 90, 120])
+        XCTAssertEqual(SessionLength.values.last!, 120)
+        XCTAssertEqual(SessionLength.values.count, 1 + 116, "every minute, no jumps")
     }
 
     func test_everyTickFindsItself() {
@@ -20,9 +21,8 @@ final class SessionLengthTests: XCTestCase {
 
     /// A typed length the tape does not carry rests on its nearest tick.
     func test_aTypedLengthRestsOnTheNearestTick() {
-        XCTAssertEqual(SessionLength.values[SessionLength.nearestIndex(for: 100)], 90)
-        XCTAssertEqual(SessionLength.values[SessionLength.nearestIndex(for: 68)], 75)
-        XCTAssertEqual(SessionLength.values[SessionLength.nearestIndex(for: 500)], 120)
+        XCTAssertEqual(SessionLength.values[SessionLength.nearestIndex(for: 100)], 100)
+        XCTAssertEqual(SessionLength.values[SessionLength.nearestIndex(for: 300)], 120)
     }
 
     func test_typing() {

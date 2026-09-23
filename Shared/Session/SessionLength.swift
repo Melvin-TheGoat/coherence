@@ -16,8 +16,11 @@ import Foundation
 enum SessionLength {
     static let shortest = 5
 
-    /// Open, then every minute from five to an hour, then the long ones.
-    static let values: [Int?] = [nil] + Array(shortest...60) + [75, 90, 120]
+    /// Open, then every minute from five to two hours. **Evenly, all the
+    /// way**: it used to jump 60, 75, 90, 120 on consecutive ticks, and four
+    /// labels one tick apart piled into "60759012O". Longer than two hours is
+    /// typed.
+    static let values: [Int?] = [nil] + Array(shortest...120)
 
     /// What the tap-to-type field accepts: five minutes to the ten hours the
     /// old custom length field allowed.
@@ -31,7 +34,7 @@ enum SessionLength {
     }
 
     /// The tape position for `minutes`: its own tick, or the nearest one for a
-    /// typed length the tape does not carry (100 sits on 90).
+    /// typed length the tape does not carry (a typed 300 sits on 120).
     static func nearestIndex(for minutes: Int?) -> Int {
         guard let minutes else { return 0 }
         var best = 1   // the first timed tick
