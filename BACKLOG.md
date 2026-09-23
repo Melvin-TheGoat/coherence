@@ -111,6 +111,16 @@ animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
   one, and an arm that bends (bones have to be weighted by hand in the Rive
   editor; the MCP cannot do it). Melvin's second Otto pass, 2026-09-20;
   CLAUDE.md's Rive sections.
+- **The valley matches Otto's state.** Melvin, 2026-09-23: "when you
+  meditate less/otto gets sadder, make the flowers around him die and maybe
+  the weather worse as he gets sadder, and maybe less birds, maybe crows or
+  uglier bugs, basically environment matches his state." So the scene reads
+  the aura stage too: flowers wilting and fewer of them, a grayer sky or
+  rain, fewer birds and crows instead of songbirds, uglier bugs in the
+  grass; the reverse as he glows. Everything in the valley is already drawn
+  from code (`ValleyScene`, `Meadow`, `ValleyLife`, `DayLight`), so most of
+  it is palette and counts keyed to the stage; crows need sprites. Not to be
+  built yet.
 - **Otto's chat on a cloud model.** Only if Apple's on-device model is not
   good enough. It would send session data off the phone, so consent, the
   privacy policy, the labels and the "no AI service" answer to App Review
@@ -179,6 +189,13 @@ animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
   Watch users.
 
 ### Onboarding and paywall
+
+- **Sell premium properly in onboarding.** Melvin and Aziz, 2026-09-23,
+  after deciding 1.1 is premium only: "going to have to refine the
+  onboarding a bit more to really sell the user on this." The paywall is
+  back at the end of onboarding and the Block setup now comes before it;
+  the selling itself (what the screens before the paywall show, in what
+  order) is theirs to shape next.
 
 - **Use the onboarding answers in the app.** Only the reminder time is
   used; what people said they were chasing is read once and dropped, the
@@ -279,6 +296,23 @@ animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
   Sign in with Apple only. App_ROADMAP_v2.md.
 
 ## Open threads
+
+- **Decisions from the 2026-09-23 call, written down, not built.**
+  - **Trial length: "likely 3 days".** The app reads the trial off the
+    monthly product in App Store Connect (`Store.trialDays`), so deciding is
+    one change there, on both subscriptions' introductory offers; every line
+    in the app follows. Today Connect says 7 days.
+  - **Glow gains that grow with a run of days.** "Maybe scales similarly
+    when you meditate 2, 3, 4 days in a row." The missed-day half is built
+    (10, 15, 20 ...); gains are still a flat 10 a day until someone picks the
+    numbers.
+  - **People who installed 1.0 or 1.0.1 for free** meet the paywall at
+    launch after updating, whatever history they have. Decide whether to
+    grandfather them (for example, everyone with a session before 1.1 keeps
+    the app) or let the trial carry them. Nothing grandfathers today.
+  - **Premium only in the store listing and review notes.** The description
+    should say plainly that 808 is a subscription with a free trial, and the
+    review notes that the reviewer starts the sandbox trial on the paywall.
 
 - **Silence notifications needs two published shortcuts (Melvin).** No app
   can switch Do Not Disturb; Shortcuts can, so 808 runs two by name. Make
