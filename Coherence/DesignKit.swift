@@ -128,8 +128,6 @@ struct EvidenceRow: View {
     /// them apart so it can put each one in its own place.
     var stats: MeditationStats? = nil
     var rating: Int? = nil
-    /// The selfie taken after the sit. When it is there it takes the panel.
-    var thumbnail: UIImage? = nil
     /// Who can see this one, when the screen is somebody's own page.
     ///
     /// Defaulted to nil so **Home is unchanged**: the feed of your three most
@@ -138,11 +136,15 @@ struct EvidenceRow: View {
     /// sessions you post" has to show which sessions those are.
     var shared: Bool? = nil
 
-    private var panelWidth: CGFloat { 98 }
-
     var body: some View {
-        HStack(spacing: 0) {
-            picture
+        HStack(alignment: .top, spacing: 12) {
+            // The puck, not the selfie (Melvin, 2026-09-23: "the photo
+            // should not be there, it looks super ugly ... you only see
+            // the photo if you tap on it"). A list row is not where a photo
+            // is looked at; the session's own page, one tap in, still shows
+            // it whole. Shared with Profile's week list so the two read as
+            // one visual language.
+            MinutesPuck(durationSec: session.durationSec)
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 8) {
                     VStack(alignment: .leading, spacing: 2) {
@@ -159,7 +161,7 @@ struct EvidenceRow: View {
                         }
                     }
                     Spacer(minLength: 0)
-                    if thumbnail == nil, !session.isPhoneOnly, score != nil {
+                    if !session.isPhoneOnly, score != nil {
                         ScoreCapsule(score: score)
                     }
                     if let rating { RatingChip(rating: rating) }
@@ -192,55 +194,41 @@ struct EvidenceRow: View {
                 }
                 }
             }
-            .padding(14)
         }
+        .padding(14)
         .frame(maxWidth: .infinity)
         .background(AppColor.backgroundSecondary)
         .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
         .shadow(color: AppColor.hairline, radius: 0, y: 2)
     }
+}
 
-    /// The panel. A photo fills it; Otto sits in it on a wash of the sky.
-    /// **No picture panel without a picture** (Melvin, 2026-09-22: "get rid
-    /// of the sloth images in recent, the sloth looks weird as fuck if hes
-    /// there on every meditation"). He was the panel's filler, and a column
-    /// of identical sloths is wallpaper, the same note that took him off the
-    /// log. A photo still takes the panel; without one the row is its words,
-    /// and the score moves up beside the rating.
-    @ViewBuilder private var picture: some View {
-        if let thumbnail {
-            ZStack {
-                Color.clear.overlay(Image(uiImage: thumbnail).resizable().scaledToFill())
-                // The score rides on the picture so the one gold object per
-                // card is also the first thing the eye lands on. A sit
-                // nothing measured gets no capsule at all: an empty one is a
-                // slot waiting to be filled, and nothing is coming to fill it.
-                VStack {
-                    Spacer()
-                    HStack {
-                        ScoreCapsule(score: score)
-                        Spacer(minLength: 0)
-                    }
-                }
-                .padding(7)
-                .opacity(session.isPhoneOnly ? 0 : 1)
-            }
-            .frame(width: panelWidth)
-            .frame(maxHeight: .infinity)
-            .clipped()
+/// A session's length, in a small amber puck — the one fact any session,
+/// phone or Watch, can report. Shared between Home's evidence rows and
+/// Profile's week list so the two lists read as one visual language
+/// (Melvin, 2026-09-23: replaces the photo that used to sit here — "you
+/// only see the photo if you tap on it").
+///
+/// **Soft amber, never the accent gold**: a puck on every row down a page
+/// would spend the one-gold-per-section rule on every row and leave nothing
+/// on the screen emphasised. A tint is a material; the accent is a decision.
+struct MinutesPuck: View {
+    let durationSec: Int
+
+    var body: some View {
+        VStack(spacing: 1) {
+            Text("\(max(1, durationSec / 60))")
+                .font(.system(size: 16, weight: .heavy, design: .rounded))
+                .monospacedDigit()
+            Text("MIN")
+                .font(.system(size: 8.5, weight: .heavy, design: .rounded))
+                .tracking(0.6)
+                .opacity(0.75)
         }
-    }
-
-    /// Otto follows the clock, not the score. Somebody who sits at dawn and
-    /// somebody who sits later get different cards, and neither of them is
-    /// being told how they did.
-    ///
-    /// It was three poses until the lying-down one was cut (Melvin,
-    /// 2026-09-20: "the lying down looks very weird"), so an evening sit now
-    /// shows him settled rather than asleep, which is closer to what the
-    /// person actually did anyway.
-    private var pose: OttoPose {
-        Calendar.current.component(.hour, from: session.startedAt) < 11 ? .awake : .meditating
+        .foregroundStyle(AppColor.accentGoldText)
+        .frame(width: 44, height: 44)
+        .background(AppColor.accentGold.opacity(0.28),
+                    in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 
