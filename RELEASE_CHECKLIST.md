@@ -79,6 +79,24 @@ corrected to match. Do every step below it before returning here.
    - [ ] Verify Production lists every type, field and index from the
      Development side.
 3. **App Store Connect:**
+   - [ ] **1.1 is PREMIUM ONLY (Melvin and Aziz, 2026-09-23;
+     `Monetization.premiumOnly`).** Onboarding ends on the paywall and the
+     app opens to it for anyone without a subscription. Before submitting:
+     - Set the trial length on BOTH subscriptions' introductory offers
+       ("likely 3 days"; Connect says 7 today). The app reads it off the
+       monthly product, so nothing else changes.
+     - The description and promotional text say plainly that 808 is a
+       subscription with a free trial.
+     - Review notes: "808 is a subscription app. The paywall at the end of
+       onboarding offers a free trial; start it with the sandbox account to
+       reach everything. Restore purchase is on the same screen."
+     - All four products attached to the version and their review
+       screenshots uploaded: if the sandbox cannot return them, the app stays
+       open instead of showing a paywall that cannot sell, which a reviewer
+       reads as "the paywall is missing".
+     - Decide what people who installed 1.0 or 1.0.1 for free get when they
+       update (BACKLOG.md "Decisions from the 2026-09-23 call"): today they
+       meet the paywall at launch.
    - [ ] Age rating questionnaire, answered fresh in the live form (do not
      assume the shape hasn't changed since this was written): see "Age
      rating (1.1, Friends ON)" below for the worked answers and expected
