@@ -3,8 +3,14 @@
 <!--
   Privacy manifest (required since 2024 for required-reason APIs).
 
-  Accessed APIs: UserDefaults only, reason CA92.1 (the app reading its own
-  preferences: migration flags, AppStorage-backed setup choices).
+  Accessed APIs: UserDefaults only. CA92.1 is the app reading its own
+  preferences (migration flags, AppStorage-backed setup choices). 1C8F.1
+  (added 2026-09-23, Block) is `BlockKit/BlockStore.swift` reading and
+  writing the App Group (`group.com.lockout.meditate808`) that this app
+  shares with its three Block extensions (Monitor, Shield, ShieldAction) —
+  the blockers, passes and holds Screen Time has to see across processes.
+  Nothing in the App Group leaves the phone; see BlockKit's own header
+  comment.
 
   Collected data: PRODUCT INTERACTION only, for analytics, since 2026-08-17
   (PostHog, behavioral events: screens completed, sessions started and
@@ -166,6 +172,7 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+				<string>1C8F.1</string>
 			</array>
 		</dict>
 	</array>

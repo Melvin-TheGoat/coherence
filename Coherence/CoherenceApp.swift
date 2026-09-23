@@ -90,6 +90,11 @@ struct CoherenceApp: App {
                 // with the phone locked, or iOS closing 808 mid-sit. Only the
                 // foreground can reach Shortcuts, so it is paid here.
                 .task { await FocusShortcut.shared.becameActive() }
+                // An account deletion whose Friends cleanup could not finish
+                // (no network, no iCloud, at the exact moment somebody left)
+                // retries here until it does. See
+                // CommunityModel.retryPendingDeletion.
+                .task { await CommunityModel.retryPendingDeletion() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }

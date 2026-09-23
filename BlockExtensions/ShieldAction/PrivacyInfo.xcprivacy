@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Privacy manifest for the Block shield-action extension (required since
+  2024 for required-reason APIs, ITMS-91053 — every bundle that calls one
+  needs its own manifest, not just the app that embeds it).
+
+  Accessed APIs: UserDefaults only, reason 1C8F.1. `BlockShieldAction`'s
+  "Ask Otto" button calls `BlockAsk.post`, which calls `BlockStore
+  .appendAsk` (BlockKit, which this target compiles) to record the tap, and
+  that reads and writes the App Group (`group.com.lockout.meditate808`)
+  shared with the main app and the other two Block extensions — never
+  `UserDefaults.standard`, which is why CA92.1 is not declared here.
+
+  Collected data: none. This extension records a button tap into state the
+  app already owns; it makes no network call and reads no biometric data.
+  See BlockKit/BlockStore.swift: nothing Block learns leaves the phone
+  (Apple's Family Controls terms).
+
+  Change this file and the app's own `Coherence/PrivacyInfo.xcprivacy`
+  together whenever BlockKit's use of UserDefaults changes.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>1C8F.1</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

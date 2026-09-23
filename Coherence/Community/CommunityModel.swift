@@ -457,6 +457,62 @@ final class CommunityModel: ObservableObject {
         } catch { errorText = Self.plain(error) }
     }
 
+    // MARK: - Account deletion
+
+    /// UserDefaults key for a Friends deletion that could not finish
+    /// (offline, no iCloud, a network blip at exactly the wrong moment).
+    /// Not `private`, like `testModeKey` above: `retryPendingDeletion` reads
+    /// it from a fresh launch and a test needs to see it too.
+    static let pendingDeletionKey = "community.pendingAccountDeletion.v1"
+
+    /// Deletes everything I've written to Friends: my profile, my posts, my
+    /// reactions, my friend edges and blocks, my username. Called once, when
+    /// the person deletes their 808 account (App Review 5.1.1(v) — deleting
+    /// an account must delete what it published, not just sign the person
+    /// out locally).
+    ///
+    /// Runs against whatever store this model already holds, so it reaches
+    /// the in-memory database in test mode and the real CloudKit one
+    /// otherwise. Gated on `FeatureFlags.friends` explicitly: `store` is set
+    /// whenever the process holds a CloudKit container, whether or not
+    /// Friends itself is switched on in THIS build, and a build that never
+    /// turned it on has nothing to clean up.
+    ///
+    /// Best effort, and resumable: a failure here (offline, no iCloud, a
+    /// dropped connection) sets `pendingDeletionKey` instead of losing the
+    /// request, and `retryPendingDeletion()` — called from `CoherenceApp`'s
+    /// launch task — tries again on every later launch until one run
+    /// finishes clean.
+    func deleteAccountData() async {
+        guard FeatureFlags.friends, let store else { return }
+        do {
+            try await store.deleteEverythingOfMine()
+            UserDefaults.standard.removeObject(forKey: Self.pendingDeletionKey)
+        } catch {
+            UserDefaults.standard.set(true, forKey: Self.pendingDeletionKey)
+        }
+    }
+
+    /// Retries a Friends deletion an earlier launch could not finish. A
+    /// no-op almost always, since the flag is normally clear. Builds its own
+    /// store rather than waiting on an instance's `load()` — the same reason
+    /// `WaitlistClient.flush()` does its own thing on launch — and, like
+    /// every other entry point into CloudKit here, goes through
+    /// `ifEntitled()` so it never constructs a container the process does
+    /// not hold (see CLAUDE.md, "THE BETA CRASHED ON LAUNCH A THIRD TIME": a
+    /// guessed or unheld container is what crashed the app on launch three
+    /// times).
+    static func retryPendingDeletion() async {
+        guard FeatureFlags.friends, UserDefaults.standard.bool(forKey: pendingDeletionKey) else { return }
+        guard let db = CloudKitCommunityDatabase.ifEntitled() else { return }
+        do {
+            try await CommunityStore(database: db).deleteEverythingOfMine()
+            UserDefaults.standard.removeObject(forKey: pendingDeletionKey)
+        } catch {
+            // Still pending. The next launch tries again.
+        }
+    }
+
     static func plain(_ error: Error) -> String {
         if let ce = error as? CommunityError { return ce.localizedDescription }
         return "Couldn't reach iCloud. " + error.localizedDescription

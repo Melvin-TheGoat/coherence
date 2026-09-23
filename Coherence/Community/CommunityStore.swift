@@ -524,4 +524,64 @@ actor CommunityStore {
         _ = try await db.save(record)
         return report
     }
+
+    // MARK: - Account deletion
+
+    /// Deletes everything I've written to the PUBLIC database: every post I
+    /// authored (its photo or video goes with the record), every reaction I
+    /// gave, every friend edge and block I wrote, my username reservation,
+    /// and my profile. Called once, when the person deletes their 808
+    /// account — App Review 5.1.1(v): deleting an account has to delete what
+    /// it published, not just sign the person out of it.
+    ///
+    /// **Best effort, not atomic.** Every category is attempted even after
+    /// an earlier one throws: a friend's feed still carrying my posts
+    /// because the FIRST query failed is worse than the same feed catching
+    /// up on a retry. The first error, if any, is thrown at the end so the
+    /// caller knows to try again (`CommunityModel.deleteAccountData` sets a
+    /// pending flag on exactly that, and a launch task keeps retrying it
+    /// until a run finishes clean).
+    ///
+    /// **What this deliberately leaves alone:** Report records (moderation
+    /// keeps them, whoever they are about), and any edge or block someone
+    /// ELSE wrote pointing at me — the public database only lets a record's
+    /// creator modify it, so those stay theirs to keep. A friend whose
+    /// account went through this simply stops resolving afterwards:
+    /// `profile(named:)` returns nil for them, which every reader of
+    /// `people[id]` already treats as "unknown" rather than a crash.
+    func deleteEverythingOfMine() async throws {
+        let mine = try await me()
+        var firstError: Error?
+
+        do { try await deleteMine(CommunityType.post, field: "author") }
+        catch { firstError = firstError ?? error }
+        do { try await deleteMine(CommunityType.reaction, field: "author") }
+        catch { firstError = firstError ?? error }
+        do { try await deleteMine(CommunityType.edge, field: "from") }
+        catch { firstError = firstError ?? error }
+        do { try await deleteMine(CommunityType.block, field: "from") }
+        catch { firstError = firstError ?? error }
+        do {
+            // The username reservation is its own record, named by the
+            // handle rather than by me, so it can only be found through the
+            // profile's own `username` field.
+            if let record = try await db.fetch(mine), let handle = Profile(record: record)?.username, !handle.isEmpty {
+                try await db.delete(CommunityNames.username(handle))
+            }
+        } catch { firstError = firstError ?? error }
+        do { try await db.delete(mine) }
+        catch { firstError = firstError ?? error }
+
+        if let firstError { throw firstError }
+    }
+
+    /// Deletes every record of `type` I created whose `field` names me — the
+    /// query-then-delete shape shared by four of the six steps above.
+    private func deleteMine(_ type: String, field: String) async throws {
+        let mine = try await me()
+        let records = try await db.query(CommunityQuery(type: type, filters: [.equals(field, .reference(mine))], limit: 500))
+        for record in records where authored(record, by: field) {
+            try await db.delete(record.recordID.recordName)
+        }
+    }
 }
