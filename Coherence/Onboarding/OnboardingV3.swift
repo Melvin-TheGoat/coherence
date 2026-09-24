@@ -483,7 +483,7 @@ private struct OttoSaysBubble: View {
         return Text(line)
             .font(.system(size: 19, weight: .semibold, design: .rounded))
             .lineSpacing(3)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 22)
             .padding(.vertical, 16)
