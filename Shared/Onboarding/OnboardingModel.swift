@@ -416,6 +416,53 @@ public enum Role: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// "When could you fit in a few quiet minutes?" (Aziz, 2026-09-23). One
+/// pick, and it is not decorative: the answer becomes the daily reminder's
+/// time, already set on the reminder screen later. The old anchor question
+/// did this job until it was cut, and the reminder sat at 8 AM since.
+public enum QuietTime: String, CaseIterable, Identifiable, Codable {
+    case morning, breakInDay, afternoon, evening, beforeBed
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .morning:    return "First thing in the morning"
+        case .breakInDay: return "On a break during the day"
+        case .afternoon:  return "In the afternoon"
+        case .evening:    return "In the evening"
+        case .beforeBed:  return "Right before bed"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .morning:    return "sunrise"
+        case .breakInDay: return "cup.and.saucer"
+        case .afternoon:  return "sun.max"
+        case .evening:    return "sunset"
+        case .beforeBed:  return "moon.stars"
+        }
+    }
+
+    /// The reminder it sets, as hour and minute.
+    public var reminder: (hour: Int, minute: Int) {
+        switch self {
+        case .morning:    return (8, 0)
+        case .breakInDay: return (12, 30)
+        case .afternoon:  return (15, 30)
+        case .evening:    return (19, 0)
+        case .beforeBed:  return (22, 0)
+        }
+    }
+
+    /// Today at that time, which is how `OnboardingAnswers.reminderTime`
+    /// holds a time of day.
+    public func reminderDate(calendar: Calendar = .current, now: Date = Date()) -> Date? {
+        calendar.date(bySettingHour: reminder.hour, minute: reminder.minute, second: 0, of: now)
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -668,6 +715,8 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var obstacles: Set<Obstacle>?
     /// Which one sounds most like them (`Role`). Optional for the same reason.
     public var role: Role?
+    /// When a few quiet minutes fit (`QuietTime`). Optional, as above.
+    public var quietTime: QuietTime?
     /// Their own words, only when "Something else" is picked. Never required.
     public var motivationOther: String = ""
     /// 0 = "Fine", 1 = "Fried".
@@ -953,7 +1002,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .stress, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .stress, .referral:
             return true
 
         // Presumes previous attempts.
@@ -1028,6 +1077,8 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case obstacles
     /// Which one sounds most like you, third (Aziz, 2026-09-23).
     case role
+    /// When a few quiet minutes fit, fourth; sets the reminder (Aziz).
+    case quietTime
     case referral
     case baseline, stress
     case restarts, intendedFor

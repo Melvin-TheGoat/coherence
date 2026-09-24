@@ -177,4 +177,24 @@ final class OnboardingModelTests: XCTestCase {
         a.causes.insert(.couldntTell)
         XCTAssertEqual(a.primaryCause, .couldntTell)
     }
+
+    /// "When could you fit in a few quiet minutes?" sets the reminder, so
+    /// each answer is pinned to its time: a changed hour here silently
+    /// changes when people are reminded.
+    func test_quietTimeSetsTheReminderTime() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "UTC")!
+        let expected: [QuietTime: (Int, Int)] = [
+            .morning: (8, 0), .breakInDay: (12, 30), .afternoon: (15, 30),
+            .evening: (19, 0), .beforeBed: (22, 0),
+        ]
+        XCTAssertEqual(Set(expected.keys), Set(QuietTime.allCases))
+        for (time, (hour, minute)) in expected {
+            let date = time.reminderDate(calendar: cal, now: Date(timeIntervalSince1970: 1_800_000_000))
+            XCTAssertEqual(date.map { cal.component(.hour, from: $0) }, hour, "\(time)")
+            XCTAssertEqual(date.map { cal.component(.minute, from: $0) }, minute, "\(time)")
+        }
+        XCTAssertTrue(OnboardingAnswers().asks(.quietTime))
+    }
+
 }

@@ -5345,7 +5345,12 @@ writing Otto in the corner across all three):
    describes you?" reworded; ONE pick, still Continue): Creative, Employee,
    Founder, Athlete, Student, Just trying to live well (Aziz: no "/ ..."
    halves, and "Employee", not "Desk job").
-`OnboardingAnswers.obstacles` and `.role` are OPTIONAL on purpose:
+4. "When could you fit in a few quiet minutes?" (`QuietTime`, one pick:
+   First thing in the morning 8:00, On a break during the day 12:30, In the
+   afternoon 3:30, In the evening 7:00, Right before bed 10:00). **The answer
+   sets `answers.reminderTime`**, which the reminder screen then opens on:
+   the job the cut anchor question used to do.
+`OnboardingAnswers.obstacles`, `.role` and `.quietTime` are OPTIONAL on purpose:
 synthesized Codable requires every non-optional key, so a plain property
 would have failed every saved resume record from before it. **New answer
 fields must be optional for the same reason.**

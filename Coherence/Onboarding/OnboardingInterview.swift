@@ -409,6 +409,22 @@ struct RoleScreen: View {
     }
 }
 
+/// "When could you fit in a few quiet minutes?". One pick; the answer sets
+/// the daily reminder's time (see `QuietTime`).
+struct QuietTimeScreen: View {
+    @Binding var quietTime: QuietTime?
+    let count: InterviewCount
+    let onContinue: () -> Void
+
+    var body: some View {
+        CornerQuestionScreen(title: "When could you fit in a few quiet minutes?",
+                             options: QuietTime.allCases, single: true, label: \.label, icon: \.icon,
+                             selected: Binding(get: { quietTime.map { [$0] } ?? [] },
+                                               set: { quietTime = $0.first }),
+                             count: count, onContinue: onContinue)
+    }
+}
+
 /// "What usually gets in the way of meditating?", straight after the goal:
 /// the question Otto promised on "Let's personalize" ("Your answers show me
 /// what gets in the way").

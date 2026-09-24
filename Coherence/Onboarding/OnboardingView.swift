@@ -106,6 +106,8 @@ struct OnboardingView: View {
         case obstacles
         /// Added 2026-09-23: "Which one sounds most like you?". Last.
         case role
+        /// Added 2026-09-23: "When could you fit in a few quiet minutes?". Last.
+        case quietTime
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -178,6 +180,7 @@ struct OnboardingView: View {
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.motivation, .motivation), (.obstacles, .obstacles), (.role, .role),
+        (.quietTime, .quietTime),
         (.referral, .referral),
         (.baseline, .baseline), (.stress, .stress),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
@@ -354,7 +357,8 @@ struct OnboardingView: View {
             // which never moves, not in the screen, which slides.
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
-            if step == .questionCount || step == .motivation || step == .obstacles || step == .role {
+            if step == .questionCount || step == .motivation || step == .obstacles || step == .role
+                || step == .quietTime {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
@@ -476,6 +480,18 @@ struct OnboardingView: View {
 
         case .role:
             RoleScreen(role: $answers.role, count: interviewCount) { go(nextAfter(.role)) }
+
+        case .quietTime:
+            QuietTimeScreen(quietTime: Binding(get: { answers.quietTime },
+                                               set: { pick in
+                                                   answers.quietTime = pick
+                                                   // The answer IS the reminder time
+                                                   // the reminder screen opens on.
+                                                   if let date = pick?.reminderDate() {
+                                                       answers.reminderTime = date
+                                                   }
+                                               }),
+                            count: interviewCount) { go(nextAfter(.quietTime)) }
 
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.
