@@ -307,19 +307,24 @@ struct BaselineScreen: View {
     }
 }
 
-// MARK: - 3 · Q1 The goal
+// MARK: - 3 · Q1 The goal, Q2 what gets in the way
 
-/// "What's your goal with meditation?" (Aziz, 2026-09-23, from Brainrot's
-/// goal screen). The first question, six answers; making it a daily habit is
-/// left out because that is the whole app. **As many answers as are true, and
-/// Continue moves on** (Aziz: not tap to advance), greyed until one is picked,
-/// the way Brainrot's is. The writing Otto sits top right, the same Otto who
-/// was writing on his cushion a screen ago: `OnboardingView` draws him in the
-/// fixed layer and moves him into the corner (`SeatedClipLayer(inCorner:)`),
-/// so this screen leaves room for him and draws nothing there itself.
-struct MotivationScreen: View {
-    @Binding var selected: Set<Motivation>
-    @Binding var otherText: String
+/// Brainrot's question screen in the valley (Aziz, 2026-09-23): the title in
+/// the sky, the answers on white plates, **as many as are true** and a
+/// Continue button, greyed until one is picked (Aziz: not tap to advance).
+/// The writing Otto sits top right, the same Otto who was writing on his
+/// cushion on "Let's personalize": `OnboardingView` draws him in the fixed
+/// layer and glides him into the corner (`SeatedClipLayer(inCorner:)`), so
+/// this screen leaves room for him and draws nothing there itself.
+struct CornerQuestionScreen<Option: Identifiable & Hashable>: View {
+    let title: String
+    let options: [Option]
+    /// One answer only: tapping another swaps it (still moved on with
+    /// Continue). Square boxes when several may be picked, none when one.
+    var single: Bool = false
+    let label: (Option) -> String
+    let icon: (Option) -> String
+    @Binding var selected: Set<Option>
     let count: InterviewCount
     let onContinue: () -> Void
 
@@ -336,7 +341,7 @@ struct MotivationScreen: View {
             }
             .frame(height: 40)
 
-            Text("What's your goal with meditation?")
+            Text(title)
                 .font(.system(size: 28, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
@@ -345,10 +350,16 @@ struct MotivationScreen: View {
                 .padding(.top, 30)
 
             VStack(spacing: 10) {
-                ForEach(Motivation.offered) { m in
-                    OnboardingOption(label: m.label, icon: m.icon,
-                                     selected: selected.contains(m), multi: true) {
-                        if selected.contains(m) { selected.remove(m) } else { selected.insert(m) }
+                ForEach(options) { o in
+                    OnboardingOption(label: label(o), icon: icon(o),
+                                     selected: selected.contains(o), multi: !single) {
+                        if single {
+                            selected = [o]
+                        } else if selected.contains(o) {
+                            selected.remove(o)
+                        } else {
+                            selected.insert(o)
+                        }
                     }
                 }
             }
@@ -364,6 +375,52 @@ struct MotivationScreen: View {
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
         }
+    }
+}
+
+/// "What's your goal with meditation?", the first question. Six answers;
+/// making it a daily habit is left out because that is the whole app.
+struct MotivationScreen: View {
+    @Binding var selected: Set<Motivation>
+    @Binding var otherText: String
+    let count: InterviewCount
+    let onContinue: () -> Void
+
+    var body: some View {
+        CornerQuestionScreen(title: "What's your goal with meditation?",
+                             options: Motivation.offered, label: \.label, icon: \.icon,
+                             selected: $selected, count: count, onContinue: onContinue)
+    }
+}
+
+/// "Which one sounds most like you?" (Brainrot's "Which best describes
+/// you?", reworded). One pick, then Continue.
+struct RoleScreen: View {
+    @Binding var role: Role?
+    let count: InterviewCount
+    let onContinue: () -> Void
+
+    var body: some View {
+        CornerQuestionScreen(title: "Which one sounds most like you?",
+                             options: Role.allCases, single: true, label: \.label, icon: \.icon,
+                             selected: Binding(get: { role.map { [$0] } ?? [] },
+                                               set: { role = $0.first }),
+                             count: count, onContinue: onContinue)
+    }
+}
+
+/// "What usually gets in the way of meditating?", straight after the goal:
+/// the question Otto promised on "Let's personalize" ("Your answers show me
+/// what gets in the way").
+struct ObstaclesScreen: View {
+    @Binding var selected: Set<Obstacle>
+    let count: InterviewCount
+    let onContinue: () -> Void
+
+    var body: some View {
+        CornerQuestionScreen(title: "What usually gets in the way of meditating?",
+                             options: Obstacle.allCases, label: \.label, icon: \.icon,
+                             selected: $selected, count: count, onContinue: onContinue)
     }
 }
 

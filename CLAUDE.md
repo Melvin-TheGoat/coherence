@@ -5331,6 +5331,23 @@ GLIDES from his cushion into the top-right corner as the question slides in
 animates and never restarts); the cushion fades. **The rest of the old
 interview is being redone by Aziz; do not polish it.**
 
+**The first three questions are Brainrot's layout** (`CornerQuestionScreen`:
+title in the sky, white answer plates, Continue greyed until an answer, the
+writing Otto in the corner across all three):
+1. "What's your goal with meditation?" (`Motivation.offered`, pick any).
+2. "What usually gets in the way of meditating?" (`Obstacle`: I forget, I
+   don't have time, My mind won't settle, I'm not sure I'm doing it right, I
+   lose motivation after a few days, My phone pulls me away; pick any). It
+   keeps Otto's promise on "Let's personalize" ("Your answers show me what
+   gets in the way"). A fresh enum, not `DropoutCause`, which is past tense,
+   written for people who quit, and locked by its own tests.
+3. "Which one sounds most like you?" (`Role`, Brainrot's "Which best
+   describes you?" reworded; ONE pick, still Continue).
+`OnboardingAnswers.obstacles` and `.role` are OPTIONAL on purpose:
+synthesized Codable requires every non-optional key, so a plain property
+would have failed every saved resume record from before it. **New answer
+fields must be optional for the same reason.**
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room

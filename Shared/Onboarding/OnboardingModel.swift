@@ -353,6 +353,69 @@ public enum BodyTracking: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// "What usually gets in the way of meditating?" (Aziz, 2026-09-23). Asked
+/// straight after the goal, because Otto has just promised "Your answers show
+/// me what gets in the way, so I can help you keep going": this is that
+/// question, in the present tense, for everyone (not only people who quit,
+/// which is who `DropoutCause` was written for). Pick any.
+public enum Obstacle: String, CaseIterable, Identifiable, Codable {
+    case forget, noTime, mindWontSettle, unsureDoingItRight, loseMotivation, phonePulls
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .forget:             return "I forget"
+        case .noTime:             return "I don't have time"
+        case .mindWontSettle:     return "My mind won't settle"
+        case .unsureDoingItRight: return "I'm not sure I'm doing it right"
+        case .loseMotivation:     return "I lose motivation after a few days"
+        case .phonePulls:         return "My phone pulls me away"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .forget:             return "bell.slash"
+        case .noTime:             return "clock"
+        case .mindWontSettle:     return "tornado"
+        case .unsureDoingItRight: return "questionmark.circle"
+        case .loseMotivation:     return "battery.25"
+        case .phonePulls:         return "iphone"
+        }
+    }
+}
+
+/// "Which one sounds most like you?" (Aziz, 2026-09-23, Brainrot's
+/// "Which best describes you?" reworded). One pick.
+public enum Role: String, CaseIterable, Identifiable, Codable {
+    case creative, deskJob, founder, athlete, student, liveWell
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .creative: return "Creative / Maker"
+        case .deskJob:  return "Desk job, all day"
+        case .founder:  return "Founder / Business owner"
+        case .athlete:  return "Athlete / Always training"
+        case .student:  return "Student"
+        case .liveWell: return "Just trying to live well"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .creative: return "paintpalette"
+        case .deskJob:  return "desktopcomputer"
+        case .founder:  return "chart.line.uptrend.xyaxis"
+        case .athlete:  return "figure.run"
+        case .student:  return "book.closed"
+        case .liveWell: return "heart"
+        }
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -599,6 +662,12 @@ public enum CostSymptom: String, CaseIterable, Identifiable, Codable {
 public struct OnboardingAnswers: Codable, Equatable {
     public var currentFrequency: CurrentFrequency?
     public var motivations: Set<Motivation> = []
+    /// What gets in the way (`Obstacle`). OPTIONAL on purpose: synthesized
+    /// Codable requires every non-optional key, so a plain property would
+    /// have made every saved resume record from before it fail to decode.
+    public var obstacles: Set<Obstacle>?
+    /// Which one sounds most like them (`Role`). Optional for the same reason.
+    public var role: Role?
     /// Their own words, only when "Something else" is picked. Never required.
     public var motivationOther: String = ""
     /// 0 = "Fine", 1 = "Fried".
@@ -884,7 +953,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .stress, .referral:
+        case .baseline, .motivation, .obstacles, .role, .stress, .referral:
             return true
 
         // Presumes previous attempts.
@@ -955,6 +1024,10 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// personalize 808 for you" the way Brainrot's goal screen follows its
     /// own, and the writing Otto carries across into its corner.
     case motivation
+    /// What gets in the way, straight after the goal (Aziz, 2026-09-23).
+    case obstacles
+    /// Which one sounds most like you, third (Aziz, 2026-09-23).
+    case role
     case referral
     case baseline, stress
     case restarts, intendedFor

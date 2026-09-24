@@ -101,6 +101,11 @@ struct OnboardingView: View {
         /// Added 2026-09-23: "Clarity and peace are within reach", the thoughts
         /// that clutter him, then "Let's clear it". Last, for the reason above.
         case clutter
+        /// Added 2026-09-23: "What usually gets in the way of meditating?".
+        /// Last, for the reason above.
+        case obstacles
+        /// Added 2026-09-23: "Which one sounds most like you?". Last.
+        case role
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -172,8 +177,9 @@ struct OnboardingView: View {
     /// `InterviewStep`. The branching lives in the model (and is exhaustively
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
+        (.motivation, .motivation), (.obstacles, .obstacles), (.role, .role),
         (.referral, .referral),
-        (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
+        (.baseline, .baseline), (.stress, .stress),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot),
@@ -348,8 +354,8 @@ struct OnboardingView: View {
             // which never moves, not in the screen, which slides.
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
-            if step == .questionCount || step == .motivation {
-                SeatedClipLayer(clip: .writing, inCorner: step == .motivation)
+            if step == .questionCount || step == .motivation || step == .obstacles || step == .role {
+                SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
 
@@ -462,6 +468,14 @@ struct OnboardingView: View {
             MotivationScreen(selected: $answers.motivations,
                              otherText: $answers.motivationOther,
                              count: interviewCount) { go(nextAfter(.motivation)) }
+
+        case .obstacles:
+            ObstaclesScreen(selected: Binding(get: { answers.obstacles ?? [] },
+                                              set: { answers.obstacles = $0 }),
+                            count: interviewCount) { go(nextAfter(.obstacles)) }
+
+        case .role:
+            RoleScreen(role: $answers.role, count: interviewCount) { go(nextAfter(.role)) }
 
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.

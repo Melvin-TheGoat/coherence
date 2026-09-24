@@ -270,6 +270,8 @@ enum Analytics {
         "blockIntro":        "23c Otto can hold your apps (cut 2026-09-22)",
         "auraDemo":          "23d Drag to see Otto brighten (cut 2026-09-22, now the stress screen)",
         "baseline":          "03 How often do you meditate?",
+        "role":              "04c Which one sounds most like you?",
+        "obstacles":         "04b What usually gets in the way of meditating?",
         "motivation":        "04 What's your goal with meditation? (pick any, first question since 2026-09-23)",
         "stress":            "05 How stressed lately?",
         "aloneWithThoughts": "06a Alone with your thoughts? (cut 1.1)",
