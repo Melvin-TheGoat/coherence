@@ -64,6 +64,11 @@ struct OttoSpeech: View {
     /// 1.4 s so the line would follow the wave, and Melvin read it as a lag
     /// between the screen arriving and the words arriving (2026-09-21).
     var delay: TimeInterval = 0
+    /// The welcome screen's look (Aziz, 2026-09-23: "fully white and more
+    /// bubble with a more welcoming font"): solid white, rounder, no outline,
+    /// a soft shadow, and the rounded face in semibold. Off everywhere else,
+    /// where Melvin's see-through Duolingo bubble stays.
+    var friendly: Bool = false
     @Binding var speaking: Bool
 
     @State private var shown = 0
@@ -90,22 +95,29 @@ struct OttoSpeech: View {
 
     var body: some View {
         Text(typed)
-            .font(.system(size: size, weight: .regular, design: .rounded))
+            .font(.system(size: size, weight: friendly ? .semibold : .regular, design: .rounded))
             .lineSpacing(3)
             .multilineTextAlignment(.leading)
             // Hugs its words, the way Duo's does: a short line gets a short
             // bubble. The clear-ink layout means the width is the finished
             // line's from the first frame, so it never grows while typing.
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 15)
+            .padding(.horizontal, friendly ? 22 : 18)
+            .padding(.vertical, friendly ? 18 : 15)
             // Room for the point inside the frame, so layout counts it.
             .padding(tail == .bottom ? .bottom : .leading, Self.tailSize)
             .background {
-                let bubble = SpeechBubbleShape(edge: tail, tailWidth: 22,
-                                               tailDepth: Self.tailSize)
-                bubble.fill(fill)
-                bubble.stroke(stroke, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+                if friendly {
+                    SpeechBubbleShape(edge: tail, cornerRadius: 28, tailWidth: 24,
+                                      tailDepth: Self.tailSize)
+                        .fill(.white)
+                        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+                } else {
+                    let bubble = SpeechBubbleShape(edge: tail, tailWidth: 22,
+                                                   tailDepth: Self.tailSize)
+                    bubble.fill(fill)
+                    bubble.stroke(stroke, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+                }
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(String(parsed.characters))")
@@ -201,18 +213,27 @@ struct OttoInMeadow: View {
     @ObservedObject var rig: OttoRigHolder
     /// His frame's height as a share of the width he is given.
     var share: CGFloat = 0.78
+    /// The dark ellipse under his feet. Off on the welcome screen (Aziz,
+    /// 2026-09-23), where he stands on the valley's own grass.
+    var shadow: Bool = true
 
     var body: some View {
         GeometryReader { geo in
             let h = geo.size.height
             ZStack(alignment: .bottom) {
                 // Grounds him: without it a figure on grass reads as pasted on.
-                Ellipse()
-                    .fill(RadialGradient(colors: [Color.black.opacity(0.20), Color.black.opacity(0)],
-                                         center: .center, startRadius: 0, endRadius: h * 0.24))
-                    .frame(width: h * 0.52, height: h * 0.075)
-                    .offset(y: h * 0.025)
+                if shadow {
+                    Ellipse()
+                        .fill(RadialGradient(colors: [Color.black.opacity(0.20), Color.black.opacity(0)],
+                                             center: .center, startRadius: 0, endRadius: h * 0.24))
+                        .frame(width: h * 0.52, height: h * 0.075)
+                        .offset(y: h * 0.025)
+                }
                 OttoRiveView(size: h, pose: pose, talking: talking, branch: false, rig: rig)
+                    // The waving art carries his raised arm on the left, so
+                    // his body sits right of the frame's centre; nudged back
+                    // so HE is centred (Aziz, 2026-09-23).
+                    .offset(x: pose == .talking ? -h * 0.06 : 0)
             }
             .frame(width: geo.size.width, height: h, alignment: .bottom)
         }
@@ -241,14 +262,16 @@ struct WelcomeScreen: View {
             // meditation app with friends and a camera session, not a
             // sensor readout, and the first thing Otto says should be true
             // of all of it.
-            OttoSpeech(text: "Hi there! I'm Otto. Let's meditate together.",
-                       speaking: $speaking)
-                .padding(.top, 18)
-                .opacity(appeared ? 1 : 0)
-
             Spacer(minLength: 8)
 
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
+            // Right above his head, his words (Aziz, 2026-09-23): it sat
+            // under the title, a screen away from him.
+            OttoSpeech(text: "Hi there! I'm Otto. Let's meditate together.",
+                       size: 20, friendly: true, speaking: $speaking)
+                .opacity(appeared ? 1 : 0)
+
+            OttoInMeadow(pose: .talking, talking: speaking, rig: rig, shadow: false)
+                .padding(.top, 2)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 12)
 
@@ -338,7 +361,9 @@ struct BreathExerciseScreen: View {
 
     var body: some View {
         TimelineView(.animation) { context in
-            let t = breathStart.map { context.date.timeIntervalSince($0) }
+            // Clamped: the first frame can be drawn a hair before the start,
+            // and a negative time flashed "5 seconds" for one frame.
+            let t = breathStart.map { max(0, context.date.timeIntervalSince($0)) }
             let fill = Self.fullness(at: t)
             ZStack {
                 // White, like the reference (Aziz: "make it a white background").
@@ -357,8 +382,14 @@ struct BreathExerciseScreen: View {
                         // zooming. Anchored at his feet so he grows upward.
                         .scaleEffect(x: 1 + 0.05 * fill, y: 1 + 0.10 * fill, anchor: .bottom)
                         .opacity(appeared ? 1 : 0)
-                    words(at: t)
-                        .frame(height: Self.wordsHeight, alignment: .top)
+                    // Always laid out, empty or not: an empty slot took no
+                    // height, and Otto jumped up the moment the words
+                    // arrived (the "glitch when otto pops up").
+                    ZStack(alignment: .top) {
+                        Color.clear
+                        words(at: t)
+                    }
+                    .frame(height: Self.wordsHeight)
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
             }

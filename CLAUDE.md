@@ -5215,3 +5215,24 @@ xcodebuild -scheme Coherence -destination 'platform=iOS Simulator,name=iPhone 17
 xcodebuild -scheme CoherenceWatch -destination 'generic/platform=watchOS Simulator' build
 xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
+
+## ONBOARDING POLISH AND MEADOW DEPTH (2026-09-23, Aziz)
+
+- **Welcome:** the grasshopper crosses IN FRONT of Otto (`OnboardingFrontLife`
+  drawn over the screen; the valley's own meadow life is off on that step via
+  `meadowLife`), no ground shadow under him (`OttoInMeadow(shadow: false)`),
+  and his line is a solid white, rounder bubble (`OttoSpeech(friendly: true)`)
+  sitting directly above his head rather than under the title.
+- **The waving/talking art is nudged left by 6% of its height** in
+  `OttoInMeadow`: his raised arm sits on the left of the frame, so his body
+  read right of centre on the welcome and question-count screens.
+- **Breathing screen glitch:** the words slot is always laid out (an empty
+  slot took no height, so Otto jumped ~35pt when "Breathe in" arrived), and
+  the time is clamped at 0 (a negative first frame flashed "5 seconds").
+  Verified from a 10fps recording: flat, then a smooth inhale rise.
+- **The meadow has depth now, in every valley scene.** A hopping grasshopper
+  exposed a flat field. Three cues, all in `SessionScene.swift`: haze where
+  the grass meets the ridge, the ground darkening toward the viewer, and 46
+  fixed grass tufts (`Meadow.tufts`, seeded, drawn far to near, smaller and
+  paler toward the ridge). The grasshopper also casts a shadow on the grass
+  (`HopperPose.groundY` / `lift`) that shrinks and fades as it jumps.

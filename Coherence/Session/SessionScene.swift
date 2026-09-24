@@ -58,6 +58,13 @@ struct ValleyScene: View {
     /// slumped) in the meadow.
     var showsFigure: Bool = true
 
+    /// Grasshoppers in this scene's own meadow. Off where the figure is drawn
+    /// by the screen ON TOP of the scene (onboarding's welcome): a
+    /// grasshopper in the scene can only ever pass behind that Otto, and
+    /// read as hopping through him. That screen draws them above itself
+    /// instead (`OnboardingFrontLife`).
+    var meadowLife: Bool = true
+
     /// Birds and grasshoppers, every ten-ish and eight-ish seconds — only
     /// while nobody is meditating (`progress == 0`: Home, onboarding, the
     /// Ready screen, the Block/Friends/Profile/Guide bands). The sit itself
@@ -157,6 +164,21 @@ struct ValleyScene: View {
                     .frame(width: w, height: h * 0.34)
                     .offset(y: h * 0.33)
 
+                // Depth (Aziz, 2026-09-23): the field was one flat green, so
+                // a grasshopper crossing it had nothing to be near or far
+                // in. Haze where the grass meets the ridge, and the ground
+                // darkening as it comes toward the viewer, the way distance
+                // actually reads outdoors.
+                LinearGradient(stops: [
+                    .init(color: .white.opacity(0.22), location: 0),
+                    .init(color: .white.opacity(0), location: 0.28),
+                    .init(color: .clear, location: 0.55),
+                    .init(color: Color(red: 0.16, green: 0.30, blue: 0.14).opacity(0.20), location: 1)
+                ], startPoint: .top, endPoint: .bottom)
+                    .frame(width: w, height: h * 0.34)
+                    .offset(y: h * 0.33)
+                    .allowsHitTesting(false)
+
                 // Birds sit in front of the ridges and the field wash (or
                 // the field, drawn after, would paint straight over one
                 // dipping near the ridge line) and stay well clear of
@@ -169,11 +191,11 @@ struct ValleyScene: View {
                 // the cushion, the sloth and the flowers can never disagree
                 // about what time it is. A grasshopper crossing farther back
                 // than his cushion is drawn in here, behind him.
-                groundScene(size: geo.size, scale: s, life: showLife)
+                groundScene(size: geo.size, scale: s, life: showLife && meadowLife)
                     .colorMultiply(Color(white: day.light))
 
                 // And one crossing nearer than his cushion, in front of him.
-                if showLife {
+                if showLife && meadowLife {
                     ValleyLife(layer: .meadowFront, size: geo.size, scale: s, seed: lifeSeed,
                                avoid: avoidRect, depthSplit: grasshopperSplit(size: geo.size))
                 }
@@ -430,8 +452,59 @@ private struct Cushion: View {
 private struct Meadow: View {
     let scale: CGFloat
 
+    /// Clumps of grass scattered over the field, fixed so the meadow is the
+    /// same every time. Smaller and paler toward the ridge, bigger and darker
+    /// near the bottom edge: the same rule the flowers follow, and the main
+    /// thing that makes the ground read as going away from you.
+    fileprivate struct Tuft {
+        let x: CGFloat
+        /// Fraction of the height, from the bottom.
+        let bottom: CGFloat
+        let blades: Int
+        let lean: CGFloat
+        /// 0 at the ridge, 1 at the bottom edge.
+        var near: CGFloat { max(0, min(1, 1 - bottom / 0.34)) }
+    }
+
+    fileprivate static let tufts: [Tuft] = {
+        var seed: UInt64 = 0x808_5EED
+        func next() -> CGFloat {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            return CGFloat(seed >> 33) / CGFloat(UInt64(1) << 31)
+        }
+        var out: [Tuft] = []
+        for _ in 0..<46 {
+            // Denser toward the ridge, where everything is smaller.
+            let depth = pow(next(), 0.8)
+            out.append(Tuft(x: next(), bottom: 0.015 + depth * 0.31,
+                            blades: 3 + Int(next() * 3), lean: (next() - 0.5) * 0.3))
+        }
+        // Far first, so a near tuft is drawn over a far one.
+        return out.sorted { $0.bottom > $1.bottom }
+    }()
+
     var body: some View {
         Canvas { ctx, size in
+            // Grass tufts first, far to near, so the flowers stand in them.
+            for t in Meadow.tufts {
+                let near = t.near
+                let h = (5 + 15 * near) * scale
+                let base = CGPoint(x: t.x * size.width, y: size.height * (1 - t.bottom))
+                var path = Path()
+                for blade in 0..<t.blades {
+                    let spread = (CGFloat(blade) - CGFloat(t.blades - 1) / 2) * 0.32
+                    let tip = CGPoint(x: base.x + spread * h + t.lean * h,
+                                      y: base.y - h * (0.75 + 0.25 * CGFloat((blade * 7 + 3) % 4) / 3))
+                    path.move(to: CGPoint(x: base.x + spread * h * 0.25, y: base.y))
+                    path.addQuadCurve(to: tip,
+                                      control: CGPoint(x: base.x + spread * h * 0.4, y: base.y - h * 0.5))
+                }
+                ctx.stroke(path,
+                           with: .color(Color(red: 0.29 - 0.08 * near, green: 0.48 - 0.08 * near,
+                                              blue: 0.27 - 0.06 * near)
+                                .opacity(0.30 + 0.45 * Double(near))),
+                           style: StrokeStyle(lineWidth: (0.8 + 1.4 * near) * scale, lineCap: .round))
+            }
             for f in Meadow.flowers {
                 let w = f.w * scale, h = f.h * scale
                 let anchor = CGPoint(x: f.left * size.width,

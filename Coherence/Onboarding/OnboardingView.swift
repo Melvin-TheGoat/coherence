@@ -279,12 +279,21 @@ struct OnboardingView: View {
             // on him.
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress) : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress) : nil,
-                             jiggle: ottoPokes)
+                             jiggle: ottoPokes,
+                             meadowLife: step != .relief)
 
             content
                 .id(screenIdentity)
                 .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: screenIdentity)
+
+            // The welcome screen's Otto stands on top of the valley, so its
+            // grasshopper crosses on top of HIM (Aziz, 2026-09-23: it was
+            // hopping through him).
+            if step == .relief {
+                OnboardingFrontLife()
+                    .transition(.opacity)
+            }
         }
             .environment(\.onboardingSharedGround, true)
             .environment(\.onboardingBack,
@@ -839,13 +848,32 @@ private struct OnboardingValley: View {
     let stage: OttoAura.Stage?
     var look: Int? = nil
     let jiggle: Int
+    var meadowLife: Bool = true
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
-                    showsFigure: stage != nil)
+                    showsFigure: stage != nil, meadowLife: meadowLife)
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)
+    }
+}
+
+/// The valley's grasshopper, drawn ABOVE a screen: the same crossings and
+/// sprites as the scene's own, in the same full-screen space, so it lands on
+/// the same grass, just in front of whatever the screen stands there.
+private struct OnboardingFrontLife: View {
+    @State private var seed = UInt64.random(in: UInt64.min...UInt64.max)
+
+    var body: some View {
+        GeometryReader { geo in
+            ValleyLife(layer: .meadowFront, size: geo.size,
+                       scale: SitLayout.scale(in: geo.size), seed: seed,
+                       avoid: nil, depthSplit: nil)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
