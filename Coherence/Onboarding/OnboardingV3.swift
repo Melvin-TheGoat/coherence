@@ -624,12 +624,30 @@ struct ClutterScreen: View {
     private static let pop = UIImpactFeedbackGenerator(style: .rigid)
     private static let answer = "Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for."
 
+    private static let cluttered = "Your mind is just cluttered."
+    @State private var clutteredLetters = 0
+
     private var answerTyped: AttributedString {
-        var line = AttributedString(Self.answer)
-        let cut = line.index(line.startIndex, offsetByCharacters: min(answerLetters, Self.answer.count))
-        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        Self.typed(Self.answer, letters: answerLetters, ink: AppColor.textPrimary)
+    }
+
+    /// `text` with its first `letters` in ink and the rest laid out in clear
+    /// ink, so a typed line is its finished size from the first frame.
+    private static func typed(_ text: String, letters: Int, ink: Color) -> AttributedString {
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(max(letters, 0), text.count))
+        line[line.startIndex..<cut].foregroundColor = ink
         line[cut..<line.endIndex].foregroundColor = .clear
         return line
+    }
+
+    private func type(_ text: String, into set: (Int) -> Void) async {
+        for (i, ch) in text.enumerated() {
+            guard !Task.isCancelled else { return }
+            set(i + 1)
+            if !ch.isWhitespace { WelcomeHaptics.tick() }
+            try? await Task.sleep(for: .milliseconds(28))
+        }
     }
 
     var body: some View {
@@ -671,9 +689,10 @@ struct ClutterScreen: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.top, 32)
-                Text("Your mind is just cluttered.")
+                // Typed, a tick a letter (Aziz), before the thoughts start.
+                Text(Self.typed(Self.cluttered, letters: clutteredLetters,
+                                ink: AppColor.textPrimary.opacity(0.72)))
                     .font(.system(size: 21, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary.opacity(0.72))
                     .multilineTextAlignment(.center)
                 Spacer(minLength: 0)
             }
@@ -719,6 +738,7 @@ struct ClutterScreen: View {
             popped = Self.thoughts.count
             level = 22
             answerShown = true
+            clutteredLetters = Self.cluttered.count
             answerLetters = Self.answer.count
             ctaShown = true
             return
@@ -727,7 +747,11 @@ struct ClutterScreen: View {
         // The heading comes in WITH the screen's slide: fading it in after
         // left a beat of empty sky between the two screens.
         headerShown = true
-        try? await Task.sleep(for: .milliseconds(350))
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(450))
+        guard !Task.isCancelled else { return }
+        await type(Self.cluttered) { clutteredLetters = $0 }
+        try? await Task.sleep(for: .milliseconds(150))
         guard !Task.isCancelled else { return }
         for (i, gap) in Self.gaps.enumerated() {
             try? await Task.sleep(for: .seconds(gap))
@@ -741,14 +765,8 @@ struct ClutterScreen: View {
         try? await Task.sleep(for: .milliseconds(700))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { answerShown = true }
-        WelcomeHaptics.prepare()
         try? await Task.sleep(for: .milliseconds(300))
-        for (i, ch) in Self.answer.enumerated() {
-            guard !Task.isCancelled else { return }
-            answerLetters = i + 1
-            if !ch.isWhitespace { WelcomeHaptics.tick() }
-            try? await Task.sleep(for: .milliseconds(28))
-        }
+        await type(Self.answer) { answerLetters = $0 }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }

@@ -5269,7 +5269,8 @@ three pages; only the words and the bar change.
 
 **Then the clutter screen** (`ClutterScreen`, `Step.clutter`, after See for
 yourself, Aziz's copy, from Brainrot's "You're not addicted"): "Clarity and
-peace are within reach." / "Your mind is just cluttered." fade in, then
+peace are within reach." arrives with the slide and "Your mind is just
+cluttered." types itself out (a tick a letter), then
 nine ordinary thoughts pop up over Otto as white capsules with a coloured
 dot, SLOW THEN FASTER (gaps 0.9 s down to 0.12 s), each with a rigid tap
 that gets firmer, and the valley's Otto dims a step with each (`clutterLevel`
