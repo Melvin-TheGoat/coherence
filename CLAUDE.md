@@ -3844,16 +3844,17 @@ things on the build, all in:
   GPT-generated sheet (brief: `mockups/otto-breathe-brief.md`; the pieces are
   `OttoStandBody` / `OttoStandArmLeft` / `OttoStandArmRight`, sources in
   `mockups/otto-v3/otto-stand-*.png`): each arm turns about a point near its
-  rounded shoulder end, pinned to the body's shoulder, from 0 to 150 degrees
-  (paws just above his head), **drawn behind the body so the joint never
-  shows**, and the chest fills 2-3.5% from his feet. **In SwiftUI, not Rive**:
+  rounded shoulder end, pinned to the body's shoulder (source y 345), up to
+  **145 degrees, a V overhead**, and the chest fills 2-3.5% from his feet.
+  **The arms are IN FRONT of the body** (Aziz: behind, the arms did not seem
+  to meet his shoulders and the paws sat too low); straight up in front, they
+  covered his cheeks, hence the V. **In SwiftUI, not Rive**:
   the water, the words and the arms all read the one `breathStart` clock, so
   they cannot drift off the 4, 2, 4. The shoulder numbers are source pixels
   measured on a test composite; higher shoulders put the raised arms over his
   face. **The arms are drawn at 0.75 of the generated size** (Aziz: "his paws
   are wayyyyy too big"): as generated the paws dwarfed his feet and the arms
-  hung past them; at 0.65 they looked stubby. Raised to 158 degrees at that
-  size.
+  hung past them; at 0.65 they looked stubby.
 - One clock (`breathStart`) drives the water, the swell and the words.
   `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
   `BreathCircle` is no longer used here.

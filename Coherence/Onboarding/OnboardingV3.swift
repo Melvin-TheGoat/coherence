@@ -438,9 +438,11 @@ struct BreathExerciseScreen: View {
 /// Three pieces from one generated sheet (`mockups/otto-breathe-brief.md`):
 /// the body with no arms, and each arm hanging straight with a rounded
 /// shoulder end. Each arm turns about a point near that end, set on the body's
-/// shoulder, and is drawn BEHIND the body so the joint is always hidden. The
-/// numbers are pixels of the source images, measured on a test composite:
-/// with the shoulders any higher the raised arms covered his face.
+/// shoulder, and is drawn IN FRONT of the body (Aziz: behind, at the old
+/// shoulder height, the arms did not seem to meet his shoulders and the paws
+/// sat too low). The numbers are pixels of the source images, measured on
+/// test composites: the lift is a V overhead, because straight up, in front,
+/// the arms covered his cheeks.
 struct OttoArmsBreathing: View {
     /// 0 arms down, 1 arms up.
     let raise: CGFloat
@@ -451,16 +453,16 @@ struct OttoArmsBreathing: View {
     private static let left = CGSize(width: 188, height: 428)
     private static let right = CGSize(width: 189, height: 427)
     /// Shoulders, in body pixels.
-    private static let shoulderY: CGFloat = 392
+    private static let shoulderY: CGFloat = 345
     private static let leftShoulderX: CGFloat = 58
     private static let rightShoulderX: CGFloat = 352
     /// Where each arm turns, in its own pixels: near the top of the rounded
     /// end, toward the side that meets the body.
-    private static let pivotY: CGFloat = 30
-    private static let leftPivotX: CGFloat = 0.62
-    private static let rightPivotX: CGFloat = 0.38
-    /// Paws just above his head at the top of the breath, not crossed over it.
-    private static let lift: Double = 158
+    private static let pivotY: CGFloat = 34
+    private static let leftPivotX: CGFloat = 0.55
+    private static let rightPivotX: CGFloat = 0.45
+    /// A V overhead at the top of the breath, paws above his ears.
+    private static let lift: Double = 145
     /// The arms as generated came with paws far bigger than his feet (Aziz:
     /// "his paws are wayyyyy too big") and hung past his feet. At 0.75 the
     /// paws match his feet and the arms end at them; 0.65 read as stubby.
@@ -470,15 +472,15 @@ struct OttoArmsBreathing: View {
         let k = bodyWidth / Self.body.width
         let angle = Self.lift * Double(raise)
         ZStack(alignment: .topLeading) {
-            arm("OttoStandArmLeft", size: Self.left, pivotX: Self.leftPivotX,
-                shoulderX: Self.leftShoulderX, degrees: angle, k: k)
-            arm("OttoStandArmRight", size: Self.right, pivotX: Self.rightPivotX,
-                shoulderX: Self.rightShoulderX, degrees: -angle, k: k)
             Image("OttoStandBody")
                 .resizable()
                 .frame(width: Self.body.width * k, height: Self.body.height * k)
                 // The chest fills a touch as the arms rise, from his feet.
                 .scaleEffect(x: 1 + 0.02 * raise, y: 1 + 0.035 * raise, anchor: .bottom)
+            arm("OttoStandArmLeft", size: Self.left, pivotX: Self.leftPivotX,
+                shoulderX: Self.leftShoulderX, degrees: angle, k: k)
+            arm("OttoStandArmRight", size: Self.right, pivotX: Self.rightPivotX,
+                shoulderX: Self.rightShoulderX, degrees: -angle, k: k)
         }
         .frame(width: Self.body.width * k, height: Self.body.height * k, alignment: .topLeading)
         .background(alignment: .bottom) {
@@ -490,7 +492,8 @@ struct OttoArmsBreathing: View {
         .accessibilityHidden(true)
     }
 
-    /// One arm, turned about its pivot, the pivot pinned to the shoulder.
+    /// One arm, turned about its pivot, the pivot pinned to the shoulder. The
+    /// pivot is in the arm's own unscaled pixels, so it scales with the arm.
     private func arm(_ name: String, size: CGSize, pivotX: CGFloat,
                      shoulderX: CGFloat, degrees: Double, k: CGFloat) -> some View {
         let w = size.width * k * Self.armScale, h = size.height * k * Self.armScale
