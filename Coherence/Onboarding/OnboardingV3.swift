@@ -342,9 +342,7 @@ struct BreathExerciseScreen: View {
                 // Otto in the middle of the screen (Aziz), the words under him.
                 // The clear block above matches the words below, so it is his
                 // centre, not the pair's, that sits on the screen's.
-                // 40, not 14: his arms hang below his feet at rest, and
-                // at 14 his paws sat on "Breathe in."
-                VStack(spacing: 40) {
+                VStack(spacing: 24) {
                     Color.clear.frame(height: Self.wordsHeight)
                     // Standing, arms rising overhead on the in-breath and
                         // lowering on the out-breath (Aziz, 2026-09-23).
@@ -462,7 +460,11 @@ struct OttoArmsBreathing: View {
     private static let leftPivotX: CGFloat = 0.62
     private static let rightPivotX: CGFloat = 0.38
     /// Paws just above his head at the top of the breath, not crossed over it.
-    private static let lift: Double = 150
+    private static let lift: Double = 158
+    /// The arms as generated came with paws far bigger than his feet (Aziz:
+    /// "his paws are wayyyyy too big") and hung past his feet. At 0.75 the
+    /// paws match his feet and the arms end at them; 0.65 read as stubby.
+    private static let armScale: CGFloat = 0.75
 
     var body: some View {
         let k = bodyWidth / Self.body.width
@@ -491,7 +493,7 @@ struct OttoArmsBreathing: View {
     /// One arm, turned about its pivot, the pivot pinned to the shoulder.
     private func arm(_ name: String, size: CGSize, pivotX: CGFloat,
                      shoulderX: CGFloat, degrees: Double, k: CGFloat) -> some View {
-        let w = size.width * k, h = size.height * k
+        let w = size.width * k * Self.armScale, h = size.height * k * Self.armScale
         let pivot = UnitPoint(x: pivotX, y: Self.pivotY / size.height)
         return Image(name)
             .resizable()

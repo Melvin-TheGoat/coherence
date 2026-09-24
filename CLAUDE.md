@@ -3850,7 +3850,10 @@ things on the build, all in:
   the water, the words and the arms all read the one `breathStart` clock, so
   they cannot drift off the 4, 2, 4. The shoulder numbers are source pixels
   measured on a test composite; higher shoulders put the raised arms over his
-  face. His arms hang below his feet at rest, hence 40 pt above the words.
+  face. **The arms are drawn at 0.75 of the generated size** (Aziz: "his paws
+  are wayyyyy too big"): as generated the paws dwarfed his feet and the arms
+  hung past them; at 0.65 they looked stubby. Raised to 158 degrees at that
+  size.
 - One clock (`breathStart`) drives the water, the swell and the words.
   `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
   `BreathCircle` is no longer used here.
