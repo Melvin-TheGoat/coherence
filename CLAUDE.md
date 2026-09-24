@@ -5296,13 +5296,28 @@ share Otto, let the valley draw him and change only the words.**
 valley's seated Otto, who says "Your answers show me what gets in the way,
 so I can help you keep going." (Aziz's line, Brainrot's direct reason for
 asking) in his typed bubble, and "Let's do it!". The answers are not yet
-used after onboarding beyond the reminder time; that open item is now a
-promise on screen. **Otto there is a
-PLACEHOLDER**: Aziz is making a Runway clip of him seated, writing in a
-green notepad (still made in Runway's image tool from `otto-sit-happy.png`
-plus the clipboard art, then animated, 5 s). It goes through the clip recipe
-(stutter check, 20 fps, loop, key) and sits on the valley's cushion in place
-of the valley's own Otto on this step.
+used after onboarding beyond the reminder time (Aziz: leave it).
+- **Otto WRITES in a notepad here**, a Runway clip (`otto-writing.mov`,
+  `SeatedClip.writing`). It had a hard cut on its first frame (Runway's
+  still, framed differently), which is dropped; no two moments of the
+  writing match (the fur shimmers), so it is a BOOMERANG of the writing,
+  frames 2 to 84 at 20 fps, through a small head tilt and before he looks up.
+  Keyed with new options in `otto_video_key.swift`, all needed and all
+  measured: `--white-floor 160 --warm 6` (Runway drew a NEUTRAL grey shadow
+  under him while the page is a WARM white: warmth, not brightness, tells
+  paper from ground), `--keep-pockets` (pocket removal punched holes in the
+  page), `--largest` (noise specks stretched the crop to the whole frame),
+  `--erode 2 --band 3` (a softer edge than the wave, which left a pale rim)
+  and `--cool` (the shadow's core is blue-grey; Otto's colours always have
+  red above blue, so it cannot eat him).
+- **The clip sits in the VALLEY'S layer (`SeatedClipLayer`, drawn by
+  `OnboardingView`), not in the screen.** Inside the screen it slid in beside
+  the valley's Otto while he faded: two Ottos side by side. Now the valley
+  keeps his cushion and fades its Otto (`ValleyScene.figureHidden`) while the
+  clip fades in on the same spot, sized so its body matches (186 x 1.17 scene
+  units, body 95%, on the line 24% up). Verified: one Otto cross-fading in
+  place, and 18 s of loop with no flash. **A clip of Otto on a screen that
+  slides must live in the fixed layer, never in the screen.**
 
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's

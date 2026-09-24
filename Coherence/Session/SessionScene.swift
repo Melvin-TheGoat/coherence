@@ -70,6 +70,13 @@ struct ValleyScene: View {
     /// ever pass behind that Otto, and read as hopping through him.
     var standingFigure: Bool = false
 
+    /// Keep the cushion but not the sloth on it: a screen seats its own Otto
+    /// there, a video clip of him doing something the rig cannot (onboarding's
+    /// "Let's personalize", where he writes in a notepad). He fades rather
+    /// than vanishing, so the handover from the scene's Otto to the clip is a
+    /// cross-fade in the same spot.
+    var figureHidden: Bool = false
+
     /// Fixes the birds and grasshoppers. Nil picks one at random; a screen
     /// that draws part of the life itself passes the same seed to both.
     var seed: UInt64? = nil
@@ -348,6 +355,8 @@ struct ValleyScene: View {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }
             }
+            .opacity(figureHidden ? 0 : 1)
+            .animation(.easeInOut(duration: 0.35), value: figureHidden)
             .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
                       y: ottoInCorner ? Self.cornerY
                                       : size.height * (1 - 0.24) - seated / 2 - ottoLift)

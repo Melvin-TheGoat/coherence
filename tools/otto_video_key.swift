@@ -3,6 +3,7 @@
 //
 //   swiftc -O -o /tmp/otto_key tools/otto_video_key.swift
 //   /tmp/otto_key in.mp4 out.mov [previewDir] [--from N --to N] [--center-feet]
+//                 [--steady] [--crossfade K] [--white-floor N --white-spread N --warm N] [--keep-pockets]
 //
 // --from / --to keep frames N..M only (a loop: pick two frames where the
 // pose matches, ideally while he is holding still). --crossfade K blends the
@@ -27,6 +28,40 @@ func flag(_ name: String) -> Int? {
 }
 let fromFrame = flag("--from") ?? 0, toFrame = flag("--to") ?? Int.max
 let crossfade = flag("--crossfade") ?? 0
+// What counts as background: every channel at least --white-floor and the
+// channels within --white-spread of each other, and (with --warm N) never a
+// pixel whose red beats its blue by N or more. Defaults suit a clean white
+// ground. The writing clip needed --white-floor 160 --warm 6 --keep-pockets:
+// Runway drew a
+// NEUTRAL grey shadow under him (core about 178,178,178, fading to white)
+// that the default floor kept (it took --white-floor 160), while his notepad's page is a WARM white (255,251,245) that the
+// default cut away with the background. Warmth, not brightness, is what
+// tells paper from a white ground.
+let whiteFloor = UInt8(flag("--white-floor") ?? 228)
+let whiteSpread = UInt8(flag("--white-spread") ?? 22)
+let warmCut = flag("--warm") ?? 999
+// --cool: also treat a COOL pixel (blue at least its red, lighter than 100)
+// as background when the flood reaches it. Runway's contact shadow darkens to
+// a blue-grey right under him; Otto is brown everywhere, so red always beats
+// blue in his colours and this cannot eat him.
+let coolIsGround = args.contains("--cool")
+args.removeAll { $0 == "--cool" }
+// --keep-pockets: do not remove enclosed white. Right for the wave (the gap
+// between his raised arm and his head), wrong for anything holding white
+// paper: it punched holes in the writing clip's notepad page.
+let keepPockets = args.contains("--keep-pockets")
+args.removeAll { $0 == "--keep-pockets" }
+// --largest: keep only the biggest connected shape (Otto, and whatever he
+// holds, since it touches him). A looser background rule lets single pixels
+// of compression noise through, and one of those anywhere stretched the crop
+// to the whole frame.
+let largestOnly = args.contains("--largest")
+args.removeAll { $0 == "--largest" }
+// --erode N peels N pixels off the outline and --band N widens the edge that
+// is un-mixed from white (default 2). Runway softened the writing clip's
+// edges more than the wave's, and the default left a pale rim round his fur.
+let erode = flag("--erode") ?? 0
+let band = max(1, flag("--band") ?? 2)
 // --steady: median-of-three on the alpha across neighbouring frames. Each
 // frame is keyed on its own, so compression noise moves the soft edge a pixel
 // back and forth from frame to frame, and the outline shimmers ("phasing",
@@ -49,7 +84,8 @@ func reader(_ asset: AVAsset) throws -> (AVAssetReader, AVAssetReaderTrackOutput
 
 @inline(__always) func isWhite(_ b: UInt8, _ g: UInt8, _ r: UInt8) -> Bool {
     let mn = min(r, g, b), mx = max(r, g, b)
-    return mn >= 228 && mx - mn <= 22
+    if coolIsGround && Int(b) >= Int(r) && mn >= 100 { return true }
+    return mn >= whiteFloor && mx - mn <= whiteSpread && Int(r) - Int(b) < warmCut
 }
 
 /// Returns straight-alpha RGBA (4 bytes/px) for one BGRA frame.
@@ -89,7 +125,7 @@ func key(_ px: UnsafePointer<UInt8>, w: Int, h: Int, stride: Int) -> [UInt8] {
     }
     // Enclosed white pockets: gone unless they sit by near-black (an eye).
     var seen = bg
-    for s in 0..<n where white[s] && !seen[s] {
+    for s in 0..<n where !keepPockets && white[s] && !seen[s] {
         var comp = [Int](), q = [s]; seen[s] = true
         var touchesDark = false
         while let i = q.popLast() {
@@ -103,26 +139,53 @@ func key(_ px: UnsafePointer<UInt8>, w: Int, h: Int, stride: Int) -> [UInt8] {
         }
         if !touchesDark && comp.count > 12 { for i in comp { bg[i] = true } }
     }
-    // Distance to background, up to 2, for the edge band.
-    var near = [UInt8](repeating: 9, count: n)
-    for i in 0..<n where bg[i] { near[i] = 0 }
-    for pass in 1...2 {
-        for i in 0..<n where near[i] == 9 {
+    if largestOnly {
+        var label = [Int32](repeating: -1, count: n)
+        var sizes: [Int] = []
+        for s0 in 0..<n where !bg[s0] && label[s0] < 0 {
+            let id = Int32(sizes.count)
+            var q = [s0]; label[s0] = id; var count = 0
+            while let i = q.popLast() {
+                count += 1
+                let x = i % w, y = i / w
+                for j in [x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1]
+                where j >= 0 && !bg[j] && label[j] < 0 { label[j] = id; q.append(j) }
+            }
+            sizes.append(count)
+        }
+        if let biggest = sizes.indices.max(by: { sizes[$0] < sizes[$1] }) {
+            for i in 0..<n where !bg[i] && label[i] != Int32(biggest) { bg[i] = true }
+        }
+    }
+    // Peel the outermost pixels off, if asked.
+    for _ in 0..<erode {
+        var grow = bg
+        for i in 0..<n where !bg[i] {
             let x = i % w, y = i / w
-            if (x > 0 && near[i - 1] == pass - 1) || (x < w - 1 && near[i + 1] == pass - 1) ||
-               (y > 0 && near[i - w] == pass - 1) || (y < h - 1 && near[i + w] == pass - 1) { near[i] = UInt8(pass) }
+            if (x > 0 && bg[i - 1]) || (x < w - 1 && bg[i + 1]) || (y > 0 && bg[i - w]) || (y < h - 1 && bg[i + w]) { grow[i] = true }
+        }
+        bg = grow
+    }
+    // Distance to background, up to `band`, for the edge band.
+    var near = [UInt8](repeating: 99, count: n)
+    for i in 0..<n where bg[i] { near[i] = 0 }
+    for pass in 1...band {
+        for i in 0..<n where near[i] == 99 {
+            let x = i % w, y = i / w
+            if (x > 0 && near[i - 1] == UInt8(pass - 1)) || (x < w - 1 && near[i + 1] == UInt8(pass - 1)) ||
+               (y > 0 && near[i - w] == UInt8(pass - 1)) || (y < h - 1 && near[i + w] == UInt8(pass - 1)) { near[i] = UInt8(pass) }
         }
     }
     var out = [UInt8](repeating: 0, count: n * 4)
     for i in 0..<n where !bg[i] {
         let p = px + (i / w) * stride + (i % w) * 4
         var r = Double(p[2]), g = Double(p[1]), b = Double(p[0]), a = 1.0
-        if near[i] <= 2 {
+        if Int(near[i]) <= band {
             // Un-mix from white: his darkest edge fur is about 150 at its
             // lightest channel, so a pixel that pale is half white.
             let mn = min(r, g, b)
             a = min(1, max(0, (255 - mn) / (255 - 150)))
-            if near[i] == 2 { a = max(a, 0.6) }
+            if Int(near[i]) == band { a = max(a, 0.6) }
             if a > 0.01 {
                 r = (r - (1 - a) * 255) / a; g = (g - (1 - a) * 255) / a; b = (b - (1 - a) * 255) / a
             }

@@ -324,6 +324,9 @@ struct OnboardingView: View {
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
                              jiggle: ottoPokes,
                              standingFigure: step == .relief,
+                             // The personalize screen seats its own Otto, a
+                             // clip of him writing, on the valley's cushion.
+                             figureHidden: step == .questionCount,
                              seed: lifeSeed)
 
             // The breath is a white page, not the valley. Each draws its own white,
@@ -340,6 +343,13 @@ struct OnboardingView: View {
                 .ignoresSafeArea()
                 .opacity(whiteCover ? 1 : 0)
                 .allowsHitTesting(false)
+
+            // Otto writing on the personalize screen sits with the valley,
+            // which never moves, not in the screen, which slides.
+            if step == .questionCount {
+                SeatedClipLayer(clip: .writing)
+                    .transition(.opacity)
+            }
 
             content
                 .id(screenIdentity)
@@ -945,13 +955,15 @@ private struct OnboardingValley: View {
     var look: Int? = nil
     let jiggle: Int
     var standingFigure: Bool = false
+    var figureHidden: Bool = false
     var seed: UInt64? = nil
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
-                    showsFigure: stage != nil, standingFigure: standingFigure, seed: seed)
+                    showsFigure: stage != nil, standingFigure: standingFigure,
+                    figureHidden: figureHidden, seed: seed)
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)
     }

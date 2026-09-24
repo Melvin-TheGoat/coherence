@@ -540,6 +540,56 @@ struct IntroScreen<Figure: View>: View {
     }
 }
 
+/// A looping clip of Otto seated, and how his body sits in its frame (the key
+/// tool crops to his outline plus a 12 px margin, so these come from its
+/// printed crop).
+struct SeatedClip {
+    let name: String
+    /// Width over height of the clip.
+    let aspect: CGFloat
+    /// His body's height as a share of the clip's.
+    let bodyShare: CGFloat
+    /// The margin under his body as a share of the clip's height.
+    let marginBelow: CGFloat
+
+    /// Writing in his notepad (Runway, 2026-09-23): crop 604 x 700, body
+    /// 676 of it. Keyed with `--center-feet --steady --white-floor 160
+    /// --warm 6 --keep-pockets --largest --erode 2 --band 3 --cool`.
+    static let writing = SeatedClip(name: "otto-writing", aspect: 604.0 / 700.0,
+                                    bodyShare: 676.0 / 700.0, marginBelow: 12.0 / 700.0)
+}
+
+/// A seated Otto clip on the valley's cushion, in exactly the place and size
+/// the valley seats him. Drawn by `OnboardingView` in the layer above the
+/// valley, never inside a screen: a screen slides in from the side, and a clip
+/// inside it slid in beside the valley's Otto as he faded, two Ottos side by
+/// side (Aziz, 2026-09-23). Here it fades in on the spot while the valley's
+/// own Otto fades out (`figureHidden`), a cross-fade in one place.
+struct SeatedClipLayer: View {
+    let clip: SeatedClip
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            let scale = SitLayout.scale(in: size)
+            // The valley's seated Otto is 186 x 1.17 scene units tall, his
+            // body 95% of that, sitting on the line 24% up from the bottom.
+            // The clip is sized so ITS body matches.
+            let seated = 186 * scale * 1.17
+            let clipHeight = seated * 0.95 / clip.bodyShare
+            let bottom = size.height * 0.76 + clipHeight * clip.marginBelow
+            OttoClip(name: clip.name, playing: !reduceMotion, loops: true, fallback: .meditating)
+                .aspectRatio(clip.aspect, contentMode: .fit)
+                .frame(height: clipHeight)
+                .position(x: size.width / 2, y: bottom - clipHeight / 2)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// Otto's line in the welcome screens' bubble: white, round, the tail down
 /// at his head, typed a letter at a time by the screen (so each letter can
 /// tick). Unarrived letters are laid out in clear ink, so the bubble is its
@@ -1105,8 +1155,10 @@ struct QuestionCountScreen: View {
     // 2026-09-23), replacing "Just N quick questions". Otto is the valley's
     // own, seated on his cushion as on every screen since Meet Otto, saying
     // why we ask, in his own voice (Aziz's line). The question count left
-    // this screen; each question's progress bar carries it. PLACEHOLDER: he will be a
-    // Runway clip of him writing in a notepad, looped, once Aziz has it.
+    // this screen; each question's progress bar carries it. He writes in a
+    // green notepad: a Runway clip, looped forward and back, seated on the
+    // valley's cushion by `OnboardingView` (`SeatedClipLayer`), NOT by this
+    // screen, because this screen slides in and he must not.
     var body: some View {
         IntroScreen(progress: 0.13,
                     progressFrom: 0.10,
