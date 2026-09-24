@@ -5,7 +5,9 @@
 //   /tmp/otto_key in.mp4 out.mov [previewDir] [--from N --to N] [--center-feet]
 //
 // --from / --to keep frames N..M only (a loop: pick two frames where the
-// pose matches). --center-feet centres the crop on his feet rather than on
+// pose matches, ideally while he is holding still). --crossfade K blends the
+// last K kept frames into the first K and drops them, so the loop wraps as a
+// soft settle instead of a jump when the two ends do not quite match. --center-feet centres the crop on his feet rather than on
 // the box around him, so a raised arm does not push his body off centre.
 //
 // Per frame: flood the white in from the border; remove enclosed white
@@ -24,6 +26,7 @@ func flag(_ name: String) -> Int? {
     return Int(args[i + 1])
 }
 let fromFrame = flag("--from") ?? 0, toFrame = flag("--to") ?? Int.max
+let crossfade = flag("--crossfade") ?? 0
 let centerFeet = args.contains("--center-feet")
 args.removeAll { $0 == "--center-feet" }
 let inURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
@@ -149,6 +152,26 @@ do {
         frames.append(k); times.append(CMSampleBufferGetPresentationTimeStamp(sb))
     }
     _ = r
+}
+if crossfade > 0 {
+    // Straight RGBA, so blend premultiplied and divide back out.
+    let L = frames.count, K = crossfade
+    for i in 0..<K {
+        let w = Double(i + 1) / Double(K + 1)   // weight of the loop's start
+        var a = frames[L - K + i]; let b = frames[i]
+        for p in stride(from: 0, to: a.count, by: 4) {
+            let aa = Double(a[p + 3]) / 255, ba = Double(b[p + 3]) / 255
+            let oa = aa * (1 - w) + ba * w
+            for c in 0..<3 {
+                let v = Double(a[p + c]) * aa * (1 - w) + Double(b[p + c]) * ba * w
+                a[p + c] = oa > 0 ? UInt8(min(255, v / oa)) : 0
+            }
+            a[p + 3] = UInt8(oa * 255)
+        }
+        frames[i] = a
+    }
+    frames.removeLast(K); times.removeLast(K)
+    print("crossfaded \(K) frames, loop is \(frames.count)")
 }
 let m = 12
 if centerFeet {
