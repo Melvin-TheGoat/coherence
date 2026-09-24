@@ -246,12 +246,10 @@ struct OttoInMeadow: View {
 /// the line under it, one button. The whole thing is a sequence, and every
 /// beat of it is felt as well as seen:
 ///
-/// 1. Otto pops up out of the ground (a squash and stretch from his feet)
-///    and lands with a thump.
-/// 2. He waves.
-/// 3. "Welcome to 808!" types out, a firm tick per letter.
-/// 4. The line under it types out faster, a lighter tick per letter.
-/// 5. "Let's go!" rises into place.
+/// 1. Otto fades in (no pop: Aziz, 2026-09-23) and waves.
+/// 2. "Welcome to 808!" types out, a firm tick per letter.
+/// 3. The line under it types out faster, a lighter tick per letter.
+/// 4. "Let's go!" rises into place.
 ///
 /// Reduce Motion gets the finished screen at once, with no ticks.
 struct WelcomeScreen: View {
@@ -262,7 +260,7 @@ struct WelcomeScreen: View {
 
     @StateObject private var rig = OttoRigHolder()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Flips once, and drives Otto's pop.
+    /// Flips once, and fades Otto in.
     @State private var popped = false
     /// Bumped on every wave, and drives the wiggle that goes with it.
     @State private var waves = 0
@@ -282,33 +280,6 @@ struct WelcomeScreen: View {
 
             OttoInMeadow(pose: .talking, rig: rig, share: 0.82)
                 .frame(maxWidth: 270)
-                .keyframeAnimator(initialValue: Pop(), trigger: popped) { view, pop in
-                    view
-                        .scaleEffect(x: pop.x, y: pop.y, anchor: .bottom)
-                        .opacity(pop.opacity)
-                } keyframes: { _ in
-                    // Starts hidden and small; the landing overshoots, squashes
-                    // and settles, which is what makes it read as a hop up
-                    // rather than a picture fading in.
-                    KeyframeTrack(\.y) {
-                        CubicKeyframe(0.2, duration: 0.01)
-                        CubicKeyframe(1.12, duration: 0.26)
-                        CubicKeyframe(0.9, duration: 0.12)
-                        CubicKeyframe(1.04, duration: 0.12)
-                        CubicKeyframe(1.0, duration: 0.14)
-                    }
-                    KeyframeTrack(\.x) {
-                        CubicKeyframe(0.5, duration: 0.01)
-                        CubicKeyframe(0.9, duration: 0.26)
-                        CubicKeyframe(1.08, duration: 0.12)
-                        CubicKeyframe(0.98, duration: 0.12)
-                        CubicKeyframe(1.0, duration: 0.14)
-                    }
-                    KeyframeTrack(\.opacity) {
-                        LinearKeyframe(0, duration: 0.01)
-                        LinearKeyframe(1, duration: 0.14)
-                    }
-                }
                 // The rig's arm can only turn about ten degrees before the cut
                 // behind it shows, which on a phone reads as nothing. So the
                 // wave is carried by his whole body too: a happy rock from the
@@ -324,6 +295,7 @@ struct WelcomeScreen: View {
                         CubicKeyframe(0, duration: 0.24)
                     }
                 }
+                // No pop (Aziz): he is simply there, faded in.
                 .opacity(popped ? 1 : 0)
                 // Above the ground, whose rise is drawn behind his legs.
                 .zIndex(1)
@@ -370,12 +342,6 @@ struct WelcomeScreen: View {
         .task { await play() }
     }
 
-    private struct Pop {
-        var x: CGFloat = 0.5
-        var y: CGFloat = 0.2
-        var opacity: Double = 0
-    }
-
     private func play() async {
         guard !popped else { return }
         if reduceMotion {
@@ -389,12 +355,8 @@ struct WelcomeScreen: View {
         // A beat for the screen to be there before anything happens on it.
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
-        popped = true
-        // The landing: the top of the hop, as he drops onto his feet.
-        try? await Task.sleep(for: .milliseconds(270))
-        guard !Task.isCancelled else { return }
-        WelcomeHaptics.land()
-        try? await Task.sleep(for: .milliseconds(200))
+        withAnimation(.easeOut(duration: 0.35)) { popped = true }
+        try? await Task.sleep(for: .milliseconds(450))
         guard !Task.isCancelled else { return }
         wave()
 

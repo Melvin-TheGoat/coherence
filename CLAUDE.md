@@ -5245,8 +5245,8 @@ warmed toward Otto's cream), a dot of progress bar, Otto standing, "Welcome to
 This replaces the valley welcome and its bubble; the grasshopper overlay
 (`OnboardingFrontLife`) is deleted because it crossed a white page.
 
-- **A sequence, every beat felt:** Otto pops up from his feet (keyframed
-  squash and stretch) and lands with a thump; he waves; the title types with a
+- **A sequence, every beat felt:** Otto fades in and waves (a pop up from
+  his feet was built and cut the same day, Aziz: no pop); the title types with a
   firm tick per letter (55 ms), the line under it with a lighter tick (28 ms),
   spaces silent; "Let's go!" springs up with a thump and he waves again.
   `WelcomeHaptics` keeps its generators prepared. `TypedLine` lays unarrived
