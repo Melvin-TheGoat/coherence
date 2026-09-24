@@ -5275,7 +5275,8 @@ dot, SLOW THEN FASTER (gaps 0.9 s down to 0.12 s), each with a rigid tap
 that gets firmer, and the valley's Otto dims a step with each (`clutterLevel`
 50 down to 22). Then, on a white card over the meadow: "Meditation is how
 you clear it. Doing it every day is how it stays clear. That's what 808 is
-for." **"Let's clear it" does what it says**: the thoughts lift off, his
+for." (typed, a tick a letter, the button rising only once it is
+done). **"Let's clear it" does what it says**: the thoughts lift off, his
 colour comes back, and only then does the flow move on. Copy rule it keeps:
 the thoughts are recognition, not alarm; the claim is only that a daily
 practice keeps it clear, no number.

@@ -618,8 +618,19 @@ struct ClutterScreen: View {
     @State private var popped = 0
     @State private var clearing = false
     @State private var answerShown = false
+    @State private var answerLetters = 0
+    @State private var ctaShown = false
 
     private static let pop = UIImpactFeedbackGenerator(style: .rigid)
+    private static let answer = "Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for."
+
+    private var answerTyped: AttributedString {
+        var line = AttributedString(Self.answer)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(answerLetters, Self.answer.count))
+        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return line
+    }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -675,9 +686,11 @@ struct ClutterScreen: View {
             VStack(spacing: 14) {
                 // On a white card: the meadow under it is busy, and white
                 // words on flowers could not be read.
-                Text("Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for.")
+                // Typed, a tick a letter (Aziz), into a card already its
+                // finished size: the unarrived letters are laid out in clear
+                // ink, so it never grows while it types.
+                Text(answerTyped)
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 18)
@@ -689,9 +702,9 @@ struct ClutterScreen: View {
                     .opacity(answerShown ? 1 : 0)
                     .offset(y: answerShown ? 0 : 16)
                 OnboardingCTA(title: "Let's clear it", action: clear)
-                    .opacity(answerShown ? 1 : 0)
-                    .offset(y: answerShown ? 0 : 30)
-                    .allowsHitTesting(answerShown && !clearing)
+                    .opacity(ctaShown ? 1 : 0)
+                    .offset(y: ctaShown ? 0 : 30)
+                    .allowsHitTesting(ctaShown && !clearing)
             }
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.bottom, 10)
@@ -706,6 +719,8 @@ struct ClutterScreen: View {
             popped = Self.thoughts.count
             level = 22
             answerShown = true
+            answerLetters = Self.answer.count
+            ctaShown = true
             return
         }
         Self.pop.prepare()
@@ -726,6 +741,17 @@ struct ClutterScreen: View {
         try? await Task.sleep(for: .milliseconds(700))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { answerShown = true }
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(300))
+        for (i, ch) in Self.answer.enumerated() {
+            guard !Task.isCancelled else { return }
+            answerLetters = i + 1
+            if !ch.isWhitespace { WelcomeHaptics.tick() }
+            try? await Task.sleep(for: .milliseconds(28))
+        }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
         WelcomeHaptics.land()
     }
 
