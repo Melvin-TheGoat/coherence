@@ -241,57 +241,259 @@ struct OttoInMeadow: View {
     }
 }
 
-/// Screen 1. Otto waves once, says hello, then settles into his breath.
+/// Screen 1, Brainrot's welcome in 808's words (Aziz, 2026-09-23, from a
+/// screenshot): a white page, Otto standing on a soft ground, the title and
+/// the line under it, one button. The whole thing is a sequence, and every
+/// beat of it is felt as well as seen:
+///
+/// 1. Otto pops up out of the ground (a squash and stretch from his feet)
+///    and lands with a thump.
+/// 2. He waves.
+/// 3. "Welcome to 808!" types out, a firm tick per letter.
+/// 4. The line under it types out faster, a lighter tick per letter.
+/// 5. "Let's go!" rises into place.
+///
+/// Reduce Motion gets the finished screen at once, with no ticks.
 struct WelcomeScreen: View {
     let onContinue: () -> Void
 
+    static let title = "Welcome to 808!"
+    static let subtitle = "It's time to regain control of your mind."
+
     @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
-    @State private var speaking = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Flips once, and drives Otto's pop.
+    @State private var popped = false
+    /// Bumped on every wave, and drives the wiggle that goes with it.
+    @State private var waves = 0
+    @State private var titleShown = 0
+    @State private var subtitleShown = 0
+    @State private var ctaShown = false
 
     var body: some View {
         VStack(spacing: 0) {
-            Text("Welcome to 808")
-                .font(OnboardingType.question)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
-                .opacity(appeared ? 1 : 0)
-
-            // Nothing Watch-specific (Melvin, 2026-09-21): 808 is becoming a
-            // meditation app with friends and a camera session, not a
-            // sensor readout, and the first thing Otto says should be true
-            // of all of it.
-            Spacer(minLength: 8)
-
-            // Right above his head, his words (Aziz, 2026-09-23): it sat
-            // under the title, a screen away from him.
-            OttoSpeech(text: "Hi there! I'm Otto. Let's meditate together.",
-                       size: 20, friendly: true, speaking: $speaking)
-                .opacity(appeared ? 1 : 0)
-
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig, shadow: false)
-                .padding(.top, 2)
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 12)
+            // A dot where the bar begins, like the reference: the questions
+            // fill it from here, so the first screen shows there is a road.
+            OnboardingProgress(from: 0, to: 0)
+                .padding(.top, 12)
+                .padding(.horizontal, 8)
 
             Spacer(minLength: 0)
+
+            OttoInMeadow(pose: .talking, rig: rig, share: 0.82)
+                .frame(maxWidth: 270)
+                .keyframeAnimator(initialValue: Pop(), trigger: popped) { view, pop in
+                    view
+                        .scaleEffect(x: pop.x, y: pop.y, anchor: .bottom)
+                        .opacity(pop.opacity)
+                } keyframes: { _ in
+                    // Starts hidden and small; the landing overshoots, squashes
+                    // and settles, which is what makes it read as a hop up
+                    // rather than a picture fading in.
+                    KeyframeTrack(\.y) {
+                        CubicKeyframe(0.2, duration: 0.01)
+                        CubicKeyframe(1.12, duration: 0.26)
+                        CubicKeyframe(0.9, duration: 0.12)
+                        CubicKeyframe(1.04, duration: 0.12)
+                        CubicKeyframe(1.0, duration: 0.14)
+                    }
+                    KeyframeTrack(\.x) {
+                        CubicKeyframe(0.5, duration: 0.01)
+                        CubicKeyframe(0.9, duration: 0.26)
+                        CubicKeyframe(1.08, duration: 0.12)
+                        CubicKeyframe(0.98, duration: 0.12)
+                        CubicKeyframe(1.0, duration: 0.14)
+                    }
+                    KeyframeTrack(\.opacity) {
+                        LinearKeyframe(0, duration: 0.01)
+                        LinearKeyframe(1, duration: 0.14)
+                    }
+                }
+                // The rig's arm can only turn about ten degrees before the cut
+                // behind it shows, which on a phone reads as nothing. So the
+                // wave is carried by his whole body too: a happy rock from the
+                // feet, two swings dying away, in time with the arm.
+                .keyframeAnimator(initialValue: 0.0, trigger: waves) { view, angle in
+                    view.rotationEffect(.degrees(angle), anchor: .bottom)
+                } keyframes: { _ in
+                    KeyframeTrack(\.self) {
+                        CubicKeyframe(-5, duration: 0.18)
+                        CubicKeyframe(4.5, duration: 0.24)
+                        CubicKeyframe(-3.5, duration: 0.24)
+                        CubicKeyframe(2, duration: 0.22)
+                        CubicKeyframe(0, duration: 0.24)
+                    }
+                }
+                .opacity(popped ? 1 : 0)
+                // Above the ground, whose rise is drawn behind his legs.
+                .zIndex(1)
+
+            VStack(spacing: 12) {
+                TypedLine(text: Self.title, shown: titleShown,
+                          font: .system(size: 34, weight: .heavy, design: .rounded),
+                          color: AppColor.textPrimary)
+                TypedLine(text: Self.subtitle, shown: subtitleShown,
+                          font: .system(size: 21, weight: .medium, design: .rounded),
+                          color: AppColor.textSecondary)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding + 4)
+            .padding(.top, 34)
+            .frame(maxWidth: .infinity)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("\(Self.title) \(Self.subtitle)")
+            .accessibilityAddTraits(.isHeader)
+
+            Spacer(minLength: 0)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, AppMetrics.screenPadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
+        .background(alignment: .bottom) {
+            GeometryReader { geo in
+                // The ground's crest sits at his knees, so he stands on it and
+                // not in front of a line. 0.52 of the page, measured from the
+                // reference and checked on the SE and the 17 Pro Max.
+                WelcomeGround()
+                    .frame(height: geo.size.height * 0.52 + geo.safeAreaInsets.bottom)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+                    .offset(y: geo.safeAreaInsets.bottom)
+            }
+        }
+        .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Get started", action: onContinue)
+            OnboardingCTA(title: "Let's go!", action: onContinue)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
-                .opacity(appeared ? 1 : 0)
+                .opacity(ctaShown ? 1 : 0)
+                .offset(y: ctaShown ? 0 : 40)
+                .allowsHitTesting(ctaShown)
         }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.5)) { appeared = true }
-            // A beat, so the wave reads as a greeting rather than a twitch
-            // that happened before the screen finished arriving.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { rig.wave() }
+        .task { await play() }
+    }
+
+    private struct Pop {
+        var x: CGFloat = 0.5
+        var y: CGFloat = 0.2
+        var opacity: Double = 0
+    }
+
+    private func play() async {
+        guard !popped else { return }
+        if reduceMotion {
+            popped = true
+            titleShown = Self.title.count
+            subtitleShown = Self.subtitle.count
+            ctaShown = true
+            return
         }
+        WelcomeHaptics.prepare()
+        // A beat for the screen to be there before anything happens on it.
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        popped = true
+        // The landing: the top of the hop, as he drops onto his feet.
+        try? await Task.sleep(for: .milliseconds(270))
+        guard !Task.isCancelled else { return }
+        WelcomeHaptics.land()
+        try? await Task.sleep(for: .milliseconds(200))
+        guard !Task.isCancelled else { return }
+        wave()
+
+        await type(Self.title, every: .milliseconds(55), firm: true) { titleShown = $0 }
+        try? await Task.sleep(for: .milliseconds(220))
+        await type(Self.subtitle, every: .milliseconds(28), firm: false) { subtitleShown = $0 }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+        WelcomeHaptics.land()
+        // And once more as the button arrives: "come on, then".
+        try? await Task.sleep(for: .milliseconds(350))
+        guard !Task.isCancelled else { return }
+        wave()
+    }
+
+    private func wave() {
+        rig.wave()
+        waves += 1
+    }
+
+    /// Reveals `text` a character at a time, a tick on every letter and none
+    /// on the spaces, so the rhythm follows the words.
+    private func type(_ text: String, every step: Duration, firm: Bool,
+                      reveal: (Int) -> Void) async {
+        for (i, ch) in text.enumerated() {
+            guard !Task.isCancelled else { return }
+            reveal(i + 1)
+            if !ch.isWhitespace { WelcomeHaptics.tick(firm: firm) }
+            try? await Task.sleep(for: step)
+        }
+    }
+}
+
+/// A line that types itself out. The letters still to come are laid out in
+/// clear ink, so the line breaks where the finished line breaks: revealing a
+/// growing prefix reflowed centred text on every letter.
+struct TypedLine: View {
+    let text: String
+    let shown: Int
+    let font: Font
+    let color: Color
+
+    var body: some View {
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(max(shown, 0), text.count))
+        line[line.startIndex..<cut].foregroundColor = color
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return Text(line)
+            .font(font)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+/// The ground on the welcome screen: a low rise across the page, pale at its
+/// crest and a shade deeper toward the bottom, like the reference's. Warmed a
+/// touch toward Otto's cream so it belongs to him rather than to a template.
+private struct WelcomeGround: View {
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width, h = geo.size.height
+            let rise: CGFloat = 38
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: rise))
+                p.addQuadCurve(to: CGPoint(x: w, y: rise), control: CGPoint(x: w / 2, y: -rise))
+                p.addLine(to: CGPoint(x: w, y: h))
+                p.addLine(to: CGPoint(x: 0, y: h))
+                p.closeSubpath()
+            }
+            .fill(LinearGradient(colors: [Color(red: 0.953, green: 0.945, blue: 0.933),
+                                          Color(red: 0.898, green: 0.886, blue: 0.867)],
+                                 startPoint: .top, endPoint: .bottom))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+/// The welcome screen's haptics. Prepared generators, for the reason
+/// `PressHaptic` gives: an unprepared one can drop the first pulses while the
+/// Taptic Engine spins up, and a typed line would lose its opening letters.
+@MainActor
+enum WelcomeHaptics {
+    private static let thump = UIImpactFeedbackGenerator(style: .medium)
+    private static let key = UIImpactFeedbackGenerator(style: .rigid)
+    private static let soft = UIImpactFeedbackGenerator(style: .light)
+
+    static func prepare() {
+        thump.prepare(); key.prepare(); soft.prepare()
+    }
+    static func land() {
+        thump.impactOccurred(intensity: 0.9)
+        thump.prepare()
+    }
+    /// A firm tick for the title's letters, a lighter one for the line under it.
+    static func tick(firm: Bool) {
+        let gen = firm ? key : soft
+        gen.impactOccurred(intensity: firm ? 0.75 : 0.55)
+        gen.prepare()
     }
 }
 

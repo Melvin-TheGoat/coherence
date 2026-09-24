@@ -5236,3 +5236,25 @@ xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPho
   fixed grass tufts (`Meadow.tufts`, seeded, drawn far to near, smaller and
   paler toward the ridge). The grasshopper also casts a shadow on the grass
   (`HopperPose.groundY` / `lift`) that shrinks and fades as it jumps.
+
+## THE WELCOME SCREEN IS BRAINROT'S, TYPED AND FELT (2026-09-23, Aziz)
+
+From a Brainrot screenshot: a white page, a soft ground rise (`WelcomeGround`,
+warmed toward Otto's cream), a dot of progress bar, Otto standing, "Welcome to
+808!" over "It's time to regain control of your mind.", and a gold "Let's go!".
+This replaces the valley welcome and its bubble; the grasshopper overlay
+(`OnboardingFrontLife`) is deleted because it crossed a white page.
+
+- **A sequence, every beat felt:** Otto pops up from his feet (keyframed
+  squash and stretch) and lands with a thump; he waves; the title types with a
+  firm tick per letter (55 ms), the line under it with a lighter tick (28 ms),
+  spaces silent; "Let's go!" springs up with a thump and he waves again.
+  `WelcomeHaptics` keeps its generators prepared. `TypedLine` lays unarrived
+  letters in clear ink so centred text never reflows. Reduce Motion gets the
+  finished screen with no ticks. The simulator plays no haptics: judge on a phone.
+- **The rig's arm turns only about ten degrees** (the cut behind it shows past
+  that), which on a phone reads as no wave at all. So each wave also rocks his
+  whole body from the feet (five degrees, dying away). A real wave, the arm
+  swinging from the shoulder, needs new art: an armless body with the
+  shoulder painted in, eyes open and smiling, plus the arm on its own layer,
+  then bones weighted by hand in the Rive editor (the MCP cannot weight).

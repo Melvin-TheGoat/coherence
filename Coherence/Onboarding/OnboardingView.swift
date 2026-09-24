@@ -287,13 +287,6 @@ struct OnboardingView: View {
                 .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: screenIdentity)
 
-            // The welcome screen's Otto stands on top of the valley, so its
-            // grasshopper crosses on top of HIM (Aziz, 2026-09-23: it was
-            // hopping through him).
-            if step == .relief {
-                OnboardingFrontLife()
-                    .transition(.opacity)
-            }
         }
             .environment(\.onboardingSharedGround, true)
             .environment(\.onboardingBack,
@@ -860,20 +853,3 @@ private struct OnboardingValley: View {
     }
 }
 
-/// The valley's grasshopper, drawn ABOVE a screen: the same crossings and
-/// sprites as the scene's own, in the same full-screen space, so it lands on
-/// the same grass, just in front of whatever the screen stands there.
-private struct OnboardingFrontLife: View {
-    @State private var seed = UInt64.random(in: UInt64.min...UInt64.max)
-
-    var body: some View {
-        GeometryReader { geo in
-            ValleyLife(layer: .meadowFront, size: geo.size,
-                       scale: SitLayout.scale(in: geo.size), seed: seed,
-                       avoid: nil, depthSplit: nil)
-        }
-        .ignoresSafeArea()
-        .allowsHitTesting(false)
-        .accessibilityHidden(true)
-    }
-}
