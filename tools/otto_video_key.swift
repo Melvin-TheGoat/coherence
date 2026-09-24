@@ -2,7 +2,11 @@
 // and writes HEVC with alpha, which AVPlayerLayer plays transparently.
 //
 //   swiftc -O -o /tmp/otto_key tools/otto_video_key.swift
-//   /tmp/otto_key in.mp4 out.mov [previewDir]
+//   /tmp/otto_key in.mp4 out.mov [previewDir] [--from N --to N] [--center-feet]
+//
+// --from / --to keep frames N..M only (a loop: pick two frames where the
+// pose matches). --center-feet centres the crop on his feet rather than on
+// the box around him, so a raised arm does not push his body off centre.
 //
 // Per frame: flood the white in from the border; remove enclosed white
 // pockets with no near-black within 6 px (the gap between a raised paw and
@@ -13,7 +17,15 @@ import AVFoundation
 import VideoToolbox
 import AppKit
 
-let args = CommandLine.arguments
+var args = CommandLine.arguments
+func flag(_ name: String) -> Int? {
+    guard let i = args.firstIndex(of: name), i + 1 < args.count else { return nil }
+    defer { args.removeSubrange(i...(i + 1)) }
+    return Int(args[i + 1])
+}
+let fromFrame = flag("--from") ?? 0, toFrame = flag("--to") ?? Int.max
+let centerFeet = args.contains("--center-feet")
+args.removeAll { $0 == "--center-feet" }
 let inURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
 let previewDir = args.count > 3 ? args[3] : nil
 
@@ -122,7 +134,10 @@ var W = 0, H = 0
 var minX = Int.max, minY = Int.max, maxX = 0, maxY = 0
 do {
     let (r, o) = try reader(asset)
+    var index = -1
     while let sb = o.copyNextSampleBuffer(), let buf = CMSampleBufferGetImageBuffer(sb) {
+        index += 1
+        if index < fromFrame || index > toFrame { continue }
         CVPixelBufferLockBaseAddress(buf, .readOnly)
         W = CVPixelBufferGetWidth(buf); H = CVPixelBufferGetHeight(buf)
         let base = CVPixelBufferGetBaseAddress(buf)!.assumingMemoryBound(to: UInt8.self)
@@ -136,6 +151,21 @@ do {
     _ = r
 }
 let m = 12
+if centerFeet {
+    // His feet are symmetric whatever his arms do: the bottom 6% of his
+    // outline, averaged over the clip, is where his body's centre line is.
+    var centres = [Double]()
+    let footTop = maxY - Int(Double(maxY - minY) * 0.06)
+    for k in frames {
+        var lo = Int.max, hi = 0
+        for y in footTop...maxY { for x in 0..<W where k[(y * W + x) * 4 + 3] > 128 { lo = min(lo, x); hi = max(hi, x) } }
+        if hi > lo { centres.append(Double(lo + hi) / 2) }
+    }
+    let c = Int(centres.reduce(0, +) / Double(max(centres.count, 1)))
+    let half = max(c - minX, maxX - c)
+    print("feet centre \(c), box centre \((minX + maxX) / 2)")
+    minX = c - half; maxX = c + half
+}
 minX = max(0, minX - m); minY = max(0, minY - m); maxX = min(W - 1, maxX + m); maxY = min(H - 1, maxY + m)
 var cw = maxX - minX + 1, ch = maxY - minY + 1
 cw -= cw % 2; ch -= ch % 2

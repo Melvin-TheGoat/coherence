@@ -277,9 +277,12 @@ struct WelcomeScreen: View {
 
             // A generated clip, not the rig (Aziz, 2026-09-23): the rig's arm
             // could only turn ten degrees, which never read as a wave. He
-            // waves, blinks, lowers his paw and holds there.
-            OttoClip(name: "otto-welcome-wave", playing: popped && !reduceMotion)
-                .aspectRatio(638.0 / 700.0, contentMode: .fit)
+            // waves for as long as the screen is up ("constantly waving"):
+            // two waves cut between frames where his arm matches, looped.
+            // The clip is cropped centred on his feet, so his BODY is on the
+            // screen's centre line and the raised arm hangs off to the side.
+            OttoClip(name: "otto-welcome-wave", playing: popped && !reduceMotion, loops: true)
+                .aspectRatio(710.0 / 700.0, contentMode: .fit)
                 .frame(height: 250)
                 // The reference's soft shadow, so he stands on the ground.
                 .background(alignment: .bottom) {

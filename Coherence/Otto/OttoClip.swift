@@ -6,17 +6,20 @@ import AVFoundation
 /// (Aziz, 2026-09-23): generated in Runway from his waving art on white, then
 /// cut out by `tools/otto_video_key.swift`.
 ///
-/// Shows the clip's first frame until `playing` turns true, plays it once,
-/// and holds on its last frame. No audio track, so it never touches the
+/// Shows the clip's first frame until `playing` turns true, then plays it
+/// once and holds the last frame, or with `loops` plays it forever with no
+/// seam (`AVPlayerLooper`), which is why a looping clip is cut between two
+/// frames where the pose matches. No audio track, so it never touches the
 /// audio session. If the file is missing, the still `fallback` pose shows.
 struct OttoClip: View {
     let name: String
     var playing: Bool
+    var loops: Bool = false
     var fallback: OttoPose = .pleased
 
     var body: some View {
         if let url = Bundle.main.url(forResource: name, withExtension: "mov") {
-            ClipPlayer(url: url, playing: playing)
+            ClipPlayer(url: url, playing: playing, loops: loops)
                 .accessibilityHidden(true)
         } else {
             Image(fallback.asset)
@@ -30,8 +33,9 @@ struct OttoClip: View {
 private struct ClipPlayer: UIViewRepresentable {
     let url: URL
     let playing: Bool
+    let loops: Bool
 
-    func makeUIView(context: Context) -> ClipView { ClipView(url: url) }
+    func makeUIView(context: Context) -> ClipView { ClipView(url: url, loops: loops) }
 
     func updateUIView(_ view: ClipView, context: Context) {
         if playing { view.play() }
@@ -45,13 +49,20 @@ private struct ClipPlayer: UIViewRepresentable {
 private final class ClipView: UIView {
     override class var layerClass: AnyClass { AVPlayerLayer.self }
     private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
-    let player: AVPlayer
+    let player: AVQueuePlayer
+    private var looper: AVPlayerLooper?
     private var started = false
 
-    init(url: URL) {
-        player = AVPlayer(url: url)
+    init(url: URL, loops: Bool) {
+        let item = AVPlayerItem(url: url)
+        player = AVQueuePlayer()
+        if loops {
+            looper = AVPlayerLooper(player: player, templateItem: item)
+        } else {
+            player.insert(item, after: nil)
+            player.actionAtItemEnd = .pause
+        }
         player.isMuted = true
-        player.actionAtItemEnd = .pause
         player.preventsDisplaySleepDuringVideoPlayback = false
         super.init(frame: .zero)
         backgroundColor = .clear
