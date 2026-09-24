@@ -17,6 +17,15 @@ struct OnboardingView: View {
     @Query private var preferences: [Preferences]
 
     @State private var step: Step = .relief
+    /// The white page over the valley behind the opening screens. Follows
+    /// `step.isWhitePage`, but lets go of it late (see the body).
+    @State private var whiteCover = false
+    /// Otto's glow on "See for yourself", starting in the middle.
+    @State private var glowDemo: Double = 50
+    /// Otto's glow on the clutter screen: 50, dimming as thoughts pile on.
+    @State private var clutterLevel: Double = 50
+    /// The valley's birds and grasshoppers, shared with `ValleyFrontLife`.
+    @State private var lifeSeed = UInt64.random(in: UInt64.min...UInt64.max)
     @State private var answers = OnboardingAnswers()
     /// Monthly, preselected (Aziz, 2026-08-24): the 7-day trial renews into
     /// Monthly, and the plan under the CTA must be the plan the footnote
@@ -83,6 +92,31 @@ struct OnboardingView: View {
         /// Added 2026-09-23: which apps Otto holds, and when, on Block builds,
         /// right after the wall. Last in the enum, for the reason above.
         case blockApps, blockSchedule
+        // Merged 2026-09-24: Melvin's two Block setup cases (block branch)
+        // come first, then the onboarding opening's (mvp). Neither set had
+        // shipped, so no saved resume record held either numbering.
+        /// Added 2026-09-23: "Meet your meditating partner", after the breath.
+        /// Last in the enum, for the reason above.
+        case meetOtto
+        /// Added 2026-09-23: "The more you meditate, the more enlightened he
+        /// becomes", the second page of Meet Otto. Last, for the reason above.
+        case ottoGrows
+        /// Added 2026-09-23: "See for yourself!", drag Otto through his looks,
+        /// the third page of Meet Otto. Last, for the reason above.
+        case seeForYourself
+        /// Added 2026-09-23: "Clarity and peace are within reach", the thoughts
+        /// that clutter him, then "Let's clear it". Last, for the reason above.
+        case clutter
+        /// Added 2026-09-23: "What usually gets in the way of meditating?".
+        /// Last, for the reason above.
+        case obstacles
+        /// Added 2026-09-23: "Which one sounds most like you?". Last.
+        case role
+        /// Added 2026-09-23: "When could you fit in a few quiet minutes?". Last.
+        case quietTime
+        /// Added 2026-09-23: "Have you tried to make meditation a habit
+        /// before?". Last.
+        case habitHistory
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -124,6 +158,16 @@ struct OnboardingView: View {
             }
         }
 
+        /// The opening screens drawn on Brainrot's white page, not the valley.
+        var isWhitePage: Bool {
+            switch self {
+            // Only the breath now: the welcome and Meet Otto went back to
+            // the valley (Aziz, 2026-09-23).
+            case .breath, .breathing: return true
+            default: return false
+            }
+        }
+
         var allowsBack: Bool {
             switch self {
             case .paywall, .signIn, .profile: return false
@@ -150,8 +194,10 @@ struct OnboardingView: View {
     /// `InterviewStep`. The branching lives in the model (and is exhaustively
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
+        (.motivation, .motivation), (.obstacles, .obstacles), (.role, .role),
+        (.quietTime, .quietTime), (.habitHistory, .habitHistory),
         (.referral, .referral),
-        (.baseline, .baseline), (.motivation, .motivation), (.stress, .stress),
+        (.baseline, .baseline), (.stress, .stress),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot),
@@ -264,7 +310,14 @@ struct OnboardingView: View {
     /// the breaths are one screen, so they share one identity and changing
     /// between them is not a transition at all.
     private var screenIdentity: Step { Self.identity(of: step) }
-    private static func identity(of step: Step) -> Step { step == .breathing ? .breath : step }
+    private static func identity(of step: Step) -> Step {
+        switch step {
+        case .breathing: return .breath
+        // Meet Otto's later pages change the words, not the screen.
+        case .ottoGrows, .seeForYourself: return .meetOtto
+        default: return step
+        }
+    }
 
     private var screenTransition: AnyTransition {
         switch motion {
@@ -294,19 +347,86 @@ struct OnboardingView: View {
             // so the screens slide across a world that stays where it is.
             // Otto sits in it on the stress screen, where the answer is drawn
             // on him.
-            OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress) : nil,
-                             look: step == .stress ? StressScreen.look(for: answers.stress) : nil,
-                             jiggle: ottoPokes)
+            OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
+                                    : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
+                                    : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
+                                    : (step == .meetOtto || step == .ottoGrows || step == .questionCount) ? .steady : nil,
+                             look: step == .stress ? StressScreen.look(for: answers.stress)
+                                   : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
+                                   : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
+                             jiggle: ottoPokes,
+                             standingFigure: step == .relief,
+                             // The personalize screen seats its own Otto, a
+                             // clip of him writing, on the valley's cushion.
+                             figureHidden: step == .questionCount,
+                             seed: lifeSeed)
+
+            // The breath is a white page, not the valley. Each draws its own white,
+            // but while one slides out and the next slides in, both are part
+            // transparent and the garden showed between them (Aziz,
+            // 2026-09-23: "not pleasant"). So a white page covers the valley
+            // for as long as the step is one of them, and fades when the flow
+            // reaches the valley's screens.
+            //
+            // Leaving them, the white stays until the next screen has slid in
+            // over it, THEN fades to reveal the valley behind that screen:
+            // dropping it with the step showed an empty garden for a beat.
+            Color.white
+                .ignoresSafeArea()
+                .opacity(whiteCover ? 1 : 0)
+                .allowsHitTesting(false)
+
+            // Otto writing on the personalize screen sits with the valley,
+            // which never moves, not in the screen, which slides.
+            // It glides up into the corner for the goal question (Aziz: the
+            // writing Otto top right, like Brainrot's brain).
+            if step == .questionCount || step == .motivation || step == .obstacles || step == .role
+                || step == .quietTime || step == .habitHistory {
+                SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
+                    .transition(.opacity)
+            }
 
             content
                 .id(screenIdentity)
                 .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: screenIdentity)
+                // A view animating OUT of a ZStack is drawn behind its
+                // siblings unless it has a zIndex, so every outgoing screen
+                // slid away BEHIND the valley and vanished in one frame, and
+                // the empty garden showed until the next one arrived (Aziz,
+                // 2026-09-23: "showing the garden area in between screens").
+                .zIndex(1)
+
+            // The welcome's Otto stands on the meadow above the scene, so the
+            // grasshoppers nearer than his feet are drawn here, over him, with
+            // the scene's own seed; the farther ones stay in the scene, behind
+            // him (Aziz, 2026-09-23: keep Melvin's birds and grasshopper).
+            if step == .relief {
+                ValleyFrontLife(seed: lifeSeed)
+                    .zIndex(2)
+                    .transition(.opacity)
+            }
+
         }
+            .onChange(of: step.isWhitePage) { _, white in
+                if white {
+                    withAnimation(.easeInOut(duration: 0.32)) { whiteCover = true }
+                } else {
+                    // After the slide (0.32 s), then a slow reveal.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        guard !step.isWhitePage else { return }
+                        withAnimation(.easeInOut(duration: 0.45)) { whiteCover = false }
+                    }
+                }
+            }
             .environment(\.onboardingSharedGround, true)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
             .onAppear {
+                // Otto's two Rive files, parsed while the welcome is still
+                // settling, so no later screen pays for it mid-slide.
+                OttoRig.preload()
+                OttoAuraRig.preload()
                 #if DEBUG
                 // A DEBUG jump to one screen wins over saved progress.
                 if ProcessInfo.processInfo.environment["ONBOARDING_STEP"] != nil { return }
@@ -349,7 +469,20 @@ struct OnboardingView: View {
         case .breath, .breathing:
             BreathExerciseScreen(breathing: step == .breathing,
                                  onReady: { go(.breathing) },
-                                 onContinue: { go(.questionCount) })
+                                 onContinue: { go(.meetOtto) })
+
+        case .meetOtto, .ottoGrows, .seeForYourself:
+            MeetOttoScreen(page: step == .meetOtto ? .meet : step == .ottoGrows ? .grows : .see,
+                           level: $glowDemo) {
+                switch step {
+                case .meetOtto: go(.ottoGrows)
+                case .ottoGrows: go(.seeForYourself)
+                default: go(.clutter)
+                }
+            }
+
+        case .clutter:
+            ClutterScreen(level: $clutterLevel) { go(.questionCount) }
 
         case .questionCount:
             QuestionCountScreen { go(firstInterviewStep) }
@@ -362,6 +495,30 @@ struct OnboardingView: View {
             MotivationScreen(selected: $answers.motivations,
                              otherText: $answers.motivationOther,
                              count: interviewCount) { go(nextAfter(.motivation)) }
+
+        case .obstacles:
+            ObstaclesScreen(selected: Binding(get: { answers.obstacles ?? [] },
+                                              set: { answers.obstacles = $0 }),
+                            count: interviewCount) { go(nextAfter(.obstacles)) }
+
+        case .role:
+            RoleScreen(role: $answers.role, count: interviewCount) { go(nextAfter(.role)) }
+
+        case .quietTime:
+            QuietTimeScreen(quietTime: Binding(get: { answers.quietTime },
+                                               set: { pick in
+                                                   answers.quietTime = pick
+                                                   // The answer IS the reminder time
+                                                   // the reminder screen opens on.
+                                                   if let date = pick?.reminderDate() {
+                                                       answers.reminderTime = date
+                                                   }
+                                               }),
+                            count: interviewCount) { go(nextAfter(.quietTime)) }
+
+        case .habitHistory:
+            HabitHistoryScreen(history: $answers.habitHistory,
+                               count: interviewCount) { go(nextAfter(.habitHistory)) }
 
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.
@@ -874,13 +1031,36 @@ private struct OnboardingValley: View {
     let stage: OttoAura.Stage?
     var look: Int? = nil
     let jiggle: Int
+    var standingFigure: Bool = false
+    var figureHidden: Bool = false
+    var seed: UInt64? = nil
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
-                    showsFigure: stage != nil)
+                    showsFigure: stage != nil, standingFigure: standingFigure,
+                    figureHidden: figureHidden, seed: seed)
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)
+    }
+}
+
+/// The grasshoppers that cross NEARER than a standing Otto's feet, drawn
+/// above the screen he stands on. Same seed, same split, same geometry as the
+/// scene's own, so each crossing is drawn exactly once, on the right side of
+/// him.
+private struct ValleyFrontLife: View {
+    let seed: UInt64
+
+    var body: some View {
+        GeometryReader { geo in
+            ValleyLife(layer: .meadowFront, size: geo.size,
+                       scale: SitLayout.scale(in: geo.size), seed: seed,
+                       avoid: nil, depthSplit: SitLayout.grasshopperSplit(in: geo.size))
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }

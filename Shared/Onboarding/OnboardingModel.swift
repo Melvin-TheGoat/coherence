@@ -15,28 +15,40 @@ import Foundation
 public enum Motivation: String, CaseIterable, Identifiable, Codable {
     case lessStressed, sharperFocus, moreDiscipline, betterSleep, lessAnxious,
          deeperPractice, manifestGoals, changeIdentity, other
+    /// Added 2026-09-23 for "What's your goal with meditation?" (Aziz). New
+    /// cases go LAST: the answers are stored by raw value, but keeping the
+    /// declaration order stable keeps every switch and test readable.
+    case morePresent, overthinkLess, justCurious
 
     public var id: String { rawValue }
 
     public var label: String {
         switch self {
-        case .lessStressed:   return "Less stressed"
-        case .sharperFocus:   return "Sharper focus"
+        case .lessStressed:   return "Feel less stressed"
+        case .sharperFocus:   return "Sharpen my focus"
         case .moreDiscipline: return "More discipline"
-        case .betterSleep:    return "Better sleep"
+        case .betterSleep:    return "Sleep better"
         case .lessAnxious:    return "Less anxious"
         case .deeperPractice: return "Deeper prayer or practice"
         case .manifestGoals:  return "Manifest my goals"
         case .changeIdentity: return "Change who I am"
         case .other:          return "Something else"
+        case .morePresent:    return "Be more present"
+        case .overthinkLess:  return "Overthink less"
+        case .justCurious:    return "Just curious"
         }
     }
 
     /// What the motivation screen offers. `.lessAnxious` was cut 2026-08-25
     /// (Melvin: same thing as less stressed, and the list was giving him
     /// choice fatigue) but the case survives so stored answers still decode.
+    ///
+    /// **Six, one pick** since 2026-09-23 (Aziz, from Brainrot's goal
+    /// screen): "What's your goal with meditation?". Making it a daily habit
+    /// is left out on purpose: that is what the whole app is for, so it goes
+    /// without saying. The older cases stay so stored answers still decode.
     public static var offered: [Motivation] {
-        allCases.filter { $0 != .lessAnxious }
+        [.lessStressed, .sharperFocus, .betterSleep, .morePresent, .overthinkLess, .justCurious]
     }
 
     public var icon: String {
@@ -50,6 +62,9 @@ public enum Motivation: String, CaseIterable, Identifiable, Codable {
         case .manifestGoals:  return "sparkles"
         case .changeIdentity: return "person.crop.circle.badge.checkmark"
         case .other:          return "ellipsis.circle"
+        case .morePresent:    return "leaf"
+        case .overthinkLess:  return "brain.head.profile"
+        case .justCurious:    return "questionmark.circle"
         }
     }
 }
@@ -338,6 +353,140 @@ public enum BodyTracking: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// "What usually gets in the way of meditating?" (Aziz, 2026-09-23). Asked
+/// straight after the goal, because Otto has just promised "Your answers show
+/// me what gets in the way, so I can help you keep going": this is that
+/// question, in the present tense, for everyone (not only people who quit,
+/// which is who `DropoutCause` was written for). Pick any.
+public enum Obstacle: String, CaseIterable, Identifiable, Codable {
+    case forget, noTime, mindWontSettle, unsureDoingItRight, loseMotivation, phonePulls
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .forget:             return "I forget"
+        case .noTime:             return "I don't have time"
+        case .mindWontSettle:     return "My mind won't settle"
+        case .unsureDoingItRight: return "I'm not sure I'm doing it right"
+        case .loseMotivation:     return "I lose motivation after a few days"
+        case .phonePulls:         return "My phone pulls me away"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .forget:             return "bell.slash"
+        case .noTime:             return "clock"
+        case .mindWontSettle:     return "tornado"
+        case .unsureDoingItRight: return "questionmark.circle"
+        case .loseMotivation:     return "battery.25"
+        case .phonePulls:         return "iphone"
+        }
+    }
+}
+
+/// "Which one sounds most like you?" (Aziz, 2026-09-23, Brainrot's
+/// "Which best describes you?" reworded). One pick.
+public enum Role: String, CaseIterable, Identifiable, Codable {
+    case creative, deskJob, founder, athlete, student, liveWell
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .creative: return "Creative"
+        case .deskJob:  return "Employee"
+        case .founder:  return "Founder"
+        case .athlete:  return "Athlete"
+        case .student:  return "Student"
+        case .liveWell: return "Just trying to live well"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .creative: return "paintpalette"
+        case .deskJob:  return "desktopcomputer"
+        case .founder:  return "chart.line.uptrend.xyaxis"
+        case .athlete:  return "figure.run"
+        case .student:  return "book.closed"
+        case .liveWell: return "heart"
+        }
+    }
+}
+
+/// "When could you fit in a few quiet minutes?" (Aziz, 2026-09-23). One
+/// pick, and it is not decorative: the answer becomes the daily reminder's
+/// time, already set on the reminder screen later. The old anchor question
+/// did this job until it was cut, and the reminder sat at 8 AM since.
+public enum QuietTime: String, CaseIterable, Identifiable, Codable {
+    case morning, breakInDay, afternoon, evening, beforeBed
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .morning:    return "First thing in the morning"
+        case .breakInDay: return "On a break during the day"
+        case .afternoon:  return "In the afternoon"
+        case .evening:    return "In the evening"
+        case .beforeBed:  return "Right before bed"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .morning:    return "sunrise"
+        case .breakInDay: return "cup.and.saucer"
+        case .afternoon:  return "sun.max"
+        case .evening:    return "sunset"
+        case .beforeBed:  return "moon.stars"
+        }
+    }
+
+    /// The reminder it sets, as hour and minute.
+    public var reminder: (hour: Int, minute: Int) {
+        switch self {
+        case .morning:    return (8, 0)
+        case .breakInDay: return (12, 30)
+        case .afternoon:  return (15, 30)
+        case .evening:    return (19, 0)
+        case .beforeBed:  return (22, 0)
+        }
+    }
+
+    /// Today at that time, which is how `OnboardingAnswers.reminderTime`
+    /// holds a time of day.
+    public func reminderDate(calendar: Calendar = .current, now: Date = Date()) -> Date? {
+        calendar.date(bySettingHour: reminder.hour, minute: reminder.minute, second: 0, of: now)
+    }
+}
+
+/// "Have you tried to make meditation a habit before?" (Aziz, 2026-09-23,
+/// Brainrot's "Have you tried to reduce screen time before?"). One pick.
+public enum HabitHistory: String, CaseIterable, Identifiable, Codable {
+    case didntStick, workedForAWhile, firstTry
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .didntStick:      return "Yes, but it didn't stick"
+        case .workedForAWhile: return "Yes, it worked for a while"
+        case .firstTry:        return "No, this is my first try"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .didntStick:      return "heart.slash"
+        case .workedForAWhile: return "hand.thumbsup"
+        case .firstTry:        return "sparkles"
+        }
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -584,6 +733,16 @@ public enum CostSymptom: String, CaseIterable, Identifiable, Codable {
 public struct OnboardingAnswers: Codable, Equatable {
     public var currentFrequency: CurrentFrequency?
     public var motivations: Set<Motivation> = []
+    /// What gets in the way (`Obstacle`). OPTIONAL on purpose: synthesized
+    /// Codable requires every non-optional key, so a plain property would
+    /// have made every saved resume record from before it fail to decode.
+    public var obstacles: Set<Obstacle>?
+    /// Which one sounds most like them (`Role`). Optional for the same reason.
+    public var role: Role?
+    /// When a few quiet minutes fit (`QuietTime`). Optional, as above.
+    public var quietTime: QuietTime?
+    /// Whether they have tried to make it a habit (`HabitHistory`). Optional.
+    public var habitHistory: HabitHistory?
     /// Their own words, only when "Something else" is picked. Never required.
     public var motivationOther: String = ""
     /// 0 = "Fine", 1 = "Fried".
@@ -675,8 +834,9 @@ public struct OnboardingAnswers: Codable, Equatable {
 
     public var primaryMotivation: Motivation? {
         let priority: [Motivation] = [.moreDiscipline, .lessAnxious, .lessStressed,
-                                      .sharperFocus, .betterSleep, .changeIdentity,
-                                      .manifestGoals, .deeperPractice, .other]
+                                      .overthinkLess, .sharperFocus, .betterSleep,
+                                      .morePresent, .changeIdentity, .manifestGoals,
+                                      .deeperPractice, .justCurious, .other]
         return priority.first { motivations.contains($0) } ?? motivations.first
     }
 
@@ -868,7 +1028,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .stress, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .stress, .referral:
             return true
 
         // Presumes previous attempts.
@@ -935,8 +1095,20 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// Attribution FIRST (Melvin, 2026-09-14). It sat last, and only 42% of
     /// installs finish the interview, so most people never told us where
     /// they came from. Asked at the door, nearly everyone answers.
+    /// The goal comes first (Aziz, 2026-09-23): it follows "Let's
+    /// personalize 808 for you" the way Brainrot's goal screen follows its
+    /// own, and the writing Otto carries across into its corner.
+    case motivation
+    /// What gets in the way, straight after the goal (Aziz, 2026-09-23).
+    case obstacles
+    /// Which one sounds most like you, third (Aziz, 2026-09-23).
+    case role
+    /// When a few quiet minutes fit, fourth; sets the reminder (Aziz).
+    case quietTime
+    /// Have you tried to make meditation a habit before, fifth (Aziz).
+    case habitHistory
     case referral
-    case baseline, motivation, stress
+    case baseline, stress
     case restarts, intendedFor
     case bodyTracking
     case blindSpot

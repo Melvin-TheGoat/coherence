@@ -58,6 +58,29 @@ struct ValleyScene: View {
     /// slumped) in the meadow.
     var showsFigure: Bool = true
 
+    /// Grasshoppers in this scene's own meadow.
+    var meadowLife: Bool = true
+
+    /// A screen stands its OWN Otto on the meadow, on top of this scene, with
+    /// his feet on the cushion's ground line (onboarding's welcome). The
+    /// scene then splits its grasshoppers at that line as if he were its own,
+    /// draws only the farther ones (behind him), and leaves the nearer ones
+    /// to the screen, which draws them above him with the same `seed`
+    /// (`ValleyFrontLife`). Without this a grasshopper in the scene could only
+    /// ever pass behind that Otto, and read as hopping through him.
+    var standingFigure: Bool = false
+
+    /// Keep the cushion but not the sloth on it: a screen seats its own Otto
+    /// there, a video clip of him doing something the rig cannot (onboarding's
+    /// "Let's personalize", where he writes in a notepad). He fades rather
+    /// than vanishing, so the handover from the scene's Otto to the clip is a
+    /// cross-fade in the same spot.
+    var figureHidden: Bool = false
+
+    /// Fixes the birds and grasshoppers. Nil picks one at random; a screen
+    /// that draws part of the life itself passes the same seed to both.
+    var seed: UInt64? = nil
+
     /// Birds and grasshoppers, every ten-ish and eight-ish seconds — only
     /// while nobody is meditating (`progress == 0`: Home, onboarding, the
     /// Ready screen, the Block/Friends/Profile/Guide bands). The sit itself
@@ -157,24 +180,39 @@ struct ValleyScene: View {
                     .frame(width: w, height: h * 0.34)
                     .offset(y: h * 0.33)
 
+                // Depth (Aziz, 2026-09-23): the field was one flat green, so
+                // a grasshopper crossing it had nothing to be near or far
+                // in. Haze where the grass meets the ridge, and the ground
+                // darkening as it comes toward the viewer, the way distance
+                // actually reads outdoors.
+                LinearGradient(stops: [
+                    .init(color: .white.opacity(0.22), location: 0),
+                    .init(color: .white.opacity(0), location: 0.28),
+                    .init(color: .clear, location: 0.55),
+                    .init(color: Color(red: 0.16, green: 0.30, blue: 0.14).opacity(0.20), location: 1)
+                ], startPoint: .top, endPoint: .bottom)
+                    .frame(width: w, height: h * 0.34)
+                    .offset(y: h * 0.33)
+                    .allowsHitTesting(false)
+
                 // Birds sit in front of the ridges and the field wash (or
                 // the field, drawn after, would paint straight over one
                 // dipping near the ridge line) and stay well clear of
                 // Otto's head by construction, via `avoidRect`.
                 if showLife {
-                    ValleyLife(layer: .sky, size: geo.size, scale: s, seed: lifeSeed, avoid: avoidRect)
+                    ValleyLife(layer: .sky, size: geo.size, scale: s, seed: seed ?? lifeSeed, avoid: avoidRect)
                 }
 
                 // Everything alive takes the hour's light as one group, so
                 // the cushion, the sloth and the flowers can never disagree
                 // about what time it is. A grasshopper crossing farther back
                 // than his cushion is drawn in here, behind him.
-                groundScene(size: geo.size, scale: s, life: showLife)
+                groundScene(size: geo.size, scale: s, life: showLife && meadowLife)
                     .colorMultiply(Color(white: day.light))
 
                 // And one crossing nearer than his cushion, in front of him.
-                if showLife {
-                    ValleyLife(layer: .meadowFront, size: geo.size, scale: s, seed: lifeSeed,
+                if showLife && meadowLife && !standingFigure {
+                    ValleyLife(layer: .meadowFront, size: geo.size, scale: s, seed: seed ?? lifeSeed,
                                avoid: avoidRect, depthSplit: grasshopperSplit(size: geo.size))
                 }
             }
@@ -190,9 +228,10 @@ struct ValleyScene: View {
     /// drawn (`!showsFigure`), or he is tucked in the corner, well clear of
     /// the meadow already.
     private func lifeAvoidRect(size: CGSize, scale s: CGFloat) -> CGRect? {
-        guard showsFigure, !ottoInCorner else { return nil }
+        guard showsFigure || standingFigure, !ottoInCorner else { return nil }
         let seated = ottoHeight(scale: s)
-        let top = SitLayout.ottoTop(in: size) - 20 - ottoLift
+        // A standing Otto's head is higher than a seated one's.
+        let top = SitLayout.ottoTop(in: size) - 20 - ottoLift - (standingFigure ? 60 * s : 0)
         let cushionBottom = SitLayout.cushionBottom(in: size) + 22 * s - ottoLift
         let ottoBottom = size.height * (1 - 0.24) + 12 - ottoLift
         let bottom = max(cushionBottom, ottoBottom)
@@ -205,7 +244,7 @@ struct ValleyScene: View {
     /// or in front of him: the bottom of his cushion, where he meets the
     /// grass. Nil with nobody sitting in the middle of the meadow.
     private func grasshopperSplit(size: CGSize) -> CGFloat? {
-        guard showsFigure, !ottoInCorner else { return nil }
+        guard showsFigure || standingFigure, !ottoInCorner else { return nil }
         return SitLayout.cushionBottom(in: size) - ottoLift
     }
 
@@ -287,7 +326,7 @@ struct ValleyScene: View {
                 .frame(width: size.width, height: size.height)
 
             if life {
-                ValleyLife(layer: .meadowBehind, size: size, scale: s, seed: lifeSeed,
+                ValleyLife(layer: .meadowBehind, size: size, scale: s, seed: seed ?? lifeSeed,
                            avoid: nil, depthSplit: grasshopperSplit(size: size))
             }
 
@@ -297,6 +336,8 @@ struct ValleyScene: View {
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
                           y: SitLayout.cushionBottom(in: size) - 22 * s - ottoLift)
+                .standsInMeadow(feetY: SitLayout.cushionFront(in: size, scale: s) - ottoLift,
+                                scale: s, sceneSize: size)
                 .opacity(ottoInCorner || !showsFigure ? 0 : 1)
 
             // The artboard carries headroom above his tuft that the cutout
@@ -314,6 +355,8 @@ struct ValleyScene: View {
                     OttoRiveView(size: tall, pose: pose, rig: rig)
                 }
             }
+            .opacity(figureHidden ? 0 : 1)
+            .animation(.easeInOut(duration: 0.35), value: figureHidden)
             .position(x: ottoInCorner ? Self.cornerX : size.width / 2,
                       y: ottoInCorner ? Self.cornerY
                                       : size.height * (1 - 0.24) - seated / 2 - ottoLift)
@@ -402,7 +445,9 @@ private struct Cloud: Shape {
 
 /// The terracotta seat. A gradient, a lit rim, and a highlight across the top
 /// so it reads as a solid object rather than a painted oval.
-private struct Cushion: View {
+/// Also the one a standing Otto stands on in onboarding's welcome, drawn
+/// there at exactly this size and place so it never changes between screens.
+struct Cushion: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width, h = geo.size.height
@@ -421,21 +466,106 @@ private struct Cushion: View {
     }
 }
 
+extension View {
+    /// **Anything standing IN the meadow goes through this.** The meadow is
+    /// one canvas painted before everything on it, so whatever is placed
+    /// afterwards covers every flower, near or far. That has now gone wrong
+    /// three times (Aziz, 2026-09-23): a grasshopper "landing on the petals"
+    /// of a nearer flower, and Otto's cushion, on the welcome AND on every
+    /// seated screen, covering the flowers in front of it. This repaints the
+    /// grass and flowers whose foot is nearer than `feetY` over the view,
+    /// cut to the view's own outline, so they stand in front of it and
+    /// nothing outside it is drawn twice.
+    ///
+    /// The view must be laid out in SCENE coordinates (full scene size, its
+    /// content placed with `.position`), the same space the meadow is drawn
+    /// in. `feetY` is where the thing meets the ground, in points from the
+    /// top of the scene.
+    func standsInMeadow(feetY: CGFloat, scale: CGFloat, sceneSize: CGSize) -> some View {
+        let placed = frame(width: sceneSize.width, height: sceneSize.height)
+        return placed.overlay {
+            Meadow(scale: scale, nearerThan: feetY)
+                .frame(width: sceneSize.width, height: sceneSize.height)
+                .mask { placed }
+                .allowsHitTesting(false)
+        }
+    }
+}
+
 /// The meadow, drawn once into a canvas rather than as 26 view hierarchies.
 ///
 /// Placement is not random. The flowers were dart-thrown in pixel space so
 /// none sits on another, and they are drawn **back to front**: smaller and
 /// paler toward the ridge, bigger and brighter at the bottom edge, which is
 /// what makes a flat field read as ground going away from you.
-private struct Meadow: View {
+struct Meadow: View {
     let scale: CGFloat
+    /// Draw only the grass and flowers standing NEARER than this feet line
+    /// (points from the top). A grasshopper redraws these over itself, cut to
+    /// its own outline, so a flower in front of it covers it instead of
+    /// looking like a petal it has landed on (Aziz, 2026-09-23). Nil draws
+    /// the whole meadow.
+    var nearerThan: CGFloat? = nil
+
+    /// Clumps of grass scattered over the field, fixed so the meadow is the
+    /// same every time. Smaller and paler toward the ridge, bigger and darker
+    /// near the bottom edge: the same rule the flowers follow, and the main
+    /// thing that makes the ground read as going away from you.
+    fileprivate struct Tuft {
+        let x: CGFloat
+        /// Fraction of the height, from the bottom.
+        let bottom: CGFloat
+        let blades: Int
+        let lean: CGFloat
+        /// 0 at the ridge, 1 at the bottom edge.
+        var near: CGFloat { max(0, min(1, 1 - bottom / 0.34)) }
+    }
+
+    fileprivate static let tufts: [Tuft] = {
+        var seed: UInt64 = 0x808_5EED
+        func next() -> CGFloat {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            return CGFloat(seed >> 33) / CGFloat(UInt64(1) << 31)
+        }
+        var out: [Tuft] = []
+        for _ in 0..<46 {
+            // Denser toward the ridge, where everything is smaller.
+            let depth = pow(next(), 0.8)
+            out.append(Tuft(x: next(), bottom: 0.015 + depth * 0.31,
+                            blades: 3 + Int(next() * 3), lean: (next() - 0.5) * 0.3))
+        }
+        // Far first, so a near tuft is drawn over a far one.
+        return out.sorted { $0.bottom > $1.bottom }
+    }()
 
     var body: some View {
         Canvas { ctx, size in
+            // Grass tufts first, far to near, so the flowers stand in them.
+            for t in Meadow.tufts {
+                let near = t.near
+                let h = (5 + 15 * near) * scale
+                let base = CGPoint(x: t.x * size.width, y: size.height * (1 - t.bottom))
+                if let nearerThan, base.y <= nearerThan { continue }
+                var path = Path()
+                for blade in 0..<t.blades {
+                    let spread = (CGFloat(blade) - CGFloat(t.blades - 1) / 2) * 0.32
+                    let tip = CGPoint(x: base.x + spread * h + t.lean * h,
+                                      y: base.y - h * (0.75 + 0.25 * CGFloat((blade * 7 + 3) % 4) / 3))
+                    path.move(to: CGPoint(x: base.x + spread * h * 0.25, y: base.y))
+                    path.addQuadCurve(to: tip,
+                                      control: CGPoint(x: base.x + spread * h * 0.4, y: base.y - h * 0.5))
+                }
+                ctx.stroke(path,
+                           with: .color(Color(red: 0.29 - 0.08 * near, green: 0.48 - 0.08 * near,
+                                              blue: 0.27 - 0.06 * near)
+                                .opacity(0.30 + 0.45 * Double(near))),
+                           style: StrokeStyle(lineWidth: (0.8 + 1.4 * near) * scale, lineCap: .round))
+            }
             for f in Meadow.flowers {
                 let w = f.w * scale, h = f.h * scale
                 let anchor = CGPoint(x: f.left * size.width,
                                      y: size.height * (1 - f.bottom))
+                if let nearerThan, anchor.y <= nearerThan { continue }
                 ctx.drawLayer { layer in
                     layer.translateBy(x: anchor.x, y: anchor.y)
                     layer.rotate(by: .degrees(f.rotation))
@@ -546,6 +676,16 @@ private struct Meadow: View {
 /// width and placed by height, and on a 667pt screen that put the top of his
 /// head 130pt higher up the frame than the composition intends.
 enum SitLayout {
+    /// Where a grasshopper passes from behind Otto to in front of him: the
+    /// bottom of his cushion, where he meets the grass.
+    static func grasshopperSplit(in size: CGSize) -> CGFloat { cushionBottom(in: size) }
+
+    /// The cushion's front edge on the grass: flowers and tufts whose foot is
+    /// below this line stand in front of it (`standsInMeadow`).
+    static func cushionFront(in size: CGSize, scale s: CGFloat) -> CGFloat {
+        cushionBottom(in: size) - 6 * s
+    }
+
     static func scale(in size: CGSize) -> CGFloat {
         min(size.width / 300, size.height / 620)
     }

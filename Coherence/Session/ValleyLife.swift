@@ -133,7 +133,10 @@ struct ValleyLife: View {
         }
         return ForEach(crossings) { crossing in
             if let pose = crossing.pose(at: t) {
+                // Nearer flowers in front of it, not under its feet
+                // (`standsInMeadow`, Aziz: it looked like landing on petals).
                 HopperGlyph(pose: pose)
+                    .standsInMeadow(feetY: pose.groundY, scale: scale, sceneSize: size)
             }
         }
     }
@@ -522,6 +525,12 @@ private struct HopperPose {
     var facingRight: Bool
     var opacity: Double
     var bodyLength: CGFloat
+    /// Where its feet meet the grass, which the shadow stays on while it
+    /// jumps. The shadow is what says how far off the ground it is, and so
+    /// how far into the meadow (Aziz, 2026-09-23: the hopping made the lack
+    /// of depth "really apparent").
+    var groundY: CGFloat = 0
+    var lift: CGFloat = 0
 }
 
 /// One grasshopper crossing the grass: it comes in from beyond the left
@@ -617,7 +626,8 @@ private struct HopperCrossing: Identifiable {
             }
         }
         return HopperPose(x: x, y: feetY - lift, legExtend: legs, spriteFrame: frame,
-                          facingRight: true, opacity: 1, bodyLength: bodyLength)
+                          facingRight: true, opacity: 1, bodyLength: bodyLength,
+                          groundY: feetY, lift: lift)
     }
 }
 
@@ -629,6 +639,26 @@ private struct HopperGlyph: View {
     private static let greenDark = Color(red: 0.30, green: 0.47, blue: 0.24)
 
     var body: some View {
+        ZStack {
+            shadow
+            glyph
+        }
+    }
+
+    /// A soft oval on the grass under it, smaller and fainter the higher it
+    /// jumps.
+    private var shadow: some View {
+        let l = pose.bodyLength
+        let up = min(1, pose.lift / max(1, l * 0.9))
+        return Ellipse()
+            .fill(Color.black.opacity(0.20 * (1 - 0.55 * Double(up))))
+            .frame(width: l * 1.15 * (1 - 0.35 * up), height: l * 0.26 * (1 - 0.35 * up))
+            .blur(radius: l * 0.05)
+            .opacity(pose.opacity)
+            .position(x: pose.x, y: pose.groundY)
+    }
+
+    @ViewBuilder private var glyph: some View {
         let l = pose.bodyLength
         if let sprite = ValleyLife.hopperSpriteName(frame: pose.spriteFrame) {
             // Frames are cropped tight and differ in height (sitting vs.

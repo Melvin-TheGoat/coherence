@@ -90,10 +90,31 @@ final class OttoRig: ObservableObject {
     /// ground, so the app rendered a BLACK RECTANGLE where Otto belongs: a
     /// broken animation beats a broken picture every time. An arbitrary
     /// artboard is not Otto, so an export without our names falls back, loudly.
+    /// The parsed file, kept for the life of the app. Parsing it is the
+    /// expensive part of a rig (hundreds of KB, on the main thread), and every
+    /// screen with Otto on it used to parse it again as it appeared, which
+    /// stalled the slide onto that screen for a few frames (Aziz, 2026-09-23:
+    /// the jumpy transitions). Each rig still gets its own artboard instance.
+    private static var cachedFile: RiveFile?
+
+    private static func parsedFile() throws -> RiveFile {
+        if let cachedFile { return cachedFile }
+        let file = try RiveFile(name: fileName, extension: ".riv", in: .main, loadCdn: false)
+        cachedFile = file
+        return file
+    }
+
+    /// Parses the file now, while nothing is moving, so the first screen that
+    /// shows him does not pay for it mid-transition.
+    static func preload() {
+        guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return }
+        _ = try? parsedFile()
+    }
+
     static func make() -> OttoRig? {
         guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return nil }
         do {
-            let model = try RiveModel(fileName: fileName, extension: ".riv", in: .main, loadCdn: false)
+            let model = RiveModel(riveFile: try parsedFile())
             try model.setArtboard(artboard)
             try model.setStateMachine(stateMachine)
             return OttoRig(model: model, artboard: artboard, stateMachine: stateMachine)
@@ -377,5 +398,44 @@ final class BreathHaptics {
             relativeTime: 0
         )
         return try CHHapticPattern(events: [inhale, exhale], parameterCurves: [curve])
+    }
+
+    /// One breath, played once: a swell over `inhale`, stillness for `hold`,
+    /// a softer fall over `exhale`. For the onboarding's single paced breath
+    /// (in 4, hold 2, out 4), which does not repeat.
+    func playOnce(inhale: TimeInterval, hold: TimeInterval, exhale: TimeInterval) {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        do {
+            let engine = try CHHapticEngine()
+            engine.playsHapticsOnly = true
+            try engine.start()
+            let rise = CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6),
+                             CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)],
+                relativeTime: 0, duration: inhale)
+            let fall = CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.45),
+                             CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.1)],
+                relativeTime: inhale + hold, duration: exhale)
+            let curve = CHHapticParameterCurve(
+                parameterID: .hapticIntensityControl,
+                controlPoints: [
+                    .init(relativeTime: 0, value: 0.05),
+                    .init(relativeTime: inhale * 0.9, value: 1.0),
+                    .init(relativeTime: inhale + hold, value: 0.9),
+                    .init(relativeTime: inhale + hold + exhale - 0.15, value: 0.05)
+                ],
+                relativeTime: 0)
+            let player = try engine.makeAdvancedPlayer(
+                with: CHHapticPattern(events: [rise, fall], parameterCurves: [curve]))
+            try player.start(atTime: CHHapticTimeImmediate)
+            self.engine = engine
+            self.player = player
+        } catch {
+            player = nil
+            engine = nil
+        }
     }
 }

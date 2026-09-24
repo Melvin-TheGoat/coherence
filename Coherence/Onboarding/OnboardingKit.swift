@@ -241,10 +241,20 @@ struct FootnoteInk: ViewModifier {
     }
 }
 
-/// `PrimaryButtonStyle`, plus the onboarding's press-and-release pulse.
+/// Onboarding's own green (Aziz, 2026-09-23: "make all these buttons and the
+/// bar thing on top green"), Duolingo's move: the one colour that means "go"
+/// through the whole flow. A meadow green warmed toward Otto rather than
+/// Duolingo's lime, with a darker edge for the lifted plate.
+enum OnboardingGreen {
+    static let fill = Color(red: 0.353, green: 0.725, blue: 0.314)
+    static let shade = Color(red: 0.255, green: 0.557, blue: 0.227)
+}
+
+/// `PrimaryButtonStyle` in onboarding's green, plus the press-and-release pulse.
 struct OnboardingPrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        PrimaryButtonStyle().makeBody(configuration: configuration)
+        PrimaryButtonStyle(fill: OnboardingGreen.fill, shade: OnboardingGreen.shade, ink: .white)
+            .makeBody(configuration: configuration)
             .onAppear { PressHaptic.prepare() }
             .onChange(of: configuration.isPressed) { _, pressed in
                 PressHaptic.fire(pressed: pressed)
@@ -601,7 +611,7 @@ struct OnboardingProgress: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(AppColor.textSecondary.opacity(0.16))
                 Capsule()
-                    .fill(AppColor.accentGold)
+                    .fill(OnboardingGreen.fill)
                     // The lit strip along the top of the fill, which is what
                     // makes a flat bar read as a filled tube.
                     .overlay(alignment: .top) {

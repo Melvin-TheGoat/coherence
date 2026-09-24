@@ -73,20 +73,25 @@ extension View {
 // MARK: - Buttons
 
 struct PrimaryButtonStyle: ButtonStyle {
+    /// Gold everywhere in the app; onboarding passes its green.
+    var fill: Color = AppColor.accentGold
+    var shade: Color = AppColor.accentGoldShade
+    var ink: Color = AppColor.textOnAccent
+
     func makeBody(configuration: Configuration) -> some View {
         let down = configuration.isPressed
         let lift = down ? 1 : AppMetrics.buttonLift
         return configuration.label
             .font(AppFont.headline.weight(.bold))
-            .foregroundStyle(AppColor.textOnAccent)
+            .foregroundStyle(ink)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: AppMetrics.buttonRadius, style: .continuous)
-                    .fill(AppColor.accentGold)
+                    .fill(fill)
                     // A hard-edged shadow, not a blur: this is the side of the
                     // button, so it must have an edge.
-                    .shadow(color: AppColor.accentGoldShade, radius: 0, y: lift)
+                    .shadow(color: shade, radius: 0, y: lift)
             )
             // Move with the edge, so the whole control sinks rather than the
             // label sliding off its own plate.

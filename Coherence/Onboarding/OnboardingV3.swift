@@ -64,6 +64,11 @@ struct OttoSpeech: View {
     /// 1.4 s so the line would follow the wave, and Melvin read it as a lag
     /// between the screen arriving and the words arriving (2026-09-21).
     var delay: TimeInterval = 0
+    /// The welcome screen's look (Aziz, 2026-09-23: "fully white and more
+    /// bubble with a more welcoming font"): solid white, rounder, no outline,
+    /// a soft shadow, and the rounded face in semibold. Off everywhere else,
+    /// where Melvin's see-through Duolingo bubble stays.
+    var friendly: Bool = false
     @Binding var speaking: Bool
 
     @State private var shown = 0
@@ -90,22 +95,29 @@ struct OttoSpeech: View {
 
     var body: some View {
         Text(typed)
-            .font(.system(size: size, weight: .regular, design: .rounded))
+            .font(.system(size: size, weight: friendly ? .semibold : .regular, design: .rounded))
             .lineSpacing(3)
             .multilineTextAlignment(.leading)
             // Hugs its words, the way Duo's does: a short line gets a short
             // bubble. The clear-ink layout means the width is the finished
             // line's from the first frame, so it never grows while typing.
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 15)
+            .padding(.horizontal, friendly ? 22 : 18)
+            .padding(.vertical, friendly ? 18 : 15)
             // Room for the point inside the frame, so layout counts it.
             .padding(tail == .bottom ? .bottom : .leading, Self.tailSize)
             .background {
-                let bubble = SpeechBubbleShape(edge: tail, tailWidth: 22,
-                                               tailDepth: Self.tailSize)
-                bubble.fill(fill)
-                bubble.stroke(stroke, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+                if friendly {
+                    SpeechBubbleShape(edge: tail, cornerRadius: 28, tailWidth: 24,
+                                      tailDepth: Self.tailSize)
+                        .fill(.white)
+                        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+                } else {
+                    let bubble = SpeechBubbleShape(edge: tail, tailWidth: 22,
+                                                   tailDepth: Self.tailSize)
+                    bubble.fill(fill)
+                    bubble.stroke(stroke, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
+                }
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(String(parsed.characters))")
@@ -201,18 +213,27 @@ struct OttoInMeadow: View {
     @ObservedObject var rig: OttoRigHolder
     /// His frame's height as a share of the width he is given.
     var share: CGFloat = 0.78
+    /// The dark ellipse under his feet. Off on the welcome screen (Aziz,
+    /// 2026-09-23), where he stands on the valley's own grass.
+    var shadow: Bool = true
 
     var body: some View {
         GeometryReader { geo in
             let h = geo.size.height
             ZStack(alignment: .bottom) {
                 // Grounds him: without it a figure on grass reads as pasted on.
-                Ellipse()
-                    .fill(RadialGradient(colors: [Color.black.opacity(0.20), Color.black.opacity(0)],
-                                         center: .center, startRadius: 0, endRadius: h * 0.24))
-                    .frame(width: h * 0.52, height: h * 0.075)
-                    .offset(y: h * 0.025)
+                if shadow {
+                    Ellipse()
+                        .fill(RadialGradient(colors: [Color.black.opacity(0.20), Color.black.opacity(0)],
+                                             center: .center, startRadius: 0, endRadius: h * 0.24))
+                        .frame(width: h * 0.52, height: h * 0.075)
+                        .offset(y: h * 0.025)
+                }
                 OttoRiveView(size: h, pose: pose, talking: talking, branch: false, rig: rig)
+                    // The waving art carries his raised arm on the left, so
+                    // his body sits right of the frame's centre; nudged back
+                    // so HE is centred (Aziz, 2026-09-23).
+                    .offset(x: pose == .talking ? -h * 0.06 : 0)
             }
             .frame(width: geo.size.width, height: h, alignment: .bottom)
         }
@@ -220,55 +241,665 @@ struct OttoInMeadow: View {
     }
 }
 
-/// Screen 1. Otto waves once, says hello, then settles into his breath.
+/// Screen 1, Brainrot's welcome in 808's words (Aziz, 2026-09-23, from a
+/// screenshot), standing in the valley. A generated clip, not the rig: the
+/// rig's arm could only turn ten degrees, which never read as a wave. He waves
+/// for as long as the screen is up ("constantly waving"): two waves played
+/// forward then backward, so it turns and wraps while he is holding still and
+/// never needs a blend (a crossfade loop ghosted his arm, the "phasing").
+/// Cropped centred on his feet so his BODY is on the screen's centre line.
 struct WelcomeScreen: View {
     let onContinue: () -> Void
 
-    @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
-    @State private var speaking = false
+    var body: some View {
+        IntroScreen(progress: 0,
+                    title: "Welcome to 808!",
+                    subtitle: "It's time to regain control of your mind.",
+                    cta: "Let's go!",
+                    onContinue: onContinue) { playing in
+            OttoClip(name: "otto-welcome-wave", playing: playing, loops: true)
+                .aspectRatio(710.0 / 700.0, contentMode: .fit)
+        }
+    }
+}
+
+/// After the breath, Brainrot's "Meet your brain" in 808's words (Aziz,
+/// 2026-09-23): Otto introduced as the reader's partner, in his middle mood,
+/// Steady, the fourth of his seven. He is the aura figure Home draws, so he
+/// breathes here the way he will there.
+///
+/// Two pages, one screen: Continue on the introduction changes only the
+/// words to "The more you meditate, the more enlightened he becomes." (Brainrot's
+/// "The more you brainrot" page, not typed, Aziz). Otto does not move between
+/// them: the same Otto, now explained.
+struct MeetOttoScreen: View {
+    enum Page { case meet, grows, see }
+    let page: Page
+    /// Otto's glow on the "See for yourself" page, 0 to 100, which the valley
+    /// draws him at. Starts at 50, the middle, where he is the same Steady
+    /// Otto as on the two pages before, so nothing jumps when it appears.
+    @Binding var level: Double
+    let onContinue: () -> Void
+
+    private var title: String {
+        switch page {
+        case .meet: return "Meet your meditating partner: Otto"
+        case .grows: return "The more you meditate, the more enlightened he becomes."
+        case .see: return "See for yourself!"
+        }
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text("Welcome to 808")
-                .font(OnboardingType.question)
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .padding(.top, 8)
-                .opacity(appeared ? 1 : 0)
-
-            // Nothing Watch-specific (Melvin, 2026-09-21): 808 is becoming a
-            // meditation app with friends and a camera session, not a
-            // sensor readout, and the first thing Otto says should be true
-            // of all of it.
-            OttoSpeech(text: "Hi there! I'm Otto. Let's meditate together.",
-                       speaking: $speaking)
-                .padding(.top, 18)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 8)
-
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
-                .opacity(appeared ? 1 : 0)
-                .offset(y: appeared ? 0 : 12)
-
-            Spacer(minLength: 0)
+        IntroScreen(progress: page == .meet ? 0.04 : page == .grows ? 0.07 : 0.10,
+                    progressFrom: page == .grows ? 0.04 : page == .see ? 0.07 : nil,
+                    title: title,
+                    titleSize: page == .meet ? 31 : 34,
+                    // He says it himself (Aziz, 2026-09-23).
+                    subtitle: page == .meet ? "I'm doing alright." : nil,
+                    cta: "Continue",
+                    standing: false,
+                    footer: page == .see ? AnyView(GlowScrubber(level: $level)) : nil,
+                    onContinue: onContinue) { _ in
+            // Drawn by the valley itself (`OnboardingValley`), on his cushion,
+            // where the stress screen and Home put him.
+            EmptyView()
         }
-        .padding(.horizontal, AppMetrics.screenPadding)
+    }
+}
+
+/// "See for yourself!" (Aziz, 2026-09-23, from Brainrot's screen of the same
+/// name): drag the bar and Otto moves through his looks live, from withered
+/// at the left to enlightened at the right. Blue (Aziz: "make the scrolling
+/// bar blue in this one"), with his face as the handle, the way Brainrot's
+/// handle is the brain's. Starts in the middle. A tick each time he changes.
+private struct GlowScrubber: View {
+    @Binding var level: Double
+    private static let knob: CGFloat = 48
+
+    private var look: Int { OttoAura.look(level: Int(level.rounded())) }
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let travel = width - Self.knob
+            let x = travel * CGFloat(min(max(level, 0), 100) / 100)
+            ZStack(alignment: .leading) {
+                // Solid: see-through, the meadow's flowers showed through it.
+                Capsule()
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+                    .frame(height: 16)
+                Capsule()
+                    .fill(AppColor.skyDeep)
+                    .frame(width: x + Self.knob / 2, height: 16)
+                Image("OttoHead")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(5)
+                    .frame(width: Self.knob, height: Self.knob)
+                    .background(Circle().fill(.white))
+                    .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
+                    .offset(x: x)
+            }
+            .frame(height: Self.knob)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                let t = (value.location.x - Self.knob / 2) / max(1, travel)
+                level = Double(min(max(t, 0), 1)) * 100
+            })
+        }
+        .frame(height: Self.knob)
+        .padding(.horizontal, 6)
+        .sensoryFeedback(.selection, trigger: look)
+        .accessibilityElement()
+        .accessibilityLabel("Otto's glow")
+        .accessibilityValue("\(Int(level.rounded())) percent")
+        .accessibilityAdjustableAction { direction in
+            level = min(100, max(0, level + (direction == .increment ? 10 : -10)))
+        }
+    }
+}
+
+/// The Brainrot-shaped screen both of those are, standing in the valley
+/// (Aziz, 2026-09-23: "back to that mountain outdoors background ... make
+/// sure the depth is good and it looks natural"): the words in the sky, Otto
+/// on the meadow, one button. It is a sequence, and every beat is felt:
+///
+/// 1. Otto fades in (no pop: Aziz) and the title arrives with him, not typed.
+/// 2. What he says types out in his bubble above his head, a light tick per
+///    letter.
+/// 3. The button rises into place with a thump.
+///
+/// **Depth.** A standing Otto is placed in the SCENE's coordinates, his feet
+/// on the ground line where the valley seats him on his cushion, scaled with
+/// the scene (`SitLayout`), so he is exactly as far away as the sitting Otto
+/// the reader meets next, and he stands on the very cushion he then sits on,
+/// drawn where the valley draws it.
+///
+/// Reduce Motion gets the finished screen at once, with no ticks, and
+/// `figure` is told not to play.
+struct IntroScreen<Figure: View>: View {
+    /// Where the progress bar stands: the questions fill it from here.
+    let progress: Double
+    /// Where it grows from, when a page moves it on.
+    var progressFrom: Double? = nil
+    let title: String
+    var titleSize: CGFloat = 34
+    /// What Otto says, typed into his bubble. Nil for a page that is the
+    /// title alone.
+    let subtitle: String?
+    let cta: String
+    /// True when `figure` is a standing Otto this screen places on the
+    /// meadow; false when the valley draws him itself.
+    var standing: Bool = true
+    /// Something between Otto and the button (the "See for yourself" bar).
+    var footer: AnyView? = nil
+    let onContinue: () -> Void
+    /// Otto, handed whether he should be moving yet.
+    @ViewBuilder let figure: (_ playing: Bool) -> Figure
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Flips once: fades Otto and the title in and starts him moving.
+    @State private var shown = false
+    @State private var subtitleShown = 0
+    @State private var ctaShown = false
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            GeometryReader { geo in
+                let size = geo.size
+                let scale = SitLayout.scale(in: size)
+                // His own cushion, the one he sits on in the very next
+                // screens, at exactly the size and place the valley draws it
+                // (Aziz, 2026-09-23: "the same mat hes sitting on ...
+                // consistent"). He stands on its top.
+                let cushionCentre = SitLayout.cushionBottom(in: size) - 22 * scale
+                let feet = cushionCentre + 2 * scale
+                // A standing sloth is a head taller than the seated one (186
+                // in the scene's units).
+                let height = 222 * scale
+                // The top of his head: the clip carries a few points of
+                // margin above his tuft; the seated Otto is the valley's.
+                let headTop = standing ? feet - height + 5 * scale : SitLayout.ottoTop(in: size)
+
+                if standing {
+                    Cushion()
+                        .frame(width: 168 * scale, height: 44 * scale)
+                        .position(x: size.width / 2, y: cushionCentre)
+                        .standsInMeadow(feetY: SitLayout.cushionFront(in: size, scale: scale),
+                                        scale: scale, sceneSize: size)
+                        .opacity(shown ? 1 : 0)
+                    figure(shown && !reduceMotion)
+                        .frame(height: height)
+                        .position(x: size.width / 2, y: feet - height / 2)
+                        .opacity(shown ? 1 : 0)
+                }
+
+                // What he says, in his bubble just above his head (Aziz,
+                // 2026-09-23: every typed line is Otto talking). It still
+                // types a letter at a time with a tick each.
+                if let subtitle {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        OttoSaysBubble(text: subtitle, shown: subtitleShown)
+                            .frame(maxWidth: size.width - 72)
+                    }
+                    .frame(width: size.width, height: max(0, headTop - 6))
+                    .position(x: size.width / 2, y: max(0, headTop - 6) / 2)
+                    .opacity(shown ? 1 : 0)
+                    .transition(.opacity)
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .animation(.easeInOut(duration: 0.3), value: subtitle)
+
+            VStack(spacing: 0) {
+                OnboardingProgress(from: progressFrom ?? progress, to: progress)
+                    // A second page of one screen moves the bar instead of
+                    // rebuilding it.
+                    .id(progress)
+                    .padding(.top, 12)
+                    .padding(.horizontal, 8)
+
+                // The words sit in the sky, over the ridge and well clear of
+                // his head.
+                VStack(spacing: 12) {
+                    Text(title)
+                        .font(.system(size: titleSize, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(shown ? 1 : 0)
+                        // A new page of the same screen cross-fades its words.
+                        .id(title)
+                        .transition(.opacity)
+                }
+                .animation(.easeInOut(duration: 0.3), value: title)
+                .padding(.horizontal, AppMetrics.screenPadding + 4)
+                .padding(.top, 44)
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel([title, subtitle].compactMap { $0 }.joined(separator: " "))
+                .accessibilityAddTraits(.isHeader)
+
+                Spacer(minLength: 0)
+            }
+        }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Get started", action: onContinue)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
-                .opacity(appeared ? 1 : 0)
+            VStack(spacing: 22) {
+                if let footer {
+                    footer.transition(.opacity)
+                }
+                OnboardingCTA(title: cta, action: onContinue)
+                    .opacity(ctaShown ? 1 : 0)
+                    .offset(y: ctaShown ? 0 : 40)
+                    .allowsHitTesting(ctaShown)
+            }
+            .animation(.easeInOut(duration: 0.3), value: footer == nil)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
         }
-        .onAppear {
-            withAnimation(.easeOut(duration: 0.5)) { appeared = true }
-            // A beat, so the wave reads as a greeting rather than a twitch
-            // that happened before the screen finished arriving.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { rig.wave() }
+        .task { await play() }
+    }
+
+    private func play() async {
+        guard !shown else { return }
+        if reduceMotion {
+            shown = true
+            subtitleShown = subtitle?.count ?? 0
+            ctaShown = true
+            return
         }
+        WelcomeHaptics.prepare()
+        // A beat for the screen to be there before anything happens on it.
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.35)) { shown = true }
+        try? await Task.sleep(for: .milliseconds(450))
+
+        if let subtitle {
+            await type(subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
+        }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+        WelcomeHaptics.land()
+    }
+
+    /// Reveals `text` a character at a time, a tick on every letter and none
+    /// on the spaces, so the rhythm follows the words.
+    private func type(_ text: String, every step: Duration, reveal: (Int) -> Void) async {
+        for (i, ch) in text.enumerated() {
+            guard !Task.isCancelled else { return }
+            reveal(i + 1)
+            if !ch.isWhitespace { WelcomeHaptics.tick() }
+            try? await Task.sleep(for: step)
+        }
+    }
+}
+
+/// A looping clip of Otto seated, and how his body sits in its frame (the key
+/// tool crops to his outline plus a 12 px margin, so these come from its
+/// printed crop).
+struct SeatedClip {
+    let name: String
+    /// Width over height of the clip.
+    let aspect: CGFloat
+    /// His body's height as a share of the clip's.
+    let bodyShare: CGFloat
+    /// The margin under his body as a share of the clip's height.
+    let marginBelow: CGFloat
+
+    /// Writing in his notepad (Runway, 2026-09-23): crop 604 x 700, body
+    /// 676 of it. Keyed with `--center-feet --steady --white-floor 160
+    /// --warm 6 --keep-pockets --largest --erode 2 --band 3 --cool`.
+    static let writing = SeatedClip(name: "otto-writing", aspect: 604.0 / 700.0,
+                                    bodyShare: 676.0 / 700.0, marginBelow: 12.0 / 700.0)
+}
+
+/// A seated Otto clip on the valley's cushion, in exactly the place and size
+/// the valley seats him. Drawn by `OnboardingView` in the layer above the
+/// valley, never inside a screen: a screen slides in from the side, and a clip
+/// inside it slid in beside the valley's Otto as he faded, two Ottos side by
+/// side (Aziz, 2026-09-23). Here it fades in on the spot while the valley's
+/// own Otto fades out (`figureHidden`), a cross-fade in one place.
+struct SeatedClipLayer: View {
+    let clip: SeatedClip
+    /// Up in the top-right corner beside the progress bar (the goal question,
+    /// Brainrot's small brain), instead of on his cushion. The move is a
+    /// scale and an offset, not a new frame, so it animates as one glide with
+    /// the step change, and the player never restarts.
+    var inCorner: Bool = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// How much of the header row he takes; the screen leaves this clear.
+    static let cornerWidth: CGFloat = 80
+    private static let cornerHeight: CGFloat = 92
+
+    var body: some View {
+        GeometryReader { outer in
+            let insetTop = outer.safeAreaInsets.top
+            GeometryReader { geo in
+                let size = geo.size
+                let scale = SitLayout.scale(in: size)
+                // The valley's seated Otto is 186 x 1.17 scene units tall, his
+                // body 95% of that, sitting on the line 24% up from the
+                // bottom. The clip is sized so ITS body matches.
+                let seated = 186 * scale * 1.17
+                let clipHeight = seated * 0.95 / clip.bodyShare
+                let bottom = size.height * 0.76 + clipHeight * clip.marginBelow
+                let centre = CGPoint(x: size.width / 2, y: bottom - clipHeight / 2)
+                // In the corner: level with the header row (12 below the safe
+                // area, 40 tall), right-aligned to the screen's gutter.
+                let k = Self.cornerHeight / clipHeight
+                let corner = CGPoint(x: size.width - AppMetrics.screenPadding - Self.cornerWidth / 2,
+                                     y: insetTop + 12 + 20 + 6)
+                OttoClip(name: clip.name, playing: !reduceMotion, loops: true, fallback: .meditating)
+                    .aspectRatio(clip.aspect, contentMode: .fit)
+                    .frame(height: clipHeight)
+                    .scaleEffect(inCorner ? k : 1)
+                    .position(centre)
+                    .offset(x: inCorner ? corner.x - centre.x : 0,
+                            y: inCorner ? corner.y - centre.y : 0)
+            }
+            .ignoresSafeArea()
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// Otto's line in the welcome screens' bubble: white, round, the tail down
+/// at his head, typed a letter at a time by the screen (so each letter can
+/// tick). Unarrived letters are laid out in clear ink, so the bubble is its
+/// finished size from the first frame and never grows while he talks.
+private struct OttoSaysBubble: View {
+    let text: String
+    let shown: Int
+    private static let tail: CGFloat = 11
+
+    var body: some View {
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(max(shown, 0), text.count))
+        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return Text(line)
+            .font(.system(size: 19, weight: .semibold, design: .rounded))
+            .lineSpacing(3)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 16)
+            .padding(.bottom, Self.tail)
+            .background {
+                SpeechBubbleShape(edge: .bottom, cornerRadius: 26, tailWidth: 24, tailDepth: Self.tail)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+/// After "See for yourself", Brainrot's "You're not addicted" screen in 808's
+/// words (Aziz, 2026-09-23): "Clarity and peace are within reach. / Your mind
+/// is just cluttered." Then the clutter arrives, thought after thought popping
+/// up around Otto, slowly and then faster, each a little tap, and he greys a
+/// little with every one. Then the answer, and a button that does what it
+/// says: "Let's clear it" sweeps the thoughts off him and his colour comes
+/// back before the flow moves on.
+///
+/// Otto is the valley's own (`OnboardingValley`), driven through `level`; the
+/// thoughts are placed in the scene's coordinates around him.
+struct ClutterScreen: View {
+    @Binding var level: Double
+    let onContinue: () -> Void
+
+    /// What crowds his head. Ordinary, specific and not cruel: the point is
+    /// recognition, not alarm.
+    private static let thoughts: [(text: String, dot: Color)] = [
+        ("Did I reply to that?", Color(red: 0.93, green: 0.33, blue: 0.30)),
+        ("3 new messages", Color(red: 0.96, green: 0.60, blue: 0.20)),
+        ("Rent is due Friday", Color(red: 0.72, green: 0.36, blue: 0.86)),
+        ("Should I have said that?", Color(red: 0.27, green: 0.56, blue: 0.90)),
+        ("Tomorrow's meeting", Color(red: 0.96, green: 0.60, blue: 0.20)),
+        ("One more scroll", Color(red: 0.93, green: 0.33, blue: 0.30)),
+        ("Don't forget to call Mom", Color(red: 0.72, green: 0.36, blue: 0.86)),
+        ("Breaking news", Color(red: 0.93, green: 0.33, blue: 0.30)),
+        ("What did they mean by that?", Color(red: 0.27, green: 0.56, blue: 0.90)),
+    ]
+
+    /// Where each lands, in the scene's units from the centre of the screen
+    /// and the top of his head, and its tilt. Scattered over his head and
+    /// shoulders so they bury him rather than frame him.
+    /// Nine rows 32 units apart, from just under the subtitle down over his
+    /// lap, alternating sides so they read as a pile rather than a list. The
+    /// first version put one on top of "Your mind is just cluttered".
+    private static let spots: [(x: CGFloat, y: CGFloat, tilt: Double)] = [
+        (-58, -40, -3), (64, -72, 2.5), (-88, -8, 2), (80, 24, -2.5),
+        (-30, -104, -1.5), (58, 88, 3), (-80, 120, 1.5), (10, 56, 1), (66, 150, -2),
+    ]
+
+    /// Seconds before each one: slow, then faster and faster.
+    private static let gaps: [Double] = [0.9, 0.62, 0.48, 0.38, 0.30, 0.24, 0.19, 0.15, 0.12]
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var headerShown = false
+    @State private var popped = 0
+    @State private var clearing = false
+    @State private var answerShown = false
+    @State private var answerLetters = 0
+    @State private var ctaShown = false
+
+    private static let pop = UIImpactFeedbackGenerator(style: .rigid)
+    private static let answer = "Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for."
+
+    private static let cluttered = "Your mind is just cluttered."
+    @State private var clutteredLetters = 0
+
+    private var answerTyped: AttributedString {
+        Self.typed(Self.answer, letters: answerLetters, ink: AppColor.textPrimary)
+    }
+
+    /// `text` with its first `letters` in ink and the rest laid out in clear
+    /// ink, so a typed line is its finished size from the first frame.
+    private static func typed(_ text: String, letters: Int, ink: Color) -> AttributedString {
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(max(letters, 0), text.count))
+        line[line.startIndex..<cut].foregroundColor = ink
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return line
+    }
+
+    private func type(_ text: String, into set: (Int) -> Void) async {
+        for (i, ch) in text.enumerated() {
+            guard !Task.isCancelled else { return }
+            set(i + 1)
+            if !ch.isWhitespace { WelcomeHaptics.tick() }
+            try? await Task.sleep(for: .milliseconds(28))
+        }
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            GeometryReader { geo in
+                let size = geo.size
+                let s = SitLayout.scale(in: size)
+                let top = SitLayout.ottoTop(in: size)
+                ForEach(Array(Self.thoughts.enumerated()), id: \.offset) { i, thought in
+                    let spot = Self.spots[i]
+                    let width = CGFloat(thought.text.count) * 8.2 + 52
+                    let x = min(max(size.width / 2 + spot.x * s, width / 2 + 12),
+                                size.width - width / 2 - 12)
+                    ThoughtChip(text: thought.text, dot: thought.dot)
+                        .rotationEffect(.degrees(spot.tilt))
+                        .scaleEffect(i < popped && !clearing ? 1 : 0.6)
+                        .opacity(i < popped && !clearing ? 1 : 0)
+                        .offset(y: clearing ? -40 : 0)
+                        .animation(clearing
+                                   ? .easeIn(duration: 0.28).delay(Double(Self.thoughts.count - i) * 0.03)
+                                   : .spring(response: 0.32, dampingFraction: 0.62),
+                                   value: popped)
+                        .animation(.easeIn(duration: 0.28).delay(Double(Self.thoughts.count - i) * 0.03),
+                                   value: clearing)
+                        .position(x: x, y: top + spot.y * s)
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
+            VStack(spacing: 10) {
+                OnboardingProgress(from: 0.10, to: 0.13)
+                    .padding(.top, 12)
+                    .padding(.horizontal, 8)
+                Text("Clarity and peace are within reach.")
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 32)
+                // Typed, a tick a letter (Aziz), before the thoughts start.
+                Text(Self.typed(Self.cluttered, letters: clutteredLetters,
+                                ink: AppColor.textPrimary.opacity(0.72)))
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding + 4)
+            .opacity(headerShown ? 1 : 0)
+            .accessibilityElement(children: .combine)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 14) {
+                // On a white card: the meadow under it is busy, and white
+                // words on flowers could not be read.
+                // Typed, a tick a letter (Aziz), into a card already its
+                // finished size: the unarrived letters are laid out in clear
+                // ink, so it never grows while it types.
+                Text(answerTyped)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.white.opacity(0.94))
+                        .shadow(color: .black.opacity(0.10), radius: 8, y: 3))
+                    .opacity(answerShown ? 1 : 0)
+                    .offset(y: answerShown ? 0 : 16)
+                OnboardingCTA(title: "Let's clear it", action: clear)
+                    .opacity(ctaShown ? 1 : 0)
+                    .offset(y: ctaShown ? 0 : 30)
+                    .allowsHitTesting(ctaShown && !clearing)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
+        }
+        .task { await play() }
+    }
+
+    private func play() async {
+        guard !headerShown else { return }
+        if reduceMotion {
+            headerShown = true
+            popped = Self.thoughts.count
+            level = 22
+            answerShown = true
+            clutteredLetters = Self.cluttered.count
+            answerLetters = Self.answer.count
+            ctaShown = true
+            return
+        }
+        Self.pop.prepare()
+        // The heading comes in WITH the screen's slide: fading it in after
+        // left a beat of empty sky between the two screens.
+        headerShown = true
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(450))
+        guard !Task.isCancelled else { return }
+        await type(Self.cluttered) { clutteredLetters = $0 }
+        try? await Task.sleep(for: .milliseconds(150))
+        guard !Task.isCancelled else { return }
+        for (i, gap) in Self.gaps.enumerated() {
+            try? await Task.sleep(for: .seconds(gap))
+            guard !Task.isCancelled else { return }
+            popped = i + 1
+            // Firmer as they pile up; he dims with each.
+            Self.pop.impactOccurred(intensity: 0.35 + 0.6 * Double(i) / Double(Self.gaps.count - 1))
+            Self.pop.prepare()
+            level = 50 - 28 * Double(i + 1) / Double(Self.gaps.count)
+        }
+        try? await Task.sleep(for: .milliseconds(700))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { answerShown = true }
+        try? await Task.sleep(for: .milliseconds(300))
+        await type(Self.answer) { answerLetters = $0 }
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+        WelcomeHaptics.land()
+    }
+
+    /// The button does what it says: the thoughts go, his colour comes back,
+    /// then the flow moves on.
+    private func clear() {
+        guard !clearing else { return }
+        clearing = true
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        Task {
+            try? await Task.sleep(for: .milliseconds(320))
+            level = 50
+            try? await Task.sleep(for: .milliseconds(650))
+            onContinue()
+        }
+    }
+}
+
+/// One thought, Brainrot's notification capsule: a coloured dot and the words
+/// on white, with a soft shadow so it sits over the scene.
+private struct ThoughtChip: View {
+    let text: String
+    let dot: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle().fill(dot).frame(width: 9, height: 9)
+            Text(text)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Capsule().fill(Color.white))
+        .shadow(color: .black.opacity(0.14), radius: 8, y: 3)
+    }
+}
+
+/// The welcome screen's haptics. Prepared generators, for the reason
+/// `PressHaptic` gives: an unprepared one can drop the first pulses while the
+/// Taptic Engine spins up, and a typed line would lose its opening letters.
+@MainActor
+enum WelcomeHaptics {
+    private static let thump = UIImpactFeedbackGenerator(style: .medium)
+    private static let soft = UIImpactFeedbackGenerator(style: .light)
+
+    static func prepare() {
+        thump.prepare(); soft.prepare()
+    }
+    static func land() {
+        thump.impactOccurred(intensity: 0.9)
+        thump.prepare()
+    }
+    /// A light tick for each typed letter.
+    static func tick() {
+        soft.impactOccurred(intensity: 0.55)
+        soft.prepare()
     }
 }
 
@@ -303,143 +934,183 @@ struct BreathExerciseScreen: View {
     let onReady: () -> Void
     let onContinue: () -> Void
 
-    private static let half: Double = 5
-    private static let breaths = 3
+    /// ONE breath, in 4, hold 2, out 4 (Aziz, 2026-09-23, from a reference
+    /// screen: "only for one breath", `mockups/breath-one.html`). It was three
+    /// 5 s breaths paced off Otto's rig. Otto is a clip timed to the same 4, 2, 4.
+    static let inhale: Double = 4
+    static let hold: Double = 2
+    static let exhale: Double = 4
+    private static var total: Double { inhale + hold + exhale }
+    /// How high the water stands, as a share of the screen, at rest and full.
+    /// Full is past the top (Aziz: "the water to go up all the way to the
+    /// top"), so on the hold the whole screen is under it, waves and all.
+    private static let low: CGFloat = 0.08
+    private static let high: CGFloat = 1.08
 
-    @StateObject private var rig: OttoRigHolder
     @State private var haptics = BreathHaptics()
     @State private var appeared = false
-    @State private var speaking = false
-    @State private var breath = 1
-    @State private var inhaling = true
     @State private var finished = false
-    /// When his current breath began, set the moment he is released. The
-    /// circle reads its size off this clock, the same one the words run on.
+    /// When the breath began. Everything on screen reads its place off this
+    /// one clock, so the water, Otto and the words can never disagree.
     @State private var breathStart: Date?
 
     init(breathing: Bool, onReady: @escaping () -> Void, onContinue: @escaping () -> Void) {
         self.breathing = breathing
         self.onReady = onReady
         self.onContinue = onContinue
-        // Resuming straight into the breaths has no invitation to wait on.
-        _rig = StateObject(wrappedValue: OttoRigHolder(holdUntilReleased: !breathing))
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-                .frame(minHeight: 96, alignment: .top)
-                .padding(.top, 8)
-
-            Spacer(minLength: 0)
-
-            // The pacer (Melvin: his chest alone "barely looks like hes
-            // breathing"). Already there on the invitation, so I'm ready
-            // adds nothing to the screen: the circle just starts to swell.
-            BreathCircle(start: finished ? nil : breathStart)
-                .frame(maxWidth: .infinity, maxHeight: BreathCircle.diameter)
-                .padding(.bottom, 24)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
-
-            // Pinned above the button and never moved: the words change,
-            // Otto does not. The top of his frame is empty sky, so it may
-            // run up under the circle.
-            OttoInMeadow(pose: .meditating, talking: speaking, rig: rig, share: 0.66)
-                .padding(.top, -40)
-                .padding(.bottom, 6)
-                .opacity(appeared ? 1 : 0)
-        }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
-        .safeAreaInset(edge: .bottom) {
-            // One slot, one height, whatever sits in it. A slot that changes
-            // height shifts every view above it, which is the jump that read
-            // as Otto floating.
+        TimelineView(.animation) { context in
+            // Clamped: the first frame can be drawn a hair before the start,
+            // and a negative time flashed "5 seconds" for one frame.
+            let t = breathStart.map { max(0, context.date.timeIntervalSince($0)) }
+            let fill = Self.fullness(at: t)
             ZStack {
-                OnboardingCTA(title: "I'm ready", action: onReady)
-                    .opacity(breathing ? 0 : 1)
-                    .allowsHitTesting(!breathing)
-                OnboardingCTA(title: "Continue", action: onContinue)
-                    .opacity(finished ? 1 : 0)
-                    .allowsHitTesting(finished)
-                if breathing && !finished {
-                    Text("Follow along")
-                        .font(OnboardingType.sub)
-                        .foregroundStyle(AppColor.textSecondary)
+                // White, like the reference (Aziz: "make it a white background").
+                Color.white.ignoresSafeArea()
+                BreathWater(level: Self.low + (Self.high - Self.low) * fill,
+                            time: context.date.timeIntervalSinceReferenceDate)
+                    .ignoresSafeArea()
+                // Otto in the middle of the screen (Aziz), the words under him.
+                // The clear block above matches the words below, so it is his
+                // centre, not the pair's, that sits on the screen's.
+                VStack(spacing: 14) {
+                    Color.clear.frame(height: Self.wordsHeight)
+                    // He guides the breath with his arms (Aziz, 2026-09-23): a
+                    // Runway clip, cut to exactly 80 frames rising palms up,
+                    // 40 held, 80 lowering palms down at 20 fps, which is this
+                    // screen's 4, 2, 4. It starts on the same clock as the
+                    // water and the words, and holds its last frame (his paws
+                    // back on his knees) once the breath is done.
+                    OttoClip(name: "otto-breath", playing: breathStart != nil, fallback: .meditating)
+                        .aspectRatio(832.0 / 624.0, contentMode: .fit)
+                        .frame(width: 380)
+                        .opacity(appeared ? 1 : 0)
+                    // Always laid out, empty or not: an empty slot took no
+                    // height, and Otto jumped up the moment the words
+                    // arrived (the "glitch when otto pops up").
+                    ZStack(alignment: .top) {
+                        Color.clear
+                        words(at: t)
+                    }
+                    .frame(height: Self.wordsHeight)
                 }
+                .padding(.horizontal, AppMetrics.screenPadding)
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.bottom, 10)
+        }
+        .safeAreaInset(edge: .bottom) {
+            // Only once the breath is done, and the slot is always laid out,
+            // so nothing above it moves when it appears.
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .opacity(finished ? 1 : 0)
+                .allowsHitTesting(finished)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
         }
         .onAppear { withAnimation(.easeOut(duration: 0.4)) { appeared = true } }
-        .task(id: breathing) { await runBreaths() }
+        // Straight into the breath (Aziz: "no im ready button should j go
+        // straight into it"). Once per visit, not per `breathing` flip.
+        .task { await runBreath() }
         .onDisappear { haptics.stop() }
     }
 
-    @ViewBuilder private var header: some View {
-        if !breathing {
-            OttoSpeech(text: "Before anything else, let's take three breaths together.",
-                       speaking: $speaking)
-        } else if finished {
+    private static let wordsHeight: CGFloat = 70
+
+    /// "Breathe in." over "3 seconds", counting down whole seconds.
+    @ViewBuilder private func words(at t: Double?) -> some View {
+        if finished {
             VStack(spacing: 6) {
                 Text("Nicely done")
                     .font(OnboardingType.question)
                     .foregroundStyle(AppColor.textPrimary)
-                Text("Three slow breaths")
-                    .font(OnboardingType.sub)
-                    .foregroundStyle(AppColor.textSecondary)
+                Text("One slow breath")
+                    .font(OnboardingType.sub.weight(.semibold))
+                    .foregroundStyle(AppColor.skyDeep)
             }
-        } else {
+        } else if let t {
+            let (word, left) = Self.phase(at: t)
             VStack(spacing: 6) {
-                Text(inhaling ? "Breathe in" : "Breathe out")
+                Text(word)
                     .font(OnboardingType.question)
                     .foregroundStyle(AppColor.textPrimary)
-                Text("\(breath) of \(Self.breaths)")
-                    .font(OnboardingType.sub)
-                    .foregroundStyle(AppColor.textSecondary)
+                Text(left == 1 ? "1 second" : "\(left) seconds")
+                    .font(OnboardingType.sub.weight(.semibold))
+                    .foregroundStyle(AppColor.skyDeep)
                     .monospacedDigit()
             }
         }
     }
 
-    /// The three breaths, paced from Otto's own breath.
-    private func runBreaths() async {
-        guard breathing else {
-            breath = 1; inhaling = true; finished = false; breathStart = nil
-            haptics.stop()
-            return
-        }
-        // Where his breath is the moment he is released: about half a second
-        // into an inhale when he was held on the invitation.
-        var phase = rig.release()
-        breathStart = Date().addingTimeInterval(-phase)
-        haptics.start()
-        defer { haptics.stop() }
-        // If he happens to be breathing out, wait for his next inhale so the
-        // words never contradict his chest.
-        if phase >= Self.half {
-            inhaling = false
-            await pause(10 - phase)
-            guard !Task.isCancelled else { return }
-            phase = 0
-        }
-        for n in 1...Self.breaths {
-            breath = n
-            inhaling = true
-            await pause(n == 1 ? Self.half - phase : Self.half)
-            guard !Task.isCancelled else { return }
-            inhaling = false
-            await pause(Self.half)
-            guard !Task.isCancelled else { return }
-        }
-        finished = true
+    private static func phase(at t: Double) -> (String, Int) {
+        if t < inhale { return ("Breathe in.", max(1, Int((inhale - t).rounded(.up)))) }
+        if t < inhale + hold { return ("Hold.", max(1, Int((inhale + hold - t).rounded(.up)))) }
+        return ("Breathe out.", max(1, Int((total - t).rounded(.up))))
     }
 
-    private func pause(_ seconds: Double) async {
-        try? await Task.sleep(for: .milliseconds(Int(max(0, seconds) * 1000)))
+    /// 0 at rest, 1 full: eased up over the inhale, still through the hold,
+    /// eased down over the exhale.
+    private static func fullness(at t: Double?) -> CGFloat {
+        guard let t, t > 0 else { return 0 }
+        func ease(_ x: Double) -> Double { x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2 }
+        if t < inhale { return CGFloat(ease(t / inhale)) }
+        if t < inhale + hold { return 1 }
+        if t < total { return CGFloat(1 - ease((t - inhale - hold) / exhale)) }
+        return 0
+    }
+
+    private func runBreath() async {
+        guard breathStart == nil, !finished else { return }
+        // A beat for the screen to land before the water moves.
+        try? await Task.sleep(for: .milliseconds(600))
+        guard !Task.isCancelled else { return }
+        // Moves the flow on to `.breathing`, which is what resume and the
+        // analytics count, without a button to press for it.
+        if !breathing { onReady() }
+        breathStart = Date()
+        haptics.playOnce(inhale: Self.inhale, hold: Self.hold, exhale: Self.exhale)
+        try? await Task.sleep(for: .milliseconds(Int(Self.total * 1000)))
+        // A cancelled sleep throws and `try?` swallows it: without this the
+        // screen would claim "Nicely done" the moment it was left.
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.3)) { finished = true }
+    }
+}
+
+/// Blue water rising from the bottom of the breath screen: three layers, each
+/// with its own slow wave, so it moves like water rather than a bar filling.
+/// `level` is how high it stands, as a share of the height.
+struct BreathWater: View {
+    let level: CGFloat
+    let time: TimeInterval
+
+    var body: some View {
+        Canvas { ctx, size in
+            let layers: [(opacity: Double, reach: CGFloat, phase: Double)] = [
+                // Pale, like the reference, so the blue countdown still
+                // reads on it: at 0.55 the front layer swallowed "1 second".
+                (0.12, 1.0, 0), (0.18, 0.93, 1.7), (0.30, 0.86, 3.1)
+            ]
+            for (i, layer) in layers.enumerated() {
+                let top = size.height * (1 - level * layer.reach) - CGFloat(i) * 9
+                let amplitude = 11 + CGFloat(i) * 3
+                var path = Path()
+                path.move(to: CGPoint(x: 0, y: size.height))
+                var x: CGFloat = 0
+                while x <= size.width + 5 {
+                    let across: Double = Double(x / size.width) * Double.pi * 1.8
+                    let speed: Double = 0.7 + Double(i) * 0.2
+                    let wave: Double = sin(across + time * speed + layer.phase)
+                    path.addLine(to: CGPoint(x: x, y: top + CGFloat(wave) * amplitude))
+                    x += 6
+                }
+                path.addLine(to: CGPoint(x: size.width, y: size.height))
+                path.closeSubpath()
+                ctx.fill(path, with: .color(AppColor.skyDeep.opacity(layer.opacity)))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
@@ -501,41 +1172,24 @@ struct QuestionCountScreen: View {
 
     let onContinue: () -> Void
 
-    @Environment(\.onboardingBack) private var back
-    @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
-    @State private var speaking = false
-
+    // Brainrot's "Let's personalize Brainrot for you." in 808's words (Aziz,
+    // 2026-09-23), replacing "Just N quick questions". Otto is the valley's
+    // own, seated on his cushion as on every screen since Meet Otto, saying
+    // why we ask, in his own voice (Aziz's line). The question count left
+    // this screen; each question's progress bar carries it. He writes in a
+    // green notepad: a Runway clip, looped forward and back, seated on the
+    // valley's cushion by `OnboardingView` (`SeatedClipLayer`), NOT by this
+    // screen, because this screen slides in and he must not.
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if let back { OnboardingBackButton(action: back) }
-                Spacer()
-            }
-            .frame(height: 40)
-
-            Spacer(minLength: 12)
-
-            OttoSpeech(text: "Just **\(Self.most) quick questions** before your first session!",
-                       speaking: $speaking)
-                .opacity(appeared ? 1 : 0)
-
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
-                .padding(.top, 6)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
+        IntroScreen(progress: 0.13,
+                    progressFrom: 0.10,
+                    title: "Let's personalize 808 for you.",
+                    subtitle: "Your answers show me what gets in the way, so I can help you keep going.",
+                    cta: "Let's do it!",
+                    standing: false,
+                    onContinue: onContinue) { _ in
+            EmptyView()
         }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
-        .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Continue", action: onContinue)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
-        }
-        .onAppear { withAnimation(.easeOut(duration: 0.3)) { appeared = true } }
     }
 }
 

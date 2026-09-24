@@ -3885,6 +3885,42 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
 - Scale the tick's line and its number SEPARATELY: scaling the whole stack
   pushed the number out of the ruler's frame and clipped it under the needle.
 
+## ONBOARDING'S BREATH IS ONE BREATH, IN BLUE WATER (2026-09-23, Aziz)
+
+From a reference screen (a character breathing while blue water rises and
+falls): `BreathExerciseScreen` is now **one breath, in 4, hold 2, out 4**, on
+a **white** screen. `mockups/breath-one.html` drew it; Aziz then changed four
+things on the build, all in:
+
+- **No "I'm ready"**: the breath starts on its own 0.6 s after the screen
+  lands, and calls `onReady` itself so the flow still moves to `.breathing`
+  (resume and analytics count that step). **Continue appears only after the
+  breath.** The invitation bubble is gone.
+- **Otto sits in the middle of the screen**, the words ("Breathe in." over a
+  sky-blue "3 seconds") under him, with a matching clear block above so it is
+  his centre on the screen's.
+- **The water rises all the way to the top** on the hold (`high` 1.08) and
+  falls away on the exhale: `BreathWater`, three pale layers of `skyDeep`
+  (0.12 / 0.18 / 0.30) each with its own slow wave. At 0.55 the front layer
+  swallowed the blue countdown.
+- **A standing Otto raising his arms was tried and DROPPED the same day**
+  (Aziz: "that looks terrible"). Three pieces cut from a ChatGPT sheet (body,
+  arms), each arm rotated about the shoulder, two arm sets (curled paws, then
+  open paws). **Rotating a flat piece of a painted 3D-style character never
+  looks natural**: the fur shading is drawn for an arm hanging down, so the
+  same picture turned overhead has the wrong light, joint and paw for its new
+  angle. If arms-up breathing returns, the ways that work are an
+  image-to-video clip of the art (keyed, synced to the clock) or a proper
+  bone rig by a Rive animator, not rotated cut-outs. The art stays in
+  `mockups/otto-v3/otto-stand-*.png` and `mockups/otto-breathe-brief.md`;
+  the image sets and `OttoArmsBreathing` are gone. **The sitting Otto with the
+  swell below is what ships.**
+  - ChatGPT's "transparent" PNGs came back as a PAINTED checkerboard (RGB, no
+    alpha). Check for a real alpha channel before cutting generated art.
+- One clock (`breathStart`) drives the water, the swell and the words.
+  `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
+  `BreathCircle` is no longer used here.
+
 ## AFTER A SESSION, EVERYTHING IS IN THE VALLEY (2026-09-22, Aziz)
 
 "revamp the screen after you meditate". Built to `mockups/after-valley.html`.
@@ -5245,3 +5281,301 @@ xcodebuild -scheme Coherence -destination 'platform=iOS Simulator,name=iPhone 17
 xcodebuild -scheme CoherenceWatch -destination 'generic/platform=watchOS Simulator' build
 xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPhone 17'
 ```
+
+## ONBOARDING POLISH AND MEADOW DEPTH (2026-09-23, Aziz)
+
+- **Welcome:** the grasshopper crosses IN FRONT of Otto (`OnboardingFrontLife`
+  drawn over the screen; the valley's own meadow life is off on that step via
+  `meadowLife`), no ground shadow under him (`OttoInMeadow(shadow: false)`),
+  and his line is a solid white, rounder bubble (`OttoSpeech(friendly: true)`)
+  sitting directly above his head rather than under the title.
+- **The waving/talking art is nudged left by 6% of its height** in
+  `OttoInMeadow`: his raised arm sits on the left of the frame, so his body
+  read right of centre on the welcome and question-count screens.
+- **Breathing screen glitch:** the words slot is always laid out (an empty
+  slot took no height, so Otto jumped ~35pt when "Breathe in" arrived), and
+  the time is clamped at 0 (a negative first frame flashed "5 seconds").
+  Verified from a 10fps recording: flat, then a smooth inhale rise.
+- **The meadow has depth now, in every valley scene.** A hopping grasshopper
+  exposed a flat field. Three cues, all in `SessionScene.swift`: haze where
+  the grass meets the ridge, the ground darkening toward the viewer, and 46
+  fixed grass tufts (`Meadow.tufts`, seeded, drawn far to near, smaller and
+  paler toward the ridge). The grasshopper also casts a shadow on the grass
+  (`HopperPose.groundY` / `lift`) that shrinks and fades as it jumps.
+
+## RULE: ANYTHING STANDING IN THE MEADOW USES `standsInMeadow` (2026-09-23, Aziz)
+
+**The meadow is one canvas painted before everything on it, so anything
+placed afterwards covers every flower, near or far.** It went wrong three
+times in one evening (a grasshopper "landing on the petals" of a nearer
+flower; Otto's cushion covering the flowers in front of it on the welcome;
+the same on every seated screen, Home included, unnoticed until then), and
+Aziz asked that it never happen again. `View.standsInMeadow(feetY:scale:
+sceneSize:)` (SessionScene.swift) repaints the grass and flowers whose foot
+is nearer than `feetY` over the view, masked to the view's own outline.
+- **Every new thing that sits, stands, lands or walks in the meadow goes
+  through it** (the cushion, grasshoppers, and whatever comes next), laid
+  out in scene coordinates with `.position`.
+- **Before calling any meadow change done, look at a screenshot for flowers
+  that should be in front of the new thing.** Depth mistakes are invisible in
+  the code and obvious on the screen.
+- It cannot mask a video (`AVPlayerLayer`), so a clip of Otto stands on a
+  cushion or ground that goes through it; that is why the welcome's Otto
+  stands on his cushion.
+
+**Meet Otto is three pages of one screen** (`MeetOttoScreen.Page`): "Meet
+your meditating partner: Otto" with Otto saying "I'm doing alright." →
+"The more you meditate, the more enlightened he becomes." → **"See for
+yourself!"** (`Step.seeForYourself`, Brainrot's screen): a BLUE bar
+(`GlowScrubber`, `AppColor.skyDeep`) with his face as the handle, starting in
+the MIDDLE (level 50, Steady, so nothing jumps from the pages before), which
+drives the valley's Otto through all thirteen looks (`OnboardingView.
+glowDemo`), a selection tick at each change. Otto never moves between the
+three pages; only the words and the bar change.
+
+**Then the clutter screen** (`ClutterScreen`, `Step.clutter`, after See for
+yourself, Aziz's copy, from Brainrot's "You're not addicted"): "Clarity and
+peace are within reach." arrives with the slide and "Your mind is just
+cluttered." types itself out (a tick a letter), then
+nine ordinary thoughts pop up over Otto as white capsules with a coloured
+dot, SLOW THEN FASTER (gaps 0.9 s down to 0.12 s), each with a rigid tap
+that gets firmer, and the valley's Otto dims a step with each (`clutterLevel`
+50 down to 22). Then, on a white card over the meadow: "Meditation is how
+you clear it. Doing it every day is how it stays clear. That's what 808 is
+for." (typed, a tick a letter, the button rising only once it is
+done). **"Let's clear it" does what it says**: the thoughts lift off, his
+colour comes back, and only then does the flow move on. Copy rule it keeps:
+the thoughts are recognition, not alarm; the claim is only that a daily
+practice keeps it clear, no number.
+
+**One Otto from Meet Otto to the questions.** The question count ("Just N
+quick questions") now uses the valley's seated Steady Otto too, its bubble
+pinned above his head, instead of standing its own waving Otto: arriving
+from the clutter screen, the seated one faded out while a standing one slid
+in, two see-through Ottos at once (Aziz: "the transition is weird"). The
+clutter screen's heading now arrives WITH the slide instead of fading in a
+beat later, which left a moment of empty sky. **When consecutive screens
+share Otto, let the valley draw him and change only the words.**
+
+**"Let's personalize 808 for you."** (Brainrot's screen, Aziz) REPLACES
+"Just N quick questions" on `Step.questionCount`: an `IntroScreen` with the
+valley's seated Otto, who says "Your answers show me what gets in the way,
+so I can help you keep going." (Aziz's line, Brainrot's direct reason for
+asking) in his typed bubble, and "Let's do it!". The answers are not yet
+used after onboarding beyond the reminder time (Aziz: leave it).
+- **Otto WRITES in a notepad here**, a Runway clip (`otto-writing.mov`,
+  `SeatedClip.writing`). It had a hard cut on its first frame (Runway's
+  still, framed differently), which is dropped; no two moments of the
+  writing match (the fur shimmers), so it is a BOOMERANG of the writing,
+  frames 2 to 84 at 20 fps, through a small head tilt and before he looks up.
+  Keyed with new options in `otto_video_key.swift`, all needed and all
+  measured: `--white-floor 160 --warm 6` (Runway drew a NEUTRAL grey shadow
+  under him while the page is a WARM white: warmth, not brightness, tells
+  paper from ground), `--keep-pockets` (pocket removal punched holes in the
+  page), `--largest` (noise specks stretched the crop to the whole frame),
+  `--erode 2 --band 3` (a softer edge than the wave, which left a pale rim)
+  and `--cool` (the shadow's core is blue-grey; Otto's colours always have
+  red above blue, so it cannot eat him).
+- **The clip sits in the VALLEY'S layer (`SeatedClipLayer`, drawn by
+  `OnboardingView`), not in the screen.** Inside the screen it slid in beside
+  the valley's Otto while he faded: two Ottos side by side. Now the valley
+  keeps his cushion and fades its Otto (`ValleyScene.figureHidden`) while the
+  clip fades in on the same spot, sized so its body matches (186 x 1.17 scene
+  units, body 95%, on the line 24% up). Verified: one Otto cross-fading in
+  place, and 18 s of loop with no flash. **A clip of Otto on a screen that
+  slides must live in the fixed layer, never in the screen.**
+
+**The goal question comes first** (`MotivationScreen`, Brainrot's goal
+screen, Aziz): "What's your goal with meditation?", AS MANY AS ARE TRUE
+and a Continue button, greyed until one is picked (Aziz: not tap to
+advance): Feel less stressed, Sharpen my focus, Sleep better, Be more present,
+Overthink less, Just curious (`Motivation.offered`; three new cases added
+LAST). "Make it a daily habit" was left out on purpose: that is the whole
+app. `InterviewStep.motivation` now precedes `referral`. The writing Otto
+GLIDES from his cushion into the top-right corner as the question slides in
+(`SeatedClipLayer(inCorner:)`, a scale and offset on the same player, so it
+animates and never restarts); the cushion fades. **The rest of the old
+interview is being redone by Aziz; do not polish it.**
+
+**The first three questions are Brainrot's layout** (`CornerQuestionScreen`:
+title in the sky, white answer plates, Continue greyed until an answer, the
+writing Otto in the corner across all three):
+1. "What's your goal with meditation?" (`Motivation.offered`, pick any).
+2. "What usually gets in the way of meditating?" (`Obstacle`: I forget, I
+   don't have time, My mind won't settle, I'm not sure I'm doing it right, I
+   lose motivation after a few days, My phone pulls me away; pick any). It
+   keeps Otto's promise on "Let's personalize" ("Your answers show me what
+   gets in the way"). A fresh enum, not `DropoutCause`, which is past tense,
+   written for people who quit, and locked by its own tests.
+3. "Which one sounds most like you?" (`Role`, Brainrot's "Which best
+   describes you?" reworded; ONE pick, still Continue): Creative, Employee,
+   Founder, Athlete, Student, Just trying to live well (Aziz: no "/ ..."
+   halves, and "Employee", not "Desk job").
+4. "When could you fit in a few quiet minutes?" (`QuietTime`, one pick:
+   First thing in the morning 8:00, On a break during the day 12:30, In the
+   afternoon 3:30, In the evening 7:00, Right before bed 10:00). **The answer
+   sets `answers.reminderTime`**, which the reminder screen then opens on:
+   the job the cut anchor question used to do.
+5. "Have you tried to make meditation a habit before?" (`HabitHistory`, one
+   pick: Yes, but it didn't stick / Yes, it worked for a while / No, this is
+   my first try). Not yet read by anything; the old `baseline` question and
+   the persona it feeds are part of the interview Aziz is redoing.
+`OnboardingAnswers.obstacles`, `.role`, `.quietTime` and `.habitHistory` are OPTIONAL on purpose:
+synthesized Codable requires every non-optional key, so a plain property
+would have failed every saved resume record from before it. **New answer
+fields must be optional for the same reason.**
+
+**His halo was cut off flat along the top** at the bright looks (Aziz). A
+Rive view draws only inside itself, and `.contain` fills the view's
+LIMITING side with the artboard, so only one side can be given spare room
+without scaling him up. `OttoAuraFigure` now shapes the view by look: wide
+(`flightSpan` 2.6) for the low looks, where the moth flies off-screen, and
+TALL (`headroom` 1.6, from look 9) for the bright ones, where he floats and
+the halo rises over his head. Bottom-aligned both ways, so he is the same
+size and place. Verified on See for yourself and on Home at 97.
+
+**Every typed line in the intro screens is Otto speaking** (Aziz): the
+line under the title moved into `OttoSaysBubble`, white and round, hanging
+just above his head with its tail at him, still typed a letter at a time
+with a haptic tick each. The screen types it, not the bubble, so each letter
+can tick. `TypedLine` is deleted.
+
+## ONBOARDING'S OPENING IS BACK IN THE VALLEY; OTTO'S CLIPS NO LONGER FLASH (2026-09-23, late, Aziz)
+
+Supersedes the white-page parts of the section below. **Screens 1, 3 and 4
+(welcome, Meet Otto, "The more you meditate") stand in the valley**; only the
+breath (screen 2) is still a white page (`Step.isWhitePage`).
+- `IntroScreen` puts the words in the SKY (ink on the light blue, clear of
+  his head) and Otto on the meadow. Meet Otto's two pages pass `standing:
+  false` and the valley draws the seated Steady Otto on his cushion
+  (`OnboardingValley` stage `.steady`), exactly where the stress screen and
+  Home seat him. The welcome's standing clip is placed in SCENE coordinates,
+  feet on `SitLayout.cushionBottom` minus 6, height `222 * SitLayout.scale`,
+  standing on HIS OWN CUSHION (Aziz: "the same mat hes sitting on ... i want
+  it to be consistent"), the scene's `Cushion` at exactly the size and
+  place the valley draws it for the seated screens, feet on its top. A
+  separate flatter mat and a row of grass blades were both tried and
+  dropped the same evening. `WelcomeGround` is deleted.
+- **Grasshoppers no longer land on petals** (Aziz: "the 2dness of the
+  flowers"). The meadow is drawn once, all of it, before any grasshopper, so
+  a NEARER flower whose head reached up to its feet looked like a landing
+  pad. Each grasshopper now redraws the grass and flowers nearer than its
+  feet line over itself, masked to its own outline (`Meadow(nearerThan:)`
+  in `ValleyLife.hoppers`): nearer stems and petals cover its legs and body,
+  and nothing outside its outline is drawn twice, so no stem darkens.
+- **Melvin's birds and grasshopper are on all three** (Aziz). On the welcome
+  the scene runs with `standingFigure: true`: it splits grasshoppers at the
+  cushion line as if he were its own and draws only the farther ones;
+  `ValleyFrontLife`, drawn above the screen with the SAME seed
+  (`OnboardingView.lifeSeed`, passed as `ValleyScene(seed:)`), draws the
+  nearer ones over him. `OnboardingFrontLife` and the `meadowLife` switch
+  that hid the grasshopper there are gone.
+- **THE "GLITCH" WAS `AVPlayerLooper`.** At every loop it showed ONE EMPTY
+  FRAME: Otto vanished for a sixtieth of a second every seven seconds. Found
+  from a 60 fps recording (a pair of frame differences of 38 grey levels,
+  the bare meadow between them), and it had been there since the first
+  clip. `OttoClip` now loops one `AVPlayer` on one item, `actionAtItemEnd =
+  .none`, seeking to zero on `didPlayToEndTime`, which keeps the last frame
+  up through the seek. Verified: 22 s, three loops, largest change 2.8 (his
+  arm mid-wave). **Never use `AVPlayerLooper` for an alpha clip.**
+- **The "phasing" was the loop crossfade** ghosting his arm: his pose differs
+  at every pause (5.5 against a still-to-still noise of 0.2), so no two loop
+  ends match. The welcome loop is now a **boomerang**: frames 38 to 107
+  forward, then back, turning and wrapping while he holds still, so nothing
+  is ever blended. Plus `--steady` in `otto_video_key.swift`: a median of
+  three on the alpha across neighbouring frames, because each frame is keyed
+  alone and the soft edge wandered a pixel frame to frame.
+
+## THE WELCOME SCREEN IS BRAINROT'S, AND OTTO WAVES FROM A VIDEO (2026-09-23, Aziz)
+
+**Onboarding now opens:** welcome (Otto waving) → one breath (Otto raising
+his arms) → **Meet your meditating partner: Otto** ("He's doing alright.",
+`MeetOttoScreen`, `Step.meetOtto`, Brainrot's "Meet your brain", Otto as the
+Steady aura figure Home draws) → its second page, **"The more you meditate,
+the more enlightened he becomes."** (`Step.ottoGrows`, not typed, the same
+Otto: both steps share one screen identity, so only the words cross-fade)
+→ the question count. Welcome and Meet Otto are one `IntroScreen`.
+
+**Screen changes in onboarding, three fixes (Aziz: "showing the garden area
+in between screens"):**
+- **The outgoing screen was sliding away BEHIND the valley.** A view
+  animating out of a ZStack is drawn behind its siblings unless it has a
+  zIndex, so every screen vanished in one frame and the bare garden showed
+  until the next arrived. `.zIndex(1)` on `content`. This was true of the
+  whole flow, not only the new screens. **Any ZStack that transitions its
+  children over a background needs the same.**
+- **A white page (`whiteCover`) sits over the valley behind the white
+  opening screens** (`Step.isWhitePage`), and when the flow leaves them it
+  holds for the slide, then fades, so the valley arrives behind a screen
+  that is already in place.
+- **Otto's Rive files are parsed once and cached** (`OttoRig.preload`,
+  `OttoAuraRig.preload`, called as onboarding appears). Every screen with
+  Otto used to parse `Otto.riv` on the main thread as it appeared, which
+  stalled the slide onto it for a few frames.
+
+From a Brainrot screenshot: a white page, a soft ground rise (`WelcomeGround`,
+warmed toward Otto's cream), a dot of progress bar, Otto standing, "Welcome to
+808!" over "It's time to regain control of your mind.", and "Let's go!". This
+replaces the valley welcome and its bubble; the grasshopper overlay
+(`OnboardingFrontLife`) is deleted because it crossed a white page.
+
+- **The sequence:** Otto fades in and waves, the title arriving with him (a
+  pop from his feet and a typed title were both built and cut the same day:
+  Aziz, no pop, title not typed); the line under it types with a light
+  haptic tick per letter (28 ms, spaces silent); "Let's go!" springs up with a
+  thump. `WelcomeHaptics` keeps its generators prepared. `TypedLine` lays
+  unarrived letters in clear ink so centred text never reflows. Reduce Motion
+  gets the finished screen, a still Otto and no ticks. The simulator plays no
+  haptics: judge on a phone.
+- **Onboarding's buttons and progress bar are GREEN** (`OnboardingGreen`),
+  Duolingo's "go" colour warmed toward the meadow. `PrimaryButtonStyle`
+  gained `fill` / `shade` / `ink` (gold by default, so the rest of the app is
+  unchanged); the paywall ladder's buttons stay gold.
+- **The wave is a generated VIDEO, not the rig.** The rig's arm turns only
+  about ten degrees before the cut behind it shows, which on a phone read as
+  no wave at all (a whole-body wiggle to compensate was built and dropped).
+  Runway (Gen-4 image to video, 1:1, from the clean waving art on white, the
+  yellow flourish marks removed) made a 7 s clip. `OttoClip`
+  (`Coherence/Otto/OttoClip.swift`) plays `otto-welcome-wave.mov` through an
+  `AVPlayerLayer` (BGRA pixel buffers keep the alpha), looping seamlessly with
+  `AVPlayerLooper` so he waves for as long as the screen is up (Aziz:
+  "constantly waving"); a missing file falls back to the still pose.
+- **`tools/otto_video_key.swift` turns a white-background clip into HEVC with
+  alpha.** Floods the white in from the border; removes enclosed white
+  pockets unless near-black lies within 6 px (keeps the eye whites, whose
+  antialiased ring means they never touch the pupil); un-mixes the two-pixel
+  edge band from white. `--from/--to` trim, `--crossfade K` blends the loop's
+  end into its start, `--center-feet` centres the crop on his FEET (the box
+  around him includes the raised arm, which put his body 54 px right of
+  centre).
+- **FRAME RATE, the "glitching" (Aziz, twice).** Runway exports 24 fps, and
+  24 does not divide a 60 Hz refresh, so frames are held unevenly and the
+  wave judders. **Interpolating to 60 fps was tried and REJECTED:** ffmpeg's
+  `minterpolate` placed its made-up frames unevenly (arm steps of 0.28, 0.71,
+  0.43 ...), still a shimmer. What ships: the ORIGINAL frames retimed to
+  **20 fps** (`setpts=1.2*PTS -r 20`, every frame kept, the wave 20% lazier),
+  which divides 60 and 120, so every frame is held three refreshes. The loop
+  wraps while he is HOLDING STILL between waves (frames 38 to 107), crossfaded
+  over 9 frames because his arm rests in a slightly different spot after each
+  wave. Measured in the app from a 60 fps recording: a steady three-refresh
+  cadence and no spike at the wrap.
+- **The recipe for every future Otto move the rig cannot make:** clean art on
+  white with room for the motion, Runway describing motion only with a
+  locked camera, then retime to 20 fps, loop at a still moment, crossfade,
+  key.
+- **The breathing screen's Otto is a clip too** (`otto-breath.mov`, same
+  day): he raises his arms palms up, holds them overhead, lowers them palms
+  down. It replaces the rig and the whole-figure swell, starts on the same
+  clock as the water, words and haptics, and holds its last frame. Cut to
+  EXACTLY 80 frames rising, 40 held, 80 lowering at 20 fps, which is the
+  screen's 4, 2, 4 (the extra frames came out of the slow starts and ends,
+  every other one, and out of the still hold). Verified on the simulator:
+  arms at the top as "Hold." appears, back on his knees for "Nicely done".
+- **CHECK EVERY RUNWAY CLIP FOR A BUILT-IN STUTTER.** The breathing clip
+  (10 s) had one and the wave (7 s) did not: in every block of four frames
+  one was a REPEAT of the frame before and the next one jumped two steps
+  (frame-to-frame motion 0, 1, 1, 2). Found with the same frame-difference
+  measure. Fix: drop the repeats, give each remaining frame its true time
+  (frames 4k+2 and 4k+3 sit one slot early), feed that as variable frame
+  rate through the concat demuxer, and let `minterpolate` fill only the one
+  missing slot per block. Motion then ramps smoothly. Do it before cutting.
