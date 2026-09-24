@@ -90,10 +90,31 @@ final class OttoRig: ObservableObject {
     /// ground, so the app rendered a BLACK RECTANGLE where Otto belongs: a
     /// broken animation beats a broken picture every time. An arbitrary
     /// artboard is not Otto, so an export without our names falls back, loudly.
+    /// The parsed file, kept for the life of the app. Parsing it is the
+    /// expensive part of a rig (hundreds of KB, on the main thread), and every
+    /// screen with Otto on it used to parse it again as it appeared, which
+    /// stalled the slide onto that screen for a few frames (Aziz, 2026-09-23:
+    /// the jumpy transitions). Each rig still gets its own artboard instance.
+    private static var cachedFile: RiveFile?
+
+    private static func parsedFile() throws -> RiveFile {
+        if let cachedFile { return cachedFile }
+        let file = try RiveFile(name: fileName, extension: ".riv", in: .main, loadCdn: false)
+        cachedFile = file
+        return file
+    }
+
+    /// Parses the file now, while nothing is moving, so the first screen that
+    /// shows him does not pay for it mid-transition.
+    static func preload() {
+        guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return }
+        _ = try? parsedFile()
+    }
+
     static func make() -> OttoRig? {
         guard Bundle.main.url(forResource: fileName, withExtension: "riv") != nil else { return nil }
         do {
-            let model = try RiveModel(fileName: fileName, extension: ".riv", in: .main, loadCdn: false)
+            let model = RiveModel(riveFile: try parsedFile())
             try model.setArtboard(artboard)
             try model.setStateMachine(stateMachine)
             return OttoRig(model: model, artboard: artboard, stateMachine: stateMachine)

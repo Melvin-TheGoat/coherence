@@ -17,6 +17,9 @@ struct OnboardingView: View {
     @Query private var preferences: [Preferences]
 
     @State private var step: Step = .relief
+    /// The white page over the valley behind the opening screens. Follows
+    /// `step.isWhitePage`, but lets go of it late (see the body).
+    @State private var whiteCover = true
     @State private var answers = OnboardingAnswers()
     /// Monthly, preselected (Aziz, 2026-08-24): the 7-day trial renews into
     /// Monthly, and the plan under the CTA must be the plan the footnote
@@ -83,6 +86,9 @@ struct OnboardingView: View {
         /// Added 2026-09-23: "Meet your meditating partner", after the breath.
         /// Last in the enum, for the reason above.
         case meetOtto
+        /// Added 2026-09-23: "The more you meditate, the more enlightened he
+        /// becomes", the second page of Meet Otto. Last, for the reason above.
+        case ottoGrows
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -115,6 +121,14 @@ struct OnboardingView: View {
                 return true
             default:
                 return false
+            }
+        }
+
+        /// The opening screens drawn on Brainrot's white page, not the valley.
+        var isWhitePage: Bool {
+            switch self {
+            case .relief, .breath, .breathing, .meetOtto, .ottoGrows: return true
+            default: return false
             }
         }
 
@@ -250,7 +264,14 @@ struct OnboardingView: View {
     /// the breaths are one screen, so they share one identity and changing
     /// between them is not a transition at all.
     private var screenIdentity: Step { Self.identity(of: step) }
-    private static func identity(of step: Step) -> Step { step == .breathing ? .breath : step }
+    private static func identity(of step: Step) -> Step {
+        switch step {
+        case .breathing: return .breath
+        // Meet Otto's second page changes the words, not the screen.
+        case .ottoGrows: return .meetOtto
+        default: return step
+        }
+    }
 
     private var screenTransition: AnyTransition {
         switch motion {
@@ -285,16 +306,53 @@ struct OnboardingView: View {
                              jiggle: ottoPokes,
                              meadowLife: step != .relief)
 
+            // The white opening screens (welcome, the breath, Meet Otto) are
+            // Brainrot's white page, not the valley. Each draws its own white,
+            // but while one slides out and the next slides in, both are part
+            // transparent and the garden showed between them (Aziz,
+            // 2026-09-23: "not pleasant"). So a white page covers the valley
+            // for as long as the step is one of them, and fades when the flow
+            // reaches the valley's screens.
+            //
+            // Leaving them, the white stays until the next screen has slid in
+            // over it, THEN fades to reveal the valley behind that screen:
+            // dropping it with the step showed an empty garden for a beat.
+            Color.white
+                .ignoresSafeArea()
+                .opacity(whiteCover ? 1 : 0)
+                .allowsHitTesting(false)
+
             content
                 .id(screenIdentity)
                 .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: screenIdentity)
+                // A view animating OUT of a ZStack is drawn behind its
+                // siblings unless it has a zIndex, so every outgoing screen
+                // slid away BEHIND the valley and vanished in one frame, and
+                // the empty garden showed until the next one arrived (Aziz,
+                // 2026-09-23: "showing the garden area in between screens").
+                .zIndex(1)
 
         }
+            .onChange(of: step.isWhitePage) { _, white in
+                if white {
+                    whiteCover = true
+                } else {
+                    // After the slide (0.32 s), then a slow reveal.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        guard !step.isWhitePage else { return }
+                        withAnimation(.easeInOut(duration: 0.45)) { whiteCover = false }
+                    }
+                }
+            }
             .environment(\.onboardingSharedGround, true)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
             .onAppear {
+                // Otto's two Rive files, parsed while the welcome is still
+                // settling, so no later screen pays for it mid-slide.
+                OttoRig.preload()
+                OttoAuraRig.preload()
                 #if DEBUG
                 // A DEBUG jump to one screen wins over saved progress.
                 if ProcessInfo.processInfo.environment["ONBOARDING_STEP"] != nil { return }
@@ -339,8 +397,10 @@ struct OnboardingView: View {
                                  onReady: { go(.breathing) },
                                  onContinue: { go(.meetOtto) })
 
-        case .meetOtto:
-            MeetOttoScreen { go(.questionCount) }
+        case .meetOtto, .ottoGrows:
+            MeetOttoScreen(grows: step == .ottoGrows) {
+                go(step == .meetOtto ? .ottoGrows : .questionCount)
+            }
 
         case .questionCount:
             QuestionCountScreen { go(firstInterviewStep) }

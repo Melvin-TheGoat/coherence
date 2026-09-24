@@ -266,15 +266,24 @@ struct WelcomeScreen: View {
 /// 2026-09-23): Otto introduced as the reader's partner, in his middle mood,
 /// Steady, the fourth of his seven. He is the aura figure Home draws, so he
 /// breathes here the way he will there.
+///
+/// Two pages, one screen: Continue on the introduction changes only the
+/// words to "The more you meditate, the more enlightened he becomes." (Brainrot's
+/// "The more you brainrot" page, not typed, Aziz). Otto does not move between
+/// them: the same Otto, now explained.
 struct MeetOttoScreen: View {
+    /// The second page (`Step.ottoGrows`).
+    let grows: Bool
     let onContinue: () -> Void
     @StateObject private var rig = OttoRigHolder()
 
     var body: some View {
-        IntroScreen(progress: 0.04,
-                    title: "Meet your meditating partner: Otto",
-                    titleSize: 31,
-                    subtitle: "He's doing alright.",
+        IntroScreen(progress: grows ? 0.07 : 0.04,
+                    progressFrom: grows ? 0.04 : nil,
+                    title: grows ? "The more you meditate, the more enlightened he becomes."
+                                 : "Meet your meditating partner: Otto",
+                    titleSize: grows ? 34 : 31,
+                    subtitle: grows ? nil : "He's doing alright.",
                     cta: "Continue",
                     onContinue: onContinue) { _ in
             OttoAuraFigure(stage: .steady, size: 230, rig: rig)
@@ -296,9 +305,12 @@ struct MeetOttoScreen: View {
 struct IntroScreen<Figure: View>: View {
     /// Where the progress bar stands: the questions fill it from here.
     let progress: Double
+    /// Where it grows from, when a page moves it on.
+    var progressFrom: Double? = nil
     let title: String
     var titleSize: CGFloat = 34
-    let subtitle: String
+    /// Typed out under the title. Nil for a page that is the title alone.
+    let subtitle: String?
     let cta: String
     let onContinue: () -> Void
     /// Otto, handed whether he should be moving yet.
@@ -312,7 +324,10 @@ struct IntroScreen<Figure: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            OnboardingProgress(from: progress, to: progress)
+            OnboardingProgress(from: progressFrom ?? progress, to: progress)
+                // A second page of one screen moves the bar instead of
+                // rebuilding it.
+                .id(progress)
                 .padding(.top, 12)
                 .padding(.horizontal, 8)
 
@@ -338,15 +353,22 @@ struct IntroScreen<Figure: View>: View {
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .opacity(shown ? 1 : 0)
-                TypedLine(text: subtitle, shown: subtitleShown,
-                          font: .system(size: 21, weight: .medium, design: .rounded),
-                          color: AppColor.textSecondary)
+                    // A new page of the same screen cross-fades its words.
+                    .id(title)
+                    .transition(.opacity)
+                if let subtitle {
+                    TypedLine(text: subtitle, shown: subtitleShown,
+                              font: .system(size: 21, weight: .medium, design: .rounded),
+                              color: AppColor.textSecondary)
+                        .transition(.opacity)
+                }
             }
+            .animation(.easeInOut(duration: 0.3), value: title)
             .padding(.horizontal, AppMetrics.screenPadding + 4)
             .padding(.top, 34)
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(title) \(subtitle)")
+            .accessibilityLabel([title, subtitle].compactMap { $0 }.joined(separator: " "))
             .accessibilityAddTraits(.isHeader)
 
             Spacer(minLength: 0)
@@ -380,7 +402,7 @@ struct IntroScreen<Figure: View>: View {
         guard !shown else { return }
         if reduceMotion {
             shown = true
-            subtitleShown = subtitle.count
+            subtitleShown = subtitle?.count ?? 0
             ctaShown = true
             return
         }
@@ -391,7 +413,9 @@ struct IntroScreen<Figure: View>: View {
         withAnimation(.easeOut(duration: 0.35)) { shown = true }
         try? await Task.sleep(for: .milliseconds(450))
 
-        await type(subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
+        if let subtitle {
+            await type(subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
+        }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }

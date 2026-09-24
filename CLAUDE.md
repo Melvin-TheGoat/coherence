@@ -5241,9 +5241,28 @@ xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPho
 
 **Onboarding now opens:** welcome (Otto waving) → one breath (Otto raising
 his arms) → **Meet your meditating partner: Otto** ("He's doing alright.",
-`MeetOttoScreen`, `Step.meetOtto`, last in the enum, Brainrot's "Meet your
-brain", Otto as the Steady aura figure Home draws) → the question count.
-Welcome and Meet Otto are one `IntroScreen`.
+`MeetOttoScreen`, `Step.meetOtto`, Brainrot's "Meet your brain", Otto as the
+Steady aura figure Home draws) → its second page, **"The more you meditate,
+the more enlightened he becomes."** (`Step.ottoGrows`, not typed, the same
+Otto: both steps share one screen identity, so only the words cross-fade)
+→ the question count. Welcome and Meet Otto are one `IntroScreen`.
+
+**Screen changes in onboarding, three fixes (Aziz: "showing the garden area
+in between screens"):**
+- **The outgoing screen was sliding away BEHIND the valley.** A view
+  animating out of a ZStack is drawn behind its siblings unless it has a
+  zIndex, so every screen vanished in one frame and the bare garden showed
+  until the next arrived. `.zIndex(1)` on `content`. This was true of the
+  whole flow, not only the new screens. **Any ZStack that transitions its
+  children over a background needs the same.**
+- **A white page (`whiteCover`) sits over the valley behind the white
+  opening screens** (`Step.isWhitePage`), and when the flow leaves them it
+  holds for the slide, then fades, so the valley arrives behind a screen
+  that is already in place.
+- **Otto's Rive files are parsed once and cached** (`OttoRig.preload`,
+  `OttoAuraRig.preload`, called as onboarding appears). Every screen with
+  Otto used to parse `Otto.riv` on the main thread as it appeared, which
+  stalled the slide onto it for a few frames.
 
 From a Brainrot screenshot: a white page, a soft ground rise (`WelcomeGround`,
 warmed toward Otto's cream), a dot of progress bar, Otto standing, "Welcome to

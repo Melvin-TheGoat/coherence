@@ -262,6 +262,7 @@ enum Analytics {
         "breath":            "02 Let's take three breaths",
         "breathing":         "03 Breathe in, breathe out",
         "meetOtto":          "03a Meet your meditating partner: Otto",
+        "ottoGrows":         "03a2 The more you meditate, the more enlightened he becomes",
         "questionCount":     "03b A few questions, here is how many",
         "whatsWaiting":      "23b Here's what's waiting (cut 2026-09-22)",
         "blockIntro":        "23c Otto can hold your apps (cut 2026-09-22)",
