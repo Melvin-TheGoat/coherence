@@ -3819,6 +3819,31 @@ say the specific amount of time". Built to `mockups/ready-timer.html`
 - Scale the tick's line and its number SEPARATELY: scaling the whole stack
   pushed the number out of the ruler's frame and clipped it under the needle.
 
+## ONBOARDING'S BREATH IS ONE BREATH, IN BLUE WATER (2026-09-23, Aziz)
+
+From a reference screen (a character breathing while blue water rises and
+falls): `BreathExerciseScreen` is now **one breath, in 4, hold 2, out 4**, on
+a **white** screen. `mockups/breath-one.html` drew it; Aziz then changed four
+things on the build, all in:
+
+- **No "I'm ready"**: the breath starts on its own 0.6 s after the screen
+  lands, and calls `onReady` itself so the flow still moves to `.breathing`
+  (resume and analytics count that step). **Continue appears only after the
+  breath.** The invitation bubble is gone.
+- **Otto sits in the middle of the screen**, the words ("Breathe in." over a
+  sky-blue "3 seconds") under him, with a matching clear block above so it is
+  his centre on the screen's.
+- **The water rises all the way to the top** on the hold (`high` 1.08) and
+  falls away on the exhale: `BreathWater`, three pale layers of `skyDeep`
+  (0.12 / 0.18 / 0.30) each with its own slow wave. At 0.55 the front layer
+  swallowed the blue countdown.
+- **Otto breathes visibly**: his rig is released at the breath's start (its
+  own 10 s chest breath) and the screen swells his whole figure from his
+  feet, taller than wide (x +5%, y +10%), so it reads as filling, not zooming.
+- One clock (`breathStart`) drives the water, the swell and the words.
+  `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
+  `BreathCircle` is no longer used here.
+
 ## AFTER A SESSION, EVERYTHING IS IN THE VALLEY (2026-09-22, Aziz)
 
 "revamp the screen after you meditate". Built to `mockups/after-valley.html`.

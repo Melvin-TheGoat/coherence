@@ -378,4 +378,43 @@ final class BreathHaptics {
         )
         return try CHHapticPattern(events: [inhale, exhale], parameterCurves: [curve])
     }
+
+    /// One breath, played once: a swell over `inhale`, stillness for `hold`,
+    /// a softer fall over `exhale`. For the onboarding's single paced breath
+    /// (in 4, hold 2, out 4), which does not repeat.
+    func playOnce(inhale: TimeInterval, hold: TimeInterval, exhale: TimeInterval) {
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
+        do {
+            let engine = try CHHapticEngine()
+            engine.playsHapticsOnly = true
+            try engine.start()
+            let rise = CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.6),
+                             CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.15)],
+                relativeTime: 0, duration: inhale)
+            let fall = CHHapticEvent(
+                eventType: .hapticContinuous,
+                parameters: [CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.45),
+                             CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.1)],
+                relativeTime: inhale + hold, duration: exhale)
+            let curve = CHHapticParameterCurve(
+                parameterID: .hapticIntensityControl,
+                controlPoints: [
+                    .init(relativeTime: 0, value: 0.05),
+                    .init(relativeTime: inhale * 0.9, value: 1.0),
+                    .init(relativeTime: inhale + hold, value: 0.9),
+                    .init(relativeTime: inhale + hold + exhale - 0.15, value: 0.05)
+                ],
+                relativeTime: 0)
+            let player = try engine.makeAdvancedPlayer(
+                with: CHHapticPattern(events: [rise, fall], parameterCurves: [curve]))
+            try player.start(atTime: CHHapticTimeImmediate)
+            self.engine = engine
+            self.player = player
+        } catch {
+            player = nil
+            engine = nil
+        }
+    }
 }

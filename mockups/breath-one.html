@@ -1,0 +1,96 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>One breath with Otto</title>
+<style>
+:root{--ink:#413024;--soft:#877160;--amber:#F0C47B;--amberSh:#D9A957;--sky:#3F80AD;--ground:#FBF3E4}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 80px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:880px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start;margin-top:26px}
+.note{color:var(--soft);font-size:13.4px;line-height:1.62;width:340px}
+.note b{color:var(--ink)}
+.note ol{padding-left:18px;margin:8px 0}
+.p{width:300px;height:620px;border-radius:38px;overflow:hidden;position:relative;flex:none;
+ box-shadow:0 12px 34px rgba(80,55,30,.16);background:var(--ground)}
+canvas{position:absolute;inset:0}
+.otto{position:absolute;left:50%;top:190px;width:170px;height:170px;margin-left:-85px;
+ background:url("otto-v3/otto-sit.png") center bottom/contain no-repeat;transform-origin:50% 100%}
+.shadow{position:absolute;left:50%;top:352px;width:130px;height:14px;margin-left:-65px;border-radius:50%;background:rgba(60,40,20,.10)}
+.word{position:absolute;left:0;right:0;top:392px;text-align:center;font-size:27px;font-weight:800;color:#2B2530}
+.count{position:absolute;left:0;right:0;top:432px;text-align:center;font-size:17px;font-weight:800;color:var(--sky)}
+.invite{position:absolute;left:24px;right:24px;top:70px;border:2px solid rgba(65,48,36,.25);border-radius:16px;
+ padding:11px 14px;font-size:14px;font-weight:600;background:rgba(255,255,255,.6)}
+.cta{position:absolute;left:18px;right:18px;bottom:22px;background:var(--amber);border-radius:18px;padding:14px 0;
+ text-align:center;font-weight:800;font-size:16px;box-shadow:0 4px 0 var(--amberSh);cursor:pointer;z-index:3}
+.replay{margin-top:12px;font-size:12px;font-weight:800;color:#9B6B19;cursor:pointer;background:none;border:0;padding:0;font-family:inherit}
+</style></head><body>
+<h1>One breath with Otto</h1>
+<p class="lede">The first onboarding screen after the welcome, rebuilt from the reference you sent:
+<b>one breath, not three</b>, paced <b>in 4, hold 2, out 4</b>. Blue water rises from the bottom as you
+breathe in, stays still while you hold, and falls as you breathe out, and <b>Otto swells and settles with
+it</b> the way the brain does. The words and the countdown run on the same clock as the water.</p>
+<div class="row">
+ <div><div class="p" id="p">
+   <canvas id="c" width="600" height="1240"></canvas>
+   <div class="invite" id="invite">Before anything else, let's take one slow breath together.</div>
+   <div class="shadow" id="sh"></div>
+   <div class="otto" id="otto"></div>
+   <div class="word" id="word"></div>
+   <div class="count" id="count"></div>
+   <div class="cta" id="cta">I'm ready</div>
+ </div><button class="replay" id="replay">Replay</button></div>
+ <div class="note"><b>How it runs</b>
+ <ol>
+  <li>Otto asks for one breath; the water rests low at the bottom. <b>I'm ready.</b></li>
+  <li><b>Breathe in.</b> 4, 3, 2, 1. The water rises to just under Otto and he swells about 7% from his feet.</li>
+  <li><b>Hold.</b> 2, 1. Everything stays exactly where it is.</li>
+  <li><b>Breathe out.</b> 4, 3, 2, 1. The water falls away and he settles back.</li>
+  <li><b>Nicely done.</b> Continue appears, and only then.</li>
+ </ol>
+ <b>Details.</b> Three layers of blue water, each with its own slow wave, so it moves like water rather
+ than a bar filling. The breathing screen's gentle haptic follows the same 4, 2, 4. The words say
+ "seconds" properly ("1 second"). Otto's own chest breathing is paused here so he breathes only with
+ you.</div>
+</div>
+<script>
+const c=document.getElementById('c'),x=c.getContext('2d'),W=600,H=1240;
+const otto=document.getElementById('otto'),sh=document.getElementById('sh'),word=document.getElementById('word'),
+ count=document.getElementById('count'),cta=document.getElementById('cta'),invite=document.getElementById('invite');
+let start=null,state='invite';
+const IN=4,HOLD=2,OUT=4,LOW=0.08,HIGH=0.58;
+const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+function level(t){ if(t<IN) return LOW+(HIGH-LOW)*ease(t/IN); if(t<IN+HOLD) return HIGH;
+ if(t<IN+HOLD+OUT) return HIGH-(HIGH-LOW)*ease((t-IN-HOLD)/OUT); return LOW;}
+function draw(now){
+ const t=start?(now-start)/1000:0;
+ const lv=state==='invite'?LOW:level(t);
+ x.clearRect(0,0,W,H);
+ const layers=[["rgba(130,172,224,.30)",1.0,0],["rgba(120,165,222,.45)",0.93,1.7],["rgba(118,164,221,.85)",0.86,3.1]];
+ layers.forEach(([col,k,ph],i)=>{
+  const top=H*(1-lv*k)-i*18, amp=22+i*6, time=now/1000;
+  x.beginPath(); x.moveTo(0,H);
+  for(let px=0;px<=W;px+=10){ x.lineTo(px, top+Math.sin(px/W*Math.PI*2*0.9+time*(0.7+i*0.2)+ph)*amp); }
+  x.lineTo(W,H); x.closePath(); x.fillStyle=col; x.fill();
+ });
+ const s=state==='invite'?0:(lv-LOW)/(HIGH-LOW);
+ otto.style.transform=`scale(${1+0.07*s},${1+0.07*s})`;
+ sh.style.transform=`scaleX(${1+0.12*s})`;
+ if(state==='breath'){
+  let w,left;
+  if(t<IN){w="Breathe in.";left=Math.ceil(IN-t)}
+  else if(t<IN+HOLD){w="Hold.";left=Math.ceil(IN+HOLD-t)}
+  else if(t<IN+HOLD+OUT){w="Breathe out.";left=Math.ceil(IN+HOLD+OUT-t)}
+  else {state='done';word.textContent="Nicely done";count.textContent="One slow breath";cta.textContent="Continue";cta.style.display='block'}
+  if(state==='breath'){word.textContent=w;count.textContent=left+(left===1?" second":" seconds")}
+ }
+ requestAnimationFrame(draw);
+}
+function reset(){state='invite';start=null;invite.style.display='block';word.textContent='';count.textContent='';cta.textContent="I'm ready";cta.style.display='block'}
+cta.onclick=()=>{ if(state==='invite'){state='breath';start=performance.now();invite.style.display='none';cta.style.display='none'} else reset() };
+document.getElementById('replay').onclick=reset;
+reset();requestAnimationFrame(draw);
+</script>
+</body></html>

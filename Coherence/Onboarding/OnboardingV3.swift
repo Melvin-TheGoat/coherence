@@ -303,143 +303,179 @@ struct BreathExerciseScreen: View {
     let onReady: () -> Void
     let onContinue: () -> Void
 
-    private static let half: Double = 5
-    private static let breaths = 3
+    /// ONE breath, in 4, hold 2, out 4 (Aziz, 2026-09-23, from a reference
+    /// screen: "only for one breath", `mockups/breath-one.html`). It was three
+    /// 5 s breaths paced off Otto's rig.
+    static let inhale: Double = 4
+    static let hold: Double = 2
+    static let exhale: Double = 4
+    private static var total: Double { inhale + hold + exhale }
+    /// How high the water stands, as a share of the screen, at rest and full.
+    /// Full is past the top (Aziz: "the water to go up all the way to the
+    /// top"), so on the hold the whole screen is under it, waves and all.
+    private static let low: CGFloat = 0.08
+    private static let high: CGFloat = 1.08
 
-    @StateObject private var rig: OttoRigHolder
+    /// Held until the breath starts, then released: his chest breathes on the
+    /// rig's own ten second breath (five in, five out), which lands on the
+    /// 4, 2, 4 closely enough, and this screen swells his whole figure on top
+    /// of it so the breath reads at a glance (Aziz: "i also want otto to have
+    /// a breathing animation").
+    @StateObject private var rig = OttoRigHolder(holdUntilReleased: true)
     @State private var haptics = BreathHaptics()
     @State private var appeared = false
     @State private var speaking = false
-    @State private var breath = 1
-    @State private var inhaling = true
     @State private var finished = false
-    /// When his current breath began, set the moment he is released. The
-    /// circle reads its size off this clock, the same one the words run on.
+    /// When the breath began. Everything on screen reads its place off this
+    /// one clock, so the water, Otto and the words can never disagree.
     @State private var breathStart: Date?
 
     init(breathing: Bool, onReady: @escaping () -> Void, onContinue: @escaping () -> Void) {
         self.breathing = breathing
         self.onReady = onReady
         self.onContinue = onContinue
-        // Resuming straight into the breaths has no invitation to wait on.
-        _rig = StateObject(wrappedValue: OttoRigHolder(holdUntilReleased: !breathing))
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-                .frame(minHeight: 96, alignment: .top)
-                .padding(.top, 8)
-
-            Spacer(minLength: 0)
-
-            // The pacer (Melvin: his chest alone "barely looks like hes
-            // breathing"). Already there on the invitation, so I'm ready
-            // adds nothing to the screen: the circle just starts to swell.
-            BreathCircle(start: finished ? nil : breathStart)
-                .frame(maxWidth: .infinity, maxHeight: BreathCircle.diameter)
-                .padding(.bottom, 24)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
-
-            // Pinned above the button and never moved: the words change,
-            // Otto does not. The top of his frame is empty sky, so it may
-            // run up under the circle.
-            OttoInMeadow(pose: .meditating, talking: speaking, rig: rig, share: 0.66)
-                .padding(.top, -40)
-                .padding(.bottom, 6)
-                .opacity(appeared ? 1 : 0)
-        }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
-        .safeAreaInset(edge: .bottom) {
-            // One slot, one height, whatever sits in it. A slot that changes
-            // height shifts every view above it, which is the jump that read
-            // as Otto floating.
+        TimelineView(.animation) { context in
+            let t = breathStart.map { context.date.timeIntervalSince($0) }
+            let fill = Self.fullness(at: t)
             ZStack {
-                OnboardingCTA(title: "I'm ready", action: onReady)
-                    .opacity(breathing ? 0 : 1)
-                    .allowsHitTesting(!breathing)
-                OnboardingCTA(title: "Continue", action: onContinue)
-                    .opacity(finished ? 1 : 0)
-                    .allowsHitTesting(finished)
-                if breathing && !finished {
-                    Text("Follow along")
-                        .font(OnboardingType.sub)
-                        .foregroundStyle(AppColor.textSecondary)
+                // White, like the reference (Aziz: "make it a white background").
+                Color.white.ignoresSafeArea()
+                BreathWater(level: Self.low + (Self.high - Self.low) * fill,
+                            time: context.date.timeIntervalSinceReferenceDate)
+                    .ignoresSafeArea()
+                // Otto in the middle of the screen (Aziz), the words under him.
+                // The clear block above matches the words below, so it is his
+                // centre, not the pair's, that sits on the screen's.
+                VStack(spacing: 14) {
+                    Color.clear.frame(height: Self.wordsHeight)
+                    OttoInMeadow(pose: .meditating, talking: speaking, rig: rig, share: 0.9)
+                        .frame(maxWidth: 230)
+                        // Taller than wide: a chest filling, not a picture
+                        // zooming. Anchored at his feet so he grows upward.
+                        .scaleEffect(x: 1 + 0.05 * fill, y: 1 + 0.10 * fill, anchor: .bottom)
+                        .opacity(appeared ? 1 : 0)
+                    words(at: t)
+                        .frame(height: Self.wordsHeight, alignment: .top)
                 }
+                .padding(.horizontal, AppMetrics.screenPadding)
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.bottom, 10)
+        }
+        .safeAreaInset(edge: .bottom) {
+            // Only once the breath is done, and the slot is always laid out,
+            // so nothing above it moves when it appears.
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .opacity(finished ? 1 : 0)
+                .allowsHitTesting(finished)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
         }
         .onAppear { withAnimation(.easeOut(duration: 0.4)) { appeared = true } }
-        .task(id: breathing) { await runBreaths() }
+        // Straight into the breath (Aziz: "no im ready button should j go
+        // straight into it"). Once per visit, not per `breathing` flip.
+        .task { await runBreath() }
         .onDisappear { haptics.stop() }
     }
 
-    @ViewBuilder private var header: some View {
-        if !breathing {
-            OttoSpeech(text: "Before anything else, let's take three breaths together.",
-                       speaking: $speaking)
-        } else if finished {
+    private static let wordsHeight: CGFloat = 70
+
+    /// "Breathe in." over "3 seconds", counting down whole seconds.
+    @ViewBuilder private func words(at t: Double?) -> some View {
+        if finished {
             VStack(spacing: 6) {
                 Text("Nicely done")
                     .font(OnboardingType.question)
                     .foregroundStyle(AppColor.textPrimary)
-                Text("Three slow breaths")
-                    .font(OnboardingType.sub)
-                    .foregroundStyle(AppColor.textSecondary)
+                Text("One slow breath")
+                    .font(OnboardingType.sub.weight(.semibold))
+                    .foregroundStyle(AppColor.skyDeep)
             }
-        } else {
+        } else if let t {
+            let (word, left) = Self.phase(at: t)
             VStack(spacing: 6) {
-                Text(inhaling ? "Breathe in" : "Breathe out")
+                Text(word)
                     .font(OnboardingType.question)
                     .foregroundStyle(AppColor.textPrimary)
-                Text("\(breath) of \(Self.breaths)")
-                    .font(OnboardingType.sub)
-                    .foregroundStyle(AppColor.textSecondary)
+                Text(left == 1 ? "1 second" : "\(left) seconds")
+                    .font(OnboardingType.sub.weight(.semibold))
+                    .foregroundStyle(AppColor.skyDeep)
                     .monospacedDigit()
             }
         }
     }
 
-    /// The three breaths, paced from Otto's own breath.
-    private func runBreaths() async {
-        guard breathing else {
-            breath = 1; inhaling = true; finished = false; breathStart = nil
-            haptics.stop()
-            return
-        }
-        // Where his breath is the moment he is released: about half a second
-        // into an inhale when he was held on the invitation.
-        var phase = rig.release()
-        breathStart = Date().addingTimeInterval(-phase)
-        haptics.start()
-        defer { haptics.stop() }
-        // If he happens to be breathing out, wait for his next inhale so the
-        // words never contradict his chest.
-        if phase >= Self.half {
-            inhaling = false
-            await pause(10 - phase)
-            guard !Task.isCancelled else { return }
-            phase = 0
-        }
-        for n in 1...Self.breaths {
-            breath = n
-            inhaling = true
-            await pause(n == 1 ? Self.half - phase : Self.half)
-            guard !Task.isCancelled else { return }
-            inhaling = false
-            await pause(Self.half)
-            guard !Task.isCancelled else { return }
-        }
-        finished = true
+    private static func phase(at t: Double) -> (String, Int) {
+        if t < inhale { return ("Breathe in.", max(1, Int((inhale - t).rounded(.up)))) }
+        if t < inhale + hold { return ("Hold.", max(1, Int((inhale + hold - t).rounded(.up)))) }
+        return ("Breathe out.", max(1, Int((total - t).rounded(.up))))
     }
 
-    private func pause(_ seconds: Double) async {
-        try? await Task.sleep(for: .milliseconds(Int(max(0, seconds) * 1000)))
+    /// 0 at rest, 1 full: eased up over the inhale, still through the hold,
+    /// eased down over the exhale.
+    private static func fullness(at t: Double?) -> CGFloat {
+        guard let t, t > 0 else { return 0 }
+        func ease(_ x: Double) -> Double { x < 0.5 ? 2 * x * x : 1 - pow(-2 * x + 2, 2) / 2 }
+        if t < inhale { return CGFloat(ease(t / inhale)) }
+        if t < inhale + hold { return 1 }
+        if t < total { return CGFloat(1 - ease((t - inhale - hold) / exhale)) }
+        return 0
+    }
+
+    private func runBreath() async {
+        guard breathStart == nil, !finished else { return }
+        // A beat for the screen to land before the water moves.
+        try? await Task.sleep(for: .milliseconds(600))
+        guard !Task.isCancelled else { return }
+        // Moves the flow on to `.breathing`, which is what resume and the
+        // analytics count, without a button to press for it.
+        if !breathing { onReady() }
+        rig.release()
+        breathStart = Date()
+        haptics.playOnce(inhale: Self.inhale, hold: Self.hold, exhale: Self.exhale)
+        try? await Task.sleep(for: .milliseconds(Int(Self.total * 1000)))
+        // A cancelled sleep throws and `try?` swallows it: without this the
+        // screen would claim "Nicely done" the moment it was left.
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.3)) { finished = true }
+    }
+}
+
+/// Blue water rising from the bottom of the breath screen: three layers, each
+/// with its own slow wave, so it moves like water rather than a bar filling.
+/// `level` is how high it stands, as a share of the height.
+struct BreathWater: View {
+    let level: CGFloat
+    let time: TimeInterval
+
+    var body: some View {
+        Canvas { ctx, size in
+            let layers: [(opacity: Double, reach: CGFloat, phase: Double)] = [
+                // Pale, like the reference, so the blue countdown still
+                // reads on it: at 0.55 the front layer swallowed "1 second".
+                (0.12, 1.0, 0), (0.18, 0.93, 1.7), (0.30, 0.86, 3.1)
+            ]
+            for (i, layer) in layers.enumerated() {
+                let top = size.height * (1 - level * layer.reach) - CGFloat(i) * 9
+                let amplitude = 11 + CGFloat(i) * 3
+                var path = Path()
+                path.move(to: CGPoint(x: 0, y: size.height))
+                var x: CGFloat = 0
+                while x <= size.width + 5 {
+                    let across: Double = Double(x / size.width) * Double.pi * 1.8
+                    let speed: Double = 0.7 + Double(i) * 0.2
+                    let wave: Double = sin(across + time * speed + layer.phase)
+                    path.addLine(to: CGPoint(x: x, y: top + CGFloat(wave) * amplitude))
+                    x += 6
+                }
+                path.addLine(to: CGPoint(x: size.width, y: size.height))
+                path.closeSubpath()
+                ctx.fill(path, with: .color(AppColor.skyDeep.opacity(layer.opacity)))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
 
