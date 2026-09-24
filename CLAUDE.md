@@ -5257,6 +5257,16 @@ is nearer than `feetY` over the view, masked to the view's own outline.
   cushion or ground that goes through it; that is why the welcome's Otto
   stands on his cushion.
 
+**Meet Otto is three pages of one screen** (`MeetOttoScreen.Page`): "Meet
+your meditating partner: Otto" with Otto saying "I'm doing alright." →
+"The more you meditate, the more enlightened he becomes." → **"See for
+yourself!"** (`Step.seeForYourself`, Brainrot's screen): a BLUE bar
+(`GlowScrubber`, `AppColor.skyDeep`) with his face as the handle, starting in
+the MIDDLE (level 50, Steady, so nothing jumps from the pages before), which
+drives the valley's Otto through all thirteen looks (`OnboardingView.
+glowDemo`), a selection tick at each change. Otto never moves between the
+three pages; only the words and the bar change.
+
 **Every typed line in the intro screens is Otto speaking** (Aziz): the
 line under the title moved into `OttoSaysBubble`, white and round, hanging
 just above his head with its tail at him, still typed a letter at a time

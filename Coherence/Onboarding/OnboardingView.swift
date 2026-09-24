@@ -20,6 +20,8 @@ struct OnboardingView: View {
     /// The white page over the valley behind the opening screens. Follows
     /// `step.isWhitePage`, but lets go of it late (see the body).
     @State private var whiteCover = false
+    /// Otto's glow on "See for yourself", starting in the middle.
+    @State private var glowDemo: Double = 50
     /// The valley's birds and grasshoppers, shared with `ValleyFrontLife`.
     @State private var lifeSeed = UInt64.random(in: UInt64.min...UInt64.max)
     @State private var answers = OnboardingAnswers()
@@ -91,6 +93,9 @@ struct OnboardingView: View {
         /// Added 2026-09-23: "The more you meditate, the more enlightened he
         /// becomes", the second page of Meet Otto. Last, for the reason above.
         case ottoGrows
+        /// Added 2026-09-23: "See for yourself!", drag Otto through his looks,
+        /// the third page of Meet Otto. Last, for the reason above.
+        case seeForYourself
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -271,8 +276,8 @@ struct OnboardingView: View {
     private static func identity(of step: Step) -> Step {
         switch step {
         case .breathing: return .breath
-        // Meet Otto's second page changes the words, not the screen.
-        case .ottoGrows: return .meetOtto
+        // Meet Otto's later pages change the words, not the screen.
+        case .ottoGrows, .seeForYourself: return .meetOtto
         default: return step
         }
     }
@@ -306,8 +311,10 @@ struct OnboardingView: View {
             // Otto sits in it on the stress screen, where the answer is drawn
             // on him.
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
+                                    : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : (step == .meetOtto || step == .ottoGrows) ? .steady : nil,
-                             look: step == .stress ? StressScreen.look(for: answers.stress) : nil,
+                             look: step == .stress ? StressScreen.look(for: answers.stress)
+                                   : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded())) : nil,
                              jiggle: ottoPokes,
                              standingFigure: step == .relief,
                              seed: lifeSeed)
@@ -412,9 +419,14 @@ struct OnboardingView: View {
                                  onReady: { go(.breathing) },
                                  onContinue: { go(.meetOtto) })
 
-        case .meetOtto, .ottoGrows:
-            MeetOttoScreen(grows: step == .ottoGrows) {
-                go(step == .meetOtto ? .ottoGrows : .questionCount)
+        case .meetOtto, .ottoGrows, .seeForYourself:
+            MeetOttoScreen(page: step == .meetOtto ? .meet : step == .ottoGrows ? .grows : .see,
+                           level: $glowDemo) {
+                switch step {
+                case .meetOtto: go(.ottoGrows)
+                case .ottoGrows: go(.seeForYourself)
+                default: go(.questionCount)
+                }
             }
 
         case .questionCount:

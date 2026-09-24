@@ -273,23 +273,89 @@ struct WelcomeScreen: View {
 /// "The more you brainrot" page, not typed, Aziz). Otto does not move between
 /// them: the same Otto, now explained.
 struct MeetOttoScreen: View {
-    /// The second page (`Step.ottoGrows`).
-    let grows: Bool
+    enum Page { case meet, grows, see }
+    let page: Page
+    /// Otto's glow on the "See for yourself" page, 0 to 100, which the valley
+    /// draws him at. Starts at 50, the middle, where he is the same Steady
+    /// Otto as on the two pages before, so nothing jumps when it appears.
+    @Binding var level: Double
     let onContinue: () -> Void
 
+    private var title: String {
+        switch page {
+        case .meet: return "Meet your meditating partner: Otto"
+        case .grows: return "The more you meditate, the more enlightened he becomes."
+        case .see: return "See for yourself!"
+        }
+    }
+
     var body: some View {
-        IntroScreen(progress: grows ? 0.07 : 0.04,
-                    progressFrom: grows ? 0.04 : nil,
-                    title: grows ? "The more you meditate, the more enlightened he becomes."
-                                 : "Meet your meditating partner: Otto",
-                    titleSize: grows ? 34 : 31,
-                    subtitle: grows ? nil : "He's doing alright.",
+        IntroScreen(progress: page == .meet ? 0.04 : page == .grows ? 0.07 : 0.10,
+                    progressFrom: page == .grows ? 0.04 : page == .see ? 0.07 : nil,
+                    title: title,
+                    titleSize: page == .meet ? 31 : 34,
+                    // He says it himself (Aziz, 2026-09-23).
+                    subtitle: page == .meet ? "I'm doing alright." : nil,
                     cta: "Continue",
                     standing: false,
+                    footer: page == .see ? AnyView(GlowScrubber(level: $level)) : nil,
                     onContinue: onContinue) { _ in
-            // Drawn by the valley itself (`OnboardingValley`, stage Steady),
-            // on his cushion, where the stress screen and Home put him.
+            // Drawn by the valley itself (`OnboardingValley`), on his cushion,
+            // where the stress screen and Home put him.
             EmptyView()
+        }
+    }
+}
+
+/// "See for yourself!" (Aziz, 2026-09-23, from Brainrot's screen of the same
+/// name): drag the bar and Otto moves through his looks live, from withered
+/// at the left to enlightened at the right. Blue (Aziz: "make the scrolling
+/// bar blue in this one"), with his face as the handle, the way Brainrot's
+/// handle is the brain's. Starts in the middle. A tick each time he changes.
+private struct GlowScrubber: View {
+    @Binding var level: Double
+    private static let knob: CGFloat = 48
+
+    private var look: Int { OttoAura.look(level: Int(level.rounded())) }
+
+    var body: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let travel = width - Self.knob
+            let x = travel * CGFloat(min(max(level, 0), 100) / 100)
+            ZStack(alignment: .leading) {
+                // Solid: see-through, the meadow's flowers showed through it.
+                Capsule()
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+                    .frame(height: 16)
+                Capsule()
+                    .fill(AppColor.skyDeep)
+                    .frame(width: x + Self.knob / 2, height: 16)
+                Image("OttoHead")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(5)
+                    .frame(width: Self.knob, height: Self.knob)
+                    .background(Circle().fill(.white))
+                    .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
+                    .offset(x: x)
+            }
+            .frame(height: Self.knob)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                let t = (value.location.x - Self.knob / 2) / max(1, travel)
+                level = Double(min(max(t, 0), 1)) * 100
+            })
+        }
+        .frame(height: Self.knob)
+        .padding(.horizontal, 6)
+        .sensoryFeedback(.selection, trigger: look)
+        .accessibilityElement()
+        .accessibilityLabel("Otto's glow")
+        .accessibilityValue("\(Int(level.rounded())) percent")
+        .accessibilityAdjustableAction { direction in
+            level = min(100, max(0, level + (direction == .increment ? 10 : -10)))
         }
     }
 }
@@ -326,6 +392,8 @@ struct IntroScreen<Figure: View>: View {
     /// True when `figure` is a standing Otto this screen places on the
     /// meadow; false when the valley draws him itself.
     var standing: Bool = true
+    /// Something between Otto and the button (the "See for yourself" bar).
+    var footer: AnyView? = nil
     let onContinue: () -> Void
     /// Otto, handed whether he should be moving yet.
     @ViewBuilder let figure: (_ playing: Bool) -> Figure
@@ -420,12 +488,18 @@ struct IntroScreen<Figure: View>: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: cta, action: onContinue)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
-                .opacity(ctaShown ? 1 : 0)
-                .offset(y: ctaShown ? 0 : 40)
-                .allowsHitTesting(ctaShown)
+            VStack(spacing: 22) {
+                if let footer {
+                    footer.transition(.opacity)
+                }
+                OnboardingCTA(title: cta, action: onContinue)
+                    .opacity(ctaShown ? 1 : 0)
+                    .offset(y: ctaShown ? 0 : 40)
+                    .allowsHitTesting(ctaShown)
+            }
+            .animation(.easeInOut(duration: 0.3), value: footer == nil)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
         }
         .task { await play() }
     }
