@@ -1,7 +1,9 @@
 import Foundation
+import SwiftUI
 import SwiftData
 import HealthKit
 import WatchConnectivity
+import UIKit
 import os
 
 /// iOS-side session pipeline.
@@ -18,6 +20,14 @@ import os
 /// nothing in between.
 ///
 /// iOS still holds the HealthKit entitlement and reads no biometric data.
+///
+/// **A phone sit keeps the screen awake the whole time** (`beginOnPhone`
+/// sets `isIdleTimerDisabled`), restored on every way out
+/// (`finishPhoneSession`, `discardLeftAppSession`). Without that, Auto-Lock
+/// backgrounds 808 on its own somewhere between thirty seconds and a few
+/// minutes in, which the leave rule below would then read as the person
+/// walking away and void the sit for nobody's fault. See `LeftAppRule` and
+/// `phoneScenePhaseChanged`.
 @MainActor
 final class SessionCoordinator: NSObject, ObservableObject {
 
@@ -38,6 +48,16 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let durationSec: Int
         /// Under the minimum (an accident) rather than long but unreadable.
         var tooShort: Bool { durationSec < SessionStore.minDurationSec }
+    }
+
+    /// A phone sit was left for too long and is waiting on a decision:
+    /// `SessionActiveView` shows `SessionLeftAppView` instead of the sit
+    /// itself while this is set. Cleared by either `overrideLeftApp` or
+    /// `discardLeftAppSession` — see `phoneScenePhaseChanged`.
+    @Published var leftAppPrompt: LeftAppPrompt?
+
+    struct LeftAppPrompt: Identifiable, Equatable {
+        let id: UUID
     }
     /// True once the Watch has ACKED the current attempt's actual workout
     /// start. `active` alone is a phone-side guess: `startWatchApp`'s callback
@@ -86,6 +106,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// Finishes a timed phone sit on its own clock, since there is no wrist to
     /// fire the authoritative end.
     private var phoneFinishTask: Task<Void, Never>?
+
+    /// When the phone left the foreground during the active PHONE sit — nil
+    /// the rest of the time. Only phone sits are tracked at all
+    /// (`LeftAppRule.applies`): a Watch sit keeps measuring on the wrist no
+    /// matter what the phone's screen is doing.
+    private var awayEnteredAt: Date?
 
     /// Sound preset chosen at Begin, keyed by sessionID — the Watch never
     /// carries it, so the phone holds it until the payload lands.
@@ -188,11 +214,17 @@ final class SessionCoordinator: NSObject, ObservableObject {
         log.info("Running session \(params.sessionID) on the phone (\(reason))")
         startAcked = true
         startFailure = nil
+        awayEnteredAt = nil
+        leftAppPrompt = nil
         active = ActiveSession(id: params.sessionID,
                                startedAt: Date(),
                                plannedDurationSec: params.plannedDurationSec,
                                soundTitle: SoundCatalog.title(for: soundID),
                                engine: .phone)
+        // Auto-lock would otherwise send 808 to the background thirty
+        // seconds to a few minutes in, and the leave rule would then void
+        // nearly every sit even though nobody touched the phone.
+        UIApplication.shared.isIdleTimerDisabled = true
         startAudio(soundID: soundID, headphones: headphones,
                    plannedDurationSec: params.plannedDurationSec)
         status = "Meditating."
@@ -218,6 +250,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// is the chime that says so.
     private func finishPhoneSession(early: Bool) {
         guard let current = active, current.engine == .phone else { return }
+        // Covers every way this can be reached: on time, an early End, and
+        // the too-short discard below all funnel through here.
+        UIApplication.shared.isIdleTimerDisabled = false
         if early { SessionEndNotice.cancel(for: current.id) }
         phoneFinishTask?.cancel()
         phoneFinishTask = nil
@@ -260,6 +295,97 @@ final class SessionCoordinator: NSObject, ObservableObject {
         Analytics.track(.sessionCompleted(
             durationBand: Analytics.durationBand(seconds: session.durationSec),
             streakBand: Analytics.streakBand(days: StreakCalculator.streak(from: dates).current)))
+    }
+
+    /// The scene left the foreground or came back, forwarded from
+    /// `SessionActiveView` on every change. Only a phone sit is judged by
+    /// this — `LeftAppRule.applies` is what makes a Watch sit exempt, since
+    /// it keeps measuring on the wrist no matter what the phone's screen is
+    /// doing.
+    ///
+    /// Melvin, 2026-09-23: "if they leave for more than 10 seconds then the
+    /// meditation doesn't count," with a quiet way back in for an honest
+    /// accident — see `overrideLeftApp`.
+    func phoneScenePhaseChanged(_ phase: ScenePhase) {
+        guard let current = active, LeftAppRule.applies(engine: current.engine) else { return }
+        if LeftAppRule.isLeaving(phase) {
+            guard awayEnteredAt == nil else { return }   // already tracking a departure
+            awayEnteredAt = Date()
+            // The clock the person set is paused with them: a background
+            // finish must never race ahead of the verdict below and quietly
+            // complete a session that is about to be voided for exactly the
+            // reason it's finishing.
+            phoneFinishTask?.cancel()
+            phoneFinishTask = nil
+            Task { await LeftAppNotice.post(for: current.id) }
+        } else if phase == .active {
+            guard let left = awayEnteredAt else { return }
+            awayEnteredAt = nil
+            LeftAppNotice.cancel(for: current.id)
+            // Already waiting on an earlier departure this sit — a second
+            // blip before it's been answered doesn't need its own verdict.
+            guard leftAppPrompt == nil else { return }
+            switch LeftAppRule.verdict(awaySec: Date().timeIntervalSince(left)) {
+            case .continues: rearmPhoneFinish(for: current)
+            case .voided: leftAppPrompt = LeftAppPrompt(id: current.id)
+            }
+        }
+        // .inactive: Control Center, Notification Center, a system alert —
+        // none of that is leaving.
+    }
+
+    /// Restarts the timed sit's own finish against the real time remaining —
+    /// the sibling of the Watch-ack re-anchor above, for the same reason:
+    /// wall-clock time moved while something else had the clock paused. If
+    /// the planned length already passed while the person was away, there
+    /// is nothing left to wait for: finish now, capped at the length that
+    /// was set, exactly like any other late finish.
+    private func rearmPhoneFinish(for session: ActiveSession) {
+        guard let planned = session.plannedDurationSec else { return }
+        let remaining = Double(planned) - Date().timeIntervalSince(session.startedAt)
+        guard remaining > 0 else {
+            finishPhoneSession(early: false)
+            return
+        }
+        phoneFinishTask?.cancel()
+        phoneFinishTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(for: .seconds(remaining))
+            guard !Task.isCancelled else { return }
+            self?.finishPhoneSession(early: false)
+        }
+    }
+
+    /// "I was still meditating" — deliberately easy to miss rather than hard
+    /// to find (Melvin: don't make the override obvious). Forgives the
+    /// departure and lets the sit carry on exactly as it was; nothing here
+    /// touches `startedAt`, so the time away still counts toward the
+    /// session's length.
+    func overrideLeftApp() {
+        guard let current = active, leftAppPrompt?.id == current.id else { return }
+        leftAppPrompt = nil
+        rearmPhoneFinish(for: current)
+    }
+
+    /// "End session": the departure stands, and the sit ends with nothing
+    /// written. Mirrors `finishPhoneSession`'s teardown, minus the write —
+    /// no Session row, so no streak day and no Block release either, since
+    /// both are derived from Sessions that exist.
+    func discardLeftAppSession() {
+        guard let current = active, leftAppPrompt?.id == current.id else { return }
+        leftAppPrompt = nil
+        UIApplication.shared.isIdleTimerDisabled = false
+        phoneFinishTask?.cancel()
+        phoneFinishTask = nil
+        SessionEndNotice.cancel(for: current.id)
+        stopAudio(reason: "left the app")
+        Task { await FocusShortcut.shared.restoreIfOurs() }
+        active = nil
+        currentAttemptID = nil
+        let duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
+        pendingSoundIDs.removeValue(forKey: current.id)
+        status = "Session discarded (left the app)"
+        Analytics.track(.sessionDiscarded(reason: "left_app",
+                                          durationBand: Analytics.durationBand(seconds: duration)))
     }
 
     /// Starts the selected tone + bed, and (for timed sessions) schedules a phone-side
