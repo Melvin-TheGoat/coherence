@@ -15,28 +15,40 @@ import Foundation
 public enum Motivation: String, CaseIterable, Identifiable, Codable {
     case lessStressed, sharperFocus, moreDiscipline, betterSleep, lessAnxious,
          deeperPractice, manifestGoals, changeIdentity, other
+    /// Added 2026-09-23 for "What's your goal with meditation?" (Aziz). New
+    /// cases go LAST: the answers are stored by raw value, but keeping the
+    /// declaration order stable keeps every switch and test readable.
+    case morePresent, overthinkLess, justCurious
 
     public var id: String { rawValue }
 
     public var label: String {
         switch self {
-        case .lessStressed:   return "Less stressed"
-        case .sharperFocus:   return "Sharper focus"
+        case .lessStressed:   return "Feel less stressed"
+        case .sharperFocus:   return "Sharpen my focus"
         case .moreDiscipline: return "More discipline"
-        case .betterSleep:    return "Better sleep"
+        case .betterSleep:    return "Sleep better"
         case .lessAnxious:    return "Less anxious"
         case .deeperPractice: return "Deeper prayer or practice"
         case .manifestGoals:  return "Manifest my goals"
         case .changeIdentity: return "Change who I am"
         case .other:          return "Something else"
+        case .morePresent:    return "Be more present"
+        case .overthinkLess:  return "Overthink less"
+        case .justCurious:    return "Just curious"
         }
     }
 
     /// What the motivation screen offers. `.lessAnxious` was cut 2026-08-25
     /// (Melvin: same thing as less stressed, and the list was giving him
     /// choice fatigue) but the case survives so stored answers still decode.
+    ///
+    /// **Six, one pick** since 2026-09-23 (Aziz, from Brainrot's goal
+    /// screen): "What's your goal with meditation?". Making it a daily habit
+    /// is left out on purpose: that is what the whole app is for, so it goes
+    /// without saying. The older cases stay so stored answers still decode.
     public static var offered: [Motivation] {
-        allCases.filter { $0 != .lessAnxious }
+        [.lessStressed, .sharperFocus, .betterSleep, .morePresent, .overthinkLess, .justCurious]
     }
 
     public var icon: String {
@@ -50,6 +62,9 @@ public enum Motivation: String, CaseIterable, Identifiable, Codable {
         case .manifestGoals:  return "sparkles"
         case .changeIdentity: return "person.crop.circle.badge.checkmark"
         case .other:          return "ellipsis.circle"
+        case .morePresent:    return "leaf"
+        case .overthinkLess:  return "brain.head.profile"
+        case .justCurious:    return "questionmark.circle"
         }
     }
 }
@@ -675,8 +690,9 @@ public struct OnboardingAnswers: Codable, Equatable {
 
     public var primaryMotivation: Motivation? {
         let priority: [Motivation] = [.moreDiscipline, .lessAnxious, .lessStressed,
-                                      .sharperFocus, .betterSleep, .changeIdentity,
-                                      .manifestGoals, .deeperPractice, .other]
+                                      .overthinkLess, .sharperFocus, .betterSleep,
+                                      .morePresent, .changeIdentity, .manifestGoals,
+                                      .deeperPractice, .justCurious, .other]
         return priority.first { motivations.contains($0) } ?? motivations.first
     }
 
@@ -935,8 +951,12 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// Attribution FIRST (Melvin, 2026-09-14). It sat last, and only 42% of
     /// installs finish the interview, so most people never told us where
     /// they came from. Asked at the door, nearly everyone answers.
+    /// The goal comes first (Aziz, 2026-09-23): it follows "Let's
+    /// personalize 808 for you" the way Brainrot's goal screen follows its
+    /// own, and the writing Otto carries across into its corner.
+    case motivation
     case referral
-    case baseline, motivation, stress
+    case baseline, stress
     case restarts, intendedFor
     case bodyTracking
     case blindSpot

@@ -346,8 +346,10 @@ struct OnboardingView: View {
 
             // Otto writing on the personalize screen sits with the valley,
             // which never moves, not in the screen, which slides.
-            if step == .questionCount {
-                SeatedClipLayer(clip: .writing)
+            // It glides up into the corner for the goal question (Aziz: the
+            // writing Otto top right, like Brainrot's brain).
+            if step == .questionCount || step == .motivation {
+                SeatedClipLayer(clip: .writing, inCorner: step == .motivation)
                     .transition(.opacity)
             }
 

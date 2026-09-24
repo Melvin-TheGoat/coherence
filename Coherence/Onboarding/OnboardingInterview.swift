@@ -307,55 +307,73 @@ struct BaselineScreen: View {
     }
 }
 
-// MARK: - 3 · Q1 Why (multi-select)
+// MARK: - 3 · Q1 The goal (one pick)
 
+/// "What's your goal with meditation?" (Aziz, 2026-09-23, from Brainrot's
+/// goal screen). The first question, one pick, six answers; making it a
+/// daily habit is left out because that is the whole app. The writing Otto
+/// sits top right, the same Otto who was writing on his cushion a screen ago:
+/// `OnboardingView` draws him in the fixed layer and moves him into the
+/// corner (`SeatedClipLayer(inCorner:)`), so this screen leaves room for him
+/// and draws nothing there itself.
+///
+/// Tap to advance, like every one-answer question, after the selection dwell
+/// so the tick registers. Coming back to it already answered shows Continue.
 struct MotivationScreen: View {
     @Binding var selected: Set<Motivation>
     @Binding var otherText: String
     let count: InterviewCount
     let onContinue: () -> Void
 
-    @FocusState private var otherFocused: Bool
+    @StateObject private var gate = AdvanceGate()
+    @Environment(\.onboardingBack) private var back
+    @State private var answeredOnAppear = false
 
     var body: some View {
-        OnboardingScreen(section: .body, counter: count,
-                         title: "What are you hoping\nmeditation gives you?",
-                         subtitle: "Pick as many as are true.",
-                         ctaEnabled: !selected.isEmpty,
-                         onContinue: onContinue) {
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                if let back { OnboardingBackButton(action: back) }
+                OnboardingProgress(from: Double(count.index - 1) / Double(max(count.total, 1)),
+                                   to: Double(count.index) / Double(max(count.total, 1)))
+                // Otto's corner (`SeatedClipLayer.cornerWidth`).
+                Color.clear.frame(width: SeatedClipLayer.cornerWidth)
+            }
+            .frame(height: 40)
+
+            Text("What's your goal with meditation?")
+                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 30)
+
             VStack(spacing: 10) {
                 ForEach(Motivation.offered) { m in
                     OnboardingOption(label: m.label, icon: m.icon,
-                                     selected: selected.contains(m), multi: true) {
-                        if selected.contains(m) {
-                            selected.remove(m)
-                            if m == .other { otherFocused = false }
-                        } else {
-                            selected.insert(m)
-                            if m == .other { otherFocused = true }
-                        }
-                    }
-                    // "Something else" opens a line of their own words, right
-                    // under the option, never required: an empty field is a
-                    // valid answer and the CTA does not gate on it.
-                    if m == .other, selected.contains(.other) {
-                        TextField("Tell us, in your words", text: $otherText)
-                            .focused($otherFocused)
-                            .textInputAutocapitalization(.sentences)
-                            .font(.system(size: 16, design: .rounded))
-                            .foregroundStyle(AppColor.textPrimary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 13)
-                            .background(AppColor.backgroundSecondary.opacity(0.7),
-                                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(AppColor.accentGold.opacity(0.4), lineWidth: 1))
-                            .transition(.opacity)
-                    }
+                                     selected: selected.contains(m)) { pick(m) }
                 }
             }
-            .animation(.easeOut(duration: 0.2), value: selected.contains(.other))
+            .padding(.top, 24)
+
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            if answeredOnAppear {
+                OnboardingCTA(title: "Continue", action: { gate.now(onContinue) })
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.bottom, 10)
+            }
+        }
+        .onAppear { answeredOnAppear = !selected.isEmpty }
+    }
+
+    private func pick(_ m: Motivation) {
+        selected = [m]
+        gate.advance(onContinue)
     }
 }
 

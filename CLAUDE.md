@@ -5319,6 +5319,17 @@ used after onboarding beyond the reminder time (Aziz: leave it).
   place, and 18 s of loop with no flash. **A clip of Otto on a screen that
   slides must live in the fixed layer, never in the screen.**
 
+**The goal question comes first** (`MotivationScreen`, Brainrot's goal
+screen, Aziz): "What's your goal with meditation?", ONE pick, tap to
+advance: Feel less stressed, Sharpen my focus, Sleep better, Be more present,
+Overthink less, Just curious (`Motivation.offered`; three new cases added
+LAST). "Make it a daily habit" was left out on purpose: that is the whole
+app. `InterviewStep.motivation` now precedes `referral`. The writing Otto
+GLIDES from his cushion into the top-right corner as the question slides in
+(`SeatedClipLayer(inCorner:)`, a scale and offset on the same player, so it
+animates and never restarts); the cushion fades. **The rest of the old
+interview is being redone by Aziz; do not polish it.**
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room

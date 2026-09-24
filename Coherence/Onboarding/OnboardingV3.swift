@@ -567,24 +567,45 @@ struct SeatedClip {
 /// own Otto fades out (`figureHidden`), a cross-fade in one place.
 struct SeatedClipLayer: View {
     let clip: SeatedClip
+    /// Up in the top-right corner beside the progress bar (the goal question,
+    /// Brainrot's small brain), instead of on his cushion. The move is a
+    /// scale and an offset, not a new frame, so it animates as one glide with
+    /// the step change, and the player never restarts.
+    var inCorner: Bool = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    /// How much of the header row he takes; the screen leaves this clear.
+    static let cornerWidth: CGFloat = 80
+    private static let cornerHeight: CGFloat = 92
+
     var body: some View {
-        GeometryReader { geo in
-            let size = geo.size
-            let scale = SitLayout.scale(in: size)
-            // The valley's seated Otto is 186 x 1.17 scene units tall, his
-            // body 95% of that, sitting on the line 24% up from the bottom.
-            // The clip is sized so ITS body matches.
-            let seated = 186 * scale * 1.17
-            let clipHeight = seated * 0.95 / clip.bodyShare
-            let bottom = size.height * 0.76 + clipHeight * clip.marginBelow
-            OttoClip(name: clip.name, playing: !reduceMotion, loops: true, fallback: .meditating)
-                .aspectRatio(clip.aspect, contentMode: .fit)
-                .frame(height: clipHeight)
-                .position(x: size.width / 2, y: bottom - clipHeight / 2)
+        GeometryReader { outer in
+            let insetTop = outer.safeAreaInsets.top
+            GeometryReader { geo in
+                let size = geo.size
+                let scale = SitLayout.scale(in: size)
+                // The valley's seated Otto is 186 x 1.17 scene units tall, his
+                // body 95% of that, sitting on the line 24% up from the
+                // bottom. The clip is sized so ITS body matches.
+                let seated = 186 * scale * 1.17
+                let clipHeight = seated * 0.95 / clip.bodyShare
+                let bottom = size.height * 0.76 + clipHeight * clip.marginBelow
+                let centre = CGPoint(x: size.width / 2, y: bottom - clipHeight / 2)
+                // In the corner: level with the header row (12 below the safe
+                // area, 40 tall), right-aligned to the screen's gutter.
+                let k = Self.cornerHeight / clipHeight
+                let corner = CGPoint(x: size.width - AppMetrics.screenPadding - Self.cornerWidth / 2,
+                                     y: insetTop + 12 + 20 + 6)
+                OttoClip(name: clip.name, playing: !reduceMotion, loops: true, fallback: .meditating)
+                    .aspectRatio(clip.aspect, contentMode: .fit)
+                    .frame(height: clipHeight)
+                    .scaleEffect(inCorner ? k : 1)
+                    .position(centre)
+                    .offset(x: inCorner ? corner.x - centre.x : 0,
+                            y: inCorner ? corner.y - centre.y : 0)
+            }
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }

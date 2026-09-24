@@ -46,9 +46,9 @@ public enum PersonalPlan {
     public static func outcomes(for motivations: Set<Motivation>) -> [String] {
         // Fixed order, not set order, so two people who picked the same things
         // read the same sentence.
-        let ordered: [Motivation] = [.lessStressed, .lessAnxious, .sharperFocus,
-                                     .moreDiscipline, .betterSleep, .changeIdentity,
-                                     .manifestGoals, .deeperPractice, .other]
+        let ordered: [Motivation] = [.lessStressed, .lessAnxious, .overthinkLess, .sharperFocus,
+                                     .moreDiscipline, .betterSleep, .morePresent, .changeIdentity,
+                                     .manifestGoals, .deeperPractice, .justCurious, .other]
         return ordered.filter(motivations.contains).compactMap(outcome)
     }
 
@@ -65,7 +65,9 @@ public enum PersonalPlan {
         case .changeIdentity: return "the person you are becoming"
         case .manifestGoals:  return "your intentions, practiced daily"
         case .deeperPractice: return "a deeper practice"
-        case .other:          return nil
+        case .morePresent:    return "more presence"
+        case .overthinkLess:  return "a quieter head"
+        case .other, .justCurious: return nil
         }
     }
 
@@ -131,9 +133,9 @@ public enum PersonalPlan {
     }
 
     static func orderedMotivations(_ motivations: Set<Motivation>) -> [Motivation] {
-        let order: [Motivation] = [.moreDiscipline, .lessStressed, .lessAnxious,
-                                   .sharperFocus, .betterSleep, .changeIdentity,
-                                   .manifestGoals, .deeperPractice, .other]
+        let order: [Motivation] = [.moreDiscipline, .lessStressed, .lessAnxious, .overthinkLess,
+                                   .sharperFocus, .betterSleep, .morePresent, .changeIdentity,
+                                   .manifestGoals, .deeperPractice, .justCurious, .other]
         return order.filter(motivations.contains)
     }
 
@@ -201,7 +203,8 @@ public enum PersonalPlan {
         // Real practices, but 808 answers them no differently from anyone else,
         // and inventing a response would be the decorative-question failure in
         // a new coat.
-        case .deeperPractice, .other:
+        // No response we could name without overclaiming.
+        case .deeperPractice, .other, .morePresent, .overthinkLess, .justCurious:
             return nil
         }
     }
