@@ -44,7 +44,7 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .trial:    return "No worries.\nTry it for a week."
+        case .trial:    return "No worries.\nTry it free first."
         case .halfYear: return "Then have your first\nyear at half price."
         }
     }
@@ -52,10 +52,14 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     /// `yearlyPrice` is Apple's localized string when a live product exists,
     /// so the rung never states a dollar figure to someone who will be shown
     /// euros one tap later.
-    func subtitle(plan: SubscriptionPlan, yearlyPrice: String) -> String {
+    ///
+    /// `trialDays` is the App Store's trial length (`Store.trialDays`), so the
+    /// rung never promises a length the purchase sheet contradicts.
+    func subtitle(plan: SubscriptionPlan, yearlyPrice: String,
+                  trialDays: Int = SubscriptionPlan.fallbackTrialDays) -> String {
         switch self {
         case .trial:
-            return "Seven days, everything unlocked, cancel any time. If a week of measured sessions doesn't convince you, you pay nothing."
+            return "\(TrialCopy.length(trialDays)) free, everything unlocked, cancel any time. If it doesn't help you meditate more, you pay nothing."
         case .halfYear:
             return "\(SubscriptionPlan.yearHalf.price) for the first year instead of \(yearlyPrice). Everything unlocked. It renews at \(yearlyPrice) a year after that, and you can cancel any time."
         }
@@ -63,7 +67,7 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
 
     var cta: String {
         switch self {
-        case .trial:    return "Start my free week"
+        case .trial:    return "Start my free trial"
         case .halfYear: return "Take half off my first year"
         }
     }
@@ -88,6 +92,8 @@ struct DownsellSheet: View {
     let plan: SubscriptionPlan
     /// Apple's localized yearly price when available; our fallback otherwise.
     let yearlyPrice: String
+    /// The App Store's trial length (`Store.trialDays`).
+    var trialDays: Int = SubscriptionPlan.fallbackTrialDays
     /// Accepted this rung. The caller preselects the rung's plan and returns
     /// to the paywall, which owns every purchase and every 3.1.2 disclosure;
     /// nothing is bought from this sheet.
@@ -104,7 +110,7 @@ struct DownsellSheet: View {
                     .font(.system(size: 27, weight: .bold, design: .rounded))
                     .multilineTextAlignment(.center)
                     .foregroundStyle(AppColor.textPrimary)
-                Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice))
+                Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, trialDays: trialDays))
                     .font(AppFont.note)
                     .multilineTextAlignment(.center)
                     .foregroundStyle(AppColor.textSecondary)
@@ -120,7 +126,10 @@ struct DownsellSheet: View {
                 // Always a way out, at every rung, in plain words. A decline
                 // that has to be hunted for is the dark pattern this ladder is
                 // otherwise carefully not being.
-                Button(rung.next == nil ? "Show me the free version" : "Not for me", action: onDecline)
+                // The last rung leads to the free tier, except while 808 is
+                // premium only, when it leads back to the plans.
+                Button(rung.next == nil && !Monetization.premiumOnly ? "Show me the free version" : "Not for me",
+                       action: onDecline)
                     .font(AppFont.callout)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.vertical, 6)
@@ -171,6 +180,7 @@ struct FreeTierScreen: View {
     /// Whether the free week may still be promised. A lapsed subscriber sees
     /// "See the plans" instead; the paywall then shows what is actually true.
     var trialEligible: Bool = true
+    var trialDays: Int = SubscriptionPlan.fallbackTrialDays
     let onStartTrial: () -> Void
     let onContinueFree: () -> Void
 
@@ -212,7 +222,7 @@ struct FreeTierScreen: View {
             Spacer(minLength: 8)
 
             VStack(spacing: 10) {
-                Button(trialEligible ? "Start 7 days free" : "See the plans",
+                Button(trialEligible ? TrialCopy.startButton(trialDays) : "See the plans",
                        action: onStartTrial)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Continue with free 808", action: onContinueFree)

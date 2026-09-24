@@ -5,10 +5,17 @@ import Foundation
 ///
 /// **The rule (Melvin, 2026-09-21, from `mockups/otto-aura.html`):** everyone
 /// starts at 40, so a new person is never greeted by a sad sloth. Each day
-/// meditated adds 10. Each day missed takes 20, except that one missed day a
-/// week is a rest day and costs nothing, the streak's own rule
-/// (`StreakCalculator.restAvailable`), so the two can never disagree. Today
-/// only counts once it is practised: an unfinished day is not a missed one.
+/// meditated adds 10. Today only counts once it is practised: an unfinished
+/// day is not a missed one.
+///
+/// **Missed days cost more the longer the run (Melvin and Aziz, 2026-09-23:
+/// "first day missed -10, second day in a row missed -15, then -20 for third
+/// etc.").** The first day missed in a row costs 10 and each further day in
+/// the same run 5 more (`missCost(run:)`). One missed day a week is a rest
+/// day and costs nothing, the streak's own rule
+/// (`StreakCalculator.restAvailable`), so the two can never disagree; it
+/// still counts as a day of the run, so the day after it is the second day
+/// missed in a row. A day meditated ends the run.
 ///
 /// So the first session lifts him from Stirring to Steady (his colour comes
 /// back), five days in a row reaches Nirvana, and a week away from Nirvana
@@ -17,11 +24,11 @@ import Foundation
 /// **"Not now" (Melvin, 2026-09-22).** Telling Otto "Not now" costs nothing if
 /// a session follows inside the same window. If the window closes with no
 /// session in it, it costs glow in proportion to how long the apps were held:
-/// `20 × hours / 24`, so a skipped Mindful day costs what a missed day does
-/// and a skipped hour costs under one. Two rules keep that from compounding:
-/// **no day ever costs more than a missed day** (the day's windows are capped
-/// at 20, and a missed day already costs 20), and **a rest day forgives the
-/// missed day, never the "Not now"**.
+/// `20 × hours / 24`, so a skipped Mindful day costs 20 and a skipped hour
+/// costs under one. Two rules keep that from compounding: **a missed day and
+/// its windows are never added together** (the day costs whichever is
+/// larger, and a day's windows are capped at 20), and **a rest day forgives
+/// the missed day, never the "Not now"**.
 ///
 /// **Consistency only, never the score.** A short, rough session still counts
 /// as showing up, and the score keeps its own ring. Derived at read time like
@@ -32,7 +39,18 @@ enum OttoAura {
 
     static let startLevel = 40
     static let dayGain = 10
-    static let missCost = 20
+    /// The first day missed in a row, and what each further day in the same
+    /// run adds: 10, 15, 20, 25 ...
+    static let firstMissCost = 10
+    static let missStep = 5
+    /// A whole day of apps held and skipped after "Not now", and the most a
+    /// day's windows can cost together.
+    static let heldDayCost = 20
+
+    /// What the `run`th missed day in a row costs, counting from 1.
+    static func missCost(run: Int) -> Int {
+        firstMissCost + missStep * max(0, run - 1)
+    }
 
     /// The seven drawings, worst to best (Melvin, 2026-09-22, drawn as one
     /// sheet: `mockups/otto-v4/sheet.png`). **His state is physical, never a
@@ -73,14 +91,14 @@ enum OttoAura {
     /// every promise; this only decides the picture, and it never disagrees
     /// with them by more than half a step.
     ///
-    /// **Laid out for the levels people actually land on.** The level moves
-    /// in tens (+10 a day, -20 a missed day), so 0, 10 ... 100 are where it
-    /// sits almost always, and each of those eleven gets its own drawing:
-    /// start (40) is Stirring and the first session (50) is Steady, exactly
-    /// as the stages promise, and 90 shows the drawing just short of Nirvana
-    /// (the faint wheel) with the full one at 100. The two in-betweens that
-    /// fall between tens (6 at 45-49, 10 at 75-79) show when a skipped
-    /// "Not now" window costs part of a day.
+    /// **Laid out for the levels people actually land on.** A day adds 10
+    /// and a missed day takes 10, 15, 20 ..., so the level sits on a multiple
+    /// of five, and each multiple of ten gets its own drawing: start (40) is
+    /// Stirring and the first session (50) is Steady, exactly as the stages
+    /// promise, and 90 shows the drawing just short of Nirvana (the faint
+    /// wheel) with the full one at 100. The two in-betweens that fall between
+    /// tens (6 at 45-49, 10 at 75-79) show after an odd-numbered missed day
+    /// (15, 25 ...) or a skipped "Not now" window.
     static func look(level: Int) -> Int {
         switch level {
         case ..<5: return 1       // Withered
@@ -102,7 +120,7 @@ enum OttoAura {
     /// What one window skipped after a "Not now" costs: 20 for a whole day,
     /// in proportion below that.
     static func skipCost(for window: DateInterval) -> Double {
-        Double(missCost) * min(window.duration / 3600, 24) / 24
+        Double(heldDayCost) * min(window.duration / 3600, 24) / 24
     }
 
     /// - Parameter notNow: every window Otto was told "Not now" in, as the
@@ -130,17 +148,20 @@ enum OttoAura {
 
         var level = Double(startLevel)
         var rests: [Date] = []
+        var run = 0          // days missed in a row, the rest day included
         var day = first
         while day <= todayStart {
-            let windows = min(Double(missCost), skipped[day] ?? 0)
+            let windows = min(Double(heldDayCost), skipped[day] ?? 0)
             if practised.contains(day) {
+                run = 0
                 level = min(100, level + Double(dayGain)) - windows
             } else if day < todayStart {
+                run += 1
                 if StreakCalculator.restAvailable(on: day, after: rests, calendar: calendar) {
                     rests.append(day)
                     level -= windows
                 } else {
-                    level -= Double(missCost)
+                    level -= max(Double(missCost(run: run)), windows)
                 }
             } else {
                 // Today, not practised yet: only windows that already closed.
