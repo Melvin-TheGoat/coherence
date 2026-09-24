@@ -5293,8 +5293,11 @@ share Otto, let the valley draw him and change only the words.**
 
 **"Let's personalize 808 for you."** (Brainrot's screen, Aziz) REPLACES
 "Just N quick questions" on `Step.questionCount`: an `IntroScreen` with the
-valley's seated Otto, who says "Just N quick questions, so I know how to help
-you." in his typed bubble, and "Let's do it!". **Otto there is a
+valley's seated Otto, who says "Your answers show me what gets in the way,
+so I can help you keep going." (Aziz's line, Brainrot's direct reason for
+asking) in his typed bubble, and "Let's do it!". The answers are not yet
+used after onboarding beyond the reminder time; that open item is now a
+promise on screen. **Otto there is a
 PLACEHOLDER**: Aziz is making a Runway clip of him seated, writing in a
 green notepad (still made in Runway's image tool from `otto-sit-happy.png`
 plus the clipboard art, then animated, 5 s). It goes through the clip recipe

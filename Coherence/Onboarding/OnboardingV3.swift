@@ -1103,14 +1103,15 @@ struct QuestionCountScreen: View {
 
     // Brainrot's "Let's personalize Brainrot for you." in 808's words (Aziz,
     // 2026-09-23), replacing "Just N quick questions". Otto is the valley's
-    // own, seated on his cushion as on every screen since Meet Otto, and the
-    // count the old screen gave is now what he says. PLACEHOLDER: he will be a
+    // own, seated on his cushion as on every screen since Meet Otto, saying
+    // why we ask, in his own voice (Aziz's line). The question count left
+    // this screen; each question's progress bar carries it. PLACEHOLDER: he will be a
     // Runway clip of him writing in a notepad, looped, once Aziz has it.
     var body: some View {
         IntroScreen(progress: 0.13,
                     progressFrom: 0.10,
                     title: "Let's personalize 808 for you.",
-                    subtitle: "Just \(Self.most) quick questions, so I know how to help you.",
+                    subtitle: "Your answers show me what gets in the way, so I can help you keep going.",
                     cta: "Let's do it!",
                     standing: false,
                     onContinue: onContinue) { _ in
