@@ -5239,6 +5239,12 @@ xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPho
 
 ## THE WELCOME SCREEN IS BRAINROT'S, AND OTTO WAVES FROM A VIDEO (2026-09-23, Aziz)
 
+**Onboarding now opens:** welcome (Otto waving) → one breath (Otto raising
+his arms) → **Meet your meditating partner: Otto** ("He's doing alright.",
+`MeetOttoScreen`, `Step.meetOtto`, last in the enum, Brainrot's "Meet your
+brain", Otto as the Steady aura figure Home draws) → the question count.
+Welcome and Meet Otto are one `IntroScreen`.
+
 From a Brainrot screenshot: a white page, a soft ground rise (`WelcomeGround`,
 warmed toward Otto's cream), a dot of progress bar, Otto standing, "Welcome to
 808!" over "It's time to regain control of your mind.", and "Let's go!". This
@@ -5288,6 +5294,20 @@ replaces the valley welcome and its bubble; the grasshopper overlay
 - **The recipe for every future Otto move the rig cannot make:** clean art on
   white with room for the motion, Runway describing motion only with a
   locked camera, then retime to 20 fps, loop at a still moment, crossfade,
-  key. Next up: the breathing screen, Otto raising his arms palms up for 4 s,
-  holding 2, lowering palms down for 4 (a 10 s clip), to be time-fitted to
-  the screen's 4, 2, 4.
+  key.
+- **The breathing screen's Otto is a clip too** (`otto-breath.mov`, same
+  day): he raises his arms palms up, holds them overhead, lowers them palms
+  down. It replaces the rig and the whole-figure swell, starts on the same
+  clock as the water, words and haptics, and holds its last frame. Cut to
+  EXACTLY 80 frames rising, 40 held, 80 lowering at 20 fps, which is the
+  screen's 4, 2, 4 (the extra frames came out of the slow starts and ends,
+  every other one, and out of the still hold). Verified on the simulator:
+  arms at the top as "Hold." appears, back on his knees for "Nicely done".
+- **CHECK EVERY RUNWAY CLIP FOR A BUILT-IN STUTTER.** The breathing clip
+  (10 s) had one and the wave (7 s) did not: in every block of four frames
+  one was a REPEAT of the frame before and the next one jumped two steps
+  (frame-to-frame motion 0, 1, 1, 2). Found with the same frame-difference
+  measure. Fix: drop the repeats, give each remaining frame its true time
+  (frames 4k+2 and 4k+3 sit one slot early), feed that as variable frame
+  rate through the concat demuxer, and let `minterpolate` fill only the one
+  missing slot per block. Motion then ramps smoothly. Do it before cutting.

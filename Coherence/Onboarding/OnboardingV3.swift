@@ -509,7 +509,7 @@ struct BreathExerciseScreen: View {
 
     /// ONE breath, in 4, hold 2, out 4 (Aziz, 2026-09-23, from a reference
     /// screen: "only for one breath", `mockups/breath-one.html`). It was three
-    /// 5 s breaths paced off Otto's rig.
+    /// 5 s breaths paced off Otto's rig. Otto is a clip timed to the same 4, 2, 4.
     static let inhale: Double = 4
     static let hold: Double = 2
     static let exhale: Double = 4
@@ -520,15 +520,8 @@ struct BreathExerciseScreen: View {
     private static let low: CGFloat = 0.08
     private static let high: CGFloat = 1.08
 
-    /// Held until the breath starts, then released: his chest breathes on the
-    /// rig's own ten second breath (five in, five out), which lands on the
-    /// 4, 2, 4 closely enough, and this screen swells his whole figure on top
-    /// of it so the breath reads at a glance (Aziz: "i also want otto to have
-    /// a breathing animation").
-    @StateObject private var rig = OttoRigHolder(holdUntilReleased: true)
     @State private var haptics = BreathHaptics()
     @State private var appeared = false
-    @State private var speaking = false
     @State private var finished = false
     /// When the breath began. Everything on screen reads its place off this
     /// one clock, so the water, Otto and the words can never disagree.
@@ -557,11 +550,15 @@ struct BreathExerciseScreen: View {
                 // centre, not the pair's, that sits on the screen's.
                 VStack(spacing: 14) {
                     Color.clear.frame(height: Self.wordsHeight)
-                    OttoInMeadow(pose: .meditating, talking: speaking, rig: rig, share: 0.9)
-                        .frame(maxWidth: 230)
-                        // Taller than wide: a chest filling, not a picture
-                        // zooming. Anchored at his feet so he grows upward.
-                        .scaleEffect(x: 1 + 0.05 * fill, y: 1 + 0.10 * fill, anchor: .bottom)
+                    // He guides the breath with his arms (Aziz, 2026-09-23): a
+                    // Runway clip, cut to exactly 80 frames rising palms up,
+                    // 40 held, 80 lowering palms down at 20 fps, which is this
+                    // screen's 4, 2, 4. It starts on the same clock as the
+                    // water and the words, and holds its last frame (his paws
+                    // back on his knees) once the breath is done.
+                    OttoClip(name: "otto-breath", playing: breathStart != nil, fallback: .meditating)
+                        .aspectRatio(832.0 / 624.0, contentMode: .fit)
+                        .frame(width: 380)
                         .opacity(appeared ? 1 : 0)
                     // Always laid out, empty or not: an empty slot took no
                     // height, and Otto jumped up the moment the words
@@ -643,7 +640,6 @@ struct BreathExerciseScreen: View {
         // Moves the flow on to `.breathing`, which is what resume and the
         // analytics count, without a button to press for it.
         if !breathing { onReady() }
-        rig.release()
         breathStart = Date()
         haptics.playOnce(inhale: Self.inhale, hold: Self.hold, exhale: Self.exhale)
         try? await Task.sleep(for: .milliseconds(Int(Self.total * 1000)))
