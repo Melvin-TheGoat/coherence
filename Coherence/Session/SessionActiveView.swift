@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// The sit. Otto in a valley, a sun that crosses it, and a clock you have to
 /// ask for.
@@ -20,6 +21,11 @@ import SwiftUI
 ///
 /// The sun does what a progress bar would, and cannot be read precisely,
 /// which is exactly right for somebody mid-sit.
+///
+/// **Leaving costs a phone sit** (Melvin, 2026-09-23): away more than ten
+/// seconds and it won't count unless you say you were still meditating.
+/// A Watch sit is exempt — it keeps measuring on the wrist regardless of
+/// what the phone's screen is doing. See `LeftAppRule`.
 struct SessionActiveView: View {
     /// When the session actually started, so the clock survives the view
     /// being rebuilt and matches whatever is measuring rather than drifting
@@ -31,9 +37,28 @@ struct SessionActiveView: View {
     var planChip: String? = nil
     var onEnd: () -> Void
 
+    @EnvironmentObject private var coordinator: SessionCoordinator
+    @Environment(\.scenePhase) private var scenePhase
     @State private var now = Date()
 
+    #if DEBUG
+    /// `PREVIEW_LEFT_APP=1` shows the "you left" state immediately, so it
+    /// can be reviewed without actually backgrounding the app for ten
+    /// seconds. Pair with `PREVIEW_BREATHING=<seconds>` to see this screen
+    /// with no live session running at all.
+    @State private var forcedLeftAppPreview =
+        ProcessInfo.processInfo.environment["PREVIEW_LEFT_APP"] == "1"
+    #endif
+
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    /// Whether to show `SessionLeftAppView` instead of the sit itself.
+    private var showingLeftApp: Bool {
+        #if DEBUG
+        if forcedLeftAppPreview { return true }
+        #endif
+        return coordinator.leftAppPrompt != nil
+    }
 
     /// An open-ended sit has no end to travel toward, so the valley takes a
     /// nominal twenty minutes to reach dusk and then holds there. It is
@@ -66,6 +91,47 @@ struct SessionActiveView: View {
     private var day: DayLight { DayLight.at(progress) }
 
     var body: some View {
+        Group {
+            if showingLeftApp {
+                SessionLeftAppView(
+                    onEndSession: {
+                        coordinator.discardLeftAppSession()
+                        #if DEBUG
+                        forcedLeftAppPreview = false
+                        #endif
+                    },
+                    onOverride: {
+                        coordinator.overrideLeftApp()
+                        #if DEBUG
+                        forcedLeftAppPreview = false
+                        #endif
+                    })
+            } else {
+                sit
+            }
+        }
+        .ignoresSafeArea()
+        .statusBarHidden()
+        .persistentSystemOverlays(.hidden)
+        // With the indicator hidden, the app gets the first touch at the
+        // bottom edge and a swipe home needs a second one. Without this the
+        // system claims the edge first and End's tap is lost to it.
+        .defersSystemGestures(on: .bottom)
+        .onReceive(clock) { now = $0 }
+        // Forwarded to the coordinator, which is the one place that knows
+        // whether this is a phone sit at all — a Watch sit ignores every
+        // change here (`LeftAppRule.applies`). The coordinator also owns
+        // keeping the screen awake for a phone sit (`beginOnPhone`), since
+        // that has to start and end with the SESSION, not this view.
+        .onChange(of: scenePhase) { _, phase in
+            coordinator.phoneScenePhaseChanged(phase)
+        }
+    }
+
+    /// The sit itself: the valley, the ring, the clock, End. Its own
+    /// property so `body` can swap it for `SessionLeftAppView` without
+    /// duplicating the outer modifiers that keep End's tap working.
+    private var sit: some View {
         GeometryReader { geo in
             let ring = SitLayout.ringDiameter(in: geo.size)
             let ringCentreY = SitLayout.ringCentreY(in: geo.size)
@@ -136,14 +202,6 @@ struct SessionActiveView: View {
             }
             .frame(width: geo.size.width, height: geo.size.height)
         }
-        .ignoresSafeArea()
-        .statusBarHidden()
-        .persistentSystemOverlays(.hidden)
-        // With the indicator hidden, the app gets the first touch at the
-        // bottom edge and a swipe home needs a second one. Without this the
-        // system claims the edge first and End's tap is lost to it.
-        .defersSystemGestures(on: .bottom)
-        .onReceive(clock) { now = $0 }
     }
 
     private var headline: String {
@@ -197,14 +255,17 @@ private struct SitRing: View {
 #Preview("Arrive") {
     SessionActiveView(startedAt: Date(), plannedDurationSec: 600,
                       planChip: "10 min · Silence", onEnd: {})
+        .environmentObject(SessionCoordinator(container: Persistence.inMemory()))
 }
 
 #Preview("Mid") {
     SessionActiveView(startedAt: Date().addingTimeInterval(-390),
                       plannedDurationSec: 600, onEnd: {})
+        .environmentObject(SessionCoordinator(container: Persistence.inMemory()))
 }
 
 #Preview("Done") {
     SessionActiveView(startedAt: Date().addingTimeInterval(-600),
                       plannedDurationSec: 600, onEnd: {})
+        .environmentObject(SessionCoordinator(container: Persistence.inMemory()))
 }
