@@ -300,7 +300,8 @@ struct MeetOttoScreen: View {
 /// on the meadow, one button. It is a sequence, and every beat is felt:
 ///
 /// 1. Otto fades in (no pop: Aziz) and the title arrives with him, not typed.
-/// 2. The line under it types out, a light tick per letter.
+/// 2. What he says types out in his bubble above his head, a light tick per
+///    letter.
 /// 3. The button rises into place with a thump.
 ///
 /// **Depth.** A standing Otto is placed in the SCENE's coordinates, his feet
@@ -318,7 +319,8 @@ struct IntroScreen<Figure: View>: View {
     var progressFrom: Double? = nil
     let title: String
     var titleSize: CGFloat = 34
-    /// Typed out under the title. Nil for a page that is the title alone.
+    /// What Otto says, typed into his bubble. Nil for a page that is the
+    /// title alone.
     let subtitle: String?
     let cta: String
     /// True when `figure` is a standing Otto this screen places on the
@@ -336,31 +338,53 @@ struct IntroScreen<Figure: View>: View {
 
     var body: some View {
         ZStack(alignment: .top) {
-            if standing {
-                GeometryReader { geo in
-                    let size = geo.size
-                    let scale = SitLayout.scale(in: size)
-                    // His own cushion, the one he sits on in the very next
-                    // screens, at exactly the size and place the valley draws
-                    // it (Aziz, 2026-09-23: "the same mat hes sitting on ...
-                    // consistent"). He stands on its top.
-                    let cushionCentre = SitLayout.cushionBottom(in: size) - 22 * scale
-                    let feet = cushionCentre + 2 * scale
-                    // A standing sloth is a head taller than the seated one
-                    // (186 in the scene's units).
-                    let height = 222 * scale
+            GeometryReader { geo in
+                let size = geo.size
+                let scale = SitLayout.scale(in: size)
+                // His own cushion, the one he sits on in the very next
+                // screens, at exactly the size and place the valley draws it
+                // (Aziz, 2026-09-23: "the same mat hes sitting on ...
+                // consistent"). He stands on its top.
+                let cushionCentre = SitLayout.cushionBottom(in: size) - 22 * scale
+                let feet = cushionCentre + 2 * scale
+                // A standing sloth is a head taller than the seated one (186
+                // in the scene's units).
+                let height = 222 * scale
+                // The top of his head: the clip carries a few points of
+                // margin above his tuft; the seated Otto is the valley's.
+                let headTop = standing ? feet - height + 5 * scale : SitLayout.ottoTop(in: size)
+
+                if standing {
                     Cushion()
                         .frame(width: 168 * scale, height: 44 * scale)
                         .position(x: size.width / 2, y: cushionCentre)
+                        .standsInMeadow(feetY: SitLayout.cushionFront(in: size, scale: scale),
+                                        scale: scale, sceneSize: size)
                         .opacity(shown ? 1 : 0)
                     figure(shown && !reduceMotion)
                         .frame(height: height)
                         .position(x: size.width / 2, y: feet - height / 2)
                         .opacity(shown ? 1 : 0)
                 }
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+
+                // What he says, in his bubble just above his head (Aziz,
+                // 2026-09-23: every typed line is Otto talking). It still
+                // types a letter at a time with a tick each.
+                if let subtitle {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 0)
+                        OttoSaysBubble(text: subtitle, shown: subtitleShown)
+                            .frame(maxWidth: size.width - 72)
+                    }
+                    .frame(width: size.width, height: max(0, headTop - 6))
+                    .position(x: size.width / 2, y: max(0, headTop - 6) / 2)
+                    .opacity(shown ? 1 : 0)
+                    .transition(.opacity)
+                }
             }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .animation(.easeInOut(duration: 0.3), value: subtitle)
 
             VStack(spacing: 0) {
                 OnboardingProgress(from: progressFrom ?? progress, to: progress)
@@ -382,12 +406,6 @@ struct IntroScreen<Figure: View>: View {
                         // A new page of the same screen cross-fades its words.
                         .id(title)
                         .transition(.opacity)
-                    if let subtitle {
-                        TypedLine(text: subtitle, shown: subtitleShown,
-                                  font: .system(size: 21, weight: .semibold, design: .rounded),
-                                  color: AppColor.textPrimary.opacity(0.72))
-                            .transition(.opacity)
-                    }
                 }
                 .animation(.easeInOut(duration: 0.3), value: title)
                 .padding(.horizontal, AppMetrics.screenPadding + 4)
@@ -448,24 +466,34 @@ struct IntroScreen<Figure: View>: View {
     }
 }
 
-/// A line that types itself out. The letters still to come are laid out in
-/// clear ink, so the line breaks where the finished line breaks: revealing a
-/// growing prefix reflowed centred text on every letter.
-struct TypedLine: View {
+/// Otto's line in the welcome screens' bubble: white, round, the tail down
+/// at his head, typed a letter at a time by the screen (so each letter can
+/// tick). Unarrived letters are laid out in clear ink, so the bubble is its
+/// finished size from the first frame and never grows while he talks.
+private struct OttoSaysBubble: View {
     let text: String
     let shown: Int
-    let font: Font
-    let color: Color
+    private static let tail: CGFloat = 11
 
     var body: some View {
         var line = AttributedString(text)
         let cut = line.index(line.startIndex, offsetByCharacters: min(max(shown, 0), text.count))
-        line[line.startIndex..<cut].foregroundColor = color
+        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
         line[cut..<line.endIndex].foregroundColor = .clear
         return Text(line)
-            .font(font)
-            .multilineTextAlignment(.center)
+            .font(.system(size: 19, weight: .semibold, design: .rounded))
+            .lineSpacing(3)
+            .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 16)
+            .padding(.bottom, Self.tail)
+            .background {
+                SpeechBubbleShape(edge: .bottom, cornerRadius: 26, tailWidth: 24, tailDepth: Self.tail)
+                    .fill(.white)
+                    .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
+            }
+            .accessibilityHidden(true)
     }
 }
 

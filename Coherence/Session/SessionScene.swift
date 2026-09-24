@@ -329,6 +329,8 @@ struct ValleyScene: View {
                 .frame(width: 168 * s, height: 44 * s)
                 .position(x: size.width / 2,
                           y: SitLayout.cushionBottom(in: size) - 22 * s - ottoLift)
+                .standsInMeadow(feetY: SitLayout.cushionFront(in: size, scale: s) - ottoLift,
+                                scale: s, sceneSize: size)
                 .opacity(ottoInCorner || !showsFigure ? 0 : 1)
 
             // The artboard carries headroom above his tuft that the cutout
@@ -451,6 +453,32 @@ struct Cushion: View {
                     .offset(y: -h * 0.22)
             }
             .shadow(color: .black.opacity(0.22), radius: 4, y: 3)
+        }
+    }
+}
+
+extension View {
+    /// **Anything standing IN the meadow goes through this.** The meadow is
+    /// one canvas painted before everything on it, so whatever is placed
+    /// afterwards covers every flower, near or far. That has now gone wrong
+    /// three times (Aziz, 2026-09-23): a grasshopper "landing on the petals"
+    /// of a nearer flower, and Otto's cushion, on the welcome AND on every
+    /// seated screen, covering the flowers in front of it. This repaints the
+    /// grass and flowers whose foot is nearer than `feetY` over the view,
+    /// cut to the view's own outline, so they stand in front of it and
+    /// nothing outside it is drawn twice.
+    ///
+    /// The view must be laid out in SCENE coordinates (full scene size, its
+    /// content placed with `.position`), the same space the meadow is drawn
+    /// in. `feetY` is where the thing meets the ground, in points from the
+    /// top of the scene.
+    func standsInMeadow(feetY: CGFloat, scale: CGFloat, sceneSize: CGSize) -> some View {
+        let placed = frame(width: sceneSize.width, height: sceneSize.height)
+        return placed.overlay {
+            Meadow(scale: scale, nearerThan: feetY)
+                .frame(width: sceneSize.width, height: sceneSize.height)
+                .mask { placed }
+                .allowsHitTesting(false)
         }
     }
 }
@@ -642,6 +670,12 @@ enum SitLayout {
     /// Where a grasshopper passes from behind Otto to in front of him: the
     /// bottom of his cushion, where he meets the grass.
     static func grasshopperSplit(in size: CGSize) -> CGFloat { cushionBottom(in: size) }
+
+    /// The cushion's front edge on the grass: flowers and tufts whose foot is
+    /// below this line stand in front of it (`standsInMeadow`).
+    static func cushionFront(in size: CGSize, scale s: CGFloat) -> CGFloat {
+        cushionBottom(in: size) - 6 * s
+    }
 
     static func scale(in size: CGSize) -> CGFloat {
         min(size.width / 300, size.height / 620)

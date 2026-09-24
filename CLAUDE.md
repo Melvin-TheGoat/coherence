@@ -5237,6 +5237,32 @@ xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPho
   paler toward the ridge). The grasshopper also casts a shadow on the grass
   (`HopperPose.groundY` / `lift`) that shrinks and fades as it jumps.
 
+## RULE: ANYTHING STANDING IN THE MEADOW USES `standsInMeadow` (2026-09-23, Aziz)
+
+**The meadow is one canvas painted before everything on it, so anything
+placed afterwards covers every flower, near or far.** It went wrong three
+times in one evening (a grasshopper "landing on the petals" of a nearer
+flower; Otto's cushion covering the flowers in front of it on the welcome;
+the same on every seated screen, Home included, unnoticed until then), and
+Aziz asked that it never happen again. `View.standsInMeadow(feetY:scale:
+sceneSize:)` (SessionScene.swift) repaints the grass and flowers whose foot
+is nearer than `feetY` over the view, masked to the view's own outline.
+- **Every new thing that sits, stands, lands or walks in the meadow goes
+  through it** (the cushion, grasshoppers, and whatever comes next), laid
+  out in scene coordinates with `.position`.
+- **Before calling any meadow change done, look at a screenshot for flowers
+  that should be in front of the new thing.** Depth mistakes are invisible in
+  the code and obvious on the screen.
+- It cannot mask a video (`AVPlayerLayer`), so a clip of Otto stands on a
+  cushion or ground that goes through it; that is why the welcome's Otto
+  stands on his cushion.
+
+**Every typed line in the intro screens is Otto speaking** (Aziz): the
+line under the title moved into `OttoSaysBubble`, white and round, hanging
+just above his head with its tail at him, still typed a letter at a time
+with a haptic tick each. The screen types it, not the bubble, so each letter
+can tick. `TypedLine` is deleted.
+
 ## ONBOARDING'S OPENING IS BACK IN THE VALLEY; OTTO'S CLIPS NO LONGER FLASH (2026-09-23, late, Aziz)
 
 Supersedes the white-page parts of the section below. **Screens 1, 3 and 4
