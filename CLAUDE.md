@@ -3687,6 +3687,28 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
 - **The Rive MCP cannot switch the editor's file.** Ask the person to click
   the tab, then confirm with `session_info` before any write.
 
+## ONBOARDING SETS UP BLOCK, AND WHY AZIZ PULLED AND SAW NONE OF IT (2026-09-23)
+
+- **Onboarding picks the apps and the schedule** (Melvin, after the call:
+  "user should set up what they want to block in the onboarding ... should
+  set up schedule in onboarding ... least friction possible"). Two screens
+  after the wall and before the paywall, Block builds only:
+  `BlockAppsScreen` (Screen Time permission, then the picker; "Not now"
+  moves on) and `BlockScheduleScreen` (`OnboardingBlockSetup.swift`). Both
+  write the Mindful day blocker `BlockController` already seeds, through
+  `BlockController.save`, so the Block tab shows exactly what onboarding
+  set. `Step.blockApps` 45 and `.blockSchedule` 46, last in the enum;
+  analytics "31c" and "31d". Off Block builds they route past and never
+  enter the Back history.
+- **Aziz pulled and was a day behind because the work was on another
+  branch.** Everything Melvin's sessions built from 2026-09-22 23:38 went to
+  `block`, while `mvp` and `main` stayed on Aziz's own last push (116ee38).
+  He fast-forwarded both to `block` (27eac0f) on 2026-09-23 at 20:04 EDT.
+  **A pull that brings new Swift files or a new `.riv` also needs
+  `xcodegen generate`, with Xcode closed, before building**: 66 files had
+  been added since his last sync, and a project that has not been
+  regenerated cannot see any of them.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in

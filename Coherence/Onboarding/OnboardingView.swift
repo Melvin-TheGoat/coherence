@@ -80,6 +80,9 @@ struct OnboardingView: View {
         /// Added 2026-09-22, replacing both of the screens above: Otto's glow,
         /// dragged by hand. Last in the enum, for the reason above.
         case auraDemo
+        /// Added 2026-09-23: which apps Otto holds, and when, on Block builds,
+        /// right after the wall. Last in the enum, for the reason above.
+        case blockApps, blockSchedule
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -110,6 +113,12 @@ struct OnboardingView: View {
                  .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
                  .auraDemo, .bodyCuriosity:
                 return true
+            // Real screens on Block builds, so leaving one belongs in the
+            // Back history like any other question. Off Block builds they
+            // route straight past on appear and must never enter it, the
+            // same as every conditional pass-through above.
+            case .blockApps, .blockSchedule:
+                return !FeatureFlags.block
             default:
                 return false
             }
@@ -180,10 +189,18 @@ struct OnboardingView: View {
     /// Taps on Otto on the stress screen: he jiggles, as he does on Home.
     @State private var ottoPokes = 0
 
-    /// After the wall: sign-in (optional), then the tour for Watch owners.
-    /// The wall sits between health consent and sign-in for everyone: the
-    /// company they'd be in, right before the app asks them for anything.
+    /// After the wall: Block's setup on Block builds, then sign-in
+    /// (optional), then the tour for Watch owners. The wall sits between
+    /// health consent and everything after it, the company they'd be in,
+    /// right before the app asks them for anything.
     private var afterWall: Step {
+        FeatureFlags.block ? .blockApps : afterBlockSetup
+    }
+
+    /// Where Block's own setup hands off to. Block builds reach it after
+    /// picking apps and a schedule; everyone else reaches it straight from
+    /// the wall, exactly as before Block's screens existed.
+    private var afterBlockSetup: Step {
         Self.paywallInsideOnboarding ? .paywall : .signIn
     }
 
@@ -479,6 +496,24 @@ struct OnboardingView: View {
                 // A resume record from before the gate went, on a phone with
                 // no Watch: nothing will be measured, so nothing to consent to.
                 Color.clear.onAppear { go(.wall) }
+            }
+
+        // Block builds only (Melvin, 2026-09-23): which apps Otto holds, and
+        // when, right after the wall. Off Block builds, or on a resume record
+        // saved before the flag last flipped, both pass straight through:
+        // nobody meets a screen for a feature their build doesn't have.
+        case .blockApps:
+            if FeatureFlags.block {
+                BlockAppsScreen { go(.blockSchedule) }
+            } else {
+                Color.clear.onAppear { go(.blockSchedule) }
+            }
+
+        case .blockSchedule:
+            if FeatureFlags.block {
+                BlockScheduleScreen { go(afterBlockSetup) }
+            } else {
+                Color.clear.onAppear { go(afterBlockSetup) }
             }
 
         // MARK: The walkthrough (see OnboardingWalkthrough.swift)
