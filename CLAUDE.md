@@ -5280,6 +5280,15 @@ colour comes back, and only then does the flow move on. Copy rule it keeps:
 the thoughts are recognition, not alarm; the claim is only that a daily
 practice keeps it clear, no number.
 
+**One Otto from Meet Otto to the questions.** The question count ("Just N
+quick questions") now uses the valley's seated Steady Otto too, its bubble
+pinned above his head, instead of standing its own waving Otto: arriving
+from the clutter screen, the seated one faded out while a standing one slid
+in, two see-through Ottos at once (Aziz: "the transition is weird"). The
+clutter screen's heading now arrives WITH the slide instead of fading in a
+beat later, which left a moment of empty sky. **When consecutive screens
+share Otto, let the valley draw him and change only the words.**
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room

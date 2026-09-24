@@ -709,9 +709,11 @@ struct ClutterScreen: View {
             return
         }
         Self.pop.prepare()
-        try? await Task.sleep(for: .milliseconds(250))
+        // The heading comes in WITH the screen's slide: fading it in after
+        // left a beat of empty sky between the two screens.
+        headerShown = true
+        try? await Task.sleep(for: .milliseconds(350))
         guard !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.4)) { headerShown = true }
         for (i, gap) in Self.gaps.enumerated() {
             try? await Task.sleep(for: .seconds(gap))
             guard !Task.isCancelled else { return }
@@ -1056,40 +1058,45 @@ struct QuestionCountScreen: View {
     let onContinue: () -> Void
 
     @Environment(\.onboardingBack) private var back
-    @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
     @State private var speaking = false
 
+    // Otto is the valley's own, seated on his cushion (`OnboardingValley`,
+    // stage Steady), the same Otto as on Meet Otto, See for yourself and the
+    // clutter screen before it. This screen used to stand its own waving Otto
+    // in the meadow, and arriving from the clutter screen the seated one faded
+    // out while the standing one slid in: two see-through Ottos on top of
+    // each other (Aziz, 2026-09-23: "the transition is weird"). Now he stays
+    // put and only his words change.
     var body: some View {
-        VStack(spacing: 0) {
+        ZStack(alignment: .top) {
+            GeometryReader { geo in
+                let size = geo.size
+                let headTop = SitLayout.ottoTop(in: size)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    OttoSpeech(text: "Just **\(Self.most) quick questions** before your first session!",
+                               size: 20, friendly: true, speaking: $speaking)
+                        .frame(maxWidth: size.width - 72)
+                }
+                .frame(width: size.width, height: max(0, headTop - 6))
+                .position(x: size.width / 2, y: max(0, headTop - 6) / 2)
+            }
+            .ignoresSafeArea()
+
             HStack {
                 if let back { OnboardingBackButton(action: back) }
                 Spacer()
             }
             .frame(height: 40)
-
-            Spacer(minLength: 12)
-
-            OttoSpeech(text: "Just **\(Self.most) quick questions** before your first session!",
-                       speaking: $speaking)
-                .opacity(appeared ? 1 : 0)
-
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
-                .padding(.top, 6)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.top, 12)
         }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
         .safeAreaInset(edge: .bottom) {
             OnboardingCTA(title: "Continue", action: onContinue)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
         }
-        .onAppear { withAnimation(.easeOut(duration: 0.3)) { appeared = true } }
     }
 }
 

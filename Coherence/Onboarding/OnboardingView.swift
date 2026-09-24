@@ -318,7 +318,7 @@ struct OnboardingView: View {
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
-                                    : (step == .meetOtto || step == .ottoGrows) ? .steady : nil,
+                                    : (step == .meetOtto || step == .ottoGrows || step == .questionCount) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress)
                                    : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
