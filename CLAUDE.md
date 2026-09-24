@@ -3848,13 +3848,18 @@ things on the build, all in:
   **145 degrees, a V overhead**, and the chest fills 2-3.5% from his feet.
   **The arms are IN FRONT of the body** (Aziz: behind, the arms did not seem
   to meet his shoulders and the paws sat too low); straight up in front, they
-  covered his cheeks, hence the V. **In SwiftUI, not Rive**:
+  covered his cheeks, hence the V. **The arms were regenerated with OPEN
+  paws** (Aziz: curled paws made the stretch look unnatural); ChatGPT
+  delivered them on a PAINTED checkerboard (an RGB image, no alpha), keyed out
+  by flood-filling the neutral greys from the edges plus a 4-pass defringe of
+  pale low-chroma edge pixels. They are long and thin, drawn at 0.38; the first
+  curled set, drawn at 0.75, is kept in `mockups/otto-v3/otto-stand-arm-*.png`
+  beside the new `*-open.png`. **Always check a generated "transparent" PNG
+  for a real alpha channel before cutting it.** **In SwiftUI, not Rive**:
   the water, the words and the arms all read the one `breathStart` clock, so
   they cannot drift off the 4, 2, 4. The shoulder numbers are source pixels
   measured on a test composite; higher shoulders put the raised arms over his
-  face. **The arms are drawn at 0.75 of the generated size** (Aziz: "his paws
-  are wayyyyy too big"): as generated the paws dwarfed his feet and the arms
-  hung past them; at 0.65 they looked stubby.
+  face.
 - One clock (`breathStart`) drives the water, the swell and the words.
   `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
   `BreathCircle` is no longer used here.

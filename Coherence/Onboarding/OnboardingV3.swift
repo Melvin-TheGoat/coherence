@@ -450,23 +450,28 @@ struct OttoArmsBreathing: View {
     var bodyWidth: CGFloat = 150
 
     private static let body = CGSize(width: 410, height: 719)
-    private static let left = CGSize(width: 188, height: 428)
-    private static let right = CGSize(width: 189, height: 427)
+    /// The second set of arms, with OPEN paws (Aziz: the curled ones made
+    /// the stretch look unnatural). ChatGPT painted a fake checkerboard behind
+    /// them; it was keyed out by flood-filling the neutral greys from the
+    /// edges, then defringed.
+    private static let left = CGSize(width: 309, height: 997)
+    private static let right = CGSize(width: 309, height: 997)
     /// Shoulders, in body pixels.
     private static let shoulderY: CGFloat = 345
     private static let leftShoulderX: CGFloat = 58
     private static let rightShoulderX: CGFloat = 352
     /// Where each arm turns, in its own pixels: near the top of the rounded
     /// end, toward the side that meets the body.
-    private static let pivotY: CGFloat = 34
+    private static let pivotY: CGFloat = 60
     private static let leftPivotX: CGFloat = 0.55
     private static let rightPivotX: CGFloat = 0.45
     /// A V overhead at the top of the breath, paws above his ears.
     private static let lift: Double = 145
-    /// The arms as generated came with paws far bigger than his feet (Aziz:
-    /// "his paws are wayyyyy too big") and hung past his feet. At 0.75 the
-    /// paws match his feet and the arms end at them; 0.65 read as stubby.
-    private static let armScale: CGFloat = 0.75
+    /// The open-pawed arms came much longer and thinner than the body; at
+    /// 0.38 they end at his feet at rest and make a long V overhead. (The
+    /// first, curled set was drawn at 0.75, after Aziz: "his paws are
+    /// wayyyyy too big".)
+    private static let armScale: CGFloat = 0.38
 
     var body: some View {
         let k = bodyWidth / Self.body.width
