@@ -247,8 +247,8 @@ struct OttoInMeadow: View {
 /// beat of it is felt as well as seen:
 ///
 /// 1. Otto fades in (no pop: Aziz, 2026-09-23) and waves, a generated clip.
-/// 2. "Welcome to 808!" types out, a firm tick per letter.
-/// 3. The line under it types out faster, a lighter tick per letter.
+/// 2. "Welcome to 808!" arrives with him, not typed (Aziz).
+/// 3. The line under it types out, a light tick per letter.
 /// 4. "Let's go!" rises into place.
 ///
 /// Reduce Motion gets the finished screen at once, with no ticks.
@@ -261,7 +261,6 @@ struct WelcomeScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// Flips once: fades Otto in and starts his wave.
     @State private var popped = false
-    @State private var titleShown = 0
     @State private var subtitleShown = 0
     @State private var ctaShown = false
 
@@ -298,9 +297,12 @@ struct WelcomeScreen: View {
                 .zIndex(1)
 
             VStack(spacing: 12) {
-                TypedLine(text: Self.title, shown: titleShown,
-                          font: .system(size: 34, weight: .heavy, design: .rounded),
-                          color: AppColor.textPrimary)
+                // Not typed (Aziz): the title is simply there, with Otto.
+                Text(Self.title)
+                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .opacity(popped ? 1 : 0)
                 TypedLine(text: Self.subtitle, shown: subtitleShown,
                           font: .system(size: 21, weight: .medium, design: .rounded),
                           color: AppColor.textSecondary)
@@ -343,7 +345,6 @@ struct WelcomeScreen: View {
         guard !popped else { return }
         if reduceMotion {
             popped = true
-            titleShown = Self.title.count
             subtitleShown = Self.subtitle.count
             ctaShown = true
             return
@@ -355,9 +356,7 @@ struct WelcomeScreen: View {
         withAnimation(.easeOut(duration: 0.35)) { popped = true }
         try? await Task.sleep(for: .milliseconds(450))
 
-        await type(Self.title, every: .milliseconds(55), firm: true) { titleShown = $0 }
-        try? await Task.sleep(for: .milliseconds(220))
-        await type(Self.subtitle, every: .milliseconds(28), firm: false) { subtitleShown = $0 }
+        await type(Self.subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
@@ -366,12 +365,11 @@ struct WelcomeScreen: View {
 
     /// Reveals `text` a character at a time, a tick on every letter and none
     /// on the spaces, so the rhythm follows the words.
-    private func type(_ text: String, every step: Duration, firm: Bool,
-                      reveal: (Int) -> Void) async {
+    private func type(_ text: String, every step: Duration, reveal: (Int) -> Void) async {
         for (i, ch) in text.enumerated() {
             guard !Task.isCancelled else { return }
             reveal(i + 1)
-            if !ch.isWhitespace { WelcomeHaptics.tick(firm: firm) }
+            if !ch.isWhitespace { WelcomeHaptics.tick() }
             try? await Task.sleep(for: step)
         }
     }
@@ -427,21 +425,19 @@ private struct WelcomeGround: View {
 @MainActor
 enum WelcomeHaptics {
     private static let thump = UIImpactFeedbackGenerator(style: .medium)
-    private static let key = UIImpactFeedbackGenerator(style: .rigid)
     private static let soft = UIImpactFeedbackGenerator(style: .light)
 
     static func prepare() {
-        thump.prepare(); key.prepare(); soft.prepare()
+        thump.prepare(); soft.prepare()
     }
     static func land() {
         thump.impactOccurred(intensity: 0.9)
         thump.prepare()
     }
-    /// A firm tick for the title's letters, a lighter one for the line under it.
-    static func tick(firm: Bool) {
-        let gen = firm ? key : soft
-        gen.impactOccurred(intensity: firm ? 0.75 : 0.55)
-        gen.prepare()
+    /// A light tick for each typed letter.
+    static func tick() {
+        soft.impactOccurred(intensity: 0.55)
+        soft.prepare()
     }
 }
 

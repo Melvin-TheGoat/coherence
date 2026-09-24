@@ -5246,9 +5246,9 @@ This replaces the valley welcome and its bubble; the grasshopper overlay
 (`OnboardingFrontLife`) is deleted because it crossed a white page.
 
 - **A sequence, every beat felt:** Otto fades in and waves (a pop up from
-  his feet was built and cut the same day, Aziz: no pop); the title types with a
-  firm tick per letter (55 ms), the line under it with a lighter tick (28 ms),
-  spaces silent; "Let's go!" springs up with a thump and he waves again.
+  his feet was built and cut the same day, Aziz: no pop); the title arrives
+  with him, NOT typed (Aziz); the line under it types with a light tick per
+  letter (28 ms), spaces silent; "Let's go!" springs up with a thump and he waves again.
   `WelcomeHaptics` keeps its generators prepared. `TypedLine` lays unarrived
   letters in clear ink so centred text never reflows. Reduce Motion gets the
   finished screen with no ticks. The simulator plays no haptics: judge on a phone.
