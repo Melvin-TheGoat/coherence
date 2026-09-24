@@ -5237,6 +5237,43 @@ xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPho
   paler toward the ridge). The grasshopper also casts a shadow on the grass
   (`HopperPose.groundY` / `lift`) that shrinks and fades as it jumps.
 
+## ONBOARDING'S OPENING IS BACK IN THE VALLEY; OTTO'S CLIPS NO LONGER FLASH (2026-09-23, late, Aziz)
+
+Supersedes the white-page parts of the section below. **Screens 1, 3 and 4
+(welcome, Meet Otto, "The more you meditate") stand in the valley**; only the
+breath (screen 2) is still a white page (`Step.isWhitePage`).
+- `IntroScreen` puts the words in the SKY (ink on the light blue, clear of
+  his head) and Otto on the meadow. Meet Otto's two pages pass `standing:
+  false` and the valley draws the seated Steady Otto on his cushion
+  (`OnboardingValley` stage `.steady`), exactly where the stress screen and
+  Home seat him. The welcome's standing clip is placed in SCENE coordinates,
+  feet on `SitLayout.cushionBottom` minus 6, height `222 * SitLayout.scale`,
+  with a contact shadow in the grass's own dark green (black reads as a hole
+  in a meadow) and `GrassAtFeet`, fifteen fixed blades in the meadow's tuft
+  colour at that distance, over his feet. `WelcomeGround` is deleted.
+- **Melvin's birds and grasshopper are on all three** (Aziz). On the welcome
+  the scene runs with `standingFigure: true`: it splits grasshoppers at the
+  cushion line as if he were its own and draws only the farther ones;
+  `ValleyFrontLife`, drawn above the screen with the SAME seed
+  (`OnboardingView.lifeSeed`, passed as `ValleyScene(seed:)`), draws the
+  nearer ones over him. `OnboardingFrontLife` and the `meadowLife` switch
+  that hid the grasshopper there are gone.
+- **THE "GLITCH" WAS `AVPlayerLooper`.** At every loop it showed ONE EMPTY
+  FRAME: Otto vanished for a sixtieth of a second every seven seconds. Found
+  from a 60 fps recording (a pair of frame differences of 38 grey levels,
+  the bare meadow between them), and it had been there since the first
+  clip. `OttoClip` now loops one `AVPlayer` on one item, `actionAtItemEnd =
+  .none`, seeking to zero on `didPlayToEndTime`, which keeps the last frame
+  up through the seek. Verified: 22 s, three loops, largest change 2.8 (his
+  arm mid-wave). **Never use `AVPlayerLooper` for an alpha clip.**
+- **The "phasing" was the loop crossfade** ghosting his arm: his pose differs
+  at every pause (5.5 against a still-to-still noise of 0.2), so no two loop
+  ends match. The welcome loop is now a **boomerang**: frames 38 to 107
+  forward, then back, turning and wrapping while he holds still, so nothing
+  is ever blended. Plus `--steady` in `otto_video_key.swift`: a median of
+  three on the alpha across neighbouring frames, because each frame is keyed
+  alone and the soft edge wandered a pixel frame to frame.
+
 ## THE WELCOME SCREEN IS BRAINROT'S, AND OTTO WAVES FROM A VIDEO (2026-09-23, Aziz)
 
 **Onboarding now opens:** welcome (Otto waving) → one breath (Otto raising

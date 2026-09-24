@@ -242,10 +242,12 @@ struct OttoInMeadow: View {
 }
 
 /// Screen 1, Brainrot's welcome in 808's words (Aziz, 2026-09-23, from a
-/// screenshot). A generated clip, not the rig: the rig's arm could only turn
-/// ten degrees, which never read as a wave. He waves for as long as the
-/// screen is up ("constantly waving"), two waves looped at a still moment,
-/// cropped centred on his feet so his BODY is on the screen's centre line.
+/// screenshot), standing in the valley. A generated clip, not the rig: the
+/// rig's arm could only turn ten degrees, which never read as a wave. He waves
+/// for as long as the screen is up ("constantly waving"): two waves played
+/// forward then backward, so it turns and wraps while he is holding still and
+/// never needs a blend (a crossfade loop ghosted his arm, the "phasing").
+/// Cropped centred on his feet so his BODY is on the screen's centre line.
 struct WelcomeScreen: View {
     let onContinue: () -> Void
 
@@ -257,7 +259,6 @@ struct WelcomeScreen: View {
                     onContinue: onContinue) { playing in
             OttoClip(name: "otto-welcome-wave", playing: playing, loops: true)
                 .aspectRatio(710.0 / 700.0, contentMode: .fit)
-                .frame(height: 250)
         }
     }
 }
@@ -275,7 +276,6 @@ struct MeetOttoScreen: View {
     /// The second page (`Step.ottoGrows`).
     let grows: Bool
     let onContinue: () -> Void
-    @StateObject private var rig = OttoRigHolder()
 
     var body: some View {
         IntroScreen(progress: grows ? 0.07 : 0.04,
@@ -285,20 +285,31 @@ struct MeetOttoScreen: View {
                     titleSize: grows ? 34 : 31,
                     subtitle: grows ? nil : "He's doing alright.",
                     cta: "Continue",
+                    standing: false,
                     onContinue: onContinue) { _ in
-            OttoAuraFigure(stage: .steady, size: 230, rig: rig)
+            // Drawn by the valley itself (`OnboardingValley`, stage Steady),
+            // on his cushion, where the stress screen and Home put him.
+            EmptyView()
         }
     }
 }
 
-/// The Brainrot-shaped screen both of those are: a white page, Otto standing
-/// on a soft ground rise, the title, the line under it, one button. It is a
-/// sequence, and every beat of it is felt as well as seen:
+/// The Brainrot-shaped screen both of those are, standing in the valley
+/// (Aziz, 2026-09-23: "back to that mountain outdoors background ... make
+/// sure the depth is good and it looks natural"): the words in the sky, Otto
+/// on the meadow, one button. It is a sequence, and every beat is felt:
 ///
-/// 1. Otto fades in (no pop: Aziz, 2026-09-23) and the title arrives with
-///    him, not typed (Aziz).
+/// 1. Otto fades in (no pop: Aziz) and the title arrives with him, not typed.
 /// 2. The line under it types out, a light tick per letter.
 /// 3. The button rises into place with a thump.
+///
+/// **Depth.** A standing Otto is placed in the SCENE's coordinates, his feet
+/// on the ground line where the valley seats him on his cushion, scaled with
+/// the scene (`SitLayout`), so he is exactly as far away as the sitting Otto
+/// the reader meets next. He gets a contact shadow in the grass's own dark
+/// green and a few blades of grass drawn over his feet, in the meadow's tuft
+/// colour for that distance, so he stands IN the grass rather than on top of
+/// a picture of it.
 ///
 /// Reduce Motion gets the finished screen at once, with no ticks, and
 /// `figure` is told not to play.
@@ -312,6 +323,9 @@ struct IntroScreen<Figure: View>: View {
     /// Typed out under the title. Nil for a page that is the title alone.
     let subtitle: String?
     let cta: String
+    /// True when `figure` is a standing Otto this screen places on the
+    /// meadow; false when the valley draws him itself.
+    var standing: Bool = true
     let onContinue: () -> Void
     /// Otto, handed whether he should be moving yet.
     @ViewBuilder let figure: (_ playing: Bool) -> Figure
@@ -323,70 +337,79 @@ struct IntroScreen<Figure: View>: View {
     @State private var ctaShown = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            OnboardingProgress(from: progressFrom ?? progress, to: progress)
-                // A second page of one screen moves the bar instead of
-                // rebuilding it.
-                .id(progress)
-                .padding(.top, 12)
-                .padding(.horizontal, 8)
-
-            Spacer(minLength: 0)
-
-            figure(shown && !reduceMotion)
-                // The reference's soft shadow, so he stands on the ground.
-                .background(alignment: .bottom) {
-                    Ellipse()
-                        .fill(RadialGradient(colors: [Color.black.opacity(0.13), Color.black.opacity(0)],
-                                             center: .center, startRadius: 0, endRadius: 80))
-                        .frame(width: 170, height: 16)
-                        .offset(y: 2)
+        ZStack(alignment: .top) {
+            if standing {
+                GeometryReader { geo in
+                    let size = geo.size
+                    let scale = SitLayout.scale(in: size)
+                    // His feet where his cushion meets the grass.
+                    let feet = SitLayout.cushionBottom(in: size) - 6 * scale
+                    // A standing sloth is a head taller than the seated one
+                    // (186 in the scene's units).
+                    let height = 222 * scale
+                    figure(shown && !reduceMotion)
+                        .frame(height: height)
+                        .background(alignment: .bottom) {
+                            // Contact shadow in the grass's own dark green:
+                            // black reads as a hole in a meadow.
+                            Ellipse()
+                                .fill(RadialGradient(colors: [Color(red: 0.13, green: 0.24, blue: 0.11).opacity(0.42),
+                                                              Color(red: 0.13, green: 0.24, blue: 0.11).opacity(0)],
+                                                     center: .center, startRadius: 0, endRadius: 62 * scale))
+                                .frame(width: 124 * scale, height: 16 * scale)
+                                .offset(y: 4 * scale)
+                        }
+                        .overlay(alignment: .bottom) {
+                            GrassAtFeet(scale: scale)
+                                .frame(width: 118 * scale, height: 14 * scale)
+                                .offset(y: 5 * scale)
+                        }
+                        .position(x: size.width / 2, y: feet - height / 2)
+                        .opacity(shown ? 1 : 0)
                 }
-                .opacity(shown ? 1 : 0)
-                // Above the ground, whose rise is drawn behind his legs.
-                .zIndex(1)
-
-            VStack(spacing: 12) {
-                Text(title)
-                    .font(.system(size: titleSize, weight: .heavy, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .opacity(shown ? 1 : 0)
-                    // A new page of the same screen cross-fades its words.
-                    .id(title)
-                    .transition(.opacity)
-                if let subtitle {
-                    TypedLine(text: subtitle, shown: subtitleShown,
-                              font: .system(size: 21, weight: .medium, design: .rounded),
-                              color: AppColor.textSecondary)
-                        .transition(.opacity)
-                }
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
             }
-            .animation(.easeInOut(duration: 0.3), value: title)
-            .padding(.horizontal, AppMetrics.screenPadding + 4)
-            .padding(.top, 34)
-            .frame(maxWidth: .infinity)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel([title, subtitle].compactMap { $0 }.joined(separator: " "))
-            .accessibilityAddTraits(.isHeader)
 
-            Spacer(minLength: 0)
-            Spacer(minLength: 0)
+            VStack(spacing: 0) {
+                OnboardingProgress(from: progressFrom ?? progress, to: progress)
+                    // A second page of one screen moves the bar instead of
+                    // rebuilding it.
+                    .id(progress)
+                    .padding(.top, 12)
+                    .padding(.horizontal, 8)
+
+                // The words sit in the sky, over the ridge and well clear of
+                // his head.
+                VStack(spacing: 12) {
+                    Text(title)
+                        .font(.system(size: titleSize, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .opacity(shown ? 1 : 0)
+                        // A new page of the same screen cross-fades its words.
+                        .id(title)
+                        .transition(.opacity)
+                    if let subtitle {
+                        TypedLine(text: subtitle, shown: subtitleShown,
+                                  font: .system(size: 21, weight: .semibold, design: .rounded),
+                                  color: AppColor.textPrimary.opacity(0.72))
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeInOut(duration: 0.3), value: title)
+                .padding(.horizontal, AppMetrics.screenPadding + 4)
+                .padding(.top, 44)
+                .frame(maxWidth: .infinity)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel([title, subtitle].compactMap { $0 }.joined(separator: " "))
+                .accessibilityAddTraits(.isHeader)
+
+                Spacer(minLength: 0)
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(alignment: .bottom) {
-            GeometryReader { geo in
-                // The ground's crest sits at his knees, so he stands on it and
-                // not in front of a line. 0.52 of the page, measured from the
-                // reference and checked on the SE and the 17 Pro Max.
-                WelcomeGround()
-                    .frame(height: geo.size.height * 0.52 + geo.safeAreaInsets.bottom)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-                    .offset(y: geo.safeAreaInsets.bottom)
-            }
-        }
-        .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
             OnboardingCTA(title: cta, action: onContinue)
                 .padding(.horizontal, AppMetrics.screenPadding)
@@ -455,24 +478,33 @@ struct TypedLine: View {
     }
 }
 
-/// The ground on the welcome screen: a low rise across the page, pale at its
-/// crest and a shade deeper toward the bottom, like the reference's. Warmed a
-/// touch toward Otto's cream so it belongs to him rather than to a template.
-private struct WelcomeGround: View {
+/// A few blades of meadow grass over a standing Otto's feet, so he stands
+/// IN the grass. Colour, width and height are the meadow's own tufts at the
+/// distance he stands (`Meadow`, near about 0.35), and the blades are fixed,
+/// not random, so they never shuffle between renders.
+private struct GrassAtFeet: View {
+    let scale: CGFloat
+
+    private static let blades: [(x: CGFloat, h: CGFloat, lean: CGFloat)] = [
+        (0.04, 0.55, -0.20), (0.10, 0.85, 0.10), (0.15, 0.60, 0.25),
+        (0.22, 0.95, -0.15), (0.29, 0.70, 0.20), (0.36, 0.50, -0.10),
+        (0.44, 0.80, 0.15), (0.50, 0.60, -0.25), (0.57, 0.90, 0.05),
+        (0.64, 0.65, 0.20), (0.71, 0.85, -0.20), (0.78, 0.55, 0.15),
+        (0.85, 0.95, -0.05), (0.91, 0.65, 0.25), (0.97, 0.50, -0.15),
+    ]
+
     var body: some View {
-        GeometryReader { geo in
-            let w = geo.size.width, h = geo.size.height
-            let rise: CGFloat = 38
-            Path { p in
-                p.move(to: CGPoint(x: 0, y: rise))
-                p.addQuadCurve(to: CGPoint(x: w, y: rise), control: CGPoint(x: w / 2, y: -rise))
-                p.addLine(to: CGPoint(x: w, y: h))
-                p.addLine(to: CGPoint(x: 0, y: h))
-                p.closeSubpath()
+        Canvas { ctx, size in
+            let ink = Color(red: 0.262, green: 0.452, blue: 0.249).opacity(0.75)
+            for b in Self.blades {
+                let base = CGPoint(x: b.x * size.width, y: size.height)
+                let top = CGPoint(x: base.x + b.lean * size.height, y: size.height * (1 - b.h))
+                var path = Path()
+                path.move(to: base)
+                path.addQuadCurve(to: top, control: CGPoint(x: base.x, y: (base.y + top.y) / 2))
+                ctx.stroke(path, with: .color(ink),
+                           style: StrokeStyle(lineWidth: 1.7 * scale, lineCap: .round))
             }
-            .fill(LinearGradient(colors: [Color(red: 0.953, green: 0.945, blue: 0.933),
-                                          Color(red: 0.898, green: 0.886, blue: 0.867)],
-                                 startPoint: .top, endPoint: .bottom))
         }
         .accessibilityHidden(true)
     }

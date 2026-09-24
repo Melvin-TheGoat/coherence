@@ -7,9 +7,16 @@ import AVFoundation
 /// cut out by `tools/otto_video_key.swift`.
 ///
 /// Shows the clip's first frame until `playing` turns true, then plays it
-/// once and holds the last frame, or with `loops` plays it forever with no
-/// seam (`AVPlayerLooper`), which is why a looping clip is cut between two
-/// frames where the pose matches. No audio track, so it never touches the
+/// once and holds the last frame, or with `loops` plays it forever, which is
+/// why a looping clip is cut to end where it begins.
+///
+/// **Not `AVPlayerLooper`.** It loops by swapping between copies of the item,
+/// and at every swap the layer showed ONE EMPTY FRAME: Otto vanished for a
+/// sixtieth of a second every loop, which is the "glitching" Aziz kept seeing
+/// (found 2026-09-23 from a 60 fps recording: two frames differing by 38
+/// grey levels, the empty meadow between them). One player on one item that
+/// seeks back to zero at the end keeps the last frame on screen through the
+/// seek instead. No audio track, so it never touches the
 /// audio session. If the file is missing, the still `fallback` pose shows.
 struct OttoClip: View {
     let name: String
@@ -49,18 +56,22 @@ private struct ClipPlayer: UIViewRepresentable {
 private final class ClipView: UIView {
     override class var layerClass: AnyClass { AVPlayerLayer.self }
     private var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
-    let player: AVQueuePlayer
-    private var looper: AVPlayerLooper?
+    let player: AVPlayer
     private var started = false
+    private var endObserver: NSObjectProtocol?
 
     init(url: URL, loops: Bool) {
         let item = AVPlayerItem(url: url)
-        player = AVQueuePlayer()
+        player = AVPlayer(playerItem: item)
+        // Stay on the last frame at the end; a loop then jumps back itself.
+        player.actionAtItemEnd = loops ? .none : .pause
         if loops {
-            looper = AVPlayerLooper(player: player, templateItem: item)
-        } else {
-            player.insert(item, after: nil)
-            player.actionAtItemEnd = .pause
+            endObserver = NotificationCenter.default.addObserver(
+                forName: AVPlayerItem.didPlayToEndTimeNotification, object: item, queue: .main
+            ) { [weak player] _ in
+                player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+                player?.play()
+            }
         }
         player.isMuted = true
         player.preventsDisplaySleepDuringVideoPlayback = false
@@ -76,6 +87,10 @@ private final class ClipView: UIView {
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    deinit {
+        if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
+    }
 
     func play() {
         guard !started else { return }

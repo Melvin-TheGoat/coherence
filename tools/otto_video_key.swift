@@ -27,6 +27,12 @@ func flag(_ name: String) -> Int? {
 }
 let fromFrame = flag("--from") ?? 0, toFrame = flag("--to") ?? Int.max
 let crossfade = flag("--crossfade") ?? 0
+// --steady: median-of-three on the alpha across neighbouring frames. Each
+// frame is keyed on its own, so compression noise moves the soft edge a pixel
+// back and forth from frame to frame, and the outline shimmers ("phasing",
+// Aziz). A median keeps a moving edge where it is and drops the flicker.
+let steady = args.contains("--steady")
+args.removeAll { $0 == "--steady" }
 let centerFeet = args.contains("--center-feet")
 args.removeAll { $0 == "--center-feet" }
 let inURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
@@ -152,6 +158,26 @@ do {
         frames.append(k); times.append(CMSampleBufferGetPresentationTimeStamp(sb))
     }
     _ = r
+}
+if steady && frames.count > 2 {
+    let original = frames
+    let L = frames.count
+    for f in 0..<L {
+        let a = original[(f + L - 1) % L], b = original[f], c = original[(f + 1) % L]
+        var out = b
+        for p in stride(from: 3, to: out.count, by: 4) {
+            let x = a[p], y = b[p], z = c[p]
+            let med = max(min(x, y), min(max(x, y), z))
+            if med != y {
+                // Take the median alpha; where the pixel had none of its own
+                // colour, borrow the neighbour that did.
+                if y == 0 { let src = (x == med) ? a : c; out[p - 3] = src[p - 3]; out[p - 2] = src[p - 2]; out[p - 1] = src[p - 1] }
+                out[p] = med
+            }
+        }
+        frames[f] = out
+    }
+    print("steadied the outline over \(L) frames")
 }
 if crossfade > 0 {
     // Straight RGBA, so blend premultiplied and divide back out.

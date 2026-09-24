@@ -19,7 +19,9 @@ struct OnboardingView: View {
     @State private var step: Step = .relief
     /// The white page over the valley behind the opening screens. Follows
     /// `step.isWhitePage`, but lets go of it late (see the body).
-    @State private var whiteCover = true
+    @State private var whiteCover = false
+    /// The valley's birds and grasshoppers, shared with `ValleyFrontLife`.
+    @State private var lifeSeed = UInt64.random(in: UInt64.min...UInt64.max)
     @State private var answers = OnboardingAnswers()
     /// Monthly, preselected (Aziz, 2026-08-24): the 7-day trial renews into
     /// Monthly, and the plan under the CTA must be the plan the footnote
@@ -127,7 +129,9 @@ struct OnboardingView: View {
         /// The opening screens drawn on Brainrot's white page, not the valley.
         var isWhitePage: Bool {
             switch self {
-            case .relief, .breath, .breathing, .meetOtto, .ottoGrows: return true
+            // Only the breath now: the welcome and Meet Otto went back to
+            // the valley (Aziz, 2026-09-23).
+            case .breath, .breathing: return true
             default: return false
             }
         }
@@ -301,13 +305,14 @@ struct OnboardingView: View {
             // so the screens slide across a world that stays where it is.
             // Otto sits in it on the stress screen, where the answer is drawn
             // on him.
-            OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress) : nil,
+            OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
+                                    : (step == .meetOtto || step == .ottoGrows) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress) : nil,
                              jiggle: ottoPokes,
-                             meadowLife: step != .relief)
+                             standingFigure: step == .relief,
+                             seed: lifeSeed)
 
-            // The white opening screens (welcome, the breath, Meet Otto) are
-            // Brainrot's white page, not the valley. Each draws its own white,
+            // The breath is a white page, not the valley. Each draws its own white,
             // but while one slides out and the next slides in, both are part
             // transparent and the garden showed between them (Aziz,
             // 2026-09-23: "not pleasant"). So a white page covers the valley
@@ -333,10 +338,20 @@ struct OnboardingView: View {
                 // 2026-09-23: "showing the garden area in between screens").
                 .zIndex(1)
 
+            // The welcome's Otto stands on the meadow above the scene, so the
+            // grasshoppers nearer than his feet are drawn here, over him, with
+            // the scene's own seed; the farther ones stay in the scene, behind
+            // him (Aziz, 2026-09-23: keep Melvin's birds and grasshopper).
+            if step == .relief {
+                ValleyFrontLife(seed: lifeSeed)
+                    .zIndex(2)
+                    .transition(.opacity)
+            }
+
         }
             .onChange(of: step.isWhitePage) { _, white in
                 if white {
-                    whiteCover = true
+                    withAnimation(.easeInOut(duration: 0.32)) { whiteCover = true }
                 } else {
                     // After the slide (0.32 s), then a slow reveal.
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
@@ -907,15 +922,34 @@ private struct OnboardingValley: View {
     let stage: OttoAura.Stage?
     var look: Int? = nil
     let jiggle: Int
-    var meadowLife: Bool = true
+    var standingFigure: Bool = false
+    var seed: UInt64? = nil
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
-                    showsFigure: stage != nil, meadowLife: meadowLife)
+                    showsFigure: stage != nil, standingFigure: standingFigure, seed: seed)
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)
     }
 }
 
+/// The grasshoppers that cross NEARER than a standing Otto's feet, drawn
+/// above the screen he stands on. Same seed, same split, same geometry as the
+/// scene's own, so each crossing is drawn exactly once, on the right side of
+/// him.
+private struct ValleyFrontLife: View {
+    let seed: UInt64
+
+    var body: some View {
+        GeometryReader { geo in
+            ValleyLife(layer: .meadowFront, size: geo.size,
+                       scale: SitLayout.scale(in: geo.size), seed: seed,
+                       avoid: nil, depthSplit: SitLayout.grasshopperSplit(in: geo.size))
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}

@@ -58,12 +58,21 @@ struct ValleyScene: View {
     /// slumped) in the meadow.
     var showsFigure: Bool = true
 
-    /// Grasshoppers in this scene's own meadow. Off where the figure is drawn
-    /// by the screen ON TOP of the scene (onboarding's welcome): a
-    /// grasshopper in the scene can only ever pass behind that Otto, and
-    /// read as hopping through him. That screen draws them above itself
-    /// instead (`OnboardingFrontLife`).
+    /// Grasshoppers in this scene's own meadow.
     var meadowLife: Bool = true
+
+    /// A screen stands its OWN Otto on the meadow, on top of this scene, with
+    /// his feet on the cushion's ground line (onboarding's welcome). The
+    /// scene then splits its grasshoppers at that line as if he were its own,
+    /// draws only the farther ones (behind him), and leaves the nearer ones
+    /// to the screen, which draws them above him with the same `seed`
+    /// (`ValleyFrontLife`). Without this a grasshopper in the scene could only
+    /// ever pass behind that Otto, and read as hopping through him.
+    var standingFigure: Bool = false
+
+    /// Fixes the birds and grasshoppers. Nil picks one at random; a screen
+    /// that draws part of the life itself passes the same seed to both.
+    var seed: UInt64? = nil
 
     /// Birds and grasshoppers, every ten-ish and eight-ish seconds — only
     /// while nobody is meditating (`progress == 0`: Home, onboarding, the
@@ -184,7 +193,7 @@ struct ValleyScene: View {
                 // dipping near the ridge line) and stay well clear of
                 // Otto's head by construction, via `avoidRect`.
                 if showLife {
-                    ValleyLife(layer: .sky, size: geo.size, scale: s, seed: lifeSeed, avoid: avoidRect)
+                    ValleyLife(layer: .sky, size: geo.size, scale: s, seed: seed ?? lifeSeed, avoid: avoidRect)
                 }
 
                 // Everything alive takes the hour's light as one group, so
@@ -195,8 +204,8 @@ struct ValleyScene: View {
                     .colorMultiply(Color(white: day.light))
 
                 // And one crossing nearer than his cushion, in front of him.
-                if showLife && meadowLife {
-                    ValleyLife(layer: .meadowFront, size: geo.size, scale: s, seed: lifeSeed,
+                if showLife && meadowLife && !standingFigure {
+                    ValleyLife(layer: .meadowFront, size: geo.size, scale: s, seed: seed ?? lifeSeed,
                                avoid: avoidRect, depthSplit: grasshopperSplit(size: geo.size))
                 }
             }
@@ -227,7 +236,7 @@ struct ValleyScene: View {
     /// or in front of him: the bottom of his cushion, where he meets the
     /// grass. Nil with nobody sitting in the middle of the meadow.
     private func grasshopperSplit(size: CGSize) -> CGFloat? {
-        guard showsFigure, !ottoInCorner else { return nil }
+        guard showsFigure || standingFigure, !ottoInCorner else { return nil }
         return SitLayout.cushionBottom(in: size) - ottoLift
     }
 
@@ -309,7 +318,7 @@ struct ValleyScene: View {
                 .frame(width: size.width, height: size.height)
 
             if life {
-                ValleyLife(layer: .meadowBehind, size: size, scale: s, seed: lifeSeed,
+                ValleyLife(layer: .meadowBehind, size: size, scale: s, seed: seed ?? lifeSeed,
                            avoid: nil, depthSplit: grasshopperSplit(size: size))
             }
 
@@ -619,6 +628,10 @@ private struct Meadow: View {
 /// width and placed by height, and on a 667pt screen that put the top of his
 /// head 130pt higher up the frame than the composition intends.
 enum SitLayout {
+    /// Where a grasshopper passes from behind Otto to in front of him: the
+    /// bottom of his cushion, where he meets the grass.
+    static func grasshopperSplit(in size: CGSize) -> CGFloat { cushionBottom(in: size) }
+
     static func scale(in size: CGSize) -> CGFloat {
         min(size.width / 300, size.height / 620)
     }
