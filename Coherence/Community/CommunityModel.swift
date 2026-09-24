@@ -370,10 +370,26 @@ final class CommunityModel: ObservableObject {
         do {
             let p = try await store.post(draft)
             Analytics.track(.postCreated(photo: !(draft.media ?? []).isEmpty))
-            feed.removeAll { $0.id == p.id }
-            feed.insert(p, at: 0)
+            feed = Self.placing(p, in: feed)
             return true
         } catch { errorText = Self.plain(error); return false }
+    }
+
+    /// Where a saved post goes in the feed without waiting for a reload: in
+    /// its own place when it is already there (an edit, which keeps its
+    /// date), otherwise among the rest by when it was practiced, which is the
+    /// order `CommunityStore.feed` returns. Inserting at the top instead sent
+    /// an edited post, or a session shared days later, above posts practiced
+    /// after it until the next refresh.
+    static func placing(_ post: Post, in feed: [Post]) -> [Post] {
+        var out = feed
+        if let i = out.firstIndex(where: { $0.id == post.id }) {
+            out[i] = post
+        } else {
+            let at = out.firstIndex { $0.practicedAt < post.practicedAt } ?? out.endIndex
+            out.insert(post, at: at)
+        }
+        return out
     }
 
     /// The post for a session, if it was shared.

@@ -564,4 +564,25 @@ final class PostRemovalTests: XCTestCase {
         XCTAssertEqual(told, session)
         XCTAssertTrue(model.feed.isEmpty)
     }
+
+    /// An edited post keeps its place, and a post saved late (a session
+    /// shared days after it was practiced) lands by its date, never on top.
+    func test_aSavedPostTakesItsPlaceByDateNotTheTop() {
+        let now = Date()
+        func post(_ id: String, hoursAgo: Double, caption: String = "") -> Post {
+            Post(id: id, author: "a", minutes: 10, streak: 1, caption: caption,
+                 practicedAt: now.addingTimeInterval(-hoursAgo * 3600))
+        }
+        let feed = [post("tonight", hoursAgo: 1), post("afternoon", hoursAgo: 7), post("yesterday", hoursAgo: 24)]
+
+        let edited = CommunityModel.placing(post("afternoon", hoursAgo: 7, caption: "edited"), in: feed)
+        XCTAssertEqual(edited.map(\.id), ["tonight", "afternoon", "yesterday"])
+        XCTAssertEqual(edited[1].caption, "edited")
+
+        let late = CommunityModel.placing(post("lastWeek", hoursAgo: 150), in: feed)
+        XCTAssertEqual(late.map(\.id), ["tonight", "afternoon", "yesterday", "lastWeek"])
+
+        let justNow = CommunityModel.placing(post("justNow", hoursAgo: 0), in: feed)
+        XCTAssertEqual(justNow.first?.id, "justNow")
+    }
 }

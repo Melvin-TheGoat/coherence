@@ -11,8 +11,8 @@ import CloudKit
 ///
 /// **What a post may carry is a rule, not a choice:** minutes, streak,
 /// technique, photos and videos, caption. Never a score, and never a
-/// heart-rate, breath or stillness value, never a curve. **A post never
-/// carried a score before 2026-09-23** either: it was derived from heart
+/// heart-rate, breath or stillness value, never a curve. **Posts stopped
+/// carrying a score on 2026-09-23**: it was derived from heart
 /// rate, guideline 5.1.3(ii) forbids storing personal health information in
 /// iCloud with no consent exception, and the public database has no consent
 /// gate at all, so the founders took the zero-risk answer and dropped it.

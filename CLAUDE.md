@@ -3709,6 +3709,23 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
   been added since his last sync, and a project that has not been
   regenerated cannot see any of them.
 
+## FRIENDS POSTS CARRY NO SCORE, AND YOUR OWN POST CAN BE EDITED (2026-09-23, Melvin)
+
+- **The score is off posts entirely** (Melvin: "Yea get rid of the
+  score"), which closes the 5.1.3(ii) question in the section above: it is
+  derived from heart rate and the public database has no consent gate.
+  Nothing writes or reads `score` on a post; the card lost its Score column
+  and a person's page its average. The CloudKit field stays in the record
+  type (fields cannot be removed) and is simply unused.
+  `test_postNeverCarriesAScore` checks the record itself.
+- **Edit post sits above Delete post** in the ⋯ menu of your own posts, when
+  this device still has the session behind it
+  (`CommunityStore.sessionID(forPost:)`), and opens that session's page in
+  edit mode. Saving updates the same record and keeps its date.
+- **A saved post takes its place by date, not the top of the feed**
+  (`CommunityModel.placing`). Inserting at the top sent an edited post above
+  posts practiced after it until the next refresh; found on the simulator.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in
