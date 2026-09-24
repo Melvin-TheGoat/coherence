@@ -1101,45 +1101,20 @@ struct QuestionCountScreen: View {
 
     let onContinue: () -> Void
 
-    @Environment(\.onboardingBack) private var back
-    @State private var speaking = false
-
-    // Otto is the valley's own, seated on his cushion (`OnboardingValley`,
-    // stage Steady), the same Otto as on Meet Otto, See for yourself and the
-    // clutter screen before it. This screen used to stand its own waving Otto
-    // in the meadow, and arriving from the clutter screen the seated one faded
-    // out while the standing one slid in: two see-through Ottos on top of
-    // each other (Aziz, 2026-09-23: "the transition is weird"). Now he stays
-    // put and only his words change.
+    // Brainrot's "Let's personalize Brainrot for you." in 808's words (Aziz,
+    // 2026-09-23), replacing "Just N quick questions". Otto is the valley's
+    // own, seated on his cushion as on every screen since Meet Otto, and the
+    // count the old screen gave is now what he says. PLACEHOLDER: he will be a
+    // Runway clip of him writing in a notepad, looped, once Aziz has it.
     var body: some View {
-        ZStack(alignment: .top) {
-            GeometryReader { geo in
-                let size = geo.size
-                let headTop = SitLayout.ottoTop(in: size)
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
-                    OttoSpeech(text: "Just **\(Self.most) quick questions** before your first session!",
-                               size: 20, friendly: true, speaking: $speaking)
-                        .frame(maxWidth: size.width - 72)
-                }
-                .frame(width: size.width, height: max(0, headTop - 6))
-                .position(x: size.width / 2, y: max(0, headTop - 6) / 2)
-            }
-            .ignoresSafeArea()
-
-            HStack {
-                if let back { OnboardingBackButton(action: back) }
-                Spacer()
-            }
-            .frame(height: 40)
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.top, 12)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Continue", action: onContinue)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
+        IntroScreen(progress: 0.13,
+                    progressFrom: 0.10,
+                    title: "Let's personalize 808 for you.",
+                    subtitle: "Just \(Self.most) quick questions, so I know how to help you.",
+                    cta: "Let's do it!",
+                    standing: false,
+                    onContinue: onContinue) { _ in
+            EmptyView()
         }
     }
 }

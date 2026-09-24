@@ -5291,6 +5291,16 @@ clutter screen's heading now arrives WITH the slide instead of fading in a
 beat later, which left a moment of empty sky. **When consecutive screens
 share Otto, let the valley draw him and change only the words.**
 
+**"Let's personalize 808 for you."** (Brainrot's screen, Aziz) REPLACES
+"Just N quick questions" on `Step.questionCount`: an `IntroScreen` with the
+valley's seated Otto, who says "Just N quick questions, so I know how to help
+you." in his typed bubble, and "Let's do it!". **Otto there is a
+PLACEHOLDER**: Aziz is making a Runway clip of him seated, writing in a
+green notepad (still made in Runway's image tool from `otto-sit-happy.png`
+plus the clipboard art, then animated, 5 s). It goes through the clip recipe
+(stutter check, 20 fps, loop, key) and sits on the valley's cushion in place
+of the valley's own Otto on this step.
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room
