@@ -70,14 +70,31 @@ struct OttoAuraFigure: View {
     /// and as big as he was. Only the layout footprint stays the canvas.
     static let flightSpan: CGFloat = 2.6
 
+    /// How much taller than his canvas the rig is drawn from this look up
+    /// (Bright and above, where the light and the halo rise over his head).
+    static let tallFromLook = 9
+    static let headroom: CGFloat = 1.6
+
     /// The rig when it loaded, else the still for this stage. Both are the
     /// same 664 x 744 canvas, so they frame identically.
     @ViewBuilder private var drawing: some View {
         if let rig = aura.rig {
             GeometryReader { geo in
+                // The rig can only draw inside its own view, and `.contain`
+                // fills that view's LIMITING side with the artboard, so only
+                // one side can be given room without making him bigger. The
+                // low looks need width (the moth flies off past the screen's
+                // edges); the bright looks need height: he floats and wears a
+                // halo above his head, which was cut off flat along the top of
+                // the view (Aziz, 2026-09-23). So the view is wide for one and
+                // tall for the other, bottom-aligned both ways, and he is the
+                // same size and in the same place in either.
+                let tall = (look ?? stage.look) >= Self.tallFromLook
                 rig.viewModel.view()
-                    .frame(width: geo.size.width * Self.flightSpan, height: geo.size.height)
-                    .position(x: geo.size.width / 2, y: geo.size.height / 2)
+                    .frame(width: geo.size.width * (tall ? 1 : Self.flightSpan),
+                           height: geo.size.height * (tall ? Self.headroom : 1))
+                    .position(x: geo.size.width / 2,
+                              y: geo.size.height - geo.size.height * (tall ? Self.headroom : 1) / 2)
             }
             // Only the drawing is wider: taps belong to whatever is on top.
             .allowsHitTesting(false)

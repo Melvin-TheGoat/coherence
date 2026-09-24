@@ -5267,6 +5267,15 @@ drives the valley's Otto through all thirteen looks (`OnboardingView.
 glowDemo`), a selection tick at each change. Otto never moves between the
 three pages; only the words and the bar change.
 
+**His halo was cut off flat along the top** at the bright looks (Aziz). A
+Rive view draws only inside itself, and `.contain` fills the view's
+LIMITING side with the artboard, so only one side can be given spare room
+without scaling him up. `OttoAuraFigure` now shapes the view by look: wide
+(`flightSpan` 2.6) for the low looks, where the moth flies off-screen, and
+TALL (`headroom` 1.6, from look 9) for the bright ones, where he floats and
+the halo rises over his head. Bottom-aligned both ways, so he is the same
+size and place. Verified on See for yourself and on Home at 97.
+
 **Every typed line in the intro screens is Otto speaking** (Aziz): the
 line under the title moved into `OttoSaysBubble`, white and round, hanging
 just above his head with its tail at him, still typed a letter at a time
