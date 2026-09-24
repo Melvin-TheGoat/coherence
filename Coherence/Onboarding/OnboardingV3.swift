@@ -571,6 +571,199 @@ private struct OttoSaysBubble: View {
     }
 }
 
+/// After "See for yourself", Brainrot's "You're not addicted" screen in 808's
+/// words (Aziz, 2026-09-23): "Clarity and peace are within reach. / Your mind
+/// is just cluttered." Then the clutter arrives, thought after thought popping
+/// up around Otto, slowly and then faster, each a little tap, and he greys a
+/// little with every one. Then the answer, and a button that does what it
+/// says: "Let's clear it" sweeps the thoughts off him and his colour comes
+/// back before the flow moves on.
+///
+/// Otto is the valley's own (`OnboardingValley`), driven through `level`; the
+/// thoughts are placed in the scene's coordinates around him.
+struct ClutterScreen: View {
+    @Binding var level: Double
+    let onContinue: () -> Void
+
+    /// What crowds his head. Ordinary, specific and not cruel: the point is
+    /// recognition, not alarm.
+    private static let thoughts: [(text: String, dot: Color)] = [
+        ("Did I reply to that?", Color(red: 0.93, green: 0.33, blue: 0.30)),
+        ("3 new messages", Color(red: 0.96, green: 0.60, blue: 0.20)),
+        ("Rent is due Friday", Color(red: 0.72, green: 0.36, blue: 0.86)),
+        ("Should I have said that?", Color(red: 0.27, green: 0.56, blue: 0.90)),
+        ("Tomorrow's meeting", Color(red: 0.96, green: 0.60, blue: 0.20)),
+        ("One more scroll", Color(red: 0.93, green: 0.33, blue: 0.30)),
+        ("Don't forget to call Mom", Color(red: 0.72, green: 0.36, blue: 0.86)),
+        ("Breaking news", Color(red: 0.93, green: 0.33, blue: 0.30)),
+        ("What did they mean by that?", Color(red: 0.27, green: 0.56, blue: 0.90)),
+    ]
+
+    /// Where each lands, in the scene's units from the centre of the screen
+    /// and the top of his head, and its tilt. Scattered over his head and
+    /// shoulders so they bury him rather than frame him.
+    /// Nine rows 32 units apart, from just under the subtitle down over his
+    /// lap, alternating sides so they read as a pile rather than a list. The
+    /// first version put one on top of "Your mind is just cluttered".
+    private static let spots: [(x: CGFloat, y: CGFloat, tilt: Double)] = [
+        (-58, -40, -3), (64, -72, 2.5), (-88, -8, 2), (80, 24, -2.5),
+        (-30, -104, -1.5), (58, 88, 3), (-80, 120, 1.5), (10, 56, 1), (66, 150, -2),
+    ]
+
+    /// Seconds before each one: slow, then faster and faster.
+    private static let gaps: [Double] = [0.9, 0.62, 0.48, 0.38, 0.30, 0.24, 0.19, 0.15, 0.12]
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var headerShown = false
+    @State private var popped = 0
+    @State private var clearing = false
+    @State private var answerShown = false
+
+    private static let pop = UIImpactFeedbackGenerator(style: .rigid)
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            GeometryReader { geo in
+                let size = geo.size
+                let s = SitLayout.scale(in: size)
+                let top = SitLayout.ottoTop(in: size)
+                ForEach(Array(Self.thoughts.enumerated()), id: \.offset) { i, thought in
+                    let spot = Self.spots[i]
+                    let width = CGFloat(thought.text.count) * 8.2 + 52
+                    let x = min(max(size.width / 2 + spot.x * s, width / 2 + 12),
+                                size.width - width / 2 - 12)
+                    ThoughtChip(text: thought.text, dot: thought.dot)
+                        .rotationEffect(.degrees(spot.tilt))
+                        .scaleEffect(i < popped && !clearing ? 1 : 0.6)
+                        .opacity(i < popped && !clearing ? 1 : 0)
+                        .offset(y: clearing ? -40 : 0)
+                        .animation(clearing
+                                   ? .easeIn(duration: 0.28).delay(Double(Self.thoughts.count - i) * 0.03)
+                                   : .spring(response: 0.32, dampingFraction: 0.62),
+                                   value: popped)
+                        .animation(.easeIn(duration: 0.28).delay(Double(Self.thoughts.count - i) * 0.03),
+                                   value: clearing)
+                        .position(x: x, y: top + spot.y * s)
+                }
+            }
+            .ignoresSafeArea()
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+
+            VStack(spacing: 10) {
+                OnboardingProgress(from: 0.10, to: 0.13)
+                    .padding(.top, 12)
+                    .padding(.horizontal, 8)
+                Text("Clarity and peace are within reach.")
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 32)
+                Text("Your mind is just cluttered.")
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.72))
+                    .multilineTextAlignment(.center)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding + 4)
+            .opacity(headerShown ? 1 : 0)
+            .accessibilityElement(children: .combine)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 14) {
+                // On a white card: the meadow under it is busy, and white
+                // words on flowers could not be read.
+                Text("Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for.")
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 14)
+                    .frame(maxWidth: .infinity)
+                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color.white.opacity(0.94))
+                        .shadow(color: .black.opacity(0.10), radius: 8, y: 3))
+                    .opacity(answerShown ? 1 : 0)
+                    .offset(y: answerShown ? 0 : 16)
+                OnboardingCTA(title: "Let's clear it", action: clear)
+                    .opacity(answerShown ? 1 : 0)
+                    .offset(y: answerShown ? 0 : 30)
+                    .allowsHitTesting(answerShown && !clearing)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
+        }
+        .task { await play() }
+    }
+
+    private func play() async {
+        guard !headerShown else { return }
+        if reduceMotion {
+            headerShown = true
+            popped = Self.thoughts.count
+            level = 22
+            answerShown = true
+            return
+        }
+        Self.pop.prepare()
+        try? await Task.sleep(for: .milliseconds(250))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.4)) { headerShown = true }
+        for (i, gap) in Self.gaps.enumerated() {
+            try? await Task.sleep(for: .seconds(gap))
+            guard !Task.isCancelled else { return }
+            popped = i + 1
+            // Firmer as they pile up; he dims with each.
+            Self.pop.impactOccurred(intensity: 0.35 + 0.6 * Double(i) / Double(Self.gaps.count - 1))
+            Self.pop.prepare()
+            level = 50 - 28 * Double(i + 1) / Double(Self.gaps.count)
+        }
+        try? await Task.sleep(for: .milliseconds(700))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { answerShown = true }
+        WelcomeHaptics.land()
+    }
+
+    /// The button does what it says: the thoughts go, his colour comes back,
+    /// then the flow moves on.
+    private func clear() {
+        guard !clearing else { return }
+        clearing = true
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        Task {
+            try? await Task.sleep(for: .milliseconds(320))
+            level = 50
+            try? await Task.sleep(for: .milliseconds(650))
+            onContinue()
+        }
+    }
+}
+
+/// One thought, Brainrot's notification capsule: a coloured dot and the words
+/// on white, with a soft shadow so it sits over the scene.
+private struct ThoughtChip: View {
+    let text: String
+    let dot: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Circle().fill(dot).frame(width: 9, height: 9)
+            Text(text)
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .lineLimit(1)
+                .fixedSize()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Capsule().fill(Color.white))
+        .shadow(color: .black.opacity(0.14), radius: 8, y: 3)
+    }
+}
+
 /// The welcome screen's haptics. Prepared generators, for the reason
 /// `PressHaptic` gives: an unprepared one can drop the first pulses while the
 /// Taptic Engine spins up, and a typed line would lose its opening letters.

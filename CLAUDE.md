@@ -5267,6 +5267,19 @@ drives the valley's Otto through all thirteen looks (`OnboardingView.
 glowDemo`), a selection tick at each change. Otto never moves between the
 three pages; only the words and the bar change.
 
+**Then the clutter screen** (`ClutterScreen`, `Step.clutter`, after See for
+yourself, Aziz's copy, from Brainrot's "You're not addicted"): "Clarity and
+peace are within reach." / "Your mind is just cluttered." fade in, then
+nine ordinary thoughts pop up over Otto as white capsules with a coloured
+dot, SLOW THEN FASTER (gaps 0.9 s down to 0.12 s), each with a rigid tap
+that gets firmer, and the valley's Otto dims a step with each (`clutterLevel`
+50 down to 22). Then, on a white card over the meadow: "Meditation is how
+you clear it. Doing it every day is how it stays clear. That's what 808 is
+for." **"Let's clear it" does what it says**: the thoughts lift off, his
+colour comes back, and only then does the flow move on. Copy rule it keeps:
+the thoughts are recognition, not alarm; the claim is only that a daily
+practice keeps it clear, no number.
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room

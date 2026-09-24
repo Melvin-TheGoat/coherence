@@ -22,6 +22,8 @@ struct OnboardingView: View {
     @State private var whiteCover = false
     /// Otto's glow on "See for yourself", starting in the middle.
     @State private var glowDemo: Double = 50
+    /// Otto's glow on the clutter screen: 50, dimming as thoughts pile on.
+    @State private var clutterLevel: Double = 50
     /// The valley's birds and grasshoppers, shared with `ValleyFrontLife`.
     @State private var lifeSeed = UInt64.random(in: UInt64.min...UInt64.max)
     @State private var answers = OnboardingAnswers()
@@ -96,6 +98,9 @@ struct OnboardingView: View {
         /// Added 2026-09-23: "See for yourself!", drag Otto through his looks,
         /// the third page of Meet Otto. Last, for the reason above.
         case seeForYourself
+        /// Added 2026-09-23: "Clarity and peace are within reach", the thoughts
+        /// that clutter him, then "Let's clear it". Last, for the reason above.
+        case clutter
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -312,9 +317,11 @@ struct OnboardingView: View {
             // on him.
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
+                                    : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
                                     : (step == .meetOtto || step == .ottoGrows) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress)
-                                   : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded())) : nil,
+                                   : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
+                                   : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
                              jiggle: ottoPokes,
                              standingFigure: step == .relief,
                              seed: lifeSeed)
@@ -425,9 +432,12 @@ struct OnboardingView: View {
                 switch step {
                 case .meetOtto: go(.ottoGrows)
                 case .ottoGrows: go(.seeForYourself)
-                default: go(.questionCount)
+                default: go(.clutter)
                 }
             }
+
+        case .clutter:
+            ClutterScreen(level: $clutterLevel) { go(.questionCount) }
 
         case .questionCount:
             QuestionCountScreen { go(firstInterviewStep) }

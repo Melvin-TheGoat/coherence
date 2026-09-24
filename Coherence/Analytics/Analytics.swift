@@ -264,6 +264,7 @@ enum Analytics {
         "meetOtto":          "03a Meet your meditating partner: Otto",
         "ottoGrows":         "03a2 The more you meditate, the more enlightened he becomes",
         "seeForYourself":    "03a3 See for yourself: drag Otto through his looks",
+        "clutter":           "03a4 Clarity is within reach; your mind is just cluttered",
         "questionCount":     "03b A few questions, here is how many",
         "whatsWaiting":      "23b Here's what's waiting (cut 2026-09-22)",
         "blockIntro":        "23c Otto can hold your apps (cut 2026-09-22)",
