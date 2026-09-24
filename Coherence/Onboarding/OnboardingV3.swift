@@ -242,47 +242,83 @@ struct OttoInMeadow: View {
 }
 
 /// Screen 1, Brainrot's welcome in 808's words (Aziz, 2026-09-23, from a
-/// screenshot): a white page, Otto standing on a soft ground, the title and
-/// the line under it, one button. The whole thing is a sequence, and every
-/// beat of it is felt as well as seen:
-///
-/// 1. Otto fades in (no pop: Aziz, 2026-09-23) and waves, a generated clip.
-/// 2. "Welcome to 808!" arrives with him, not typed (Aziz).
-/// 3. The line under it types out, a light tick per letter.
-/// 4. "Let's go!" rises into place.
-///
-/// Reduce Motion gets the finished screen at once, with no ticks.
+/// screenshot). A generated clip, not the rig: the rig's arm could only turn
+/// ten degrees, which never read as a wave. He waves for as long as the
+/// screen is up ("constantly waving"), two waves looped at a still moment,
+/// cropped centred on his feet so his BODY is on the screen's centre line.
 struct WelcomeScreen: View {
     let onContinue: () -> Void
 
-    static let title = "Welcome to 808!"
-    static let subtitle = "It's time to regain control of your mind."
+    var body: some View {
+        IntroScreen(progress: 0,
+                    title: "Welcome to 808!",
+                    subtitle: "It's time to regain control of your mind.",
+                    cta: "Let's go!",
+                    onContinue: onContinue) { playing in
+            OttoClip(name: "otto-welcome-wave", playing: playing, loops: true)
+                .aspectRatio(710.0 / 700.0, contentMode: .fit)
+                .frame(height: 250)
+        }
+    }
+}
+
+/// After the breath, Brainrot's "Meet your brain" in 808's words (Aziz,
+/// 2026-09-23): Otto introduced as the reader's partner, in his middle mood,
+/// Steady, the fourth of his seven. He is the aura figure Home draws, so he
+/// breathes here the way he will there.
+struct MeetOttoScreen: View {
+    let onContinue: () -> Void
+    @StateObject private var rig = OttoRigHolder()
+
+    var body: some View {
+        IntroScreen(progress: 0.04,
+                    title: "Meet your meditating partner: Otto",
+                    titleSize: 31,
+                    subtitle: "He's doing alright.",
+                    cta: "Continue",
+                    onContinue: onContinue) { _ in
+            OttoAuraFigure(stage: .steady, size: 230, rig: rig)
+        }
+    }
+}
+
+/// The Brainrot-shaped screen both of those are: a white page, Otto standing
+/// on a soft ground rise, the title, the line under it, one button. It is a
+/// sequence, and every beat of it is felt as well as seen:
+///
+/// 1. Otto fades in (no pop: Aziz, 2026-09-23) and the title arrives with
+///    him, not typed (Aziz).
+/// 2. The line under it types out, a light tick per letter.
+/// 3. The button rises into place with a thump.
+///
+/// Reduce Motion gets the finished screen at once, with no ticks, and
+/// `figure` is told not to play.
+struct IntroScreen<Figure: View>: View {
+    /// Where the progress bar stands: the questions fill it from here.
+    let progress: Double
+    let title: String
+    var titleSize: CGFloat = 34
+    let subtitle: String
+    let cta: String
+    let onContinue: () -> Void
+    /// Otto, handed whether he should be moving yet.
+    @ViewBuilder let figure: (_ playing: Bool) -> Figure
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Flips once: fades Otto in and starts his wave.
-    @State private var popped = false
+    /// Flips once: fades Otto and the title in and starts him moving.
+    @State private var shown = false
     @State private var subtitleShown = 0
     @State private var ctaShown = false
 
     var body: some View {
         VStack(spacing: 0) {
-            // A dot where the bar begins, like the reference: the questions
-            // fill it from here, so the first screen shows there is a road.
-            OnboardingProgress(from: 0, to: 0)
+            OnboardingProgress(from: progress, to: progress)
                 .padding(.top, 12)
                 .padding(.horizontal, 8)
 
             Spacer(minLength: 0)
 
-            // A generated clip, not the rig (Aziz, 2026-09-23): the rig's arm
-            // could only turn ten degrees, which never read as a wave. He
-            // waves for as long as the screen is up ("constantly waving"):
-            // two waves cut between frames where his arm matches, looped.
-            // The clip is cropped centred on his feet, so his BODY is on the
-            // screen's centre line and the raised arm hangs off to the side.
-            OttoClip(name: "otto-welcome-wave", playing: popped && !reduceMotion, loops: true)
-                .aspectRatio(710.0 / 700.0, contentMode: .fit)
-                .frame(height: 250)
+            figure(shown && !reduceMotion)
                 // The reference's soft shadow, so he stands on the ground.
                 .background(alignment: .bottom) {
                     Ellipse()
@@ -291,19 +327,18 @@ struct WelcomeScreen: View {
                         .frame(width: 170, height: 16)
                         .offset(y: 2)
                 }
-                // No pop (Aziz): he is simply there, faded in.
-                .opacity(popped ? 1 : 0)
+                .opacity(shown ? 1 : 0)
                 // Above the ground, whose rise is drawn behind his legs.
                 .zIndex(1)
 
             VStack(spacing: 12) {
-                // Not typed (Aziz): the title is simply there, with Otto.
-                Text(Self.title)
-                    .font(.system(size: 34, weight: .heavy, design: .rounded))
+                Text(title)
+                    .font(.system(size: titleSize, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
                     .multilineTextAlignment(.center)
-                    .opacity(popped ? 1 : 0)
-                TypedLine(text: Self.subtitle, shown: subtitleShown,
+                    .fixedSize(horizontal: false, vertical: true)
+                    .opacity(shown ? 1 : 0)
+                TypedLine(text: subtitle, shown: subtitleShown,
                           font: .system(size: 21, weight: .medium, design: .rounded),
                           color: AppColor.textSecondary)
             }
@@ -311,7 +346,7 @@ struct WelcomeScreen: View {
             .padding(.top, 34)
             .frame(maxWidth: .infinity)
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(Self.title) \(Self.subtitle)")
+            .accessibilityLabel("\(title) \(subtitle)")
             .accessibilityAddTraits(.isHeader)
 
             Spacer(minLength: 0)
@@ -331,7 +366,7 @@ struct WelcomeScreen: View {
         }
         .background(Color.white.ignoresSafeArea())
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Let's go!", action: onContinue)
+            OnboardingCTA(title: cta, action: onContinue)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
                 .opacity(ctaShown ? 1 : 0)
@@ -342,10 +377,10 @@ struct WelcomeScreen: View {
     }
 
     private func play() async {
-        guard !popped else { return }
+        guard !shown else { return }
         if reduceMotion {
-            popped = true
-            subtitleShown = Self.subtitle.count
+            shown = true
+            subtitleShown = subtitle.count
             ctaShown = true
             return
         }
@@ -353,10 +388,10 @@ struct WelcomeScreen: View {
         // A beat for the screen to be there before anything happens on it.
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
-        withAnimation(.easeOut(duration: 0.35)) { popped = true }
+        withAnimation(.easeOut(duration: 0.35)) { shown = true }
         try? await Task.sleep(for: .milliseconds(450))
 
-        await type(Self.subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
+        await type(subtitle, every: .milliseconds(28)) { subtitleShown = $0 }
         try? await Task.sleep(for: .milliseconds(250))
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }

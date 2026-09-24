@@ -80,6 +80,9 @@ struct OnboardingView: View {
         /// Added 2026-09-22, replacing both of the screens above: Otto's glow,
         /// dragged by hand. Last in the enum, for the reason above.
         case auraDemo
+        /// Added 2026-09-23: "Meet your meditating partner", after the breath.
+        /// Last in the enum, for the reason above.
+        case meetOtto
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -334,7 +337,10 @@ struct OnboardingView: View {
         case .breath, .breathing:
             BreathExerciseScreen(breathing: step == .breathing,
                                  onReady: { go(.breathing) },
-                                 onContinue: { go(.questionCount) })
+                                 onContinue: { go(.meetOtto) })
+
+        case .meetOtto:
+            MeetOttoScreen { go(.questionCount) }
 
         case .questionCount:
             QuestionCountScreen { go(firstInterviewStep) }
