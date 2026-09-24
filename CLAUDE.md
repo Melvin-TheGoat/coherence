@@ -3837,29 +3837,20 @@ things on the build, all in:
   falls away on the exhale: `BreathWater`, three pale layers of `skyDeep`
   (0.12 / 0.18 / 0.30) each with its own slow wave. At 0.55 the front layer
   swallowed the blue countdown.
-- **Otto STANDS and breathes with his arms** (same day, Aziz: "one where
-  otto is standing up and raising his arms for breath up and lowering it for
-  breath down"). The sitting rig with a whole-body swell did not read as
-  breathing. `OttoArmsBreathing` draws three pieces cut from one
-  GPT-generated sheet (brief: `mockups/otto-breathe-brief.md`; the pieces are
-  `OttoStandBody` / `OttoStandArmLeft` / `OttoStandArmRight`, sources in
-  `mockups/otto-v3/otto-stand-*.png`): each arm turns about a point near its
-  rounded shoulder end, pinned to the body's shoulder (source y 345), up to
-  **145 degrees, a V overhead**, and the chest fills 2-3.5% from his feet.
-  **The arms are IN FRONT of the body** (Aziz: behind, the arms did not seem
-  to meet his shoulders and the paws sat too low); straight up in front, they
-  covered his cheeks, hence the V. **The arms were regenerated with OPEN
-  paws** (Aziz: curled paws made the stretch look unnatural); ChatGPT
-  delivered them on a PAINTED checkerboard (an RGB image, no alpha), keyed out
-  by flood-filling the neutral greys from the edges plus a 4-pass defringe of
-  pale low-chroma edge pixels. They are long and thin, drawn at 0.38; the first
-  curled set, drawn at 0.75, is kept in `mockups/otto-v3/otto-stand-arm-*.png`
-  beside the new `*-open.png`. **Always check a generated "transparent" PNG
-  for a real alpha channel before cutting it.** **In SwiftUI, not Rive**:
-  the water, the words and the arms all read the one `breathStart` clock, so
-  they cannot drift off the 4, 2, 4. The shoulder numbers are source pixels
-  measured on a test composite; higher shoulders put the raised arms over his
-  face.
+- **A standing Otto raising his arms was tried and DROPPED the same day**
+  (Aziz: "that looks terrible"). Three pieces cut from a ChatGPT sheet (body,
+  arms), each arm rotated about the shoulder, two arm sets (curled paws, then
+  open paws). **Rotating a flat piece of a painted 3D-style character never
+  looks natural**: the fur shading is drawn for an arm hanging down, so the
+  same picture turned overhead has the wrong light, joint and paw for its new
+  angle. If arms-up breathing returns, the ways that work are an
+  image-to-video clip of the art (keyed, synced to the clock) or a proper
+  bone rig by a Rive animator, not rotated cut-outs. The art stays in
+  `mockups/otto-v3/otto-stand-*.png` and `mockups/otto-breathe-brief.md`;
+  the image sets and `OttoArmsBreathing` are gone. **The sitting Otto with the
+  swell below is what ships.**
+  - ChatGPT's "transparent" PNGs came back as a PAINTED checkerboard (RGB, no
+    alpha). Check for a real alpha channel before cutting generated art.
 - One clock (`breathStart`) drives the water, the swell and the words.
   `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
   `BreathCircle` is no longer used here.
