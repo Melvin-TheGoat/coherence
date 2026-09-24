@@ -306,10 +306,8 @@ struct MeetOttoScreen: View {
 /// **Depth.** A standing Otto is placed in the SCENE's coordinates, his feet
 /// on the ground line where the valley seats him on his cushion, scaled with
 /// the scene (`SitLayout`), so he is exactly as far away as the sitting Otto
-/// the reader meets next. He gets a contact shadow in the grass's own dark
-/// green and a few blades of grass drawn over his feet, in the meadow's tuft
-/// colour for that distance, so he stands IN the grass rather than on top of
-/// a picture of it.
+/// the reader meets next, and he stands on the very cushion he then sits on,
+/// drawn where the valley draws it.
 ///
 /// Reduce Motion gets the finished screen at once, with no ticks, and
 /// `figure` is told not to play.
@@ -342,28 +340,21 @@ struct IntroScreen<Figure: View>: View {
                 GeometryReader { geo in
                     let size = geo.size
                     let scale = SitLayout.scale(in: size)
-                    // His feet where his cushion meets the grass.
-                    let feet = SitLayout.cushionBottom(in: size) - 6 * scale
+                    // His own cushion, the one he sits on in the very next
+                    // screens, at exactly the size and place the valley draws
+                    // it (Aziz, 2026-09-23: "the same mat hes sitting on ...
+                    // consistent"). He stands on its top.
+                    let cushionCentre = SitLayout.cushionBottom(in: size) - 22 * scale
+                    let feet = cushionCentre + 2 * scale
                     // A standing sloth is a head taller than the seated one
                     // (186 in the scene's units).
                     let height = 222 * scale
+                    Cushion()
+                        .frame(width: 168 * scale, height: 44 * scale)
+                        .position(x: size.width / 2, y: cushionCentre)
+                        .opacity(shown ? 1 : 0)
                     figure(shown && !reduceMotion)
                         .frame(height: height)
-                        .background(alignment: .bottom) {
-                            // Contact shadow in the grass's own dark green:
-                            // black reads as a hole in a meadow.
-                            Ellipse()
-                                .fill(RadialGradient(colors: [Color(red: 0.13, green: 0.24, blue: 0.11).opacity(0.42),
-                                                              Color(red: 0.13, green: 0.24, blue: 0.11).opacity(0)],
-                                                     center: .center, startRadius: 0, endRadius: 62 * scale))
-                                .frame(width: 124 * scale, height: 16 * scale)
-                                .offset(y: 4 * scale)
-                        }
-                        .overlay(alignment: .bottom) {
-                            GrassAtFeet(scale: scale)
-                                .frame(width: 118 * scale, height: 14 * scale)
-                                .offset(y: 5 * scale)
-                        }
                         .position(x: size.width / 2, y: feet - height / 2)
                         .opacity(shown ? 1 : 0)
                 }
@@ -475,38 +466,6 @@ struct TypedLine: View {
             .font(font)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
-    }
-}
-
-/// A few blades of meadow grass over a standing Otto's feet, so he stands
-/// IN the grass. Colour, width and height are the meadow's own tufts at the
-/// distance he stands (`Meadow`, near about 0.35), and the blades are fixed,
-/// not random, so they never shuffle between renders.
-private struct GrassAtFeet: View {
-    let scale: CGFloat
-
-    private static let blades: [(x: CGFloat, h: CGFloat, lean: CGFloat)] = [
-        (0.04, 0.55, -0.20), (0.10, 0.85, 0.10), (0.15, 0.60, 0.25),
-        (0.22, 0.95, -0.15), (0.29, 0.70, 0.20), (0.36, 0.50, -0.10),
-        (0.44, 0.80, 0.15), (0.50, 0.60, -0.25), (0.57, 0.90, 0.05),
-        (0.64, 0.65, 0.20), (0.71, 0.85, -0.20), (0.78, 0.55, 0.15),
-        (0.85, 0.95, -0.05), (0.91, 0.65, 0.25), (0.97, 0.50, -0.15),
-    ]
-
-    var body: some View {
-        Canvas { ctx, size in
-            let ink = Color(red: 0.262, green: 0.452, blue: 0.249).opacity(0.75)
-            for b in Self.blades {
-                let base = CGPoint(x: b.x * size.width, y: size.height)
-                let top = CGPoint(x: base.x + b.lean * size.height, y: size.height * (1 - b.h))
-                var path = Path()
-                path.move(to: base)
-                path.addQuadCurve(to: top, control: CGPoint(x: base.x, y: (base.y + top.y) / 2))
-                ctx.stroke(path, with: .color(ink),
-                           style: StrokeStyle(lineWidth: 1.7 * scale, lineCap: .round))
-            }
-        }
-        .accessibilityHidden(true)
     }
 }
 

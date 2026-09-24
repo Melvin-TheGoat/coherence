@@ -5248,9 +5248,18 @@ breath (screen 2) is still a white page (`Step.isWhitePage`).
   (`OnboardingValley` stage `.steady`), exactly where the stress screen and
   Home seat him. The welcome's standing clip is placed in SCENE coordinates,
   feet on `SitLayout.cushionBottom` minus 6, height `222 * SitLayout.scale`,
-  with a contact shadow in the grass's own dark green (black reads as a hole
-  in a meadow) and `GrassAtFeet`, fifteen fixed blades in the meadow's tuft
-  colour at that distance, over his feet. `WelcomeGround` is deleted.
+  standing on HIS OWN CUSHION (Aziz: "the same mat hes sitting on ... i want
+  it to be consistent"), the scene's `Cushion` at exactly the size and
+  place the valley draws it for the seated screens, feet on its top. A
+  separate flatter mat and a row of grass blades were both tried and
+  dropped the same evening. `WelcomeGround` is deleted.
+- **Grasshoppers no longer land on petals** (Aziz: "the 2dness of the
+  flowers"). The meadow is drawn once, all of it, before any grasshopper, so
+  a NEARER flower whose head reached up to its feet looked like a landing
+  pad. Each grasshopper now redraws the grass and flowers nearer than its
+  feet line over itself, masked to its own outline (`Meadow(nearerThan:)`
+  in `ValleyLife.hoppers`): nearer stems and petals cover its legs and body,
+  and nothing outside its outline is drawn twice, so no stem darkens.
 - **Melvin's birds and grasshopper are on all three** (Aziz). On the welcome
   the scene runs with `standingFigure: true`: it splits grasshoppers at the
   cushion line as if he were its own and draws only the farther ones;

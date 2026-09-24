@@ -221,9 +221,10 @@ struct ValleyScene: View {
     /// drawn (`!showsFigure`), or he is tucked in the corner, well clear of
     /// the meadow already.
     private func lifeAvoidRect(size: CGSize, scale s: CGFloat) -> CGRect? {
-        guard showsFigure, !ottoInCorner else { return nil }
+        guard showsFigure || standingFigure, !ottoInCorner else { return nil }
         let seated = ottoHeight(scale: s)
-        let top = SitLayout.ottoTop(in: size) - 20 - ottoLift
+        // A standing Otto's head is higher than a seated one's.
+        let top = SitLayout.ottoTop(in: size) - 20 - ottoLift - (standingFigure ? 60 * s : 0)
         let cushionBottom = SitLayout.cushionBottom(in: size) + 22 * s - ottoLift
         let ottoBottom = size.height * (1 - 0.24) + 12 - ottoLift
         let bottom = max(cushionBottom, ottoBottom)
@@ -433,7 +434,9 @@ private struct Cloud: Shape {
 
 /// The terracotta seat. A gradient, a lit rim, and a highlight across the top
 /// so it reads as a solid object rather than a painted oval.
-private struct Cushion: View {
+/// Also the one a standing Otto stands on in onboarding's welcome, drawn
+/// there at exactly this size and place so it never changes between screens.
+struct Cushion: View {
     var body: some View {
         GeometryReader { geo in
             let w = geo.size.width, h = geo.size.height
@@ -458,8 +461,14 @@ private struct Cushion: View {
 /// none sits on another, and they are drawn **back to front**: smaller and
 /// paler toward the ridge, bigger and brighter at the bottom edge, which is
 /// what makes a flat field read as ground going away from you.
-private struct Meadow: View {
+struct Meadow: View {
     let scale: CGFloat
+    /// Draw only the grass and flowers standing NEARER than this feet line
+    /// (points from the top). A grasshopper redraws these over itself, cut to
+    /// its own outline, so a flower in front of it covers it instead of
+    /// looking like a petal it has landed on (Aziz, 2026-09-23). Nil draws
+    /// the whole meadow.
+    var nearerThan: CGFloat? = nil
 
     /// Clumps of grass scattered over the field, fixed so the meadow is the
     /// same every time. Smaller and paler toward the ridge, bigger and darker
@@ -499,6 +508,7 @@ private struct Meadow: View {
                 let near = t.near
                 let h = (5 + 15 * near) * scale
                 let base = CGPoint(x: t.x * size.width, y: size.height * (1 - t.bottom))
+                if let nearerThan, base.y <= nearerThan { continue }
                 var path = Path()
                 for blade in 0..<t.blades {
                     let spread = (CGFloat(blade) - CGFloat(t.blades - 1) / 2) * 0.32
@@ -518,6 +528,7 @@ private struct Meadow: View {
                 let w = f.w * scale, h = f.h * scale
                 let anchor = CGPoint(x: f.left * size.width,
                                      y: size.height * (1 - f.bottom))
+                if let nearerThan, anchor.y <= nearerThan { continue }
                 ctx.drawLayer { layer in
                     layer.translateBy(x: anchor.x, y: anchor.y)
                     layer.rotate(by: .degrees(f.rotation))

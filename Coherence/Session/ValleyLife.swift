@@ -133,7 +133,18 @@ struct ValleyLife: View {
         }
         return ForEach(crossings) { crossing in
             if let pose = crossing.pose(at: t) {
-                HopperGlyph(pose: pose)
+                ZStack {
+                    HopperGlyph(pose: pose)
+                    // The grass and flowers nearer than it, drawn again over
+                    // it and cut to its outline: the meadow is drawn once,
+                    // all of it, before any grasshopper, so without this a
+                    // nearer flower whose head reached up to its feet looked
+                    // like a petal it had landed on (Aziz, 2026-09-23). Cut to
+                    // its outline, nothing outside it is drawn twice.
+                    Meadow(scale: scale, nearerThan: pose.groundY)
+                        .frame(width: size.width, height: size.height)
+                        .mask(HopperGlyph(pose: pose).frame(width: size.width, height: size.height))
+                }
             }
         }
     }
