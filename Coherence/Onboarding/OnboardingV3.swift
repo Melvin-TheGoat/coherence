@@ -246,7 +246,7 @@ struct OttoInMeadow: View {
 /// the line under it, one button. The whole thing is a sequence, and every
 /// beat of it is felt as well as seen:
 ///
-/// 1. Otto fades in (no pop: Aziz, 2026-09-23) and waves.
+/// 1. Otto fades in (no pop: Aziz, 2026-09-23) and waves, a generated clip.
 /// 2. "Welcome to 808!" types out, a firm tick per letter.
 /// 3. The line under it types out faster, a lighter tick per letter.
 /// 4. "Let's go!" rises into place.
@@ -258,12 +258,9 @@ struct WelcomeScreen: View {
     static let title = "Welcome to 808!"
     static let subtitle = "It's time to regain control of your mind."
 
-    @StateObject private var rig = OttoRigHolder()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// Flips once, and fades Otto in.
+    /// Flips once: fades Otto in and starts his wave.
     @State private var popped = false
-    /// Bumped on every wave, and drives the wiggle that goes with it.
-    @State private var waves = 0
     @State private var titleShown = 0
     @State private var subtitleShown = 0
     @State private var ctaShown = false
@@ -278,22 +275,19 @@ struct WelcomeScreen: View {
 
             Spacer(minLength: 0)
 
-            OttoInMeadow(pose: .talking, rig: rig, share: 0.82)
-                .frame(maxWidth: 270)
-                // The rig's arm can only turn about ten degrees before the cut
-                // behind it shows, which on a phone reads as nothing. So the
-                // wave is carried by his whole body too: a happy rock from the
-                // feet, two swings dying away, in time with the arm.
-                .keyframeAnimator(initialValue: 0.0, trigger: waves) { view, angle in
-                    view.rotationEffect(.degrees(angle), anchor: .bottom)
-                } keyframes: { _ in
-                    KeyframeTrack(\.self) {
-                        CubicKeyframe(-5, duration: 0.18)
-                        CubicKeyframe(4.5, duration: 0.24)
-                        CubicKeyframe(-3.5, duration: 0.24)
-                        CubicKeyframe(2, duration: 0.22)
-                        CubicKeyframe(0, duration: 0.24)
-                    }
+            // A generated clip, not the rig (Aziz, 2026-09-23): the rig's arm
+            // could only turn ten degrees, which never read as a wave. He
+            // waves, blinks, lowers his paw and holds there.
+            OttoClip(name: "otto-welcome-wave", playing: popped && !reduceMotion)
+                .aspectRatio(638.0 / 700.0, contentMode: .fit)
+                .frame(height: 250)
+                // The reference's soft shadow, so he stands on the ground.
+                .background(alignment: .bottom) {
+                    Ellipse()
+                        .fill(RadialGradient(colors: [Color.black.opacity(0.13), Color.black.opacity(0)],
+                                             center: .center, startRadius: 0, endRadius: 80))
+                        .frame(width: 170, height: 16)
+                        .offset(y: 2)
                 }
                 // No pop (Aziz): he is simply there, faded in.
                 .opacity(popped ? 1 : 0)
@@ -357,8 +351,6 @@ struct WelcomeScreen: View {
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.35)) { popped = true }
         try? await Task.sleep(for: .milliseconds(450))
-        guard !Task.isCancelled else { return }
-        wave()
 
         await type(Self.title, every: .milliseconds(55), firm: true) { titleShown = $0 }
         try? await Task.sleep(for: .milliseconds(220))
@@ -367,15 +359,6 @@ struct WelcomeScreen: View {
         guard !Task.isCancelled else { return }
         withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
         WelcomeHaptics.land()
-        // And once more as the button arrives: "come on, then".
-        try? await Task.sleep(for: .milliseconds(350))
-        guard !Task.isCancelled else { return }
-        wave()
-    }
-
-    private func wave() {
-        rig.wave()
-        waves += 1
     }
 
     /// Reveals `text` a character at a time, a tick on every letter and none
