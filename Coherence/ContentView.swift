@@ -139,6 +139,14 @@ struct ContentView: View {
     /// The tab on screen: the tour's while it runs, the person's otherwise.
     private var shownTab: MainTab { tourTab ?? tab }
 
+    /// One of Otto's screens is up or waiting behind another cover.
+    private var ottoShowing: Bool {
+        for s in [sheet, pendingSheet] {
+            if case .some(.intervention) = s { return true }
+        }
+        return false
+    }
+
     /// The bar reads what is on screen, so the tour's tab shows as selected;
     /// a tap writes the person's own selection.
     private var tabSelection: Binding<MainTab> {
@@ -222,6 +230,7 @@ struct ContentView: View {
         .modifier(BlockHooks(block: block,
                              sessionActive: coordinator.active != nil,
                              awardShowing: !unlockQueue.isEmpty,
+                             ottoShowing: ottoShowing,
                              lastSessionID: coordinator.lastSessionID,
                              sessions: sessions,
                              scenePhase: scenePhase,

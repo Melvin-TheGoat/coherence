@@ -15,6 +15,10 @@ struct BlockHooks: ViewModifier {
     /// An award is being celebrated in its own cover: Otto waits for it, or
     /// the second cover would be dropped (the known one-cover trap).
     let awardShowing: Bool
+    /// One of Otto's screens is up, or queued behind another cover. Another
+    /// ask while he is already asking would queue a second Otto behind the
+    /// first, to appear the moment the person answers him.
+    let ottoShowing: Bool
     let lastSessionID: UUID?
     let sessions: [Session]
     let scenePhase: ScenePhase
@@ -57,7 +61,7 @@ struct BlockHooks: ViewModifier {
     /// already have opened the apps, and Otto asking about nothing (with "No
     /// passes left today") is worse than no Otto.
     private func showOtto() {
-        guard !sessionActive else { return }
+        guard !sessionActive, !ottoShowing else { return }
         catchUp()
         block.clearDeliveredAsk()
         guard !block.holding().isEmpty else { return }

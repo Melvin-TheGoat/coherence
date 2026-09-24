@@ -453,12 +453,35 @@ private struct FaceTimeScene: View {
         _answered = State(initialValue: startAnswered)
     }
 
+    /// The self-view's size once answered, FaceTime's own shape.
+    private static let pip = CGSize(width: 100, height: 136)
+
     var body: some View {
-        ZStack {
-            if answered {
-                answeredView
-            } else {
-                ringing
+        GeometryReader { geo in
+            let size = geo.size
+            ZStack {
+                if answered {
+                    answeredView
+                }
+                // ONE camera view for both states, drawn in the same place
+                // in the tree either way, so Accept only moves and shrinks it
+                // (see `FaceTimeCameraPreview` for why a second preview froze
+                // the screen).
+                cameraView
+                    .frame(width: answered ? Self.pip.width : size.width,
+                           height: answered ? Self.pip.height : size.height)
+                    .clipShape(RoundedRectangle(cornerRadius: answered ? 16 : 0, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: answered ? 16 : 0, style: .continuous)
+                        .stroke(.white.opacity(answered ? 0.5 : 0), lineWidth: 1.5))
+                    .shadow(color: .black.opacity(answered ? 0.22 : 0), radius: 10, y: 4)
+                    .position(answered ? CGPoint(x: size.width - 66, y: 128)
+                                       : CGPoint(x: size.width / 2, y: size.height / 2))
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+                if !answered {
+                    ringing
+                        .transition(.opacity)
+                }
             }
         }
         .ignoresSafeArea()
@@ -466,14 +489,27 @@ private struct FaceTimeScene: View {
         .onDisappear { camera.stop() }
     }
 
+    /// Your live mirrored camera, or, when it cannot run, a soft dark card
+    /// while ringing and a neutral placeholder once answered.
+    @ViewBuilder
+    private var cameraView: some View {
+        if camera.ready {
+            FaceTimeCameraPreview(session: camera.session)
+        } else if answered {
+            ZStack {
+                AppColor.backgroundSecondary
+                Image(systemName: "person.fill")
+                    .font(.system(size: 30))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+        } else {
+            LinearGradient(colors: [AppColor.textPrimary.opacity(0.92), AppColor.textPrimary],
+                           startPoint: .top, endPoint: .bottom)
+        }
+    }
+
     private var ringing: some View {
         ZStack {
-            if camera.running {
-                FaceTimeCameraPreview(session: camera.session)
-            } else {
-                LinearGradient(colors: [AppColor.textPrimary.opacity(0.92), AppColor.textPrimary],
-                               startPoint: .top, endPoint: .bottom)
-            }
             // Keeps the call card legible over a live, moving background.
             LinearGradient(colors: [.black.opacity(0.55), .black.opacity(0.05), .black.opacity(0.6)],
                            startPoint: .top, endPoint: .bottom)
@@ -508,9 +544,8 @@ private struct FaceTimeScene: View {
     }
 
     private var answeredView: some View {
-        ValleyStage(pose: "OttoTalk", line: currentLine, doors: doors, secondary: "Hang up") { size, _ in
-            selfView
-                .position(x: size.width - 66, y: 128)
+        ValleyStage(pose: "OttoTalk", line: currentLine, doors: doors, secondary: "Hang up") { _, _ in
+            EmptyView()
         }
         .task {
             for i in 1...2 {
@@ -530,28 +565,9 @@ private struct FaceTimeScene: View {
         return ""
     }
 
-    /// The picture-in-picture self-view, top right, FaceTime's own shape:
-    /// your live mirrored camera, or a neutral placeholder when it can't run.
-    private var selfView: some View {
-        ZStack {
-            if camera.running {
-                FaceTimeCameraPreview(session: camera.session)
-            } else {
-                AppColor.backgroundSecondary
-                Image(systemName: "person.fill")
-                    .font(.system(size: 30))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-        }
-        .frame(width: 100, height: 136)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(.white.opacity(0.5), lineWidth: 1.5))
-        .shadow(color: .black.opacity(0.22), radius: 10, y: 4)
-        .accessibilityHidden(true)
-    }
-
+    /// The camera shrinks into the corner the way FaceTime's does.
     private func answer() {
-        withAnimation(.easeInOut(duration: 0.25)) { answered = true }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { answered = true }
     }
 
     private func callButton(_ label: String, systemImage: String, color: Color,
@@ -925,18 +941,29 @@ private struct HowLongScreen: View {
     var rehearsal = false
 
     @State private var minutes = 10
-    private static let options = [5, 10, 15, 30, 60]
+    /// One row, three choices (Melvin, 2026-09-23: "change those to 10/20/30
+    /// and thats it").
+    private static let options = [10, 20, 30]
 
     var body: some View {
         let ink = DayLight.at(0).ink
         GeometryReader { geo in
             let size = geo.size
             let ottoHeight = min(170, size.height * 0.19)
-            // Seated on the near ridge, where the meadow begins, not afloat.
             let ottoBottom = size.height * 0.60
             let ottoTop = ottoBottom - ottoHeight
+            // The valley's grass begins at 66% of its frame, below his feet,
+            // which left him afloat in front of the mountains. Drawing the
+            // scene taller and letting the extra run off the top raises the
+            // grass to just under him, on this screen only.
+            // The drawing has air under him, so the grass rises past his
+            // frame's bottom to his lap: seated in the meadow, not on its edge.
+            let grassTop = ottoBottom - ottoHeight * 0.22
+            let rise = max(0, (size.height * 0.66 - grassTop) / 0.34)
             ZStack {
                 ValleyScene(progress: 0, showsFigure: false)
+                    .frame(width: size.width, height: size.height + rise)
+                    .frame(width: size.width, height: size.height, alignment: .bottom)
                 VStack {
                     Spacer(minLength: 0)
                     OttoLine(text: "Fine. How long do you need?", ink: ink)
@@ -948,15 +975,16 @@ private struct HowLongScreen: View {
                     .scaledToFit()
                     .frame(height: ottoHeight)
                     .position(x: size.width / 2, y: ottoBottom - ottoHeight / 2)
-                VStack(spacing: 12) {
-                    // Two rows: five labels in one run wrapped "15 min" onto
-                    // two lines on a 402pt phone.
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 88), spacing: 8)], spacing: 8) {
+                VStack(spacing: 10) {
+                    Spacer()
+                    // Low, just above the buttons it sets, rather than
+                    // straight under Otto (Melvin, 2026-09-23).
+                    HStack(spacing: 8) {
                         ForEach(Self.options, id: \.self) { m in
                             Button {
                                 minutes = m
                             } label: {
-                                Text(m == 60 ? "1 hour" : "\(m) min")
+                                Text("\(m) min")
                                     .font(.system(size: 15, weight: .semibold))
                                     .lineLimit(1)
                                     .foregroundStyle(AppColor.textPrimary)
@@ -970,15 +998,10 @@ private struct HowLongScreen: View {
                             .buttonStyle(.plain)
                         }
                     }
-                }
-                .padding(16)
-                .background(AppColor.backgroundPrimary.opacity(0.95),
-                            in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .padding(.horizontal, 16)
-                .frame(width: size.width)
-                .position(x: size.width / 2, y: ottoBottom + 12 + 70)
-                VStack(spacing: 10) {
-                    Spacer()
+                    .padding(12)
+                    .background(AppColor.backgroundPrimary.opacity(0.95),
+                                in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .padding(.bottom, 8)
                     Button("Actually, let's meditate", action: onMeditate)
                         .buttonStyle(PrimaryButtonStyle())
                     // A cream pill, not bare text: bare ink sat on the
@@ -990,7 +1013,7 @@ private struct HowLongScreen: View {
                         if !rehearsal { block.takePass(minutes: minutes) }
                         onClose()
                     } label: {
-                        Text(minutes == 60 ? "Open my apps for an hour" : "Open my apps for \(minutes) min")
+                        Text("Open my apps for \(minutes) min")
                             .font(DisplayFont.display(15, .bold))
                             .foregroundStyle(AppColor.textPrimary)
                             .frame(maxWidth: .infinity)

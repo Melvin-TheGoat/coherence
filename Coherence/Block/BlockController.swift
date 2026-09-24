@@ -297,10 +297,16 @@ final class BlockController: ObservableObject {
     /// Tapping the notification both delivers it AND brings 808 to the
     /// foreground, and each of those asks for Otto. The first one wins; the
     /// other, a moment later, would queue a second screen behind the first.
+    ///
+    /// **Two seconds, not fifteen** (2026-09-23). Those two asks land within
+    /// a second of each other; fifteen also swallowed the next real tap, so
+    /// closing Otto and tapping "Otto wants a word" again opened 808 on
+    /// nothing (Melvin). A screen already up is `BlockHooks.ottoShowing`'s
+    /// job, not this window's.
     private var lastPresentation: Date?
 
     func claimPresentation(now: Date = Date()) -> Bool {
-        if let last = lastPresentation, now.timeIntervalSince(last) < 15 { return false }
+        if let last = lastPresentation, now.timeIntervalSince(last) < 2 { return false }
         lastPresentation = now
         return true
     }

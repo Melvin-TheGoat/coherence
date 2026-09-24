@@ -3726,6 +3726,33 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
   (`CommunityModel.placing`). Inserting at the top sent an edited post above
   posts practiced after it until the next refresh; found on the simulator.
 
+## OTTO'S SCREENS: THREE PHONE BUGS AND THE HOW-LONG SCREEN (2026-09-23, Melvin)
+
+- **"Not now" offers 10, 20 or 30 minutes, one row**, sitting just above the
+  buttons it sets. The valley is drawn taller on that screen only, so its
+  grass rises to Otto's lap (it began at 66% of the frame, below his feet,
+  and he floated in front of the mountains).
+- **Tapping "Otto wants a word" could open 808 on nothing.** Every Otto
+  claimed a fifteen-second window, meant to swallow the second of the two
+  asks one tap makes (the delivery and the foreground), and it swallowed the
+  next real tap as well. The window is two seconds now, and
+  `BlockHooks.ottoShowing` stops an ask while one of his screens is up or
+  queued.
+- **The video call went blank for seconds after Accept, and repeated calls
+  froze the phone.** Accept threw away the full-screen camera preview and
+  attached a second, smaller one to the running session, which rebuilt its
+  video path while the interface waited. Every call also built its own
+  session and configured it on the main thread. Now all calls share one
+  session (`FrontCameraEngine`), touched only on its own serial queue,
+  counted in and out so the last one out stops it, and the screen keeps ONE
+  preview that Accept moves and shrinks into the corner. The simulator has
+  no camera, so this was verified on the phone or not at all; the engine
+  logs how long configuring, starting and stopping take (category
+  `FrontCamera`), readable through `devicectl ... --console`.
+- **Nothing was left on the phone to explain the freeze**: no crash or hang
+  report for 808 in its logs. The fixes target the two things in the code
+  that could hold the main thread; if it recurs, stream the console.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in
