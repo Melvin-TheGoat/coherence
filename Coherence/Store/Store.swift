@@ -79,6 +79,11 @@ final class Store: ObservableObject {
     /// charge immediately: that is the difference between an offer and a lie,
     /// and reviewers check the claim against the purchase sheet.
     @Published private(set) var trialEligible = true
+    /// How many days the free trial runs: the monthly product's introductory
+    /// offer, read when the products load, and the plan's fallback before
+    /// that. Every line that states the trial's length reads this
+    /// (`TrialCopy`), so App Store Connect is the one place it is set.
+    @Published private(set) var trialDays = SubscriptionPlan.fallbackTrialDays
     /// The invite reward's balance, attached by the app at launch
     /// (`RewardLedger`). nil on a store with no persistence (tests).
     var ledger: RewardLedger?
@@ -143,6 +148,21 @@ final class Store: ObservableObject {
         // Both subscriptions share one group, so either answers for both.
         if let sub = products.first(where: { $0.subscription != nil })?.subscription {
             trialEligible = await sub.isEligibleForIntroOffer
+        }
+        if let offer = product(for: .monthly)?.subscription?.introductoryOffer,
+           offer.paymentMode == .freeTrial {
+            trialDays = Self.days(in: offer.period)
+        }
+    }
+
+    /// A subscription period in days, the way a trial is stated.
+    private static func days(in period: Product.SubscriptionPeriod) -> Int {
+        switch period.unit {
+        case .day: return period.value
+        case .week: return period.value * 7
+        case .month: return period.value * 30
+        case .year: return period.value * 365
+        @unknown default: return period.value
         }
     }
 

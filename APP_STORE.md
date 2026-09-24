@@ -415,16 +415,17 @@ match the manifest is a review flag by itself.
   already say "Photos or Videos," singular category, any number of items.
 - **Health & Fitness is correctly ABSENT.** Heart rate, breathing, stillness,
   scores, and every curve stay device-local (5.1.3(ii); see `ENTITLEMENTS.md`
-  and the 5.1.3 store split in `CLAUDE.md`). A Friends post's optional score
-  is declared as "Other User Content"/App Functionality rather than Health &
-  Fitness, the same free-share-card number a user already hand-types into
-  Instagram. **This is a founder judgment call, not a settled fact**:
-  guideline 5.1.3(ii) bars storing personal health information in iCloud
-  with no written consent exception, and whether a coarse 0-100 practice
-  score derived from heart rate counts as "personal health information" is
-  genuinely arguable either way. Revisit before shipping if either founder
-  is not comfortable with the current answer; the zero-risk alternative is
-  dropping the score field from posts entirely.
+  and the 5.1.3 store split in `CLAUDE.md`). **A Friends post never carries a
+  score** (2026-09-23, the founders' call), so there is nothing derived from
+  heart rate in the public database at all, and no Health & Fitness
+  declaration is needed for Friends on that account. This supersedes an
+  earlier judgment call that had declared an optional score as "Other User
+  Content"/App Functionality: guideline 5.1.3(ii) bars storing personal
+  health information in iCloud with no written consent exception, and
+  whether a coarse 0-100 practice score derived from heart rate cleared that
+  bar was genuinely arguable either way, so the zero-risk answer (dropping
+  the score field from posts entirely) was taken instead of continuing to
+  argue it.
 - **No Screen Time / Block row exists, on purpose.** Nothing Block touches
   is collected by our definition (see `PRIVACY_POLICY.md`, "Block"); adding
   a row for it would be declaring a collection that does not happen.
@@ -469,8 +470,8 @@ all. Nobody needs to reach for one during review.
 > CloudKit database, not our own server. To review it, the test device needs
 > to be signed in to iCloud (Settings → [name] at the top of the Settings
 > app); most review devices already are. Open the Friends tab, claim a
-> username, and you can: post a session (photos or videos are optional; a
-> phone-only session posts with no score, which is expected), search for and
+> username, and you can: post a session (photos or videos are optional, and
+> posts never carry a score), search for and
 > add another account, react to a post, report a post or a profile, and
 > block a person. Every post and profile has Report in its menu; reports
 > reach us at support@meditate808.com, normally within 24 hours (Terms of
@@ -508,9 +509,9 @@ all. Nobody needs to reach for one during review.
 >
 > Health data: session results measured from a paired Apple Watch are
 > computed on-device and stored only on-device, in a store excluded from
-> CloudKit sync, per guideline 5.1.3(ii). A Friends post may include the
-> session's overall score (never a heart-rate value, curve, or any other
-> measured reading), only when the person who posted it chooses to.
+> CloudKit sync, per guideline 5.1.3(ii). A Friends post never includes the
+> session's overall score, a heart-rate value, a curve, or any other
+> measured reading.
 >
 > Audio licensing: the guided narration was commissioned with a commercial
 > license; the tones are synthesized at runtime; the ambient beds and nature

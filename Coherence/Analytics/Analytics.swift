@@ -287,6 +287,8 @@ enum Analytics {
         "result":            "17 Here's what you told us (cut 1.1)",
         "cost":              "17b The cost (not routed to) (cut 1.1)",
         "wall":              "31b The wall: you'd be in company (before the paywall since 1.0.2) (cut 1.1)",
+        "blockApps":         "31c Which apps should Otto hold? (Block builds only)",
+        "blockSchedule":     "31d When should Otto hold them? (Block builds only)",
         "proofBody":         "19 Proof: the body is visible (cut 1.0.2)",
         "sampleStart":       "20 Sample session: start (cut 1.1)",
         "sampleBuild":       "21 Sample session: the score builds (cut 1.1)",

@@ -36,10 +36,11 @@ struct OnboardingView: View {
     /// (screen 23), while its open-questions section argues for after the first
     /// session. Kept as one switch so moving it is a one-line change, not a
     /// re-plumb — see ONBOARDING.md "Open — needs a decision before building".
-    /// FALSE since 2026-09-15 (Melvin): the paywall comes after the first
-    /// meditation, from ContentView (`FirstSessionOffer`), once the person has
-    /// seen their own score, curves and readings. Onboarding sells nothing.
-    private static let paywallInsideOnboarding = false
+    /// FALSE from 2026-09-15 (Melvin): the paywall came after the first
+    /// meditation, from ContentView (`FirstSessionOffer`). TRUE again while
+    /// 808 is premium only (2026-09-23, `Monetization`): onboarding ends on
+    /// the paywall, and there is no free app to walk into past it.
+    private static let paywallInsideOnboarding = Monetization.premiumOnly
 
     enum Step: Int, CaseIterable {
         case relief, breath                                    // 1–2
@@ -79,6 +80,9 @@ struct OnboardingView: View {
         /// Added 2026-09-22, replacing both of the screens above: Otto's glow,
         /// dragged by hand. Last in the enum, for the reason above.
         case auraDemo
+        /// Added 2026-09-23: which apps Otto holds, and when, on Block builds,
+        /// right after the wall. Last in the enum, for the reason above.
+        case blockApps, blockSchedule
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -109,6 +113,12 @@ struct OnboardingView: View {
                  .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
                  .auraDemo, .bodyCuriosity:
                 return true
+            // Real screens on Block builds, so leaving one belongs in the
+            // Back history like any other question. Off Block builds they
+            // route straight past on appear and must never enter it, the
+            // same as every conditional pass-through above.
+            case .blockApps, .blockSchedule:
+                return !FeatureFlags.block
             default:
                 return false
             }
@@ -179,10 +189,18 @@ struct OnboardingView: View {
     /// Taps on Otto on the stress screen: he jiggles, as he does on Home.
     @State private var ottoPokes = 0
 
-    /// After the wall: sign-in (optional), then the tour for Watch owners.
-    /// The wall sits between health consent and sign-in for everyone: the
-    /// company they'd be in, right before the app asks them for anything.
+    /// After the wall: Block's setup on Block builds, then sign-in
+    /// (optional), then the tour for Watch owners. The wall sits between
+    /// health consent and everything after it, the company they'd be in,
+    /// right before the app asks them for anything.
     private var afterWall: Step {
+        FeatureFlags.block ? .blockApps : afterBlockSetup
+    }
+
+    /// Where Block's own setup hands off to. Block builds reach it after
+    /// picking apps and a schedule; everyone else reaches it straight from
+    /// the wall, exactly as before Block's screens existed.
+    private var afterBlockSetup: Step {
         Self.paywallInsideOnboarding ? .paywall : .signIn
     }
 
@@ -480,6 +498,24 @@ struct OnboardingView: View {
                 Color.clear.onAppear { go(.wall) }
             }
 
+        // Block builds only (Melvin, 2026-09-23): which apps Otto holds, and
+        // when, right after the wall. Off Block builds, or on a resume record
+        // saved before the flag last flipped, both pass straight through:
+        // nobody meets a screen for a feature their build doesn't have.
+        case .blockApps:
+            if FeatureFlags.block {
+                BlockAppsScreen { go(.blockSchedule) }
+            } else {
+                Color.clear.onAppear { go(.blockSchedule) }
+            }
+
+        case .blockSchedule:
+            if FeatureFlags.block {
+                BlockScheduleScreen { go(afterBlockSetup) }
+            } else {
+                Color.clear.onAppear { go(afterBlockSetup) }
+            }
+
         // MARK: The walkthrough (see OnboardingWalkthrough.swift)
 
         // The tour is the whole tutorial now (Melvin, 2026-09-19: "I don't
@@ -502,10 +538,21 @@ struct OnboardingView: View {
             Color.clear.onAppear { finish() }
 
         case .paywall:
-            // No paywall inside onboarding since 2026-09-15; it opens after
-            // the first meditation from ContentView. A saved resume record
-            // pointing here moves on to sign-in.
-            Color.clear.onAppear { go(.signIn) }
+            if Self.paywallInsideOnboarding {
+                // Premium only (`Monetization`). A purchase or a restore moves
+                // on to sign-in; so does a store that could not load its
+                // plans, since nobody is locked out by a failure. Declining
+                // every offer comes back here: there is no free tier.
+                PaywallScreen(placement: "onboarding", plan: $plan) { _ in go(.signIn) }
+                    // Its own paper, not the shared valley: its small print,
+                    // legal links and "Not right now" are grey type that
+                    // vanished into the ridge (2026-09-23).
+                    .environment(\.onboardingSharedGround, false)
+            } else {
+                // No paywall inside onboarding (2026-09-15 to 2026-09-23): a
+                // saved resume record pointing here moves on to sign-in.
+                Color.clear.onAppear { go(.signIn) }
+            }
 
         case .signIn:
             SignInScreen(onSignedIn: { credential in

@@ -166,6 +166,8 @@ struct UnlockSheet: View {
     /// Whether the free week may still be promised. A lapsed subscriber sees
     /// "See the plans"; the paywall then shows what is actually true.
     var trialEligible: Bool = true
+    /// The App Store's trial length (`Store.trialDays`).
+    var trialDays: Int = SubscriptionPlan.fallbackTrialDays
     let onSeePlans: () -> Void
     let onDismiss: () -> Void
 
@@ -185,7 +187,7 @@ struct UnlockSheet: View {
             }
             Spacer(minLength: 16)
             VStack(spacing: 8) {
-                Button(trialEligible ? "Start 7 days free" : "See the plans",
+                Button(trialEligible ? TrialCopy.startButton(trialDays) : "See the plans",
                        action: onSeePlans)
                     .buttonStyle(PrimaryButtonStyle())
                 Button("Not now", action: onDismiss)

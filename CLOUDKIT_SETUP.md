@@ -121,7 +121,6 @@ The full field list for every type, for checking against:
 | `caption` | String |
 | `technique` | String |
 | `sound` | String |
-| `score` | Int(64) |
 | `minutes` | Int(64) |
 | `streak` | Int(64) |
 | `media` | Asset List — the full-resolution file per item: the photo, or the exported video |
@@ -136,6 +135,16 @@ in one is the same item as index `i` in the others. Replaced the single
 `photo` Asset field (2026-09-23, several photos and videos per post). The
 old `photo` field can be left in Development and Production; nothing reads
 it any more.
+
+**`score` was dropped from Post the same day, for a different reason (the
+founders' call): it is derived from heart rate, and guideline 5.1.3(ii)
+forbids storing personal health information in iCloud with no consent
+exception.** The field cannot be deleted from an existing schema, so it can
+be left in Development and Production too, holding whatever old posts
+already wrote to it; the app no longer writes or reads it, so nothing shows
+it again. The score itself is untouched everywhere it lived outside this
+container: the private session page, the results screen, and a shared card,
+which is the person's own act and not our storage.
 
 **Reaction** — record name `react-<post>-<author>`
 | Field | Type |

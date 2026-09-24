@@ -5,9 +5,11 @@
 > CLAUDE.md records what moved after this was written: follower and
 > following counts (2026-09-18); the invite reward is 3 sessions, capped at
 > 15 (2026-09-15); the selfie rule is gone, so a post takes any photo and a
-> session can hold a video (2026-09-22); a post's score is optional
-> (2026-09-22); the tab is in the valley (2026-09-22). Ideas still open are
-> in `BACKLOG.md` > Potential features.
+> session can hold a video (2026-09-22); a post's score went from required,
+> to optional (2026-09-22), to gone entirely (2026-09-23, the founders' call
+> — see "The rule for what a post may carry" below); the tab is in the
+> valley (2026-09-22). Ideas still open are in `BACKLOG.md` > Potential
+> features.
 
 Aziz's ask: after a meditation, post the session with a photo to your
 friends, the way a Strava run goes to your feed. Friends, not followers.
@@ -19,9 +21,10 @@ must be reviewed before any Swift (standing rule).
 ## What ships in v1, and what does not
 
 **In:** mutual friends (request, accept), a feed of friends' posts, a post
-made from the results screen (photo optional, caption optional, score,
-minutes, streak, technique), one reaction per post, a friend's profile,
-report and block, an invite link, the invite reward, a username claim.
+made from the results screen (photo optional, caption optional, minutes,
+streak, technique, never a score), one reaction per post, a friend's
+profile, report and block, an invite link, the invite reward, a username
+claim.
 
 **Out, on purpose:** comments (every text field is a moderation surface;
 reactions carry the whole Strava kudos loop without one), clubs, leaderboards,
@@ -45,18 +48,29 @@ retention feature when there are people in it.
 
 ## The rule for what a post may carry
 
-**A post carries exactly what the free share card carries: score, minutes,
-streak, the technique, a photo and a caption. Never a heart-rate number, a
-breath rate, a stillness value, or a curve.** Two reasons and both are hard:
+**A post carries the free share card's data minus its one number: minutes,
+streak, the technique, a photo and a caption. Never a score, a heart-rate
+number, a breath rate, a stillness value, or a curve.** Two reasons and both
+are hard:
 
 1. Guideline 5.1.3(ii) forbids storing personal health information in
-   iCloud. The public CloudKit database is iCloud. The score is a derived
-   number the user already publishes to Instagram by hand, and we treat a
-   deliberate "Post" tap the same way. A heart-rate delta is HealthKit data
-   and does not go, full stop.
+   iCloud. The public CloudKit database is iCloud. A heart-rate delta is
+   HealthKit data and does not go, full stop.
 2. The free tier rule: free gives you the score, paid gives you the evidence.
    A post showing curves would be the way around the lock, for the author
    and for everyone reading.
+
+**Score was on this list at first and came out 2026-09-23 (the founders'
+call).** The original argument was that the score is a derived number the
+user already publishes to Instagram by hand, so a deliberate "Post" tap
+could be treated the same way. That argument holds for SHARING a card,
+which is the person's own act each time; it does not hold for us STORING
+the number indefinitely in a database we can read, which a post does and a
+shared card never did. Whether a coarse 0-100 score derived from heart rate
+counts as "personal health information" under 5.1.3(ii) was genuinely
+arguable either way (the reasoning is in `APP_STORE.md`'s App Privacy
+notes), so the zero-risk answer was taken instead: a post never carries
+one, whether or not the sit that produced it had one.
 
 The post is drawn natively (photo on top, a stat strip below), not as the
 rendered share-card image, so it can be themed and read at row size.
@@ -79,7 +93,7 @@ Record types (public database, `iCloud.com.lockout.meditate808`):
 |---|---|---|
 | `Profile` | `username`, `displayName`, `avatar` (asset, optional), `firstSessionAt`, `createdAt` | the owner, once; edited by the owner |
 | `FriendEdge` | `from` (ref Profile), `to` (ref Profile), `createdAt` | the `from` user |
-| `Post` | `author` (ref), `score`, `minutes`, `streak`, `technique`, `caption`, `photo` (asset), `practicedAt`, `createdAt` | the author |
+| `Post` | `author` (ref), `minutes`, `streak`, `technique`, `caption`, `photo` (asset), `practicedAt`, `createdAt` | the author |
 | `Reaction` | `post` (ref), `author` (ref), `createdAt` | the reactor |
 | `Block` | `from` (ref), `to` (ref) | the blocker |
 | `Report` | `reporter`, `target` (ref Post or Profile), `reason`, `createdAt` | the reporter |
@@ -127,7 +141,8 @@ when Share has stepped down, one gold object per section). Opens the
 composer: photo (camera or library, optional), caption (optional, 140
 characters), the stat strip it will carry, the technique from the reflection
 if one was set. **Post.** Back on results. The card on the feed is the photo,
-the score ring, minutes, streak, the technique, the caption.
+minutes, streak, the technique, the caption. No score (2026-09-23): a post
+never carries one.
 
 The first post ever shows the **community rules** once (be kind, your own
 practice only, no nudity, no harassment, we remove what is reported and

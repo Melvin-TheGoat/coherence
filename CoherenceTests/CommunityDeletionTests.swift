@@ -31,8 +31,8 @@ final class CommunityDeletionTests: XCTestCase {
         return url
     }()
 
-    private func draft(score: Int = 70) -> CommunityStore.Draft {
-        .init(score: score, minutes: 12, streak: 3, technique: "Counting", caption: "",
+    private func draft() -> CommunityStore.Draft {
+        .init(minutes: 12, streak: 3, technique: "Counting", caption: "",
               media: [.init(kind: .photo, aspect: 0.75, fileURL: selfie, posterURL: selfie)],
               practicedAt: Date())
     }
@@ -69,7 +69,7 @@ final class CommunityDeletionTests: XCTestCase {
         try await melvin.accept(azizID)
 
         let myPost = try await aziz.post(draft())
-        let theirPost = try await melvin.post(draft(score: 81))
+        let theirPost = try await melvin.post(draft())
         let feedBefore = try await melvin.feed()
         XCTAssertEqual(feedBefore.count, 2)
 
@@ -82,7 +82,7 @@ final class CommunityDeletionTests: XCTestCase {
 
     func test_deletedPersonsReactionsDisappearFromOthersPosts() async throws {
         try await aziz.claimUsername("aziz", displayName: "Aziz")
-        let post = try await melvin.post(draft(score: 55))
+        let post = try await melvin.post(draft())
         try await aziz.react(to: post.id)
         var who = try await melvin.reactors(to: post.id)
         XCTAssertEqual(who, [azizID])
@@ -100,7 +100,7 @@ final class CommunityDeletionTests: XCTestCase {
         try await melvin.claimUsername("melvin", displayName: "Melvin")
         try await aziz.sendRequest(to: melvinID)
         try await melvin.accept(azizID)
-        let theirPost = try await melvin.post(draft(score: 64))
+        let theirPost = try await melvin.post(draft())
 
         let melvinRecordsBefore = db.records.values.filter { self.authoredByMelvinFixture($0) }.count
         try await aziz.deleteEverythingOfMine()
@@ -126,7 +126,7 @@ final class CommunityDeletionTests: XCTestCase {
 
     func test_reportsSurviveEitherDirection() async throws {
         try await aziz.claimUsername("aziz", displayName: "Aziz")
-        let melvinsPost = try await melvin.post(draft(score: 40))
+        let melvinsPost = try await melvin.post(draft())
         // Aziz reported someone else, and someone else reported Aziz.
         let filedByAziz = try await aziz.report(melvinsPost.id, as: .post, reason: "spam")
         let filedAgainstAziz = try await melvin.report(azizID, as: .profile, reason: "spam")
