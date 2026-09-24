@@ -425,6 +425,22 @@ struct QuietTimeScreen: View {
     }
 }
 
+/// "Have you tried to make meditation a habit before?" (Brainrot's "Have you
+/// tried to reduce screen time before?"). One pick.
+struct HabitHistoryScreen: View {
+    @Binding var history: HabitHistory?
+    let count: InterviewCount
+    let onContinue: () -> Void
+
+    var body: some View {
+        CornerQuestionScreen(title: "Have you tried to make meditation a habit before?",
+                             options: HabitHistory.allCases, single: true, label: \.label, icon: \.icon,
+                             selected: Binding(get: { history.map { [$0] } ?? [] },
+                                               set: { history = $0.first }),
+                             count: count, onContinue: onContinue)
+    }
+}
+
 /// "What usually gets in the way of meditating?", straight after the goal:
 /// the question Otto promised on "Let's personalize" ("Your answers show me
 /// what gets in the way").

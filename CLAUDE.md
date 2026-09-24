@@ -5350,7 +5350,11 @@ writing Otto in the corner across all three):
    afternoon 3:30, In the evening 7:00, Right before bed 10:00). **The answer
    sets `answers.reminderTime`**, which the reminder screen then opens on:
    the job the cut anchor question used to do.
-`OnboardingAnswers.obstacles`, `.role` and `.quietTime` are OPTIONAL on purpose:
+5. "Have you tried to make meditation a habit before?" (`HabitHistory`, one
+   pick: Yes, but it didn't stick / Yes, it worked for a while / No, this is
+   my first try). Not yet read by anything; the old `baseline` question and
+   the persona it feeds are part of the interview Aziz is redoing.
+`OnboardingAnswers.obstacles`, `.role`, `.quietTime` and `.habitHistory` are OPTIONAL on purpose:
 synthesized Codable requires every non-optional key, so a plain property
 would have failed every saved resume record from before it. **New answer
 fields must be optional for the same reason.**

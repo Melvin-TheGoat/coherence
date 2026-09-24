@@ -108,6 +108,9 @@ struct OnboardingView: View {
         case role
         /// Added 2026-09-23: "When could you fit in a few quiet minutes?". Last.
         case quietTime
+        /// Added 2026-09-23: "Have you tried to make meditation a habit
+        /// before?". Last.
+        case habitHistory
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -180,7 +183,7 @@ struct OnboardingView: View {
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.motivation, .motivation), (.obstacles, .obstacles), (.role, .role),
-        (.quietTime, .quietTime),
+        (.quietTime, .quietTime), (.habitHistory, .habitHistory),
         (.referral, .referral),
         (.baseline, .baseline), (.stress, .stress),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
@@ -358,7 +361,7 @@ struct OnboardingView: View {
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
-                || step == .quietTime {
+                || step == .quietTime || step == .habitHistory {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
@@ -492,6 +495,10 @@ struct OnboardingView: View {
                                                    }
                                                }),
                             count: interviewCount) { go(nextAfter(.quietTime)) }
+
+        case .habitHistory:
+            HabitHistoryScreen(history: $answers.habitHistory,
+                               count: interviewCount) { go(nextAfter(.habitHistory)) }
 
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.

@@ -463,6 +463,30 @@ public enum QuietTime: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// "Have you tried to make meditation a habit before?" (Aziz, 2026-09-23,
+/// Brainrot's "Have you tried to reduce screen time before?"). One pick.
+public enum HabitHistory: String, CaseIterable, Identifiable, Codable {
+    case didntStick, workedForAWhile, firstTry
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .didntStick:      return "Yes, but it didn't stick"
+        case .workedForAWhile: return "Yes, it worked for a while"
+        case .firstTry:        return "No, this is my first try"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .didntStick:      return "heart.slash"
+        case .workedForAWhile: return "hand.thumbsup"
+        case .firstTry:        return "sparkles"
+        }
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -717,6 +741,8 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var role: Role?
     /// When a few quiet minutes fit (`QuietTime`). Optional, as above.
     public var quietTime: QuietTime?
+    /// Whether they have tried to make it a habit (`HabitHistory`). Optional.
+    public var habitHistory: HabitHistory?
     /// Their own words, only when "Something else" is picked. Never required.
     public var motivationOther: String = ""
     /// 0 = "Fine", 1 = "Fried".
@@ -1002,7 +1028,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .quietTime, .stress, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .stress, .referral:
             return true
 
         // Presumes previous attempts.
@@ -1079,6 +1105,8 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case role
     /// When a few quiet minutes fit, fourth; sets the reminder (Aziz).
     case quietTime
+    /// Have you tried to make meditation a habit before, fifth (Aziz).
+    case habitHistory
     case referral
     case baseline, stress
     case restarts, intendedFor
