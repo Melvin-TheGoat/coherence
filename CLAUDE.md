@@ -5237,24 +5237,57 @@ xcodebuild test -scheme Coherence -destination 'platform=iOS Simulator,name=iPho
   paler toward the ridge). The grasshopper also casts a shadow on the grass
   (`HopperPose.groundY` / `lift`) that shrinks and fades as it jumps.
 
-## THE WELCOME SCREEN IS BRAINROT'S, TYPED AND FELT (2026-09-23, Aziz)
+## THE WELCOME SCREEN IS BRAINROT'S, AND OTTO WAVES FROM A VIDEO (2026-09-23, Aziz)
 
 From a Brainrot screenshot: a white page, a soft ground rise (`WelcomeGround`,
 warmed toward Otto's cream), a dot of progress bar, Otto standing, "Welcome to
-808!" over "It's time to regain control of your mind.", and a gold "Let's go!".
-This replaces the valley welcome and its bubble; the grasshopper overlay
+808!" over "It's time to regain control of your mind.", and "Let's go!". This
+replaces the valley welcome and its bubble; the grasshopper overlay
 (`OnboardingFrontLife`) is deleted because it crossed a white page.
 
-- **A sequence, every beat felt:** Otto fades in and waves (a pop up from
-  his feet was built and cut the same day, Aziz: no pop); the title arrives
-  with him, NOT typed (Aziz); the line under it types with a light tick per
-  letter (28 ms), spaces silent; "Let's go!" springs up with a thump and he waves again.
-  `WelcomeHaptics` keeps its generators prepared. `TypedLine` lays unarrived
-  letters in clear ink so centred text never reflows. Reduce Motion gets the
-  finished screen with no ticks. The simulator plays no haptics: judge on a phone.
-- **The rig's arm turns only about ten degrees** (the cut behind it shows past
-  that), which on a phone reads as no wave at all. So each wave also rocks his
-  whole body from the feet (five degrees, dying away). A real wave, the arm
-  swinging from the shoulder, needs new art: an armless body with the
-  shoulder painted in, eyes open and smiling, plus the arm on its own layer,
-  then bones weighted by hand in the Rive editor (the MCP cannot weight).
+- **The sequence:** Otto fades in and waves, the title arriving with him (a
+  pop from his feet and a typed title were both built and cut the same day:
+  Aziz, no pop, title not typed); the line under it types with a light
+  haptic tick per letter (28 ms, spaces silent); "Let's go!" springs up with a
+  thump. `WelcomeHaptics` keeps its generators prepared. `TypedLine` lays
+  unarrived letters in clear ink so centred text never reflows. Reduce Motion
+  gets the finished screen, a still Otto and no ticks. The simulator plays no
+  haptics: judge on a phone.
+- **Onboarding's buttons and progress bar are GREEN** (`OnboardingGreen`),
+  Duolingo's "go" colour warmed toward the meadow. `PrimaryButtonStyle`
+  gained `fill` / `shade` / `ink` (gold by default, so the rest of the app is
+  unchanged); the paywall ladder's buttons stay gold.
+- **The wave is a generated VIDEO, not the rig.** The rig's arm turns only
+  about ten degrees before the cut behind it shows, which on a phone read as
+  no wave at all (a whole-body wiggle to compensate was built and dropped).
+  Runway (Gen-4 image to video, 1:1, from the clean waving art on white, the
+  yellow flourish marks removed) made a 7 s clip. `OttoClip`
+  (`Coherence/Otto/OttoClip.swift`) plays `otto-welcome-wave.mov` through an
+  `AVPlayerLayer` (BGRA pixel buffers keep the alpha), looping seamlessly with
+  `AVPlayerLooper` so he waves for as long as the screen is up (Aziz:
+  "constantly waving"); a missing file falls back to the still pose.
+- **`tools/otto_video_key.swift` turns a white-background clip into HEVC with
+  alpha.** Floods the white in from the border; removes enclosed white
+  pockets unless near-black lies within 6 px (keeps the eye whites, whose
+  antialiased ring means they never touch the pupil); un-mixes the two-pixel
+  edge band from white. `--from/--to` trim, `--crossfade K` blends the loop's
+  end into its start, `--center-feet` centres the crop on his FEET (the box
+  around him includes the raised arm, which put his body 54 px right of
+  centre).
+- **FRAME RATE, the "glitching" (Aziz, twice).** Runway exports 24 fps, and
+  24 does not divide a 60 Hz refresh, so frames are held unevenly and the
+  wave judders. **Interpolating to 60 fps was tried and REJECTED:** ffmpeg's
+  `minterpolate` placed its made-up frames unevenly (arm steps of 0.28, 0.71,
+  0.43 ...), still a shimmer. What ships: the ORIGINAL frames retimed to
+  **20 fps** (`setpts=1.2*PTS -r 20`, every frame kept, the wave 20% lazier),
+  which divides 60 and 120, so every frame is held three refreshes. The loop
+  wraps while he is HOLDING STILL between waves (frames 38 to 107), crossfaded
+  over 9 frames because his arm rests in a slightly different spot after each
+  wave. Measured in the app from a 60 fps recording: a steady three-refresh
+  cadence and no spike at the wrap.
+- **The recipe for every future Otto move the rig cannot make:** clean art on
+  white with room for the motion, Runway describing motion only with a
+  locked camera, then retime to 20 fps, loop at a still moment, crossfade,
+  key. Next up: the breathing screen, Otto raising his arms palms up for 4 s,
+  holding 2, lowering palms down for 4 (a 10 s clip), to be time-fitted to
+  the screen's 4, 2, 4.
