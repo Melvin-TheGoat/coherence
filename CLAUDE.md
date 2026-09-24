@@ -5320,8 +5320,9 @@ used after onboarding beyond the reminder time (Aziz: leave it).
   slides must live in the fixed layer, never in the screen.**
 
 **The goal question comes first** (`MotivationScreen`, Brainrot's goal
-screen, Aziz): "What's your goal with meditation?", ONE pick, tap to
-advance: Feel less stressed, Sharpen my focus, Sleep better, Be more present,
+screen, Aziz): "What's your goal with meditation?", AS MANY AS ARE TRUE
+and a Continue button, greyed until one is picked (Aziz: not tap to
+advance): Feel less stressed, Sharpen my focus, Sleep better, Be more present,
 Overthink less, Just curious (`Motivation.offered`; three new cases added
 LAST). "Make it a daily habit" was left out on purpose: that is the whole
 app. `InterviewStep.motivation` now precedes `referral`. The writing Otto

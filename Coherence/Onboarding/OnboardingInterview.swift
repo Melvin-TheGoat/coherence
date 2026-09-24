@@ -307,27 +307,23 @@ struct BaselineScreen: View {
     }
 }
 
-// MARK: - 3 · Q1 The goal (one pick)
+// MARK: - 3 · Q1 The goal
 
 /// "What's your goal with meditation?" (Aziz, 2026-09-23, from Brainrot's
-/// goal screen). The first question, one pick, six answers; making it a
-/// daily habit is left out because that is the whole app. The writing Otto
-/// sits top right, the same Otto who was writing on his cushion a screen ago:
-/// `OnboardingView` draws him in the fixed layer and moves him into the
-/// corner (`SeatedClipLayer(inCorner:)`), so this screen leaves room for him
-/// and draws nothing there itself.
-///
-/// Tap to advance, like every one-answer question, after the selection dwell
-/// so the tick registers. Coming back to it already answered shows Continue.
+/// goal screen). The first question, six answers; making it a daily habit is
+/// left out because that is the whole app. **As many answers as are true, and
+/// Continue moves on** (Aziz: not tap to advance), greyed until one is picked,
+/// the way Brainrot's is. The writing Otto sits top right, the same Otto who
+/// was writing on his cushion a screen ago: `OnboardingView` draws him in the
+/// fixed layer and moves him into the corner (`SeatedClipLayer(inCorner:)`),
+/// so this screen leaves room for him and draws nothing there itself.
 struct MotivationScreen: View {
     @Binding var selected: Set<Motivation>
     @Binding var otherText: String
     let count: InterviewCount
     let onContinue: () -> Void
 
-    @StateObject private var gate = AdvanceGate()
     @Environment(\.onboardingBack) private var back
-    @State private var answeredOnAppear = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -351,7 +347,9 @@ struct MotivationScreen: View {
             VStack(spacing: 10) {
                 ForEach(Motivation.offered) { m in
                     OnboardingOption(label: m.label, icon: m.icon,
-                                     selected: selected.contains(m)) { pick(m) }
+                                     selected: selected.contains(m), multi: true) {
+                        if selected.contains(m) { selected.remove(m) } else { selected.insert(m) }
+                    }
                 }
             }
             .padding(.top, 24)
@@ -362,18 +360,10 @@ struct MotivationScreen: View {
         .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
-            if answeredOnAppear {
-                OnboardingCTA(title: "Continue", action: { gate.now(onContinue) })
-                    .padding(.horizontal, AppMetrics.screenPadding)
-                    .padding(.bottom, 10)
-            }
+            OnboardingCTA(title: "Continue", enabled: !selected.isEmpty, action: onContinue)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
         }
-        .onAppear { answeredOnAppear = !selected.isEmpty }
-    }
-
-    private func pick(_ m: Motivation) {
-        selected = [m]
-        gate.advance(onContinue)
     }
 }
 
