@@ -3837,9 +3837,20 @@ things on the build, all in:
   falls away on the exhale: `BreathWater`, three pale layers of `skyDeep`
   (0.12 / 0.18 / 0.30) each with its own slow wave. At 0.55 the front layer
   swallowed the blue countdown.
-- **Otto breathes visibly**: his rig is released at the breath's start (its
-  own 10 s chest breath) and the screen swells his whole figure from his
-  feet, taller than wide (x +5%, y +10%), so it reads as filling, not zooming.
+- **Otto STANDS and breathes with his arms** (same day, Aziz: "one where
+  otto is standing up and raising his arms for breath up and lowering it for
+  breath down"). The sitting rig with a whole-body swell did not read as
+  breathing. `OttoArmsBreathing` draws three pieces cut from one
+  GPT-generated sheet (brief: `mockups/otto-breathe-brief.md`; the pieces are
+  `OttoStandBody` / `OttoStandArmLeft` / `OttoStandArmRight`, sources in
+  `mockups/otto-v3/otto-stand-*.png`): each arm turns about a point near its
+  rounded shoulder end, pinned to the body's shoulder, from 0 to 150 degrees
+  (paws just above his head), **drawn behind the body so the joint never
+  shows**, and the chest fills 2-3.5% from his feet. **In SwiftUI, not Rive**:
+  the water, the words and the arms all read the one `breathStart` clock, so
+  they cannot drift off the 4, 2, 4. The shoulder numbers are source pixels
+  measured on a test composite; higher shoulders put the raised arms over his
+  face. His arms hang below his feet at rest, hence 40 pt above the words.
 - One clock (`breathStart`) drives the water, the swell and the words.
   `BreathHaptics.playOnce(inhale:hold:exhale:)` plays the 4, 2, 4 once.
   `BreathCircle` is no longer used here.

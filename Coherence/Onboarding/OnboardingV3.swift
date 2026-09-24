@@ -316,15 +316,8 @@ struct BreathExerciseScreen: View {
     private static let low: CGFloat = 0.08
     private static let high: CGFloat = 1.08
 
-    /// Held until the breath starts, then released: his chest breathes on the
-    /// rig's own ten second breath (five in, five out), which lands on the
-    /// 4, 2, 4 closely enough, and this screen swells his whole figure on top
-    /// of it so the breath reads at a glance (Aziz: "i also want otto to have
-    /// a breathing animation").
-    @StateObject private var rig = OttoRigHolder(holdUntilReleased: true)
     @State private var haptics = BreathHaptics()
     @State private var appeared = false
-    @State private var speaking = false
     @State private var finished = false
     /// When the breath began. Everything on screen reads its place off this
     /// one clock, so the water, Otto and the words can never disagree.
@@ -349,13 +342,13 @@ struct BreathExerciseScreen: View {
                 // Otto in the middle of the screen (Aziz), the words under him.
                 // The clear block above matches the words below, so it is his
                 // centre, not the pair's, that sits on the screen's.
-                VStack(spacing: 14) {
+                // 40, not 14: his arms hang below his feet at rest, and
+                // at 14 his paws sat on "Breathe in."
+                VStack(spacing: 40) {
                     Color.clear.frame(height: Self.wordsHeight)
-                    OttoInMeadow(pose: .meditating, talking: speaking, rig: rig, share: 0.9)
-                        .frame(maxWidth: 230)
-                        // Taller than wide: a chest filling, not a picture
-                        // zooming. Anchored at his feet so he grows upward.
-                        .scaleEffect(x: 1 + 0.05 * fill, y: 1 + 0.10 * fill, anchor: .bottom)
+                    // Standing, arms rising overhead on the in-breath and
+                        // lowering on the out-breath (Aziz, 2026-09-23).
+                    OttoArmsBreathing(raise: fill, bodyWidth: 150)
                         .opacity(appeared ? 1 : 0)
                     words(at: t)
                         .frame(height: Self.wordsHeight, alignment: .top)
@@ -431,7 +424,6 @@ struct BreathExerciseScreen: View {
         // Moves the flow on to `.breathing`, which is what resume and the
         // analytics count, without a button to press for it.
         if !breathing { onReady() }
-        rig.release()
         breathStart = Date()
         haptics.playOnce(inhale: Self.inhale, hold: Self.hold, exhale: Self.exhale)
         try? await Task.sleep(for: .milliseconds(Int(Self.total * 1000)))
@@ -439,6 +431,74 @@ struct BreathExerciseScreen: View {
         // screen would claim "Nicely done" the moment it was left.
         guard !Task.isCancelled else { return }
         withAnimation(.easeOut(duration: 0.3)) { finished = true }
+    }
+}
+
+/// Otto standing, breathing with his arms (Aziz, 2026-09-23): they swing from
+/// his sides to overhead as `raise` goes 0 to 1, and his chest fills a little.
+///
+/// Three pieces from one generated sheet (`mockups/otto-breathe-brief.md`):
+/// the body with no arms, and each arm hanging straight with a rounded
+/// shoulder end. Each arm turns about a point near that end, set on the body's
+/// shoulder, and is drawn BEHIND the body so the joint is always hidden. The
+/// numbers are pixels of the source images, measured on a test composite:
+/// with the shoulders any higher the raised arms covered his face.
+struct OttoArmsBreathing: View {
+    /// 0 arms down, 1 arms up.
+    let raise: CGFloat
+    /// How wide his body is drawn; everything else follows from it.
+    var bodyWidth: CGFloat = 150
+
+    private static let body = CGSize(width: 410, height: 719)
+    private static let left = CGSize(width: 188, height: 428)
+    private static let right = CGSize(width: 189, height: 427)
+    /// Shoulders, in body pixels.
+    private static let shoulderY: CGFloat = 392
+    private static let leftShoulderX: CGFloat = 58
+    private static let rightShoulderX: CGFloat = 352
+    /// Where each arm turns, in its own pixels: near the top of the rounded
+    /// end, toward the side that meets the body.
+    private static let pivotY: CGFloat = 30
+    private static let leftPivotX: CGFloat = 0.62
+    private static let rightPivotX: CGFloat = 0.38
+    /// Paws just above his head at the top of the breath, not crossed over it.
+    private static let lift: Double = 150
+
+    var body: some View {
+        let k = bodyWidth / Self.body.width
+        let angle = Self.lift * Double(raise)
+        ZStack(alignment: .topLeading) {
+            arm("OttoStandArmLeft", size: Self.left, pivotX: Self.leftPivotX,
+                shoulderX: Self.leftShoulderX, degrees: angle, k: k)
+            arm("OttoStandArmRight", size: Self.right, pivotX: Self.rightPivotX,
+                shoulderX: Self.rightShoulderX, degrees: -angle, k: k)
+            Image("OttoStandBody")
+                .resizable()
+                .frame(width: Self.body.width * k, height: Self.body.height * k)
+                // The chest fills a touch as the arms rise, from his feet.
+                .scaleEffect(x: 1 + 0.02 * raise, y: 1 + 0.035 * raise, anchor: .bottom)
+        }
+        .frame(width: Self.body.width * k, height: Self.body.height * k, alignment: .topLeading)
+        .background(alignment: .bottom) {
+            Ellipse()
+                .fill(Color.black.opacity(0.08))
+                .frame(width: bodyWidth * 0.9, height: bodyWidth * 0.1)
+                .offset(y: bodyWidth * 0.04)
+        }
+        .accessibilityHidden(true)
+    }
+
+    /// One arm, turned about its pivot, the pivot pinned to the shoulder.
+    private func arm(_ name: String, size: CGSize, pivotX: CGFloat,
+                     shoulderX: CGFloat, degrees: Double, k: CGFloat) -> some View {
+        let w = size.width * k, h = size.height * k
+        let pivot = UnitPoint(x: pivotX, y: Self.pivotY / size.height)
+        return Image(name)
+            .resizable()
+            .frame(width: w, height: h)
+            .rotationEffect(.degrees(degrees), anchor: pivot)
+            .position(x: shoulderX * k - pivotX * w + w / 2,
+                      y: Self.shoulderY * k - pivot.y * h + h / 2)
     }
 }
 
