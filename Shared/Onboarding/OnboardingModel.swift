@@ -395,10 +395,10 @@ public enum Role: String, CaseIterable, Identifiable, Codable {
 
     public var label: String {
         switch self {
-        case .creative: return "Creative / Maker"
-        case .deskJob:  return "Desk job, all day"
-        case .founder:  return "Founder / Business owner"
-        case .athlete:  return "Athlete / Always training"
+        case .creative: return "Creative"
+        case .deskJob:  return "Employee"
+        case .founder:  return "Founder"
+        case .athlete:  return "Athlete"
         case .student:  return "Student"
         case .liveWell: return "Just trying to live well"
         }

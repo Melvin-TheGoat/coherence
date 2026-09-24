@@ -5342,7 +5342,9 @@ writing Otto in the corner across all three):
    gets in the way"). A fresh enum, not `DropoutCause`, which is past tense,
    written for people who quit, and locked by its own tests.
 3. "Which one sounds most like you?" (`Role`, Brainrot's "Which best
-   describes you?" reworded; ONE pick, still Continue).
+   describes you?" reworded; ONE pick, still Continue): Creative, Employee,
+   Founder, Athlete, Student, Just trying to live well (Aziz: no "/ ..."
+   halves, and "Employee", not "Desk job").
 `OnboardingAnswers.obstacles` and `.role` are OPTIONAL on purpose:
 synthesized Codable requires every non-optional key, so a plain property
 would have failed every saved resume record from before it. **New answer
