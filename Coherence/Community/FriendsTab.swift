@@ -671,6 +671,8 @@ struct PostCard: View {
     @ObservedObject var model: CommunityModel
     let onReport: () -> Void
 
+    @Environment(\.modelContext) private var context
+
     /// The header block's own height (avatar and name down through the
     /// stats), measured live so the media strip below it can match — see
     /// `PostMediaStrip`. Seeded at a plausible size so the first frame is
@@ -681,11 +683,28 @@ struct PostCard: View {
     /// closure kept the index from the last time `body` ran, so tapping the
     /// second photo opened the first.
     @State private var viewerStart: ViewerStart?
+    /// The session Edit post opens on, nil while closed. Its own optional
+    /// rather than reusing `viewerStart`'s shape, and its own `.sheet`
+    /// rather than adding to any other view's: one view, one `.sheet(item:)`.
+    @State private var editTarget: EditTarget?
 
     private struct ViewerStart: Identifiable { let id: Int }
+    private struct EditTarget: Identifiable { let id: UUID }
 
     private var author: Profile? { model.person(post.author) }
     private var isMine: Bool { post.author == model.myID }
+
+    /// The session this post came from, when it still exists ON THIS DEVICE.
+    /// `CommunityStore.sessionID(forPost:)` only resolves an id derived from
+    /// a session in the first place (`CommunityStore.postID(forSession:)`);
+    /// a post from another device, or an older one saved before that rule,
+    /// has nothing here to open, so Edit is left off the menu rather than
+    /// opening a session page with nothing to load.
+    private var editableSessionID: UUID? {
+        guard isMine, let sid = CommunityStore.sessionID(forPost: post.id) else { return nil }
+        let descriptor = FetchDescriptor<Session>(predicate: #Predicate<Session> { $0.id == sid })
+        return ((try? context.fetchCount(descriptor)) ?? 0) > 0 ? sid : nil
+    }
 
     var body: some View {
         // Spacing (Melvin, 2026-09-18: "too crowded/dense, look at Strava").
@@ -717,9 +736,9 @@ struct PostCard: View {
                 // Who, what they called it, what they said, the numbers.
                 // Everything they KEPT (photos, video) comes after, below
                 // "below the title, description, time, streak, and
-                // technique" (Melvin, 2026-09-23).
+                // technique" (Melvin, 2026-09-23). **No Score column**
+                // (2026-09-23): a post never carries one any more.
                 HStack(spacing: 0) {
-                    if let score = post.score { stat("Score", "\(score)") }
                     stat("Time", "\(post.minutes)m")
                     stat("Day streak", "\(post.streak)")
                     if let t = post.technique, !t.isEmpty { stat("Technique", t) }
@@ -747,6 +766,9 @@ struct PostCard: View {
         .whiteCard(radius: 20)
         .fullScreenCover(item: $viewerStart) { start in
             PostMediaViewer(media: post.media, startIndex: start.id)
+        }
+        .sheet(item: $editTarget) { target in
+            SaveSessionView(sessionID: target.id, mode: .edit) { editTarget = nil }
         }
         #if DEBUG
         // PREVIEW_MEDIA_VIEWER=1 opens the viewer on the first seeded
@@ -799,6 +821,12 @@ struct PostCard: View {
             Spacer()
             Menu {
                 if isMine {
+                    // Edit post only when this device still has the session
+                    // it came from (`editableSessionID`); a post from another
+                    // device has nothing here to open.
+                    if let sid = editableSessionID {
+                        Button("Edit post") { editTarget = EditTarget(id: sid) }
+                    }
                     Button("Delete post", role: .destructive) { Task { await model.deletePost(post.id) } }
                 } else {
                     Button("Report", role: .destructive, action: onReport)
@@ -865,7 +893,7 @@ struct PostCard: View {
                     // made the one thing a reader can DO on this screen the
                     // quietest object on the card.
                     // Sky before (a choice), gold once given (the one gold
-                    // thing on the card besides the score).
+                    // thing on the card, now that Score is gone from it).
                     .background {
                         if mine {
                             Capsule().fill(AppColor.accentGold)
@@ -1484,7 +1512,9 @@ struct PersonView: View {
         .whiteCard(radius: 22)
     }
 
-    /// One card, three numbers read off it, not three tiles.
+    /// One card, two numbers read off it, not three tiles. **No "avg score"
+    /// column** (2026-09-23): a post never carries a score, so a person's
+    /// page shows no score or average score anywhere.
     private var stats: some View {
         HStack(spacing: 0) {
             // A post's streak is the streak on the day it was sat. Only the
@@ -1492,10 +1522,6 @@ struct PersonView: View {
             statColumn(posts.first.flatMap { Date().timeIntervalSince($0.practicedAt) < 36 * 3600 ? "\($0.streak)" : nil } ?? "\u{2013}",
                        "streak")
             statColumn("\(posts.count)", "posts")
-            // Only the sits something measured: a phone session has no score,
-            // and counting it as a zero would drag an average nobody earned.
-            let scores = posts.compactMap(\.score)
-            statColumn(scores.isEmpty ? "\u{2013}" : "\(scores.reduce(0, +) / scores.count)", "avg score")
         }
         .padding(.vertical, 12)
         .whiteCard(radius: 18)

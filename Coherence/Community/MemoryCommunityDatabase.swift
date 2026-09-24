@@ -144,14 +144,14 @@ enum DemoCommunity {
         try? await melvin.markFirstSession(at: Date().addingTimeInterval(-86_400 * 40))
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         // One photo (the ordinary case).
-        let melvinPost = try? await melvin.post(.init(score: 81, minutes: 14, streak: 9, technique: "Slow breathing",
+        let melvinPost = try? await melvin.post(.init(minutes: 14, streak: 9, technique: "Slow breathing",
                                                        caption: "Cold enough to see my breath.",
                                                        media: media([(UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1), 0.75, false)]),
                                                        practicedAt: Date().addingTimeInterval(-3_600),
                                                        title: "Roof before work", sound: "Rain"))
         // Three photos, different aspect ratios, so the strip's "shrink to
         // one height, never crop" rule is exercised across shapes.
-        _ = try? await melvin.post(.init(score: 64, minutes: 25, streak: 8, technique: "Guided",
+        _ = try? await melvin.post(.init(minutes: 25, streak: 8, technique: "Guided",
                                           caption: "", media: media([
                                             (UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1), 0.75, false),
                                             (UIColor(red: 0.20, green: 0.24, blue: 0.28, alpha: 1), UIColor(red: 0.10, green: 0.12, blue: 0.16, alpha: 1), 1.33, false),
@@ -179,9 +179,9 @@ enum DemoCommunity {
         db.user = "_demo_sam"
         try? await sam.accept(CommunityNames.profile(user: "_demo_me"))
         try? await sam.markFirstSession(at: Date().addingTimeInterval(1))
-        // A phone sit: no score, and no media either, so the feed reviews
-        // "a post with no media shows no strip" alongside the optional score.
-        _ = try? await sam.post(.init(score: nil, minutes: 8, streak: 1, technique: "Silence",
+        // A phone sit: no media, so the feed reviews "a post with no media
+        // shows no strip".
+        _ = try? await sam.post(.init(minutes: 8, streak: 1, technique: "Silence",
                                       caption: "", practicedAt: Date().addingTimeInterval(-7_200),
                                       title: "Quick sit", sound: "Silence"))
 
@@ -191,7 +191,7 @@ enum DemoCommunity {
         if let melvinPost { try? await me.react(to: melvinPost.id) }
         // A mix of photos and a video, so the strip's play glyph and the
         // viewer's mixed paging both get a real post to open.
-        _ = try? await me.post(.init(score: 72, minutes: 18, streak: 4, technique: "Counting",
+        _ = try? await me.post(.init(minutes: 18, streak: 4, technique: "Counting",
                                       caption: "", media: media([
                                         (UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1), 0.75, false),
                                         (UIColor(red: 0.18, green: 0.26, blue: 0.22, alpha: 1), UIColor(red: 0.08, green: 0.14, blue: 0.11, alpha: 1), 1.78, true),

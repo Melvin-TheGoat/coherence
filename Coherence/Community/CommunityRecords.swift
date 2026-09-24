@@ -9,12 +9,17 @@ import CloudKit
 /// record the reactor owns, a block is a record the blocker owns, and nobody
 /// ever needs to edit anyone else's row.
 ///
-/// **What a post may carry is a rule, not a choice:** score, minutes, streak,
-/// technique, photos and videos, caption. Never a heart-rate, breath or
-/// stillness value, never a curve. Guideline 5.1.3(ii) forbids health data in
-/// iCloud, and the free tier locks the evidence; a post is the free share
-/// card's data and nothing more. `CommunityStoreTests
-/// .test_postCarriesOnlyTheFreeCardFields` pins the field list.
+/// **What a post may carry is a rule, not a choice:** minutes, streak,
+/// technique, photos and videos, caption. Never a score, and never a
+/// heart-rate, breath or stillness value, never a curve. **A post never
+/// carried a score before 2026-09-23** either: it was derived from heart
+/// rate, guideline 5.1.3(ii) forbids storing personal health information in
+/// iCloud with no consent exception, and the public database has no consent
+/// gate at all, so the founders took the zero-risk answer and dropped it.
+/// The free tier locks the evidence besides; a post is the free share card's
+/// data minus the one number that could be read as health data.
+/// `CommunityStoreTests.test_postCarriesOnlyTheFreeCardFields` and
+/// `.test_postNeverCarriesAScore` pin the field list.
 enum CommunityType {
     static let profile  = "Profile"
     static let edge     = "FriendEdge"
@@ -132,11 +137,6 @@ struct Post: Identifiable, Equatable {
 
     let id: String
     let author: String
-    /// The score, when the sit had one. **Optional since 2026-09-22**
-    /// (Melvin: "have the score on the friends post be optional, again like
-    /// we are making the watch optional"): a session run on the phone
-    /// measures nothing, and it is still a session somebody did.
-    var score: Int?
     var minutes: Int
     var streak: Int
     var technique: String?
@@ -153,19 +153,21 @@ struct Post: Identifiable, Equatable {
     var sound: String?
 
     /// The only fields a post may carry. Locked by test; if you find yourself
-    /// adding one, read the rule at the top of this file first. The four
-    /// `media*` fields are parallel arrays, one entry per item, in order:
-    /// splitting them (rather than one array of structs) is what CloudKit's
-    /// record fields can actually hold — an Asset List, two more Lists for
-    /// the kind and the aspect ratio.
-    static let fields = ["author", "score", "minutes", "streak", "technique", "caption",
+    /// adding one, read the rule at the top of this file first. **`score` is
+    /// deliberately absent** (2026-09-23) even though the CloudKit record
+    /// type still has the field from before that date; nothing here writes
+    /// or reads it any more. The four `media*` fields are parallel arrays,
+    /// one entry per item, in order: splitting them (rather than one array of
+    /// structs) is what CloudKit's record fields can actually hold — an
+    /// Asset List, two more Lists for the kind and the aspect ratio.
+    static let fields = ["author", "minutes", "streak", "technique", "caption",
                          "media", "mediaPosters", "mediaKinds", "mediaAspects",
                          "practicedAt", "createdAt", "title", "sound"]
 
-    init(id: String = UUID().uuidString, author: String, score: Int? = nil, minutes: Int, streak: Int,
+    init(id: String = UUID().uuidString, author: String, minutes: Int, streak: Int,
          technique: String? = nil, caption: String = "", media: [PostMedia] = [],
          practicedAt: Date, createdAt: Date = Date(), title: String = "", sound: String? = nil) {
-        self.id = id; self.author = author; self.score = score; self.minutes = minutes
+        self.id = id; self.author = author; self.minutes = minutes
         self.streak = streak; self.technique = technique; self.caption = caption
         self.media = media; self.practicedAt = practicedAt; self.createdAt = createdAt
         self.title = title; self.sound = sound
@@ -188,7 +190,6 @@ struct Post: Identifiable, Equatable {
         }
         self.init(id: record.recordID.recordName,
                   author: author,
-                  score: record["score"] as? Int,
                   minutes: record["minutes"] as? Int ?? 0,
                   streak: record["streak"] as? Int ?? 0,
                   technique: record["technique"] as? String,
@@ -208,7 +209,6 @@ struct Post: Identifiable, Equatable {
         record["title"] = title
         record["sound"] = sound
         record["author"] = CommunityRecordValue.reference(author).ckValue
-        record["score"] = score
         record["minutes"] = minutes
         record["streak"] = streak
         record["technique"] = technique

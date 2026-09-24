@@ -328,11 +328,12 @@ actor CommunityStore {
         var posterURL: URL
     }
 
-    /// The numbers a post carries, handed in by the results screen. Nothing
-    /// measured beyond the score is accepted by this signature on purpose.
+    /// The numbers a post carries, handed in by the results screen. **No
+    /// score** (2026-09-23, the founders' call): it is derived from heart
+    /// rate, this is the public database, and 5.1.3(ii) forbids storing
+    /// personal health information in iCloud with no consent exception.
+    /// Nothing measured is accepted by this signature on purpose.
     struct Draft: Equatable {
-        /// nil when nothing measured the sit.
-        var score: Int?
         var minutes: Int
         var streak: Int
         var technique: String?
@@ -354,6 +355,16 @@ actor CommunityStore {
 
     static func postID(forSession sessionID: String) -> String { "post-" + sessionID }
 
+    /// The inverse of `postID(forSession:)`: the session a post's record name
+    /// derives from, when it does. nil for a post with no session behind it
+    /// (a random UUID id, e.g. one made before that rule, or one whose id is
+    /// otherwise not a session's). Edit post reads this to decide whether
+    /// there is a session page here to open at all.
+    static func sessionID(forPost postID: String) -> UUID? {
+        guard postID.hasPrefix("post-") else { return nil }
+        return UUID(uuidString: String(postID.dropFirst("post-".count)))
+    }
+
     static let captionLimit = 140
     static let titleLimit = 60
 
@@ -370,7 +381,7 @@ actor CommunityStore {
         let id = draft.sessionID.map(Self.postID(forSession:)) ?? UUID().uuidString
         let existing = try await db.fetch(id)
         guard ContentFilter.check([draft.title, draft.caption]) == .ok else { throw CommunityError.contentBlocked }
-        let post = Post(id: id, author: mine, score: draft.score, minutes: draft.minutes, streak: draft.streak,
+        let post = Post(id: id, author: mine, minutes: draft.minutes, streak: draft.streak,
                         technique: draft.technique, caption: caption,
                         practicedAt: draft.practicedAt,
                         createdAt: existing?["createdAt"] as? Date ?? Date(),
