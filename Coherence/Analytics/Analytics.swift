@@ -272,6 +272,7 @@ enum Analytics {
         "baseline":          "04g How often do you meditate right now? (slider, after Did you know since 2026-09-25)",
         "wandering":         "04b1 How much of your day is your mind somewhere else?",
         "recovery":          "04b2 How quickly do you settle back down?",
+        "whyItWorks":        "04p Why 808 works",
         "attentionHacked":   "04o Your attention has been hacked",
         "lifeMoments":       "04n N more years of family, fun, the beauty of this world",
         "goodNews":          "04m The good news is (a quarter of it back)",

@@ -704,6 +704,9 @@ struct AttentionHackedScreen: View {
     @State private var shownCards = 0
     @State private var ctaShown = false
 
+    /// A slight red (Aziz), the "cost" terracotta at a wash.
+    static let warning = Color(red: 0.95, green: 0.86, blue: 0.83)
+
     static let lines = [
         "Apps are designed to keep pulling at your attention.",
         "Your mind lives in the future, where anxiety grows.",
@@ -732,7 +735,7 @@ struct AttentionHackedScreen: View {
                         .padding(.vertical, 18)
                         .padding(.horizontal, 16)
                         .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(AppColor.skyDeep.opacity(0.10)))
+                            .fill(Self.warning))
                         .opacity(i < shownCards ? 1 : 0)
                         .offset(y: i < shownCards ? 0 : 12)
                 }
@@ -767,6 +770,92 @@ struct AttentionHackedScreen: View {
             guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
             WelcomeHaptics.land()
+        }
+    }
+}
+
+// MARK: - Why 808 works
+
+/// "Why 808 works" (Aziz, 2026-09-25, Brainrot's screen of the same name),
+/// straight after "Your attention has been hacked": two soft red rows for the
+/// ways people usually try, and one green row for 808, popping in with a tick
+/// each. White page, like the screen before. The rows name approaches the
+/// reader will recognise from their own tries, never a competitor.
+struct WhyItWorksScreen: View {
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var headShown = false
+    @State private var shownRows = 0
+    @State private var ctaShown = false
+
+    private static let rows: [(from: String, to: String, good: Bool)] = [
+        ("Willpower", "Fades", false),
+        ("Now and then", "Forgotten", false),
+        ("808", "A daily habit", true),
+    ]
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            Text("Why 808 works")
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .opacity(headShown ? 1 : 0)
+                .scaleEffect(headShown ? 1 : 0.94)
+
+            VStack(spacing: 12) {
+                ForEach(Array(Self.rows.enumerated()), id: \.offset) { i, row in
+                    HStack(spacing: 8) {
+                        Text(row.from)
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(AppColor.textPrimary.opacity(0.6))
+                        Text(row.to)
+                    }
+                    .font(.system(size: 18, weight: row.good ? .heavy : .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 20)
+                    .padding(.horizontal, 12)
+                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(row.good ? Color(red: 0.84, green: 0.94, blue: 0.82)
+                                       : AttentionHackedScreen.warning))
+                    .scaleEffect(i < shownRows ? 1 : 0.94)
+                    .opacity(i < shownRows ? 1 : 0)
+                }
+            }
+            .padding(.top, 40)
+            Spacer(minLength: 0)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding + 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .opacity(ctaShown ? 1 : 0)
+                .offset(y: ctaShown ? 0 : 30)
+                .allowsHitTesting(ctaShown)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+        }
+        .task {
+            if reduceMotion { headShown = true; shownRows = Self.rows.count; ctaShown = true; return }
+            WelcomeHaptics.prepare()
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { headShown = true }
+            WelcomeHaptics.land()
+            try? await Task.sleep(for: .milliseconds(550))
+            for i in 0..<Self.rows.count {
+                guard !Task.isCancelled else { return }
+                // The last, 808's, lands a beat later and with a thump.
+                if i == Self.rows.count - 1 { try? await Task.sleep(for: .milliseconds(250)) }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { shownRows = i + 1 }
+                if i == Self.rows.count - 1 { WelcomeHaptics.land() } else { WelcomeHaptics.tick() }
+                try? await Task.sleep(for: .milliseconds(550))
+            }
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
         }
     }
 }
