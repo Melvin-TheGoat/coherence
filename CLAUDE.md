@@ -5563,8 +5563,15 @@ replaces the valley welcome and its bubble; the grasshopper overlay
   white with room for the motion, Runway describing motion only with a
   locked camera, then retime to 20 fps, loop at a still moment, crossfade,
   key.
-- **The breathing screen's Otto is a clip too** (`otto-breath.mov`, same
-  day): he raises his arms palms up, holds them overhead, lowers them palms
+- **The breathing screen's Otto is a clip too** (`otto-breath.mov`). Since
+  2026-09-25 (Aziz) he breathes IN through his nose, holds, and breathes OUT
+  through his mouth with light-blue breath lines rising (light blue so they
+  survive the white-background key; `--steady` and `--largest` must NOT be
+  used on it, they erase moving thin lines and lines detached from him).
+  Retimed from the 24 fps source by phase: in 20-99 one-to-one (80 frames),
+  hold 100-155 sampled to 40, out 156-239 sampled to 80; no built-in stutter
+  this time. Crop 510 x 674, drawn 320 tall. It replaced the first version,
+  where he raised his arms palms up, held them overhead and lowered them palms
   down. It replaces the rig and the whole-figure swell, starts on the same
   clock as the water, words and haptics, and holds its last frame. Cut to
   EXACTLY 80 frames rising, 40 held, 80 lowering at 20 fps, which is the

@@ -977,15 +977,16 @@ struct BreathExerciseScreen: View {
                 // centre, not the pair's, that sits on the screen's.
                 VStack(spacing: 14) {
                     Color.clear.frame(height: Self.wordsHeight)
-                    // He guides the breath with his arms (Aziz, 2026-09-23): a
-                    // Runway clip, cut to exactly 80 frames rising palms up,
-                    // 40 held, 80 lowering palms down at 20 fps, which is this
+                    // He breathes it with you (Aziz, 2026-09-25): in through his
+                    // nose, a held chest, then out through his mouth with blue
+                    // breath lines rising. A Runway clip retimed to exactly 80
+                    // frames in, 40 held, 80 out at 20 fps, which is this
                     // screen's 4, 2, 4. It starts on the same clock as the
-                    // water and the words, and holds its last frame (his paws
-                    // back on his knees) once the breath is done.
+                    // water and the words, and holds its last frame (at rest)
+                    // once the breath is done. Replaced the arms-raising clip.
                     OttoClip(name: "otto-breath", playing: breathStart != nil, fallback: .meditating)
-                        .aspectRatio(832.0 / 624.0, contentMode: .fit)
-                        .frame(width: 380)
+                        .aspectRatio(510.0 / 674.0, contentMode: .fit)
+                        .frame(height: 320)
                         .opacity(appeared ? 1 : 0)
                     // Always laid out, empty or not: an empty slot took no
                     // height, and Otto jumped up the moment the words
