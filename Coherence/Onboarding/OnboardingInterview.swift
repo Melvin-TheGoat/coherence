@@ -323,7 +323,8 @@ struct CornerQuestionScreen<Option: Identifiable & Hashable>: View {
     /// Continue). Square boxes when several may be picked, none when one.
     var single: Bool = false
     let label: (Option) -> String
-    let icon: (Option) -> String
+    /// Nil draws no icon (the age question: seven identical ones was noise).
+    let icon: (Option) -> String?
     @Binding var selected: Set<Option>
     let count: InterviewCount
     let onContinue: () -> Void

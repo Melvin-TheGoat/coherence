@@ -5425,7 +5425,12 @@ synthesized Codable requires every non-optional key, so a plain property
 would have failed every saved resume record from before it. **New answer
 fields must be optional for the same reason.**
 
-**"Did you know?"** (`DidYouKnowScreen`, `Step.didYouKnow`, after the habit
+**"How old are you?"** (`Step.age`, after the habit question, Brainrot's):
+Under 18 through 55+ and "Prefer not to say", one pick, stored in the old
+`ageBracket` field. The opt-out is required, not decoration: App Review 5.1.1
+rejects apps that require personal information they do not need.
+
+**"Did you know?"** (`DidYouKnowScreen`, `Step.didYouKnow`, after the age
 question, Brainrot's screen): four white fact cards popping in with a tick
 above the seated Steady Otto. **Every fact is from a study 808 already
 cites** (Mrazek 2013, Killingsworth & Gilbert 2010, Goyal 2014, Cearns &

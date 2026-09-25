@@ -487,6 +487,24 @@ public enum HabitHistory: String, CaseIterable, Identifiable, Codable {
     }
 }
 
+/// "How old are you?" (Aziz, 2026-09-25, Brainrot's question). Stored in
+/// `OnboardingAnswers.ageBracket` as the label, the field the cut `you`
+/// question used. "Prefer not to say" is there on purpose: App Review 5.1.1
+/// rejects apps that REQUIRE personal information they do not need to work,
+/// and nothing in 808 needs an age.
+public enum AgeRange: String, CaseIterable, Identifiable, Codable {
+    case under18 = "Under 18"
+    case from18 = "18 to 24"
+    case from25 = "25 to 34"
+    case from35 = "35 to 44"
+    case from45 = "45 to 54"
+    case over55 = "55+"
+    case notSaying = "Prefer not to say"
+
+    public var id: String { rawValue }
+    public var label: String { rawValue }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -1028,7 +1046,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .stress, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .referral:
             return true
 
         // Presumes previous attempts.
@@ -1107,6 +1125,8 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case quietTime
     /// Have you tried to make meditation a habit before, fifth (Aziz).
     case habitHistory
+    /// How old are you, sixth, then "Did you know?" (Aziz, 2026-09-25).
+    case age
     case referral
     case baseline, stress
     case restarts, intendedFor

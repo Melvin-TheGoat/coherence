@@ -120,6 +120,8 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "Did you know?", four sourced facts, after the
         /// habit question. Last in the enum, for the reason above.
         case didYouKnow
+        /// Added 2026-09-25: "How old are you?", before Did you know. Last.
+        case age
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -206,6 +208,7 @@ struct OnboardingView: View {
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.motivation, .motivation), (.obstacles, .obstacles), (.role, .role),
         (.quietTime, .quietTime), (.habitHistory, .habitHistory),
+        (.age, .age),
         (.referral, .referral),
         (.baseline, .baseline), (.stress, .stress),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
@@ -393,7 +396,7 @@ struct OnboardingView: View {
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
-                || step == .quietTime || step == .habitHistory {
+                || step == .quietTime || step == .habitHistory || step == .age {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
@@ -530,13 +533,20 @@ struct OnboardingView: View {
 
         case .habitHistory:
             HabitHistoryScreen(history: $answers.habitHistory,
-                               count: interviewCount) { go(.didYouKnow) }
+                               count: interviewCount) { go(nextAfter(.habitHistory)) }
+
+        case .age:
+            CornerQuestionScreen(title: "How old are you?",
+                                 options: AgeRange.allCases, single: true, label: \.label, icon: { _ in nil },
+                                 selected: Binding(get: { answers.ageBracket.flatMap(AgeRange.init(rawValue:)).map { [$0] } ?? [] },
+                                                   set: { answers.ageBracket = $0.first?.rawValue }),
+                                 count: interviewCount) { go(.didYouKnow) }
 
         // Not a question, so not in the interview list: it sits between the
         // habit question and whatever the interview asks next.
         case .didYouKnow:
-            DidYouKnowScreen(progress: countFraction(after: .habitHistory)) {
-                go(nextAfter(.habitHistory))
+            DidYouKnowScreen(progress: countFraction(after: .age)) {
+                go(nextAfter(.age))
             }
 
         // The stress question and the aura slider are one screen (Melvin,
