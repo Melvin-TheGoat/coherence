@@ -5531,9 +5531,9 @@ screen before it says "Continue" so the line is not said twice.
 `Step.attentionHacked`, a WHITE page, no Otto, so the words carry it, Aziz):
 the headline, then three soft-blue cards: "Apps are designed to keep pulling
 at your attention.", "Your mind lives in the future, where anxiety grows.",
-"That anxiety follows you into everything you do." Aziz's lines, tightened
-to what holds ("designed to shorten your attention span" claimed intent;
-"seeps into your subconscious" had no support). A habit-truths version
+"That anxiety subconsciously seeps into every facet of your life." (Aziz
+kept this last line as written; the second is tightened from "designed to
+shorten your attention span", which claimed intent.) A habit-truths version
 (Lally 2010) was built and dropped: "Why 808 works" next covers habits. If the clip is regenerated, re-measure the beats. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as

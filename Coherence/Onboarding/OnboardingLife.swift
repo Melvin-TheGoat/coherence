@@ -694,8 +694,8 @@ struct LifeMomentsScreen: View {
 /// sloth, nothing to pull the eye). The headline, then three lines popping in
 /// with a tick. Aziz's wording, tightened to what holds: apps are built to
 /// hold attention (not "designed to shorten your attention span", a claim
-/// about intent), worry is future-focused thinking, and "leaks into your
-/// subconscious" became "follows you into everything you do".
+/// about intent) and worry is future-focused thinking. The last line is
+/// Aziz's, kept as he wants it: a felt claim, not a statistic.
 struct AttentionHackedScreen: View {
     let onContinue: () -> Void
 
@@ -707,7 +707,7 @@ struct AttentionHackedScreen: View {
     static let lines = [
         "Apps are designed to keep pulling at your attention.",
         "Your mind lives in the future, where anxiety grows.",
-        "That anxiety follows you into everything you do.",
+        "That anxiety subconsciously seeps into every facet of your life.",
     ]
 
     var body: some View {
