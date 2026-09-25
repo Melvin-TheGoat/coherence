@@ -541,6 +541,103 @@ public enum AgeRange: String, CaseIterable, Identifiable, Codable {
     public var label: String { rawValue }
 }
 
+/// "When something stresses you out, how quickly do you settle back down?"
+/// (Aziz, 2026-09-25). Feeds the profile's Emotional balance bar.
+public enum StressRecovery: String, CaseIterable, Identifiable, Codable {
+    case rightAway, withinHour, allDay, forDays
+
+    public var id: String { rawValue }
+
+    public var label: String {
+        switch self {
+        case .rightAway:  return "Right away"
+        case .withinHour: return "Within an hour"
+        case .allDay:     return "It stays with me all day"
+        case .forDays:    return "It sticks around for days"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .rightAway:  return "hare"
+        case .withinHour: return "clock"
+        case .allDay:     return "sun.max"
+        case .forDays:    return "calendar"
+        }
+    }
+}
+
+/// The profile at the end of the questions (Aziz, 2026-09-25, Brainrot's
+/// "Your attention profile is"). Five kinds of Otto, each drawn to match. It
+/// is the reader's own answers played back, never a measurement: there is no
+/// percentage anywhere on it, only a type and two bar positions.
+public enum MindProfile: String, CaseIterable, Codable {
+    case racingMind, fullPlate, alwaysOn, comeback, freshStart
+
+    public var name: String {
+        switch self {
+        case .racingMind: return "The Racing Mind"
+        case .fullPlate:  return "The Full Plate"
+        case .alwaysOn:   return "The Always-On Mind"
+        case .comeback:   return "The Comeback"
+        case .freshStart: return "The Fresh Start"
+        }
+    }
+
+    /// Encouraging, and never a foil ("not X but Y"): the standing copy rules.
+    public var line: String {
+        switch self {
+        case .racingMind: return "Your thoughts move fast. A few quiet minutes a day is how you slow them down."
+        case .fullPlate:  return "Your days are packed. Short sessions that fit around them are what will stick."
+        case .alwaysOn:   return "Your phone gets a lot of your attention. A few minutes a day is how you take some back."
+        case .comeback:   return "You've started before and you know it works. Now it's about coming back every day."
+        case .freshStart: return "Everything's ahead of you. Starting small and showing up is all it takes."
+        }
+    }
+
+    /// Which one. Several obstacles can be picked, so a fixed order decides:
+    /// nobody who has not meditated yet is told they are "coming back", then
+    /// the answer 808 can help with most directly comes first.
+    public static func of(_ a: OnboardingAnswers) -> MindProfile {
+        let obstacles = a.obstacles ?? []
+        let neverStarted = a.currentFrequency == .never
+            || (a.habitHistory == .firstTry
+                && (a.currentFrequency == nil || a.currentFrequency == .triedNeverStuck))
+        if neverStarted { return .freshStart }
+        if obstacles.contains(.phonePulls) { return .alwaysOn }
+        if obstacles.contains(.mindWontSettle) || a.motivations.contains(.overthinkLess) { return .racingMind }
+        if obstacles.contains(.noTime) { return .fullPlate }
+        return .comeback
+    }
+
+    /// Headspace, 0 cluttered to 1 clear: stress, a mind that won't settle,
+    /// the phone and wanting to overthink less each move it toward cluttered.
+    /// Never quite at either end, because it is a reading of a few answers.
+    public static func headspace(_ a: OnboardingAnswers) -> Double {
+        let obstacles = a.obstacles ?? []
+        var clear = 1.0 - 0.45 * min(max(a.stress, 0), 1)
+        if obstacles.contains(.mindWontSettle) { clear -= 0.20 }
+        if obstacles.contains(.phonePulls) { clear -= 0.10 }
+        if a.motivations.contains(.overthinkLess) { clear -= 0.10 }
+        return min(max(clear, 0.08), 0.94)
+    }
+
+    /// Emotional balance, 0 reactive to 1 steady: mostly how fast they settle
+    /// after stress, nudged by how stressed they have been lately.
+    public static func balance(_ a: OnboardingAnswers) -> Double {
+        let base: Double
+        switch a.recovery {
+        case .rightAway?:  base = 0.88
+        case .withinHour?: base = 0.64
+        case .allDay?:     base = 0.36
+        case .forDays?:    base = 0.14
+        case nil:          base = 0.5
+        }
+        let steady = base - 0.12 * (min(max(a.stress, 0), 1) - 0.5)
+        return min(max(steady, 0.08), 0.94)
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -791,6 +888,8 @@ public struct OnboardingAnswers: Codable, Equatable {
     /// Codable requires every non-optional key, so a plain property would
     /// have made every saved resume record from before it fail to decode.
     public var obstacles: Set<Obstacle>?
+    /// How quickly they settle after stress (`StressRecovery`). Optional.
+    public var recovery: StressRecovery?
     /// Which one sounds most like them (`Role`). Optional for the same reason.
     public var role: Role?
     /// When a few quiet minutes fit (`QuietTime`). Optional, as above.
@@ -1082,7 +1181,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .recovery, .referral:
             return true
 
         // Presumes previous attempts.
@@ -1155,6 +1254,11 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case motivation
     /// What gets in the way, straight after the goal (Aziz, 2026-09-23).
     case obstacles
+    /// How stressed have you been lately, the Otto slider, moved up from the
+    /// old questions (Aziz, 2026-09-25): the profile's Headspace bar reads it.
+    case stress
+    /// How quickly do you settle back down, for Emotional balance.
+    case recovery
     /// Which one sounds most like you, third (Aziz, 2026-09-23).
     case role
     /// When a few quiet minutes fit, fourth; sets the reminder (Aziz).
@@ -1167,7 +1271,6 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// (Aziz, 2026-09-25), moved up from after `referral`.
     case baseline
     case referral
-    case stress
     case restarts, intendedFor
     case bodyTracking
     case blindSpot

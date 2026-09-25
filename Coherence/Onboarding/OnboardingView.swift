@@ -125,6 +125,12 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "Putting together your plan", the writing Otto and
         /// three bars that read the answers back. Last in the enum.
         case buildingPlan
+        /// Added 2026-09-25: "When something stresses you out, how quickly do
+        /// you settle back down?". Last in the enum.
+        case recovery
+        /// Added 2026-09-25: "Your mind profile is", five Ottos and two bars.
+        /// Last in the enum.
+        case mindProfile
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -209,11 +215,12 @@ struct OnboardingView: View {
     /// `InterviewStep`. The branching lives in the model (and is exhaustively
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
-        (.motivation, .motivation), (.obstacles, .obstacles), (.role, .role),
+        (.motivation, .motivation), (.obstacles, .obstacles),
+        (.stress, .stress), (.recovery, .recovery), (.role, .role),
         (.quietTime, .quietTime), (.habitHistory, .habitHistory),
         (.age, .age),
         (.referral, .referral),
-        (.baseline, .baseline), (.stress, .stress),
+        (.baseline, .baseline),
         (.restarts, .restarts), (.intendedFor, .intendedFor),
         (.bodyTracking, .bodyTracking),
         (.blindSpot, .blindSpot),
@@ -368,7 +375,7 @@ struct OnboardingView: View {
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
-                                       || step == .buildingPlan) ? .steady : nil,
+                                       || step == .buildingPlan || step == .mindProfile) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress)
                                    : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
@@ -379,7 +386,8 @@ struct OnboardingView: View {
                              figureHidden: step == .questionCount || step == .buildingPlan
                                  || step == .baseline,
                              seed: lifeSeed,
-                             drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan)
+                             drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
+                                    || step == .mindProfile)
                                  ? DidYouKnowScreen.ottoDrop : 0)
 
             // The breath is a white page, not the valley. Each draws its own white,
@@ -402,7 +410,8 @@ struct OnboardingView: View {
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
-                || step == .quietTime || step == .habitHistory || step == .age {
+                || step == .quietTime || step == .habitHistory || step == .age
+                || step == .recovery {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
@@ -521,7 +530,17 @@ struct OnboardingView: View {
         // After the new questions for now; it belongs at the END of the
         // interview once Aziz's redo of the old questions lands.
         case .buildingPlan:
-            BuildingPlanScreen { go(nextAfter(.baseline)) }
+            BuildingPlanScreen { go(.mindProfile) }
+
+        case .mindProfile:
+            MindProfileScreen(answers: answers) { go(nextAfter(.baseline)) }
+
+        case .recovery:
+            CornerQuestionScreen(title: "When something stresses you out, how quickly do you settle back down?",
+                                 options: StressRecovery.allCases, single: true, label: \.label, icon: \.icon,
+                                 selected: Binding(get: { answers.recovery.map { [$0] } ?? [] },
+                                                   set: { answers.recovery = $0.first }),
+                                 count: interviewCount) { go(nextAfter(.recovery)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,

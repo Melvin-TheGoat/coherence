@@ -1116,6 +1116,149 @@ private struct PlanRow: View {
     }
 }
 
+/// "Your mind profile is" (Aziz, 2026-09-25, Brainrot's "Your attention
+/// profile is"), after "Tailoring 808 to you". One of five types
+/// (`MindProfile.of`), its line, and two bars read from their answers:
+/// Headspace (cluttered to clear) and Emotional balance (reactive to steady).
+/// Light rays fan up behind Otto's head. No percentages: the bars are their
+/// answers played back, not a measurement.
+///
+/// PLACEHOLDER Otto: the valley's seated Steady Otto for every type, until
+/// the five-Otto sheet is drawn and cut.
+struct MindProfileScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+    @State private var barsShown = false
+
+    private var profile: MindProfile { MindProfile.of(answers) }
+
+    var body: some View {
+        GeometryReader { geo in
+            let head = SitLayout.ottoTop(in: geo.size) + geo.size.height * DidYouKnowScreen.ottoDrop
+            ZStack(alignment: .top) {
+                // Rays from just above his head, fanning up behind the words.
+                SunburstRays()
+                    .frame(width: geo.size.width * 2.2, height: geo.size.width * 2.2)
+                    .position(x: geo.size.width / 2, y: head + 40)
+                    .mask(alignment: .top) {
+                        Rectangle().frame(height: max(0, head + 30))
+                    }
+                    .opacity(shown ? 1 : 0)
+                    .allowsHitTesting(false)
+
+                VStack(spacing: 0) {
+                    Text("Your mind profile is")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColor.skyDeep)
+                        .padding(.top, 36)
+                    Text(profile.name)
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 4)
+                        .scaleEffect(shown ? 1 : 0.9)
+                    Text(profile.line)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary.opacity(0.78))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 8)
+
+                    VStack(spacing: 14) {
+                        ProfileBar(title: "Headspace", low: "Cluttered", high: "Clear",
+                                   value: barsShown ? MindProfile.headspace(answers) : 0)
+                        ProfileBar(title: "Emotional balance", low: "Reactive", high: "Steady",
+                                   value: barsShown ? MindProfile.balance(answers) : 0)
+                    }
+                    .padding(.top, 18)
+
+                    Spacer(minLength: 0)
+                }
+                .padding(.horizontal, AppMetrics.screenPadding + 6)
+                .opacity(shown ? 1 : 0)
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "That's me", action: onContinue)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+                .opacity(barsShown ? 1 : 0)
+                .allowsHitTesting(barsShown)
+        }
+        .task {
+            if reduceMotion { shown = true; barsShown = true; return }
+            WelcomeHaptics.prepare()
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { shown = true }
+            WelcomeHaptics.land()
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 1.0)) { barsShown = true }
+        }
+    }
+}
+
+/// One of the profile's two bars: its title, the bar, and the two ends.
+private struct ProfileBar: View {
+    let title: String
+    let low: String
+    let high: String
+    let value: Double
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.9))
+                    Capsule()
+                        .fill(LinearGradient(colors: [AppColor.skyDeep.opacity(0.35), AppColor.skyDeep],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(0, geo.size.width * value))
+                }
+            }
+            .frame(height: 14)
+            HStack {
+                Text(low)
+                Spacer()
+                Text(high)
+            }
+            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .foregroundStyle(AppColor.textPrimary.opacity(0.65))
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(title): between \(low) and \(high)")
+    }
+}
+
+/// Brainrot's light rays, in white over the sky.
+private struct SunburstRays: View {
+    var body: some View {
+        Canvas { ctx, size in
+            let c = CGPoint(x: size.width / 2, y: size.height / 2)
+            let r = max(size.width, size.height)
+            let rays = 18
+            for k in 0..<rays {
+                let a0 = Double(k) / Double(rays) * 2 * .pi
+                let a1 = a0 + .pi / Double(rays)
+                var p = Path()
+                p.move(to: c)
+                p.addLine(to: CGPoint(x: c.x + r * cos(a0), y: c.y + r * sin(a0)))
+                p.addLine(to: CGPoint(x: c.x + r * cos(a1), y: c.y + r * sin(a1)))
+                p.closeSubpath()
+                ctx.fill(p, with: .color(.white.opacity(0.22)))
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
 /// The welcome screen's haptics. Prepared generators, for the reason
 /// `PressHaptic` gives: an unprepared one can drop the first pulses while the
 /// Taptic Engine spins up, and a typed line would lose its opening letters.
