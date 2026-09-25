@@ -881,6 +881,136 @@ private struct ThoughtChip: View {
     }
 }
 
+/// "Did you know?" (Aziz, 2026-09-25, Brainrot's screen of the same name),
+/// after the habit question. Four facts, EACH FROM A STUDY 808 ALREADY CITES
+/// (website sources, SCIENCE.md, the streak awards), because a made-up or
+/// unsourced number here would cost the right to be believed later and is the
+/// health claim App Review looks for:
+/// 1. Mrazek et al. 2013, Psychological Science: two weeks of mindfulness
+///    training improved working memory and reduced mind wandering. "Your whole
+///    life runs on" attention is framing, not a finding (Aziz asked for
+///    clarity in every part of life; no study measures that directly).
+/// 2. Killingsworth & Gilbert 2010, Science ("A wandering mind is an unhappy
+///    mind"): mind wandering in 46.9% of waking samples.
+/// 3. Goyal et al. 2014, JAMA Internal Medicine: 47 trials, moderate evidence
+///    for anxiety (and depression). NOT "stress": the evidence there is weaker.
+/// Each card about as long as Brainrot's (Aziz), eleven to thirteen words.
+/// 4. Cearns & Clark 2023: across 280,000 sessions, frequency predicted
+///    improvement and session length did not.
+/// Written as what practice does, not as "risks of not meditating": no study
+/// measures harm from not meditating, and the copy never tells the reader what
+/// they lack. The cards sit ABOVE Otto, who stays on his cushion: below him
+/// there is no room without floating him off the ground.
+struct DidYouKnowScreen: View {
+    let progress: Double
+    let onContinue: () -> Void
+
+    @Environment(\.onboardingBack) private var back
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shownCards = 0
+    @State private var ctaShown = false
+
+    static let facts: [(icon: String, text: String)] = [
+        ("scope", "Meditation sharpens your attention, the skill your whole life runs on"),
+        ("cloud", "Our minds wander almost half the time we're awake, and it makes us unhappier"),
+        ("heart", "People who meditate regularly feel less anxious, across 47 studies"),
+        ("flame", "How often you meditate matters more than how long each session lasts"),
+    ]
+
+    var body: some View {
+        GeometryReader { geo in
+            let headTop = SitLayout.ottoTop(in: geo.size)
+            // A short phone (the SE, 667pt) has about 60pt less above his
+            // head than a 17: a compact size keeps the four cards clear of it.
+            let compact = geo.size.height < 760
+            VStack(spacing: 0) {
+                HStack(spacing: 14) {
+                    if let back { OnboardingBackButton(action: back) }
+                    OnboardingProgress(from: progress, to: progress)
+                }
+                .frame(height: 40)
+
+                Text("Did you know?")
+                    .font(.system(size: compact ? 26 : 32, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .padding(.top, 4)
+
+                VStack(spacing: compact ? 5 : 7) {
+                    ForEach(Array(Self.facts.enumerated()), id: \.offset) { i, fact in
+                        FactCard(icon: fact.icon, text: fact.text, compact: compact)
+                            .opacity(i < shownCards ? 1 : 0)
+                            .offset(y: i < shownCards ? 0 : 10)
+                    }
+                }
+                .padding(.top, compact ? 8 : 12)
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.top, 12)
+            // Clear of his head, whatever the phone.
+            .frame(height: max(0, headTop - geo.safeAreaInsets.top + 4), alignment: .top)
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+                .opacity(ctaShown ? 1 : 0)
+                .offset(y: ctaShown ? 0 : 30)
+                .allowsHitTesting(ctaShown)
+        }
+        .task { await play() }
+    }
+
+    private func play() async {
+        guard shownCards == 0 else { return }
+        if reduceMotion {
+            shownCards = Self.facts.count
+            ctaShown = true
+            return
+        }
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(350))
+        for i in 0..<Self.facts.count {
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { shownCards = i + 1 }
+            WelcomeHaptics.tick()
+            try? await Task.sleep(for: .milliseconds(420))
+        }
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+        WelcomeHaptics.land()
+    }
+}
+
+/// One fact: an icon and a line on a white card.
+private struct FactCard: View {
+    let icon: String
+    let text: String
+    var compact = false
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(AppColor.skyDeep)
+                .frame(width: 26)
+            Text(text)
+                .font(.system(size: compact ? 13.5 : 15, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, compact ? 7 : 10)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .fill(Color.white)
+            .shadow(color: .black.opacity(0.08), radius: 6, y: 2))
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// The welcome screen's haptics. Prepared generators, for the reason
 /// `PressHaptic` gives: an unprepared one can drop the first pulses while the
 /// Taptic Engine spins up, and a typed line would lose its opening letters.

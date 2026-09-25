@@ -5425,6 +5425,17 @@ synthesized Codable requires every non-optional key, so a plain property
 would have failed every saved resume record from before it. **New answer
 fields must be optional for the same reason.**
 
+**"Did you know?"** (`DidYouKnowScreen`, `Step.didYouKnow`, after the habit
+question, Brainrot's screen): four white fact cards popping in with a tick
+above the seated Steady Otto. **Every fact is from a study 808 already
+cites** (Mrazek 2013, Killingsworth & Gilbert 2010, Goyal 2014, Cearns &
+Clark 2023; details in the doc comment), each about Brainrot's length.
+Aziz asked for "risks of not meditating"; it was written as what practice
+does instead, because no study measures harm from not meditating (an
+invented risk is the health claim App Review rejects) and the copy never
+tells the reader what they lack. Goyal is quoted for ANXIETY, not stress
+(the stress evidence is weaker). Cards sit ABOVE Otto, compact under 760pt.
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room

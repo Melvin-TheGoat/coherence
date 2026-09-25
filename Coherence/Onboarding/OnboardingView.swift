@@ -117,6 +117,9 @@ struct OnboardingView: View {
         /// Added 2026-09-23: "Have you tried to make meditation a habit
         /// before?". Last.
         case habitHistory
+        /// Added 2026-09-25: "Did you know?", four sourced facts, after the
+        /// habit question. Last in the enum, for the reason above.
+        case didYouKnow
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -182,6 +185,13 @@ struct OnboardingView: View {
 
     /// How far through THIS person's interview we are.
     /// This reader's position in their own interview. Nil off the interview.
+    /// How far along the interview is once `step` has been answered.
+    private func countFraction(after step: InterviewStep) -> Double {
+        let all = answers.interview
+        guard let i = all.firstIndex(of: step) else { return 0 }
+        return Double(i + 1) / Double(max(all.count, 1))
+    }
+
     private var interviewCount: InterviewCount {
         guard let here = Self.interviewPairs.first(where: { $0.0 == step })?.1,
               let i = answers.interview.firstIndex(of: here) else {
@@ -350,7 +360,8 @@ struct OnboardingView: View {
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
-                                    : (step == .meetOtto || step == .ottoGrows || step == .questionCount) ? .steady : nil,
+                                    : (step == .meetOtto || step == .ottoGrows || step == .questionCount
+                                       || step == .didYouKnow) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress)
                                    : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
@@ -518,7 +529,14 @@ struct OnboardingView: View {
 
         case .habitHistory:
             HabitHistoryScreen(history: $answers.habitHistory,
-                               count: interviewCount) { go(nextAfter(.habitHistory)) }
+                               count: interviewCount) { go(.didYouKnow) }
+
+        // Not a question, so not in the interview list: it sits between the
+        // habit question and whatever the interview asks next.
+        case .didYouKnow:
+            DidYouKnowScreen(progress: countFraction(after: .habitHistory)) {
+                go(nextAfter(.habitHistory))
+            }
 
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.
