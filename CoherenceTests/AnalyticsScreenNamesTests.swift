@@ -19,7 +19,7 @@ final class AnalyticsScreenNamesTests: XCTestCase {
     func test_onboardingStepCarriesBothTheRoutingIDAndTheScreenName() {
         let props = Analytics.Event.onboardingStep(id: "baseline").properties
         XCTAssertEqual(props["step"], "baseline")
-        XCTAssertEqual(props["screen"], "03 How often do you meditate?")
+        XCTAssertEqual(props["screen"], "04g How often do you meditate right now? (slider, after Did you know since 2026-09-25)")
     }
 
     func test_unknownScreenIsVisiblyUnnamed() {
