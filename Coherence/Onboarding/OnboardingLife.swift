@@ -480,34 +480,47 @@ struct LifeDotsScreen: View {
 
 /// "The good news is…" (Aziz, 2026-09-25, Brainrot's "11 years back").
 /// Otto bright again in the valley (`OnboardingView` draws him at his Bright
-/// look on this step), and in big green the years a QUARTER of their number
-/// comes to (`MindWander.quarterBack`): "Even winning back a quarter of that
-/// is 4 years." Conditional arithmetic on their own answers, not a claim of
-/// what 808 gives back, which nothing measures.
+/// look on this step). "The good news is…" types, then "808 can help you
+/// train your attention. Win back even a quarter of it, and that's", then a
+/// QUARTER of their number counts up in big green (`MindWander.quarterBack`).
+/// Researched 2026-09-25: every study finds meditation reduces mind wandering
+/// (Mrazek 2013, Price 2023, Brandmeyer 2018), and none reports it as a share
+/// of the day, so there is no honest "N% more present" to multiply by. The
+/// training claim is sourced; the number stays an "if" on their own answers.
 struct GoodNewsScreen: View {
     let answers: OnboardingAnswers
     let onContinue: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var shown = false
+    @State private var headLetters = 0
+    @State private var bodyLetters = 0
     @State private var counted = 0
+    @State private var numberShown = false
     @State private var landed = false
+
+    private static let head = "The good news is…"
+    private static let body = "808 can help you train your attention. Win back even a quarter of it, and that's"
 
     private var target: Int { MindWander.quarterBack(answers) }
     private var unit: String {
-        let days = MindWander.years(answers) == nil
-        return days ? (target == 1 ? "day a year" : "days a year")
-                    : (target == 1 ? "year back" : "years back")
+        MindWander.years(answers) == nil ? (target == 1 ? "day a year" : "days a year")
+                                         : (target == 1 ? "year back" : "years back")
+    }
+
+    private static func typed(_ text: String, _ n: Int, _ ink: Color) -> AttributedString {
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(n, text.count))
+        line[line.startIndex..<cut].foregroundColor = ink
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return line
     }
 
     var body: some View {
         VStack(spacing: 8) {
-            Text("The good news is…")
+            Text(Self.typed(Self.head, headLetters, AppColor.textPrimary))
                 .font(.system(size: 26, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-            Text("your attention can be trained. Even winning back a quarter of that is")
+            Text(Self.typed(Self.body, bodyLetters, AppColor.textPrimary.opacity(0.85)))
                 .font(.system(size: 19, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary.opacity(0.85))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.top, 6)
@@ -521,12 +534,14 @@ struct GoodNewsScreen: View {
                 .shadow(color: .white.opacity(0.8), radius: 8)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
+                .opacity(numberShown ? 1 : 0)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding + 6)
         .padding(.top, 46)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .opacity(shown ? 1 : 0)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(Self.head) \(Self.body) \(target) \(unit).")
         .safeAreaInset(edge: .bottom) {
             OnboardingCTA(title: "Let's do this!", action: onContinue)
                 .opacity(landed ? 1 : 0)
@@ -534,23 +549,44 @@ struct GoodNewsScreen: View {
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
         }
-        .task {
-            withAnimation(.easeOut(duration: 0.35)) { shown = true }
-            if reduceMotion { counted = target; landed = true; return }
-            WelcomeHaptics.prepare()
-            try? await Task.sleep(for: .milliseconds(450))
-            let steps = max(1, min(target, 20))
-            for k in 1...steps {
-                guard !Task.isCancelled else { return }
-                withAnimation(.snappy(duration: 0.1)) {
-                    counted = Int((Double(target) * Double(k) / Double(steps)).rounded())
-                }
-                WelcomeHaptics.tick()
-                try? await Task.sleep(for: .milliseconds(60))
-            }
+        .task { await play() }
+    }
+
+    private func type(_ text: String, _ set: (Int) -> Void) async {
+        for (i, ch) in text.enumerated() {
             guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { landed = true }
-            WelcomeHaptics.land()
+            set(i + 1)
+            if !ch.isWhitespace { WelcomeHaptics.tick() }
+            try? await Task.sleep(for: .milliseconds(30))
         }
+    }
+
+    private func play() async {
+        guard !landed else { return }
+        if reduceMotion {
+            headLetters = Self.head.count; bodyLetters = Self.body.count
+            counted = target; numberShown = true; landed = true
+            return
+        }
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(250))
+        // "The good news is…" first, a beat, then the rest (Aziz).
+        await type(Self.head) { headLetters = $0 }
+        try? await Task.sleep(for: .milliseconds(350))
+        await type(Self.body) { bodyLetters = $0 }
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.2)) { numberShown = true }
+        let steps = max(1, min(target, 20))
+        for k in 1...steps {
+            guard !Task.isCancelled else { return }
+            withAnimation(.snappy(duration: 0.1)) {
+                counted = Int((Double(target) * Double(k) / Double(steps)).rounded())
+            }
+            WelcomeHaptics.tick()
+            try? await Task.sleep(for: .milliseconds(60))
+        }
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { landed = true }
+        WelcomeHaptics.land()
     }
 }

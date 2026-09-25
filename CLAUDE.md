@@ -5508,11 +5508,16 @@ a tick each. Built, not generated: the dots are THEIR age and number. The
 pause, the dots and the years screen all read `MindWander.years`, so the
 number is always the same across them. No age: one year of 365 day-dots.
 **Then the good news** (`GoodNewsScreen`, `Step.goodNews`): Otto at his
-Bright look in the valley, "The good news is… your attention can be trained.
-Even winning back a quarter of that is" and, counting up in big green, a
-QUARTER of their number (`MindWander.quarterBack`), then "Let's do this!".
-Brainrot's "11 years back" is a promise nothing measures; this is
-conditional arithmetic on their own answers and claims nothing about 808. `MindWander`
+Bright look in the valley; "The good news is…" TYPES, then "808 can help you
+train your attention. Win back even a quarter of it, and that's", then a
+QUARTER of their number counts up in big green (`MindWander.quarterBack`),
+then "Let's do this!". Aziz asked for the number to come from research on
+how much more present daily meditators are; researched 2026-09-25 and there
+is NO such figure: Mrazek 2013, Price 2023 (Frontiers, n=304) and Brandmeyer
+2018 all report reduced mind wandering on Likert scales or during the sit,
+never as a share of the day. Turning a scale shift into "X% more present"
+would be an invented number, so the quarter stays an "if" on their answers.
+Do not re-derive a percentage from those papers. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good
