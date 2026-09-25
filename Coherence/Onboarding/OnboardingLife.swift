@@ -8,8 +8,9 @@ import SwiftUI
 
 // MARK: - The question
 
-/// "How much of your day is your mind somewhere else?" A slider from 10% to
-/// 90% that opens on the research average, which a note under it names. Age
+/// "How much of your day is your mind somewhere else?" Five stops in words
+/// (`WanderLevel`), each a share behind the scenes, opening on the middle one,
+/// the research average, which the note under it names. Age
 /// is not mentioned here (Aziz): it first appears in the "N years" moment.
 struct WanderingScreen: View {
     @Binding var share: Double?
@@ -17,7 +18,7 @@ struct WanderingScreen: View {
     let onContinue: () -> Void
 
     @Environment(\.onboardingBack) private var back
-    private var value: Double { share ?? MindWander.average }
+    private var level: WanderLevel { WanderLevel(share: share ?? MindWander.average) }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -29,28 +30,32 @@ struct WanderingScreen: View {
             }
             .frame(height: 40)
 
+            // Clear of the corner Otto: it touched him at 24 (Aziz).
             Text("How much of your day is your mind somewhere else?")
                 .font(.system(size: 26, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 24)
+                .padding(.top, 44)
             Text("Your best guess. There's no wrong answer.")
                 .font(.system(size: 16, weight: .medium, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary.opacity(0.7))
                 .padding(.top, 8)
 
-            Text("\(Int((value * 100).rounded()))%")
-                .font(.system(size: 64, weight: .heavy, design: .rounded))
+            Text(level.label)
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
-                .monospacedDigit()
-                .contentTransition(.numericText())
+                .multilineTextAlignment(.center)
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.15), value: level)
+                .frame(height: 50)
                 .padding(.top, 22)
 
-            PercentSlider(value: Binding(get: { value }, set: { share = $0 }))
+            WordSlider(index: Binding(get: { level.rawValue },
+                                      set: { share = WanderLevel(rawValue: $0)?.share }))
                 .padding(.top, 12)
             HStack {
-                Text("Hardly ever")
+                Text("Rarely")
                 Spacer()
                 Text("Almost always")
             }
@@ -58,7 +63,7 @@ struct WanderingScreen: View {
             .foregroundStyle(AppColor.textPrimary.opacity(0.75))
             .padding(.top, 4)
 
-            Text("Most people land around 47%.")
+            Text("Most people say about half the time.")
                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColor.skyDeep)
                 .padding(.top, 16)
@@ -76,19 +81,20 @@ struct WanderingScreen: View {
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.bottom, 10)
         }
-        .sensoryFeedback(.selection, trigger: Int((value * 20).rounded()))
+        .sensoryFeedback(.selection, trigger: level)
     }
 }
 
-/// A 10% to 90% slider in steps of 5, green, Otto's face as the handle.
-private struct PercentSlider: View {
-    @Binding var value: Double
+/// Five stops, green, Otto's face as the handle.
+private struct WordSlider: View {
+    @Binding var index: Int
     private static let knob: CGFloat = 46
+    private static let stops = WanderLevel.allCases.count
 
     var body: some View {
         GeometryReader { geo in
             let travel = geo.size.width - Self.knob
-            let x = travel * CGFloat((value - 0.1) / 0.8)
+            let x = travel * CGFloat(index) / CGFloat(Self.stops - 1)
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.white)
                     .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
@@ -103,18 +109,19 @@ private struct PercentSlider: View {
                     .offset(x: x)
             }
             .frame(height: Self.knob)
+            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: index)
             .contentShape(Rectangle())
             .gesture(DragGesture(minimumDistance: 0).onChanged { g in
                 let t = min(max((g.location.x - Self.knob / 2) / max(1, travel), 0), 1)
-                value = ((0.1 + 0.8 * Double(t)) * 20).rounded() / 20
+                index = Int((t * CGFloat(Self.stops - 1)).rounded())
             })
         }
         .frame(height: Self.knob)
         .accessibilityElement()
         .accessibilityLabel("How much of your day your mind is somewhere else")
-        .accessibilityValue("\(Int((value * 100).rounded())) percent")
+        .accessibilityValue(WanderLevel(rawValue: index)?.label ?? "")
         .accessibilityAdjustableAction { d in
-            value = min(0.9, max(0.1, value + (d == .increment ? 0.05 : -0.05)))
+            index = min(Self.stops - 1, max(0, index + (d == .increment ? 1 : -1)))
         }
     }
 }

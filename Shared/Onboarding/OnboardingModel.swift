@@ -663,6 +663,41 @@ public enum MindProfile: String, CaseIterable, Codable {
     }
 }
 
+/// The wandering question's answers in words (Aziz, 2026-09-25: "put it
+/// into words and have those words correlate with a certain %"). Each stop
+/// stores its share in `OnboardingAnswers.mindWandering`; the middle one is
+/// the research average, so the slider opens on it.
+public enum WanderLevel: Int, CaseIterable, Identifiable {
+    case rarely, nowAndThen, aboutHalf, mostOfTheTime, almostAlways
+
+    public var id: Int { rawValue }
+
+    public var label: String {
+        switch self {
+        case .rarely:        return "Rarely"
+        case .nowAndThen:    return "Now and then"
+        case .aboutHalf:     return "About half the time"
+        case .mostOfTheTime: return "Most of the time"
+        case .almostAlways:  return "Almost always"
+        }
+    }
+
+    public var share: Double {
+        switch self {
+        case .rarely:        return 0.15
+        case .nowAndThen:    return 0.30
+        case .aboutHalf:     return 0.47
+        case .mostOfTheTime: return 0.65
+        case .almostAlways:  return 0.85
+        }
+    }
+
+    /// The stop nearest a stored share.
+    public init(share: Double) {
+        self = Self.allCases.min { abs($0.share - share) < abs($1.share - share) } ?? .aboutHalf
+    }
+}
+
 /// The life arithmetic behind the "N years" screens (Aziz, 2026-09-25,
 /// Brainrot's "You're on track to spend 25 years…"): THEIR numbers, multiplied.
 /// years with the mind elsewhere = years left × waking share × their own

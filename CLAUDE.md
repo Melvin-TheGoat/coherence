@@ -5470,9 +5470,11 @@ him: over him it washed him out). Brainrot's rays were tried and cut (Aziz:
 letter, Aziz), then the bars fill, then "That's me".
 
 **"How much of your day is your mind somewhere else?"** (`WanderingScreen`,
-`Step.wandering`, after the stress question, Aziz): a 10 to 90% slider in
-steps of 5 that opens on the research average ("Most people land around
-47%", Killingsworth & Gilbert 2010). It feeds `MindWander` (Shared, tested in
+`Step.wandering`, after the stress question, Aziz): a slider of five stops
+IN WORDS (`WanderLevel`: Rarely 15%, Now and then 30%, About half the time
+47%, Most of the time 65%, Almost always 85%, the percentages behind the
+scenes only), opening on the research average ("Most people say about half
+the time", Killingsworth & Gilbert 2010). It feeds `MindWander` (Shared, tested in
 `MindWanderTests`): years with the mind elsewhere = (80 − the middle of their
 age bracket) × 16/24 × their share; "Prefer not to say" gets days a year
 instead, never a guessed age. The question never mentions age. That number

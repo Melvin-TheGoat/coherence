@@ -84,6 +84,13 @@ final class MindWanderTests: XCTestCase {
         XCTAssertEqual(MindWander.daysPerYear(a(nil, 0.5)), 122)
     }
 
+    func test_wordStopsMapToShares() {
+        XCTAssertEqual(WanderLevel.aboutHalf.share, MindWander.average)
+        XCTAssertEqual(WanderLevel.allCases.map(\.share), WanderLevel.allCases.map(\.share).sorted())
+        XCTAssertEqual(WanderLevel(share: 0.47), .aboutHalf)
+        XCTAssertEqual(WanderLevel(share: 0.9), .almostAlways)
+    }
+
     func test_unansweredUsesTheResearchAverage() {
         XCTAssertEqual(MindWander.share(a(.from25, nil)), 0.47)
     }
