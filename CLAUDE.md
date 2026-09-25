@@ -5466,7 +5466,8 @@ The valley turns GOLDEN HOUR on this screen only (`OnboardingValley(hour:)`,
 `MindProfileScreen.hour` = 0.2 of the sit's sunset) with a warm glow
 breathing behind Otto (`ProfileGlow`, drawn in `ProfileOttoLayer` BEHIND
 him: over him it washed him out). Brainrot's rays were tried and cut (Aziz:
-"a different idea than the rays"). The bars are onboarding green.
+"a different idea than the rays"). The bars are onboarding green. The type's line types out (a tick a
+letter, Aziz), then the bars fill, then "That's me".
 
 **"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
 after the frequency slider for now; it belongs at the END of the interview

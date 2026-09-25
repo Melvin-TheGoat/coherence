@@ -1167,6 +1167,16 @@ struct MindProfileScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
     @State private var barsShown = false
+    @State private var lineLetters = 0
+
+    private var typedLine: AttributedString {
+        let text = profile.line
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(lineLetters, text.count))
+        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary.opacity(0.78)
+        line[cut..<line.endIndex].foregroundColor = .clear
+        return line
+    }
 
     private var profile: MindProfile { MindProfile.of(answers) }
 
@@ -1189,9 +1199,10 @@ struct MindProfileScreen: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 4)
                         .scaleEffect(shown ? 1 : 0.9)
-                    Text(profile.line)
+                    // Typed, a tick a letter (Aziz), into a block already its
+                    // finished size: unarrived letters are laid out in clear ink.
+                    Text(typedLine)
                         .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary.opacity(0.78))
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 8)
@@ -1219,11 +1230,18 @@ struct MindProfileScreen: View {
                 .allowsHitTesting(barsShown)
         }
         .task {
-            if reduceMotion { shown = true; barsShown = true; return }
+            if reduceMotion { shown = true; lineLetters = profile.line.count; barsShown = true; return }
             WelcomeHaptics.prepare()
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { shown = true }
             WelcomeHaptics.land()
-            try? await Task.sleep(for: .milliseconds(600))
+            try? await Task.sleep(for: .milliseconds(450))
+            for (i, ch) in profile.line.enumerated() {
+                guard !Task.isCancelled else { return }
+                lineLetters = i + 1
+                if !ch.isWhitespace { WelcomeHaptics.tick() }
+                try? await Task.sleep(for: .milliseconds(28))
+            }
+            try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 1.0)) { barsShown = true }
         }
