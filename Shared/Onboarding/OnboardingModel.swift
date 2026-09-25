@@ -595,19 +595,44 @@ public enum MindProfile: String, CaseIterable, Codable {
         }
     }
 
-    /// Which one. Several obstacles can be picked, so a fixed order decides:
-    /// nobody who has not meditated yet is told they are "coming back", then
-    /// the answer 808 can help with most directly comes first.
+    /// Which one. Several obstacles can be picked, so a fixed order decides,
+    /// the answer 808 can help with most directly first (Aziz, 2026-09-25):
+    /// 1. Always-On: "My phone pulls me away".
+    /// 2. Racing Mind: "My mind won't settle" or the goal "Overthink less".
+    /// 3. Full Plate: "I don't have time".
+    /// 4. Fresh Start: none of those, and new (never meditated, a first try,
+    ///    or "I'm not sure I'm doing it right").
+    /// 5. Comeback: none of those, and they have meditated before.
+    /// Only Comeback's line assumes a history, so being new only has to keep
+    /// someone out of Comeback; the other three lines fit a beginner too. And
+    /// someone who meditates every day is never "coming back": with nothing
+    /// else to go on they read as a Racing Mind.
     public static func of(_ a: OnboardingAnswers) -> MindProfile {
         let obstacles = a.obstacles ?? []
-        let neverStarted = a.currentFrequency == .never
-            || (a.habitHistory == .firstTry
-                && (a.currentFrequency == nil || a.currentFrequency == .triedNeverStuck))
-        if neverStarted { return .freshStart }
         if obstacles.contains(.phonePulls) { return .alwaysOn }
         if obstacles.contains(.mindWontSettle) || a.motivations.contains(.overthinkLess) { return .racingMind }
         if obstacles.contains(.noTime) { return .fullPlate }
+        let isNew = a.currentFrequency == .never
+            || obstacles.contains(.unsureDoingItRight)
+            || (a.habitHistory == .firstTry
+                && (a.currentFrequency == nil || a.currentFrequency == .triedNeverStuck))
+        if isNew { return .freshStart }
+        if a.currentFrequency == .almostDaily { return .racingMind }
         return .comeback
+    }
+
+    /// The drawing for this profile, and how much of its height is his body
+    /// from his head (below the tuft) to his seat, measured on the cut-outs
+    /// (the Racing Mind's swirls stand above his head), so each is drawn at
+    /// the valley Otto's size.
+    public var art: (asset: String, bodyShare: Double) {
+        switch self {
+        case .racingMind: return ("OttoProfileRacing", 381.0 / 458.0)
+        case .fullPlate:  return ("OttoProfileFullPlate", 396.0 / 421.0)
+        case .alwaysOn:   return ("OttoProfileAlwaysOn", 398.0 / 424.0)
+        case .comeback:   return ("OttoProfileComeback", 393.0 / 419.0)
+        case .freshStart: return ("OttoProfileFresh", 400.0 / 427.0)
+        }
     }
 
     /// Headspace, 0 cluttered to 1 clear: stress, a mind that won't settle,

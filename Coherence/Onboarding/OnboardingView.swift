@@ -384,7 +384,7 @@ struct OnboardingView: View {
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount || step == .buildingPlan
-                                 || step == .baseline,
+                                 || step == .baseline || step == .mindProfile,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)
@@ -417,6 +417,10 @@ struct OnboardingView: View {
             }
             // Otto thinking, paw on chin, across the frequency slider and the
             // plan screen: one layer for both, so he never changes between them.
+            if step == .mindProfile {
+                ProfileOttoLayer(profile: MindProfile.of(answers))
+                    .transition(.opacity)
+            }
             if step == .baseline || step == .buildingPlan {
                 SeatedClipLayer(clip: .thinking, drop: DidYouKnowScreen.ottoDrop)
                     .transition(.opacity)

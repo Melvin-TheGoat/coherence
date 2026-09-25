@@ -623,6 +623,32 @@ struct SeatedClipLayer: View {
     }
 }
 
+/// The profile's Otto (`MindProfile.art`), on the valley's cushion at the
+/// valley Otto's size. In the fixed layer, like the clips, so he fades in on
+/// the spot while the screen's words slide.
+struct ProfileOttoLayer: View {
+    let profile: MindProfile
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            let scale = SitLayout.scale(in: size)
+            let body = 186 * scale * 1.17 * 0.9
+            let art = profile.art
+            let height = body / art.bodyShare
+            let bottom = size.height * (0.76 + DidYouKnowScreen.ottoDrop) + height * (6.0 / 430.0)
+            Image(art.asset)
+                .resizable()
+                .scaledToFit()
+                .frame(height: height)
+                .position(x: size.width / 2, y: bottom - height / 2)
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// Otto's line in the welcome screens' bubble: white, round, the tail down
 /// at his head, typed a letter at a time by the screen (so each letter can
 /// tick). Unarrived letters are laid out in clear ink, so the bubble is its
@@ -1123,8 +1149,8 @@ private struct PlanRow: View {
 /// Light rays fan up behind Otto's head. No percentages: the bars are their
 /// answers played back, not a measurement.
 ///
-/// PLACEHOLDER Otto: the valley's seated Steady Otto for every type, until
-/// the five-Otto sheet is drawn and cut.
+/// Otto is drawn per type (`ProfileOttoLayer`, in `OnboardingView`'s fixed
+/// layer on the valley's cushion), five drawings from one ChatGPT sheet.
 struct MindProfileScreen: View {
     let answers: OnboardingAnswers
     let onContinue: () -> Void

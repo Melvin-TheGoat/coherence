@@ -5444,10 +5444,16 @@ screen below). `BaselineScreen` is deleted.
 "Tailoring 808 to you", Brainrot's "Your attention profile is", Aziz): one of
 five types (`MindProfile`, Shared, tested in `MindProfileTests`): The Racing
 Mind, The Full Plate, The Always-On Mind, The Comeback, The Fresh Start, each
-with an encouraging line. Order decides when several fit: never meditated is
-ALWAYS Fresh Start (nobody new is told they are "coming back"), then phone,
-then a mind that won't settle or "Overthink less", then no time, else
-Comeback. Two bars, their answers played back, NO percentages: **Headspace**
+with an encouraging line. Order decides when several fit (revised the same
+day, Aziz): phone → Always-On, mind won't settle or "Overthink less" →
+Racing Mind, no time → Full Plate, then NEW (never meditated, first try, or
+"not sure I'm doing it right") → Fresh Start, else Comeback. Only Comeback's
+line assumes a history, so being new only keeps someone out of it (phone +
+never meditated is Always-On), and an every-day meditator is never "coming
+back". Each type has its own drawing (`OttoProfile*` image sets, cut from one
+ChatGPT sheet, `ProfileOttoLayer` in the fixed layer on the cushion). The
+sheet came through chat at 1774 px wide, so they are a little soft: re-cut
+from ChatGPT's original PNG when Aziz has it. Two bars, their answers played back, NO percentages: **Headspace**
 (Cluttered to Clear: stress, mind won't settle, phone, overthink less) and
 **Emotional balance** (Reactive to Steady: the new "settle back down"
 question, nudged by stress). Bars rejected on the way, so nobody re-proposes
@@ -5456,8 +5462,7 @@ phone/screen time ("our app is not a screen time app"), rest, presence.
 To feed them, **"How stressed have you been lately?" moved up** to after
 "What gets in the way", and **"When something stresses you out, how quickly
 do you settle back down?"** (`StressRecovery`, `Step.recovery`) follows it.
-Light rays fan up from behind Otto's head. **Otto is a placeholder** (the
-Steady seated Otto for all five) until a five-Otto sheet is drawn.
+Light rays fan up from behind Otto's head.
 
 **"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
 after the frequency slider for now; it belongs at the END of the interview

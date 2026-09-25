@@ -11,11 +11,23 @@ final class MindProfileTests: XCTestCase {
         return a
     }
 
-    func test_neverMeditatedIsAlwaysAFreshStart() {
-        let a = answers { $0.currentFrequency = .never; $0.obstacles = [.phonePulls, .noTime] }
-        XCTAssertEqual(MindProfile.of(a), .freshStart)
-        let b = answers { $0.currentFrequency = nil; $0.habitHistory = .firstTry }
-        XCTAssertEqual(MindProfile.of(b), .freshStart)
+    /// Being new only keeps someone out of The Comeback, whose line assumes a
+    /// history; a specific obstacle still names them (phone + never meditated
+    /// is Always-On, Aziz 2026-09-25).
+    func test_aNewcomerIsNeverTheComeback() {
+        XCTAssertEqual(MindProfile.of(answers { $0.currentFrequency = .never; $0.obstacles = [.phonePulls] }), .alwaysOn)
+        XCTAssertEqual(MindProfile.of(answers { $0.currentFrequency = .never; $0.obstacles = [.forget] }), .freshStart)
+        XCTAssertEqual(MindProfile.of(answers { $0.currentFrequency = nil; $0.habitHistory = .firstTry }), .freshStart)
+        XCTAssertEqual(MindProfile.of(answers { $0.obstacles = [.unsureDoingItRight] }), .freshStart)
+        for f in CurrentFrequency.allCases where f == .never {
+            for o in Obstacle.allCases {
+                XCTAssertNotEqual(MindProfile.of(answers { $0.currentFrequency = f; $0.obstacles = [o] }), .comeback)
+            }
+        }
+    }
+
+    func test_everyDayIsNeverComingBack() {
+        XCTAssertNotEqual(MindProfile.of(answers { $0.currentFrequency = .almostDaily; $0.obstacles = [.forget] }), .comeback)
     }
 
     func test_obstaclesDecideInOrder() {
@@ -24,7 +36,7 @@ final class MindProfileTests: XCTestCase {
         XCTAssertEqual(MindProfile.of(answers { $0.motivations = [.overthinkLess] }), .racingMind)
         XCTAssertEqual(MindProfile.of(answers { $0.obstacles = [.noTime, .forget] }), .fullPlate)
         XCTAssertEqual(MindProfile.of(answers { $0.obstacles = [.forget] }), .comeback)
-        XCTAssertEqual(MindProfile.of(answers { _ in }), .comeback)
+        XCTAssertEqual(MindProfile.of(answers { $0.obstacles = [.loseMotivation] }), .comeback)
     }
 
     func test_headspaceClutterMovesTheRightWay() {
