@@ -5469,6 +5469,18 @@ him: over him it washed him out). Brainrot's rays were tried and cut (Aziz:
 "a different idea than the rays"). The bars are onboarding green. The type's line types out (a tick a
 letter, Aziz), then the bars fill, then "That's me".
 
+**"How much of your day is your mind somewhere else?"** (`WanderingScreen`,
+`Step.wandering`, after the stress question, Aziz): a 10 to 90% slider in
+steps of 5 that opens on the research average ("Most people land around
+47%", Killingsworth & Gilbert 2010). It feeds `MindWander` (Shared, tested in
+`MindWanderTests`): years with the mind elsewhere = (80 − the middle of their
+age bracket) × 16/24 × their share; "Prefer not to say" gets days a year
+instead, never a guessed age. The question never mentions age. That number
+is for a **"You're on track to spend N years…" moment after the mind
+profile, which Aziz wants as a GENERATED ANIMATION with a strong background,
+not built screens** (four SwiftUI screens were started and dropped). Its "good
+news" must make no "N years back" promise: nothing measures that.
+
 **"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
 after the frequency slider for now; it belongs at the END of the interview
 once the old questions are redone). Brainrot's "Personalizing your

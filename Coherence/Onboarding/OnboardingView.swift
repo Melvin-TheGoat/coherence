@@ -131,6 +131,9 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "Your mind profile is", five Ottos and two bars.
         /// Last in the enum.
         case mindProfile
+        /// Added 2026-09-25: "How much of your day is your mind somewhere
+        /// else?". Last in the enum.
+        case wandering
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -216,7 +219,7 @@ struct OnboardingView: View {
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.motivation, .motivation), (.obstacles, .obstacles),
-        (.stress, .stress), (.recovery, .recovery), (.role, .role),
+        (.stress, .stress), (.wandering, .wandering), (.recovery, .recovery), (.role, .role),
         (.quietTime, .quietTime), (.habitHistory, .habitHistory),
         (.age, .age),
         (.referral, .referral),
@@ -412,7 +415,7 @@ struct OnboardingView: View {
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
                 || step == .quietTime || step == .habitHistory || step == .age
-                || step == .recovery {
+                || step == .recovery || step == .wandering {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
@@ -540,6 +543,11 @@ struct OnboardingView: View {
 
         case .mindProfile:
             MindProfileScreen(answers: answers) { go(nextAfter(.baseline)) }
+
+        case .wandering:
+            WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
+                go(nextAfter(.wandering))
+            }
 
         case .recovery:
             CornerQuestionScreen(title: "When something stresses you out, how quickly do you settle back down?",

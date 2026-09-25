@@ -60,3 +60,31 @@ final class MindProfileTests: XCTestCase {
         }
     }
 }
+
+/// The "N years" arithmetic: their age bracket, 16 waking hours, their own
+/// wandering estimate. Pinned so a changed constant cannot quietly move the
+/// number we show someone.
+final class MindWanderTests: XCTestCase {
+    private func a(_ age: AgeRange?, _ share: Double?) -> OnboardingAnswers {
+        var x = OnboardingAnswers()
+        x.ageBracket = age?.rawValue
+        x.mindWandering = share
+        return x
+    }
+
+    func test_yearsFromAgeAndShare() {
+        XCTAssertEqual(MindWander.years(a(.from25, 0.5)), 17)   // 50 left x 2/3 x 0.5
+        XCTAssertEqual(MindWander.years(a(.from18, 0.7)), 28)   // 59 x 2/3 x 0.7
+        XCTAssertEqual(MindWander.years(a(.from45, 0.3)), 6)    // 30 x 2/3 x 0.3
+    }
+
+    func test_noAgeMeansNoYearsButDaysAYear() {
+        XCTAssertNil(MindWander.years(a(.notSaying, 0.5)))
+        XCTAssertNil(MindWander.years(a(nil, 0.5)))
+        XCTAssertEqual(MindWander.daysPerYear(a(nil, 0.5)), 122)
+    }
+
+    func test_unansweredUsesTheResearchAverage() {
+        XCTAssertEqual(MindWander.share(a(.from25, nil)), 0.47)
+    }
+}

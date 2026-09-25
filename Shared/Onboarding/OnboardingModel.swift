@@ -663,6 +663,49 @@ public enum MindProfile: String, CaseIterable, Codable {
     }
 }
 
+/// The life arithmetic behind the "N years" screens (Aziz, 2026-09-25,
+/// Brainrot's "You're on track to spend 25 years…"): THEIR numbers, multiplied.
+/// years with the mind elsewhere = years left × waking share × their own
+/// estimate of how often the mind wanders. The estimate is asked, never
+/// inferred from other answers (no study maps stress to a wandering share),
+/// and the slider opens on the research average, 46.9% (Killingsworth &
+/// Gilbert 2010, Science).
+public enum MindWander {
+    public static let average = 0.47
+    public static let lifespan = 80.0
+    /// 16 waking hours of 24.
+    public static let wakingShare = 16.0 / 24.0
+
+    /// The middle of their age bracket; nil for "Prefer not to say".
+    public static func age(_ a: OnboardingAnswers) -> Double? {
+        switch a.ageBracket.flatMap(AgeRange.init(rawValue:)) {
+        case .under18?: return 16
+        case .from18?:  return 21
+        case .from25?:  return 30
+        case .from35?:  return 40
+        case .from45?:  return 50
+        case .over55?:  return 62
+        default:        return nil
+        }
+    }
+
+    public static func share(_ a: OnboardingAnswers) -> Double {
+        min(max(a.mindWandering ?? average, 0.05), 0.95)
+    }
+
+    /// Whole years ahead with the mind elsewhere, or nil without an age.
+    public static func years(_ a: OnboardingAnswers) -> Int? {
+        guard let age = age(a) else { return nil }
+        let left = max(0, lifespan - age)
+        return Int((left * wakingShare * share(a)).rounded())
+    }
+
+    /// Days a year with the mind elsewhere, for anyone who kept their age.
+    public static func daysPerYear(_ a: OnboardingAnswers) -> Int {
+        Int((365 * wakingShare * share(a)).rounded())
+    }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -915,6 +958,9 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var obstacles: Set<Obstacle>?
     /// How quickly they settle after stress (`StressRecovery`). Optional.
     public var recovery: StressRecovery?
+    /// Their estimate of how much of the day their mind is somewhere else,
+    /// 0 to 1 (`MindWander`). Optional, as above.
+    public var mindWandering: Double?
     /// Which one sounds most like them (`Role`). Optional for the same reason.
     public var role: Role?
     /// When a few quiet minutes fit (`QuietTime`). Optional, as above.
@@ -1206,7 +1252,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .recovery, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .wandering, .recovery, .referral:
             return true
 
         // Presumes previous attempts.
@@ -1282,6 +1328,9 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// How stressed have you been lately, the Otto slider, moved up from the
     /// old questions (Aziz, 2026-09-25): the profile's Headspace bar reads it.
     case stress
+    /// How much of your day is your mind somewhere else, feeding the "N
+    /// years" screens (Aziz, 2026-09-25).
+    case wandering
     /// How quickly do you settle back down, for Emotional balance.
     case recovery
     /// Which one sounds most like you, third (Aziz, 2026-09-23).
