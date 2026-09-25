@@ -5485,8 +5485,10 @@ render of the valley: Otto sits still under a clock while the seasons race,
 cut at frame 124 where he looks afraid in spring and HELD there, 20 fps,
 5.15 s, `OttoClip(fills:)`). The number counts up with a tick a step across
 the seasons and lands with a thump as the clip ends. Brainrot's layout (Aziz):
-white words over the sky, the number big and dark with a white outline
-(`OutlinedNumber`), the disclaimer at the bottom above Next. Runway drew a
+the words on a FROSTED CARD in the sky (material plus a white wash, the
+number in sky blue), the disclaimer in a matching frosted pill above Next.
+An outlined style (eight offset white copies behind dark text) was tried and
+looked rough. Runway drew a
 CLOCK across the top of the sky, so the words sit in the gap between the
 clock and Otto's head (40% down), smaller than Brainrot's; at the top they
 sat on the clock. A dark fade over the meadow was tried first and looked

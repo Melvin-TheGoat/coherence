@@ -161,29 +161,51 @@ struct LifeNumberScreen: View {
             // and Otto's head: the clip puts the clock at the top of the sky,
             // and the words over it could not be read (Aziz). Placed from the
             // screen's height, because the clip is drawn to fill it.
+            // On a frosted card in the open sky between the clock and his
+            // head (Aziz: the outlined text looked rough). The number in the
+            // app's sky blue, the same blue the pause types it in.
             GeometryReader { geo in
-                VStack(spacing: 0) {
-                    // Dark with a white outline, like the number: white text
-                    // over the pale sky and the clock could not be read (Aziz).
-                    OutlinedNumber(text: "You're on track to spend", size: 20, outline: 2.2)
-                    OutlinedNumber(text: "\(counted) \(unit)")
+                VStack(spacing: 2) {
+                    Text("You're on track to spend")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                    Text("\(counted) \(unit)")
+                        .font(.system(size: 46, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.skyDeep)
+                        .monospacedDigit()
                         .contentTransition(.numericText())
                         .scaleEffect(landed ? 1.05 : 1)
                         .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
-                    OutlinedNumber(text: years == nil ? "a year with your mind elsewhere."
-                                                      : "with your mind somewhere else.",
-                                   size: 20, outline: 2.2)
+                    Text(years == nil ? "a year with your mind elsewhere."
+                                      : "with your mind somewhere else.")
+                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
                 }
-                .frame(width: geo.size.width)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .fill(.ultraThinMaterial)
+                        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(Color.white.opacity(0.35)))
+                        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+                )
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.40)
             }
             .ignoresSafeArea()
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
-                OutlinedNumber(text: years == nil ? "Based on your answer and 16 waking hours a day."
-                                                  : "Based on your answers, 16 waking hours a day and a life to 80.",
-                               size: 12, outline: 1.6)
+                Text(years == nil ? "Based on your answer and 16 waking hours a day."
+                                  : "Based on your answers, 16 waking hours a day and a life to 80.")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(Capsule().fill(.ultraThinMaterial)
+                        .overlay(Capsule().fill(Color.white.opacity(0.35))))
                 OnboardingCTA(title: "Next", action: onContinue)
                     .opacity(landed ? 1 : 0)
                     .allowsHitTesting(landed)
@@ -238,8 +260,10 @@ struct LifePauseScreen: View {
         let cut = line.index(line.startIndex, offsetByCharacters: min(letters, text.count))
         line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
         line[cut..<line.endIndex].foregroundColor = .clear
-        if let r = line.range(of: amount), r.upperBound <= cut {
-            line[r].foregroundColor = AppColor.skyDeep
+        // Their number is blue as it types, letter by letter (Aziz), not
+        // repainted once it is finished.
+        if let r = line.range(of: amount), r.lowerBound < cut {
+            line[r.lowerBound..<min(r.upperBound, cut)].foregroundColor = AppColor.skyDeep
         }
         return line
     }
@@ -449,30 +473,5 @@ struct LifeDotsScreen: View {
         } else {
             Task { await wander() }
         }
-    }
-}
-
-/// Dark text with a white outline, Brainrot's number style, used for all
-/// three lines of the years screen: eight white copies
-/// nudged around it, then the dark text on top.
-private struct OutlinedNumber: View {
-    let text: String
-    var size: CGFloat = 54
-    var outline: CGFloat = 3.5
-
-    var body: some View {
-        let font = Font.system(size: size, weight: .black, design: .rounded)
-        ZStack {
-            ForEach(0..<8, id: \.self) { i in
-                let a = Double(i) / 8 * 2 * .pi
-                Text(text).font(font).foregroundStyle(.white)
-                    .offset(x: cos(a) * outline, y: sin(a) * outline)
-            }
-            Text(text).font(font).foregroundStyle(Color(red: 0.13, green: 0.12, blue: 0.16))
-        }
-        .monospacedDigit()
-        .minimumScaleFactor(0.6)
-        .lineLimit(1)
-        .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
     }
 }
