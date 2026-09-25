@@ -133,8 +133,8 @@ private struct WordSlider: View {
 /// screen: Otto sits still while the seasons race past him under a clock, and
 /// it ends in spring with him looking afraid (`otto-seasons.mov`, cut at that
 /// frame and held there). The number counts up while the seasons pass, a tick
-/// a step, and lands with a thump as the clip ends. The words sit over the
-/// meadow on a soft dark fade, because the sky is the clock's.
+/// a step, and lands with a thump as the clip ends. The words sit at the top
+/// over the sky, Brainrot's layout (Aziz), the disclaimer at the bottom.
 struct LifeNumberScreen: View {
     let answers: OnboardingAnswers
     let onContinue: () -> Void
@@ -153,44 +153,46 @@ struct LifeNumberScreen: View {
     private static let clipSeconds = 5.15
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack {
             OttoClip(name: "otto-seasons", playing: !reduceMotion, fallback: .meditating, fills: true)
                 .ignoresSafeArea()
 
-            LinearGradient(colors: [.clear, Color.black.opacity(0.55)],
-                           startPoint: .top, endPoint: .bottom)
-                .frame(height: 330)
-                .frame(maxWidth: .infinity)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
-
-            // Tight enough to sit on the meadow below him: the clip puts
-            // his cushion about 70% down the screen.
-            VStack(spacing: 2) {
+            // Brainrot's layout: the words over the sky at the top, white, the
+            // number huge and dark with a white outline so it reads over the
+            // clip whatever is behind it.
+            VStack(spacing: 6) {
                 Text("You're on track to spend")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
-                Text("\(counted) \(unit)")
-                    .font(.system(size: 48, weight: .heavy, design: .rounded))
-                    .monospacedDigit()
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
+                    .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+                OutlinedNumber(text: "\(counted) \(unit)")
                     .contentTransition(.numericText())
-                    .scaleEffect(landed ? 1.06 : 1)
+                    .scaleEffect(landed ? 1.05 : 1)
                     .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
                 Text(years == nil ? "a year with your mind somewhere else."
-                                  : "with your mind somewhere else.")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                                  : "of your life with your mind somewhere else.")
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.top, 30)
+        }
+        .safeAreaInset(edge: .bottom) {
+            VStack(spacing: 10) {
                 Text(years == nil ? "Based on your answer and 16 waking hours a day."
                                   : "Based on your answers, 16 waking hours a day and a life to 80.")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .opacity(0.85)
-                    .padding(.top, 6)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .shadow(color: .black.opacity(0.45), radius: 3, y: 1)
                 OnboardingCTA(title: "Next", action: onContinue)
                     .opacity(landed ? 1 : 0)
                     .allowsHitTesting(landed)
-                    .padding(.top, 10)
             }
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.bottom, 10)
         }
@@ -213,5 +215,28 @@ struct LifeNumberScreen: View {
             landed = true
             WelcomeHaptics.land()
         }
+    }
+}
+
+/// A big dark number with a white outline, Brainrot's: eight white copies
+/// nudged around it, then the dark text on top.
+private struct OutlinedNumber: View {
+    let text: String
+    private static let width: CGFloat = 4
+
+    var body: some View {
+        let font = Font.system(size: 72, weight: .black, design: .rounded)
+        ZStack {
+            ForEach(0..<8, id: \.self) { i in
+                let a = Double(i) / 8 * 2 * .pi
+                Text(text).font(font).foregroundStyle(.white)
+                    .offset(x: cos(a) * Self.width, y: sin(a) * Self.width)
+            }
+            Text(text).font(font).foregroundStyle(Color(red: 0.13, green: 0.12, blue: 0.16))
+        }
+        .monospacedDigit()
+        .minimumScaleFactor(0.6)
+        .lineLimit(1)
+        .shadow(color: .black.opacity(0.2), radius: 6, y: 3)
     }
 }
