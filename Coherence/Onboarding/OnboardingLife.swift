@@ -181,12 +181,9 @@ struct LifeNumberScreen: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
-                Text(years == nil ? "Based on your answer and 16 waking hours a day."
-                                  : "Based on your answers, 16 waking hours a day and a life to 80.")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .shadow(color: .black.opacity(0.45), radius: 3, y: 1)
+                OutlinedNumber(text: years == nil ? "Based on your answer and 16 waking hours a day."
+                                                  : "Based on your answers, 16 waking hours a day and a life to 80.",
+                               size: 12, outline: 1.6)
                 OnboardingCTA(title: "Next", action: onContinue)
                     .opacity(landed ? 1 : 0)
                     .allowsHitTesting(landed)
