@@ -78,6 +78,42 @@ public enum CurrentFrequency: String, CaseIterable, Identifiable, Codable {
 
     public var id: String { rawValue }
 
+    /// The slider's readout (Aziz, 2026-09-25). `allCases` runs from "Not
+    /// yet" at the left to "Every day" at the right, which is the slider.
+    public var sliderLabel: String {
+        switch self {
+        case .never:           return "Not yet"
+        case .triedNeverStuck: return "Once in a while"
+        case .fewTimesMonth:   return "A few times a month"
+        case .mostWeeks:       return "A few times a week"
+        case .almostDaily:     return "Every day"
+        }
+    }
+
+    /// The line under the slider, one per stop. Encouraging, and never what
+    /// the reader lacks (the standing copy rule).
+    public var sliderLine: String {
+        switch self {
+        case .never:           return "The perfect time to start. I've got you."
+        case .triedNeverStuck: return "Every session counts from here."
+        case .fewTimesMonth:   return "A great base to build on."
+        case .mostWeeks:       return "You're close. A few more days and it's a habit."
+        case .almostDaily:     return "You've done the hardest part. Let's keep it going."
+        }
+    }
+
+    /// Of the week's seven flames, how many light at this stop, and whether
+    /// they are only faintly lit (once in a while).
+    public var flames: (lit: Int, faint: Bool) {
+        switch self {
+        case .never:           return (0, false)
+        case .triedNeverStuck: return (1, true)
+        case .fewTimesMonth:   return (1, false)
+        case .mostWeeks:       return (4, false)
+        case .almostDaily:     return (7, false)
+        }
+    }
+
     public var label: String {
         switch self {
         case .never:           return "Never. This would be the start"
@@ -1127,8 +1163,11 @@ public enum InterviewStep: String, CaseIterable, Codable {
     case habitHistory
     /// How old are you, sixth, then "Did you know?" (Aziz, 2026-09-25).
     case age
+    /// How often do you meditate right now: the slider after "Did you know?"
+    /// (Aziz, 2026-09-25), moved up from after `referral`.
+    case baseline
     case referral
-    case baseline, stress
+    case stress
     case restarts, intendedFor
     case bodyTracking
     case blindSpot

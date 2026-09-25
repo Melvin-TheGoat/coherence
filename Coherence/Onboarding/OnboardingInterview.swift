@@ -279,31 +279,163 @@ struct BreathScreen: View {
 /// pick ("I've tried, it never stuck", "a few times a month") ARE the
 /// inconsistency the product exists to fix, so they convict themselves gently
 /// and nothing has to be asserted at them later.
-struct BaselineScreen: View {
-    @StateObject private var gate = AdvanceGate()
+/// "How often do you meditate right now?" (Aziz, 2026-09-25, Brainrot's
+/// screen-time slider). Five stops from "Not yet" to "Every day", the big
+/// readout, a week of seven flames that light as it slides toward every day
+/// (the flame is the streak's icon), and a line under it per stop. Saves into
+/// `currentFrequency`, the old list question's answer, so the persona it
+/// feeds is unchanged. Starts in the middle like Brainrot's; a tick per stop.
+/// Otto sits on his cushion below (the valley's, dropped as on "Did you
+/// know?"); a looping clip of him thinking replaces him when it exists.
+struct FrequencyScreen: View {
     @Binding var frequency: CurrentFrequency?
     let count: InterviewCount
     let onContinue: () -> Void
 
+    @Environment(\.onboardingBack) private var back
+
+    private var stops: [CurrentFrequency] { CurrentFrequency.allCases }
+    private var current: CurrentFrequency { frequency ?? .fewTimesMonth }
+
     var body: some View {
-        OnboardingScreen(section: .body, counter: count,
-                         title: "How often do you\nmeditate right now?",
-                         subtitle: "Honestly. This is the number we're going to move.",
-                         ctaEnabled: frequency != nil,
-                         autoAdvances: true,
-                         onContinue: { gate.now(onContinue) }) {
-            VStack(spacing: 10) {
-                ForEach(CurrentFrequency.allCases) { f in
-                    OnboardingOption(label: f.label, icon: f.icon,
-                                     selected: frequency == f) { pick(f) }
-                }
+        VStack(spacing: 0) {
+            HStack(spacing: 14) {
+                if let back { OnboardingBackButton(action: back) }
+                OnboardingProgress(from: Double(count.index - 1) / Double(max(count.total, 1)),
+                                   to: Double(count.index) / Double(max(count.total, 1)))
             }
+            .frame(height: 40)
+
+            Text("How often do you meditate right now?")
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
+            Text("No judgment. It's just where we start.")
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary.opacity(0.7))
+                .padding(.top, 6)
+
+            Text(current.sliderLabel)
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.15), value: current)
+                .padding(.top, 16)
+
+            WeekFlames(lit: current.flames.lit, faint: current.flames.faint)
+                .padding(.top, 10)
+
+            StopSlider(count: stops.count,
+                       index: Binding(get: { stops.firstIndex(of: current) ?? 2 },
+                                      set: { frequency = stops[$0] }))
+                .padding(.top, 14)
+            HStack {
+                Text("Not yet")
+                Spacer()
+                Text("Every day")
+            }
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .foregroundStyle(AppColor.textPrimary.opacity(0.75))
+            .padding(.top, 4)
+
+            Text(current.sliderLine)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.skyDeep)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .contentTransition(.opacity)
+                .animation(.easeOut(duration: 0.2), value: current)
+                .padding(.top, 12)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, 12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Continue") {
+                if frequency == nil { frequency = current }
+                onContinue()
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
+        }
+        .sensoryFeedback(.selection, trigger: current)
+        .accessibilityElement(children: .contain)
+        .accessibilityAdjustableAction { direction in
+            let i = stops.firstIndex(of: current) ?? 2
+            let j = direction == .increment ? min(stops.count - 1, i + 1) : max(0, i - 1)
+            frequency = stops[j]
         }
     }
+}
 
-    private func pick(_ f: CurrentFrequency) {
-        frequency = f
-        gate.advance(onContinue)
+/// A week of seven flames: lit ones in the streak's blush, the rest hollow.
+/// Each one that lights pops.
+private struct WeekFlames: View {
+    let lit: Int
+    let faint: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            ForEach(0..<7, id: \.self) { i in
+                let on = i < lit
+                Image(systemName: on ? "flame.fill" : "flame")
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(on ? AppColor.streakBlushText.opacity(faint ? 0.45 : 1)
+                                        : AppColor.textPrimary.opacity(0.25))
+                    .scaleEffect(on ? 1 : 0.85)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5).delay(Double(i) * 0.03), value: on)
+            }
+        }
+        // On white: over the sky, blush and hollow flames both vanished.
+        .padding(.horizontal, 18)
+        .padding(.vertical, 10)
+        .background(Capsule().fill(Color.white)
+            .shadow(color: .black.opacity(0.08), radius: 6, y: 2))
+        .accessibilityHidden(true)
+    }
+}
+
+/// A slider that snaps to `count` stops, green like onboarding's buttons,
+/// with Otto's face as the handle (as on See for yourself).
+private struct StopSlider: View {
+    let count: Int
+    @Binding var index: Int
+    private static let knob: CGFloat = 46
+
+    var body: some View {
+        GeometryReader { geo in
+            let travel = geo.size.width - Self.knob
+            let x = travel * CGFloat(index) / CGFloat(max(count - 1, 1))
+            ZStack(alignment: .leading) {
+                Capsule()
+                    .fill(Color.white)
+                    .shadow(color: .black.opacity(0.10), radius: 3, y: 1)
+                    .frame(height: 14)
+                Capsule()
+                    .fill(OnboardingGreen.fill)
+                    .frame(width: x + Self.knob / 2, height: 14)
+                Image("OttoHead")
+                    .resizable()
+                    .scaledToFit()
+                    .padding(5)
+                    .frame(width: Self.knob, height: Self.knob)
+                    .background(Circle().fill(.white))
+                    .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
+                    .offset(x: x)
+            }
+            .frame(height: Self.knob)
+            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: index)
+            .contentShape(Rectangle())
+            .gesture(DragGesture(minimumDistance: 0).onChanged { value in
+                let t = (value.location.x - Self.knob / 2) / max(1, travel)
+                index = Int((min(max(t, 0), 1) * CGFloat(count - 1)).rounded())
+            })
+        }
+        .frame(height: Self.knob)
     }
 }
 

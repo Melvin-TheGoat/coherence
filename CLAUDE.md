@@ -5430,6 +5430,17 @@ Under 18 through 55+ and "Prefer not to say", one pick, stored in the old
 `ageBracket` field. The opt-out is required, not decoration: App Review 5.1.1
 rejects apps that require personal information they do not need.
 
+**"How often do you meditate right now?"** (`FrequencyScreen`, Brainrot's
+screen-time slider, after "Did you know?"): five stops Not yet / Once in a
+while / A few times a month / A few times a week / Every day, a big readout,
+seven flames on a white capsule that light as it slides right (the streak's
+icon, `streakBlushText`), and an encouraging line per stop. It REPLACES the
+old list question on `Step.baseline` and saves into `currentFrequency`, so
+the persona it feeds is unchanged; `InterviewStep.baseline` moved up to just
+after `age`. Starts in the middle. **Otto is a placeholder**: Aziz is making
+a Runway clip of him seated, paw on chin, thinking (from `otto-sit-happy.png`),
+to go on this step the way the writing clip does. `BaselineScreen` is deleted.
+
 **"Did you know?"** (`DidYouKnowScreen`, `Step.didYouKnow`, after the age
 question, Brainrot's screen): four white fact cards popping in with a tick
 above the seated Steady Otto. **Every fact is from a study 808 already

@@ -364,7 +364,7 @@ struct OnboardingView: View {
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
-                                       || step == .didYouKnow) ? .steady : nil,
+                                       || step == .didYouKnow || step == .baseline) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress)
                                    : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
@@ -374,7 +374,7 @@ struct OnboardingView: View {
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount,
                              seed: lifeSeed,
-                             drop: step == .didYouKnow ? DidYouKnowScreen.ottoDrop : 0)
+                             drop: (step == .didYouKnow || step == .baseline) ? DidYouKnowScreen.ottoDrop : 0)
 
             // The breath is a white page, not the valley. Each draws its own white,
             // but while one slides out and the next slides in, both are part
@@ -503,8 +503,8 @@ struct OnboardingView: View {
             QuestionCountScreen { go(firstInterviewStep) }
 
         case .baseline:
-            BaselineScreen(frequency: $answers.currentFrequency,
-                           count: interviewCount) { go(nextAfter(.baseline)) }
+            FrequencyScreen(frequency: $answers.currentFrequency,
+                            count: interviewCount) { go(nextAfter(.baseline)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
