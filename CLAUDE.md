@@ -5583,10 +5583,12 @@ tells the reader what they lack. Goyal is quoted for ANXIETY, not stress
 (`OnboardingValley(drop:)`, `DidYouKnowScreen.ottoDrop`) so the bigger cards
 (Aziz) clear his head; compact below 640pt of view height (an SE).
 
-**"Why 808 works"** (`WhyItWorksScreen`, `Step.whyItWorks`, white page, after
-"attention hacked", Brainrot's screen): "Willpower → Fades" and "Now and then
-→ Forgotten" in soft red, "808 → A daily habit" in green, landing last with
-a thump. Approaches the reader recognises, never a competitor. The
+**"How 808 makes it stick"** (`WhyItWorksScreen`, `Step.whyItWorks`, white
+page, after "attention hacked"): the MECHANISM, three cards: Otto's glow
+(brighter with each day, fades with missed ones), a nudge at your time (the
+reminder at the quiet-minutes time), and Otto holds your apps (Block builds
+only; otherwise "Just five minutes"). A Brainrot "X → bad, 808 → good"
+version was built first and dropped (Aziz: "terrible"). The
 "attention hacked" cards are the same soft red. **The stress question is a
 plain question now** (`StressLevel`: Pretty calm … Burnt out, stored as the
 0 to 1 `stress` the Headspace bar reads, plus `stressLevel` so it knows it

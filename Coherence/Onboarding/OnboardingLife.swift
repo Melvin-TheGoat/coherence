@@ -774,13 +774,16 @@ struct AttentionHackedScreen: View {
     }
 }
 
-// MARK: - Why 808 works
+// MARK: - How 808 makes it stick
 
-/// "Why 808 works" (Aziz, 2026-09-25, Brainrot's screen of the same name),
-/// straight after "Your attention has been hacked": two soft red rows for the
-/// ways people usually try, and one green row for 808, popping in with a tick
-/// each. White page, like the screen before. The rows name approaches the
-/// reader will recognise from their own tries, never a competitor.
+/// "How 808 makes it stick" (Aziz, 2026-09-25), after "Your attention has
+/// been hacked": the MECHANISM, what the app does that makes meditating a
+/// daily habit, as three cards popping in with a tick. A Brainrot-style
+/// "X → bad, 808 → good" comparison was built first and dropped ("terrible").
+/// Every card is something the app really does: Otto's glow rises with each
+/// day meditated and fades with missed ones (`OttoAura`), the daily reminder
+/// fires at the quiet-minutes time, and Block, only on builds that have it,
+/// holds the chosen apps until a session is done.
 struct WhyItWorksScreen: View {
     let onContinue: () -> Void
 
@@ -789,47 +792,65 @@ struct WhyItWorksScreen: View {
     @State private var shownRows = 0
     @State private var ctaShown = false
 
-    private static let rows: [(from: String, to: String, good: Bool)] = [
-        ("Willpower", "Fades", false),
-        ("Now and then", "Forgotten", false),
-        ("808", "A daily habit", true),
-    ]
+    private static var rows: [(icon: String, title: String, line: String)] {
+        var r: [(String, String, String)] = [
+            ("sparkles", "Otto's glow",
+             "Meditate and he glows brighter. Skip days and he fades."),
+            ("bell", "A nudge at your time",
+             "One reminder a day, at the time you picked."),
+        ]
+        if FeatureFlags.block {
+            r.append(("lock", "Otto holds your apps",
+                      "Your distracting apps stay locked until you've meditated."))
+        } else {
+            r.append(("clock", "Just five minutes",
+                      "Short enough to fit into any day."))
+        }
+        return r
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 0)
-            Text("Why 808 works")
-                .font(.system(size: 32, weight: .heavy, design: .rounded))
+            Text("How 808 makes it stick")
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
                 .opacity(headShown ? 1 : 0)
                 .scaleEffect(headShown ? 1 : 0.94)
 
             VStack(spacing: 12) {
                 ForEach(Array(Self.rows.enumerated()), id: \.offset) { i, row in
-                    HStack(spacing: 8) {
-                        Text(row.from)
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(AppColor.textPrimary.opacity(0.6))
-                        Text(row.to)
+                    HStack(alignment: .top, spacing: 14) {
+                        Image(systemName: row.icon)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(OnboardingGreen.shade)
+                            .frame(width: 44, height: 44)
+                            .background(Circle().fill(Color(red: 0.84, green: 0.94, blue: 0.82)))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(row.title)
+                                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                                .foregroundStyle(AppColor.textPrimary)
+                            Text(row.line)
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .foregroundStyle(AppColor.textPrimary.opacity(0.75))
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    .font(.system(size: 18, weight: row.good ? .heavy : .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-                    .padding(.horizontal, 12)
-                    .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(row.good ? Color(red: 0.84, green: 0.94, blue: 0.82)
-                                       : AttentionHackedScreen.warning))
-                    .scaleEffect(i < shownRows ? 1 : 0.94)
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color(white: 0.965)))
                     .opacity(i < shownRows ? 1 : 0)
+                    .offset(y: i < shownRows ? 0 : 14)
+                    .accessibilityElement(children: .combine)
                 }
             }
-            .padding(.top, 40)
+            .padding(.top, 32)
             Spacer(minLength: 0)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, AppMetrics.screenPadding + 8)
+        .padding(.horizontal, AppMetrics.screenPadding + 4)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
             OnboardingCTA(title: "Continue", action: onContinue)
@@ -845,17 +866,16 @@ struct WhyItWorksScreen: View {
             try? await Task.sleep(for: .milliseconds(250))
             withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { headShown = true }
             WelcomeHaptics.land()
-            try? await Task.sleep(for: .milliseconds(550))
+            try? await Task.sleep(for: .milliseconds(500))
             for i in 0..<Self.rows.count {
                 guard !Task.isCancelled else { return }
-                // The last, 808's, lands a beat later and with a thump.
-                if i == Self.rows.count - 1 { try? await Task.sleep(for: .milliseconds(250)) }
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { shownRows = i + 1 }
-                if i == Self.rows.count - 1 { WelcomeHaptics.land() } else { WelcomeHaptics.tick() }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { shownRows = i + 1 }
+                WelcomeHaptics.tick()
                 try? await Task.sleep(for: .milliseconds(550))
             }
             guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+            WelcomeHaptics.land()
         }
     }
 }
