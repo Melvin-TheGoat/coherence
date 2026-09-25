@@ -140,6 +140,8 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "What would you do with N years of being fully
         /// here?", the white pause. Last in the enum.
         case lifePause
+        /// Added 2026-09-25: "This is your life.", the dots. Last in the enum.
+        case lifeDots
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -186,7 +188,7 @@ struct OnboardingView: View {
             switch self {
             // Only the breath now: the welcome and Meet Otto went back to
             // the valley (Aziz, 2026-09-23).
-            case .breath, .breathing, .lifePause: return true
+            case .breath, .breathing, .lifePause, .lifeDots: return true
             default: return false
             }
         }
@@ -554,7 +556,10 @@ struct OnboardingView: View {
             LifeNumberScreen(answers: answers) { go(.lifePause) }
 
         case .lifePause:
-            LifePauseScreen(answers: answers) { go(nextAfter(.baseline)) }
+            LifePauseScreen(answers: answers) { go(.lifeDots) }
+
+        case .lifeDots:
+            LifeDotsScreen(answers: answers) { go(nextAfter(.baseline)) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {

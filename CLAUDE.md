@@ -5496,7 +5496,14 @@ at the top.
 `isWhitePage`): "What would you do with N years of being fully here?" typed
 with a tick a letter, their number in blue, moving on by itself 2.5 s after
 it finishes (Skip at once). A forward question instead of Brainrot's "Do you
-understand what it means…", per the copy rules. `MindWander`
+understand what it means…", per the copy rules.
+**Then the dots** (`LifeDotsScreen`, `Step.lifeDots`, white page): "This is
+your life." 80 dots, one a year, the years lived filling blue ("You are here,
+assuming you're 30"), then "And this is how much of it your mind spends
+somewhere else." and that many years fill in muted terracotta from the end,
+a tick each. Built, not generated: the dots are THEIR age and number. The
+pause, the dots and the years screen all read `MindWander.years`, so the
+number is always the same across them. No age: one year of 365 day-dots. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good

@@ -288,6 +288,169 @@ struct LifePauseScreen: View {
     }
 }
 
+/// "This is your life." (Aziz, 2026-09-25, Brainrot's dots.) Eighty dots, a
+/// year each; the years lived fill in blue, "You are here, assuming you're
+/// 30". Then "And this is how much of it your mind spends somewhere else."
+/// and that many years fill in terracotta from the end, one by one with a
+/// tick, the SAME number as the years screen (`MindWander.years`). One screen,
+/// two beats, so the grid never moves. Without an age it is one year of 365
+/// days, and only the second beat.
+struct LifeDotsScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var lived = 0
+    @State private var wandering = 0
+    @State private var secondBeat = false
+    @State private var ctaShown = false
+    @State private var skipped = false
+
+    /// Muted terracotta, the website's "cost" colour: a warning's hue with
+    /// half the chroma, so a field of it does not read as an error.
+    private static let terracotta = Color(red: 0.80, green: 0.47, blue: 0.40)
+    private static let lifeBlue = Color(red: 0.55, green: 0.80, blue: 0.96)
+    private static let empty = Color(white: 0.87)
+
+    private var age: Double? { MindWander.age(answers) }
+    private var total: Int { age == nil ? 365 : 80 }
+    private var columns: Int { age == nil ? 19 : 8 }
+    private var livedTarget: Int { min(Int(age ?? 0), total) }
+    private var wanderTarget: Int {
+        min(MindWander.years(answers) ?? MindWander.daysPerYear(answers), total - livedTarget)
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Text(secondBeat ? "And this is how much of it your mind spends somewhere else."
+                            : (age == nil ? "This is your year." : "This is your life."))
+                .font(.system(size: 28, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(height: 110, alignment: .bottom)
+                .id(secondBeat)
+                .transition(.opacity)
+                .padding(.top, 40)
+
+            dots.padding(.top, 28)
+
+            Text(footnote)
+                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .foregroundStyle(secondBeat ? Self.terracotta : AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .frame(height: 50)
+                .padding(.top, 20)
+                .id("f\(secondBeat)")
+                .transition(.opacity)
+
+            Spacer(minLength: 0)
+        }
+        .animation(.easeInOut(duration: 0.35), value: secondBeat)
+        .padding(.horizontal, AppMetrics.screenPadding + 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            ZStack {
+                if ctaShown {
+                    OnboardingCTA(title: "Next", action: onContinue)
+                        .transition(.opacity)
+                } else {
+                    Button("Skip", action: skip)
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary.opacity(0.4))
+                        .frame(height: 56)
+                }
+            }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
+        }
+        .task { await play() }
+    }
+
+    private var footnote: String {
+        if secondBeat {
+            return age == nil ? "\(wanderTarget) days a year" : "\(wanderTarget) years"
+        }
+        if let age { return "You are here, assuming you're \(Int(age))" }
+        return "365 days"
+    }
+
+    private var dots: some View {
+        let size: CGFloat = age == nil ? 10 : 22
+        let gap: CGFloat = age == nil ? 5 : 16
+        return LazyVGrid(columns: Array(repeating: GridItem(.fixed(size), spacing: gap), count: columns),
+                         spacing: gap) {
+            ForEach(0..<total, id: \.self) { i in
+                Circle()
+                    .fill(color(i))
+                    .frame(width: size, height: size)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel(age == nil
+            ? "A year of 365 days, \(wanderTarget) of them with your mind somewhere else"
+            : "Eighty years, \(livedTarget) lived, \(wanderTarget) of the rest with your mind somewhere else")
+    }
+
+    private func color(_ i: Int) -> Color {
+        if i >= total - wandering { return Self.terracotta }
+        if i < lived { return Self.lifeBlue }
+        return Self.empty
+    }
+
+    private func play() async {
+        guard !ctaShown else { return }
+        if reduceMotion {
+            lived = livedTarget; secondBeat = true; wandering = wanderTarget; ctaShown = true
+            return
+        }
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(500))
+        if age != nil {
+            for k in 0..<livedTarget {
+                guard !Task.isCancelled, !skipped else { break }
+                withAnimation(.easeOut(duration: 0.12)) { lived = k + 1 }
+                if k % 2 == 0 { WelcomeHaptics.tick() }
+                try? await Task.sleep(for: .milliseconds(35))
+            }
+            guard !skipped else { return }
+            try? await Task.sleep(for: .seconds(1.8))
+        }
+        guard !Task.isCancelled, !skipped else { return }
+        await wander()
+    }
+
+    private func wander() async {
+        lived = livedTarget
+        secondBeat = true
+        try? await Task.sleep(for: .milliseconds(700))
+        // One dot at a time on the year grid; in bursts on the 365-day grid.
+        let per = age == nil ? 5 : 1
+        var k = 0
+        while k < wanderTarget {
+            guard !Task.isCancelled else { return }
+            k = min(wanderTarget, k + per)
+            withAnimation(.easeOut(duration: 0.15)) { wandering = k }
+            WelcomeHaptics.tick()
+            try? await Task.sleep(for: .milliseconds(age == nil ? 35 : 90))
+        }
+        try? await Task.sleep(for: .milliseconds(400))
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { ctaShown = true }
+        WelcomeHaptics.land()
+    }
+
+    private func skip() {
+        guard !skipped else { return }
+        skipped = true
+        if secondBeat {
+            wandering = wanderTarget
+            withAnimation { ctaShown = true }
+        } else {
+            Task { await wander() }
+        }
+    }
+}
+
 /// Dark text with a white outline, Brainrot's number style, used for all
 /// three lines of the years screen: eight white copies
 /// nudged around it, then the dark text on top.
