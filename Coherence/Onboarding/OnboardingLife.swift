@@ -543,7 +543,9 @@ struct GoodNewsScreen: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(Self.head) \(Self.body) \(target) \(unit).")
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Let's do this!", action: onContinue)
+            // "Let's do this!" moved to the screen after, where it lands on
+            // the payoff (Aziz); said twice in a row it would lose its punch.
+            OnboardingCTA(title: "Continue", action: onContinue)
                 .opacity(landed ? 1 : 0)
                 .allowsHitTesting(landed)
                 .padding(.horizontal, AppMetrics.screenPadding)
@@ -610,6 +612,8 @@ struct LifeMomentsScreen: View {
     @State private var ctaShown = false
 
     /// When each word takes over, in seconds into the clip, measured on it.
+    /// The words are all onboarding green (Aziz; a colour each was tried
+    /// first), the green the good news screen counts its years in.
     private static let beats: [(at: Double, word: String)] = [
         (0.0, "family"),
         (3.5, "having fun"),
@@ -634,7 +638,7 @@ struct LifeMomentsScreen: View {
                     .foregroundStyle(AppColor.textPrimary.opacity(0.85))
                 Text(Self.beats[beat].word)
                     .font(.system(size: 46, weight: .black, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
+                    .foregroundStyle(OnboardingGreen.fill)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
                     .id(beat)
@@ -648,7 +652,7 @@ struct LifeMomentsScreen: View {
             .opacity(shown ? 1 : 0)
         }
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Continue", action: onContinue)
+            OnboardingCTA(title: "Let's do this!", action: onContinue)
                 .opacity(ctaShown ? 1 : 0)
                 .allowsHitTesting(ctaShown)
                 .padding(.horizontal, AppMetrics.screenPadding)

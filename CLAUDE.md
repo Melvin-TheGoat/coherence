@@ -5511,7 +5511,7 @@ number is always the same across them. No age: one year of 365 day-dots.
 Bright look in the valley; "The good news is…" TYPES, then "808 can help you
 train your attention. Win back even a quarter of it, and that's", then a
 QUARTER of their number counts up in big green (`MindWander.quarterBack`),
-then "Let's do this!". Aziz asked for the number to come from research on
+then "Continue". Aziz asked for the number to come from research on
 how much more present daily meditators are; researched 2026-09-25 and there
 is NO such figure: Mrazek 2013, Price 2023 (Frontiers, n=304) and Brandmeyer
 2018 all report reduced mind wandering on Likert scales or during the sit,
@@ -5524,8 +5524,9 @@ screen (`otto-life-moments.mov`: his family arrives and hugs him, he blows a
 dandelion laughing, the valley turns golden, held on that frame), and under
 "4 more years of" (the good news quarter) the big word swaps ON THE CLIP'S
 MEASURED BEATS: family 0 s, having fun 3.5 s, the beauty of this world
-6.3 s, so much more. 8.7 s, a thump each. Dark words with a white glow over
-the open sky. If the clip is regenerated, re-measure the beats. `MindWander`
+6.3 s, so much more. 8.7 s, a thump each, all in onboarding GREEN (a colour
+per word was tried and dropped the same day), a white glow over the sky. Its button is "Let's do this!" (Aziz); the good news
+screen before it says "Continue" so the line is not said twice. If the clip is regenerated, re-measure the beats. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good
