@@ -163,19 +163,16 @@ struct LifeNumberScreen: View {
             // screen's height, because the clip is drawn to fill it.
             GeometryReader { geo in
                 VStack(spacing: 0) {
-                    Text("You're on track to spend")
-                        .font(.system(size: 19, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.4), radius: 4, y: 1)
+                    // Dark with a white outline, like the number: white text
+                    // over the pale sky and the clock could not be read (Aziz).
+                    OutlinedNumber(text: "You're on track to spend", size: 20, outline: 2.2)
                     OutlinedNumber(text: "\(counted) \(unit)")
                         .contentTransition(.numericText())
                         .scaleEffect(landed ? 1.05 : 1)
                         .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
-                    Text(years == nil ? "a year with your mind elsewhere."
-                                      : "with your mind somewhere else.")
-                        .font(.system(size: 19, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.4), radius: 4, y: 1)
+                    OutlinedNumber(text: years == nil ? "a year with your mind elsewhere."
+                                                      : "with your mind somewhere else.",
+                                   size: 20, outline: 2.2)
                 }
                 .frame(width: geo.size.width)
                 .position(x: geo.size.width / 2, y: geo.size.height * 0.40)
@@ -219,19 +216,21 @@ struct LifeNumberScreen: View {
     }
 }
 
-/// A big dark number with a white outline, Brainrot's: eight white copies
+/// Dark text with a white outline, Brainrot's number style, used for all
+/// three lines of the years screen: eight white copies
 /// nudged around it, then the dark text on top.
 private struct OutlinedNumber: View {
     let text: String
-    private static let width: CGFloat = 3.5
+    var size: CGFloat = 54
+    var outline: CGFloat = 3.5
 
     var body: some View {
-        let font = Font.system(size: 54, weight: .black, design: .rounded)
+        let font = Font.system(size: size, weight: .black, design: .rounded)
         ZStack {
             ForEach(0..<8, id: \.self) { i in
                 let a = Double(i) / 8 * 2 * .pi
                 Text(text).font(font).foregroundStyle(.white)
-                    .offset(x: cos(a) * Self.width, y: sin(a) * Self.width)
+                    .offset(x: cos(a) * outline, y: sin(a) * outline)
             }
             Text(text).font(font).foregroundStyle(Color(red: 0.13, green: 0.12, blue: 0.16))
         }
