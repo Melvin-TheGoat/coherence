@@ -23,10 +23,13 @@ struct OttoClip: View {
     var playing: Bool
     var loops: Bool = false
     var fallback: OttoPose = .pleased
+    /// Fill the frame, cropping the edges (a full-screen background clip),
+    /// instead of fitting inside it.
+    var fills: Bool = false
 
     var body: some View {
         if let url = Bundle.main.url(forResource: name, withExtension: "mov") {
-            ClipPlayer(url: url, playing: playing, loops: loops)
+            ClipPlayer(url: url, playing: playing, loops: loops, fills: fills)
                 .accessibilityHidden(true)
         } else {
             Image(fallback.asset)
@@ -41,8 +44,9 @@ private struct ClipPlayer: UIViewRepresentable {
     let url: URL
     let playing: Bool
     let loops: Bool
+    let fills: Bool
 
-    func makeUIView(context: Context) -> ClipView { ClipView(url: url, loops: loops) }
+    func makeUIView(context: Context) -> ClipView { ClipView(url: url, loops: loops, fills: fills) }
 
     func updateUIView(_ view: ClipView, context: Context) {
         if playing { view.play() }
@@ -60,7 +64,7 @@ private final class ClipView: UIView {
     private var started = false
     private var endObserver: NSObjectProtocol?
 
-    init(url: URL, loops: Bool) {
+    init(url: URL, loops: Bool, fills: Bool = false) {
         let item = AVPlayerItem(url: url)
         player = AVPlayer(playerItem: item)
         // Stay on the last frame at the end; a loop then jumps back itself.
@@ -80,7 +84,7 @@ private final class ClipView: UIView {
         isOpaque = false
         playerLayer.isOpaque = false
         playerLayer.backgroundColor = UIColor.clear.cgColor
-        playerLayer.videoGravity = .resizeAspect
+        playerLayer.videoGravity = fills ? .resizeAspectFill : .resizeAspect
         // BGRA keeps the alpha channel through to the layer.
         playerLayer.pixelBufferAttributes = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
         playerLayer.player = player

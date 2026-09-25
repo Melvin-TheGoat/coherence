@@ -713,7 +713,9 @@ public enum MindWander {
 
     /// The middle of their age bracket; nil for "Prefer not to say".
     public static func age(_ a: OnboardingAnswers) -> Double? {
-        switch a.ageBracket.flatMap(AgeRange.init(rawValue:)) {
+        // The cut `you` question stored "25-34"; the new one stores "25 to 34".
+        let stored = a.ageBracket?.replacingOccurrences(of: "-", with: " to ")
+        switch stored.flatMap(AgeRange.init(rawValue:)) {
         case .under18?: return 16
         case .from18?:  return 21
         case .from25?:  return 30

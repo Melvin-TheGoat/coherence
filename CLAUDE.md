@@ -5478,9 +5478,17 @@ the time", Killingsworth & Gilbert 2010). It feeds `MindWander` (Shared, tested 
 `MindWanderTests`): years with the mind elsewhere = (80 − the middle of their
 age bracket) × 16/24 × their share; "Prefer not to say" gets days a year
 instead, never a guessed age. The question never mentions age. That number
-is for a **"You're on track to spend N years…" moment after the mind
-profile, which Aziz wants as a GENERATED ANIMATION with a strong background,
-not built screens** (four SwiftUI screens were started and dropped). Its "good
+drives **"You're on track to spend N years with your mind somewhere else"**
+(`LifeNumberScreen`, `Step.lifeNumber`, after the mind profile): a GENERATED
+clip fills the screen (`otto-seasons.mov`, Runway from a clean full-screen
+render of the valley: Otto sits still under a clock while the seasons race,
+cut at frame 124 where he looks afraid in spring and HELD there, 20 fps,
+5.15 s, `OttoClip(fills:)`). The number counts up with a tick a step across
+the seasons and lands with a thump as the clip ends; the words sit over the
+meadow below him on a dark fade, because the clock owns the sky. `MindWander`
+also reads the old "25-34" age format. Four built SwiftUI screens (pause,
+life dots, good news) were started and dropped: Aziz wants these moments as
+generated clips. Its "good
 news" must make no "N years back" promise: nothing measures that.
 
 **"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,

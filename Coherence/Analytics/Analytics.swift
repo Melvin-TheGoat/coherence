@@ -272,6 +272,7 @@ enum Analytics {
         "baseline":          "04g How often do you meditate right now? (slider, after Did you know since 2026-09-25)",
         "wandering":         "04b1 How much of your day is your mind somewhere else?",
         "recovery":          "04b2 How quickly do you settle back down?",
+        "lifeNumber":        "04j You're on track to spend N years (the seasons clip)",
         "mindProfile":       "04i Your mind profile (five Ottos, Headspace and Emotional balance)",
         "buildingPlan":      "04h Putting together your plan (reads the answers back)",
         "age":               "04e2 How old are you?",

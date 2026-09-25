@@ -125,3 +125,93 @@ private struct WordSlider: View {
         }
     }
 }
+
+// MARK: - The years
+
+/// "You're on track to spend N years with your mind somewhere else" (Aziz,
+/// 2026-09-25, Brainrot's "25 years" screen). A generated clip fills the
+/// screen: Otto sits still while the seasons race past him under a clock, and
+/// it ends in spring with him looking afraid (`otto-seasons.mov`, cut at that
+/// frame and held there). The number counts up while the seasons pass, a tick
+/// a step, and lands with a thump as the clip ends. The words sit over the
+/// meadow on a soft dark fade, because the sky is the clock's.
+struct LifeNumberScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var counted = 0
+    @State private var landed = false
+
+    private var years: Int? { MindWander.years(answers) }
+    private var target: Int { years ?? MindWander.daysPerYear(answers) }
+    private var unit: String {
+        years == nil ? (target == 1 ? "day" : "days") : (target == 1 ? "year" : "years")
+    }
+
+    /// Matches the clip: 5.15 s.
+    private static let clipSeconds = 5.15
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            OttoClip(name: "otto-seasons", playing: !reduceMotion, fallback: .meditating, fills: true)
+                .ignoresSafeArea()
+
+            LinearGradient(colors: [.clear, Color.black.opacity(0.55)],
+                           startPoint: .top, endPoint: .bottom)
+                .frame(height: 330)
+                .frame(maxWidth: .infinity)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
+
+            // Tight enough to sit on the meadow below him: the clip puts
+            // his cushion about 70% down the screen.
+            VStack(spacing: 2) {
+                Text("You're on track to spend")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                Text("\(counted) \(unit)")
+                    .font(.system(size: 48, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .contentTransition(.numericText())
+                    .scaleEffect(landed ? 1.06 : 1)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
+                Text(years == nil ? "a year with your mind somewhere else."
+                                  : "with your mind somewhere else.")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Text(years == nil ? "Based on your answer and 16 waking hours a day."
+                                  : "Based on your answers, 16 waking hours a day and a life to 80.")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .opacity(0.85)
+                    .padding(.top, 6)
+                OnboardingCTA(title: "Next", action: onContinue)
+                    .opacity(landed ? 1 : 0)
+                    .allowsHitTesting(landed)
+                    .padding(.top, 10)
+            }
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.35), radius: 6, y: 2)
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 10)
+        }
+        .task {
+            if reduceMotion { counted = target; landed = true; return }
+            WelcomeHaptics.prepare()
+            // Count up across the seasons, landing as the clip ends.
+            let steps = max(1, min(target, 40))
+            let per = Self.clipSeconds * 0.9 / Double(steps)
+            try? await Task.sleep(for: .milliseconds(300))
+            for k in 1...steps {
+                guard !Task.isCancelled else { return }
+                withAnimation(.snappy(duration: 0.1)) {
+                    counted = Int((Double(target) * Double(k) / Double(steps)).rounded())
+                }
+                WelcomeHaptics.tick()
+                try? await Task.sleep(for: .seconds(per))
+            }
+            guard !Task.isCancelled else { return }
+            landed = true
+            WelcomeHaptics.land()
+        }
+    }
+}

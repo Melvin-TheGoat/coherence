@@ -134,6 +134,9 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "How much of your day is your mind somewhere
         /// else?". Last in the enum.
         case wandering
+        /// Added 2026-09-25: "You're on track to spend N years…", the seasons
+        /// clip. Last in the enum.
+        case lifeNumber
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -387,7 +390,7 @@ struct OnboardingView: View {
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount || step == .buildingPlan
-                                 || step == .baseline || step == .mindProfile,
+                                 || step == .baseline || step == .mindProfile || step == .lifeNumber,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)
@@ -542,7 +545,10 @@ struct OnboardingView: View {
             BuildingPlanScreen { go(.mindProfile) }
 
         case .mindProfile:
-            MindProfileScreen(answers: answers) { go(nextAfter(.baseline)) }
+            MindProfileScreen(answers: answers) { go(.lifeNumber) }
+
+        case .lifeNumber:
+            LifeNumberScreen(answers: answers) { go(nextAfter(.baseline)) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
