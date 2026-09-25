@@ -557,6 +557,15 @@ struct SeatedClip {
     /// --warm 6 --keep-pockets --largest --erode 2 --band 3 --cool`.
     static let writing = SeatedClip(name: "otto-writing", aspect: 604.0 / 700.0,
                                     bodyShare: 676.0 / 700.0, marginBelow: 12.0 / 700.0)
+
+    /// Thinking, paw on chin (Runway, 2026-09-25): crop 658 x 848, body 824
+    /// of it. A boomerang of frames 1 to 109 at 20 fps. Keyed with
+    /// `--center-feet --steady --largest --erode 1 --white-floor 140
+    /// --white-spread 30 --warm 25`: Runway's shadow here is a WARM grey
+    /// (about 166,156,146), so warmth alone could not tell it from Otto; the
+    /// cream of his belly and muzzle is far warmer (red over blue by 50+).
+    static let thinking = SeatedClip(name: "otto-thinking", aspect: 658.0 / 848.0,
+                                     bodyShare: 824.0 / 848.0, marginBelow: 12.0 / 848.0)
 }
 
 /// A seated Otto clip on the valley's cushion, in exactly the place and size
@@ -572,6 +581,9 @@ struct SeatedClipLayer: View {
     /// scale and an offset, not a new frame, so it animates as one glide with
     /// the step change, and the player never restarts.
     var inCorner: Bool = false
+    /// Lower on the cushion by this share of the screen, matching the
+    /// valley's own `drop` on the same step.
+    var drop: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// How much of the header row he takes; the screen leaves this clear.
@@ -589,7 +601,7 @@ struct SeatedClipLayer: View {
                 // bottom. The clip is sized so ITS body matches.
                 let seated = 186 * scale * 1.17
                 let clipHeight = seated * 0.95 / clip.bodyShare
-                let bottom = size.height * 0.76 + clipHeight * clip.marginBelow
+                let bottom = size.height * (0.76 + drop) + clipHeight * clip.marginBelow
                 let centre = CGPoint(x: size.width / 2, y: bottom - clipHeight / 2)
                 // In the corner: level with the header row (12 below the safe
                 // area, 40 tall), right-aligned to the screen's gutter.
@@ -1019,138 +1031,75 @@ private struct FactCard: View {
     }
 }
 
-/// "Putting together your plan…" (Aziz, 2026-09-25, Brainrot's
-/// "Personalizing your experience"). The writing Otto on his cushion (drawn by
-/// `OnboardingView`'s clip layer) while three bars fill one after another,
-/// each ending in a tick and a line read back from THEIR answers. Brainrot's
-/// "Analyzing your habits / Calculating your profile" would be pretend work;
-/// every line here is something they told us, and the reminder time is real
-/// (the quiet-minutes answer set it). The next screen has to deliver the plan.
+/// "Tailoring 808 to you…" (Aziz, 2026-09-25, Brainrot's "Personalizing
+/// your experience!", said differently). Otto thinks, paw on chin (the
+/// thinking clip, drawn by `OnboardingView`'s clip layer, the same Otto as on
+/// the frequency slider before it), while three bars fill one after another,
+/// each with a line under it, and then the flow moves on by itself. No ticks
+/// and no answers read back (Aziz: "the same thing as the brainrot one").
 struct BuildingPlanScreen: View {
-    let answers: OnboardingAnswers
     let onContinue: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    /// How far each bar has filled, 0 to 1.
     @State private var fill: [Double] = [0, 0, 0]
-    @State private var done: [Bool] = [false, false, false]
-    @State private var ctaShown = false
+    @State private var finished = false
 
-    private var rows: [(working: String, result: String)] {
-        [("Reading your goals…", Self.goals(answers.motivations)),
-         ("Planning around what gets in the way…", Self.helps(answers.obstacles ?? [])),
-         ("Setting your daily reminder…", Self.time(answers.reminderTime))]
-    }
+    static let lines = ["Looking at your goals…",
+                        "Mapping what gets in the way…",
+                        "Building your daily routine…"]
 
     var body: some View {
         VStack(spacing: 0) {
-            // No progress bar (Brainrot's has none): a full one read as a
-            // fourth row of the plan.
-            Text(ctaShown ? "Your plan is ready!" : "Putting together your plan…")
+            Text("Tailoring 808 to you…")
                 .font(.system(size: 30, weight: .heavy, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .multilineTextAlignment(.center)
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.3), value: ctaShown)
                 .padding(.top, 44)
 
-            VStack(spacing: 18) {
+            VStack(spacing: 20) {
                 ForEach(0..<3, id: \.self) { i in
-                    PlanRow(working: rows[i].working, result: rows[i].result,
-                            fill: fill[i], done: done[i])
+                    PlanRow(text: Self.lines[i], fill: fill[i])
                 }
             }
-            .padding(.top, 22)
+            .padding(.top, 26)
 
             Spacer(minLength: 0)
         }
         .padding(.horizontal, AppMetrics.screenPadding + 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "See my plan", action: onContinue)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
-                .opacity(ctaShown ? 1 : 0)
-                .offset(y: ctaShown ? 0 : 30)
-                .allowsHitTesting(ctaShown)
-        }
         .task { await play() }
     }
 
     private func play() async {
-        guard !ctaShown else { return }
+        guard !finished else { return }
         if reduceMotion {
-            fill = [1, 1, 1]; done = [true, true, true]; ctaShown = true
-            return
-        }
-        WelcomeHaptics.prepare()
-        try? await Task.sleep(for: .milliseconds(400))
-        for i in 0..<3 {
-            guard !Task.isCancelled else { return }
-            withAnimation(.easeInOut(duration: 1.3)) { fill[i] = 1 }
-            try? await Task.sleep(for: .milliseconds(1350))
-            guard !Task.isCancelled else { return }
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { done[i] = true }
-            WelcomeHaptics.tick()
-            try? await Task.sleep(for: .milliseconds(350))
-        }
-        guard !Task.isCancelled else { return }
-        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
-        WelcomeHaptics.land()
-    }
-
-    /// "Feel less stressed and sleep better", in the order the question lists
-    /// them, lowercased after the first.
-    static func goals(_ picked: Set<Motivation>) -> String {
-        let names = Motivation.offered.filter(picked.contains).map(\.label)
-        guard let first = names.first else { return "Your goals, noted" }
-        let rest = names.dropFirst().map { $0.prefix(1).lowercased() + $0.dropFirst() }
-        return join([first] + rest)
-    }
-
-    /// What 808 does about each obstacle, only things the app really does.
-    static func helps(_ picked: Set<Obstacle>) -> String {
-        func help(_ o: Obstacle) -> String {
-            switch o {
-            case .forget:             return "a daily reminder"
-            case .noTime:             return "sessions as short as five minutes"
-            case .mindWontSettle:     return "a breath to settle in"
-            case .unsureDoingItRight: return "a guide for every method"
-            case .loseMotivation:     return "a streak and Otto's glow"
-            case .phonePulls:         return FeatureFlags.block ? "Otto holding your apps" : "a quiet Do Not Disturb switch"
+            fill = [1, 1, 1]
+        } else {
+            WelcomeHaptics.prepare()
+            try? await Task.sleep(for: .milliseconds(400))
+            for i in 0..<3 {
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 1.4)) { fill[i] = 1 }
+                try? await Task.sleep(for: .milliseconds(1500))
+                guard !Task.isCancelled else { return }
+                WelcomeHaptics.tick()
             }
         }
-        let list = Obstacle.allCases.filter(picked.contains).prefix(2).map(help)
-        guard !list.isEmpty else { return "Short sessions and a daily reminder" }
-        let s = join(Array(list))
-        return s.prefix(1).uppercased() + s.dropFirst()
-    }
-
-    static func time(_ date: Date?) -> String {
-        let t = date ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
-        return "Every day at " + t.formatted(date: .omitted, time: .shortened)
-    }
-
-    private static func join(_ parts: [String]) -> String {
-        switch parts.count {
-        case 0: return ""
-        case 1: return parts[0]
-        case 2: return parts[0] + " and " + parts[1]
-        default: return parts.dropLast().joined(separator: ", ") + " and " + parts.last!
-        }
+        try? await Task.sleep(for: .milliseconds(500))
+        guard !Task.isCancelled, !finished else { return }
+        finished = true
+        WelcomeHaptics.land()
+        onContinue()
     }
 }
 
-/// One bar of the plan screen: the working line, a bar that fills, then a
-/// tick and the answer read back.
+/// One bar of the plan screen, Brainrot's: the bar, and the line under it.
 private struct PlanRow: View {
-    let working: String
-    let result: String
+    let text: String
     let fill: Double
-    let done: Bool
 
     var body: some View {
-        VStack(spacing: 7) {
+        VStack(spacing: 8) {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.9))
@@ -1159,19 +1108,9 @@ private struct PlanRow: View {
                 }
             }
             .frame(height: 9)
-            HStack(spacing: 6) {
-                if done {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(OnboardingGreen.fill)
-                        .transition(.scale.combined(with: .opacity))
-                }
-                Text(done ? result : working)
-                    .contentTransition(.opacity)
-            }
-            .font(.system(size: 16, weight: .semibold, design: .rounded))
-            .foregroundStyle(done ? AppColor.textPrimary : AppColor.skyDeep)
-            .multilineTextAlignment(.center)
-            .fixedSize(horizontal: false, vertical: true)
+            Text(text)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.skyDeep)
         }
         .accessibilityElement(children: .combine)
     }

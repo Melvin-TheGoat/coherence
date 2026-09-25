@@ -5437,20 +5437,22 @@ seven flames on a white capsule that light as it slides right (the streak's
 icon, `streakBlushText`), and an encouraging line per stop. It REPLACES the
 old list question on `Step.baseline` and saves into `currentFrequency`, so
 the persona it feeds is unchanged; `InterviewStep.baseline` moved up to just
-after `age`. Starts in the middle. **Otto is a placeholder**: Aziz is making
-a Runway clip of him seated, paw on chin, thinking (from `otto-sit-happy.png`),
-to go on this step the way the writing clip does. `BaselineScreen` is deleted.
+after `age`. Starts in the middle. Otto thinks, paw on chin (see the plan
+screen below). `BaselineScreen` is deleted.
 
-**"Putting together your plan…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
+**"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
 after the frequency slider for now; it belongs at the END of the interview
-once the old questions are redone): the writing Otto on his cushion (clip
-layer, valley Otto hidden) and three bars filling in turn, each ending in a
-tick and a line read back from THEIR answers: their goals, what 808 does
-about what gets in the way (only things the app really does; Block's line
-only on Block builds), and "Every day at" their reminder time. Brainrot's
-"Analyzing your habits" style lines were refused as pretend work. The title
-becomes "Your plan is ready!" and "See my plan" appears. **The next screen
-must deliver that plan; it does not exist yet.**
+once the old questions are redone). Brainrot's "Personalizing your
+experience!" said differently (Aziz): three bars fill in turn with a line
+under each ("Looking at your goals…", "Mapping what gets in the way…",
+"Building your daily routine…"), a tick each, then it moves on by ITSELF.
+A version that read their answers back with check marks was built and
+rejected the same day ("the same thing as the brainrot one").
+**Otto thinks on both the slider and this screen** (`otto-thinking.mov`,
+`SeatedClip.thinking`, one `SeatedClipLayer` for both steps so he never
+swaps; valley Otto hidden, both dropped 8%). **After adding a new clip to
+`Coherence/Otto/`, run `xcodegen generate`**: without it the file is not in
+the bundle and `OttoClip` silently shows its still fallback.
 
 **"Did you know?"** (`DidYouKnowScreen`, `Step.didYouKnow`, after the age
 question, Brainrot's screen): four white fact cards popping in with a tick

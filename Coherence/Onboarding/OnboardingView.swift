@@ -376,9 +376,11 @@ struct OnboardingView: View {
                              standingFigure: step == .relief,
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
-                             figureHidden: step == .questionCount || step == .buildingPlan,
+                             figureHidden: step == .questionCount || step == .buildingPlan
+                                 || step == .baseline,
                              seed: lifeSeed,
-                             drop: (step == .didYouKnow || step == .baseline) ? DidYouKnowScreen.ottoDrop : 0)
+                             drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan)
+                                 ? DidYouKnowScreen.ottoDrop : 0)
 
             // The breath is a white page, not the valley. Each draws its own white,
             // but while one slides out and the next slides in, both are part
@@ -400,10 +402,14 @@ struct OnboardingView: View {
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
-                || step == .quietTime || step == .habitHistory || step == .age
-                || step == .buildingPlan {
-                SeatedClipLayer(clip: .writing,
-                                inCorner: step != .questionCount && step != .buildingPlan)
+                || step == .quietTime || step == .habitHistory || step == .age {
+                SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
+                    .transition(.opacity)
+            }
+            // Otto thinking, paw on chin, across the frequency slider and the
+            // plan screen: one layer for both, so he never changes between them.
+            if step == .baseline || step == .buildingPlan {
+                SeatedClipLayer(clip: .thinking, drop: DidYouKnowScreen.ottoDrop)
                     .transition(.opacity)
             }
 
@@ -515,7 +521,7 @@ struct OnboardingView: View {
         // After the new questions for now; it belongs at the END of the
         // interview once Aziz's redo of the old questions lands.
         case .buildingPlan:
-            BuildingPlanScreen(answers: answers) { go(nextAfter(.baseline)) }
+            BuildingPlanScreen { go(nextAfter(.baseline)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
