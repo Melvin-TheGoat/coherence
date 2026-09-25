@@ -5517,7 +5517,15 @@ is NO such figure: Mrazek 2013, Price 2023 (Frontiers, n=304) and Brandmeyer
 2018 all report reduced mind wandering on Likert scales or during the sit,
 never as a share of the day. Turning a scale shift into "X% more present"
 would be an invented number, so the quarter stays an "if" on their answers.
-Do not re-derive a percentage from those papers. `MindWander`
+Do not re-derive a percentage from those papers.
+**Then "N more years of…"** (`LifeMomentsScreen`, `Step.lifeMoments`,
+Brainrot's "11 more years of Playing"): ONE 10 s generated clip fills the
+screen (`otto-life-moments.mov`: his family arrives and hugs him, he blows a
+dandelion laughing, the valley turns golden, held on that frame), and under
+"4 more years of" (the good news quarter) the big word swaps ON THE CLIP'S
+MEASURED BEATS: family 0 s, having fun 3.5 s, the beauty of this world
+6.3 s, so much more. 8.7 s, a thump each. Dark words with a white glow over
+the open sky. If the clip is regenerated, re-measure the beats. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good

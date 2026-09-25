@@ -144,6 +144,9 @@ struct OnboardingView: View {
         case lifeDots
         /// Added 2026-09-25: "The good news is…". Last in the enum.
         case goodNews
+        /// Added 2026-09-25: "N more years of family / fun / beauty",
+        /// the life-moments clip. Last in the enum.
+        case lifeMoments
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -398,7 +401,8 @@ struct OnboardingView: View {
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount || step == .buildingPlan
-                                 || step == .baseline || step == .mindProfile || step == .lifeNumber,
+                                 || step == .baseline || step == .mindProfile || step == .lifeNumber
+                                 || step == .lifeMoments,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)
@@ -565,7 +569,10 @@ struct OnboardingView: View {
             LifeDotsScreen(answers: answers) { go(.goodNews) }
 
         case .goodNews:
-            GoodNewsScreen(answers: answers) { go(nextAfter(.baseline)) }
+            GoodNewsScreen(answers: answers) { go(.lifeMoments) }
+
+        case .lifeMoments:
+            LifeMomentsScreen(answers: answers) { go(nextAfter(.baseline)) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {

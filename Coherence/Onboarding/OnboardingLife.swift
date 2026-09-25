@@ -590,3 +590,94 @@ struct GoodNewsScreen: View {
         WelcomeHaptics.land()
     }
 }
+
+// MARK: - More years of…
+
+/// "4 more years of family / having fun / the beauty of this world / so much
+/// more." (Aziz, 2026-09-25, Brainrot's "11 more years of Playing"). One
+/// generated clip fills the screen (`otto-life-moments.mov`, 10 s, 20 fps):
+/// his family arrives and they hug, he blows a dandelion laughing, then the
+/// valley turns golden and he takes it in, held on that last frame. The big
+/// word swaps on the clip's own beats, a thump each, and the number is the
+/// good news screen's quarter (`MindWander.quarterBack`).
+struct LifeMomentsScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var beat = 0
+    @State private var shown = false
+    @State private var ctaShown = false
+
+    /// When each word takes over, in seconds into the clip, measured on it.
+    private static let beats: [(at: Double, word: String)] = [
+        (0.0, "family"),
+        (3.5, "having fun"),
+        (6.3, "the beauty of this world"),
+        (8.7, "so much more."),
+    ]
+
+    private var header: String {
+        let n = MindWander.quarterBack(answers)
+        if MindWander.years(answers) == nil { return "\(n) more days a year of" }
+        return n == 1 ? "1 more year of" : "\(n) more years of"
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            OttoClip(name: "otto-life-moments", playing: !reduceMotion, fallback: .pleased, fills: true)
+                .ignoresSafeArea()
+
+            VStack(spacing: 4) {
+                Text(header)
+                    .font(.system(size: 22, weight: .heavy, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+                Text(Self.beats[beat].word)
+                    .font(.system(size: 46, weight: .black, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .id(beat)
+                    .transition(.asymmetric(insertion: .scale(scale: 0.85).combined(with: .opacity),
+                                            removal: .opacity))
+            }
+            .shadow(color: .white.opacity(0.9), radius: 10)
+            .shadow(color: .white.opacity(0.6), radius: 3)
+            .padding(.horizontal, AppMetrics.screenPadding + 6)
+            .padding(.top, 70)
+            .opacity(shown ? 1 : 0)
+        }
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .opacity(ctaShown ? 1 : 0)
+                .allowsHitTesting(ctaShown)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(header) family, having fun, the beauty of this world, and so much more.")
+        .task { await play() }
+    }
+
+    private func play() async {
+        withAnimation(.easeOut(duration: 0.35)) { shown = true }
+        if reduceMotion {
+            beat = Self.beats.count - 1
+            ctaShown = true
+            return
+        }
+        WelcomeHaptics.prepare()
+        WelcomeHaptics.land()
+        let start = Date()
+        for i in 1..<Self.beats.count {
+            let wait = Self.beats[i].at - Date().timeIntervalSince(start)
+            if wait > 0 { try? await Task.sleep(for: .seconds(wait)) }
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) { beat = i }
+            WelcomeHaptics.land()
+        }
+        try? await Task.sleep(for: .milliseconds(600))
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+    }
+}
