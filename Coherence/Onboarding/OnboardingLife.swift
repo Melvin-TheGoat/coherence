@@ -475,3 +475,82 @@ struct LifeDotsScreen: View {
         }
     }
 }
+
+// MARK: - The good news
+
+/// "The good news is…" (Aziz, 2026-09-25, Brainrot's "11 years back").
+/// Otto bright again in the valley (`OnboardingView` draws him at his Bright
+/// look on this step), and in big green the years a QUARTER of their number
+/// comes to (`MindWander.quarterBack`): "Even winning back a quarter of that
+/// is 4 years." Conditional arithmetic on their own answers, not a claim of
+/// what 808 gives back, which nothing measures.
+struct GoodNewsScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown = false
+    @State private var counted = 0
+    @State private var landed = false
+
+    private var target: Int { MindWander.quarterBack(answers) }
+    private var unit: String {
+        let days = MindWander.years(answers) == nil
+        return days ? (target == 1 ? "day a year" : "days a year")
+                    : (target == 1 ? "year back" : "years back")
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("The good news is…")
+                .font(.system(size: 26, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+            Text("your attention can be trained. Even winning back a quarter of that is")
+                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary.opacity(0.85))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
+            Text("\(counted) \(unit)")
+                .font(.system(size: 52, weight: .black, design: .rounded))
+                .foregroundStyle(OnboardingGreen.fill)
+                .monospacedDigit()
+                .contentTransition(.numericText())
+                .scaleEffect(landed ? 1.06 : 1)
+                .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
+                .shadow(color: .white.opacity(0.8), radius: 8)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding + 6)
+        .padding(.top, 46)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .opacity(shown ? 1 : 0)
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Let's do this!", action: onContinue)
+                .opacity(landed ? 1 : 0)
+                .allowsHitTesting(landed)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+        }
+        .task {
+            withAnimation(.easeOut(duration: 0.35)) { shown = true }
+            if reduceMotion { counted = target; landed = true; return }
+            WelcomeHaptics.prepare()
+            try? await Task.sleep(for: .milliseconds(450))
+            let steps = max(1, min(target, 20))
+            for k in 1...steps {
+                guard !Task.isCancelled else { return }
+                withAnimation(.snappy(duration: 0.1)) {
+                    counted = Int((Double(target) * Double(k) / Double(steps)).rounded())
+                }
+                WelcomeHaptics.tick()
+                try? await Task.sleep(for: .milliseconds(60))
+            }
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { landed = true }
+            WelcomeHaptics.land()
+        }
+    }
+}

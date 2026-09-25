@@ -142,6 +142,8 @@ struct OnboardingView: View {
         case lifePause
         /// Added 2026-09-25: "This is your life.", the dots. Last in the enum.
         case lifeDots
+        /// Added 2026-09-25: "The good news is…". Last in the enum.
+        case goodNews
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -384,6 +386,7 @@ struct OnboardingView: View {
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
+                                    : step == .goodNews ? .bright
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
                                        || step == .buildingPlan || step == .mindProfile) ? .steady : nil,
@@ -559,7 +562,10 @@ struct OnboardingView: View {
             LifePauseScreen(answers: answers) { go(.lifeDots) }
 
         case .lifeDots:
-            LifeDotsScreen(answers: answers) { go(nextAfter(.baseline)) }
+            LifeDotsScreen(answers: answers) { go(.goodNews) }
+
+        case .goodNews:
+            GoodNewsScreen(answers: answers) { go(nextAfter(.baseline)) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {

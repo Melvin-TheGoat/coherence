@@ -5506,7 +5506,13 @@ assuming you're 30"), then "And this is how much of it your mind spends
 somewhere else." and that many years fill in muted terracotta from the end,
 a tick each. Built, not generated: the dots are THEIR age and number. The
 pause, the dots and the years screen all read `MindWander.years`, so the
-number is always the same across them. No age: one year of 365 day-dots. `MindWander`
+number is always the same across them. No age: one year of 365 day-dots.
+**Then the good news** (`GoodNewsScreen`, `Step.goodNews`): Otto at his
+Bright look in the valley, "The good news is… your attention can be trained.
+Even winning back a quarter of that is" and, counting up in big green, a
+QUARTER of their number (`MindWander.quarterBack`), then "Let's do this!".
+Brainrot's "11 years back" is a promise nothing measures; this is
+conditional arithmetic on their own answers and claims nothing about 808. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good

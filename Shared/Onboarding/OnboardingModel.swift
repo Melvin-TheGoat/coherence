@@ -737,6 +737,15 @@ public enum MindWander {
         return Int((left * wakingShare * share(a)).rounded())
     }
 
+    /// A quarter of their years (or days a year), at least one: the good
+    /// news screen's "even winning back a quarter of that is N years". Plain
+    /// arithmetic on their own number, never a promise of what 808 returns
+    /// (nothing measures that; Brainrot's "11 years back" is invented).
+    public static func quarterBack(_ a: OnboardingAnswers) -> Int {
+        let whole = years(a) ?? daysPerYear(a)
+        return max(1, Int((Double(whole) / 4).rounded()))
+    }
+
     /// Days a year with the mind elsewhere, for anyone who kept their age.
     public static func daysPerYear(_ a: OnboardingAnswers) -> Int {
         Int((365 * wakingShare * share(a)).rounded())

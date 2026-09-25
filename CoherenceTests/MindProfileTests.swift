@@ -91,6 +91,12 @@ final class MindWanderTests: XCTestCase {
         XCTAssertEqual(WanderLevel(share: 0.9), .almostAlways)
     }
 
+    func test_aQuarterBack() {
+        XCTAssertEqual(MindWander.quarterBack(a(.from25, 0.47)), 4)   // 16 / 4
+        XCTAssertEqual(MindWander.quarterBack(a(.over55, 0.15)), 1)   // never 0
+        XCTAssertEqual(MindWander.quarterBack(a(nil, 0.47)), 29)      // 114 days / 4
+    }
+
     func test_oldAgeFormatStillReads() {
         var x = OnboardingAnswers()
         x.ageBracket = "25-34"
