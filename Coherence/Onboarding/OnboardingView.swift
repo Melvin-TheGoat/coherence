@@ -131,6 +131,25 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "Your mind profile is", five Ottos and two bars.
         /// Last in the enum.
         case mindProfile
+        /// Added 2026-09-25: "How much of your day is your mind somewhere
+        /// else?". Last in the enum.
+        case wandering
+        /// Added 2026-09-25: "You're on track to spend N years…", the seasons
+        /// clip. Last in the enum.
+        case lifeNumber
+        /// Added 2026-09-25: "What would you do with N years of being fully
+        /// here?", the white pause. Last in the enum.
+        case lifePause
+        /// Added 2026-09-25: "This is your life.", the dots. Last in the enum.
+        case lifeDots
+        /// Added 2026-09-25: "The good news is…". Last in the enum.
+        case goodNews
+        /// Added 2026-09-25: "N more years of family / fun / beauty",
+        /// the life-moments clip. Last in the enum.
+        case lifeMoments
+        /// Added 2026-09-25: "Your attention has been hacked.", a white page
+        /// before Why 808 works. Last in the enum.
+        case attentionHacked
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -177,7 +196,7 @@ struct OnboardingView: View {
             switch self {
             // Only the breath now: the welcome and Meet Otto went back to
             // the valley (Aziz, 2026-09-23).
-            case .breath, .breathing: return true
+            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked: return true
             default: return false
             }
         }
@@ -216,7 +235,7 @@ struct OnboardingView: View {
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.motivation, .motivation), (.obstacles, .obstacles),
-        (.stress, .stress), (.recovery, .recovery), (.role, .role),
+        (.stress, .stress), (.wandering, .wandering), (.recovery, .recovery), (.role, .role),
         (.quietTime, .quietTime), (.habitHistory, .habitHistory),
         (.age, .age),
         (.referral, .referral),
@@ -373,6 +392,7 @@ struct OnboardingView: View {
             OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
+                                    : step == .goodNews ? .bright
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
                                        || step == .buildingPlan || step == .mindProfile) ? .steady : nil,
@@ -384,11 +404,13 @@ struct OnboardingView: View {
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount || step == .buildingPlan
-                                 || step == .baseline || step == .mindProfile,
+                                 || step == .baseline || step == .mindProfile || step == .lifeNumber
+                                 || step == .lifeMoments,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)
-                                 ? DidYouKnowScreen.ottoDrop : 0)
+                                 ? DidYouKnowScreen.ottoDrop : 0,
+                             hour: step == .mindProfile ? MindProfileScreen.hour : 0)
 
             // The breath is a white page, not the valley. Each draws its own white,
             // but while one slides out and the next slides in, both are part
@@ -411,7 +433,7 @@ struct OnboardingView: View {
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
                 || step == .quietTime || step == .habitHistory || step == .age
-                || step == .recovery {
+                || step == .recovery || step == .wandering {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
             }
@@ -460,6 +482,7 @@ struct OnboardingView: View {
                 }
             }
             .environment(\.onboardingSharedGround, true)
+            .environment(\.typingHaptics, true)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
             .onAppear {
@@ -537,7 +560,30 @@ struct OnboardingView: View {
             BuildingPlanScreen { go(.mindProfile) }
 
         case .mindProfile:
-            MindProfileScreen(answers: answers) { go(nextAfter(.baseline)) }
+            MindProfileScreen(answers: answers) { go(.lifeNumber) }
+
+        case .lifeNumber:
+            LifeNumberScreen(answers: answers) { go(.lifePause) }
+
+        case .lifePause:
+            LifePauseScreen(answers: answers) { go(.lifeDots) }
+
+        case .lifeDots:
+            LifeDotsScreen(answers: answers) { go(.goodNews) }
+
+        case .goodNews:
+            GoodNewsScreen(answers: answers) { go(.lifeMoments) }
+
+        case .lifeMoments:
+            LifeMomentsScreen(answers: answers) { go(.attentionHacked) }
+
+        case .attentionHacked:
+            AttentionHackedScreen { go(nextAfter(.baseline)) }
+
+        case .wandering:
+            WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
+                go(nextAfter(.wandering))
+            }
 
         case .recovery:
             CornerQuestionScreen(title: "When something stresses you out, how quickly do you settle back down?",
@@ -1106,12 +1152,16 @@ private struct OnboardingValley: View {
     /// Lower Otto and his cushion by this share of the screen's height
     /// ("Did you know?", whose cards sit above his head).
     var drop: CGFloat = 0
+    /// How far into the valley's sunset (0 is midday). The mind profile is
+    /// golden hour, so the reveal feels like a moment (Aziz, 2026-09-25:
+    /// "a different background ... a different idea than the rays").
+    var hour: Double = 0
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         GeometryReader { geo in
-            ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
+            ValleyScene(progress: hour, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
                         showsFigure: stage != nil, standingFigure: standingFigure,
                         figureHidden: figureHidden, seed: seed,
                         ottoLift: -geo.size.height * drop)

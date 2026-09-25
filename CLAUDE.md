@@ -5478,7 +5478,83 @@ phone/screen time ("our app is not a screen time app"), rest, presence.
 To feed them, **"How stressed have you been lately?" moved up** to after
 "What gets in the way", and **"When something stresses you out, how quickly
 do you settle back down?"** (`StressRecovery`, `Step.recovery`) follows it.
-Light rays fan up from behind Otto's head.
+The valley turns GOLDEN HOUR on this screen only (`OnboardingValley(hour:)`,
+`MindProfileScreen.hour` = 0.2 of the sit's sunset) with a warm glow
+breathing behind Otto (`ProfileGlow`, drawn in `ProfileOttoLayer` BEHIND
+him: over him it washed him out). Brainrot's rays were tried and cut (Aziz:
+"a different idea than the rays"). The bars are onboarding green. The type's line types out (a tick a
+letter, Aziz), then the bars fill, then "That's me".
+
+**"How much of your day is your mind somewhere else?"** (`WanderingScreen`,
+`Step.wandering`, after the stress question, Aziz): a slider of five stops
+IN WORDS (`WanderLevel`: Rarely 15%, Now and then 30%, About half the time
+47%, Most of the time 65%, Almost always 85%, the percentages behind the
+scenes only), opening on the research average ("Most people say about half
+the time", Killingsworth & Gilbert 2010). It feeds `MindWander` (Shared, tested in
+`MindWanderTests`): years with the mind elsewhere = (80 − the middle of their
+age bracket) × 16/24 × their share; "Prefer not to say" gets days a year
+instead, never a guessed age. The question never mentions age. That number
+drives **"You're on track to spend N years with your mind somewhere else"**
+(`LifeNumberScreen`, `Step.lifeNumber`, after the mind profile): a GENERATED
+clip fills the screen (`otto-seasons.mov`, Runway from a clean full-screen
+render of the valley: Otto sits still under a clock while the seasons race,
+cut at frame 124 where he looks afraid in spring and HELD there, 20 fps,
+5.15 s, `OttoClip(fills:)`). The number counts up with a tick a step across
+the seasons and lands with a thump as the clip ends. Brainrot's layout (Aziz):
+the words on a FROSTED CARD in the sky (material plus a white wash, the
+number in sky blue), the disclaimer in a matching frosted pill above Next.
+An outlined style (eight offset white copies behind dark text) was tried and
+looked rough. Runway drew a
+CLOCK across the top of the sky, so the words sit in the gap between the
+clock and Otto's head (40% down), smaller than Brainrot's; at the top they
+sat on the clock. A dark fade over the meadow was tried first and looked
+wrong. A clip regenerated WITHOUT the clock would let the words go full size
+at the top.
+**Then the pause** (`LifePauseScreen`, `Step.lifePause`, a white page via
+`isWhitePage`): "What would you do with N years of being fully here?" typed
+with a tick a letter, their number in blue, moving on by itself 0.9 s after
+it finishes (Skip at once; the gaps on this run were shortened, Aziz: "a bit
+too long"). A forward question instead of Brainrot's "Do you
+understand what it means…", per the copy rules.
+**Then the dots** (`LifeDotsScreen`, `Step.lifeDots`, white page): "This is
+your life." 80 dots, one a year, the years lived filling blue ("You are here,
+assuming you're 30"), then "And this is how much of it your mind spends
+somewhere else." and that many years fill in muted terracotta from the end,
+a tick each. Built, not generated: the dots are THEIR age and number. The
+pause, the dots and the years screen all read `MindWander.years`, so the
+number is always the same across them. No age: one year of 365 day-dots.
+**Then the good news** (`GoodNewsScreen`, `Step.goodNews`): Otto at his
+Bright look in the valley; "The good news is…" TYPES, then "808 can help you
+train your attention. Win back even a quarter of it, and that's", then a
+QUARTER of their number counts up in big green (`MindWander.quarterBack`),
+then "Continue". Aziz asked for the number to come from research on
+how much more present daily meditators are; researched 2026-09-25 and there
+is NO such figure: Mrazek 2013, Price 2023 (Frontiers, n=304) and Brandmeyer
+2018 all report reduced mind wandering on Likert scales or during the sit,
+never as a share of the day. Turning a scale shift into "X% more present"
+would be an invented number, so the quarter stays an "if" on their answers.
+Do not re-derive a percentage from those papers.
+**Then "N more years of…"** (`LifeMomentsScreen`, `Step.lifeMoments`,
+Brainrot's "11 more years of Playing"): ONE 10 s generated clip fills the
+screen (`otto-life-moments.mov`: his family arrives and hugs him, he blows a
+dandelion laughing, the valley turns golden, held on that frame), and under
+"4 more years of" (the good news quarter) the big word swaps ON THE CLIP'S
+MEASURED BEATS: family 0 s, having fun 3.5 s, the beauty of this world
+6.3 s, so much more. 8.7 s, a thump each, all in onboarding GREEN (a colour
+per word was tried and dropped the same day), a white glow over the sky. Its button is "Let's do this!" (Aziz); the good news
+screen before it says "Continue" so the line is not said twice.
+**Then "Your attention has been hacked."** (`AttentionHackedScreen`,
+`Step.attentionHacked`, a WHITE page, no Otto, so the words carry it, Aziz):
+the headline, then three soft-blue cards: "Apps are designed to keep pulling
+at your attention.", "Your mind lives in the future, where anxiety grows.",
+"That anxiety subconsciously seeps into every facet of your life." (Aziz
+kept this last line as written; the second is tightened from "designed to
+shorten your attention span", which claimed intent.) A habit-truths version
+(Lally 2010) was built and dropped: "Why 808 works" next covers habits. If the clip is regenerated, re-measure the beats. `MindWander`
+also reads the old "25-34" age format. Four built SwiftUI screens (pause,
+life dots, good news) were started and dropped: Aziz wants these moments as
+generated clips. Its "good
+news" must make no "N years back" promise: nothing measures that.
 
 **"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
 after the frequency slider for now; it belongs at the END of the interview
@@ -5515,6 +5591,13 @@ without scaling him up. `OttoAuraFigure` now shapes the view by look: wide
 TALL (`headroom` 1.6, from look 9) for the bright ones, where he floats and
 the halo rises over his head. Bottom-aligned both ways, so he is the same
 size and place. Verified on See for yourself and on Home at 97.
+
+**Every typing animation ticks** (Aziz, 2026-09-25). The screens' own
+typed lines tick once per letter (`WelcomeHaptics.tick`); `OttoSpeech`, which
+types five letters a frame, ticks every third frame. OttoSpeech's ticks are
+gated by the `typingHaptics` environment value, which `OnboardingView` turns
+on: the same bubble on Home, Block and the session screens stays silent,
+because Home and a sit never buzz.
 
 **Every typed line in the intro screens is Otto speaking** (Aziz): the
 line under the title moved into `OttoSaysBubble`, white and round, hanging
