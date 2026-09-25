@@ -64,10 +64,25 @@ enum DemoCommunity {
         return PostPhoto.prepare(image)
     }
 
-    /// A real three-second clip of the same gradient with a light drifting
-    /// across it. It used to be four bytes, which the viewer showed as a
-    /// broken video, so a review of the demo read as a playback bug.
-    private static func fakeVideo(_ top: UIColor, _ bottom: UIColor, aspect: Double) async -> URL? {
+    /// A real photo for a seeded post, so reviewing the feed shows what posts
+    /// will look like rather than blank gradients (Melvin, 2026-09-25: "can
+    /// we use actual pictures instead of these weird like blank photos").
+    /// From `Coherence/Community/DemoPhotos`, each cropped to its post's
+    /// shape: Unsplash License photos by Caleb George (roof), Chris Liu-Beers
+    /// (window), Kenneth Thewissen (field), Dominik Martin (tea), Ilham
+    /// Rahmansyah (feet), Philipp Reiner (sunrise) and Schicka (lily), via
+    /// Lorem Picsum. The files ship in every build (about 350 KB); only this
+    /// DEBUG seed reads them.
+    static func demoPhoto(_ name: String) -> UIImage? {
+        Bundle.main.url(forResource: name, withExtension: "jpg").flatMap { UIImage(contentsOfFile: $0.path) }
+    }
+
+    /// A real three-second clip: the photo slowly zooming in, or when there
+    /// is no photo, the gradient with a light drifting across it. It used
+    /// to be four bytes, which the viewer showed as a broken video, so a
+    /// review of the demo read as a playback bug.
+    private static func fakeVideo(_ top: UIColor, _ bottom: UIColor, aspect: Double,
+                                  photo: CGImage? = nil) async -> URL? {
         let width = 480, height = Int((480 / aspect / 2).rounded()) * 2
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("demo-video-\(UUID().uuidString).mp4")
         guard let writer = try? AVAssetWriter(outputURL: url, fileType: .mp4) else { return nil }
@@ -98,12 +113,19 @@ enum DemoCommunity {
             if let ctx = CGContext(data: CVPixelBufferGetBaseAddress(buffer), width: width, height: height,
                                    bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), space: space,
                                    bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue) {
-                // Quartz's y runs up, so the top colour starts at y = height.
-                ctx.drawLinearGradient(ground, start: CGPoint(x: 0, y: height), end: .zero, options: [])
                 let t = CGFloat(i) / CGFloat(frames - 1)
-                let centre = CGPoint(x: CGFloat(width) * (0.15 + 0.7 * t), y: CGFloat(height) * 0.5)
-                ctx.drawRadialGradient(light, startCenter: centre, startRadius: 0, endCenter: centre,
-                                       endRadius: CGFloat(min(width, height)) * 0.45, options: [])
+                if let photo {
+                    let zoom = 1 + 0.08 * t
+                    let w = CGFloat(width) * zoom, h = CGFloat(height) * zoom
+                    ctx.draw(photo, in: CGRect(x: (CGFloat(width) - w) / 2, y: (CGFloat(height) - h) / 2,
+                                               width: w, height: h))
+                } else {
+                    // Quartz's y runs up, so the top colour starts at y = height.
+                    ctx.drawLinearGradient(ground, start: CGPoint(x: 0, y: height), end: .zero, options: [])
+                    let centre = CGPoint(x: CGFloat(width) * (0.15 + 0.7 * t), y: CGFloat(height) * 0.5)
+                    ctx.drawRadialGradient(light, startCenter: centre, startRadius: 0, endCenter: centre,
+                                           endRadius: CGFloat(min(width, height)) * 0.45, options: [])
+                }
             }
             CVPixelBufferUnlockBaseAddress(buffer, [])
             adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(i), timescale: fps))
@@ -115,13 +137,15 @@ enum DemoCommunity {
 
     /// One or several items for a seeded post, mixing photos and videos so
     /// the feed's strip can be reviewed with 1, 3, and a mixed set (Melvin,
-    /// 2026-09-23). `spec` is (top colour, bottom colour, aspect, isVideo).
-    static func media(_ spec: [(UIColor, UIColor, Double, Bool)]) async -> [CommunityStore.DraftMedia] {
+    /// 2026-09-23). `spec` is (demo photo, top colour, bottom colour, aspect, isVideo); the
+    /// gradient only stands in when the photo cannot load.
+    static func media(_ spec: [(String?, UIColor, UIColor, Double, Bool)]) async -> [CommunityStore.DraftMedia] {
         var items: [CommunityStore.DraftMedia] = []
-        for (top, bottom, aspect, isVideo) in spec {
-            guard let poster = fakeSelfie(top, bottom, aspect: aspect) else { continue }
+        for (name, top, bottom, aspect, isVideo) in spec {
+            let photo = name.flatMap(demoPhoto)
+            guard let poster = photo.flatMap(PostPhoto.prepare) ?? fakeSelfie(top, bottom, aspect: aspect) else { continue }
             if isVideo {
-                guard let video = await fakeVideo(top, bottom, aspect: aspect) else { continue }
+                guard let video = await fakeVideo(top, bottom, aspect: aspect, photo: photo?.cgImage) else { continue }
                 items.append(.init(kind: .video, aspect: aspect, fileURL: video, posterURL: poster))
             } else {
                 items.append(.init(kind: .photo, aspect: aspect, fileURL: poster, posterURL: poster))
@@ -146,16 +170,16 @@ enum DemoCommunity {
         // One photo (the ordinary case).
         let melvinPost = try? await melvin.post(.init(minutes: 14, streak: 9, technique: "Slow breathing",
                                                        caption: "Cold enough to see my breath.",
-                                                       media: media([(UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1), 0.75, false)]),
+                                                       media: media([("demo-feed-roof", UIColor(red: 0.24, green: 0.35, blue: 0.42, alpha: 1), UIColor(red: 0.54, green: 0.42, blue: 0.29, alpha: 1), 0.75, false)]),
                                                        practicedAt: Date().addingTimeInterval(-3_600),
                                                        title: "Roof before work", sound: "Rain"))
         // Three photos, different aspect ratios, so the strip's "shrink to
         // one height, never crop" rule is exercised across shapes.
         _ = try? await melvin.post(.init(minutes: 25, streak: 8, technique: "Guided",
                                           caption: "", media: media([
-                                            (UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1), 0.75, false),
-                                            (UIColor(red: 0.20, green: 0.24, blue: 0.28, alpha: 1), UIColor(red: 0.10, green: 0.12, blue: 0.16, alpha: 1), 1.33, false),
-                                            (UIColor(red: 0.30, green: 0.28, blue: 0.20, alpha: 1), UIColor(red: 0.55, green: 0.48, blue: 0.32, alpha: 1), 1.0, false),
+                                            ("demo-feed-window", UIColor(red: 0.17, green: 0.14, blue: 0.10, alpha: 1), UIColor(red: 0.42, green: 0.31, blue: 0.13, alpha: 1), 0.75, false),
+                                            ("demo-feed-field", UIColor(red: 0.20, green: 0.24, blue: 0.28, alpha: 1), UIColor(red: 0.10, green: 0.12, blue: 0.16, alpha: 1), 1.33, false),
+                                            ("demo-feed-tea", UIColor(red: 0.30, green: 0.28, blue: 0.20, alpha: 1), UIColor(red: 0.55, green: 0.48, blue: 0.32, alpha: 1), 1.0, false),
                                           ]),
                                           practicedAt: Date().addingTimeInterval(-86_400 - 1_800),
                                           title: "Evening meditation", sound: "Guided"))
@@ -193,9 +217,9 @@ enum DemoCommunity {
         // viewer's mixed paging both get a real post to open.
         _ = try? await me.post(.init(minutes: 18, streak: 4, technique: "Counting",
                                       caption: "", media: media([
-                                        (UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1), 0.75, false),
-                                        (UIColor(red: 0.18, green: 0.26, blue: 0.22, alpha: 1), UIColor(red: 0.08, green: 0.14, blue: 0.11, alpha: 1), 1.78, true),
-                                        (UIColor(red: 0.34, green: 0.28, blue: 0.40, alpha: 1), UIColor(red: 0.14, green: 0.11, blue: 0.20, alpha: 1), 0.75, false),
+                                        ("demo-feed-feet", UIColor(red: 0.30, green: 0.22, blue: 0.24, alpha: 1), UIColor(red: 0.12, green: 0.10, blue: 0.09, alpha: 1), 0.75, false),
+                                        ("demo-feed-sunrise", UIColor(red: 0.18, green: 0.26, blue: 0.22, alpha: 1), UIColor(red: 0.08, green: 0.14, blue: 0.11, alpha: 1), 1.78, true),
+                                        ("demo-feed-lily", UIColor(red: 0.34, green: 0.28, blue: 0.40, alpha: 1), UIColor(red: 0.14, green: 0.11, blue: 0.20, alpha: 1), 0.75, false),
                                       ]),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2),
                                       title: "Morning session", sound: "Silence"))
