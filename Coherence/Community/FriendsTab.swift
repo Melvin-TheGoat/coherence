@@ -142,90 +142,20 @@ private struct StatusBarScrim: ViewModifier {
 /// Profile and the guide stand in, with nobody in it.
 struct FriendsSky<Content: View>: View {
     var height: CGFloat
+    /// Draw the valley this tall and show only its top `height`: a short
+    /// band then keeps the sky and hills at their natural size instead of
+    /// squashing the whole scene, which ran the ridge line through the
+    /// words. nil draws the scene at the band's own height.
+    var sceneHeight: CGFloat? = nil
     @ViewBuilder var content: Content
 
     var body: some View {
         ValleyScene(progress: 0, showsFigure: false)
-            .frame(height: height)
+            .frame(height: max(height, sceneHeight ?? height))
             .frame(maxWidth: .infinity)
+            .frame(height: height, alignment: .top)
             .clipped()
             .overlay { content }
-    }
-}
-
-/// Your friends standing on the meadow, the ones who posted a session today
-/// glowing with Otto's own warm light (the approved mockup's one new idea).
-/// It reads only who you are friends with and whether they posted today:
-/// the feed is the only evidence 808 has that a friend sat, and nothing
-/// from Block or Screen Time ever reaches it. The last face is Invite.
-private struct FriendsOnTheMeadow: View {
-    @ObservedObject var model: CommunityModel
-
-    private var postedToday: Set<String> {
-        Set(model.feed.filter { Calendar.current.isDateInToday($0.practicedAt) }.map(\.author))
-    }
-
-    /// Today's first, then everyone else, each in the order they were added.
-    private var ordered: [String] {
-        let lit = postedToday
-        return model.friends.filter(lit.contains) + model.friends.filter { !lit.contains($0) }
-    }
-
-    var body: some View {
-        let lit = postedToday
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 12) {
-                ForEach(ordered, id: \.self) { id in
-                    NavigationLink(value: id) { face(id, lit: lit.contains(id)) }
-                        .buttonStyle(CardButtonStyle())
-                }
-                ShareLink(item: InviteButton.message(for: model.profile?.username ?? "")) {
-                    inviteFace
-                }
-                .buttonStyle(CardButtonStyle())
-                .simultaneousGesture(TapGesture().onEnded { Analytics.track(.inviteShared) })
-            }
-            .padding(.horizontal, AppMetrics.screenPadding)
-            // Room for the glow, which spills past the circle.
-            .padding(.vertical, 8)
-        }
-    }
-
-    private func face(_ id: String, lit: Bool) -> some View {
-        let person = model.person(id)
-        let name = person.map { $0.displayName.isEmpty ? "@" + $0.username : $0.displayName } ?? "Friend"
-        return VStack(spacing: 4) {
-            ProfilePortrait(photoURL: person?.avatarURL, size: 50)
-                .overlay(Circle().stroke(lit ? AppColor.auraGlow : .white, lineWidth: 3))
-                .shadow(color: lit ? AppColor.auraGlow.opacity(0.95) : .black.opacity(0.18),
-                        radius: lit ? 9 : 3, y: lit ? 0 : 2)
-            label(name)
-        }
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(lit ? "\(name), posted a session today" : name)
-    }
-
-    private var inviteFace: some View {
-        VStack(spacing: 4) {
-            Image(systemName: "plus")
-                .font(.system(size: 20, weight: .bold))
-                .foregroundStyle(AppColor.skyDeep)
-                .frame(width: 50, height: 50)
-                .background(AppColor.backgroundPrimary.opacity(0.94), in: Circle())
-                .overlay(Circle().strokeBorder(AppColor.skyDeep.opacity(0.45),
-                                               style: StrokeStyle(lineWidth: 2, dash: [4, 3])))
-            label("Invite")
-        }
-        .accessibilityLabel("Invite a friend")
-    }
-
-    private func label(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 11, weight: .heavy, design: .rounded))
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.35), radius: 2, y: 1)
-            .lineLimit(1)
-            .frame(width: 60)
     }
 }
 
@@ -398,7 +328,7 @@ struct FeedView: View {
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
             .modifier(NoTopEdgeHaze())
-            .modifier(StatusBarScrim(height: top, threshold: 160))
+            .modifier(StatusBarScrim(height: top, threshold: 100))
             .refreshable { await model.refresh() }
         }
         .background(ValleyGround.meadow.ignoresSafeArea())
@@ -413,10 +343,19 @@ struct FeedView: View {
         }
     }
 
-    /// The title, your handle and requests in the sky; your friends standing
-    /// on the meadow below them.
+    /// The title, your handle, Invite and Requests in the sky.
+    ///
+    /// **No row of friends' faces on the meadow any more** (Melvin,
+    /// 2026-09-25: "the profile photos at the top are weird looking, get rid
+    /// of them, and raise everything else up"). The band is only as tall as
+    /// its words need, so the search and the first post sit about 100pt
+    /// higher. A friend's page is still a tap on their name in a post, or on
+    /// your followers and following in Profile; Invite, which was the last
+    /// face in that row, is a pill beside Requests.
     private func band(top: CGFloat) -> some View {
-        FriendsSky(height: top + 216) {
+        // Cut at 62% of the scene: sky and hills, down to the near green
+        // ridge, which runs straight into the page's own meadow.
+        FriendsSky(height: top + 116, sceneHeight: (top + 116) / 0.62) {
             VStack(spacing: 0) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 1) {
@@ -430,15 +369,34 @@ struct FeedView: View {
                         }
                     }
                     Spacer(minLength: 8)
-                    requestsButton.padding(.top, 6)
+                    HStack(spacing: 8) {
+                        inviteButton
+                        requestsButton
+                    }
+                    .padding(.top, 6)
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.top, top + 10)
                 Spacer(minLength: 0)
-                FriendsOnTheMeadow(model: model)
-                    .padding(.bottom, 4)
             }
         }
+    }
+
+    /// Invite, a cream pill like Requests at rest: never gold, which is kept
+    /// for a request somebody is waiting on.
+    private var inviteButton: some View {
+        ShareLink(item: InviteButton.message(for: model.profile?.username ?? "")) {
+            Label("Invite", systemImage: "person.badge.plus")
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(ValleyGround.ink)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Capsule().fill(AppColor.backgroundPrimary.opacity(0.94))
+                    .shadow(color: .black.opacity(0.12), radius: 5, y: 2))
+                .padding(.bottom, 3)
+        }
+        .simultaneousGesture(TapGesture().onEnded { Analytics.track(.inviteShared) })
+        .accessibilityLabel("Invite a friend")
     }
 
     #if DEBUG
