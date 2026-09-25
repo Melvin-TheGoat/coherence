@@ -3769,6 +3769,25 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
 - **The Do Not Disturb shortcuts are published** and in `FocusShortcut`,
   checked against iCloud first (names exact, one action each).
 
+## THE MEADOW TAB BAR IS A TEST, DEBUG ONLY (2026-09-25, Melvin)
+
+Concept 1 of `mockups/tabbar-icons/PROMPTS.md` ("the bar is the meadow"),
+built from the ChatGPT sheet Melvin generated: a cottage (Home), a wooden
+gate (Block), a green mound with a white plus (Begin), two sloths (Friends)
+and a signpost (Profile), standing on rolling hills in the valley's own
+daytime colours; the selected one stands in a sunbeam with its label in a
+white pill. `MeadowTabBar.swift`, switched in `MainTabBar.usesMeadow`: on in
+DEBUG, off with Settings > Block (debug) > "Meadow tab bar (test)" or
+`CLASSIC_TAB_BAR=1`, never in Release.
+
+- **The plus is green, not gold** (Melvin: "we actually dont want the plus
+  to be gold"), the onboarding buttons' `OnboardingGreen`. If this bar
+  ships, the colour rule "the plus is the single gold object on the bar"
+  in the FIVE-TAB LAYOUT section is retired with it.
+- **The icons are cut from the sheet** (`Coherence/TabBar/tab-*.png`,
+  about 120 px each, cream flooded away), so they are soft at tab size. A
+  version that ships needs the set exported at 1024 px.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in

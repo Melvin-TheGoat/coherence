@@ -65,6 +65,7 @@ private struct SettingsForm: View {
     @State private var primerRows = 0
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
+    @AppStorage(MeadowTabBar.storageKey) private var meadowTabBar = true
     #endif
 
     private let durationOptions: [(String, Int?)] = [
@@ -361,6 +362,13 @@ private struct SettingsForm: View {
         settingsCard {
             navRow(icon: "bell.badge", title: "Otto's unblock screens", teal: true) {
                 InterventionGalleryView()
+            }
+            divider
+            // The meadow tab bar test (2026-09-25), so the two bars can be
+            // compared on a phone.
+            row(icon: "leaf", title: "Meadow tab bar (test)") {
+                Toggle("", isOn: $meadowTabBar)
+                    .labelsHidden().tint(AppColor.calmAccent)
             }
         }
     }

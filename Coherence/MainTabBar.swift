@@ -36,7 +36,30 @@ struct MainTabBar: View {
     @Binding var selection: MainTab
     let onPlus: () -> Void
 
+    /// The meadow bar is a TEST (see `MeadowTabBar`): on in development builds
+    /// unless switched off in Settings (Block (debug)) or launched with
+    /// `CLASSIC_TAB_BAR=1`, never in Release. It draws the Block and Friends
+    /// tabs, so it steps aside when either flag is off.
+    @AppStorage(MeadowTabBar.storageKey) private var meadowTest = true
+
+    private var usesMeadow: Bool {
+        #if DEBUG
+        return meadowTest && FeatureFlags.block && FeatureFlags.friends
+            && ProcessInfo.processInfo.environment["CLASSIC_TAB_BAR"] != "1"
+        #else
+        return false
+        #endif
+    }
+
     var body: some View {
+        if usesMeadow {
+            MeadowTabBar(selection: $selection, onPlus: onPlus)
+        } else {
+            classic
+        }
+    }
+
+    private var classic: some View {
         HStack(alignment: .top, spacing: 0) {
             item(.home, icon: "house", label: "Home")
             if FeatureFlags.block {
