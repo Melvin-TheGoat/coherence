@@ -4,7 +4,7 @@ import UIKit
 /// The bar as a strip of Otto's meadow. A TEST (Melvin, 2026-09-25: "Can we
 /// test it with this?"), built from the ChatGPT sheet he made from concept 1
 /// of `mockups/tabbar-icons/PROMPTS.md`, "the bar is the meadow". DEBUG only,
-/// switched in `MainTabBar.usesMeadow`; Release draws the classic bar.
+/// one of the `TestTabBar` styles; Release draws the classic bar.
 ///
 /// Each tab is a small object standing in the grass: a cottage (Home), a
 /// wooden gate (Block), a green mound with a white plus (Begin, in the green
@@ -16,8 +16,6 @@ import UIKit
 /// 120 px each), so they are a little soft at this size. A version that
 /// ships needs the set exported larger.
 struct MeadowTabBar: View {
-    static let storageKey = "debug.meadowTabBar"
-
     @Binding var selection: MainTab
     let onPlus: () -> Void
 
@@ -149,8 +147,54 @@ private struct MeadowBarGround: View {
             RollingHills(peaks: [0.4, 0.7, 0.35, 0.6, 0.3, 0.65, 0.45], crest: 12)
                 .fill(LinearGradient(colors: day.field, startPoint: .top, endPoint: .bottom))
                 .padding(.top, 26)
+            // The sheet's grass is scattered with flowers and tufts between
+            // the objects (Melvin: "You didnt use the like flowers and decor
+            // surrounding the icons?").
+            Canvas { ctx, size in
+                let band = min(size.height, 96)
+                for f in Self.flowers {
+                    let c = CGPoint(x: f.x * size.width, y: 40 + f.y * (band - 48))
+                    if f.tuft { Self.tuft(at: c, in: &ctx) }
+                    Self.flower(at: c, scale: f.s, yellow: f.yellow, in: &ctx)
+                }
+            }
+            .allowsHitTesting(false)
         }
         .shadow(color: .black.opacity(0.12), radius: 8, y: -2)
+    }
+
+    /// Spread across the grass, most of them between the objects rather than
+    /// under them: x and y are fractions of the band.
+    private static let flowers: [(x: CGFloat, y: CGFloat, s: CGFloat, yellow: Bool, tuft: Bool)] = [
+        (0.02, 0.35, 1.0, false, true), (0.09, 0.90, 0.8, false, false), (0.19, 0.20, 0.7, true, false),
+        (0.21, 0.80, 0.9, false, true), (0.31, 0.15, 0.6, false, false), (0.39, 0.95, 0.8, true, true),
+        (0.44, 0.30, 0.7, false, false), (0.57, 0.25, 0.7, false, true), (0.60, 0.92, 0.9, true, false),
+        (0.70, 0.18, 0.6, false, false), (0.79, 0.85, 0.8, false, true), (0.81, 0.22, 0.7, true, false),
+        (0.90, 0.30, 0.8, false, false), (0.97, 0.75, 1.0, false, true),
+    ]
+
+    private static func flower(at c: CGPoint, scale s: CGFloat, yellow: Bool, in ctx: inout GraphicsContext) {
+        let petal = 2.3 * s, reach = 2.5 * s
+        for k in 0..<5 {
+            let a = CGFloat(k) / 5 * 2 * .pi - .pi / 2
+            let p = CGPoint(x: c.x + cos(a) * reach, y: c.y + sin(a) * reach)
+            ctx.fill(Path(ellipseIn: CGRect(x: p.x - petal, y: p.y - petal, width: petal * 2, height: petal * 2)),
+                     with: .color(yellow ? Color(red: 1, green: 0.86, blue: 0.42) : .white))
+        }
+        let r = 1.7 * s
+        ctx.fill(Path(ellipseIn: CGRect(x: c.x - r, y: c.y - r, width: r * 2, height: r * 2)),
+                 with: .color(yellow ? Color(red: 0.93, green: 0.55, blue: 0.2) : Color(red: 0.97, green: 0.78, blue: 0.3)))
+    }
+
+    private static func tuft(at c: CGPoint, in ctx: inout GraphicsContext) {
+        var p = Path()
+        for dx in [-5.0, -1.0, 3.5] as [CGFloat] {
+            p.move(to: CGPoint(x: c.x + dx, y: c.y + 7))
+            p.addQuadCurve(to: CGPoint(x: c.x + dx * 1.6, y: c.y - 2),
+                           control: CGPoint(x: c.x + dx * 0.4, y: c.y + 2))
+        }
+        ctx.stroke(p, with: .color(Color(red: 0.36, green: 0.58, blue: 0.3)),
+                   style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
     }
 }
 

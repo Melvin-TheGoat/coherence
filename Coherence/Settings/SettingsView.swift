@@ -65,7 +65,7 @@ private struct SettingsForm: View {
     @State private var primerRows = 0
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
-    @AppStorage(MeadowTabBar.storageKey) private var meadowTabBar = true
+    @AppStorage(TestTabBar.storageKey) private var tabBarStyle = TestTabBar.lifted.rawValue
     #endif
 
     private let durationOptions: [(String, Int?)] = [
@@ -364,11 +364,14 @@ private struct SettingsForm: View {
                 InterventionGalleryView()
             }
             divider
-            // The meadow tab bar test (2026-09-25), so the two bars can be
-            // compared on a phone.
-            row(icon: "leaf", title: "Meadow tab bar (test)") {
-                Toggle("", isOn: $meadowTabBar)
-                    .labelsHidden().tint(AppColor.calmAccent)
+            // The tab bar test (2026-09-25), so the bars can be compared on
+            // a phone.
+            row(icon: "leaf", title: "Tab bar (test)") {
+                Picker("", selection: $tabBarStyle) {
+                    ForEach(TestTabBar.allCases) { Text($0.label).tag($0.rawValue) }
+                }
+                .labelsHidden()
+                .tint(AppColor.calmAccent)
             }
         }
     }

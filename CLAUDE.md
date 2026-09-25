@@ -3769,7 +3769,20 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
 - **The Do Not Disturb shortcuts are published** and in `FocusShortcut`,
   checked against iCloud first (names exact, one action each).
 
-## THE MEADOW TAB BAR IS A TEST, DEBUG ONLY (2026-09-25, Melvin)
+## TWO TAB BARS UNDER TEST, DEBUG ONLY (2026-09-25, Melvin)
+
+Settings > Block (debug) > "Tab bar (test)" picks Classic, Meadow or Lifted
+(`TestTabBar`, stored in `debug.tabBarStyle`, Lifted by default);
+`CLASSIC_TAB_BAR=1` forces the old bar; Release always draws the classic one.
+**Lifted** (`LiftedTabBar.swift`) is Melvin's second ChatGPT sheet, Duolingo's
+pressable look: a floating cream bar with a darker lip, the four objects cut
+from the sheet at about 200 px (`Coherence/TabBar/lifted-*.png`), the plus
+drawn in code as the onboarding button (`OnboardingGreen`, white plus), and
+the selected tab in a rounded square with a 2.5pt outline and a light wash
+(blue for Home, Block and Profile, green for Friends, as the sheet colours
+them). The Meadow bar below gained the sheet's scattered flowers and tufts.
+
+### The meadow bar
 
 Concept 1 of `mockups/tabbar-icons/PROMPTS.md` ("the bar is the meadow"),
 built from the ChatGPT sheet Melvin generated: a cottage (Home), a wooden
@@ -3777,8 +3790,7 @@ gate (Block), a green mound with a white plus (Begin), two sloths (Friends)
 and a signpost (Profile), standing on rolling hills in the valley's own
 daytime colours; the selected one stands in a sunbeam with its label in a
 white pill. `MeadowTabBar.swift`, switched in `MainTabBar.usesMeadow`: on in
-DEBUG, off with Settings > Block (debug) > "Meadow tab bar (test)" or
-`CLASSIC_TAB_BAR=1`, never in Release.
+DEBUG as one of the `TestTabBar` styles, never in Release.
 
 - **The plus is green, not gold** (Melvin: "we actually dont want the plus
   to be gold"), the onboarding buttons' `OnboardingGreen`. If this bar

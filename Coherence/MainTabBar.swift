@@ -36,26 +36,27 @@ struct MainTabBar: View {
     @Binding var selection: MainTab
     let onPlus: () -> Void
 
-    /// The meadow bar is a TEST (see `MeadowTabBar`): on in development builds
-    /// unless switched off in Settings (Block (debug)) or launched with
-    /// `CLASSIC_TAB_BAR=1`, never in Release. It draws the Block and Friends
-    /// tabs, so it steps aside when either flag is off.
-    @AppStorage(MeadowTabBar.storageKey) private var meadowTest = true
+    /// Two new bars are under TEST (`TestTabBar`, 2026-09-25): chosen in
+    /// Settings > Block (debug) > "Tab bar (test)", Lifted by default, the
+    /// classic bar with `CLASSIC_TAB_BAR=1`, and never in Release. Both draw
+    /// the Block and Friends tabs, so they step aside when either flag is off.
+    @AppStorage(TestTabBar.storageKey) private var testStyle = TestTabBar.lifted.rawValue
 
-    private var usesMeadow: Bool {
+    private var style: TestTabBar {
         #if DEBUG
-        return meadowTest && FeatureFlags.block && FeatureFlags.friends
-            && ProcessInfo.processInfo.environment["CLASSIC_TAB_BAR"] != "1"
+        guard FeatureFlags.block, FeatureFlags.friends,
+              ProcessInfo.processInfo.environment["CLASSIC_TAB_BAR"] != "1" else { return .classic }
+        return TestTabBar(rawValue: testStyle) ?? .lifted
         #else
-        return false
+        return .classic
         #endif
     }
 
     var body: some View {
-        if usesMeadow {
-            MeadowTabBar(selection: $selection, onPlus: onPlus)
-        } else {
-            classic
+        switch style {
+        case .classic: classic
+        case .meadow: MeadowTabBar(selection: $selection, onPlus: onPlus)
+        case .lifted: LiftedTabBar(selection: $selection, onPlus: onPlus)
         }
     }
 
