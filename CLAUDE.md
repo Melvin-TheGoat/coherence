@@ -5441,6 +5441,17 @@ after `age`. Starts in the middle. **Otto is a placeholder**: Aziz is making
 a Runway clip of him seated, paw on chin, thinking (from `otto-sit-happy.png`),
 to go on this step the way the writing clip does. `BaselineScreen` is deleted.
 
+**"Putting together your plan…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
+after the frequency slider for now; it belongs at the END of the interview
+once the old questions are redone): the writing Otto on his cushion (clip
+layer, valley Otto hidden) and three bars filling in turn, each ending in a
+tick and a line read back from THEIR answers: their goals, what 808 does
+about what gets in the way (only things the app really does; Block's line
+only on Block builds), and "Every day at" their reminder time. Brainrot's
+"Analyzing your habits" style lines were refused as pretend work. The title
+becomes "Your plan is ready!" and "See my plan" appears. **The next screen
+must deliver that plan; it does not exist yet.**
+
 **"Did you know?"** (`DidYouKnowScreen`, `Step.didYouKnow`, after the age
 question, Brainrot's screen): four white fact cards popping in with a tick
 above the seated Steady Otto. **Every fact is from a study 808 already

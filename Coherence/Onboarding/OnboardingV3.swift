@@ -1019,6 +1019,164 @@ private struct FactCard: View {
     }
 }
 
+/// "Putting together your plan…" (Aziz, 2026-09-25, Brainrot's
+/// "Personalizing your experience"). The writing Otto on his cushion (drawn by
+/// `OnboardingView`'s clip layer) while three bars fill one after another,
+/// each ending in a tick and a line read back from THEIR answers. Brainrot's
+/// "Analyzing your habits / Calculating your profile" would be pretend work;
+/// every line here is something they told us, and the reminder time is real
+/// (the quiet-minutes answer set it). The next screen has to deliver the plan.
+struct BuildingPlanScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// How far each bar has filled, 0 to 1.
+    @State private var fill: [Double] = [0, 0, 0]
+    @State private var done: [Bool] = [false, false, false]
+    @State private var ctaShown = false
+
+    private var rows: [(working: String, result: String)] {
+        [("Reading your goals…", Self.goals(answers.motivations)),
+         ("Planning around what gets in the way…", Self.helps(answers.obstacles ?? [])),
+         ("Setting your daily reminder…", Self.time(answers.reminderTime))]
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // No progress bar (Brainrot's has none): a full one read as a
+            // fourth row of the plan.
+            Text(ctaShown ? "Your plan is ready!" : "Putting together your plan…")
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .contentTransition(.opacity)
+                .animation(.easeInOut(duration: 0.3), value: ctaShown)
+                .padding(.top, 44)
+
+            VStack(spacing: 18) {
+                ForEach(0..<3, id: \.self) { i in
+                    PlanRow(working: rows[i].working, result: rows[i].result,
+                            fill: fill[i], done: done[i])
+                }
+            }
+            .padding(.top, 22)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding + 8)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "See my plan", action: onContinue)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+                .opacity(ctaShown ? 1 : 0)
+                .offset(y: ctaShown ? 0 : 30)
+                .allowsHitTesting(ctaShown)
+        }
+        .task { await play() }
+    }
+
+    private func play() async {
+        guard !ctaShown else { return }
+        if reduceMotion {
+            fill = [1, 1, 1]; done = [true, true, true]; ctaShown = true
+            return
+        }
+        WelcomeHaptics.prepare()
+        try? await Task.sleep(for: .milliseconds(400))
+        for i in 0..<3 {
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeInOut(duration: 1.3)) { fill[i] = 1 }
+            try? await Task.sleep(for: .milliseconds(1350))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) { done[i] = true }
+            WelcomeHaptics.tick()
+            try? await Task.sleep(for: .milliseconds(350))
+        }
+        guard !Task.isCancelled else { return }
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+        WelcomeHaptics.land()
+    }
+
+    /// "Feel less stressed and sleep better", in the order the question lists
+    /// them, lowercased after the first.
+    static func goals(_ picked: Set<Motivation>) -> String {
+        let names = Motivation.offered.filter(picked.contains).map(\.label)
+        guard let first = names.first else { return "Your goals, noted" }
+        let rest = names.dropFirst().map { $0.prefix(1).lowercased() + $0.dropFirst() }
+        return join([first] + rest)
+    }
+
+    /// What 808 does about each obstacle, only things the app really does.
+    static func helps(_ picked: Set<Obstacle>) -> String {
+        func help(_ o: Obstacle) -> String {
+            switch o {
+            case .forget:             return "a daily reminder"
+            case .noTime:             return "sessions as short as five minutes"
+            case .mindWontSettle:     return "a breath to settle in"
+            case .unsureDoingItRight: return "a guide for every method"
+            case .loseMotivation:     return "a streak and Otto's glow"
+            case .phonePulls:         return FeatureFlags.block ? "Otto holding your apps" : "a quiet Do Not Disturb switch"
+            }
+        }
+        let list = Obstacle.allCases.filter(picked.contains).prefix(2).map(help)
+        guard !list.isEmpty else { return "Short sessions and a daily reminder" }
+        let s = join(Array(list))
+        return s.prefix(1).uppercased() + s.dropFirst()
+    }
+
+    static func time(_ date: Date?) -> String {
+        let t = date ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date()) ?? Date()
+        return "Every day at " + t.formatted(date: .omitted, time: .shortened)
+    }
+
+    private static func join(_ parts: [String]) -> String {
+        switch parts.count {
+        case 0: return ""
+        case 1: return parts[0]
+        case 2: return parts[0] + " and " + parts[1]
+        default: return parts.dropLast().joined(separator: ", ") + " and " + parts.last!
+        }
+    }
+}
+
+/// One bar of the plan screen: the working line, a bar that fills, then a
+/// tick and the answer read back.
+private struct PlanRow: View {
+    let working: String
+    let result: String
+    let fill: Double
+    let done: Bool
+
+    var body: some View {
+        VStack(spacing: 7) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.white.opacity(0.9))
+                    Capsule().fill(OnboardingGreen.fill)
+                        .frame(width: max(0, geo.size.width * fill))
+                }
+            }
+            .frame(height: 9)
+            HStack(spacing: 6) {
+                if done {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(OnboardingGreen.fill)
+                        .transition(.scale.combined(with: .opacity))
+                }
+                Text(done ? result : working)
+                    .contentTransition(.opacity)
+            }
+            .font(.system(size: 16, weight: .semibold, design: .rounded))
+            .foregroundStyle(done ? AppColor.textPrimary : AppColor.skyDeep)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// The welcome screen's haptics. Prepared generators, for the reason
 /// `PressHaptic` gives: an unprepared one can drop the first pulses while the
 /// Taptic Engine spins up, and a typed line would lose its opening letters.

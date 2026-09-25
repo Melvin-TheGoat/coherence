@@ -270,6 +270,7 @@ enum Analytics {
         "blockIntro":        "23c Otto can hold your apps (cut 2026-09-22)",
         "auraDemo":          "23d Drag to see Otto brighten (cut 2026-09-22, now the stress screen)",
         "baseline":          "04g How often do you meditate right now? (slider, after Did you know since 2026-09-25)",
+        "buildingPlan":      "04h Putting together your plan (reads the answers back)",
         "age":               "04e2 How old are you?",
         "didYouKnow":        "04f Did you know? (four sourced facts)",
         "habitHistory":      "04e Have you tried to make meditation a habit before?",

@@ -122,6 +122,9 @@ struct OnboardingView: View {
         case didYouKnow
         /// Added 2026-09-25: "How old are you?", before Did you know. Last.
         case age
+        /// Added 2026-09-25: "Putting together your plan", the writing Otto and
+        /// three bars that read the answers back. Last in the enum.
+        case buildingPlan
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -364,7 +367,8 @@ struct OnboardingView: View {
                                     : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
-                                       || step == .didYouKnow || step == .baseline) ? .steady : nil,
+                                       || step == .didYouKnow || step == .baseline
+                                       || step == .buildingPlan) ? .steady : nil,
                              look: step == .stress ? StressScreen.look(for: answers.stress)
                                    : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
@@ -372,7 +376,7 @@ struct OnboardingView: View {
                              standingFigure: step == .relief,
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
-                             figureHidden: step == .questionCount,
+                             figureHidden: step == .questionCount || step == .buildingPlan,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline) ? DidYouKnowScreen.ottoDrop : 0)
 
@@ -396,8 +400,10 @@ struct OnboardingView: View {
             // It glides up into the corner for the goal question (Aziz: the
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
-                || step == .quietTime || step == .habitHistory || step == .age {
-                SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
+                || step == .quietTime || step == .habitHistory || step == .age
+                || step == .buildingPlan {
+                SeatedClipLayer(clip: .writing,
+                                inCorner: step != .questionCount && step != .buildingPlan)
                     .transition(.opacity)
             }
 
@@ -504,7 +510,12 @@ struct OnboardingView: View {
 
         case .baseline:
             FrequencyScreen(frequency: $answers.currentFrequency,
-                            count: interviewCount) { go(nextAfter(.baseline)) }
+                            count: interviewCount) { go(.buildingPlan) }
+
+        // After the new questions for now; it belongs at the END of the
+        // interview once Aziz's redo of the old questions lands.
+        case .buildingPlan:
+            BuildingPlanScreen(answers: answers) { go(nextAfter(.baseline)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,
