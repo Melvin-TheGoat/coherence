@@ -213,6 +213,81 @@ struct LifeNumberScreen: View {
     }
 }
 
+/// The pause after the years (Aziz, 2026-09-25, Brainrot's "Do you
+/// understand what it means…"): a white page that types one question with a
+/// tick a letter, their number in blue, then moves on by itself (Skip moves
+/// on at once). A question pointing forward rather than Brainrot's challenge,
+/// so it names what they could have rather than what they are losing.
+struct LifePauseScreen: View {
+    let answers: OnboardingAnswers
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var letters = 0
+    @State private var done = false
+
+    private var amount: String {
+        if let y = MindWander.years(answers) { return y == 1 ? "1 year" : "\(y) years" }
+        return "\(MindWander.daysPerYear(answers)) days a year"
+    }
+    private var sentence: String { "What would you do with \(amount) of being fully here?" }
+
+    private var typed: AttributedString {
+        let text = sentence
+        var line = AttributedString(text)
+        let cut = line.index(line.startIndex, offsetByCharacters: min(letters, text.count))
+        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        line[cut..<line.endIndex].foregroundColor = .clear
+        if let r = line.range(of: amount), r.upperBound <= cut {
+            line[r].foregroundColor = AppColor.skyDeep
+        }
+        return line
+    }
+
+    var body: some View {
+        VStack {
+            Spacer()
+            Text(typed)
+                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, AppMetrics.screenPadding + 12)
+                .accessibilityLabel(sentence)
+            Spacer()
+            Button("Skip", action: finish)
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary.opacity(0.4))
+                .padding(.bottom, 24)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .task {
+            let text = sentence
+            if reduceMotion {
+                letters = text.count
+            } else {
+                WelcomeHaptics.prepare()
+                try? await Task.sleep(for: .milliseconds(450))
+                for (i, ch) in text.enumerated() {
+                    guard !Task.isCancelled, !done else { return }
+                    letters = i + 1
+                    if !ch.isWhitespace { WelcomeHaptics.tick() }
+                    try? await Task.sleep(for: .milliseconds(40))
+                }
+            }
+            // Long enough to sit with it.
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            finish()
+        }
+    }
+
+    private func finish() {
+        guard !done else { return }
+        done = true
+        onContinue()
+    }
+}
+
 /// Dark text with a white outline, Brainrot's number style, used for all
 /// three lines of the years screen: eight white copies
 /// nudged around it, then the dark text on top.

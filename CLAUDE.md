@@ -5491,7 +5491,12 @@ CLOCK across the top of the sky, so the words sit in the gap between the
 clock and Otto's head (40% down), smaller than Brainrot's; at the top they
 sat on the clock. A dark fade over the meadow was tried first and looked
 wrong. A clip regenerated WITHOUT the clock would let the words go full size
-at the top. `MindWander`
+at the top.
+**Then the pause** (`LifePauseScreen`, `Step.lifePause`, a white page via
+`isWhitePage`): "What would you do with N years of being fully here?" typed
+with a tick a letter, their number in blue, moving on by itself 2.5 s after
+it finishes (Skip at once). A forward question instead of Brainrot's "Do you
+understand what it means…", per the copy rules. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good
