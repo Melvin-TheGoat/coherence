@@ -461,6 +461,7 @@ struct OnboardingView: View {
                 }
             }
             .environment(\.onboardingSharedGround, true)
+            .environment(\.typingHaptics, true)
             .environment(\.onboardingBack,
                          history.isEmpty || !step.allowsBack ? nil : goBack)
             .onAppear {

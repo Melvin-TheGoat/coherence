@@ -5505,6 +5505,13 @@ TALL (`headroom` 1.6, from look 9) for the bright ones, where he floats and
 the halo rises over his head. Bottom-aligned both ways, so he is the same
 size and place. Verified on See for yourself and on Home at 97.
 
+**Every typing animation ticks** (Aziz, 2026-09-25). The screens' own
+typed lines tick once per letter (`WelcomeHaptics.tick`); `OttoSpeech`, which
+types five letters a frame, ticks every third frame. OttoSpeech's ticks are
+gated by the `typingHaptics` environment value, which `OnboardingView` turns
+on: the same bubble on Home, Block and the session screens stays silent,
+because Home and a sit never buzz.
+
 **Every typed line in the intro screens is Otto speaking** (Aziz): the
 line under the title moved into `OttoSaysBubble`, white and round, hanging
 just above his head with its tail at him, still typed a letter at a time

@@ -73,6 +73,9 @@ struct OttoSpeech: View {
 
     @State private var shown = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Ticks while it types. ON inside onboarding only (set by
+    /// `OnboardingView`): Home and the session screens never buzz.
+    @Environment(\.typingHaptics) private var typingHaptics
 
     /// Five characters a frame at 60 frames a second: about 300 a second.
     private static let perTick = 5
@@ -133,10 +136,18 @@ struct OttoSpeech: View {
                     guard !Task.isCancelled else { return }
                 }
                 speaking = true
+                let haptics = typingHaptics
+                if haptics { WelcomeHaptics.prepare() }
+                var frame = 0
                 while shown < total {
                     try? await Task.sleep(for: .milliseconds(16))
                     guard !Task.isCancelled else { speaking = false; return }
                     shown = min(total, shown + Self.perTick)
+                    // A light tick as it types (Aziz, 2026-09-25). This bubble
+                    // types five letters a frame, far faster than a tap a
+                    // letter, so it ticks every third frame, about 20 a second.
+                    frame += 1
+                    if haptics && frame % 3 == 1 { WelcomeHaptics.tick() }
                 }
                 speaking = false
             }
@@ -1815,3 +1826,16 @@ struct AuraDemoScreen: View {
     }
 }
 
+/// Whether Otto's typed bubbles tick as they type. Onboarding turns it on
+/// for everything inside it; everywhere else stays silent, because Home and
+/// a sit must never buzz.
+private struct TypingHapticsKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    var typingHaptics: Bool {
+        get { self[TypingHapticsKey.self] }
+        set { self[TypingHapticsKey.self] = newValue }
+    }
+}
