@@ -5445,7 +5445,7 @@ after the frequency slider for now; it belongs at the END of the interview
 once the old questions are redone). Brainrot's "Personalizing your
 experience!" said differently (Aziz): three bars fill in turn with a line
 under each ("Looking at your goals…", "Mapping what gets in the way…",
-"Building your daily routine…"), a tick each, then it moves on by ITSELF.
+"Getting Otto ready…"; "Building your daily routine" was cut, the routine comes later), a tick each, then it moves on by ITSELF.
 A version that read their answers back with check marks was built and
 rejected the same day ("the same thing as the brainrot one").
 **Otto thinks on both the slider and this screen** (`otto-thinking.mov`,

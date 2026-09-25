@@ -1046,7 +1046,7 @@ struct BuildingPlanScreen: View {
 
     static let lines = ["Looking at your goals…",
                         "Mapping what gets in the way…",
-                        "Building your daily routine…"]
+                        "Getting Otto ready…"]
 
     var body: some View {
         VStack(spacing: 0) {
