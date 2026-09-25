@@ -147,6 +147,9 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "N more years of family / fun / beauty",
         /// the life-moments clip. Last in the enum.
         case lifeMoments
+        /// Added 2026-09-25: "Your attention has been hacked.", a white page
+        /// before Why 808 works. Last in the enum.
+        case attentionHacked
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -193,7 +196,7 @@ struct OnboardingView: View {
             switch self {
             // Only the breath now: the welcome and Meet Otto went back to
             // the valley (Aziz, 2026-09-23).
-            case .breath, .breathing, .lifePause, .lifeDots: return true
+            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked: return true
             default: return false
             }
         }
@@ -572,7 +575,10 @@ struct OnboardingView: View {
             GoodNewsScreen(answers: answers) { go(.lifeMoments) }
 
         case .lifeMoments:
-            LifeMomentsScreen(answers: answers) { go(nextAfter(.baseline)) }
+            LifeMomentsScreen(answers: answers) { go(.attentionHacked) }
+
+        case .attentionHacked:
+            AttentionHackedScreen { go(nextAfter(.baseline)) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
