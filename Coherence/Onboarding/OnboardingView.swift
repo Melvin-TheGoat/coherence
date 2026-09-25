@@ -370,7 +370,8 @@ struct OnboardingView: View {
                              // The personalize screen seats its own Otto, a
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount,
-                             seed: lifeSeed)
+                             seed: lifeSeed,
+                             drop: step == .didYouKnow ? DidYouKnowScreen.ottoDrop : 0)
 
             // The breath is a white page, not the valley. Each draws its own white,
             // but while one slides out and the next slides in, both are part
@@ -1052,13 +1053,20 @@ private struct OnboardingValley: View {
     var standingFigure: Bool = false
     var figureHidden: Bool = false
     var seed: UInt64? = nil
+    /// Lower Otto and his cushion by this share of the screen's height
+    /// ("Did you know?", whose cards sit above his head).
+    var drop: CGFloat = 0
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
-        ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
-                    showsFigure: stage != nil, standingFigure: standingFigure,
-                    figureHidden: figureHidden, seed: seed)
+        GeometryReader { geo in
+            ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
+                        showsFigure: stage != nil, standingFigure: standingFigure,
+                        figureHidden: figureHidden, seed: seed,
+                        ottoLift: -geo.size.height * drop)
+        }
+        .ignoresSafeArea()
             .animation(.easeInOut(duration: 0.35), value: stage != nil)
             .accessibilityHidden(stage == nil)
     }

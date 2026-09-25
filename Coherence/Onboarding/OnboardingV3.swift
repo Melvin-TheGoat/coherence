@@ -907,6 +907,11 @@ struct DidYouKnowScreen: View {
 
     @Environment(\.onboardingBack) private var back
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Otto and his cushion sit this share of the screen lower here, so the
+    /// bigger cards (Aziz: "make the boxes a bit bigger") clear his head.
+    /// About 70pt on a 17, and the cushion still clears Continue.
+    static let ottoDrop: CGFloat = 0.08
+
     @State private var shownCards = 0
     @State private var ctaShown = false
 
@@ -919,10 +924,12 @@ struct DidYouKnowScreen: View {
 
     var body: some View {
         GeometryReader { geo in
-            let headTop = SitLayout.ottoTop(in: geo.size)
+            let headTop = SitLayout.ottoTop(in: geo.size) + geo.size.height * Self.ottoDrop
             // A short phone (the SE, 667pt) has about 60pt less above his
             // head than a 17: a compact size keeps the four cards clear of it.
-            let compact = geo.size.height < 760
+            // This height is inside the safe area AND the Continue inset, so
+            // a 17 measures about 700 here and an SE about 580.
+            let compact = geo.size.height < 640
             VStack(spacing: 0) {
                 HStack(spacing: 14) {
                     if let back { OnboardingBackButton(action: back) }
@@ -933,9 +940,9 @@ struct DidYouKnowScreen: View {
                 Text("Did you know?")
                     .font(.system(size: compact ? 26 : 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
-                    .padding(.top, 4)
+                    .padding(.top, 0)
 
-                VStack(spacing: compact ? 5 : 7) {
+                VStack(spacing: compact ? 7 : 10) {
                     ForEach(Array(Self.facts.enumerated()), id: \.offset) { i, fact in
                         FactCard(icon: fact.icon, text: fact.text, compact: compact)
                             .opacity(i < shownCards ? 1 : 0)
@@ -991,20 +998,21 @@ private struct FactCard: View {
     var compact = false
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: compact ? 18 : 20, weight: .semibold))
                 .foregroundStyle(AppColor.skyDeep)
-                .frame(width: 26)
+                .frame(width: 24)
             Text(text)
-                .font(.system(size: compact ? 13.5 : 15, weight: .semibold, design: .rounded))
+                .font(.system(size: compact ? 14 : 15.5, weight: .semibold, design: .rounded))
                 .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, compact ? 7 : 10)
-        .background(RoundedRectangle(cornerRadius: 16, style: .continuous)
+        .padding(.leading, 14)
+        .padding(.trailing, 10)
+        .padding(.vertical, compact ? 10 : 15)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
             .fill(Color.white)
             .shadow(color: .black.opacity(0.08), radius: 6, y: 2))
         .accessibilityElement(children: .combine)

@@ -5434,7 +5434,9 @@ Aziz asked for "risks of not meditating"; it was written as what practice
 does instead, because no study measures harm from not meditating (an
 invented risk is the health claim App Review rejects) and the copy never
 tells the reader what they lack. Goyal is quoted for ANXIETY, not stress
-(the stress evidence is weaker). Cards sit ABOVE Otto, compact under 760pt.
+(the stress evidence is weaker). Cards sit ABOVE Otto, who drops 8% of the screen on this step
+(`OnboardingValley(drop:)`, `DidYouKnowScreen.ottoDrop`) so the bigger cards
+(Aziz) clear his head; compact below 640pt of view height (an SE).
 
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
