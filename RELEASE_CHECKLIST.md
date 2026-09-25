@@ -27,17 +27,14 @@ corrected to match. Do every step below it before returning here.
      APP's App ID only (an extension cannot carry it; the entitlement file
      already declares it, confirm the portal and the archived profile agree,
      via `tools/archive.sh`'s checks).
-   - [ ] Decide and act on Sensitive Content Analysis: either add
-     `com.apple.developer.sensitivecontentanalysis.client` to
-     `Coherence/Coherence.entitlements` and enable it on the App ID (so
-     `PhotoScreen` actually screens photos on devices with Sensitive Content
-     Warning on), or consciously ship without it, relying on the text
-     filter plus report and block as the guideline 1.2 moderation path
-     (this is allowed; automated image screening is not required by 1.2,
-     only "a method for filtering," and captions are already filtered).
-     Either is defensible; ship the decision, not silence. This is a
-     Swift/entitlements change, out of scope for this document's owner to
-     make.
+   - [ ] **Sensitive Content Analysis: DECIDED yes (Melvin, 2026-09-25).**
+     Tick the capability on BOTH App IDs first (Identifiers >
+     `com.lockout.meditate808` and `com.lockout.meditate808.dev` >
+     Capabilities > Sensitive Content Analysis > Save); signing refuses the
+     entitlement until then. Then add
+     `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] to
+     `Coherence/Coherence.entitlements` (self-serve, no approval needed).
+     `PhotoScreen` already runs on every post item and profile photo.
    - [x] **Privacy manifests for Block's three app extensions: DONE in code,
      2026-09-23 (commit 7c31bcd).** Each of BlockMonitor, BlockShield and
      BlockShieldAction reads and writes the shared App Group's `UserDefaults`
@@ -131,6 +128,25 @@ corrected to match. Do every step below it before returning here.
    sheet, deploy `tools/community-reports.gs`, paste its `/exec` URL into
    `ReportClient.endpoint` (a Swift change, out of scope here), file one
    real test report and confirm the email arrives.
+   - [ ] **Child sexual abuse material: a written procedure before photo
+     posts go live** (added 2026-09-25). US law (18 U.S.C. § 2258A) requires
+     a provider that learns of apparent CSAM to report it to NCMEC's
+     CyberTipline and preserve it; the REPORT Act added penalties. Register
+     808 with NCMEC as an electronic service provider, and write down who
+     checks reported photos, how one is preserved and reported, and that it
+     is then removed. Screening photos does not replace this.
+   - [ ] **Texas SB 2420 is enforceable now** (the Supreme Court let it
+     stand on 2026-07-06; Utah's SB 142 has been live since 2026-05-06;
+     Louisiana 2027-07-01; California AB 1043 2027-01-01). Apple's age
+     assurance page: "In regions where legally required, you need to check
+     the age of the people using your app with the Declared Age Range API",
+     and for a significant update, "Until the parent provides consent, the
+     child must be prevented from accessing the significant update". 1.1
+     adds social features and a paid-only model, which likely counts. Decide
+     WITH THE LAWYER, before submitting, whether 1.1 must check age with
+     Declared Age Range for users in those states and hold Friends from
+     minors until a parent consents. The onboarding age question is
+     self-reported and does not count as this check.
 5. **Website redeploy** (manual, Cloudflare Pages, drag the `website`
    folder in): both `website/privacy.html` and `website/terms.html` now
    carry the Friends media-plural wording, the Block section, and the
