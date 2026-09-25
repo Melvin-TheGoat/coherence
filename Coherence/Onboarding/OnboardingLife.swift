@@ -792,21 +792,24 @@ struct WhyItWorksScreen: View {
     @State private var shownRows = 0
     @State private var ctaShown = false
 
+    /// With Block, a chain (Aziz, 2026-09-25): friction, then a reminder
+    /// every time, then the habit sinking in. Without it, the features the
+    /// build does have, so the screen never sells what is not there.
+    private static var chain: Bool { FeatureFlags.block }
+
     private static var rows: [(icon: String, title: String, line: String)] {
-        var r: [(String, String, String)] = [
-            ("sparkles", "Otto's glow",
-             "Meditate and he glows brighter. Skip days and he fades."),
-            ("bell", "A nudge at your time",
-             "One reminder a day, at the time you picked."),
-        ]
-        if FeatureFlags.block {
-            r.append(("lock", "Otto holds your apps",
-                      "Your distracting apps stay locked until you've meditated."))
-        } else {
-            r.append(("clock", "Just five minutes",
-                      "Short enough to fit into any day."))
+        if chain {
+            return [
+                ("lock", "808 puts a little friction between you and your apps", ""),
+                ("bell", "Every time you open one, Otto reminds you to meditate", ""),
+                ("sparkles", "Over time it sinks into your subconscious, and meditating becomes a habit you enjoy instead of dread", ""),
+            ]
         }
-        return r
+        return [
+            ("sparkles", "Otto's glow", "Meditate and he glows brighter. Skip days and he fades."),
+            ("bell", "A nudge at your time", "One reminder a day, at the time you picked."),
+            ("clock", "Just five minutes", "Short enough to fit into any day."),
+        ]
     }
 
     var body: some View {
@@ -819,9 +822,15 @@ struct WhyItWorksScreen: View {
                 .opacity(headShown ? 1 : 0)
                 .scaleEffect(headShown ? 1 : 0.94)
 
-            VStack(spacing: 12) {
+            VStack(spacing: Self.chain ? 6 : 12) {
                 ForEach(Array(Self.rows.enumerated()), id: \.offset) { i, row in
-                    HStack(alignment: .top, spacing: 14) {
+                    if Self.chain && i > 0 {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(OnboardingGreen.shade.opacity(0.7))
+                            .opacity(i < shownRows ? 1 : 0)
+                    }
+                    HStack(alignment: .center, spacing: 14) {
                         Image(systemName: row.icon)
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundStyle(OnboardingGreen.shade)
@@ -829,12 +838,15 @@ struct WhyItWorksScreen: View {
                             .background(Circle().fill(Color(red: 0.84, green: 0.94, blue: 0.82)))
                         VStack(alignment: .leading, spacing: 3) {
                             Text(row.title)
-                                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                                .font(.system(size: Self.chain ? 17 : 18, weight: .heavy, design: .rounded))
                                 .foregroundStyle(AppColor.textPrimary)
-                            Text(row.line)
-                                .font(.system(size: 15, weight: .medium, design: .rounded))
-                                .foregroundStyle(AppColor.textPrimary.opacity(0.75))
                                 .fixedSize(horizontal: false, vertical: true)
+                            if !row.line.isEmpty {
+                                Text(row.line)
+                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .foregroundStyle(AppColor.textPrimary.opacity(0.75))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
                         }
                         Spacer(minLength: 0)
                     }
@@ -871,7 +883,7 @@ struct WhyItWorksScreen: View {
                 guard !Task.isCancelled else { return }
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { shownRows = i + 1 }
                 WelcomeHaptics.tick()
-                try? await Task.sleep(for: .milliseconds(550))
+                try? await Task.sleep(for: .milliseconds(Self.chain ? 800 : 550))
             }
             guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }

@@ -5584,10 +5584,12 @@ tells the reader what they lack. Goyal is quoted for ANXIETY, not stress
 (Aziz) clear his head; compact below 640pt of view height (an SE).
 
 **"How 808 makes it stick"** (`WhyItWorksScreen`, `Step.whyItWorks`, white
-page, after "attention hacked"): the MECHANISM, three cards: Otto's glow
-(brighter with each day, fades with missed ones), a nudge at your time (the
-reminder at the quiet-minutes time), and Otto holds your apps (Block builds
-only; otherwise "Just five minutes"). A Brainrot "X → bad, 808 → good"
+page, after "attention hacked"): the MECHANISM as a chain with arrows (Aziz):
+"808 puts a little friction between you and your apps" → "Every time you open
+one, Otto reminds you to meditate" → "Over time it sinks into your
+subconscious, and meditating becomes a habit you enjoy instead of dread". Block builds only (the chain is
+Block); without Block it shows Otto's glow, a nudge at your time, and "Just
+five minutes", so it never sells a feature the build lacks. A Brainrot "X → bad, 808 → good"
 version was built first and dropped (Aziz: "terrible"). The
 "attention hacked" cards are the same soft red. **The stress question is a
 plain question now** (`StressLevel`: Pretty calm … Burnt out, stored as the
