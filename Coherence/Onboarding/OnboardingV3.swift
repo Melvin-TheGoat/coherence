@@ -628,6 +628,7 @@ struct SeatedClipLayer: View {
 /// the spot while the screen's words slide.
 struct ProfileOttoLayer: View {
     let profile: MindProfile
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         GeometryReader { geo in
@@ -637,6 +638,11 @@ struct ProfileOttoLayer: View {
             let art = profile.art
             let height = body / art.bodyShare
             let bottom = size.height * (0.76 + DidYouKnowScreen.ottoDrop) + height * (6.0 / 430.0)
+            // Golden hour's light gathering around him, slowly breathing;
+            // it replaced Brainrot's rays (Aziz, 2026-09-25).
+            ProfileGlow(breathing: !reduceMotion)
+                .frame(width: size.width * 1.3, height: size.width * 1.3)
+                .position(x: size.width / 2, y: bottom - height * 0.55)
             Image(art.asset)
                 .resizable()
                 .scaledToFit()
@@ -1152,6 +1158,9 @@ private struct PlanRow: View {
 /// Otto is drawn per type (`ProfileOttoLayer`, in `OnboardingView`'s fixed
 /// layer on the valley's cushion), five drawings from one ChatGPT sheet.
 struct MindProfileScreen: View {
+    /// The valley's time of day behind this screen: golden hour.
+    static let hour: Double = 0.2
+
     let answers: OnboardingAnswers
     let onContinue: () -> Void
 
@@ -1165,15 +1174,8 @@ struct MindProfileScreen: View {
         GeometryReader { geo in
             let head = SitLayout.ottoTop(in: geo.size) + geo.size.height * DidYouKnowScreen.ottoDrop
             ZStack(alignment: .top) {
-                // Rays from just above his head, fanning up behind the words.
-                SunburstRays()
-                    .frame(width: geo.size.width * 2.2, height: geo.size.width * 2.2)
-                    .position(x: geo.size.width / 2, y: head + 40)
-                    .mask(alignment: .top) {
-                        Rectangle().frame(height: max(0, head + 30))
-                    }
-                    .opacity(shown ? 1 : 0)
-                    .allowsHitTesting(false)
+                // The warm glow behind him is drawn by `ProfileOttoLayer`,
+                // BEHIND him: drawn here it sat over him and washed him out.
 
                 VStack(spacing: 0) {
                     Text("Your mind profile is")
@@ -1244,7 +1246,7 @@ private struct ProfileBar: View {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.9))
                     Capsule()
-                        .fill(LinearGradient(colors: [AppColor.skyDeep.opacity(0.35), AppColor.skyDeep],
+                        .fill(LinearGradient(colors: [OnboardingGreen.fill.opacity(0.45), OnboardingGreen.fill],
                                              startPoint: .leading, endPoint: .trailing))
                         .frame(width: max(0, geo.size.width * value))
                 }
@@ -1263,25 +1265,24 @@ private struct ProfileBar: View {
     }
 }
 
-/// Brainrot's light rays, in white over the sky.
-private struct SunburstRays: View {
+/// A warm, soft light behind Otto on the profile screen, slowly swelling and
+/// settling on the breath's pace.
+private struct ProfileGlow: View {
+    let breathing: Bool
+    @State private var swell = false
+
     var body: some View {
-        Canvas { ctx, size in
-            let c = CGPoint(x: size.width / 2, y: size.height / 2)
-            let r = max(size.width, size.height)
-            let rays = 18
-            for k in 0..<rays {
-                let a0 = Double(k) / Double(rays) * 2 * .pi
-                let a1 = a0 + .pi / Double(rays)
-                var p = Path()
-                p.move(to: c)
-                p.addLine(to: CGPoint(x: c.x + r * cos(a0), y: c.y + r * sin(a0)))
-                p.addLine(to: CGPoint(x: c.x + r * cos(a1), y: c.y + r * sin(a1)))
-                p.closeSubpath()
-                ctx.fill(p, with: .color(.white.opacity(0.22)))
+        Circle()
+            .fill(RadialGradient(colors: [Color(red: 1, green: 0.97, blue: 0.86),
+                                          Color(red: 1, green: 0.90, blue: 0.62).opacity(0.7),
+                                          Color(red: 1, green: 0.85, blue: 0.55).opacity(0)],
+                                 center: .center, startRadius: 30, endRadius: 230))
+            .scaleEffect(swell ? 1.08 : 0.94)
+            .onAppear {
+                guard breathing else { return }
+                withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) { swell = true }
             }
-        }
-        .accessibilityHidden(true)
+            .accessibilityHidden(true)
     }
 }
 

@@ -388,7 +388,8 @@ struct OnboardingView: View {
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)
-                                 ? DidYouKnowScreen.ottoDrop : 0)
+                                 ? DidYouKnowScreen.ottoDrop : 0,
+                             hour: step == .mindProfile ? MindProfileScreen.hour : 0)
 
             // The breath is a white page, not the valley. Each draws its own white,
             // but while one slides out and the next slides in, both are part
@@ -1106,12 +1107,16 @@ private struct OnboardingValley: View {
     /// Lower Otto and his cushion by this share of the screen's height
     /// ("Did you know?", whose cards sit above his head).
     var drop: CGFloat = 0
+    /// How far into the valley's sunset (0 is midday). The mind profile is
+    /// golden hour, so the reveal feels like a moment (Aziz, 2026-09-25:
+    /// "a different background ... a different idea than the rays").
+    var hour: Double = 0
 
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         GeometryReader { geo in
-            ValleyScene(progress: 0, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
+            ValleyScene(progress: hour, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
                         showsFigure: stage != nil, standingFigure: standingFigure,
                         figureHidden: figureHidden, seed: seed,
                         ottoLift: -geo.size.height * drop)

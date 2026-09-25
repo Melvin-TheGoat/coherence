@@ -5462,7 +5462,11 @@ phone/screen time ("our app is not a screen time app"), rest, presence.
 To feed them, **"How stressed have you been lately?" moved up** to after
 "What gets in the way", and **"When something stresses you out, how quickly
 do you settle back down?"** (`StressRecovery`, `Step.recovery`) follows it.
-Light rays fan up from behind Otto's head.
+The valley turns GOLDEN HOUR on this screen only (`OnboardingValley(hour:)`,
+`MindProfileScreen.hour` = 0.2 of the sit's sunset) with a warm glow
+breathing behind Otto (`ProfileGlow`, drawn in `ProfileOttoLayer` BEHIND
+him: over him it washed him out). Brainrot's rays were tried and cut (Aziz:
+"a different idea than the rays"). The bars are onboarding green.
 
 **"Tailoring 808 to you…"** (`BuildingPlanScreen`, `Step.buildingPlan`,
 after the frequency slider for now; it belongs at the END of the interview
