@@ -128,6 +128,25 @@ corrected to match. Do every step below it before returning here.
    sheet, deploy `tools/community-reports.gs`, paste its `/exec` URL into
    `ReportClient.endpoint` (a Swift change, out of scope here), file one
    real test report and confirm the email arrives.
+   - [ ] **Child sexual abuse material: a written procedure before photo
+     posts go live** (added 2026-09-25). US law (18 U.S.C. § 2258A) requires
+     a provider that learns of apparent CSAM to report it to NCMEC's
+     CyberTipline and preserve it; the REPORT Act added penalties. Register
+     808 with NCMEC as an electronic service provider, and write down who
+     checks reported photos, how one is preserved and reported, and that it
+     is then removed. Screening photos does not replace this.
+   - [ ] **Texas SB 2420 is enforceable now** (the Supreme Court let it
+     stand on 2026-07-06; Utah's SB 142 has been live since 2026-05-06;
+     Louisiana 2027-07-01; California AB 1043 2027-01-01). Apple's age
+     assurance page: "In regions where legally required, you need to check
+     the age of the people using your app with the Declared Age Range API",
+     and for a significant update, "Until the parent provides consent, the
+     child must be prevented from accessing the significant update". 1.1
+     adds social features and a paid-only model, which likely counts. Decide
+     WITH THE LAWYER, before submitting, whether 1.1 must check age with
+     Declared Age Range for users in those states and hold Friends from
+     minors until a parent consents. The onboarding age question is
+     self-reported and does not count as this check.
 5. **Website redeploy** (manual, Cloudflare Pages, drag the `website`
    folder in): both `website/privacy.html` and `website/terms.html` now
    carry the Friends media-plural wording, the Block section, and the
