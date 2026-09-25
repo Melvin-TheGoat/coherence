@@ -150,6 +150,8 @@ struct OnboardingView: View {
         /// Added 2026-09-25: "Your attention has been hacked.", a white page
         /// before Why 808 works. Last in the enum.
         case attentionHacked
+        /// Added 2026-09-25: "Why 808 works". Last in the enum.
+        case whyItWorks
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -196,7 +198,7 @@ struct OnboardingView: View {
             switch self {
             // Only the breath now: the welcome and Meet Otto went back to
             // the valley (Aziz, 2026-09-23).
-            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked: return true
+            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked, .whyItWorks: return true
             default: return false
             }
         }
@@ -387,17 +389,13 @@ struct OnboardingView: View {
         ZStack {
             // The valley, drawn once behind every screen (Melvin, 2026-09-22),
             // so the screens slide across a world that stays where it is.
-            // Otto sits in it on the stress screen, where the answer is drawn
-            // on him.
-            OnboardingValley(stage: step == .stress ? StressScreen.stage(for: answers.stress)
-                                    : step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
+            OnboardingValley(stage: step == .seeForYourself ? OttoAura.Stage(level: Int(glowDemo.rounded()))
                                     : step == .clutter ? OttoAura.Stage(level: Int(clutterLevel.rounded()))
                                     : step == .goodNews ? .bright
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
                                        || step == .buildingPlan || step == .mindProfile) ? .steady : nil,
-                             look: step == .stress ? StressScreen.look(for: answers.stress)
-                                   : step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
+                             look: step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
                              jiggle: ottoPokes,
                              standingFigure: step == .relief,
@@ -433,19 +431,42 @@ struct OnboardingView: View {
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
                 || step == .quietTime || step == .habitHistory || step == .age
-                || step == .recovery || step == .wandering {
+                || step == .recovery || step == .wandering || step == .stress {
                 SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
                     .transition(.opacity)
+                    // Explicit order above the valley: a view animating OUT of
+                    // a ZStack without a zIndex is drawn behind its siblings,
+                    // so every Otto layer vanished on the spot instead of
+                    // fading (found in 30 fps recordings).
+                    .zIndex(0.5)
             }
             // Otto thinking, paw on chin, across the frequency slider and the
             // plan screen: one layer for both, so he never changes between them.
+            // Kept MOUNTED on the mind profile, hidden only once the
+            // profile's Otto has faded in on top of it: a video view does not
+            // fade out when removed, it vanishes, and the cushion sat empty for
+            // a beat (found in a 30 fps recording).
+            if step == .baseline || step == .buildingPlan || step == .mindProfile {
+                SeatedClipLayer(clip: .thinking, drop: DidYouKnowScreen.ottoDrop)
+                    .opacity(step == .mindProfile ? 0 : 1)
+                    .animation(step == .mindProfile ? .linear(duration: 0.15).delay(0.45) : .default,
+                               value: step == .mindProfile)
+                    .transition(.opacity)
+                    // Explicit order above the valley: a view animating OUT of
+                    // a ZStack without a zIndex is drawn behind its siblings,
+                    // so every Otto layer vanished on the spot instead of
+                    // fading (found in 30 fps recordings).
+                    .zIndex(0.5)
+            }
+            // Declared after the thinking clip so it is drawn above it.
             if step == .mindProfile {
                 ProfileOttoLayer(profile: MindProfile.of(answers))
                     .transition(.opacity)
-            }
-            if step == .baseline || step == .buildingPlan {
-                SeatedClipLayer(clip: .thinking, drop: DidYouKnowScreen.ottoDrop)
-                    .transition(.opacity)
+                    // Explicit order above the valley: a view animating OUT of
+                    // a ZStack without a zIndex is drawn behind its siblings,
+                    // so every Otto layer vanished on the spot instead of
+                    // fading (found in 30 fps recordings).
+                    .zIndex(0.5)
             }
 
             content
@@ -578,7 +599,10 @@ struct OnboardingView: View {
             LifeMomentsScreen(answers: answers) { go(.attentionHacked) }
 
         case .attentionHacked:
-            AttentionHackedScreen { go(nextAfter(.baseline)) }
+            AttentionHackedScreen { go(.whyItWorks) }
+
+        case .whyItWorks:
+            WhyItWorksScreen { go(nextAfter(.baseline)) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
@@ -638,9 +662,14 @@ struct OnboardingView: View {
         // The stress question and the aura slider are one screen (Melvin,
         // 2026-09-22): the answer is drawn on Otto as it is dragged.
         case .stress:
-            StressScreen(stress: $answers.stress,
-                         count: interviewCount,
-                         onPoke: { ottoPokes += 1 }) { go(nextAfter(.stress)) }
+            CornerQuestionScreen(title: "How stressed have you been lately?",
+                                 options: StressLevel.allCases, single: true, label: \.label, icon: \.icon,
+                                 selected: Binding(get: { answers.stressLevel.flatMap(StressLevel.init(rawValue:)).map { [$0] } ?? [] },
+                                                   set: { pick in
+                                                       answers.stressLevel = pick.first?.rawValue
+                                                       if let level = pick.first { answers.stress = level.stress }
+                                                   }),
+                                 count: interviewCount) { go(nextAfter(.stress)) }
 
         // Cut 2026-09-15 (doingNothing) and 2026-09-19 (aloneWithThoughts,
         // Melvin). The Step cases stay so resume records and ONBOARDING_STEP
@@ -1161,10 +1190,20 @@ private struct OnboardingValley: View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.
         GeometryReader { geo in
-            ValleyScene(progress: hour, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
-                        showsFigure: stage != nil, standingFigure: standingFigure,
-                        figureHidden: figureHidden, seed: seed,
-                        ottoLift: -geo.size.height * drop)
+            ZStack {
+                ValleyScene(progress: hour, aura: stage ?? .steady, auraLook: look, auraSnap: true, jiggle: jiggle,
+                            showsFigure: stage != nil, standingFigure: standingFigure,
+                            figureHidden: figureHidden, seed: seed,
+                            ottoLift: -geo.size.height * drop)
+                    // The sky's hour is not animatable, so a change of hour
+                    // (golden hour on the mind profile) cross-fades two
+                    // valleys instead of cutting (smooth transitions, Aziz).
+                    .id(hour)
+                    .transition(.opacity)
+            }
+            .animation(.easeInOut(duration: 0.6), value: hour)
+            // Otto settling lower or higher (`drop`) glides, never jumps.
+            .animation(.easeInOut(duration: 0.4), value: drop)
         }
         .ignoresSafeArea()
             .animation(.easeInOut(duration: 0.35), value: stage != nil)

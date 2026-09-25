@@ -704,6 +704,9 @@ struct AttentionHackedScreen: View {
     @State private var shownCards = 0
     @State private var ctaShown = false
 
+    /// A slight red (Aziz), the "cost" terracotta at a wash.
+    static let warning = Color(red: 0.95, green: 0.86, blue: 0.83)
+
     static let lines = [
         "Apps are designed to keep pulling at your attention.",
         "Your mind lives in the future, where anxiety grows.",
@@ -732,7 +735,7 @@ struct AttentionHackedScreen: View {
                         .padding(.vertical, 18)
                         .padding(.horizontal, 16)
                         .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(AppColor.skyDeep.opacity(0.10)))
+                            .fill(Self.warning))
                         .opacity(i < shownCards ? 1 : 0)
                         .offset(y: i < shownCards ? 0 : 12)
                 }
@@ -763,6 +766,124 @@ struct AttentionHackedScreen: View {
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { shownCards = i + 1 }
                 WelcomeHaptics.tick()
                 try? await Task.sleep(for: .milliseconds(650))
+            }
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+            WelcomeHaptics.land()
+        }
+    }
+}
+
+// MARK: - How 808 makes it stick
+
+/// "How 808 makes it stick" (Aziz, 2026-09-25), after "Your attention has
+/// been hacked": the MECHANISM, what the app does that makes meditating a
+/// daily habit, as three cards popping in with a tick. A Brainrot-style
+/// "X → bad, 808 → good" comparison was built first and dropped ("terrible").
+/// Every card is something the app really does: Otto's glow rises with each
+/// day meditated and fades with missed ones (`OttoAura`), the daily reminder
+/// fires at the quiet-minutes time, and Block, only on builds that have it,
+/// holds the chosen apps until a session is done.
+struct WhyItWorksScreen: View {
+    let onContinue: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var headShown = false
+    @State private var shownRows = 0
+    @State private var ctaShown = false
+
+    /// With Block, a chain (Aziz, 2026-09-25): friction, then a reminder
+    /// every time, then the habit sinking in. Without it, the features the
+    /// build does have, so the screen never sells what is not there.
+    private static var chain: Bool { FeatureFlags.block }
+
+    private static var rows: [(icon: String, title: String, line: String)] {
+        if chain {
+            return [
+                ("lock", "808 puts a little friction between you and your apps", ""),
+                ("bell", "Every time you open one, Otto reminds you to meditate", ""),
+                ("sparkles", "Over time it sinks into your subconscious, and meditating becomes a habit you enjoy instead of dread", ""),
+            ]
+        }
+        return [
+            ("sparkles", "Otto's glow", "Meditate and he glows brighter. Skip days and he fades."),
+            ("bell", "A nudge at your time", "One reminder a day, at the time you picked."),
+            ("clock", "Just five minutes", "Short enough to fit into any day."),
+        ]
+    }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
+            Text("How 808 makes it stick")
+                .font(.system(size: 30, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .opacity(headShown ? 1 : 0)
+                .scaleEffect(headShown ? 1 : 0.94)
+
+            VStack(spacing: Self.chain ? 6 : 12) {
+                ForEach(Array(Self.rows.enumerated()), id: \.offset) { i, row in
+                    if Self.chain && i > 0 {
+                        Image(systemName: "arrow.down")
+                            .font(.system(size: 18, weight: .bold))
+                            .foregroundStyle(OnboardingGreen.shade.opacity(0.7))
+                            .opacity(i < shownRows ? 1 : 0)
+                    }
+                    HStack(alignment: .center, spacing: 14) {
+                        Image(systemName: row.icon)
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundStyle(OnboardingGreen.shade)
+                            .frame(width: 44, height: 44)
+                            .background(Circle().fill(Color(red: 0.84, green: 0.94, blue: 0.82)))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(row.title)
+                                .font(.system(size: Self.chain ? 17 : 18, weight: .heavy, design: .rounded))
+                                .foregroundStyle(AppColor.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            if !row.line.isEmpty {
+                                Text(row.line)
+                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .foregroundStyle(AppColor.textPrimary.opacity(0.75))
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(16)
+                    .background(RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(Color(white: 0.965)))
+                    .opacity(i < shownRows ? 1 : 0)
+                    .offset(y: i < shownRows ? 0 : 14)
+                    .accessibilityElement(children: .combine)
+                }
+            }
+            .padding(.top, 32)
+            Spacer(minLength: 0)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, AppMetrics.screenPadding + 4)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
+            OnboardingCTA(title: "Continue", action: onContinue)
+                .opacity(ctaShown ? 1 : 0)
+                .offset(y: ctaShown ? 0 : 30)
+                .allowsHitTesting(ctaShown)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.bottom, 10)
+        }
+        .task {
+            if reduceMotion { headShown = true; shownRows = Self.rows.count; ctaShown = true; return }
+            WelcomeHaptics.prepare()
+            try? await Task.sleep(for: .milliseconds(250))
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { headShown = true }
+            WelcomeHaptics.land()
+            try? await Task.sleep(for: .milliseconds(500))
+            for i in 0..<Self.rows.count {
+                guard !Task.isCancelled else { return }
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) { shownRows = i + 1 }
+                WelcomeHaptics.tick()
+                try? await Task.sleep(for: .milliseconds(Self.chain ? 800 : 550))
             }
             guard !Task.isCancelled else { return }
             withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }

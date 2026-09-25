@@ -752,6 +752,38 @@ public enum MindWander {
     }
 }
 
+/// "How stressed have you been lately?" as a plain question (Aziz,
+/// 2026-09-25: Otto cycling through his moods was already done on See for
+/// yourself). Each answer stores its level in `OnboardingAnswers.stress`, the
+/// 0 to 1 the profile's Headspace bar and `isHighStress` already read.
+public enum StressLevel: Int, CaseIterable, Identifiable {
+    case calm, aLittle, fairly, very, burntOut
+
+    public var id: Int { rawValue }
+
+    public var label: String {
+        switch self {
+        case .calm:     return "Pretty calm"
+        case .aLittle:  return "A little stressed"
+        case .fairly:   return "Fairly stressed"
+        case .very:     return "Very stressed"
+        case .burntOut: return "Burnt out"
+        }
+    }
+
+    public var icon: String {
+        switch self {
+        case .calm:     return "leaf"
+        case .aLittle:  return "cloud"
+        case .fairly:   return "cloud.rain"
+        case .very:     return "cloud.bolt"
+        case .burntOut: return "flame"
+        }
+    }
+
+    public var stress: Double { [0.1, 0.3, 0.5, 0.7, 0.9][rawValue] }
+}
+
 public enum DropoutCause: String, CaseIterable, Identifiable, Codable {
     case couldntTell, tooManyChoices, forgot, feltWrong, noTime, gotBoring,
          noAccountability
@@ -1004,6 +1036,9 @@ public struct OnboardingAnswers: Codable, Equatable {
     public var obstacles: Set<Obstacle>?
     /// How quickly they settle after stress (`StressRecovery`). Optional.
     public var recovery: StressRecovery?
+    /// Which stress answer was picked (`StressLevel`), so the question knows
+    /// it was answered: `stress` alone defaults to 0.5. Optional, as above.
+    public var stressLevel: Int?
     /// Their estimate of how much of the day their mind is somewhere else,
     /// 0 to 1 (`MindWander`). Optional, as above.
     public var mindWandering: Double?

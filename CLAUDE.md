@@ -5602,6 +5602,31 @@ tells the reader what they lack. Goyal is quoted for ANXIETY, not stress
 (`OnboardingValley(drop:)`, `DidYouKnowScreen.ottoDrop`) so the bigger cards
 (Aziz) clear his head; compact below 640pt of view height (an SE).
 
+**"How 808 makes it stick"** (`WhyItWorksScreen`, `Step.whyItWorks`, white
+page, after "attention hacked"): the MECHANISM as a chain with arrows (Aziz):
+"808 puts a little friction between you and your apps" → "Every time you open
+one, Otto reminds you to meditate" → "Over time it sinks into your
+subconscious, and meditating becomes a habit you enjoy instead of dread". Block builds only (the chain is
+Block); without Block it shows Otto's glow, a nudge at your time, and "Just
+five minutes", so it never sells a feature the build lacks. A Brainrot "X → bad, 808 → good"
+version was built first and dropped (Aziz: "terrible"). The
+"attention hacked" cards are the same soft red. **The stress question is a
+plain question now** (`StressLevel`: Pretty calm … Burnt out, stored as the
+0 to 1 `stress` the Headspace bar reads, plus `stressLevel` so it knows it
+was answered); dragging Otto through his moods there repeated See for
+yourself. **"That's me" pops in only after the profile's bars fill.**
+
+**Onboarding transitions, audited 2026-09-25 (Aziz: "make sure it's as
+smooth as possible").** Every Otto layer in `OnboardingView`'s ZStack
+(writing clip, thinking clip, profile Otto) carries `.zIndex(0.5)`: without
+one a view animating OUT is drawn behind its siblings, so each vanished on the
+spot (the "empty cushion" frame) instead of fading. The thinking clip also
+stays mounted on the mind profile and fades only after the profile Otto has
+faded in on top. The valley's hour change cross-fades two valleys
+(`.id(hour)`) and `drop` glides. Checked by 30 fps recordings: welcome →
+breath → Meet Otto, age → Did you know → slider, Tailoring → profile →
+years, and the rest.
+
 **His halo was cut off flat along the top** at the bright looks (Aziz). A
 Rive view draws only inside itself, and `.contain` fills the view's
 LIMITING side with the artboard, so only one side can be given spare room

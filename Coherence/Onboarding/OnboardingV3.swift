@@ -1178,6 +1178,7 @@ struct MindProfileScreen: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = false
     @State private var barsShown = false
+    @State private var ctaShown = false
     @State private var lineLetters = 0
 
     private var typedLine: AttributedString {
@@ -1234,14 +1235,16 @@ struct MindProfileScreen: View {
             .frame(width: geo.size.width, height: geo.size.height)
         }
         .safeAreaInset(edge: .bottom) {
+            // Pops in only once the words and the bars are done (Aziz).
             OnboardingCTA(title: "That's me", action: onContinue)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
-                .opacity(barsShown ? 1 : 0)
-                .allowsHitTesting(barsShown)
+                .opacity(ctaShown ? 1 : 0)
+                .offset(y: ctaShown ? 0 : 30)
+                .allowsHitTesting(ctaShown)
         }
         .task {
-            if reduceMotion { shown = true; lineLetters = profile.line.count; barsShown = true; return }
+            if reduceMotion { shown = true; lineLetters = profile.line.count; barsShown = true; ctaShown = true; return }
             WelcomeHaptics.prepare()
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) { shown = true }
             WelcomeHaptics.land()
@@ -1255,6 +1258,10 @@ struct MindProfileScreen: View {
             try? await Task.sleep(for: .milliseconds(250))
             guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 1.0)) { barsShown = true }
+            try? await Task.sleep(for: .milliseconds(1100))
+            guard !Task.isCancelled else { return }
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.72)) { ctaShown = true }
+            WelcomeHaptics.land()
         }
     }
 }
