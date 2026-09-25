@@ -3752,6 +3752,22 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
 - **Nothing was left on the phone to explain the freeze**: no crash or hang
   report for 808 in its logs. The fixes target the two things in the code
   that could hold the main thread; if it recurs, stream the console.
+- **VERIFIED on Melvin's phone 2026-09-25: the video call answers at once.**
+
+## DECIDED 2026-09-25 (Melvin), so nobody reopens them
+
+- **Free 1.0 users meet the paywall on updating.** No grandfathering;
+  anyone who bought a plan or Lifetime is entitled and never sees it.
+- **Glow gains stay a flat 10 a day.** Only missed days escalate.
+- **Aziz's onboarding changes stay**: green buttons and bar (onboarding's
+  own colour, not the app's gold), the optional age question, one 4-2-4
+  breath.
+- **Posted photos are screened** (Sensitive Content Analysis). The
+  entitlement waits on the capability being ticked on both App IDs in the
+  developer portal; adding it before that breaks every device build
+  (BACKLOG.md > Open threads).
+- **The Do Not Disturb shortcuts are published** and in `FocusShortcut`,
+  checked against iCloud first (names exact, one action each).
 
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 

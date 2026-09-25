@@ -27,17 +27,14 @@ corrected to match. Do every step below it before returning here.
      APP's App ID only (an extension cannot carry it; the entitlement file
      already declares it, confirm the portal and the archived profile agree,
      via `tools/archive.sh`'s checks).
-   - [ ] Decide and act on Sensitive Content Analysis: either add
-     `com.apple.developer.sensitivecontentanalysis.client` to
-     `Coherence/Coherence.entitlements` and enable it on the App ID (so
-     `PhotoScreen` actually screens photos on devices with Sensitive Content
-     Warning on), or consciously ship without it, relying on the text
-     filter plus report and block as the guideline 1.2 moderation path
-     (this is allowed; automated image screening is not required by 1.2,
-     only "a method for filtering," and captions are already filtered).
-     Either is defensible; ship the decision, not silence. This is a
-     Swift/entitlements change, out of scope for this document's owner to
-     make.
+   - [ ] **Sensitive Content Analysis: DECIDED yes (Melvin, 2026-09-25).**
+     Tick the capability on BOTH App IDs first (Identifiers >
+     `com.lockout.meditate808` and `com.lockout.meditate808.dev` >
+     Capabilities > Sensitive Content Analysis > Save); signing refuses the
+     entitlement until then. Then add
+     `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] to
+     `Coherence/Coherence.entitlements` (self-serve, no approval needed).
+     `PhotoScreen` already runs on every post item and profile photo.
    - [x] **Privacy manifests for Block's three app extensions: DONE in code,
      2026-09-23 (commit 7c31bcd).** Each of BlockMonitor, BlockShield and
      BlockShieldAction reads and writes the shared App Group's `UserDefaults`

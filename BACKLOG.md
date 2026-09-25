@@ -297,33 +297,43 @@ animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
 
 ## Open threads
 
-- **Decisions from the 2026-09-23 call, written down, not built.**
+- **Decisions from the 2026-09-23 call.**
   - **Trial length: "likely 3 days".** The app reads the trial off the
     monthly product in App Store Connect (`Store.trialDays`), so deciding is
     one change there, on both subscriptions' introductory offers; every line
     in the app follows. Today Connect says 7 days.
-  - **Glow gains that grow with a run of days.** "Maybe scales similarly
-    when you meditate 2, 3, 4 days in a row." The missed-day half is built
-    (10, 15, 20 ...); gains are still a flat 10 a day until someone picks the
-    numbers.
-  - **People who installed 1.0 or 1.0.1 for free** meet the paywall at
-    launch after updating, whatever history they have. Decide whether to
-    grandfather them (for example, everyone with a session before 1.1 keeps
-    the app) or let the trial carry them. Nothing grandfathers today.
+  - **DECIDED 2026-09-25 (Melvin): glow gains stay a flat 10 a day.** "Forget
+    about the daily glow gains." Only missed days escalate (10, 15, 20 ...).
+  - **DECIDED 2026-09-25 (Melvin): people who installed 1.0 or 1.0.1 for
+    free meet the paywall** after updating ("Send them to paywall"). No
+    grandfathering. Anyone who bought a plan or Lifetime is entitled and
+    never sees it.
   - **Premium only in the store listing and review notes.** The description
     should say plainly that 808 is a subscription with a free trial, and the
     review notes that the reviewer starts the sandbox trial on the paywall.
 
-- **Silence notifications needs two published shortcuts (Melvin).** No app
-  can switch Do Not Disturb; Shortcuts can, so 808 runs two by name. Make
-  `808 Silence` (Set Focus, Do Not Disturb, Turn On) and `808 Restore`
-  (Set Focus, Do Not Disturb, Turn Off) in the Shortcuts app, share each as
-  an iCloud link, and paste the links into
-  `FocusShortcut.silenceInstallURL` / `restoreInstallURL`. Until then
-  Release hides the switch, and a DEBUG build's setup sheet walks through
-  making them by hand ("I made both"), so the switch can be tested on a
-  phone first. "Shortcut not found" (2026-09-23) was 808 marking the
-  shortcuts installed when the empty links had installed nothing.
+- **DECIDED 2026-09-25 (Melvin): keep Aziz's onboarding changes** that undid
+  earlier calls: green buttons and progress bar (not gold), the optional age
+  question (read by nothing yet), and one 4-2-4 breath instead of three.
+
+- **Screen posted photos: DECIDED, blocked on the developer portal
+  (2026-09-25).** Melvin said yes to Sensitive Content Analysis. The code
+  exists (`PhotoScreen`, run on every post item and profile photo before
+  upload); the entitlement is held back because signing refused it until the
+  capability is ticked on the App IDs: Certificates, Identifiers & Profiles
+  > Identifiers > `com.lockout.meditate808` AND `com.lockout.meditate808.dev`
+  > Capabilities > Sensitive Content Analysis > Save. Then add
+  `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] to
+  `Coherence/Coherence.entitlements`. Committing it before the portal step
+  breaks every device build, Aziz's included. Apple only analyses for people
+  who turned on Sensitive Content Warning (or Communication Safety), so it
+  screens a minority of adults; report, block and removal stay the backstop.
+
+- **Silence notifications: the two shortcuts are published and in the app
+  (2026-09-25).** `808 Silence` and `808 Restore`, checked against iCloud
+  (names exact, one Do Not Disturb action each), so Release now draws the
+  switch and setup is two taps. Still to see on a phone: install both from
+  the setup sheet, silence and restore around a sit.
 - **The real time of day on every valley screen.** Home follows the clock
   since 2026-09-23 (`ValleyScene(clock: true)`, `DayLight.clockProgress`,
   `VALLEY_HOUR` in DEBUG). Onboarding, Block, Friends, Profile, the Guide,

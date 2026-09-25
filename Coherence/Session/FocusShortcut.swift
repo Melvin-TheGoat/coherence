@@ -75,8 +75,13 @@ final class FocusShortcut: ObservableObject {
     ///    below, one per constant. Nothing else in the app needs to change:
     ///    the setup sheet switches to its two-tap install, and Release starts
     ///    drawing the switch.
-    static let silenceInstallURL: URL? = nil
-    static let restoreInstallURL: URL? = nil
+    ///
+    /// Published by Melvin, 2026-09-25, and checked against iCloud before
+    /// they went in: the names match `silenceName` / `restoreName` exactly,
+    /// and each holds one action, Do Not Disturb on (Silence) or off
+    /// (Restore).
+    static let silenceInstallURL: URL? = URL(string: "https://www.icloud.com/shortcuts/79d5372830ec4678968d2b0db130bc9f")
+    static let restoreInstallURL: URL? = URL(string: "https://www.icloud.com/shortcuts/c7e4855d192a47e9991c8e9a71558601")
 
     /// Both links exist, so setup is two taps rather than making the
     /// shortcuts by hand.
