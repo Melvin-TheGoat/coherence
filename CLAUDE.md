@@ -5485,9 +5485,13 @@ render of the valley: Otto sits still under a clock while the seasons race,
 cut at frame 124 where he looks afraid in spring and HELD there, 20 fps,
 5.15 s, `OttoClip(fills:)`). The number counts up with a tick a step across
 the seasons and lands with a thump as the clip ends. Brainrot's layout (Aziz):
-white words at the TOP over the sky, the number huge and dark with a white
-outline (`OutlinedNumber`), the disclaimer at the bottom above Next; a dark
-fade over the meadow was tried first and looked wrong. `MindWander`
+white words over the sky, the number big and dark with a white outline
+(`OutlinedNumber`), the disclaimer at the bottom above Next. Runway drew a
+CLOCK across the top of the sky, so the words sit in the gap between the
+clock and Otto's head (40% down), smaller than Brainrot's; at the top they
+sat on the clock. A dark fade over the meadow was tried first and looked
+wrong. A clip regenerated WITHOUT the clock would let the words go full size
+at the top. `MindWander`
 also reads the old "25-34" age format. Four built SwiftUI screens (pause,
 life dots, good news) were started and dropped: Aziz wants these moments as
 generated clips. Its "good

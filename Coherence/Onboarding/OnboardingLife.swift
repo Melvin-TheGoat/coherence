@@ -157,29 +157,30 @@ struct LifeNumberScreen: View {
             OttoClip(name: "otto-seasons", playing: !reduceMotion, fallback: .meditating, fills: true)
                 .ignoresSafeArea()
 
-            // Brainrot's layout: the words over the sky at the top, white, the
-            // number huge and dark with a white outline so it reads over the
-            // clip whatever is behind it.
-            VStack(spacing: 6) {
-                Text("You're on track to spend")
-                    .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
-                    .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
-                OutlinedNumber(text: "\(counted) \(unit)")
-                    .contentTransition(.numericText())
-                    .scaleEffect(landed ? 1.05 : 1)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
-                Text(years == nil ? "a year with your mind somewhere else."
-                                  : "of your life with your mind somewhere else.")
-                    .font(.system(size: 24, weight: .heavy, design: .rounded))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .shadow(color: .black.opacity(0.35), radius: 4, y: 1)
-                Spacer(minLength: 0)
+            // Brainrot's layout, fitted into the open sky between the clock
+            // and Otto's head: the clip puts the clock at the top of the sky,
+            // and the words over it could not be read (Aziz). Placed from the
+            // screen's height, because the clip is drawn to fill it.
+            GeometryReader { geo in
+                VStack(spacing: 0) {
+                    Text("You're on track to spend")
+                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.4), radius: 4, y: 1)
+                    OutlinedNumber(text: "\(counted) \(unit)")
+                        .contentTransition(.numericText())
+                        .scaleEffect(landed ? 1.05 : 1)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: landed)
+                    Text(years == nil ? "a year with your mind elsewhere."
+                                      : "with your mind somewhere else.")
+                        .font(.system(size: 19, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.4), radius: 4, y: 1)
+                }
+                .frame(width: geo.size.width)
+                .position(x: geo.size.width / 2, y: geo.size.height * 0.40)
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.top, 30)
+            .ignoresSafeArea()
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
@@ -222,10 +223,10 @@ struct LifeNumberScreen: View {
 /// nudged around it, then the dark text on top.
 private struct OutlinedNumber: View {
     let text: String
-    private static let width: CGFloat = 4
+    private static let width: CGFloat = 3.5
 
     var body: some View {
-        let font = Font.system(size: 72, weight: .black, design: .rounded)
+        let font = Font.system(size: 54, weight: .black, design: .rounded)
         ZStack {
             ForEach(0..<8, id: \.self) { i in
                 let a = Double(i) / 8 * 2 * .pi
