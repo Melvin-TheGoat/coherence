@@ -266,7 +266,7 @@ struct LifePauseScreen: View {
                 letters = text.count
             } else {
                 WelcomeHaptics.prepare()
-                try? await Task.sleep(for: .milliseconds(450))
+                try? await Task.sleep(for: .milliseconds(250))
                 for (i, ch) in text.enumerated() {
                     guard !Task.isCancelled, !done else { return }
                     letters = i + 1
@@ -274,8 +274,9 @@ struct LifePauseScreen: View {
                     try? await Task.sleep(for: .milliseconds(40))
                 }
             }
-            // Long enough to sit with it.
-            try? await Task.sleep(for: .seconds(2.5))
+            // Long enough to read, short enough not to drag (Aziz: the
+            // pauses felt too long).
+            try? await Task.sleep(for: .seconds(1.4))
             guard !Task.isCancelled else { return }
             finish()
         }
@@ -405,7 +406,7 @@ struct LifeDotsScreen: View {
             return
         }
         WelcomeHaptics.prepare()
-        try? await Task.sleep(for: .milliseconds(500))
+        try? await Task.sleep(for: .milliseconds(250))
         if age != nil {
             for k in 0..<livedTarget {
                 guard !Task.isCancelled, !skipped else { break }
@@ -414,7 +415,7 @@ struct LifeDotsScreen: View {
                 try? await Task.sleep(for: .milliseconds(35))
             }
             guard !skipped else { return }
-            try? await Task.sleep(for: .seconds(1.8))
+            try? await Task.sleep(for: .seconds(0.9))
         }
         guard !Task.isCancelled, !skipped else { return }
         await wander()
@@ -423,7 +424,7 @@ struct LifeDotsScreen: View {
     private func wander() async {
         lived = livedTarget
         secondBeat = true
-        try? await Task.sleep(for: .milliseconds(700))
+        try? await Task.sleep(for: .milliseconds(350))
         // One dot at a time on the year grid; in bursts on the 365-day grid.
         let per = age == nil ? 5 : 1
         var k = 0
@@ -434,7 +435,7 @@ struct LifeDotsScreen: View {
             WelcomeHaptics.tick()
             try? await Task.sleep(for: .milliseconds(age == nil ? 35 : 90))
         }
-        try? await Task.sleep(for: .milliseconds(400))
+        try? await Task.sleep(for: .milliseconds(200))
         withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) { ctaShown = true }
         WelcomeHaptics.land()
     }

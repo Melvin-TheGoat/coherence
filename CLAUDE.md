@@ -5494,8 +5494,9 @@ wrong. A clip regenerated WITHOUT the clock would let the words go full size
 at the top.
 **Then the pause** (`LifePauseScreen`, `Step.lifePause`, a white page via
 `isWhitePage`): "What would you do with N years of being fully here?" typed
-with a tick a letter, their number in blue, moving on by itself 2.5 s after
-it finishes (Skip at once). A forward question instead of Brainrot's "Do you
+with a tick a letter, their number in blue, moving on by itself 1.4 s after
+it finishes (Skip at once; the gaps on this run were shortened, Aziz: "a bit
+too long"). A forward question instead of Brainrot's "Do you
 understand what it means…", per the copy rules.
 **Then the dots** (`LifeDotsScreen`, `Step.lifeDots`, white page): "This is
 your life." 80 dots, one a year, the years lived filling blue ("You are here,
