@@ -43,3 +43,6 @@ Meditations/
 
 # Agent worktrees (Claude Code)
 .claude/worktrees/
+
+# Melvin's zen moodboard: other people's photos, kept on this Mac only (public repo).
+mockups/moodboard/

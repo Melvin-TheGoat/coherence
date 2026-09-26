@@ -3813,6 +3813,52 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   about 120 px each, cream flooded away), so they are soft at tab size. A
   version that ships needs the set exported at 1024 px.
 
+## THE ZEN DIRECTION: MELVIN'S MOODBOARD IS THE REFERENCE (2026-09-26)
+
+"Lets continue to draw from them for inspiration when designing this app.
+Remind me and lets be critical to try to get everything subtly on this
+theme." **Every design pass, from now on, is held up against the board: say
+where the screen falls short of it, and keep the change subtle.** The brief
+was "spice it up slightly", never a rebuild.
+
+- **The fourteen images live on Melvin's Mac only**, in
+  `mockups/moodboard/zen/` (gitignored: other people's photos, public repo).
+  In words, for a session without them: a man meditating on a wooden deck
+  over a misty rainforest; a moss-ringed knot like an eye in bark; a forest
+  reflected in rippling water; tai chi in fog before a temple, the sun a
+  white disc; a lone lit tree over its reflection in a black lake; two
+  paintings of a tiny figure in a vast glade and by a misty lake; a monk on a
+  rock above layered ridges at dawn; a silhouette against a thin band of
+  sunset; a sitter under a huge banyan in shafts of light; a figure on a
+  stone before an enormous moon, doubled in still water; a silhouette
+  meditating in a pavilion; a monk on a pale concrete path seen from above,
+  black and white; a sitter in a raked-sand circle under maples.
+- **The gap is light, not colour. Measured:** the board averages 0.43
+  brightness and 808's screens 0.80, while saturation is about equal (0.24
+  against 0.18). The board keeps most of a frame in shade and spends its
+  light in one place (a sun, a moon, a shaft of light); 808 lights
+  everything evenly. An early claim that 808 was more colourful was wrong,
+  and the numbers corrected it.
+- **The six principles:** light is an event; mist makes the distance; a small
+  figure in a big quiet; circles settle things (ensō, moon, ripple, raked
+  ring); honest materials (sand, stone, moss, wood, paper); one warm thing
+  at a time.
+- **Proposed palette, not adopted yet:** sumi #1E231D, koke #59673D, kasumi
+  #DCE0DD, suna #F0E9DC (the tiles already), ishi #94877F, ai (indigo)
+  #2E4A62, kincha #C68A3E, shu (seal red) #A8432A.
+- **No theme park:** no torii, cherry blossoms, kanji as decoration, koi,
+  lanterns, bamboo borders or gongs. None are on the board. If a change can
+  be described as "adding Japanese stuff", it is the wrong change.
+- **The audit** is `mockups/zen-audit/index.html` (serve `mockups/`) and the
+  artifact https://claude.ai/artifact/1Rw6fSaRKx2fhVuBfoSQEL: every screen
+  rated against the board, a motif kit, three before-and-afters, and a build
+  order (scene pass with mist and a moon, the ensō timer, raked sand and
+  ripples, one ink icon set, hanko awards, palette tokens, the paywall
+  header, an optional serif, omikuji and ema props). **Awaiting Melvin's four
+  answers:** mock 1 to 3 together; a serif for a few moments or stay all
+  rounded; indigo for chosen things; send the direction to Aziz for
+  onboarding. Design first, as always: nothing from it is built yet.
+
 ## TILES ARE SAND AND DIM AT NIGHT; OTTO'S BUBBLE IS GLASS (2026-09-26, Melvin)
 
 "I want the white tiles to definitely be dimmed ... more of like an

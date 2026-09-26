@@ -1,0 +1,732 @@
+<title>808 Zen Audit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=IBM+Plex+Mono&display=swap">
+<style>
+  :root {
+    --paper: #F1EEE7;
+    --paper-2: #E7E3D9;
+    --card: #F7F5F0;
+    --ink: #1E231D;
+    --ink-2: #505849;
+    --moss: #59673D;
+    --mist: #DCE0DD;
+    --line: #D3CEC2;
+    --accent: #9A6431;
+    --seal: #A8432A;
+    --serif: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+    --sans: "Zen Kaku Gothic New", "Hiragino Sans", system-ui, -apple-system, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #121611; --paper-2: #1A1F18; --card: #181D17; --ink: #E6E2D6; --ink-2: #A9AE9E;
+      --moss: #9BA878; --mist: #2A3029; --line: #2E352C; --accent: #D59B62; --seal: #C9573A;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #121611; --paper-2: #1A1F18; --card: #181D17; --ink: #E6E2D6; --ink-2: #A9AE9E;
+    --moss: #9BA878; --mist: #2A3029; --line: #2E352C; --accent: #D59B62; --seal: #C9573A;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 1.7; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 80px; }
+  h1, h2, h3 { font-family: var(--serif); font-weight: 700; text-wrap: balance; line-height: 1.25; margin: 0; }
+  h1 { font-size: clamp(34px, 6vw, 56px); letter-spacing: 0.01em; }
+  h2 { font-size: clamp(24px, 3.4vw, 32px); }
+  h3 { font-size: 20px; }
+  p { margin: 0; max-width: 64ch; }
+  .label { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-2); font-weight: 500; }
+  section { margin-top: 88px; display: grid; gap: 22px; }
+  .rule { width: 120px; height: 10px; color: var(--ink-2); opacity: 0.6; }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+  .hero .lede { font-size: 18px; color: var(--ink-2); margin-top: 16px; }
+  .hero canvas { width: 100%; max-width: 360px; justify-self: center; aspect-ratio: 1; }
+  .finding { margin-top: 26px; padding: 18px 20px; border-left: 3px solid var(--moss); background: var(--paper-2); border-radius: 0 12px 12px 0; }
+  .finding strong { font-family: var(--serif); font-size: 19px; display: block; margin-bottom: 4px; }
+  @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero canvas { max-width: 240px; } }
+
+  /* Palettes */
+  .palettes { display: grid; gap: 18px; }
+  .strip { display: grid; gap: 8px; }
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .sw { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: var(--card); }
+  .sw i { display: block; height: 46px; }
+  .sw span { display: block; padding: 6px 8px 7px; font-size: 12px; line-height: 1.35; }
+  .sw code { font-family: var(--mono); font-size: 11px; color: var(--ink-2); }
+  .chart { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 16px 10px; overflow-x: auto; }
+  .chart svg { display: block; width: 100%; min-width: 320px; height: auto; }
+  .chart text { font-family: var(--sans); fill: var(--ink-2); font-size: 12px; }
+  .chart .v { fill: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* Principles */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 26px 30px; }
+  .pr { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: start; }
+  .pr svg { width: 44px; height: 44px; color: var(--ink); }
+  .pr h3 { font-size: 18px; margin-bottom: 4px; }
+  .pr p { font-size: 15px; color: var(--ink-2); }
+
+  /* Screens */
+  .group { display: grid; gap: 16px; margin-top: 18px; }
+  .group > .label { margin-top: 10px; }
+  .screens { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; }
+  .scr { display: grid; grid-template-columns: 112px 1fr; gap: 14px; padding: 14px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; }
+  .scr img { width: 112px; height: auto; border-radius: 12px; display: block; box-shadow: 0 1px 0 var(--line); }
+  .scr h4 { margin: 0 0 2px; font-size: 15px; font-weight: 700; }
+  .scr p { font-size: 13.5px; line-height: 1.55; color: var(--ink-2); margin-top: 7px; }
+  .scr p b { color: var(--ink); font-weight: 700; }
+  .stones { display: inline-flex; gap: 3px; vertical-align: middle; }
+  .stones i { width: 11px; height: 8px; border-radius: 50%; border: 1.4px solid var(--ink-2); display: inline-block; }
+  .stones i.on { background: var(--ink); border-color: var(--ink); }
+  .score { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); }
+
+  /* Kit */
+  .kit { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; display: grid; }
+  .tile canvas, .tile svg.art { width: 100%; height: auto; display: block; aspect-ratio: 23 / 17; background: #EDEAE2; }
+  .tile div { padding: 12px 14px 14px; }
+  .tile h3 { font-size: 16px; }
+  .tile p { font-size: 13.5px; color: var(--ink-2); margin-top: 4px; }
+
+  /* Before and after */
+  .pairs { display: grid; gap: 34px; }
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 20px; align-items: start; }
+  .pair figure { margin: 0; display: grid; gap: 8px; }
+  .pair img, .pair canvas { width: 100%; height: auto; border-radius: 22px; display: block; aspect-ratio: 377 / 820; border: 1px solid var(--line); }
+  .pair figcaption { font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-2); }
+  .pair .why h3 { margin-bottom: 8px; }
+  .pair .why p { font-size: 15px; color: var(--ink-2); }
+  .pair .why p + p { margin-top: 10px; }
+  @media (max-width: 760px) { .pair { grid-template-columns: 1fr 1fr; } .pair .why { grid-column: 1 / -1; } }
+
+  /* Order and decisions */
+  ol.order { margin: 0; padding: 0; list-style: none; counter-reset: step; display: grid; gap: 12px; }
+  ol.order li { counter-increment: step; display: grid; grid-template-columns: 44px 1fr; gap: 12px; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; }
+  ol.order li::before { content: counter(step); font-family: var(--serif); font-size: 26px; line-height: 1; color: var(--moss); }
+  ol.order b { display: block; }
+  ol.order span { font-size: 14px; color: var(--ink-2); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .tag { font-size: 11.5px; padding: 2px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); }
+  .tag.art { border-color: var(--accent); color: var(--accent); }
+  .leave { font-size: 16px; color: var(--ink-2); max-width: 70ch; }
+  .decide { display: grid; gap: 10px; }
+  .q { display: grid; grid-template-columns: 30px 1fr; gap: 10px; align-items: baseline; font-size: 16px; }
+  .q em { font-style: normal; font-family: var(--serif); color: var(--seal); font-size: 20px; }
+  footer { margin-top: 70px; font-size: 13px; color: var(--ink-2); max-width: 72ch; }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div>
+      <div class="label">808 &#183; design audit &#183; 26 September 2026</div>
+      <h1 style="margin-top:10px">808 Zen Audit</h1>
+      <p class="lede">Every screen held up against Melvin's fourteen images: what still reads as a generic app, and the small moves that bring it into the garden. The brief was "spice it up slightly", so everything here is a nudge, not a rebuild.</p>
+      <div class="finding">
+        <strong>The board isn't more colourful than 808. It's darker.</strong>
+        Measured, the fourteen images average 0.43 brightness and 808's screens average 0.80. Saturation is about the same (0.24 against 0.18). The board keeps most of each frame in shade and spends its light in one place: a sun, a moon, a shaft through the leaves. 808 lights everything evenly. That, more than any colour, is why it reads as generic.
+      </div>
+    </div>
+    <canvas id="hero-enso" data-w="360" data-h="360" aria-label="An ens&#333;, a brush-drawn circle"></canvas>
+  </header>
+
+  <section id="board">
+    <div>
+      <div class="label">What the board is made of</div>
+      <h2 style="margin-top:6px">Moss, ink, mist and a little warm light</h2>
+    </div>
+    <div class="palettes">
+      <div class="strip">
+        <div class="label">The board, measured (main colours across all fourteen)</div>
+        <div class="swatches">
+          <div class="sw"><i style="background:#161E11"></i><span>Ink<br><code>#161E11</code></span></div>
+          <div class="sw"><i style="background:#37412D"></i><span>Deep forest<br><code>#37412D</code></span></div>
+          <div class="sw"><i style="background:#59673D"></i><span>Moss<br><code>#59673D</code></span></div>
+          <div class="sw"><i style="background:#8E9868"></i><span>Lichen<br><code>#8E9868</code></span></div>
+          <div class="sw"><i style="background:#889190"></i><span>Stone<br><code>#889190</code></span></div>
+          <div class="sw"><i style="background:#94877F"></i><span>Warm stone<br><code>#94877F</code></span></div>
+          <div class="sw"><i style="background:#D8DFE3"></i><span>Mist<br><code>#D8DFE3</code></span></div>
+          <div class="sw"><i style="background:#F1EEE7"></i><span>Paper path<br><code>#F1EEE7</code></span></div>
+          <div class="sw"><i style="background:#DEC09C"></i><span>Dawn<br><code>#DEC09C</code></span></div>
+          <div class="sw"><i style="background:#B2783D"></i><span>Maple<br><code>#B2783D</code></span></div>
+        </div>
+      </div>
+      <div class="strip">
+        <div class="label">808 today</div>
+        <div class="swatches">
+          <div class="sw"><i style="background:#8CBBD4"></i><span>Sky<br><code>#8CBBD4</code></span></div>
+          <div class="sw"><i style="background:#BBD8E4"></i><span>Pale sky<br><code>#BBD8E4</code></span></div>
+          <div class="sw"><i style="background:#9CBC85"></i><span>Meadow<br><code>#9CBC85</code></span></div>
+          <div class="sw"><i style="background:#8FAFB4"></i><span>Ridge<br><code>#8FAFB4</code></span></div>
+          <div class="sw"><i style="background:#FEF9F2"></i><span>Cream<br><code>#FEF9F2</code></span></div>
+          <div class="sw"><i style="background:#F0E9DC"></i><span>Sand tiles<br><code>#F0E9DC</code></span></div>
+          <div class="sw"><i style="background:#F0C47B"></i><span>Gold<br><code>#F0C47B</code></span></div>
+          <div class="sw"><i style="background:#3F80AD"></i><span>Chosen blue<br><code>#3F80AD</code></span></div>
+          <div class="sw"><i style="background:#5AB950"></i><span>Onboarding green<br><code>#5AB950</code></span></div>
+        </div>
+      </div>
+      <div class="strip">
+        <div class="label">Proposed, named the old way</div>
+        <div class="swatches">
+          <div class="sw"><i style="background:#1E231D"></i><span>Sumi, ink<br><code>#1E231D</code></span></div>
+          <div class="sw"><i style="background:#59673D"></i><span>Koke, moss<br><code>#59673D</code></span></div>
+          <div class="sw"><i style="background:#DCE0DD"></i><span>Kasumi, mist<br><code>#DCE0DD</code></span></div>
+          <div class="sw"><i style="background:#F0E9DC"></i><span>Suna, sand<br><code>#F0E9DC</code></span></div>
+          <div class="sw"><i style="background:#94877F"></i><span>Ishi, stone<br><code>#94877F</code></span></div>
+          <div class="sw"><i style="background:#2E4A62"></i><span>Ai, indigo<br><code>#2E4A62</code></span></div>
+          <div class="sw"><i style="background:#C68A3E"></i><span>Kincha, gold<br><code>#C68A3E</code></span></div>
+          <div class="sw"><i style="background:#A8432A"></i><span>Shu, seal red<br><code>#A8432A</code></span></div>
+        </div>
+      </div>
+      <div class="chart" role="img" aria-label="Brightness: board 0.43, 808 0.80. Saturation: board 0.24, 808 0.18.">
+        <svg viewBox="0 0 640 150">
+          <g transform="translate(110,0)">
+            <line x1="0" y1="14" x2="0" y2="128" stroke="currentColor" stroke-opacity="0.15"></line>
+            <line x1="250" y1="14" x2="250" y2="128" stroke="currentColor" stroke-opacity="0.1"></line>
+            <line x1="500" y1="14" x2="500" y2="128" stroke="currentColor" stroke-opacity="0.1"></line>
+            <text x="0" y="146" text-anchor="middle">0</text><text x="250" y="146" text-anchor="middle">0.5</text><text x="500" y="146" text-anchor="middle">1</text>
+            <text x="-12" y="34" text-anchor="end">Brightness</text>
+            <rect x="0" y="18" width="215" height="11" rx="3" fill="#59673D"></rect><text class="v" x="222" y="28">0.43 board</text>
+            <rect x="0" y="33" width="400" height="11" rx="3" fill="#8CBBD4"></rect><text class="v" x="407" y="43">0.80 808</text>
+            <text x="-12" y="92" text-anchor="end">Saturation</text>
+            <rect x="0" y="76" width="120" height="11" rx="3" fill="#59673D"></rect><text class="v" x="127" y="86">0.24 board</text>
+            <rect x="0" y="91" width="90" height="11" rx="3" fill="#8CBBD4"></rect><text class="v" x="97" y="101">0.18 808</text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="principles">
+      <div class="pr">
+        <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="22" cy="22" r="7" fill="currentColor" stroke="none"></circle><path d="M4 34h36" stroke-linecap="round" opacity=".5"></path></svg>
+        <div><h3>Light is an event</h3><p>The sitter under the banyan, the sun burning through the fog behind the tai chi: one bright place, the rest in shade. 808 should keep its light for the sun, the moon and Otto's glow.</p></div>
+      </div>
+      <div class="pr">
+        <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 20c8-7 14-7 20-2s12 5 18-1" opacity=".35"></path><path d="M3 28c9-6 15-6 21-1s11 4 17-1" opacity=".6"></path><path d="M3 36c8-5 15-5 21-1s11 3 17-1"></path></svg>
+        <div><h3>Mist makes the distance</h3><p>The monk above the layered ridges: each ridge paler and hazier than the one in front. 808's ridges are three flat cut-outs with no air between them.</p></div>
+      </div>
+      <div class="pr">
+        <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="22" cy="31" r="2" fill="currentColor" stroke="none"></circle><path d="M4 34h36" opacity=".5"></path></svg>
+        <div><h3>A small figure in a big quiet</h3><p>The painted glade, the figure by the lake: the person takes up a sliver of the frame. On Home the cards crowd Otto; the sit screen gets it right.</p></div>
+      </div>
+      <div class="pr">
+        <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M31 9a15 15 0 1 0 6 11"></path></svg>
+        <div><h3>Circles settle things</h3><p>The moon behind the stone, the ripples in the pond, the raked ring, the ens&#333;. A circle is the one shape the whole board shares, and it's 808's timer, glow and tab bar already.</p></div>
+      </div>
+      <div class="pr">
+        <svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.3"><ellipse cx="22" cy="24" rx="18" ry="8"></ellipse><ellipse cx="22" cy="24" rx="12" ry="5" opacity=".7"></ellipse><ellipse cx="22" cy="24" rx="6" ry="2.5" opacity=".5"></ellipse></svg>
+        <div><h3>Honest materials</h3><p>Raked gravel, stone, moss, weathered wood, paper. The sand tiles were the first step. Stone for the small controls and a faint paper grain would finish it.</p></div>
+      </div>
+      <div class="pr">
+        <svg viewBox="0 0 44 44" fill="none"><circle cx="10" cy="22" r="5" fill="#8a8f86"></circle><circle cx="22" cy="22" r="5" fill="#5f6558"></circle><circle cx="34" cy="22" r="5" fill="#B2783D"></circle></svg>
+        <div><h3>One warm thing at a time</h3><p>A saffron robe, one maple, a thin band of sunset. On the board colour is rare and means something. 808 puts gold on nearly every screen, so it stops meaning anything.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screens">
+    <div>
+      <div class="label">Screen by screen</div>
+      <h2 style="margin-top:6px">Where each screen stands today</h2>
+      <p style="margin-top:8px;color:var(--ink-2)">The stones rate how close each screen is to the board now, from one to five. Captured on the simulator with test data.</p>
+    </div>
+
+    <div class="group">
+      <div class="label">Home and the tabs</div>
+      <div class="screens">
+        <div class="scr"><img src="shots/home-day.jpg" alt="Home by day"><div><h4>Home, by day</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> evenly bright from sky to cards. The trophy, figure and clock icons could belong to any fitness app, and the daisies are scattered like confetti.</p>
+          <p><b>Zen move:</b> mist between the ridges, his cushion on a raked-sand circle, half the daisies swapped for grass and two stones, ink icons on the tiles.</p></div></div>
+        <div class="scr"><img src="shots/home-night.jpg" alt="Home at night"><div><h4>Home, at night</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Works:</b> the dark sky, the glass bubble and the dimmed tiles are already close to the board.</p>
+          <p><b>Zen move:</b> a big pale moon low behind him, like the figure on the stone before the moon, and fewer stars. The moon and his glow become the only light.</p></div></div>
+        <div class="scr"><img src="shots/home-glow.jpg" alt="Otto's glow rising after a session"><div><h4>After a session</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> sparks and a floating "+10%" are the language of a game reward.</p>
+          <p><b>Zen move:</b> one slow set of ripples spreading out from his cushion, like the forest pond. The number stays, smaller, and fades.</p></div></div>
+        <div class="scr"><img src="shots/block.jpg" alt="Block tab"><div><h4>Block</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> the full-width gold "Add a blocker" is the loudest thing on the screen, and the rows use system symbols.</p>
+          <p><b>Zen move:</b> adding becomes a quiet outlined pill, and each blocker gets an ink mark (sun, moon, gate) from the new icon set.</p></div></div>
+        <div class="scr"><img src="shots/friends.jpg" alt="Friends feed"><div><h4>Friends</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> a standard social feed, a &#128591; emoji for the reaction, and a gold "1 request" pill up in the sky.</p>
+          <p><b>Zen move:</b> the reaction becomes a small ink ens&#333; stamp, photos sit on a thin paper mat, and the request pill turns stone instead of gold.</p></div></div>
+        <div class="scr"><img src="shots/profile.jpg" alt="Profile"><div><h4>Profile</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> amber chart bars and system icons in the stats row.</p>
+          <p><b>Zen move:</b> each bar a single upright brush stroke, ink icons in the stats row, and the award shelf as a row of seals.</p></div></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">The session</div>
+      <div class="screens">
+        <div class="scr"><img src="shots/ready.jpg" alt="Ready screen"><div><h4>Ready</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Works:</b> the scene, Otto waving and a single Begin button.</p>
+          <p><b>Reads generic:</b> the length ruler looks like a tape measure, with an &#8734; glyph and system icons on the pills.</p>
+          <p><b>Zen move:</b> fine brush marks for the ticks, "open" drawn as an unclosed ens&#333;, and ink icons on the pills.</p></div></div>
+        <div class="scr"><img src="shots/sit-early.jpg" alt="The sit"><div><h4>The sit</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Works:</b> already the calmest screen, and the day turning to dusk is exactly right.</p>
+          <p><b>Reads generic:</b> the timer is a thin UI ring, and big bright daisies in the foreground compete with a sitting figure.</p>
+          <p><b>Zen move:</b> the ens&#333; timer, grass and stones in front, and slowly drifting mist.</p></div></div>
+        <div class="scr"><img src="shots/sit-late.jpg" alt="The end of a sit"><div><h4>The end of a sit</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> the ens&#333; closes as the time runs out and the moon rises behind the ridge. "That's ten minutes" is the right line, and it deserves the quiet serif if we add one.</p></div></div>
+        <div class="scr"><img src="shots/too-short.jpg" alt="Too short"><div><h4>Too short</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Works:</b> it says it plainly, in his voice.</p>
+          <p><b>Zen move:</b> nothing beyond the scene pass.</p></div></div>
+        <div class="scr"><img src="shots/save.jpg" alt="The session's page"><div><h4>The session's page</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> a form, with a blue slider, dashed photo tiles and a gold Save.</p>
+          <p><b>Zen move:</b> the slider track as a brush stroke with a small stone for the thumb, and "10 min" in the serif. Leave the rest.</p></div></div>
+        <div class="scr"><img src="shots/results.jpg" alt="Measurements"><div><h4>Measurements</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p>The rating prompt fired in the preview; it's the real third-session prompt, not a bug.</p>
+          <p><b>Zen move:</b> moss lines on paper for the charts. The gold score ring stays gold, since it's the one ring that means a score.</p></div></div>
+        <div class="scr"><img src="shots/share.jpg" alt="Share card"><div><h4>Share card</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> a faint paper grain and a small seal with "808" in the corner. This card is the only ad 808 has, so it's worth the care.</p></div></div>
+        <div class="scr"><img src="shots/award.jpg" alt="Award unlocked"><div><h4>Award unlocked</h4><div class="score"><span class="stones"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> the most game-like screen in the app: a gold squircle, "AWARD UNLOCKED", confetti energy.</p>
+          <p><b>Zen move:</b> a vermilion hanko seal pressed onto the sky with a soft stamp, then one line and Keep going.</p></div></div>
+        <div class="scr"><img src="shots/paywall.jpg" alt="Paywall"><div><h4>Paywall</h4><div class="score"><span class="stones"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> a stock plan list on blank cream.</p>
+          <p><b>Zen move:</b> a band of layered misty ridges with Otto tiny in the distance, the way the painted mountain does it, and the plans on sand below.</p></div></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Otto's interruptions (Block)</div>
+      <div class="screens">
+        <div class="scr"><img src="shots/int-facetime.jpg" alt="Otto video call"><div><h4>The video call</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Works:</b> the joke lands. Leave it.</p></div></div>
+        <div class="scr"><img src="shots/int-fridge.jpg" alt="Fridge note"><div><h4>The note</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> a yellow sticky note on a blank page.</p>
+          <p><b>Zen move:</b> an omikuji, the folded paper fortune people tie up at a shrine, with the same words.</p></div></div>
+        <div class="scr"><img src="shots/int-sign.jpg" alt="Otto holding a sign"><div><h4>The sign</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> an ema, the small wooden plaque people write a wish on, in place of the cardboard sign.</p></div></div>
+        <div class="scr"><img src="shots/int-twodoors.jpg" alt="Two doors"><div><h4>Two doors</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> the scene pass only.</p></div></div>
+        <div class="scr"><img src="shots/howlong.jpg" alt="How long"><div><h4>How long</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> the scene pass only.</p></div></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Guide, sounds and settings</div>
+      <div class="screens">
+        <div class="scr"><img src="shots/guide.jpg" alt="Guide"><div><h4>Guide</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> system symbols in blue discs, on a plain list.</p>
+          <p><b>Zen move:</b> an ink drawing for each method (ten stones for Counting Down, one cloud for Blue Sky), and section labels in tracked small caps.</p></div></div>
+        <div class="scr"><img src="shots/guide-method.jpg" alt="A method"><div><h4>A method</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> long reading in a calm serif on a shorter line, and brush numerals for the steps.</p></div></div>
+        <div class="scr"><img src="shots/sound.jpg" alt="Sound picker"><div><h4>Sounds</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Reads generic:</b> system icons for rain, waves, forest and fire.</p>
+          <p><b>Zen move:</b> ink icons from the same set. The rows can stay as they are.</p></div></div>
+        <div class="scr"><img src="shots/blocker-editor.jpg" alt="Blocker editor"><div><h4>Blocker editor</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> indigo instead of sky blue for what's chosen, and an ink mark in the circle.</p></div></div>
+        <div class="scr"><img src="shots/settings.jpg" alt="Settings"><div><h4>Settings</h4><div class="score"><span class="stones"><i class="on"></i><i></i><i></i><i></i><i></i></span></div>
+          <p><b>Zen move:</b> low priority. Ink icons and sand, and otherwise leave it an honest settings list.</p></div></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <div class="label">Onboarding (Aziz's, mid-revamp)</div>
+      <div class="screens">
+        <div class="scr"><img src="shots/ob-0.jpg" alt="Welcome"><div><h4>Welcome</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>For Aziz:</b> the green buttons are the brightest thing in onboarding. A moss green would sit inside the scene instead of on top of it.</p></div></div>
+        <div class="scr"><img src="shots/ob-3.jpg" alt="A question"><div><h4>A question</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>For Aziz:</b> the answer plates are sand already. The scene pass would reach every screen here with no extra work.</p></div></div>
+        <div class="scr"><img src="shots/ob-30.jpg" alt="Choosing apps to block"><div><h4>Choosing apps</h4><div class="score"><span class="stones"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+          <p><b>For Aziz:</b> same as above. The cut-out sun and flat ridges are the same scene, so it gets the same fix.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="kit">
+    <div>
+      <div class="label">The kit</div>
+      <h2 style="margin-top:6px">Six things to spend it on</h2>
+      <p style="margin-top:8px;color:var(--ink-2)">Drawn here as a direction, not as final art. The real ink icons and seals would come off one ChatGPT sheet each, the way the tab bar did.</p>
+    </div>
+    <div class="kit">
+      <div class="tile"><canvas id="k-enso" data-w="460" data-h="340"></canvas><div><h3>The ens&#333; timer</h3><p>The sit's ring becomes a brush circle that paints itself closed as the time runs out.</p></div></div>
+      <div class="tile"><canvas id="k-mist" data-w="460" data-h="340"></canvas><div><h3>Mist between ridges</h3><p>Each ridge paler than the one in front, with haze pooled in the valleys. Every valley screen gets it at once.</p></div></div>
+      <div class="tile"><canvas id="k-sand" data-w="460" data-h="340"></canvas><div><h3>Raked sand and ripples</h3><p>A raked circle under his cushion, and one slow ripple when a session lands.</p></div></div>
+      <div class="tile"><canvas id="k-moon" data-w="460" data-h="340"></canvas><div><h3>The moon</h3><p>Home at night and the end of a sit. A big pale disc behind the ridge, and the only light in the sky.</p></div></div>
+      <div class="tile">
+        <svg class="art" viewBox="0 0 460 340" role="img" aria-label="A vermilion seal with the number 7">
+          <defs><filter id="rough" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="4"></feTurbulence><feDisplacementMap in="SourceGraphic" scale="4"></feDisplacementMap></filter>
+          <filter id="ink" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="1" seed="9" result="n"></feTurbulence><feColorMatrix in="n" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -1.4 1.1" result="spots"></feColorMatrix><feComposite in="SourceGraphic" in2="spots" operator="in"></feComposite></filter></defs>
+          <rect width="460" height="340" fill="#EDEAE2"></rect>
+          <g filter="url(#rough)"><g filter="url(#ink)">
+            <rect x="170" y="80" width="120" height="120" rx="14" fill="#A8432A"></rect>
+          </g></g>
+          <text x="230" y="168" text-anchor="middle" font-family="Shippori Mincho, Georgia, serif" font-weight="700" font-size="72" fill="#EDEAE2">7</text>
+          <text x="230" y="240" text-anchor="middle" font-family="Zen Kaku Gothic New, system-ui, sans-serif" font-size="14" letter-spacing="3" fill="#505849">SEVEN DAYS</text>
+        </svg>
+        <div><h3>Awards as seals</h3><p>A hanko in seal red, pressed on with a soft stamp. On the unlock screen, and as a row on Profile.</p></div></div>
+      <div class="tile">
+        <svg class="art" viewBox="0 0 460 340" role="img" aria-label="Ink icon sketches: stones, ens&#333;, incense, rain, wave, pine">
+          <defs><filter id="brush" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="2"></feTurbulence><feDisplacementMap in="SourceGraphic" scale="2.6"></feDisplacementMap></filter></defs>
+          <rect width="460" height="340" fill="#EDEAE2"></rect>
+          <g filter="url(#brush)" fill="none" stroke="#1E231D" stroke-linecap="round" stroke-linejoin="round">
+            <g transform="translate(78,110)"><ellipse cx="0" cy="22" rx="30" ry="12" fill="#2a2f28" stroke="none"></ellipse><ellipse cx="2" cy="2" rx="21" ry="9" fill="#3a4036" stroke="none"></ellipse><ellipse cx="0" cy="-15" rx="12" ry="7" fill="#2a2f28" stroke="none"></ellipse></g>
+            <g transform="translate(230,110)"><path d="M18 -26a32 32 0 1 0 14 24" stroke-width="7"></path><path d="M18 -26a32 32 0 1 0 14 24" stroke-width="2.5" stroke="#EDEAE2" stroke-dasharray="3 14" opacity=".6"></path></g>
+            <g transform="translate(382,110)"><path d="M0 36V-4" stroke-width="3"></path><path d="M0 -8c-8-8 8-14 0-22s6-12 0-18" stroke-width="1.6" opacity=".55"></path><ellipse cx="0" cy="38" rx="14" ry="4" fill="#1E231D" stroke="none"></ellipse></g>
+            <g transform="translate(78,245)"><path d="M-18 -20l-8 22M0 -24l-8 26M18 -20l-8 22" stroke-width="3.2"></path><path d="M-26 14h52" stroke-width="2" opacity=".5"></path></g>
+            <g transform="translate(230,245)"><path d="M-40 12c14-2 20-18 34-20s22 10 16 18c-4 5-12 2-10-4" stroke-width="5"></path><path d="M-40 26c16 0 28-6 44-6s24 6 36 6" stroke-width="2.4" opacity=".6"></path></g>
+            <g transform="translate(382,245)"><path d="M0 -38l-18 22h10l-16 18h12l-14 16h52l-14-16h12l-16-18h10z" fill="#2c3a28" stroke="#1E231D" stroke-width="2"></path><path d="M0 18v14" stroke-width="4"></path></g>
+          </g>
+        </svg>
+        <div><h3>One ink icon set</h3><p>Stones, ens&#333;, incense, rain, wave, pine: the tab bar's brush language, carried to the tiles, sounds, guide and blockers.</p></div></div>
+    </div>
+  </section>
+
+  <section id="before-after">
+    <div>
+      <div class="label">Before and after</div>
+      <h2 style="margin-top:6px">Three screens, pushed toward the board</h2>
+      <p style="margin-top:8px;color:var(--ink-2)">Quick paintings to show the direction, not pixel mockups. Otto is the real art.</p>
+    </div>
+    <div class="pairs">
+      <div class="pair">
+        <figure><img src="shots/sit-early.jpg" alt="The sit today"><figcaption>Today</figcaption></figure>
+        <figure><canvas id="c-sit" data-w="377" data-h="820" aria-label="The sit, proposed: mist, a raked sand circle, an ens&#333; timer"></canvas><figcaption>Proposed</figcaption></figure>
+        <div class="why"><h3>The sit</h3><p>The ring becomes an ens&#333; that paints itself closed. The sky is misted instead of postcard blue, each ridge is paler than the last, and Otto sits on raked sand with grass and two stones in front instead of daisies.</p><p>This is the screen people stare at for ten minutes, so it's where the board matters most.</p></div>
+      </div>
+      <div class="pair">
+        <figure><img src="shots/home-night.jpg" alt="Home at night today"><figcaption>Today</figcaption></figure>
+        <figure><canvas id="c-night" data-w="377" data-h="820" aria-label="Home at night, proposed: a large moon behind Otto"></canvas><figcaption>Proposed</figcaption></figure>
+        <div class="why"><h3>Home at night</h3><p>A big pale moon rises behind him, like the figure on the stone before the moon. There are fewer stars and faint mist over the ridge, and the raked sand catches the moonlight.</p><p>The bubble and the dimmed tiles already work, so they stay.</p></div>
+      </div>
+      <div class="pair">
+        <figure><img src="shots/award.jpg" alt="Award unlocked today"><figcaption>Today</figcaption></figure>
+        <figure><canvas id="c-award" data-w="377" data-h="820" aria-label="Award unlocked, proposed: a vermilion seal"></canvas><figcaption>Proposed</figcaption></figure>
+        <div class="why"><h3>Award unlocked</h3><p>The gold squircle becomes a hanko: a seal-red stamp that presses down onto the sky. It's the most game-like screen today, and a seal is how you'd mark an achievement on paper in Japan.</p><p>The button turns kincha, a browner gold that belongs to the scene.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="order">
+    <div>
+      <div class="label">The order I'd build it in</div>
+      <h2 style="margin-top:6px">Biggest reach first</h2>
+    </div>
+    <ol class="order">
+      <li><div><b>The scene pass</b><span>Mist between the ridges, a softer misted sky, a deeper foreground, half the daisies turned to grass and stones, and a moon at night. One change in the scene code, and every valley screen gets it, onboarding included.</span><div class="tags"><span class="tag">high reach</span><span class="tag">code</span></div></div></li>
+      <li><div><b>The ens&#333; timer</b><span>The sit's ring painted as a brush circle. The signature moment.</span><div class="tags"><span class="tag">high reach</span><span class="tag">code, one brush texture</span></div></div></li>
+      <li><div><b>Raked sand and ripples</b><span>A raked circle under his cushion on Home, Ready and the sit, and one slow ripple when a session lands in place of the sparks.</span><div class="tags"><span class="tag">medium</span><span class="tag">code</span></div></div></li>
+      <li><div><b>One ink icon set</b><span>Replaces the system symbols where they're seen most: Home's tiles, sounds, the guide and the blockers. I'll write the ChatGPT prompt.</span><div class="tags"><span class="tag">high reach</span><span class="tag art">needs one sheet</span></div></div></li>
+      <li><div><b>Awards as seals</b><span>The unlock screen and the Profile shelf.</span><div class="tags"><span class="tag">medium</span><span class="tag art">sheet or drawn in code</span></div></div></li>
+      <li><div><b>Palette tokens</b><span>Indigo for chosen things, a browner gold for the one button, and a moss meadow.</span><div class="tags"><span class="tag">medium</span><span class="tag">code</span></div></div></li>
+      <li><div><b>The paywall's misty header</b><span>Layered ridges with Otto tiny in the distance.</span><div class="tags"><span class="tag">medium</span><span class="tag">code</span></div></div></li>
+      <li><div><b>A calm serif for a few moments</b><span>Optional. See the second question below.</span><div class="tags"><span class="tag">medium</span><span class="tag">code</span></div></div></li>
+      <li><div><b>Omikuji and ema in Otto's interruptions</b><span>The note and the sign, as the everyday objects they'd be in Japan.</span><div class="tags"><span class="tag">low</span><span class="tag art">needs art</span></div></div></li>
+    </ol>
+  </section>
+
+  <section id="leave">
+    <div>
+      <div class="label">What we leave out</div>
+      <h2 style="margin-top:6px">No theme park</h2>
+    </div>
+    <p class="leave">No torii gates, cherry-blossom petals, kanji as decoration, koi, paper lanterns, bamboo borders or gongs. None of them are on the board. The board is weather, light and a few honest materials, and that's what 808 borrows. If a change could be described as "adding Japanese stuff", it's the wrong change.</p>
+  </section>
+
+  <section id="decide">
+    <div>
+      <div class="label">Your call</div>
+      <h2 style="margin-top:6px">Four questions</h2>
+    </div>
+    <div class="decide">
+      <div class="q"><em>1</em><span>Mock the first three together (the scene pass, the ens&#333; timer, raked sand) as proper screens for Home and the sit, day and night?</span></div>
+      <div class="q"><em>2</em><span>A calm serif for a handful of moments (the greeting, the sit's last line, award names, method titles), or stay all rounded? The house rule today is rounded everywhere.</span></div>
+      <div class="q"><em>3</em><span>Indigo instead of sky blue for anything chosen?</span></div>
+      <div class="q"><em>4</em><span>Send this direction to Aziz for the onboarding revamp?</span></div>
+    </div>
+  </section>
+
+  <footer>Screenshots from the iPhone 17 simulator on 26 September 2026, development build with test data. The fourteen board images stay on Melvin's Mac in mockups/moodboard/zen and aren't published. The board's colours and brightness were measured from the images themselves; 808's from these screenshots.</footer>
+</div>
+
+<script>
+(function () {
+  function rng(seed) { var s = (seed >>> 0) || 1; return function () { s ^= s << 13; s >>>= 0; s ^= s >> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; }; }
+  function hex(h, a) { var n = parseInt(h.slice(1), 16); return 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',' + (a == null ? 1 : a) + ')'; }
+  function setup(id) {
+    var c = document.getElementById(id); if (!c) return null;
+    var W = +c.dataset.w, H = +c.dataset.h, d = Math.min(2, window.devicePixelRatio || 1);
+    c.width = Math.round(W * d); c.height = Math.round(H * d);
+    var ctx = c.getContext('2d'); ctx.setTransform(d, 0, 0, d, 0, 0);
+    return { ctx: ctx, W: W, H: H };
+  }
+
+  // A brush arc: many bristles, tapering at the end, with dry-brush breaks.
+  function brushArc(ctx, cx, cy, r, a0, a1, width, color, seed) {
+    var R = rng(seed), N = 34, steps = 140;
+    ctx.save(); ctx.lineCap = 'round'; ctx.strokeStyle = color;
+    for (var i = 0; i < N; i++) {
+      var t = i / (N - 1) - 0.5, edge = Math.abs(t) * 2;
+      var start = a0 + R() * 0.05 + edge * 0.04;
+      var end = a1 - (edge * edge * 0.45 + R() * 0.06);
+      ctx.globalAlpha = 0.16 + 0.6 * (1 - edge) * (0.6 + 0.4 * R());
+      ctx.lineWidth = width / N * 2.6;
+      var down = false; ctx.beginPath();
+      for (var k = 0; k <= steps; k++) {
+        var f = k / steps, a = start + (end - start) * f;
+        var taper = 1 - 0.55 * f * f;
+        var wob = Math.sin(a * 3 + i * 0.7) * 0.5 + (R() - 0.5) * 0.35;
+        var rr = r + t * width * taper + wob;
+        var x = cx + Math.cos(a) * rr, y = cy + Math.sin(a) * rr;
+        var gap = R() < (0.01 + 0.3 * f * f * edge);
+        if (gap) { down = false; continue; }
+        if (!down) { ctx.moveTo(x, y); down = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    // The loaded start of the stroke.
+    ctx.globalAlpha = 0.85; ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(cx + Math.cos(a0) * r, cy + Math.sin(a0) * r, width * 0.5, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function ridgeLine(W, base, amp, seed) {
+    var R = rng(seed), p = [R() * 6, R() * 6, R() * 6], pts = [];
+    for (var i = 0; i <= 40; i++) {
+      var x = W * i / 40, u = i / 40;
+      var y = base - amp * (0.55 + 0.28 * Math.sin(u * 5.2 + p[0]) + 0.16 * Math.sin(u * 11 + p[1]) + 0.06 * Math.sin(u * 23 + p[2]));
+      pts.push([x, y]);
+    }
+    return pts;
+  }
+  function fillRidge(ctx, W, H, pts, color) {
+    ctx.fillStyle = color; ctx.beginPath(); ctx.moveTo(0, H); ctx.lineTo(pts[0][0], pts[0][1]);
+    for (var i = 1; i < pts.length; i++) { var a = pts[i - 1], b = pts[i]; ctx.quadraticCurveTo(a[0], a[1], (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); }
+    ctx.lineTo(W, pts[pts.length - 1][1]); ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+  }
+  function mist(ctx, W, y, h, color, a) {
+    var g = ctx.createLinearGradient(0, y - h, 0, y + h * 0.35);
+    g.addColorStop(0, hex(color, 0)); g.addColorStop(0.72, hex(color, a)); g.addColorStop(1, hex(color, 0));
+    ctx.fillStyle = g; ctx.fillRect(0, y - h, W, h * 1.35);
+  }
+  function disc(ctx, x, y, r, color, glow, ga) {
+    var g = ctx.createRadialGradient(x, y, r * 0.6, x, y, r * 2.6);
+    g.addColorStop(0, hex(glow, ga)); g.addColorStop(1, hex(glow, 0));
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r * 2.6, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+  }
+  function rakedSand(ctx, cx, cy, rx, ry, base, dark, light, rings) {
+    ctx.save();
+    ctx.fillStyle = base; ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    for (var i = 1; i <= rings; i++) {
+      var k = 1 - i / (rings + 1.4);
+      ctx.lineWidth = 1.2; ctx.strokeStyle = dark;
+      ctx.beginPath(); ctx.ellipse(cx, cy + 0.6, rx * k, ry * k, 0, 0, Math.PI * 2); ctx.stroke();
+      ctx.lineWidth = 1; ctx.strokeStyle = light;
+      ctx.beginPath(); ctx.ellipse(cx, cy - 0.8, rx * k, ry * k, 0, 0, Math.PI * 2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function grass(ctx, W, H, top, seed, dark, light, density) {
+    var R = rng(seed); ctx.save(); ctx.lineCap = 'round';
+    for (var i = 0; i < density; i++) {
+      var y = top + (H - top) * Math.pow(R(), 0.7), s = 0.4 + 1.6 * (y - top) / (H - top);
+      var x = R() * W;
+      ctx.strokeStyle = R() < 0.5 ? dark : light; ctx.globalAlpha = 0.35 + 0.4 * R();
+      ctx.lineWidth = 0.8 * s;
+      ctx.beginPath(); ctx.moveTo(x, y); ctx.quadraticCurveTo(x + (R() - 0.5) * 4 * s, y - 5 * s, x + (R() - 0.5) * 6 * s, y - 9 * s); ctx.stroke();
+    }
+    ctx.restore();
+  }
+  function stone(ctx, x, y, rx, ry, c1, c2) {
+    var g = ctx.createLinearGradient(x, y - ry, x, y + ry);
+    g.addColorStop(0, c1); g.addColorStop(1, c2);
+    ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.beginPath(); ctx.ellipse(x + 2, y + ry * 0.75, rx * 1.05, ry * 0.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = g; ctx.beginPath(); ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  function stars(ctx, W, H, n, seed) {
+    var R = rng(seed); ctx.save();
+    for (var i = 0; i < n; i++) { ctx.globalAlpha = 0.25 + 0.5 * R(); ctx.fillStyle = '#EDE9DE'; ctx.beginPath(); ctx.arc(R() * W, R() * H, 0.6 + R() * 0.9, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+  function roundRect(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function seal(ctx, x, y, s, color, seed) {
+    var R = rng(seed); ctx.save();
+    ctx.fillStyle = color; ctx.beginPath();
+    var r = s * 0.12, n = 60;
+    for (var i = 0; i <= n; i++) {
+      var f = i / n, px, py;
+      if (f < 0.25) { px = x + s * f * 4; py = y; } else if (f < 0.5) { px = x + s; py = y + s * (f - 0.25) * 4; } else if (f < 0.75) { px = x + s - s * (f - 0.5) * 4; py = y + s; } else { px = x; py = y + s - s * (f - 0.75) * 4; }
+      px += (R() - 0.5) * 2.2; py += (R() - 0.5) * 2.2;
+      i ? ctx.lineTo(px, py) : ctx.moveTo(px, py);
+    }
+    ctx.closePath(); ctx.fill();
+    // Uneven ink: pale flecks where the seal didn't take.
+    for (var k = 0; k < 140; k++) { ctx.globalAlpha = 0.18 * R(); ctx.fillStyle = '#F2ECE0'; ctx.beginPath(); ctx.arc(x + R() * s, y + R() * s, 0.6 + R() * 2.2, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+
+  // The valley, the board's way. mode: 'day' or 'night'.
+  function valley(ctx, W, H, mode, groundTop) {
+    var night = mode === 'night';
+    var sky = ctx.createLinearGradient(0, 0, 0, groundTop);
+    if (night) { sky.addColorStop(0, '#0E141C'); sky.addColorStop(0.6, '#1B2430'); sky.addColorStop(1, '#2A3037'); }
+    else { sky.addColorStop(0, '#B4C2C4'); sky.addColorStop(0.55, '#D6DBD4'); sky.addColorStop(1, '#ECE3CF'); }
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+    if (night) stars(ctx, W, groundTop * 0.7, 26, 11);
+  }
+  function ridges(ctx, W, H, groundTop, night) {
+    var cols = night ? ['#2B3540', '#222C33', '#1B2428', '#151D1B'] : ['#AEB6AE', '#949F92', '#7B8970', '#5E6C48'];
+    var mistC = night ? '#6E7A84' : '#E8E5DA', mistA = night ? 0.22 : 0.7;
+    var bases = [groundTop - 70, groundTop - 44, groundTop - 20, groundTop + 4], amps = [56, 44, 30, 16];
+    for (var i = 0; i < 4; i++) {
+      fillRidge(ctx, W, H, ridgeLine(W, bases[i], amps[i], 21 + i * 7), cols[i]);
+      if (i < 3) mist(ctx, W, bases[i] + 6, 34, mistC, mistA);
+    }
+  }
+  function ground(ctx, W, H, top, night) {
+    var g = ctx.createLinearGradient(0, top, 0, H);
+    if (night) { g.addColorStop(0, '#1A231E'); g.addColorStop(1, '#0F1512'); } else { g.addColorStop(0, '#687650'); g.addColorStop(1, '#4A5536'); }
+    ctx.fillStyle = g; ctx.fillRect(0, top, W, H - top);
+    grass(ctx, W, H, top, 5, night ? '#0C120E' : '#3D482B', night ? '#2A3629' : '#7D8A5F', 520);
+  }
+
+  var otto = new Image();
+  var ottoReady = false;
+  otto.onload = function () { ottoReady = true; drawAll(); };
+  otto.src = 'shots/otto-sit.png';
+
+  function drawOtto(ctx, cx, bottom, h) {
+    if (!ottoReady) return;
+    var w = h * otto.naturalWidth / otto.naturalHeight;
+    ctx.drawImage(otto, cx - w / 2, bottom - h, w, h);
+  }
+
+  function drawHero() {
+    var s = setup('hero-enso'); if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H;
+    ctx.clearRect(0, 0, W, H);
+    var ink = getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#1E231D';
+    brushArc(ctx, W / 2, H / 2, W * 0.34, -Math.PI * 0.62, Math.PI * 1.28, 30, ink, 7);
+  }
+
+  function drawKit() {
+    var s = setup('k-enso');
+    if (s) {
+      var c = s.ctx; c.fillStyle = '#EDEAE2'; c.fillRect(0, 0, s.W, s.H);
+      c.strokeStyle = 'rgba(30,35,29,0.10)'; c.lineWidth = 3; c.beginPath(); c.arc(s.W / 2, s.H / 2, 110, 0, Math.PI * 2); c.stroke();
+      brushArc(c, s.W / 2, s.H / 2, 110, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.68, 20, '#1E231D', 3);
+      c.fillStyle = '#1E231D'; c.globalAlpha = 0.85; c.font = '500 40px "Zen Kaku Gothic New", system-ui, sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('6:24', s.W / 2, s.H / 2 + 2); c.globalAlpha = 1;
+    }
+    s = setup('k-mist');
+    if (s) {
+      var c2 = s.ctx, W = s.W, H = s.H;
+      var sky = c2.createLinearGradient(0, 0, 0, H); sky.addColorStop(0, '#B4C2C4'); sky.addColorStop(1, '#ECE3CF');
+      c2.fillStyle = sky; c2.fillRect(0, 0, W, H);
+      disc(c2, W * 0.7, H * 0.36, 20, '#F4EAD2', '#F3E6C6', 0.5);
+      var cols = ['#AEB6AE', '#949F92', '#7B8970', '#5E6C48', '#46522F'];
+      for (var i = 0; i < 5; i++) { fillRidge(c2, W, H, ridgeLine(W, 130 + i * 44, 52 - i * 5, 40 + i * 3), cols[i]); if (i < 4) mist(c2, W, 136 + i * 44, 34, '#E8E5DA', 0.72); }
+    }
+    s = setup('k-sand');
+    if (s) {
+      var c3 = s.ctx; c3.fillStyle = '#DCD3C1'; c3.fillRect(0, 0, s.W, s.H);
+      rakedSand(c3, s.W / 2, s.H / 2 + 8, 205, 110, '#DCD3C1', 'rgba(150,135,110,0.55)', 'rgba(250,246,238,0.8)', 11);
+      stone(c3, s.W / 2, s.H / 2 + 2, 40, 22, '#8B8A82', '#55544E');
+    }
+    s = setup('k-moon');
+    if (s) {
+      var c4 = s.ctx, W4 = s.W, H4 = s.H;
+      var sk = c4.createLinearGradient(0, 0, 0, H4); sk.addColorStop(0, '#0E141C'); sk.addColorStop(1, '#2A3037');
+      c4.fillStyle = sk; c4.fillRect(0, 0, W4, H4);
+      stars(c4, W4, H4 * 0.5, 18, 3);
+      disc(c4, W4 * 0.5, H4 * 0.5, 62, '#E4E1D6', '#C9CCC8', 0.22);
+      fillRidge(c4, W4, H4, ridgeLine(W4, H4 * 0.66, 40, 12), '#222C33');
+      mist(c4, W4, H4 * 0.66 + 4, 26, '#6E7A84', 0.22);
+      fillRidge(c4, W4, H4, ridgeLine(W4, H4 * 0.78, 18, 19), '#151D1B');
+      // Still water: the moon again, broken into bars.
+      c4.fillStyle = '#10171A'; c4.fillRect(0, H4 * 0.8, W4, H4 * 0.2);
+      c4.save(); c4.globalAlpha = 0.45; c4.fillStyle = '#E4E1D6';
+      for (var j = 0; j < 6; j++) { var yy = H4 * 0.83 + j * 8, ww = 70 - j * 9; c4.fillRect(W4 * 0.5 - ww / 2, yy, ww, 2.2); }
+      c4.restore();
+    }
+  }
+
+  function drawSit() {
+    var s = setup('c-sit'); if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H, gt = H * 0.60;
+    valley(ctx, W, H, 'day', gt);
+    disc(ctx, W * 0.3, gt - 56, 18, '#F6ECD4', '#F3E6C6', 0.55);
+    ridges(ctx, W, H, gt, false);
+    ground(ctx, W, H, gt, false);
+    rakedSand(ctx, W / 2, H * 0.80, W * 0.40, H * 0.07, '#DCD3C1', 'rgba(150,135,110,0.55)', 'rgba(250,246,238,0.8)', 7);
+    ctx.fillStyle = '#9A5A40'; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.807, W * 0.19, H * 0.024, 0, 0, Math.PI * 2); ctx.fill();
+    drawOtto(ctx, W / 2, H * 0.815, H * 0.21);
+    stone(ctx, W * 0.14, H * 0.91, 26, 14, '#8E8C84', '#5A5953');
+    stone(ctx, W * 0.87, H * 0.935, 17, 9, '#8E8C84', '#5A5953');
+    grass(ctx, W, H, H * 0.86, 77, '#33402A', '#6F7D52', 160);
+    var cx = W / 2, cy = H * 0.33, r = W * 0.20;
+    ctx.strokeStyle = 'rgba(30,35,29,0.10)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.stroke();
+    brushArc(ctx, cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * 0.72, 18, '#1E231D', 5);
+    ctx.fillStyle = 'rgba(30,35,29,0.82)'; ctx.font = '500 34px "Zen Kaku Gothic New", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('8:25', cx, cy + 1);
+  }
+
+  function drawNight() {
+    var s = setup('c-night'); if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H, gt = H * 0.47;
+    valley(ctx, W, H, 'night', gt);
+    disc(ctx, W / 2, gt - 44, W * 0.25, '#E4E1D6', '#C9CCC8', 0.2);
+    ridges(ctx, W, H, gt, true);
+    ground(ctx, W, H, gt, true);
+    rakedSand(ctx, W / 2, H * 0.575, W * 0.36, H * 0.05, '#5F5C54', 'rgba(20,20,18,0.5)', 'rgba(200,196,184,0.35)', 6);
+    ctx.fillStyle = '#6A3F2F'; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.582, W * 0.17, H * 0.018, 0, 0, Math.PI * 2); ctx.fill();
+    drawOtto(ctx, W / 2, H * 0.588, H * 0.17);
+    // Greeting and the glass bubble.
+    ctx.fillStyle = '#F3E7D8'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    ctx.font = '700 23px "Zen Kaku Gothic New", system-ui, sans-serif'; ctx.fillText('Good Night', W / 2, H * 0.085);
+    ctx.globalAlpha = 0.7; ctx.font = '400 11px "Zen Kaku Gothic New", system-ui, sans-serif'; ctx.fillText('Saturday, September 26', W / 2, H * 0.085 + 18); ctx.globalAlpha = 1;
+    var bx = W * 0.12, by = H * 0.16, bw = W * 0.76, bh = 58;
+    roundRect(ctx, bx, by, bw, bh, 16); ctx.fillStyle = 'rgba(0,0,0,0.16)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(243,231,216,0.42)'; ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = '#F3E7D8'; ctx.font = '400 13px "Zen Kaku Gothic New", system-ui, sans-serif';
+    ctx.fillText('Rest day yesterday. Sit today and', W / 2, by + 25); ctx.fillText('your streak carries on.', W / 2, by + 43);
+    // Dimmed sand tiles and the tab bar.
+    var tile = 'rgba(226,219,207,1)';
+    roundRect(ctx, W * 0.05, H * 0.64, W * 0.9, H * 0.12, 18); ctx.fillStyle = tile; ctx.fill();
+    ctx.fillStyle = '#413024'; ctx.textAlign = 'left'; ctx.font = '700 17px "Zen Kaku Gothic New", system-ui, sans-serif'; ctx.fillText("Otto's glow", W * 0.09, H * 0.64 + 30);
+    ctx.textAlign = 'right'; ctx.fillText('50%', W * 0.91, H * 0.64 + 30);
+    roundRect(ctx, W * 0.09, H * 0.64 + 42, W * 0.82, 9, 4.5); ctx.fillStyle = '#E2CFB6'; ctx.fill();
+    roundRect(ctx, W * 0.09, H * 0.64 + 42, W * 0.41, 9, 4.5); ctx.fillStyle = '#E9A13E'; ctx.fill();
+    for (var i = 0; i < 3; i++) { roundRect(ctx, W * 0.05 + i * W * 0.305, H * 0.785, W * 0.28, H * 0.1, 16); ctx.fillStyle = tile; ctx.fill(); }
+    roundRect(ctx, W * 0.03, H * 0.905, W * 0.94, H * 0.075, 30); ctx.fillStyle = '#EFE7DA'; ctx.fill();
+  }
+
+  function drawAward() {
+    var s = setup('c-award'); if (!s) return;
+    var ctx = s.ctx, W = s.W, H = s.H, gt = H * 0.66;
+    valley(ctx, W, H, 'day', gt);
+    ridges(ctx, W, H, gt, false);
+    ground(ctx, W, H, gt, false);
+    rakedSand(ctx, W / 2, H * 0.83, W * 0.34, H * 0.055, '#DCD3C1', 'rgba(150,135,110,0.55)', 'rgba(250,246,238,0.8)', 6);
+    ctx.fillStyle = '#9A5A40'; ctx.beginPath(); ctx.ellipse(W / 2, H * 0.835, W * 0.14, H * 0.018, 0, 0, Math.PI * 2); ctx.fill();
+    drawOtto(ctx, W / 2, H * 0.84, H * 0.15);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(30,35,29,0.62)'; ctx.font = '500 11px "Zen Kaku Gothic New", system-ui, sans-serif';
+    ctx.fillText('A NEW MARK', W / 2, H * 0.11);
+    ctx.fillStyle = '#1E231D'; ctx.font = '700 30px "Shippori Mincho", Georgia, serif'; ctx.fillText('Three days', W / 2, H * 0.11 + 38);
+    ctx.fillStyle = 'rgba(30,35,29,0.7)'; ctx.font = '400 13px "Zen Kaku Gothic New", system-ui, sans-serif';
+    ctx.fillText('Three days in a row.', W / 2, H * 0.11 + 64);
+    var size = W * 0.34, sx = W / 2 - size / 2, sy = H * 0.27;
+    seal(ctx, sx, sy, size, '#A8432A', 8);
+    ctx.fillStyle = '#F2ECE0'; ctx.font = '700 70px "Shippori Mincho", Georgia, serif'; ctx.textBaseline = 'middle';
+    ctx.fillText('3', W / 2, sy + size / 2 + 4); ctx.textBaseline = 'alphabetic';
+    roundRect(ctx, W * 0.08, H * 0.905, W * 0.84, 50, 16); ctx.fillStyle = '#C68A3E'; ctx.fill();
+    ctx.fillStyle = '#1E231D'; ctx.font = '700 16px "Zen Kaku Gothic New", system-ui, sans-serif'; ctx.fillText('Keep going', W / 2, H * 0.905 + 31);
+  }
+
+  function drawAll() { drawHero(); drawKit(); drawSit(); drawNight(); drawAward(); }
+  drawAll();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawAll);
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawHero); } catch (e) {}
+  new MutationObserver(drawHero).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+})();
+</script>
