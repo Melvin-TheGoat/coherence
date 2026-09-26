@@ -3768,11 +3768,25 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
 - **The Do Not Disturb shortcuts are published** and in `FocusShortcut`,
   checked against iCloud first (names exact, one action each).
 
-## TWO TAB BARS UNDER TEST, DEBUG ONLY (2026-09-25, Melvin)
+## TAB BARS UNDER TEST, DEBUG ONLY (2026-09-25, Melvin)
 
-Settings > Block (debug) > "Tab bar (test)" picks Classic, Meadow or Lifted
-(`TestTabBar`, stored in `debug.tabBarStyle`, Lifted by default);
+Settings > Block (debug) > "Tab bar (test)" picks Classic, Meadow, Lifted or
+Ink (`TestTabBar`, stored in `debug.tabBarStyle.v2`). The newest opens first
+(`TestTabBar.debugDefault`, Ink since 2026-09-26); bump the key's version
+when a new style should open first on a phone that already picked one.
 `CLASSIC_TAB_BAR=1` forces the old bar; Release always draws the classic one.
+**Ink** (`InkTabBar.swift`, 2026-09-26, "Ooh try this one") is Melvin's third
+sheet, kept at `mockups/tabbar-icons/ink-sheet.webp`: an ensō round a house,
+a river stone, a cairn of two stones and a leaf, the plus as a green brushed
+circle, on a cream capsule with a thin tan outline. The selected tab stands
+in a pale blue watercolour wash, its label in the sheet's blue. Cut with
+`tools/sheet_cut.swift` (its header has the method and the two traps); every
+icon is drawn at ONE scale, 0.26 pt per sheet pixel, so they keep the sheet's
+sizes relative to one another. One wash serves all four tabs in the four
+poses that keep its height: turned any other way it poked over the bar's
+top edge. Boxes on the sheet (x y w h), floor 0.035: home 135 428 200 162,
+block 405 150 185 125, friends 955 135 175 144, profile 1225 428 170 163,
+plus 648 420 242 220 (`ENCLOSED=1`), wash 925 418 240 222.
 **Lifted** (`LiftedTabBar.swift`) is Melvin's second ChatGPT sheet, Duolingo's
 pressable look: a floating cream bar with a darker lip, the four objects cut
 from the sheet at about 200 px (`Coherence/TabBar/lifted-*.png`), the plus

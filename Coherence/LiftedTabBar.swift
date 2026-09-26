@@ -5,14 +5,19 @@ import UIKit
 /// Block (debug) > "Tab bar (test)". DEBUG only: Release always draws the
 /// classic bar.
 enum TestTabBar: String, CaseIterable, Identifiable {
-    case classic, meadow, lifted
-    static let storageKey = "debug.tabBarStyle"
+    case classic, meadow, lifted, ink
+    /// The newest bar opens first. The key's version goes up with each new
+    /// style, so a phone that had picked an older one in Settings still
+    /// shows the newest after the update.
+    static let storageKey = "debug.tabBarStyle.v2"
+    static let debugDefault = TestTabBar.ink
     var id: String { rawValue }
     var label: String {
         switch self {
         case .classic: return "Classic"
         case .meadow: return "Meadow"
         case .lifted: return "Lifted"
+        case .ink: return "Ink"
         }
     }
 }

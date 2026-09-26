@@ -36,17 +36,18 @@ struct MainTabBar: View {
     @Binding var selection: MainTab
     let onPlus: () -> Void
 
-    /// Two new bars are under TEST (`TestTabBar`, 2026-09-25): chosen in
-    /// Settings > Block (debug) > "Tab bar (test)", Lifted by default, the
-    /// classic bar with `CLASSIC_TAB_BAR=1`, and never in Release. Both draw
-    /// the Block and Friends tabs, so they step aside when either flag is off.
-    @AppStorage(TestTabBar.storageKey) private var testStyle = TestTabBar.lifted.rawValue
+    /// New bars are under TEST (`TestTabBar`, 2026-09-25): chosen in
+    /// Settings > Block (debug) > "Tab bar (test)", the newest by default,
+    /// the classic bar with `CLASSIC_TAB_BAR=1`, and never in Release. They
+    /// all draw the Block and Friends tabs, so they step aside when either
+    /// flag is off.
+    @AppStorage(TestTabBar.storageKey) private var testStyle = TestTabBar.debugDefault.rawValue
 
     private var style: TestTabBar {
         #if DEBUG
         guard FeatureFlags.block, FeatureFlags.friends,
               ProcessInfo.processInfo.environment["CLASSIC_TAB_BAR"] != "1" else { return .classic }
-        return TestTabBar(rawValue: testStyle) ?? .lifted
+        return TestTabBar(rawValue: testStyle) ?? .debugDefault
         #else
         return .classic
         #endif
@@ -57,6 +58,7 @@ struct MainTabBar: View {
         case .classic: classic
         case .meadow: MeadowTabBar(selection: $selection, onPlus: onPlus)
         case .lifted: LiftedTabBar(selection: $selection, onPlus: onPlus)
+        case .ink: InkTabBar(selection: $selection, onPlus: onPlus)
         }
     }
 

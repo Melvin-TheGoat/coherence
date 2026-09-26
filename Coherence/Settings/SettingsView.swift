@@ -65,7 +65,7 @@ private struct SettingsForm: View {
     @State private var primerRows = 0
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
-    @AppStorage(TestTabBar.storageKey) private var tabBarStyle = TestTabBar.lifted.rawValue
+    @AppStorage(TestTabBar.storageKey) private var tabBarStyle = TestTabBar.debugDefault.rawValue
     #endif
 
     private let durationOptions: [(String, Int?)] = [
