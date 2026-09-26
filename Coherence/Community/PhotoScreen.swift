@@ -10,9 +10,8 @@ import SensitiveContentAnalysis
 ///
 /// **Two conditions, both outside our code, decide whether it runs:**
 /// 1. the `com.apple.developer.sensitivecontentanalysis.client` entitlement,
-///    which is NOT in the app yet on purpose: adding an entitlement changes
-///    the next App Store build and its review while Friends is still switched
-///    off. It is on the 1.1 list in RELEASE_CHECKLIST.md;
+///    in the app since 2026-09-26, once the capability was ticked on both
+///    App IDs (signing refuses it before that);
 /// 2. the person has Sensitive Content Warning (or Communication Safety) on;
 ///    Apple only analyses when they do.
 /// When either is missing the analyzer reports its policy as disabled and

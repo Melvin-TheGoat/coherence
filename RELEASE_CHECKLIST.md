@@ -27,14 +27,12 @@ corrected to match. Do every step below it before returning here.
      APP's App ID only (an extension cannot carry it; the entitlement file
      already declares it, confirm the portal and the archived profile agree,
      via `tools/archive.sh`'s checks).
-   - [ ] **Sensitive Content Analysis: DECIDED yes (Melvin, 2026-09-25).**
-     Tick the capability on BOTH App IDs first (Identifiers >
-     `com.lockout.meditate808` and `com.lockout.meditate808.dev` >
-     Capabilities > Sensitive Content Analysis > Save); signing refuses the
-     entitlement until then. Then add
-     `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] to
-     `Coherence/Coherence.entitlements` (self-serve, no approval needed).
-     `PhotoScreen` already runs on every post item and profile photo.
+   - [x] **Sensitive Content Analysis: DONE (2026-09-26).** Capability
+     ticked on both App IDs (Melvin, 2026-09-25);
+     `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] is
+     in `Coherence/Coherence.entitlements` and the beta signed with it. At
+     archive, check the App Store build's entitlements list it too
+     (`codesign -d --entitlements - <app>`).
    - [x] **Privacy manifests for Block's three app extensions: DONE in code,
      2026-09-23 (commit 7c31bcd).** Each of BlockMonitor, BlockShield and
      BlockShieldAction reads and writes the shared App Group's `UserDefaults`
@@ -349,11 +347,8 @@ on it.
   `tools/community-reports.gs` (steps in its header), paste the /exec URL
   into `ReportClient.endpoint` (empty today, so nothing is sent), and file
   one real report to see the email arrive.
-- [ ] **Photo screening entitlement:** add
-  `com.apple.developer.sensitivecontentanalysis.client` to
-  `Coherence/Coherence.entitlements` and enable it on the App ID. Without it
-  `PhotoScreen` lets every photo through (reports remain the backstop). Left
-  out on purpose so the Friends-off build did not change entitlements.
+- [x] **Photo screening entitlement:** DONE 2026-09-26 (see "NEXT
+  RELEASE: 1.1" above).
 - [ ] **Flip `FeatureFlags.friendsInRelease` to true** in the archive that
   ships 1.1 (and update `FeatureFlagTests` in the same commit).
 - [ ] **Camera string:** `NSCameraUsageDescription` already names the selfie

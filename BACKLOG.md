@@ -316,16 +316,12 @@ animated in Rive shipped to `block` on 2026-09-23 (`OttoAura.riv`).
   earlier calls: green buttons and progress bar (not gold), the optional age
   question (read by nothing yet), and one 4-2-4 breath instead of three.
 
-- **Screen posted photos: DECIDED, blocked on the developer portal
-  (2026-09-25).** Melvin said yes to Sensitive Content Analysis. The code
-  exists (`PhotoScreen`, run on every post item and profile photo before
-  upload); the entitlement is held back because signing refused it until the
-  capability is ticked on the App IDs: Certificates, Identifiers & Profiles
-  > Identifiers > `com.lockout.meditate808` AND `com.lockout.meditate808.dev`
-  > Capabilities > Sensitive Content Analysis > Save. Then add
-  `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] to
-  `Coherence/Coherence.entitlements`. Committing it before the portal step
-  breaks every device build, Aziz's included. Apple only analyses for people
+- **Screen posted photos: DONE (2026-09-26).** Melvin said yes to Sensitive
+  Content Analysis (2026-09-25) and ticked the capability on both App IDs;
+  `com.apple.developer.sensitivecontentanalysis.client` = [`analysis`] is in
+  `Coherence/Coherence.entitlements`, and the beta on his phone (202609260240)
+  carries it in both its signature and its profile. `PhotoScreen` runs on
+  every post item and profile photo before upload. Apple only analyses for people
   who turned on Sensitive Content Warning (or Communication Safety), so it
   screens a minority of adults; report, block and removal stay the backstop.
 

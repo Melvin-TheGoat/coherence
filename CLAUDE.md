@@ -3763,9 +3763,8 @@ top section of `RELEASE_CHECKLIST.md` ("NEXT RELEASE: 1.1").
   own colour, not the app's gold), the optional age question, one 4-2-4
   breath.
 - **Posted photos are screened** (Sensitive Content Analysis). The
-  entitlement waits on the capability being ticked on both App IDs in the
-  developer portal; adding it before that breaks every device build
-  (BACKLOG.md > Open threads).
+  entitlement is in since 2026-09-26, after the capability was ticked on
+  both App IDs; the beta on Melvin's phone is signed with it.
 - **The Do Not Disturb shortcuts are published** and in `FocusShortcut`,
   checked against iCloud first (names exact, one action each).
 
@@ -5113,6 +5112,18 @@ end cards, and any ad or social content. The parts that matter most here:
   - On Aziz's (cofounder) machine Homebrew is **not** present; XcodeGen lives at
     `~/.local/bin/xcodegen` (resources in `~/.local/share/xcodegen`), and
     `~/.local/bin` is on PATH.
+- **Xcode's sign-in on Melvin's Mac disappears by itself, and it is macOS, not
+  our tools** (2026-09-25). Xcode 26 keeps only an ID in its preferences
+  (`DVTDeveloperAccountManagerAppleIDLists`); the sign-in lives in macOS's
+  account store. That record was deleted on 2026-09-23 at 01:12, the same
+  second System Settings opened, and every Xcode launch after that asked for
+  it and got "No managed object was found for account with identifier"
+  (unified log, accountsd). Cached profiles keep building, so nobody notices
+  until a profile has to change (a new entitlement, device or bundle ID),
+  which fails with "No Accounts". No session has ever written to Xcode's
+  preferences or the keychain (every transcript checked). Fix: sign in again,
+  Xcode > Settings > Accounts. The preference key keeps the dead ID, so
+  reading it proves nothing; a `PREP_ONLY=1` beta build is the check.
 - No iPhone 15 simulator exists here; use **iPhone 17** as the iOS Simulator
   destination in `xcodebuild` commands.
 - Regenerate the project after any `project.yml` change: `xcodegen generate`.
