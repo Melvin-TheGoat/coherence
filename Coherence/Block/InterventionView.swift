@@ -296,7 +296,7 @@ private struct OttoLine: View {
     var body: some View {
         OttoSpeech(text: text, tail: .bottom, size: 19,
                    ink: ink, stroke: ink.opacity(0.38),
-                   fill: AppColor.backgroundPrimary.opacity(0.86),
+                   fill: ValleyBubble.dayGlass, alignment: .center,
                    speaking: .constant(false))
             .id(text)
     }

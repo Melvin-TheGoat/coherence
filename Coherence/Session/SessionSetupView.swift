@@ -240,7 +240,7 @@ struct SessionSetupView: View {
                             : "Get comfortable.",
                        tail: .bottom, size: 17,
                        ink: day.ink, stroke: day.ink.opacity(0.38),
-                       fill: AppColor.backgroundPrimary.opacity(0.72),
+                       fill: ValleyBubble.dayGlass, alignment: .center,
                        speaking: .constant(false))
         }
         .frame(width: min(size.width - 56, 320), height: max(120, speaks))
@@ -253,7 +253,7 @@ struct SessionSetupView: View {
         OttoSpeech(text: "What are we listening to?",
                    tail: .leading, size: 15,
                    ink: day.ink, stroke: day.ink.opacity(0.38),
-                   fill: AppColor.backgroundPrimary.opacity(0.72),
+                   fill: ValleyBubble.dayGlass, alignment: .center,
                    speaking: .constant(false))
             .frame(maxWidth: size.width - 118, alignment: .leading)
             .position(x: 104 + (size.width - 118) / 2, y: 122)

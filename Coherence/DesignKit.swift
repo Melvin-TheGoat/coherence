@@ -165,7 +165,7 @@ struct EvidenceRow: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity)
-        .background(AppColor.backgroundSecondary)
+        .background(TileFill(shape: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)))
         .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
         .shadow(color: AppColor.hairline, radius: 0, y: 2)
     }
@@ -481,6 +481,30 @@ enum ValleyGround {
     static let quiet = AppColor.meadowInk.opacity(0.11)
 }
 
+/// Otto's bubble over the valley (Melvin, 2026-09-26: "the text should be
+/// centered, and i want it more transparent"): see-through glass with its
+/// words centred, where it used to be a cream card.
+///
+/// By day it is cream glass under the day's dark ink. **A valley that
+/// follows the clock (Home) turns it to dark glass under the night's pale
+/// ink once the sky is dark**, because dark words on a see-through bubble
+/// over a night sky cannot be read. The switch is at 0.55 of the valley's
+/// day, where both looks read at about 4.5:1 against the sky behind them.
+enum ValleyBubble {
+    /// The day's glass.
+    static let dayGlass = AppColor.backgroundPrimary.opacity(0.42)
+
+    /// Ink, outline and fill for a valley at `progress` (0 full day, 1 night).
+    static func look(at progress: Double) -> (ink: Color, stroke: Color, fill: Color) {
+        if progress < 0.55 {
+            let ink = DayLight.at(0).ink
+            return (ink, ink.opacity(0.38), dayGlass)
+        }
+        let ink = DayLight.at(1).ink
+        return (ink, ink.opacity(0.42), Color.black.opacity(0.14))
+    }
+}
+
 /// A section title standing on the grass: white, with a faint shadow so it
 /// survives the flowers.
 struct GrassHeading: View {
@@ -496,9 +520,10 @@ struct GrassHeading: View {
 }
 
 extension View {
-    /// A white card standing on the grass: the valley pages' one surface.
+    /// A card standing on the grass: the valley pages' one surface. Sand, not
+    /// white, since 2026-09-26; the name stayed so the call sites did too.
     func whiteCard(radius: CGFloat = 20) -> some View {
-        background(.white, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+        background(TileFill(shape: RoundedRectangle(cornerRadius: radius, style: .continuous)))
             .shadow(color: .black.opacity(0.07), radius: 8, y: 2)
     }
 }

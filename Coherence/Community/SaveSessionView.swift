@@ -225,7 +225,7 @@ struct SaveSessionView: View {
             OttoMark(size: 52, pose: .head)
                 .padding(7)
                 .background(AppColor.sky, in: Circle())
-                .overlay(Circle().stroke(.white, lineWidth: 3))
+                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 3))
                 .shadow(color: .black.opacity(0.16), radius: 6, y: 3)
                 .padding(.trailing, AppMetrics.screenPadding)
                 .padding(.bottom, 8)

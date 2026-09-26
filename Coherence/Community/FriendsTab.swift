@@ -41,7 +41,7 @@ struct FriendsTab: View {
                             testModeCard
                             #endif
                             UnavailableCard(model: model)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                                 .padding(.horizontal, AppMetrics.screenPadding)
                                 .padding(.bottom, 24)
                         }
@@ -1370,7 +1370,7 @@ struct PersonView: View {
                     FriendsSky(height: proxy.safeAreaInsets.top + 86) { EmptyView() }
                         .overlay(alignment: .bottom) {
                             ProfilePortrait(photoURL: profile?.avatarURL, size: Self.portrait)
-                                .overlay(Circle().stroke(.white, lineWidth: 4))
+                                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
                                 .shadow(color: .black.opacity(0.16), radius: 7, y: 3)
                                 .offset(y: Self.portrait / 2 - 6)
                         }

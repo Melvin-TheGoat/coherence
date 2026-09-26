@@ -185,10 +185,10 @@ private struct GuideBubble: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(alignment: .trailing) {
             Triangle()
-                .fill(.white)
+                .fill(AppColor.backgroundSecondary)
                 .frame(width: 10, height: 16)
                 .offset(x: 9)
         }
@@ -265,7 +265,7 @@ private struct MethodRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .contentShape(Rectangle())
     }
 }
@@ -299,7 +299,7 @@ struct MethodDetailView: View {
                                 .fixedSize(horizontal: false, vertical: true)
                                 .padding(14)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                                 .padding(.top, 8)
                         }
 
@@ -346,7 +346,7 @@ struct MethodDetailView: View {
             .clipped()
             .overlay(alignment: .bottom) {
                 MethodSymbol(name: method.symbol, size: Self.circle)
-                    .overlay(Circle().stroke(.white, lineWidth: 4))
+                    .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
                     .shadow(color: .black.opacity(0.14), radius: 6, y: 3)
                     .offset(y: Self.circle / 2)
             }
@@ -376,7 +376,7 @@ struct MethodDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 16)
         .padding(.vertical, 16)
-        .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     /// One card, numbered dots in sky, a divider between steps: a sequence to
@@ -406,7 +406,7 @@ struct MethodDetailView: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 4)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var variants: some View {
@@ -437,7 +437,7 @@ struct MethodDetailView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var purpose: some View {
@@ -458,7 +458,7 @@ struct MethodDetailView: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     /// Begin, pinned and gold, so it is there from the first step instead of

@@ -140,7 +140,7 @@ struct BlockTab: View {
                     Spacer(minLength: 0)
                     OttoSpeech(text: ottoLine, tail: .bottom, size: 17,
                                ink: ink, stroke: ink.opacity(0.38),
-                               fill: AppColor.backgroundPrimary.opacity(0.82),
+                               fill: ValleyBubble.dayGlass, alignment: .center,
                                speaking: .constant(false))
                         .id(ottoLine)
                 }

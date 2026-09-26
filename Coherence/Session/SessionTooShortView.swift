@@ -28,7 +28,7 @@ struct SessionTooShortView: View {
                     Spacer(minLength: 0)
                     OttoSpeech(text: line, tail: .bottom, size: 16,
                                ink: day.ink, stroke: day.ink.opacity(0.38),
-                               fill: AppColor.backgroundPrimary.opacity(0.84),
+                               fill: ValleyBubble.dayGlass, alignment: .center,
                                speaking: .constant(false))
                 }
                 .frame(width: min(geo.size.width - 56, 320),

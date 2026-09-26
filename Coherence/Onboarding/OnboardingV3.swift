@@ -60,6 +60,9 @@ struct OttoSpeech: View {
     /// needs a fill**: on the session screen the morning sun rose straight
     /// through the glass and sat behind a word.
     var fill: Color = .clear
+    /// How the lines sit. Leading by default, like Duo's; the valley
+    /// bubbles centre them (Melvin, 2026-09-26).
+    var alignment: TextAlignment = .leading
     /// A beat before he starts. Zero everywhere now: the welcome screen had
     /// 1.4 s so the line would follow the wave, and Melvin read it as a lag
     /// between the screen arriving and the words arriving (2026-09-21).
@@ -100,7 +103,7 @@ struct OttoSpeech: View {
         Text(typed)
             .font(.system(size: size, weight: friendly ? .semibold : .regular, design: .rounded))
             .lineSpacing(3)
-            .multilineTextAlignment(.leading)
+            .multilineTextAlignment(alignment)
             // Hugs its words, the way Duo's does: a short line gets a short
             // bubble. The clear-ink layout means the width is the finished
             // line's from the first frame, so it never grows while typing.

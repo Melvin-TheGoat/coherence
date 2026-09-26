@@ -144,7 +144,7 @@ struct BlockerEditor: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(AppColor.textPrimary)
                     .padding(.horizontal, 12).padding(.vertical, 7)
-                    .background(.white.opacity(0.78), in: Capsule())
+                    .background(AppColor.backgroundSecondary.opacity(0.78), in: Capsule())
                     .padding(.leading, AppMetrics.screenPadding)
                     .padding(.top, 16)
             }
@@ -162,13 +162,13 @@ struct BlockerEditor: View {
                     .foregroundStyle(AppColor.skyDeep)
                     .frame(width: Self.circle, height: Self.circle)
                     .background(AppColor.skyWash, in: Circle())
-                    .overlay(Circle().stroke(.white, lineWidth: 4))
+                    .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
                     .shadow(color: .black.opacity(0.14), radius: 6, y: 3)
                 Image(systemName: "pencil")
                     .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(AppColor.meadowInk)
                     .frame(width: 30, height: 30)
-                    .background(.white, in: Circle())
+                    .background(AppColor.backgroundSecondary, in: Circle())
                     .shadow(color: .black.opacity(0.16), radius: 4, y: 2)
                     .offset(x: 6, y: 2)
             }
@@ -185,7 +185,7 @@ struct BlockerEditor: View {
             .foregroundStyle(AppColor.textPrimary)
             .submitLabel(.done)
             .padding(.horizontal, 16).padding(.vertical, 15)
-            .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private var modeControl: some View {
@@ -209,7 +209,7 @@ struct BlockerEditor: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 13)
             .frame(minHeight: 54)
-            .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .contentShape(Rectangle())
         }
         .buttonStyle(CardButtonStyle())
@@ -245,7 +245,7 @@ struct BlockerEditor: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16).padding(.vertical, 11)
-            .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(CardButtonStyle())
     }
@@ -268,7 +268,7 @@ struct BlockerEditor: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     /// Brainrot's presets, lit only when the circles below match them
@@ -283,7 +283,7 @@ struct BlockerEditor: View {
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(on ? .white : AppColor.meadowInk)
                         .padding(.horizontal, 14).padding(.vertical, 8)
-                        .background(on ? AppColor.skyDeep : .white, in: Capsule())
+                        .background(on ? AppColor.skyDeep : AppColor.backgroundSecondary, in: Capsule())
                 }
                 .buttonStyle(.plain)
                 .accessibilityAddTraits(on ? .isSelected : [])
@@ -304,7 +304,7 @@ struct BlockerEditor: View {
                         .font(.system(size: 13, weight: .heavy, design: .rounded))
                         .foregroundStyle(on ? .white : AppColor.meadowInk)
                         .frame(width: 42, height: 42)
-                        .background(on ? AppColor.skyDeep : .white, in: Circle())
+                        .background(on ? AppColor.skyDeep : AppColor.backgroundSecondary, in: Circle())
                 }
                 .buttonStyle(.plain)
                 .frame(maxWidth: .infinity)
@@ -325,7 +325,7 @@ struct BlockerEditor: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(AppColor.streakBlushText)
                     .padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(.white, in: Capsule())
+                    .background(AppColor.backgroundSecondary, in: Capsule())
             }
             Button(isNew ? "Save blocker" : "Save changes", action: save)
                 .buttonStyle(PrimaryButtonStyle())
@@ -338,7 +338,7 @@ struct BlockerEditor: View {
                     .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(AppColor.streakBlushText)
                     .padding(.horizontal, 16).padding(.vertical, 8)
-                    .background(.white.opacity(0.85), in: Capsule())
+                    .background(AppColor.backgroundSecondary.opacity(0.85), in: Capsule())
             }
         }
         .padding(.horizontal, AppMetrics.screenPadding)

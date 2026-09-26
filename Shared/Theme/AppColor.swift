@@ -17,9 +17,11 @@ import SwiftUI
 /// fill, the sage curves, the blush, the empty days. It is wrong for anything
 /// that is a word. Each of `textSecondary`, `accentGoldText`, `calmAccent`
 /// and `streakBlushText` was pushed back down until it cleared 4.5:1 on both
-/// the paper and a white card, because a pastel label is an illegible label
-/// and legibility is not a style choice. The first pass of this palette put
-/// four of them between 4.0 and 4.46 and every one of them looked fine.
+/// the paper and a card, because a pastel label is an illegible label and
+/// legibility is not a style choice. The first pass of this palette put four
+/// of them between 4.0 and 4.46 and every one of them looked fine. When the
+/// cards went from white to sand (2026-09-26) all four went about a sixth
+/// darker, so they clear 4.5 on the sand AND on Home's night-dimmed sand.
 ///
 /// **Every value here is sampled out of Otto** (2026-09-19, Aziz: the app is
 /// hard to look at, make it friendly). The paper is the cream his artwork sits
@@ -35,6 +37,10 @@ import SwiftUI
 /// **blush = the streak**. Exactly one of them is loud per section.
 enum AppColor {
     static let backgroundPrimary = Color("BackgroundPrimary")
+    /// Every tile and card: zen-garden sand, #F0E9DC (Melvin, 2026-09-26:
+    /// "an off-white, closer to zen garden sand"). It was pure white, which
+    /// glared on the valley. Draw tiles through `TileFill` so they dim with
+    /// Home's night sky; never fill a tile with `.white`.
     static let backgroundSecondary = Color("BackgroundSecondary")
     /// Gold as a FILL: buttons, rings, tinted discs. Light mode runs it
     /// LIGHTER than dark mode, which is the opposite of the usual instinct and

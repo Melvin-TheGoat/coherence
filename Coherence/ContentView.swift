@@ -195,7 +195,9 @@ struct ContentView: View {
                     .background(AppColor.backgroundSecondary.opacity(0.92), in: Capsule())
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
-                if shownTab == .home, let id = detailsFor, auraGain == nil { detailsToast(id) }
+                if shownTab == .home, let id = detailsFor, auraGain == nil {
+                    detailsToast(id).environment(\.tileDim, Self.tileDim)
+                }
                 MainTabBar(selection: tabSelection) { sheet = .setup }
                     .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { tabBarHeight = $0 }
             }
@@ -506,6 +508,7 @@ struct ContentView: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            .environment(\.tileDim, Self.tileDim)
             // The page is grass. The sky that shows when the top is pulled
             // down scrolls WITH the scene (see `homeScene`): a background
             // pinned half sky and half grass showed a band of sky behind the
@@ -519,6 +522,14 @@ struct ContentView: View {
     private static var homeDay: DayLight { DayLight.now }
     /// The meadow's colour at its near edge, which the page continues.
     private static var meadow: Color { homeDay.field[1] }
+    /// How much Home's tiles dim for the hour (Melvin, 2026-09-26: the white
+    /// "stands out a lot very boldly" on a night valley): nothing by day, 6
+    /// percent under the night sky, eased in on the sky's own clock. Six is
+    /// as far as the caption inks were darkened to stay readable on it.
+    static var tileDim: Double {
+        let t = min(max((DayLight.clockProgress() - 0.32) / (0.65 - 0.32), 0), 1)
+        return 0.06 * t * t * (3 - 2 * t)
+    }
 
     /// The valley with Otto in it, and the three things laid on the sky.
     private func homeScene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
@@ -578,11 +589,13 @@ struct ContentView: View {
             if tourTab == nil {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    // Dark ink at every hour: the bubble is cream even at night.
+                    // See-through and centred, and pale words on dark glass
+                    // once the sky is dark (`ValleyBubble`).
+                    let look = ValleyBubble.look(at: DayLight.clockProgress())
                     OttoSpeech(text: ottoLines[ottoLineIndex % ottoLines.count],
                                tail: .bottom, size: 17,
-                               ink: DayLight.at(0).ink, stroke: DayLight.at(0).ink.opacity(0.38),
-                               fill: AppColor.backgroundPrimary.opacity(0.78),
+                               ink: look.ink, stroke: look.stroke, fill: look.fill,
+                               alignment: .center,
                                speaking: .constant(false))
                 }
                 .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - bubbleTop))
@@ -702,7 +715,7 @@ struct ContentView: View {
         .padding(.leading, 16)
         .padding(.trailing, 14)
         .padding(.vertical, 11)
-        .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(TileFill(shape: RoundedRectangle(cornerRadius: 18, style: .continuous)))
         .shadow(color: .black.opacity(0.16), radius: 10, y: 4)
         .overlay(alignment: .topLeading) {
             Button {
@@ -776,7 +789,7 @@ struct ContentView: View {
                 .monospacedDigit()
         }
         .frame(width: 54, height: 54)
-        .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
+        .background(TileFill(shape: Circle(), opacity: 0.9))
         .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(streak.current) day streak")
@@ -795,7 +808,7 @@ struct ContentView: View {
                     .foregroundStyle(DayLight.at(0).ink.opacity(0.8))
             }
             .frame(width: 54, height: 54)
-            .background(AppColor.backgroundPrimary.opacity(0.85), in: Circle())
+            .background(TileFill(shape: Circle(), opacity: 0.9))
             .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
         }
         .buttonStyle(.plain)
@@ -878,8 +891,7 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .background(
-            RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
-                .fill(AppColor.backgroundSecondary)
+            TileFill(shape: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
                 .shadow(color: AppColor.hairline, radius: 0, y: 2)
         )
         .accessibilityElement(children: .combine)
@@ -1145,10 +1157,11 @@ struct ContentView: View {
     private var greeting: String {
         let base: String
         switch Calendar.current.component(.hour, from: Date()) {
-        case 5..<12: base = "Good morning"
-        case 12..<17: base = "Good afternoon"
-        case 17..<22: base = "Good evening"
-        default: base = "Good night"
+        // Title case, all four (Melvin, 2026-09-26: "capitalize Night").
+        case 5..<12: base = "Good Morning"
+        case 12..<17: base = "Good Afternoon"
+        case 17..<22: base = "Good Evening"
+        default: base = "Good Night"
         }
         return firstName.map { "\(base), \($0)" } ?? base
     }

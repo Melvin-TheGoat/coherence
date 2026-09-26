@@ -3813,6 +3813,43 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   about 120 px each, cream flooded away), so they are soft at tab size. A
   version that ships needs the set exported at 1024 px.
 
+## TILES ARE SAND AND DIM AT NIGHT; OTTO'S BUBBLE IS GLASS (2026-09-26, Melvin)
+
+"I want the white tiles to definitely be dimmed ... more of like an
+offwhite, closer to like zen garden sand ... dim it slightly when its
+nighttime", and of the bubble: "the text should be centered, and i want it
+more transparent, im not messing with this white background".
+
+- **Every tile is zen-garden sand, #F0E9DC** (`BackgroundSecondary`, which
+  was pure white). `.card()`, `.whiteCard()`, `EvidenceRow`, Home's stat
+  tiles, corner circles and details toast, and the tile fills in the guide,
+  the blocker editor, Friends and the session page all draw it. **Never
+  fill a tile with `.white`; draw it through `TileFill`**, which is how it
+  dims.
+- **Home dims its tiles with the clock** (`tileDim` in the environment):
+  a 6 percent black overlay under the night sky, eased in from 0.32 to 0.65
+  of `DayLight.clockProgress()`. Every other screen is a daytime valley and
+  never dims.
+- **Sand cost contrast, so four inks went darker.** `TextSecondary`,
+  `AccentGoldText`, `CalmAccent` and `StreakBlushText` sat at about 4.6:1 on
+  white and fell to about 3.8 on sand. Each went about a sixth darker, so
+  it clears 4.5 on the sand and on Home's night-dimmed sand. The dim stops
+  at 6 percent for that reason: dimming further needs darker inks again.
+  `Hairline`, the lip under a card, went darker than the sand (it had been
+  lighter than the new card), and `Trace`, the empty slot, went deeper so
+  it still reads on a sand card.
+- **Otto's valley bubbles are glass with centred words** (`ValleyBubble`,
+  `OttoSpeech(alignment:)`): cream glass at 0.42 under the day's dark ink.
+  Home, which follows the clock, switches at 0.55 of the day to dark glass
+  (black at 0.14) under the night's pale ink, because dark words on a
+  see-through bubble cannot be read against a night sky.
+- The greeting is title case at every hour: Good Morning, Good Afternoon,
+  Good Evening, Good Night.
+- **Not changed, on purpose:** onboarding's own pure whites (its capsules,
+  the white welcome bubble, the white pages) are Aziz's, mid-revamp. Its
+  `backgroundSecondary` plates did turn sand with the token. The tab bars
+  keep their own paper.
+
 ## ONBOARDING STANDS IN THE VALLEY; THE STRESS QUESTION IS ANSWERED ON OTTO (2026-09-22, Melvin)
 
 "More on theme, like in a green forest area like the home menu but its in

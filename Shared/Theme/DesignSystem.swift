@@ -48,6 +48,35 @@ private struct ScreenBackground: ViewModifier {
     }
 }
 
+/// How far the tiles on a screen are dimmed for the scene behind them, 0 to
+/// 1. Zero everywhere but Home, which follows the clock: its tiles are the
+/// brightest thing on a night valley, so they dim a little as the sky goes
+/// dark (Melvin, 2026-09-26: "the white stands out a lot very boldly").
+private struct TileDimKey: EnvironmentKey {
+    static let defaultValue: Double = 0
+}
+
+extension EnvironmentValues {
+    var tileDim: Double {
+        get { self[TileDimKey.self] }
+        set { self[TileDimKey.self] = newValue }
+    }
+}
+
+/// A tile's surface: the sand of `backgroundSecondary`, darkened by the
+/// screen's `tileDim`. Every tile draws through this, so a tile can never be
+/// the one left glaring at night.
+struct TileFill<S: Shape>: View {
+    let shape: S
+    var opacity: Double = 1
+    @Environment(\.tileDim) private var dim
+
+    var body: some View {
+        shape.fill(AppColor.backgroundSecondary.opacity(opacity))
+            .overlay(shape.fill(Color.black.opacity(dim * opacity)))
+    }
+}
+
 private struct CardStyle: ViewModifier {
     var padding: CGFloat = AppMetrics.cardPadding
     func body(content: Content) -> some View {
@@ -55,11 +84,10 @@ private struct CardStyle: ViewModifier {
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
-                RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)
-                    .fill(AppColor.backgroundSecondary)
+                TileFill(shape: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
                     // Cards used to be separated from the ground by a hairline.
                     // On cream that reads as a drawn box; a 2pt bottom edge in
-                    // the same warm tone reads as a card resting on paper.
+                    // a shade deeper than the card reads as a card resting on paper.
                     .shadow(color: AppColor.hairline, radius: 0, y: 2)
             )
     }
