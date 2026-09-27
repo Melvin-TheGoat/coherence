@@ -101,5 +101,16 @@ if [ "$ID" != "com.lockout.meditate808.dev" ] || [ "$VER" != "$B" ]; then
   echo "refusing to install $ID build $VER: not this run's beta"
   exit 1
 fi
-xcrun devicectl device install app --device "$DEV" "$APP" 2>&1 | grep -E "bundleID|rror" | head -2
+# A phone that has only just connected can refuse the first install
+# (CoreDevice error 1011), so try twice, and never report a failure as done.
+for try in 1 2; do
+  OUT="$(xcrun devicectl device install app --device "$DEV" "$APP" 2>&1)"
+  echo "$OUT" | grep -q "App installed" && break
+  [ "$try" = 1 ] && sleep 5
+done
+if ! echo "$OUT" | grep -q "App installed"; then
+  echo "$OUT" | grep -E "rror" | head -2
+  echo "INSTALL FAILED: built $B but it is not on the phone. Unlock it and run again."
+  exit 1
+fi
 echo "808 Beta $B installed. The Watch companion installs itself; if not, iPhone > Watch app > 808 Beta > Install."
