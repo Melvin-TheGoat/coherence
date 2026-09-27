@@ -65,6 +65,8 @@ struct ProfileTab: View {
     /// a band of sky behind the cards the moment anything moves. The page is
     /// grass, the band rides on top of it, and pulling down stretches the sky
     /// instead of tearing it.
+    @Environment(\.tabBarClearance) private var tabBarClearance
+
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
@@ -90,6 +92,11 @@ struct ProfileTab: View {
                 .scrollIndicators(.hidden)
                 .ignoresSafeArea(edges: .top)
                 .background(Self.meadow.ignoresSafeArea())
+                // The tab bar's inset does not reach inside this tab's own
+                // NavigationStack, so the bottom of the page scrolled under
+                // the bar and "This week" could never be read whole (Melvin,
+                // 2026-09-27). Added back from the bar's measured height.
+                .safeAreaPadding(.bottom, tabBarClearance)
             }
             .navigationBarHidden(true)
         }

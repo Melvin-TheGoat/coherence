@@ -15,6 +15,7 @@ struct FriendsTab: View {
     @Environment(\.tourTab) private var tourTab
 
     private var user: User? { users.first }
+    @Environment(\.tabBarClearance) private var tabBarClearance
 
     var body: some View {
         NavigationStack {
@@ -62,6 +63,9 @@ struct FriendsTab: View {
             // `mockups/friends-valley.html`). The last page left on plain
             // cream with brown ink.
             .background(ValleyGround.meadow.ignoresSafeArea())
+            // The tab bar's inset does not reach inside this NavigationStack,
+            // so the last post sat under the bar (see ProfileTab).
+            .safeAreaPadding(.bottom, tabBarClearance)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)

@@ -76,7 +76,9 @@ struct LiftedTabBar: View {
         .padding(.bottom, -Self.intoInset)
     }
 
-    static let intoInset: CGFloat = 14
+    /// Down into the home indicator's inset. 22 since 2026-09-27 (Melvin:
+    /// "lowered slightly lower on the screen"); it was 14.
+    static let intoInset: CGFloat = 22
     private static let lip = Color(red: 0.90, green: 0.85, blue: 0.77)
 
     private enum Tint {
@@ -94,13 +96,15 @@ struct LiftedTabBar: View {
             selection = tab
         } label: {
             VStack(spacing: 2) {
+                // 32 tall, 12.5 labels until 2026-09-27 (Melvin: "shrink the
+                // icons slightly, make them less tall and less big").
                 art(name)
-                    .frame(height: 38)
+                    .frame(height: 32)
                 Text(label)
-                    .font(.system(size: 12.5, weight: .heavy, design: .rounded))
+                    .font(.system(size: 11.5, weight: .heavy, design: .rounded))
                     .foregroundStyle(selected ? tint.stroke : ValleyGround.ink.opacity(0.62))
             }
-            .padding(.vertical, 6)
+            .padding(.vertical, 4)
             .frame(maxWidth: .infinity)
             .background {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
@@ -129,10 +133,10 @@ struct LiftedTabBar: View {
                 Circle().fill(OnboardingGreen.shade).offset(y: 4)
                 Circle().fill(OnboardingGreen.fill)
                 Image(systemName: "plus")
-                    .font(.system(size: 28, weight: .heavy, design: .rounded))
+                    .font(.system(size: 24, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
             }
-            .frame(width: 58, height: 58)
+            .frame(width: 50, height: 50)
             .padding(.bottom, 4)
         }
         .buttonStyle(.plain)
