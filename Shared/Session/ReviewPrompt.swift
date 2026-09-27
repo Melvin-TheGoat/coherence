@@ -5,8 +5,10 @@ import Foundation
 /// The rules come from the App Review pass of 2026-08-11 and are not
 /// negotiable: the prompt is UNCONDITIONAL on how the session went (routing
 /// only happy users to Apple's sheet is ratings manipulation and a live
-/// rejection reason), it fires after a completed session, and never inside
-/// onboarding. Apple's own sheet caps itself at three showings per 365 days
+/// rejection reason) and it fires after a completed session. Onboarding
+/// also asks once, on "808 was made for people like you" (Aziz, 2026-09-26,
+/// reversing the old never-in-onboarding rule); that ask is unconditional
+/// too and does not stamp `lastAskedKey`. Apple's own sheet caps itself at three showings per 365 days
 /// whatever we ask, so the cooldown here is about not being tiresome, not
 /// about the limit.
 enum ReviewPrompt {

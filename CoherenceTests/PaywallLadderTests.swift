@@ -72,8 +72,8 @@ final class PaywallLadderTests: XCTestCase {
     /// The discounted year replaces the year on the paywall rather than
     /// sitting beside it: two yearly cards at two prices is a shell game.
     func test_theDiscountedYearTakesTheYearsPlace() {
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly, .lifetime])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf])
     }
 
     /// The rules from the paywall above it apply the whole way down.

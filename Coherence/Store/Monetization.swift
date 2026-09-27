@@ -18,6 +18,18 @@ import Foundation
 /// sell anything.
 enum Monetization {
     static let premiumOnly = true
+
+    /// No free trial (Aziz, 2026-09-26: "no free trial and only monthly and
+    /// yearly"). While false, no screen offers or mentions a trial: the
+    /// paywall sells the plans outright, the ladder opens on half off the
+    /// first year, and the lock sheets say "See the plans".
+    ///
+    /// **App Store Connect must match.** The trial itself is the monthly
+    /// product's introductory offer; while that offer exists, Apple's
+    /// purchase sheet still grants it whatever this screen says. Delete the
+    /// introductory offer on `com.lockout.meditate808.monthly` (and yearly,
+    /// if it has one) before a build with this switch ships.
+    static let freeTrial = false
 }
 
 /// How the free trial is said. Its length is the monthly product's

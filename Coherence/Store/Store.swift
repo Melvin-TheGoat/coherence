@@ -84,6 +84,13 @@ final class Store: ObservableObject {
     /// that. Every line that states the trial's length reads this
     /// (`TrialCopy`), so App Store Connect is the one place it is set.
     @Published private(set) var trialDays = SubscriptionPlan.fallbackTrialDays
+
+    /// Whether any screen may offer the free trial: 808 offers one at all
+    /// (`Monetization.freeTrial`), and this person is still eligible (or the
+    /// plans have not loaded, when eligibility is unknown).
+    var trialOffered: Bool {
+        Monetization.freeTrial && (trialEligible || state != .ready)
+    }
     /// The invite reward's balance, attached by the app at launch
     /// (`RewardLedger`). nil on a store with no persistence (tests).
     var ledger: RewardLedger?

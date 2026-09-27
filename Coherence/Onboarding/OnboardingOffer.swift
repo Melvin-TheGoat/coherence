@@ -41,7 +41,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// rather than sitting beside it, because two yearly cards at different
     /// prices is a shell game.
     static func cards(selecting plan: SubscriptionPlan) -> [SubscriptionPlan] {
-        plan == .yearHalf ? [.monthly, .yearHalf, .lifetime] : [.monthly, .yearly, .lifetime]
+        // Monthly and yearly only (Aziz, 2026-09-26). Lifetime stays a
+        // product, so anyone who bought it still restores it.
+        plan == .yearHalf ? [.monthly, .yearHalf] : [.monthly, .yearly]
     }
 
     var title: String {
@@ -322,214 +324,269 @@ struct PaywallScreen: View {
         store.trialDays == 1 ? "One day free." : "\(TrialCopy.spelled(store.trialDays)) days free."
     }
 
-    /// Whether the free week may be promised. StoreKit knows if this person
-    /// already used the introductory offer; promising it anyway would put a
-    /// claim on screen that the purchase sheet contradicts one tap later.
-    private var offerTrial: Bool { store.trialEligible || store.state != .ready }
+    /// Whether the free trial may be promised: 808 offers one at all
+    /// (`Monetization.freeTrial`, off since 2026-09-26), and StoreKit says
+    /// this person has not used it. Promising it anyway would put a claim on
+    /// screen that the purchase sheet contradicts one tap later.
+    private var offerTrial: Bool { store.trialOffered }
 
+    @StateObject private var otto = OttoRigHolder()
+
+    /// The pale green the onboarding cards use, for the chosen plan.
+    private static let chosenWash = Color(red: 0.87, green: 0.95, blue: 0.85)
+
+    /// The headline: the trial when one is on offer, otherwise Otto, who the
+    /// reader just raised to his brightest on the ascend screen.
+    private var title: String {
+        guard selling else { return notSellingTitle }
+        return offerTrial ? trialTitle : "Keep Otto glowing."
+    }
+
+    private var subtitle: String {
+        guard selling else { return notSellingSubtitle }
+        return offerTrial
+            ? "Try all of 808 first. If it doesn't help you meditate more, cancel and pay nothing."
+            : "Unlock everything in 808 and make meditation part of your day."
+    }
+
+    /// 3.1.2 wants auto-renewal SAID, not implied: "cancel any time" hints at
+    /// it and reviewers reject paywalls that only hint.
+    private var footnote: String {
+        guard selling else { return notSellingFootnote }
+        return offerTrial
+            ? "\(TrialCopy.length(store.trialDays)) free, then \(priceLine). Renews automatically until you cancel in Settings."
+            : "\(priceLine). Renews automatically until you cancel in Settings."
+    }
+
+    /// In the valley, like the rest of onboarding (Aziz, 2026-09-26: "make it
+    /// consistent with the theme"): the sky and the hills, Otto floating at his
+    /// brightest where the ascend screen left him, and the plans on a white
+    /// panel with the onboarding's green for the choice and the button.
     var body: some View {
-        OnboardingScreen(section: .win,
-                         // The not-selling copy differs by build on purpose.
-                         // DEBUG genuinely is the testing era; a RELEASE user
-                         // only lands here when the product fetch failed, and
-                         // "free while we're testing" on a shipping app is a
-                         // claim about the business, not their connection.
-                         title: selling ? (offerTrial ? trialTitle : "Welcome back.")
-                                        : notSellingTitle,
-                         subtitle: selling
-                            ? (offerTrial
-                               ? "Try all of 808 first. If it doesn't help you meditate more, cancel and pay nothing."
-                               : "Pick a plan to keep going. Every plan unlocks everything.")
-                            : notSellingSubtitle,
-                         // The free week is the subscriptions' introductory
-                         // offer. Lifetime has none: it is one charge, today,
-                         // and both the button and the footnote must say so
-                         // rather than promising a trial that won't happen.
-                         ctaTitle: selling
-                            ? (plan == .lifetime ? "Buy Lifetime"
-                               : offerTrial ? "Start my free trial" : "Subscribe")
-                            : "Continue",
-                         // 3.1.2 wants auto-renewal SAID, not implied: "cancel
-                         // any time" hints at it and reviewers reject paywalls
-                         // that only hint. Lifetime is the exception, it is a
-                         // one-time purchase and claiming it renews would be
-                         // its own lie.
-                         ctaFootnote: selling
-                            ? (plan == .lifetime
-                               ? "\(priceLine), charged today. Nothing renews."
-                               : offerTrial
-                               ? "\(TrialCopy.length(store.trialDays)) free, then \(priceLine). Renews automatically until you cancel in Settings."
-                               : "\(priceLine). Renews automatically until you cancel in Settings.")
-                            : notSellingFootnote,
-                         skipTitle: "Restore purchase",
-                         onSkip: selling ? { restore() } : nil,
-                         onContinue: { advance() }) {
-            VStack(spacing: 11) {
-                ForEach(SubscriptionPlan.cards(selecting: plan)) { p in
-                    Button { plan = p } label: {
-                        HStack(spacing: 13) {
-                            Image(systemName: plan == p ? "largecircle.fill.circle" : "circle")
-                                .font(.system(size: 19))
-                                .foregroundStyle(plan == p ? AppColor.accentGold
-                                                           : AppColor.textSecondary.opacity(0.4))
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(p.title)
-                                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                                    .foregroundStyle(AppColor.textPrimary)
-                                // The notes are arithmetic on OUR dollar
-                                // prices ("About $1.84 a week"). Beside
-                                // Apple's localized price they would be a
-                                // dollar claim about a euro charge, so they
-                                // render only with our fallback prices, the
-                                // same guard the anchor already has.
-                                if store.displayPrice(for: p) == nil, let note = p.note {
-                                    Text(note)
-                                        .font(.caption2)
-                                        .foregroundStyle(AppColor.accentGoldText)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                            }
-                            Spacer(minLength: 0)
-                            VStack(alignment: .trailing, spacing: 1) {
-                                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                                    // Only shown against OUR price. Apple's
-                                    // localized string is a different currency
-                                    // in most countries, and a dollar anchor
-                                    // beside a euro price is nonsense.
-                                    if store.displayPrice(for: p) == nil,
-                                       let anchor = p.anchorPrice {
-                                        Text(anchor)
-                                            .font(.system(size: 13, weight: .medium, design: .rounded))
-                                            .foregroundStyle(AppColor.textSecondary.opacity(0.7))
-                                            .strikethrough(true, color: AppColor.textSecondary.opacity(0.7))
-                                    }
-                                    Text(store.displayPrice(for: p) ?? p.price)
-                                        .font(.system(size: 18, weight: .bold, design: .rounded))
-                                        .foregroundStyle(AppColor.textPrimary)
-                                }
-                                Text(p.cadence)
-                                    .font(.caption2)
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                        }
-                        .padding(16)
-                        .background(plan == p ? AppColor.accentGold.opacity(0.10)
-                                              : AppColor.backgroundSecondary.opacity(0.7),
-                                    in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
-                            .stroke(plan == p ? AppColor.accentGold : .clear, lineWidth: 1.5))
-                    }
-                    .buttonStyle(CardButtonStyle())
-                }
-                .sensoryFeedback(.success, trigger: plan)
-                .sensoryFeedback(.success, trigger: started)
+        GeometryReader { geo in
+            let compact = geo.size.height < 700
+            ZStack(alignment: .top) {
+                ValleyScene(progress: 0, showsFigure: false)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
 
-                Text(selling
-                     ? (plan == .lifetime || !offerTrial
-                        ? "One tap on the button above shows Apple's purchase sheet before anything is charged."
-                        : "No charge today. Cancel before the trial ends and you pay nothing.")
-                     : "Planned pricing. Nothing here can be bought yet.")
-                    .font(.caption2)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.top, 4)
+                VStack(spacing: 0) {
+                    VStack(spacing: 8) {
+                        Text(title)
+                            .font(.system(size: compact ? 28 : 32, weight: .heavy, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                        Text(subtitle)
+                            .font(.system(size: compact ? 16 : 18, weight: .semibold, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary.opacity(0.7))
+                    }
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, AppMetrics.screenPadding + 4)
+                    .padding(.top, compact ? 8 : 20)
 
-                // Guideline 3.1.2: any screen selling an auto-renewable
-                // subscription must carry FUNCTIONAL links to the privacy
-                // policy and Terms of Use, on the purchase screen itself, not
-                // just in App Store Connect metadata. Kept visible in the beta
-                // too: the documents are true regardless of whether billing is
-                // on, and a link that appears only when money is involved is a
-                // link someone forgot to test.
-                HStack(spacing: 22) {
-                    Button("Privacy Policy") { legalDoc = .privacy }
-                    Button("Terms of Use") { legalDoc = .terms }
-                }
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(AppColor.textSecondary)
-                .padding(.top, 2)
+                    Spacer(minLength: 0)
+                    OttoAuraFigure(stage: .nirvana, look: 13,
+                                   size: compact ? 110 : 150, rig: otto)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                    Spacer(minLength: 12)
 
-                // The way out. Only when there is something to decline, and
-                // worded as a decision rather than an escape, because the
-                // ladder behind it is an offer and not a trap.
-                if selling || ProcessInfo.processInfo.isPreviewingDownsell {
-                    Button("Not right now") {
-                        Analytics.track(.paywallDismissed)
-                        // One follow-up, then the discount (Melvin,
-                        // 2026-09-22: "there are too many, and they arent
-                        // convincing"). The hardware anchor that used to open
-                        // the ladder is gone from it; `HardwareScreen` stays
-                        // for the onboarding step that still jumps to it.
-                        route = .rung(offerTrial ? .trial : .halfYear)
-                    }
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .padding(.top, 8)
+                    panel(compact: compact, bottomInset: geo.safeAreaInsets.bottom)
                 }
-            }
-            .fullScreenCover(item: $route) { destination in
-                switch destination {
-                case .rung(let current):
-                    DownsellSheet(rung: current, plan: plan,
-                                  yearlyPrice: store.displayPrice(for: .yearly)
-                                      ?? SubscriptionPlan.yearly.price,
-                                  trialDays: store.trialDays) {
-                        // Taking a rung PRESELECTS the plan and returns to the
-                        // paywall; the purchase happens there and only there.
-                        // The rungs used to buy in place, which put a
-                        // purchase-initiating CTA on a screen carrying no
-                        // price, no renewal statement and no legal links: the
-                        // textbook 3.1.2 rejection. One screen holds every
-                        // disclosure; every sale goes through it.
-                        plan = current.plan
-                        route = nil
-                    } onDecline: {
-                        // Straight to the next rung. After the last one: the
-                        // free tier, or, while 808 is premium only
-                        // (`Monetization`), back to the plans, since there is
-                        // no free 808 to settle into.
-                        if let next = current.next {
-                            route = .rung(next)
-                        } else {
-                            route = Monetization.premiumOnly ? nil : .freeTier
-                        }
-                        lastRung = current
-                    }
-                case .freeTier:
-                    FreeTierScreen(trialEligible: offerTrial, trialDays: store.trialDays) {
-                        // Same rule, plus the bug it fixes: this closure used
-                        // to call advance() with whatever plan was last
-                        // selected, so a "Start 7 days free" button could
-                        // charge $99.99 for a Lifetime someone had tapped
-                        // minutes earlier. The trial is the monthly product's;
-                        // select it, return, let the paywall sell it.
-                        plan = .monthly
-                        route = nil
-                    } onContinueFree: {
-                        Analytics.track(.freeTierEntered(
-                            afterRung: lastRung?.analyticsName ?? "none"))
-                        route = nil
-                        onDone(false)
-                    }
-                }
-            }
-            .sheet(item: $legalDoc) { doc in
-                NavigationStack {
-                    ScrollView { MarkdownView(markdown: DocLoader.load(doc.file)).padding() }
-                        .navigationTitle(doc.title)
-                        .navigationBarTitleDisplayMode(.inline)
-                }
-            }
-            .onAppear {
-                // A transient fetch failure should not be a permanent state:
-                // every arrival at the paywall retries the load.
-                if store.state != .ready {
-                    Task { await store.load() }
-                }
-                guard !trackedView else { return }
-                trackedView = true
-                Analytics.track(.paywallViewed(placement: placement))
             }
         }
+        .ignoresSafeArea(edges: .bottom)
+        .fullScreenCover(item: $route) { destination in
+            switch destination {
+            case .rung(let current):
+                DownsellSheet(rung: current, plan: plan,
+                              yearlyPrice: store.displayPrice(for: .yearly)
+                                  ?? SubscriptionPlan.yearly.price,
+                              trialDays: store.trialDays) {
+                    // Taking a rung PRESELECTS the plan and returns to the
+                    // paywall; the purchase happens there and only there.
+                    // The rungs used to buy in place, which put a
+                    // purchase-initiating CTA on a screen carrying no
+                    // price, no renewal statement and no legal links: the
+                    // textbook 3.1.2 rejection. One screen holds every
+                    // disclosure; every sale goes through it.
+                    plan = current.plan
+                    route = nil
+                } onDecline: {
+                    // Straight to the next rung. After the last one: the
+                    // free tier, or, while 808 is premium only
+                    // (`Monetization`), back to the plans, since there is
+                    // no free 808 to settle into.
+                    if let next = current.next, next != .trial || offerTrial {
+                        route = .rung(next)
+                    } else {
+                        route = Monetization.premiumOnly ? nil : .freeTier
+                    }
+                    lastRung = current
+                }
+            case .freeTier:
+                FreeTierScreen(trialEligible: offerTrial, trialDays: store.trialDays) {
+                    // Same rule, plus the bug it fixes: this closure used
+                    // to call advance() with whatever plan was last
+                    // selected, so a "Start 7 days free" button could
+                    // charge $99.99 for a Lifetime someone had tapped
+                    // minutes earlier. Select monthly, return, let the
+                    // paywall sell it.
+                    plan = .monthly
+                    route = nil
+                } onContinueFree: {
+                    Analytics.track(.freeTierEntered(
+                        afterRung: lastRung?.analyticsName ?? "none"))
+                    route = nil
+                    onDone(false)
+                }
+            }
+        }
+        .sheet(item: $legalDoc) { doc in
+            NavigationStack {
+                ScrollView { MarkdownView(markdown: DocLoader.load(doc.file)).padding() }
+                    .navigationTitle(doc.title)
+                    .navigationBarTitleDisplayMode(.inline)
+            }
+        }
+        .sensoryFeedback(.success, trigger: plan)
+        .sensoryFeedback(.success, trigger: started)
+        .onAppear {
+            // Lifetime is no longer offered; a plan carried over from before
+            // lands on monthly rather than on a card that isn't there.
+            if plan == .lifetime { plan = .monthly }
+            // A transient fetch failure should not be a permanent state:
+            // every arrival at the paywall retries the load.
+            if store.state != .ready {
+                Task { await store.load() }
+            }
+            guard !trackedView else { return }
+            trackedView = true
+            Analytics.track(.paywallViewed(placement: placement))
+        }
+    }
+
+    /// The plans, the button and everything Apple requires beside them
+    /// (price, renewal, Restore, Privacy Policy, Terms of Use: 3.1.1, 3.1.2).
+    private func panel(compact: Bool, bottomInset: CGFloat) -> some View {
+        VStack(spacing: compact ? 9 : 12) {
+            ForEach(SubscriptionPlan.cards(selecting: plan)) { p in
+                planCard(p, compact: compact)
+            }
+
+            OnboardingCTA(title: selling ? (offerTrial ? "Start my free trial" : "Continue") : "Continue",
+                          action: { advance() })
+                .padding(.top, 4)
+
+            Text(footnote)
+                .font(.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 18) {
+                if selling {
+                    Button("Restore") { restore() }
+                }
+                Button("Privacy Policy") { legalDoc = .privacy }
+                Button("Terms of Use") { legalDoc = .terms }
+            }
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(AppColor.textSecondary)
+
+            // No "Not right now" (Aziz, 2026-09-26: "there is no free version
+            // of the app"). 808 is premium only (`Monetization.premiumOnly`),
+            // so there is nothing to decline into; the half-off ladder
+            // (`DownsellSheet`) stays in the code, unreachable from here.
+        }
+        .padding(.horizontal, AppMetrics.screenPadding)
+        .padding(.top, compact ? 16 : 22)
+        // Clear of the home indicator's strip: a tap that low goes to iOS as
+        // the start of a swipe home, and "Not right now" never fired.
+        .padding(.bottom, max(bottomInset, 12) + 14)
+        .background(
+            UnevenRoundedRectangle(topLeadingRadius: 30, topTrailingRadius: 30, style: .continuous)
+                .fill(.white)
+                .shadow(color: .black.opacity(0.10), radius: 16, y: -4)
+        )
+    }
+
+    private func planCard(_ p: SubscriptionPlan, compact: Bool) -> some View {
+        let chosen = plan == p
+        return Button { plan = p } label: {
+            HStack(spacing: 13) {
+                ZStack {
+                    Circle()
+                        .stroke(chosen ? OnboardingGreen.shade : AppColor.textSecondary.opacity(0.35),
+                                lineWidth: 2)
+                    if chosen {
+                        Circle().fill(OnboardingGreen.fill).padding(4)
+                    }
+                }
+                .frame(width: 22, height: 22)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(p.title)
+                        .font(.system(size: 17, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                    // The notes are arithmetic on OUR dollar prices ("About
+                    // $1.84 a week"). Beside Apple's localized price they
+                    // would be a dollar claim about a euro charge, so they
+                    // render only with our fallback prices.
+                    if store.displayPrice(for: p) == nil, let note = p.note {
+                        Text(note)
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(OnboardingGreen.shade)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                Spacer(minLength: 0)
+                VStack(alignment: .trailing, spacing: 1) {
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        // Only against OUR price: a dollar anchor beside a
+                        // euro price is nonsense.
+                        if store.displayPrice(for: p) == nil, let anchor = p.anchorPrice {
+                            Text(anchor)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(AppColor.textSecondary.opacity(0.7))
+                                .strikethrough(true, color: AppColor.textSecondary.opacity(0.7))
+                        }
+                        Text(store.displayPrice(for: p) ?? p.price)
+                            .font(.system(size: 19, weight: .heavy, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                    }
+                    // Wraps rather than truncating: the half-off year's
+                    // renewal price rides this line and must be read whole.
+                    Text(p.cadence)
+                        .font(.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .multilineTextAlignment(.trailing)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: 130, alignment: .trailing)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, compact ? 12 : 16)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(chosen ? Self.chosenWash : Color(white: 0.965)))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(chosen ? OnboardingGreen.fill : .clear, lineWidth: 2.5))
+            // A tag on the card's top edge. True arithmetic, not a slogan:
+            // the year costs under a third of twelve months.
+            .overlay(alignment: .topLeading) {
+                if p == .yearly || p == .yearHalf {
+                    Text("Best value")
+                        .font(.system(size: 11, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 3)
+                        .background(Capsule().fill(OnboardingGreen.fill))
+                        .fixedSize()
+                        .offset(x: 50, y: -9)
+                }
+            }
+        }
+        .buttonStyle(CardButtonStyle())
     }
 
     /// Continue. When nothing is on sale this is navigation; when something
@@ -563,7 +620,7 @@ struct PaywallScreen: View {
                 // Lifetime carries no introductory offer, so it can never be a
                 // trial however eligible the buyer still is for the
                 // subscription group's free week.
-                if store.trialEligible && plan != .lifetime { Analytics.track(.trialStarted) }
+                if offerTrial && plan != .lifetime { Analytics.track(.trialStarted) }
                 Analytics.track(.purchase(plan: plan.rawValue))
                 started = true
                 onDone(true)
