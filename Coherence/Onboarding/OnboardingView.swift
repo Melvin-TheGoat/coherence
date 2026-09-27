@@ -152,6 +152,18 @@ struct OnboardingView: View {
         case attentionHacked
         /// Added 2026-09-25: "Why 808 works". Last in the enum.
         case whyItWorks
+        /// Added 2026-09-26: "808 is built on research", Brainrot's research
+        /// screen with the studies behind the mechanism. Last in the enum.
+        case research
+        /// Added 2026-09-26: "808 was made for people like you", the App
+        /// Store rating ask with famous meditators. Last in the enum.
+        case socialProof
+        /// Added 2026-09-26: "This week, 808 will help you:", Brainrot's
+        /// week-ahead screen. Last in the enum.
+        case thisWeek
+        /// Added 2026-09-26: "Ready to take control?", hold the button and
+        /// Otto ascends. Last in the enum.
+        case ascend
 
         /// Progress rail: only the interview shows one. Once we're reflecting
         /// back and selling, a progress bar just tells them how much sales
@@ -198,7 +210,7 @@ struct OnboardingView: View {
             switch self {
             // Only the breath now: the welcome and Meet Otto went back to
             // the valley (Aziz, 2026-09-23).
-            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked, .whyItWorks: return true
+            case .breath, .breathing, .lifePause, .lifeDots, .attentionHacked, .whyItWorks, .research, .socialProof, .thisWeek: return true
             default: return false
             }
         }
@@ -289,10 +301,9 @@ struct OnboardingView: View {
 
     /// Where Block's own setup hands off to. Block builds reach it after
     /// picking apps and a schedule; everyone else reaches it straight from
-    /// the wall, exactly as before Block's screens existed.
-    private var afterBlockSetup: Step {
-        Self.paywallInsideOnboarding ? .paywall : .signIn
-    }
+    /// the wall. The paywall used to sit here; since 2026-09-26 it comes
+    /// right after the ascend screen, before the reminder and Block setup.
+    private var afterBlockSetup: Step { .signIn }
 
     /// Whether this iPhone has an Apple Watch paired. It replaced the
     /// question "Do you have an Apple Watch?" (2026-09-22): the phone already
@@ -602,7 +613,23 @@ struct OnboardingView: View {
             AttentionHackedScreen { go(.whyItWorks) }
 
         case .whyItWorks:
-            WhyItWorksScreen { go(nextAfter(.baseline)) }
+            WhyItWorksScreen { go(.research) }
+
+        case .research:
+            ResearchScreen { go(.socialProof) }
+
+        case .socialProof:
+            SocialProofScreen { go(.thisWeek) }
+
+        case .thisWeek:
+            ThisWeekScreen(answers: answers) { go(.ascend) }
+
+        case .ascend:
+            // The offer comes straight after "Let's go!" (Aziz, 2026-09-26,
+            // Brainrot's order). The old questions after it are being redone
+            // and are skipped; the reminder and Block's setup follow the
+            // paywall instead of preceding it.
+            AscendScreen { go(.paywall) }
 
         case .wandering:
             WanderingScreen(share: $answers.mindWandering, count: interviewCount) {
@@ -844,15 +871,15 @@ struct OnboardingView: View {
                 // on to sign-in; so does a store that could not load its
                 // plans, since nobody is locked out by a failure. Declining
                 // every offer comes back here: there is no free tier.
-                PaywallScreen(placement: "onboarding", plan: $plan) { _ in go(.signIn) }
+                PaywallScreen(placement: "onboarding", plan: $plan) { _ in go(.permission) }
                     // Its own paper, not the shared valley: its small print,
                     // legal links and "Not right now" are grey type that
                     // vanished into the ridge (2026-09-23).
                     .environment(\.onboardingSharedGround, false)
             } else {
-                // No paywall inside onboarding (2026-09-15 to 2026-09-23): a
-                // saved resume record pointing here moves on to sign-in.
-                Color.clear.onAppear { go(.signIn) }
+                // No paywall inside onboarding: the flow carries on to the
+                // reminder, as it would after a purchase.
+                Color.clear.onAppear { go(.permission) }
             }
 
         case .signIn:
@@ -903,7 +930,7 @@ struct OnboardingView: View {
         // an offer for what they own. Decided here, on the way IN, and not by
         // the paywall view watching `store.entitled`: that version also fired
         // when a purchase completed ON the paywall, advancing twice.
-        let next: Step = (requested == .paywall && store.entitled) ? .signIn : requested
+        let next: Step = (requested == .paywall && store.entitled) ? .permission : requested
         guard next != step else { return }
         if !step.onlyPassesThrough { history.append(step) }
         // One line covers the whole 26-screen funnel: the step being LEFT is
@@ -963,7 +990,7 @@ struct OnboardingView: View {
         let point = saved.resumePoint(unresumable: Set(Self.unresumable.map(\.rawValue)),
                                       fallback: Step.tourHome.rawValue)
         guard var target = Step(rawValue: point.step), target != .relief else { return }
-        if target == .paywall, store.entitled { target = .signIn }
+        if target == .paywall, store.entitled { target = .permission }
         answers = saved.answers
         history = point.history.compactMap(Step.init(rawValue:))
         plan = SubscriptionPlan(rawValue: saved.plan) ?? .monthly
@@ -1185,7 +1212,6 @@ private struct OnboardingValley: View {
     /// golden hour, so the reveal feels like a moment (Aziz, 2026-09-25:
     /// "a different background ... a different idea than the rays").
     var hour: Double = 0
-
     var body: some View {
         // Snap: the stress bar drags him through his looks, and a fade into
         // each one left him half a second behind the thumb.

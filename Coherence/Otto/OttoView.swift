@@ -27,7 +27,7 @@ struct OttoView: View {
                 if availability != .available {
                     OttoUnavailableView(availability: availability)
                 } else if !store.entitlements.otto {
-                    OttoLockedView(trialEligible: store.trialEligible || store.state != .ready,
+                    OttoLockedView(trialEligible: store.trialOffered,
                                    trialDays: store.trialDays) {
                         Analytics.track(.lockedTapped(signal: "otto"))
                         showPlans = true

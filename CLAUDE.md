@@ -5722,7 +5722,7 @@ tells the reader what they lack. Goyal is quoted for ANXIETY, not stress
 (`OnboardingValley(drop:)`, `DidYouKnowScreen.ottoDrop`) so the bigger cards
 (Aziz) clear his head; compact below 640pt of view height (an SE).
 
-**"How 808 makes it stick"** (`WhyItWorksScreen`, `Step.whyItWorks`, white
+**"How 808 makes meditation stick"** (`WhyItWorksScreen`, `Step.whyItWorks`, white
 page, after "attention hacked"): the MECHANISM as a chain with arrows (Aziz):
 "808 puts a little friction between you and your apps" → "Every time you open
 one, Otto reminds you to meditate" → "Over time it sinks into your
@@ -5735,6 +5735,91 @@ plain question now** (`StressLevel`: Pretty calm … Burnt out, stored as the
 0 to 1 `stress` the Headspace bar reads, plus `stressLevel` so it knows it
 was answered); dragging Otto through his moods there repeated See for
 yourself. **"That's me" pops in only after the profile's bars fill.**
+
+**"808 is built on research"** (`ResearchScreen`, `Step.research`, white
+page, after "How 808 makes meditation stick", Brainrot's research screen,
+Aziz 2026-09-26): one study per link of the chain, named by where it was
+done, each finding from the study's own abstract: Harvard (Killingsworth &
+Gilbert 2010, Science: minds wander almost half the time), Heidelberg and
+Max Planck (Grüning 2023, PNAS: a pause before an app opens cut openings
+57% in six weeks), UCL (Lally 2010, EJSP: daily repetition in one context
+turns automatic, one missed day doesn't undo it). **The logos are Aziz's
+call, over a flagged risk**: a crest is a trademark and can read as an
+endorsement none of them gave (App Review 5.2.1). Harvard, Heidelberg, Max
+Planck and UCL (the official UCL mark, not the gradient one on Commons),
+from Wikimedia, as `Research*` image sets. The footnote saying 808 is not
+affiliated must stay. The screen shows the four logos alone, one to a
+row (Aziz: no text under them); the findings live in the doc comment.
+
+**"808 was made for people like you."** (`SocialProofScreen`,
+`Step.socialProof`, white page, after the research screen, Brainrot's rating
+screen, Aziz 2026-09-26): Otto at his radiant look, three famous meditators'
+faces, a laurel row asking for a rating, and a quote card turning every 5 s
+(Kobe Bryant, Oprah Winfrey, Ray Dalio: the verbatim, on-the-record lines the
+old wall screen carried). **It asks for the App Store rating with Apple's
+sheet, once, unconditionally**, which REVERSES the "never inside onboarding"
+rule in `ReviewPrompt` (Aziz's call); still never gated on a "do you like
+it?" answer, and it does not stamp `reviewPrompt.lastAskedAt`, so the
+third-session ask is unchanged. **Faces are Aziz's call over a flagged
+right-of-publicity risk**: the footnote saying none of them endorse 808, and
+the photo credits the licences require (Steve Lipofsky, John Mathew Smith,
+Locksteel888, all CC BY-SA), must stay.
+Photos are `Proof*` image sets cropped from Wikimedia Commons.
+
+**"In 1 week, 808 will help you:"** (`ThisWeekScreen`, `Step.thisWeek`,
+white page, after the rating screen, Brainrot's week-ahead screen, Aziz
+2026-09-26): four pale-blue rows popping in, then Otto with his hand up
+(`OttoGreet`). No numbers (Brainrot's "Save over 3 hours every day" is the
+invented figure 808 refuses). Aziz's rows, answering the problems people
+arrive with: "Make meditation part of your daily routine", "Improve your
+mental clarity", "Regulate your emotions and stress", "Be more present in
+your everyday life".
+
+**"Ready to take control?"** (`AscendScreen`, `Step.ascend`, after "In 1
+week", Brainrot's hold-to-ascend screen, Aziz 2026-09-26): press and hold the
+white button (Otto's head, a gold ring filling over 3.2 s) and Otto climbs
+from Steady (level 50) through every look to Nirvana; let go early and he
+sinks back. **Its own place, not the meadow** (Aziz: like Brainrot's but not a
+copy): `MoonLake`, a lake at dusk under a big moon, Otto on a flat stone,
+from Melvin's moodboard (figure before an enormous moon, still water). The
+screen draws its own Otto (`OttoAuraFigure`, Rive aura rig: float, glow,
+halo, leaves) and lifts him off the stone up to 8% of the screen; ripples
+spread from the stone and the moon brightens with him. **Looks SNAP**: the
+rig's cross-fade left him half see-through against the bright moon. The
+status bar is hidden here (dark icons on a night sky; onboarding pins light,
+so `preferredColorScheme(.dark)` did nothing). **Never put an `.animation`
+on an `OttoAuraFigure` whose look changes**: from look 9 the rig's view
+switches from wide to tall, and an animation eases that frame through a
+shape that is big both ways, so he balloons for half a second (Aziz: "he just
+gets really big for no reason"). Animate only the lift (`floatUp`). Ticks firm up as he climbs; a
+success buzz, "Let's go!" and Continue at the top. VoiceOver finishes it on
+a double tap.
+
+**The offer comes right after "Let's go!"** (Aziz, 2026-09-26, Brainrot's
+order): ascend → `.paywall` → reminder (`.permission`) → health (paired
+Watch only) → Block's apps and schedule → sign in. The old interview
+questions after the ascend screen are skipped (Aziz is redoing them), and
+`afterBlockSetup` is now always `.signIn`. A payer is sent past the paywall
+to the reminder, not to sign in.
+
+**NO FREE TRIAL, MONTHLY AND YEARLY ONLY, AND THE PAYWALL IS IN THE VALLEY
+(Aziz, 2026-09-26).** `Monetization.freeTrial = false`; every trial promise
+reads `Store.trialOffered` (the paywall, the ladder, Otto's and the results
+screen's lock sheets), so flipping it back is one line. **App Store Connect
+must match**: the monthly product's introductory offer still grants a trial
+on Apple's purchase sheet until it is deleted (RELEASE_CHECKLIST.md, step 0).
+`SubscriptionPlan.cards` is monthly and yearly (or the half-off first year in
+the year's place); Lifetime stays a product for restores and a leftover
+selection lands on monthly. **There is no "Not right now"** (Aziz, same day: "there is
+no free version of the app"), so the half-off ladder is unreachable; its
+first rung would read "No worries. Have your first year at half price." if
+it comes back. The paywall: the valley
+sky with Otto floating at Nirvana, "Keep Otto glowing.", the plans on a white
+panel with green selection, a "Best value" tag on the year, the green
+Continue, the renewal line, Restore / Privacy Policy / Terms of Use. Anything
+pinned to the panel's bottom stays clear of the home-indicator strip (a tap
+there never fired). The half-off rung stands in the valley with the green
+button too.
 
 **Onboarding transitions, audited 2026-09-25 (Aziz: "make sure it's as
 smooth as possible").** Every Otto layer in `OnboardingView`'s ZStack

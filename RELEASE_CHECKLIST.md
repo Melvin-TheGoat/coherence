@@ -16,6 +16,20 @@ a phone and flipped). It points at the detailed sections below and at
 detailed section and the code are the truth, and this list should be
 corrected to match. Do every step below it before returning here.
 
+0. **NO FREE TRIAL (Aziz, 2026-09-26), App Store Connect must match the
+   build.** The app no longer offers or mentions a trial
+   (`Monetization.freeTrial = false`), and sells only Monthly and Yearly
+   with no way past the paywall but buying or restoring.
+   - [ ] Delete the introductory offer (the 3-day free trial) on
+     `com.lockout.meditate808.monthly`, and on `.yearly` if it carries one.
+     While it exists, Apple's purchase sheet still grants a trial the paywall
+     never mentions: a 3.1.2 mismatch between the screen and the sheet.
+   - [ ] Leave `com.lockout.meditate808.lifetime` for sale or not (the
+     founders' call): the paywall no longer shows it, but existing Lifetime
+     buyers must keep restoring it, so do NOT delete the product.
+   - [ ] Update the store description, review notes and the subscription
+     block in `APP_STORE.md` so none of them promise a trial or Lifetime.
+
 1. **Developer portal (Certificates, Identifiers & Profiles), done once, by
    the Account Holder:**
    - [x] Family Controls (Distribution) approved on all four App IDs

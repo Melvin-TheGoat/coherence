@@ -45,7 +45,10 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .trial:    return "No worries.\nTry it free first."
-        case .halfYear: return "Then have your first\nyear at half price."
+        // With no free trial (`Monetization.freeTrial`) this is the first
+        // rung, so it opens the answer to "Not right now" itself.
+        case .halfYear: return Monetization.freeTrial ? "Then have your first\nyear at half price."
+                                                      : "No worries. Have your\nfirst year at half price."
         }
     }
 
@@ -101,43 +104,47 @@ struct DownsellSheet: View {
     /// Declined. The caller decides whether another rung follows.
     let onDecline: () -> Void
 
+    /// In the valley like the paywall behind it (Aziz, 2026-09-26: the
+    /// offer consistent with the theme): the words in the sky, Otto on his
+    /// cushion, the onboarding's green button, "Not for me" on the meadow.
     var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 24)
+        ZStack(alignment: .top) {
+            ValleyScene(progress: 0, aura: .bright)
+                .ignoresSafeArea()
+                .allowsHitTesting(false)
 
-            VStack(spacing: 14) {
+            VStack(spacing: 12) {
                 Text(rung.title)
-                    .font(.system(size: 27, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
+                    .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
                 Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, trialDays: trialDays))
-                    .font(AppFont.note)
-                    .multilineTextAlignment(.center)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.72))
             }
-            .padding(.horizontal, 8)
-
-            Spacer()
-
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, AppMetrics.screenPadding + 4)
+            .padding(.top, 36)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
-                Button(rung.cta, action: onTake)
-                    .buttonStyle(PrimaryButtonStyle())
+                OnboardingCTA(title: rung.cta, action: onTake)
                 // Always a way out, at every rung, in plain words. A decline
                 // that has to be hunted for is the dark pattern this ladder is
                 // otherwise carefully not being.
                 // The last rung leads to the free tier, except while 808 is
                 // premium only, when it leads back to the plans.
-                Button(rung.next == nil && !Monetization.premiumOnly ? "Show me the free version" : "Not for me",
-                       action: onDecline)
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.vertical, 6)
+                Button(action: onDecline) {
+                    Text(rung.next == nil && !Monetization.premiumOnly ? "Show me the free version" : "Not for me")
+                        .onMeadow()
+                }
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .padding(.vertical, 6)
             }
+            .padding(.horizontal, AppMetrics.screenPadding)
+            .padding(.bottom, 16)
         }
-        .padding(AppMetrics.screenPadding)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .screenBackground()
     }
 }
 
