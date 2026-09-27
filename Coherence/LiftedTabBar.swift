@@ -5,12 +5,12 @@ import UIKit
 /// Block (debug) > "Tab bar (test)". DEBUG only: Release always draws the
 /// classic bar.
 enum TestTabBar: String, CaseIterable, Identifiable {
-    case classic, meadow, lifted, ink
+    case classic, meadow, lifted, ink, sloths
     /// The newest bar opens first. The key's version goes up with each new
     /// style, so a phone that had picked an older one in Settings still
     /// shows the newest after the update.
-    static let storageKey = "debug.tabBarStyle.v2"
-    static let debugDefault = TestTabBar.ink
+    static let storageKey = "debug.tabBarStyle.v3"
+    static let debugDefault = TestTabBar.sloths
     var id: String { rawValue }
     var label: String {
         switch self {
@@ -18,6 +18,7 @@ enum TestTabBar: String, CaseIterable, Identifiable {
         case .meadow: return "Meadow"
         case .lifted: return "Lifted"
         case .ink: return "Ink"
+        case .sloths: return "Sloths"
         }
     }
 }
@@ -32,17 +33,27 @@ enum TestTabBar: String, CaseIterable, Identifiable {
 /// and Profile, green for Friends. The plus is drawn in code, so it stays
 /// crisp; the four objects are cut from the sheet
 /// (`Coherence/TabBar/lifted-*.png`, about 200 px each).
+///
+/// **Sloths** (Melvin's fourth sheet, 2026-09-27) is this same bar with other
+/// art: a sun over hills, a moon on a stone, two sloths, a cairn
+/// (`Coherence/TabBar/sloth-*.png`). Its objects differ in shape (the two
+/// sloths are twice as wide as the moon), so they are drawn at one scale,
+/// the sheet's sizes kept, instead of all fitted to one height.
 struct LiftedTabBar: View {
     @Binding var selection: MainTab
     let onPlus: () -> Void
+    /// Which art: `lifted-*` or `sloth-*`.
+    var prefix = "lifted"
+    /// Points per sheet pixel, or nil to fit every object to 38pt tall.
+    var artScale: CGFloat? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 0) {
-            item(.home, art: "lifted-home", label: "Home", tint: .blue, tour: nil)
-            item(.block, art: "lifted-block", label: "Block", tint: .blue, tour: .block)
+            item(.home, art: "\(prefix)-home", label: "Home", tint: .blue, tour: nil)
+            item(.block, art: "\(prefix)-block", label: "Block", tint: .blue, tour: .block)
             plus
-            item(.friends, art: "lifted-friends", label: "Friends", tint: .green, tour: .friends)
-            item(.profile, art: "lifted-profile", label: "Profile", tint: .blue, tour: .profile)
+            item(.friends, art: "\(prefix)-friends", label: "Friends", tint: .green, tour: .friends)
+            item(.profile, art: "\(prefix)-profile", label: "Profile", tint: .blue, tour: .profile)
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 6)
@@ -133,10 +144,17 @@ struct LiftedTabBar: View {
     @ViewBuilder
     private func art(_ name: String) -> some View {
         if let image = UIImage(named: name) {
-            Image(uiImage: image)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
+            if let artScale {
+                Image(uiImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .frame(width: image.size.width * artScale, height: image.size.height * artScale)
+            } else {
+                Image(uiImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+            }
         } else {
             Color.clear
         }

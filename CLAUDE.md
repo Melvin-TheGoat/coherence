@@ -3815,6 +3815,11 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
 
 ## THE ZEN DIRECTION: MELVIN'S MOODBOARD IS THE REFERENCE (2026-09-26)
 
+**SHELVED 2026-09-27 (Melvin: "Nevermind on the theme revamp").** Nothing
+below is a standing instruction any more: do not hold screens against the
+board or remind him of it. Kept as a record in case it comes back; the
+sand tiles, night dim and glass bubble shipped separately and stay.
+
 "Lets continue to draw from them for inspiration when designing this app.
 Remind me and lets be critical to try to get everything subtly on this
 theme." **Every design pass, from now on, is held up against the board: say
