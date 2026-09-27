@@ -274,6 +274,7 @@ enum SessionStore {
                                     mode: String,
                                     frequencyID: String? = nil,
                                     durationSec: Int,
+                                    source: String = "phone",
                                     in context: ModelContext) -> Session? {
         guard durationSec >= minDurationSec else { return nil }
 
@@ -290,7 +291,7 @@ enum SessionStore {
             frequencyID: frequencyID,
             startedAt: startedAt,
             durationSec: durationSec,
-            source: "phone"
+            source: source
         )
         context.insert(session)
         try? context.save()

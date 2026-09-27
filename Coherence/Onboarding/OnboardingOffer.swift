@@ -27,6 +27,13 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// half-off-month rung made. It renews at the full yearly price, and
     /// every screen that shows it says so.
     case yearHalf
+    /// The ladder's two rungs (Melvin, 2026-09-27: "no i dont want to pay"
+    /// offers the free trial, then the first month half off). Each is its
+    /// own product because a product carries exactly one introductory offer:
+    /// `monthTrial` is the monthly price with a free trial, `monthHalf` the
+    /// monthly price with its first month at half. The paywall itself still
+    /// sells `monthly` with no trial (Aziz, 2026-09-26).
+    case monthTrial, monthHalf
 
     var id: String { rawValue }
 
@@ -43,7 +50,15 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     static func cards(selecting plan: SubscriptionPlan) -> [SubscriptionPlan] {
         // Monthly and yearly only (Aziz, 2026-09-26). Lifetime stays a
         // product, so anyone who bought it still restores it.
-        plan == .yearHalf ? [.monthly, .yearHalf] : [.monthly, .yearly]
+        // A rung's plan takes the monthly card's place, the way the half-off
+        // year takes the year's: two monthly cards at two prices is a shell
+        // game.
+        switch plan {
+        case .yearHalf: return [.monthly, .yearHalf]
+        case .monthTrial: return [.monthTrial, .yearly]
+        case .monthHalf: return [.monthHalf, .yearly]
+        default: return [.monthly, .yearly]
+        }
     }
 
     var title: String {
@@ -52,6 +67,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearly:   return "Yearly"
         case .lifetime: return "Lifetime"
         case .yearHalf: return "First year"
+        case .monthTrial: return "Free trial"
+        case .monthHalf: return "First month"
         }
     }
 
@@ -61,6 +78,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearly:   return "$29.99"
         case .lifetime: return "$99.99"
         case .yearHalf: return "$14.99"
+        case .monthTrial: return "$7.99"
+        case .monthHalf: return "$3.99"
         }
     }
 
@@ -86,6 +105,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // The year's real price, which this is genuinely half of, so the
         // strikethrough is a true reference price and not a fake one.
         case .yearHalf: return "$29.99"
+        case .monthTrial: return nil
+        // The month's real price, which this is genuinely half of.
+        case .monthHalf: return "$7.99"
         }
     }
 
@@ -97,6 +119,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // The renewal price rides the cadence, so it is beside the number
         // everywhere the number appears (3.1.2, and plain honesty).
         case .yearHalf: return "first year, then $29.99 a year"
+        case .monthTrial: return "per month after the trial"
+        case .monthHalf: return "first month, then $7.99 a month"
         }
     }
 
@@ -123,6 +147,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .lifetime: return "A year of monthly, then never again"
         // $14.99 over 12 months, the same arithmetic as the year above it.
         case .yearHalf: return "$1.25 a month for the first year"
+        case .monthTrial: return "Nothing to pay today"
+        case .monthHalf: return "Half off your first month"
         }
     }
 }
@@ -329,6 +355,27 @@ struct PaywallScreen: View {
     /// this person has not used it. Promising it anyway would put a claim on
     /// screen that the purchase sheet contradicts one tap later.
     private var offerTrial: Bool { store.trialOffered }
+    /// The plan being bought right now starts with a free trial: the main
+    /// offer when trials are on, or the ladder's trial rung, which exists
+    /// even while the paywall itself sells none.
+    private var trialNow: Bool {
+        plan == .monthTrial ? (store.trialEligible || store.state != .ready) : (offerTrial && plan != .lifetime)
+    }
+
+    /// A rung can be offered only if its product exists (a DEBUG build demos
+    /// them all), and the trial only to someone who has never had one.
+    private func available(_ rung: DownsellRung) -> Bool {
+        guard selling else { return false }
+        let exists = store.product(for: rung.plan) != nil || Self.demoSelling
+        return exists && (rung != .trial || store.trialEligible || store.state != .ready)
+    }
+    private func firstRung(after rung: DownsellRung? = nil) -> DownsellRung? {
+        var next = rung.map { $0.next } ?? DownsellRung.allCases.first
+        while let r = next, !available(r) { next = r.next }
+        return next
+    }
+    /// Declined every rung once: the link goes, so "no" is not a loop.
+    @State private var declinedAll = false
 
     @StateObject private var otto = OttoRigHolder()
 
@@ -353,7 +400,7 @@ struct PaywallScreen: View {
     /// it and reviewers reject paywalls that only hint.
     private var footnote: String {
         guard selling else { return notSellingFootnote }
-        return offerTrial
+        return trialNow
             ? "\(TrialCopy.length(store.trialDays)) free, then \(priceLine). Renews automatically until you cancel in Settings."
             : "\(priceLine). Renews automatically until you cancel in Settings."
     }
@@ -402,6 +449,10 @@ struct PaywallScreen: View {
                 DownsellSheet(rung: current, plan: plan,
                               yearlyPrice: store.displayPrice(for: .yearly)
                                   ?? SubscriptionPlan.yearly.price,
+                              monthlyPrice: store.displayPrice(for: .monthly)
+                                  ?? SubscriptionPlan.monthly.price,
+                              halfMonthPrice: store.displayPrice(for: .monthHalf)
+                                  ?? SubscriptionPlan.monthHalf.price,
                               trialDays: store.trialDays) {
                     // Taking a rung PRESELECTS the plan and returns to the
                     // paywall; the purchase happens there and only there.
@@ -417,9 +468,10 @@ struct PaywallScreen: View {
                     // free tier, or, while 808 is premium only
                     // (`Monetization`), back to the plans, since there is
                     // no free 808 to settle into.
-                    if let next = current.next, next != .trial || offerTrial {
+                    if let next = firstRung(after: current) {
                         route = .rung(next)
                     } else {
+                        declinedAll = true
                         route = Monetization.premiumOnly ? nil : .freeTier
                     }
                     lastRung = current
@@ -474,7 +526,7 @@ struct PaywallScreen: View {
                 planCard(p, compact: compact)
             }
 
-            OnboardingCTA(title: selling ? (offerTrial ? "Start my free trial" : "Continue") : "Continue",
+            OnboardingCTA(title: selling ? (trialNow ? "Start my free trial" : "Continue") : "Continue",
                           action: { advance() })
                 .padding(.top, 4)
 
@@ -494,10 +546,15 @@ struct PaywallScreen: View {
             .font(.caption.weight(.semibold))
             .foregroundStyle(AppColor.textSecondary)
 
-            // No "Not right now" (Aziz, 2026-09-26: "there is no free version
-            // of the app"). 808 is premium only (`Monetization.premiumOnly`),
-            // so there is nothing to decline into; the half-off ladder
-            // (`DownsellSheet`) stays in the code, unreachable from here.
+            // No free version to decline into (Aziz, 2026-09-26), but a "no"
+            // is answered with the ladder (Melvin, 2026-09-27): the free
+            // trial, then the first month at half. Once both are declined the
+            // link goes, and the plans are what is left.
+            if !declinedAll, let first = firstRung() {
+                Button("No, I don't want to pay") { route = .rung(first) }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary.opacity(0.8))
+            }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .padding(.top, compact ? 16 : 22)
@@ -620,7 +677,7 @@ struct PaywallScreen: View {
                 // Lifetime carries no introductory offer, so it can never be a
                 // trial however eligible the buyer still is for the
                 // subscription group's free week.
-                if offerTrial && plan != .lifetime { Analytics.track(.trialStarted) }
+                if trialNow { Analytics.track(.trialStarted) }
                 Analytics.track(.purchase(plan: plan.rawValue))
                 started = true
                 onDone(true)

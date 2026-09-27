@@ -42,7 +42,17 @@ final class Store: ObservableObject {
         /// one intro offer, which is why this cannot be the yearly one.
         static let yearHalf = "com.lockout.meditate808.yearly50"
 
-        static let all = [monthly, yearly, lifetime, yearHalf]
+        /// The ladder's rungs (2026-09-27), each carrying its own
+        /// introductory offer: a free trial, and the first month at half.
+        static let monthTrial = "com.lockout.meditate808.monthlytrial"
+        static let monthHalf = "com.lockout.meditate808.monthly50"
+
+        static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf]
+        /// What must load for the store to count as selling. The rungs are
+        /// NOT in it: until they exist in App Store Connect the ladder simply
+        /// does not appear, where counting them would stop the whole paywall
+        /// selling and, with that, lift the lock for everyone.
+        static let core = [monthly, yearly, lifetime, yearHalf]
 
         static func of(_ plan: SubscriptionPlan) -> String {
             switch plan {
@@ -50,6 +60,8 @@ final class Store: ObservableObject {
             case .yearly:   return yearly
             case .lifetime: return lifetime
             case .yearHalf: return yearHalf
+            case .monthTrial: return monthTrial
+            case .monthHalf: return monthHalf
             }
         }
     }
@@ -147,7 +159,7 @@ final class Store: ObservableObject {
             // fallback prices beside live rows and a buy button that silently
             // no-ops on the missing product. Unavailable means free (the
             // paywall shows "Plans aren't loading" with a retry).
-            state = found.count == ProductID.all.count ? .ready : .unavailable
+            state = ProductID.core.allSatisfy { id in found.contains { $0.id == id } } ? .ready : .unavailable
         } catch {
             state = .unavailable
         }
@@ -156,7 +168,9 @@ final class Store: ObservableObject {
         if let sub = products.first(where: { $0.subscription != nil })?.subscription {
             trialEligible = await sub.isEligibleForIntroOffer
         }
-        if let offer = product(for: .monthly)?.subscription?.introductoryOffer,
+        // The ladder's trial product is where the trial lives now; the
+        // monthly's own, if any, is the fallback.
+        if let offer = (product(for: .monthTrial) ?? product(for: .monthly))?.subscription?.introductoryOffer,
            offer.paymentMode == .freeTrial {
             trialDays = Self.days(in: offer.period)
         }

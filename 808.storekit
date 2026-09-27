@@ -1,7 +1,6 @@
 {
   "identifier" : "8B4C1A20-0808-4E33-9C21-1F5A0C7D2E90",
-  "nonRenewingSubscriptions" : [
-  ],
+  "nonRenewingSubscriptions" : [],
   "products" : [
     {
       "displayPrice" : "99.99",
@@ -21,30 +20,21 @@
   ],
   "settings" : {
     "_askToBuyEnabled" : false,
-    "_storeKitErrors" : [
-    ]
+    "_storeKitErrors" : []
   },
   "subscriptionGroups" : [
     {
       "id" : "808100001",
-      "localizations" : [
-      ],
+      "localizations" : [],
       "name" : "808",
       "subscriptions" : [
         {
-          "adHocOffers" : [
-          ],
-          "codeOffers" : [
-          ],
+          "adHocOffers" : [],
+          "codeOffers" : [],
           "displayPrice" : "7.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "808000001",
-          "introductoryOffer" : {
-            "internalID" : "808200001",
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P1W"
-          },
           "localizations" : [
             {
               "description" : "808, billed monthly.",
@@ -59,19 +49,12 @@
           "type" : "RecurringSubscription"
         },
         {
-          "adHocOffers" : [
-          ],
-          "codeOffers" : [
-          ],
+          "adHocOffers" : [],
+          "codeOffers" : [],
           "displayPrice" : "29.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "808000002",
-          "introductoryOffer" : {
-            "internalID" : "808200002",
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P1W"
-          },
           "localizations" : [
             {
               "description" : "808, billed yearly.",
@@ -84,6 +67,84 @@
           "referenceName" : "Yearly",
           "subscriptionGroupID" : "808100001",
           "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "808000003",
+          "localizations" : [
+            {
+              "description" : "808, first year at half price.",
+              "displayName" : "First year half off",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lockout.meditate808.yearly50",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "First year half off",
+          "subscriptionGroupID" : "808100001",
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "displayPrice" : "14.99",
+            "paymentMode" : "payUpFront",
+            "subscriptionPeriod" : "P1Y",
+            "internalID" : "808200003"
+          }
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "7.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "808000004",
+          "localizations" : [
+            {
+              "description" : "808, billed monthly after a free trial.",
+              "displayName" : "Monthly with free trial",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lockout.meditate808.monthlytrial",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly with free trial",
+          "subscriptionGroupID" : "808100001",
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D",
+            "internalID" : "808200004"
+          }
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "7.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "808000005",
+          "localizations" : [
+            {
+              "description" : "808, first month at half price.",
+              "displayName" : "First month half off",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lockout.meditate808.monthly50",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "First month half off",
+          "subscriptionGroupID" : "808100001",
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "displayPrice" : "3.99",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "payAsYouGo",
+            "subscriptionPeriod" : "P1M",
+            "internalID" : "808200005"
+          }
         }
       ]
     }

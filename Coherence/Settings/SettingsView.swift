@@ -17,7 +17,7 @@ struct SettingsView: View {
         NavigationStack {
             Group {
                 if let user = currentUser, let prefs = preferences.first {
-                    SettingsForm(user: user, prefs: prefs,
+                    SettingsForm(user: user, prefs: prefs, onDone: { dismiss() },
                                  onSignOut: { SessionStore.signOut(in: context); OttoChatStore.deleteAll(); dismiss() },
                                  onDelete: {
                                      Analytics.track(.accountDeleted)
@@ -34,13 +34,6 @@ struct SettingsView: View {
                     Text("No account").foregroundStyle(AppColor.textSecondary)
                 }
             }
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
-                }
-            }
         }
     }
 
@@ -52,6 +45,7 @@ struct SettingsView: View {
 private struct SettingsForm: View {
     @Bindable var user: User
     @Bindable var prefs: Preferences
+    let onDone: () -> Void
     let onSignOut: () -> Void
     let onDelete: () -> Void
 
@@ -80,12 +74,46 @@ private struct SettingsForm: View {
         return durationOptions + [("\(current / 60) min", current)]
     }
 
+    /// In the valley like Friends, Profile and the guide (Melvin, 2026-09-27:
+    /// "Settings needs to also be on theme"): a band of sky with the title
+    /// and Done, sand cards on the grass, white headings between them. The
+    /// pages it pushes keep their own bar and back button.
     var body: some View {
-        ScrollView {
+        GeometryReader { proxy in
+            let top = proxy.safeAreaInsets.top
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    FriendsSky(height: top + 92, sceneHeight: (top + 92) / 0.62) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text("Settings")
+                                .font(DisplayFont.display(30, .heavy))
+                                .foregroundStyle(ValleyGround.ink)
+                            Spacer()
+                            Button("Done", action: onDone)
+                                .font(AppFont.callout.weight(.bold))
+                                .foregroundStyle(ValleyGround.ink)
+                                .padding(.horizontal, 16).padding(.vertical, 8)
+                                .background(AppColor.backgroundPrimary.opacity(0.9), in: Capsule())
+                        }
+                        .padding(.horizontal, AppMetrics.screenPadding)
+                        .padding(.top, top + 10)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                    }
+                    settingsBody
+                }
+            }
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .background(ValleyGround.meadow.ignoresSafeArea())
+        }
+        .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var settingsBody: some View {
             VStack(alignment: .leading, spacing: 16) {
                 profileCard
 
-                SectionHeader(title: "Practice")
+                GrassHeading(title: "Practice")
                 settingsCard {
                     row(icon: "timer", title: "Default length") {
                         Picker("", selection: Binding(
@@ -135,7 +163,7 @@ private struct SettingsForm: View {
                     }
                 }
 
-                SectionHeader(title: "Membership")
+                GrassHeading(title: "Membership")
                 settingsCard {
                     membershipRow(icon: "arrow.clockwise", title: "Restore purchases",
                                   subtitle: "Bought on another device, or reinstalled") {
@@ -148,7 +176,7 @@ private struct SettingsForm: View {
                     }
                 }
 
-                SectionHeader(title: "The foundation")
+                GrassHeading(title: "The foundation")
                 settingsCard {
                     membershipRow(icon: "envelope", title: "Give us feedback",
                                   subtitle: "Opens an email to us. Every message is read.") {
@@ -173,10 +201,11 @@ private struct SettingsForm: View {
                 #endif
 
                 accountFooter
+                    .padding(14)
+                    .frame(maxWidth: .infinity)
+                    .whiteCard(radius: 16)
             }
             .padding(AppMetrics.screenPadding)
-        }
-        .screenBackground()
         .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete account", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
@@ -200,7 +229,7 @@ private struct SettingsForm: View {
     /// has not reached.
     @ViewBuilder
     private var testingDebugSection: some View {
-        SectionHeader(title: "Testing (debug)")
+        GrassHeading(title: "Testing (debug)")
         settingsCard {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
@@ -249,7 +278,7 @@ private struct SettingsForm: View {
     /// reinstalling.
     @ViewBuilder
     private var freeTierDebugSection: some View {
-        SectionHeader(title: "Free tier (debug)")
+        GrassHeading(title: "Free tier (debug)")
         settingsCard {
             VStack(alignment: .leading, spacing: 8) {
                 Toggle(isOn: Binding(
@@ -275,7 +304,7 @@ private struct SettingsForm: View {
 
     @ViewBuilder
     private var cloudKitDebugSection: some View {
-        SectionHeader(title: "CloudKit (debug)")
+        GrassHeading(title: "CloudKit (debug)")
         settingsCard {
             VStack(alignment: .leading, spacing: 6) {
                 Text(Persistence.mode.label)
@@ -344,7 +373,7 @@ private struct SettingsForm: View {
     @ViewBuilder
     private var airPodsDebugSection: some View {
         if #available(iOS 26.0, *) {
-            SectionHeader(title: "AirPods (debug)")
+            GrassHeading(title: "AirPods (debug)")
             settingsCard {
                 navRow(icon: "airpodspro", title: "AirPods capture probe", teal: true) {
                     AirPodsProbeView()
@@ -358,7 +387,7 @@ private struct SettingsForm: View {
     /// nothing real happening (`InterventionGalleryView`).
     @ViewBuilder
     private var blockDebugSection: some View {
-        SectionHeader(title: "Block (debug)")
+        GrassHeading(title: "Block (debug)")
         settingsCard {
             navRow(icon: "bell.badge", title: "Otto's unblock screens", teal: true) {
                 InterventionGalleryView()
@@ -397,11 +426,10 @@ private struct SettingsForm: View {
     private var profileCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                Text(initial)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.accentGoldText)
-                    .frame(width: 42, height: 42)
-                    .background(AppColor.accentGold.opacity(0.15), in: Circle())
+                // Otto's face, the same default Profile shows.
+                OttoMark(size: 34, pose: .head)
+                    .frame(width: 46, height: 46)
+                    .background(AppColor.sky, in: Circle())
                 VStack(alignment: .leading, spacing: 1) {
                     Text(user.displayName?.isEmpty == false ? user.displayName! : "Add your name")
                         .font(AppFont.callout.weight(.semibold))
@@ -517,8 +545,7 @@ private struct SettingsForm: View {
         VStack(alignment: .leading, spacing: 0) { content() }
             .padding(.horizontal, 13)
             .padding(.vertical, 4)
-            .background(AppColor.backgroundSecondary,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .whiteCard(radius: 16)
     }
 
     private var divider: some View {
@@ -530,9 +557,9 @@ private struct SettingsForm: View {
         HStack(spacing: 11) {
             Image(systemName: icon)
                 .font(.system(size: 13))
-                .foregroundStyle(teal ? AppColor.calmAccent : AppColor.accentGold)
+                .foregroundStyle(teal ? AppColor.calmAccent : AppColor.accentGoldText)
                 .frame(width: 30, height: 30)
-                .background((teal ? AppColor.calmAccent : AppColor.accentGold).opacity(0.12),
+                .background((teal ? AppColor.calmAccent : AppColor.accentGold).opacity(0.2),
                             in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)

@@ -13,9 +13,9 @@ final class PaywallLadderTests: XCTestCase {
     /// exist if it concedes something, and after the discount there is
     /// nothing left to concede.
     func test_rungsGoRiskThenMoney() {
-        XCTAssertEqual(DownsellRung.allCases, [.trial, .halfYear])
-        XCTAssertEqual(DownsellRung.trial.next, .halfYear)
-        XCTAssertNil(DownsellRung.halfYear.next, "the ladder must end")
+        XCTAssertEqual(DownsellRung.allCases, [.trial, .halfMonth])
+        XCTAssertEqual(DownsellRung.trial.next, .halfMonth)
+        XCTAssertNil(DownsellRung.halfMonth.next, "the ladder must end")
         XCTAssertLessThanOrEqual(DownsellRung.allCases.count, 2)
     }
 
@@ -51,17 +51,35 @@ final class PaywallLadderTests: XCTestCase {
     /// Each rung sells the plan it describes. A rung that talked about a year
     /// and charged for a month would be the deception the whole flow avoids.
     func test_eachRungSellsWhatItDescribes() {
-        XCTAssertEqual(DownsellRung.halfYear.plan, .yearHalf)
-        XCTAssertEqual(DownsellRung.trial.plan, .monthly)
-        let copy = DownsellRung.halfYear.subtitle(plan: .yearHalf,
-                                                  yearlyPrice: SubscriptionPlan.yearly.price)
-        XCTAssertTrue(copy.contains(SubscriptionPlan.yearHalf.price), "it must state what you pay")
-        XCTAssertTrue(copy.contains(SubscriptionPlan.yearly.price), "and what it renews at")
+        XCTAssertEqual(DownsellRung.halfMonth.plan, .monthHalf)
+        XCTAssertEqual(DownsellRung.trial.plan, .monthTrial)
+        let copy = DownsellRung.halfMonth.subtitle(plan: .monthHalf,
+                                                   yearlyPrice: SubscriptionPlan.yearly.price)
+        XCTAssertTrue(copy.contains(SubscriptionPlan.monthHalf.price), "it must state what you pay")
+        XCTAssertTrue(copy.contains(SubscriptionPlan.monthly.price), "and what it renews at")
+    }
+
+    /// Every rung sells its own product, never the paywall's plain monthly:
+    /// the paywall's monthly carries no trial (Aziz, 2026-09-26), so a rung
+    /// selling it would promise an offer the purchase sheet contradicts.
+    func test_rungsSellTheirOwnProducts() {
+        for rung in DownsellRung.allCases {
+            XCTAssertNotEqual(Store.ProductID.of(rung.plan), Store.ProductID.monthly)
+            XCTAssertFalse(Store.ProductID.core.contains(Store.ProductID.of(rung.plan)),
+                           "a rung's product must not be required, or a missing one stops the paywall selling")
+        }
     }
 
     /// Half of the year's price, and it says what it renews at wherever the
     /// number appears. A discount whose renewal is hidden is the 3.1.2
     /// rejection and the lie underneath it.
+    func test_theHalfMonthIsRealAndSaysWhatItRenewsAt() {
+        XCTAssertEqual(SubscriptionPlan.monthHalf.price, "$3.99")
+        XCTAssertEqual(SubscriptionPlan.monthly.price, "$7.99")
+        XCTAssertTrue(SubscriptionPlan.monthHalf.cadence.contains(SubscriptionPlan.monthly.price))
+        XCTAssertEqual(SubscriptionPlan.monthHalf.anchorPrice, SubscriptionPlan.monthly.price)
+    }
+
     func test_theDiscountIsRealAndSaysWhatItRenewsAt() {
         XCTAssertEqual(SubscriptionPlan.yearHalf.price, "$14.99")
         XCTAssertEqual(SubscriptionPlan.yearly.price, "$29.99")
@@ -74,6 +92,8 @@ final class PaywallLadderTests: XCTestCase {
     func test_theDiscountedYearTakesTheYearsPlace() {
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly])
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.monthTrial, .yearly])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthHalf), [.monthHalf, .yearly])
     }
 
     /// The rules from the paywall above it apply the whole way down.
@@ -141,10 +161,10 @@ final class PaywallLadderTests: XCTestCase {
     /// charge. (The weekly-cents reframe was dropped with the localized
     /// price: a cents figure computed from USD is wrong in every other
     /// currency.)
-    func test_theYearRungSaysItRenews() {
-        let text = DownsellRung.halfYear
-            .subtitle(plan: .yearHalf, yearlyPrice: SubscriptionPlan.yearly.price)
+    func test_theMonthRungSaysItRenews() {
+        let text = DownsellRung.halfMonth
+            .subtitle(plan: .monthHalf, yearlyPrice: SubscriptionPlan.yearly.price)
             .lowercased()
-        XCTAssertTrue(text.contains("renews"), "the year rung hides the renewal")
+        XCTAssertTrue(text.contains("renews"), "the month rung hides the renewal")
     }
 }

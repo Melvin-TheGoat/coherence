@@ -49,7 +49,8 @@ struct BlockHooks: ViewModifier {
 
     private func catchUp() {
         guard FeatureFlags.block else { return }
-        let recent = sessions.prefix(24).map { session in
+        // A recorded sit never opens apps (`Session.isLogged`).
+        let recent = sessions.filter { !$0.isLogged }.prefix(24).map { session in
             (end: session.startedAt.addingTimeInterval(TimeInterval(session.durationSec)),
              durationSec: session.durationSec)
         }

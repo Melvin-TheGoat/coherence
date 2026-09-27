@@ -257,7 +257,12 @@ struct ContentView: View {
         .onAppear(perform: debugPreviewHooks)
         #endif
         // A session is running on the Watch — take over the phone for every mode.
-        .fullScreenCover(item: Binding(get: { coordinator.active }, set: { _ in })) { session in
+        // Not while the Ready screen is up: a sit begun there runs over it
+        // (`SessionSetupView.hosting`), so there is no second cover to slide.
+        .fullScreenCover(item: Binding(get: { () -> SessionCoordinator.ActiveSession? in
+                                           if case .setup = sheet { return nil }
+                                           return coordinator.active },
+                                       set: { _ in })) { session in
             SessionActiveView(startedAt: session.startedAt,
                               plannedDurationSec: session.plannedDurationSec,
                               planChip: planChip(session)) {
@@ -1147,12 +1152,7 @@ struct ContentView: View {
     /// nil when there is nothing worth saying. An open-ended silent sit is
     /// the default, and a chip reading "Open" over a valley is jargon in a
     /// gold capsule.
-    private func planChip(_ session: SessionCoordinator.ActiveSession) -> String? {
-        var parts: [String] = []
-        if let planned = session.plannedDurationSec { parts.append("\(planned / 60) min") }
-        if let title = session.soundTitle { parts.append(title) }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
-    }
+    private func planChip(_ session: SessionCoordinator.ActiveSession) -> String? { session.planChip }
 
     private var greeting: String {
         let base: String

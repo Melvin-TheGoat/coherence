@@ -57,8 +57,10 @@ enum LeftAppNotice {
         let settings = await center.notificationSettings()
         guard [.authorized, .provisional, .ephemeral].contains(settings.authorizationStatus) else { return }
         let content = UNMutableNotificationContent()
-        content.title = "Come back to your session"
-        content.body = "Open 808 within 10 seconds or this session won't count."
+        // Cheerfully worried, not a warning (Melvin, 2026-09-27: the old
+        // "or this session won't count" read as angry and demanding).
+        content.title = "Wait, come back!"
+        content.body = "Your session's still going! Hop back in within 10 seconds so it still counts."
         content.sound = .default
         content.interruptionLevel = .timeSensitive
         content.userInfo = [userInfoKey: session.uuidString]

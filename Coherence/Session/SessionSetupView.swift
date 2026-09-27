@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchConnectivity
 import SwiftData
 
 /// Begin a session. Deliberately almost empty.
@@ -42,6 +43,12 @@ struct SessionSetupView: View {
     /// The count reached zero: Otto settles from waving into sitting just
     /// before the sit screen takes over, so the hand-off is his, not a cut.
     @State private var settling = false
+    /// The sit is running HERE, over this screen, rather than in a cover of
+    /// its own (Melvin, 2026-09-27: "the screen swipes down and then comes
+    /// up"). Begin used to dismiss this cover, which slid down, and then the
+    /// sit's cover slid up. Both screens are the same valley, so the sit
+    /// fades in over it instead, and this screen closes when the sit ends.
+    @State private var hosting = false
 
     @ObservedObject private var focus = FocusShortcut.shared
     @State private var showFocusSetup = false
@@ -55,6 +62,23 @@ struct SessionSetupView: View {
     /// scene and make it two screens, which is exactly the settings-panel
     /// feeling Aziz rejected.
     @State private var choosingSound = false
+
+    /// How this sit is kept (Melvin, 2026-09-27): on the phone, unmeasured,
+    /// or measured by the Watch. Remembered, like the sound. The third card,
+    /// recording one done elsewhere, is not a way to run a sit, so it is not
+    /// stored here: it opens `logging`.
+    @AppStorage("ready.sitKind") private var kindRaw = SitKind.unmeasured.rawValue
+    private var kind: SitKind { SitKind(rawValue: kindRaw) ?? .unmeasured }
+    /// The three cards, a state of this screen like the sound list.
+    @State private var choosingKind = false
+    /// Recording a sit done elsewhere: how long, and when it ended.
+    @State private var logging = false
+    @State private var logMinutes = 10
+    @State private var logEnded = Date()
+    /// The recorded session, open on its page for a photo and notes.
+    @State private var loggedID: LoggedSession?
+    @Environment(\.modelContext) private var context
+    private var aside: Bool { choosingSound || choosingKind || logging }
 
     /// The two heights `ottoLift` is worked out from, measured as laid out.
     /// Seeded with what an iPhone 17 Pro measures, so the first frame is
@@ -70,10 +94,32 @@ struct SessionSetupView: View {
                 // ONE scene, for both states. Never rebuilt, never replaced:
                 // it owns the Rive rig, and swapping it would restart him.
                 ValleyScene(progress: 0, pose: settling ? .meditating : .greeting,
-                            ottoInCorner: choosingSound, ottoLift: lift)
+                            ottoInCorner: aside, ottoLift: lift)
 
-                if choosingSound {
-                    asking(day: day, in: geo.size)
+                if choosingKind {
+                    asking("How are we meditating?", day: day, in: geo.size)
+                    SitKindCards(kind: kind, watchPaired: Self.watchPaired) { picked in
+                        switch picked {
+                        case .record:
+                            logEnded = Date()
+                            choosingKind = false
+                            logging = true
+                        case .unmeasured, .watch:
+                            kindRaw = picked.rawValue
+                            choosingKind = false
+                        }
+                    }
+                    .padding(.top, Self.listTop)
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else if logging {
+                    asking("How long did you meditate?", day: day, in: geo.size)
+                    LogSitCard(minutes: $logMinutes, ended: $logEnded, save: saveLog)
+                        .padding(.top, Self.listTop)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else if choosingSound {
+                    asking("What are we listening to?", day: day, in: geo.size)
                     SoundChoiceList(soundID: $soundID, top: Self.listTop) {
                         choosingSound = false
                     }
@@ -98,22 +144,46 @@ struct SessionSetupView: View {
             }
             .frame(width: geo.size.width, height: geo.size.height)
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: choosingSound)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: choosingKind)
+            .animation(.spring(response: 0.42, dampingFraction: 0.86), value: logging)
             .animation(.spring(response: 0.42, dampingFraction: 0.86), value: countdown == nil)
         }
         .ignoresSafeArea()
         .overlay(alignment: .topLeading) {
             // Counting in, the one way out is the Cancel pill where Begin
             // was; two Cancels on one screen is one too many.
-            if countdown == nil {
-                Button(choosingSound ? "Back" : "Cancel") {
-                    if choosingSound { choosingSound = false } else { cancel() }
+            if countdown == nil, !hosting {
+                Button(aside ? "Back" : "Cancel") {
+                    if logging { logging = false; choosingKind = true }
+                    else if choosingKind { choosingKind = false }
+                    else if choosingSound { choosingSound = false }
+                    else { cancel() }
                 }
                 .font(AppFont.callout.weight(.semibold))
                 .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
                 .padding(.horizontal, 20).padding(.top, 14)
             }
         }
+        .overlay {
+            if hosting, let session = coordinator.active {
+                SessionActiveView(startedAt: session.startedAt,
+                                  plannedDurationSec: session.plannedDurationSec,
+                                  planChip: session.planChip) {
+                    coordinator.endActiveSession()
+                }
+                .transition(.opacity)
+            }
+        }
+        // The sit is over: close, straight to Home and the glow.
+        .onChange(of: coordinator.active?.id) { _, id in
+            if hosting, id == nil { dismiss() }
+        }
         .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
+        // The recorded sit's own page, for the photo or video that shows it
+        // happened, and notes. Closing it closes this screen too.
+        .fullScreenCover(item: $loggedID, onDismiss: { dismiss() }) { logged in
+            SaveSessionView(sessionID: logged.id, mode: .edit) { loggedID = nil }
+        }
         // NOT a permission prompt on appear. Somebody who opened this screen
         // is about to close their eyes, and a system dialog is the single
         // worst thing to put in front of them. The prompt comes when they
@@ -249,8 +319,8 @@ struct SessionSetupView: View {
 
     /// He asks the question, so the list needs no title. The point aims left
     /// at his face, the same tail the onboarding questions use.
-    private func asking(day: DayLight, in size: CGSize) -> some View {
-        OttoSpeech(text: "What are we listening to?",
+    private func asking(_ line: String, day: DayLight, in size: CGSize) -> some View {
+        OttoSpeech(text: line,
                    tail: .leading, size: 15,
                    ink: day.ink, stroke: day.ink.opacity(0.38),
                    fill: ValleyBubble.dayGlass, alignment: .center,
@@ -264,24 +334,25 @@ struct SessionSetupView: View {
         return VStack(spacing: 0) {
             Spacer(minLength: 0)
             VStack(spacing: 10) {
-                Button { choosingSound = true } label: {
-                    SitPill(glyph: "\u{266A}", label: "Sound",
-                            subtitle: compact ? nil : sound, compact: compact) {
-                        HStack(spacing: 4) {
-                            // One line on a short phone, so the choice moves
-                            // to the right, where it was before the pills grew.
-                            if compact {
-                                Text(sound)
-                                    .font(AppFont.caption.weight(.semibold))
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                            Text("\u{203A}")
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundStyle(AppColor.textSecondary)
+                // Side by side, half width each, so adding the choice of how
+                // to sit did not make the controls taller and push them over
+                // Otto's lap (the first build stacked three pills).
+                HStack(spacing: 10) {
+                    Button { choosingKind = true } label: {
+                        SitPill(glyph: kind.glyph, label: kind.title,
+                                subtitle: compact ? nil : kind.line, compact: compact, half: true) {
+                            chevron
                         }
                     }
+                    .buttonStyle(.plain)
+                    Button { choosingSound = true } label: {
+                        SitPill(glyph: "\u{266A}", label: "Sound",
+                                subtitle: compact ? nil : sound, compact: compact, half: true) {
+                            chevron
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 silenceControl(ink: day.ink, compact: compact)
 
@@ -295,6 +366,12 @@ struct SessionSetupView: View {
         }
         .padding(.horizontal, 18)
         .padding(.bottom, Self.controlsBottom)
+    }
+
+    private var chevron: some View {
+        Text("\u{203A}")
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(AppColor.textSecondary)
     }
 
     /// "Open · Silence ›" — exactly what happens if you just tap Begin.
@@ -381,12 +458,190 @@ struct SessionSetupView: View {
         let planned = lengthMinutes.map { $0 * 60 }
         // Remembered for next time. Settings shows it as the default length.
         preferences.first?.defaultDurationSec = planned
-        coordinator.begin(mode: SoundCatalog.mode(for: id),
-                          trackID: nil,
-                          plannedDurationSec: planned,
-                          hapticsEnabled: preferences.first?.hapticsEnabled ?? true,
-                          soundID: id)
-        dismiss()
+        hosting = true
+        let haptics = preferences.first?.hapticsEnabled ?? true
+        withAnimation(.easeInOut(duration: 0.5)) {
+            if kind == .watch {
+                coordinator.beginMeasured(mode: SoundCatalog.mode(for: id),
+                                          plannedDurationSec: planned,
+                                          hapticsEnabled: haptics, soundID: id)
+            } else {
+                coordinator.begin(mode: SoundCatalog.mode(for: id),
+                                  trackID: nil,
+                                  plannedDurationSec: planned,
+                                  hapticsEnabled: haptics,
+                                  soundID: id)
+            }
+        }
+        // A phone start runs in the same turn; if nothing began, close as
+        // before rather than leave the Ready screen stuck.
+        if coordinator.active == nil { hosting = false; dismiss() }
+    }
+}
+
+extension SessionSetupView {
+    /// Whether this phone has a Watch to measure with. Read from the session
+    /// WatchConnectivity already activated at launch; nothing is asked.
+    static var watchPaired: Bool {
+        WCSession.isSupported() && WCSession.default.activationState == .activated
+            && WCSession.default.isPaired
+    }
+
+    /// Writes a sit done without the app and opens its page.
+    fileprivate func saveLog() {
+        let seconds = logMinutes * 60
+        let id = UUID()
+        guard SessionStore.persistPhoneSession(id: id,
+                                               startedAt: logEnded.addingTimeInterval(TimeInterval(-seconds)),
+                                               mode: "silence", durationSec: seconds,
+                                               source: "logged", in: context) != nil else { return }
+        Analytics.track(.sessionLogged)
+        loggedID = LoggedSession(id: id)
+    }
+}
+
+struct LoggedSession: Identifiable { let id: UUID }
+
+/// The three ways to keep a sit.
+enum SitKind: String, CaseIterable {
+    case unmeasured, watch, record
+
+    var title: String {
+        switch self {
+        case .unmeasured: return "Meditate"
+        case .watch: return "With Apple Watch"
+        case .record: return "Record one"
+        }
+    }
+
+    /// Under the title on the Ready screen's pill.
+    var line: String {
+        switch self {
+        case .unmeasured: return "Timer only"
+        case .watch: return "Measured"
+        case .record: return "By hand"
+        }
+    }
+
+    var card: String {
+        switch self {
+        case .unmeasured: return "Just you and a timer. Nothing is measured."
+        case .watch: return "Your Watch reads your heart, stillness and breath."
+        case .record: return "Meditated somewhere else? Add it here."
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .unmeasured: return "figure.mind.and.body"
+        case .watch: return "applewatch"
+        case .record: return "square.and.pencil"
+        }
+    }
+
+    /// The pill's glyph, in the same slot the Sound pill uses for its note.
+    var glyph: String {
+        switch self {
+        case .unmeasured: return "\u{25CB}"
+        case .watch: return "\u{231A}\u{FE0E}"
+        case .record: return "\u{270E}"
+        }
+    }
+}
+
+/// Three tall cards side by side (Melvin, 2026-09-27: "three large vertical
+/// rectangle buttons, with an icon in the upper middle, the title below it,
+/// and a short description"), on the valley like the sound list.
+struct SitKindCards: View {
+    let kind: SitKind
+    let watchPaired: Bool
+    let pick: (SitKind) -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            ForEach(SitKind.allCases, id: \.self) { k in
+                let chosen = k == kind
+                let dim = k == .watch && !watchPaired
+                Button { pick(k) } label: {
+                    VStack(spacing: 10) {
+                        Image(systemName: k.symbol)
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundStyle(chosen ? AppColor.accentGoldText : AppColor.calmAccent)
+                            .frame(width: 58, height: 58)
+                            .background((chosen ? AppColor.accentGold : AppColor.calmAccent).opacity(0.14),
+                                        in: Circle())
+                            .padding(.top, 20)
+                        Text(k.title)
+                            .font(DisplayFont.display(16, .heavy))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text(dim ? "Needs a paired Apple Watch." : k.card)
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 10)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .frame(height: 236, alignment: .top)
+                    .background(AppColor.backgroundPrimary.opacity(0.94),
+                                in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(AppColor.accentGold, lineWidth: chosen ? 2.5 : 0))
+                    .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+                    .opacity(dim ? 0.6 : 1)
+                }
+                .buttonStyle(.plain)
+                .disabled(dim)
+                .accessibilityLabel("\(k.title). \(k.card)")
+                .accessibilityAddTraits(chosen ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 16)
+    }
+}
+
+/// Recording a sit done without the app: how long, when it ended, and a
+/// word that a photo or video comes next and helps.
+struct LogSitCard: View {
+    @Binding var minutes: Int
+    @Binding var ended: Date
+    let save: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            VStack(spacing: 0) {
+                Picker("Minutes", selection: $minutes) {
+                    ForEach(1...240, id: \.self) { Text("\($0) min").tag($0) }
+                }
+                .pickerStyle(.wheel)
+                .frame(height: 130)
+                .clipped()
+                Divider().overlay(AppColor.hairline)
+                DatePicker("Finished", selection: $ended, in: ...Date(),
+                           displayedComponents: [.date, .hourAndMinute])
+                    .font(AppFont.callout.weight(.semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .tint(AppColor.accentGoldText)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+            }
+            .background(AppColor.backgroundPrimary.opacity(0.94),
+                        in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+
+            Text("Next you can add a photo or video of your session. It's optional, but it helps show it happened.")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(AppColor.textPrimary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 14).padding(.vertical, 9)
+                .background(AppColor.backgroundPrimary.opacity(0.9), in: Capsule())
+
+            Button("Save", action: save)
+                .buttonStyle(PrimaryButtonStyle())
+        }
+        .padding(.horizontal, 18)
     }
 }
 
@@ -408,30 +663,37 @@ struct SitPill<Trailing: View>: View {
     var subtitle: String? = nil
     var tint: Color = AppColor.textPrimary
     var compact = false
+    /// Half the width, beside another pill: a smaller roundel and less
+    /// padding, so the words keep their room.
+    var half = false
     @ViewBuilder var trailing: Trailing
 
     var body: some View {
-        HStack(spacing: compact ? 12 : 14) {
+        let small = compact || half
+        HStack(spacing: half ? 9 : (compact ? 12 : 14)) {
             Text(glyph)
-                .font(.system(size: compact ? 16 : 19))
+                .font(.system(size: small ? 16 : 19))
                 .foregroundStyle(tint)
-                .frame(width: compact ? 32 : 42, height: compact ? 32 : 42)
+                .frame(width: small ? 32 : 42, height: small ? 32 : 42)
                 .background(tint.opacity(0.12), in: Circle())
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(DisplayFont.display(16.5, .semibold))
+                    .font(DisplayFont.display(half ? 15 : 16.5, .semibold))
                     .foregroundStyle(AppColor.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 if let subtitle {
                     Text(subtitle)
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.85)
                 }
             }
             Spacer(minLength: 0)
             trailing
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, half ? 12 : 16)
         .padding(.vertical, compact ? 10 : 15)
         .background(AppColor.backgroundPrimary.opacity(0.94),
                     in: RoundedRectangle(cornerRadius: compact ? 18 : 20, style: .continuous))

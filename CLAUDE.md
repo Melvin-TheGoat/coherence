@@ -3813,6 +3813,45 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   about 120 px each, cream flooded away), so they are soft at tab size. A
   version that ships needs the set exported at 1024 px.
 
+## THE PLUS OFFERS THREE WAYS TO SIT; THE LADDER IS BACK (2026-09-27, Melvin)
+
+- **The sit runs OVER the Ready screen** (`SessionSetupView.hosting`). Begin
+  used to dismiss the Ready cover (it slid down) and the sit's own cover then
+  slid up: the "swipes down and comes up" glitch. Now the sit fades in over
+  the same valley and the Ready screen closes when the sit ends; ContentView's
+  live-session cover stays out of the way while `.setup` is the sheet, and
+  still carries every sit started elsewhere (the Watch, Otto's "let's
+  meditate").
+- **The screen dims during a sit** (`SitDimmer`, in SessionActiveView.swift):
+  to a fifth of full over two seconds, never brighter than it was, and put
+  back AT ONCE whenever 808 stops being active or the sit ends, since an
+  app's brightness outlives the app.
+- **Three ways to sit** (`SitKind`): the Ready screen's first pill opens three
+  tall cards in the valley, like the sound list. **Meditate** is the phone
+  timer. **With Apple Watch** starts the Watch from the phone again
+  (`SessionCoordinator.beginMeasured`, the old `startWatchApp` path trimmed):
+  the sit shows at once, re-anchors to the Watch's ack, and becomes a phone
+  sit if no ack comes within 45 s or the launch fails, so a sitter never
+  loses the minutes. **Record one** logs a sit done without the app (minutes
+  and when it finished), then opens its page for a photo or video,
+  recommended and optional. Logged sessions (`Session.source == "logged"`,
+  `isLogged`) count for the streak and Otto's glow and **never open Block's
+  apps**, or typing in a sit would be the way round the block.
+- **"No, I don't want to pay"** is back on the paywall and walks the ladder:
+  a free trial, then the first month at half, then the plans again (and the
+  link goes). **Each rung is its own product**, since a product carries one
+  introductory offer and the paywall's monthly now carries none:
+  `com.lockout.meditate808.monthlytrial` (monthly with a free trial) and
+  `com.lockout.meditate808.monthly50` (first month $3.99, then $7.99). They
+  are NOT in `ProductID.core`: counting them would stop the paywall selling
+  (and lift the lock) until they exist in App Store Connect; until then the
+  rungs simply don't show in Release. The trial length reads off
+  `monthlytrial`'s offer. `808.storekit` matches.
+- Settings and Create/Edit profile are in the valley (sky band, sand cards on
+  grass, Otto as the default portrait). The "come back" notification is
+  cheerful: "Wait, come back!" / "Your session's still going! Hop back in
+  within 10 seconds so it still counts."
+
 ## THE ZEN DIRECTION: MELVIN'S MOODBOARD IS THE REFERENCE (2026-09-26)
 
 **SHELVED 2026-09-27 (Melvin: "Nevermind on the theme revamp").** Nothing

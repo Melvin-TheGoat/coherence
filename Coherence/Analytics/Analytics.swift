@@ -34,7 +34,9 @@ enum Analytics {
         case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "notYet" | "declined"
 
         // Core loop
-        case sessionStarted(source: String, sound: String)   // source: "phone" | "watch"
+        case sessionStarted(source: String, sound: String)   // source: "phone" | "watch" | "phone_watch"
+        /// A sit done without the app, recorded by hand. Nothing about it.
+        case sessionLogged
         case sessionCompleted(durationBand: String, streakBand: String)
         /// A session the Watch ended but did not score: "too_short" (under the
         /// minimum, an accidental Begin/End, not a failure) or "unreadable".
@@ -104,6 +106,7 @@ enum Analytics {
             case .onboardingResumed: "onboarding_resumed"
             case .watchGate: "watch_gate"
             case .sessionStarted: "session_started"
+            case .sessionLogged: "session_logged"
             case .sessionCompleted: "session_completed"
             case .sessionDiscarded: "session_discarded"
             case .sessionDeleted: "session_deleted"
@@ -152,6 +155,7 @@ enum Analytics {
             case .onboardingResumed(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
             case .watchGate(let outcome): ["outcome": outcome]
             case .sessionStarted(let source, let sound): ["source": source, "sound": sound]
+            case .sessionLogged: [:]
             case .sessionCompleted(let d, let s): ["duration": d, "streak": s]
             case .sessionDiscarded(let reason, let d): ["reason": reason, "duration": d]
             case .sessionStartFailed(let reason): ["reason": reason]

@@ -25,30 +25,26 @@ import SwiftUI
 /// That is the real terminal rung, and it is the honest one: the app is
 /// useful without paying, so the ladder should end by saying so.
 ///
-/// **A half-off-first-month rung was REMOVED on 2026-08-24. Do not add it back
-/// without a second product.** It sold `.monthly`, and a product carries
-/// exactly one introductory offer, which for `com.lockout.meditate808.monthly`
-/// is the free week. So the screen promised a discount that the purchase sheet
-/// would then contradict: an App Review 3.1.2 problem and a straightforward
-/// lie to the user. Delivering it needs its own product ID in the same
-/// subscription group, and product IDs are permanent, so that waits for the
-/// Organization account and a downsell we have actually tested.
+/// **The half-off-first-month rung came back on 2026-09-27, on its own
+/// product** (`com.lockout.meditate808.monthly50`). It was removed on
+/// 2026-08-24 because it sold `.monthly`, whose one introductory offer was the
+/// free week, so the screen promised a discount the purchase sheet would
+/// contradict. The trial rung likewise sells its own product
+/// (`...monthlytrial`), since the paywall's monthly now carries no trial.
+/// `test_noTwoRungsSellTheSameProductWithDifferentOffers` is the tripwire.
 ///
 /// **What we refuse, same as the paywall itself:** no countdown, no "94% off",
 /// no "spots remaining", no "you will never see this again". A meditation app
 /// manufacturing panic contradicts the thing it sells.
 enum DownsellRung: Int, CaseIterable, Identifiable {
-    case trial, halfYear
+    case trial, halfMonth
 
     var id: Int { rawValue }
 
     var title: String {
         switch self {
-        case .trial:    return "No worries.\nTry it free first."
-        // With no free trial (`Monetization.freeTrial`) this is the first
-        // rung, so it opens the answer to "Not right now" itself.
-        case .halfYear: return Monetization.freeTrial ? "Then have your first\nyear at half price."
-                                                      : "No worries. Have your\nfirst year at half price."
+        case .trial:     return "No worries.\nTry it free first."
+        case .halfMonth: return "Then have your first\nmonth at half price."
         }
     }
 
@@ -59,27 +55,29 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     /// `trialDays` is the App Store's trial length (`Store.trialDays`), so the
     /// rung never promises a length the purchase sheet contradicts.
     func subtitle(plan: SubscriptionPlan, yearlyPrice: String,
+                  monthlyPrice: String = SubscriptionPlan.monthly.price,
+                  halfMonthPrice: String = SubscriptionPlan.monthHalf.price,
                   trialDays: Int = SubscriptionPlan.fallbackTrialDays) -> String {
         switch self {
         case .trial:
             return "\(TrialCopy.length(trialDays)) free, everything unlocked, cancel any time. If it doesn't help you meditate more, you pay nothing."
-        case .halfYear:
-            return "\(SubscriptionPlan.yearHalf.price) for the first year instead of \(yearlyPrice). Everything unlocked. It renews at \(yearlyPrice) a year after that, and you can cancel any time."
+        case .halfMonth:
+            return "\(halfMonthPrice) for your first month instead of \(monthlyPrice). Everything unlocked. It renews at \(monthlyPrice) a month after that, and you can cancel any time."
         }
     }
 
     var cta: String {
         switch self {
-        case .trial:    return "Start my free trial"
-        case .halfYear: return "Take half off my first year"
+        case .trial:     return "Start my free trial"
+        case .halfMonth: return "Take half off my first month"
         }
     }
 
     /// Which plan this rung actually sells.
     var plan: SubscriptionPlan {
         switch self {
-        case .trial:    return .monthly
-        case .halfYear: return .yearHalf
+        case .trial:     return .monthTrial
+        case .halfMonth: return .monthHalf
         }
     }
 
@@ -95,6 +93,9 @@ struct DownsellSheet: View {
     let plan: SubscriptionPlan
     /// Apple's localized yearly price when available; our fallback otherwise.
     let yearlyPrice: String
+    /// Apple's localized monthly and half-month prices when available.
+    var monthlyPrice: String = SubscriptionPlan.monthly.price
+    var halfMonthPrice: String = SubscriptionPlan.monthHalf.price
     /// The App Store's trial length (`Store.trialDays`).
     var trialDays: Int = SubscriptionPlan.fallbackTrialDays
     /// Accepted this rung. The caller preselects the rung's plan and returns
@@ -117,7 +118,8 @@ struct DownsellSheet: View {
                 Text(rung.title)
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
-                Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, trialDays: trialDays))
+                Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, monthlyPrice: monthlyPrice,
+                                   halfMonthPrice: halfMonthPrice, trialDays: trialDays))
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary.opacity(0.72))
             }
@@ -273,8 +275,8 @@ extension DownsellRung {
     /// Analytics property. The rung's own name, no prices and no user data.
     var analyticsName: String {
         switch self {
-        case .trial:    return "trial"
-        case .halfYear: return "half_year"
+        case .trial:     return "trial"
+        case .halfMonth: return "half_month"
         }
     }
 }

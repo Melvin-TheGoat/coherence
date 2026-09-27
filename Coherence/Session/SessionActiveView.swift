@@ -125,7 +125,10 @@ struct SessionActiveView: View {
         // that has to start and end with the SESSION, not this view.
         .onChange(of: scenePhase) { _, phase in
             coordinator.phoneScenePhaseChanged(phase)
+            if phase == .active { SitDimmer.dim() } else { SitDimmer.restore() }
         }
+        .onAppear { SitDimmer.dim() }
+        .onDisappear { SitDimmer.restore() }
     }
 
     /// The sit itself: the valley, the ring, the clock, End. Its own
@@ -268,4 +271,51 @@ private struct SitRing: View {
     SessionActiveView(startedAt: Date().addingTimeInterval(-600),
                       plannedDurationSec: 600, onEnd: {})
         .environmentObject(SessionCoordinator(container: Persistence.inMemory()))
+}
+
+/// Turns the screen down while a sit runs (Melvin, 2026-09-27: "dim the
+/// screen when meditating so it doesnt drain battery"). The screen has to
+/// stay awake for a phone sit, so this is the other half of that.
+///
+/// **The brightness is the person's, not ours, so it always goes back.** An
+/// app's brightness outlives the app, so it is restored the moment 808 stops
+/// being the active app (the notification shade counts) and when the sit
+/// ends, and taken down again when they return. It never raises a screen that
+/// was already dimmer than the sit's level.
+@MainActor
+enum SitDimmer {
+    /// A fifth of full: the clock still reads in a dark room.
+    static let level: CGFloat = 0.2
+    private static var saved: CGFloat?
+    private static var fade: Task<Void, Never>?
+
+    private static var screen: UIScreen? {
+        (UIApplication.shared.connectedScenes.first { $0 is UIWindowScene } as? UIWindowScene)?.screen
+    }
+
+    static func dim() {
+        guard let screen, saved == nil else { return }
+        saved = screen.brightness
+        let start = screen.brightness, target = min(start, level)
+        fade?.cancel()
+        // Over two seconds, so it settles rather than snaps.
+        fade = Task { @MainActor in
+            let steps = 60
+            for i in 1...steps {
+                try? await Task.sleep(for: .milliseconds(33))
+                guard !Task.isCancelled else { return }
+                screen.brightness = start + (target - start) * CGFloat(i) / CGFloat(steps)
+            }
+        }
+    }
+
+    /// At once, not faded: this runs as the app leaves the screen, and a fade
+    /// would be suspended halfway with the phone left dim.
+    static func restore() {
+        fade?.cancel()
+        fade = nil
+        guard let saved else { return }
+        self.saved = nil
+        screen?.brightness = saved
+    }
 }

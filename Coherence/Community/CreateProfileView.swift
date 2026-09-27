@@ -52,67 +52,88 @@ struct CreateProfileView: View {
     /// A profile already exists: same screen, edit wording.
     private var editing: Bool { !(model.profile?.username ?? "").isEmpty }
 
+    /// In the valley (Melvin, 2026-09-27: "looks plain, make it on theme"):
+    /// the words on a band of sky, the portrait sitting on the seam the way
+    /// Profile seats it, and the two fields on one sand card on the grass.
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Text(editing ? "Edit profile" : "Create your profile")
-                    .font(AppFont.title)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .padding(.top, 12)
-                Text("Your username is how friends find you. It's yours alone.")
-                    .font(AppFont.callout)
-                    .foregroundStyle(AppColor.textSecondary)
-                    .padding(.top, 6)
-
-                photoPicker
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 26)
-
-                fieldLabel("Username")
-                HStack(spacing: 6) {
-                    Text("@").foregroundStyle(AppColor.textSecondary)
-                    TextField("username", text: $handle)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.asciiCapable)
-                        .textContentType(.username)
-                        .focused($focused)
-                        .onChange(of: handle) { _, new in
-                            let cleaned = Username.normalize(new) ?? ""
-                            if cleaned != new { handle = cleaned }
-                            check()
+        GeometryReader { proxy in
+            let top = proxy.safeAreaInsets.top
+            ScrollView {
+                VStack(spacing: 0) {
+                    FriendsSky(height: top + 150, sceneHeight: (top + 150) / 0.62) {
+                        VStack(spacing: 6) {
+                            Text(editing ? "Edit profile" : "Create your profile")
+                                .font(DisplayFont.display(28, .heavy))
+                                .foregroundStyle(ValleyGround.ink)
+                            Text("Your username is how friends find you. It's yours alone.")
+                                .font(AppFont.callout)
+                                .foregroundStyle(ValleyGround.inkSoft)
+                                .multilineTextAlignment(.center)
                         }
+                        .padding(.horizontal, 30)
+                        .padding(.top, top + 12)
+                        .frame(maxHeight: .infinity, alignment: .top)
+                    }
+                    .overlay(alignment: .bottom) {
+                        photoPicker.offset(y: 62)
+                    }
+                    .zIndex(1)
+
+                    VStack(alignment: .leading, spacing: 0) {
+                        fieldLabel("Username")
+                        HStack(spacing: 6) {
+                            Text("@").foregroundStyle(AppColor.textSecondary)
+                            TextField("username", text: $handle)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .keyboardType(.asciiCapable)
+                                .textContentType(.username)
+                                .focused($focused)
+                                .onChange(of: handle) { _, new in
+                                    let cleaned = Username.normalize(new) ?? ""
+                                    if cleaned != new { handle = cleaned }
+                                    check()
+                                }
+                        }
+                        .font(AppFont.body)
+                        .foregroundStyle(AppColor.textPrimary)
+                        .padding(14)
+                        .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                        statusLine.padding(.top, 7)
+
+                        fieldLabel("Nickname")
+                        TextField("What friends call you", text: $name)
+                            .textContentType(.nickname)
+                            .font(AppFont.body)
+                            .foregroundStyle(AppColor.textPrimary)
+                            .padding(14)
+                            .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 2)
+                    .padding(.bottom, 18)
+                    .whiteCard(radius: 20)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                    .padding(.top, 104)
+
+                    if model.phase == .unavailable {
+                        Text("No iCloud on this iPhone. Usernames are saved to iCloud, so you can finish setting up now and create your profile once iCloud is on.")
+                            .font(AppFont.caption)
+                            .foregroundStyle(AppColor.textSecondary)
+                            .padding(14)
+                            .whiteCard(radius: 16)
+                            .padding(.horizontal, AppMetrics.screenPadding)
+                            .padding(.top, 14)
+                    }
+                    Color.clear.frame(height: 120)
                 }
-                .font(AppFont.body)
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(14)
-                .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                statusLine.padding(.top, 7)
-
-                fieldLabel("Nickname")
-                TextField("What friends call you", text: $name)
-                    .textContentType(.nickname)
-                    .font(AppFont.body)
-                    .foregroundStyle(AppColor.textPrimary)
-                    .padding(14)
-                    .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-
-                if model.phase == .unavailable {
-                    Text("No iCloud on this iPhone. Usernames are saved to iCloud, so you can finish setting up now and create your profile once iCloud is on.")
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .padding(12)
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1))
-                        .padding(.top, 20)
-                }
-                Color.clear.frame(height: 120)
             }
-            .padding(.horizontal, AppMetrics.screenPadding)
+            .scrollDismissesKeyboard(.interactively)
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .background(ValleyGround.meadow.ignoresSafeArea())
         }
-        .scrollDismissesKeyboard(.interactively)
-        .screenBackground()
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
                 Button { claim() } label: {
@@ -124,14 +145,19 @@ struct CreateProfileView: View {
                 .brightness(availability == .available ? 0 : -0.25)
                 if model.phase == .unavailable {
                     Button("Continue without a profile") { onDone(nil) }
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.textSecondary)
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
                 }
             }
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.top, 10)
             .padding(.bottom, 8)
-            .background(AppColor.backgroundPrimary.ignoresSafeArea(edges: .bottom))
+            .background(
+                LinearGradient(stops: [.init(color: ValleyGround.meadow.opacity(0), location: 0),
+                                       .init(color: ValleyGround.meadow, location: 0.4)],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea(edges: .bottom))
         }
         .fullScreenCover(isPresented: $showCamera) {
             CameraPicker(device: .front) { photo = $0 }.ignoresSafeArea()
@@ -190,24 +216,26 @@ struct CreateProfileView: View {
                 ZStack {
                     if let photo {
                         Image(uiImage: photo).resizable().scaledToFill()
-                            .frame(width: 96, height: 96).clipShape(Circle())
+                            .frame(width: 104, height: 104).clipShape(Circle())
                     } else if let current = model.profile?.avatarURL {
-                        PersonAvatar(name: name, size: 96, photoURL: current)
+                        PersonAvatar(name: name, size: 104, photoURL: current)
                     } else {
-                        Circle()
-                            .strokeBorder(style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
-                            .foregroundStyle(AppColor.accentGold.opacity(0.7))
-                            .frame(width: 96, height: 96)
-                            .overlay(
-                                VStack(spacing: 3) {
-                                    Image(systemName: "plus").font(.system(size: 22, weight: .medium))
-                                    Text("Add photo").font(.system(size: 11, weight: .semibold))
-                                }
-                                .foregroundStyle(AppColor.accentGoldText))
+                        // Otto until they pick one: the default portrait
+                        // everywhere else in the app, with a camera badge
+                        // saying it can change.
+                        ProfilePortrait(photoURL: nil, size: 104)
                     }
                 }
-                if photo != nil || model.profile?.avatarURL != nil {
-                    Text("Change photo").font(AppFont.caption.weight(.semibold)).foregroundStyle(AppColor.accentGoldText)
+                .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))
+                .shadow(color: .black.opacity(0.16), radius: 7, y: 3)
+                .overlay(alignment: .bottomTrailing) {
+                    Image(systemName: "camera.fill")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(AppColor.textOnAccent)
+                        .frame(width: 32, height: 32)
+                        .background(AppColor.accentGold, in: Circle())
+                        .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 3))
+                        .offset(x: 2, y: 2)
                 }
             }
         }

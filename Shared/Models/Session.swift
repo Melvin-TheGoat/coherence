@@ -31,7 +31,12 @@ final class Session {
     // NO updatedAt — sessions are immutable.
 
     /// Nothing measured this sit. The sit still happened.
-    var isPhoneOnly: Bool { source == "phone" }
+    /// Nothing measured it: run on the phone, or recorded by hand.
+    var isPhoneOnly: Bool { source == "phone" || source == "logged" }
+    /// Recorded by hand for a sit done without the app (2026-09-27). It
+    /// counts for the streak and Otto's glow but never opens Block's apps:
+    /// typing in a sit must not be a way round the block.
+    var isLogged: Bool { source == "logged" }
 
     /// Computed accessor over the String-backed `mode`.
     var modeValue: SessionMode {
