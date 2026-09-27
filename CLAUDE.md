@@ -3350,6 +3350,11 @@ and **screen 1**, with four changes.
   draws a face, so Profile, the feed and a person's page cannot disagree;
   the picker in Create your profile already offered camera or library.
   **Initials are gone**, which was the old fallback.
+  **SUPERSEDED 2026-09-27 (Melvin: "I dont want otto to be the default
+  photo ... just like an empty person icon like instagram").** The default
+  is now a white person silhouette on a warm grey disc, shoulders running
+  off the bottom, drawn in `ProfilePortrait`; Settings and Create profile
+  use it too.
 
 ### Block can be tested without Screen Time (same day)
 
@@ -3848,7 +3853,13 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   rungs simply don't show in Release. The trial length reads off
   `monthlytrial`'s offer. `808.storekit` matches.
 - Settings and Create/Edit profile are in the valley (sky band, sand cards on
-  grass, Otto as the default portrait). The "come back" notification is
+  grass, the empty-person default portrait).
+- **Onboarding's "how quickly do you settle back down" question is cut** (a
+  user left on it). `Step.recovery` routes past; Emotional balance on the
+  mind profile now reads the stress answer (0.84 minus 0.6 of stress, a
+  little lower for a mind that won't settle) so it still spreads people out.
+- "How 808 makes meditation stick" uses "In 1 week"'s icon style: filled
+  symbols in their own colours on white discs with a soft shadow. The "come back" notification is
   cheerful: "Wait, come back!" / "Your session's still going! Hop back in
   within 10 seconds so it still counts."
 

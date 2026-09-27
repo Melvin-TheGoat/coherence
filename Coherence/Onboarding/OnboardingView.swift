@@ -192,7 +192,7 @@ struct OnboardingView: View {
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
                  .rating, .watchConnect, .breathe, .sessionResults, .paywall,
                  .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
-                 .auraDemo, .bodyCuriosity:
+                 .auraDemo, .bodyCuriosity, .recovery:
                 return true
             // Real screens on Block builds, so leaving one belongs in the
             // Back history like any other question. Off Block builds they
@@ -249,7 +249,7 @@ struct OnboardingView: View {
     /// tested there); this is only the translation.
     static let interviewPairs: [(Step, InterviewStep)] = [
         (.motivation, .motivation), (.obstacles, .obstacles),
-        (.stress, .stress), (.wandering, .wandering), (.recovery, .recovery), (.role, .role),
+        (.stress, .stress), (.wandering, .wandering), (.role, .role),
         (.quietTime, .quietTime), (.habitHistory, .habitHistory),
         (.age, .age),
         (.referral, .referral),
@@ -636,12 +636,10 @@ struct OnboardingView: View {
                 go(nextAfter(.wandering))
             }
 
+        // Cut 2026-09-27 (a user left onboarding on it); a resume record
+        // that lands here moves on to the question after wandering.
         case .recovery:
-            CornerQuestionScreen(title: "When something stresses you out, how quickly do you settle back down?",
-                                 options: StressRecovery.allCases, single: true, label: \.label, icon: \.icon,
-                                 selected: Binding(get: { answers.recovery.map { [$0] } ?? [] },
-                                                   set: { answers.recovery = $0.first }),
-                                 count: interviewCount) { go(nextAfter(.recovery)) }
+            Color.clear.onAppear { go(nextAfter(.wandering)) }
 
         case .motivation:
             MotivationScreen(selected: $answers.motivations,

@@ -220,9 +220,9 @@ struct CreateProfileView: View {
                     } else if let current = model.profile?.avatarURL {
                         PersonAvatar(name: name, size: 104, photoURL: current)
                     } else {
-                        // Otto until they pick one: the default portrait
-                        // everywhere else in the app, with a camera badge
-                        // saying it can change.
+                        // The empty person until they pick one, the default
+                        // everywhere in the app, with a camera badge saying
+                        // it can change.
                         ProfilePortrait(photoURL: nil, size: 104)
                     }
                 }

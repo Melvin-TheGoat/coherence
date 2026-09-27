@@ -426,10 +426,8 @@ private struct SettingsForm: View {
     private var profileCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 12) {
-                // Otto's face, the same default Profile shows.
-                OttoMark(size: 34, pose: .head)
-                    .frame(width: 46, height: 46)
-                    .background(AppColor.sky, in: Circle())
+                // The empty person every profile starts with.
+                ProfilePortrait(photoURL: nil, size: 46)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(user.displayName?.isEmpty == false ? user.displayName! : "Add your name")
                         .font(AppFont.callout.weight(.semibold))

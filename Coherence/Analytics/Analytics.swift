@@ -275,7 +275,7 @@ enum Analytics {
         "auraDemo":          "23d Drag to see Otto brighten (cut 2026-09-22, now the stress screen)",
         "baseline":          "04g How often do you meditate right now? (slider, after Did you know since 2026-09-25)",
         "wandering":         "04b1 How much of your day is your mind somewhere else?",
-        "recovery":          "04b2 How quickly do you settle back down?",
+        "recovery":          "04b2 How quickly do you settle back down? (cut 1.1)",
         "whyItWorks":        "04p How 808 makes meditation stick",
         "research":          "04q 808 is built on research",
         "socialProof":       "04r Made for people like you (rating ask)",

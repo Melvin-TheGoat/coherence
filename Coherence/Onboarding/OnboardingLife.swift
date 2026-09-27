@@ -798,18 +798,24 @@ struct WhyItWorksScreen: View {
     /// build does have, so the screen never sells what is not there.
     private static var chain: Bool { FeatureFlags.block }
 
-    private static var rows: [(icon: String, title: String, line: String)] {
+    /// The icons are "In 1 week"'s (Melvin, 2026-09-27): a filled symbol in
+    /// its own colour on a white disc with a soft shadow, the same four
+    /// colours that screen uses.
+    private static let blue = Color(red: 0.25, green: 0.55, blue: 0.85)
+    private static let orange = Color(red: 0.93, green: 0.62, blue: 0.24)
+
+    private static var rows: [(icon: String, tint: Color, title: String, line: String)] {
         if chain {
             return [
-                ("lock", "808 puts a little friction between you and your apps", ""),
-                ("bell", "Every time you open one, Otto reminds you to meditate", ""),
-                ("sparkles", "Over time it sinks into your subconscious, and meditating becomes a habit you enjoy instead of dread", ""),
+                ("lock.fill", blue, "808 puts a little friction between you and your apps", ""),
+                ("bell.fill", orange, "Every time you open one, Otto reminds you to meditate", ""),
+                ("sparkles", OnboardingGreen.shade, "Over time it sinks into your subconscious, and meditating becomes a habit you enjoy instead of dread", ""),
             ]
         }
         return [
-            ("sparkles", "Otto's glow", "Meditate and he glows brighter. Skip days and he fades."),
-            ("bell", "A nudge at your time", "One reminder a day, at the time you picked."),
-            ("clock", "Just five minutes", "Short enough to fit into any day."),
+            ("sparkles", orange, "Otto's glow", "Meditate and he glows brighter. Skip days and he fades."),
+            ("bell.fill", blue, "A nudge at your time", "One reminder a day, at the time you picked."),
+            ("clock.fill", OnboardingGreen.shade, "Just five minutes", "Short enough to fit into any day."),
         ]
     }
 
@@ -833,10 +839,11 @@ struct WhyItWorksScreen: View {
                     }
                     HStack(alignment: .center, spacing: 14) {
                         Image(systemName: row.icon)
-                            .font(.system(size: 20, weight: .semibold))
-                            .foregroundStyle(OnboardingGreen.shade)
-                            .frame(width: 44, height: 44)
-                            .background(Circle().fill(Color(red: 0.84, green: 0.94, blue: 0.82)))
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundStyle(row.tint)
+                            .frame(width: 48, height: 48)
+                            .background(Circle().fill(.white))
+                            .shadow(color: .black.opacity(0.06), radius: 4, y: 2)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(row.title)
                                 .font(.system(size: Self.chain ? 17 : 18, weight: .heavy, design: .rounded))

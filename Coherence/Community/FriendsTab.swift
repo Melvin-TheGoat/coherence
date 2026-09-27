@@ -1075,8 +1075,16 @@ struct ProfilePortrait: View {
             if let photo {
                 Image(uiImage: photo).resizable().scaledToFill()
             } else {
-                AppColor.sky
-                OttoMark(size: size * 0.8, pose: .head)
+                // An empty person, Instagram's default (Melvin, 2026-09-27:
+                // "I dont want otto to be the default photo"): a white
+                // silhouette whose shoulders run off the bottom of the circle.
+                AppColor.hairline
+                Image(systemName: "person.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .foregroundStyle(.white)
+                    .frame(width: size * 0.66)
+                    .offset(y: size * 0.16)
             }
         }
         .frame(width: size, height: size)

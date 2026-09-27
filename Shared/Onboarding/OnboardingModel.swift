@@ -650,6 +650,16 @@ public enum MindProfile: String, CaseIterable, Codable {
     /// Emotional balance, 0 reactive to 1 steady: mostly how fast they settle
     /// after stress, nudged by how stressed they have been lately.
     public static func balance(_ a: OnboardingAnswers) -> Double {
+        let stress = min(max(a.stress, 0), 1)
+        // The recovery question was cut (2026-09-27). Without it, stress
+        // carries the bar, so it still spreads people out instead of
+        // parking everyone in the middle; a mind that won't settle leans it
+        // a little toward reactive.
+        guard a.recovery != nil else {
+            var steady = 0.84 - 0.6 * stress
+            if (a.obstacles ?? []).contains(.mindWontSettle) { steady -= 0.08 }
+            return min(max(steady, 0.08), 0.94)
+        }
         let base: Double
         switch a.recovery {
         case .rightAway?:  base = 0.88
@@ -1333,7 +1343,7 @@ extension OnboardingAnswers {
     public func asks(_ step: InterviewStep) -> Bool {
         switch step {
         // Everyone. These work regardless of history.
-        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .wandering, .recovery, .referral:
+        case .baseline, .motivation, .obstacles, .role, .quietTime, .habitHistory, .age, .stress, .wandering, .referral:
             return true
 
         // Presumes previous attempts.
@@ -1412,8 +1422,10 @@ public enum InterviewStep: String, CaseIterable, Codable {
     /// How much of your day is your mind somewhere else, feeding the "N
     /// years" screens (Aziz, 2026-09-25).
     case wandering
-    /// How quickly do you settle back down, for Emotional balance.
-    case recovery
+    // CUT 2026-09-27 (Melvin): `recovery`, "When something stresses you out,
+    // how quickly do you settle back down?". A user left onboarding on it.
+    // `OnboardingAnswers.recovery` stays so resume records decode, and
+    // Emotional balance reads the stress answer instead.
     /// Which one sounds most like you, third (Aziz, 2026-09-23).
     case role
     /// When a few quiet minutes fit, fourth; sets the reminder (Aziz).
