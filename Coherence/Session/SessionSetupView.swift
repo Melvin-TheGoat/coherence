@@ -267,8 +267,8 @@ struct SessionSetupView: View {
                 SitPill(glyph: "\u{263E}",
                         label: focus.silenced ? "Notifications off" : "Silence notifications",
                         subtitle: compact ? nil
-                                  : focus.silenced ? "Do Not Disturb is on for this sit"
-                                                   : "Turns on Do Not Disturb while you sit",
+                                  : focus.silenced ? "Do Not Disturb is on"
+                                                   : "Do Not Disturb while you sit",
                         tint: focus.silenced ? AppColor.calmAccent : AppColor.textPrimary,
                         compact: compact) {
                     Toggle("", isOn: .constant(focus.silenced))
@@ -339,7 +339,7 @@ struct SessionSetupView: View {
                 // Otto's lap (the first build stacked three pills).
                 HStack(spacing: 10) {
                     Button { choosingKind = true } label: {
-                        SitPill(glyph: kind.glyph, label: kind.title,
+                        SitPill(glyph: kind.glyph, label: kind.pillTitle,
                                 subtitle: compact ? nil : kind.line, compact: compact, half: true) {
                             chevron
                         }
@@ -514,6 +514,12 @@ enum SitKind: String, CaseIterable {
         }
     }
 
+    /// On the Ready screen's half-width pill, where "With Apple Watch" no
+    /// longer fits once the pills grew (2026-09-27).
+    var pillTitle: String {
+        self == .watch ? "Apple Watch" : title
+    }
+
     /// Under the title on the Ready screen's pill.
     var line: String {
         switch self {
@@ -668,23 +674,28 @@ struct SitPill<Trailing: View>: View {
     var half = false
     @ViewBuilder var trailing: Trailing
 
+    /// Bigger since 2026-09-27 (Melvin: "make these buttons in the
+    /// meditating screen bigger"): roundel 32/42 to 40/48, labels 15/16.5 to
+    /// 17/18.5, 3 more points above and below. The Ready screen measures the
+    /// block and lifts Otto to clear it, so nothing else had to move. A short
+    /// phone (`compact`) keeps the old sizes; it has no sky to give.
     var body: some View {
-        let small = compact || half
-        HStack(spacing: half ? 9 : (compact ? 12 : 14)) {
+        let roundel: CGFloat = compact ? 32 : (half ? 40 : 48)
+        HStack(spacing: compact ? (half ? 9 : 12) : (half ? 10 : 14)) {
             Text(glyph)
-                .font(.system(size: small ? 16 : 19))
+                .font(.system(size: roundel * 0.46))
                 .foregroundStyle(tint)
-                .frame(width: small ? 32 : 42, height: small ? 32 : 42)
+                .frame(width: roundel, height: roundel)
                 .background(tint.opacity(0.12), in: Circle())
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
-                    .font(DisplayFont.display(half ? 15 : 16.5, .semibold))
+                    .font(DisplayFont.display(compact ? (half ? 15 : 16.5) : (half ? 17 : 18.5), .semibold))
                     .foregroundStyle(AppColor.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
                 if let subtitle {
                     Text(subtitle)
-                        .font(AppFont.caption)
+                        .font(compact ? AppFont.caption : .system(size: 13.5, weight: .medium))
                         .foregroundStyle(AppColor.textSecondary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
@@ -693,10 +704,10 @@ struct SitPill<Trailing: View>: View {
             Spacer(minLength: 0)
             trailing
         }
-        .padding(.horizontal, half ? 12 : 16)
-        .padding(.vertical, compact ? 10 : 15)
+        .padding(.horizontal, half ? 13 : 16)
+        .padding(.vertical, compact ? 10 : 18)
         .background(AppColor.backgroundPrimary.opacity(0.94),
-                    in: RoundedRectangle(cornerRadius: compact ? 18 : 20, style: .continuous))
+                    in: RoundedRectangle(cornerRadius: compact ? 18 : 22, style: .continuous))
         .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
     }
 }

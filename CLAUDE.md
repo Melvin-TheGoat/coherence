@@ -3863,6 +3863,33 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   cheerful: "Wait, come back!" / "Your session's still going! Hop back in
   within 10 seconds so it still counts."
 
+## A SESSION KEEPS VIDEOS UP TO FIVE MINUTES (2026-09-27, Melvin)
+
+"When i uploaded a 37 second video, it loaded for a while and then said video
+too long ... allow like 90s videos, maybe even like 5 minutes." The limit was
+30 s, and three things made a 37 s clip slow and then fail: the picker let
+Photos convert the clip to a "compatible" format before handing it over, the
+import read every pick as `Data` first (the whole clip in memory) to see
+whether it was a photo, and the one failure message blamed the length.
+
+- **`SessionVideo.maxSeconds = 300`.** The length is checked the moment the
+  file is in hand; a longer clip is turned away at once, with its length and
+  "Trim it in Photos, then add it again". Never trimmed silently.
+- **Every clip is kept to about 40 MB, whatever its length**, by choosing the
+  export preset by duration (`SessionVideo.preset`): up to a minute at
+  960x540, two at 640x480, five at Medium (360 by 640). Measured on a real 4K
+  iPhone clip: 4.8, 2.7 and 1 Mbps. At 540p throughout five minutes was about
+  180 MB, and a posted video goes to the PUBLIC database, which is our quota.
+- The picker asks for `.current` encoding, a video is read only as a file,
+  the export reports progress ("Preparing your video… 42%") and logs its
+  error (category `video`) instead of failing silently.
+- Verified on the simulator with a real 37 s 4K clip (added), a 3-minute clip
+  (added) and a 6-minute clip (refused at once).
+
+The Ready screen's pills are bigger too (roundel 40/48, labels 17/18.5, 18pt
+above and below); Otto's lift is measured, so he rose to clear them. On the
+half-width pill the Watch kind reads "Apple Watch" (`SitKind.pillTitle`).
+
 ## A VALLEY BAND FADES INTO THE GRASS BELOW IT (2026-09-27, Melvin)
 
 "Redo ALL of the backgrounds so that it looks like the flowers fade away into

@@ -4,6 +4,7 @@ import PhotosUI
 import AVFoundation
 import AVKit
 import UniformTypeIdentifiers
+import os
 
 /// **The session screen**: everything you might say about a sit, on one page
 /// (`mockups/after-session.html`, screen 1, Melvin's pick 2026-09-22).
@@ -61,6 +62,8 @@ struct SaveSessionView: View {
     /// item has been read and added.
     @State private var pickedItems: [PhotosPickerItem] = []
     @State private var loadingMedia = false
+    /// How far a picked video's preparation has got, while it runs.
+    @State private var videoProgress: Double?
     @State private var loaded = false
     /// What the session was saved as before this screen opened, so an
     /// Only-you save only reaches iCloud when there is a post to take down.
@@ -376,8 +379,14 @@ struct SaveSessionView: View {
                     if mediaItems.count < SessionStore.maxPhotosPerSession {
                         Button { showCamera = true } label: { addTileLabel("camera") }
                             .buttonStyle(.plain)
+                        // `.current`: the original file, as it is. The default
+                        // lets Photos convert a video to a "compatible" format
+                        // before handing it over, which for a phone's 4K clip
+                        // is most of a minute of spinner, and then we convert
+                        // it again anyway.
                         PhotosPicker(selection: $pickedItems, maxSelectionCount: remainingSlots,
-                                    matching: .any(of: [.images, .videos])) {
+                                    matching: .any(of: [.images, .videos]),
+                                    preferredItemEncoding: .current) {
                             addTileLabel("photo.on.rectangle")
                         }
                     }
@@ -386,7 +395,8 @@ struct SaveSessionView: View {
             }
             .scrollIndicators(.hidden)
             if loadingMedia {
-                Text("Getting it ready…")
+                Text(videoProgress.map { "Preparing your video… \(Int(($0 * 100).rounded()))%" }
+                     ?? "Getting it ready…")
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
                     .padding(.horizontal, Self.inset)
@@ -611,26 +621,55 @@ struct SaveSessionView: View {
         defer { loadingMedia = false; pickedItems = [] }
         for item in items {
             guard mediaItems.count < SessionStore.maxPhotosPerSession else { break }
-            // A still first: most picks are photos, and a video's poster
-            // frame goes in the same place, so everything that draws a photo
-            // keeps working without knowing there is a film behind it.
+            // A video is read as a FILE and never as `Data`: asking for Data
+            // first (to see whether it was a photo) pulled the whole clip into
+            // memory before anything else happened. A Live Photo offers an
+            // image as well as its movie, and is kept as the photo.
+            let types = item.supportedContentTypes
+            let isVideo = types.contains { $0.conforms(to: .movie) } && !types.contains { $0.conforms(to: .image) }
+            if isVideo {
+                await addVideo(item)
+                continue
+            }
+            // A still: most picks are photos, and a video's poster frame goes
+            // in the same place, so everything that draws a photo keeps
+            // working without knowing there is a film behind it.
             if let data = try? await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
                 addPhoto(image, video: nil)
                 continue
             }
-            guard let movie = try? await item.loadTransferable(type: Movie.self) else {
+            if types.contains(where: { $0.conforms(to: .movie) }) {
+                await addVideo(item)
+            } else {
                 problem = "That one couldn't be read. Try another."
-                continue
             }
-            defer { try? FileManager.default.removeItem(at: movie.url) }
-            guard let exported = await SessionVideo.export(movie.url),
-                  let poster = SessionVideo.posterFrame(movie.url) else {
-                problem = "That video couldn't be saved. Try a shorter one."
-                continue
-            }
-            addPhoto(poster, video: exported)
         }
+    }
+
+    /// Up to five minutes (Melvin, 2026-09-27: "at least allow like 90s
+    /// videos, maybe even like 5 minutes"). The length is checked the moment
+    /// the file is in hand, so a clip that is too long is turned away at once
+    /// instead of after a minute of converting it (a 37-second clip used to
+    /// convert and then fail under a message that blamed its length).
+    private func addVideo(_ item: PhotosPickerItem) async {
+        guard let movie = try? await item.loadTransferable(type: Movie.self) else {
+            problem = "That video couldn't be read. Try another."
+            return
+        }
+        defer { try? FileManager.default.removeItem(at: movie.url) }
+        if let seconds = await SessionVideo.duration(of: movie.url), seconds > SessionVideo.maxSeconds + 0.5 {
+            problem = "Videos can be up to 5 minutes, and that one is \(SessionVideo.clock(seconds)). Trim it in Photos, then add it again."
+            return
+        }
+        videoProgress = 0
+        defer { videoProgress = nil }
+        guard let exported = await SessionVideo.export(movie.url, progress: { videoProgress = $0 }),
+              let poster = SessionVideo.posterFrame(movie.url) else {
+            problem = "That video couldn't be added. Try it again, or try another."
+            return
+        }
+        addPhoto(poster, video: exported)
     }
 
     @discardableResult
@@ -861,29 +900,85 @@ enum RatingSliderMath {
     }
 }
 
-/// Keeping a video with a session: small enough to ride the same private
-/// iCloud the sessions do, so half a minute at 540p and nothing more.
+/// Keeping a video with a session. It rides the private iCloud the sessions
+/// do, and a posted one goes to the public database, so every clip is kept
+/// to about 40 MB whatever its length: short clips stay sharp, long ones
+/// trade detail for length.
 enum SessionVideo {
-    static let maxSeconds: Double = 30
+    /// Five minutes (Melvin, 2026-09-27). It was half a minute.
+    static let maxSeconds: Double = 300
 
-    static func export(_ url: URL, limit: Double = maxSeconds) async -> Data? {
+    private static let log = Logger(subsystem: "com.lockout.meditate808", category: "video")
+
+    /// Measured on a real 4K iPhone clip (2026-09-27): 960x540 runs about
+    /// 4.8 Mbps, 640x480 about 2.7, Medium (360 by 640) about 1. So a
+    /// minute at 540p, two at 480p and five at 360p all land near 36 to
+    /// 40 MB. At 540p throughout, five minutes was about 180 MB.
+    static func preset(forSeconds seconds: Double) -> String {
+        if seconds <= 60 { return AVAssetExportPreset960x540 }
+        if seconds <= 120 { return AVAssetExportPreset640x480 }
+        return AVAssetExportPresetMediumQuality
+    }
+
+    static func duration(of url: URL) async -> Double? {
+        guard let d = try? await AVURLAsset(url: url).load(.duration) else { return nil }
+        let s = CMTimeGetSeconds(d)
+        return s.isFinite ? s : nil
+    }
+
+    /// "7:12", for telling someone how long their clip is.
+    static func clock(_ seconds: Double) -> String {
+        let s = Int(seconds.rounded())
+        return String(format: "%d:%02d", s / 60, s % 60)
+    }
+
+    static func export(_ url: URL, progress: @escaping @MainActor (Double) -> Void = { _ in }) async -> Data? {
         let asset = AVURLAsset(url: url)
-        guard let session = AVAssetExportSession(asset: asset,
-                                                 presetName: AVAssetExportPreset960x540) else { return nil }
+        let seconds = await duration(of: url) ?? 0
+        guard let session = AVAssetExportSession(asset: asset, presetName: preset(forSeconds: seconds)) else {
+            log.error("no export session for a \(seconds, privacy: .public) s clip")
+            return nil
+        }
+        // Past the limit only by rounding; the caller already turned away
+        // anything longer.
+        if seconds > maxSeconds {
+            session.timeRange = CMTimeRange(start: .zero,
+                                            duration: CMTime(seconds: maxSeconds, preferredTimescale: 600))
+        }
         let out = FileManager.default.temporaryDirectory
             .appendingPathComponent("808-video-\(UUID().uuidString).mp4")
-        session.outputURL = out
-        session.outputFileType = .mp4
-        let duration = (try? await asset.load(.duration)) ?? .zero
-        if CMTimeGetSeconds(duration) > limit {
-            session.timeRange = CMTimeRange(start: .zero,
-                                            duration: CMTime(seconds: limit, preferredTimescale: 600))
-        }
-        await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
-            session.exportAsynchronously { done.resume() }
-        }
         defer { try? FileManager.default.removeItem(at: out) }
-        guard session.status == .completed else { return nil }
+        if #available(iOS 18, *) {
+            let watcher = Task {
+                for await state in session.states(updateInterval: 0.25) {
+                    if case .exporting(let p) = state { await progress(p.fractionCompleted) }
+                }
+            }
+            defer { watcher.cancel() }
+            do {
+                try await session.export(to: out, as: .mp4)
+            } catch {
+                log.error("export failed: \(String(describing: error), privacy: .public)")
+                return nil
+            }
+        } else {
+            session.outputURL = out
+            session.outputFileType = .mp4
+            let watcher = Task {
+                while !Task.isCancelled {
+                    await progress(Double(session.progress))
+                    try? await Task.sleep(for: .milliseconds(250))
+                }
+            }
+            await withCheckedContinuation { (done: CheckedContinuation<Void, Never>) in
+                session.exportAsynchronously { done.resume() }
+            }
+            watcher.cancel()
+            guard session.status == .completed else {
+                log.error("export failed: \(String(describing: session.error), privacy: .public)")
+                return nil
+            }
+        }
         return try? Data(contentsOf: out)
     }
 
