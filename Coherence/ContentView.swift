@@ -545,6 +545,7 @@ struct ContentView: View {
         return ZStack(alignment: .top) {
             ValleyScene(progress: 0, aura: auraStage, auraLook: auraLook, jiggle: ottoPokes, clock: true)
                 .frame(width: width, height: height)
+                .fadesIntoMeadow(Self.meadow)
 
             // The greeting, centred, where Brainrot writes its name. The
             // streak sits in the corner beside it, a flame and a number.

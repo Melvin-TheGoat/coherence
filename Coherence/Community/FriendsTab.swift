@@ -159,6 +159,7 @@ struct FriendsSky<Content: View>: View {
             .frame(maxWidth: .infinity)
             .frame(height: height, alignment: .top)
             .clipped()
+            .fadesIntoMeadow()
             .overlay { content }
     }
 }

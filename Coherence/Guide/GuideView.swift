@@ -79,6 +79,7 @@ struct GuideView: View {
             .frame(height: 228)
             .frame(maxWidth: .infinity)
             .clipped()
+            .fadesIntoMeadow(GuideGround.meadow)
             // **One unit, the bubble against Otto.** They were two overlays,
             // the bubble pinned to the left edge and Otto to the right, so
             // on a phone the bubble floated a thumb's width away from him
@@ -344,6 +345,7 @@ struct MethodDetailView: View {
             .frame(height: 212)
             .frame(maxWidth: .infinity)
             .clipped()
+            .fadesIntoMeadow(GuideGround.meadow)
             .overlay(alignment: .bottom) {
                 MethodSymbol(name: method.symbol, size: Self.circle)
                     .overlay(Circle().stroke(AppColor.backgroundSecondary, lineWidth: 4))

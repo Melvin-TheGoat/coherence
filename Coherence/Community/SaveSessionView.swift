@@ -213,6 +213,7 @@ struct SaveSessionView: View {
                 .frame(height: scene)
                 .frame(height: visible, alignment: .top)
                 .clipped()
+                .fadesIntoMeadow()
                 .ignoresSafeArea(edges: .top)
                 // Decoration only. `.clipped()` hides the scene's extra
                 // height but does not stop it catching touches, and the band

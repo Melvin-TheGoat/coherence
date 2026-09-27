@@ -3863,6 +3863,27 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   cheerful: "Wait, come back!" / "Your session's still going! Hop back in
   within 10 seconds so it still counts."
 
+## A VALLEY BAND FADES INTO THE GRASS BELOW IT (2026-09-27, Melvin)
+
+"Redo ALL of the backgrounds so that it looks like the flowers fade away into
+the empty green below, right now theres this like hard cut off." Every band
+of valley that sits over a page of flat grass ends in `fadesIntoMeadow`
+(DesignKit): the page's own green, smoothstepped in over the band's bottom
+fifth, so the flowers and tufts dissolve and the ground's darker near edge
+lands exactly on the page colour. On Home, Profile, Friends (and Settings,
+Create profile, Requests through `FriendsSky`), both guide bands, the Block
+tab, the blocker editor and the session page. **Any new band gets it too**,
+and it goes on the scene, never on a stack that also holds Otto or a control,
+because it paints over whatever is under it. Full-screen scenes (the sit,
+Ready, Otto's screens, onboarding) have no grass below and do not use it.
+
+The Sloths tab bar's Block icon is a lock on a stone with leaves (Melvin's own
+render, `mockups/tabbar-icons/sloth-lock.webp`), lifted off its paper with
+Vision's subject matte rather than `sheet_cut`: the lock's tan is too close to
+the cream for colour-to-alpha, which would have left it see-through over the
+selected tab's blue wash. The bar's art is 0.18 pt per sheet pixel in a 28pt
+slot.
+
 ## THE ZEN DIRECTION: MELVIN'S MOODBOARD IS THE REFERENCE (2026-09-26)
 
 **SHELVED 2026-09-27 (Melvin: "Nevermind on the theme revamp").** Nothing

@@ -35,9 +35,10 @@ enum TestTabBar: String, CaseIterable, Identifiable {
 /// (`Coherence/TabBar/lifted-*.png`, about 200 px each).
 ///
 /// **Sloths** (Melvin's fourth sheet, 2026-09-27) is this same bar with other
-/// art: a sun over hills, a moon on a stone, two sloths, a cairn
+/// art: a sun over hills, a lock on a stone (its own render, 2026-09-27;
+/// it replaced the sheet's moon), two sloths, a cairn
 /// (`Coherence/TabBar/sloth-*.png`). Its objects differ in shape (the two
-/// sloths are twice as wide as the moon), so they are drawn at one scale,
+/// sloths are twice as wide as the lock), so they are drawn at one scale,
 /// the sheet's sizes kept, instead of all fitted to one height.
 struct LiftedTabBar: View {
     @Binding var selection: MainTab
@@ -96,10 +97,11 @@ struct LiftedTabBar: View {
             selection = tab
         } label: {
             VStack(spacing: 2) {
-                // 32 tall, 12.5 labels until 2026-09-27 (Melvin: "shrink the
-                // icons slightly, make them less tall and less big").
+                // 38 tall with 12.5 labels until 2026-09-27 (Melvin: "shrink
+                // the icons slightly, make them less tall and less big"), 32
+                // that afternoon, 28 that evening ("even smaller").
                 art(name)
-                    .frame(height: 32)
+                    .frame(height: 28)
                 Text(label)
                     .font(.system(size: 11.5, weight: .heavy, design: .rounded))
                     .foregroundStyle(selected ? tint.stroke : ValleyGround.ink.opacity(0.62))

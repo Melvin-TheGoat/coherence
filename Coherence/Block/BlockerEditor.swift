@@ -139,6 +139,7 @@ struct BlockerEditor: View {
             .frame(height: Self.bandHeight)
             .frame(maxWidth: .infinity)
             .clipped()
+            .fadesIntoMeadow(Self.meadow)
             .overlay(alignment: .topLeading) {
                 Button("Cancel") { dismiss() }
                     .font(.system(size: 14, weight: .bold))

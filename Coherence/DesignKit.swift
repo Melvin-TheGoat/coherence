@@ -481,6 +481,38 @@ enum ValleyGround {
     static let quiet = AppColor.meadowInk.opacity(0.11)
 }
 
+extension View {
+    /// Where a band of valley meets the flat grass of the page under it, the
+    /// flowers and tufts fade into that grass instead of stopping on a line
+    /// (Melvin, 2026-09-27: "right now theres this like hard cut off, it
+    /// looks weird"). A gradient of the page's own green over the band's
+    /// bottom `share` of its height, so the ground's darker near edge lands
+    /// exactly on the page colour as well.
+    ///
+    /// Put it on the scene itself, never on a stack that also holds Otto or
+    /// a control: it paints over whatever is under it.
+    func fadesIntoMeadow(_ meadow: Color = ValleyGround.meadow, share: CGFloat = 0.2) -> some View {
+        overlay {
+            GeometryReader { geo in
+                // Smoothstep, then held solid for the last few points, so the
+                // fade has no visible start and no visible end.
+                LinearGradient(stops: [
+                    .init(color: meadow.opacity(0), location: 0),
+                    .init(color: meadow.opacity(0.10), location: 0.18),
+                    .init(color: meadow.opacity(0.35), location: 0.37),
+                    .init(color: meadow.opacity(0.65), location: 0.55),
+                    .init(color: meadow.opacity(0.90), location: 0.74),
+                    .init(color: meadow, location: 0.9),
+                    .init(color: meadow, location: 1)
+                ], startPoint: .top, endPoint: .bottom)
+                .frame(height: geo.size.height * share)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+            }
+            .allowsHitTesting(false)
+        }
+    }
+}
+
 /// Otto's bubble over the valley (Melvin, 2026-09-26: "the text should be
 /// centered, and i want it more transparent"): see-through glass with its
 /// words centred, where it used to be a cream card.

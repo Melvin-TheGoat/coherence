@@ -123,6 +123,7 @@ struct BlockTab: View {
         return ZStack(alignment: .top) {
             ValleyScene(progress: 0, showsFigure: false)
                 .frame(width: width, height: height)
+                .fadesIntoMeadow(Self.meadow)
             Image(OttoPose.asking.asset)
                 .resizable()
                 .scaledToFit()

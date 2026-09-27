@@ -59,7 +59,7 @@ struct MainTabBar: View {
         case .meadow: MeadowTabBar(selection: $selection, onPlus: onPlus)
         case .lifted: LiftedTabBar(selection: $selection, onPlus: onPlus)
         case .ink: InkTabBar(selection: $selection, onPlus: onPlus)
-        case .sloths: LiftedTabBar(selection: $selection, onPlus: onPlus, prefix: "sloth", artScale: 0.21)
+        case .sloths: LiftedTabBar(selection: $selection, onPlus: onPlus, prefix: "sloth", artScale: 0.18)
         }
     }
 

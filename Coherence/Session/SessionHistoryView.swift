@@ -150,6 +150,7 @@ struct ProfileTab: View {
     private func profileScene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
         ValleyScene(progress: 0, showsFigure: false)
             .frame(width: width, height: height)
+            .fadesIntoMeadow(Self.meadow)
     }
 
     /// A frosted circle on the sky, the material every floating control uses.
