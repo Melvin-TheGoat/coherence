@@ -1056,17 +1056,9 @@ struct ContentView: View {
     }
 
     private func refreshAwards() {
-        let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
-            guard let id = st.sessionID, let s = st.overallScore else { return nil }
-            return (id, s)
-        }, uniquingKeysWith: { a, _ in a })
-
         let earned = AwardEngine.evaluate(
-            sessions: sessions.map {
-                .init(startedAt: $0.startedAt,
-                      durationSec: $0.durationSec,
-                      overallScore: scores[$0.id])
-            },
+            sessions: AwardFacts.build(sessions: sessions, stats: allStats,
+                                       reflections: reflections, photos: photos),
             accountCreatedAt: users.first?.createdAt,
             friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
@@ -1075,6 +1067,11 @@ struct ContentView: View {
         // months of history and would otherwise meet a dozen unlock screens in
         // a row, which would cheapen the one that matters.
         AwardsInbox.seedIfNeeded(with: earned)
+        // And the same problem again whenever the CATALOG grows: an existing
+        // device's watermark is already old, so a batch of newly-added
+        // awards that its OLD history already satisfies would otherwise
+        // queue up as breaking news the moment this build first runs.
+        AwardsInbox.catchUpCatalogIfNeeded(with: earned)
         unlockQueue = AwardsInbox.pending(from: earned)
         for award in unlockQueue { Analytics.track(.awardUnlocked(id: award.id)) }
     }

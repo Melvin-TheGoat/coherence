@@ -257,5 +257,41 @@ final class OttoAuraTests: XCTestCase {
             XCTAssertLessThanOrEqual(abs(OttoAura.look(level: level) - own), 1, "level \(level)")
         }
     }
+
+    // MARK: - dateStageFirstReached (2026-09-28, the aura awards)
+
+    /// Matches `level`'s own history exactly: five days in a row reaches
+    /// Steady on day one and Nirvana on day five, the same numbers
+    /// `test_theFirstSessionLiftsHimToSteady` and
+    /// `test_fiveDaysInARowReachNirvana` already pin.
+    func test_dateStageFirstReachedMatchesTheLevelHistory() {
+        // 40 start; day6 +10=50 (Steady); day7 +10=60 (Bright); day8=70;
+        // day9=80 (Radiant); day10=90 (Nirvana).
+        let dates = [6, 7, 8, 9, 10].map { day($0) }
+        XCTAssertEqual(OttoAura.dateStageFirstReached(.steady, from: dates, calendar: cal),
+                       day(6, 0))
+        XCTAssertEqual(OttoAura.dateStageFirstReached(.bright, from: dates, calendar: cal),
+                       day(7, 0))
+        XCTAssertEqual(OttoAura.dateStageFirstReached(.radiant, from: dates, calendar: cal),
+                       day(9, 0))
+        XCTAssertEqual(OttoAura.dateStageFirstReached(.nirvana, from: dates, calendar: cal),
+                       day(10, 0))
+    }
+
+    func test_dateStageFirstReachedIsNilWhenTheStageWasNeverReached() {
+        XCTAssertNil(OttoAura.dateStageFirstReached(.nirvana, from: [day(1)], calendar: cal))
+        XCTAssertNil(OttoAura.dateStageFirstReached(.steady, from: [], calendar: cal))
+    }
+
+    /// A later dip cannot take the date away: it stays whatever it was the
+    /// moment it first happened, the same "did this ever happen" rule as
+    /// every other award, and it needs no "today" to know that.
+    func test_dateStageFirstReachedSurvivesALaterDip() {
+        // Five days reach Nirvana on day 10; a gap and a low restart
+        // afterward must not move that earlier date.
+        let dates = [6, 7, 8, 9, 10].map { day($0) } + [day(30)]
+        XCTAssertEqual(OttoAura.dateStageFirstReached(.nirvana, from: dates, calendar: cal),
+                       day(10, 0))
+    }
 }
 

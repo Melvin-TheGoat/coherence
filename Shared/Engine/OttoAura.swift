@@ -180,6 +180,46 @@ enum OttoAura {
                       calendar: Calendar = .current) -> Stage {
         Stage(level: level(from: sessionDates, notNow: notNow, today: today, calendar: calendar))
     }
+
+    /// The day practice first raised Otto to at least `stage`, replayed from
+    /// session dates alone (no "Not now" windows: that is Block's own data
+    /// and never informs anything outside it). Used by the aura awards
+    /// (2026-09-28), so a later dip can never take back a peak that really
+    /// happened, the same "did this ever happen" rule as every other award.
+    ///
+    /// This only ever needs to walk FORWARD from the first session to the
+    /// last, because level only rises on a practised day (capped at 100) and
+    /// only falls on a missed one, so the running level can never exceed a
+    /// value it already held right after some earlier gain. Checking right
+    /// after every gain is therefore enough to find the first time a stage
+    /// was reached, with no need to project forward to "today" at all.
+    static func dateStageFirstReached(_ stage: Stage, from sessionDates: [Date],
+                                      calendar: Calendar = .current) -> Date? {
+        let days = Set(sessionDates.map { calendar.startOfDay(for: $0) })
+        guard let first = days.min(), let last = days.max() else { return nil }
+
+        var level = Double(startLevel)
+        var rests: [Date] = []
+        var run = 0
+        var day = first
+        while day <= last {
+            if days.contains(day) {
+                run = 0
+                level = min(100, level + Double(dayGain))
+                if Stage(level: Int(level.rounded())) >= stage { return day }
+            } else {
+                run += 1
+                if StreakCalculator.restAvailable(on: day, after: rests, calendar: calendar) {
+                    rests.append(day)
+                } else {
+                    level = max(0, level - Double(missCost(run: run)))
+                }
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        return nil
+    }
 }
 
 // MARK: - What he says when you tap him

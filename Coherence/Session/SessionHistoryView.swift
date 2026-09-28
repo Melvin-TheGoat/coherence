@@ -21,6 +21,7 @@ struct ProfileTab: View {
     @Query private var users: [User]
     @Query private var prefsRows: [Preferences]
     @Query private var photos: [SessionPhoto]
+    @Query private var reflections: [SessionReflection]
     @EnvironmentObject private var community: CommunityModel
     @EnvironmentObject private var store: Store
 
@@ -298,17 +299,9 @@ struct ProfileTab: View {
     /// history the rest of this screen is already showing, so a shelf can
     /// never disagree with the sessions below it.
     private var awardProgress: [AwardEngine.Earned] {
-        let scores = Dictionary(allStats.compactMap { st -> (UUID, Double)? in
-            guard let id = st.sessionID, let s = st.overallScore else { return nil }
-            return (id, s)
-        }, uniquingKeysWith: { a, _ in a })
-
-        return AwardEngine.evaluate(
-            sessions: sessions.map {
-                .init(startedAt: $0.startedAt,
-                      durationSec: $0.durationSec,
-                      overallScore: scores[$0.id])
-            },
+        AwardEngine.evaluate(
+            sessions: AwardFacts.build(sessions: sessions, stats: allStats,
+                                       reflections: reflections, photos: photos),
             accountCreatedAt: users.first?.createdAt,
             friendBroughtAt: prefsRows.compactMap(\.evidenceGrantSince).min())
             .filter { !FeatureFlags.hiddenAwardIDs.contains($0.award.id) }
