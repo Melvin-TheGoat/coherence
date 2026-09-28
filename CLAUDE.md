@@ -6456,9 +6456,15 @@ never confirms; the Watch already starts its own sessions and has End.
   card through all seven looks, a sticky phone that swaps screenshots per
   feature, the famous-meditators wall, the research with sources, an evening
   closer. **Reviews and the waitlist are gone** (Aziz). Nunito, self-hosted.
-  Screenshots in `website/img/app/` were taken from the simulator and show
-  "Aziz"; Block and hats appear on it but are off in Release, so deploy when
-  the release that ships them does. Copy was rewritten to avoid generated
+  **The public name is "808 Meditate"** (Aziz, 2026-09-28): the site's
+  title, nav and footer, and the first line of the policy and terms; "808"
+  stays the short form in running copy and the app's display name. The
+  screenshots in `website/img/app/` show a sample user, Maya: launch with
+  `SIMCTL_CHILD_DEMO_NAME=Maya SIMCTL_CHILD_DEMO_USERNAME=maya` (both hooks
+  now REPLACE the stored name, and Friends test mode claims the same handle),
+  then relaunch with your own name to put it back. Block and hats appear on
+  the site but are off in Release, so deploy when the release that ships
+  them does. Copy was rewritten to avoid generated
   tells (Aziz: "make sure the text doesn't sound like AI").
 - **Legal pages are generated**: `python3 tools/legal_pages.py` builds
   `website/privacy.html` and `terms.html` from the app's own

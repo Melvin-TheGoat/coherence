@@ -3,8 +3,8 @@
 **Last updated: September 28, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
-**Lock Out Inc. ("we," "us," "808")** governing your use of the **808** app
-for iPhone, with optional support for Apple Watch (the "App"). By downloading
+**Lock Out Inc. ("we," "us")** governing your use of the **808 Meditate**
+app ("808") for iPhone, with optional support for Apple Watch (the "App"). By downloading
 or using the App, you agree to these Terms. If you don't agree, don't use the
 App.
 

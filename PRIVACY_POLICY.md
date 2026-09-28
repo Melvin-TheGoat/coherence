@@ -2,9 +2,9 @@
 
 **Last updated: September 28, 2026**
 
-This Privacy Policy explains how **Lock Out Inc. ("we," "us," "808")**
-handles information in the **808** app for iPhone, with optional support for
-Apple Watch.
+This Privacy Policy explains how **Lock Out Inc. ("we," "us")** handles
+information in the **808 Meditate** app ("808") for iPhone, with optional
+support for Apple Watch.
 
 ## The short version
 

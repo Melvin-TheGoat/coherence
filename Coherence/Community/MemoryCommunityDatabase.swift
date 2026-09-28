@@ -159,7 +159,11 @@ enum DemoCommunity {
         let me = CommunityStore(database: db)
         // PREVIEW_FRIENDS=claim leaves me unclaimed so the first-run screen shows.
         if ProcessInfo.processInfo.environment["PREVIEW_FRIENDS"] != "claim" {
-            try? await me.claimUsername("aziz", displayName: "Aziz")
+            // DEMO_USERNAME / DEMO_NAME override it, so screenshots never
+            // carry a founder's handle.
+            let env = ProcessInfo.processInfo.environment
+            try? await me.claimUsername(env["DEMO_USERNAME"] ?? "aziz",
+                                        displayName: env["DEMO_NAME"] ?? "Aziz")
         }
 
         db.user = "_demo_melvin"

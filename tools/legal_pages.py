@@ -17,9 +17,9 @@ ROOT = Path(__file__).resolve().parent.parent
 
 PAGES = [
     ("PRIVACY_POLICY.md", "website/privacy.html", "Privacy Policy",
-     "How 808 handles your information: what stays on your phone, what syncs to your own iCloud, and what we can see."),
+     "How 808 Meditate handles your information: what stays on your phone, what syncs to your own iCloud, and what we can see."),
     ("TERMS_OF_SERVICE.md", "website/terms.html", "Terms of Service",
-     "The terms for using the 808 meditation app."),
+     "The terms for using 808 Meditate."),
 ]
 
 
@@ -81,7 +81,7 @@ TEMPLATE = """<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>808 {title}</title>
+<title>808 Meditate {title}</title>
 <meta name="description" content="{description}">
 <link rel="preload" href="fonts/nunito-var.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="icon" href="img/otto/ottohead.png">
@@ -133,7 +133,7 @@ TEMPLATE = """<!doctype html>
 <body>
 <div class="top">
   <nav class="nav">
-    <a class="brand" href="index.html"><img src="img/otto/ottohead.png" alt="" width="34" height="34">808</a>
+    <a class="brand" href="index.html"><img src="img/otto/ottohead.png" alt="" width="34" height="34">808 Meditate</a>
     <a class="back" href="index.html">Back to the site</a>
   </nav>
   <h1>{title}</h1>
