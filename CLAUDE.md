@@ -6235,3 +6235,28 @@ replaces the valley welcome and its bubble; the grasshopper overlay
   behind `FeatureFlags.shop` (off in Release), Friends becomes a circle on
   Home; every scene and bubble follows the clock (`clock: true`, words on the
   sky use `ValleyGround.skyInk`).
+
+## GLOW BY LENGTH, A GARDEN WEEK, HATS RECUT (2026-09-28, Melvin)
+
+- **Glow grows with how long you meditated that day** (`OttoAura.gain`):
+  1% per two minutes to 10% at 20 min, then 1% per four minutes to 20% at
+  60 min and beyond. The day's sessions are SUMMED first and the curve
+  applied once, capped at 20, so splitting a sit never beats one long one.
+  Missed days, the rest day and "Not now" pricing are unchanged. Callers pass
+  `OttoAura.Sit` (date + seconds). The reward screen's gain for a second
+  session on one day is its marginal gain.
+- **"This week" is a garden** (option C of `mockups/session-view.html`,
+  replacing the cairns a day after they shipped): bare soil, a leaf per
+  session, a flower from the third, a fallen leaf on a forgiven rest day;
+  the header says sessions and days sat. `WeekCairns` kept its name.
+- **Hats recut** (`tools/hat_extract.swift` v2): over his head a pixel is
+  kept only when its colour is nearer the hat's palette (sampled off his
+  outline) than his own; one smoothed lower edge; a drawn contact shadow
+  instead of the render's ragged shadowed fur; the halo cut to its ring by
+  two fitted ellipses with its front band rebuilt where it crossed his tuft.
+  Flags that mattered: `--otto-floor 0.7` (black hats), `--min-piece 1500`
+  (leaf crown), `--ring --no-fill --no-shadow` (halo). The flower crown
+  keeps its first cut; the Little Horns are gone.
+- **The Store tab is the Shop**, and its Otto is pinned above the scrolling
+  closet. The Ready screen's pill icons are much smaller. Award copy says
+  "session" where the awards agent wrote "sit".
