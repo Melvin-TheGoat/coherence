@@ -1,0 +1,162 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · After a session, the reward</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--ink:#413024;--soft:#877160;--card:#F0E9DC;--amber:#F7B143;--amberText:#8E6116;--green:#5DAF4E;
+ --greenDark:#3F8A34;--flame:#E0703A;--glow:#FFD77A;--sky1:#9FC5DE;--sky2:#DDEBEF;--grass:#9CBC85}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:30px 26px 80px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:980px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.wrap{display:flex;gap:34px;align-items:flex-start;margin-top:24px;flex-wrap:wrap}
+.side{max-width:560px}
+.beat{background:#fff;border-radius:14px;padding:12px 16px;margin-bottom:10px;font-size:13.4px;line-height:1.55;color:var(--soft)}
+.beat b{color:var(--ink)} .beat .t{font-weight:800;color:var(--amberText);margin-right:6px}
+.beat.on{box-shadow:0 0 0 2px var(--green)}
+.btns{display:flex;gap:10px;margin:12px 0 4px}
+button{font:inherit;font-weight:800;border:0;border-radius:99px;padding:10px 18px;cursor:pointer;background:#fff;color:var(--ink);
+ box-shadow:0 2px 6px rgba(0,0,0,.08)}
+button.go{background:var(--green);color:#fff}
+
+/* phone */
+.p{width:330px;height:700px;border-radius:40px;overflow:hidden;position:relative;flex:none;
+ box-shadow:0 14px 40px rgba(80,55,30,.2);background:linear-gradient(var(--sky1),var(--sky2) 62%,#CFE0C4 62%,var(--grass) 70%,#89AE73)}
+.hills{position:absolute;left:-20%;right:-20%;top:52%;height:90px;border-radius:50% 50% 0 0;background:#A9C1CE}
+.hills.b{left:30%;right:-40%;top:55%;background:#B7CBD5}
+.meadow{position:absolute;left:0;right:0;top:61%;bottom:0;background:linear-gradient(#9CBC85,#86AB70)}
+.otto{position:absolute;left:50%;top:292px;width:176px;transform:translateX(-50%);transform-origin:50% 100%;z-index:3}
+.otto img{width:100%;display:block;filter:drop-shadow(0 6px 8px rgba(0,0,0,.12))}
+.cushion{position:absolute;left:50%;top:478px;width:170px;height:34px;border-radius:50%;background:#C8765A;transform:translateX(-50%);z-index:2}
+.burst{position:absolute;left:50%;top:380px;width:10px;height:10px;border-radius:50%;transform:translate(-50%,-50%);
+ background:radial-gradient(circle,rgba(255,236,170,.95),rgba(255,215,120,.55) 40%,rgba(255,215,120,0) 70%);z-index:1;opacity:0}
+.rays{position:absolute;left:50%;top:380px;width:620px;height:620px;transform:translate(-50%,-50%);opacity:0;z-index:1;
+ background:repeating-conic-gradient(rgba(255,240,190,.28) 0 8deg,rgba(255,240,190,0) 8deg 20deg);border-radius:50%;
+ -webkit-mask:radial-gradient(circle,#000 20%,transparent 68%);mask:radial-gradient(circle,#000 20%,transparent 68%)}
+.title{position:absolute;left:0;right:0;top:70px;text-align:center;font-size:30px;font-weight:900;color:#fff;
+ text-shadow:0 3px 0 rgba(0,0,0,.12),0 0 18px rgba(255,220,140,.6);opacity:0;transform:scale(.4)}
+.sub{position:absolute;left:0;right:0;top:112px;text-align:center;font-size:14px;font-weight:800;color:rgba(255,255,255,.95);opacity:0}
+.bank{position:absolute;top:22px;right:18px;background:rgba(254,249,242,.96);border-radius:99px;padding:5px 12px 5px 6px;
+ display:flex;align-items:center;gap:6px;font-weight:900;font-size:15px;box-shadow:0 3px 8px rgba(0,0,0,.14);z-index:9}
+.coin{width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#FFE9A8,#F2B544 55%,#C98A1E);
+ box-shadow:inset 0 -2px 0 rgba(0,0,0,.18);display:inline-flex;align-items:center;justify-content:center;font-size:12px}
+.coin:after{content:"❦";color:#9B6B19;font-size:11px;transform:rotate(-90deg)}
+.fly{position:absolute;z-index:8}
+.tiles{position:absolute;left:14px;right:14px;top:530px;display:flex;gap:9px;z-index:5}
+.tile{flex:1;background:var(--card);border-radius:18px;padding:10px 6px 9px;text-align:center;box-shadow:0 5px 0 #D9CDB9,0 8px 14px rgba(0,0,0,.12);
+ opacity:0;transform:translateY(30px) scale(.8)}
+.tile .ic{height:30px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.tile .v{font-size:22px;font-weight:900;margin-top:2px;font-variant-numeric:tabular-nums}
+.tile .l{font-size:10.5px;font-weight:800;color:var(--soft);text-transform:uppercase;letter-spacing:.06em}
+.tile.streak .v{color:var(--flame)}
+.glowbar{position:absolute;left:24px;right:24px;top:632px;height:40px;opacity:0;z-index:5}
+.gb{position:relative;height:16px;border-radius:99px;background:rgba(255,255,255,.55);overflow:hidden;box-shadow:inset 0 2px 3px rgba(0,0,0,.12)}
+.gb i{position:absolute;left:0;top:0;bottom:0;width:40%;border-radius:99px;background:linear-gradient(90deg,#FFD77A,#F2A43A)}
+.gl{display:flex;justify-content:space-between;font-size:11px;font-weight:900;color:#fff;margin-bottom:5px;text-shadow:0 1px 2px rgba(0,0,0,.2)}
+.levelup{position:absolute;left:50%;top:210px;transform:translate(-50%,0) scale(.3);opacity:0;z-index:7;
+ background:linear-gradient(#FFE9A6,#F3B94A);color:#6B4A0F;font-weight:900;font-size:15px;padding:9px 18px;border-radius:14px;
+ box-shadow:0 4px 0 #C8902B,0 8px 18px rgba(0,0,0,.18);white-space:nowrap}
+.cta{position:absolute;left:20px;right:20px;bottom:22px;height:54px;border-radius:18px;background:var(--green);color:#fff;
+ font-size:18px;font-weight:900;display:flex;align-items:center;justify-content:center;box-shadow:0 5px 0 var(--greenDark);
+ opacity:0;transform:translateY(20px);z-index:9}
+.leaf{position:absolute;width:12px;height:18px;border-radius:0 100% 0 100%;background:#7FB068;z-index:6;opacity:.95}
+.tap{position:absolute;left:0;right:0;bottom:84px;text-align:center;font-size:11px;font-weight:800;color:rgba(255,255,255,.8);z-index:9}
+.plus{position:absolute;font-weight:900;color:#fff;font-size:20px;text-shadow:0 2px 4px rgba(0,0,0,.25);z-index:9;opacity:0}
+.pick{border-left:3px solid #3E8175;background:#fff;border-radius:0 14px 14px 0;padding:14px 18px;max-width:980px;margin-top:22px;
+ font-size:13.6px;line-height:1.62;color:var(--soft)}
+.pick b{color:#3E8175}
+</style></head><body>
+<h1>After a session: the reward</h1>
+<p class="lede">What plays the moment a session ends, replacing today's glow burst on Home. It borrows the
+<b>structure</b> of Duolingo's lesson-complete (one card at a time, each number counting up, then the streak) and
+Clash Royale's rewards (coins flying into your bank one by one, a level-up burst), in 808's valley. It runs about
+<b>nine seconds</b>, every beat has a haptic, and <b>a tap anywhere skips to the next beat</b>, so it is never in
+the way. Press <b>Play</b>.</p>
+
+<div class="wrap">
+  <div class="p" id="p">
+    <div class="rays" id="rays"></div>
+    <div class="hills"></div><div class="hills b"></div><div class="meadow"></div>
+    <div class="burst" id="burst"></div>
+    <div class="bank" id="bank"><span class="coin"></span><span id="bankN">124</span></div>
+    <div class="title" id="title">Session complete!</div>
+    <div class="sub" id="sub">18 minutes, well spent</div>
+    <div class="levelup" id="levelup">Otto reached Steady ✦</div>
+    <div class="cushion"></div>
+    <div class="otto" id="otto"><img src="otto-v4/reference-otto-sitting.png" alt=""></div>
+    <div class="tiles">
+      <div class="tile" id="t1"><div class="ic">⏳</div><div class="v" id="v1">0</div><div class="l">Minutes</div></div>
+      <div class="tile streak" id="t2"><div class="ic" id="flame">🔥</div><div class="v" id="v2">4</div><div class="l">Day streak</div></div>
+      <div class="tile" id="t3"><div class="ic"><span class="coin" style="width:26px;height:26px"></span></div><div class="v" id="v3">+0</div><div class="l">Points</div></div>
+    </div>
+    <div class="glowbar" id="glowbar"><div class="gl"><span>Otto's glow</span><span id="gpct">40%</span></div><div class="gb"><i id="gfill"></i></div></div>
+    <div class="cta" id="cta">Continue</div>
+    <div class="tap" id="tap">Tap to skip</div>
+  </div>
+
+  <div class="side">
+    <div class="btns"><button class="go" onclick="play()">▶ Play</button><button onclick="play(true)">Play with a level-up</button></div>
+    <div class="beat" id="b0"><span class="t">0.0s</span><b>The landing.</b> The valley brightens from behind him, soft rays turn slowly, and Otto hops (squash, lift, land). "Session complete!" pops in with a bounce, the minutes under it. A heavy haptic on the land.</div>
+    <div class="beat" id="b1"><span class="t">1.2s</span><b>The cards, one at a time</b> (Duolingo). Minutes counts up from 0 with a light tick per step. Then the streak card: the flame flares and the number <b>rolls</b> from yesterday's to today's with a bump. Then points.</div>
+    <div class="beat" id="b2"><span class="t">3.2s</span><b>The coins</b> (Clash Royale). Points count up on the card while coins arc one by one from it into the bank at the top right; the bank ticks up with each one landing, and each landing ticks. One point per minute, so 18 coins, capped at a quick 18 flights however long the session.</div>
+    <div class="beat" id="b3"><span class="t">5.6s</span><b>The glow.</b> Otto's glow bar fills from before to after, with a shimmer running along it; +10% floats up off it. If he crosses into a new look, the <b>level-up</b>: a flash, he changes into the new look with a burst, and a gold ribbon names it ("Otto reached Steady"). Success haptic.</div>
+    <div class="beat" id="b4"><span class="t">8.0s</span><b>Continue.</b> The green button rises. An award earned by this session opens right after, on the existing award screen. Then Home, with the "Add how that felt" toast as today.</div>
+  </div>
+</div>
+<div class="pick"><b>What changes in the app:</b> this becomes a full-screen cover that opens when a session lands, instead of
+the glow playing on Home. The numbers are all real: minutes, the streak before and after, points (1 per minute),
+the glow before and after. Nothing is invented. Hand-logged sessions play it too, but without coins, since they
+earn none. <b>Sound is optional</b>: a soft chime per coin like Clash Royale's would suit it, and it stays silent
+when the phone is on silent.</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let timers=[], raf=[];
+function at(t,fn){timers.push(setTimeout(fn,t))}
+function anim(el,frames,opts){return el.animate(frames,Object.assign({fill:'forwards',easing:'cubic-bezier(.2,1.4,.4,1)'},opts))}
+function count(el,from,to,ms,fmt=(v)=>v){const t0=performance.now();function step(t){const k=Math.min(1,(t-t0)/ms);
+  el.textContent=fmt(Math.round(from+(to-from)*(1-Math.pow(1-k,3))));if(k<1)raf.push(requestAnimationFrame(step))}raf.push(requestAnimationFrame(step))}
+function beat(i){document.querySelectorAll('.beat').forEach(b=>b.classList.remove('on'));const b=$('b'+i);if(b)b.classList.add('on')}
+function reset(){timers.forEach(clearTimeout);timers=[];raf.forEach(cancelAnimationFrame);raf=[];
+  document.querySelectorAll('.fly,.leaf,.plus').forEach(e=>e.remove());
+  ['title','sub','t1','t2','t3','glowbar','cta','levelup','rays','burst','otto'].forEach(id=>$(id).getAnimations().forEach(a=>a.cancel()));
+  $('v1').textContent='0';$('v2').textContent='4';$('v3').textContent='+0';$('bankN').textContent='124';$('gpct').textContent='40%';$('gfill').style.width='40%'}
+function play(level){reset();const P=$('p');
+  beat(0);
+  anim($('rays'),[{opacity:0,transform:'translate(-50%,-50%) rotate(0deg)'},{opacity:1,transform:'translate(-50%,-50%) rotate(40deg)'}],{duration:9000,easing:'linear'});
+  anim($('burst'),[{width:'10px',height:'10px',opacity:0},{width:'360px',height:'360px',opacity:1}],{duration:900,easing:'ease-out'});
+  anim($('otto'),[{transform:'translateX(-50%) scale(1,1)'},{transform:'translateX(-50%) scale(1.12,.86)'},{transform:'translateX(-50%) translateY(-46px) scale(.94,1.08)'},{transform:'translateX(-50%) translateY(0) scale(1.08,.92)'},{transform:'translateX(-50%) scale(1,1)'}],{duration:900,easing:'ease-out'});
+  at(250,()=>anim($('title'),[{opacity:0,transform:'scale(.4)'},{opacity:1,transform:'scale(1)'}],{duration:520}));
+  at(520,()=>anim($('sub'),[{opacity:0,transform:'translateY(8px)'},{opacity:1,transform:'none'}],{duration:400,easing:'ease-out'}));
+  for(let i=0;i<14;i++)at(200+i*60,()=>leaf());
+  // cards
+  at(1200,()=>{beat(1);anim($('t1'),[{opacity:0,transform:'translateY(30px) scale(.8)'},{opacity:1,transform:'none'}],{duration:480});count($('v1'),0,18,700)});
+  at(2000,()=>{anim($('t2'),[{opacity:0,transform:'translateY(30px) scale(.8)'},{opacity:1,transform:'none'}],{duration:480});
+    at(420,()=>{anim($('flame'),[{transform:'scale(1)'},{transform:'scale(1.6) rotate(-8deg)'},{transform:'scale(1)'}],{duration:520});
+      anim($('v2'),[{transform:'translateY(0)',opacity:1},{transform:'translateY(-14px)',opacity:0}],{duration:180,easing:'ease-in'}).onfinish=()=>{$('v2').textContent='5';
+      anim($('v2'),[{transform:'translateY(14px) scale(1.4)',opacity:0},{transform:'none',opacity:1}],{duration:380})}})});
+  at(2800,()=>anim($('t3'),[{opacity:0,transform:'translateY(30px) scale(.8)'},{opacity:1,transform:'none'}],{duration:480}));
+  // coins
+  at(3200,()=>{beat(2);count($('v3'),0,18,1900,v=>'+'+v);for(let i=0;i<18;i++)at(i*105,()=>coin(i))});
+  // glow
+  at(5600,()=>{beat(3);anim($('glowbar'),[{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'none'}],{duration:400,easing:'ease-out'});
+    at(300,()=>{$('gfill').animate([{width:'40%'},{width:'50%'}],{duration:1100,fill:'forwards',easing:'ease-out'});count($('gpct'),40,50,1100,v=>v+'%');plus('+10%',260,610)});
+    if(level)at(1500,()=>{flash();anim($('levelup'),[{opacity:0,transform:'translate(-50%,0) scale(.3)'},{opacity:1,transform:'translate(-50%,0) scale(1)'}],{duration:560});
+      anim($('otto'),[{filter:'brightness(1)'},{filter:'brightness(1.8) saturate(1.4)'},{filter:'brightness(1)'}],{duration:700})})});
+  at(level?8400:8000,()=>{beat(4);anim($('cta'),[{opacity:0,transform:'translateY(20px)'},{opacity:1,transform:'none'}],{duration:460})});
+}
+function leaf(){const P=$('p');const l=document.createElement('div');l.className='leaf';const x=60+Math.random()*210;l.style.left=x+'px';l.style.top='360px';P.appendChild(l);
+  const dx=(Math.random()-.5)*260, up=160+Math.random()*120;
+  l.animate([{transform:'translate(0,0) rotate(0)',opacity:1},{transform:`translate(${dx*.6}px,${-up}px) rotate(${Math.random()*360}deg)`,opacity:1,offset:.45},{transform:`translate(${dx}px,${120}px) rotate(${Math.random()*720}deg)`,opacity:0}],{duration:1800+Math.random()*600,easing:'cubic-bezier(.2,.6,.4,1)',fill:'forwards'})}
+function coin(i){const P=$('p');const c=document.createElement('span');c.className='coin fly';const sx=262,sy=560;c.style.left=sx+'px';c.style.top=sy+'px';P.appendChild(c);
+  const ex=286,ey=26, mx=sx-60-Math.random()*80, my=300+Math.random()*60;
+  const a=c.animate([{transform:'translate(0,0) scale(.6)'},{transform:`translate(${mx-sx}px,${my-sy}px) scale(1.25)`,offset:.45},{transform:`translate(${ex-sx}px,${ey-sy}px) scale(.8)`}],{duration:620,easing:'cubic-bezier(.4,0,.6,1)',fill:'forwards'});
+  a.onfinish=()=>{c.remove();const n=$('bankN');n.textContent=(+n.textContent+1);$('bank').animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:180})}}
+function plus(txt,x,y){const P=$('p');const p=document.createElement('div');p.className='plus';p.textContent=txt;p.style.left=x+'px';p.style.top=y+'px';P.appendChild(p);
+  p.animate([{opacity:0,transform:'translateY(0)'},{opacity:1,transform:'translateY(-20px)',offset:.3},{opacity:0,transform:'translateY(-54px)'}],{duration:1300,fill:'forwards'})}
+function flash(){const P=$('p');const f=document.createElement('div');f.className='fly';Object.assign(f.style,{inset:'0',background:'#fff'});P.appendChild(f);
+  f.animate([{opacity:.9},{opacity:0}],{duration:600,fill:'forwards'}).onfinish=()=>f.remove()}
+$('p').addEventListener('click',()=>{/* in the app a tap skips a beat */});
+setTimeout(()=>play(true),600);
+</script>
+</body></html>
