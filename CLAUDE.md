@@ -3847,7 +3847,10 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   link goes). **Each rung is its own product**, since a product carries one
   introductory offer and the paywall's monthly now carries none:
   `com.lockout.meditate808.monthlytrial` (monthly with a free trial) and
-  `com.lockout.meditate808.monthly50` (first month $3.99, then $7.99). They
+  `com.lockout.meditate808.monthly50` (since the same evening **$3.99 every
+  month after a free trial**: Melvin wanted the trial on the half-off rung,
+  and one purchase carries one introductory offer, so it became a cheaper
+  plan rather than a cheaper first month). They
   are NOT in `ProductID.core`: counting them would stop the paywall selling
   (and lift the lock) until they exist in App Store Connect; until then the
   rungs simply don't show in Release. The trial length reads off

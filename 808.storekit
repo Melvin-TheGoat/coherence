@@ -122,27 +122,27 @@
         {
           "adHocOffers" : [],
           "codeOffers" : [],
-          "displayPrice" : "7.99",
+          "displayPrice" : "3.99",
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "808000005",
           "localizations" : [
             {
-              "description" : "808, first month at half price.",
-              "displayName" : "First month half off",
+              "description" : "808 at half price, every month.",
+              "displayName" : "Half price",
               "locale" : "en_US"
             }
           ],
           "productID" : "com.lockout.meditate808.monthly50",
           "recurringSubscriptionPeriod" : "P1M",
-          "referenceName" : "First month half off",
+          "referenceName" : "Half price",
           "subscriptionGroupID" : "808100001",
           "type" : "RecurringSubscription",
           "introductoryOffer" : {
-            "displayPrice" : "3.99",
+            "displayPrice" : "0.00",
             "numberOfPeriods" : 1,
-            "paymentMode" : "payAsYouGo",
-            "subscriptionPeriod" : "P1M",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D",
             "internalID" : "808200005"
           }
         }

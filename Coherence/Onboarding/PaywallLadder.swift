@@ -25,8 +25,14 @@ import SwiftUI
 /// That is the real terminal rung, and it is the honest one: the app is
 /// useful without paying, so the ladder should end by saying so.
 ///
-/// **The half-off-first-month rung came back on 2026-09-27, on its own
-/// product** (`com.lockout.meditate808.monthly50`). It was removed on
+/// **The second rung is 808 at half price, with the free trial first**
+/// (Melvin, 2026-09-27: "give them the 3 day free trial if they choose to
+/// accept the month half off"). Apple gives a purchase ONE introductory
+/// offer, so "free days, then a half-price first month" cannot be one
+/// purchase; he chose a cheaper plan instead: the monthly50 product is $3.99
+/// EVERY month, and its one introductory offer is the free trial. A rung
+/// selling half off only the first month came back earlier that day, on its
+/// own product (`com.lockout.meditate808.monthly50`). It was removed on
 /// 2026-08-24 because it sold `.monthly`, whose one introductory offer was the
 /// free week, so the screen promised a discount the purchase sheet would
 /// contradict. The trial rung likewise sells its own product
@@ -44,7 +50,7 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .trial:     return "No worries.\nTry it free first."
-        case .halfMonth: return "Then have your first\nmonth at half price."
+        case .halfMonth: return "Then have 808\nat half price."
         }
     }
 
@@ -62,14 +68,14 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         case .trial:
             return "\(TrialCopy.length(trialDays)) free, everything unlocked, cancel any time. If it doesn't help you meditate more, you pay nothing."
         case .halfMonth:
-            return "\(halfMonthPrice) for your first month instead of \(monthlyPrice). Everything unlocked. It renews at \(monthlyPrice) a month after that, and you can cancel any time."
+            return "\(TrialCopy.length(trialDays)) free, then \(halfMonthPrice) a month instead of \(monthlyPrice). Everything unlocked. It renews every month, and you can cancel any time."
         }
     }
 
     var cta: String {
         switch self {
         case .trial:     return "Start my free trial"
-        case .halfMonth: return "Take half off my first month"
+        case .halfMonth: return "Start free, then half price"
         }
     }
 

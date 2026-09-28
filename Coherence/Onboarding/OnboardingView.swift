@@ -406,7 +406,7 @@ struct OnboardingView: View {
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
                                        || step == .buildingPlan || step == .mindProfile
-                                       || step == .blockApps || step == .blockSchedule) ? .steady : nil,
+                                       || step == .blockApps) ? .steady : nil,
                              look: step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
                              jiggle: ottoPokes,
@@ -415,7 +415,7 @@ struct OnboardingView: View {
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount || step == .buildingPlan
                                  || step == .baseline || step == .mindProfile || step == .lifeNumber
-                                 || step == .lifeMoments || step == .blockApps || step == .blockSchedule,
+                                 || step == .lifeMoments || step == .blockApps,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)

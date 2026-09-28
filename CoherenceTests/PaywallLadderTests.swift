@@ -70,14 +70,18 @@ final class PaywallLadderTests: XCTestCase {
         }
     }
 
-    /// Half of the year's price, and it says what it renews at wherever the
-    /// number appears. A discount whose renewal is hidden is the 3.1.2
-    /// rejection and the lie underneath it.
-    func test_theHalfMonthIsRealAndSaysWhatItRenewsAt() {
+    /// Half the month's price, every month since 2026-09-27, after a free
+    /// trial. The rung must say both the trial and that it renews, and the
+    /// strikethrough is the real monthly price it is half of.
+    func test_theHalfPricePlanIsRealAndSaysItRenews() {
         XCTAssertEqual(SubscriptionPlan.monthHalf.price, "$3.99")
         XCTAssertEqual(SubscriptionPlan.monthly.price, "$7.99")
-        XCTAssertTrue(SubscriptionPlan.monthHalf.cadence.contains(SubscriptionPlan.monthly.price))
+        XCTAssertTrue(SubscriptionPlan.monthHalf.cadence.contains("per month"))
         XCTAssertEqual(SubscriptionPlan.monthHalf.anchorPrice, SubscriptionPlan.monthly.price)
+        let copy = DownsellRung.halfMonth.subtitle(plan: .monthHalf, yearlyPrice: SubscriptionPlan.yearly.price,
+                                                   trialDays: 3)
+        XCTAssertTrue(copy.contains("free"), "the rung must say the trial comes first")
+        XCTAssertTrue(copy.lowercased().contains("renews"))
     }
 
     func test_theDiscountIsRealAndSaysWhatItRenewsAt() {

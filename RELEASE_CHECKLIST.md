@@ -20,11 +20,14 @@ corrected to match. Do every step below it before returning here.
    subscription group as Monthly and Yearly, create
    `com.lockout.meditate808.monthlytrial` ($7.99 a month, introductory offer:
    free trial, the length you want; the app reads it) and
-   `com.lockout.meditate808.monthly50` ($7.99 a month, introductory offer:
-   pay as you go, 1 month at $3.99), and attach both to the version. Until
-   they exist the "No, I don't want to pay" link does not appear in Release;
-   nothing else breaks. Test each once in the sandbox: the trial rung's
-   purchase sheet must show the free trial, the half-month one $3.99.
+   `com.lockout.meditate808.monthly50` (**$3.99 a month, every month**,
+   introductory offer: free trial, 3 days; changed 2026-09-27 from a
+   half-off first month, because Melvin wants the trial on it and Apple
+   allows one introductory offer per product), and attach both to the
+   version. Until they exist the "No, I don't want to pay" link does not
+   appear in Release; nothing else breaks. Test each once in the sandbox:
+   the trial rung's purchase sheet must show the free trial, the half-price
+   one 3 days free then $3.99 a month.
 0. **NO FREE TRIAL (Aziz, 2026-09-26), App Store Connect must match the
    build.** The app no longer offers or mentions a trial
    (`Monetization.freeTrial = false`), and sells only Monthly and Yearly

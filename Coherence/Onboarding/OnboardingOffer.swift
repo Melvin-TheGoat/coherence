@@ -68,7 +68,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .lifetime: return "Lifetime"
         case .yearHalf: return "First year"
         case .monthTrial: return "Free trial"
-        case .monthHalf: return "First month"
+        case .monthHalf: return "Half price"
         }
     }
 
@@ -106,7 +106,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // strikethrough is a true reference price and not a fake one.
         case .yearHalf: return "$29.99"
         case .monthTrial: return nil
-        // The month's real price, which this is genuinely half of.
+        // The month's real price, which this plan is genuinely half of,
+        // every month (2026-09-27), so the strikethrough stays a true
+        // reference price.
         case .monthHalf: return "$7.99"
         }
     }
@@ -120,7 +122,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // everywhere the number appears (3.1.2, and plain honesty).
         case .yearHalf: return "first year, then $29.99 a year"
         case .monthTrial: return "per month after the trial"
-        case .monthHalf: return "first month, then $7.99 a month"
+        case .monthHalf: return "per month after the trial"
         }
     }
 
@@ -148,7 +150,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // $14.99 over 12 months, the same arithmetic as the year above it.
         case .yearHalf: return "$1.25 a month for the first year"
         case .monthTrial: return "Nothing to pay today"
-        case .monthHalf: return "Half off your first month"
+        case .monthHalf: return "Half the monthly price, every month"
         }
     }
 }
