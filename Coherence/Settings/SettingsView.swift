@@ -112,10 +112,16 @@ private struct SettingsForm: View {
                 .scrollIndicators(.hidden)
                 .ignoresSafeArea(edges: .top)
                 .background(ValleyGround.meadow.ignoresSafeArea())
+                // Once the sky has scrolled away, meadow fades in behind the
+                // clock and Done, so the cards pass under it instead of
+                // colliding with the pill.
+                .modifier(StatusBarScrim(height: top + 64, threshold: 60))
 
+                // The ZStack already starts below the status bar, so the
+                // pin needs only the title row's own 10pt, not `top` again.
                 doneButton
                     .padding(.trailing, AppMetrics.screenPadding)
-                    .padding(.top, top + 10)
+                    .padding(.top, 10)
             }
         }
         .toolbar(.hidden, for: .navigationBar)

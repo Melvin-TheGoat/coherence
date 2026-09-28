@@ -147,7 +147,7 @@ private struct CloseCapsule: View {
 /// has no navigation bar, so iOS has no top edge to fade, and without this
 /// the feed's cards slid under the clock with nothing behind it. Invisible
 /// while the sky is showing, which is the whole point of the band.
-private struct StatusBarScrim: ViewModifier {
+struct StatusBarScrim: ViewModifier {
     let height: CGFloat
     let threshold: CGFloat
     @State private var past = false
