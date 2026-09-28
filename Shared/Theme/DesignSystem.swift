@@ -66,13 +66,20 @@ extension EnvironmentValues {
 /// A tile's surface: the sand of `backgroundSecondary`, darkened by the
 /// screen's `tileDim`. Every tile draws through this, so a tile can never be
 /// the one left glaring at night.
+///
+/// `color` defaults to the sand every tile uses, but a surface that has to
+/// stand OUT from a sand card around it (Home's `EvidenceRow`, 2026-09-27:
+/// "its like the same gray color, make them different") can pass a lighter
+/// tone and still dim at night through the same mechanism, rather than a new
+/// surface inventing its own night rule.
 struct TileFill<S: Shape>: View {
     let shape: S
+    var color: Color = AppColor.backgroundSecondary
     var opacity: Double = 1
     @Environment(\.tileDim) private var dim
 
     var body: some View {
-        shape.fill(AppColor.backgroundSecondary.opacity(opacity))
+        shape.fill(color.opacity(opacity))
             .overlay(shape.fill(Color.black.opacity(dim * opacity)))
     }
 }
