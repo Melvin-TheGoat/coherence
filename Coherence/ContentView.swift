@@ -21,6 +21,8 @@ struct ContentView: View {
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
     @Query private var prefsRows: [Preferences]
+    /// For the "added a photo" award.
+    @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
     @EnvironmentObject private var store: Store
     /// Block (2026-09-22): the blockers, the passes, and the "Ask Otto" that
