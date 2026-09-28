@@ -75,38 +75,58 @@ private struct SettingsForm: View {
     }
 
     /// In the valley like Friends, Profile and the guide (Melvin, 2026-09-27:
-    /// "Settings needs to also be on theme"): a band of sky with the title
-    /// and Done, sand cards on the grass, white headings between them. The
-    /// pages it pushes keep their own bar and back button.
+    /// "Settings needs to also be on theme"): a band of sky with the title,
+    /// sand cards on the grass, white headings between them. The pages it
+    /// pushes keep their own bar and back button.
+    ///
+    /// **Done is pinned, not scrolled** (Melvin, 2026-09-28: "so dont have to
+    /// scroll up everytime we want to leave"). It used to live inside the sky
+    /// band, so it left the screen with the rest of the scroll content. Now
+    /// it is an overlay on the `GeometryReader` itself, outside the
+    /// `ScrollView`, so it stays put at the same spot the whole time — over
+    /// the sky at the top and over the sand cards once you have scrolled
+    /// past it. Its cream pill is what makes that work at either: the pill
+    /// is its own background regardless of what is under it, the house style
+    /// for any control floating on a scene ("a cream capsule is something
+    /// you press").
     var body: some View {
         GeometryReader { proxy in
             let top = proxy.safeAreaInsets.top
-            ScrollView {
-                VStack(alignment: .leading, spacing: 0) {
-                    FriendsSky(height: top + 92, sceneHeight: (top + 92) / 0.62) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text("Settings")
-                                .font(DisplayFont.display(30, .heavy))
-                                .foregroundStyle(ValleyGround.skyInk)
-                            Spacer()
-                            Button("Done", action: onDone)
-                                .font(AppFont.callout.weight(.bold))
-                                .foregroundStyle(ValleyGround.ink)
-                                .padding(.horizontal, 16).padding(.vertical, 8)
-                                .background(AppColor.backgroundPrimary.opacity(0.9), in: Capsule())
+            ZStack(alignment: .topTrailing) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
+                        FriendsSky(height: top + 92, sceneHeight: (top + 92) / 0.62) {
+                            HStack(alignment: .firstTextBaseline) {
+                                Text("Settings")
+                                    .font(DisplayFont.display(30, .heavy))
+                                    .foregroundStyle(ValleyGround.skyInk)
+                                Spacer()
+                            }
+                            .padding(.horizontal, AppMetrics.screenPadding)
+                            .padding(.top, top + 10)
+                            .frame(maxHeight: .infinity, alignment: .top)
                         }
-                        .padding(.horizontal, AppMetrics.screenPadding)
-                        .padding(.top, top + 10)
-                        .frame(maxHeight: .infinity, alignment: .top)
+                        settingsBody
                     }
-                    settingsBody
                 }
+                .scrollIndicators(.hidden)
+                .ignoresSafeArea(edges: .top)
+                .background(ValleyGround.meadow.ignoresSafeArea())
+
+                doneButton
+                    .padding(.trailing, AppMetrics.screenPadding)
+                    .padding(.top, top + 10)
             }
-            .scrollIndicators(.hidden)
-            .ignoresSafeArea(edges: .top)
-            .background(ValleyGround.meadow.ignoresSafeArea())
         }
         .toolbar(.hidden, for: .navigationBar)
+    }
+
+    private var doneButton: some View {
+        Button("Done", action: onDone)
+            .font(AppFont.callout.weight(.bold))
+            .foregroundStyle(ValleyGround.ink)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(AppColor.backgroundPrimary.opacity(0.9), in: Capsule())
     }
 
     private var settingsBody: some View {
