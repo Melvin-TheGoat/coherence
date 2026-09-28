@@ -405,7 +405,8 @@ struct OnboardingView: View {
                                     : step == .goodNews ? .bright
                                     : (step == .meetOtto || step == .ottoGrows || step == .questionCount
                                        || step == .didYouKnow || step == .baseline
-                                       || step == .buildingPlan || step == .mindProfile) ? .steady : nil,
+                                       || step == .buildingPlan || step == .mindProfile
+                                       || step == .blockApps || step == .blockSchedule) ? .steady : nil,
                              look: step == .seeForYourself ? OttoAura.look(level: Int(glowDemo.rounded()))
                                    : step == .clutter ? OttoAura.look(level: Int(clutterLevel.rounded())) : nil,
                              jiggle: ottoPokes,
@@ -414,7 +415,7 @@ struct OnboardingView: View {
                              // clip of him writing, on the valley's cushion.
                              figureHidden: step == .questionCount || step == .buildingPlan
                                  || step == .baseline || step == .mindProfile || step == .lifeNumber
-                                 || step == .lifeMoments,
+                                 || step == .lifeMoments || step == .blockApps || step == .blockSchedule,
                              seed: lifeSeed,
                              drop: (step == .didYouKnow || step == .baseline || step == .buildingPlan
                                     || step == .mindProfile)
@@ -442,8 +443,12 @@ struct OnboardingView: View {
             // writing Otto top right, like Brainrot's brain).
             if step == .questionCount || step == .motivation || step == .obstacles || step == .role
                 || step == .quietTime || step == .habitHistory || step == .age
-                || step == .recovery || step == .wandering || step == .stress {
-                SeatedClipLayer(clip: .writing, inCorner: step != .questionCount)
+                || step == .recovery || step == .wandering || step == .stress
+                || step == .blockApps || step == .blockSchedule {
+                // Block's two screens (2026-09-27) take the same Otto: seated
+                // and writing under "Which apps steal your time?", up in the
+                // corner for "When should I hold them?".
+                SeatedClipLayer(clip: .writing, inCorner: step != .questionCount && step != .blockApps)
                     .transition(.opacity)
                     // Explicit order above the valley: a view animating OUT of
                     // a ZStack without a zIndex is drawn behind its siblings,

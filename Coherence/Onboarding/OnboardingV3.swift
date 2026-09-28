@@ -408,11 +408,17 @@ struct IntroScreen<Figure: View>: View {
     var standing: Bool = true
     /// Something between Otto and the button (the "See for yourself" bar).
     var footer: AnyView? = nil
+    /// The questions' bar. Off for a screen after the interview (Block's
+    /// "Which apps steal your time?"), which shows Back in its place.
+    var showsProgress: Bool = true
+    /// A quiet way past the button ("Not now"), under it.
+    var secondary: (title: String, action: () -> Void)? = nil
     let onContinue: () -> Void
     /// Otto, handed whether he should be moving yet.
     @ViewBuilder let figure: (_ playing: Bool) -> Figure
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingBack) private var back
     /// Flips once: fades Otto and the title in and starts him moving.
     @State private var shown = false
     @State private var subtitleShown = 0
@@ -469,12 +475,22 @@ struct IntroScreen<Figure: View>: View {
             .animation(.easeInOut(duration: 0.3), value: subtitle)
 
             VStack(spacing: 0) {
-                OnboardingProgress(from: progressFrom ?? progress, to: progress)
-                    // A second page of one screen moves the bar instead of
-                    // rebuilding it.
-                    .id(progress)
+                if showsProgress {
+                    OnboardingProgress(from: progressFrom ?? progress, to: progress)
+                        // A second page of one screen moves the bar instead of
+                        // rebuilding it.
+                        .id(progress)
+                        .padding(.top, 12)
+                        .padding(.horizontal, 8)
+                } else {
+                    HStack {
+                        if let back { OnboardingBackButton(action: back) }
+                        Spacer()
+                    }
+                    .frame(height: 40)
                     .padding(.top, 12)
-                    .padding(.horizontal, 8)
+                    .padding(.horizontal, AppMetrics.screenPadding)
+                }
 
                 // The words sit in the sky, over the ridge and well clear of
                 // his head.
@@ -510,6 +526,15 @@ struct IntroScreen<Figure: View>: View {
                     .opacity(ctaShown ? 1 : 0)
                     .offset(y: ctaShown ? 0 : 40)
                     .allowsHitTesting(ctaShown)
+                if let secondary {
+                    Button(action: secondary.action) {
+                        Text(secondary.title).modifier(FootnoteInk())
+                    }
+                    .font(.footnote.weight(.semibold))
+                    .padding(.top, -12)
+                    .opacity(ctaShown ? 1 : 0)
+                    .allowsHitTesting(ctaShown)
+                }
             }
             .animation(.easeInOut(duration: 0.3), value: footer == nil)
             .padding(.horizontal, AppMetrics.screenPadding)

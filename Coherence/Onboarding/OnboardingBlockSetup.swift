@@ -14,67 +14,36 @@ import FamilyControls
 // Mindful day is left exactly as waiting as it is for someone who never opens
 // the Block tab at all.
 
-/// Screen: which apps Otto holds. "Choose apps" asks for Screen Time access
-/// if 808 doesn't have it yet, then opens Apple's own picker right away.
-/// There is no error state and no dead end: a refusal, a failure, or picking
-/// nothing all just move on to the schedule, the same as tapping "Not now".
+/// Screen: which apps Otto holds. In the onboarding's own look (Melvin,
+/// 2026-09-27: it "looks different than the rest of the onboarding, like i
+/// want the text to type in like it did before"): the title in the sky and
+/// Otto, seated and writing, saying his line a letter at a time, the way the
+/// personalize screen does. "Choose apps" asks for Screen Time access if 808
+/// doesn't have it yet, then opens Apple's own picker. There is no error
+/// state and no dead end: a refusal, a failure, or picking nothing all just
+/// move on to the schedule, the same as tapping "Not now".
 struct BlockAppsScreen: View {
     let onContinue: () -> Void
 
     @ObservedObject private var block = BlockController.shared
-    @Environment(\.onboardingBack) private var back
-    @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
-    @State private var speaking = false
     @State private var picking = false
-    @State private var selection: FamilyActivitySelection
+    /// Nothing ticked when the picker opens (Melvin, 2026-09-27: "it
+    /// shouldnt by default select all apps, it shouldnt select any"). It
+    /// used to open on whatever Mindful day already held, which on a phone
+    /// that had been through onboarding before was everything.
+    @State private var selection = FamilyActivitySelection()
     @State private var selectionChanged = false
 
-    init(onContinue: @escaping () -> Void) {
-        self.onContinue = onContinue
-        // Whatever Mindful day already holds, so re-opening the picker (a
-        // resumed onboarding, or Back and forward again) shows what was
-        // actually picked rather than starting over blank.
-        let mindfulDayID = BlockController.shared.state.blockers.first { $0.kind == .mindfulDay }?.id
-        _selection = State(initialValue: mindfulDayID.map { BlockController.shared.selection(for: $0) }
-                            ?? FamilyActivitySelection())
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                if let back { OnboardingBackButton(action: back) }
-                Spacer()
-            }
-            .frame(height: 40)
-
-            Spacer(minLength: 8)
-
-            OttoSpeech(text: "Which apps steal your time? I'll hold them until you've meditated.",
-                       speaking: $speaking)
-                .opacity(appeared ? 1 : 0)
-
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
-                .padding(.top, 6)
-                .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, AppMetrics.screenPadding)
-        .padding(.top, 12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 10) {
-                OnboardingCTA(title: "Choose apps", action: chooseApps)
-                Button(action: onContinue) {
-                    Text("Not now").modifier(FootnoteInk())
-                }
-                .font(.footnote.weight(.semibold))
-            }
-            .padding(.horizontal, AppMetrics.screenPadding)
-            .padding(.bottom, 10)
-        }
+        IntroScreen(progress: 1,
+                    title: "Which apps steal your time?",
+                    titleSize: 30,
+                    subtitle: "I'll hold them until you've meditated.",
+                    cta: "Choose apps",
+                    standing: false,
+                    showsProgress: false,
+                    secondary: (title: "Not now", action: onContinue),
+                    onContinue: chooseApps) { _ in EmptyView() }
         .familyActivityPicker(isPresented: $picking, selection: Binding(
             get: { selection },
             set: { selection = $0; selectionChanged = true }))
@@ -88,7 +57,6 @@ struct BlockAppsScreen: View {
             guard selectionChanged, !selection.isEmptySelection else { return }
             saveSelection()
         }
-        .onAppear { withAnimation(.easeOut(duration: 0.3)) { appeared = true } }
     }
 
     private func chooseApps() {
@@ -111,95 +79,66 @@ struct BlockAppsScreen: View {
     }
 }
 
-/// Screen: when Otto holds them. "All day, until I meditate" — Mindful day's
-/// own schedule — is preselected, so Continue alone is enough. The two
-/// alternatives are schedules `BlockModel` already knows (`mindfulMorning`,
-/// `focusHours`), read off their presets rather than restated here, and
-/// applied to the SAME blocker: choosing one never creates a second blocker,
-/// it just changes when Mindful day runs.
+/// Screen: when Otto holds them. The question screens' layout (the title in
+/// the sky, white plates, Otto writing in the corner), over `BlockWhenPicker`,
+/// the same choices the Block tab's editor offers. "All day, until I
+/// meditate" is preselected, so Continue alone is enough; Custom takes any
+/// hours and days (Melvin, 2026-09-27: "put one more button that is custom,
+/// allows them to set when they want"). Every choice is applied to the SAME
+/// Mindful day blocker: choosing one never creates a second blocker.
 struct BlockScheduleScreen: View {
     let onContinue: () -> Void
 
     @ObservedObject private var block = BlockController.shared
     @Environment(\.onboardingBack) private var back
-    @StateObject private var rig = OttoRigHolder()
-    @State private var appeared = false
-    @State private var speaking = false
-    @State private var choice: Choice = .allDay
-
-    private enum Choice: CaseIterable, Hashable {
-        case allDay, mornings, weekdays
-
-        var title: String {
-            switch self {
-            case .allDay: return "All day, until I meditate"
-            case .mornings: return "Mornings, 6 to 10"
-            case .weekdays: return "Weekdays, 9 to 5"
-            }
-        }
-
-        var icon: String {
-            switch self {
-            case .allDay: return BlockerKind.mindfulDay.defaultSymbol
-            case .mornings: return BlockerKind.mindfulMorning.defaultSymbol
-            case .weekdays: return BlockerKind.focusHours.defaultSymbol
-            }
-        }
-
-        var window: BlockWindow {
-            switch self {
-            case .allDay: return .allDay
-            case .mornings: return Blocker.preset(.mindfulMorning).window
-            case .weekdays: return Blocker.preset(.focusHours).window
-            }
-        }
-
-        var weekdays: Set<Int> {
-            self == .weekdays ? Blocker.preset(.focusHours).weekdays : Set(1...7)
-        }
-    }
+    @State private var choice: BlockWhen = .allDay
+    @State private var hours = BlockHours()
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: 14) {
                 if let back { OnboardingBackButton(action: back) }
                 Spacer()
+                // Otto's corner (`SeatedClipLayer.cornerWidth`).
+                Color.clear.frame(width: SeatedClipLayer.cornerWidth)
             }
             .frame(height: 40)
 
-            OttoSpeech(text: "When should I hold them?", speaking: $speaking)
-                .padding(.top, 8)
-                .opacity(appeared ? 1 : 0)
+            ScrollView {
+                VStack(spacing: 0) {
+                    Text("When should I hold them?")
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 30)
 
-            OttoInMeadow(pose: .talking, talking: speaking, rig: rig)
-                .padding(.top, 6)
-                .opacity(appeared ? 1 : 0)
-
-            VStack(spacing: 10) {
-                ForEach(Choice.allCases, id: \.self) { option in
-                    OnboardingOption(label: option.title, icon: option.icon,
-                                     selected: choice == option) { choice = option }
+                    BlockWhenPicker(choice: $choice, hours: $hours)
+                        .padding(.top, 24)
+                        .padding(.bottom, 12)
                 }
             }
-            .padding(.top, 20)
-            .opacity(appeared ? 1 : 0)
-
-            Spacer(minLength: 0)
+            .scrollIndicators(.hidden)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .padding(.top, 12)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onboardingGround(.body)
         .safeAreaInset(edge: .bottom) {
-            OnboardingCTA(title: "Continue", action: save)
+            OnboardingCTA(title: "Continue", enabled: windowOK, action: save)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 10)
         }
-        .onAppear { withAnimation(.easeOut(duration: 0.3)) { appeared = true } }
+    }
+
+    private var windowOK: Bool {
+        var probe = Blocker.preset(.custom)
+        probe.apply(choice, hours: hours)
+        return probe.windowProblem == nil
     }
 
     /// Saves the window on the same Mindful day blocker and switches it on,
-    /// through `BlockController.save` — the commit path the Block tab itself
+    /// through `BlockController.save`, the commit path the Block tab itself
     /// uses, which registers the DeviceActivity schedules and reconciles the
     /// shields. `save` already refuses to leave a blocker on with no apps, so
     /// someone who tapped "Not now" on the apps screen lands here, picks a
@@ -208,8 +147,7 @@ struct BlockScheduleScreen: View {
     private func save() {
         if let i = block.state.blockers.firstIndex(where: { $0.kind == .mindfulDay }) {
             var blocker = block.state.blockers[i]
-            blocker.window = choice.window
-            blocker.weekdays = choice.weekdays
+            blocker.apply(choice, hours: hours)
             blocker.isOn = true
             block.save(blocker, selection: nil)
         }
