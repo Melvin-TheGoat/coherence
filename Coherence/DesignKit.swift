@@ -387,12 +387,16 @@ enum SessionListSupport {
 
 // MARK: - The week
 
-/// Seven days ending today, as a garden: a plant per day with a leaf per
-/// session (`mockups/session-view.html`, section 2, option C). Cairns (option
-/// A) shipped first on 2026-09-27; Melvin swapped them for the plants the
-/// next day ("with the little plants, I like that more actually"). Either
-/// way it replaced a single gold tick or photo per day, which could only
-/// ever say WHETHER you sat, never how many times.
+/// Seven days ending today, as a garden: a plant per day, in full flower from
+/// the FIRST session and one more bloom per session after that
+/// (`mockups/session-view.html`, section 2, option C). Cairns (option A)
+/// shipped first on 2026-09-27; Melvin swapped them for the plants the next
+/// day ("with the little plants, I like that more actually"). Either way it
+/// replaced a single gold tick or photo per day, which could only ever say
+/// WHETHER you sat, never how many times. **Most people only meditate once a
+/// day** (Melvin, 2026-09-28), so a single session earning only a bare sprout
+/// undersold it; a session now earns the whole plant, and it is EXTRA
+/// sessions that show up, as extra blooms fanned off the same stem.
 ///
 /// Home used to carry a whole month (2026-09-19, Aziz: "I think the calendar
 /// should be a weekly calendar"). A month is a grid of thirty-five small
@@ -435,9 +439,11 @@ struct WeekStrip: View {
 
     /// A day is a plant (option C of `mockups/session-view.html`, Melvin,
     /// 2026-09-28: "change it to plan C, with the little plants"): bare soil
-    /// on a day not sat, a stem with a leaf per session, a flower once the
-    /// day holds three. The rest day the streak forgave is a leaf fallen on
-    /// the soil, never a plant, because it was bridged, not practised.
+    /// on a day not sat, a full flowering plant from the FIRST session, and
+    /// one more bloom fanned off the same stem for every session after that,
+    /// capped so the count always reads as "one plant", never a crowd. The
+    /// rest day the streak forgave is a leaf fallen on the soil, never a
+    /// plant, because it was bridged, not practised.
     private func plant(_ day: WeekCairns.Day) -> some View {
         VStack(spacing: 8) {
             Text(letter(day.date))
@@ -463,10 +469,16 @@ struct WeekStrip: View {
         }
     }
 
-    /// Soil, stem, leaves and flower: the mockup's plant drawn a fifth
-    /// larger (`k`), so a single session's sprout still reads at arm's
-    /// length. A mound, a stem 16, 28 or 40 mockup units tall, a leaf every
-    /// 12 alternating sides, the flower on top from the third session.
+    /// Capped so a very active day still reads as "a full plant", never a
+    /// crowd of overlapping petals in a 40pt column (Melvin, 2026-09-28:
+    /// "add multiple flowers under one day for however many times they
+    /// meditated" — this is the ceiling on "however many").
+    private static let maxBlooms = 3
+
+    /// Soil, then a mature plant, drawn a fifth larger (`k`) so it still reads
+    /// at arm's length: a stem, two leaves, a flower on top from the FIRST
+    /// session — no more waiting for a third. Each session after that fans a
+    /// smaller bloom off the same stem, alternating sides, up to `maxBlooms`.
     private static func draw(_ day: WeekCairns.Day, in ctx: inout GraphicsContext, size: CGSize) {
         let k: CGFloat = 1.2
         let cx = size.width / 2
@@ -488,8 +500,9 @@ struct WeekStrip: View {
             return
         }
 
-        let count = min(day.sessionCount, 3)
-        let height = CGFloat(4 + 12 * count) * k
+        // The plant itself no longer scales with the count: one session
+        // already earns the mature stem, both leaves, and the main bloom.
+        let height = CGFloat(4 + 12 * 3) * k
         let top = ground - 2 - height
         var stem = Path()
         stem.move(to: CGPoint(x: cx, y: ground - 2))
@@ -499,7 +512,7 @@ struct WeekStrip: View {
         ctx.stroke(stem, with: .color(AppColor.meadowInk),
                    style: StrokeStyle(lineWidth: 2.4 * k, lineCap: .round))
 
-        for i in 0..<count {
+        for i in 0..<2 {
             let y = ground - (8 + CGFloat(12 * i)) * k
             let side: CGFloat = (i.isMultiple(of: 2) ? -1 : 1) * k
             var leaf = Path()
@@ -511,15 +524,54 @@ struct WeekStrip: View {
             ctx.fill(leaf, with: .color(leafInk))
         }
 
-        guard day.sessionCount >= 3 else { return }
-        for petal in 0..<5 {
-            let a = Double(petal) / 5 * 2 * .pi - .pi / 2
-            let p = CGPoint(x: cx + 3.4 * k * cos(a), y: top + 3.4 * k * sin(a))
-            ctx.fill(Path(ellipseIn: CGRect(x: p.x - 3.3 * k, y: p.y - 3.3 * k, width: 6.6 * k, height: 6.6 * k)),
-                     with: .color(AppColor.streakBlush))
+        Self.bloom(at: CGPoint(x: cx, y: top), in: &ctx, k: k,
+                   petal: AppColor.streakBlush, dot: AppColor.accentGold, scale: 1)
+
+        // One bloom per session after the first, fanned off the main stem
+        // at a shared branch point so the count is read at a glance rather
+        // than counted. Only the centre dot stays gold — that reads as the
+        // one achieved thing on the plant, so it never repeats.
+        let extra = min(day.sessionCount, Self.maxBlooms) - 1
+        guard extra > 0 else { return }
+        let branchOrigin = CGPoint(x: cx, y: ground - 2 - height * 0.6)
+        let angles: [Double] = extra == 1 ? [18] : [-18, 18]
+        let petals: [Color] = [AppColor.streakBlush.opacity(0.75), AppColor.calmAccent.opacity(0.6)]
+        for (index, degrees) in angles.enumerated() {
+            let radians = degrees * .pi / 180
+            let radius: CGFloat = 17 * k
+            let bloomCenter = CGPoint(x: branchOrigin.x + radius * sin(radians),
+                                      y: branchOrigin.y - radius * cos(radians))
+            var branch = Path()
+            branch.move(to: branchOrigin)
+            branch.addQuadCurve(to: bloomCenter,
+                                control: CGPoint(x: (branchOrigin.x + bloomCenter.x) / 2,
+                                                 y: branchOrigin.y - radius * 0.5))
+            ctx.stroke(branch, with: .color(AppColor.meadowInk),
+                       style: StrokeStyle(lineWidth: 1.6 * k, lineCap: .round))
+            Self.bloom(at: bloomCenter, in: &ctx, k: k,
+                       petal: petals[index % petals.count],
+                       dot: AppColor.meadowInk.opacity(0.55), scale: 0.78)
         }
-        ctx.fill(Path(ellipseIn: CGRect(x: cx - 2.5 * k, y: top - 2.5 * k, width: 5 * k, height: 5 * k)),
-                 with: .color(AppColor.accentGold))
+    }
+
+    /// Five petals ringed round a centre dot, the same shape at every size:
+    /// `scale` shrinks a branched bloom so it reads as a smaller flower off
+    /// the same plant, never a second identical one.
+    private static func bloom(at point: CGPoint, in ctx: inout GraphicsContext, k: CGFloat,
+                              petal: Color, dot: Color, scale: CGFloat) {
+        let offset = 3.4 * k * scale
+        let petalSize = 6.6 * k * scale
+        for i in 0..<5 {
+            let a = Double(i) / 5 * 2 * .pi - .pi / 2
+            let p = CGPoint(x: point.x + offset * cos(a), y: point.y + offset * sin(a))
+            ctx.fill(Path(ellipseIn: CGRect(x: p.x - petalSize / 2, y: p.y - petalSize / 2,
+                                            width: petalSize, height: petalSize)),
+                     with: .color(petal))
+        }
+        let dotSize = 5 * k * scale
+        ctx.fill(Path(ellipseIn: CGRect(x: point.x - dotSize / 2, y: point.y - dotSize / 2,
+                                        width: dotSize, height: dotSize)),
+                 with: .color(dot))
     }
 
     private func accessibilityLabel(_ day: WeekCairns.Day) -> String {

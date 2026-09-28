@@ -4,11 +4,15 @@ import Foundation
 /// section 2). It was drawn as cairns (option A) for a day and is now a
 /// garden (option C, Melvin, 2026-09-28); the name stayed.
 ///
-/// One leaf per session that day, a flower from the third; an empty day is
-/// bare soil; a day the streak forgave (one missed day per seven,
+/// A full flowering plant from the FIRST session that day — most people only
+/// meditate once a day, so a single session earns the whole plant, not a bare
+/// sprout — and one more bloom fanned off the same stem for every session
+/// after that (`WeekStrip.draw`, capped at `WeekStrip.maxBlooms`). An empty
+/// day is bare soil; a day the streak forgave (one missed day per seven,
 /// `StreakCalculator`) draws a fallen leaf instead of nothing, so the strip
 /// and the streak headline can never disagree about which days were
-/// forgiven and which were simply missed.
+/// forgiven and which were simply missed. This type only counts sessions —
+/// `WeekStrip` decides how many blooms that count actually draws.
 ///
 /// Pure Foundation, no SwiftUI: the view draws the stones, this decides which
 /// days get them.

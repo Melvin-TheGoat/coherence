@@ -70,7 +70,13 @@ struct ProfileTab: View {
     var body: some View {
         NavigationStack {
             GeometryReader { proxy in
-                let band = proxy.safeAreaInsets.top + proxy.size.height * 0.20
+                // Halved from 0.20 (Melvin, 2026-09-28: "too much deadspace
+                // at the top"), so the portrait and name sit noticeably
+                // higher. Still clear of the status bar / Dynamic Island:
+                // the portrait's top edge lands at `band` itself (see
+                // `identityCard`'s own math), which stays well below
+                // `safeAreaInsets.top` at this fraction on every device size.
+                let band = proxy.safeAreaInsets.top + proxy.size.height * 0.10
                 ScrollView {
                     VStack(spacing: 0) {
                         profileScene(width: proxy.size.width, height: band,
