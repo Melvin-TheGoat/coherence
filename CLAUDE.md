@@ -6299,5 +6299,21 @@ laid over the real drawing can fit a head of a different shape.
   dumps the cutter's keep/mask/silhouette decisions for tuning.
 - Both `OttoAuraFigure` (Home, Shop, the reward) and the session
   `OttoRiveView` (Ready, the sit) draw the three layers when a hat has them.
+- **The aura figure splits the back again: `-under` and `-over`** (Melvin,
+  same day: the Nirvana mandala crossed the brims). The aura rig paints its
+  glow, mandala and rings BEHIND his body but inside the one Rive render, so
+  a back picture under the whole rig had them drawn over the brim's sides.
+  `-over` is the back beside his head (outside his silhouette, ramping in
+  over three pixels, below the front edge) and is drawn ABOVE the rig;
+  `-under` is the rest, under it. The session Otto keeps the single `-back`:
+  its rig has nothing behind him, and his raised waving arm must stay in
+  front of the brim.
+- **`PREVIEW_HAT=<id> PREVIEW_HAT_REEL=1`** (DEBUG, `HatReel`) steps one hat
+  through all thirteen aura looks in the valley, then the Ready wave and the
+  sit, for a screen recording per hat. The gallery's 72pt grid is too small
+  to judge a brim against a cheek.
+- **zsh passes `$flags` as ONE word**: a loop with `extra="--otto-floor 0.7"`
+  silently cut the ensō without its floor. Drive flag lists from bash or
+  Python.
   The session Otto uses `.background` / `.overlay`, never a ZStack, so every
   layer is proposed exactly the drawing's frame and his size never changes.

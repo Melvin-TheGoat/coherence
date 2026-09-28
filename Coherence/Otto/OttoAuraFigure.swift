@@ -97,7 +97,11 @@ struct OttoAuraFigure: View {
             // hat squashes it, its front over him (Melvin, 2026-09-28: the
             // brims did not wrap round his head, and fur poked out past the
             // crown). A hat without layers is one picture over him.
-            hatLayer(canvas: canvas, suffix: "-back")
+            // The back comes in two here: the part behind his head under the
+            // rig, the part beside it (`-over`) above it, because the rig
+            // paints its glow, mandala and rings behind his body and they
+            // crossed the brim's sides at Nirvana (Melvin, 2026-09-28).
+            hatLayer(canvas: canvas, suffix: hasLayer("-under") ? "-under" : "-back")
             if hasLayer("-cover") {
                 ZStack(alignment: .top) {
                     drawing
@@ -108,6 +112,7 @@ struct OttoAuraFigure: View {
             } else {
                 drawing
             }
+            hatLayer(canvas: canvas, suffix: "-over")
             hatOverlay(canvas: canvas)
         }
             .frame(width: canvas * Self.canvasAspect, height: canvas)
@@ -204,7 +209,7 @@ struct OttoAuraFigure: View {
         return UIImage(named: "hat-\(id)\(suffix)") != nil
     }
 
-    /// One layer of the worn hat (`-back` or `-cover`), in the same box and
+    /// One layer of the worn hat (`-back`, `-under`, `-over` or `-cover`), in the same box and
     /// bob as the hat itself. Nothing when the hat has no such layer.
     @ViewBuilder
     private func hatLayer(canvas: CGFloat, suffix: String) -> some View {

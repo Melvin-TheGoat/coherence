@@ -799,6 +799,28 @@ if layered && !ring {
     }
 }
 
+// How much of the hat's back belongs OVER the aura rig: all of it beside his
+// head, none of it behind. The aura rig carries its mandala, glow and rings
+// behind his body, so a back picture drawn under the whole rig let them
+// paint over the brim's sides (the Nirvana wheel crossed the sun hat's
+// brim). Ramps over three pixels inside his silhouette, so the hat's back
+// meets his outline rather than leaving a sliver of glow between them.
+var overWeight = [Double](repeating: 1, count: W * H)
+if layered && !ring {
+    var level = inside
+    for step in 0..<4 {
+        var next = level
+        for y in 0..<H { for x in 0..<W where level[y * W + x] {
+            let i = y * W + x
+            if x == 0 || y == 0 || x == W - 1 || y == H - 1
+                || !level[i - 1] || !level[i + 1] || !level[i - W] || !level[i + W] { next[i] = false }
+        } }
+        for i in 0..<(W * H) where level[i] && !next[i] { overWeight[i] = 0.75 - 0.25 * Double(step) }
+        level = next
+    }
+    for i in 0..<(W * H) where level[i] { overWeight[i] = 0 }
+}
+
 // Bounding box, of everything any layer draws.
 var minX = W, minY = H, maxX = 0, maxY = 0
 for y in 0..<H { for x in 0..<W {
@@ -810,7 +832,7 @@ guard maxX > minX else { print("no hat found"); exit(1) }
 minX = max(0, minX - 2); minY = max(0, minY - 2); maxX = min(W - 1, maxX + 2); maxY = min(H - 1, maxY + 2)
 let cw = maxX - minX + 1, ch = maxY - minY + 1
 
-enum Part { case whole, front, back, cover }
+enum Part { case whole, front, back, cover, under, over }
 func picture(_ part: Part) -> [UInt8] {
     var out = [UInt8](repeating: 0, count: cw * ch * 4)
     for y in minY...maxY { for x in minX...maxX {
@@ -826,15 +848,21 @@ func picture(_ part: Part) -> [UInt8] {
         // How much of this pixel belongs to the front: all of it above the
         // edge, fading out over two pixels below it.
         let frontShare = part == .front ? min(1, max(0, (frontEdge[x] + 2 - Double(y)) / 2)) : 1
+        // The back split in two for the aura rig: `over` is the share drawn
+        // above the rig (beside his head and below the front edge, which the
+        // front picture already covers above), `under` the rest.
+        let ow = overWeight[i] * (1 - min(1, max(0, (frontEdge[x] + 2 - Double(y)) / 2)))
+        let split = part == .over ? ow : part == .under ? 1 - ow : 1
+        let backLike = part == .back || part == .under || part == .over
         guard keep[i] else {
-            if part == .back, fillPx[i] != 0 {
-                let v = fillPx[i] - 1, al = fillFade[i]
+            if backLike, fillPx[i] != 0 {
+                let v = fillPx[i] - 1, al = fillFade[i] * split
                 guard al > 0.01 else { continue }
                 out[o] = UInt8(Double(v >> 16 & 255) * al); out[o + 1] = UInt8(Double(v >> 8 & 255) * al)
                 out[o + 2] = UInt8(Double(v & 255) * al); out[o + 3] = UInt8(255 * al)
                 continue
             }
-            guard part != .back else { continue }
+            guard !backLike else { continue }
             let al = shade[i]
             guard al > 0.01 else { continue }
             out[o] = UInt8(20 * al); out[o + 1] = UInt8(12 * al); out[o + 2] = UInt8(6 * al)
@@ -855,7 +883,7 @@ func picture(_ part: Part) -> [UInt8] {
             return max(0, min(255, Int((Double(c) - Double(bgc) * (1 - alpha)) / alpha)))
         }
         let (ur, ug, ub) = grown[i] ? (r, g, b) : (un(r, cream.0), un(g, cream.1), un(b, cream.2))
-        alpha *= frontShare
+        alpha *= frontShare * split
         guard alpha > 0.004 else { continue }
         out[o] = UInt8(Double(ur) * alpha); out[o + 1] = UInt8(Double(ug) * alpha)
         out[o + 2] = UInt8(Double(ub) * alpha); out[o + 3] = UInt8(alpha * 255)
@@ -876,6 +904,8 @@ if layered && !ring {
     write(picture(.front), base + "-front.png")
     write(picture(.back), base + "-back.png")
     write(picture(.cover), base + "-cover.png")
+    write(picture(.under), base + "-under.png")
+    write(picture(.over), base + "-over.png")
 }
 
 // The box in Otto's canvas units (his drawing's own pixels, 664 x 744).
