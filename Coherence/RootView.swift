@@ -39,8 +39,15 @@ struct RootView: View {
         if ProcessInfo.processInfo.environment["HARD_PAYWALL"] == "1" {
             return !store.entitled && !store.previewEntitled
         }
-        #endif
+        // Otherwise a development build is never locked. The simulator on
+        // Melvin's Mac reaches the real sandbox monthly and yearly, so since
+        // the lock stopped waiting for Lifetime and the half-off year
+        // (2026-09-28) every DEBUG launch, the laptop demo included, opened
+        // on a paywall it could not get past without a sandbox account.
+        return false
+        #else
         return store.state == .ready && !store.entitled
+        #endif
     }
 
     var body: some View {

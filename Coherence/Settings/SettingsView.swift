@@ -60,11 +60,13 @@ private struct SettingsForm: View {
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
     @AppStorage(TestTabBar.storageKey) private var tabBarStyle = TestTabBar.debugDefault.rawValue
-    /// The Apple Watch switch: the same value as the Ready screen's.
+    #endif
+    /// The Apple Watch switch: the same value as the Ready screen's. Outside
+    /// the DEBUG block: the Watch section uses them in every build, and
+    /// inside it the Release build did not compile.
     @AppStorage(WatchLink.choiceKey) private var sitKindRaw = SitKind.unmeasured.rawValue
     @ObservedObject private var watchLink = WatchLink.shared
     @State private var showWatchSetup = false
-    #endif
 
     private let durationOptions: [(String, Int?)] = [
         ("Open", nil), ("5 min", 300), ("10 min", 600), ("15 min", 900), ("20 min", 1200), ("30 min", 1800)
