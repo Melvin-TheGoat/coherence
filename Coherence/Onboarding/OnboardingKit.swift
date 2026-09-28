@@ -386,18 +386,33 @@ extension EnvironmentValues {
 /// The top-left chevron. Sized to a 40 pt target rather than the glyph, since a
 /// 17 pt arrow is well under the minimum anyone can reliably hit.
 struct OnboardingBackButton: View {
+    var ink: Color = AppColor.textSecondary
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
             Image(systemName: "chevron.left")
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(AppColor.textSecondary)
+                .foregroundStyle(ink)
                 .frame(width: 40, height: 40, alignment: .leading)
                 .contentShape(Rectangle())
         }
         .buttonStyle(CardButtonStyle())
         .accessibilityLabel("Back")
+        .preference(key: OnboardingBackDrawn.self, value: true)
+    }
+}
+
+/// Whether a screen drew its own Back chevron. `OnboardingView` reads it and
+/// puts one in the top-left corner of every screen that did not (Melvin,
+/// 2026-09-27: "Add a back button to the onboarding screen"), so a new screen
+/// can never ship without a way back. A screen that wants the chevron
+/// somewhere else (beside a progress bar) draws `OnboardingBackButton`
+/// itself, and this stays out of its way.
+struct OnboardingBackDrawn: PreferenceKey {
+    static let defaultValue = false
+    static func reduce(value: inout Bool, nextValue: () -> Bool) {
+        value = value || nextValue()
     }
 }
 

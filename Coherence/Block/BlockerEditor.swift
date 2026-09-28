@@ -10,7 +10,7 @@ import FamilyControls
 /// This REPLACES Brainrot's segmented All Day / Schedule / Daily Limit
 /// editor (2026-09-22, `mockups/blocker-editor-v2.html`) with the onboarding's
 /// own screen (`BlockScheduleScreen` in `OnboardingBlockSetup.swift`): the
-/// same title style, the same `BlockWhenPicker` over `BlockWhen`'s four
+/// same title style, the same `BlockWhenPicker` over `BlockWhen`'s
 /// choices (`Coherence/Block/BlockWhen.swift`), All day preselected. Onboarding
 /// and this editor now draw the identical picker, so they can never disagree
 /// about what a blocker can be set to.

@@ -84,6 +84,22 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertFalse(BlockRules.holds(late, in: s, at: at(11, 3), calendar: cal))
     }
 
+    /// Night owl (`BlockWhen.nightOwlWindow`): 6 pm until 6 am. A session in
+    /// the evening opens the apps until the morning, and the next evening
+    /// holds them again.
+    func test_nightOwlHoldsOvernightAndASessionOpensTheNight() {
+        var owl = on(.custom)
+        owl.window = .hours(start: 18 * 60, end: 6 * 60)
+        var s = state(owl)
+        XCTAssertNil(owl.windowProblem)
+        XCTAssertFalse(BlockRules.holds(owl, in: s, at: at(10, 12), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(owl, in: s, at: at(10, 23), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(owl, in: s, at: at(11, 3), calendar: cal))
+        BlockRules.recordSession(endingAt: at(10, 20), durationSec: 300, in: &s, calendar: cal)
+        XCTAssertFalse(BlockRules.holds(owl, in: s, at: at(11, 3), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(owl, in: s, at: at(11, 19), calendar: cal))
+    }
+
     func test_focusHoursRestAtTheWeekend() {
         let focus = on(.focusHours)
         let s = state(focus)

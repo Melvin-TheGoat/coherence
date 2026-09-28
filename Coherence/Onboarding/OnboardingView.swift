@@ -486,6 +486,18 @@ struct OnboardingView: View {
             }
 
             content
+                .overlayPreferenceValue(OnboardingBackDrawn.self, alignment: .topLeading) { drawn in
+                    // Every screen gets a way back: the ones that draw no
+                    // chevron of their own get this one, where the question
+                    // screens put theirs.
+                    if !drawn && !history.isEmpty && step.allowsBack {
+                        // The ascend screen is night over a lake.
+                        OnboardingBackButton(ink: step == .ascend ? .white.opacity(0.8) : AppColor.textSecondary,
+                                             action: goBack)
+                            .padding(.leading, AppMetrics.screenPadding)
+                            .padding(.top, 12)
+                    }
+                }
                 .id(screenIdentity)
                 .transition(screenTransition)
                 .animation(.easeInOut(duration: 0.32), value: screenIdentity)
@@ -551,6 +563,9 @@ struct OnboardingView: View {
                 if target == .sessionResults {
                     walkthroughSessionID = DemoData.seedResults(in: context)
                 }
+                // One step of history, so the jumped-to screen shows its
+                // Back chevron the way it does in the real flow.
+                if target != .relief { history = [.relief] }
                 step = target
             }
         #endif

@@ -476,12 +476,17 @@ struct IntroScreen<Figure: View>: View {
 
             VStack(spacing: 0) {
                 if showsProgress {
-                    OnboardingProgress(from: progressFrom ?? progress, to: progress)
-                        // A second page of one screen moves the bar instead of
-                        // rebuilding it.
-                        .id(progress)
-                        .padding(.top, 12)
-                        .padding(.horizontal, 8)
+                    HStack(spacing: 14) {
+                        // Held to the bar's height so the words below do not
+                        // move; the chevron still draws, and is hit, at 40pt.
+                        if let back { OnboardingBackButton(action: back).frame(height: 14) }
+                        OnboardingProgress(from: progressFrom ?? progress, to: progress)
+                            // A second page of one screen moves the bar instead
+                            // of rebuilding it.
+                            .id(progress)
+                    }
+                    .padding(.top, 12)
+                    .padding(.horizontal, back == nil ? 8 : AppMetrics.screenPadding)
                 } else {
                     HStack {
                         if let back { OnboardingBackButton(action: back) }
@@ -738,6 +743,7 @@ private struct OttoSaysBubble: View {
 struct ClutterScreen: View {
     @Binding var level: Double
     let onContinue: () -> Void
+    @Environment(\.onboardingBack) private var back
 
     /// What crowds his head. Ordinary, specific and not cruel: the point is
     /// recognition, not alarm.
@@ -834,9 +840,13 @@ struct ClutterScreen: View {
             .accessibilityHidden(true)
 
             VStack(spacing: 10) {
-                OnboardingProgress(from: 0.10, to: 0.13)
-                    .padding(.top, 12)
-                    .padding(.horizontal, 8)
+                HStack(spacing: 14) {
+                    if let back { OnboardingBackButton(action: back).frame(height: 14) }
+                    OnboardingProgress(from: 0.10, to: 0.13)
+                }
+                .padding(.top, 12)
+                // The stack already sits in the screen gutter.
+                .padding(.horizontal, back == nil ? 8 : 0)
                 Text("Clarity and peace are within reach.")
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)

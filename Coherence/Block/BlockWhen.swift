@@ -9,13 +9,19 @@ import SwiftUI
 /// draw `BlockWhenPicker` over this, so the two can never offer different
 /// things. It replaced the editor's All Day / Schedule / Daily Limit control.
 enum BlockWhen: Hashable, CaseIterable {
-    case allDay, mornings, weekdays, custom
+    case allDay, mornings, weekdays, nightOwl, custom
+
+    /// Night owl's hours (Melvin, 2026-09-27): 6 pm until 6 am, every day,
+    /// the evening scroll and the phone in bed. It runs past midnight, which
+    /// `BlockWindow.hours` already means by an end before the start.
+    static let nightOwlWindow = BlockWindow.hours(start: 18 * 60, end: 6 * 60)
 
     var title: String {
         switch self {
         case .allDay: return "All day, until I meditate"
         case .mornings: return "Mornings, 6 to 10"
         case .weekdays: return "Weekdays, 9 to 5"
+        case .nightOwl: return "Night owl, 6 pm to 6 am"
         case .custom: return "Custom"
         }
     }
@@ -25,6 +31,7 @@ enum BlockWhen: Hashable, CaseIterable {
         case .allDay: return BlockerKind.mindfulDay.defaultSymbol
         case .mornings: return BlockerKind.mindfulMorning.defaultSymbol
         case .weekdays: return BlockerKind.focusHours.defaultSymbol
+        case .nightOwl: return BlockerKind.windDown.defaultSymbol
         case .custom: return "clock"
         }
     }
@@ -36,6 +43,7 @@ enum BlockWhen: Hashable, CaseIterable {
         case .allDay: return "All day"
         case .mornings: return "Mornings"
         case .weekdays: return "Work hours"
+        case .nightOwl: return "Night owl"
         case .custom: return "My hours"
         }
     }
@@ -50,6 +58,7 @@ enum BlockWhen: Hashable, CaseIterable {
             let morning = Blocker.preset(.mindfulMorning), work = Blocker.preset(.focusHours)
             if blocker.window == morning.window && blocker.weekdays == morning.weekdays { return .mornings }
             if blocker.window == work.window && blocker.weekdays == work.weekdays { return .weekdays }
+            if blocker.window == nightOwlWindow && blocker.weekdays == Set(1...7) { return .nightOwl }
             return .custom
         }
     }
@@ -92,6 +101,9 @@ extension Blocker {
             let p = Blocker.preset(.focusHours)
             window = p.window
             weekdays = p.weekdays
+        case .nightOwl:
+            window = BlockWhen.nightOwlWindow
+            weekdays = Set(1...7)
         case .custom:
             window = .hours(start: hours.start, end: hours.end)
             weekdays = hours.days
@@ -99,7 +111,7 @@ extension Blocker {
     }
 }
 
-/// The four choices as the onboarding's white plates, and under Custom the
+/// The five choices as the onboarding's white plates, and under Custom the
 /// hours and the days.
 struct BlockWhenPicker: View {
     @Binding var choice: BlockWhen
