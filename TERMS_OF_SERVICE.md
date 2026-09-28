@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: September 23, 2026**
+**Last updated: September 28, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
 **Lock Out Inc. ("we," "us," "808")** governing your use of the **808** app
@@ -29,11 +29,14 @@ unwell.
 
 ## 2. The service
 
-The App runs meditation sessions. An Apple Watch is optional: when you use one,
-the App shows you evidence of how your body responded, a heart-rate trend and
-a measure of how still you were, generated **after** the session, not as a
-live score. A session started on your iPhone alone runs a plain timer and
-measures nothing about your body. If you use Block, the App can also hold
+The App runs meditation sessions and helps you keep meditating: Otto, the
+App's sloth, gets brighter as you practice, your sessions earn points you can
+spend on hats for him, and your streak and awards are tracked for you. An
+Apple Watch is optional: when it measures a session, the App shows you
+evidence of how your body responded, a heart-rate trend and a measure of how
+still you were, generated **after** the session, not as a live score. A
+session started on your iPhone without the Watch measuring runs a plain timer
+and measures nothing about your body. If you use Block, the App can also hold
 apps you find distracting until you've meditated. Features may change over
 time.
 
@@ -54,6 +57,32 @@ by their terms, not ours.
 You must be at least 13 years old (or the minimum age of digital consent where you
 live) to use the App. You sign in with **Sign in with Apple**; you're responsible
 for activity under your account and for keeping your Apple ID secure.
+
+## 3a. Subscriptions and payments
+
+Using the App requires a subscription, which you can buy in the App, monthly
+or yearly. The price, the billing period and any introductory offer are shown
+before you buy.
+
+- **Payment is handled by Apple.** It is charged to your Apple ID when you
+  confirm the purchase, under the App Store's terms.
+- **Subscriptions renew automatically** at the same price and for the same
+  period unless you turn off auto-renew at least 24 hours before the current
+  period ends. You can manage or cancel your subscription at any time in your
+  Apple ID's subscription settings; cancelling stops the next renewal and you
+  keep access until the end of the period you paid for.
+- **Free trials and introductory prices**, when offered, are shown before you
+  buy. A free trial becomes a paid subscription at its end unless you cancel
+  at least 24 hours before it ends.
+- **Refunds** are handled by Apple under its policies; we cannot issue them
+  directly.
+- A lifetime purchase made in an earlier version of the App remains valid,
+  and you can restore any purchase from the paywall or from Settings.
+
+**Points and hats.** Points are earned by meditating and can be spent on hats
+for Otto inside the App. They have no cash value, cannot be bought, sold or
+transferred, and are not a currency. We may change how points are earned or
+what they can be spent on.
 
 ## 4. License
 
@@ -78,35 +107,35 @@ your device; your account and session log sync through your own private iCloud;
 we operate no servers of our own; and you can delete everything from
 Settings → Delete Account.
 
-## 6a. Friends: what you post, and what we will not tolerate
+## 6a. Friends: your profile, and what we will not tolerate
 
-Friends is optional. If you create a profile and post a session, that post,
-its photos or videos and your profile become visible to other people using
-808. You keep ownership of what you post. You give us permission to store
-it, show it to the people you share it with, and remove it, for as long as
+Friends is optional. If you create a profile, your username, display name,
+profile photo and a summary of how often you meditate become visible to other
+people using 808. You keep ownership of what you add. You give us permission
+to store it, show it to other people using 808, and remove it, for as long as
 you keep it in the app.
 
-**By posting you confirm** that the content is yours to post, that any person
-in a photo or video is you, and that it does not infringe anyone's rights.
+**By adding a profile photo you confirm** that it is yours to use, that any
+person in it is you, and that it does not infringe anyone's rights.
 
-**There is no tolerance for objectionable content.** Do not post anything
-that is unlawful, hateful, harassing, threatening, sexually explicit,
-violent, or that shows or targets another person without their consent, and
-do not impersonate anyone or spam other users.
+**There is no tolerance for objectionable content.** Do not use a username,
+name or photo that is unlawful, hateful, harassing, threatening, sexually
+explicit, violent, or that shows or targets another person without their
+consent, and do not impersonate anyone or spam other users.
 
-**How this is enforced.** Text is filtered before it is accepted. Every post
-and every person can be reported from the app, and you can block someone,
-which hides you from each other in both directions. We review reports and
-act on them, normally within 24 hours: content that breaks these rules is
-removed, and accounts that break them repeatedly are removed with it. We may
-remove content or an account without notice where the rules are plainly
-broken.
+**How this is enforced.** Usernames and names are filtered before they are
+accepted. Every person can be reported from the app, and you can block
+someone, which hides you from each other in both directions. We review
+reports and act on them, normally within 24 hours: content that breaks these
+rules is removed, and accounts that break them repeatedly are removed with
+it. We may remove content or an account without notice where the rules are
+plainly broken.
 
 **Reports go to us**, not to the person reported. Blocking is between you and
 them and is not announced.
 
-**Deleting your account** removes your Friends profile, your posts, and the
-connections and blocks you created, as described in our
+**Deleting your account** removes your Friends profile and the connections
+and blocks you created, as described in our
 [Privacy Policy](https://meditate808.com/privacy). Reports you filed are
 kept as moderation records so we can continue acting on them.
 
@@ -149,7 +178,7 @@ license above.
 ## 8. Third-party services
 
 The App relies on Apple services (Sign in with Apple, HealthKit, Screen Time,
-iCloud/CloudKit, the App Store), which are governed by Apple's own terms. As
+iCloud/CloudKit, Shortcuts, the App Store, and in-app purchase), which are governed by Apple's own terms. As
 described in Section 2, you may also play media from other apps or services
 while the App measures; those services are independent of us. We're not
 responsible for third-party services or their content.
