@@ -128,24 +128,35 @@ struct LiftedTabBar: View {
     }
 
     /// The onboarding button as a circle: green with a darker lip under it
-    /// and a heavy white plus.
+    /// and a heavy white plus. Bigger than the tabs and raised half out of
+    /// the bar (Melvin, 2026-09-27: "make the center green button bigger,
+    /// should be bigger than the rest"): 68pt against the icons' 28pt slot,
+    /// lifted so the bar keeps its height.
     private var plus: some View {
         Button(action: onPlus) {
             ZStack {
-                Circle().fill(OnboardingGreen.shade).offset(y: 4)
+                Circle().fill(OnboardingGreen.shade).offset(y: 5)
                 Circle().fill(OnboardingGreen.fill)
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
             }
-            .frame(width: 50, height: 50)
-            .padding(.bottom, 4)
+            .frame(width: Self.plusSize, height: Self.plusSize)
+            .shadow(color: .black.opacity(0.16), radius: 8, y: 4)
         }
         .buttonStyle(.plain)
+        // The tour's spotlight measures the circle itself, before the lift
+        // and the slot's width (the 2026-09-19 lesson: measured after, the
+        // lit window missed the top of the plus).
         .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.begin: $0] }
-        .frame(maxWidth: .infinity)
+        .offset(y: -Self.plusLift)
+        // The slot keeps the tabs' height, so the bar does not grow.
+        .frame(maxWidth: .infinity, maxHeight: 48)
         .accessibilityLabel("Begin session")
     }
+
+    static let plusSize: CGFloat = 68
+    static let plusLift: CGFloat = 14
 
     @ViewBuilder
     private func art(_ name: String) -> some View {
