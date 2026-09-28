@@ -133,6 +133,13 @@ struct EvidenceRow: View {
     /// sessions you post" has to show which sessions those are.
     var shared: Bool? = nil
 
+    /// The row's own corner, deliberately tighter than the card's
+    /// `AppMetrics.cardRadius` it sits inside: a nested plate only reads as
+    /// an object ON the card when its corner is smaller than the container's
+    /// (the same relationship `.whiteCard()` uses for a card standing on the
+    /// grass). Matches `AppMetrics.buttonRadius`.
+    private static let plateRadius: CGFloat = 20
+
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
             // The puck, not the selfie (Melvin, 2026-09-23: "the photo
@@ -165,9 +172,28 @@ struct EvidenceRow: View {
         }
         .padding(14)
         .frame(maxWidth: .infinity)
-        .background(TileFill(shape: RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous)))
-        .clipShape(RoundedRectangle(cornerRadius: AppMetrics.cardRadius, style: .continuous))
-        .shadow(color: AppColor.hairline, radius: 0, y: 2)
+        // A surface of its own, not the card's sand (Melvin, 2026-09-27: "in
+        // the home tab, in the 'recent' part, its buttons are like not
+        // distinguishable from the background, its like the same gray
+        // color"). Home's "Recent" card (`ContentView.proofSection`) is
+        // `.card()`, which fills with `backgroundSecondary` sand through this
+        // same `TileFill` — so a row filled the identical way was invisible
+        // against the card holding it. `backgroundPrimary`, the app's
+        // lighter cream paper, is the plate instead, still routed through
+        // `TileFill` so it dims exactly like every other tile at night
+        // (`tileDim`; "never fill a tile with `.white`, draw it through
+        // `TileFill`"). This is scoped to `EvidenceRow` itself rather than a
+        // parameter every call site would carry: the view has exactly one
+        // call site left (Home's Recent card — grep confirms it; Profile's
+        // week log draws its own bare `MinutesRow` on a hairline instead), so
+        // there is no other screen a param would need to reach, and a plain
+        // Button already dims this whole row on press (`CardButtonStyle`).
+        .background(TileFill(shape: RoundedRectangle(cornerRadius: Self.plateRadius, style: .continuous),
+                              color: AppColor.backgroundPrimary))
+        .clipShape(RoundedRectangle(cornerRadius: Self.plateRadius, style: .continuous))
+        // The same soft lift `.whiteCard()` gives a card standing on the
+        // grass: this row needs an equivalent lift standing on the card.
+        .shadow(color: .black.opacity(0.07), radius: 8, y: 2)
     }
 }
 
