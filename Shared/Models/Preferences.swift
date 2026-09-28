@@ -42,6 +42,30 @@ final class Preferences {
     /// evidence after the grant runs out.
     var grantedSessionIDs: [String] = []
 
+    // MARK: The shop (OttoPoints, HatCatalog; added 2026-09-27, all
+    // defaulted so the migration is lightweight and CloudKit-safe)
+
+    /// Hats bought in the shop, comma-joined ids. A plain scalar `String`
+    /// rather than `[String]` (as `rewardedFriends` above uses) so the
+    /// migration is a single default with nothing to reconsider; read and
+    /// write it through `ownedHatIDList`.
+    var ownedHatIDs: String = ""
+    /// The hat Otto currently wears, or "" for none; read and write it
+    /// through `wornHatIDValue`.
+    var wornHatID: String = ""
+
+    /// Computed accessor over the comma-joined `ownedHatIDs`.
+    var ownedHatIDList: [String] {
+        get { ownedHatIDs.isEmpty ? [] : ownedHatIDs.split(separator: ",").map(String.init) }
+        set { ownedHatIDs = newValue.joined(separator: ",") }
+    }
+
+    /// Computed accessor over `wornHatID`, nil for "worn nothing".
+    var wornHatIDValue: String? {
+        get { wornHatID.isEmpty ? nil : wornHatID }
+        set { wornHatID = newValue ?? "" }
+    }
+
     /// Computed accessor over the String-backed `theme`.
     var themeValue: Theme {
         get { Theme(rawValue: theme) ?? .system }
