@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// Otto as bright as your practice has kept him (`OttoAura`), for Home.
 ///
@@ -30,8 +31,26 @@ struct OttoAuraFigure: View {
     /// Change look at once rather than cross-fading (`OttoAuraRig.snap`),
     /// for a screen where a finger drags him through his looks.
     var snap: Bool = false
+    /// The hat he wears (`HatCatalog`), from the shop (2026-09-27):
+    /// **overrides** the worn hat read from `Preferences` below, so a
+    /// caller previewing a hat (the Store tab, trying one on before buying)
+    /// can show it before it is actually worn. Every other caller (Home
+    /// included) leaves this nil and gets whatever is actually worn, with
+    /// no change needed at the call site — `ContentView` never has to know
+    /// the shop exists.
+    var hatID: String? = nil
+
+    /// Read directly rather than threaded down from Home, since Home's own
+    /// file is owned elsewhere and should not need editing for the shop to
+    /// show up on it. Home is exactly the case `hatID` is nil for.
+    @Query(sort: \Preferences.createdAt) private var shopPrefsRows: [Preferences]
+    private var effectiveHatID: String? { hatID ?? shopPrefsRows.first?.wornHatIDValue }
 
     @State private var bob = false
+    /// A free-running oscillator for the RIG's own float, which the app
+    /// cannot read back (see `rigHatLift` below). Runs unconditionally; it
+    /// only ever moves the hat when `rigHatLift` decides to use it.
+    @State private var rigBob = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The animated seven (`OttoAura.riv`). Nil until that file ships, and
     /// whenever it will not load; the stills below stand in either way.
@@ -45,20 +64,125 @@ struct OttoAuraFigure: View {
 
     var body: some View {
         let canvas = size * 0.95 / Self.bodyShare
-        drawing
+        ZStack(alignment: .top) {
+            drawing
+            hatOverlay(canvas: canvas)
+        }
             .frame(width: canvas * Self.canvasAspect, height: canvas)
             // Hang his baseline on the bottom of the frame; the light under
             // him (Nirvana's swirl, Radiant's motes) overflows below it.
             .offset(y: canvas * (1 - Self.baseline))
             .ottoJiggle(jiggle)
             // The rig floats him itself; only the stills need lifting here.
+            // The hat, inside this same ZStack, rides along for free.
             .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
             .frame(width: size, height: size, alignment: .bottom)
             .animation(.spring(duration: 0.5, bounce: 0.2), value: stage)
-            .onAppear { setBob() }
+            .onAppear { setBob(); startRigBob() }
             .onChange(of: stage) { _, _ in setBob() }
             .accessibilityElement()
-            .accessibilityLabel("Otto, \(Self.mood(stage))")
+            .accessibilityLabel("Otto, \(Self.mood(stage))\(effectiveHatID != nil ? ", wearing a hat" : "")")
+    }
+
+    // MARK: - The hat
+
+    /// Where the hat sits, drawn in the SAME 664 x 744 canvas frame
+    /// `drawing` renders in, so a fraction measured off that canvas is a
+    /// fraction of this view with no further conversion.
+    ///
+    /// **Measured, not guessed**, 2026-09-27: the topmost fur pixel (any
+    /// channel below 178, the darkness threshold `tools/otto_aura_cut.swift`
+    /// already uses to find him against the paper) in a 260pt band centred
+    /// on his body's own x (332 of 664), scanned on the real `OttoAura1`
+    /// through `OttoAura7` art. Nirvana's tuft sits LOWER in frame than
+    /// Withered's (he is drawn bigger and closer for the brighter stages) —
+    /// that is what the source art actually does, not a bug in the scan.
+    private static let headTopFraction: [OttoAura.Stage: CGFloat] = [
+        .withered: 67.0 / 744, .faded: 59.0 / 744, .stirring: 46.0 / 744,
+        .steady: 40.0 / 744, .bright: 64.0 / 744, .radiant: 112.0 / 744,
+        .nirvana: 167.0 / 744
+    ]
+
+    /// The same, indexed by the rig's LOOK (1 to 13): the seven stages sit
+    /// at the odd numbers exactly; the six in-between looks are a straight
+    /// line between their neighbours, matching how those drawings are
+    /// themselves described ("a body halfway between each pair").
+    private static func headTopFraction(look: Int) -> CGFloat {
+        let stages = OttoAura.Stage.allCases   // declared 1...7, already in order
+        let clamped = min(max(look, 1), 13)
+        if clamped % 2 == 1 {
+            return headTopFraction[stages[(clamped - 1) / 2]] ?? 0.08
+        }
+        let lower = headTopFraction[stages[clamped / 2 - 1]] ?? 0.08
+        let upper = headTopFraction[stages[clamped / 2]] ?? 0.08
+        return (lower + upper) / 2
+    }
+
+    /// A hat's own box, square, as a fraction of the canvas width. `HatArt`
+    /// takes one `size` and fits its content inside it (`.scaledToFit()`),
+    /// so a square box is what its own signature expects. There is no real
+    /// hat art yet, so this is a reasonable placeholder proportion sized to
+    /// his head in the crops used to measure `headTopFraction`, not fitted
+    /// to any one hat; revisit once real art picks its own natural anchor.
+    private static let hatSizeFraction: CGFloat = 0.34
+    /// How far the hat's bottom edge sinks past the very topmost strand, so
+    /// it reads as worn rather than balanced on a single tip of fur.
+    private static let hatSinkFraction: CGFloat = 0.22
+
+    /// The rig's own vertical motion for a floating look, so the hat can
+    /// approximate it: `Lift`, a fixed per-look rise, plus `Bob`, a slow
+    /// oscillation. **Read straight off `tools/otto_aura_rig_build.py`**,
+    /// which built `OttoAura.riv`: `Lift` keys `{6: -26, 7: -40}` (canvas
+    /// units, stage 6 = Radiant, stage 7 = Nirvana, everything below zero),
+    /// and the `Float` timeline bobs `Bob` between 0 and -10 over its own
+    /// 5.0 s duration (300 frames at 60 fps). **This can only ever be an
+    /// approximation**: the rig runs that animation internally and SwiftUI
+    /// cannot read its live value back, so the hat plays an independent
+    /// oscillation of the same amplitude and period rather than a true
+    /// mirror — close enough that it rides with him instead of sitting
+    /// still while he moves.
+    ///
+    /// Applied only from look 9 (Bright) up, where the rig's own Float
+    /// state starts to engage.
+    private func rigHatLift(look: Int, canvas: CGFloat) -> CGFloat {
+        guard aura.rig != nil, look >= 9 else { return 0 }
+        // Bright (9) carries no Lift keyframe in the build script; only
+        // Radiant (11) and Nirvana (13) do. The in-between looks (10, 12)
+        // are a straight line between their neighbours, the same rule
+        // `headTopFraction(look:)` uses.
+        let lift: CGFloat
+        switch look {
+        case 9: lift = 0
+        case 10: lift = -13
+        case 11: lift = -26
+        case 12: lift = -33
+        default: lift = -40
+        }
+        let bobAmplitude: CGFloat = 10.0 / 744
+        return canvas * (lift / 744 - (rigBob ? bobAmplitude : 0))
+    }
+
+    @ViewBuilder
+    private func hatOverlay(canvas: CGFloat) -> some View {
+        if let effectiveHatID {
+            let effectiveLook = look ?? stage.look
+            let headFraction = Self.headTopFraction(look: effectiveLook)
+            let hatSize = canvas * Self.canvasAspect * Self.hatSizeFraction
+            let sink = hatSize * Self.hatSinkFraction
+            let bottomY = canvas * headFraction + sink
+            HatArt(id: effectiveHatID, size: hatSize)
+                .position(x: canvas * Self.canvasAspect * (332.0 / 664.0), y: bottomY - hatSize / 2)
+                .offset(y: rigHatLift(look: effectiveLook, canvas: canvas))
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// Runs for the figure's whole lifetime; `rigHatLift` is the only reader
+    /// and it only ever consumes this above look 9, so the cost elsewhere is
+    /// one Bool quietly flipping every 2.5 s.
+    private func startRigBob() {
+        guard !reduceMotion else { return }
+        withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) { rigBob = true }
     }
 
     /// How much wider than his canvas the rig is drawn. The moth that visits
