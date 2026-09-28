@@ -583,46 +583,300 @@ if !ring && !noShadow {
     }
 }
 
-// Bounding box.
+// A picture of the decisions, for tuning (--map out.png): the render dimmed,
+// red where the first mask had it, green where it was kept, blue tint over
+// his registered silhouette.
+if let i = a.firstIndex(of: "--map"), i + 1 < a.count {
+    var m = [UInt8](repeating: 255, count: W * H * 4)
+    for p in 0..<(W * H) {
+        let (r, g, b, _) = render.at(p % W, p / W)
+        var c = (Double(r) * 0.5, Double(g) * 0.5, Double(b) * 0.5)
+        if grown[p] { c.2 += 60 }
+        if mask[p] && !keep[p] { c.0 += 110 }
+        if keep[p] { c.1 += 110 }
+        m[p * 4] = UInt8(min(255, c.0)); m[p * 4 + 1] = UInt8(min(255, c.1)); m[p * 4 + 2] = UInt8(min(255, c.2))
+    }
+    let mc = CGContext(data: &m, width: W, height: H, bitsPerComponent: 8, bytesPerRow: W * 4,
+                       space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    try! NSBitmapImageRep(cgImage: mc.makeImage()!).representation(using: .png, properties: [:])!
+        .write(to: URL(fileURLWithPath: a[i + 1]))
+}
+
+// MARK: - Layers (v3, 2026-09-28, --layers)
+//
+// Melvin: the brims "dont actually wrap around his head ... theres like empty
+// space between the sides of his head and where the hat starts", and on the
+// wizard and bucket hats "you can see some of his head poking through the
+// upper sides". Both come from one fact: the render drew his head fuller than
+// his real drawing, so no single picture laid over him can fit. A real hat
+// sits in three depths, so the cut is split into three pictures of one box:
+//   front  the hat above its front edge (crown, band, the brim over his
+//          forehead), drawn OVER him, with the contact shadow;
+//   back   the whole hat plus its inside filled in between the brim's sides,
+//          drawn BEHIND him, so wherever his real head is narrower than the
+//          render's the hat's inside shows instead of sky;
+//   cover  where his own drawing is hidden: his head above the front edge,
+//          which the hat squashes, so fur never pokes out past the crown.
+// The front edge is a smooth curve fitted over the middle of his forehead and
+// held flat past his head's sides.
+let layered = a.contains("--layers")
+var frontEdge = [Double](repeating: Double(H), count: W)
+var fillPx = [UInt32](repeating: 0, count: W * H)    // 0 = none, else 0xRRGGBB + 1
+var cover = [Double](repeating: 0, count: W * H)
+var fillFade = [Double](repeating: 1, count: W * H)
+if layered && !ring {
+    let edged = (0..<W).filter { edge[$0] >= 0 }.map { edge[$0] }.sorted()
+    guard !edged.isEmpty else { print("no front edge"); exit(1) }
+    let edgeRow = edged[edged.count / 2]
+    let headCols = (0..<W).filter { inside[edgeRow * W + $0] }
+    let hx0 = headCols.min() ?? 0, hx1 = headCols.max() ?? W - 1
+    let hc = Double(hx0 + hx1) / 2, hw = Double(hx1 - hx0)
+    var pts = (0..<W).filter { edge[$0] >= 0 && abs(Double($0) - hc) < 0.32 * hw }
+        .map { (Double($0) - hc, Double(edge[$0])) }
+    func fit(_ p: [(Double, Double)]) -> (Double, Double, Double) {
+        var s = [Double](repeating: 0, count: 5), t = [Double](repeating: 0, count: 3)
+        for (x, y) in p {
+            var xp = 1.0
+            for k in 0..<5 { s[k] += xp; if k < 3 { t[k] += xp * y }; xp *= x }
+        }
+        let m = [[s[0], s[1], s[2]], [s[1], s[2], s[3]], [s[2], s[3], s[4]]]
+        func det(_ q: [[Double]]) -> Double {
+            q[0][0] * (q[1][1] * q[2][2] - q[1][2] * q[2][1])
+                - q[0][1] * (q[1][0] * q[2][2] - q[1][2] * q[2][0])
+                + q[0][2] * (q[1][0] * q[2][1] - q[1][1] * q[2][0])
+        }
+        let d = det(m)
+        guard abs(d) > 1e-9 else { return (t[0] / max(1, s[0]), 0, 0) }
+        func col(_ c: Int) -> [[Double]] { (0..<3).map { r in (0..<3).map { $0 == c ? t[r] : m[r][$0] } } }
+        return (det(col(0)) / d, det(col(1)) / d, det(col(2)) / d)
+    }
+    var coef = fit(pts)
+    for _ in 0..<2 {
+        pts = pts.filter { abs($0.1 - (coef.0 + coef.1 * $0.0 + coef.2 * $0.0 * $0.0)) < 8 }
+        coef = fit(pts)
+    }
+    for x in 0..<W {
+        let xc = min(max(Double(x), Double(hx0)), Double(hx1)) - hc
+        frontEdge[x] = coef.0 + coef.1 * xc + coef.2 * xc * xc
+    }
+    print(String(format: "front edge: head %d...%d, edge %.0f at the middle, %.0f / %.0f at its sides",
+                 hx0, hx1, frontEdge[Int(hc)], frontEdge[hx0], frontEdge[hx1]))
+
+    // The hat's inside, between the brim's inner edges, row by row, in the
+    // brim's own colours darkened as its underside is.
+    // Averaged over fifteen rows as well as six columns: one row's sample
+    // alone drew the inside as horizontal streaks.
+    func sample(_ xs: [Int], _ y: Int) -> (Double, Double, Double)? {
+        var c = (0.0, 0.0, 0.0), n = 0.0
+        for yy in max(0, y - 7)...min(H - 1, y + 7) {
+            for x in xs where x >= 0 && x < W && keep[yy * W + x] {
+                let (r, g, b, _) = render.at(x, yy)
+                c.0 += Double(r); c.1 += Double(g); c.2 += Double(b); n += 1
+            }
+        }
+        guard n > 0, xs.contains(where: { $0 >= 0 && $0 < W && keep[y * W + $0] }) else { return nil }
+        return (c.0 / n, c.1 / n, c.2 / n)
+    }
+    let firstRow = max(0, Int(frontEdge.min() ?? 0))
+    for y in firstRow..<H {
+        var L = -1, R = W
+        for x in 0..<Int(hc) where keep[y * W + x] && Double(y) > frontEdge[x] { L = x }
+        for x in stride(from: W - 1, to: Int(hc), by: -1) where keep[y * W + x] && Double(y) > frontEdge[x] { R = x }
+        // A row the brim reaches on one side only (its tips are rarely level)
+        // is filled from that side to his middle.
+        let leftSample = L >= 0 ? sample(Array((L - 5)...L), y) : nil
+        let rightSample = R < W ? sample(Array(R...(R + 5)), y) : nil
+        guard let either = leftSample ?? rightSample else { continue }
+        let lc = leftSample ?? either, rc = rightSample ?? either
+        let from = leftSample != nil ? L : Int(hc), to = rightSample != nil ? R : Int(hc)
+        guard to - from > 2 else { continue }
+        L = from; R = to
+        for x in (L + 1)..<R where !keep[y * W + x] && Double(y) > frontEdge[x] {
+            let t = Double(x - L) / Double(R - L), dark = 0.82
+            let mr: Double = (lc.0 * (1 - t) + rc.0 * t) * dark
+            let mg: Double = (lc.1 * (1 - t) + rc.1 * t) * dark
+            let mb: Double = (lc.2 * (1 - t) + rc.2 * t) * dark
+            let r = UInt32(max(0, min(255, mr))), g = UInt32(max(0, min(255, mg)))
+            let b = UInt32(max(0, min(255, mb)))
+            fillPx[y * W + x] = (r << 16 | g << 8 | b) + 1
+        }
+    }
+
+    // The inside ends at the hat's back rim, which curves UP behind his head
+    // from each brim tip (seen from a little above, the back of a brim sits
+    // higher than its sides). Below that curve there is no hat: a fill cut
+    // off square, or faded, showed its edge beside a narrower head.
+    let leftTip = (0..<H).last { y in (0..<Int(hc)).contains { keep[y * W + $0] && Double(y) > frontEdge[$0] } }
+    let rightTip = (0..<H).last { y in ((Int(hc) + 1)..<W).contains { keep[y * W + $0] && Double(y) > frontEdge[$0] } }
+    if let lt = leftTip ?? rightTip, let rt = rightTip ?? leftTip {
+        let span = max(1, hw / 2 + 40)
+        let rise = 0.55 * (Double(min(lt, rt)) - frontEdge[Int(hc)])
+        for x in 0..<W {
+            let u = min(1, abs(Double(x) - hc) / span)
+            let tip = x < Int(hc) ? Double(lt) : Double(rt)
+            let rim = tip - rise * (1 - u * u)
+            for y in 0..<H where fillPx[y * W + x] != 0 {
+                let below = Double(y) - rim
+                if below > 0 { fillFade[y * W + x] = max(0, 1 - below / 3) }
+            }
+        }
+    }
+
+    // Stop hiding him a few pixels ABOVE the hat's real bottom in each
+    // column: the fitted edge can sit a little below it, and hiding fur the
+    // hat does not reach shows the sky as a pale line along the band.
+    // The hat's VISIBLE bottom in a column is where its first real gap
+    // starts, reading down from its top: the brim's underside can sit lower
+    // in the same column with forehead between, and hiding fur down to it
+    // left holes along the edge.
+    var coverLimit = frontEdge
+    var visibleBottom = frontEdge
+    for x in 0..<W {
+        guard let top = (0..<H).first(where: { keep[$0 * W + x] }) else { continue }
+        var y = top, gap = 0, bottom = top
+        while y < H && Double(y) <= frontEdge[x] {
+            if keep[y * W + x] { gap = 0; bottom = y } else {
+                gap += 1
+                if gap >= 4 { break }
+            }
+            y += 1
+        }
+        // Six pixels up, inside solid hat: the line steps column to column,
+        // and a step reaching the slanted edge left a speck of sky.
+        visibleBottom[x] = min(frontEdge[x], Double(bottom))
+        coverLimit[x] = visibleBottom[x] - 6
+    }
+    let margin = 24
+    var rowGrown = [Bool](repeating: false, count: W * H)
+    for y in 0..<H {
+        var last = -10_000
+        var next = [Int](repeating: 10_000, count: W)
+        var n = 10_000
+        for x in stride(from: W - 1, through: 0, by: -1) { if inside[y * W + x] { n = x }; next[x] = n }
+        for x in 0..<W {
+            if inside[y * W + x] { last = x }
+            if x - last <= margin || next[x] - x <= margin { rowGrown[y * W + x] = true }
+        }
+    }
+    for x in 0..<W {
+        var last = -10_000
+        var next = [Int](repeating: 10_000, count: H)
+        var n = 10_000
+        for y in stride(from: H - 1, through: 0, by: -1) { if rowGrown[y * W + x] { n = y }; next[y] = n }
+        for y in 0..<H {
+            if rowGrown[y * W + x] { last = y }
+            guard y - last <= margin || next[y] - y <= margin else { continue }
+            let above = coverLimit[x] - Double(y)
+            // Near the front edge the weave has notches; hiding his fur
+            // behind a notch shows the sky through it as a dotted pale line.
+            // So close to the edge he is hidden only where the hat is.
+            // The same for the hat's own soft edge: its outermost pixels are
+            // half see-through, and fur hidden behind them shows as specks.
+            let i = y * W + x
+            let solid = keep[i] && x > 0 && x < W - 1 && y > 0 && y < H - 1
+                && keep[i - 1] && keep[i + 1] && keep[i - W] && keep[i + W]
+            if above > 0 && (above > 14 || solid) { cover[i] = min(1, above / 4) }
+        }
+    }
+
+    // The contact shadow lies on his forehead, under the front edge, across
+    // his head only.
+    for i in 0..<(W * H) { shade[i] = 0 }
+    if !noShadow {
+        for x in hx0...hx1 {
+            // From the hat's VISIBLE bottom, not the fitted curve: where the
+            // brim sits a pixel or two above the curve, starting at the
+            // curve left an unshaded sliver of forehead, a pale dotted line.
+            for d in 1...shadowDepth {
+                let y = Int(visibleBottom[x].rounded()) + d
+                guard y >= 0, y < H else { continue }
+                let i = y * W + x
+                guard inside[i], !keep[i] || Double(y) > frontEdge[x] else { continue }
+                let t = 1 - Double(d) / Double(shadowDepth)
+                shade[i] = 0.34 * pow(t, 1.7)
+            }
+        }
+    }
+}
+
+// Bounding box, of everything any layer draws.
 var minX = W, minY = H, maxX = 0, maxY = 0
-for y in 0..<H { for x in 0..<W where keep[y * W + x] || shade[y * W + x] > 0.01 {
+for y in 0..<H { for x in 0..<W {
+    let i = y * W + x
+    guard keep[i] || shade[i] > 0.01 || fillPx[i] != 0 || cover[i] > 0.01 else { continue }
     minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
 } }
 guard maxX > minX else { print("no hat found"); exit(1) }
 minX = max(0, minX - 2); minY = max(0, minY - 2); maxX = min(W - 1, maxX + 2); maxY = min(H - 1, maxY + 2)
 let cw = maxX - minX + 1, ch = maxY - minY + 1
 
-var out = [UInt8](repeating: 0, count: cw * ch * 4)
-for y in minY...maxY { for x in minX...maxX {
-    let i = y * W + x
-    let o = ((y - minY) * cw + (x - minX)) * 4
-    guard keep[i] else {
-        let al = shade[i]
-        guard al > 0.01 else { continue }
-        out[o] = UInt8(20 * al); out[o + 1] = UInt8(12 * al); out[o + 2] = UInt8(6 * al)
-        out[o + 3] = UInt8(al * 255)
-        continue
-    }
-    let (r, g, b, _) = render.at(x, y)
-    var alpha = 1.0
-    if !grown[i] { alpha = Double(min(1, max(0, fg[i]))) }
-    var edgePx = false
-    for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
-    where nx >= 0 && nx < W && ny >= 0 && ny < H && !keep[ny * W + nx] { edgePx = true }
-    if edgePx { alpha *= 0.55 }
-    func un(_ c: Int, _ bgc: Int) -> Int {
-        guard alpha > 0.01, alpha < 0.999 else { return c }
-        return max(0, min(255, Int((Double(c) - Double(bgc) * (1 - alpha)) / alpha)))
-    }
-    let (ur, ug, ub) = grown[i] ? (r, g, b) : (un(r, cream.0), un(g, cream.1), un(b, cream.2))
-    out[o] = UInt8(Double(ur) * alpha); out[o + 1] = UInt8(Double(ug) * alpha)
-    out[o + 2] = UInt8(Double(ub) * alpha); out[o + 3] = UInt8(alpha * 255)
-} }
-let ctx = CGContext(data: &out, width: cw, height: ch, bitsPerComponent: 8, bytesPerRow: cw * 4,
-                    space: CGColorSpaceCreateDeviceRGB(),
-                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
-let rep = NSBitmapImageRep(cgImage: ctx.makeImage()!)
-try! rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: a[3]))
+enum Part { case whole, front, back, cover }
+func picture(_ part: Part) -> [UInt8] {
+    var out = [UInt8](repeating: 0, count: cw * ch * 4)
+    for y in minY...maxY { for x in minX...maxX {
+        let i = y * W + x
+        let o = ((y - minY) * cw + (x - minX)) * 4
+        if part == .cover {
+            let al = cover[i]
+            guard al > 0.01 else { continue }
+            out[o] = UInt8(255 * al); out[o + 1] = UInt8(255 * al); out[o + 2] = UInt8(255 * al)
+            out[o + 3] = UInt8(255 * al)
+            continue
+        }
+        // How much of this pixel belongs to the front: all of it above the
+        // edge, fading out over two pixels below it.
+        let frontShare = part == .front ? min(1, max(0, (frontEdge[x] + 2 - Double(y)) / 2)) : 1
+        guard keep[i] else {
+            if part == .back, fillPx[i] != 0 {
+                let v = fillPx[i] - 1, al = fillFade[i]
+                guard al > 0.01 else { continue }
+                out[o] = UInt8(Double(v >> 16 & 255) * al); out[o + 1] = UInt8(Double(v >> 8 & 255) * al)
+                out[o + 2] = UInt8(Double(v & 255) * al); out[o + 3] = UInt8(255 * al)
+                continue
+            }
+            guard part != .back else { continue }
+            let al = shade[i]
+            guard al > 0.01 else { continue }
+            out[o] = UInt8(20 * al); out[o + 1] = UInt8(12 * al); out[o + 2] = UInt8(6 * al)
+            out[o + 3] = UInt8(al * 255)
+            continue
+        }
+        let (r, g, b, _) = render.at(x, y)
+        var alpha = 1.0
+        if !grown[i] { alpha = Double(min(1, max(0, fg[i]))) }
+        var edgePx = false
+        for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+        where nx >= 0 && nx < W && ny >= 0 && ny < H && !keep[ny * W + nx] && fillPx[ny * W + nx] == 0 {
+            edgePx = true
+        }
+        if edgePx { alpha *= 0.55 }
+        func un(_ c: Int, _ bgc: Int) -> Int {
+            guard alpha > 0.01, alpha < 0.999 else { return c }
+            return max(0, min(255, Int((Double(c) - Double(bgc) * (1 - alpha)) / alpha)))
+        }
+        let (ur, ug, ub) = grown[i] ? (r, g, b) : (un(r, cream.0), un(g, cream.1), un(b, cream.2))
+        alpha *= frontShare
+        guard alpha > 0.004 else { continue }
+        out[o] = UInt8(Double(ur) * alpha); out[o + 1] = UInt8(Double(ug) * alpha)
+        out[o + 2] = UInt8(Double(ub) * alpha); out[o + 3] = UInt8(alpha * 255)
+    } }
+    return out
+}
+func write(_ px: [UInt8], _ path: String) {
+    var px = px
+    let ctx = CGContext(data: &px, width: cw, height: ch, bitsPerComponent: 8, bytesPerRow: cw * 4,
+                        space: CGColorSpaceCreateDeviceRGB(),
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+    try! NSBitmapImageRep(cgImage: ctx.makeImage()!).representation(using: .png, properties: [:])!
+        .write(to: URL(fileURLWithPath: path))
+}
+write(picture(.whole), a[3])
+if layered && !ring {
+    let base = a[3].hasSuffix(".png") ? String(a[3].dropLast(4)) : a[3]
+    write(picture(.front), base + "-front.png")
+    write(picture(.back), base + "-back.png")
+    write(picture(.cover), base + "-cover.png")
+}
 
 // The box in Otto's canvas units (his drawing's own pixels, 664 x 744).
 let ow = baseW * best.s, oh = baseH * best.s

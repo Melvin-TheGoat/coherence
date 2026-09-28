@@ -53,7 +53,7 @@ struct HatArt: View {
     static let placement: [String: CGRect] = [
         "beanie":      CGRect(x: 146.9, y: -28.9, width: 368.0, height: 263.2),
         "sunhat":      CGRect(x: 83.6, y: 15.4, width: 490.4, height: 261.0),
-        "bucket":      CGRect(x: 119.5, y: 23.8, width: 426.4, height: 238.5),
+        "bucket":      CGRect(x: 119.5, y: 21.7, width: 426.4, height: 240.6),
         "flowercrown": CGRect(x: 124.4, y: 34.4, width: 404.6, height: 218.1),
         "monkhat":     CGRect(x: 85.0, y: 17.5, width: 489.0, height: 237.1),
         "leafcrown":   CGRect(x: 131.5, y: 52.0, width: 401.1, height: 169.6),

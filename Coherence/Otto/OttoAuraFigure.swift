@@ -92,7 +92,22 @@ struct OttoAuraFigure: View {
     var body: some View {
         let canvas = size * 0.95 / Self.bodyShare
         ZStack(alignment: .top) {
-            drawing
+            // A hat cut in layers (tools/hat_extract.swift --layers) sits in
+            // three depths: its back behind him, his head hidden where the
+            // hat squashes it, its front over him (Melvin, 2026-09-28: the
+            // brims did not wrap round his head, and fur poked out past the
+            // crown). A hat without layers is one picture over him.
+            hatLayer(canvas: canvas, suffix: "-back")
+            if hasLayer("-cover") {
+                ZStack(alignment: .top) {
+                    drawing
+                    hatLayer(canvas: canvas, suffix: "-cover")
+                        .blendMode(.destinationOut)
+                }
+                .compositingGroup()
+            } else {
+                drawing
+            }
             hatOverlay(canvas: canvas)
         }
             .frame(width: canvas * Self.canvasAspect, height: canvas)
@@ -183,6 +198,30 @@ struct OttoAuraFigure: View {
         return rigBob ? -10 * unit : 0
     }
 
+    /// Whether the worn hat was cut with this layer.
+    private func hasLayer(_ suffix: String) -> Bool {
+        guard let id = effectiveHatID else { return false }
+        return UIImage(named: "hat-\(id)\(suffix)") != nil
+    }
+
+    /// One layer of the worn hat (`-back` or `-cover`), in the same box and
+    /// bob as the hat itself. Nothing when the hat has no such layer.
+    @ViewBuilder
+    private func hatLayer(canvas: CGFloat, suffix: String) -> some View {
+        if let id = effectiveHatID, let image = UIImage(named: "hat-\(id)\(suffix)") {
+            let effectiveLook = look ?? stage.look
+            let unit = canvas / 744
+            let box = Self.hatBox(id, look: effectiveLook, rig: aura.rig != nil)
+            Image(uiImage: image).resizable()
+                .frame(width: box.width * unit, height: box.height * unit)
+                .position(x: box.midX * unit, y: box.midY * unit)
+                .offset(y: rigBobOffset(look: effectiveLook, unit: unit))
+                .allowsHitTesting(false)
+        }
+    }
+
+    /// The hat over him: its front layer when it was cut in layers, else the
+    /// whole picture.
     @ViewBuilder
     private func hatOverlay(canvas: CGFloat) -> some View {
         if let id = effectiveHatID {
@@ -190,7 +229,7 @@ struct OttoAuraFigure: View {
             let unit = canvas / 744
             let box = Self.hatBox(id, look: effectiveLook, rig: aura.rig != nil)
             Group {
-                if let image = UIImage(named: "hat-\(id)") {
+                if let image = UIImage(named: "hat-\(id)-front") ?? UIImage(named: "hat-\(id)") {
                     Image(uiImage: image).resizable()
                 } else {
                     HatArt(id: id, size: box.width * unit)

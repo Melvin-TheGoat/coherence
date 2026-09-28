@@ -276,7 +276,24 @@ struct OttoRiveView: View {
     @Query(sort: \Preferences.createdAt) private var hatPrefs: [Preferences]
 
     var body: some View {
-        drawn.overlay(alignment: .topLeading) { hat }
+        // A hat cut in layers sits in three depths, as on Home: its back
+        // behind him, his head hidden where the hat squashes it, its front
+        // over him (see OttoAuraFigure).
+        // Background and overlay, not a ZStack, so every layer is proposed
+        // exactly the drawing's frame and his size never changes.
+        covered
+            .background(alignment: .topLeading) { hat("-back") }
+            .overlay(alignment: .topLeading) { hat(hatPicture("-front") != nil ? "-front" : "") }
+    }
+
+    @ViewBuilder private var covered: some View {
+        if hatPicture("-cover") != nil {
+            drawn
+                .overlay(alignment: .topLeading) { hat("-cover").blendMode(.destinationOut) }
+                .compositingGroup()
+        } else {
+            drawn
+        }
     }
 
     // MARK: - The hat
@@ -328,9 +345,16 @@ struct OttoRiveView: View {
         return max(0, rise * size / 522)
     }
 
-    @ViewBuilder private var hat: some View {
+    /// The worn hat's picture for one layer ("" is the whole hat), if the
+    /// hat has it and this pose wears one.
+    private func hatPicture(_ suffix: String) -> UIImage? {
+        guard hatPose != nil, let id = OttoAuraFigure.previewHat ?? hatPrefs.first?.wornHatIDValue else { return nil }
+        return UIImage(named: "hat-\(id)\(suffix)")
+    }
+
+    @ViewBuilder private func hat(_ suffix: String) -> some View {
         if let hatPose, let id = OttoAuraFigure.previewHat ?? hatPrefs.first?.wornHatIDValue,
-           let box = Self.hatBox(id, pose: hatPose), let image = UIImage(named: "hat-\(id)") {
+           let box = Self.hatBox(id, pose: hatPose), let image = hatPicture(suffix) {
             let fw = width ?? size * OttoRig.aspect
             let k = min(fw / 425, size / 522)
             let ox = (fw - 425 * k) / 2, oy = (size - 522 * k) / 2
