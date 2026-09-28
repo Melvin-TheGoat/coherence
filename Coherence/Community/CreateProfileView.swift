@@ -64,10 +64,10 @@ struct CreateProfileView: View {
                         VStack(spacing: 6) {
                             Text(editing ? "Edit profile" : "Create your profile")
                                 .font(DisplayFont.display(28, .heavy))
-                                .foregroundStyle(ValleyGround.ink)
+                                .foregroundStyle(ValleyGround.skyInk)
                             Text("Your username is how friends find you. It's yours alone.")
                                 .font(AppFont.callout)
-                                .foregroundStyle(ValleyGround.inkSoft)
+                                .foregroundStyle(ValleyGround.skyInkSoft)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.horizontal, 30)

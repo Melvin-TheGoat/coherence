@@ -235,7 +235,7 @@ struct AwardUnlockView: View {
     /// award hangs in the sky in Otto's aura light, and he waves up at it
     /// from his cushion. It was a cream page with a gold wash.
     var body: some View {
-        let day = DayLight.at(0)
+        let day = DayLight.now
         GeometryReader { geo in
             // The screen ignores the safe area, so its insets read zero: the
             // sky line (`SitLayout.skyTop`, roughly where the island stops)
@@ -243,7 +243,7 @@ struct AwardUnlockView: View {
             let textTop = SitLayout.skyTop(in: geo.size) + 22
             let badgeY = SitLayout.ottoTop(in: geo.size) - 88
             ZStack {
-                ValleyScene(progress: 0, pose: .greeting)
+                ValleyScene(progress: 0, pose: .greeting, clock: true)
                 VStack(spacing: 7) {
                     Text("AWARD UNLOCKED")
                         .font(.caption2.weight(.heavy))

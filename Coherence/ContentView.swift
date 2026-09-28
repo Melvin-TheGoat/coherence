@@ -786,9 +786,7 @@ struct ContentView: View {
     private var streakBadge: some View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         return VStack(spacing: 0) {
-            Image(systemName: "flame.fill")
-                .font(.system(size: 20, weight: .semibold))
-                .foregroundStyle(AppColor.streakBlushText)
+            SitArt(name: "home-streak", size: 24)
             Text("\(streak.current)")
                 .font(DisplayFont.display(16, .heavy))
                 .foregroundStyle(AppColor.streakBlushText)
@@ -805,9 +803,7 @@ struct ContentView: View {
     private var guideBadge: some View {
         Button { sheet = .guide } label: {
             VStack(spacing: 1) {
-                Image(systemName: "book.closed.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(AppColor.calmAccent)
+                SitArt(name: "home-guide", size: 24)
                 Text("Guide")
                     .font(.system(size: 10, weight: .bold))
                     // Daytime ink always: it sits on a cream circle at every hour.
@@ -868,21 +864,19 @@ struct ContentView: View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
         let seconds = sessions.reduce(0) { $0 + $1.durationSec }
         return HStack(spacing: 10) {
-            statTile(icon: "trophy.fill", tint: AppColor.accentGoldText,
+            statTile(art: "home-best",
                      value: "\(streak.longest)", label: streak.longest == 1 ? "best day" : "best streak")
-            statTile(icon: "figure.mind.and.body", tint: AppColor.calmAccent,
+            statTile(art: "home-sessions",
                      value: "\(sessions.count)", label: sessions.count == 1 ? "session" : "sessions")
-            statTile(icon: "clock.fill", tint: AppColor.textSecondary,
+            statTile(art: "home-time",
                      value: Self.sat(seconds), label: "meditated")
         }
     }
 
-    private func statTile(icon: String, tint: Color, value: String, label: String) -> some View {
+    private func statTile(art: String, value: String, label: String) -> some View {
         VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(tint)
-                .frame(height: 26)
+            SitArt(name: art, size: 32)
+                .frame(height: 32)
             Text(value)
                 .font(DisplayFont.display(22, .heavy))
                 .foregroundStyle(AppColor.textPrimary)

@@ -88,7 +88,12 @@ struct SessionActiveView: View {
     /// The clock has run out. Whatever is measuring is wrapping up.
     private var finishing: Bool { plannedDurationSec != nil && displaySeconds == 0 }
 
-    private var day: DayLight { DayLight.at(progress) }
+    /// The sky, which starts at the real hour and runs on to night (the scene's
+    /// own `clock` rule), so the words on it match the sky they sit on.
+    private var day: DayLight {
+        let start = DayLight.clockProgress(at: now)
+        return DayLight.at(start + (1 - start) * progress)
+    }
 
     var body: some View {
         Group {
@@ -140,7 +145,7 @@ struct SessionActiveView: View {
             let ringCentreY = SitLayout.ringCentreY(in: geo.size)
 
             ZStack {
-                ValleyScene(progress: progress)
+                ValleyScene(progress: progress, clock: true)
 
                 // An open-ended sit gets the track and no arc. The arc is a
                 // proportion of something, and there is nothing here for it

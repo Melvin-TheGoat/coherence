@@ -150,7 +150,7 @@ private struct InterventionScene: View {
             ValleyStage(pose: "OttoSit", line: "Zzz... oh, hey. Morning meditation?", doors: doors) { size, ottoTop in
                 Text("z z")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
-                    .foregroundStyle(DayLight.at(0).inkSoft)
+                    .foregroundStyle(DayLight.now.inkSoft)
                     .position(x: size.width * 0.66, y: ottoTop + 18)
             }
         case .sign:
@@ -236,15 +236,19 @@ private struct ValleyStage<Extra: View>: View {
         self.extra = extra
     }
 
+    /// The hour drawn: the real one, unless the scene asks for its own (the
+    /// sleepy one is night on purpose).
+    private var hour: Double { progress == 0 ? DayLight.clockProgress() : progress }
+
     var body: some View {
-        let day = DayLight.at(progress)
+        let day = DayLight.at(hour)
         GeometryReader { geo in
             let size = geo.size
             let ottoHeight = min(230, size.height * 0.28)
             let ottoBottom = size.height - 150
             let ottoTop = ottoBottom - ottoHeight
             ZStack {
-                ValleyScene(progress: progress, showsFigure: false)
+                ValleyScene(progress: progress, showsFigure: false, clock: progress == 0)
                 // The aura drawings share one padded canvas (light around him,
                 // room under him), so they are drawn taller to put the sloth
                 // himself at `ottoHeight`, with his baseline on `ottoBottom`.
@@ -261,10 +265,9 @@ private struct ValleyStage<Extra: View>: View {
                 if !line.isEmpty {
                     VStack {
                         Spacer(minLength: 0)
-                        // The bubble is always cream, so its words are always the
-                        // daytime ink: at night the sky's own ink is pale, and
-                        // the line vanished into its own bubble.
-                        OttoLine(text: line, ink: DayLight.at(0).ink)
+                        // Home's bubble at this scene's hour: cream glass and
+                        // dark words by day, dark glass and pale words at night.
+                        OttoLine(text: line, progress: hour)
                     }
                     .frame(width: min(size.width - 56, 330), height: max(0, ottoTop - 8 - 110))
                     .position(x: size.width / 2, y: 110 + max(0, ottoTop - 8 - 110) / 2)
@@ -273,7 +276,7 @@ private struct ValleyStage<Extra: View>: View {
                 VStack {
                     Spacer()
                     DoorButtons(doors: doors, primary: primary, secondary: secondary,
-                                ink: progress > 0.6 ? AppColor.backgroundPrimary : day.ink)
+                                ink: hour > 0.6 ? AppColor.backgroundPrimary : day.ink)
                 }
             }
         }
@@ -292,11 +295,12 @@ extension ValleyStage where Extra == EmptyView {
 /// His line, in the bubble the valley screens use.
 private struct OttoLine: View {
     let text: String
-    let ink: Color
+    let progress: Double
     var body: some View {
+        let look = ValleyBubble.look(at: progress)
         OttoSpeech(text: text, tail: .bottom, size: 19,
-                   ink: ink, stroke: ink.opacity(0.38),
-                   fill: ValleyBubble.dayGlass, alignment: .center,
+                   ink: look.ink, stroke: look.stroke,
+                   fill: look.fill, alignment: .center,
                    speaking: .constant(false))
             .id(text)
     }
@@ -595,13 +599,13 @@ private struct BreatheWithMeScene: View {
     @State private var start = Date()
 
     var body: some View {
-        let day = DayLight.at(0)
+        let day = DayLight.now
         GeometryReader { geo in
             let size = geo.size
             let ottoHeight = min(210, size.height * 0.25)
             let ottoBottom = size.height - 150
             ZStack {
-                ValleyScene(progress: 0, showsFigure: false)
+                ValleyScene(progress: 0, showsFigure: false, clock: true)
                 BreathCircle(start: start)
                     .frame(width: 200, height: 200)
                     .position(x: size.width / 2, y: size.height * 0.30)
@@ -745,13 +749,13 @@ private struct SignScene: View {
 private struct TwoDoorsScene: View {
     let doors: InterventionDoors
     var body: some View {
-        let day = DayLight.at(0)
+        let day = DayLight.now
         GeometryReader { geo in
             let size = geo.size
             let ottoHeight = min(220, size.height * 0.27)
             let ottoBottom = size.height - 130
             ZStack {
-                ValleyScene(progress: 0, showsFigure: false)
+                ValleyScene(progress: 0, showsFigure: false, clock: true)
                 let drawn = ottoHeight / OttoAuraFigure.bodyShare
                 Image(OttoAuraFigure.asset(.steady))
                     .resizable()
@@ -761,7 +765,7 @@ private struct TwoDoorsScene: View {
                               y: ottoBottom + drawn * (1 - OttoAuraFigure.baseline) - drawn / 2)
                 VStack {
                     Spacer(minLength: 0)
-                    OttoLine(text: "What do you want more right now?", ink: day.ink)
+                    OttoLine(text: "What do you want more right now?", progress: DayLight.clockProgress())
                 }
                 .frame(width: min(size.width - 56, 330), height: max(0, ottoBottom - ottoHeight - 8 - 110))
                 .position(x: size.width / 2, y: 110 + max(0, ottoBottom - ottoHeight - 8 - 110) / 2)
@@ -807,7 +811,7 @@ private struct CountdownScene: View {
                     Text(done ? "Your call" : "Counting down")
                         .font(.system(size: 15, weight: .medium))
                 }
-                .foregroundStyle(DayLight.at(0).ink)
+                .foregroundStyle(DayLight.now.ink)
                 .position(x: size.width / 2, y: 118)
             }
         }
@@ -946,7 +950,7 @@ private struct HowLongScreen: View {
     private static let options = [10, 20, 30]
 
     var body: some View {
-        let ink = DayLight.at(0).ink
+        let ink = DayLight.now.ink
         GeometryReader { geo in
             let size = geo.size
             let ottoHeight = min(170, size.height * 0.19)
@@ -961,12 +965,12 @@ private struct HowLongScreen: View {
             let grassTop = ottoBottom - ottoHeight * 0.22
             let rise = max(0, (size.height * 0.66 - grassTop) / 0.34)
             ZStack {
-                ValleyScene(progress: 0, showsFigure: false)
+                ValleyScene(progress: 0, showsFigure: false, clock: true)
                     .frame(width: size.width, height: size.height + rise)
                     .frame(width: size.width, height: size.height, alignment: .bottom)
                 VStack {
                     Spacer(minLength: 0)
-                    OttoLine(text: "Fine. How long do you need?", ink: ink)
+                    OttoLine(text: "Fine. How long do you need?", progress: DayLight.clockProgress())
                 }
                 .frame(width: min(size.width - 56, 330), height: max(0, ottoTop - 8 - 110))
                 .position(x: size.width / 2, y: 110 + max(0, ottoTop - 8 - 110) / 2)

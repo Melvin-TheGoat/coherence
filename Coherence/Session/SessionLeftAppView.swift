@@ -15,16 +15,16 @@ struct SessionLeftAppView: View {
     let onOverride: () -> Void
 
     var body: some View {
-        let day = DayLight.at(0)
+        let day = DayLight.now
         GeometryReader { geo in
             ZStack {
-                ValleyScene(progress: 0, aura: .steady)
+                ValleyScene(progress: 0, aura: .steady, clock: true)
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     OttoSpeech(text: "**You left 808.** This session won't count.",
                                tail: .bottom, size: 16,
-                               ink: day.ink, stroke: day.ink.opacity(0.38),
-                               fill: ValleyBubble.dayGlass, alignment: .center,
+                               ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
+                               fill: ValleyBubble.now.fill, alignment: .center,
                                speaking: .constant(false))
                 }
                 .frame(width: min(geo.size.width - 56, 320),

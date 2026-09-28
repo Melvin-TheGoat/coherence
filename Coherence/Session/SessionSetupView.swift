@@ -88,17 +88,20 @@ struct SessionSetupView: View {
 
     var body: some View {
         GeometryReader { geo in
-            let day = DayLight.at(0)
+            let day = DayLight.now
             let lift = ottoLift(in: geo.size)
             ZStack {
                 // ONE scene, for both states. Never rebuilt, never replaced:
                 // it owns the Rive rig, and swapping it would restart him.
-                ValleyScene(progress: 0, pose: settling ? .meditating : .greeting,
+                ValleyScene(progress: 0, pose: settling ? .meditating : .greeting, clock: true,
                             ottoInCorner: aside, ottoLift: lift)
 
                 if choosingKind {
                     asking("How are we meditating?", day: day, in: geo.size)
-                    SitKindCards(kind: kind, watchPaired: Self.watchPaired) { picked in
+                    // Tall cards, in the middle of the screen (Melvin, 2026-09-27:
+                    // "a lot bigger/taller and centered ... they are too high").
+                    let cardHeight = min(340, geo.size.height * 0.38)
+                    SitKindCards(kind: kind, watchPaired: Self.watchPaired, height: cardHeight) { picked in
                         switch picked {
                         case .record:
                             logEnded = Date()
@@ -109,8 +112,8 @@ struct SessionSetupView: View {
                             choosingKind = false
                         }
                     }
-                    .padding(.top, Self.listTop)
-                    .frame(maxHeight: .infinity, alignment: .top)
+                    .position(x: geo.size.width / 2,
+                              y: max(geo.size.height / 2, Self.listTop + cardHeight / 2))
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else if logging {
                     asking("How long did you meditate?", day: day, in: geo.size)
@@ -160,7 +163,7 @@ struct SessionSetupView: View {
                     else { cancel() }
                 }
                 .font(AppFont.callout.weight(.semibold))
-                .foregroundStyle(DayLight.at(0).ink.opacity(0.55))
+                .foregroundStyle(DayLight.now.ink.opacity(0.55))
                 .padding(.horizontal, 20).padding(.top, 14)
             }
         }
@@ -308,8 +311,8 @@ struct SessionSetupView: View {
                             ? "Ready when you are. Start any YouTube or Spotify audio first."
                             : "Get comfortable.",
                        tail: .bottom, size: 17,
-                       ink: day.ink, stroke: day.ink.opacity(0.38),
-                       fill: ValleyBubble.dayGlass, alignment: .center,
+                       ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
+                       fill: ValleyBubble.now.fill, alignment: .center,
                        speaking: .constant(false))
         }
         .frame(width: min(size.width - 56, 320), height: max(120, speaks))
@@ -321,8 +324,8 @@ struct SessionSetupView: View {
     private func asking(_ line: String, day: DayLight, in size: CGSize) -> some View {
         OttoSpeech(text: line,
                    tail: .leading, size: 15,
-                   ink: day.ink, stroke: day.ink.opacity(0.38),
-                   fill: ValleyBubble.dayGlass, alignment: .center,
+                   ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
+                   fill: ValleyBubble.now.fill, alignment: .center,
                    speaking: .constant(false))
             .frame(maxWidth: size.width - 118, alignment: .leading)
             .position(x: 104 + (size.width - 118) / 2, y: 122)
@@ -555,6 +558,7 @@ enum SitKind: String, CaseIterable {
 struct SitKindCards: View {
     let kind: SitKind
     let watchPaired: Bool
+    var height: CGFloat = 236
     let pick: (SitKind) -> Void
 
     var body: some View {
@@ -563,11 +567,10 @@ struct SitKindCards: View {
                 let chosen = k == kind
                 let dim = k == .watch && !watchPaired
                 Button { pick(k) } label: {
-                    VStack(spacing: 10) {
-                        SitArt(name: k.art, size: 76)
-                            .padding(.top, 16)
+                    VStack(spacing: 12) {
+                        SitArt(name: k.art, size: 64)
                         Text(k.title)
-                            .font(DisplayFont.display(16, .heavy))
+                            .font(DisplayFont.display(17, .heavy))
                             .foregroundStyle(AppColor.textPrimary)
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
@@ -578,8 +581,8 @@ struct SitKindCards: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.horizontal, 10)
-                    .frame(maxWidth: .infinity, alignment: .top)
-                    .frame(height: 236, alignment: .top)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: height)
                     .background(AppColor.backgroundPrimary.opacity(0.94),
                                 in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous)

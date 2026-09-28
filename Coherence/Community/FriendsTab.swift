@@ -154,7 +154,7 @@ struct FriendsSky<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
-        ValleyScene(progress: 0, showsFigure: false)
+        ValleyScene(progress: 0, showsFigure: false, clock: true)
             .frame(height: max(height, sceneHeight ?? height))
             .frame(maxWidth: .infinity)
             .frame(height: height, alignment: .top)

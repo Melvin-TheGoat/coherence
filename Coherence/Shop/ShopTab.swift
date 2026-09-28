@@ -31,7 +31,7 @@ struct ShopTab: View {
     @State private var previewing: String?
     @StateObject private var rig = OttoRigHolder()
 
-    private static let day = DayLight.at(0)
+    private static var day: DayLight { DayLight.now }
     private static let meadow = day.field[1]
     private static let sceneShare: CGFloat = 0.42
 
@@ -94,7 +94,7 @@ struct ShopTab: View {
     private func scene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
         let ottoHeight = min(200, height * 0.62)
         return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, showsFigure: false)
+            ValleyScene(progress: 0, showsFigure: false, clock: true)
                 .frame(width: width, height: height)
                 .fadesIntoMeadow(Self.meadow)
             OttoAuraFigure(stage: currentStage, size: ottoHeight, rig: rig, hatID: shownHatID)

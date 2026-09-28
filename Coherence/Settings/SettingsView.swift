@@ -87,7 +87,7 @@ private struct SettingsForm: View {
                         HStack(alignment: .firstTextBaseline) {
                             Text("Settings")
                                 .font(DisplayFont.display(30, .heavy))
-                                .foregroundStyle(ValleyGround.ink)
+                                .foregroundStyle(ValleyGround.skyInk)
                             Spacer()
                             Button("Done", action: onDone)
                                 .font(AppFont.callout.weight(.bold))

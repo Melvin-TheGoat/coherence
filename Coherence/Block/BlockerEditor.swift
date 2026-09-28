@@ -63,11 +63,11 @@ struct BlockerEditor: View {
 
     /// The meadow at its near edge, so the footer's fade lands on the same
     /// green the valley's own grass ends in.
-    private static let meadow = DayLight.at(0).field[1]
+    private static var meadow: Color { DayLight.now.field[1] }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            ValleyScene(progress: 0, showsFigure: false)
+            ValleyScene(progress: 0, showsFigure: false, clock: true)
                 .ignoresSafeArea()
 
             ScrollView {

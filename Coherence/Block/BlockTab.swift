@@ -35,7 +35,7 @@ struct BlockTab: View {
         var id: UUID { blocker.id }
     }
 
-    private static let day = DayLight.at(0)
+    private static var day: DayLight { DayLight.now }
     private static let meadow = day.field[1]
 
     var body: some View {
@@ -126,7 +126,7 @@ struct BlockTab: View {
         let ottoHeight = min(215, height * 0.43)
         let ottoBottom = height * 0.85
         return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, showsFigure: false)
+            ValleyScene(progress: 0, showsFigure: false, clock: true)
                 .frame(width: width, height: height)
                 .fadesIntoMeadow(Self.meadow)
             Image(OttoPose.asking.asset)
@@ -145,8 +145,8 @@ struct BlockTab: View {
                 VStack {
                     Spacer(minLength: 0)
                     OttoSpeech(text: ottoLine, tail: .bottom, size: 17,
-                               ink: ink, stroke: ink.opacity(0.38),
-                               fill: ValleyBubble.dayGlass, alignment: .center,
+                               ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
+                               fill: ValleyBubble.now.fill, alignment: .center,
                                speaking: .constant(false))
                         .id(ottoLine)
                 }

@@ -49,7 +49,8 @@ struct RootView: View {
                 if premiumLock {
                     PaywallScreen(placement: "root_lock", plan: $lockPlan) { _ in }
                 } else {
-                    ContentView()
+                    // Home's night dim, for every tab and every sheet.
+                    ContentView().environment(\.tileDim, ContentView.tileDim)
                 }
             } else {
                 OnboardingView()

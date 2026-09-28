@@ -75,7 +75,7 @@ struct GuideView: View {
     /// The valley with Otto in it, saying the title. The house rule from the
     /// Ready screen: Otto says the sentence that would otherwise be a heading.
     private var band: some View {
-        ValleyScene(progress: 0, showsFigure: false)
+        ValleyScene(progress: 0, showsFigure: false, clock: true)
             .frame(height: 228)
             .frame(maxWidth: .infinity)
             .clipped()
@@ -151,7 +151,7 @@ struct NoTopEdgeHaze: ViewModifier {
 
 private enum GuideGround {
     /// The meadow at its near edge, which the page continues under the band.
-    static let meadow = DayLight.at(0).field[1]
+    static var meadow: Color { DayLight.now.field[1] }
     /// Dividers inside a white card. Not the app's `hairline`, which is cream
     /// and on white reads as the brown these screens were moved off.
     static let quiet = AppColor.meadowInk.opacity(0.11)
@@ -341,7 +341,7 @@ struct MethodDetailView: View {
         // Tall enough that the sky clears the status bar and the back
         // button: at 150 the top third sat under them and the band read as
         // meadow alone.
-        ValleyScene(progress: 0, showsFigure: false)
+        ValleyScene(progress: 0, showsFigure: false, clock: true)
             .frame(height: 212)
             .frame(maxWidth: .infinity)
             .clipped()

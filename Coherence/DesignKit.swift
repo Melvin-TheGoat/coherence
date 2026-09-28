@@ -254,7 +254,7 @@ struct RatingChip: View {
     let rating: Int
     var body: some View {
         HStack(spacing: 3) {
-            Image(systemName: "star.fill").font(.system(size: 9))
+            SitArt(name: "home-rating", size: 13)
             Text("\(rating)").font(.caption.weight(.semibold)).monospacedDigit()
         }
         .foregroundStyle(AppColor.textSecondary)
@@ -461,7 +461,9 @@ struct WeekStrip: View {
                         .overlay(Image(uiImage: photo).resizable().scaledToFill())
                         .clipShape(Circle())
                 } else if done {
-                    Circle().fill(AppColor.accentGold)
+                    // A day meditated is a sprout on a warm coin (Melvin's
+                    // clay icons, 2026-09-27), where it was a gold tick.
+                    Circle().fill(AppColor.accentGold.opacity(0.28))
                 } else {
                     // An empty day is a shallow well, and it has to be visible
                     // (Aziz, 2026-09-19: "we are gonna need more contrast in
@@ -478,9 +480,7 @@ struct WeekStrip: View {
                     Circle().stroke(AppColor.calmAccent, lineWidth: 2)
                 }
                 if done && photo == nil {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 16, weight: .black))
-                        .foregroundStyle(AppColor.textOnAccent)
+                    SitArt(name: "home-day", size: 30)
                 }
             }
             .frame(width: 40, height: 40)
@@ -501,9 +501,17 @@ struct WeekStrip: View {
 /// it, and the divider to use inside a white card. Not the app's `hairline`,
 /// which is cream and on white reads as the brown these pages moved off.
 enum ValleyGround {
-    static let meadow = DayLight.at(0).field[1]
+    // The grass follows the hour, like Home (Melvin, 2026-09-27: every
+    // screen matches the time of day).
+    static var meadow: Color { DayLight.now.field[1] }
+    /// Daytime ink, for words on a cream surface (the tab bar, pills, cards),
+    /// which stays cream at every hour.
     static let ink = DayLight.at(0).ink
     static let inkSoft = DayLight.at(0).inkSoft
+    /// The sky's ink at this hour, for words drawn straight on the sky: dark
+    /// by day, pale at night.
+    static var skyInk: Color { DayLight.now.ink }
+    static var skyInkSoft: Color { DayLight.now.inkSoft }
     static let quiet = AppColor.meadowInk.opacity(0.11)
 }
 
@@ -551,6 +559,9 @@ extension View {
 enum ValleyBubble {
     /// The day's glass.
     static let dayGlass = AppColor.backgroundPrimary.opacity(0.42)
+
+    /// The glass for a valley drawn at this hour, which every app screen is.
+    static var now: (ink: Color, stroke: Color, fill: Color) { look(at: DayLight.clockProgress()) }
 
     /// Ink, outline and fill for a valley at `progress` (0 full day, 1 night).
     static func look(at progress: Double) -> (ink: Color, stroke: Color, fill: Color) {

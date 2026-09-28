@@ -161,7 +161,7 @@ struct SaveSessionView: View {
     /// The valley's sky, the length as the one big number, and Otto's head on
     /// the edge of it, the way Profile wears him.
     private func skyBand(top: CGFloat) -> some View {
-        let day = DayLight.at(0)
+        let day = DayLight.now
         // The scene is drawn taller than the band and cut off at its bottom,
         // so the words sit in sky and only a strip of meadow shows: at the
         // band's own height the horizon fell across the title. 0.53 is where
@@ -212,7 +212,7 @@ struct SaveSessionView: View {
                alignment: .topLeading)
         // The valley the sit was in, running up under the status bar.
         .background(alignment: .top) {
-            ValleyScene(progress: 0, showsFigure: false)
+            ValleyScene(progress: 0, showsFigure: false, clock: true)
                 .frame(height: scene)
                 .frame(height: visible, alignment: .top)
                 .clipped()

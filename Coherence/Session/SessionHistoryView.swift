@@ -141,14 +141,14 @@ struct ProfileTab: View {
     }
 
     /// The same daylight Home uses, so the two tabs are one place.
-    private static let day = DayLight.at(0)
+    private static var day: DayLight { DayLight.now }
     /// The meadow at its near edge, which the page continues.
     private static var meadow: Color { day.field[1] }
 
     /// The valley with nobody in it. Otto is the portrait on this page, and
     /// drawing him in the band as well would put two of him on one screen.
     private func profileScene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
-        ValleyScene(progress: 0, showsFigure: false)
+        ValleyScene(progress: 0, showsFigure: false, clock: true)
             .frame(width: width, height: height)
             .fadesIntoMeadow(Self.meadow)
     }

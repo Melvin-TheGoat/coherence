@@ -20,15 +20,15 @@ struct SessionTooShortView: View {
     /// calm Otto, since the seven stages replaced Curious). It was a
     /// cream page with a timer glyph.
     var body: some View {
-        let day = DayLight.at(0)
+        let day = DayLight.now
         GeometryReader { geo in
             ZStack {
-                ValleyScene(progress: 0, aura: .steady)
+                ValleyScene(progress: 0, aura: .steady, clock: true)
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
                     OttoSpeech(text: line, tail: .bottom, size: 16,
-                               ink: day.ink, stroke: day.ink.opacity(0.38),
-                               fill: ValleyBubble.dayGlass, alignment: .center,
+                               ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
+                               fill: ValleyBubble.now.fill, alignment: .center,
                                speaking: .constant(false))
                 }
                 .frame(width: min(geo.size.width - 56, 320),
