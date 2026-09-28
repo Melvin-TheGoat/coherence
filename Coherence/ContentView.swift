@@ -21,7 +21,6 @@ struct ContentView: View {
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
     @Query private var prefsRows: [Preferences]
-    @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
     @EnvironmentObject private var store: Store
     /// Block (2026-09-22): the blockers, the passes, and the "Ask Otto" that
@@ -94,6 +93,12 @@ struct ContentView: View {
         /// (Melvin, 2026-09-21: the Guide tab makes way for Block).
         case guide
         case results(UUID)
+        /// A saved session, shown (`mockups/session-view.html`, 2026-09-27):
+        /// who, when, the title, the numbers, every photo and video, what was
+        /// practised, and private notes, with Edit one tap away. What Home's
+        /// Recent rows and Profile's week log open now; `.save` is kept for
+        /// Edit itself and for the "Add how that felt" toast.
+        case view(UUID)
         /// Save session (Friends): opens when a live session lands, then
         /// chains into its results.
         case save(UUID)
@@ -115,6 +120,7 @@ struct ContentView: View {
             case .settings: return "settings"
             case .guide: return "guide"
             case .results(let id): return "results-\(id)"
+            case .view(let id): return "view-\(id)"
             case .save(let id): return "save-\(id)"
             case .discarded(let d): return "discarded-\(d.id)"
             case .paywall: return "paywall"
@@ -176,7 +182,7 @@ struct ContentView: View {
                 // session opened from Profile's week list must show the
                 // same screen Home shows for it).
                 ProfileTab(selectedDay: $profileDay,
-                           openSession: { id in sheet = FeatureFlags.friends ? .save(id) : .results(id) }) {
+                           openSession: { id in sheet = .view(id) }) {
                     sheet = .settings
                 }
             }
@@ -301,6 +307,8 @@ struct ContentView: View {
                     .onAppear { Analytics.track(.guideOpened) }
             case .results(let id):
                 SessionResultsView(sessionID: id)
+            case .view(let id):
+                SessionView(sessionID: id)
             case .save(let id):
                 SaveSessionView(sessionID: id, mode: .edit) {
                     SessionDetails.clear(id)
@@ -438,6 +446,11 @@ struct ContentView: View {
             }
             if ProcessInfo.processInfo.environment["PREVIEW_SAVE"] == "1", sheet == nil {
                 sheet = .save(DemoData.seedResults(in: context))
+            }
+            // PREVIEW_SESSION=1 opens a demo session's own page (`SessionView`,
+            // 2026-09-27), the way Home's Recent rows and Profile's week log do.
+            if ProcessInfo.processInfo.environment["PREVIEW_SESSION"] == "1", sheet == nil {
+                sheet = .view(DemoData.seedResults(in: context))
             }
             if ProcessInfo.processInfo.environment["PREVIEW_FIRST_PAYWALL"] == "1", sheet == nil {
                 sheet = .paywall
@@ -1079,33 +1092,32 @@ struct ContentView: View {
         return nil
     }
 
+    /// The cairns: a stone per session, for the rolling seven days ending
+    /// today (`WeekCairns`, shared with `WeekCairns.summary` for the header's
+    /// own totals, so the two numbers and the stones can never disagree).
+    /// Photos left this strip the same day (Melvin, 2026-09-27): a stack of
+    /// stones says how many times a day was sat, which a single photo never
+    /// could.
     private var calendarCard: some View {
-        let practiced = SessionCalendar.practicedDays(from: sessions.map(\.startedAt))
-        let byDay = FeatureFlags.friends ? PhotoThumbs.maps(photos: photos, sessions: sessions).byDay : [:]
+        let week = WeekCairns.week(from: sessions.map {
+            WeekCairns.SessionFact(startedAt: $0.startedAt, durationSec: $0.durationSec)
+        })
+        let summary = WeekCairns.summary(week)
         return VStack(alignment: .leading, spacing: 14) {
             HStack {
                 SectionHeader(title: "This week")
                 Spacer()
-                Text("\(practicedThisWeek(practiced)) of 7")
+                Text("\(summary.sessions) session\(summary.sessions == 1 ? "" : "s") · \(summary.minutes) min")
                     .font(AppFont.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary)
                     .monospacedDigit()
             }
-            WeekStrip(practiced: practiced, photos: byDay) { day in
+            WeekStrip(days: week) { day in
                 profileDay = day
                 tab = .profile
             }
         }
         .card(padding: 18)
-    }
-
-    /// Days sat in the last seven, which is the window the strip draws. Not
-    /// the calendar week, for the reason `WeekStrip` gives.
-    private func practicedThisWeek(_ practiced: Set<Date>) -> Int {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0 - 6, to: today) }
-            .filter { practiced.contains($0) }.count
     }
 
     // MARK: - The proof
@@ -1139,7 +1151,7 @@ struct ContentView: View {
                         // The session's own page, which is where everything
                         // about it is said now. Its measurements, when a
                         // Watch took any, are one tap further in.
-                        Button { sheet = FeatureFlags.friends ? .save(session.id) : .results(session.id) } label: {
+                        Button { sheet = .view(session.id) } label: {
                             EvidenceRow(session: session,
                                         score: scores[session.id],
                                         rating: ratings[session.id])
