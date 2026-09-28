@@ -819,7 +819,9 @@ enum SessionVideo {
 
 /// Plays a kept video. Written to a temp file first, because AVPlayer reads
 /// files and the video lives in the store as bytes.
-private struct VideoSheet: View {
+///
+/// Not `private`: `SessionView` plays a kept item's video the same way.
+struct VideoSheet: View {
     let data: Data
 
     @State private var url: URL?

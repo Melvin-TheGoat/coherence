@@ -387,7 +387,12 @@ enum SessionListSupport {
 
 // MARK: - The week
 
-/// Seven days ending today, as bubbles.
+/// Seven days ending today, as cairns — one small stone per session that day
+/// (`mockups/session-view.html`, section 2, option A, Melvin's pick over
+/// Apple Health's bars, a garden of sprouts and Calm's ring, 2026-09-27:
+/// "it answers 'how many times' per day, which was the ask, without turning
+/// Home into a chart"). It replaced a single gold tick or photo per day,
+/// which could only ever say WHETHER you sat, never how many times.
 ///
 /// Home used to carry a whole month (2026-09-19, Aziz: "I think the calendar
 /// should be a weekly calendar"). A month is a grid of thirty-five small
@@ -397,78 +402,114 @@ enum SessionListSupport {
 /// **Seven days ending TODAY, not the calendar week.** A Sunday-to-Saturday
 /// week shows the days that have not happened yet, and on a habit app a row of
 /// empty circles for Thursday, Friday and Saturday reads as three days you
-/// have already failed. Rolling means today is always the last bubble, the
+/// have already failed. Rolling means today is always the last cairn, the
 /// streak is the run of filled ones leading up to it, and nothing on the strip
 /// is a promise you have not had the chance to keep.
 ///
 /// The month has not gone anywhere. It lives on Profile, which is where you go
 /// when you actually want to look back.
 struct WeekStrip: View {
-    let practiced: Set<Date>
-    /// Start-of-day → that day's photo, when Friends is on. A day with one
-    /// shows it inside its bubble.
+    let days: [WeekCairns.Day]
+    /// Start-of-day → that day's photo. **Unused** since the cairns replaced
+    /// a photo-per-day (Melvin, 2026-09-27: a stack of stones says how many
+    /// times, a single photo could only ever say whether). Kept, defaulted,
+    /// so a caller built against the old signature still compiles.
     var photos: [Date: UIImage] = [:]
     var onDayTap: ((Date) -> Void)? = nil
 
     private let calendar = Calendar.current
 
+    /// Stones widen with the session's length, clamped so a long sit's stone
+    /// never crowds out its neighbours in a day with several — the same
+    /// reasoning `MinutesPuck` floors a duration at one shown minute.
+    private static let minStoneWidth: CGFloat = 15
+    private static let maxStoneWidth: CGFloat = 32
+    private static let stoneHeight: CGFloat = 8.5
+
     var body: some View {
-        let today = calendar.startOfDay(for: Date())
-        let days = (0..<7).compactMap {
-            calendar.date(byAdding: .day, value: $0 - 6, to: today)
-        }
         HStack(spacing: 0) {
-            ForEach(days, id: \.self) { day in
-                bubble(day, isToday: day == today)
+            ForEach(days, id: \.date) { day in
+                cairn(day)
                     .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
-                    .onTapGesture { if practiced.contains(day) { onDayTap?(day) } }
+                    .onTapGesture { if day.sessionCount > 0 { onDayTap?(day.date) } }
             }
         }
     }
 
-    private func bubble(_ day: Date, isToday: Bool) -> some View {
-        let done = practiced.contains(day)
-        let photo = photos[day]
-        return VStack(spacing: 8) {
-            Text(letter(day))
+    private func cairn(_ day: WeekCairns.Day) -> some View {
+        VStack(spacing: 8) {
+            Text(letter(day.date))
                 .font(.system(size: 11.5, weight: .bold, design: .rounded))
-                .foregroundStyle(isToday ? AppColor.textPrimary : AppColor.textSecondary)
-            ZStack {
-                if let photo {
+                .foregroundStyle(day.isToday ? AppColor.textPrimary : AppColor.textSecondary)
+            ZStack(alignment: .bottom) {
+                // An empty today is a shallow well and it has to be visible
+                // (Aziz, 2026-09-19: "we are gonna need more contrast"): a
+                // dashed sage ring around the spot still waiting on you.
+                if day.isToday && day.sessionMinutes.isEmpty {
                     Circle()
-                        .fill(AppColor.backgroundPrimary)
-                        .overlay(Image(uiImage: photo).resizable().scaledToFill())
-                        .clipShape(Circle())
-                } else if done {
-                    // A day meditated is a sprout on a warm coin (Melvin's
-                    // clay icons, 2026-09-27), where it was a gold tick.
-                    Circle().fill(AppColor.accentGold.opacity(0.28))
+                        .strokeBorder(AppColor.calmAccent,
+                                     style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
+                        .frame(width: 32, height: 32)
+                        .offset(y: -3)
+                }
+                if !day.sessionMinutes.isEmpty {
+                    // Oldest first in the array, and oldest at the BOTTOM of
+                    // the cairn: it is the stone the day was built on.
+                    VStack(spacing: 1.5) {
+                        ForEach(Array(day.sessionMinutes.enumerated().reversed()), id: \.offset) { i, minutes in
+                            stone(minutes: minutes, index: i)
+                        }
+                    }
+                } else if day.isRestDay {
+                    // The streak forgave this day (`StreakCalculator`): a
+                    // small leaf, not nothing and not a stone — it was never
+                    // practised, only bridged.
+                    leaf
                 } else {
-                    // An empty day is a shallow well, and it has to be visible
-                    // (Aziz, 2026-09-19: "we are gonna need more contrast in
-                    // the this week circles"). The first cut filled it with
-                    // the PAPER colour, reasoning that a hollow reads as
-                    // nothing happened. True on the paper and wrong here: the
-                    // strip sits on a white card, so a paper-coloured circle
-                    // on white is no circle at all and the row read as seven
-                    // floating letters. `trace` is a warm tone deep enough to
-                    // be a shape against both grounds.
-                    Circle().fill(AppColor.trace)
-                }
-                if isToday && !done {
-                    Circle().stroke(AppColor.calmAccent, lineWidth: 2)
-                }
-                if done && photo == nil {
-                    SitArt(name: "home-day", size: 30)
+                    Capsule()
+                        .fill(AppColor.trace)
+                        .frame(width: 22, height: 2.5)
                 }
             }
-            .frame(width: 40, height: 40)
+            .frame(height: 40, alignment: .bottom)
         }
+    }
+
+    /// One warm stone. Alternating opacity of `textSecondary` — the app's own
+    /// warm ink, not a second palette (the house rule: colour routes through
+    /// `AppColor`) — with a small highlight standing in for the mockup's
+    /// painted shine. `meadowInk` was tried first and reads as green (it is
+    /// the sage ink for words drawn ON the meadow), which looked like moss,
+    /// not stone; `textSecondary` is the warm greige every card already inks
+    /// its captions with.
+    private func stone(minutes: Int, index: Int) -> some View {
+        let width = min(Self.maxStoneWidth, Self.minStoneWidth + CGFloat(minutes) * 0.32)
+        let shades: [Double] = [0.62, 0.48, 0.76]
+        let shade = shades[index % shades.count]
+        return Ellipse()
+            .fill(AppColor.textSecondary.opacity(shade))
+            .frame(width: width, height: Self.stoneHeight)
+            .overlay(alignment: .topLeading) {
+                Ellipse()
+                    .fill(Color.white.opacity(0.3))
+                    .frame(width: width * 0.34, height: Self.stoneHeight * 0.4)
+                    .padding(.leading, width * 0.12)
+                    .padding(.top, Self.stoneHeight * 0.1)
+            }
+    }
+
+    /// The forgiven-rest-day mark: two small strokes rather than the guide's
+    /// pointed leaf shape, so it reads at cairn scale without a dedicated path.
+    private var leaf: some View {
+        Image(systemName: "leaf.fill")
+            .font(.system(size: 13))
+            .foregroundStyle(AppColor.calmAccent)
+            .padding(.bottom, 2)
     }
 
     /// One letter, and the day's own initial rather than a fixed S M T W T F S,
-    /// because the strip rolls: the leftmost bubble is a different weekday
+    /// because the strip rolls: the leftmost cairn is a different weekday
     /// every day.
     private func letter(_ day: Date) -> String {
         let i = calendar.component(.weekday, from: day) - 1

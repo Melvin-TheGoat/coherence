@@ -1,6 +1,7 @@
 #if DEBUG
 import Foundation
 import SwiftData
+import UIKit
 
 /// DEBUG-only synthetic data, for previewing screens (e.g. the post-session
 /// evidence graphs) in the simulator without a real Watch session. Not compiled
@@ -64,7 +65,29 @@ enum DemoData {
         context.insert(SessionReflection(sessionID: session.id, rating: 8,
                                          note: "Felt genuinely settled by the end. The first ten minutes my mind was everywhere, kept planning tomorrow instead of being here. Then somewhere around the halfway mark it went quiet on its own, and I stopped noticing the timer. Getting up afterwards felt like surfacing."))
         try? context.save()
+        // A demo photo, so a preview of the session's own page (`SessionView`)
+        // shows the media pager rather than an always-empty one — every other
+        // field here is faked too, and a screen previewed with no media never
+        // gets looked at.
+        if let image = demoPhoto(),
+           let jpeg = PostPhoto.jpeg(image), let thumb = PostPhoto.thumbnail(image) {
+            SessionStore.addPhoto(sessionID: session.id, jpeg: jpeg, thumbnail: thumb, in: context)
+        }
         return session.id
+    }
+
+    /// A plain gradient square, standing in for a selfie no simulator can take.
+    private static func demoPhoto() -> UIImage? {
+        let size = CGSize(width: 600, height: 800)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        return UIGraphicsImageRenderer(size: size, format: format).image { ctx in
+            let colors = [AppColor.calmAccent, AppColor.accentGold].map { UIColor($0).cgColor }
+            let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
+                                      colors: colors as CFArray, locations: [0, 1])!
+            ctx.cgContext.drawLinearGradient(gradient, start: .zero,
+                                             end: CGPoint(x: size.width, y: size.height), options: [])
+        }
     }
 
     /// Seeds ~3 weeks of varied history (App Store screenshots via
