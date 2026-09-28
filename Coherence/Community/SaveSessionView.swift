@@ -15,15 +15,16 @@ import os
 ///
 /// Top to bottom: the sky band with the length as the one big number and
 /// Otto's head as the mark, then how it felt (a slider out of ten, not
-/// emojis), what you did (every technique AND every sound 808 offers), the
-/// description friends read, private notes, photos or video, and who can see
-/// it. Nothing is required. Gold lands twice: the slider's fill and Save.
+/// emojis), what you did (every technique AND every sound 808 offers),
+/// private notes, and photos or video. Nothing is required. Gold lands twice:
+/// the slider's fill and Save.
 ///
-/// The old version of this screen was Strava's, with visibility first and a
-/// front-camera selfie required before anything could be posted. Both are
-/// gone (Melvin: any photo, any video, for friends and for yourself).
-///
-/// Friends-gated: only reachable when `FeatureFlags.friends` is on.
+/// **Posting removed entirely** (Melvin, 2026-09-27: "get rid of the feed, no
+/// more posting with photos/videos since its a big privacy policy change").
+/// This page used to ask who could see it and, for Friends, a description and
+/// a reserved username; none of that exists here any more. Everything on it
+/// is private — this is your own record of the sit, kept on this phone (and,
+/// for the ones that sync, in your own iCloud).
 struct SaveSessionView: View {
     enum Mode { case new, edit }
 
@@ -32,9 +33,6 @@ struct SaveSessionView: View {
     let onDone: () -> Void
 
     @Environment(\.modelContext) private var context
-    @EnvironmentObject private var community: CommunityModel
-    @Query private var users: [User]
-    @AppStorage("community.rulesAgreed.v1") private var rulesAgreed = false
 
     @State private var session: Session?
     @State private var score: Int?
@@ -42,7 +40,6 @@ struct SaveSessionView: View {
     @State private var sound = "Silence"
 
     @State private var title = ""
-    @State private var publicNote = ""
     @State private var privateNote = ""
     @State private var technique: String?
     /// The words behind "Something else", kept and saved like the results
@@ -51,7 +48,6 @@ struct SaveSessionView: View {
     /// Out of ten. nil until the slider is touched, because a slider parked
     /// at five would file every unrated session as middling.
     @State private var rating: Int?
-    @State private var visibility: Visibility = .private
     /// Every photo and video the session currently keeps, in order. Add and
     /// remove (`addPhoto`/`removeItem`) write straight through
     /// `SessionStore` and refresh this list, so there is no separate
@@ -65,17 +61,9 @@ struct SaveSessionView: View {
     /// How far a picked video's preparation has got, while it runs.
     @State private var videoProgress: Double?
     @State private var loaded = false
-    /// What the session was saved as before this screen opened, so an
-    /// Only-you save only reaches iCloud when there is a post to take down.
-    @State private var savedVisibility: Visibility = .private
-    /// Set once they choose, so iCloud finishing its load late never
-    /// overrides the choice.
-    @State private var userPicked = false
 
     @State private var saving = false
     @State private var showCamera = false
-    @State private var showRules = false
-    @State private var showClaim = false
     /// The kept item whose video is playing, if any.
     @State private var playingItem: SessionPhoto?
     @State private var showResults = false
@@ -83,9 +71,7 @@ struct SaveSessionView: View {
 
     /// Which field holds the keyboard, so Done can put it away.
     @FocusState private var focused: Field?
-    private enum Field: Hashable { case title, publicNote, privateNote, techniqueNote }
-
-    enum Visibility: String { case friends, `private` }
+    private enum Field: Hashable { case title, privateNote, techniqueNote }
 
     var body: some View {
         GeometryReader { proxy in
@@ -102,10 +88,8 @@ struct SaveSessionView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     feelSection.whiteCard(radius: 18)
                     whatSection.whiteCard(radius: 18)
-                    if visibility == .friends { descriptionSection.whiteCard(radius: 18) }
                     notesSection.whiteCard(radius: 18)
                     mediaSection.whiteCard(radius: 18)
-                    visibilitySection.whiteCard(radius: 18)
                     if score != nil { measurementsRow.whiteCard(radius: 18) }
                     Color.clear.frame(height: 110)
                 }
@@ -127,29 +111,13 @@ struct SaveSessionView: View {
             }
         }
         .fullScreenCover(isPresented: $showCamera) { SelfieCamera { image in addPhoto(image, video: nil) } }
-        .sheet(isPresented: $showRules) {
-            CommunityRulesSheet {
-                rulesAgreed = true
-                showRules = false
-                save()
-            }
-            .presentationDetents([.height(260)])
-        }
-        .sheet(isPresented: $showClaim) {
-            NavigationStack {
-                CreateProfileView(model: community,
-                                  suggested: users.first?.username ?? "",
-                                  nickname: users.first?.displayName ?? "") { _ in showClaim = false }
-                .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showClaim = false } } }
-            }
-        }
         .sheet(item: $playingItem) { item in
             if let data = item.video { VideoSheet(data: data) }
         }
         .fullScreenCover(isPresented: $showResults) {
             SessionResultsView(sessionID: sessionID)
         }
-        .alert("Couldn't share that", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
+        .alert("Couldn't save that", isPresented: Binding(get: { problem != nil }, set: { if !$0 { problem = nil } })) {
             Button("OK") { problem = nil }
         } message: { Text(problem ?? "") }
         .onChange(of: pickedItems) { _, items in Task { await addPicked(items) } }
@@ -328,24 +296,6 @@ struct SaveSessionView: View {
         }
     }
 
-    private var descriptionSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionHeader("What friends will read")
-            TextField("How did it go?", text: $publicNote, axis: .vertical)
-                .lineLimit(2...5)
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textPrimary)
-                .focused($focused, equals: .publicNote)
-                .onChange(of: publicNote) { _, new in
-                    if new.count > CommunityStore.captionLimit {
-                        publicNote = String(new.prefix(CommunityStore.captionLimit))
-                    }
-                }
-                .padding(.horizontal, Self.inset)
-                .padding(.vertical, 12)
-        }
-    }
-
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             sectionHeader("Notes")
@@ -480,79 +430,10 @@ struct SaveSessionView: View {
         .buttonStyle(.plain)
     }
 
-    private var visibilitySection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            sectionHeader("Who can see it")
-            HStack(spacing: 0) {
-                visibilityPill(.private, icon: "lock", text: "Only you")
-                visibilityPill(.friends, icon: "person.2", text: "Friends")
-            }
-            .padding(3)
-            .background(ValleyGround.quiet, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .padding(.horizontal, Self.inset)
-            .padding(.vertical, 12)
-            visibilityNote
-        }
-    }
-
-    private func visibilityPill(_ value: Visibility, icon: String, text: String) -> some View {
-        Button {
-            userPicked = true
-            withAnimation(.easeOut(duration: 0.18)) { visibility = value }
-        } label: {
-            Label(text, systemImage: icon)
-                .font(AppFont.callout.weight(.bold))
-                .foregroundStyle(visibility == value ? .white : AppColor.meadowInk)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
-                .background {
-                    if visibility == value {
-                        RoundedRectangle(cornerRadius: 11, style: .continuous).fill(AppColor.skyDeep)
-                    }
-                }
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    /// Only when something stands between Friends and sharing.
-    @ViewBuilder
-    private var visibilityNote: some View {
-        if visibility == .friends, loaded {
-            Group {
-                switch community.phase {
-                case .needsUsername:
-                    Button { showClaim = true } label: {
-                        Text("Create your profile to share with friends")
-                            .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.skyDeep)
-                    }
-                    .buttonStyle(.plain)
-                    .padding(.horizontal, Self.inset)
-                    .padding(.bottom, 8)
-                case .unavailable:
-                    caption("Sharing needs iCloud on this iPhone. Save it as Only you for now.")
-                case .loading:
-                    caption("Connecting to iCloud…")
-                case .ready:
-                    EmptyView()
-                }
-            }
-        }
-    }
-
-    private func caption(_ text: String) -> some View {
-        Text(text)
-            .font(AppFont.caption)
-            .foregroundStyle(AppColor.textSecondary)
-            .padding(.horizontal, Self.inset)
-            .padding(.bottom, 8)
-    }
-
     // MARK: - The button
 
     private var dock: some View {
-        Button { tapPrimary() } label: {
+        Button { save() } label: {
             Text(saving ? "Saving…" : "Save")
         }
         .buttonStyle(PrimaryButtonStyle())
@@ -579,19 +460,7 @@ struct SaveSessionView: View {
         )
     }
 
-    /// Only you can always be saved; Friends needs a profile, which the note
-    /// above the button explains. **It never needs a score**: a post never
-    /// carries one, whether or not the sit had one (2026-09-22, then made
-    /// absolute 2026-09-23).
-    private var canAct: Bool {
-        guard loaded else { return false }
-        if visibility == .private { return true }
-        return community.phase == .ready
-    }
-
-    private func tapPrimary() {
-        if visibility == .friends, !rulesAgreed { showRules = true } else { save() }
-    }
+    private var canAct: Bool { loaded }
 
     // MARK: - Media
 
@@ -704,7 +573,6 @@ struct SaveSessionView: View {
         let reflection = SessionStore.reflection(for: sessionID, in: context)
         title = (reflection?.title).flatMap { $0.isEmpty ? nil : $0 }
             ?? SessionStore.defaultTitle(for: session?.startedAt ?? Date())
-        publicNote = reflection?.publicNote ?? ""
         privateNote = reflection?.note ?? ""
         techniqueNote = reflection?.techniqueNote ?? ""
         rating = reflection?.rating
@@ -715,13 +583,7 @@ struct SaveSessionView: View {
             ?? (session?.mode == SessionMode.guided.rawValue ? MeditationMethod.guidedID : nil)
             ?? (session?.mode == SessionMode.silence.rawValue ? MeditationMethod.silenceID : nil)
         mediaItems = SessionStore.photos(for: sessionID, in: context)
-
-        savedVisibility = Visibility(rawValue: reflection?.visibility ?? "private") ?? .private
-        visibility = savedVisibility
-        // Usable BEFORE iCloud answers. Only you never needs the network.
         loaded = true
-
-        await community.load()
     }
 
     private func save() {
@@ -730,77 +592,18 @@ struct SaveSessionView: View {
         Task { @MainActor in
             let finalTitle = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                 ? SessionStore.defaultTitle(for: session.startedAt) : title
+            // `publicNote` and `visibility` are left at their stored defaults
+            // ("" and "private"): posting is gone, so nothing here ever writes
+            // anything but a private record any more.
             let row = SessionStore.saveSession(sessionID: sessionID, title: finalTitle,
-                                               publicNote: publicNote, privateNote: privateNote,
-                                               visibility: visibility.rawValue,
+                                               publicNote: "", privateNote: privateNote,
+                                               visibility: "private",
                                                technique: technique, techniqueNote: techniqueNote,
                                                in: context)
             // `saveSession` keeps whatever rating was there; this screen owns
             // it now, so it writes it after.
             row.rating = rating
             try? context.save()
-            switch visibility {
-            case .private:
-                if savedVisibility == .friends { await community.unpost(session: sessionID) }
-            case .friends:
-                guard ContentFilter.check([finalTitle, publicNote]) == .ok else {
-                    problem = CommunityError.contentBlocked.localizedDescription
-                    saving = false
-                    return
-                }
-                // Every kept item, screened before anything goes up, all at
-                // once rather than one after another. A video screens its
-                // poster frame, the same still `jpeg` always holds
-                // (2026-09-22: "any photo and any video, for friends and for
-                // yourself").
-                let stills = mediaItems.compactMap(\.jpeg)
-                let blocked = await withTaskGroup(of: Bool.self) { group in
-                    for data in stills {
-                        group.addTask {
-                            guard let img = UIImage(data: data) else { return false }
-                            return await PhotoScreen.check(img) == .sensitive
-                        }
-                    }
-                    for await sensitive in group where sensitive {
-                        group.cancelAll()
-                        return true
-                    }
-                    return false
-                }
-                if blocked {
-                    problem = CommunityError.photoBlocked.localizedDescription
-                    saving = false
-                    return
-                }
-                // Always sends the CURRENT full list, in order: a post always
-                // ends up matching exactly what this screen shows, add or
-                // remove, rather than merging against whatever it had before.
-                let media = mediaItems.compactMap(PostMediaPrep.Source.init)
-                // No `score:` here (2026-09-23): a post never carries one, even
-                // though this screen still knows the sit's score for its own
-                // "See the measurements" row below.
-                let draft = CommunityStore.Draft(
-                    minutes: minutes,
-                    streak: streak,
-                    technique: MeditationMethod.label(for: technique),
-                    caption: publicNote,
-                    media: [],
-                    practicedAt: session.startedAt,
-                    sessionID: sessionID.uuidString,
-                    title: finalTitle,
-                    sound: sound)
-                // The upload runs after this screen has closed: waiting on it
-                // here was the "loaded like forever". The model reports a
-                // failure on the Friends tab; this puts the session back to
-                // Only you, so the chip on its row tells the truth.
-                let sid = sessionID, note = publicNote, privateNote = privateNote
-                let technique = technique, techniqueNote = techniqueNote, context = context
-                community.postInBackground(draft, media: media) {
-                    SessionStore.saveSession(sessionID: sid, title: finalTitle, publicNote: note,
-                                             privateNote: privateNote, visibility: Visibility.private.rawValue,
-                                             technique: technique, techniqueNote: techniqueNote, in: context)
-                }
-            }
             saving = false
             SessionDetails.clear(sessionID)
             onDone()

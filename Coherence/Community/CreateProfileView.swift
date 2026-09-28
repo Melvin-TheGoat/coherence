@@ -8,7 +8,9 @@ import PhotosUI
 /// - the last onboarding step, right after Sign in;
 /// - `FriendsIntroView`, the one-time prompt for people who finished
 ///   onboarding before Friends existed;
-/// - the Friends tab and Save session, for anyone who still has none.
+/// - the Friends tab, for anyone who still has none. (Save session used to be
+///   a fourth door, back when it could open Friends sharing; posting was
+///   removed 2026-09-27 and took that door with it.)
 ///
 /// Required, per Aziz, with the one unavoidable exit: with no iCloud account a
 /// username cannot be saved at all, so that case (and only that case) offers
@@ -354,9 +356,9 @@ struct FriendsIntroView: View {
                     .foregroundStyle(AppColor.textPrimary)
                     .padding(.top, 6)
 
-                bullet("person.2", "See the sessions your friends share, and give them a 🙏.")
-                bullet("camera", "Share yours with a selfie when you finish.")
-                bullet("lock", "Any session can stay private. Heart rate and breathing never leave your phone.")
+                bullet("person.2", "See how often your friends meditate, and follow along.")
+                bullet("magnifyingglass", "Find them by @username, and let them find you.")
+                bullet("lock", "No feed, no posts. Heart rate and breathing never leave your phone.")
 
                 Spacer()
 

@@ -1,18 +1,26 @@
 import SwiftUI
 import SwiftData
-import AVKit
 
-/// The Friends tab (COMMUNITY.md, mockup `mockups/friends.html`). Mutual
-/// friends, a feed of what they posted, one reaction per post, requests
-/// behind a count, search by handle, and an invite. No comments, no public
-/// counts. The first open claims a real username; the tab is honest about
+/// Friends (COMMUNITY.md, mockup `mockups/friends.html`). Mutual friends,
+/// requests behind a count, search by handle, an invite, and how often
+/// someone meditates. No feed, no posts (Melvin, 2026-09-27: "get rid of the
+/// feed, no more posting with photos/videos since its a big privacy policy
+/// change"). The first open claims a real username; the tab is honest about
 /// iCloud being unavailable rather than pretending to load.
+///
+/// **A screen now, not a tab** — presented as a full sheet from Home (a plus
+/// or a button opens it; the tab bar itself is somebody else's to wire). The
+/// type keeps its old name so every call site only needs the new `onClose`.
 struct FriendsTab: View {
     @Environment(\.modelContext) private var context
     @Query private var users: [User]
     @EnvironmentObject private var model: CommunityModel
     /// Set while the onboarding tour shows this tab under its dim.
     @Environment(\.tourTab) private var tourTab
+    /// Closes the screen when it is presented as a sheet. nil hides the
+    /// button — a host that still wants this embedded in a tab bar passes
+    /// nothing and gets exactly the old behaviour.
+    var onClose: (() -> Void)? = nil
 
     private var user: User? { users.first }
     @Environment(\.tabBarClearance) private var tabBarClearance
@@ -56,7 +64,7 @@ struct FriendsTab: View {
                                       suggested: user?.username ?? "",
                                       nickname: user?.displayName ?? "") { _ in }
                 case .ready:
-                    FeedView(model: model, myDisplayName: user?.displayName ?? "")
+                    FriendsHomeView(model: model, myDisplayName: user?.displayName ?? "")
                 }
             }
             // The valley, like Home, Profile and the guide (Aziz, 2026-09-22,
@@ -64,11 +72,16 @@ struct FriendsTab: View {
             // cream with brown ink.
             .background(ValleyGround.meadow.ignoresSafeArea())
             // The tab bar's inset does not reach inside this NavigationStack,
-            // so the last post sat under the bar (see ProfileTab).
+            // so the last row sat under the bar (see ProfileTab). Zero when
+            // this is a sheet, which is what makes the close button below
+            // land in the right place either way.
             .safeAreaPadding(.bottom, tabBarClearance)
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
+            .overlay(alignment: .topLeading) {
+                if let onClose { CloseCapsule(action: onClose) }
+            }
         }
         .task {
             // The tour passing through is not somebody opening Friends, and
@@ -103,6 +116,26 @@ struct FriendsTab: View {
     }
 
     #endif
+}
+
+/// The close button for a screen presented as a sheet: a cream capsule, the
+/// same material Cancel and Done wear everywhere else in the app (Save
+/// session's X, the report sheet's Cancel). Top-left, clear of the status bar.
+private struct CloseCapsule: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark")
+                .font(.system(size: 14, weight: .bold))
+                .foregroundStyle(AppColor.textPrimary)
+                .frame(width: 34, height: 34)
+                .background(AppColor.backgroundPrimary.opacity(0.94), in: Circle())
+                .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
+        }
+        .padding(.leading, AppMetrics.screenPadding)
+        .padding(.top, 8)
+    }
 }
 
 // MARK: - The valley
@@ -191,7 +224,7 @@ struct UnavailableCard: View {
             Text("Friends need iCloud")
                 .font(AppFont.headline)
                 .foregroundStyle(AppColor.textPrimary)
-            Text("Your friends, your posts and your username are kept in your own iCloud account. 808 has no server of its own, so there is nowhere else to keep them.")
+            Text("Your friends and your username are kept in your own iCloud account. 808 has no server of its own, so there is nowhere else to keep them.")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -270,9 +303,9 @@ struct UnavailableCard: View {
     }
 }
 
-/// The reward, stated once, on the claim screen and the empty feed. The
-/// mechanics live in feature 4 (the grant); the copy is here so the promise
-/// and the code ship in the same build.
+/// The reward, stated once, on the claim screen and when there is nobody
+/// here yet. The mechanics live in feature 4 (the grant); the copy is here so
+/// the promise and the code ship in the same build.
 private struct InviteRewardNote: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -289,16 +322,18 @@ private struct InviteRewardNote: View {
     }
 }
 
-// MARK: - Feed
+// MARK: - Home
 
-struct FeedView: View {
+/// The main screen: your handle, search, and the friends you already have —
+/// no feed, no posts (Melvin, 2026-09-27). Tapping a friend opens their page,
+/// which is where "how often do they meditate" is read in full.
+struct FriendsHomeView: View {
     @ObservedObject var model: CommunityModel
     let myDisplayName: String
 
     @State private var query = ""
     @State private var result: Profile?
     @State private var searched = false
-    @State private var reportTarget: ReportSheet.Target?
 
     var body: some View {
         GeometryReader { proxy in
@@ -312,16 +347,8 @@ struct FeedView: View {
                         #endif
                         searchField
                         if searched { searchResult }
-                        if !model.uploading.isEmpty { postingPill }
-                        if model.feed.isEmpty {
-                            EmptyFeed(model: model, username: model.profile?.username ?? "")
-                        } else {
-                            ForEach(model.feed) { post in
-                                PostCard(post: post, model: model) { reportTarget = .post(post.id) }
-                            }
-                            InviteButton(username: model.profile?.username ?? "", style: .quiet)
-                                .padding(.top, 4)
-                        }
+                        GrassHeading(title: "Friends")
+                        friendsSection
                         // The bar is a safe-area inset so the scroll clears it
                         // on its own; this only clears the half of the plus
                         // that rises above it.
@@ -344,8 +371,32 @@ struct FeedView: View {
         .navigationDestination(for: String.self) { id in
             PersonView(id: id, model: model)
         }
-        .sheet(item: $reportTarget) { target in
-            ReportSheet(target: target, model: model)
+    }
+
+    /// Every mutual friend, with how often they meditate — the thing that
+    /// replaced the feed. Tapping one opens their page.
+    @ViewBuilder
+    private var friendsSection: some View {
+        if model.friends.isEmpty {
+            EmptyFriends(model: model, username: model.profile?.username ?? "")
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(model.friends.enumerated()), id: \.element) { i, id in
+                    if let p = model.person(id) {
+                        if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
+                        NavigationLink(value: id) {
+                            PersonRow(profile: p, subtitle: "@" + p.username, practice: practiceLine(p.practice)) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundStyle(AppColor.skyDeep)
+                            }
+                        }
+                        .buttonStyle(CardButtonStyle())
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .whiteCard()
         }
     }
 
@@ -354,8 +405,8 @@ struct FeedView: View {
     /// **No row of friends' faces on the meadow any more** (Melvin,
     /// 2026-09-25: "the profile photos at the top are weird looking, get rid
     /// of them, and raise everything else up"). The band is only as tall as
-    /// its words need, so the search and the first post sit about 100pt
-    /// higher. A friend's page is still a tap on their name in a post, or on
+    /// its words need, so the search and the friends list sit about 100pt
+    /// higher. A friend's page is still a tap on their name below, or on
     /// your followers and following in Profile; Invite, which was the last
     /// face in that row, is a pill beside Requests.
     private func band(top: CGFloat) -> some View {
@@ -392,24 +443,6 @@ struct FeedView: View {
                 Spacer(minLength: 0)
             }
         }
-    }
-
-    /// A post still uploading after its session page closed
-    /// (`CommunityModel.postInBackground`). It lands in the feed on its own
-    /// when it is up.
-    private var postingPill: some View {
-        HStack(spacing: 10) {
-            ProgressView().controlSize(.small).tint(AppColor.skyDeep)
-            Text(model.uploading.count == 1 ? "Posting your session…"
-                                            : "Posting \(model.uploading.count) sessions…")
-                .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(ValleyGround.inkSoft)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
-        .transition(.opacity)
     }
 
     /// Invite, a cream pill like Requests at rest: never gold, which is kept
@@ -511,7 +544,8 @@ struct FeedView: View {
         Group {
             if let result {
                 NavigationLink(value: result.id) {
-                    PersonRow(profile: result, subtitle: "@" + result.username) {
+                    PersonRow(profile: result, subtitle: "@" + result.username,
+                             practice: practiceLine(result.practice)) {
                         Image(systemName: "chevron.right")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundStyle(AppColor.skyDeep)
@@ -540,17 +574,17 @@ struct FeedView: View {
     }
 }
 
-private struct EmptyFeed: View {
+private struct EmptyFriends: View {
     @ObservedObject var model: CommunityModel
     let username: String
 
     var body: some View {
         VStack(spacing: 12) {
             Text("🙏").font(.system(size: 40)).padding(.top, 8)
-            Text("Nobody here yet")
+            Text("No friends yet")
                 .font(AppFont.headline)
                 .foregroundStyle(AppColor.textPrimary)
-            Text("Your feed shows the sessions your friends post. Ask someone to sit with you.")
+            Text("Search for someone by their @username, or invite a friend to 808.")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -652,435 +686,6 @@ struct InviteButton: View {
     }
 }
 
-// MARK: - Post card
-
-/// A friend's session, in Strava's activity-card shape (mockup v2, section
-/// 4): who and when (with the sound where Strava shows a place), a bold
-/// title, the description, stats with the label above the number, then
-/// everything they kept from the sit, then a footer with who gave 🙏.
-struct PostCard: View {
-    let post: Post
-    @ObservedObject var model: CommunityModel
-    let onReport: () -> Void
-
-    @Environment(\.modelContext) private var context
-
-    /// The header block's own height (avatar and name down through the
-    /// stats), measured live so the media strip below it can match — see
-    /// `PostMediaStrip`. Seeded at a plausible size so the first frame is
-    /// never a sliver before the real measurement lands.
-    @State private var headerHeight: CGFloat = 190
-    /// The item the viewer opens on, nil while it is closed. One optional
-    /// rather than a Bool plus an index: with `isPresented:` the cover's
-    /// closure kept the index from the last time `body` ran, so tapping the
-    /// second photo opened the first.
-    @State private var viewerStart: ViewerStart?
-    /// The session Edit post opens on, nil while closed. Its own optional
-    /// rather than reusing `viewerStart`'s shape, and its own `.sheet`
-    /// rather than adding to any other view's: one view, one `.sheet(item:)`.
-    @State private var editTarget: EditTarget?
-
-    private struct ViewerStart: Identifiable { let id: Int }
-    private struct EditTarget: Identifiable { let id: UUID }
-
-    private var author: Profile? { model.person(post.author) }
-    private var isMine: Bool { post.author == model.myID }
-
-    /// The session this post came from, when it still exists ON THIS DEVICE.
-    /// `CommunityStore.sessionID(forPost:)` only resolves an id derived from
-    /// a session in the first place (`CommunityStore.postID(forSession:)`);
-    /// a post from another device, or an older one saved before that rule,
-    /// has nothing here to open, so Edit is left off the menu rather than
-    /// opening a session page with nothing to load.
-    private var editableSessionID: UUID? {
-        guard isMine, let sid = CommunityStore.sessionID(forPost: post.id) else { return nil }
-        let descriptor = FetchDescriptor<Session>(predicate: #Predicate<Session> { $0.id == sid })
-        return ((try? context.fetchCount(descriptor)) ?? 0) > 0 ? sid : nil
-    }
-
-    var body: some View {
-        // Spacing (Melvin, 2026-09-18: "too crowded/dense, look at Strava").
-        // The card used to bleed to both screen edges with 16pt inside it and
-        // the photo running wall to wall, so nothing had air around it and
-        // one card ran into the next. Now: an inset rounded card, one inset
-        // constant for every child (`inset`), the photo inset and rounded
-        // like the text, and a real gap between the groups. A feed is read at
-        // arm's length while scrolling, so the white space is what separates
-        // one person's sit from the next.
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                header
-                    .padding(.horizontal, Self.inset).padding(.top, Self.inset)
-
-                Text(post.title.isEmpty ? "Meditation" : post.title)
-                    .font(.system(size: 19, weight: .bold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary)
-                    .padding(.horizontal, Self.inset).padding(.top, 14)
-
-                if !post.caption.isEmpty {
-                    Text(post.caption)
-                        .font(AppFont.callout)
-                        .foregroundStyle(AppColor.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, Self.inset).padding(.top, 6)
-                }
-
-                // Who, what they called it, what they said, the numbers.
-                // Everything they KEPT (photos, video) comes after, below
-                // "below the title, description, time, streak, and
-                // technique" (Melvin, 2026-09-23). **No Score column**
-                // (2026-09-23): a post never carries one any more.
-                HStack(spacing: 0) {
-                    stat("Time", "\(post.minutes)m")
-                    stat("Day streak", "\(post.streak)")
-                    if let t = post.technique, !t.isEmpty { stat("Technique", t) }
-                }
-                .padding(.horizontal, Self.inset)
-                .padding(.top, 13)
-                .padding(.bottom, 14)
-                // No rule above the numbers (Melvin, 2026-09-23: it sat too
-                // close under the words and did nothing the gap does not).
-            }
-            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
-
-            if !post.media.isEmpty {
-                PostMediaStrip(media: post.media, height: stripHeight) { index in
-                    viewerStart = ViewerStart(id: index)
-                }
-                .padding(.bottom, 14)
-            }
-
-            footer
-                .padding(.horizontal, Self.inset)
-                .padding(.top, post.media.isEmpty ? 2 : 0).padding(.bottom, Self.inset)
-        }
-        // White on the grass, like every card on the valley pages.
-        .whiteCard(radius: 20)
-        .fullScreenCover(item: $viewerStart) { start in
-            PostMediaViewer(media: post.media, startIndex: start.id)
-        }
-        .sheet(item: $editTarget) { target in
-            SaveSessionView(sessionID: target.id, mode: .edit) { editTarget = nil }
-        }
-        #if DEBUG
-        // PREVIEW_MEDIA_VIEWER=1 opens the viewer on the first seeded
-        // three-item post, once per launch, so it can be reviewed with no
-        // tap. Once: the card appears again when the cover closes, and two
-        // seeded posts qualify.
-        .task {
-            if ProcessInfo.processInfo.environment["PREVIEW_MEDIA_VIEWER"] == "1",
-               post.media.count >= 3, !Self.previewedViewer {
-                Self.previewedViewer = true
-                viewerStart = ViewerStart(id: 0)
-            }
-        }
-        #endif
-    }
-
-    /// One inset for every child of the card, so nothing sits closer to an
-    /// edge than anything else. `fileprivate` so the media strip below can
-    /// align to the same edge.
-    fileprivate static let inset: CGFloat = 18
-
-    #if DEBUG
-    @MainActor private static var previewedViewer = false
-    #endif
-
-    /// The strip's fixed height: about the header block's own height
-    /// (Melvin, 2026-09-23: "the same, or maybe slightly taller, than
-    /// however tall the pixels are for everything above it"), clamped so an
-    /// empty description never collapses it and a long one never runs away.
-    private var stripHeight: CGFloat {
-        min(360, max(160, headerHeight * 1.1))
-    }
-
-    private var header: some View {
-        HStack(spacing: 10) {
-            NavigationLink(value: post.author) {
-                HStack(spacing: 12) {
-                    PersonAvatar(name: author?.displayName, size: 42, photoURL: author?.avatarURL)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(displayName)
-                            .font(AppFont.callout.weight(.semibold))
-                            .foregroundStyle(AppColor.textPrimary)
-                        Text(whenAndWhere)
-                            .font(AppFont.caption)
-                            .foregroundStyle(AppColor.textSecondary)
-                    }
-                }
-            }
-            .buttonStyle(CardButtonStyle())
-            Spacer()
-            Menu {
-                if isMine {
-                    // Edit post only when this device still has the session
-                    // it came from (`editableSessionID`); a post from another
-                    // device has nothing here to open.
-                    if let sid = editableSessionID {
-                        Button("Edit post") { editTarget = EditTarget(id: sid) }
-                    }
-                    Button("Delete post", role: .destructive) { Task { await model.deletePost(post.id) } }
-                } else {
-                    Button("Report", role: .destructive, action: onReport)
-                }
-            } label: {
-                Image(systemName: "ellipsis")
-                    .foregroundStyle(AppColor.textSecondary)
-                    .frame(width: 32, height: 32)
-                    .contentShape(Rectangle())
-            }
-        }
-    }
-
-    private var displayName: String {
-        if let name = author?.displayName, !name.isEmpty { return name }
-        return author.map { "@" + $0.username } ?? "Someone"
-    }
-
-    /// "Today at 7:12 AM · Rain": Strava's date line, with the sound where it
-    /// puts the location.
-    private var whenAndWhere: String {
-        let time = post.practicedAt.formatted(date: .omitted, time: .shortened)
-        let day = SessionListSupport.relativeDay(post.practicedAt)
-        return [day + " at " + time, post.sound].compactMap { $0 }.joined(separator: " · ")
-    }
-
-    /// One column. Value over label, centred, equal width, so two posts line
-    /// up down the feed the way two sessions line up in the app.
-    private func stat(_ label: String, _ value: String) -> some View {
-        VStack(spacing: 1) {
-            Text(value)
-                .font(DisplayFont.display(16, .heavy))
-                .foregroundStyle(ValleyGround.ink)
-                .lineLimit(1).minimumScaleFactor(0.6)
-            Text(label)
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.textSecondary)
-                .lineLimit(1).minimumScaleFactor(0.8)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    /// The pill on the left, just the emoji (Melvin, 2026-09-23: "It should
-    /// not say 'nice session'. It should just show the prayer emoji inside
-    /// the button, no text."); who gave one reads to its right, where the
-    /// button used to sit. The button's job is now spoken through
-    /// `accessibilityLabel` rather than read off the card.
-    private var footer: some View {
-        let who = model.reactions[post.id] ?? []
-        let mine = model.hasReacted(to: post.id)
-        return HStack(spacing: 10) {
-            Button {
-                Task { await model.toggleReaction(post.id) }
-            } label: {
-                // Full colour whether or not you have given one (Melvin,
-                // 2026-09-23: faded, it read as unclickable). The pill's fill
-                // says the state: sky before, gold once given.
-                Text("🙏")
-                    .font(.system(size: 17))
-                    .padding(.horizontal, 14).padding(.vertical, 8)
-                    // Filled, like every other button in the app: amber once
-                    // you have given one, paper before. An outlined capsule
-                    // was the last thin-line control in the product, and it
-                    // made the one thing a reader can DO on this screen the
-                    // quietest object on the card.
-                    // Sky before (a choice), gold once given (the one gold
-                    // thing on the card, now that Score is gone from it).
-                    .background {
-                        if mine {
-                            Capsule().fill(AppColor.accentGold)
-                                .shadow(color: AppColor.accentGoldShade, radius: 0, y: 3)
-                        } else {
-                            Capsule().fill(AppColor.skyWash)
-                        }
-                    }
-                    .padding(.bottom, 3)
-            }
-            .buttonStyle(.plain)
-            .disabled(isMine)
-            .accessibilityLabel("Nice session")
-
-            Text(reactorLine(who))
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.textSecondary)
-                .lineLimit(1)
-            Spacer()
-        }
-    }
-
-    private func reactorLine(_ ids: [String]) -> String {
-        let names = ids.map { $0 == model.myID ? "You" : (model.person($0)?.displayName ?? "") }.filter { !$0.isEmpty }
-        switch names.count {
-        case 0: return isMine ? "No 🙏 yet" : "Be the first to give a 🙏"
-        case 1: return names[0] + " gave a 🙏"
-        case 2: return "\(names[0]) and \(names[1])"
-        default: return "\(names[0]) and \(names.count - 1) others"
-        }
-    }
-}
-
-// MARK: - Media strip and viewer
-
-/// Every photo and video on a post, scrollable, each kept at its OWN aspect
-/// ratio and shrunk to one shared `height` (Melvin, 2026-09-23: "do not
-/// change the aspect ratio at all... just shrink it so the height is always
-/// a certain height"). One item never scrolls; it just sits there.
-private struct PostMediaStrip: View {
-    let media: [Post.PostMedia]
-    let height: CGFloat
-    let onTap: (Int) -> Void
-
-    var body: some View {
-        ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                ForEach(media) { item in
-                    Button { onTap(item.index) } label: {
-                        PostMediaThumb(item: item, height: height)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, PostCard.inset)
-        }
-        .scrollIndicators(.hidden)
-    }
-}
-
-private struct PostMediaThumb: View {
-    let item: Post.PostMedia
-    let height: CGFloat
-    @State private var image: UIImage?
-
-    /// width from the STORED aspect ratio, so the strip lays itself out
-    /// before the poster has even downloaded. 0.75 (portrait, a selfie's
-    /// own shape) only stands in for a malformed record.
-    private var width: CGFloat { height * CGFloat(item.aspect > 0 ? item.aspect : 0.75) }
-
-    var body: some View {
-        AppColor.backgroundPrimary.opacity(0.4)
-            .frame(width: width, height: height)
-            .overlay {
-                if let image { Image(uiImage: image).resizable().scaledToFill() }
-            }
-            .overlay(alignment: .bottomLeading) {
-                if item.kind == .video {
-                    Image(systemName: "play.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.white)
-                        .shadow(radius: 3)
-                        .padding(8)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .task(id: item.posterURL) {
-                image = (item.posterURL ?? item.url).flatMap { UIImage(contentsOfFile: $0.path) }
-            }
-    }
-}
-
-/// The full-screen, paged look at everything a post kept: photos fit the
-/// screen, videos play with sound, and nothing here saves or shares — this
-/// is only for looking. Opens on whichever item was tapped.
-private struct PostMediaViewer: View {
-    let media: [Post.PostMedia]
-    let startIndex: Int
-    @Environment(\.dismiss) private var dismiss
-    @State private var index: Int
-
-    init(media: [Post.PostMedia], startIndex: Int) {
-        self.media = media
-        self.startIndex = startIndex
-        _index = State(initialValue: startIndex)
-    }
-
-    var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Color.black.ignoresSafeArea()
-            TabView(selection: $index) {
-                ForEach(media) { item in
-                    MediaPage(item: item, isCurrent: item.index == index).tag(item.index)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: media.count > 1 ? .always : .never))
-            .ignoresSafeArea()
-
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 34, height: 34)
-                    .background(.black.opacity(0.45), in: Circle())
-            }
-            .padding(.top, 8).padding(.trailing, 16)
-        }
-    }
-}
-
-private struct MediaPage: View {
-    let item: Post.PostMedia
-    /// Whether this is the page on screen. A paged TabView keeps its
-    /// neighbours alive, so a video swiped past would otherwise keep playing,
-    /// sound and all, behind the photo you moved on to.
-    let isCurrent: Bool
-    @State private var image: UIImage?
-
-    var body: some View {
-        Group {
-            switch item.kind {
-            case .photo:
-                if let image {
-                    Image(uiImage: image).resizable().scaledToFit()
-                } else {
-                    ProgressView().tint(.white)
-                }
-            case .video:
-                if let url = item.url {
-                    VideoPage(url: url, isCurrent: isCurrent)
-                } else {
-                    ProgressView().tint(.white)
-                }
-            }
-        }
-        .task {
-            if item.kind == .photo, let url = item.url ?? item.posterURL {
-                image = UIImage(contentsOfFile: url.path)
-            }
-        }
-    }
-}
-
-/// One player per video, made once and kept (an `AVPlayer` built in `body`
-/// is a new player on every redraw), looping like a clip in any feed, and
-/// playing only while its page is the one on screen.
-private struct VideoPage: View {
-    let url: URL
-    let isCurrent: Bool
-    @State private var player: AVQueuePlayer?
-    @State private var looper: AVPlayerLooper?
-
-    var body: some View {
-        Group {
-            if let player {
-                VideoPlayer(player: player)
-            } else {
-                ProgressView().tint(.white)
-            }
-        }
-        .task {
-            if player == nil {
-                let queue = AVQueuePlayer()
-                looper = AVPlayerLooper(player: queue, templateItem: AVPlayerItem(url: url))
-                player = queue
-            }
-            if isCurrent { player?.play() }
-        }
-        .onChange(of: isCurrent) { _, current in
-            if current { player?.play() } else { player?.pause() }
-        }
-        .onDisappear { player?.pause() }
-    }
-}
-
 // MARK: - People
 
 struct PersonAvatar: View {
@@ -1132,6 +737,10 @@ struct ProfilePortrait: View {
 struct PersonRow<Trailing: View>: View {
     let profile: Profile
     let subtitle: String
+    /// How often they meditate (Melvin, 2026-09-27), under the handle:
+    /// "5 sessions this week · 7 day streak", or nil to leave it off (a
+    /// blocked person's row, say, where the fact is not the point).
+    var practice: String? = nil
     @ViewBuilder let trailing: () -> Trailing
 
     var body: some View {
@@ -1144,6 +753,11 @@ struct PersonRow<Trailing: View>: View {
                 Text(subtitle)
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)
+                if let practice {
+                    Text(practice)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(AppColor.calmAccent)
+                }
             }
             Spacer()
             trailing()
@@ -1151,6 +765,24 @@ struct PersonRow<Trailing: View>: View {
         .padding(.vertical, 12)
         .fullyTappable()
     }
+}
+
+/// "5 sessions this week · 7 day streak", or "Last meditated Tuesday" once
+/// this week has been quiet, or "No sessions yet" for someone brand new.
+/// What a friend's page and every row in the follow lists and search say
+/// about how often they meditate — never a score, a heart rate, or a curve
+/// (the rule at the top of `CommunityRecords.swift`).
+func practiceLine(_ stats: PracticeStats) -> String {
+    guard stats.totalSessions > 0 else { return "No sessions yet" }
+    if stats.sessions7d > 0 {
+        var parts = ["\(stats.sessions7d) session\(stats.sessions7d == 1 ? "" : "s") this week"]
+        if stats.currentStreak > 0 {
+            parts.append("\(stats.currentStreak) day\(stats.currentStreak == 1 ? "" : "s") streak")
+        }
+        return parts.joined(separator: " · ")
+    }
+    guard let last = stats.lastSessionAt else { return "No sessions yet" }
+    return "Last meditated " + SessionListSupport.relativeDay(last).lowercased()
 }
 
 struct RequestsView: View {
@@ -1233,9 +865,9 @@ struct RequestsView: View {
                     .foregroundStyle(ValleyGround.ink)
             }
         }
-        // No navigationDestination here: FeedView's, further up the same
-        // stack, already routes profile ids. A second one for the same type
-        // makes SwiftUI pick one arbitrarily.
+        // No navigationDestination here: FriendsHomeView's, further up the
+        // same stack, already routes profile ids. A second one for the same
+        // type makes SwiftUI pick one arbitrarily.
         .task { await model.loadBlocked() }
     }
 
@@ -1248,7 +880,8 @@ struct RequestsView: View {
                 if let p = model.person(id) {
                     if i > 0 { Rectangle().fill(ValleyGround.quiet).frame(height: 1) }
                     NavigationLink(value: id) {
-                        PersonRow(profile: p, subtitle: "@" + p.username + subtitle) { trailing(id) }
+                        PersonRow(profile: p, subtitle: "@" + p.username + subtitle,
+                                 practice: practiceLine(p.practice)) { trailing(id) }
                     }
                     .buttonStyle(CardButtonStyle())
                 }
@@ -1356,7 +989,8 @@ struct FollowListView: View {
                                 ForEach(ids, id: \.self) { id in
                                     if let person = model.person(id) {
                                         NavigationLink(value: id) {
-                                            PersonRow(profile: person, subtitle: "@" + person.username) { EmptyView() }
+                                            PersonRow(profile: person, subtitle: "@" + person.username,
+                                                     practice: practiceLine(person.practice)) { EmptyView() }
                                         }
                                         .buttonStyle(CardButtonStyle())
                                     }
@@ -1384,16 +1018,17 @@ struct FollowListView: View {
     }
 }
 
-/// A person: header, three numbers from their posts (friends only), the
-/// relationship button, and the menu guideline 1.2 checks for (Remove,
-/// Report, Block).
+/// A person: header, how often they meditate, the relationship button, and
+/// the menu guideline 1.2 checks for (Remove, Report, Block). No posts, no
+/// feed (Melvin, 2026-09-27) — everything here is read off their public
+/// `Profile` record, which is why it shows for a stranger from search just as
+/// it does for a friend.
 struct PersonView: View {
     let id: String
     @ObservedObject var model: CommunityModel
     @Environment(\.dismiss) private var dismiss
 
     @State private var relationship: CommunityStore.Relationship = .none
-    @State private var posts: [Post] = []
     @State private var reportTarget: ReportSheet.Target?
     @State private var confirmBlock = false
     @State private var busy = false
@@ -1419,27 +1054,7 @@ struct PersonView: View {
                         .zIndex(1)
                     VStack(spacing: 12) {
                         identity
-                        if relationship == .friends || isMe { stats }
-                        if !posts.isEmpty {
-                            HStack { GrassHeading(title: "Posts"); Spacer() }.padding(.top, 4)
-                            ForEach(posts) { post in
-                                PostCard(post: post, model: model) { reportTarget = .post(post.id) }
-                            }
-                        } else if relationship != .friends && !isMe {
-                            VStack(spacing: 4) {
-                                Text("Posts show once you are friends")
-                                    .font(AppFont.callout.weight(.semibold))
-                                    .foregroundStyle(AppColor.textPrimary)
-                                Text("Their sessions appear here and in your feed.")
-                                    .font(AppFont.caption)
-                                    .foregroundStyle(AppColor.textSecondary)
-                            }
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .padding(18)
-                            .background(AppColor.backgroundPrimary.opacity(0.94),
-                                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        }
+                        stats
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
                     .padding(.top, -6)
@@ -1475,7 +1090,7 @@ struct PersonView: View {
                 Task { await model.block(id); dismiss() }
             }
         } message: {
-            Text("They will not see your posts or find you, and you will not see theirs. You can undo this from Friends → Requests → Blocked.")
+            Text("They will not find you, and you will not see them. You can undo this from Friends → Requests → Blocked.")
         }
         .task { await reload(); await model.loadFollowCounts(id) }
     }
@@ -1483,7 +1098,6 @@ struct PersonView: View {
     private func reload() async {
         await model.loadPerson(id)
         relationship = await model.relationship(with: id)
-        posts = await model.posts(by: id)
     }
 
     /// One white card, as on your own Profile: name, handle and since, the
@@ -1512,16 +1126,15 @@ struct PersonView: View {
         .whiteCard(radius: 22)
     }
 
-    /// One card, two numbers read off it, not three tiles. **No "avg score"
-    /// column** (2026-09-23): a post never carries a score, so a person's
-    /// page shows no score or average score anywhere.
+    /// How often they meditate, three numbers off their public
+    /// `PracticeStats` (Melvin, 2026-09-27) — never a score, which this card
+    /// carried nowhere even when it read from posts.
     private var stats: some View {
-        HStack(spacing: 0) {
-            // A post's streak is the streak on the day it was sat. Only the
-            // last day or so still describes today.
-            statColumn(posts.first.flatMap { Date().timeIntervalSince($0.practicedAt) < 36 * 3600 ? "\($0.streak)" : nil } ?? "\u{2013}",
-                       "streak")
-            statColumn("\(posts.count)", "posts")
+        let p = profile?.practice ?? .empty
+        return HStack(spacing: 0) {
+            statColumn("\(p.currentStreak)", "day streak")
+            statColumn("\(p.sessions7d)", "this week")
+            statColumn("\(p.totalSessions)", "total")
         }
         .padding(.vertical, 12)
         .whiteCard(radius: 18)
@@ -1612,7 +1225,7 @@ struct ReportSheet: View {
                         .foregroundStyle(AppColor.textPrimary)
                         .padding(12)
                         .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    Text("A person reads every report, usually within a day. Reported posts come down; people who keep doing it are removed. support@meditate808.com")
+                    Text("A person reads every report, usually within a day. People who keep doing it are removed. support@meditate808.com")
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
                     Button {

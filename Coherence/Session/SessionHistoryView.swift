@@ -18,7 +18,6 @@ import Charts
 struct ProfileTab: View {
     @Query(sort: \Session.startedAt, order: .reverse) private var sessions: [Session]
     @Query private var allStats: [MeditationStats]
-    @Query private var reflections: [SessionReflection]
     @Query private var users: [User]
     @Query private var prefsRows: [Preferences]
     @Query private var photos: [SessionPhoto]
@@ -249,7 +248,7 @@ struct ProfileTab: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(AppColor.calmAccent)
                 .padding(.top, 1)
-            Text("Friends see your name, your streak and the sessions you post. Everything else stays here.")
+            Text("Friends see your name and how often you meditate. Everything else stays here.")
                 .font(.system(size: 11, design: .rounded))
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -486,7 +485,6 @@ struct ProfileTab: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 SectionHeader(title: "Your minutes")
-                if FeatureFlags.friends { ReachChip(shared: false) }
                 Spacer()
                 if recent.count >= 2 {
                     Text("last \(recent.count)")
@@ -639,15 +637,6 @@ struct ProfileTab: View {
     private var logSection: some View {
         let visible = weekSessions
         let scores = SessionListSupport.scoreMap(allStats)
-        // Reach, read off the reflection each session carries. Only when
-        // there is somebody to share with: "Only you" on every row of a
-        // build with no Friends tab is a label answering nobody's question.
-        let reach: [UUID: Bool] = FeatureFlags.friends
-            ? Dictionary(reflections.compactMap { r -> (UUID, Bool)? in
-                guard let id = r.sessionID else { return nil }
-                return (id, r.visibility == "friends")
-              }, uniquingKeysWith: { a, _ in a })
-            : [:]
         let thumbs = photoThumbs
 
         return VStack(spacing: 0) {
@@ -685,17 +674,7 @@ struct ProfileTab: View {
                             } label: {
                                 MinutesRow(session: session,
                                            score: scores[session.id],
-                                           thumbnail: thumbs[session.id],
-                                           // **Only the shared ones are
-                                           // marked.** Every row carried
-                                           // "Only you" at first, which is
-                                           // nine identical capsules down
-                                           // one card: the same repetition
-                                           // that got Otto taken off these
-                                           // rows. A chip earns its space
-                                           // when it marks the exception,
-                                           // and posting is the exception.
-                                           shared: reach[session.id] == true ? true : nil)
+                                           thumbnail: thumbs[session.id])
                                     .overlay(alignment: .top) { rowRule }
                             }
                             .buttonStyle(CardButtonStyle())
@@ -868,19 +847,15 @@ private struct MinutesRow: View {
     let session: Session
     let score: Double?
     var thumbnail: UIImage? = nil
-    var shared: Bool? = nil
 
     var body: some View {
         HStack(spacing: 12) {
             MinutesPuck(durationSec: session.durationSec)
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 6) {
-                    Text(SessionListSupport.relativeDay(session.startedAt))
-                        .font(DisplayFont.display(15))
-                        .foregroundStyle(AppColor.textPrimary)
-                    if let shared { ReachChip(shared: shared) }
-                }
+                Text(SessionListSupport.relativeDay(session.startedAt))
+                    .font(DisplayFont.display(15))
+                    .foregroundStyle(AppColor.textPrimary)
                 Text(subtitle)
                     .font(AppFont.caption)
                     .foregroundStyle(AppColor.textSecondary)

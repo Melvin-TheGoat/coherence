@@ -116,31 +116,6 @@ struct PhotoTile: View {
     }
 }
 
-/// The rules, once, before the first post. Short, positive where it can be,
-/// and explicit about what happens to what gets reported.
-struct CommunityRulesSheet: View {
-    let onAgree: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Keep it kind")
-                .font(AppFont.title)
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(.top, 8)
-            Text("Post your own practice. Anything abusive or explicit gets taken down.")
-                .font(AppFont.callout)
-                .foregroundStyle(AppColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-            Button(action: onAgree) { Text("Agree and post") }
-                .buttonStyle(PrimaryButtonStyle())
-        }
-        .padding(AppMetrics.screenPadding)
-        .screenBackground()
-    }
-}
-
 /// Photo preparation for upload: longest side 1080, JPEG, written to a temp
 /// file for `CKAsset`. Roughly 200 KB a picture.
 enum PostPhoto {

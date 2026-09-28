@@ -411,6 +411,48 @@ final class CommunityStoreTests: XCTestCase {
         XCTAssertTrue(db.records.isEmpty)
     }
 
+    // MARK: Practice stats
+
+    // `CoherenceTests` compiles `Shared/` directly into itself (see the
+    // header comment on `Shared/Community/InviteReward.swift`), so an
+    // unqualified `PracticeStats` here resolves to THIS module's own copy,
+    // not `Coherence.PracticeStats` — the type `CommunityStore` actually
+    // takes. Qualified explicitly below for that reason.
+
+    /// How often I meditate, published and read back — the fields
+    /// `PracticeStats.compute` fills in, nothing else touched.
+    func test_updatePracticeStatsWritesAndReadsBackAllFiveFields() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        let last = Date(timeIntervalSince1970: 2_000_000)
+        let stats = Coherence.PracticeStats(sessions7d: 4, minutes7d: 62, currentStreak: 9,
+                                            totalSessions: 41, lastSessionAt: last)
+        let profile = try await aziz.updatePracticeStats(stats)
+        XCTAssertEqual(profile.practice, stats)
+        let reread = try await aziz.myProfile()
+        XCTAssertEqual(reread?.practice, stats)
+    }
+
+    /// Publishing stats never disturbs the identity fields, and claiming or
+    /// renaming never resets stats already published — each changes through
+    /// its own call, like the avatar.
+    func test_updatePracticeStatsLeavesIdentityUntouchedAndSurvivesARename() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        let stats = Coherence.PracticeStats(sessions7d: 2, minutes7d: 20, currentStreak: 3,
+                                            totalSessions: 10, lastSessionAt: Date(timeIntervalSince1970: 1_000))
+        try await aziz.updatePracticeStats(stats)
+        let renamed = try await aziz.claimUsername("aziz", displayName: "Aziz M")
+        XCTAssertEqual(renamed.practice, stats, "a rename must not reset how often I meditate")
+        XCTAssertEqual(renamed.username, "aziz")
+        XCTAssertEqual(renamed.displayName, "Aziz M")
+    }
+
+    /// A profile that has never published anything reads the empty default,
+    /// never a crash on a missing field.
+    func test_practiceStatsDefaultToEmpty() async throws {
+        let p = try await aziz.claimUsername("aziz", displayName: "Aziz")
+        XCTAssertEqual(p.practice, .empty)
+    }
+
     // MARK: The query description round-trips to a CloudKit predicate
 
     func test_queryBuildsAPredicateCloudKitAccepts() {

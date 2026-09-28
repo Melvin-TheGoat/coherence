@@ -60,6 +60,10 @@ final class CommunityModel: ObservableObject {
     /// The earliest session on this phone, supplied by the app (the model
     /// has no SwiftData access of its own).
     var firstLocalSession: (() -> Date?)?
+    /// Every local session's start and length (all sources: Watch, phone,
+    /// hand-logged), for the practice stats published on my profile
+    /// (`syncPracticeStats`). Supplied by the app, which owns SwiftData.
+    var allSessions: (() -> [(startedAt: Date, durationSec: Int)])?
     /// Told when one of my posts is deleted from the feed, so the session it
     /// belonged to stops saying "Friends can see this". Receives the session
     /// id. Supplied by the app, which owns SwiftData.
@@ -176,6 +180,37 @@ final class CommunityModel: ObservableObject {
         guard let store, phase == .ready, let profile, profile.firstSessionAt == nil else { return }
         try? await store.markFirstSession(at: date)
         self.profile = try? await store.myProfile()
+    }
+
+    // MARK: - Practice stats
+
+    /// The stats last written, so a foreground tick with nothing new to say
+    /// costs no network call.
+    private var lastSyncedPracticeStats: PracticeStats?
+    /// The last time a sync was ATTEMPTED (whether or not it changed
+    /// anything), for the "at most every few minutes" foreground gate.
+    private var lastPracticeStatsAttemptAt: Date?
+
+    /// Publishes how often I meditate (sessions and minutes this week, the
+    /// streak, the total, and my last sit), computed from every local
+    /// session. A no-op when Friends is off, when there is no profile yet
+    /// (`.needsUsername`/`.unavailable`/`.loading`), or when the app never
+    /// gave this model a way to read its sessions.
+    ///
+    /// `force` skips the "at most every few minutes" gate, for the moment a
+    /// session actually lands (`SessionCoordinator.onSessionSaved`,
+    /// `SessionSetupView.saveLog`); a plain app-foreground tick keeps it, so
+    /// coming back to the app a dozen times an hour costs one write at most.
+    func syncPracticeStats(force: Bool = false) async {
+        guard FeatureFlags.friends, let store, phase == .ready, let allSessions else { return }
+        if !force, let last = lastPracticeStatsAttemptAt, Date().timeIntervalSince(last) < 180 { return }
+        lastPracticeStatsAttemptAt = Date()
+        let stats = PracticeStats.compute(from: allSessions())
+        guard stats != lastSyncedPracticeStats else { return }
+        guard let updated = try? await store.updatePracticeStats(stats) else { return }
+        lastSyncedPracticeStats = stats
+        profile = updated
+        people[updated.id] = updated
     }
 
     // MARK: - Loading
@@ -571,6 +606,37 @@ final class CommunityModel: ObservableObject {
             UserDefaults.standard.removeObject(forKey: pendingDeletionKey)
         } catch {
             // Still pending. The next launch tries again.
+        }
+    }
+
+    // MARK: - Posting removed
+
+    /// UserDefaults key for the one-time cleanup that removes every post
+    /// this person had already shared, from the day posting was removed
+    /// (Melvin, 2026-09-27: "get rid of the feed, no more posting with
+    /// photos/videos ... big privacy policy change"). Not `private`, like
+    /// `pendingDeletionKey` above: a test needs to see it too.
+    static let postsClearedKey = "community.postsCleared.v1"
+
+    /// Deletes every post I've already shared, once. Silent on purpose:
+    /// nobody needs telling that a feed which no longer exists in the app
+    /// also stopped existing on the server. Retried on a later launch (from
+    /// `CoherenceApp`'s launch task) if this one can't reach iCloud, the same
+    /// pattern as `retryPendingDeletion`.
+    ///
+    /// Runs against whatever store this model already holds (real CloudKit,
+    /// or the in-memory one in test mode), so it needs no store of its own.
+    /// A profile is not required — `me()` only needs an iCloud account — so
+    /// this can run even for someone who never claimed a username.
+    func clearMyPostsIfNeeded() async {
+        guard FeatureFlags.friends, !UserDefaults.standard.bool(forKey: Self.postsClearedKey) else { return }
+        guard let store else { return }
+        do {
+            try await store.deleteMyPosts()
+            UserDefaults.standard.set(true, forKey: Self.postsClearedKey)
+        } catch {
+            // No iCloud account, no network, or a query missing an index in
+            // this environment: retried on the next launch.
         }
     }
 

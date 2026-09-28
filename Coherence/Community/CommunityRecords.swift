@@ -54,15 +54,23 @@ struct Profile: Identifiable, Equatable {
     /// The profile photo, as a local file (CloudKit hands assets back as
     /// files). Optional: initials stand in when there is none.
     var avatarURL: URL?
+    /// How often this person meditates (Melvin, 2026-09-27: "see how often
+    /// someone meditates"): sessions and minutes this week, the streak, the
+    /// total, and when they last sat. Changes only through
+    /// `CommunityStore.updatePracticeStats`, the same way the avatar changes
+    /// only through `setAvatar`, so claiming or renaming a handle never
+    /// resets it.
+    var practice: PracticeStats = .empty
 
     init(id: String, username: String, displayName: String, firstSessionAt: Date? = nil,
-         createdAt: Date = Date(), avatarURL: URL? = nil) {
+         createdAt: Date = Date(), avatarURL: URL? = nil, practice: PracticeStats = .empty) {
         self.id = id
         self.username = username
         self.displayName = displayName
         self.firstSessionAt = firstSessionAt
         self.createdAt = createdAt
         self.avatarURL = avatarURL
+        self.practice = practice
     }
 
     init?(record: CKRecord) {
@@ -73,16 +81,42 @@ struct Profile: Identifiable, Equatable {
                   displayName: record["displayName"] as? String ?? "",
                   firstSessionAt: record["firstSessionAt"] as? Date,
                   createdAt: record["createdAt"] as? Date ?? Date(),
-                  avatarURL: (record["avatar"] as? CKAsset)?.fileURL)
+                  avatarURL: (record["avatar"] as? CKAsset)?.fileURL,
+                  practice: PracticeStats(record: record))
     }
 
-    /// Writes everything but the photo, which changes only through
-    /// `CommunityStore.setAvatar` so a rename never re-uploads it.
+    /// Writes everything but the photo and the practice stats, which change
+    /// through their own calls so a rename never re-uploads a photo or
+    /// resets how often somebody meditates.
     func apply(to record: CKRecord) {
         record["username"] = username
         record["displayName"] = displayName
         record["firstSessionAt"] = firstSessionAt
         record["createdAt"] = createdAt
+    }
+}
+
+/// The CloudKit side of `PracticeStats` (Shared, pure Foundation): five
+/// fields on the Profile record, written together and only through
+/// `CommunityStore.updatePracticeStats`. **New CloudKit fields — must be
+/// promoted Development → Production before release** (see CLAUDE.md,
+/// "ORG-ACCOUNT-DAY CHECKLIST"): `sessions7d`, `minutes7d`, `currentStreak`,
+/// `totalSessions`, `lastSessionAt`.
+extension PracticeStats {
+    init(record: CKRecord) {
+        self.init(sessions7d: record["sessions7d"] as? Int ?? 0,
+                  minutes7d: record["minutes7d"] as? Int ?? 0,
+                  currentStreak: record["currentStreak"] as? Int ?? 0,
+                  totalSessions: record["totalSessions"] as? Int ?? 0,
+                  lastSessionAt: record["lastSessionAt"] as? Date)
+    }
+
+    func apply(to record: CKRecord) {
+        record["sessions7d"] = sessions7d
+        record["minutes7d"] = minutes7d
+        record["currentStreak"] = currentStreak
+        record["totalSessions"] = totalSessions
+        record["lastSessionAt"] = lastSessionAt
     }
 }
 

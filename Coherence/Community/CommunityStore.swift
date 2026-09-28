@@ -150,6 +150,20 @@ actor CommunityStore {
         _ = try await db.save(record)
     }
 
+    /// Publishes how often I meditate (`CommunityModel.syncPracticeStats`
+    /// computes it from every local session and calls this after one lands
+    /// and on each app foreground). Only these five fields change; everything
+    /// else on the profile record is left exactly as it was.
+    @discardableResult
+    func updatePracticeStats(_ stats: PracticeStats) async throws -> Profile {
+        let mine = try await me()
+        guard let record = try await db.fetch(mine) else { throw CommunityError.noProfile }
+        stats.apply(to: record)
+        let saved = try await db.save(record)
+        guard let profile = Profile(record: saved) else { throw CommunityError.noProfile }
+        return profile
+    }
+
     // MARK: - Finding people
 
     func profile(named recordName: String) async throws -> Profile? {
@@ -416,6 +430,17 @@ actor CommunityStore {
 
     func deletePost(_ id: String) async throws {
         try await db.delete(id)
+    }
+
+    /// Deletes every post I've authored, and nothing else Friends knows about
+    /// me (my profile, my friends, my reactions all stay). Used once, the day
+    /// posting was removed from the app (Melvin, 2026-09-27: "get rid of the
+    /// feed, no more posting with photos/videos") to take down what people
+    /// had already shared — `CommunityModel.clearMyPostsIfNeeded` calls it.
+    /// Reuses the same query-then-delete `deleteEverythingOfMine` already
+    /// does for posts, rather than a second implementation of it.
+    func deleteMyPosts() async throws {
+        try await deleteMine(CommunityType.post, field: "author")
     }
 
     /// Friends' posts and mine, most recently practiced first.

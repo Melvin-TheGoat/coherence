@@ -87,25 +87,13 @@ struct ScoreRing: View {
 /// the social-1.1 merge, so most cards will carry a real face before long.
 /// The pose deliberately does NOT follow the score: a mascot pulling a
 /// disappointed face at a bad sit is the app judging somebody for showing up.
-/// "Friends" or "Only you", the two words 808 uses for reach.
 ///
-/// One definition, because the sentence on Profile and the chip on a session
-/// card are the same claim about the same thing: if they ever drift apart, a
-/// page says one word and a row under it says another about the same sit.
-struct ReachChip: View {
-    let shared: Bool
-
-    var body: some View {
-        Text(shared ? "Friends" : "Only you")
-            .font(.system(size: 8.5, weight: .bold, design: .rounded))
-            .kerning(0.4)
-            .foregroundStyle(shared ? AppColor.calmAccent : AppColor.textSecondary)
-            .padding(.horizontal, 7).padding(.vertical, 3)
-            .background(shared ? AppColor.calmAccent.opacity(0.16) : AppColor.trace,
-                        in: Capsule())
-    }
-}
-
+/// **`ReachChip` and the "Friends" / "Only you" chip are gone** (Melvin,
+/// 2026-09-27: no more posting, no more feed). A session was never shared or
+/// kept back any more finely than the whole account is; marking individual
+/// rows with who could see them was a claim about a feature that no longer
+/// exists.
+///
 /// A measured session's score, on the row or on its picture.
 private struct ScoreCapsule: View {
     let score: Double?
@@ -125,13 +113,6 @@ struct EvidenceRow: View {
     let session: Session
     let score: Double?
     var rating: Int? = nil
-    /// Who can see this one, when the screen is somebody's own page.
-    ///
-    /// Defaulted to nil so **Home is unchanged**: the feed of your three most
-    /// recent sits is not the place to audit sharing. Profile passes it,
-    /// because a page that says "Friends see your name, your streak and the
-    /// sessions you post" has to show which sessions those are.
-    var shared: Bool? = nil
 
     /// The row's own corner, deliberately tighter than the card's
     /// `AppMetrics.cardRadius` it sits inside: a nested plate only reads as
@@ -162,7 +143,6 @@ struct EvidenceRow: View {
                     .foregroundStyle(AppColor.textPrimary)
                     .multilineTextAlignment(.leading)
                     .lineLimit(2)
-                if let shared { ReachChip(shared: shared) }
             }
             Spacer(minLength: 0)
             if !session.isPhoneOnly, score != nil {

@@ -22,6 +22,7 @@ import SwiftData
 /// `v1-full-feature-set` has it if any of it comes back.
 struct SessionSetupView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
+    @EnvironmentObject private var community: CommunityModel
     @Environment(\.dismiss) private var dismiss
     @Query private var preferences: [Preferences]
 
@@ -496,6 +497,9 @@ extension SessionSetupView {
                                                source: "logged", in: context) != nil else { return }
         Analytics.track(.sessionLogged)
         loggedID = LoggedSession(id: id)
+        // Logged sits never go through `SessionCoordinator`, so they miss its
+        // `onSessionSaved` hook — republish how often I meditate here instead.
+        Task { await community.syncPracticeStats(force: true) }
     }
 }
 
