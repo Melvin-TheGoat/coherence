@@ -36,6 +36,9 @@ struct SaveSessionView: View {
 
     @State private var session: Session?
     @State private var score: Int?
+    /// The Watch's readings, when it measured this session.
+    @State private var bodyReadings: BodyReadings?
+    @State private var measuredScore: Double?
     @State private var streak = 0
     @State private var sound = "Silence"
 
@@ -90,7 +93,10 @@ struct SaveSessionView: View {
                     whatSection.whiteCard(radius: 18)
                     notesSection.whiteCard(radius: 18)
                     mediaSection.whiteCard(radius: 18)
-                    if score != nil { measurementsRow.whiteCard(radius: 18) }
+                    if let readings = bodyReadings {
+                        BodyCard(readings: readings, score: measuredScore, seeGraphs: { showResults = true }, inset: Self.inset)
+                            .whiteCard(radius: 18)
+                    }
                     Color.clear.frame(height: 110)
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
@@ -409,27 +415,6 @@ struct SaveSessionView: View {
             }
     }
 
-    /// A Watch session measured something; the curves are one tap in. The
-    /// page itself is what you SAY about the sit, which is true of every
-    /// session; measurements are true of some.
-    private var measurementsRow: some View {
-        Button { showResults = true } label: {
-            HStack(spacing: 10) {
-                Text("See the measurements")
-                    .font(AppFont.callout.weight(.semibold))
-                    .foregroundStyle(AppColor.skyDeep)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(AppColor.skyDeep)
-            }
-            .contentShape(Rectangle())
-            .padding(.horizontal, Self.inset)
-            .padding(.vertical, 15)
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - The button
 
     private var dock: some View {
@@ -567,6 +552,10 @@ struct SaveSessionView: View {
         session = try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.id == sid })).first
         let stats = try? context.fetch(FetchDescriptor<MeditationStats>(predicate: #Predicate { $0.sessionID == sid })).first
         score = stats?.overallScore.map { Int(($0 * 100).rounded()) }
+        if let stats {
+            bodyReadings = BodyReadings(stats)
+            measuredScore = stats.overallScore
+        }
         streak = StreakCalculator.streak(from: SessionStore.sessionStartDates(in: context)).current
         sound = SoundCatalog.title(for: session?.frequencyID) ?? "Silence"
 

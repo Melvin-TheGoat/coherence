@@ -53,7 +53,9 @@ struct ScoreRing: View {
                 Circle()
                     .inset(by: lineWidth / 2)
                     .trim(from: 0, to: max(0.02, min(score, 1)))
-                    .stroke(AppColor.accentGold, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    // Green, the app's "go" colour (Aziz, 2026-09-28: the
+                    // gold ring didn't match the rest of the app).
+                    .stroke(OnboardingGreen.fill, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
@@ -101,11 +103,12 @@ private struct ScoreCapsule: View {
     var body: some View {
         Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
             .font(.system(size: 13.5, weight: .bold, design: .rounded))
-            .foregroundStyle(score == nil ? AppColor.textSecondary : AppColor.textOnAccent)
+            .foregroundStyle(score == nil ? AppColor.textSecondary : .white)
             .monospacedDigit()
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
-            .background(Capsule().fill(score == nil ? AppColor.trace : AppColor.accentGold))
+            // Green, like the score ring (Aziz, 2026-09-28).
+            .background(Capsule().fill(score == nil ? AppColor.trace : OnboardingGreen.fill))
     }
 }
 
@@ -199,9 +202,10 @@ struct MinutesPuck: View {
                 .tracking(0.6)
                 .opacity(0.75)
         }
-        .foregroundStyle(AppColor.accentGoldText)
+        // Green, not amber (Aziz, 2026-09-28: match the rest of the app).
+        .foregroundStyle(OnboardingGreen.shade)
         .frame(width: 44, height: 44)
-        .background(AppColor.accentGold.opacity(0.28),
+        .background(OnboardingGreen.fill.opacity(0.2),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

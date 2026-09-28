@@ -110,8 +110,11 @@ struct SessionResultsView: View {
     var body: some View {
         NavigationStack {
             ScrollViewReader { scroller in
+            GeometryReader { proxy in
             ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
+                VStack(spacing: 0) {
+                band(width: proxy.size.width, topInset: proxy.safeAreaInsets.top)
+                VStack(alignment: .leading, spacing: 14) {
                     if let session {
                         if let stats {
                             tourDim(hero(session, stats), lit: .score)
@@ -149,11 +152,26 @@ struct SessionResultsView: View {
                     } else {
                         Text("No results for this session.")
                             .font(AppFont.callout).foregroundStyle(AppColor.textSecondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .card()
                     }
                 }
-                .padding(AppMetrics.screenPadding)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.top, -Self.overlap)
+                .padding(.bottom, 28)
+                }
             }
-            .screenBackground()
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            // In the valley like the session's own page (Aziz, 2026-09-28,
+            // `mockups/apple-watch/`): the meadow behind sand cards, where the
+            // screen used to be plain cream under a system bar.
+            .background(ValleyGround.meadow.ignoresSafeArea())
+            // Once the band has scrolled away, meadow fades in behind the
+            // clock so the cards never run under it bare.
+            .modifier(StatusBarScrim(height: proxy.safeAreaInsets.top + 12, threshold: 60))
+            }
             // Leaving the unlocked first results is the moment of the offer.
             // It rode the reflection card's own onDisappear until that card
             // was cut (2026-09-22); it belongs to the screen, not to a card.
@@ -167,29 +185,7 @@ struct SessionResultsView: View {
                     firstOffer.requestPaywall()
                 }
             }
-            .toolbar {
-                ToolbarItemGroup(placement: .topBarLeading) {
-                    if session != nil, stats != nil {
-                        Button { route = .share } label: {
-                            Image(systemName: "square.and.arrow.up")
-                        }
-                        .tint(AppColor.accentGoldText)
-                    }
-                    if session != nil {
-                        Menu {
-                            Button(role: .destructive) { pendingDelete = sessionID } label: {
-                                Label("Delete session", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
-                        }
-                        .tint(AppColor.textSecondary)
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }.tint(AppColor.accentGoldText)
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .deleteSessionDialog(pending: $pendingDelete) { _ in
                 deleted = true
                 dismiss()
@@ -257,6 +253,74 @@ struct SessionResultsView: View {
             }
             }
         }
+    }
+
+    // MARK: The band
+
+    /// How tall the sky band is under the status bar, and how far the first
+    /// card rides up over it (the session page's own numbers).
+    private static let bandHeight: CGFloat = 150
+    private static let overlap: CGFloat = 40
+
+    /// The valley's sky with nobody in it, the buttons, and what this is:
+    /// "Your body" over when, how long and the sound.
+    private func band(width: CGFloat, topInset: CGFloat) -> some View {
+        let height = topInset + Self.bandHeight
+        return ZStack(alignment: .top) {
+            ValleyScene(progress: 0, showsFigure: false, clock: true)
+                .frame(width: width, height: height)
+                .fadesIntoMeadow()
+            // The title sits in the buttons' row, so it is always on sky:
+            // lower down, the ridge ran behind the date line.
+            ZStack(alignment: .top) {
+                HStack {
+                    bandButton("xmark", label: "Close") { dismiss() }
+                    Spacer(minLength: 8)
+                    if session != nil, stats != nil {
+                        bandButton("square.and.arrow.up", label: "Share") { route = .share }
+                    }
+                    if session != nil {
+                        Menu {
+                            Button(role: .destructive) { pendingDelete = sessionID } label: {
+                                Label("Delete session", systemImage: "trash")
+                            }
+                        } label: {
+                            bandCircle("ellipsis")
+                        }
+                        .accessibilityLabel("More")
+                    }
+                }
+                if let session {
+                    VStack(spacing: 2) {
+                        Text(stats == nil ? "Your session" : "Your body")
+                            .font(DisplayFont.display(24, .heavy))
+                            .foregroundStyle(ValleyGround.skyInk)
+                        Text(metaLine(session))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .foregroundStyle(ValleyGround.skyInk.opacity(0.7))
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 90)
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, topInset + 4)
+        }
+        .frame(width: width, height: height)
+    }
+
+    private func bandButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { bandCircle(symbol) }
+            .accessibilityLabel(label)
+    }
+
+    private func bandCircle(_ symbol: String) -> some View {
+        Image(systemName: symbol)
+            .font(.system(size: 14, weight: .bold))
+            .foregroundStyle(ValleyGround.ink)
+            .frame(width: 34, height: 34)
+            .background(AppColor.backgroundPrimary.opacity(0.9), in: Circle())
+            .shadow(color: .black.opacity(0.12), radius: 5, y: 2)
     }
 
     /// Which tour stage lights a given curve.
@@ -356,15 +420,11 @@ struct SessionResultsView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 6)
 
-            // Date, length and sound in one quiet line. These were a header
-            // row and chips; as facts about a finished session they are
-            // footnotes, not framing.
-            Text(metaLine(session))
-                .font(AppFont.caption)
-                .foregroundStyle(AppColor.textSecondary.opacity(0.8))
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 2)
+        .padding(.vertical, 18)
+        .padding(.horizontal, 14)
+        .card(padding: 0)
     }
 
     /// Otto, under the verdict: the spoken verdict is what the rules can
@@ -410,7 +470,7 @@ struct SessionResultsView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private var grantChip: some View {
@@ -425,7 +485,7 @@ struct SessionResultsView: View {
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 12).padding(.vertical, 9)
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(AppColor.calmAccent.opacity(0.45), lineWidth: 1))
+        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func metaLine(_ session: Session) -> String {
@@ -482,8 +542,7 @@ struct SessionResultsView: View {
                 // Tinted in the signal's own colour rather than sitting on a
                 // white card: a filled shape reads as an object you could pick
                 // up, an outlined one reads as a field in a form.
-                .background(AppColor.calmAccentFill.opacity(0.13),
-                            in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+                .card(padding: 0)
             }
         }
     }
@@ -524,7 +583,8 @@ struct SessionResultsView: View {
                     .foregroundStyle(AppColor.calmAccent)
                 .padding(.horizontal, 13)
                 .padding(.vertical, 6)
-                .background(AppColor.calmAccentFill.opacity(0.14), in: Capsule())
+                .background(AppColor.backgroundSecondary, in: Capsule())
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 2)
             }
             // Attached to the button, not stacked on the NavigationStack with
             // the other two sheets — several .sheet modifiers on one view is

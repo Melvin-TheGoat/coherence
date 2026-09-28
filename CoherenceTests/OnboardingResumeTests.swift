@@ -36,6 +36,14 @@ final class OnboardingResumeTests: XCTestCase {
         XCTAssertNil(OnboardingResume.load(from: defaults))
     }
 
+    /// The rating ask is once per run of onboarding: its flag goes with the
+    /// record, so the next onboarding (after a sign-out) may ask again.
+    func test_clearAlsoForgetsTheRatingAsk() {
+        defaults.set(true, forKey: OnboardingResume.reviewAskedKey)
+        OnboardingResume.clear(from: defaults)
+        XCTAssertFalse(defaults.bool(forKey: OnboardingResume.reviewAskedKey))
+    }
+
     func test_twoWeeksOldStartsOver() {
         sample(savedAt: Date().addingTimeInterval(-15 * 86_400)).save(to: defaults)
         XCTAssertNil(OnboardingResume.load(from: defaults), "stale answers belong to a different person")

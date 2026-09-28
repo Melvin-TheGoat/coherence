@@ -132,9 +132,12 @@ enum BlockSchedule {
         let name = passName(id)
         center.stopMonitoring([name])
         let margin: TimeInterval = 16 * 60
+        // Whole seconds, so the end Screen Time is told is the end the rules
+        // read (it drops fractions of a second).
+        let end = BlockRules.wholeSecond(end)
         let exact = DateInterval(start: min(now, end.addingTimeInterval(-margin)), end: end)
         if start(name, exact, in: center) { return end }
-        let longer = max(end, now.addingTimeInterval(margin))
+        let longer = BlockRules.wholeSecond(max(end, now.addingTimeInterval(margin)))
         if start(name, DateInterval(start: now, end: longer), in: center) { return longer }
         return nil
     }

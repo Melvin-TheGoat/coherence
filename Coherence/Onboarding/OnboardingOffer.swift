@@ -113,6 +113,19 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         }
     }
 
+    /// The ladder's rungs are designed to open with a free trial. Whether a
+    /// given person actually gets one is the App Store's answer
+    /// (`Store.freeTrialDays(for:)`), never this.
+    var designedWithTrial: Bool {
+        self == .monthTrial || self == .monthHalf
+    }
+
+    /// The cadence as it is true right now: a rung whose trial this person
+    /// will not get says "per month", not "per month after the trial".
+    func cadence(withTrial trial: Bool) -> String {
+        designedWithTrial && !trial ? "per month" : cadence
+    }
+
     var cadence: String {
         switch self {
         case .monthly:  return "per month"
@@ -319,8 +332,9 @@ struct PaywallScreen: View {
     /// A hardcoded dollar amount beside a live purchase button is wrong in
     /// every country but one.
     private var priceLine: String {
-        store.displayPrice(for: plan).map { "\($0) \(plan.cadence)" }
-            ?? "\(plan.price) \(plan.cadence)"
+        let cadence = plan.cadence(withTrial: trialNow)
+        return store.displayPrice(for: plan).map { "\($0) \(cadence)" }
+            ?? "\(plan.price) \(cadence)"
     }
 
     private var notSellingFootnote: String {
@@ -360,8 +374,19 @@ struct PaywallScreen: View {
     /// The plan being bought right now starts with a free trial: the main
     /// offer when trials are on, or the ladder's trial rung, which exists
     /// even while the paywall itself sells none.
-    private var trialNow: Bool {
-        plan == .monthTrial ? (store.trialEligible || store.state != .ready) : (offerTrial && plan != .lifetime)
+    private var trialNow: Bool { trialLength != nil }
+
+    /// The free days the plan being bought starts with, or nil for none. A
+    /// rung's trial is its OWN product's offer and eligibility, never the
+    /// monthly's: the half-price plan must not promise days its purchase
+    /// sheet will not give. Lifetime and the half-off year carry no free
+    /// trial (the year's offer is a discount paid up front).
+    private var trialLength: Int? {
+        switch plan {
+        case .monthTrial, .monthHalf: return store.freeTrialDays(for: plan)
+        case .lifetime, .yearHalf: return nil
+        case .monthly, .yearly: return offerTrial ? store.trialDays : nil
+        }
     }
 
     /// A rung can be offered only if its product exists (a DEBUG build demos
@@ -369,7 +394,9 @@ struct PaywallScreen: View {
     private func available(_ rung: DownsellRung) -> Bool {
         guard selling else { return false }
         let exists = store.product(for: rung.plan) != nil || Self.demoSelling
-        return exists && (rung != .trial || store.trialEligible || store.state != .ready)
+        // The trial rung only to someone its product would actually give
+        // free days to; "Try it free first" over a charge is the lie.
+        return exists && (rung != .trial || store.freeTrialDays(for: .monthTrial) != nil)
     }
     private func firstRung(after rung: DownsellRung? = nil) -> DownsellRung? {
         var next = rung.map { $0.next } ?? DownsellRung.allCases.first
@@ -402,9 +429,10 @@ struct PaywallScreen: View {
     /// it and reviewers reject paywalls that only hint.
     private var footnote: String {
         guard selling else { return notSellingFootnote }
-        return trialNow
-            ? "\(TrialCopy.length(store.trialDays)) free, then \(priceLine). Renews automatically until you cancel in Settings."
-            : "\(priceLine). Renews automatically until you cancel in Settings."
+        if let days = trialLength {
+            return "\(TrialCopy.length(days)) free, then \(priceLine). Renews automatically until you cancel in Settings."
+        }
+        return "\(priceLine). Renews automatically until you cancel in Settings."
     }
 
     /// In the valley, like the rest of onboarding (Aziz, 2026-09-26: "make it
@@ -455,7 +483,7 @@ struct PaywallScreen: View {
                                   ?? SubscriptionPlan.monthly.price,
                               halfMonthPrice: store.displayPrice(for: .monthHalf)
                                   ?? SubscriptionPlan.monthHalf.price,
-                              trialDays: store.trialDays) {
+                              trialDays: store.freeTrialDays(for: current.plan)) {
                     // Taking a rung PRESELECTS the plan and returns to the
                     // paywall; the purchase happens there and only there.
                     // The rungs used to buy in place, which put a
@@ -616,7 +644,7 @@ struct PaywallScreen: View {
                     }
                     // Wraps rather than truncating: the half-off year's
                     // renewal price rides this line and must be read whole.
-                    Text(p.cadence)
+                    Text(p.cadence(withTrial: store.freeTrialDays(for: p) != nil))
                         .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
                         .multilineTextAlignment(.trailing)

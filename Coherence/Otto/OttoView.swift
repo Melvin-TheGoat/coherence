@@ -549,19 +549,19 @@ struct OttoBubble: View {
     var body: some View {
         Text(text)
             .font(AppFont.callout)
-            .foregroundStyle(AppColor.textPrimary)
+            .foregroundStyle(SpeechBubbleStyle.ink)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(AppColor.backgroundSecondary)
-                    .shadow(color: AppColor.hairline, radius: 0, y: 3)
+                    .fill(SpeechBubbleStyle.fill)
+                    .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
             }
             .overlay(alignment: .bottomLeading) {
                 // The tail: a small rotated square tucked under the corner
                 // nearest Otto's mouth.
                 Rectangle()
-                    .fill(AppColor.backgroundSecondary)
+                    .fill(SpeechBubbleStyle.fill)
                     .frame(width: 12, height: 12)
                     .rotationEffect(.degrees(45))
                     .offset(x: -4, y: -12)

@@ -289,6 +289,15 @@ this release needs a NEW archive.
 
 ## OPEN: must be done in the submission that ships the next build
 
+- [ ] **Privacy policy and terms were rewritten on 2026-09-28; the App
+  Privacy label must match them.** New since the last submission: Friends
+  profiles publish a practice summary (sessions and minutes in the last 7
+  days, streak, total sessions, last session date) to the public database,
+  and posts are gone. Declare the summary under App Privacy (it is data we
+  can read, linked to the profile), drop anything that only described posts,
+  and redeploy the website so `meditate808.com/privacy` and `/terms` show the
+  same text the app bundles (`python3 tools/legal_pages.py` rebuilds them).
+
 - [ ] **CloudKit Console: promote the schema Development → Production
   BEFORE the build goes live.** This build adds fields to two synced models:
   `CD_Preferences` (evidenceGrantRemaining, evidenceGrantSince,

@@ -48,11 +48,16 @@ final class Store: ObservableObject {
         static let monthHalf = "com.lockout.meditate808.monthly50"
 
         static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf]
-        /// What must load for the store to count as selling. The rungs are
-        /// NOT in it: until they exist in App Store Connect the ladder simply
-        /// does not appear, where counting them would stop the whole paywall
-        /// selling and, with that, lift the lock for everyone.
-        static let core = [monthly, yearly, lifetime, yearHalf]
+        /// What must load for the store to count as selling: the two plans
+        /// the paywall shows (Aziz, 2026-09-26). The rungs are NOT in it:
+        /// until they exist in App Store Connect the ladder simply does not
+        /// appear, where counting them would stop the whole paywall selling
+        /// and, with that, lift the lock for everyone. Nor are Lifetime (no
+        /// longer sold, kept only so a past purchase restores) and the
+        /// half-off year (no screen offers it): both load when present and
+        /// are never required, or a missing one would leave the paywall
+        /// reading "Plans aren't loading" with the lock off.
+        static let core = [monthly, yearly]
 
         static func of(_ plan: SubscriptionPlan) -> String {
             switch plan {
@@ -96,6 +101,26 @@ final class Store: ObservableObject {
     /// that. Every line that states the trial's length reads this
     /// (`TrialCopy`), so App Store Connect is the one place it is set.
     @Published private(set) var trialDays = SubscriptionPlan.fallbackTrialDays
+    /// Each loaded product's free-trial introductory offer, in days, keyed by
+    /// product ID, for the offers this person is still eligible for. A
+    /// product with no free-trial offer (or a pay-up-front one, like the
+    /// half-off year), or one they already used, has no entry.
+    @Published private(set) var freeTrialDaysByProduct: [String: Int] = [:]
+
+    /// The free days buying `plan` would start with for THIS person, or nil
+    /// when it starts with none: the product carries no free-trial offer, or
+    /// StoreKit says they already used one. Before the plans load (a DEBUG
+    /// demo, or never in Release, where nothing sells until `.ready`) the
+    /// ladder's rungs are assumed to carry the trial they are designed with.
+    func freeTrialDays(for plan: SubscriptionPlan) -> Int? {
+        guard state == .ready else {
+            return plan.designedWithTrial ? SubscriptionPlan.fallbackTrialDays : nil
+        }
+        guard let days = freeTrialDaysByProduct[ProductID.of(plan)], days > 0 else {
+            return nil
+        }
+        return days
+    }
 
     /// Whether any screen may offer the free trial: 808 offers one at all
     /// (`Monetization.freeTrial`), and this person is still eligible (or the
@@ -155,7 +180,7 @@ final class Store: ObservableObject {
         do {
             let found = try await Product.products(for: ProductID.all)
             products = found.sorted { $0.price < $1.price }
-            // All three or none: a partial fetch would render hardcoded
+            // Both core plans or none: a partial fetch would render hardcoded
             // fallback prices beside live rows and a buy button that silently
             // no-ops on the missing product. Unavailable means free (the
             // paywall shows "Plans aren't loading" with a retry).
@@ -174,6 +199,18 @@ final class Store: ObservableObject {
            offer.paymentMode == .freeTrial {
             trialDays = Self.days(in: offer.period)
         }
+        // Every product's own trial, so a rung states the length (or the
+        // absence) of the offer IT carries, never another product's.
+        var byProduct: [String: Int] = [:]
+        for product in products {
+            // Eligibility is per subscription group, so it is asked of the
+            // product's own group rather than assumed from the monthly's.
+            if let sub = product.subscription, let offer = sub.introductoryOffer,
+               offer.paymentMode == .freeTrial, await sub.isEligibleForIntroOffer {
+                byProduct[product.id] = Self.days(in: offer.period)
+            }
+        }
+        freeTrialDaysByProduct = byProduct
     }
 
     /// A subscription period in days, the way a trial is stated.

@@ -20,6 +20,10 @@ enum SessionDeletion {
             // session would be a false alarm.
             Task { await community.unpost(session: id) }
         }
+        // The "Add how that felt" toast for this session goes with it: a tap
+        // on it would open the page of a session that no longer exists, and
+        // saving a photo there wrote an orphan row.
+        SessionDetails.clear(id)
         if SessionStore.deleteSession(id: id, in: context) {
             OttoChatStore.delete(key: OttoChatStore.key(for: id))
             Analytics.track(.sessionDeleted)

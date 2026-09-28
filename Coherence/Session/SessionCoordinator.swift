@@ -124,6 +124,33 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// audio or tears down the live screen must match against this first.
     private var currentAttemptID: UUID?
 
+    /// Sessions that have ended here, however they ended: saved, discarded,
+    /// finished on the phone. Most recent last, capped. A queued `started`
+    /// ack replaying after the end must never re-adopt one (`shouldAdopt`),
+    /// and the stale-WC family has bitten this project five times now.
+    private var endedIDs: [UUID] = []
+    /// Payloads already handled. The Watch sends every payload twice
+    /// (sendMessage, then transferUserInfo as the backstop), so the second
+    /// copy of a saved session, or of a discard, must do nothing at all.
+    private var handledPayloadIDs: [UUID] = []
+    /// Sits begun with `beginMeasured` whose Watch has not been told they are
+    /// over. The phone taking one over (`convertToPhoneSession`, End before
+    /// the ack) tells the Watch to stop and clears its params, once.
+    private var watchAttemptIDs: Set<UUID> = []
+    /// A Watch payload for a sit the phone now owns, held until the phone's
+    /// own finish writes the Session, then attached to it. Written straight
+    /// away it would create the Session with the Watch's shorter length, and
+    /// the phone's finish would then find the row taken and call the sit too
+    /// short.
+    private var heldPayloads: [UUID: SessionPayload] = [:]
+
+    private static let recentIDLimit = 64
+    private static func remember(_ id: UUID, in list: inout [UUID]) {
+        guard !list.contains(id) else { return }
+        list.append(id)
+        if list.count > recentIDLimit { list.removeFirst(list.count - recentIDLimit) }
+    }
+
     /// True between the Watch's "ending" announcement and the payload landing:
     /// the live screen is already down, and the home screen shows a small
     /// receiving banner so the handoff never looks frozen.
@@ -228,6 +255,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         currentAttemptID = params.sessionID
         startAcked = false
         startFailure = nil
+        watchAttemptIDs.insert(params.sessionID)
         if let soundID { pendingSoundIDs[params.sessionID] = soundID }
         Analytics.track(.sessionStarted(source: "phone_watch", sound: soundID ?? "silence"))
         active = ActiveSession(id: params.sessionID,
@@ -289,6 +317,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
         guard let current = active, current.id == sessionID, current.engine == .watch,
               !startAcked else { return }
         log.info("The Watch never answered for \(sessionID); finishing on the phone")
+        // The Watch may still be waking up with these params. Tell it the sit
+        // is not its to run, so it does not start one nobody is watching.
+        releaseWatch(from: sessionID)
         let converted = ActiveSession(id: current.id, startedAt: current.startedAt,
                                       plannedDurationSec: current.plannedDurationSec,
                                       soundTitle: current.soundTitle, engine: .phone)
@@ -296,11 +327,36 @@ final class SessionCoordinator: NSObject, ObservableObject {
         startAcked = true
         status = "Meditating."
         UIApplication.shared.isIdleTimerDisabled = true
-        if let planned = current.plannedDurationSec {
-            let remaining = Double(planned) - Date().timeIntervalSince(current.startedAt)
-            if remaining > 0 { SessionEndNotice.schedule(for: current.id, afterSeconds: Int(remaining)) }
-        }
+        // Schedules the end notice against the time actually left, too.
         rearmPhoneFinish(for: converted)
+    }
+
+    /// The phone has taken a Watch attempt over or finished it: tell the
+    /// Watch to stop, over both channels as `endActiveSession` does, cancel
+    /// any params still queued for it, and clear them from the application
+    /// context (keeping the onboarded flag that rides with them), so a
+    /// cold-launching Watch cannot start a sit that is already over. Once per
+    /// attempt; a no-op for a sit the Watch was never asked to run.
+    private func releaseWatch(from sessionID: UUID) {
+        guard watchAttemptIDs.remove(sessionID) != nil, WCSession.isSupported() else { return }
+        let wc = WCSession.default
+        for transfer in wc.outstandingUserInfoTransfers {
+            if let data = transfer.userInfo[WCKeys.params] as? Data,
+               let params = try? JSONDecoder().decode(SessionParams.self, from: data),
+               params.sessionID == sessionID {
+                transfer.cancel()
+            }
+        }
+        let msg = [WCKeys.end: sessionID.uuidString]
+        if wc.isReachable {
+            wc.sendMessage(msg, replyHandler: nil, errorHandler: { [weak self] error in
+                self?.log.error("release end sendMessage failed: \(error.localizedDescription)")
+            })
+        }
+        wc.transferUserInfo(msg)
+        if wc.activationState == .activated {
+            try? wc.updateApplicationContext([WCKeys.onboarded: onboarded])
+        }
     }
 
     /// Runs the whole sit here: the phone keeps the clock, plays the sound,
@@ -333,7 +389,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         phoneFinishTask?.cancel()
         guard let planned = params.plannedDurationSec else { return }
         // Rings at the end even with the phone locked and 808 asleep.
-        SessionEndNotice.schedule(for: params.sessionID, afterSeconds: planned)
+        SessionEndNotice.schedule(for: params.sessionID, afterSeconds: planned, plannedSec: planned)
         phoneFinishTask = Task { @MainActor [weak self] in
             // A cancelled sleep THROWS and `try?` swallows it, which would run
             // the finish immediately on the cancel. Bitten three times here.
@@ -364,6 +420,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
         Task { await FocusShortcut.shared.restoreIfOurs() }
         active = nil
         currentAttemptID = nil
+        Self.remember(current.id, in: &endedIDs)
+        // A sit that began as a Watch attempt: the Watch must not keep running
+        // it, or start it late from queued params.
+        releaseWatch(from: current.id)
+        let heldPayload = heldPayloads.removeValue(forKey: current.id)
 
         var duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
         // A silent timed sit lets iOS suspend 808, so the finish can run
@@ -387,6 +448,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
             Analytics.track(.sessionDiscarded(reason: "too_short",
                                               durationBand: Analytics.durationBand(seconds: duration)))
             return
+        }
+        // The Watch measured this sit after all (it started late, then shipped
+        // before the phone's clock ran out): its readings belong to it.
+        if let heldPayload,
+           SessionStore.store(heldPayload, frequencyID: soundID, in: context).session != nil {
+            WatchLink.shared.noteConnected()
         }
         lastSessionID = session.id
         Self.onSessionSaved?(session.startedAt, session.durationSec)
@@ -418,6 +485,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // reason it's finishing.
             phoneFinishTask?.cancel()
             phoneFinishTask = nil
+            // Nor may the end notification ring for a sit that is paused, and
+            // perhaps about to be voided. `rearmPhoneFinish` puts it back.
+            SessionEndNotice.cancel(for: current.id)
             Task { await LeftAppNotice.post(for: current.id) }
         } else if phase == .active {
             guard let left = awayEnteredAt else { return }
@@ -448,6 +518,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
             finishPhoneSession(early: false)
             return
         }
+        // Rescheduled for the time actually left, titled with the length set.
+        SessionEndNotice.schedule(for: session.id, afterSeconds: Int(remaining.rounded(.up)),
+                                  plannedSec: planned)
         phoneFinishTask?.cancel()
         phoneFinishTask = Task { @MainActor [weak self] in
             try? await Task.sleep(for: .seconds(remaining))
@@ -482,6 +555,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
         Task { await FocusShortcut.shared.restoreIfOurs() }
         active = nil
         currentAttemptID = nil
+        Self.remember(current.id, in: &endedIDs)
+        releaseWatch(from: current.id)
+        heldPayloads.removeValue(forKey: current.id)
         let duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
         pendingSoundIDs.removeValue(forKey: current.id)
         status = "Session discarded (left the app)"
@@ -524,6 +600,22 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// check + workout spin-up), which made the phone's countdown reach 0:00
     /// while the Watch still had time left.
     private func watchStarted(sessionID: UUID, at startedAt: Date) {
+        // Any ack at all means this Watch has run a session for 808, which is
+        // what turns the Apple Watch switch on the first time.
+        WatchLink.shared.noteConnected()
+        // Over already (saved, discarded, or finished on the phone): a late or
+        // replayed ack must not bring it back.
+        guard !endedIDs.contains(sessionID) else {
+            log.info("Ignoring a start ack for \(sessionID): that sit has ended")
+            return
+        }
+        // The phone took this sit over before the Watch confirmed. It owns
+        // the clock now; rebuilding it as a Watch sit would strand the phone's
+        // finish, its end notice and the idle timer.
+        if let current = active, current.id == sessionID, current.engine == .phone {
+            log.info("Ignoring a late start ack for \(sessionID): the phone is running it")
+            return
+        }
         if sessionID == currentAttemptID { startWatchdog?.cancel() }
         // The ack arrived for a session the phone is not showing. Either it
         // gave up (the watchdog fired while the Watch was locked and could not
@@ -534,12 +626,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
         if active?.id != sessionID {
             guard adoptRunningSession(sessionID: sessionID, at: startedAt) else { return }
         }
-        guard let current = active, current.id == sessionID else { return }
+        guard let current = active, current.id == sessionID, current.engine == .watch else { return }
         startAcked = true
         active = ActiveSession(id: current.id,
                                startedAt: startedAt,
                                plannedDurationSec: current.plannedDurationSec,
-                               soundTitle: current.soundTitle)
+                               soundTitle: current.soundTitle,
+                               engine: current.engine)
         if let planned = current.plannedDurationSec {
             let remaining = Double(planned) - Date().timeIntervalSince(startedAt)
             audioStopTask?.cancel()
@@ -565,12 +658,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
         let existing = try? context.fetch(
             FetchDescriptor<Session>(predicate: #Predicate { $0.id == sessionID }))
         guard Self.shouldAdopt(startedAt: startedAt,
-                               alreadyPersisted: !((existing ?? []).isEmpty)) else {
+                               alreadyPersisted: !((existing ?? []).isEmpty),
+                               recentlyEnded: endedIDs.contains(sessionID)) else {
             log.info("Ignoring a start ack for \(sessionID): not a session that can still be running")
             return false
         }
 
         log.info("Adopting the Watch's running session \(sessionID)")
+        finishPhoneSitForWatch()
         startFailure = nil
         currentAttemptID = sessionID
         startAcked = true
@@ -582,6 +677,19 @@ final class SessionCoordinator: NSObject, ObservableObject {
         return true
     }
 
+    /// A session just started on the Watch while a phone sit was running
+    /// here. The phone sit is written first, exactly as an early End would
+    /// write it; replacing it outright lost it, left the screen awake for
+    /// good, and let its end notification ring for a sit that was gone.
+    private func finishPhoneSitForWatch() {
+        guard let current = active, current.engine == .phone else { return }
+        log.info("A Watch session is starting; finishing phone sit \(current.id) first")
+        if awayEnteredAt != nil { LeftAppNotice.cancel(for: current.id) }
+        awayEnteredAt = nil
+        leftAppPrompt = nil
+        finishPhoneSession(early: true)
+    }
+
     /// Past this, a start ack describes a session that cannot still be running,
     /// so it is a queued message replaying rather than news. Generous, because
     /// an open-ended sit has no upper bound and only the Watch ends it.
@@ -591,9 +699,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// taken over. Pure, so the stale-queue guards can be tested without a
     /// Watch: a queued ack replaying from a finished session must never
     /// resurrect its screen, and a persisted session is by definition finished.
+    /// `recentlyEnded` covers the gap persistence cannot: a sit that ended
+    /// with nothing written (discarded, too short) or whose ack replays in the
+    /// moment before its row lands.
     nonisolated static func shouldAdopt(startedAt: Date, now: Date = Date(),
-                                        alreadyPersisted: Bool) -> Bool {
-        guard !alreadyPersisted else { return false }
+                                        alreadyPersisted: Bool,
+                                        recentlyEnded: Bool = false) -> Bool {
+        guard !alreadyPersisted, !recentlyEnded else { return false }
         let age = now.timeIntervalSince(startedAt)
         // A start stamped in the future is a clock skew, not news.
         return age >= 0 && age < maxAdoptAgeSec
@@ -608,6 +720,20 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // No wrist involved: this screen owns the whole session, so ending it
         // here is the end of it.
         if active.engine == .phone {
+            finishPhoneSession(early: true)
+            return
+        }
+        // The Watch has not confirmed it began, and a Watch ignores an end
+        // for a session it is not running. Waiting on it left the sit up with
+        // "Ending on your Watch" until the ack revived it or the watchdog
+        // turned it into a phone sit nobody was in. The phone ends it here:
+        // written as a phone sit if long enough, discarded if not, the Watch
+        // told to stop (`releaseWatch`), and any late ack ignored (`endedIDs`).
+        if !startAcked {
+            startWatchdog?.cancel()
+            self.active = ActiveSession(id: active.id, startedAt: active.startedAt,
+                                        plannedDurationSec: active.plannedDurationSec,
+                                        soundTitle: active.soundTitle, engine: .phone)
             finishPhoneSession(early: true)
             return
         }
@@ -643,6 +769,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
             return
         }
         stopAudio(reason: "start failure: \(failure.rawValue)")
+        startWatchdog?.cancel()
+        // No sit happened, so 808's own Do Not Disturb has nothing to cover.
+        Task { await FocusShortcut.shared.restoreIfOurs() }
+        if let id = currentAttemptID {
+            Self.remember(id, in: &endedIDs)
+            releaseWatch(from: id)
+        }
         active = nil
         currentAttemptID = nil
         startFailure = failure
@@ -667,21 +800,46 @@ final class SessionCoordinator: NSObject, ObservableObject {
     }
 
     private func persist(_ payload: SessionPayload) {
+        let id = payload.sessionID
+        // The Watch sends every payload twice (sendMessage, then
+        // transferUserInfo as the backstop). The second copy of a saved
+        // session, or of a discard, must do nothing: read as "nothing
+        // written", it put up the "couldn't read that one" screen after a
+        // good session and counted every discard twice.
+        guard !handledPayloadIDs.contains(id) else {
+            log.info("Second copy of payload \(id) ignored")
+            return
+        }
+        Self.remember(id, in: &handledPayloadIDs)
+
+        // The phone took this sit over and is still running it. Its own
+        // finish writes the Session; the measurements are attached then.
+        if let current = active, current.id == id, current.engine == .phone {
+            log.info("Holding payload \(id) until the phone's sit ends")
+            heldPayloads[id] = payload
+            return
+        }
+
         // A payload is "ours" if it matches the session the user just began, or
         // if no attempt is in flight (e.g. the app relaunched mid-session and the
         // payload finally landed). A STALE payload — flushed from the Watch's
         // transferUserInfo queue when the watch app launches for a NEW session —
         // still gets persisted below (it's a real finished session), but it must
-        // not stop the new session's audio or tear down its screen.
-        let isCurrent = currentAttemptID == nil || payload.sessionID == currentAttemptID
+        // not stop the new session's audio or tear down its screen. Nor is a
+        // sit the phone already finished "ours": its live screen is long gone,
+        // and its readings are only attached.
+        let endedHere = endedIDs.contains(id)
+        let isCurrent = id == currentAttemptID || (currentAttemptID == nil && !endedHere)
 
         if isCurrent {
             receivingFromWatch = false
+            startWatchdog?.cancel()
             // Session ended (Watch End for open-ended, or the Watch's own timer) —
             // stop the phone audio now. For timed sessions the parallel timer may
             // have already stopped it; stopAudio() is idempotent.
             stopAudio(reason: "payload landed")
             Task { await FocusShortcut.shared.restoreIfOurs() }
+            UIApplication.shared.isIdleTimerDisabled = false
             // The session is over — take down the mid-session screen.
             active = nil
             currentAttemptID = nil
@@ -693,18 +851,30 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // onboarded flag, which rides the same context.
             try? WCSession.default.updateApplicationContext([WCKeys.onboarded: onboarded])
         } else {
-            log.info("Stale payload \(payload.sessionID) persisted without touching the live session")
+            log.info("Stale payload \(id) persisted without touching the live session")
         }
+        Self.remember(id, in: &endedIDs)
+        // The Watch finished it itself; there is nothing left to tell it.
+        watchAttemptIDs.remove(id)
 
-        let soundID = pendingSoundIDs.removeValue(forKey: payload.sessionID)
+        let soundID = pendingSoundIDs.removeValue(forKey: id)
 
         let context = container.mainContext
-        guard let session = SessionStore.persist(payload, frequencyID: soundID,
-                                                 in: context) else {
+        let session: Session
+        switch SessionStore.store(payload, frequencyID: soundID, in: context) {
+        case .saved(let saved):
+            session = saved
+        case .alreadyStored:
+            // Written before (a copy that outlived a relaunch). Nothing new.
+            return
+        case .rejected:
+            // Discarded on the wrist, too short, or unreadable. Only the sit
+            // in front of the person gets the screen; a phone sit that ended
+            // here already said everything there was to say.
             if isCurrent {
                 status = "Session discarded (too short / unreadable)"
-                lastDiscardedID = payload.sessionID
-                let discard = Discard(id: payload.sessionID, durationSec: payload.durationSec)
+                lastDiscardedID = id
+                let discard = Discard(id: id, durationSec: payload.durationSec)
                 lastDiscard = discard
                 // Its own event, NOT a failure: a Begin-then-End by accident is
                 // not a broken session and must not read as one on the
@@ -714,6 +884,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
             }
             return
         }
+        // A Watch just measured a session, so it has connected to 808.
+        WatchLink.shared.noteConnected()
+        // Readings attached to a sit the phone already wrote: it was saved,
+        // counted and announced when it ended, so nothing is said twice.
+        guard !endedHere else { return }
         Self.onSessionSaved?(session.startedAt, session.durationSec)
         guard isCurrent else { return }
         lastSessionID = session.id
@@ -730,7 +905,14 @@ final class SessionCoordinator: NSObject, ObservableObject {
 }
 
 extension SessionCoordinator: WCSessionDelegate {
-    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {}
+    nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+        Task { @MainActor in WatchLink.shared.refresh() }
+    }
+    /// Paired, unpaired, 808 installed or removed on the Watch: the Ready
+    /// screen's switch and Settings follow at once.
+    nonisolated func sessionWatchStateDidChange(_ session: WCSession) {
+        Task { @MainActor in WatchLink.shared.refresh() }
+    }
     nonisolated func sessionDidBecomeInactive(_ session: WCSession) {}
     nonisolated func sessionDidDeactivate(_ session: WCSession) {
         WCSession.default.activate()
@@ -764,7 +946,7 @@ extension SessionCoordinator: WCSessionDelegate {
     /// a refusal to start.
     private nonisolated func handle(_ dict: [String: Any]) {
         if let data = dict[WCKeys.payload] as? Data,
-           let payload = try? JSONDecoder().decode(SessionPayload.self, from: data) {
+           let payload = PayloadCoding.decode(data) {
             Task { @MainActor in self.persist(payload) }
             return
         }
@@ -815,7 +997,11 @@ extension SessionCoordinator: WCSessionDelegate {
     @MainActor
     private func watchEnding(sessionID: UUID) {
         guard sessionID == currentAttemptID else { return }   // stale-safe
+        // The phone took this sit over; the Watch ending is not its end. The
+        // payload is held and attached when the phone's own clock finishes.
+        guard active?.engine != .phone else { return }
         stopAudio(reason: "watch ending")
+        UIApplication.shared.isIdleTimerDisabled = false
         active = nil
         receivingFromWatch = true
         status = "Receiving from your Watch…"
@@ -834,7 +1020,10 @@ extension SessionCoordinator: WCSessionDelegate {
     /// downstream (started re-anchor, payload, persist) is the existing path.
     @MainActor
     private func joinWatchSession(sessionID: UUID, at startedAt: Date, soundID: String?) {
-        guard currentAttemptID != sessionID else { return }   // double delivery
+        guard currentAttemptID != sessionID,                  // double delivery
+              !endedIDs.contains(sessionID) else { return }
+        // A phone sit running here is written first, never silently replaced.
+        finishPhoneSitForWatch()
         currentAttemptID = sessionID
         if let soundID { pendingSoundIDs[sessionID] = soundID }
         Analytics.track(.sessionStarted(source: "watch", sound: soundID ?? "silence"))

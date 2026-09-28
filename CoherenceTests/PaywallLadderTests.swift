@@ -84,6 +84,33 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(copy.lowercased().contains("renews"))
     }
 
+    /// The half-price rung promises free days only when its own product
+    /// gives this person some. With none (no free-trial offer on monthly50,
+    /// or the trial already used), it states the price from today, and its
+    /// button and cadence stop mentioning a trial.
+    func test_theHalfPriceRungPromisesNoTrialItCannotGive() {
+        let copy = DownsellRung.halfMonth.subtitle(plan: .monthHalf, yearlyPrice: SubscriptionPlan.yearly.price,
+                                                   trialDays: nil)
+        XCTAssertFalse(copy.lowercased().contains("free"), copy)
+        XCTAssertTrue(copy.contains(SubscriptionPlan.monthHalf.price))
+        XCTAssertTrue(copy.lowercased().contains("renews"))
+        XCTAssertFalse(DownsellRung.halfMonth.cta(trialDays: nil).lowercased().contains("free"))
+        XCTAssertTrue(DownsellRung.halfMonth.cta(trialDays: 3).lowercased().contains("free"))
+        XCTAssertFalse(SubscriptionPlan.monthHalf.cadence(withTrial: false).contains("trial"))
+        XCTAssertTrue(SubscriptionPlan.monthHalf.cadence(withTrial: true).contains("trial"))
+        XCTAssertEqual(SubscriptionPlan.yearly.cadence(withTrial: false), SubscriptionPlan.yearly.cadence)
+    }
+
+    /// Only the two plans the paywall shows must load for it to sell. A
+    /// missing Lifetime (no longer sold) or half-off year (no screen offers
+    /// it) must not leave the paywall reading "Plans aren't loading" with the
+    /// premium lock off.
+    func test_onlyThePaywallsPlansAreRequired() {
+        XCTAssertEqual(Set(Store.ProductID.core), [Store.ProductID.monthly, Store.ProductID.yearly])
+        XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.lifetime),
+                      "Lifetime still loads, so a past purchase restores")
+    }
+
     func test_theDiscountIsRealAndSaysWhatItRenewsAt() {
         XCTAssertEqual(SubscriptionPlan.yearHalf.price, "$14.99")
         XCTAssertEqual(SubscriptionPlan.yearly.price, "$29.99")

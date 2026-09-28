@@ -393,9 +393,9 @@ public struct Award: Identifiable, Hashable {
               """)
     }
 
-    /// A single sitting's length, timed in the app in real time. Unlike
-    /// `min20`/`min30`/`min60` above, a hand-logged session never earns
-    /// these: nothing timed it, so a typed-in length would be a guess
+    /// A single sitting's length, timed in the app in real time. As with
+    /// `min20`/`min30`/`min60` above (since 2026-09-28), a hand-logged
+    /// session never earns these: nothing timed it, so a typed-in length would be a guess
     /// wearing the badge a real sit earns.
     private static func length(_ minutes: Int, _ title: String, _ blurb: String) -> Award {
         Award(id: "length\(minutes)", title: title, blurb: blurb,

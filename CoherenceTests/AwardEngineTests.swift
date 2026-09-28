@@ -164,13 +164,20 @@ final class AwardEngineTests: XCTestCase {
         }
     }
 
-    /// `min20`/`min30`/`min60` predate the "hand-logged sessions don't earn a
-    /// length award" rule and must keep their OLD, unfiltered behaviour: a
-    /// logged session still counts toward them, exactly as it always could.
-    func test_originalMinuteAwardsStillCountHandLoggedSessions() {
+    /// `min20`/`min30`/`min60` are single-session lengths too, so a
+    /// hand-logged session no longer earns them (2026-09-28). This pinned
+    /// the opposite until then, which made typing in an hour the way to the
+    /// hour award.
+    func test_minuteAwardsExcludeHandLoggedSessions() {
         let logged = earned([day(0, minutes: 60, isLogged: true)])
-        XCTAssertTrue(logged["min60"]!.isEarned,
-                      "min60's original behaviour changed: it must still count a logged session")
+        for id in ["min20", "min30", "min60"] {
+            XCTAssertFalse(logged[id]!.isEarned, "a hand-logged session earned \(id)")
+        }
+        let real = earned([day(0, minutes: 60)])
+        XCTAssertTrue(real["min60"]!.isEarned)
+        let both = earned([day(-1, minutes: 60, isLogged: true), day(0, minutes: 25)])
+        XCTAssertTrue(both["min20"]!.isEarned, "a timed session still earns it")
+        XCTAssertFalse(both["min30"]!.isEarned, "the logged hour does not")
     }
 
     // MARK: New: a single session's real length excludes hand-logged sits

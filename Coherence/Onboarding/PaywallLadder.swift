@@ -58,26 +58,36 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     /// so the rung never states a dollar figure to someone who will be shown
     /// euros one tap later.
     ///
-    /// `trialDays` is the App Store's trial length (`Store.trialDays`), so the
-    /// rung never promises a length the purchase sheet contradicts.
+    /// `trialDays` is the free trial the rung's OWN product gives this person
+    /// (`Store.freeTrialDays(for:)`), so the rung never promises a length the
+    /// purchase sheet contradicts. nil means none: the product carries no
+    /// free-trial offer, or they already used it, and the half-price rung
+    /// then says what it costs from today. (The trial rung is never offered
+    /// without one.)
     func subtitle(plan: SubscriptionPlan, yearlyPrice: String,
                   monthlyPrice: String = SubscriptionPlan.monthly.price,
                   halfMonthPrice: String = SubscriptionPlan.monthHalf.price,
-                  trialDays: Int = SubscriptionPlan.fallbackTrialDays) -> String {
+                  trialDays: Int? = SubscriptionPlan.fallbackTrialDays) -> String {
         switch self {
         case .trial:
-            return "\(TrialCopy.length(trialDays)) free, everything unlocked, cancel any time. If it doesn't help you meditate more, you pay nothing."
+            let days = trialDays ?? SubscriptionPlan.fallbackTrialDays
+            return "\(TrialCopy.length(days)) free, everything unlocked, cancel any time. If it doesn't help you meditate more, you pay nothing."
         case .halfMonth:
-            return "\(TrialCopy.length(trialDays)) free, then \(halfMonthPrice) a month instead of \(monthlyPrice). Everything unlocked. It renews every month, and you can cancel any time."
+            let price = "\(halfMonthPrice) a month instead of \(monthlyPrice). Everything unlocked. It renews every month, and you can cancel any time."
+            guard let trialDays else { return price }
+            return "\(TrialCopy.length(trialDays)) free, then \(price)"
         }
     }
 
-    var cta: String {
+    /// The button, true to whether free days come first.
+    func cta(trialDays: Int?) -> String {
         switch self {
         case .trial:     return "Start my free trial"
-        case .halfMonth: return "Start free, then half price"
+        case .halfMonth: return trialDays == nil ? "Get half price" : "Start free, then half price"
         }
     }
+
+    var cta: String { cta(trialDays: SubscriptionPlan.fallbackTrialDays) }
 
     /// Which plan this rung actually sells.
     var plan: SubscriptionPlan {
@@ -102,8 +112,9 @@ struct DownsellSheet: View {
     /// Apple's localized monthly and half-month prices when available.
     var monthlyPrice: String = SubscriptionPlan.monthly.price
     var halfMonthPrice: String = SubscriptionPlan.monthHalf.price
-    /// The App Store's trial length (`Store.trialDays`).
-    var trialDays: Int = SubscriptionPlan.fallbackTrialDays
+    /// The free days this rung's own product gives this person
+    /// (`Store.freeTrialDays(for:)`), nil for none.
+    var trialDays: Int? = SubscriptionPlan.fallbackTrialDays
     /// Accepted this rung. The caller preselects the rung's plan and returns
     /// to the paywall, which owns every purchase and every 3.1.2 disclosure;
     /// nothing is bought from this sheet.
@@ -137,7 +148,7 @@ struct DownsellSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {
-                OnboardingCTA(title: rung.cta, action: onTake)
+                OnboardingCTA(title: rung.cta(trialDays: trialDays), action: onTake)
                 // Always a way out, at every rung, in plain words. A decline
                 // that has to be hunted for is the dark pattern this ladder is
                 // otherwise carefully not being.

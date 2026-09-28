@@ -94,36 +94,34 @@ struct OttoSpeech: View {
     private var typed: AttributedString {
         var line = parsed
         let cut = line.index(line.startIndex, offsetByCharacters: min(shown, total))
-        line[line.startIndex..<cut].foregroundColor = ink
+        line[line.startIndex..<cut].foregroundColor = SpeechBubbleStyle.ink
         line[cut..<line.endIndex].foregroundColor = .clear
         return line
     }
 
     var body: some View {
         Text(typed)
-            .font(.system(size: size, weight: friendly ? .semibold : .regular, design: .rounded))
+            .font(.system(size: size, weight: .semibold, design: .rounded))
             .lineSpacing(3)
             .multilineTextAlignment(alignment)
             // Hugs its words, the way Duo's does: a short line gets a short
             // bubble. The clear-ink layout means the width is the finished
             // line's from the first frame, so it never grows while typing.
             .fixedSize(horizontal: false, vertical: true)
-            .padding(.horizontal, friendly ? 22 : 18)
-            .padding(.vertical, friendly ? 18 : 15)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 17)
             // Room for the point inside the frame, so layout counts it.
             .padding(tail == .bottom ? .bottom : .leading, Self.tailSize)
             .background {
-                if friendly {
-                    SpeechBubbleShape(edge: tail, cornerRadius: 28, tailWidth: 24,
-                                      tailDepth: Self.tailSize)
-                        .fill(.white)
-                        .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
-                } else {
-                    let bubble = SpeechBubbleShape(edge: tail, tailWidth: 22,
-                                                   tailDepth: Self.tailSize)
-                    bubble.fill(fill)
-                    bubble.stroke(stroke, style: StrokeStyle(lineWidth: 2, lineJoin: .round))
-                }
+                // Every bubble is solid white with dark words (Aziz,
+                // 2026-09-28: "not clear, more friendly, white and black").
+                // This replaces the see-through outline and the valley's
+                // glass; `ink`, `stroke`, `fill` and `friendly` are still
+                // accepted so no call site changes, and are ignored.
+                SpeechBubbleShape(edge: tail, cornerRadius: 26, tailWidth: 24,
+                                  tailDepth: Self.tailSize)
+                    .fill(SpeechBubbleStyle.fill)
+                    .shadow(color: .black.opacity(0.14), radius: 10, y: 4)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(String(parsed.characters))")
@@ -155,6 +153,12 @@ struct OttoSpeech: View {
                 speaking = false
             }
     }
+}
+
+/// The one look every speech bubble shares: white, with near-black words.
+enum SpeechBubbleStyle {
+    static let fill = Color.white
+    static let ink = Color(red: 0.11, green: 0.11, blue: 0.12)
 }
 
 /// A rounded rectangle with a point, as one continuous outline, the way
@@ -711,7 +715,7 @@ private struct OttoSaysBubble: View {
     var body: some View {
         var line = AttributedString(text)
         let cut = line.index(line.startIndex, offsetByCharacters: min(max(shown, 0), text.count))
-        line[line.startIndex..<cut].foregroundColor = AppColor.textPrimary
+        line[line.startIndex..<cut].foregroundColor = SpeechBubbleStyle.ink
         line[cut..<line.endIndex].foregroundColor = .clear
         return Text(line)
             .font(.system(size: 19, weight: .semibold, design: .rounded))
@@ -780,6 +784,9 @@ struct ClutterScreen: View {
     @State private var answerShown = false
     @State private var answerLetters = 0
     @State private var ctaShown = false
+    /// The delayed move on after "Let's clear it", kept so leaving the
+    /// screen (Back within that second) cancels it instead of jumping forward.
+    @State private var clearTask: Task<Void, Never>?
 
     private static let pop = UIImpactFeedbackGenerator(style: .rigid)
     private static let answer = "Meditation is how you clear it. Doing it every day is how it stays clear. That's what 808 is for."
@@ -893,6 +900,10 @@ struct ClutterScreen: View {
             .padding(.bottom, 10)
         }
         .task { await play() }
+        .onDisappear {
+            clearTask?.cancel()
+            clearTask = nil
+        }
     }
 
     private func play() async {
@@ -943,10 +954,14 @@ struct ClutterScreen: View {
         guard !clearing else { return }
         clearing = true
         UINotificationFeedbackGenerator().notificationOccurred(.success)
-        Task {
+        clearTask = Task {
             try? await Task.sleep(for: .milliseconds(320))
+            guard !Task.isCancelled else { return }
             level = 50
             try? await Task.sleep(for: .milliseconds(650))
+            // A cancelled sleep throws and `try?` swallows it, so without
+            // this the move on ran anyway, undoing a Back.
+            guard !Task.isCancelled else { return }
             onContinue()
         }
     }

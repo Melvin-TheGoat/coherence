@@ -3,6 +3,9 @@ import SwiftData
 
 /// One-time back-fill of the current score across every historical session.
 ///
+/// v9 (5.3.1): live scores now use the wall-clock duration this back-fill
+/// already read, so rows scored live under 5.3.0 are brought onto it.
+///
 /// Re-run for v5, which demoted breath to the SMALLEST term and made it
 /// binary: a doorway either exists or it does not, worth .20 against heart .50
 /// and stillness .30. It must also now BEGIN within the first five minutes,
@@ -48,15 +51,20 @@ import SwiftData
 /// successful save, so a crash mid-migration just retries next launch.
 enum ScoreMigration {
 
-    static let doneKey = "scoreBackfillDone.v8"
+    static let doneKey = "scoreBackfillDone.v9"
 
     /// Rewrites `overallScore` on every row not already at the current
     /// algorithm version. Idempotent, and a no-op once the flag is set.
     @discardableResult
     static func backfillIfNeeded(in context: ModelContext,
-                                 defaults: UserDefaults = .standard) -> Int {
+                                 defaults: UserDefaults = .standard,
+                                 save: (ModelContext) throws -> Void = { try $0.save() }) -> Int {
         guard !defaults.bool(forKey: doneKey) else { return 0 }
-        let updated = backfill(in: context)
+        // The flag follows a SUCCESSFUL save, never the attempt. It used to be
+        // set whatever `save()` did, so one failed write (disk full, a store
+        // mid-migration) left history on the old formula forever with the
+        // flag swearing it was done.
+        guard let updated = try? backfillOrThrow(in: context, save: save) else { return 0 }
         defaults.set(true, forKey: doneKey)
         return updated
     }
@@ -64,12 +72,21 @@ enum ScoreMigration {
     /// The work itself, without the flag — exposed for tests.
     @discardableResult
     static func backfill(in context: ModelContext) -> Int {
+        (try? backfillOrThrow(in: context)) ?? 0
+    }
+
+    /// Throws when a fetch or the save fails, so the caller can leave the flag
+    /// unset and retry on the next launch. `save` is a seam for the test that
+    /// proves a failed save leaves the flag unset.
+    static func backfillOrThrow(in context: ModelContext,
+                                save: (ModelContext) throws -> Void = { try $0.save() }) throws -> Int {
         let version = SignalEngine.version
-        guard let rows = try? context.fetch(FetchDescriptor<MeditationStats>()) else { return 0 }
+        let rows = try context.fetch(FetchDescriptor<MeditationStats>())
 
         // Session durations, keyed by id: the stats row doesn't carry one, and
-        // duration is what the time ceiling needs.
-        let sessions = (try? context.fetch(FetchDescriptor<Session>())) ?? []
+        // duration is what the time ceiling needs. A failed fetch throws rather
+        // than falling back to spans, which would score every row short.
+        let sessions = try context.fetch(FetchDescriptor<Session>())
         var durations: [UUID: Int] = [:]
         for s in sessions { durations[s.id] = s.durationSec }
 
@@ -105,7 +122,12 @@ enum ScoreMigration {
             row.algorithmVersion = version
             updated += 1
         }
-        if updated > 0 { try? context.save() }
+        if updated > 0 {
+            // Roll the edits back on a failed save, so the rows still read as
+            // the old version and a retry rescores them rather than skipping
+            // rows that only look current in memory.
+            do { try save(context) } catch { context.rollback(); throw error }
+        }
         return updated
     }
 }

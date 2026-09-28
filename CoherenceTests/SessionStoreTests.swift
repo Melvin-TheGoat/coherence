@@ -116,6 +116,31 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertEqual(count(MeditationStats.self, in: ctx), 1)
     }
 
+    /// The Watch sends every payload twice. The second copy must come back
+    /// as a duplicate, not as "nothing written", or the phone reads a good
+    /// session as unreadable and puts up the discard screen.
+    func test_aSecondCopyIsAlreadyStoredNotRejected() {
+        let ctx = freshContext()
+        let p = payload()
+        guard case .saved = SessionStore.store(p, in: ctx) else {
+            return XCTFail("the first copy writes the session")
+        }
+        guard case .alreadyStored = SessionStore.store(p, in: ctx) else {
+            return XCTFail("the second copy is a duplicate, not a rejection")
+        }
+        XCTAssertEqual(count(Session.self, in: ctx), 1)
+        XCTAssertEqual(count(MeditationStats.self, in: ctx), 1)
+    }
+
+    /// Only a payload with nothing to write is rejected.
+    func test_discardedAndShortPayloadsAreRejected() {
+        let ctx = freshContext()
+        guard case .rejected = SessionStore.store(payload(discard: true), in: ctx),
+              case .rejected = SessionStore.store(payload(duration: 10), in: ctx) else {
+            return XCTFail("discarded and too-short payloads are rejections")
+        }
+    }
+
     /// Discarded and too-short payloads write nothing.
     func test_persistSkipsDiscardedAndShort() {
         let ctx = freshContext()
@@ -133,5 +158,54 @@ final class SessionStoreTests: XCTestCase {
         XCTAssertEqual(dates.count, 1)
         let r = StreakCalculator.streak(from: dates, today: dates[0])
         XCTAssertEqual(r.current, 1)
+    }
+
+    // MARK: - Payload transport
+
+    /// A realistic two-hour result: noisy curves on the engine's 5 s hop, the
+    /// way a live session arrives. As plain JSON it overran sendMessage's
+    /// limit, so End on the Watch waited on the slow queue.
+    private func longResult(minutes: Int) -> SignalResult {
+        let n = minutes * 60 / 5
+        var seed: UInt64 = 808
+        func noise() -> Double {
+            seed = seed &* 6364136223846793005 &+ 1442695040888963407
+            return Double(seed >> 11) / Double(1 << 53)
+        }
+        return SignalResult(
+            heartRateTimeseries: (0..<n).map { 72 - Double($0) / Double(n) * 9 + noise() * 1.8 },
+            meanHR: 67.4, startHR: 72, endHR: 63, hrDecline: 9,
+            stillnessTimeseries: (0..<n).map { _ in 0.82 + noise() * 0.15 },
+            stillnessScore: 0.9, stillnessMethod: "total",
+            breathingRateTimeseries: (0..<n).map { _ in 5 + noise() * 6 },
+            breathDepthTimeseries: (0..<n).map { _ in noise() * 0.004 },
+            meanBreathingRate: 7.1, breathingRegularity: 0.5, resonanceMatchScore: 0.7,
+            breathClarityTimeseries: (0..<n).map { _ in 0.4 + noise() * 0.5 },
+            overallScore: 0.83, windowSec: 30, hopSec: 5, algorithmVersion: "5.3.1"
+        )
+    }
+
+    func test_payloadCoding_roundTripsCompressedAndReadsPlainJSON() throws {
+        let p = payload(duration: 7200, result: longResult(minutes: 120))
+        let packed = try PayloadCoding.encode(p)
+        XCTAssertTrue(packed.starts(with: PayloadCoding.tag))
+        let back = try XCTUnwrap(PayloadCoding.decode(packed))
+        XCTAssertEqual(back, PayloadCoding.forTransport(p))
+        // Summary numbers travel exact; curves to six significant digits.
+        XCTAssertEqual(back.result?.overallScore, p.result?.overallScore)
+        for (a, b) in zip(back.result!.heartRateTimeseries, p.result!.heartRateTimeseries) {
+            XCTAssertEqual(a, b, accuracy: 0.001)
+        }
+        // An older Watch sends plain JSON; the phone still reads it.
+        let plain = try JSONEncoder().encode(p)
+        XCTAssertEqual(PayloadCoding.decode(plain), p)
+    }
+
+    func test_payloadCoding_fourHourSessionFitsTheImmediateChannel() throws {
+        let p = payload(duration: 14_400, result: longResult(minutes: 240))
+        let plain = try JSONEncoder().encode(p)
+        let packed = try PayloadCoding.encode(p)
+        XCTAssertGreaterThan(plain.count, PayloadCoding.messageLimit, "the fixture should reproduce the problem")
+        XCTAssertLessThanOrEqual(packed.count, PayloadCoding.messageLimit)
     }
 }

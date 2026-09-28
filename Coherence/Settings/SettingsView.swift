@@ -60,6 +60,10 @@ private struct SettingsForm: View {
     @State private var primerMessage = ""
     @State private var cloudStatus = CloudStatus.unknown
     @AppStorage(TestTabBar.storageKey) private var tabBarStyle = TestTabBar.debugDefault.rawValue
+    /// The Apple Watch switch: the same value as the Ready screen's.
+    @AppStorage(WatchLink.choiceKey) private var sitKindRaw = SitKind.unmeasured.rawValue
+    @ObservedObject private var watchLink = WatchLink.shared
+    @State private var showWatchSetup = false
     #endif
 
     private let durationOptions: [(String, Int?)] = [
@@ -138,6 +142,9 @@ private struct SettingsForm: View {
     private var settingsBody: some View {
             VStack(alignment: .leading, spacing: 16) {
                 profileCard
+
+                GrassHeading(title: "Apple Watch")
+                watchCard
 
                 GrassHeading(title: "Practice")
                 settingsCard {
@@ -511,6 +518,45 @@ private struct SettingsForm: View {
 
     private var initial: String {
         String((user.displayName ?? "•").prefix(1)).uppercased()
+    }
+
+    // MARK: Apple Watch
+
+    /// Which Watch, whether it is connected, whether it measures, and how to
+    /// connect one (Aziz, 2026-09-28). Settings is where somebody goes
+    /// looking, so the section is here even without a Watch; the Ready
+    /// screen shows nothing then.
+    private var watchCard: some View {
+        settingsCard {
+            HStack(spacing: 11) {
+                Image(systemName: "applewatch")
+                    .font(.system(size: 14))
+                    .foregroundStyle(AppColor.calmAccent)
+                    .frame(width: 30, height: 30)
+                    .background(AppColor.calmAccent.opacity(0.2),
+                                in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                WatchStatusLine(status: watchLink.status)
+                Spacer()
+            }
+            .padding(.vertical, 10)
+            if watchLink.connected {
+                divider
+                row(icon: "waveform.path.ecg", title: "Measure my sessions",
+                    subtitle: "Heart rate, stillness and breathing", teal: true) {
+                    Toggle("", isOn: Binding(
+                        get: { sitKindRaw == SitKind.watch.rawValue },
+                        set: { sitKindRaw = ($0 ? SitKind.watch : .unmeasured).rawValue }
+                    )).labelsHidden().tint(OnboardingGreen.fill)
+                }
+            }
+            divider
+            membershipRow(icon: "questionmark.circle", title: "How to connect",
+                          subtitle: "Four steps, about a minute") {
+                showWatchSetup = true
+            }
+        }
+        .sheet(isPresented: $showWatchSetup) { WatchConnectSheet() }
+        .onAppear { watchLink.refresh() }
     }
 
     // MARK: Membership

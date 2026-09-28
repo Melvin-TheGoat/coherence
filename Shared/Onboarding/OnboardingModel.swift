@@ -539,6 +539,23 @@ public enum AgeRange: String, CaseIterable, Identifiable, Codable {
 
     public var id: String { rawValue }
     public var label: String { rawValue }
+
+    /// Reads any age bracket a resume record may hold. The new question
+    /// stores "25 to 34"; the cut `you` question stored en dashes ("25–34",
+    /// "18–20", "21–24"), and some records carry a hyphen ("25-34"). Its two
+    /// narrower brackets under 25 both fall inside "18 to 24".
+    public init?(stored: String?) {
+        guard let stored else { return nil }
+        let unified = stored
+            .replacingOccurrences(of: "\u{2013}", with: " to ")
+            .replacingOccurrences(of: "-", with: " to ")
+        switch unified {
+        case "18 to 20", "21 to 24": self = .from18
+        default:
+            guard let range = AgeRange(rawValue: unified) else { return nil }
+            self = range
+        }
+    }
 }
 
 /// "When something stresses you out, how quickly do you settle back down?"
@@ -723,9 +740,7 @@ public enum MindWander {
 
     /// The middle of their age bracket; nil for "Prefer not to say".
     public static func age(_ a: OnboardingAnswers) -> Double? {
-        // The cut `you` question stored "25-34"; the new one stores "25 to 34".
-        let stored = a.ageBracket?.replacingOccurrences(of: "-", with: " to ")
-        switch stored.flatMap(AgeRange.init(rawValue:)) {
+        switch AgeRange(stored: a.ageBracket) {
         case .under18?: return 16
         case .from18?:  return 21
         case .from25?:  return 30
@@ -1364,9 +1379,28 @@ extension OnboardingAnswers {
         }
     }
 
-    /// The interview this person will actually be shown, in order.
+    /// The interview this person would be asked, in order, by the model's
+    /// full branching. Onboarding shows only its first part
+    /// (`shownInterview`); the rest is kept and tested while the old
+    /// questions are redone.
     public var interview: [InterviewStep] {
         InterviewStep.allCases.filter(asks)
+    }
+
+    /// The last question onboarding shows today: the frequency slider, after
+    /// which the flow moves on to "Tailoring 808 to you" (2026-09-25). The
+    /// questions after it in the model (`referral` onwards) are asked by no
+    /// screen until Aziz's redo of the old interview lands.
+    public static let lastShownQuestion: InterviewStep = .baseline
+
+    /// The questions THIS person is actually shown, in order: the interview
+    /// up to and including `lastShownQuestion`. The progress bar and "N of M"
+    /// count against this, so the bar fills on the last question they see
+    /// instead of stopping at three quarters for questions nobody asks.
+    public var shownInterview: [InterviewStep] {
+        let all = interview
+        guard let end = all.firstIndex(of: Self.lastShownQuestion) else { return all }
+        return Array(all[...end])
     }
 
     /// The most questions any reader is asked, over every path the branching
@@ -1384,7 +1418,7 @@ extension OnboardingAnswers {
         return paths.map { frequency in
             var answers = OnboardingAnswers()
             answers.currentFrequency = frequency
-            return answers.interview.count
+            return answers.shownInterview.count
         }.max() ?? 0
     }
 }

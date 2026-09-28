@@ -139,7 +139,11 @@ struct ProfileTab: View {
         // now, so a one-day filter inside it would be a second, invisible
         // scope on top of the visible one. The day is consumed: Home's tap
         // chooses a week and the week's own controls take it from there.
-        .onChange(of: selectedDay) { _, day in
+        //
+        // **`initial: true`**: Home sets the day and THEN switches tabs, so
+        // this tab is built with the day already set and a plain onChange
+        // never fired; the tap landed on this week every time.
+        .onChange(of: selectedDay, initial: true) { _, day in
             guard let day else { return }
             go(to: SessionCalendar.weekStart(for: day, calendar: calendar))
             selectedDay = nil
@@ -460,9 +464,8 @@ struct ProfileTab: View {
     /// improvement while session length does not, so a chart of minutes is
     /// a record rather than a target.
     ///
-    /// **Amber stays.** It has always meant the measured quantity of a
-    /// session, which with a Watch is its score and without one is its
-    /// length. The instrument changed, not the colour's meaning.
+    /// **Green since 2026-09-28** (Aziz), like the score ring and the session
+    /// rows: amber no longer marks a session anywhere.
     ///
     /// Bars, not a line. A line implies the value between two sessions and
     /// there is no value between two sessions: each is a separate morning.
@@ -510,7 +513,9 @@ struct ProfileTab: View {
                         BarMark(x: .value("Session", point.index),
                                 y: .value("Minutes", point.minutes * (settled ? 1 : 0)),
                                 width: .fixed(barWidth))
-                            .foregroundStyle(AppColor.accentGold)
+                            // Green, like every other session object now
+                            // (Aziz, 2026-09-28).
+                            .foregroundStyle(OnboardingGreen.fill)
                             .cornerRadius(7)
                     }
                     RuleMark(y: .value("Average", average))
@@ -521,6 +526,10 @@ struct ProfileTab: View {
                 // bars, which would read as the numbers changing rather
                 // than the chart arriving.
                 .chartYScale(domain: 0...(max(longest, average) * 1.12 + 0.5))
+                // Half a step of air at each end. With a numeric x the first
+                // and last bars sat centred ON the plot's edges, so the first
+                // one ran over the 10 / 5 / 0 labels (Aziz, 2026-09-28).
+                .chartXScale(domain: -0.7...(Double(recent.count) - 0.3))
                 // **No animation of its own.** It had one, a slightly slower
                 // spring than the card's, and an `.animation(value:)` drives
                 // every animatable change in its subtree, the position the
@@ -540,7 +549,8 @@ struct ProfileTab: View {
                 HStack(spacing: 0) {
                     proofStat("\(Int(average.rounded()))m", "average", AppColor.calmAccent)
                     divider
-                    proofStat("\(Int(longest.rounded()))m", "longest", AppColor.accentGoldText)
+                    // Floored, like every session length in the app (and its points).
+                    proofStat("\(Int(longest))m", "longest", OnboardingGreen.shade)
                     divider
                     proofStat("\(sessions.count)", "in total", AppColor.textPrimary)
                 }

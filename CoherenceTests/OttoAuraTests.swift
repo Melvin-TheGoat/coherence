@@ -55,31 +55,35 @@ final class OttoAuraTests: XCTestCase {
         XCTAssertEqual(level([8, 10], today: 10), 60)
     }
 
-    /// The rest day is the first day of the run, so the next one missed is
-    /// the second in a row.
+    /// Two days missed in a row: the streak forgives neither (it only
+    /// forgives a LONE missed day), so the first costs 10 and the second 15.
+    /// This pinned 45 before 2026-09-28, when the glow spent the rest day on
+    /// the first day of any gap while the streak broke; the two disagreed.
     func test_theSecondMissedDayInARowCostsFifteen() {
-        // 40 +10 (7) = 50; 8 rest; 9 costs 15 = 35; +10 (10) = 45.
-        XCTAssertEqual(level([7, 10], today: 10), 45)
+        // 40 +10 (7) = 50; 8 -10; 9 -15 = 25; +10 (10) = 35.
+        XCTAssertEqual(level([7, 10], today: 10), 35)
     }
 
     /// Melvin and Aziz, 2026-09-23: "first day missed -10, second day in a
     /// row missed -15, then -20 for third etc."
     func test_missedDaysCostMoreTheLongerTheRun() {
         XCTAssertEqual((1...5).map { OttoAura.missCost(run: $0) }, [10, 15, 20, 25, 30])
-        // 100 by the 6th; 7 rest; 8 -15; 9 -20; 10 -25; today (11) unfinished.
-        XCTAssertEqual(level([1, 2, 3, 4, 5, 6], today: 11), 40)
+        // 100 by the 6th; 7 -10 (the streak broke, so no rest day); 8 -15;
+        // 9 -20; 10 -25; today (11) unfinished.
+        XCTAssertEqual(level([1, 2, 3, 4, 5, 6], today: 11), 30)
     }
 
     /// A day meditated ends the run: the next miss is a first miss again.
     func test_meditatingStartsTheRunOver() {
-        // 1..5 = 90; 6 rest; 7 -15 = 75; 8 +10 = 85; 9 is a first miss (-10,
-        // the rest was 3 days ago) = 75; 10 +10 = 85.
+        // 1..5 = 90; 6 -10, 7 -15 = 65 (two in a row, no rest day); 8 +10 =
+        // 75; 9 is a lone miss in a new run, forgiven as its rest day; 10 +10
+        // = 85.
         XCTAssertEqual(level([1, 2, 3, 4, 5, 8, 10], today: 10), 85)
     }
 
     func test_aWeekAwayFromNirvanaBringsHimToWithered() {
-        // Nirvana by the 5th, then seven days missed: a rest, then 15, 20,
-        // 25, 30, 35 and 40.
+        // Nirvana by the 5th, then seven days missed: 10, 15, 20, 25, 30, 35
+        // and 40.
         let away = level([1, 2, 3, 4, 5], today: 13)
         XCTAssertEqual(away, 0)
         XCTAssertEqual(OttoAura.Stage(level: away), .withered)
@@ -109,6 +113,21 @@ final class OttoAuraTests: XCTestCase {
         // 1..5 = 80 with 2 as the rest; 6 and 7 missed inside the week: -10
         // then -15; 8 +10.
         XCTAssertEqual(level([1, 3, 4, 5, 8], today: 8), 65)
+    }
+
+    /// The glow forgives exactly the days the streak forgives (2026-09-28).
+    /// Practice on 1, 4 and 6: the streak breaks over 2 and 3 and bridges 5
+    /// as a rest day, its weekly allowance starting over with the new run.
+    /// The glow used to spend its rest day on day 2 and then charge day 5.
+    func test_theGlowForgivesTheDaysTheStreakForgives() {
+        let dates = [1, 4, 6].map { day($0) }
+        let runs = StreakCalculator.runs(from: dates, calendar: cal)
+        XCTAssertEqual(runs.flatMap(\.restDays), [cal.startOfDay(for: day(5))])
+        // 1 +10 = 50; 2 -10; 3 -15 = 25; 4 +10 = 35; 5 rest; 6 +10 = 45.
+        XCTAssertEqual(level([1, 4, 6], today: 6), 45)
+        // While yesterday is the streak's rest day, the glow does not charge it.
+        XCTAssertTrue(StreakCalculator.streak(from: [day(8)], today: day(10), calendar: cal).restDayUsed)
+        XCTAssertEqual(level([8], today: 10), 50)
     }
 
     // MARK: - Length-based gain (Melvin, 2026-09-28)
@@ -216,10 +235,11 @@ final class OttoAuraTests: XCTestCase {
     /// day costs whichever is larger, and its windows at most 20.
     func test_aMissedDayAndItsWindowsAreNeverAddedTogether() {
         let both = [window(9, from: 0, hours: 24), window(9, from: 21, hours: 3)]
-        // Day 8 is the rest, so day 9 is the second missed day (15) with 20
-        // of windows: 20, not 35.
+        // 7 +10 = 50; 8 -10 (a first miss, no rest across two days); day 9
+        // is the second missed day (15) with 20 of windows: 20, not 35; so
+        // 20, then 10 +10 = 30.
         XCTAssertEqual(OttoAura.level(from: asSits([day(7), day(10)]), notNow: both,
-                                      today: day(10), calendar: cal), 40)
+                                      today: day(10), calendar: cal), 30)
         // On a rest day the two windows are capped at 20 together.
         XCTAssertEqual(OttoAura.level(from: asSits([day(7), day(8), day(10)]), notNow: both,
                                       today: day(10), calendar: cal), 50)

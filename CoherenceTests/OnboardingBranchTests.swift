@@ -172,12 +172,29 @@ final class OnboardingBranchTests: XCTestCase {
         for frequency in CurrentFrequency.allCases {
             var a = OnboardingAnswers()
             a.currentFrequency = frequency
-            XCTAssertLessThanOrEqual(a.interview.count, ceiling,
+            XCTAssertLessThanOrEqual(a.shownInterview.count, ceiling,
                                      "\(frequency) is asked more questions than onboarding declares")
         }
         // The unanswered state is a path too: it is what the declaring screen
         // itself is looking at.
-        XCTAssertLessThanOrEqual(OnboardingAnswers().interview.count, ceiling)
+        XCTAssertLessThanOrEqual(OnboardingAnswers().shownInterview.count, ceiling)
         XCTAssertGreaterThan(ceiling, 0)
+    }
+
+    /// The progress bar counts against the questions a person is SHOWN.
+    /// Counting the model's whole list (referral onwards, which no screen
+    /// asks today) left the bar stuck short of full on the last question.
+    /// The flow shows everything up to the frequency slider and nothing after.
+    func test_shownInterviewEndsOnTheLastQuestionAsked() {
+        let asked: [InterviewStep] = [.motivation, .obstacles, .stress, .wandering, .role,
+                                      .quietTime, .habitHistory, .age, .baseline]
+        for frequency in CurrentFrequency.allCases.map(Optional.some) + [nil] {
+            var a = OnboardingAnswers()
+            a.currentFrequency = frequency
+            XCTAssertEqual(a.shownInterview, asked, "\(String(describing: frequency))")
+            XCTAssertEqual(a.shownInterview.last, OnboardingAnswers.lastShownQuestion)
+            XCTAssertFalse(a.shownInterview.contains(.referral), "no screen asks it")
+        }
+        XCTAssertEqual(OnboardingAnswers.longestInterview, asked.count)
     }
 }

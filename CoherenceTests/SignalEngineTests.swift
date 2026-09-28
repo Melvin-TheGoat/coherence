@@ -879,6 +879,36 @@ extension SignalEngineTests {
         XCTAssertEqual(SignalEngine.durationFactor(seconds: 7200), 1.08, accuracy: 0.001)
     }
 
+    /// Live scoring and the back-fill must agree to the point. The Watch trims
+    /// five seconds off each end before analysis, so the analysed span runs
+    /// about ten seconds short of the wall-clock length the phone stores as
+    /// `Session.durationSec`; scoring on the span made a perfect 10:00 sit read
+    /// 99 live and 100 once back-filled. Given the stored duration, `analyze`
+    /// scores exactly what `score` (the back-fill's path) does with it.
+    func test_analyze_scoresOnTheCallersWallClockDuration() {
+        let m = motion(dur: 590, pitch: { _ in 0 }, accel: restingAccel)
+        let h = hr(dur: 590) { 72 - $0 / 100 }
+        let live = SignalEngine.analyze(motion: m, hr: h, bellyBreathing: false,
+                                        durationSec: 600)
+        let backfilled = SignalEngine.score(stillnessScore: live.stillnessScore,
+                                            heartRateTimeseries: live.heartRateTimeseries,
+                                            breathDoorway: nil,
+                                            durationSec: 600)
+        XCTAssertNotNil(live.overallScore)
+        XCTAssertEqual(live.overallScore ?? -1, backfilled ?? -2, accuracy: 1e-9)
+
+        // Without it the span still decides, which is what every caller that
+        // does not know the wall clock (the tests, the offline harness) gets.
+        let spanOnly = SignalEngine.analyze(motion: m, hr: h, bellyBreathing: false)
+        let spanScore = SignalEngine.score(stillnessScore: spanOnly.stillnessScore,
+                                           heartRateTimeseries: spanOnly.heartRateTimeseries,
+                                           breathDoorway: nil,
+                                           durationSec: 590)
+        XCTAssertEqual(spanOnly.overallScore ?? -1, spanScore ?? -2, accuracy: 1e-9)
+        XCTAssertLessThan(spanOnly.overallScore ?? 1, live.overallScore ?? 0,
+                          "the ten trimmed seconds must no longer cost a sub-ten-minute sit")
+    }
+
     /// The bonus multiplies depth, so time still cannot rescue a bad session —
     /// the principle carried over from v3. And the score clamps at 1.0.
     func test_score_timeBonusCannotRescueARestlessSit() {

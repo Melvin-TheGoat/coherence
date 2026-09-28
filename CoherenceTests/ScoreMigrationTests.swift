@@ -142,4 +142,33 @@ final class ScoreMigrationTests: XCTestCase {
         XCTAssertEqual(ScoreMigration.backfillIfNeeded(in: ctx, defaults: defaults), 1)
         XCTAssertEqual(ScoreMigration.backfillIfNeeded(in: ctx, defaults: defaults), 0)
     }
+
+    /// The done-flag follows a SUCCESSFUL save. A failed save used to set it
+    /// anyway, leaving history on the old formula for good; now the flag stays
+    /// unset and the next launch retries, and the retry rescores the row.
+    func test_backfillIfNeeded_failedSaveLeavesTheFlagUnset() throws {
+        struct SaveFailed: Error {}
+        let ctx = makeContext()
+        let defaults = UserDefaults(suiteName: "score-migration-save-test")!
+        defaults.removePersistentDomain(forName: "score-migration-save-test")
+        let id = UUID()
+        ctx.insert(Session(id: id, startedAt: Date(), durationSec: 600))
+        let stats = MeditationStats(sessionID: id,
+                                    heartRateTimeseries: [70, 69, 68],
+                                    stillnessScore: 0.9,
+                                    algorithmVersion: "2.0.0")
+        ctx.insert(stats)
+        try ctx.save()
+
+        let failed = ScoreMigration.backfillIfNeeded(in: ctx, defaults: defaults,
+                                                     save: { _ in throw SaveFailed() })
+        XCTAssertEqual(failed, 0)
+        XCTAssertFalse(defaults.bool(forKey: ScoreMigration.doneKey),
+                       "a failed save must not mark the back-fill done")
+
+        XCTAssertEqual(ScoreMigration.backfillIfNeeded(in: ctx, defaults: defaults), 1,
+                       "the retry rescores the row the failed attempt rolled back")
+        XCTAssertTrue(defaults.bool(forKey: ScoreMigration.doneKey))
+        XCTAssertEqual(stats.algorithmVersion, SignalEngine.version)
+    }
 }

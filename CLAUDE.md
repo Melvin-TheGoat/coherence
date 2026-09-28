@@ -6357,3 +6357,91 @@ on a SwiftUI timer of its own.
   every 1.6 s; on Home it happens once, when the glow crosses that line.
   The session Otto uses `.background` / `.overlay`, never a ZStack, so every
   layer is proposed exactly the drawing's frame and his size never changes.
+
+## CUSTOM BLOCK HOURS CAN END ON A SESSION (2026-09-28, Aziz)
+
+Custom (in `BlockWhenPicker`, so the onboarding's "When should I hold them?"
+and the Block tab's editor both get it) now chooses its end: **Until a time**
+("From 8 pm until 10 pm") or **Until I meditate** ("From 8 pm until I
+meditate"). The second is stored as hours running to midnight, since every
+window already opens on a session, plus `Blocker.untilSession = true` so it
+reads back as chosen ("From 8 pm until you meditate, every day") and does not
+collide with Wind down, which is 9 pm to midnight and says so. The field is
+optional: blockers saved before it load as plain windows.
+`test_customUntilIMeditate` pins the hold, the wording and the round trip.
+
+## MEDITATING WITH AN APPLE WATCH: BUILT (2026-09-28, Aziz)
+
+`mockups/apple-watch/index.html` (artifact
+https://claude.ai/artifact/QsYStAd24tW5MuYdi2o2sb) was the design.
+
+**What was built:** `WatchLink` (`Coherence/Session/WatchLink.swift`: paired,
+808 installed, connected before; `PREVIEW_WATCH=connected|notInstalled` in
+DEBUG), `WatchDefault` (the rule, `Shared/`, tested), the small switch on the
+Ready screen (`watchControl`, the same value as Melvin's "Apple Watch,
+Measured" card, `ready.sitKind`), `WatchConnectSheet` (the four steps with a
+live status), an Apple Watch section at the top of Settings, and `BodyCard`
+(`BodyReadings`, tested) on both `SessionView` and `SaveSessionView`, first
+under who and when. The engine was already there: `beginMeasured` shows the
+sit at once, wakes the Watch, and turns the sit into a phone sit if the Watch
+never confirms; the Watch already starts its own sessions and has End.
+
+- **The score is back** (Aziz, same day, reversing "readings only"): the
+  card leads with the score ring, then heart rate, stillness and breathing
+  in words, and "See the graphs" opens `SessionResultsView`.
+  **Premium**, like the rest of the app. No Watch is never a problem and is
+  never mentioned to someone without one.
+- **The + screen gets a small Apple Watch switch** under Silence notifications,
+  smaller than the other pills, shown only when a Watch is paired: a green
+  check and "Connected", or "Not connected" with Set up, which opens the
+  connect steps. **Settings gets an Apple Watch section** (status, "Measure my
+  sessions", the same steps).
+- **The phone starts every session at once** and, when measuring is on, asks
+  the Watch to measure it in the background; if the Watch answers, the same
+  session becomes measured, and if not it carries on as a phone session with
+  no error. The build needs `SessionStore.persist` to attach stats to a
+  session the phone already saved (today it bails on an existing Session) and
+  a quiet Watch timer for phone-started sessions (no haptics).
+- **After a measured session** the session page leads with a "Your body" card
+  (three readings in words, a small line each) and "See the graphs".
+- **Start and end on either device** (Aziz, same day): the Watch keeps its own
+  Begin, and a session started on the phone shows End on the wrist too. It
+  is one session whichever side starts or ends it.
+- **The switch defaults ON only when this Watch has connected to 808 before
+  and is connected now**; a Watch that never connected, or is not connected
+  today, starts off. The first successful connection turns it on, and after
+  that the person's choice is remembered.
+- **Later:** an onboarding question about owning a Watch, to offer setup.
+
+## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
+
+- **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley
+  look (`website/index.html`): hero valley with the phone standing whole in
+  the meadow and two Ottos, the mission lit word by word on scroll (restored
+  from the old site), a draggable "He glows brighter every day you meditate"
+  card through all seven looks, a sticky phone that swaps screenshots per
+  feature, the famous-meditators wall, the research with sources, an evening
+  closer. **Reviews and the waitlist are gone** (Aziz). Nunito, self-hosted.
+  Screenshots in `website/img/app/` were taken from the simulator and show
+  "Aziz"; Block and hats appear on it but are off in Release, so deploy when
+  the release that ships them does. Copy was rewritten to avoid generated
+  tells (Aziz: "make sure the text doesn't sound like AI").
+- **Legal pages are generated**: `python3 tools/legal_pages.py` builds
+  `website/privacy.html` and `terms.html` from the app's own
+  `PRIVACY_POLICY.md` / `TERMS_OF_SERVICE.md`. Edit the .md, never the HTML.
+  Both rewritten 2026-09-28: Friends has no posts (a public practice summary
+  instead), a subscriptions section in the terms, points have no cash value.
+- **Bug sweep:** five reviewers, four fixing agents, 603 tests green. The
+  load-bearing ones: `SessionStore.store` returns saved / alreadyStored /
+  rejected (the Watch's duplicate payload used to show a false "couldn't
+  read" screen); a converted phone sit tells the Watch to stop and a late
+  payload ATTACHES stats to the phone-written Session; `signIn` takes
+  `completingOnboarding:`; `Store.ProductID.core` is monthly + yearly only;
+  the glow forgives exactly what the streak forgives; score 5.3.1 scores on
+  the wall-clock duration (migration v9).
+- **Watch payloads are compressed** (`PayloadCoding`, Shared/Connectivity):
+  curves rounded to 6 significant digits, summaries exact, LZFSE, a "808Z"
+  tag, plain JSON still decodes. A four-hour session fits sendMessage.
+- **Design skills installed** in `~/.claude/skills/`: Anthropic's
+  `frontend-design` and Vercel's `web-design-guidelines` (its rules vendored
+  as `rules.md` instead of fetched at run time).

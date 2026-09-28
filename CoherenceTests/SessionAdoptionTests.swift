@@ -61,4 +61,13 @@ final class SessionAdoptionTests: XCTestCase {
         XCTAssertFalse(SessionCoordinator.shouldAdopt(startedAt: now.addingTimeInterval(120),
                                                       now: now, alreadyPersisted: false))
     }
+
+    /// A sit that ended with nothing written (discarded, too short) is never
+    /// persisted, so persistence alone cannot refuse its queued ack. The
+    /// phone's memory of what has ended can.
+    func test_aRecentlyEndedSessionIsNeverAdopted() {
+        XCTAssertFalse(SessionCoordinator.shouldAdopt(startedAt: Date().addingTimeInterval(-20),
+                                                      alreadyPersisted: false,
+                                                      recentlyEnded: true))
+    }
 }

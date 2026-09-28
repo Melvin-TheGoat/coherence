@@ -103,6 +103,34 @@ final class MindWanderTests: XCTestCase {
         XCTAssertEqual(MindWander.age(x), 30)
     }
 
+    /// The cut `you` question stored en dashes, and two brackets under 25
+    /// that the new question folds into "18 to 24".
+    func test_enDashBracketsFromTheOldQuestionRead() {
+        var x = OnboardingAnswers()
+        for (stored, age) in [("25\u{2013}34", 30.0), ("35\u{2013}44", 40), ("45\u{2013}54", 50),
+                              ("18\u{2013}20", 21), ("21\u{2013}24", 21), ("55+", 62),
+                              ("Under 18", 16), ("18 to 24", 21)] {
+            x.ageBracket = stored
+            XCTAssertEqual(MindWander.age(x), age, stored)
+        }
+        x.ageBracket = "Prefer not to say"
+        XCTAssertNil(MindWander.age(x))
+        x.ageBracket = nil
+        XCTAssertNil(MindWander.age(x))
+        x.ageBracket = "nonsense"
+        XCTAssertNil(MindWander.age(x))
+    }
+
+    /// The age question shows an old answer as picked, so going back to it
+    /// never looks unanswered.
+    func test_ageRangeReadsEveryStoredFormat() {
+        XCTAssertEqual(AgeRange(stored: "21\u{2013}24"), .from18)
+        XCTAssertEqual(AgeRange(stored: "25-34"), .from25)
+        XCTAssertEqual(AgeRange(stored: AgeRange.over55.rawValue), .over55)
+        XCTAssertEqual(AgeRange(stored: AgeRange.notSaying.rawValue), .notSaying)
+        XCTAssertNil(AgeRange(stored: nil))
+    }
+
     func test_unansweredUsesTheResearchAverage() {
         XCTAssertEqual(MindWander.share(a(.from25, nil)), 0.47)
     }

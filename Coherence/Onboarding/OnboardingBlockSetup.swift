@@ -90,6 +90,7 @@ struct BlockScheduleScreen: View {
     let onContinue: () -> Void
 
     @ObservedObject private var block = BlockController.shared
+    @EnvironmentObject private var store: Store
     @Environment(\.onboardingBack) private var back
     @State private var choice: BlockWhen = .allDay
     @State private var hours = BlockHours()
@@ -137,7 +138,8 @@ struct BlockScheduleScreen: View {
         return probe.windowProblem == nil
     }
 
-    /// Saves the window on the same Mindful day blocker and switches it on,
+    /// Saves the window on the same Mindful day blocker and switches it on
+    /// (for someone Block is open to; see `BlockAccess`),
     /// through `BlockController.save`, the commit path the Block tab itself
     /// uses, which registers the DeviceActivity schedules and reconciles the
     /// shields. `save` already refuses to leave a blocker on with no apps, so
@@ -148,7 +150,10 @@ struct BlockScheduleScreen: View {
         if let i = block.state.blockers.firstIndex(where: { $0.kind == .mindfulDay }) {
             var blocker = block.state.blockers[i]
             blocker.apply(choice, hours: hours)
-            blocker.isOn = true
+            // Block is paid (`Entitlements.block`). The same check the Block
+            // tab makes before switching one on: without it, the schedule is
+            // still saved and the blocker waits, off, for a plan.
+            blocker.isOn = BlockAccess.allowed(store.entitlements)
             block.save(blocker, selection: nil)
         }
         onContinue()

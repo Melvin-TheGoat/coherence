@@ -71,16 +71,31 @@ struct BlockHours: Equatable {
     var start = 20 * 60
     var end = 22 * 60
     var days: Set<Int> = Set(1...7)
+    /// "From [time] until I meditate": no end but a session (or midnight).
+    var untilMeditate = false
 
     init() {}
 
     init(_ blocker: Blocker) {
-        if case .hours(let s, let e) = blocker.window {
+        switch blocker.window {
+        case .hours(let s, let e):
             start = s
             end = e
+        case .allDay:
+            // All day on only some days reads as Custom, so its hours must be
+            // the whole day: the 8 pm to 10 pm default here used to be saved
+            // over it the moment anything else on the blocker was changed.
+            if BlockWhen.of(blocker) == .custom {
+                start = 0
+                end = 24 * 60
+            }
         }
         days = blocker.weekdays
+        untilMeditate = blocker.untilSession == true
     }
+
+    /// The end actually saved: midnight when the end is a session.
+    var effectiveEnd: Int { untilMeditate ? 24 * 60 : end }
 }
 
 extension Blocker {
@@ -89,6 +104,7 @@ extension Blocker {
     /// may have set.
     mutating func apply(_ when: BlockWhen, hours: BlockHours) {
         dailyLimitMinutes = nil
+        untilSession = when == .custom && hours.untilMeditate ? true : nil
         switch when {
         case .allDay:
             window = .allDay
@@ -105,7 +121,13 @@ extension Blocker {
             window = BlockWhen.nightOwlWindow
             weekdays = Set(1...7)
         case .custom:
-            window = .hours(start: hours.start, end: hours.end)
+            // Midnight to midnight is the whole day: saved as one, so it
+            // reads back as "All day" on the days picked, as it was set.
+            if !hours.untilMeditate && hours.start == 0 && hours.effectiveEnd == 24 * 60 {
+                window = .allDay
+            } else {
+                window = .hours(start: hours.start, end: hours.effectiveEnd)
+            }
             weekdays = hours.days
         }
     }
@@ -132,11 +154,37 @@ struct BlockWhenPicker: View {
         }
     }
 
+    /// Custom reads as a sentence (Aziz, 2026-09-28): "From [time] until
+    /// [time]", or "From [time] until I meditate".
     private var customHours: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                endChoice("Until a time", on: !hours.untilMeditate) { hours.untilMeditate = false }
+                endChoice("Until I meditate", on: hours.untilMeditate) { hours.untilMeditate = true }
+            }
+            HStack(alignment: .top, spacing: 12) {
                 clock("From", minutes: $hours.start, isEnd: false)
-                clock("Until", minutes: $hours.end, isEnd: true)
+                if hours.untilMeditate {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Until")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColor.textSecondary)
+                        Label("I meditate", systemImage: "figure.mind.and.body")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundStyle(AppColor.textPrimary)
+                            .padding(.vertical, 7)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    clock("Until", minutes: $hours.end, isEnd: true)
+                }
+            }
+            if hours.untilMeditate {
+                Text("Held from then until you finish a session, or midnight at the latest.")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             HStack(spacing: 8) {
                 ForEach(DayChoice.allCases, id: \.self) { d in
@@ -168,8 +216,23 @@ struct BlockWhenPicker: View {
     /// What Screen Time would refuse, said here rather than after Save.
     private var problem: String? {
         var probe = Blocker.preset(.custom)
-        probe.window = .hours(start: hours.start, end: hours.end)
+        probe.window = .hours(start: hours.start, end: hours.effectiveEnd)
         return probe.windowProblem
+    }
+
+    private func endChoice(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) { action() }
+        } label: {
+            Text(title)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(on ? AppColor.textOnAccent : AppColor.textPrimary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .background(on ? AppColor.accentGold : AppColor.textSecondary.opacity(0.10), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(on ? .isSelected : [])
     }
 
     private func clock(_ title: String, minutes: Binding<Int>, isEnd: Bool) -> some View {

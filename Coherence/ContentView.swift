@@ -20,7 +20,9 @@ struct ContentView: View {
     @Query private var users: [User]
     @Query private var reflections: [SessionReflection]
     @Query private var allStats: [MeditationStats]
-    @Query private var prefsRows: [Preferences]
+    /// Oldest first, like the Shop and Otto's figure, so every screen reads
+    /// the same row if a second one ever arrives by sync.
+    @Query(sort: \Preferences.createdAt) private var prefsRows: [Preferences]
     /// For the "added a photo" award.
     @Query private var photos: [SessionPhoto]
     @EnvironmentObject private var community: CommunityModel
@@ -233,7 +235,7 @@ struct ContentView: View {
             }
         }
         .onAppear(perform: refreshAwards)
-        .onChange(of: sessions.count) { _, _ in refreshAwards() }
+        .onChange(of: sessions.count) { _, _ in refreshAwards(); readDetailsPrompt() }
         .modifier(DiscardHook(discard: coordinator.lastDiscard,
                               sessionActive: coordinator.active != nil) { d in
             if sheet == nil { sheet = .discarded(d) } else { pendingSheet = .discarded(d) }
@@ -304,7 +306,13 @@ struct ContentView: View {
                 beginFromOtto(minutes: minutes == 0 ? nil : minutes)
                 return
             }
-            if let next = pendingSheet { pendingSheet = nil; sheet = next }
+            if let next = pendingSheet {
+                pendingSheet = nil
+                // Otto asks only while something is held: a session that
+                // ended behind another cover may have opened the apps.
+                if case .intervention = next, block.holding().isEmpty { return }
+                sheet = next
+            }
         }) { which in
             switch which {
             case .setup:
@@ -1021,14 +1029,22 @@ struct ContentView: View {
         ottoLineIndex = 0
         // The reward screen, not a glow on Home (Melvin, 2026-09-27).
         let owned = prefsRows.first?.ownedHatIDList ?? []
-        let points = landed.isLogged ? 0 : landed.durationSec / 60
+        // The bank either side of the session from the SAME function the Shop
+        // reads, so the reward lands on the number the Shop then shows. The
+        // balance is floored at zero, so after a deleted session paid for a
+        // hat the bank can gain less than the session earned; the points
+        // shown are then what actually reached it.
+        let bankBefore = OttoPoints.balance(sessions: sessions.filter { $0.id != id }, ownedHatIDs: owned)
+        let bankAfter = OttoPoints.balance(sessions: sessions, ownedHatIDs: owned)
+        let earned = landed.isLogged ? 0 : landed.durationSec / 60
+        let points = bankBefore + earned == bankAfter ? earned : bankAfter - bankBefore
         let reward = SessionReward(
             id: id,
             seconds: landed.durationSec,
             streakBefore: StreakCalculator.streak(from: others).current,
             streakAfter: StreakCalculator.streak(from: dates).current,
             points: points,
-            bankBefore: max(0, OttoPoints.balance(sessions: sessions, ownedHatIDs: owned) - points),
+            bankBefore: bankBefore,
             glowBefore: before, glowAfter: after)
         if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
     }
@@ -1137,7 +1153,9 @@ struct ContentView: View {
         let summary = WeekCairns.summary(week)
         return VStack(alignment: .leading, spacing: 14) {
             HStack {
-                SectionHeader(title: "This week")
+                // The rolling seven days ending today, never the calendar
+                // week (Profile's "This week"), so it says what it counts.
+                SectionHeader(title: "Last 7 days")
                 Spacer()
                 Text("\(summary.sessions) session\(summary.sessions == 1 ? "" : "s") · \(week.filter { $0.sessionCount > 0 }.count) of 7 days")
                     .font(AppFont.caption.weight(.semibold))
@@ -1163,7 +1181,7 @@ struct ContentView: View {
                     Button { profileDay = nil; tab = .profile } label: {
                         Text("See all")
                             .font(AppFont.caption.weight(.semibold))
-                            .foregroundStyle(AppColor.accentGoldText)
+                            .foregroundStyle(OnboardingGreen.shade)
                             .padding(.horizontal, 8).padding(.vertical, 6)
                     }
                     .buttonStyle(CardButtonStyle())

@@ -200,6 +200,77 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertEqual(odd.scheduleLine(calendar: cal), "7:30 am to noon, Mon, Wed, Sun")
     }
 
+    /// "From 8 pm until I meditate" (Aziz, 2026-09-28): held from the start
+    /// time to midnight, released by a session like every window, read back
+    /// as what was chosen, and a blocker saved before the field loads as a
+    /// plain window.
+    func test_customUntilIMeditate() throws {
+        var b = on(.custom)
+        b.window = .hours(start: 20 * 60, end: 24 * 60)
+        b.untilSession = true
+        XCTAssertNil(b.windowProblem)
+        XCTAssertEqual(b.scheduleLine(calendar: cal), "From 8 pm until you meditate, every day")
+
+        // Held from 8 pm until midnight at the latest.
+        let s = state(b)
+        XCTAssertFalse(BlockRules.holds(b, in: s, at: at(10, 19), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(b, in: s, at: at(10, 21), calendar: cal))
+        XCTAssertFalse(BlockRules.holds(b, in: s, at: at(11, 0, 30), calendar: cal))
+
+        let saved = try JSONDecoder().decode(Blocker.self, from: JSONEncoder().encode(b))
+        XCTAssertEqual(saved.untilSession, true, "survives a save")
+
+        // Wind down is 9 pm to midnight and says so; only a chosen "until I
+        // meditate" reads that way.
+        XCTAssertEqual(Blocker.preset(.windDown).scheduleLine(calendar: cal), "9 pm to midnight, every day")
+    }
+
+    /// "From midnight until I meditate" is saved as midnight to midnight,
+    /// the whole day. It was refused as an empty window (start and end the
+    /// same clock time), so it could not be saved at all.
+    func test_fromMidnightUntilIMeditateCanBeSaved() {
+        var b = on(.custom)
+        b.window = .hours(start: 0, end: 24 * 60)
+        b.untilSession = true
+        XCTAssertNil(b.windowProblem)
+        XCTAssertEqual(b.scheduleLine(calendar: cal), "From midnight until you meditate, every day")
+        let s = state(b)
+        XCTAssertTrue(BlockRules.holds(b, in: s, at: at(10, 0, 30), calendar: cal))
+        XCTAssertTrue(BlockRules.holds(b, in: s, at: at(10, 23, 50), calendar: cal))
+        // A window that really is empty is still refused.
+        b.window = .hours(start: 8 * 60, end: 8 * 60)
+        XCTAssertNotNil(b.windowProblem)
+    }
+
+    /// A daily limit cleared in the editor stays cleared through a save.
+    /// The synthesized encoder left a nil limit out, and the decoder then
+    /// filled it from the Daily limit preset's 30 minutes.
+    func test_aClearedDailyLimitStaysClearedThroughASave() throws {
+        var b = on(.dailyLimit)
+        b.dailyLimitMinutes = nil
+        let back = try JSONDecoder().decode(Blocker.self, from: JSONEncoder().encode(b))
+        XCTAssertNil(back.dailyLimitMinutes)
+        // Saved by the old encoder, with the key simply missing.
+        let old = try JSONDecoder().decode(BlockState.self,
+                                           from: Data(#"{"blockers":[{"kind":"dailyLimit","name":"Limit"}]}"#.utf8))
+        XCTAssertNil(old.blockers[0].dailyLimitMinutes)
+        // A limit that is set survives.
+        b.dailyLimitMinutes = 45
+        XCTAssertEqual(try JSONDecoder().decode(Blocker.self, from: JSONEncoder().encode(b)).dailyLimitMinutes, 45)
+    }
+
+    /// A pass ends on a whole second, the precision Screen Time is told its
+    /// end in, so the monitor's wake at that second finds it over.
+    func test_aPassEndsOnAWholeSecond() {
+        var s = state(on(.mindfulDay))
+        let now = at(10, 9).addingTimeInterval(0.7)
+        BlockRules.takePass(minutes: 5, in: &s, at: now, calendar: cal)
+        let end = s.passes[0].end
+        XCTAssertEqual(end.timeIntervalSinceReferenceDate, end.timeIntervalSinceReferenceDate.rounded())
+        XCTAssertGreaterThanOrEqual(end, now.addingTimeInterval(300))
+        XCTAssertNil(BlockRules.activePass(s.blockers[0].id, in: s, at: end))
+    }
+
     func test_theDefaults() {
         let day = Blocker.preset(.mindfulDay)
         XCTAssertEqual(Blocker.sessionMinutes, 5)
