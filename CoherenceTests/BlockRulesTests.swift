@@ -164,9 +164,11 @@ final class BlockRulesTests: XCTestCase {
         let day = on(.mindfulDay)
         var s = state(day)
         BlockRules.takePass(minutes: 5, in: &s, at: at(9, 9), calendar: cal)
-        let sessions = [at(7, 12), at(8, 12), at(10, 12)]
-        let without = OttoAura.level(from: sessions, today: at(10, 13), calendar: cal)
-        let with = OttoAura.level(from: sessions, notNow: BlockRules.notNowWindows(s),
+        // Twenty minutes a day (+10, the old flat gain), so this test is
+        // about the "Not now" pricing rule, not the length curve.
+        let sits = [at(7, 12), at(8, 12), at(10, 12)].map { OttoAura.Sit(date: $0, seconds: 20 * 60) }
+        let without = OttoAura.level(from: sits, today: at(10, 13), calendar: cal)
+        let with = OttoAura.level(from: sits, notNow: BlockRules.notNowWindows(s),
                                   today: at(10, 13), calendar: cal)
         XCTAssertEqual(without - with, 20)
     }

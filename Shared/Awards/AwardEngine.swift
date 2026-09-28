@@ -379,8 +379,10 @@ public enum AwardEngine {
                 default:            return .nirvana
                 }
             }()
-            let hit = OttoAura.dateStageFirstReached(stage, from: ordered.map(\.startedAt),
-                                                     calendar: calendar)
+            let hit = OttoAura.dateStageFirstReached(
+                stage,
+                from: ordered.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
+                calendar: calendar)
             return Earned(award: award, earnedAt: hit, progress: hit != nil ? 1 : 0, progressText: nil)
 
         default:
