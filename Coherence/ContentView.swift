@@ -1122,12 +1122,9 @@ struct ContentView: View {
         return nil
     }
 
-    /// The cairns: a stone per session, for the rolling seven days ending
-    /// today (`WeekCairns`, shared with `WeekCairns.summary` for the header's
-    /// own totals, so the two numbers and the stones can never disagree).
-    /// Photos left this strip the same day (Melvin, 2026-09-27): a stack of
-    /// stones says how many times a day was sat, which a single photo never
-    /// could.
+    /// The garden: a plant per day, a leaf per session, for the rolling seven
+    /// days ending today (`WeekCairns`, which the header's totals read too,
+    /// so the numbers and the plants can never disagree).
     private var calendarCard: some View {
         let week = WeekCairns.week(from: sessions.map {
             WeekCairns.SessionFact(startedAt: $0.startedAt, durationSec: $0.durationSec)
@@ -1137,7 +1134,7 @@ struct ContentView: View {
             HStack {
                 SectionHeader(title: "This week")
                 Spacer()
-                Text("\(summary.sessions) session\(summary.sessions == 1 ? "" : "s") · \(summary.minutes) min")
+                Text("\(summary.sessions) session\(summary.sessions == 1 ? "" : "s") · \(week.filter { $0.sessionCount > 0 }.count) of 7 days")
                     .font(AppFont.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary)
                     .monospacedDigit()

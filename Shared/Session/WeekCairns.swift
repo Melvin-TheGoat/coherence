@@ -1,15 +1,14 @@
 import Foundation
 
-/// The pure arithmetic behind Home's "This week" cairns (`mockups/session-view.html`,
-/// section 2, option A — Melvin's pick over Apple Health's bars, a garden of
-/// sprouts, and Calm's ring: "it answers 'how many times' per day, which was
-/// the ask, without turning Home into a chart").
+/// The pure arithmetic behind Home's "This week" strip (`mockups/session-view.html`,
+/// section 2). It was drawn as cairns (option A) for a day and is now a
+/// garden (option C, Melvin, 2026-09-28); the name stayed.
 ///
-/// One stone per session that day, stacked bottom up; a longer session is a
-/// wider stone; an empty day is bare ground; a day the streak forgave (one
-/// missed day per seven, `StreakCalculator`) draws a small leaf instead of
-/// nothing, so the cairn and the streak headline can never disagree about
-/// which days were forgiven and which were simply missed.
+/// One leaf per session that day, a flower from the third; an empty day is
+/// bare soil; a day the streak forgave (one missed day per seven,
+/// `StreakCalculator`) draws a fallen leaf instead of nothing, so the strip
+/// and the streak headline can never disagree about which days were
+/// forgiven and which were simply missed.
 ///
 /// Pure Foundation, no SwiftUI: the view draws the stones, this decides which
 /// days get them.

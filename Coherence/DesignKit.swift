@@ -387,12 +387,12 @@ enum SessionListSupport {
 
 // MARK: - The week
 
-/// Seven days ending today, as cairns — one small stone per session that day
-/// (`mockups/session-view.html`, section 2, option A, Melvin's pick over
-/// Apple Health's bars, a garden of sprouts and Calm's ring, 2026-09-27:
-/// "it answers 'how many times' per day, which was the ask, without turning
-/// Home into a chart"). It replaced a single gold tick or photo per day,
-/// which could only ever say WHETHER you sat, never how many times.
+/// Seven days ending today, as a garden: a plant per day with a leaf per
+/// session (`mockups/session-view.html`, section 2, option C). Cairns (option
+/// A) shipped first on 2026-09-27; Melvin swapped them for the plants the
+/// next day ("with the little plants, I like that more actually"). Either
+/// way it replaced a single gold tick or photo per day, which could only
+/// ever say WHETHER you sat, never how many times.
 ///
 /// Home used to carry a whole month (2026-09-19, Aziz: "I think the calendar
 /// should be a weekly calendar"). A month is a grid of thirty-five small
@@ -419,93 +419,116 @@ struct WeekStrip: View {
 
     private let calendar = Calendar.current
 
-    /// Stones widen with the session's length, clamped so a long sit's stone
-    /// never crowds out its neighbours in a day with several — the same
-    /// reasoning `MinutesPuck` floors a duration at one shown minute.
-    private static let minStoneWidth: CGFloat = 15
-    private static let maxStoneWidth: CGFloat = 32
-    private static let stoneHeight: CGFloat = 8.5
-
     var body: some View {
         HStack(spacing: 0) {
             ForEach(days, id: \.date) { day in
-                cairn(day)
+                plant(day)
                     .frame(maxWidth: .infinity)
                     .contentShape(Rectangle())
                     .onTapGesture { if day.sessionCount > 0 { onDayTap?(day.date) } }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(accessibilityLabel(day))
+                    .accessibilityAddTraits(day.sessionCount > 0 ? .isButton : [])
             }
         }
     }
 
-    private func cairn(_ day: WeekCairns.Day) -> some View {
+    /// A day is a plant (option C of `mockups/session-view.html`, Melvin,
+    /// 2026-09-28: "change it to plan C, with the little plants"): bare soil
+    /// on a day not sat, a stem with a leaf per session, a flower once the
+    /// day holds three. The rest day the streak forgave is a leaf fallen on
+    /// the soil, never a plant, because it was bridged, not practised.
+    private func plant(_ day: WeekCairns.Day) -> some View {
         VStack(spacing: 8) {
             Text(letter(day.date))
                 .font(.system(size: 11.5, weight: .bold, design: .rounded))
                 .foregroundStyle(day.isToday ? AppColor.textPrimary : AppColor.textSecondary)
             ZStack(alignment: .bottom) {
-                // An empty today is a shallow well and it has to be visible
-                // (Aziz, 2026-09-19: "we are gonna need more contrast"): a
-                // dashed sage ring around the spot still waiting on you.
-                if day.isToday && day.sessionMinutes.isEmpty {
+                // An empty today is still waiting on you, and it has to be
+                // visible (Aziz, 2026-09-19: "we are gonna need more
+                // contrast"): a dashed sage ring round its patch of soil.
+                if day.isToday && day.sessionCount == 0 {
                     Circle()
                         .strokeBorder(AppColor.calmAccent,
                                      style: StrokeStyle(lineWidth: 1.5, dash: [3, 3]))
                         .frame(width: 32, height: 32)
-                        .offset(y: -3)
+                        .offset(y: 2)
                 }
-                if !day.sessionMinutes.isEmpty {
-                    // Oldest first in the array, and oldest at the BOTTOM of
-                    // the cairn: it is the stone the day was built on.
-                    VStack(spacing: 1.5) {
-                        ForEach(Array(day.sessionMinutes.enumerated().reversed()), id: \.offset) { i, minutes in
-                            stone(minutes: minutes, index: i)
-                        }
-                    }
-                } else if day.isRestDay {
-                    // The streak forgave this day (`StreakCalculator`): a
-                    // small leaf, not nothing and not a stone — it was never
-                    // practised, only bridged.
-                    leaf
-                } else {
-                    Capsule()
-                        .fill(AppColor.trace)
-                        .frame(width: 22, height: 2.5)
+                Canvas { ctx, size in
+                    Self.draw(day, in: &ctx, size: size)
                 }
+                .frame(width: 40, height: 64)
             }
-            .frame(height: 40, alignment: .bottom)
+            .frame(height: 64, alignment: .bottom)
         }
     }
 
-    /// One warm stone. Alternating opacity of `textSecondary` — the app's own
-    /// warm ink, not a second palette (the house rule: colour routes through
-    /// `AppColor`) — with a small highlight standing in for the mockup's
-    /// painted shine. `meadowInk` was tried first and reads as green (it is
-    /// the sage ink for words drawn ON the meadow), which looked like moss,
-    /// not stone; `textSecondary` is the warm greige every card already inks
-    /// its captions with.
-    private func stone(minutes: Int, index: Int) -> some View {
-        let width = min(Self.maxStoneWidth, Self.minStoneWidth + CGFloat(minutes) * 0.32)
-        let shades: [Double] = [0.62, 0.48, 0.76]
-        let shade = shades[index % shades.count]
-        return Ellipse()
-            .fill(AppColor.textSecondary.opacity(shade))
-            .frame(width: width, height: Self.stoneHeight)
-            .overlay(alignment: .topLeading) {
-                Ellipse()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: width * 0.34, height: Self.stoneHeight * 0.4)
-                    .padding(.leading, width * 0.12)
-                    .padding(.top, Self.stoneHeight * 0.1)
+    /// Soil, stem, leaves and flower: the mockup's plant drawn a fifth
+    /// larger (`k`), so a single session's sprout still reads at arm's
+    /// length. A mound, a stem 16, 28 or 40 mockup units tall, a leaf every
+    /// 12 alternating sides, the flower on top from the third session.
+    private static func draw(_ day: WeekCairns.Day, in ctx: inout GraphicsContext, size: CGSize) {
+        let k: CGFloat = 1.2
+        let cx = size.width / 2
+        let ground = size.height - 4
+        ctx.fill(Path(ellipseIn: CGRect(x: cx - 13 * k, y: ground - 3.5 * k, width: 26 * k, height: 7 * k)),
+                 with: .color(AppColor.textSecondary.opacity(0.32)))
+
+        let leafInk = AppColor.meadowInk.opacity(0.78)
+        guard day.sessionCount > 0 else {
+            if day.isRestDay {
+                var leaf = Path()
+                leaf.move(to: CGPoint(x: cx - 5 * k, y: ground - 1))
+                leaf.addQuadCurve(to: CGPoint(x: cx + 6 * k, y: ground - 5 * k),
+                                  control: CGPoint(x: cx, y: ground - 13 * k))
+                leaf.addQuadCurve(to: CGPoint(x: cx - 5 * k, y: ground - 1),
+                                  control: CGPoint(x: cx, y: ground - 4 * k))
+                ctx.fill(leaf, with: .color(leafInk))
             }
+            return
+        }
+
+        let count = min(day.sessionCount, 3)
+        let height = CGFloat(4 + 12 * count) * k
+        let top = ground - 2 - height
+        var stem = Path()
+        stem.move(to: CGPoint(x: cx, y: ground - 2))
+        stem.addCurve(to: CGPoint(x: cx, y: top),
+                      control1: CGPoint(x: cx - 1.5, y: ground - 2 - height * 0.35),
+                      control2: CGPoint(x: cx + 1.5, y: ground - 2 - height * 0.7))
+        ctx.stroke(stem, with: .color(AppColor.meadowInk),
+                   style: StrokeStyle(lineWidth: 2.4 * k, lineCap: .round))
+
+        for i in 0..<count {
+            let y = ground - (8 + CGFloat(12 * i)) * k
+            let side: CGFloat = (i.isMultiple(of: 2) ? -1 : 1) * k
+            var leaf = Path()
+            leaf.move(to: CGPoint(x: cx, y: y))
+            leaf.addQuadCurve(to: CGPoint(x: cx + side * 14, y: y - 2 * k),
+                              control: CGPoint(x: cx + side * 9, y: y - 7 * k))
+            leaf.addQuadCurve(to: CGPoint(x: cx, y: y),
+                              control: CGPoint(x: cx + side * 7, y: y + 4 * k))
+            ctx.fill(leaf, with: .color(leafInk))
+        }
+
+        guard day.sessionCount >= 3 else { return }
+        for petal in 0..<5 {
+            let a = Double(petal) / 5 * 2 * .pi - .pi / 2
+            let p = CGPoint(x: cx + 3.4 * k * cos(a), y: top + 3.4 * k * sin(a))
+            ctx.fill(Path(ellipseIn: CGRect(x: p.x - 3.3 * k, y: p.y - 3.3 * k, width: 6.6 * k, height: 6.6 * k)),
+                     with: .color(AppColor.streakBlush))
+        }
+        ctx.fill(Path(ellipseIn: CGRect(x: cx - 2.5 * k, y: top - 2.5 * k, width: 5 * k, height: 5 * k)),
+                 with: .color(AppColor.accentGold))
     }
 
-    /// The forgiven-rest-day mark: two small strokes rather than the guide's
-    /// pointed leaf shape, so it reads at cairn scale without a dedicated path.
-    private var leaf: some View {
-        Image(systemName: "leaf.fill")
-            .font(.system(size: 13))
-            .foregroundStyle(AppColor.calmAccent)
-            .padding(.bottom, 2)
+    private func accessibilityLabel(_ day: WeekCairns.Day) -> String {
+        let name = day.date.formatted(.dateTime.weekday(.wide))
+        switch day.sessionCount {
+        case 0: return day.isRestDay ? "\(name), rest day" : name
+        case 1: return "\(name), 1 session"
+        default: return "\(name), \(day.sessionCount) sessions"
+        }
     }
 
     /// One letter, and the day's own initial rather than a fixed S M T W T F S,

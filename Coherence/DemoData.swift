@@ -100,7 +100,9 @@ enum DemoData {
         let cal = Calendar.current
         // Day offsets back from today — consecutive last 7 days (the streak),
         // then a realistic scatter before that.
-        let offsets = [0, 1, 2, 3, 4, 5, 6, 8, 9, 11, 12, 13, 15, 17, 18, 20, 22, 25]
+        // Days 1 and 3 hold two and three sits, so Home's garden shows a
+        // plant at every stage (a sprout, two leaves, a flower).
+        let offsets = [0, 1, 1, 2, 3, 3, 3, 4, 5, 6, 8, 9, 11, 12, 13, 15, 17, 18, 20, 22, 25]
         let sounds: [(mode: String, id: String?, belly: Bool)] = [
             ("guided", "guided.identity", false), ("frequency", "manifest", false),
             ("nature", "rain", false), ("frequency", "theta", false),
