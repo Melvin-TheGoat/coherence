@@ -827,13 +827,9 @@ struct ContentView: View {
     /// The how-to guide, in the streak's circle so the two read as a pair.
     private var guideBadge: some View {
         Button { sheet = .guide } label: {
-            VStack(spacing: 1) {
-                SitArt(name: "home-guide", size: 24)
-                Text("Guide")
-                    .font(.system(size: 10, weight: .bold))
-                    // Daytime ink always: it sits on a cream circle at every hour.
-                    .foregroundStyle(DayLight.at(0).ink.opacity(0.8))
-            }
+            // No label under it (Melvin, 2026-09-27): the book says it, and
+            // VoiceOver still reads the name.
+            SitArt(name: "home-guide", size: 32)
             .frame(width: 54, height: 54)
             .background(TileFill(shape: Circle(), opacity: 0.9))
             .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
@@ -845,14 +841,8 @@ struct ContentView: View {
     /// Friends, in the streak's circle: the two sloths from the tab bar.
     private var friendsBadge: some View {
         Button { sheet = .friends } label: {
-            VStack(spacing: 3) {
-                SitArt(name: "sloth-friends", size: 38)
-                    .frame(height: 20)
-                Text("Friends")
-                    .font(.system(size: 10, weight: .bold))
-                    // Daytime ink always: it sits on a cream circle at every hour.
-                    .foregroundStyle(DayLight.at(0).ink.opacity(0.8))
-            }
+            // No label under it, like the guide's circle.
+            SitArt(name: "sloth-friends", size: 44)
             .frame(width: 54, height: 54)
             .background(TileFill(shape: Circle(), opacity: 0.9))
             .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
