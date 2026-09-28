@@ -610,7 +610,13 @@ struct ContentView: View {
             // circles (6 + 54 + 10 + 54, and 8 of air): a long line used to
             // grow up into the corner and cover the guide (Melvin,
             // 2026-09-23).
-            let bubbleTop = topInset + 132
+            // A hat takes the room above his head, so the bubble rises by as
+            // much as the hat does. It narrows too, to pass between the corner
+            // circles, which lets it climb to just under the date.
+            let hat = OttoAuraFigure.previewHat ?? prefsRows.first?.wornHatIDValue
+            let hatRise = OttoAuraFigure.hatRise(hat, size: 186 * SitLayout.scale(in: size) * 1.17)
+            let bubbleTop = topInset + (hatRise > 0 ? 66 : 132)
+            let bubbleWidth = hatRise > 0 ? min(width - 152, 330) : min(width - 56, 330)
             if tourTab == nil {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
@@ -623,7 +629,7 @@ struct ContentView: View {
                                alignment: .center,
                                speaking: .constant(false))
                 }
-                .frame(width: min(width - 56, 330), height: max(0, ottoTop - 8 - bubbleTop))
+                .frame(width: bubbleWidth, height: max(0, ottoTop - 8 - hatRise - bubbleTop))
                 .padding(.top, bubbleTop)
             }
 

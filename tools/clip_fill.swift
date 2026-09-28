@@ -15,6 +15,14 @@
 //   * 650 x 1416 is the phone's shape (an iPhone 17 Pro is 402 x 874 pt), the
 //     centre of the source cut to it, so the clip's framing on screen is the
 //     framing the screens' words were placed against.
+//   * `--patch-from T --patch-circle cx,cy,r --patch-last N` lays a circle
+//     of the source frame at T seconds (source pixels, y from the top) over
+//     the last N output frames. For otto-seasons: the clock's hands spin to
+//     the clip's last frame, so every late frame is motion-blurred, and the
+//     screen holds that last frame (Melvin, 2026-09-27: "it ends with the
+//     clock blurry"). The clock is still for the first second, and the
+//     camera is locked, so its sharp face drops straight onto the ending
+//     and the hands stop. Feathered 3 px so the rim leaves no seam.
 //   * It prints which source frames are identical to the one before. A
 //     REGULAR pattern (one in every four, say) is a generator padding its
 //     frame rate, a stutter to fix before shipping (CLAUDE.md, "CHECK EVERY
@@ -35,6 +43,14 @@ let from = option("--from") ?? 0
 let to = option("--to") ?? .greatestFiniteMagnitude
 let outW = Int(option("--width") ?? 650), outH = Int(option("--height") ?? 1416)
 let fps = 20.0
+let patchFrom = option("--patch-from")
+let patchLast = Int(option("--patch-last") ?? 0)
+var patchCircle: (x: Double, y: Double, r: Double)?
+if let i = args.firstIndex(of: "--patch-circle"), i + 1 < args.count {
+    let v = args[i + 1].split(separator: ",").compactMap { Double($0) }
+    if v.count == 3 { patchCircle = (v[0], v[1], v[2]) }
+    args.removeSubrange(i...(i + 1))
+}
 guard args.count >= 3 else { print("clip_fill in out [--from s --to s]"); exit(1) }
 let inURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
 
@@ -46,6 +62,15 @@ Task {
     let transform = try await track.load(.preferredTransform)
     let duration = CMTimeGetSeconds(try await asset.load(.duration))
     let end = min(to, duration)
+
+    // The patch's source frame, when asked for, decoded on its own.
+    var patchImage: CIImage?
+    if let t = patchFrom {
+        let gen = AVAssetImageGenerator(asset: asset)
+        gen.requestedTimeToleranceBefore = .zero; gen.requestedTimeToleranceAfter = .zero
+        gen.appliesPreferredTrackTransform = true
+        patchImage = CIImage(cgImage: try await gen.image(at: CMTime(seconds: t, preferredTimescale: 600)).image)
+    }
 
     // Every source frame in the range, decoded once.
     let reader = try AVAssetReader(asset: asset)
@@ -110,7 +135,18 @@ Task {
     for k in 0..<count {
         let want = from + Double(k) / fps
         let i = frames.indices.min { abs(frames[$0].t - want) < abs(frames[$1].t - want) }!
-        let image = frames[i].image
+        var source = frames[i].image
+        if let patchImage, let c = patchCircle, k >= count - patchLast {
+            // CIImage counts y from the bottom.
+            let centre = CIVector(x: c.x, y: source.extent.height - c.y)
+            let mask = CIFilter(name: "CIRadialGradient", parameters: [
+                "inputCenter": centre, "inputRadius0": c.r - 3, "inputRadius1": c.r,
+                "inputColor0": CIColor.white, "inputColor1": CIColor.clear])!.outputImage!
+                .cropped(to: source.extent)
+            source = patchImage.applyingFilter("CIBlendWithMask", parameters: [
+                kCIInputBackgroundImageKey: source, kCIInputMaskImageKey: mask])
+        }
+        let image = source
             .cropped(to: crop)
             .transformed(by: CGAffineTransform(translationX: -crop.minX, y: -crop.minY))
             .transformed(by: CGAffineTransform(scaleX: scale, y: scale))

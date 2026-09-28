@@ -21,10 +21,6 @@ struct BlockTab: View {
     #if DEBUG
     @State private var testShield = false
     #endif
-    /// Bumped by a tap on Otto, which jiggles him (`OttoJiggle`), as on Home.
-    @State private var ottoPokes = 0
-    /// Set while the onboarding tour shows this tab under its dim.
-    @Environment(\.tourTab) private var tourTab
 
     /// The editor, for an existing blocker or one made from a preset.
     struct EditRequest: Identifiable {
@@ -35,15 +31,14 @@ struct BlockTab: View {
         var id: UUID { blocker.id }
     }
 
-    private static var day: DayLight { DayLight.now }
-    private static let meadow = day.field[1]
+    private static var meadow: Color { ValleyGround.meadow }
 
     var body: some View {
         GeometryReader { proxy in
-            let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * 0.52
+            let top = proxy.safeAreaInsets.top
             ScrollView {
                 VStack(spacing: 0) {
-                    scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
+                    band(top: top)
                     VStack(alignment: .leading, spacing: 14) {
                         #if DEBUG
                         testCard
@@ -70,7 +65,7 @@ struct BlockTab: View {
                         presets
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
-                    .padding(.top, -sceneHeight * 0.10)
+                    .padding(.top, 4)
                     .padding(.bottom, 32)
                 }
             }
@@ -112,77 +107,23 @@ struct BlockTab: View {
         }
     }
 
-    // MARK: - The scene
+    // MARK: - The band
 
-    /// Otto stands bigger here than he did, between the 91pt face he had and
-    /// the 125pt one he has on Home (Melvin, 2026-09-22: bigger, "like the
-    /// size he is in the homescreen", then "a bit smaller" again). Measured
-    /// on an iPhone 17 Pro by HEAD width, the way the aura drawings are
-    /// matched to the rig. The clipboard pose is taller than the seated one
-    /// for the same face, so the scene is taller too, to keep his line above
-    /// him.
-    private func scene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
-        let ink = Self.day.ink
-        let ottoHeight = min(215, height * 0.43)
-        let ottoBottom = height * 0.85
-        return ZStack(alignment: .top) {
-            ValleyScene(progress: 0, showsFigure: false, clock: true)
-                .frame(width: width, height: height)
-                .fadesIntoMeadow(Self.meadow)
-            Image(OttoPose.asking.asset)
-                .resizable()
-                .scaledToFit()
-                .frame(height: ottoHeight)
-                .ottoJiggle(ottoPokes)
-                .contentShape(Rectangle())
-                .onTapGesture { ottoPokes += 1 }
-                .position(x: width / 2, y: ottoBottom - ottoHeight / 2)
-                .accessibilityLabel("Otto, holding his clipboard")
-                .accessibilityAddTraits(.isButton)
-            // Not during the onboarding tour: Otto is the one walking the
-            // reader through, and two of his bubbles would talk over each other.
-            if tourTab == nil {
-                VStack {
-                    Spacer(minLength: 0)
-                    OttoSpeech(text: ottoLine, tail: .bottom, size: 17,
-                               ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
-                               fill: ValleyBubble.now.fill, alignment: .center,
-                               speaking: .constant(false))
-                        .id(ottoLine)
-                }
-                .frame(width: min(width - 56, 330),
-                       height: max(0, ottoBottom - ottoHeight - 6 - (topInset + 12)))
-                .padding(.top, topInset + 12)
-            }
+    /// A short band of valley with the title on its sky, as Settings and
+    /// Friends have. Otto and his line are gone from this tab (Melvin,
+    /// 2026-09-27: "I dont like how otto looks in the lock screen. Just get
+    /// rid of him"), and the blockers moved up into the room he took; the
+    /// cards already say what is being held.
+    private func band(top: CGFloat) -> some View {
+        FriendsSky(height: top + 92, sceneHeight: (top + 92) / 0.62) {
+            Text("Block")
+                .font(DisplayFont.display(30, .heavy))
+                .foregroundStyle(ValleyGround.skyInk)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, AppMetrics.screenPadding)
+                .padding(.top, top + 10)
+                .frame(maxHeight: .infinity, alignment: .top)
         }
-        .frame(width: width, height: height)
-        .clipped()
-    }
-
-    /// What Otto says, from the state, never generated.
-    private var ottoLine: String {
-        let now = Date()
-        if !block.authorized {
-            return "Let me hold the apps that pull you in. I need Screen Time for that."
-        }
-        let set = block.state.blockers.filter { $0.isOn && $0.hasApps }
-        if set.isEmpty {
-            return "Pick the apps that pull you in, and I'll hold them until you've meditated."
-        }
-        if !block.holding(at: now).isEmpty {
-            return "I'm holding your apps. A short session and they're yours."
-        }
-        if set.contains(where: { BlockRules.activePass($0.id, in: block.state, at: now) != nil }) {
-            return "Enjoy your few minutes. I'll hold them again after."
-        }
-        let releasedToday = set.contains { blocker in
-            guard let window = blocker.openWindow(at: now) else { return false }
-            return BlockRules.released(blocker.id, window: window, in: block.state)
-        }
-        if releasedToday {
-            return "You meditated, so your apps are open. Nice one."
-        }
-        return "I'll hold your apps when your next window opens."
     }
 
     // MARK: - Cards

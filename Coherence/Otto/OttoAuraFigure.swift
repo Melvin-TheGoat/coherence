@@ -44,7 +44,34 @@ struct OttoAuraFigure: View {
     /// file is owned elsewhere and should not need editing for the shop to
     /// show up on it. Home is exactly the case `hatID` is nil for.
     @Query(sort: \Preferences.createdAt) private var shopPrefsRows: [Preferences]
-    private var effectiveHatID: String? { hatID ?? shopPrefsRows.first?.wornHatIDValue }
+    private var effectiveHatID: String? {
+        Self.previewHat ?? hatID ?? shopPrefsRows.first?.wornHatIDValue
+    }
+
+    /// PREVIEW_HAT=<id> (DEBUG) puts a hat on him anywhere, to check its fit.
+    static var previewHat: String? {
+        #if DEBUG
+        return ProcessInfo.processInfo.environment["PREVIEW_HAT"]
+        #else
+        return nil
+        #endif
+    }
+
+    /// How far a hat reaches above the top of his fur, in points, for a
+    /// figure drawn `size` tall: what a screen that puts words above his head
+    /// has to leave room for (Home's bubble). Reads the art's own shape, so a
+    /// flat halo is not given a beanie's room.
+    static func hatRise(_ id: String?, size: CGFloat) -> CGFloat {
+        guard let id else { return 0 }
+        let canvas = size * 0.95 / bodyShare
+        let fit = HatArt.fit(for: id)
+        let box = canvas * canvasAspect * fit.width
+        var drawn = box
+        if let image = UIImage(named: "hat-\(id)"), image.size.width > 0 {
+            drawn = min(box, box * image.size.height / image.size.width)
+        }
+        return max(0, drawn - box * fit.sink)
+    }
 
     @State private var bob = false
     /// A free-running oscillator for the RIG's own float, which the app
@@ -118,16 +145,7 @@ struct OttoAuraFigure: View {
         return (lower + upper) / 2
     }
 
-    /// A hat's own box, square, as a fraction of the canvas width. `HatArt`
-    /// takes one `size` and fits its content inside it (`.scaledToFit()`),
-    /// so a square box is what its own signature expects. There is no real
-    /// hat art yet, so this is a reasonable placeholder proportion sized to
-    /// his head in the crops used to measure `headTopFraction`, not fitted
-    /// to any one hat; revisit once real art picks its own natural anchor.
-    private static let hatSizeFraction: CGFloat = 0.34
-    /// How far the hat's bottom edge sinks past the very topmost strand, so
-    /// it reads as worn rather than balanced on a single tip of fur.
-    private static let hatSinkFraction: CGFloat = 0.22
+    // Each hat's size and how far it sits down on him: `HatArt.fit`.
 
     /// The rig's own vertical motion for a floating look, so the hat can
     /// approximate it: `Lift`, a fixed per-look rise, plus `Bob`, a slow
@@ -167,8 +185,9 @@ struct OttoAuraFigure: View {
         if let effectiveHatID {
             let effectiveLook = look ?? stage.look
             let headFraction = Self.headTopFraction(look: effectiveLook)
-            let hatSize = canvas * Self.canvasAspect * Self.hatSizeFraction
-            let sink = hatSize * Self.hatSinkFraction
+            let fit = HatArt.fit(for: effectiveHatID)
+            let hatSize = canvas * Self.canvasAspect * fit.width
+            let sink = hatSize * fit.sink
             let bottomY = canvas * headFraction + sink
             HatArt(id: effectiveHatID, size: hatSize)
                 .position(x: canvas * Self.canvasAspect * (332.0 / 664.0), y: bottomY - hatSize / 2)

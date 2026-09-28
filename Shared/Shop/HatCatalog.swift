@@ -22,10 +22,16 @@ enum HatCatalog {
         Item(id: "beanie", name: "Beanie", price: 20),
         Item(id: "sunhat", name: "Straw Sun Hat", price: 60),
         Item(id: "bucket", name: "Bucket Hat", price: 120),
+        // The horns, the halo and the wanderer's hat came with Melvin's art
+        // (2026-09-27): the sheet drew ten, and a dark straw hat on its own.
+        Item(id: "horns", name: "Little Horns", price: 180),
         Item(id: "leafcrown", name: "Leaf Crown", price: 220),
         Item(id: "flowercrown", name: "Flower Crown", price: 350),
         Item(id: "monkhat", name: "Monk's Woven Hat", price: 500),
+        Item(id: "wanderer", name: "Wanderer's Hat", price: 650),
         Item(id: "wizardhat", name: "Wizard Hat", price: 750),
+        // A halo is the nearest thing to enlightenment a sloth can wear.
+        Item(id: "halo", name: "Halo", price: 900),
         Item(id: "goldcrown", name: "Golden Crown", price: 1000)
     ]
 

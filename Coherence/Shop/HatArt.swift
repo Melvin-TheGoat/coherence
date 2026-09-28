@@ -21,6 +21,9 @@ struct HatArt: View {
                     Image(uiImage: uiImage)
                         .resizable()
                         .scaledToFit()
+                        // Brim on the box's floor, so `fit`'s sink is measured
+                        // from where the hat actually meets his head.
+                        .frame(width: size, height: size, alignment: .bottom)
                 } else {
                     Self.placeholder(for: id)
                 }
@@ -29,6 +32,30 @@ struct HatArt: View {
             }
         }
         .frame(width: size, height: size)
+    }
+
+    // MARK: - Fit
+
+    /// How each hat sits on him, fitted by eye on the simulator with
+    /// `PREVIEW_HAT=<id>` (2026-09-27, the art's first day): `width` is the
+    /// box as a fraction of his canvas width, `sink` how far the box's floor
+    /// goes below the top of his fur, as a fraction of the box. A negative
+    /// sink floats the hat above him, which is what a halo does.
+    static func fit(for id: String) -> (width: CGFloat, sink: CGFloat) {
+        switch id {
+        case "beanie":      return (0.40, 0.42)
+        case "sunhat":      return (0.54, 0.34)
+        case "bucket":      return (0.44, 0.38)
+        case "horns":       return (0.44, 0.34)
+        case "leafcrown":   return (0.46, 0.33)
+        case "flowercrown": return (0.46, 0.33)
+        case "monkhat":     return (0.56, 0.26)
+        case "wanderer":    return (0.58, 0.30)
+        case "wizardhat":   return (0.42, 0.30)
+        case "halo":        return (0.32, -0.08)
+        case "goldcrown":   return (0.30, 0.24)
+        default:            return (0.34, 0.22)
+        }
     }
 
     // MARK: - Placeholder
