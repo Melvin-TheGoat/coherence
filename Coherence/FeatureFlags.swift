@@ -59,6 +59,20 @@ enum FeatureFlags {
         #endif
     }
 
+    /// **The Store (2026-09-27) is OFF in Release** until the hats have
+    /// their art: points and hats are built and tested, but every hat is a
+    /// placeholder shape. On, it takes the Friends tab's place and Friends
+    /// opens from a circle on Home. DEBUG keeps it on.
+    static let shopInRelease = false
+
+    static var shop: Bool {
+        #if DEBUG
+        return true
+        #else
+        return shopInRelease
+        #endif
+    }
+
     /// Award ids that belong to a switched-off feature.
     static var hiddenAwardIDs: Set<String> {
         friends ? [] : ["friendBrought"]

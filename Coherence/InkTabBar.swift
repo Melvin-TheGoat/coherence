@@ -28,7 +28,11 @@ struct InkTabBar: View {
             item(.home, art: "ink-home", label: "Home", wash: (0, false), tour: nil)
             item(.block, art: "ink-block", label: "Block", wash: (180, true), tour: .block)
             plus
-            item(.friends, art: "ink-friends", label: "Friends", wash: (180, false), tour: .friends)
+            if FeatureFlags.shop {
+                item(.store, art: "ink-store", label: "Store", wash: (180, false), tour: .store)
+            } else {
+                item(.friends, art: "ink-friends", label: "Friends", wash: (180, false), tour: .friends)
+            }
             item(.profile, art: "ink-profile", label: "Profile", wash: (0, true), tour: .profile)
         }
         .padding(.horizontal, 6)
@@ -115,7 +119,7 @@ struct InkTabBar: View {
                 .interpolation(.high)
                 .frame(width: image.size.width * scale, height: image.size.height * scale)
         } else {
-            Color.clear.frame(width: 1, height: 1)
+            TabArtFallback(name: name, size: 22)
         }
     }
 }

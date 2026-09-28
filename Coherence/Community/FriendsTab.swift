@@ -39,7 +39,9 @@ struct FriendsTab: View {
                                 VStack(alignment: .leading) {
                                     Text("Friends")
                                         .font(DisplayFont.display(30, .heavy))
-                                        .foregroundStyle(ValleyGround.ink)
+                                        .foregroundStyle(ValleyGround.skyInk)
+                                        // Clear of the close button in the corner.
+                                        .padding(.leading, onClose == nil ? 0 : 44)
                                     Spacer()
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -64,7 +66,8 @@ struct FriendsTab: View {
                                       suggested: user?.username ?? "",
                                       nickname: user?.displayName ?? "") { _ in }
                 case .ready:
-                    FriendsHomeView(model: model, myDisplayName: user?.displayName ?? "")
+                    FriendsHomeView(model: model, myDisplayName: user?.displayName ?? "",
+                                    roomForClose: onClose != nil)
                 }
             }
             // The valley, like Home, Profile and the guide (Aziz, 2026-09-22,
@@ -330,6 +333,8 @@ private struct InviteRewardNote: View {
 struct FriendsHomeView: View {
     @ObservedObject var model: CommunityModel
     let myDisplayName: String
+    /// The screen is a sheet with a close button in the top-left corner.
+    var roomForClose = false
 
     @State private var query = ""
     @State private var result: Profile?
@@ -418,15 +423,17 @@ struct FriendsHomeView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Friends")
                             .font(DisplayFont.display(30, .heavy))
-                            .foregroundStyle(ValleyGround.ink)
+                            .foregroundStyle(ValleyGround.skyInk)
                         if let handle = model.profile.map({ "@" + $0.username }), handle.count > 1 {
                             Text(handle)
                                 .font(AppFont.caption.weight(.semibold))
-                                .foregroundStyle(ValleyGround.inkSoft)
+                                .foregroundStyle(ValleyGround.skyInkSoft)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }
                     }
+                    // Clear of the close button, when this is a sheet from Home.
+                    .padding(.leading, roomForClose ? 44 : 0)
                     // A long handle gives way before the pills do: it was the
                     // handle's width that pushed "Requests" onto two lines
                     // (Melvin, 2026-09-27, the last "s" alone underneath).
@@ -777,7 +784,7 @@ func practiceLine(_ stats: PracticeStats) -> String {
     if stats.sessions7d > 0 {
         var parts = ["\(stats.sessions7d) session\(stats.sessions7d == 1 ? "" : "s") this week"]
         if stats.currentStreak > 0 {
-            parts.append("\(stats.currentStreak) day\(stats.currentStreak == 1 ? "" : "s") streak")
+            parts.append("\(stats.currentStreak) day streak")
         }
         return parts.joined(separator: " · ")
     }
@@ -862,7 +869,7 @@ struct RequestsView: View {
             ToolbarItem(placement: .principal) {
                 Text("Requests")
                     .font(DisplayFont.display(19, .heavy))
-                    .foregroundStyle(ValleyGround.ink)
+                    .foregroundStyle(ValleyGround.skyInk)
             }
         }
         // No navigationDestination here: FriendsHomeView's, further up the

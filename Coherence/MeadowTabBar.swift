@@ -24,7 +24,11 @@ struct MeadowTabBar: View {
             item(.home, art: "tab-home", label: "Home", tour: nil)
             item(.block, art: "tab-block", label: "Block", tour: .block)
             begin
-            item(.friends, art: "tab-friends", label: "Friends", tour: .friends)
+            if FeatureFlags.shop {
+                item(.store, art: "tab-store", label: "Store", tour: .store)
+            } else {
+                item(.friends, art: "tab-friends", label: "Friends", tour: .friends)
+            }
             item(.profile, art: "tab-profile", label: "Profile", tour: .profile)
         }
         .padding(.horizontal, 4)
@@ -103,7 +107,7 @@ struct MeadowTabBar: View {
                 .interpolation(.high)
                 .scaledToFit()
         } else {
-            Color.clear
+            TabArtFallback(name: name, size: 28)
         }
     }
 }

@@ -7,17 +7,18 @@ import XCTest
 final class TourStopTests: XCTestCase {
 
     /// Every combination of the two switches a build can ship with.
-    private let builds: [(block: Bool, friends: Bool)] = [
-        (true, true), (true, false), (false, true), (false, false),
+    private let builds: [(block: Bool, friends: Bool, shop: Bool)] = [
+        (true, true, false), (true, false, false), (false, true, false), (false, false, false),
+        (true, true, true), (true, false, true), (false, true, true), (false, false, true),
     ]
 
     private var everyLine: [String] {
-        builds.flatMap { TourStop.all(block: $0.block, friends: $0.friends).map(\.line) }
+        builds.flatMap { TourStop.all(block: $0.block, friends: $0.friends, shop: $0.shop).map(\.line) }
     }
 
     func test_tour_isFourToSixStopsOnEveryBuild() {
         for build in builds {
-            let count = TourStop.all(block: build.block, friends: build.friends).count
+            let count = TourStop.all(block: build.block, friends: build.friends, shop: build.shop).count
             XCTAssertTrue((4...6).contains(count), "\(build): \(count) stops")
         }
     }
@@ -26,7 +27,7 @@ final class TourStopTests: XCTestCase {
     /// lifts off the screen the reader is about to use.
     func test_tour_startsOnHomeAndEndsOnThePlus() {
         for build in builds {
-            let stops = TourStop.all(block: build.block, friends: build.friends)
+            let stops = TourStop.all(block: build.block, friends: build.friends, shop: build.shop)
             XCTAssertEqual(stops.first?.tab, .home)
             XCTAssertEqual(stops.last?.tab, .home)
             XCTAssertEqual(stops.last?.targets, [.begin])
@@ -36,9 +37,14 @@ final class TourStopTests: XCTestCase {
     /// A switched-off feature has no tab to show and no anchor to light.
     func test_tour_visitsATabOnlyWhenItsFeatureIsOn() {
         for build in builds {
-            let tabs = TourStop.all(block: build.block, friends: build.friends).map(\.tab)
+            let tabs = TourStop.all(block: build.block, friends: build.friends, shop: build.shop).map(\.tab)
             XCTAssertEqual(tabs.contains(.block), build.block, "\(build)")
-            XCTAssertEqual(tabs.contains(.friends), build.friends, "\(build)")
+            // With the shop on, Friends is a circle on Home and the Store has the tab.
+            XCTAssertEqual(tabs.contains(.friends), build.friends && !build.shop, "\(build)")
+            XCTAssertEqual(tabs.contains(.store), build.shop, "\(build)")
+            let lit = TourStop.all(block: build.block, friends: build.friends, shop: build.shop)
+                .flatMap(\.targets)
+            XCTAssertEqual(lit.contains(.friendsCircle), build.friends && build.shop, "\(build)")
             XCTAssertTrue(tabs.contains(.profile))
             XCTAssertFalse(tabs.contains(.guide), "the guide is shown on Home, under the streak")
         }
@@ -46,7 +52,7 @@ final class TourStopTests: XCTestCase {
 
     func test_tour_everyStopLightsSomething() {
         for build in builds {
-            for stop in TourStop.all(block: build.block, friends: build.friends) {
+            for stop in TourStop.all(block: build.block, friends: build.friends, shop: build.shop) {
                 XCTAssertFalse(stop.targets.isEmpty, stop.line)
             }
         }

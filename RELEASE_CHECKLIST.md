@@ -16,6 +16,26 @@ a phone and flipped). It points at the detailed sections below and at
 detailed section and the code are the truth, and this list should be
 corrected to match. Do every step below it before returning here.
 
+0b. **FRIENDS WITHOUT POSTS, AND THE STORE (Melvin, 2026-09-27).** The
+   feed and all photo and video posting are gone; friends see each other's
+   name and how often they meditate. Owed before the build that ships it:
+   - [ ] CloudKit Development → Production: five new fields on the public
+     `Profile` record type (`sessions7d`, `minutes7d`, `currentStreak`,
+     `totalSessions`, `lastSessionAt`), and two on the synced `Preferences`
+     (`ownedHatIDs`, `wornHatID`). A field that is not in Production is
+     silently dropped on a real install.
+   - [ ] Privacy policy, both copies, and the App Privacy label: the
+     "Friends and posts" section still describes photos, videos and posts.
+     It now publishes the name, @username and those five practice numbers
+     (session counts, minutes, streak, last session date) to people who
+     follow you, and nothing else. Photos or Videos can come off the label
+     once no build that posts is in use; the profile photo is still a photo.
+   - [ ] Existing posts are deleted from iCloud once, on each person's next
+     launch (`CommunityModel.clearMyPostsIfNeeded`). Nothing to do but know.
+   - [ ] The Store is behind `FeatureFlags.shopInRelease` (off). Flip it
+     only when every hat has its art (`Coherence/Shop/Hats/hat-<id>.png`)
+     and the Store tab has its icon (`sloth-store`); until then Release keeps
+     the Friends tab where the Store would be.
 0a. **THE LADDER'S TWO PRODUCTS (Melvin, 2026-09-27).** In the same
    subscription group as Monthly and Yearly, create
    `com.lockout.meditate808.monthlytrial` ($7.99 a month, introductory offer:

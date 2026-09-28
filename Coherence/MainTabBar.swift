@@ -24,7 +24,9 @@ extension EnvironmentValues {
 enum MainTab: Hashable {
     /// `guide` is the tab only while Block is switched off; with Block on the
     /// guide lives in its circle under the streak on Home (2026-09-21).
-    case home, guide, block, friends, profile
+    /// `store` takes the Friends tab's place when the shop is on (Melvin,
+    /// 2026-09-27); Friends then opens from its circle on Home.
+    case home, guide, block, friends, store, profile
 }
 
 /// The bottom bar (2026-09-12, Melvin): the layout most apps use, so the app
@@ -73,7 +75,9 @@ struct MainTabBar: View {
                 item(.guide, icon: "book.closed", label: "Guide")
             }
             plus
-            if FeatureFlags.friends {
+            if FeatureFlags.shop {
+                item(.store, icon: "bag", label: "Store", tour: .store)
+            } else if FeatureFlags.friends {
                 item(.friends, icon: "person.2", label: "Friends", tour: .friends)
             } else {
                 item(.friends, icon: "magnifyingglass", label: "Search")

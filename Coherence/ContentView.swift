@@ -106,6 +106,8 @@ struct ContentView: View {
         case intervention(InterventionKind)
         /// The free-week offer, from switching a blocker on. Block is paid.
         case blockPaywall
+        /// Friends, from its circle on Home, when the Store has its tab.
+        case friends
 
         var id: String {
             switch self {
@@ -118,6 +120,7 @@ struct ContentView: View {
             case .paywall: return "paywall"
             case .intervention(let kind): return "intervention-\(kind.rawValue)"
             case .blockPaywall: return "blockPaywall"
+            case .friends: return "friends"
             }
         }
     }
@@ -165,6 +168,8 @@ struct ContentView: View {
                 BlockTab(block: block, entitlements: store.entitlements) { present(.blockPaywall) }
             case .friends:
                 if FeatureFlags.friends { FriendsTab() } else { SearchTab() }
+            case .store:
+                ShopTab()
             case .profile:
                 // Same destination Home's own rows open, through this
                 // view's single sheet presenter (Melvin, 2026-09-23: a
@@ -325,6 +330,8 @@ struct ContentView: View {
                     .onAppear { block.noteInterventionShown(kind) }
             case .blockPaywall:
                 PaywallScreen(placement: "block", plan: $paywallPlan) { _ in sheet = nil }
+            case .friends:
+                FriendsTab(onClose: { sheet = nil })
             }
         }
     }
@@ -463,6 +470,7 @@ struct ContentView: View {
                 case "block": tab = FeatureFlags.block ? .block : .guide
                 case "guide": tab = .guide
                 case "friends", "search": tab = .friends
+                case "store", "shop": tab = FeatureFlags.shop ? .store : .home
                 case "profile": tab = .profile
                 default: tab = .home
                 }
@@ -574,6 +582,17 @@ struct ContentView: View {
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, AppMetrics.screenPadding)
             .padding(.top, topInset + 6)
+
+            // Friends, in the opposite corner, once the Store has its tab
+            // (Melvin, 2026-09-27: "make friends a button"). Top left rather
+            // than under the guide, where a third circle ran into his bubble.
+            if FeatureFlags.friends && FeatureFlags.shop {
+                friendsBadge
+                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.friendsCircle: $0] }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.leading, AppMetrics.screenPadding)
+                    .padding(.top, topInset + 6)
+            }
 
             // The glow a landed session just earned. Under his bubble, so
             // the sparks pass behind the words rather than across them.
@@ -815,6 +834,25 @@ struct ContentView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel("How to meditate guide")
+    }
+
+    /// Friends, in the streak's circle: the two sloths from the tab bar.
+    private var friendsBadge: some View {
+        Button { sheet = .friends } label: {
+            VStack(spacing: 3) {
+                SitArt(name: "sloth-friends", size: 38)
+                    .frame(height: 20)
+                Text("Friends")
+                    .font(.system(size: 10, weight: .bold))
+                    // Daytime ink always: it sits on a cream circle at every hour.
+                    .foregroundStyle(DayLight.at(0).ink.opacity(0.8))
+            }
+            .frame(width: 54, height: 54)
+            .background(TileFill(shape: Circle(), opacity: 0.9))
+            .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Friends")
     }
 
     /// How bright Otto is, as a percentage, and the bar that fills as the

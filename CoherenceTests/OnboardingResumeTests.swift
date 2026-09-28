@@ -91,6 +91,12 @@ final class FeatureFlagTests: XCTestCase {
                        "Block ships once shields, passes and the notification are verified on a phone")
     }
 
+    /// The hats are placeholders until their art exists.
+    func test_storeIsOffForTheAppStoreUntilTheHatsHaveArt() {
+        XCTAssertFalse(FeatureFlags.shopInRelease,
+                       "The Store ships once every hat has its art")
+    }
+
     func test_ottoIsOffForTheAppStore() {
         XCTAssertFalse(FeatureFlags.ottoInRelease,
                        "Otto ships once the founders have read its answers and the policy names it")

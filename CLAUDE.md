@@ -3948,6 +3948,53 @@ the cream for colour-to-alpha, which would have left it see-through over the
 selected tab's blue wash. The bar's art is 0.18 pt per sheet pixel in a 28pt
 slot.
 
+## EVERY SCREEN FOLLOWS THE CLOCK; THE STORE TAKES FRIENDS' TAB (2026-09-27, Melvin)
+
+- **Every app valley draws the real hour, like Home**: pass `clock: true`
+  to `ValleyScene` with `progress: 0`, never the clock as the progress.
+  Ambient life (birds, the grasshopper) only runs while `progress == 0`, so
+  `progress: DayLight.clockProgress()` silently empties the meadow. The sit
+  passes its own progress with `clock: true` and runs from the real hour on
+  to night. Onboarding (Aziz's, mid-revamp) and the paywall ladder stay at
+  day. Arguments follow declaration order, and `clock` sits after
+  `life`, before `ottoInCorner` / `ottoLift`.
+- **Two inks now:** `ValleyGround.ink` / `inkSoft` stay DAYTIME ink, for
+  words on cream (the tab bars, pills, cards), which is cream at every hour;
+  `ValleyGround.skyInk` / `skyInkSoft` and `DayLight.now` follow the hour,
+  for words drawn straight on the sky. Making `ValleyGround.ink` follow the
+  clock turned the tab bar's labels white on cream. `ValleyGround.meadow`
+  follows the hour too, so a band fades into grass of its own colour.
+- **Otto's bubble is Home's everywhere** (`ValleyBubble.now`: cream glass
+  and dark words by day, dark glass and pale words at night), and Home's
+  night dim on tiles (`tileDim`) is set once, on `ContentView` in RootView,
+  so every tab and every sheet dims.
+- **Home's icons are Melvin's clay objects** (`Coherence/HomeIcons/`,
+  sheet at `mockups/tabbar-icons/home-icons-sheet.webp`): flame (streak),
+  book (guide), trophy (best streak), mala beads (sessions), hourglass (time
+  meditated), a sprout on a warm coin (a day meditated, in the week strip)
+  and a flower (the rating chip). The Ready screen's five lost their stones
+  the same day. All drawn through `SitArt`.
+- **The Store replaces the Friends tab** (`FeatureFlags.shop`, ON in DEBUG,
+  OFF in Release until every hat has its art; tripwire in
+  `OnboardingResumeTests`). `MainTab.store`, every bar draws it, and a
+  missing `*-store` art falls back to a gold bag (`TabArtFallback`).
+  **Friends opens from a circle top-left on Home**, mirroring the streak:
+  a third circle under the guide ran into Otto's bubble. The tour lights the
+  three circles in one stop and adds a Store stop, six in all.
+- **Friends has no feed and no posting** (the agent's merge): a list of
+  friends with how often each meditates (`PracticeStats`, five fields on the
+  public Profile record), follow lists, search, requests, report, block.
+  Save session is always private. Old posts are deleted once per person.
+  CloudKit promotion and the policy are owed: RELEASE_CHECKLIST.md 0b.
+- **Points: one per whole minute meditated; hand-logged sessions earn
+  none** (`OttoPoints`, `HatCatalog`, eight hats from 20 to 1000 points,
+  worn on Otto through `OttoAuraFigure`). Every hat is a placeholder shape
+  until Melvin's art lands as `Coherence/Shop/Hats/hat-<id>.png`.
+- Onboarding has a Back chevron on every screen that allows one: a screen
+  that draws none gets one from `OnboardingView` (the `OnboardingBackDrawn`
+  preference), so a new screen cannot ship without a way back. Night owl
+  (6 pm to 6 am, every day) joined "When should I hold them?".
+
 ## THE ZEN DIRECTION: MELVIN'S MOODBOARD IS THE REFERENCE (2026-09-26)
 
 **SHELVED 2026-09-27 (Melvin: "Nevermind on the theme revamp").** Nothing

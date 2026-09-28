@@ -32,7 +32,7 @@ struct ShopTab: View {
     @StateObject private var rig = OttoRigHolder()
 
     private static var day: DayLight { DayLight.now }
-    private static let meadow = day.field[1]
+    private static var meadow: Color { day.field[1] }
     private static let sceneShare: CGFloat = 0.42
 
     /// The oldest row, the same rule `InviteReward`'s ledger uses: there can
@@ -63,9 +63,13 @@ struct ShopTab: View {
                 VStack(spacing: 0) {
                     scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
                     VStack(alignment: .leading, spacing: 18) {
+                        // Standing on the grass, so white with a faint shadow, as
+                        // every heading on the meadow is: brown vanished into the
+                        // night grass.
                         Text("Otto's closet")
                             .font(DisplayFont.display(22, .heavy))
-                            .foregroundStyle(AppColor.textPrimary)
+                            .foregroundStyle(.white)
+                            .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())],
                                   spacing: 14) {
                             ForEach(HatCatalog.all) { item in
@@ -145,7 +149,15 @@ struct ShopTab: View {
                     .padding(.horizontal, AppMetrics.screenPadding)
                     .padding(.top, 12)
             }
-            .background(.ultraThinMaterial)
+            // The grass rising under the button, like the session page's,
+            // rather than a pale material band that read as a sheet of paper
+            // at night.
+            .background(
+                LinearGradient(stops: [.init(color: Self.meadow.opacity(0), location: 0),
+                                       .init(color: Self.meadow, location: 0.4)],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+            )
         }
     }
 

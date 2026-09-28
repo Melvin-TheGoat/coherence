@@ -53,7 +53,11 @@ struct LiftedTabBar: View {
             item(.home, art: "\(prefix)-home", label: "Home", tint: .blue, tour: nil)
             item(.block, art: "\(prefix)-block", label: "Block", tint: .blue, tour: .block)
             plus
-            item(.friends, art: "\(prefix)-friends", label: "Friends", tint: .green, tour: .friends)
+            if FeatureFlags.shop {
+                item(.store, art: "\(prefix)-store", label: "Store", tint: .green, tour: .store)
+            } else {
+                item(.friends, art: "\(prefix)-friends", label: "Friends", tint: .green, tour: .friends)
+            }
             item(.profile, art: "\(prefix)-profile", label: "Profile", tint: .blue, tour: .profile)
         }
         .padding(.horizontal, 6)
@@ -172,6 +176,22 @@ struct LiftedTabBar: View {
                     .interpolation(.high)
                     .scaledToFit()
             }
+        } else {
+            TabArtFallback(name: name, size: 26)
+        }
+    }
+}
+
+/// A bar's object before its art exists: the Store's bag until Melvin's
+/// clay one arrives.
+struct TabArtFallback: View {
+    let name: String
+    var size: CGFloat = 24
+    var body: some View {
+        if name.hasSuffix("-store") {
+            Image(systemName: "bag.fill")
+                .font(.system(size: size, weight: .semibold))
+                .foregroundStyle(AppColor.accentGoldText)
         } else {
             Color.clear
         }
