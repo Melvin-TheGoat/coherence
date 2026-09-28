@@ -623,6 +623,7 @@ let layered = a.contains("--layers")
 var frontEdge = [Double](repeating: Double(H), count: W)
 var fillPx = [UInt32](repeating: 0, count: W * H)    // 0 = none, else 0xRRGGBB + 1
 var cover = [Double](repeating: 0, count: W * H)
+var lookCovers = [[Double]]()
 var fillFade = [Double](repeating: 1, count: W * H)
 if layered && !ring {
     let edged = (0..<W).filter { edge[$0] >= 0 }.map { edge[$0] }.sorted()
@@ -746,36 +747,81 @@ if layered && !ring {
         visibleBottom[x] = min(frontEdge[x], Double(bottom))
         coverLimit[x] = visibleBottom[x] - 6
     }
-    let margin = 24
-    var rowGrown = [Bool](repeating: false, count: W * H)
-    for y in 0..<H {
-        var last = -10_000
-        var next = [Int](repeating: 10_000, count: W)
-        var n = 10_000
-        for x in stride(from: W - 1, through: 0, by: -1) { if inside[y * W + x] { n = x }; next[x] = n }
-        for x in 0..<W {
-            if inside[y * W + x] { last = x }
-            if x - last <= margin || next[x] - x <= margin { rowGrown[y * W + x] = true }
-        }
-    }
-    for x in 0..<W {
-        var last = -10_000
-        var next = [Int](repeating: 10_000, count: H)
-        var n = 10_000
-        for y in stride(from: H - 1, through: 0, by: -1) { if rowGrown[y * W + x] { n = y }; next[y] = n }
+    // Where his head is hidden: his silhouette grown by `margin`, above the
+    // hat's visible bottom. A function of the silhouette so each of the aura
+    // rig's thirteen looks can have its own (`--looks`): their heads and
+    // tufts differ, and one cut from Steady's head let a taller tuft poke
+    // out through the top of a cone.
+    func coverFor(_ sil: [Bool], margin: Int) -> [Double] {
+        var out = [Double](repeating: 0, count: W * H)
+        var rowGrown = [Bool](repeating: false, count: W * H)
         for y in 0..<H {
-            if rowGrown[y * W + x] { last = y }
-            guard y - last <= margin || next[y] - y <= margin else { continue }
-            let above = coverLimit[x] - Double(y)
-            // Near the front edge the weave has notches; hiding his fur
-            // behind a notch shows the sky through it as a dotted pale line.
-            // So close to the edge he is hidden only where the hat is.
-            // The same for the hat's own soft edge: its outermost pixels are
-            // half see-through, and fur hidden behind them shows as specks.
-            let i = y * W + x
-            let solid = keep[i] && x > 0 && x < W - 1 && y > 0 && y < H - 1
-                && keep[i - 1] && keep[i + 1] && keep[i - W] && keep[i + W]
-            if above > 0 && (above > 14 || solid) { cover[i] = min(1, above / 4) }
+            var last = -10_000
+            var next = [Int](repeating: 10_000, count: W)
+            var n = 10_000
+            for x in stride(from: W - 1, through: 0, by: -1) { if sil[y * W + x] { n = x }; next[x] = n }
+            for x in 0..<W {
+                if sil[y * W + x] { last = x }
+                if x - last <= margin || next[x] - x <= margin { rowGrown[y * W + x] = true }
+            }
+        }
+        for x in 0..<W {
+            var last = -10_000
+            var next = [Int](repeating: 10_000, count: H)
+            var n = 10_000
+            for y in stride(from: H - 1, through: 0, by: -1) { if rowGrown[y * W + x] { n = y }; next[y] = n }
+            for y in 0..<H {
+                if rowGrown[y * W + x] { last = y }
+                guard y - last <= margin || next[y] - y <= margin else { continue }
+                let above = coverLimit[x] - Double(y)
+                // Near the front edge the weave has notches; hiding his fur
+                // behind a notch shows the sky through it as a dotted pale line.
+                // So close to the edge he is hidden only where the hat is.
+                // The same for the hat's own soft edge: its outermost pixels are
+                // half see-through, and fur hidden behind them shows as specks.
+                let i = y * W + x
+                let solid = keep[i] && x > 0 && x < W - 1 && y > 0 && y < H - 1
+                    && keep[i - 1] && keep[i + 1] && keep[i - W] && keep[i + W]
+                if above > 0 && (above > 14 || solid) { out[i] = min(1, above / 4) }
+            }
+        }
+        return out
+    }
+    cover = coverFor(inside, margin: 24)
+
+    // --looks <dir>: one hidden-head mask per aura look, from that look's own
+    // body (the images the rig draws, pulled out of OttoAura.riv), placed on
+    // the hat the way the app places the hat on him: by his head's skull,
+    // centre and width, against Steady's (HatArt.steadyHead).
+    if let li = a.firstIndex(of: "--looks"), li + 1 < a.count {
+        let dir = a[li + 1]
+        let files = ["otto-clean2-body-1", "otto-mid2-body-1", "otto-clean2-body-2", "otto-mid2-body-2",
+                     "otto-clean2-body-3", "otto-mid2-body-3", "otto-clean2-body-4", "otto-mid2-body-4",
+                     "otto-clean2-body-5", "otto-mid2-body-5", "otto-clean2-body-6", "otto-mid2-body-6",
+                     "otto-clean2-body-7"]
+        // (skull, cx, width) in each image's own pixels: OttoAuraFigure.bodies.
+        let heads: [(Double, Double, Double)] = [
+            (52, 255.5, 331), (47, 258.5, 340), (54, 252.0, 344), (51, 250.5, 337), (56, 248.5, 340),
+            (51, 243.5, 343), (51, 246.5, 340), (61, 247.5, 335), (62, 251.0, 326), (67, 248.5, 325),
+            (66, 253.0, 320), (84, 248.0, 309), (68, 249.5, 320)]
+        let steady = (skull: 86.0, cx: 330.5, width: 341.0)
+        let ow = baseW * best.s, oh = baseH * best.s
+        let oleft = baseX + (baseW - ow) / 2 + best.dx
+        let otop = baseBottom - oh + best.dy
+        for (n, file) in files.enumerated() {
+            let body = Bitmap(dir + "/" + file + ".png")
+            let (hs, hcx, hw) = heads[n]
+            let kk = hw / steady.width
+            var sil = [Bool](repeating: false, count: W * H)
+            for y in 0..<H { for x in 0..<W {
+                let cx = (Double(x) - oleft) / ow * Double(otto.w)
+                let cy = (Double(y) - otop) / oh * Double(otto.h)
+                let px = Int((hcx + (cx - steady.cx) * kk).rounded())
+                let py = Int((hs + (cy - steady.skull) * kk).rounded())
+                guard px >= 0, py >= 0, px < body.w, py < body.h else { continue }
+                if body.at(px, py).3 > 128 { sil[y * W + x] = true }
+            } }
+            lookCovers.append(coverFor(sil, margin: 10))
         }
     }
 
@@ -825,7 +871,8 @@ if layered && !ring {
 var minX = W, minY = H, maxX = 0, maxY = 0
 for y in 0..<H { for x in 0..<W {
     let i = y * W + x
-    guard keep[i] || shade[i] > 0.01 || fillPx[i] != 0 || cover[i] > 0.01 else { continue }
+    guard keep[i] || shade[i] > 0.01 || fillPx[i] != 0 || cover[i] > 0.01
+        || lookCovers.contains(where: { $0[i] > 0.01 }) else { continue }
     minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
 } }
 guard maxX > minX else { print("no hat found"); exit(1) }
@@ -906,6 +953,12 @@ if layered && !ring {
     write(picture(.cover), base + "-cover.png")
     write(picture(.under), base + "-under.png")
     write(picture(.over), base + "-over.png")
+    let steadyCover = cover
+    for (n, c) in lookCovers.enumerated() {
+        cover = c
+        write(picture(.cover), base + "-cover-\(n + 1).png")
+    }
+    cover = steadyCover
 }
 
 // The box in Otto's canvas units (his drawing's own pixels, 664 x 744).

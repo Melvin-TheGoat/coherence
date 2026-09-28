@@ -52,13 +52,13 @@ struct HatArt: View {
     /// cut. The horns are gone.
     static let placement: [String: CGRect] = [
         "beanie":      CGRect(x: 146.9, y: -28.9, width: 368.0, height: 263.2),
-        "sunhat":      CGRect(x: 83.6, y: 15.4, width: 490.4, height: 261.0),
-        "bucket":      CGRect(x: 119.5, y: 21.7, width: 426.4, height: 240.6),
+        "sunhat":      CGRect(x: 83.6, y: -8.5, width: 490.4, height: 285.0),
+        "bucket":      CGRect(x: 119.5, y: -8.5, width: 426.4, height: 270.9),
         "flowercrown": CGRect(x: 124.4, y: 34.4, width: 404.6, height: 218.1),
-        "monkhat":     CGRect(x: 85.0, y: 17.5, width: 489.0, height: 237.1),
+        "monkhat":     CGRect(x: 85.0, y: -8.5, width: 489.0, height: 263.2),
         "leafcrown":   CGRect(x: 131.5, y: 52.0, width: 401.1, height: 169.6),
-        "wanderer":    CGRect(x: 82.6, y: 9.6, width: 497.3, height: 243.0),
-        "enso":        CGRect(x: 82.6, y: -2.4, width: 497.3, height: 252.2),
+        "wanderer":    CGRect(x: 82.6, y: -8.7, width: 497.3, height: 261.4),
+        "enso":        CGRect(x: 82.6, y: -8.7, width: 497.3, height: 258.6),
         "wizardhat":   CGRect(x: 93.2, y: -49.0, width: 479.7, height: 320.0),
         "goldcrown":   CGRect(x: 175.9, y: -38.4, width: 310.8, height: 177.3),
         "halo":        CGRect(x: 211.9, y: -13.0, width: 238.1, height: 66.4),

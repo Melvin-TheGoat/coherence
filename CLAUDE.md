@@ -6315,5 +6315,45 @@ laid over the real drawing can fit a head of a different shape.
 - **zsh passes `$flags` as ONE word**: a loop with `extra="--otto-floor 0.7"`
   silently cut the ensō without its floor. Drive flag lists from bash or
   Python.
+
+## THE HAT FOLLOWS THE RIG'S OWN NUMBERS (2026-09-28, Melvin)
+
+"Too low on his head for 12 and 13 ... when hes floating the hat doesnt float
+with him." Both had one cause: the hat is drawn by SwiftUI over a Rive render
+and GUESSED where he was. The hand-copied lifts were 4 to 16 units short
+(look 9 had none at all), the per-look scales up to 5% off, and the float ran
+on a SwiftUI timer of its own.
+
+- **`OttoAuraRig` now keeps its own account of where he is** (`pose()`):
+  `Lift`'s y and `Bob`'s scale per look, the body image's place in `Bob`, and
+  the `Float` curve (Bob y 0 → −10 → 0 over 300 frames, Rive's default cubic
+  ease), all read out of the shipping `.riv`, replayed on the rig's own clock
+  (`OttoAuraRiveViewModel` reports every advance). It follows the 0.5 s look
+  fade (instant under `snap`) and the 0.7 s blend into and out of the float
+  at look 9. The hat reads it every frame through a `TimelineView`, with no
+  animation of its own. **Measured: the hat and his face move the same
+  0 → −10 → 0 px through a whole float, never more than 1 px apart.**
+- **The runtime cannot hand back a node's position**, so this is the only way
+  short of moving the hats into the rig, and moving them in cannot carry the
+  cover (Rive has no destination-out). **Re-read the numbers whenever `Lift`,
+  `Bob`, the look timelines or `Float` change**: `tools/riv_dump.py
+  Coherence/Otto/OttoAura.riv` prints them (and `--bodies DIR` writes the
+  thirteen body PNGs). It parses the binary itself, using the runtime's
+  generated headers in any rive-ios checkout.
+- **The editor's cloud copy of OttoAura (file 2603768) is OLDER than what
+  ships**: no `snap`, no Leaves layer, no Halo layer, 3.2 MB against 5.4.
+  Same failure as Otto.riv, third time now. Nothing was exported from it.
+  Before ANY edit to the aura rig in Rive, rebuild the missing work there or
+  it will overwrite the app's file with an older rig.
+- **Each look hides its own head** (`hat-<id>-cover-<look>.png`, from
+  `hat_extract --looks <bodies dir>`): the bright looks were drawn with taller
+  tufts than Steady, and a mask cut from Steady's head let the tip poke out of
+  the cone hats at looks 10 to 12. The boxes grew upward to hold the taller
+  masks, so `HatArt.placement` changed for the sun hat, bucket, monk's,
+  wanderer's and ensō.
+- **Known, not fixed, not a hat bug:** for a moment as the look crosses 9 the
+  rig is drawn huge, when `OttoAuraFigure` swaps its view from wide
+  (`flightSpan`) to tall (`headroom`). Seen in the reel, which changes look
+  every 1.6 s; on Home it happens once, when the glow crosses that line.
   The session Otto uses `.background` / `.overlay`, never a ZStack, so every
   layer is proposed exactly the drawing's frame and his size never changes.

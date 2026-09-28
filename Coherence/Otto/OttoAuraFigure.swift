@@ -67,17 +67,13 @@ struct OttoAuraFigure: View {
         // The tallest it stands above his tuft on any look, so the bubble never
         // has to move as he brightens.
         let rise = (1...13).map { look -> CGFloat in
-            let tuft = 649 - 600 + lift(look: look)
-            return tuft - hatBox(id, look: look, rig: true).minY
+            let tuft = 649 - 600 + CGFloat(OttoAuraRig.lift[look - 1])
+            return tuft - hatBox(id, look: look, pose: OttoAuraRig.rest(look)).minY
         }.max() ?? 0
         return max(0, rise * unit)
     }
 
     @State private var bob = false
-    /// A free-running oscillator for the RIG's own float, which the app
-    /// cannot read back (see `rigBobOffset` below). Runs unconditionally; it
-    /// only ever moves the hat when `rigBobOffset` decides to use it.
-    @State private var rigBob = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The animated seven (`OttoAura.riv`). Nil until that file ships, and
     /// whenever it will not load; the stills below stand in either way.
@@ -105,7 +101,9 @@ struct OttoAuraFigure: View {
             if hasLayer("-cover") {
                 ZStack(alignment: .top) {
                     drawing
-                    hatLayer(canvas: canvas, suffix: "-cover")
+                    // Each look hides its OWN head (`--looks`): their tufts
+                    // differ, and Steady's let a taller one poke through.
+                    hatLayer(canvas: canvas, suffix: hasLayer(lookCover) ? lookCover : "-cover")
                         .blendMode(.destinationOut)
                 }
                 .compositingGroup()
@@ -125,7 +123,7 @@ struct OttoAuraFigure: View {
             .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
             .frame(width: size, height: size, alignment: .bottom)
             .animation(.spring(duration: 0.5, bounce: 0.2), value: stage)
-            .onAppear { setBob(); startRigBob() }
+            .onAppear { setBob() }
             .onChange(of: stage) { _, _ in setBob() }
             .accessibilityElement()
             .accessibilityLabel("Otto, \(Self.mood(stage))\(effectiveHatID != nil ? ", wearing a hat" : "")")
@@ -157,51 +155,38 @@ struct OttoAuraFigure: View {
         (15, 68, 249.5, 320, 568, 501),   // 13 Nirvana
     ]
 
-    /// A look's head on the 664 x 744 canvas. The rig stands every body 600
-    /// units tall on his base (332, 649) by scaling it there (see CLAUDE.md,
-    /// the aura rig), so the rig's head is the measured one scaled by that;
-    /// the stills are cut at the bodies' own size.
-    private static func head(look: Int, rig: Bool) -> (skull: CGFloat, cx: CGFloat, width: CGFloat) {
-        let b = bodies[min(max(look, 1), 13) - 1]
-        let k: CGFloat = rig ? 600 / (b.bottom - b.tuft) : 1
-        return (649 - k * (b.bottom - b.skull), 332 + k * (b.cx - b.imageW / 2), k * b.w)
-    }
-
-    /// The rig's own rise for a floating look (`Lift` in
-    /// `tools/otto_aura_rig_build.py`: nothing through Bright, 26 up at
-    /// Radiant, 40 at Nirvana, the in-betweens halfway).
-    private static func lift(look: Int) -> CGFloat {
-        switch look {
-        case ...9: return 0
-        case 10: return -13
-        case 11: return -26
-        case 12: return -33
-        default: return -40
+    /// A look's head on the 664 x 744 canvas. On the rig it is wherever the
+    /// rig has him this frame (`OttoAuraRig.pose`): the body image's place
+    /// inside `Bob`, scaled by `Bob`, raised by `Lift` and floated by `Bob`'s
+    /// y, all read out of the file. The stills are cut at the bodies' own
+    /// size with his base on the canvas's.
+    private static func head(look: Int, pose: OttoAuraRig.Pose?) -> (skull: CGFloat, cx: CGFloat, width: CGFloat) {
+        let i = min(max(look, 1), 13) - 1
+        let b = bodies[i]
+        guard let pose else {
+            return (649 - (b.bottom - b.skull), 332 + (b.cx - b.imageW / 2), b.w)
         }
+        let img = OttoAuraRig.body[i]
+        let k = CGFloat(pose.scale)
+        return (649 + CGFloat(pose.lift + pose.bob) + k * (CGFloat(img.y - img.h / 2) + b.skull),
+                332 + k * (CGFloat(img.x) - b.imageW / 2 + b.cx),
+                k * b.w)
     }
 
     /// A hat's box on a look, in canvas units: its box on Steady, where it was
     /// generated (`HatArt.placement`), moved and scaled with his head from
-    /// Steady's to this look's. Nil for a hat with no art.
-    static func hatBox(_ id: String, look: Int, rig: Bool) -> CGRect {
+    /// Steady's to this look's. `pose` is the rig's (nil for the stills).
+    static func hatBox(_ id: String, look: Int, pose: OttoAuraRig.Pose?) -> CGRect {
         let box = HatArt.placement[id] ?? CGRect(x: 172, y: -20, width: 318, height: 206)
         let from = HatArt.steadyHead
-        let to = head(look: look, rig: rig)
+        let to = head(look: look, pose: pose)
         let s = to.width / from.width
         return CGRect(x: to.cx + (box.minX - from.cx) * s,
-                      y: to.skull + (box.minY - from.skull) * s + (rig ? lift(look: look) : 0),
+                      y: to.skull + (box.minY - from.skull) * s,
                       width: box.width * s, height: box.height * s)
     }
 
-    /// The float the rig plays on top of `Lift` (the `Float` timeline bobs
-    /// `Bob` between 0 and -10 over 5 s). **An approximation**: the rig runs
-    /// it inside, and SwiftUI cannot read its value back, so the hat plays the
-    /// same oscillation on its own. Only from Bright up, where he floats.
-    /// Moving the hats into the rig itself removes the guess.
-    private func rigBobOffset(look: Int, unit: CGFloat) -> CGFloat {
-        guard aura.rig != nil, look >= 9 else { return 0 }
-        return rigBob ? -10 * unit : 0
-    }
+    private var lookCover: String { "-cover-\(look ?? stage.look)" }
 
     /// Whether the worn hat was cut with this layer.
     private func hasLayer(_ suffix: String) -> Bool {
@@ -209,19 +194,12 @@ struct OttoAuraFigure: View {
         return UIImage(named: "hat-\(id)\(suffix)") != nil
     }
 
-    /// One layer of the worn hat (`-back`, `-under`, `-over` or `-cover`), in the same box and
-    /// bob as the hat itself. Nothing when the hat has no such layer.
+    /// One layer of the worn hat (`-back`, `-under`, `-over` or `-cover`), in
+    /// the same box as the hat itself. Nothing when the hat has no such layer.
     @ViewBuilder
     private func hatLayer(canvas: CGFloat, suffix: String) -> some View {
         if let id = effectiveHatID, let image = UIImage(named: "hat-\(id)\(suffix)") {
-            let effectiveLook = look ?? stage.look
-            let unit = canvas / 744
-            let box = Self.hatBox(id, look: effectiveLook, rig: aura.rig != nil)
-            Image(uiImage: image).resizable()
-                .frame(width: box.width * unit, height: box.height * unit)
-                .position(x: box.midX * unit, y: box.midY * unit)
-                .offset(y: rigBobOffset(look: effectiveLook, unit: unit))
-                .allowsHitTesting(false)
+            placedHat(id: id, canvas: canvas) { Image(uiImage: image).resizable() }
         }
     }
 
@@ -230,29 +208,42 @@ struct OttoAuraFigure: View {
     @ViewBuilder
     private func hatOverlay(canvas: CGFloat) -> some View {
         if let id = effectiveHatID {
-            let effectiveLook = look ?? stage.look
-            let unit = canvas / 744
-            let box = Self.hatBox(id, look: effectiveLook, rig: aura.rig != nil)
-            Group {
+            placedHat(id: id, canvas: canvas) {
                 if let image = UIImage(named: "hat-\(id)-front") ?? UIImage(named: "hat-\(id)") {
                     Image(uiImage: image).resizable()
                 } else {
-                    HatArt(id: id, size: box.width * unit)
+                    HatArt(id: id, size: canvas / 744 * (HatArt.placement[id]?.width ?? 318))
                 }
             }
-            .frame(width: box.width * unit, height: box.height * unit)
-            .position(x: box.midX * unit, y: box.midY * unit)
-            .offset(y: rigBobOffset(look: effectiveLook, unit: unit))
-            .allowsHitTesting(false)
         }
     }
 
-    /// Runs for the figure's whole lifetime; `rigBobOffset` is the only reader
-    /// and it only ever consumes this above look 9, so the cost elsewhere is
-    /// one Bool quietly flipping every 2.5 s.
-    private func startRigBob() {
-        guard !reduceMotion else { return }
-        withAnimation(.easeInOut(duration: 2.5).repeatForever(autoreverses: true)) { rigBob = true }
+    /// One picture of the hat in its box. On the rig the box follows him
+    /// every frame (`OttoAuraRig.pose`: the float, and the lift and scale
+    /// fading between looks), never on an animation of its own, which is what
+    /// used to leave the hat bobbing out of step with him. The stills move as
+    /// one picture with their hat, so theirs is fixed.
+    @ViewBuilder
+    private func placedHat<Content: View>(id: String, canvas: CGFloat,
+                                          @ViewBuilder content: @escaping () -> Content) -> some View {
+        let look = look ?? stage.look
+        let unit = canvas / 744
+        if let rig = aura.rig {
+            TimelineView(.animation) { _ in
+                let box = Self.hatBox(id, look: look, pose: rig.pose())
+                content()
+                    .frame(width: box.width * unit, height: box.height * unit)
+                    .position(x: box.midX * unit, y: box.midY * unit)
+            }
+            .transaction { $0.animation = nil }
+            .allowsHitTesting(false)
+        } else {
+            let box = Self.hatBox(id, look: look, pose: nil)
+            content()
+                .frame(width: box.width * unit, height: box.height * unit)
+                .position(x: box.midX * unit, y: box.midY * unit)
+                .allowsHitTesting(false)
+        }
     }
 
     /// How much wider than his canvas the rig is drawn. The moth that visits
