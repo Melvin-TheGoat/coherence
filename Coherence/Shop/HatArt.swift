@@ -45,21 +45,23 @@ struct HatArt: View {
     /// forehead. `OttoAuraFigure` carries a box from Steady onto every other
     /// look by where that look's head is.
     ///
-    /// The horns are the one hat from the old sheet (Melvin liked them), so
-    /// their box is set by eye to seat the band on his skull.
+    /// Recut 2026-09-28 (Melvin: "white space, messed up cropping" under
+    /// every brim but the flower crown's): the tool now keeps only what looks
+    /// like the hat over his head, draws its own soft shadow under one clean
+    /// edge, and cuts the halo to its ring. The flower crown keeps its first
+    /// cut. The horns are gone.
     static let placement: [String: CGRect] = [
-        "beanie":      CGRect(x: 146.9, y: -28.9, width: 368.0, height: 275.8),
-        "sunhat":      CGRect(x: 83.6, y: 15.4, width: 490.4, height: 261.7),
-        "bucket":      CGRect(x: 119.5, y: 23.8, width: 426.4, height: 240.6),
-        "horns":       CGRect(x: 172, y: -70, width: 318, height: 206),
+        "beanie":      CGRect(x: 146.9, y: -28.9, width: 368.0, height: 263.2),
+        "sunhat":      CGRect(x: 83.6, y: 15.4, width: 490.4, height: 261.0),
+        "bucket":      CGRect(x: 119.5, y: 23.8, width: 426.4, height: 238.5),
         "flowercrown": CGRect(x: 124.4, y: 34.4, width: 404.6, height: 218.1),
-        "monkhat":     CGRect(x: 85.0, y: 17.5, width: 489.0, height: 238.5),
-        "leafcrown":   CGRect(x: 131.5, y: 33.0, width: 401.1, height: 218.1),
-        "wanderer":    CGRect(x: 82.6, y: 9.6, width: 497.3, height: 245.8),
-        "enso":        CGRect(x: 82.6, y: -2.4, width: 497.3, height: 255.0),
-        "wizardhat":   CGRect(x: 93.2, y: -49.0, width: 479.7, height: 322.8),
-        "goldcrown":   CGRect(x: 175.9, y: -38.4, width: 310.8, height: 180.8),
-        "halo":        CGRect(x: 211.9, y: -13.0, width: 238.1, height: 70.6),
+        "monkhat":     CGRect(x: 85.0, y: 17.5, width: 489.0, height: 237.1),
+        "leafcrown":   CGRect(x: 131.5, y: 52.0, width: 401.1, height: 169.6),
+        "wanderer":    CGRect(x: 82.6, y: 9.6, width: 497.3, height: 243.0),
+        "enso":        CGRect(x: 82.6, y: -2.4, width: 497.3, height: 252.2),
+        "wizardhat":   CGRect(x: 93.2, y: -49.0, width: 479.7, height: 320.0),
+        "goldcrown":   CGRect(x: 175.9, y: -38.4, width: 310.8, height: 177.3),
+        "halo":        CGRect(x: 211.9, y: -13.0, width: 238.1, height: 66.4),
     ]
 
     /// Steady's head in the same units, where every box above was measured

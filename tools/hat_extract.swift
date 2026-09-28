@@ -37,6 +37,8 @@ let trimTop = a.contains("--trim-top")
 let noFill = a.contains("--no-fill")
 /// A floating thing casts no shadow on him (the halo).
 let noShadow = a.contains("--no-shadow")
+/// A halo: keep the ring and nothing inside it (see the ring branch).
+let ring = a.contains("--ring")
 /// How close a colour must be to count as redrawn fur when trimming edges.
 /// Hats far from his colours (black, blue, green) can take a looser trim.
 var trimTol = 30.0
@@ -63,7 +65,7 @@ struct Bitmap {
     }
 }
 
-let render = Bitmap(a[1])
+var render = Bitmap(a[1])
 let otto = Bitmap(a[2])
 let W = render.w, H = render.h
 let cream = (252, 248, 240)
@@ -276,8 +278,8 @@ for start in 0..<(W * H) where mask[start] && label[start] == 0 {
     sizes.append(n)
 }
 let biggest = sizes.max() ?? 0
-let keep = Set(sizes.indices.filter { $0 > 0 && sizes[$0] >= max(400, biggest / 12) })
-for i in 0..<(W * H) where mask[i] && !keep.contains(label[i]) { mask[i] = false }
+let keepIDs = Set(sizes.indices.filter { $0 > 0 && sizes[$0] >= max(400, biggest / 12) })
+for i in 0..<(W * H) where mask[i] && !keepIDs.contains(label[i]) { mask[i] = false }
 
 // Fill small holes inside the hat (weave gaps the difference missed).
 var outside = [Bool](repeating: false, count: W * H)
@@ -297,36 +299,293 @@ for i in 0..<(W * H) where !noFill && !mask[i] && !outside[i] {
     if abs(r - cream.0) + abs(g - cream.1) + abs(b - cream.2) > 36 || grown[i] { mask[i] = true }
 }
 
-// What each hat pixel over his fur is (see furKind), then the edges trimmed:
-// up from the bottom of each column, redrawn face fur is dropped until the
-// first pixel that is really hat (the tan strip under every brim); and, for a
-// crown, down from the top likewise (his tuft poking out above it).
-var kind = [Kind?](repeating: nil, count: W * H)
-for i in 0..<(W * H) where mask[i] && grown[i] { kind[i] = furKind(i % W, i / W) }
-for x in 0..<W {
-    var y = min(H - 1, eyeY + Int(0.12 * Double(H)))
-    while y > 0 {
-        let i = y * W + x
-        if mask[i], grown[i], case .hat? = kind[i] {
-            if nearFur(x, y) { kind[i] = .fur } else { break }
-        }
-        y -= 1
+// MARK: - Keep only hat over his head (v2, 2026-09-28)
+//
+// v1 judged each pixel against the reference pixel at the SAME spot, and the
+// generator redraws his forehead under a brim (cream skin where the drawing
+// has brown fur, fur a few pixels over), so a ragged band of face survived
+// under every brim (Melvin: "white space, messed up cropping"). v2 asks a
+// different question: which does this colour look more like, HIS palette
+// (anywhere on his head, at any shading) or THIS hat's (sampled where only
+// hat can be: off his silhouette)? Then the lower edge is smoothed into one
+// curve and a soft contact shadow is drawn under it, instead of keeping the
+// render's own ragged shadowed fur.
+
+func q5(_ r: Int, _ g: Int, _ b: Int) -> Int { (r >> 3) << 10 | (g >> 3) << 5 | (b >> 3) }
+func unq(_ k: Int) -> (Double, Double, Double) {
+    (Double((k >> 10) & 31) * 8 + 4, Double((k >> 5) & 31) * 8 + 4, Double(k & 31) * 8 + 4)
+}
+// His palette: every opaque colour in the reference's upper body.
+var ottoBins = Set<Int>()
+for y in 0..<Int(Double(otto.h) * 0.6) { for x in 0..<otto.w {
+    let (r, g, b, al) = otto.at(x, y)
+    // Not his pupils or nostrils: no hat ever covers his eyes, and near
+    // black is exactly what a black hat is made of (the Ensō Hat).
+    if al > 240 && max(r, g, b) >= 60 { ottoBins.insert(q5(r, g, b)) }
+} }
+let ottoPal = ottoBins.map(unq)
+
+// This hat's palette: solid pixels off his silhouette, away from any edge.
+var hatCount: [Int: Int] = [:]
+for y in 1..<(H - 1) { for x in 1..<(W - 1) {
+    let i = y * W + x
+    guard mask[i], !grown[i], fg[i] > 0.95,
+          mask[i - 1], mask[i + 1], mask[i - W], mask[i + W] else { continue }
+    let (r, g, b, _) = render.at(x, y)
+    hatCount[q5(r, g, b), default: 0] += 1
+} }
+let hatPal = hatCount.filter { $0.value >= 3 }.map { unq($0.key) }
+print("palettes: otto \(ottoPal.count) colours, hat \(hatPal.count)")
+
+/// The nearest a palette comes to `c`, letting each palette colour darken
+/// or lighten within `lo...hi` (shade on a hat, shadow on his face).
+func nearest(_ c: (Double, Double, Double), _ pal: [(Double, Double, Double)],
+             _ lo: Double, _ hi: Double) -> Double {
+    var best = Double.infinity
+    for p in pal {
+        let pp = p.0 * p.0 + p.1 * p.1 + p.2 * p.2
+        let k = pp < 1 ? 1 : min(hi, max(lo, (c.0 * p.0 + c.1 * p.1 + c.2 * p.2) / pp))
+        let d = abs(c.0 - k * p.0) + abs(c.1 - k * p.1) + abs(c.2 - k * p.2)
+        if d < best { best = d }
     }
-    if trimTop {
-        var y = 0
-        while y < eyeY {
-            let i = y * W + x
-            if mask[i], case .hat? = kind[i] ?? .hat {
-                if nearFur(x, y) { kind[i] = .fur; if !grown[i] { mask[i] = false } } else { break }
+    return best
+}
+var debugAt: [(Int, Int)] = []
+if let i = a.firstIndex(of: "--debug"), i + 1 < a.count {
+    debugAt = a[i + 1].split(separator: ";").compactMap {
+        let v = $0.split(separator: ",").compactMap { Int($0) }
+        return v.count == 2 ? (v[0], v[1]) : nil
+    }
+}
+/// How dark his colours may be shaded and still count as him. 0.4 catches
+/// the deep shadow under a brim; a black hat needs 0.7, or its weave reads
+/// as his fur in shade (the Ensō Hat).
+var ottoFloor = 0.4
+if let i = a.firstIndex(of: "--otto-floor"), i + 1 < a.count { ottoFloor = Double(a[i + 1]) ?? 0.4 }
+/// The smallest separate piece kept. A crown whose render drew his tuft a
+/// little off his outline needs more (the Leaf Crown: 1500).
+var minPiece = 300
+if let i = a.firstIndex(of: "--min-piece"), i + 1 < a.count { minPiece = Int(a[i + 1]) ?? 300 }
+var bias = 1.0
+if let i = a.firstIndex(of: "--bias"), i + 1 < a.count { bias = Double(a[i + 1]) ?? 1 }
+
+/// Over his head, whether a pixel's colour (3 x 3 average) is nearer this
+/// hat's palette than his own.
+func looksLikeHat(_ xx: Int, _ yy: Int) -> Bool {
+    var c = (0.0, 0.0, 0.0)
+    for oy in -1...1 { for ox in -1...1 {
+        let (r, g, b, _) = render.at(min(max(xx + ox, 0), W - 1), min(max(yy + oy, 0), H - 1))
+        c.0 += Double(r) / 9; c.1 += Double(g) / 9; c.2 += Double(b) / 9
+    } }
+    let dO = nearest(c, ottoPal, ottoFloor, 1.08)
+    let dH = nearest(c, hatPal, 0.7, 1.2)
+    if debugAt.contains(where: { abs($0.0 - xx) < 1 && abs($0.1 - yy) < 1 }) {
+        print(String(format: "debug (%d,%d) c=(%.0f,%.0f,%.0f) dOtto=%.1f dHat=%.1f", xx, yy, c.0, c.1, c.2, dO, dH))
+    }
+    return dH < dO * bias
+}
+
+var keep = [Bool](repeating: false, count: W * H)
+if ring {
+    // A halo: the ring and nothing inside it. Seen from the front a ring is
+    // thicker at the bottom than the top, so no ellipse describes its hole.
+    // The render's hole is clean on the right (paper shows through) and
+    // filled with glow on the left, so each row's hole is read on the right
+    // and mirrored about the ring's centre. The drip under it goes by the
+    // ring's lower edge, fitted from columns well away from the middle.
+    var minX = W, maxX = 0, rowWidth = [Int](repeating: 0, count: H)
+    var rowMin = [Int](repeating: W, count: H), rowMax = [Int](repeating: -1, count: H)
+    for y in 0..<H { for x in 0..<W where mask[y * W + x] {
+        minX = min(minX, x); maxX = max(maxX, x)
+        rowMin[y] = min(rowMin[y], x); rowMax[y] = max(rowMax[y], x)
+    } }
+    for y in 0..<H where rowMax[y] >= 0 { rowWidth[y] = rowMax[y] - rowMin[y] }
+    let widest = rowWidth.max() ?? 0
+    let wideRows = (0..<H).filter { rowWidth[$0] >= widest - 2 }
+    let yc = Double(wideRows.reduce(0, +)) / Double(max(1, wideRows.count))
+    let cx = Double(minX + maxX) / 2, rx = Double(maxX - minX) / 2 + 0.5
+    var ryBs: [Double] = []
+    for x in minX...maxX {
+        let u = (Double(x) - cx) / rx
+        guard abs(u) > 0.4, abs(u) < 0.9 else { continue }
+        guard let low = (0..<H).last(where: { mask[$0 * W + x] }) else { continue }
+        ryBs.append((Double(low) - yc) / (1 - u * u).squareRoot())
+    }
+    ryBs.sort()
+    let ryB = ryBs.isEmpty ? 0 : ryBs[ryBs.count / 2]
+    print(String(format: "ring: centre (%.0f, %.0f), %.0f wide, lower radius %.0f", cx, yc, rx, ryB))
+    // The outer edge: top from the highest ring pixel, bottom from the fit.
+    let ryT = yc - Double((0..<H).first(where: { rowMax[$0] >= 0 }) ?? 0) + 0.5
+    func outerTop(_ x: Double) -> Double { let u = (x - cx) / rx; return yc - ryT * max(0, 1 - u * u).squareRoot() }
+    func outerBot(_ x: Double) -> Double { let u = (x - cx) / rx; return yc + ryB * max(0, 1 - u * u).squareRoot() }
+    // The hole, read three quarters across on the right, where it is clean:
+    // the band's thickness at the top, at the bottom, and at the far end.
+    let colX = Int(cx + 0.5 * rx)
+    var tT = 0, tB = 0, tR = 0
+    while Int(outerTop(Double(colX))) + tT < H, mask[(Int(outerTop(Double(colX))) + tT) * W + colX] { tT += 1 }
+    while Int(outerBot(Double(colX))) - tB > 0, mask[(Int(outerBot(Double(colX))) - tB) * W + colX] { tB += 1 }
+    while maxX - tR > Int(cx), mask[Int(yc) * W + maxX - tR] { tR += 1 }
+    let rxi = rx - Double(tR)
+    let topI = outerTop(Double(colX)) + Double(tT), botI = outerBot(Double(colX)) - Double(tB)
+    let ui = (Double(colX) - cx) / rxi
+    let yci = (topI + botI) / 2
+    let ryi = (botI - topI) / 2 / max(0.05, 1 - ui * ui).squareRoot()
+    print(String(format: "ring: band %d top, %d bottom, %d end; hole %.0f x %.0f at y %.0f", tT, tB, tR, rxi, ryi, yci))
+    for yy in 0..<H { for xx in 0..<W where mask[yy * W + xx] {
+        let x = Double(xx), y = Double(yy)
+        if abs(x - cx) <= rx && y > outerBot(x) + 2 { continue }
+        let ix = (x - cx) / rxi, iy = (y - yci) / ryi
+        if ix * ix + iy * iy < 1 { continue }
+        keep[yy * W + xx] = true
+    } }
+    // Where the ring's front passes his tuft the render mixed the two (a
+    // drip, a bite out of the band). A ring's front band looks the same all
+    // along it, so the middle of the band is rebuilt from the band just
+    // either side of the tuft, at the same depth into the band, blended
+    // across by position.
+    func innerBot(_ x: Double) -> Double {
+        let u = (x - cx) / rxi
+        return abs(u) < 1 ? yci + ryi * (1 - u * u).squareRoot() : yc
+    }
+    let span = 0.42 * rx
+    let xl = cx - span, xr = cx + span
+    let snapshot = render.px, fgSnap = fg
+    for xx in Int(xl.rounded(.up))...Int(xr.rounded(.down)) {
+        let x = Double(xx)
+        let top = innerBot(x), bot = outerBot(x) + 2
+        guard bot > top else { continue }
+        let w = (x - xl) / (xr - xl)
+        for yy in Int(top.rounded(.up))...Int(bot) where yy >= 0 && yy < H {
+            let t = (Double(yy) - top) / (bot - top)
+            func sample(_ sx: Double) -> (Double, Double, Double, Double) {
+                let st = innerBot(sx), sb = outerBot(sx) + 2
+                let fy = min(Double(H - 2), max(0, st + t * (sb - st)))
+                let y0 = Int(fy), f = fy - Double(y0)
+                let j0 = y0 * W + Int(sx.rounded()), j1 = j0 + W
+                func mix(_ c: Int) -> Double {
+                    Double(snapshot[j0 * 4 + c]) * (1 - f) + Double(snapshot[j1 * 4 + c]) * f
+                }
+                return (mix(0), mix(1), mix(2), Double(fgSnap[j0]) * (1 - f) + Double(fgSnap[j1]) * f)
             }
-            y += 1
+            let l = sample(xl), r = sample(xr)
+            let i = yy * W + xx
+            render.px[i * 4] = UInt8((l.0 * (1 - w) + r.0 * w).rounded())
+            render.px[i * 4 + 1] = UInt8((l.1 * (1 - w) + r.1 * w).rounded())
+            render.px[i * 4 + 2] = UInt8((l.2 * (1 - w) + r.2 * w).rounded())
+            fg[i] = Float(l.3 * (1 - w) + r.3 * w)
+            grown[i] = false
+            keep[i] = fg[i] > 0.02
+        }
+    }
+} else {
+    for yy in 0..<H { for xx in 0..<W where mask[yy * W + xx] {
+        let i = yy * W + xx
+        if !grown[i] { keep[i] = true; continue }
+        if looksLikeHat(xx, yy) { keep[i] = true }
+    } }
+}
+
+// Opening inside his silhouette takes off thin teeth of face the classifier
+// let through; then the big pieces only; then closing fills weave gaps, but
+// never past what the render actually drew.
+func openInside(_ m: [Bool], _ r: Int) -> [Bool] {
+    let o = grow(shrink(m, r), r)
+    return (0..<(W * H)).map { grown[$0] ? o[$0] && m[$0] : m[$0] }
+}
+if !ring {
+    keep = openInside(keep, 2)
+    // And hair-thin lines anywhere (a strand of his outline the render drew
+    // just off his silhouette): an opening of one takes lines two pixels
+    // wide and leaves every real edge where it was.
+    let opened = grow(shrink(keep, 1), 1)
+    for i in 0..<(W * H) where keep[i] && !opened[i] { keep[i] = false }
+}
+do {
+    var lab = [Int](repeating: 0, count: W * H)
+    var sz: [Int] = [0]
+    for st in 0..<(W * H) where keep[st] && lab[st] == 0 {
+        let id = sz.count
+        var stack = [st]; lab[st] = id; var n = 0
+        while let p = stack.popLast() {
+            n += 1
+            let x = p % W, y = p / W
+            for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+            where nx >= 0 && nx < W && ny >= 0 && ny < H {
+                let q = ny * W + nx
+                if keep[q] && lab[q] == 0 { lab[q] = id; stack.append(q) }
+            }
+        }
+        sz.append(n)
+    }
+    // Only specks go. Whatever the classifier kept over his head is hat
+    // coloured, and a seam of edge pixels along his outline can cut a
+    // cone's whole middle off from its brim, so a relative size test (v1's)
+    // threw real hat away.
+    let ok = Set(sz.indices.filter { $0 > 0 && sz[$0] >= minPiece })
+    for i in 0..<(W * H) where keep[i] && !ok.contains(lab[i]) { keep[i] = false }
+}
+if !ring {
+    let closedKeep = shrink(grow(keep, 5), 5)
+    for i in 0..<(W * H) where closedKeep[i] && mask[i] { keep[i] = true }
+    // Holes the hat encloses are hat (a pale star, a light patch of weave),
+    // as long as the render drew something there.
+    var out = [Bool](repeating: false, count: W * H)
+    var st: [Int] = []
+    for x in 0..<W { st.append(x); st.append((H - 1) * W + x) }
+    for y in 0..<H { st.append(y * W); st.append(y * W + W - 1) }
+    while let p = st.popLast() {
+        if out[p] || keep[p] { continue }
+        out[p] = true
+        let x = p % W, y = p / W
+        if x > 0 { st.append(p - 1) }; if x < W - 1 { st.append(p + 1) }
+        if y > 0 { st.append(p - W) }; if y < H - 1 { st.append(p + W) }
+    }
+    for i in 0..<(W * H) where !keep[i] && !out[i] && mask[i] { keep[i] = true }
+}
+
+// One clean lower edge over his head: in each column, the lowest pixel with
+// solid hat above it, then a running median across columns, and nothing
+// below that line survives.
+var edge = [Int](repeating: -1, count: W)
+if !ring {
+    for x in 0..<W {
+        var y = H - 1
+        while y >= 4 {
+            let i = y * W + x
+            if keep[i] && grown[i] && (1...4).allSatisfy({ keep[(y - $0) * W + x] }) { edge[x] = y; break }
+            y -= 1
+        }
+    }
+    var smooth = edge
+    for x in 0..<W where edge[x] >= 0 {
+        let vals = (max(0, x - 9)...min(W - 1, x + 9)).compactMap { edge[$0] >= 0 ? edge[$0] : nil }.sorted()
+        smooth[x] = vals[vals.count / 2]
+    }
+    edge = smooth
+    for yy in 0..<H { for xx in 0..<W where keep[yy * W + xx] && grown[yy * W + xx] {
+        if edge[xx] >= 0 && yy > edge[xx] { keep[yy * W + xx] = false }
+    } }
+}
+
+// The contact shadow: a soft dark band under that edge, on his head only.
+let shadowDepth = Int(0.014 * Double(H))
+var shade = [Double](repeating: 0, count: W * H)
+if !ring && !noShadow {
+    for x in 0..<W where edge[x] >= 0 {
+        for d in 1...shadowDepth {
+            let y = edge[x] + d
+            guard y < H else { break }
+            let i = y * W + x
+            guard inside[i], !keep[i] else { continue }
+            let t = 1 - Double(d) / Double(shadowDepth)
+            shade[i] = 0.34 * pow(t, 1.7)
         }
     }
 }
 
 // Bounding box.
 var minX = W, minY = H, maxX = 0, maxY = 0
-for y in 0..<H { for x in 0..<W where mask[y * W + x] {
+for y in 0..<H { for x in 0..<W where keep[y * W + x] || shade[y * W + x] > 0.01 {
     minX = min(minX, x); maxX = max(maxX, x); minY = min(minY, y); maxY = max(maxY, y)
 } }
 guard maxX > minX else { print("no hat found"); exit(1) }
@@ -334,37 +593,28 @@ minX = max(0, minX - 2); minY = max(0, minY - 2); maxX = min(W - 1, maxX + 2); m
 let cw = maxX - minX + 1, ch = maxY - minY + 1
 
 var out = [UInt8](repeating: 0, count: cw * ch * 4)
-for y in minY...maxY { for x in minX...maxX where mask[y * W + x] {
+for y in minY...maxY { for x in minX...maxX {
+    let i = y * W + x
+    let o = ((y - minY) * cw + (x - minX)) * 4
+    guard keep[i] else {
+        let al = shade[i]
+        guard al > 0.01 else { continue }
+        out[o] = UInt8(20 * al); out[o + 1] = UInt8(12 * al); out[o + 2] = UInt8(6 * al)
+        out[o + 3] = UInt8(al * 255)
+        continue
+    }
     let (r, g, b, _) = render.at(x, y)
     var alpha = 1.0
-    if !grown[y * W + x] {
-        // Over the paper: Vision's soft edge is the alpha.
-        alpha = Double(min(1, max(0, fg[y * W + x])))
-    }
-    // Feather the edge by one pixel.
-    var edge = false
+    if !grown[i] { alpha = Double(min(1, max(0, fg[i]))) }
+    var edgePx = false
     for (nx, ny) in [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
-    where nx >= 0 && nx < W && ny >= 0 && ny < H && !mask[ny * W + nx] { edge = true }
-    if edge { alpha *= 0.55 }
+    where nx >= 0 && nx < W && ny >= 0 && ny < H && !keep[ny * W + nx] { edgePx = true }
+    if edgePx { alpha *= 0.55 }
     func un(_ c: Int, _ bgc: Int) -> Int {
         guard alpha > 0.01, alpha < 0.999 else { return c }
         return max(0, min(255, Int((Double(c) - Double(bgc) * (1 - alpha)) / alpha)))
     }
-    var (ur, ug, ub) = grown[y * W + x] ? (r, g, b) : (un(r, cream.0), un(g, cream.1), un(b, cream.2))
-    if grown[y * W + x] {
-        // Over his fur: hat, the hat's shadow, or fur the generator only
-        // redrew. Fur is dropped (his own drawing is under it, whichever of
-        // the thirteen looks he is in); a shadow becomes see-through dark, so
-        // it shades a grey Otto as well as a golden one.
-        switch kind[y * W + x] ?? .hat {
-        case .fur: continue
-        case .shadow(let dark):
-            if noShadow { continue }
-            (ur, ug, ub) = (20, 12, 6); alpha = min(alpha, dark)
-        case .hat: break
-        }
-    }
-    let o = ((y - minY) * cw + (x - minX)) * 4
+    let (ur, ug, ub) = grown[i] ? (r, g, b) : (un(r, cream.0), un(g, cream.1), un(b, cream.2))
     out[o] = UInt8(Double(ur) * alpha); out[o + 1] = UInt8(Double(ug) * alpha)
     out[o + 2] = UInt8(Double(ub) * alpha); out[o + 3] = UInt8(alpha * 255)
 } }
