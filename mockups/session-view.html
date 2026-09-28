@@ -1,0 +1,252 @@
+<!doctype html><html><head><meta charset="utf-8"><title>808 · A session, and this week</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{
+  --grass:#9CBC85; --card:#F0E9DC; --ink:#413024; --soft:#877160;
+  --amber:#F7B143; --amberSoft:#FBE3BE; --amberText:#8E6116; --sage:#3E8175;
+  --blushText:#A1502E; --trace:#E3D6C3; --hair:#E2D6C4; --paper:#FEF9F2;
+  --sky1:#A9CBE0; --sky2:#DCE9EE; --skyDeep:#3F7FA8; --green:#5DAF4E;
+}
+*{box-sizing:border-box}
+body{margin:0;background:#EFE5D8;color:var(--ink);padding:32px 26px 90px;
+ font-family:ui-rounded,"SF Pro Rounded",-apple-system,system-ui,sans-serif}
+h1{font-size:25px;margin:0 0 7px;font-weight:800}
+h2{font-size:17px;margin:46px 0 4px;font-weight:800}
+.lede{color:var(--soft);font-size:14.5px;max-width:940px;line-height:1.62;margin:0}
+.lede b{color:var(--ink)}
+.row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-top:22px}
+.col{width:300px}
+.tag{font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--soft);padding-bottom:9px}
+.tag b{color:var(--ink)}
+.note{color:var(--soft);font-size:13.2px;line-height:1.6;margin-top:12px}
+.note b{color:var(--ink)}
+.pick{border-left:3px solid var(--sage);background:#fff;border-radius:0 14px 14px 0;padding:14px 18px;
+ max-width:940px;margin-top:16px;font-size:13.6px;line-height:1.62;color:var(--soft)}
+.pick b{color:var(--sage)}
+
+/* phone */
+.p{width:300px;height:620px;border-radius:34px;overflow:hidden;position:relative;flex:none;
+ background:var(--grass);box-shadow:0 12px 34px rgba(80,55,30,.16)}
+.scroll{position:absolute;inset:0;overflow:hidden}
+.band{position:relative;height:150px;background:linear-gradient(var(--sky1),var(--sky2) 70%,#CFE0C4);overflow:hidden}
+.band .hill{position:absolute;left:-10%;right:-10%;bottom:0;height:52px;border-radius:50% 50% 0 0;background:#8FB07D}
+.band .hill.b{bottom:18px;height:46px;background:#A7BFCB;left:-30%;right:30%}
+.band .hill.c{bottom:14px;height:40px;background:#B4C8D2;left:35%;right:-25%}
+.band .sun{position:absolute;width:30px;height:30px;border-radius:50%;background:#FBE7B8;left:40px;top:62px}
+.band .fade{position:absolute;left:0;right:0;bottom:0;height:34px;background:linear-gradient(rgba(156,188,133,0),var(--grass))}
+.top{position:absolute;top:44px;left:14px;right:14px;display:flex;justify-content:space-between;align-items:center;z-index:3}
+.pill{background:rgba(254,249,242,.94);border-radius:99px;padding:6px 12px;font-size:12px;font-weight:800;
+ box-shadow:0 2px 6px rgba(0,0,0,.1);display:inline-flex;gap:6px;align-items:center}
+.circle{width:30px;height:30px;border-radius:50%;background:rgba(254,249,242,.94);display:flex;align-items:center;
+ justify-content:center;font-size:13px;font-weight:900;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.card{background:var(--card);border-radius:20px;box-shadow:0 2px 8px rgba(40,25,15,.10);overflow:hidden}
+.wrap{padding:0 12px}
+
+/* post-style header */
+.who{display:flex;align-items:center;gap:10px;padding:14px 14px 0}
+.av{width:38px;height:38px;border-radius:50%;background:#D8CFC4;flex:none;position:relative;overflow:hidden}
+.av:before{content:"";position:absolute;left:50%;top:8px;width:14px;height:14px;border-radius:50%;background:#fff;transform:translateX(-50%)}
+.av:after{content:"";position:absolute;left:50%;bottom:-8px;width:28px;height:20px;border-radius:50% 50% 0 0;background:#fff;transform:translateX(-50%)}
+.who .n{font-size:13.5px;font-weight:800}
+.who .d{font-size:11px;color:var(--soft);margin-top:1px}
+.ttl{font-size:19px;font-weight:800;padding:12px 14px 0;line-height:1.2}
+.desc{font-size:12.5px;line-height:1.5;padding:6px 14px 0;color:var(--ink)}
+.stats{display:flex;padding:12px 14px 13px}
+.stats div{flex:1}
+.stats .l{font-size:10px;color:var(--soft);font-weight:700}
+.stats .v{font-size:16px;font-weight:800;margin-top:1px}
+.stats .v.a{color:var(--amberText)}
+.media{margin:0 14px 12px;border-radius:14px;height:236px;position:relative;overflow:hidden;
+ background:linear-gradient(160deg,#9DB9CC 0%,#C9B9A4 55%,#8E7B66 100%)}
+.media .figure{position:absolute;left:50%;bottom:0;width:120px;height:150px;transform:translateX(-50%);
+ border-radius:60px 60px 10px 10px;background:linear-gradient(#6F5A48,#4B3B2F)}
+.media .figure:before{content:"";position:absolute;left:50%;top:-50px;width:62px;height:62px;border-radius:50%;
+ background:#C9A585;transform:translateX(-50%)}
+.dots{position:absolute;bottom:9px;left:0;right:0;display:flex;justify-content:center;gap:5px}
+.dots i{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.55)}
+.dots i.on{background:#fff}
+.count{position:absolute;top:9px;right:9px;background:rgba(0,0,0,.35);color:#fff;font-size:10.5px;font-weight:800;
+ border-radius:99px;padding:3px 8px}
+.play{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:46px;height:46px;border-radius:50%;
+ background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;font-size:17px;color:var(--ink)}
+.thumbs{display:flex;gap:6px;padding:0 14px 12px}
+.thumbs span{width:44px;height:54px;border-radius:9px;background:linear-gradient(160deg,#9DB9CC,#8E7B66);position:relative}
+.thumbs span.on{box-shadow:0 0 0 2px var(--skyDeep)}
+.thumbs span.v:after{content:"▶";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff}
+.sect{margin-top:10px;padding:12px 14px}
+.sect .h{font-size:12.5px;font-weight:800;margin-bottom:6px}
+.sect .t{font-size:12.5px;line-height:1.5}
+.sect .t.soft{color:var(--soft)}
+.lock{font-size:10px;color:var(--soft);font-weight:700;margin-left:4px}
+.kv{display:flex;justify-content:space-between;font-size:12.5px;padding:9px 0;border-top:1px solid var(--hair)}
+.kv:first-of-type{border-top:0;padding-top:2px}
+.kv .k{color:var(--soft)}
+.kv .v{font-weight:800}
+.meas{display:flex;align-items:center;gap:10px}
+.ring{width:40px;height:40px;border-radius:50%;background:conic-gradient(var(--amber) 0 72%,var(--trace) 0);
+ display:flex;align-items:center;justify-content:center;flex:none}
+.ring span{width:30px;height:30px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;
+ font-size:11.5px;font-weight:900}
+.meas .t{flex:1}
+.chev{color:var(--soft);font-weight:800}
+.hero{position:relative;height:330px;background:linear-gradient(160deg,#9DB9CC 0%,#C9B9A4 55%,#8E7B66 100%);overflow:hidden}
+.hero .figure{position:absolute;left:50%;bottom:0;width:150px;height:190px;transform:translateX(-50%);
+ border-radius:75px 75px 12px 12px;background:linear-gradient(#6F5A48,#4B3B2F)}
+.hero .figure:before{content:"";position:absolute;left:50%;top:-64px;width:78px;height:78px;border-radius:50%;background:#C9A585;transform:translateX(-50%)}
+.hero .shade{position:absolute;left:0;right:0;bottom:0;height:130px;background:linear-gradient(rgba(0,0,0,0),rgba(30,20,10,.62))}
+.hero .over{position:absolute;left:16px;right:16px;bottom:16px;color:#fff}
+.hero .over .big{font-size:40px;font-weight:900;line-height:1}
+.hero .over .big i{font-style:normal;font-size:16px;font-weight:800;margin-left:3px}
+.hero .over .tt{font-size:17px;font-weight:800;margin-top:6px}
+.hero .over .dd{font-size:11px;opacity:.85;margin-top:2px}
+.lift{margin-top:-16px;position:relative}
+
+/* week module options */
+.home{width:300px;border-radius:26px;background:var(--grass);padding:14px 12px;box-shadow:0 12px 34px rgba(80,55,30,.16)}
+.wcard{background:var(--card);border-radius:20px;padding:14px 14px 13px;box-shadow:0 2px 8px rgba(40,25,15,.10)}
+.whead{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.whead .h{font-size:16px;font-weight:800}
+.whead .s{font-size:11.5px;color:var(--soft);font-weight:700}
+.whead .s b{color:var(--amberText)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.days .dl{font-size:10px;font-weight:800;color:var(--soft);margin-top:6px}
+.days .dl.today{color:var(--ink)}
+</style></head><body>
+
+<h1>A session, opened · and what "This week" could be</h1>
+<p class="lede">Two things for review before any Swift. <b>First</b>, the screen a saved session opens on
+from Home's Recent or from Profile: today it opens the edit page. It should open a page that
+<b>shows</b> the session, the way a Friends post used to, but with everything you kept (all the
+photos and videos, how it felt, what you did, your notes, and the measurements if a Watch was on),
+with Edit one tap away. <b>Second</b>, options for the "This week" strip on Home, from the research
+on what other apps put there.</p>
+
+<h2>1 · The session, opened</h2>
+<div class="row">
+
+  <div class="col">
+    <div class="tag"><b>A</b> · the post, with everything</div>
+    <div class="p"><div class="scroll">
+      <div class="band"><div class="sun"></div><div class="hill b"></div><div class="hill c"></div><div class="hill"></div><div class="fade"></div></div>
+      <div class="top"><span class="circle">✕</span><span style="display:flex;gap:6px"><span class="pill">✎ Edit</span><span class="circle">⋯</span></span></div>
+      <div class="wrap" style="margin-top:-64px;position:relative">
+        <div class="card">
+          <div class="who"><div class="av"></div><div><div class="n">Melvin</div><div class="d">Today at 7:42 AM · Rain</div></div></div>
+          <div class="ttl">Morning sit</div>
+          <div class="stats">
+            <div><div class="l">Time</div><div class="v a">18m</div></div>
+            <div><div class="l">Felt</div><div class="v">8/10</div></div>
+            <div><div class="l">Day streak</div><div class="v">5</div></div>
+          </div>
+          <div class="media"><div class="figure"></div><span class="count">1 of 3</span>
+            <div class="dots"><i class="on"></i><i></i><i></i></div></div>
+        </div>
+        <div class="card sect">
+          <div class="kv"><span class="k">What you did</span><span class="v">Breath counting</span></div>
+          <div class="kv"><span class="k">Sound</span><span class="v">Rain</span></div>
+        </div>
+        <div class="card sect"><div class="h">Notes <span class="lock">Only you</span></div>
+          <div class="t">Noisy start, settled after the first few minutes.</div></div>
+      </div>
+    </div></div>
+    <div class="note"><b>A feed post, turned inward.</b> The card you'd have seen in Friends: who, when,
+    the sound, the title, the numbers, then the pictures, swiped across (1 of 3, a video plays in
+    place). Under it, what you did and your notes. <b>Edit</b> top right opens today's page; <b>⋯</b>
+    holds Delete. Measurements, if a Watch was on, would be one more card: see C.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>B</b> · the picture first</div>
+    <div class="p"><div class="scroll">
+      <div class="hero"><div class="figure"></div><div class="shade"></div>
+        <div class="over"><div class="big">18<i>min</i></div><div class="tt">Morning sit</div><div class="dd">Today at 7:42 AM · Rain</div></div>
+        <div class="dots" style="bottom:auto;top:84px"><i class="on"></i><i></i><i></i></div>
+      </div>
+      <div class="top"><span class="circle">✕</span><span style="display:flex;gap:6px"><span class="pill">✎ Edit</span><span class="circle">⋯</span></span></div>
+      <div class="wrap lift">
+        <div class="card">
+          <div class="stats" style="padding-top:13px">
+            <div><div class="l">Felt</div><div class="v">8/10</div></div>
+            <div><div class="l">Day streak</div><div class="v">5</div></div>
+            <div><div class="l">What you did</div><div class="v" style="font-size:13px;margin-top:3px">Breath counting</div></div>
+          </div>
+        </div>
+        <div class="card sect"><div class="h">Notes <span class="lock">Only you</span></div>
+          <div class="t">Noisy start, settled after the first few minutes.</div></div>
+      </div>
+    </div></div>
+    <div class="note"><b>The picture is the page.</b> The first photo or video fills the top, the
+    length sits on it big, and everything else is under it. Strongest when there IS a picture; with
+    none, the top falls back to the valley band with the length on the sky, like the session page
+    you edit now.</div>
+  </div>
+
+  <div class="col">
+    <div class="tag"><b>C</b> · A, with a Watch session's measurements</div>
+    <div class="p"><div class="scroll">
+      <div class="band"><div class="sun"></div><div class="hill b"></div><div class="hill c"></div><div class="hill"></div><div class="fade"></div></div>
+      <div class="top"><span class="circle">✕</span><span style="display:flex;gap:6px"><span class="pill">✎ Edit</span><span class="circle">⋯</span></span></div>
+      <div class="wrap" style="margin-top:-64px;position:relative">
+        <div class="card">
+          <div class="who"><div class="av"></div><div><div class="n">Melvin</div><div class="d">Yesterday at 9:10 PM · Silence</div></div></div>
+          <div class="ttl">Evening sit</div>
+          <div class="stats">
+            <div><div class="l">Time</div><div class="v a">22m</div></div>
+            <div><div class="l">Felt</div><div class="v">7/10</div></div>
+            <div><div class="l">Day streak</div><div class="v">4</div></div>
+          </div>
+          <div class="thumbs"><span class="on"></span><span class="v"></span></div>
+        </div>
+        <div class="card sect"><div class="meas"><div class="ring"><span>72</span></div>
+          <div class="t"><div class="h" style="margin:0">Measured on your Watch</div><div class="t soft" style="font-size:11.5px">Heart settled 9 beats · still 88%</div></div>
+          <span class="chev">›</span></div></div>
+        <div class="card sect"><div class="h">Notes <span class="lock">Only you</span></div>
+          <div class="t">Sat after a long day. Took a while.</div></div>
+      </div>
+    </div></div>
+    <div class="note"><b>What a Watch adds.</b> The score ring and one line from the verdict, opening
+    the full measurements screen. With no Watch this card is simply not there, never an empty ring.
+    Pictures here shown small (a tap opens them full screen) to show that option too.</div>
+  </div>
+
+</div>
+<div class="pick"><b>My pick: A.</b> It is the shape you asked for (the feed post, with every detail),
+it works the same whether or not there is a picture, and a Watch session only adds a card. B looks
+great with a photo and weaker without one, which is most sessions today.</div>
+
+
+<h2>2 · "This week" on Home</h2>
+<p class="lede">What the research found (sources in the chat): most apps show a week as <b>one mark
+per day</b> (Duolingo's checkmarks, which is what we have), a <b>weekly ring</b> (Calm), <b>bars of
+minutes</b> (Apple Health's Mindful Minutes, Apple Fitness) or a <b>plain count</b> (Strava's
+Weekly Snapshot). Only a stack per day shows <b>how many times</b> you sat each day. Every option
+here is the same rolling seven days ending today, sample week: 9 sessions, 101 minutes, 6 of 7
+days, Tuesday the forgiven rest day. Nothing compares against last week: Strava users call that
+guilt.</p>
+<div class="row">
+  <div class="col"><div class="tag"><b>A</b> · a cairn a day</div>
+    <div class="home"><div class="wcard"><div class="whead"><span class="h">This week</span><span class="s"><b>9</b> sessions · 101 min</span></div><svg viewBox="0 0 266 96" width="266" height="96"><line x1="5" y1="78" x2="33" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><ellipse cx="19" cy="72.75" rx="12.8" ry="4.75" fill="#B8A48E"/><ellipse cx="17" cy="71.25" rx="4.4" ry="1.4" fill="#fff" opacity=".35"/><text x="19" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">S</text><line x1="43" y1="78" x2="71" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><ellipse cx="57" cy="72.75" rx="12.25" ry="4.75" fill="#B8A48E"/><ellipse cx="55" cy="71.25" rx="4.125" ry="1.4" fill="#fff" opacity=".35"/><ellipse cx="57" cy="63.25" rx="12.625" ry="4.75" fill="#A89480"/><ellipse cx="55" cy="61.75" rx="4.3125" ry="1.4" fill="#fff" opacity=".35"/><text x="57" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">M</text><line x1="81" y1="78" x2="109" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><path d="M90 72 q5 -12 11 -4 q-6 1 -11 4z" fill="#8FB07D"/><text x="95" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">T</text><line x1="119" y1="78" x2="147" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><ellipse cx="133" cy="72.75" rx="15.0" ry="4.75" fill="#B8A48E"/><ellipse cx="131" cy="71.25" rx="5.5" ry="1.4" fill="#fff" opacity=".35"/><text x="133" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">W</text><line x1="157" y1="78" x2="185" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><ellipse cx="171" cy="72.75" rx="10.875" ry="4.75" fill="#B8A48E"/><ellipse cx="169" cy="71.25" rx="3.4375" ry="1.4" fill="#fff" opacity=".35"/><ellipse cx="171" cy="63.25" rx="11.25" ry="4.75" fill="#A89480"/><ellipse cx="169" cy="61.75" rx="3.625" ry="1.4" fill="#fff" opacity=".35"/><ellipse cx="171" cy="53.75" rx="10.8" ry="4.75" fill="#C4B39F"/><ellipse cx="169" cy="52.25" rx="3.4000000000000004" ry="1.4" fill="#fff" opacity=".35"/><text x="171" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">T</text><line x1="195" y1="78" x2="223" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><ellipse cx="209" cy="72.75" rx="11.975" ry="4.75" fill="#B8A48E"/><ellipse cx="207" cy="71.25" rx="3.9875" ry="1.4" fill="#fff" opacity=".35"/><text x="209" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">F</text><line x1="233" y1="78" x2="261" y2="78" stroke="#D9CBB6" stroke-width="2" stroke-linecap="round"/><ellipse cx="247" cy="72.75" rx="11.7" ry="4.75" fill="#B8A48E"/><ellipse cx="245" cy="71.25" rx="3.85" ry="1.4" fill="#fff" opacity=".35"/><text x="247" y="93" text-anchor="middle" font-size="10" font-weight="900" fill="#413024" font-family="ui-rounded,-apple-system">S</text></svg></div></div>
+    <div class="note"><b>One stone per session</b>, stacked; a longer session is a wider stone. Three
+    sits make a small cairn, an empty day is bare ground, the rest day is a leaf. Counts at a glance,
+    on theme (the cairn was the first streak icon idea), and it reads as building, never as a score.</div></div>
+  <div class="col"><div class="tag"><b>B</b> · minutes, one block per session</div>
+    <div class="home"><div class="wcard"><div class="whead"><span class="h">This week</span><span class="s"><b>9</b> sessions · 101 min</span></div><svg viewBox="0 0 266 96" width="266" height="96"><rect x="10" y="54.0" width="18" height="22.0" rx="4" fill="#F7B143" opacity="0.95"/><text x="19" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">S</text><rect x="48" y="58.0" width="18" height="18.0" rx="4" fill="#F7B143" opacity="0.95"/><rect x="48" y="28.0" width="18" height="28.0" rx="4" fill="#F7B143" opacity="0.77"/><text x="57" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">M</text><rect x="86" y="75" width="18" height="3" rx="1.5" fill="#E3D6C3"/><text x="95" y="70" text-anchor="middle" font-size="9" fill="#877160" font-family="ui-rounded,-apple-system">rest</text><text x="95" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">T</text><rect x="124" y="38.0" width="18" height="38.0" rx="4" fill="#F7B143" opacity="0.95"/><text x="133" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">W</text><rect x="162" y="68.0" width="18" height="8.0" rx="4" fill="#F7B143" opacity="0.95"/><rect x="162" y="48.0" width="18" height="18.0" rx="4" fill="#F7B143" opacity="0.77"/><rect x="162" y="24.0" width="18" height="22.0" rx="4" fill="#F7B143" opacity="0.59"/><text x="171" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">T</text><rect x="200" y="60.0" width="18" height="16.0" rx="4" fill="#F7B143" opacity="0.95"/><text x="209" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">F</text><rect x="238" y="62.0" width="18" height="14.0" rx="4" fill="#F7B143" opacity="0.95"/><text x="247" y="93" text-anchor="middle" font-size="10" font-weight="900" fill="#413024" font-family="ui-rounded,-apple-system">S</text></svg></div></div>
+    <div class="note"><b>Apple Health's bars, split.</b> Height is minutes, and each session is its
+    own block, so you see both how long and how many. The most exact, and the most like a chart.</div></div>
+  <div class="col"><div class="tag"><b>C</b> · a garden</div>
+    <div class="home"><div class="wcard"><div class="whead"><span class="h">This week</span><span class="s"><b>9</b> sessions · 6 of 7 days</span></div><svg viewBox="0 0 266 96" width="266" height="96"><ellipse cx="19" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M19 74 C18 78,20 68,19 58" stroke="#6E9B5A" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M19 68 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><text x="19" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">S</text><ellipse cx="57" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M57 74 C56 66,58 56,57 46" stroke="#6E9B5A" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M57 68 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><path d="M57 56 q9 -7 14 -2 q-7 6 -14 2z" fill="#7FB068"/><text x="57" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">M</text><ellipse cx="95" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M90 72 q5 -12 11 -4 q-6 1 -11 4z" fill="#8FB07D"/><text x="95" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">T</text><ellipse cx="133" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M133 74 C132 78,134 68,133 58" stroke="#6E9B5A" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M133 68 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><text x="133" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">W</text><ellipse cx="171" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M171 74 C170 54,172 44,171 34" stroke="#6E9B5A" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M171 68 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><path d="M171 56 q9 -7 14 -2 q-7 6 -14 2z" fill="#7FB068"/><path d="M171 44 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><circle cx="171" cy="34" r="6" fill="#F4C9C0"/><circle cx="171" cy="34" r="2.6" fill="#E08E57"/><text x="171" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">T</text><ellipse cx="209" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M209 74 C208 78,210 68,209 58" stroke="#6E9B5A" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M209 68 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><text x="209" y="93" text-anchor="middle" font-size="10" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">F</text><ellipse cx="247" cy="76" rx="13" ry="3.5" fill="#C9B39A"/><path d="M247 74 C246 78,248 68,247 58" stroke="#6E9B5A" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M247 68 q-9 -7 -14 -2 q7 6 14 2z" fill="#7FB068"/><text x="247" y="93" text-anchor="middle" font-size="10" font-weight="900" fill="#413024" font-family="ui-rounded,-apple-system">S</text></svg></div></div>
+    <div class="note"><b>Each day is a plant that grows a leaf per session</b> and flowers at three.
+    Uses the clay sprout and flower you already made. Softest of the four; counts past three are
+    harder to read.</div></div>
+  <div class="col"><div class="tag"><b>D</b> · Calm's ring</div>
+    <div class="home"><div class="wcard"><div class="whead"><span class="h">This week</span><span class="s">101 min · 6 of 7 days</span></div><div style="display:flex;justify-content:center"><svg viewBox="0 0 96 96" width="96" height="96"><path d="M50.0 10.1 A38 38 0 0 1 76.4 22.8" stroke="#8FB07D" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M78.9 25.9 A38 38 0 0 1 85.4 54.5" stroke="#8FB07D" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M84.6 58.4 A38 38 0 0 1 66.3 81.3" stroke="#D8E3CC" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M62.7 83.1 A38 38 0 0 1 33.3 83.1" stroke="#8FB07D" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M29.7 81.3 A38 38 0 0 1 11.4 58.4" stroke="#8FB07D" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M10.6 54.5 A38 38 0 0 1 17.1 25.9" stroke="#8FB07D" stroke-width="9" fill="none" stroke-linecap="round"/><path d="M19.6 22.8 A38 38 0 0 1 46.0 10.1" stroke="#8FB07D" stroke-width="9" fill="none" stroke-linecap="round"/><text x="48" y="50" text-anchor="middle" font-size="24" font-weight="900" fill="#413024" font-family="ui-rounded,-apple-system">9</text><text x="48" y="63" text-anchor="middle" font-size="9" font-weight="800" fill="#877160" font-family="ui-rounded,-apple-system">sessions</text></svg></div></div></div>
+    <div class="note"><b>Seven segments, one per day you sat</b>, the week's sessions in the middle.
+    Clear total, but it no longer says which days, and it is one more ring on a Home that already
+    has Otto's glow bar.</div></div>
+</div>
+<div class="pick"><b>My pick: A, the cairns.</b> It answers "how many times" per day, which was the ask,
+without turning Home into a chart, and it is ours (stones, a quiet valley) rather than Apple's bars
+or Calm's ring. The header line keeps the plain totals (sessions and minutes), so nothing is lost.
+If you'd rather it be exact about minutes, B.</div>
+
+</body></html>
