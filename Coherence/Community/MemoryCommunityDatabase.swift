@@ -167,6 +167,10 @@ enum DemoCommunity {
         try? await melvin.claimUsername("melvin", displayName: "Melvin")
         try? await melvin.markFirstSession(at: Date().addingTimeInterval(-86_400 * 40))
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
+        // How often Melvin meditates, so the friends list and his page have
+        // something real to show (Melvin, 2026-09-27: practice stats).
+        try? await melvin.updatePracticeStats(.init(sessions7d: 4, minutes7d: 62, currentStreak: 9,
+                                                     totalSessions: 41, lastSessionAt: Date().addingTimeInterval(-3_600)))
         // One photo (the ordinary case).
         let melvinPost = try? await melvin.post(.init(minutes: 14, streak: 9, technique: "Slow breathing",
                                                        caption: "Cold enough to see my breath.",
@@ -188,10 +192,13 @@ enum DemoCommunity {
         let jordan = CommunityStore(database: db)
         try? await jordan.claimUsername("jordan.k", displayName: "Jordan")
         try? await jordan.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
+        // Jordan asked but has never sat: the "No sessions yet" case.
 
         db.user = "_demo_lena"
         let lena = CommunityStore(database: db)
         try? await lena.claimUsername("lena", displayName: "Lena")
+        try? await lena.updatePracticeStats(.init(sessions7d: 0, minutes7d: 0, currentStreak: 0,
+                                                   totalSessions: 15, lastSessionAt: Date().addingTimeInterval(-86_400 * 4)))
 
         // Sam: I asked, Sam accepted, Sam sat. The reward case.
         db.user = "_demo_sam"
@@ -203,6 +210,8 @@ enum DemoCommunity {
         db.user = "_demo_sam"
         try? await sam.accept(CommunityNames.profile(user: "_demo_me"))
         try? await sam.markFirstSession(at: Date().addingTimeInterval(1))
+        try? await sam.updatePracticeStats(.init(sessions7d: 1, minutes7d: 8, currentStreak: 1,
+                                                  totalSessions: 2, lastSessionAt: Date().addingTimeInterval(-7_200)))
         // A phone sit: no media, so the feed reviews "a post with no media
         // shows no strip".
         _ = try? await sam.post(.init(minutes: 8, streak: 1, technique: "Silence",

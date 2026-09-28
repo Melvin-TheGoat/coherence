@@ -137,6 +137,52 @@ final class CommunityDeletionTests: XCTestCase {
         XCTAssertNotNil(db.records[filedAgainstAziz.id], "a report filed against Aziz must survive too — moderation keeps it")
     }
 
+    // MARK: Posting removed (2026-09-27) — the one-time cleanup
+
+    /// `CommunityStore.deleteMyPosts` (reused by the one-time cleanup that
+    /// took down every post the day posting was removed) removes only my own
+    /// posts, and nothing else Friends knows about me.
+    func test_deleteMyPostsRemovesOnlyMyPostsAndNothingElse() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        try await aziz.sendRequest(to: melvinID)
+        try await melvin.accept(azizID)
+
+        let myPost = try await aziz.post(draft())
+        let theirPost = try await melvin.post(draft())
+        try await aziz.react(to: theirPost.id)
+
+        try await aziz.deleteMyPosts()
+
+        XCTAssertNil(db.records[myPost.id], "my post is gone")
+        XCTAssertNotNil(db.records[theirPost.id], "my friend's post survives")
+        XCTAssertNotNil(db.records[azizID], "my profile survives")
+        XCTAssertNotNil(db.records[CommunityNames.edge(from: azizID, to: melvinID)], "the friendship survives")
+        let reactors = try await melvin.reactors(to: theirPost.id)
+        XCTAssertEqual(reactors, [azizID], "my reaction on their post survives — only posts I authored are removed")
+    }
+
+    /// `CommunityModel.clearMyPostsIfNeeded` runs once, retries after a
+    /// failure, and needs no claimed username (only an iCloud identity).
+    /// Same pending-flag shape as `AccountDeletionPendingFlagTests` below.
+    func test_clearMyPostsIfNeededRunsOnceAndNeedsNoProfile() async throws {
+        UserDefaults.standard.removeObject(forKey: CommunityModel.postsClearedKey)
+        defer { UserDefaults.standard.removeObject(forKey: CommunityModel.postsClearedKey) }
+
+        // No username claimed at all: `me()` only needs an iCloud identity.
+        let post = try await aziz.post(draft())
+        let model = await CommunityModel(store: aziz)
+        await model.clearMyPostsIfNeeded()
+
+        XCTAssertNil(db.records[post.id], "the never-claimed person's own post is still theirs to clear")
+        XCTAssertTrue(UserDefaults.standard.bool(forKey: CommunityModel.postsClearedKey))
+
+        // A second call, with a fresh post, must be a no-op: the flag is set.
+        let secondPost = try await aziz.post(draft())
+        await model.clearMyPostsIfNeeded()
+        XCTAssertNotNil(db.records[secondPost.id], "once cleared, it never runs again")
+    }
+
     // MARK: Best effort
 
     func test_everyCategoryIsAttemptedEvenWhenOneFailsAndTheFailureSurfaces() async throws {

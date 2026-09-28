@@ -17,17 +17,6 @@ struct CoherenceApp: App {
         // delivered. Installed on every build, not only Block's: it is also
         // what plays the timed session's end chime with 808 on screen.
         BlockNotifications.shared.install()
-        if FeatureFlags.block {
-            // Every saved session, phone or Watch, even with 808 in the
-            // background: Block opens the rest of the windows it counts for.
-            SessionCoordinator.onSessionSaved = { startedAt, durationSec in
-                Task { @MainActor in
-                    BlockController.shared.recordSession(
-                        endingAt: startedAt.addingTimeInterval(TimeInterval(durationSec)),
-                        durationSec: durationSec)
-                }
-            }
-        }
         // One-time rescue of pre-split health stats — the extract MUST run
         // before the split container first opens the main store.
         let rescued = Persistence.rescueOrphanedHealthStatsIfNeeded()
@@ -55,6 +44,13 @@ struct CoherenceApp: App {
             d.fetchLimit = 1
             return (try? mainContext.fetch(d))?.first?.startedAt
         }
+        // Every session, all sources — Watch, phone, hand-logged — for the
+        // practice stats published on my profile (`syncPracticeStats`), the
+        // same set the streak already reads.
+        community.allSessions = {
+            let d = FetchDescriptor<Session>()
+            return ((try? mainContext.fetch(d)) ?? []).map { ($0.startedAt, $0.durationSec) }
+        }
         community.onPostRemoved = { sessionID in
             if let row = SessionStore.reflection(for: sessionID, in: mainContext) {
                 row.visibility = "private"
@@ -63,6 +59,23 @@ struct CoherenceApp: App {
             }
         }
         _community = StateObject(wrappedValue: community)
+        // Every session written, phone or Watch, current or stale: Block
+        // opens the rest of the windows it counts for (2026-09-22), and
+        // Friends republishes how often I meditate (2026-09-27). One hook,
+        // set once at launch, so a Watch session landing while 808 is in the
+        // background still does both.
+        SessionCoordinator.onSessionSaved = { startedAt, durationSec in
+            if FeatureFlags.block {
+                Task { @MainActor in
+                    BlockController.shared.recordSession(
+                        endingAt: startedAt.addingTimeInterval(TimeInterval(durationSec)),
+                        durationSec: durationSec)
+                }
+            }
+            Task { @MainActor in
+                await community.syncPracticeStats(force: true)
+            }
+        }
     }
 
     var body: some Scene {
@@ -95,12 +108,21 @@ struct CoherenceApp: App {
                 // retries here until it does. See
                 // CommunityModel.retryPendingDeletion.
                 .task { await CommunityModel.retryPendingDeletion() }
+                // Posting was removed 2026-09-27: this takes down whatever
+                // this person had already shared, once, retrying on a later
+                // launch if it can't reach iCloud. See
+                // CommunityModel.clearMyPostsIfNeeded.
+                .task { await community.clearMyPostsIfNeeded() }
                 .onChange(of: scenePhase) { _, phase in
                     if phase == .active, store.state != .ready {
                         Task { await store.load() }
                     }
                     if phase == .active {
                         Task { await FocusShortcut.shared.becameActive() }
+                        // Gated to once every few minutes inside
+                        // `syncPracticeStats`, so coming back to the app
+                        // repeatedly costs at most one write.
+                        Task { await community.syncPracticeStats() }
                     }
                 }
         }
