@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import CoreHaptics
 import RiveRuntime
 
@@ -268,7 +269,81 @@ struct OttoRiveView: View {
     /// Set once from the owner so the same rig survives re-renders.
     @ObservedObject var rig: OttoRigHolder
 
+    /// The hat he wears from the Store, on the two seated poses of the
+    /// session screens: waving on the Ready screen, sitting through the
+    /// session (Melvin, 2026-09-27: "yes he should"). Read here, like Home's
+    /// Otto, so no caller has to know the Store exists.
+    @Query(sort: \Preferences.createdAt) private var hatPrefs: [Preferences]
+
     var body: some View {
+        drawn.overlay(alignment: .topLeading) { hat }
+    }
+
+    // MARK: - The hat
+
+    /// Where his head is in each seated pose's image (measured with
+    /// `tools/otto_head_measure.swift` on the images inside `Otto.riv`): the
+    /// image's size, the top of his skull, the head's centre and width, all
+    /// in the image's own pixels, which are artboard units in the rig.
+    private static let heads: [OttoPose: (w: CGFloat, h: CGFloat, skull: CGFloat, cx: CGFloat, head: CGFloat)] = [
+        .meditating: (398, 474, 41, 198, 308),
+        .greeting: (418, 434, 32, 203.5, 286),
+    ]
+    /// Where a pose image's bottom centre sits on the 425 x 522 artboard
+    /// (each image stands its feet on the figure's node).
+    static let feet = CGPoint(x: 212.5, y: 512)
+
+    private var hatPose: OttoPose? {
+        if pose == .meditating { return .meditating }
+        if pose == .greeting || greeting { return .greeting }
+        return nil
+    }
+
+    /// The hat's box on the 425 x 522 artboard for one seated pose: its box
+    /// on Steady (`HatArt.placement`) carried onto this pose's head the same
+    /// way `OttoAuraFigure` carries it between looks.
+    static func hatBox(_ id: String, pose: OttoPose) -> CGRect? {
+        guard let head = heads[pose] else { return nil }
+        let box = HatArt.placement[id] ?? CGRect(x: 172, y: -20, width: 318, height: 206)
+        let from = HatArt.steadyHead
+        let skull = feet.y - head.h + head.skull
+        let cx = feet.x - head.w / 2 + head.cx
+        let s = head.head / from.width
+        return CGRect(x: cx + (box.minX - from.cx) * s, y: skull + (box.minY - from.skull) * s,
+                      width: box.width * s, height: box.height * s)
+    }
+
+    /// How far above `SitLayout.ottoTop` the hat reaches, in points, for a
+    /// figure `size` tall: the Ready screen lifts his bubble by it and the
+    /// sit lifts its ring, so a tall hat never runs into either. The taller
+    /// of the two poses, so nothing moves when he settles from waving into
+    /// sitting.
+    static func hatRise(_ id: String?, size: CGFloat) -> CGFloat {
+        guard let id else { return 0 }
+        // `SitLayout.ottoTop` sits this far down the artboard: the scene
+        // draws the rig 1.17 times the height it gives his head.
+        let top = 522 * (1 - 1 / 1.17)
+        let rise = [OttoPose.meditating, .greeting].compactMap { hatBox(id, pose: $0) }
+            .map { top - $0.minY }.max() ?? 0
+        return max(0, rise * size / 522)
+    }
+
+    @ViewBuilder private var hat: some View {
+        if let hatPose, let id = OttoAuraFigure.previewHat ?? hatPrefs.first?.wornHatIDValue,
+           let box = Self.hatBox(id, pose: hatPose), let image = UIImage(named: "hat-\(id)") {
+            let fw = width ?? size * OttoRig.aspect
+            let k = min(fw / 425, size / 522)
+            let ox = (fw - 425 * k) / 2, oy = (size - 522 * k) / 2
+            Image(uiImage: image)
+                .resizable()
+                .frame(width: box.width * k, height: box.height * k)
+                .position(x: ox + box.midX * k, y: oy + box.midY * k)
+                .animation(.easeInOut(duration: 0.5), value: hatPose)
+                .allowsHitTesting(false)
+        }
+    }
+
+    @ViewBuilder private var drawn: some View {
         if let live = rig.rig {
             live.viewModel.view()
                 .frame(width: width ?? size * OttoRig.aspect, height: size)

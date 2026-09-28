@@ -39,6 +39,8 @@ struct SessionActiveView: View {
 
     @EnvironmentObject private var coordinator: SessionCoordinator
     @Environment(\.scenePhase) private var scenePhase
+    /// For the hat he wears, which the ring has to clear.
+    @Query(sort: \Preferences.createdAt) private var prefsRows: [Preferences]
     @State private var now = Date()
 
     #if DEBUG
@@ -142,7 +144,9 @@ struct SessionActiveView: View {
     private var sit: some View {
         GeometryReader { geo in
             let ring = SitLayout.ringDiameter(in: geo.size)
-            let ringCentreY = SitLayout.ringCentreY(in: geo.size)
+            let hat = OttoRiveView.hatRise(OttoAuraFigure.previewHat ?? prefsRows.first?.wornHatIDValue,
+                                           size: SitLayout.ottoHeight(in: geo.size))
+            let ringCentreY = SitLayout.ringCentreY(in: geo.size, hat: hat)
 
             ZStack {
                 ValleyScene(progress: progress, clock: true)
@@ -181,7 +185,7 @@ struct SessionActiveView: View {
                 }
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppMetrics.screenPadding)
-                .position(x: geo.size.width / 2, y: SitLayout.headlineY(in: geo.size))
+                .position(x: geo.size.width / 2, y: SitLayout.headlineY(in: geo.size, hat: hat))
                 .opacity(arriving || finishing ? 1 : 0)
                 .animation(.easeInOut(duration: 0.7), value: arriving)
                 .animation(.easeInOut(duration: 0.7), value: finishing)

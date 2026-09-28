@@ -132,14 +132,14 @@ struct SessionSetupView: View {
                     greeting(day: day, in: geo.size, lift: lift)
                     if let countdown {
                         countingIn(countdown, day: day)
-                            .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size, lift: lift))
+                            .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size, lift: lift, hat: hatRise(in: geo.size)))
                             .transition(.opacity)
                         countdownCancel
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         SessionLengthPicker(minutes: $lengthMinutes, ink: day.ink, inkSoft: day.inkSoft)
                             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pickerHeight = $0 }
-                            .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size, lift: lift))
+                            .position(x: geo.size.width / 2, y: Self.lengthY(in: geo.size, lift: lift, hat: hatRise(in: geo.size)))
                             .transition(.opacity)
                         readyControls(day: day, compact: Self.compact(in: geo.size))
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -208,8 +208,8 @@ struct SessionSetupView: View {
     /// Otto's line, which is pinned to the top of his head and runs about 84pt
     /// tall. The same band the sit screen centres its headline in. When he is
     /// lifted the band is shorter, so the timer rises half as far as he does.
-    private static func lengthY(in size: CGSize, lift: CGFloat) -> CGFloat {
-        let bubbleTop = SitLayout.ottoTop(in: size) - 8 - 84 - lift
+    private static func lengthY(in size: CGSize, lift: CGFloat, hat: CGFloat = 0) -> CGFloat {
+        let bubbleTop = SitLayout.ottoTop(in: size) - 8 - 84 - lift - hat
         return (SitLayout.skyTop(in: size) + 14 + bubbleTop) / 2
     }
 
@@ -242,10 +242,18 @@ struct SessionSetupView: View {
         guard countdown == nil else { return 0 }
         let pillsTop = size.height - Self.controlsBottom - controlsHeight
         let need = SitLayout.cushionBottom(in: size) + 6 - pillsTop
-        let bubbleTop = SitLayout.ottoTop(in: size) - 8 - 84
-        let tapeBottom = Self.lengthY(in: size, lift: 0) + pickerHeight / 2
+        let hat = hatRise(in: size)
+        let bubbleTop = SitLayout.ottoTop(in: size) - 8 - 84 - hat
+        let tapeBottom = Self.lengthY(in: size, lift: 0, hat: hat) + pickerHeight / 2
         let room = 2 * (bubbleTop - tapeBottom - 10)
         return max(0, min(need, room))
+    }
+
+    /// How far his hat stands above his head, which his bubble (and the
+    /// timer over it) rise by.
+    private func hatRise(in size: CGSize) -> CGFloat {
+        OttoRiveView.hatRise(OttoAuraFigure.previewHat ?? preferences.first?.wornHatIDValue,
+                             size: SitLayout.ottoHeight(in: size))
     }
 
     /// Short phones (the SE) get the one-line pills: Home's card size costs
@@ -305,7 +313,7 @@ struct SessionSetupView: View {
 
     private func greeting(day: DayLight, in size: CGSize, lift: CGFloat) -> some View {
         // Pinned just above his head, wherever `ottoLift` has put it.
-        let speaks = SitLayout.ottoTop(in: size) - 8 - lift
+        let speaks = SitLayout.ottoTop(in: size) - 8 - lift - hatRise(in: size)
         return VStack(spacing: 0) {
             Spacer(minLength: 0)
             OttoSpeech(text: countdown == nil

@@ -715,12 +715,15 @@ enum SitLayout {
         min(size.width * 0.40, size.height * 0.175)
     }
 
-    static func ringCentreY(in size: CGSize) -> CGFloat {
-        ottoTop(in: size) - 12 - ringDiameter(in: size) / 2
+    /// `hat` is how far his hat stands above his head
+    /// (`OttoRiveView.hatRise`): the ring hangs from the top of the hat, so
+    /// a tall one never runs through the clock.
+    static func ringCentreY(in size: CGSize, hat: CGFloat = 0) -> CGFloat {
+        ottoTop(in: size) - hat - 12 - ringDiameter(in: size) / 2
     }
 
-    static func ringTop(in size: CGSize) -> CGFloat {
-        ringCentreY(in: size) - ringDiameter(in: size) / 2
+    static func ringTop(in size: CGSize, hat: CGFloat = 0) -> CGFloat {
+        ringCentreY(in: size, hat: hat) - ringDiameter(in: size) / 2
     }
 
     /// Roughly where the Dynamic Island stops. Read as a fraction rather than
@@ -737,9 +740,13 @@ enum SitLayout {
     /// in the space it actually has drops it about 45pt on a tall phone and
     /// still clears the ring on a short one, which a second fixed fraction
     /// could not have done for both.
-    static func headlineY(in size: CGSize) -> CGFloat {
-        (skyTop(in: size) + ringTop(in: size)) / 2
+    static func headlineY(in size: CGSize, hat: CGFloat = 0) -> CGFloat {
+        (skyTop(in: size) + ringTop(in: size, hat: hat)) / 2
     }
+
+    /// The height the scene draws the seated Otto at, for asking
+    /// `OttoRiveView.hatRise` about this screen.
+    static func ottoHeight(in size: CGSize) -> CGFloat { 186 * scale(in: size) * 1.17 }
 }
 
 // MARK: - The light
