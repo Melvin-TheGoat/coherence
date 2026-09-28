@@ -838,7 +838,7 @@ struct ContentView: View {
         // A "Not now" that went unanswered costs glow (Melvin, 2026-09-22).
         // The windows come from the phone's own Screen Time state and are
         // never sent anywhere.
-        return OttoAura.level(from: sessions.map(\.startedAt),
+        return OttoAura.level(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
                               notNow: FeatureFlags.block ? block.notNowWindows : [])
     }
 
@@ -1011,8 +1011,13 @@ struct ContentView: View {
         let windows = FeatureFlags.block ? block.notNowWindows : []
         let dates = sessions.map(\.startedAt)
         let others = dates.filter { $0 != landed.startedAt }
-        let before = OttoAura.level(from: others, notNow: windows)
-        let after = OttoAura.level(from: dates, notNow: windows)
+        // Before is the level WITHOUT the landed session, after is WITH it,
+        // so a second session on the same day shows only its marginal gain
+        // (Melvin, 2026-09-28: a day's gain is summed once, not per session).
+        let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
+        let otherSits = sits.filter { $0.date != landed.startedAt }
+        let before = OttoAura.level(from: otherSits, notNow: windows)
+        let after = OttoAura.level(from: sits, notNow: windows)
         ottoLineIndex = 0
         // The reward screen, not a glow on Home (Melvin, 2026-09-27).
         let owned = prefsRows.first?.ownedHatIDList ?? []

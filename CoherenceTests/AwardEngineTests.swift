@@ -374,15 +374,16 @@ final class AwardEngineTests: XCTestCase {
     // MARK: New: Otto's aura
 
     func test_ottoAwardsFollowTheAuraHistory() {
-        // Five days in a row reaches Nirvana (see OttoAuraTests), so all
-        // four Otto awards land together by day five.
-        let facts = (1...5).map { day(-10 + $0) }
+        // Five twenty-minute days in a row reaches Nirvana (see
+        // OttoAuraTests: gain(minutes: 20) == 10, the old flat daily gain),
+        // so all four Otto awards land together by day five.
+        let facts = (1...5).map { day(-10 + $0, minutes: 20) }
         let a = earned(facts)
         for id in ["ottoSteady", "ottoBright", "ottoRadiant", "ottoNirvana"] {
             XCTAssertTrue(a[id]!.isEarned, "\(id) was not earned by a run that reaches Nirvana")
         }
 
-        // One session alone raises him to Steady only.
+        // One ten-minute session alone (+5) raises him to Steady (45) only.
         let one = earned([day(0)])
         XCTAssertTrue(one["ottoSteady"]!.isEarned)
         XCTAssertFalse(one["ottoBright"]!.isEarned)

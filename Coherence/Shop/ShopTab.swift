@@ -54,7 +54,7 @@ struct ShopTab: View {
     private var selected: String { previewing ?? wornHatID ?? HatCatalog.all[0].id }
 
     private var currentStage: OttoAura.Stage {
-        OttoAura.stage(from: sessions.map(\.startedAt))
+        OttoAura.stage(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) })
     }
 
     var body: some View {
