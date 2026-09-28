@@ -15,6 +15,10 @@ import Foundation
 public enum AwardsInbox {
     private static let announcedKey = "awardsAnnounced.v1"
     private static let lastCheckKey = "awardsLastCheck.v1"
+    private static let catalogVersionKey = "awardsCatalogVersion.v1"
+
+    /// Bump this every time the catalog grows. See `catchUpCatalogIfNeeded`.
+    private static let currentCatalogVersion = 2
 
     private static var announced: Set<String> {
         get { Set(UserDefaults.standard.stringArray(forKey: announcedKey) ?? []) }
@@ -61,11 +65,33 @@ public enum AwardsInbox {
         announced = announced.union(earned.filter(\.isEarned).map(\.award.id))
     }
 
+    /// **The flood fix, for when the catalog itself grows.** `seedIfNeeded`
+    /// only ever protects a device on its FIRST look, and `lastCheck` never
+    /// moves after that. So an existing user, whose watermark is already
+    /// months old, would otherwise have every newly-added award that their
+    /// OLD history already satisfies (a past session dated after that old
+    /// watermark) queue up as "just earned" the moment this bigger catalog
+    /// first runs on their phone. Call this once, right after
+    /// `seedIfNeeded`, before the first `pending` of a session: while this
+    /// device has not caught up to `currentCatalogVersion`, everything
+    /// already earned is marked announced silently, exactly like a fresh
+    /// install, and the version is stamped so it only ever does this once
+    /// per growth of the catalog. A genuinely new award, earned by a
+    /// session that lands AFTER this call, is untouched and announces as
+    /// normal.
+    public static func catchUpCatalogIfNeeded(with earned: [AwardEngine.Earned]) {
+        let seenVersion = UserDefaults.standard.integer(forKey: catalogVersionKey)
+        guard seenVersion < currentCatalogVersion else { return }
+        announced = announced.union(earned.filter(\.isEarned).map(\.award.id))
+        UserDefaults.standard.set(currentCatalogVersion, forKey: catalogVersionKey)
+    }
+
     #if DEBUG
     /// So the unlock screen can be reviewed without inventing a fresh history.
     public static func resetForPreview() {
         UserDefaults.standard.removeObject(forKey: announcedKey)
         UserDefaults.standard.removeObject(forKey: lastCheckKey)
+        UserDefaults.standard.removeObject(forKey: catalogVersionKey)
     }
     #endif
 }
