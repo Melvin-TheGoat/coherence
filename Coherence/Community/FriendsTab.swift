@@ -312,6 +312,7 @@ struct FeedView: View {
                         #endif
                         searchField
                         if searched { searchResult }
+                        if !model.uploading.isEmpty { postingPill }
                         if model.feed.isEmpty {
                             EmptyFeed(model: model, username: model.profile?.username ?? "")
                         } else {
@@ -371,8 +372,14 @@ struct FeedView: View {
                             Text(handle)
                                 .font(AppFont.caption.weight(.semibold))
                                 .foregroundStyle(ValleyGround.inkSoft)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
                         }
                     }
+                    // A long handle gives way before the pills do: it was the
+                    // handle's width that pushed "Requests" onto two lines
+                    // (Melvin, 2026-09-27, the last "s" alone underneath).
+                    .layoutPriority(-1)
                     Spacer(minLength: 8)
                     HStack(spacing: 8) {
                         inviteButton
@@ -387,12 +394,32 @@ struct FeedView: View {
         }
     }
 
+    /// A post still uploading after its session page closed
+    /// (`CommunityModel.postInBackground`). It lands in the feed on its own
+    /// when it is up.
+    private var postingPill: some View {
+        HStack(spacing: 10) {
+            ProgressView().controlSize(.small).tint(AppColor.skyDeep)
+            Text(model.uploading.count == 1 ? "Posting your session…"
+                                            : "Posting \(model.uploading.count) sessions…")
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(ValleyGround.inkSoft)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+        .transition(.opacity)
+    }
+
     /// Invite, a cream pill like Requests at rest: never gold, which is kept
     /// for a request somebody is waiting on.
     private var inviteButton: some View {
         ShareLink(item: InviteButton.message(for: model.profile?.username ?? "")) {
             Label("Invite", systemImage: "person.badge.plus")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundStyle(ValleyGround.ink)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -437,6 +464,8 @@ struct FeedView: View {
                  ? "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")"
                  : "Requests")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
+                .lineLimit(1)
+                .fixedSize()
                 .foregroundStyle(waiting ? AppColor.textOnAccent : ValleyGround.ink)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)

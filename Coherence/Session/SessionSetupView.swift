@@ -264,12 +264,11 @@ struct SessionSetupView: View {
                     else { await focus.silence() }
                 }
             } label: {
-                SitPill(glyph: "\u{263E}",
+                SitPill(art: "sit-silence",
                         label: focus.silenced ? "Notifications off" : "Silence notifications",
                         subtitle: compact ? nil
                                   : focus.silenced ? "Do Not Disturb is on"
                                                    : "Do Not Disturb while you sit",
-                        tint: focus.silenced ? AppColor.calmAccent : AppColor.textPrimary,
                         compact: compact) {
                     Toggle("", isOn: .constant(focus.silenced))
                         .labelsHidden()
@@ -339,14 +338,14 @@ struct SessionSetupView: View {
                 // Otto's lap (the first build stacked three pills).
                 HStack(spacing: 10) {
                     Button { choosingKind = true } label: {
-                        SitPill(glyph: kind.glyph, label: kind.pillTitle,
+                        SitPill(art: kind.art, label: kind.pillTitle,
                                 subtitle: compact ? nil : kind.line, compact: compact, half: true) {
                             chevron
                         }
                     }
                     .buttonStyle(.plain)
                     Button { choosingSound = true } label: {
-                        SitPill(glyph: "\u{266A}", label: "Sound",
+                        SitPill(art: "sit-sound", label: "Sound",
                                 subtitle: compact ? nil : sound, compact: compact, half: true) {
                             chevron
                         }
@@ -537,20 +536,15 @@ enum SitKind: String, CaseIterable {
         }
     }
 
-    var symbol: String {
+    /// Its object on a stone (`SitIcons/`, Melvin's sheet of 2026-09-27,
+    /// `mockups/tabbar-icons/sit-icons-sheet.webp`), on the Ready screen's
+    /// pill and on its tall card. They replaced SF Symbols and Unicode
+    /// glyphs, which Melvin found "AI/generic".
+    var art: String {
         switch self {
-        case .unmeasured: return "figure.mind.and.body"
-        case .watch: return "applewatch"
-        case .record: return "square.and.pencil"
-        }
-    }
-
-    /// The pill's glyph, in the same slot the Sound pill uses for its note.
-    var glyph: String {
-        switch self {
-        case .unmeasured: return "\u{25CB}"
-        case .watch: return "\u{231A}\u{FE0E}"
-        case .record: return "\u{270E}"
+        case .unmeasured: return "sit-meditate"
+        case .watch: return "sit-watch"
+        case .record: return "sit-record"
         }
     }
 }
@@ -570,13 +564,8 @@ struct SitKindCards: View {
                 let dim = k == .watch && !watchPaired
                 Button { pick(k) } label: {
                     VStack(spacing: 10) {
-                        Image(systemName: k.symbol)
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundStyle(chosen ? AppColor.accentGoldText : AppColor.calmAccent)
-                            .frame(width: 58, height: 58)
-                            .background((chosen ? AppColor.accentGold : AppColor.calmAccent).opacity(0.14),
-                                        in: Circle())
-                            .padding(.top, 20)
+                        SitArt(name: k.art, size: 76)
+                            .padding(.top, 16)
                         Text(k.title)
                             .font(DisplayFont.display(16, .heavy))
                             .foregroundStyle(AppColor.textPrimary)
@@ -664,10 +653,11 @@ struct LogSitCard: View {
 /// `SessionSetupView.ottoLift` is the room this made for itself, and
 /// `compact` is the one-line size for phones with no room to make.
 struct SitPill<Trailing: View>: View {
-    let glyph: String
+    /// The object on its stone (`SitArt`), where a glyph in a tinted circle
+    /// used to be.
+    let art: String
     let label: String
     var subtitle: String? = nil
-    var tint: Color = AppColor.textPrimary
     var compact = false
     /// Half the width, beside another pill: a smaller roundel and less
     /// padding, so the words keep their room.
@@ -680,13 +670,11 @@ struct SitPill<Trailing: View>: View {
     /// block and lifts Otto to clear it, so nothing else had to move. A short
     /// phone (`compact`) keeps the old sizes; it has no sky to give.
     var body: some View {
-        let roundel: CGFloat = compact ? 32 : (half ? 40 : 48)
-        HStack(spacing: compact ? (half ? 9 : 12) : (half ? 10 : 14)) {
-            Text(glyph)
-                .font(.system(size: roundel * 0.46))
-                .foregroundStyle(tint)
-                .frame(width: roundel, height: roundel)
-                .background(tint.opacity(0.12), in: Circle())
+        // The art has no circle behind it, so it is drawn a little larger
+        // than the roundel it replaced to carry the same weight.
+        let roundel: CGFloat = compact ? 36 : (half ? 46 : 54)
+        HStack(spacing: compact ? (half ? 8 : 11) : (half ? 9 : 13)) {
+            SitArt(name: art, size: roundel)
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(DisplayFont.display(compact ? (half ? 15 : 16.5) : (half ? 17 : 18.5), .semibold))
@@ -709,6 +697,24 @@ struct SitPill<Trailing: View>: View {
         .background(AppColor.backgroundPrimary.opacity(0.94),
                     in: RoundedRectangle(cornerRadius: compact ? 18 : 22, style: .continuous))
         .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
+    }
+}
+
+/// One of the Ready screen's objects on a stone, fitted into a square.
+struct SitArt: View {
+    let name: String
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let image = UIImage(named: name) {
+                Image(uiImage: image).resizable().interpolation(.high).scaledToFit()
+            } else {
+                Color.clear
+            }
+        }
+        .frame(width: size, height: size)
+        .accessibilityHidden(true)
     }
 }
 

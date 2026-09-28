@@ -150,8 +150,9 @@ struct LifeNumberScreen: View {
         years == nil ? (target == 1 ? "day" : "days") : (target == 1 ? "year" : "years")
     }
 
-    /// Matches the clip: 5.15 s.
-    private static let clipSeconds = 5.15
+    /// Matches the clip: 4.9 s (the Higgsfield regeneration of 2026-09-27,
+    /// cut where he is frightened in spring; the first cut ran 5.15).
+    private static let clipSeconds = 4.9
 
     var body: some View {
         ZStack {
@@ -613,13 +614,16 @@ struct LifeMomentsScreen: View {
     @State private var ctaShown = false
 
     /// When each word takes over, in seconds into the clip, measured on it.
+    /// Re-measured on the Higgsfield clip of 2026-09-27 (the family at his
+    /// size): the family hugs him until about 4.5 s, he lifts the dandelion
+    /// at 5.3, the golden light breaks at 6.8, and he settles from 8.6.
     /// The words are all onboarding green (Aziz; a colour each was tried
     /// first), the green the good news screen counts its years in.
     private static let beats: [(at: Double, word: String)] = [
         (0.0, "family"),
-        (3.5, "having fun"),
-        (6.3, "the beauty of this world"),
-        (8.7, "so much more."),
+        (5.3, "having fun"),
+        (6.8, "the beauty of this world"),
+        (8.6, "so much more."),
     ]
 
     private var header: String {

@@ -376,10 +376,14 @@ actor CommunityStore {
 
     @discardableResult
     func post(_ draft: Draft) async throws -> Post {
-        let mine = try await me()
         let caption = String(draft.caption.trimmingCharacters(in: .whitespacesAndNewlines).prefix(Self.captionLimit))
         let id = draft.sessionID.map(Self.postID(forSession:)) ?? UUID().uuidString
-        let existing = try await db.fetch(id)
+        // Two independent round trips, run together rather than one after the
+        // other (2026-09-27: posting "loaded like forever").
+        async let me = me()
+        async let lookup = db.fetch(id)
+        let mine = try await me
+        let existing = try await lookup
         guard ContentFilter.check([draft.title, draft.caption]) == .ok else { throw CommunityError.contentBlocked }
         let post = Post(id: id, author: mine, minutes: draft.minutes, streak: draft.streak,
                         technique: draft.technique, caption: caption,

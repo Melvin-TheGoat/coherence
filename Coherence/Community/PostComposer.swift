@@ -237,8 +237,29 @@ enum PhotoThumbs {
 /// feed's strip, with the ORIGINAL aspect ratio so the feed can lay the strip
 /// out before anything downloads.
 enum PostMediaPrep {
+    /// The stored bytes of one kept item, read on the main actor (a
+    /// `SessionPhoto` is a SwiftData model and must not cross threads), so
+    /// the decoding, resizing and file writing can run off it.
+    struct Source: Sendable {
+        let jpeg: Data
+        let thumbnail: Data?
+        let video: Data?
+
+        init?(_ item: SessionPhoto) {
+            guard let jpeg = item.jpeg else { return nil }
+            self.jpeg = jpeg
+            thumbnail = item.thumbnail
+            video = item.video
+        }
+    }
+
     static func draft(for item: SessionPhoto) -> CommunityStore.DraftMedia? {
-        guard let jpeg = item.jpeg, let stillSize = UIImage(data: jpeg)?.size, stillSize.height > 0 else { return nil }
+        Source(item).flatMap(draft(from:))
+    }
+
+    static func draft(from item: Source) -> CommunityStore.DraftMedia? {
+        let jpeg = item.jpeg
+        guard let stillSize = UIImage(data: jpeg)?.size, stillSize.height > 0 else { return nil }
         let aspect = Double(stillSize.width / stillSize.height)
         guard let posterURL = PostPhoto.prepare(data: item.thumbnail ?? jpeg) else { return nil }
         if let video = item.video {

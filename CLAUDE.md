@@ -3863,6 +3863,40 @@ DEBUG as one of the `TestTabBar` styles, never in Release.
   cheerful: "Wait, come back!" / "Your session's still going! Hop back in
   within 10 seconds so it still counts."
 
+## NEW CLIPS, NEW ICONS, AND A POST THAT DOES NOT MAKE YOU WAIT (2026-09-27, Melvin)
+
+- **Two onboarding clips regenerated in Higgsfield** (the family was far
+  bigger than Otto, the clock was an oval). `tools/clip_fill.swift` turns a
+  full-screen generated clip into what `OttoClip(fills: true)` plays: the
+  centre cut to the phone's shape (650 x 1416), 20 fps by nearest frame,
+  H.264. No ffmpeg needed. It also lists source frames identical to the one
+  before: a REGULAR pattern is padding (a stutter), clustered runs are only
+  stillness. Both Higgsfield clips had clustered runs and must NOT be
+  de-duplicated: that would hurry exactly his calm moments. The Higgsfield
+  clock clip has a stray orange shape in its top-left corner that the crop
+  removes.
+- **The Ready screen's icons are Melvin's objects on stones**
+  (`Coherence/Session/SitIcons/sit-*.png`, sheet kept at
+  `mockups/tabbar-icons/sit-icons-sheet.webp`): hourglass on a cushion
+  (Meditate), a watch (Apple Watch), a notebook (Record one), a singing bowl
+  (Sound), a moon and bell (Silence notifications). `SitArt` draws one; the
+  pills and the three tall cards use it in place of SF Symbols and Unicode
+  glyphs. Lifted off the sheet with Vision's subject matte. **The sheet's
+  real pixel size is what the file says**, not what a chat preview claims:
+  the first cut used the preview's 2160 px width and sheared the stones.
+- **A Friends post no longer holds the session page open.** It used to await
+  every upload (up to ten items, a video up to 40 MB) before closing.
+  `CommunityModel.postInBackground` now takes the post: the page closes as
+  soon as screening passes, the files are prepared off the main actor
+  (`PostMediaPrep.Source` carries the bytes, since a SwiftData row must not
+  cross threads), iOS is asked for time to finish if the app is left, and
+  the feed shows "Posting your session…" until it lands. A failure shows on
+  the Friends tab and puts the session back to Only you. Screening runs all
+  items at once, and `CommunityStore.post` looks up the user and any
+  existing post together instead of one after the other.
+- The Friends header's pills keep to one line: a long @handle truncates
+  instead of pushing "Requests" onto two lines.
+
 ## A SESSION KEEPS VIDEOS UP TO FIVE MINUTES (2026-09-27, Melvin)
 
 "When i uploaded a 37 second video, it loaded for a while and then said video
@@ -5738,10 +5772,11 @@ age bracket) × 16/24 × their share; "Prefer not to say" gets days a year
 instead, never a guessed age. The question never mentions age. That number
 drives **"You're on track to spend N years with your mind somewhere else"**
 (`LifeNumberScreen`, `Step.lifeNumber`, after the mind profile): a GENERATED
-clip fills the screen (`otto-seasons.mov`, Runway from a clean full-screen
-render of the valley: Otto sits still under a clock while the seasons race,
-cut at frame 124 where he looks afraid in spring and HELD there, 20 fps,
-5.15 s, `OttoClip(fills:)`). The number counts up with a tick a step across
+clip fills the screen (`otto-seasons.mov`, Otto sits still under a clock
+while the seasons race, ending where he looks afraid in spring and HELD
+there, 20 fps, `OttoClip(fills:)`; since 2026-09-27 it is Melvin's Higgsfield
+regeneration with a ROUND clock, cut at 4.85 s, 4.9 s long, and
+`LifeNumberScreen.clipSeconds` must match the clip). The number counts up with a tick a step across
 the seasons and lands with a thump as the clip ends. Brainrot's layout (Aziz):
 the words on a FROSTED CARD in the sky (material plus a white wash, the
 number in sky blue), the disclaimer in a matching frosted pill above Next.
@@ -5781,8 +5816,10 @@ Brainrot's "11 more years of Playing"): ONE 10 s generated clip fills the
 screen (`otto-life-moments.mov`: his family arrives and hugs him, he blows a
 dandelion laughing, the valley turns golden, held on that frame), and under
 "4 more years of" (the good news quarter) the big word swaps ON THE CLIP'S
-MEASURED BEATS: family 0 s, having fun 3.5 s, the beauty of this world
-6.3 s, so much more. 8.7 s, a thump each, all in onboarding GREEN (a colour
+MEASURED BEATS: family 0 s, having fun 5.3 s, the beauty of this world
+6.8 s, so much more. 8.6 s (re-measured 2026-09-27 on Melvin's Higgsfield
+regeneration, the family at Otto's size; the first clip's were 3.5 / 6.3 /
+8.7), a thump each, all in onboarding GREEN (a colour
 per word was tried and dropped the same day), a white glow over the sky. Its button is "Let's do this!" (Aziz); the good news
 screen before it says "Continue" so the line is not said twice.
 **Then "Your attention has been hacked."** (`AttentionHackedScreen`,

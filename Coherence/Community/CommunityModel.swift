@@ -365,6 +365,40 @@ final class CommunityModel: ObservableObject {
 
     // MARK: - Posts and reactions
 
+    /// Sessions whose post is still uploading, so the feed can say so.
+    @Published private(set) var uploading: [String] = []
+
+    /// Posts without holding the screen that asked (Melvin, 2026-09-27:
+    /// Friends "loaded like forever before actually posting"). The session
+    /// page used to wait for every photo and video to reach iCloud, up to
+    /// ten items of which a video can be 40 MB, before it closed. Now it
+    /// closes at once: the files are prepared off the main actor, the upload
+    /// runs here (this model outlives the page), iOS is asked for time to
+    /// finish if the person leaves the app, and the feed shows a "Posting"
+    /// line meanwhile. A failure lands in `errorText`, which the Friends tab
+    /// shows, and `onFailure` lets the caller undo what it recorded.
+    func postInBackground(_ draft: CommunityStore.Draft, media: [PostMediaPrep.Source],
+                          onFailure: @escaping @MainActor () -> Void) {
+        let key = draft.sessionID ?? UUID().uuidString
+        uploading.append(key)
+        var background = UIBackgroundTaskIdentifier.invalid
+        background = UIApplication.shared.beginBackgroundTask(withName: "808 post") {
+            UIApplication.shared.endBackgroundTask(background)
+            background = .invalid
+        }
+        Task { @MainActor in
+            let prepared = await Task.detached(priority: .userInitiated) {
+                media.compactMap(PostMediaPrep.draft(from:))
+            }.value
+            var full = draft
+            full.media = prepared
+            let ok = await post(full)
+            uploading.removeAll { $0 == key }
+            if !ok { onFailure() }
+            if background != .invalid { UIApplication.shared.endBackgroundTask(background) }
+        }
+    }
+
     func post(_ draft: CommunityStore.Draft) async -> Bool {
         guard let store else { return false }
         do {

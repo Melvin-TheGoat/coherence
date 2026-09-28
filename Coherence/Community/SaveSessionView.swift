@@ -748,22 +748,34 @@ struct SaveSessionView: View {
                     saving = false
                     return
                 }
-                // Every kept item, screened before anything goes up. A video
-                // screens its poster frame, the same still `jpeg` always
-                // holds (2026-09-22: "any photo and any video, for friends
-                // and for yourself").
-                for item in mediaItems {
-                    guard let jpeg = item.jpeg, let img = UIImage(data: jpeg) else { continue }
-                    if await PhotoScreen.check(img) == .sensitive {
-                        problem = CommunityError.photoBlocked.localizedDescription
-                        saving = false
-                        return
+                // Every kept item, screened before anything goes up, all at
+                // once rather than one after another. A video screens its
+                // poster frame, the same still `jpeg` always holds
+                // (2026-09-22: "any photo and any video, for friends and for
+                // yourself").
+                let stills = mediaItems.compactMap(\.jpeg)
+                let blocked = await withTaskGroup(of: Bool.self) { group in
+                    for data in stills {
+                        group.addTask {
+                            guard let img = UIImage(data: data) else { return false }
+                            return await PhotoScreen.check(img) == .sensitive
+                        }
                     }
+                    for await sensitive in group where sensitive {
+                        group.cancelAll()
+                        return true
+                    }
+                    return false
+                }
+                if blocked {
+                    problem = CommunityError.photoBlocked.localizedDescription
+                    saving = false
+                    return
                 }
                 // Always sends the CURRENT full list, in order: a post always
                 // ends up matching exactly what this screen shows, add or
                 // remove, rather than merging against whatever it had before.
-                let media = mediaItems.compactMap { PostMediaPrep.draft(for: $0) }
+                let media = mediaItems.compactMap(PostMediaPrep.Source.init)
                 // No `score:` here (2026-09-23): a post never carries one, even
                 // though this screen still knows the sit's score for its own
                 // "See the measurements" row below.
@@ -772,21 +784,21 @@ struct SaveSessionView: View {
                     streak: streak,
                     technique: MeditationMethod.label(for: technique),
                     caption: publicNote,
-                    media: media,
+                    media: [],
                     practicedAt: session.startedAt,
                     sessionID: sessionID.uuidString,
                     title: finalTitle,
                     sound: sound)
-                guard await community.post(draft) else {
-                    // The reflection says Friends but nothing went up; record
-                    // it as private so the chip on results tells the truth.
-                    SessionStore.saveSession(sessionID: sessionID, title: finalTitle, publicNote: publicNote,
+                // The upload runs after this screen has closed: waiting on it
+                // here was the "loaded like forever". The model reports a
+                // failure on the Friends tab; this puts the session back to
+                // Only you, so the chip on its row tells the truth.
+                let sid = sessionID, note = publicNote, privateNote = privateNote
+                let technique = technique, techniqueNote = techniqueNote, context = context
+                community.postInBackground(draft, media: media) {
+                    SessionStore.saveSession(sessionID: sid, title: finalTitle, publicNote: note,
                                              privateNote: privateNote, visibility: Visibility.private.rawValue,
                                              technique: technique, techniqueNote: techniqueNote, in: context)
-                    problem = community.errorText ?? "Couldn't reach iCloud."
-                    community.errorText = nil
-                    saving = false
-                    return
                 }
             }
             saving = false
