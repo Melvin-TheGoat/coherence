@@ -64,6 +64,9 @@ struct ContentView: View {
     /// Awards earned but not yet celebrated, oldest first. Announced one at a
     /// time: two unlock screens racing each other would cheapen both.
     @State private var unlockQueue: [AwardEngine.Earned] = []
+    /// Awards a landing session earned wait for its reward screen, and open
+    /// after Continue (the order of `mockups/reward-v1.html`).
+    @State private var holdAwards = false
     /// A session that finished while the app was away (`PendingSave`).
     /// Recomputed on every return to the foreground, because that is the
     /// moment they picked the phone up after sitting.
@@ -106,6 +109,8 @@ struct ContentView: View {
         case intervention(InterventionKind)
         /// The free-week offer, from switching a blocker on. Block is paid.
         case blockPaywall
+        /// What a finished session earned (`SessionRewardView`).
+        case reward(SessionReward)
         /// Friends, from its circle on Home, when the Store has its tab.
         case friends
 
@@ -121,6 +126,7 @@ struct ContentView: View {
             case .intervention(let kind): return "intervention-\(kind.rawValue)"
             case .blockPaywall: return "blockPaywall"
             case .friends: return "friends"
+            case .reward(let r): return "reward-\(r.id)"
             }
         }
     }
@@ -211,7 +217,7 @@ struct ContentView: View {
         }
         .screenBackground()
         .fullScreenCover(item: Binding(
-            get: { tourTab == nil ? unlockQueue.first : nil },
+            get: { tourTab == nil && !holdAwards ? unlockQueue.first : nil },
             set: { _ in })) { item in
             AwardUnlockView(item: item) {
                 AwardsInbox.markAnnounced(item.award.id)
@@ -229,10 +235,11 @@ struct ContentView: View {
                            onPaywallDue: { present(.paywall) })
         .modifier(RootHooks(community: community, users: users,
                             sessionActive: coordinator.active != nil,
-                            awardShowing: !unlockQueue.isEmpty,
+                            awardShowing: !unlockQueue.isEmpty && !holdAwards,
                             touring: tourTab != nil,
                             lastSessionID: coordinator.lastSessionID,
                             resumedID: landedWhileAway,
+                            holdAwards: $holdAwards,
                             onLanded: celebrate))
         .modifier(BlockHooks(block: block,
                              sessionActive: coordinator.active != nil,
@@ -332,6 +339,11 @@ struct ContentView: View {
                 PaywallScreen(placement: "block", plan: $paywallPlan) { _ in sheet = nil }
             case .friends:
                 FriendsTab(onClose: { sheet = nil })
+            case .reward(let reward):
+                SessionRewardView(reward: reward) {
+                    holdAwards = false
+                    sheet = nil
+                }
             }
         }
     }
@@ -378,6 +390,15 @@ struct ContentView: View {
     /// than an inline closure: as one expression on the body's chain it sent
     /// the type checker over its time limit (2026-09-15).
     private func debugPreviewHooks() {
+            // PREVIEW_REWARD=<from>:<to> opens the reward screen with a
+            // demo session (18 minutes, streak 4 to 5) and that glow.
+            if let raw = ProcessInfo.processInfo.environment["PREVIEW_REWARD"], sheet == nil {
+                let parts = raw.split(separator: ":").compactMap { Int($0) }
+                sheet = .reward(SessionReward(id: UUID(), seconds: 18 * 60, streakBefore: 4, streakAfter: 5,
+                                              points: 18, bankBefore: 124,
+                                              glowBefore: parts.first ?? 40,
+                                              glowAfter: parts.count > 1 ? parts[1] : 50))
+            }
             // PREVIEW_AURA=<from>:<to> replays a landed session's glow on
             // Home, without waiting a day for a real one to earn it.
             if let raw = ProcessInfo.processInfo.environment["PREVIEW_AURA"] {
@@ -965,7 +986,7 @@ struct ContentView: View {
         PendingSave.clear()
         landedWhileAway = nil
         tab = .home
-        guard let landed = sessions.first(where: { $0.id == id }) else { return }
+        guard let landed = sessions.first(where: { $0.id == id }) else { holdAwards = false; return }
         // The prompt to fill it in waits for the glow to finish; the toast
         // itself is hidden while `auraGain` is set.
         if FeatureFlags.friends {
@@ -974,12 +995,22 @@ struct ContentView: View {
         }
         let windows = FeatureFlags.block ? block.notNowWindows : []
         let dates = sessions.map(\.startedAt)
-        let before = OttoAura.level(from: dates.filter { $0 != landed.startedAt }, notNow: windows)
+        let others = dates.filter { $0 != landed.startedAt }
+        let before = OttoAura.level(from: others, notNow: windows)
         let after = OttoAura.level(from: dates, notNow: windows)
         ottoLineIndex = 0
-        ottoPokes += 1
-        auraGain = AuraGain(sessionID: id, from: before, to: after)
-        Task { await countGlow(from: before, to: after) }
+        // The reward screen, not a glow on Home (Melvin, 2026-09-27).
+        let owned = prefsRows.first?.ownedHatIDList ?? []
+        let points = landed.isLogged ? 0 : landed.durationSec / 60
+        let reward = SessionReward(
+            id: id,
+            seconds: landed.durationSec,
+            streakBefore: StreakCalculator.streak(from: others).current,
+            streakAfter: StreakCalculator.streak(from: dates).current,
+            points: points,
+            bankBefore: max(0, OttoPoints.balance(sessions: sessions, ownedHatIDs: owned) - points),
+            glowBefore: before, glowAfter: after)
+        if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
     }
 
     /// The bar and its number climb to what the sit earned, then the card
@@ -1253,10 +1284,13 @@ private struct RootHooks: ViewModifier {
     let touring: Bool
     let lastSessionID: UUID?
     let resumedID: UUID?
+    @Binding var holdAwards: Bool
     let onLanded: (UUID) -> Void
 
     func body(content: Content) -> some View {
         content
+            // A session has landed: its awards wait for its reward screen.
+            .onChange(of: lastSessionID) { _, id in if id != nil, !touring { holdAwards = true } }
             .modifier(FriendsHooks(community: community, users: users,
                                    sessionActive: sessionActive, awardShowing: awardShowing,
                                    touring: touring))
