@@ -6260,3 +6260,44 @@ replaces the valley welcome and its bubble; the grasshopper overlay
 - **The Store tab is the Shop**, and its Otto is pinned above the scrolling
   closet. The Ready screen's pill icons are much smaller. Award copy says
   "session" where the awards agent wrote "sit".
+
+## HATS SIT IN THREE DEPTHS (2026-09-28, Melvin)
+
+"The bottom outside parts of them dont actually wrap around his head ...
+empty space between the sides of his head and where the hat starts", and on
+the wizard and bucket hats "you can see some of his head poking through the
+upper sides". One cause: each hat was generated ON a render of Otto whose
+head the generator drew FULLER than his real drawing, and no single picture
+laid over the real drawing can fit a head of a different shape.
+
+- **`tools/hat_extract.swift --layers` cuts three pictures of one box**
+  (`hat-<id>-front/-back/-cover.png`, beside the whole `hat-<id>.png`, which
+  the Shop cards and any unlayered hat still use):
+  - **front**: the hat above its front edge (crown, band, the brim over his
+    forehead) plus the contact shadow, drawn OVER him. The front edge is a
+    quadratic fitted over the middle of his forehead, held flat past his
+    head's sides.
+  - **back**: the whole hat plus its INSIDE filled between the brim's inner
+    edges (colours sampled from the brim, averaged over fifteen rows so it
+    does not streak, darkened to 0.82), bounded below by a back rim that
+    curves UP behind his head. Drawn BEHIND him, so wherever his real head
+    is narrower than the render's, the hat's inside shows instead of sky.
+  - **cover**: where his own drawing is hidden (his head above the hat's
+    visible bottom, plus a 24 px margin for looks with a fuller head), so fur
+    never pokes past the crown. Drawn as `.blendMode(.destinationOut)` over
+    the rig inside a `.compositingGroup()`; it does not clip the moth or the
+    halo (checked at 5 and 97).
+- **Two traps that each made a pale dotted line along the front edge:** the
+  hat's soft edge pixels are half see-through, so fur hidden behind them
+  showed sky (the cover now hides fur near the edge only behind SOLID hat,
+  and stops six pixels inside it); and the contact shadow started at the
+  fitted curve instead of the hat's visible bottom, leaving an unshaded
+  sliver of forehead (it now starts at the visible bottom, found per column
+  as the first real gap reading down from the hat's top).
+- **Layered:** sun hat, bucket, monk's, wanderer's, ensō, wizard. The
+  beanie, both crowns and the halo stay single pictures. `--map out.png`
+  dumps the cutter's keep/mask/silhouette decisions for tuning.
+- Both `OttoAuraFigure` (Home, Shop, the reward) and the session
+  `OttoRiveView` (Ready, the sit) draw the three layers when a hat has them.
+  The session Otto uses `.background` / `.overlay`, never a ZStack, so every
+  layer is proposed exactly the drawing's frame and his size never changes.
