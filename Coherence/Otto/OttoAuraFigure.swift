@@ -181,8 +181,11 @@ struct OttoAuraFigure: View {
         let from = HatArt.steadyHead
         let to = head(look: look, pose: pose)
         let s = to.width / from.width
+        // Raised on the looks whose forehead is shorter than Steady's, so the
+        // brim never comes down over his eye patches (`HatArt.faceLift`).
+        let lift = HatArt.faceLift(id, look: look)
         return CGRect(x: to.cx + (box.minX - from.cx) * s,
-                      y: to.skull + (box.minY - from.skull) * s,
+                      y: to.skull + (box.minY - from.skull - lift) * s,
                       width: box.width * s, height: box.height * s)
     }
 

@@ -52,13 +52,13 @@ struct HatArt: View {
     /// cut. The horns are gone.
     static let placement: [String: CGRect] = [
         "beanie":      CGRect(x: 146.9, y: -28.9, width: 368.0, height: 263.2),
-        "sunhat":      CGRect(x: 83.6, y: -8.5, width: 490.4, height: 285.0),
-        "bucket":      CGRect(x: 119.5, y: -8.5, width: 426.4, height: 270.9),
+        "sunhat":      CGRect(x: 83.6, y: 9.1, width: 490.4, height: 267.4),
+        "bucket":      CGRect(x: 119.5, y: 14.7, width: 426.4, height: 247.7),
         "flowercrown": CGRect(x: 124.4, y: 34.4, width: 404.6, height: 218.1),
-        "monkhat":     CGRect(x: 85.0, y: -8.5, width: 489.0, height: 263.2),
+        "monkhat":     CGRect(x: 85.0, y: 15.4, width: 489.0, height: 239.2),
         "leafcrown":   CGRect(x: 131.5, y: 52.0, width: 401.1, height: 169.6),
-        "wanderer":    CGRect(x: 82.6, y: -8.7, width: 497.3, height: 261.4),
-        "enso":        CGRect(x: 82.6, y: -8.7, width: 497.3, height: 258.6),
+        "wanderer":    CGRect(x: 82.6, y: 9.6, width: 497.3, height: 243.0),
+        "enso":        CGRect(x: 82.6, y: -2.4, width: 497.3, height: 252.2),
         "wizardhat":   CGRect(x: 93.2, y: -49.0, width: 479.7, height: 320.0),
         "goldcrown":   CGRect(x: 175.9, y: -38.4, width: 310.8, height: 177.3),
         "halo":        CGRect(x: 211.9, y: -13.0, width: 238.1, height: 66.4),
@@ -68,6 +68,41 @@ struct HatArt: View {
     /// from (`tools/otto_head_measure.swift` on `OttoAura4`): the top of his
     /// skull under the tuft, its centre, and its width.
     static let steadyHead = (skull: CGFloat(86), cx: CGFloat(330.5), width: CGFloat(341))
+
+    /// How much higher each hat sits on each of the thirteen looks than his
+    /// skull alone would put it, in these same Steady units (Melvin,
+    /// 2026-09-28: at the bright looks "the hats start to cover [the brown
+    /// around his eyes] and it looks like the hats are drooping down onto his
+    /// face"). Those looks were drawn with a shorter forehead and bigger
+    /// patches: their top sits 0.188 of his head's width below the skull at
+    /// Steady and 0.100 at Nirvana.
+    ///
+    /// **Measured, per hat, by `tools/hat_lift.swift`**: along every column
+    /// across his face, the gap from the hat's lowest point to the top of the
+    /// patches; each look is raised until its closest gap matches Steady's
+    /// (capped at 12, so a crown or the halo, far above his eyes, only has to
+    /// stay off the patches), plus 3 from look 8 up, where the bigger patches
+    /// run close to the brim along more of it. Never lowered, so the early
+    /// looks keep the fit they were cut to. **`hat_extract --looks --lifts`
+    /// must be given the same row, or each look's hidden-head mask sits in
+    /// the wrong place.** A hat not listed is worn at its skull.
+    static let faceLift: [String: [CGFloat]] = [
+        "beanie": [0, 0, 0, 0, 0, 0, 0, 4.5, 8, 26, 16.5, 21.5, 24],
+        "sunhat": [0, 0, 0, 0, 2, 0, 0, 10.5, 14.5, 11, 19, 17.5, 30.5],
+        "bucket": [0, 0, 0, 0, 2, 0, 0, 9, 13, 10.5, 19, 23.5, 31],
+        "flowercrown": [0, 0, 0, 0, 2, 0, 0, 10, 13, 17.5, 20.5, 17.5, 33],
+        "monkhat": [0, 0, 0, 0, 2, 0, 0, 10, 14, 11.5, 19.5, 24, 32],
+        "leafcrown": [0, 0, 0, 0, 0, 0, 0, 0, 0.5, 14, 6.5, 16.5, 17.5],
+        "wanderer": [0, 0, 0, 0, 2, 0, 0, 10, 13.5, 11, 19.5, 24, 32.5],
+        "enso": [0, 0, 0, 0, 1.5, 0, 0, 9, 13, 10.5, 18.5, 22, 31],
+        "wizardhat": [0, 0, 0, 0, 1.5, 0, 0, 10, 14, 11, 18.5, 21, 30.5],
+        "goldcrown": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2.5],
+        "halo": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ]
+
+    static func faceLift(_ id: String, look: Int) -> CGFloat {
+        faceLift[id]?[min(max(look, 1), 13) - 1] ?? 0
+    }
 
     // MARK: - Placeholder
 

@@ -805,6 +805,12 @@ if layered && !ring {
             (51, 243.5, 343), (51, 246.5, 340), (61, 247.5, 335), (62, 251.0, 326), (67, 248.5, 325),
             (66, 253.0, 320), (84, 248.0, 309), (68, 249.5, 320)]
         let steady = (skull: 86.0, cx: 330.5, width: 341.0)
+        // HatArt.faceLift for this hat (--lifts, thirteen numbers from
+        // tools/hat_lift.swift): the app wears the hat this much higher on
+        // each look, so in the hat's own frame his head sits this much LOWER.
+        let faceLift: [Double] = a.firstIndex(of: "--lifts").map {
+            a[$0 + 1].split(separator: ",").map { Double($0)! }
+        } ?? [Double](repeating: 0, count: 13)
         let ow = baseW * best.s, oh = baseH * best.s
         let oleft = baseX + (baseW - ow) / 2 + best.dx
         let otop = baseBottom - oh + best.dy
@@ -817,7 +823,7 @@ if layered && !ring {
                 let cx = (Double(x) - oleft) / ow * Double(otto.w)
                 let cy = (Double(y) - otop) / oh * Double(otto.h)
                 let px = Int((hcx + (cx - steady.cx) * kk).rounded())
-                let py = Int((hs + (cy - steady.skull) * kk).rounded())
+                let py = Int((hs + (cy - steady.skull - faceLift[n]) * kk).rounded())
                 guard px >= 0, py >= 0, px < body.w, py < body.h else { continue }
                 if body.at(px, py).3 > 128 { sil[y * W + x] = true }
             } }

@@ -6355,5 +6355,39 @@ on a SwiftUI timer of its own.
   rig is drawn huge, when `OttoAuraFigure` swaps its view from wide
   (`flightSpan`) to tall (`headroom`). Seen in the reel, which changes look
   every 1.6 s; on Home it happens once, when the glow crosses that line.
+
+## THE HATS CLEAR HIS EYE PATCHES AT EVERY LOOK (2026-09-28, Melvin)
+
+"The hat gets lower and lower as he gets closer to nirvana ... ensure it
+doesnt touch the brown part surrounding his eye ... never covering." The
+placement was right; the ART changes. The bright looks were drawn with a
+shorter forehead and bigger patches: the patch top sits 0.188 of his head's
+width below the skull at Steady (where every hat was fitted) and 0.100 at
+Nirvana, so a hat anchored at the skull lands on them.
+
+- **`HatArt.faceLift[id]` raises each hat per look**, in Steady units, and
+  `hatBox` subtracts it. Measured by **`tools/hat_lift.swift`**: along every
+  column across his face, the gap from the hat's lowest point (its `-front`
+  picture, or the whole one) to the top of the patches; each look is raised
+  until its closest gap matches Steady's, **capped at 12** (the halo and the
+  crowns sit far above his eyes and only have to stay off the patches;
+  keeping all of their height would float them off his head), **plus 3 from
+  look 8 up** (bigger patches run close to the brim along more of it, which
+  reads tighter). **Never lowered**, so looks 1 to 7 keep the fit they were
+  cut to. Brim hats rise 9 to 33 at looks 8 to 13, crowns 0 to 17, the halo 0.
+- **`hat_extract --looks DIR --lifts <13 numbers>`** places each look's
+  hidden-head mask with the SAME row. Without it the mask sits where the
+  head was before the lift. The pipeline for a layered hat is: cut, run
+  `hat_lift` on its `-front`, re-cut with `--lifts`, update the box.
+- **Patch detection that failed, so nobody retries it:** a colour test alone
+  counts the shaded fur at the sides of his head as patch (Steady then looked
+  as though its hats already overlapped); the working rule walks each column
+  down from the skull through fur, then at least 8 rows of cream face, then
+  the patch's own mid brown, and drops columns whose neighbours disagree
+  (the bright looks' rim light passes for cream for a pixel or two).
+- **A single lift per look was tried first and is not enough**: matching the
+  patches' highest point left looks 10 to 12 with the brim right on them,
+  because their patches are also wider and higher at the outer corners,
+  where brims curve down. It has to be per hat.
   The session Otto uses `.background` / `.overlay`, never a ZStack, so every
   layer is proposed exactly the drawing's frame and his size never changes.
