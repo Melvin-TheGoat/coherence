@@ -63,20 +63,20 @@ struct OttoAuraFigure: View {
     /// flat halo is not given a beanie's room.
     static func hatRise(_ id: String?, size: CGFloat) -> CGFloat {
         guard let id else { return 0 }
-        let canvas = size * 0.95 / bodyShare
-        let fit = HatArt.fit(for: id)
-        let box = canvas * canvasAspect * fit.width
-        var drawn = box
-        if let image = UIImage(named: "hat-\(id)"), image.size.width > 0 {
-            drawn = min(box, box * image.size.height / image.size.width)
-        }
-        return max(0, drawn - box * fit.sink)
+        let unit = size * 0.95 / bodyShare / 744
+        // The tallest it stands above his tuft on any look, so the bubble never
+        // has to move as he brightens.
+        let rise = (1...13).map { look -> CGFloat in
+            let tuft = 649 - 600 + lift(look: look)
+            return tuft - hatBox(id, look: look, rig: true).minY
+        }.max() ?? 0
+        return max(0, rise * unit)
     }
 
     @State private var bob = false
     /// A free-running oscillator for the RIG's own float, which the app
-    /// cannot read back (see `rigHatLift` below). Runs unconditionally; it
-    /// only ever moves the hat when `rigHatLift` decides to use it.
+    /// cannot read back (see `rigBobOffset` below). Runs unconditionally; it
+    /// only ever moves the hat when `rigBobOffset` decides to use it.
     @State private var rigBob = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// The animated seven (`OttoAura.riv`). Nil until that file ships, and
@@ -113,90 +113,97 @@ struct OttoAuraFigure: View {
 
     // MARK: - The hat
 
-    /// Where the hat sits, drawn in the SAME 664 x 744 canvas frame
-    /// `drawing` renders in, so a fraction measured off that canvas is a
-    /// fraction of this view with no further conversion.
-    ///
-    /// **Measured, not guessed**, 2026-09-27: the topmost fur pixel (any
-    /// channel below 178, the darkness threshold `tools/otto_aura_cut.swift`
-    /// already uses to find him against the paper) in a 260pt band centred
-    /// on his body's own x (332 of 664), scanned on the real `OttoAura1`
-    /// through `OttoAura7` art. Nirvana's tuft sits LOWER in frame than
-    /// Withered's (he is drawn bigger and closer for the brighter stages) —
-    /// that is what the source art actually does, not a bug in the scan.
-    private static let headTopFraction: [OttoAura.Stage: CGFloat] = [
-        .withered: 67.0 / 744, .faded: 59.0 / 744, .stirring: 46.0 / 744,
-        .steady: 40.0 / 744, .bright: 64.0 / 744, .radiant: 112.0 / 744,
-        .nirvana: 167.0 / 744
+    /// His head in each of the rig's thirteen looks, measured on the clean
+    /// bodies `OttoAura.riv` animates (pulled out of the file and run through
+    /// `tools/otto_head_measure.swift`, 2026-09-27), in each image's own
+    /// pixels: the tuft's tip, the top of his skull under it, the head's centre
+    /// and width, the bottom of his body, and the image's width. Look order.
+    /// An earlier version read the head off the lit stills, where baked light
+    /// and a bug beside Withered's head threw the numbers.
+    private static let bodies: [(tuft: CGFloat, skull: CGFloat, cx: CGFloat, w: CGFloat,
+                                 bottom: CGFloat, imageW: CGFloat)] = [
+        (4, 52, 255.5, 331, 587, 492),    // 1 Withered
+        (4, 47, 258.5, 340, 563, 492),    // 2 A
+        (6, 54, 252.0, 344, 594, 496),    // 3 Faded
+        (3, 51, 250.5, 337, 575, 494),    // 4 B
+        (6, 56, 248.5, 340, 607, 500),    // 5 Stirring
+        (4, 51, 243.5, 343, 592, 493),    // 6 C
+        (5, 51, 246.5, 340, 613, 495),    // 7 Steady
+        (6, 61, 247.5, 335, 574, 493),    // 8 D
+        (7, 62, 251.0, 326, 600, 496),    // 9 Bright
+        (12, 67, 248.5, 325, 574, 500),   // 10 E
+        (12, 66, 253.0, 320, 567, 501),   // 11 Radiant
+        (25, 84, 248.0, 309, 564, 501),   // 12 F
+        (15, 68, 249.5, 320, 568, 501),   // 13 Nirvana
     ]
 
-    /// The same, indexed by the rig's LOOK (1 to 13): the seven stages sit
-    /// at the odd numbers exactly; the six in-between looks are a straight
-    /// line between their neighbours, matching how those drawings are
-    /// themselves described ("a body halfway between each pair").
-    private static func headTopFraction(look: Int) -> CGFloat {
-        let stages = OttoAura.Stage.allCases   // declared 1...7, already in order
-        let clamped = min(max(look, 1), 13)
-        if clamped % 2 == 1 {
-            return headTopFraction[stages[(clamped - 1) / 2]] ?? 0.08
-        }
-        let lower = headTopFraction[stages[clamped / 2 - 1]] ?? 0.08
-        let upper = headTopFraction[stages[clamped / 2]] ?? 0.08
-        return (lower + upper) / 2
+    /// A look's head on the 664 x 744 canvas. The rig stands every body 600
+    /// units tall on his base (332, 649) by scaling it there (see CLAUDE.md,
+    /// the aura rig), so the rig's head is the measured one scaled by that;
+    /// the stills are cut at the bodies' own size.
+    private static func head(look: Int, rig: Bool) -> (skull: CGFloat, cx: CGFloat, width: CGFloat) {
+        let b = bodies[min(max(look, 1), 13) - 1]
+        let k: CGFloat = rig ? 600 / (b.bottom - b.tuft) : 1
+        return (649 - k * (b.bottom - b.skull), 332 + k * (b.cx - b.imageW / 2), k * b.w)
     }
 
-    // Each hat's size and how far it sits down on him: `HatArt.fit`.
-
-    /// The rig's own vertical motion for a floating look, so the hat can
-    /// approximate it: `Lift`, a fixed per-look rise, plus `Bob`, a slow
-    /// oscillation. **Read straight off `tools/otto_aura_rig_build.py`**,
-    /// which built `OttoAura.riv`: `Lift` keys `{6: -26, 7: -40}` (canvas
-    /// units, stage 6 = Radiant, stage 7 = Nirvana, everything below zero),
-    /// and the `Float` timeline bobs `Bob` between 0 and -10 over its own
-    /// 5.0 s duration (300 frames at 60 fps). **This can only ever be an
-    /// approximation**: the rig runs that animation internally and SwiftUI
-    /// cannot read its live value back, so the hat plays an independent
-    /// oscillation of the same amplitude and period rather than a true
-    /// mirror — close enough that it rides with him instead of sitting
-    /// still while he moves.
-    ///
-    /// Applied only from look 9 (Bright) up, where the rig's own Float
-    /// state starts to engage.
-    private func rigHatLift(look: Int, canvas: CGFloat) -> CGFloat {
-        guard aura.rig != nil, look >= 9 else { return 0 }
-        // Bright (9) carries no Lift keyframe in the build script; only
-        // Radiant (11) and Nirvana (13) do. The in-between looks (10, 12)
-        // are a straight line between their neighbours, the same rule
-        // `headTopFraction(look:)` uses.
-        let lift: CGFloat
+    /// The rig's own rise for a floating look (`Lift` in
+    /// `tools/otto_aura_rig_build.py`: nothing through Bright, 26 up at
+    /// Radiant, 40 at Nirvana, the in-betweens halfway).
+    private static func lift(look: Int) -> CGFloat {
         switch look {
-        case 9: lift = 0
-        case 10: lift = -13
-        case 11: lift = -26
-        case 12: lift = -33
-        default: lift = -40
+        case ...9: return 0
+        case 10: return -13
+        case 11: return -26
+        case 12: return -33
+        default: return -40
         }
-        let bobAmplitude: CGFloat = 10.0 / 744
-        return canvas * (lift / 744 - (rigBob ? bobAmplitude : 0))
+    }
+
+    /// A hat's box on a look, in canvas units: its box on Steady, where it was
+    /// generated (`HatArt.placement`), moved and scaled with his head from
+    /// Steady's to this look's. Nil for a hat with no art.
+    static func hatBox(_ id: String, look: Int, rig: Bool) -> CGRect {
+        let box = HatArt.placement[id] ?? CGRect(x: 172, y: -20, width: 318, height: 206)
+        let from = HatArt.steadyHead
+        let to = head(look: look, rig: rig)
+        let s = to.width / from.width
+        return CGRect(x: to.cx + (box.minX - from.cx) * s,
+                      y: to.skull + (box.minY - from.skull) * s + (rig ? lift(look: look) : 0),
+                      width: box.width * s, height: box.height * s)
+    }
+
+    /// The float the rig plays on top of `Lift` (the `Float` timeline bobs
+    /// `Bob` between 0 and -10 over 5 s). **An approximation**: the rig runs
+    /// it inside, and SwiftUI cannot read its value back, so the hat plays the
+    /// same oscillation on its own. Only from Bright up, where he floats.
+    /// Moving the hats into the rig itself removes the guess.
+    private func rigBobOffset(look: Int, unit: CGFloat) -> CGFloat {
+        guard aura.rig != nil, look >= 9 else { return 0 }
+        return rigBob ? -10 * unit : 0
     }
 
     @ViewBuilder
     private func hatOverlay(canvas: CGFloat) -> some View {
-        if let effectiveHatID {
+        if let id = effectiveHatID {
             let effectiveLook = look ?? stage.look
-            let headFraction = Self.headTopFraction(look: effectiveLook)
-            let fit = HatArt.fit(for: effectiveHatID)
-            let hatSize = canvas * Self.canvasAspect * fit.width
-            let sink = hatSize * fit.sink
-            let bottomY = canvas * headFraction + sink
-            HatArt(id: effectiveHatID, size: hatSize)
-                .position(x: canvas * Self.canvasAspect * (332.0 / 664.0), y: bottomY - hatSize / 2)
-                .offset(y: rigHatLift(look: effectiveLook, canvas: canvas))
-                .allowsHitTesting(false)
+            let unit = canvas / 744
+            let box = Self.hatBox(id, look: effectiveLook, rig: aura.rig != nil)
+            Group {
+                if let image = UIImage(named: "hat-\(id)") {
+                    Image(uiImage: image).resizable()
+                } else {
+                    HatArt(id: id, size: box.width * unit)
+                }
+            }
+            .frame(width: box.width * unit, height: box.height * unit)
+            .position(x: box.midX * unit, y: box.midY * unit)
+            .offset(y: rigBobOffset(look: effectiveLook, unit: unit))
+            .allowsHitTesting(false)
         }
     }
 
-    /// Runs for the figure's whole lifetime; `rigHatLift` is the only reader
+    /// Runs for the figure's whole lifetime; `rigBobOffset` is the only reader
     /// and it only ever consumes this above look 9, so the cost elsewhere is
     /// one Bool quietly flipping every 2.5 s.
     private func startRigBob() {

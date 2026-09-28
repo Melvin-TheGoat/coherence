@@ -45,6 +45,20 @@ struct RootView: View {
 
     var body: some View {
         Group {
+            #if DEBUG
+            if let hat = ProcessInfo.processInfo.environment["PREVIEW_HAT_GALLERY"] {
+                HatGallery(firstID: hat)
+            } else {
+                app
+            }
+            #else
+            app
+            #endif
+        }
+    }
+
+    @ViewBuilder private var app: some View {
+        Group {
             if preferences.contains(where: { $0.onboardingComplete }) {
                 if premiumLock {
                     PaywallScreen(placement: "root_lock", plan: $lockPlan) { _ in }

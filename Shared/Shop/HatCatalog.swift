@@ -29,6 +29,7 @@ enum HatCatalog {
         Item(id: "flowercrown", name: "Flower Crown", price: 350),
         Item(id: "monkhat", name: "Monk's Woven Hat", price: 500),
         Item(id: "wanderer", name: "Wanderer's Hat", price: 650),
+        Item(id: "enso", name: "Ensō Hat", price: 700),
         Item(id: "wizardhat", name: "Wizard Hat", price: 750),
         // A halo is the nearest thing to enlightenment a sloth can wear.
         Item(id: "halo", name: "Halo", price: 900),

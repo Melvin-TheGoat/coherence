@@ -34,29 +34,38 @@ struct HatArt: View {
         .frame(width: size, height: size)
     }
 
-    // MARK: - Fit
+    // MARK: - Where it sits
 
-    /// How each hat sits on him, fitted by eye on the simulator with
-    /// `PREVIEW_HAT=<id>` (2026-09-27, the art's first day): `width` is the
-    /// box as a fraction of his canvas width, `sink` how far the box's floor
-    /// goes below the top of his fur, as a fraction of the box. A negative
-    /// sink floats the hat above him, which is what a halo does.
-    static func fit(for id: String) -> (width: CGFloat, sink: CGFloat) {
-        switch id {
-        case "beanie":      return (0.40, 0.42)
-        case "sunhat":      return (0.54, 0.34)
-        case "bucket":      return (0.44, 0.38)
-        case "horns":       return (0.44, 0.34)
-        case "leafcrown":   return (0.46, 0.33)
-        case "flowercrown": return (0.46, 0.33)
-        case "monkhat":     return (0.56, 0.26)
-        case "wanderer":    return (0.58, 0.30)
-        case "wizardhat":   return (0.42, 0.30)
-        case "halo":        return (0.32, -0.08)
-        case "goldcrown":   return (0.30, 0.24)
-        default:            return (0.34, 0.22)
-        }
-    }
+    /// Each hat's box on Steady (the `OttoAura4` drawing, in its 664 x 744
+    /// canvas units), where the hat was GENERATED on him (Melvin, 2026-09-27).
+    /// Every hat was drawn onto `mockups/otto-hats/otto-reference.png` and cut
+    /// back out by `tools/hat_extract.swift`, which printed these boxes, so a
+    /// hat sits exactly where the picture of him wearing it put it. The first
+    /// set were product shots placed by eye and read as pasted on his
+    /// forehead. `OttoAuraFigure` carries a box from Steady onto every other
+    /// look by where that look's head is.
+    ///
+    /// The horns are the one hat from the old sheet (Melvin liked them), so
+    /// their box is set by eye to seat the band on his skull.
+    static let placement: [String: CGRect] = [
+        "beanie":      CGRect(x: 146.9, y: -28.9, width: 368.0, height: 275.8),
+        "sunhat":      CGRect(x: 83.6, y: 15.4, width: 490.4, height: 261.7),
+        "bucket":      CGRect(x: 119.5, y: 23.8, width: 426.4, height: 240.6),
+        "horns":       CGRect(x: 172, y: -70, width: 318, height: 206),
+        "flowercrown": CGRect(x: 124.4, y: 34.4, width: 404.6, height: 218.1),
+        "monkhat":     CGRect(x: 85.0, y: 17.5, width: 489.0, height: 238.5),
+        "leafcrown":   CGRect(x: 131.5, y: 33.0, width: 401.1, height: 218.1),
+        "wanderer":    CGRect(x: 82.6, y: 9.6, width: 497.3, height: 245.8),
+        "enso":        CGRect(x: 82.6, y: -2.4, width: 497.3, height: 255.0),
+        "wizardhat":   CGRect(x: 93.2, y: -49.0, width: 479.7, height: 322.8),
+        "goldcrown":   CGRect(x: 175.9, y: -38.4, width: 310.8, height: 180.8),
+        "halo":        CGRect(x: 211.9, y: -13.0, width: 238.1, height: 70.6),
+    ]
+
+    /// Steady's head in the same units, where every box above was measured
+    /// from (`tools/otto_head_measure.swift` on `OttoAura4`): the top of his
+    /// skull under the tuft, its centre, and its width.
+    static let steadyHead = (skull: CGFloat(86), cx: CGFloat(330.5), width: CGFloat(341))
 
     // MARK: - Placeholder
 
