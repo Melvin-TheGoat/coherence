@@ -101,7 +101,12 @@ struct BlockTab: View {
 
     private var addButton: some View {
         Button {
-            editing = EditRequest(blocker: .preset(.custom))
+            // All day, until I meditate, in one click (Melvin, 2026-09-27):
+            // the editor's own default, so a new blocker opens already set to
+            // the choice it will save with if nobody touches anything.
+            var blocker = Blocker.preset(.custom)
+            blocker.apply(.allDay, hours: BlockHours())
+            editing = EditRequest(blocker: blocker)
         } label: {
             Label("Add a blocker", systemImage: "plus")
         }
@@ -221,7 +226,10 @@ struct BlockTab: View {
     }
 
     private var presets: some View {
-        let kinds: [BlockerKind] = [.mindfulDay, .mindfulMorning, .windDown, .focusHours, .dailyLimit]
+        // Daily Limit is out (Melvin, 2026-09-27): the editor that could set
+        // one is gone, so nothing new should be able to make one either. A
+        // blocker saved with a limit before this change keeps holding on it.
+        let kinds: [BlockerKind] = [.mindfulDay, .mindfulMorning, .windDown, .focusHours]
             .filter { kind in kind != .mindfulDay || !block.state.blockers.contains { $0.kind == .mindfulDay } }
         return VStack(alignment: .leading, spacing: 10) {
             Text("Presets")
