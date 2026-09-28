@@ -6190,3 +6190,48 @@ replaces the valley welcome and its bubble; the grasshopper overlay
   (frames 4k+2 and 4k+3 sit one slot early), feed that as variable frame
   rate through the concat demuxer, and let `minterpolate` fill only the one
   missing slot per block. Motion then ramps smoothly. Do it before cutting.
+
+## HATS, THE REWARD, THE SESSION VIEW, 58 AWARDS (2026-09-27/28, Melvin)
+
+- **Hats are generated ON Otto, then cut back out** (Melvin: the first set
+  "absolutely do not sit well", undersides showing like clipart). Each hat
+  was rendered on the Steady reference (`mockups/otto-hats/`), then
+  `tools/hat_extract.swift` registers the render to the clean body, masks
+  with Vision's foreground mask and keeps what differs (fur / shadow / hat
+  classified, edge trims only; a global fur match punched holes). Placement
+  lives in `HatArt.placement` in Steady canvas units (664 x 744) and is
+  carried to every look by head anchors measured on the clean rig bodies
+  (`tools/otto_head_measure.swift`, `OttoAuraFigure.bodies`), including the
+  rig's per-look scale and lift. `PREVIEW_HAT=<id>` and
+  `PREVIEW_HAT_GALLERY=<id|all>` (DEBUG) show them; the gallery draws all
+  thirteen looks. Known gaps: on floating looks the bob is approximated in
+  SwiftUI (`rigBobOffset`), and bugs pass under the hat. Both go away if the
+  hats move into `OttoAura.riv`, which needs that file open in the editor.
+- **The session Otto wears it too** (Ready greeting and the sit's
+  meditating pose, `OttoRiveView.hatBox`), from pose images measured inside
+  `Otto.riv`. The Ready bubble and the sit's ring rise by
+  `OttoRiveView.hatRise`; with a hat on, the Ready screen has no sky left for
+  the lift above the pills, so he sits where an SE seats him.
+- **After a session: `SessionRewardView`** (mockup `reward-v1.html`,
+  Melvin: "honestly perfect"). Otto lands and hops, then three tiles (time,
+  streak, points), coins arcing into the bank, the glow bar filling, a
+  ribbon if he reached a new stage, Continue. Tapping skips to the end.
+  Award unlocks are held until Continue (`holdAwards`) so the two never
+  stack. `PREVIEW_REWARD=<from>:<to>` replays it.
+- **A saved session opens `SessionView`** (the friends-feed shape with every
+  detail, photo and video), not the edit screen; Home's week is cairns
+  (`WeekCairns`), not photos. `PREVIEW_SESSION=1`.
+- **Awards: 18 became 58** (seven groups). Logged sessions count for totals
+  and streaks but never for length or time-of-day awards.
+  `AwardsInbox.catchUpCatalogIfNeeded` silently announces everything an
+  existing device already earned the first time a bigger catalog runs, so a
+  catalog change never floods anyone. `AwardFacts` is the one place Home and
+  Profile build facts from. The hat award was left out while the Store is
+  off in Release.
+- Also: every onboarding screen gets Back unless it draws its own
+  (`OnboardingBackDrawn`); the Night owl blocker (6 pm to 6 am); Home's clay
+  icons; the Block tab without Otto; the years clip ends on a sharp clock
+  (`tools/clip_fill.swift --patch-*`); the Store replaces the Friends tab
+  behind `FeatureFlags.shop` (off in Release), Friends becomes a circle on
+  Home; every scene and bubble follows the clock (`clock: true`, words on the
+  sky use `ValleyGround.skyInk`).
