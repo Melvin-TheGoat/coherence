@@ -179,17 +179,17 @@ private struct GuideBubble: View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
                 .font(DisplayFont.display(19, .heavy))
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(SpeechBubbleStyle.ink)
             Text(line)
                 .font(.system(size: 13.5, weight: .semibold))
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(SpeechBubbleStyle.ink)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
-        .background(AppColor.backgroundSecondary, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(SpeechBubbleStyle.fill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay(alignment: .trailing) {
             Triangle()
-                .fill(AppColor.backgroundSecondary)
+                .fill(SpeechBubbleStyle.fill)
                 .frame(width: 10, height: 16)
                 .offset(x: 9)
         }

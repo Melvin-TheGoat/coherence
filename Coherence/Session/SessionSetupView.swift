@@ -24,7 +24,10 @@ struct SessionSetupView: View {
     @EnvironmentObject private var coordinator: SessionCoordinator
     @EnvironmentObject private var community: CommunityModel
     @Environment(\.dismiss) private var dismiss
-    @Query private var preferences: [Preferences]
+    /// Oldest first, as `ShopTab` and `OttoAuraFigure` read it: there can be
+    /// two rows (a bootstrap and a synced one), and `.first` of an unsorted
+    /// query is whichever the store hands back.
+    @Query(sort: \Preferences.createdAt) private var preferences: [Preferences]
 
     /// Empty = silence.
     @AppStorage("sessionSoundID") private var soundID: String = ""
@@ -70,6 +73,16 @@ struct SessionSetupView: View {
     /// stored here: it opens `logging`.
     @AppStorage("ready.sitKind") private var kindRaw = SitKind.unmeasured.rawValue
     private var kind: SitKind { SitKind(rawValue: kindRaw) ?? .unmeasured }
+    /// Whether an Apple Watch is connected (`WatchLink`). The Watch measures
+    /// only when it is chosen AND connected: a Watch that is not connected
+    /// today never takes a sit, whatever was chosen.
+    @ObservedObject private var watchLink = WatchLink.shared
+    @State private var showWatchSetup = false
+    /// What this sit will actually be: the choice, unless it asks for a Watch
+    /// that is not connected right now.
+    private var effectiveKind: SitKind {
+        kind == .watch && !watchLink.connected ? .unmeasured : kind
+    }
     /// The three cards, a state of this screen like the sound list.
     @State private var choosingKind = false
     /// Recording a sit done elsewhere: how long, and when it ended.
@@ -183,9 +196,16 @@ struct SessionSetupView: View {
             if hosting, id == nil { dismiss() }
         }
         .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
+        .sheet(isPresented: $showWatchSetup) { WatchConnectSheet() }
         // The recorded sit's own page, for the photo or video that shows it
         // happened, and notes. Closing it closes this screen too.
-        .fullScreenCover(item: $loggedID, onDismiss: { dismiss() }) { logged in
+        // A recorded sit is the end of this screen, so 808's own Do Not
+        // Disturb (the Silence switch may have been on) goes back off here;
+        // no sit of the coordinator's will ever end and restore it.
+        .fullScreenCover(item: $loggedID, onDismiss: {
+            Task { await FocusShortcut.shared.restoreIfOurs() }
+            dismiss()
+        }) { logged in
             SaveSessionView(sessionID: logged.id, mode: .edit) { loggedID = nil }
         }
         // NOT a permission prompt on appear. Somebody who opened this screen
@@ -194,13 +214,20 @@ struct SessionSetupView: View {
         // reach for the switch, which is the moment it is about anything.
         .onAppear {
             focus.refreshStatus()
+            watchLink.refresh()
             if !lengthLoaded {
                 lengthLoaded = true
                 lengthMinutes = SessionLength.clamped(preferences.first?.defaultDurationSec.map { $0 / 60 })
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { focus.refreshStatus() }
+            if phase == .active { focus.refreshStatus(); watchLink.refresh() }
+        }
+        // Closed mid-count (swiped away, or dismissed from above): the count
+        // must not run on and start a sit behind a screen that is gone.
+        .onDisappear {
+            countdownTask?.cancel()
+            countdownTask = nil
         }
     }
 
@@ -350,8 +377,8 @@ struct SessionSetupView: View {
                 // Otto's lap (the first build stacked three pills).
                 HStack(spacing: 10) {
                     Button { choosingKind = true } label: {
-                        SitPill(art: kind.art, label: kind.pillTitle,
-                                subtitle: compact ? nil : kind.line, compact: compact, half: true) {
+                        SitPill(art: effectiveKind.art, label: effectiveKind.pillTitle,
+                                subtitle: compact ? nil : effectiveKind.line, compact: compact, half: true) {
                             chevron
                         }
                     }
@@ -367,6 +394,8 @@ struct SessionSetupView: View {
 
                 silenceControl(ink: day.ink, compact: compact)
 
+                watchControl
+
                 Button("Begin", action: begin)
                     .buttonStyle(PrimaryButtonStyle())
                     .padding(.top, 4)
@@ -377,6 +406,76 @@ struct SessionSetupView: View {
         }
         .padding(.horizontal, 18)
         .padding(.bottom, Self.controlsBottom)
+    }
+
+    /// Measure with the Apple Watch, yes or no (Aziz, 2026-09-28): a small
+    /// switch under Silence notifications, deliberately smaller than the
+    /// pills, because the same choice inside the Meditate card is easy to
+    /// miss. It is `kindRaw`, the card's own value, so they cannot disagree.
+    /// Nothing at all without a paired Watch; "Not connected" and Set up when
+    /// the Watch is paired but 808 is not on it.
+    @ViewBuilder
+    private var watchControl: some View {
+        switch watchLink.status {
+        case .noWatch:
+            EmptyView()
+        case .connected:
+            Button {
+                withAnimation(.snappy(duration: 0.2)) {
+                    kindRaw = (kind == .watch ? SitKind.unmeasured : .watch).rawValue
+                }
+            } label: {
+                watchPill {
+                    Label("Connected", systemImage: "checkmark.circle.fill")
+                        .labelStyle(WatchCheckLabelStyle())
+                        .fixedSize()
+                    Toggle("", isOn: .constant(kind == .watch))
+                        .labelsHidden()
+                        .tint(OnboardingGreen.fill)
+                        .allowsHitTesting(false)
+                        .scaleEffect(0.72)
+                        .frame(width: 38, height: 24)
+                        .fixedSize()
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Measure with Apple Watch")
+            .accessibilityValue(kind == .watch ? "On" : "Off")
+        case .notInstalled:
+            Button { showWatchSetup = true } label: {
+                watchPill {
+                    Text("Not connected")
+                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
+                        .foregroundStyle(AppColor.textSecondary)
+                    Text("Set up")
+                        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(AppColor.skyDeep, in: Capsule())
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func watchPill<Trailing: View>(@ViewBuilder _ trailing: () -> Trailing) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "applewatch")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AppColor.textPrimary)
+            Text("Apple Watch")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .fixedSize()
+            trailing()
+        }
+        .padding(.leading, 14)
+        .padding(.trailing, 8)
+        .padding(.vertical, 5)
+        .frame(minHeight: 36)
+        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
     }
 
     private var chevron: some View {
@@ -472,7 +571,7 @@ struct SessionSetupView: View {
         hosting = true
         let haptics = preferences.first?.hapticsEnabled ?? true
         withAnimation(.easeInOut(duration: 0.5)) {
-            if kind == .watch {
+            if WatchDefault.measures(chosen: kind == .watch, connected: watchLink.connected) {
                 coordinator.beginMeasured(mode: SoundCatalog.mode(for: id),
                                           plannedDurationSec: planned,
                                           hapticsEnabled: haptics, soundID: id)
@@ -1105,5 +1204,16 @@ struct SoundBars: View {
         }
         .frame(height: 13)
         .onAppear { up = true }
+    }
+}
+
+/// A green check before "Connected".
+struct WatchCheckLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 3) {
+            configuration.icon.foregroundStyle(OnboardingGreen.fill)
+            configuration.title.foregroundStyle(OnboardingGreen.shade)
+        }
+        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
     }
 }

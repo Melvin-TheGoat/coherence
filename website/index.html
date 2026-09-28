@@ -3,704 +3,718 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>808 · Meditation, measured on your Apple Watch</title>
-<meta name="description" content="Meet 808, the first app that scores your meditation from your body, with all the tools to verify, track, and share your practice.">
-<meta property="og:title" content="Make meditation easy with 808">
-<meta property="og:description" content="The first app that scores your meditation from your body.">
-<meta property="og:image" content="img/shot-share.png">
-<link rel="preload" href="fonts/manrope-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/hanken-var.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='none' stroke='%23D4AF37' stroke-width='5'%3E%3Cellipse cx='50' cy='28.5' rx='13.5' ry='20.5'/%3E%3Cellipse cx='50' cy='71.5' rx='13.5' ry='20.5'/%3E%3Cellipse cx='28.5' cy='50' rx='20.5' ry='13.5'/%3E%3Cellipse cx='71.5' cy='50' rx='20.5' ry='13.5'/%3E%3C/g%3E%3C/svg%3E">
+<title>808: Meditation That Sticks</title>
+<meta name="description" content="808 is the meditation app that makes it a habit. Otto holds the apps that pull you in until you've meditated, and glows brighter every day you do.">
+<meta property="og:title" content="808: Meditation That Sticks">
+<meta property="og:description" content="Otto holds the apps that pull you in until you've meditated, and glows brighter every day you do.">
+<meta property="og:image" content="img/app/home.jpg">
+<link rel="preload" href="fonts/nunito-var.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="img/otto/ottohead.png">
 <style>
-  /* ---- self-hosted type: no third-party request on this page ---- */
-  @font-face { font-family:'Manrope'; src:url('fonts/manrope-var.woff2') format('woff2');
-    font-weight:200 800; font-display:swap; }
-  @font-face { font-family:'Hanken Grotesk'; src:url('fonts/hanken-var.woff2') format('woff2');
-    font-weight:100 900; font-display:swap; }
-  @font-face { font-family:'DM Mono'; src:url('fonts/dmmono-400.woff2') format('woff2');
-    font-weight:400; font-display:swap; }
-  @font-face { font-family:'DM Mono'; src:url('fonts/dmmono-500.woff2') format('woff2');
-    font-weight:500; font-display:swap; }
+  /* Self-hosted, so the page still asks nothing of a third party. Nunito is
+     the closest open rounded face to the app's SF Rounded. */
+  @font-face { font-family:'Nunito'; src:url('fonts/nunito-var.woff2') format('woff2');
+    font-weight:200 1000; font-display:swap; }
 
-  /* ---- the app's own tokens. One accent, gold, everywhere. The old
-         two-colour grammar was cut in the app and dies here with it. ---- */
+  /* One appearance, like the app: a daylight valley. Painted explicitly so
+     the page holds on any host ground. */
   :root{
-    --bg:#13100D;
-    --card:#221E19;
-    --card-soft:rgba(34,30,25,.62);
-    --border:#2E2A23;
-    --fg:#F5F3EC;
-    --muted:#9A9A93;
-    --dim:#55534E;
-    --gold:#D4AF37;
-    --gold-ink:#17130A;
-    --display:'Manrope', ui-sans-serif, system-ui, sans-serif;
-    --body:'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
-    --mono:'DM Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sky-top:#86BDE2; --sky-bot:#DCEEF6;
+    --paper:#FBF8F2; --sand:#F0E9DC; --sand-edge:#E2D8C6;
+    --ink:#2A231E; --ink-soft:#6B6158; --ink-faint:#A1978C;
+    --green:#5AB950; --green-shade:#418E3A; --green-ink:#2F6E2A;
+    --meadow:#9BC586; --meadow-deep:#86B472;
+    --gold:#E9B949;
+    --font:'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
   }
 
-  * { box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body{
-    margin:0; background:var(--bg); color:var(--fg);
-    font-family:var(--body); font-size:17px; line-height:1.6;
-    -webkit-font-smoothing:antialiased; overflow-x:hidden;
-  }
-  body.has-banner{ padding-bottom:84px; }
-  ::selection{ background:rgba(212,175,55,.28); }
-  /* height:auto is load-bearing: the width/height attributes reserve layout
-     space, and without it a 320px-wide phone keeps its 2622px attribute height. */
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{ margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font); font-size:18px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; overflow-x:hidden; }
   img{ max-width:100%; height:auto; display:block; }
-  a{ color:var(--gold); text-decoration:none; }
-  a:hover{ text-decoration:underline; }
-  a:focus-visible, button:focus-visible, input:focus-visible{
-    outline:2px solid var(--gold); outline-offset:2px; }
+  a{ color:var(--green-ink); }
+  a:focus-visible, button:focus-visible{ outline:3px solid var(--green); outline-offset:3px; border-radius:8px; }
+  h1,h2,h3{ margin:0; text-wrap:balance; letter-spacing:-.025em; }
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 20px; }
 
-  .shell{ max-width:1080px; margin:0 auto; padding:0 22px; }
-  section{ padding:84px 0 10px; }
+  /* ---------- nav ---------- */
+  .nav{ position:relative; z-index:3; display:flex; align-items:center; justify-content:space-between;
+    max-width:1120px; margin:0 auto; padding:20px 20px 0; }
+  .brand{ display:flex; align-items:center; gap:10px; color:var(--ink); text-decoration:none;
+    font-weight:900; font-size:26px; letter-spacing:-.03em; }
+  .brand img{ width:38px; height:38px; }
+  .nav .get{ font-weight:800; font-size:15px; color:#fff; text-decoration:none;
+    background:var(--green); padding:10px 18px; border-radius:999px;
+    box-shadow:0 3px 0 var(--green-shade); }
+  .nav .get:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--green-shade); }
 
-  .lab{
-    font-family:var(--mono); font-weight:500; font-size:12px;
-    letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  /* ---------- hero: the valley ---------- */
+  .hero{ position:relative; overflow:hidden; background:linear-gradient(var(--sky-top), var(--sky-bot) 62%);
+    border-radius:0 0 40px 40px; }
+  .hero-copy{ position:relative; z-index:2; text-align:center; padding:46px 20px 0; }
+  .hero h1{ font-weight:900; font-size:clamp(38px,6.4vw,68px); line-height:1.02; }
+  .hero p.lede{ max-width:34ch; margin:18px auto 0; font-size:clamp(17px,2vw,20px); color:#3E4A52; font-weight:600; }
+  .badge{ display:inline-block; margin-top:24px; line-height:0; }
+  .badge img{ height:54px; width:auto; }
+  .stage{ position:relative; height:clamp(480px,62vw,720px); margin-top:26px; }
+  .hero .stage{ height:clamp(700px,64vw,860px); }
+  .scene{ position:absolute; inset:auto 0 0 0; width:100%; height:100%; }
+  .sun{ position:absolute; left:18%; top:4%; width:clamp(70px,9vw,120px); aspect-ratio:1; border-radius:50%;
+    background:radial-gradient(circle,#FFF4C9 45%,rgba(255,236,170,.0) 72%); }
+  .cloud{ position:absolute; background:#fff; border-radius:999px; opacity:.95; }
+  .cloud::before,.cloud::after{ content:""; position:absolute; background:#fff; border-radius:50%; }
+  .cloud.c1{ width:150px; height:42px; left:6%; top:12%; }
+  .cloud.c1::before{ width:70px; height:70px; left:22px; top:-34px; }
+  .cloud.c1::after{ width:52px; height:52px; left:76px; top:-22px; }
+  .cloud.c2{ width:190px; height:50px; right:5%; top:4%; }
+  .cloud.c2::before{ width:90px; height:90px; left:36px; top:-46px; }
+  .cloud.c2::after{ width:64px; height:64px; left:108px; top:-28px; }
+  @media (prefers-reduced-motion:no-preference){
+    .cloud{ animation:drift 38s ease-in-out infinite alternate; }
+    .cloud.c2{ animation-duration:52s; animation-direction:alternate-reverse; }
   }
-  .lab .n{ color:var(--gold); }
-  h1,h2,h3{ font-family:var(--display); text-wrap:balance; }
-  h2{ font-size:clamp(28px,4.2vw,40px); font-weight:800; letter-spacing:-.02em;
-      line-height:1.12; margin:14px 0 0; }
-  .prose{ max-width:62ch; color:var(--muted); }
-  .prose b{ color:var(--fg); font-weight:600; }
+  @keyframes drift{ to{ transform:translateX(40px); } }
 
-  /* ---- masthead ---- */
-  .masthead{ display:flex; align-items:center; gap:14px; padding:22px 0 8px; }
-  .wordmark{ display:flex; align-items:center; gap:10px;
-    font-family:var(--display); font-weight:800; font-size:22px; }
-  .wordmark svg{ width:30px; height:30px; }
-  .masthead .lab{ font-size:11px; }
-  .spacer{ flex:1; }
-  .masthead a{ font-family:var(--mono); font-size:12px; letter-spacing:.08em;
-    text-transform:uppercase; padding:12px 4px; }
-
-  /* ---- hero ---- */
-  .hero{ display:grid; grid-template-columns:1.15fr .85fr; gap:44px;
-    align-items:center; padding:56px 0 72px; }
-  h1{ font-size:clamp(34px,5.4vw,54px); font-weight:800; letter-spacing:-.025em;
-    line-height:1.08; margin:0 0 18px; }
-  h1 .em{ color:var(--gold); }
-  .lede{ font-size:18px; color:var(--muted); max-width:54ch; margin:0 0 26px; }
-  .lede b{ color:var(--fg); font-weight:600; }
-
-  .phone{ border-radius:44px; border:3px solid #2b2823; overflow:hidden;
-    background:#000; outline:1px solid rgba(170,163,150,.55);
-    box-shadow:0 26px 70px rgba(0,0,0,.75); }
-  .hero .phone{ max-width:320px; justify-self:center; }
-
-  /* ---- waitlist form ---- */
-  .signup .row{ display:flex; gap:10px; flex-wrap:wrap; }
-  .signup input[type=email]{
-    flex:1; min-width:220px; min-height:52px; padding:0 16px;
-    background:var(--card); color:var(--fg);
-    border:1px solid var(--border); border-radius:14px;
-    font-family:var(--body); font-size:16px;
+  .phone{ position:relative; border-radius:46px; background:#1d1b1a; padding:10px;
+    box-shadow:0 30px 60px rgba(34,50,40,.28), inset 0 0 0 2px #3a3634; }
+  .phone img{ border-radius:37px; width:100%; }
+  .hero .phone{ position:absolute; left:50%; bottom:clamp(36px,5vw,64px); transform:translateX(-50%);
+    width:clamp(250px,24vw,300px); z-index:2; }
+  /* The phone stands in the grass, so it gets a shadow on the ground. */
+  .hero .phone::after{ content:""; position:absolute; left:8%; right:8%; bottom:-22px; height:26px; z-index:-1;
+    border-radius:50%; background:radial-gradient(closest-side,rgba(40,70,40,.35),rgba(40,70,40,0)); }
+  .otto{ position:absolute; z-index:3; pointer-events:none; }
+  .otto.left{ width:clamp(130px,16vw,220px); left:calc(50% - clamp(310px,34vw,470px)); bottom:6%; }
+  .otto.right{ width:clamp(120px,14vw,190px); left:calc(50% + clamp(160px,17vw,240px)); bottom:9%; }
+  @media (prefers-reduced-motion:no-preference){
+    .otto.left{ animation:breathe 10s ease-in-out infinite; transform-origin:50% 100%; }
   }
-  .signup input[type=email]::placeholder{ color:var(--dim); }
-  .cta{
-    min-height:52px; padding:0 24px; border:0; border-radius:14px;
-    background:var(--gold); color:var(--gold-ink); cursor:pointer;
-    font-family:var(--display); font-weight:700; font-size:16px;
-  }
-  .cta:hover{ filter:brightness(1.06); }
-  .cta[disabled]{ opacity:.6; cursor:default; }
-  .check{ display:flex; align-items:center; gap:9px; margin-top:12px;
-    color:var(--muted); font-size:14px; cursor:pointer; min-height:44px; }
-  .check input{ width:17px; height:17px; accent-color:var(--gold); }
-  .formerr{ display:none; color:#C08A6B; font-size:14px; margin:8px 0 0; }
-  .microcopy{ font-family:var(--mono); font-size:11px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--dim); margin:10px 0 0; }
-  .done{ display:none; padding:18px 20px; background:var(--card);
-    border:1px solid var(--border); border-radius:14px; max-width:420px; }
-  .done b{ font-family:var(--display); }
-  .done p{ margin:4px 0 0; color:var(--muted); font-size:15px; }
+  @keyframes breathe{ 50%{ transform:scale(1.025); } }
 
-  /* ---- the mission, lit word by word ---- */
-  .mission{ height:320svh; position:relative; }
-  .mission-pin{ position:sticky; top:0; height:100svh;
-    display:grid; place-items:center; padding:0 22px; }
-  .mission p{ max-width:860px; margin:0;
-    font-family:var(--display); font-weight:700;
-    font-size:clamp(24px,4.2vw,42px); line-height:1.32; letter-spacing:-.015em;
-    text-wrap:balance; }
-  /* Lit by default so the paragraph reads with JavaScript off. */
-  .mission p span{ color:var(--fg); transition:color .18s linear; }
-  .mission.dimmable p span{ color:var(--dim); }
-  .mission.dimmable p span.lit{ color:var(--fg); }
-  @media (prefers-reduced-motion: reduce){
+  /* ---------- intro ---------- */
+  .intro{ text-align:center; padding:96px 20px 40px; }
+  .intro p{ max-width:40ch; margin:0 auto 18px; font-size:clamp(19px,2.3vw,24px); font-weight:700; color:var(--ink-soft); }
+  .intro p b{ color:var(--ink); }
+  .laurels{ display:flex; justify-content:center; gap:clamp(18px,6vw,70px); margin-top:34px; flex-wrap:wrap; }
+  .laurel{ display:flex; align-items:center; gap:8px; }
+  .laurel svg{ width:26px; height:56px; color:var(--ink-faint); }
+  .laurel .flip{ transform:scaleX(-1); }
+  .laurel div{ text-align:center; }
+  .laurel b{ display:block; font-size:clamp(20px,2.4vw,26px); font-weight:900; letter-spacing:-.02em; }
+  .laurel span{ font-size:14px; font-weight:700; color:var(--ink-soft); }
+
+
+  /* ---------- the mission, lit word by word ---------- */
+  .mission{ height:300svh; position:relative; }
+  .mission-pin{ position:sticky; top:0; height:100svh; display:grid; place-items:center; padding:0 22px; }
+  .mission p{ max-width:880px; margin:0; font-weight:900; font-size:clamp(28px,4.6vw,50px);
+    line-height:1.22; letter-spacing:-.025em; text-align:center; text-wrap:balance; }
+  /* Lit by default so it reads with JavaScript off; the script dims it. */
+  .mission p span{ color:var(--ink); transition:color .2s linear; }
+  .mission.dimmable p span{ color:#DDD3C4; }
+  .mission.dimmable p span.lit{ color:var(--ink); }
+  .mission p span.g{ }
+  .mission.dimmable p span.g.lit{ color:var(--green-ink); }
+  @media (prefers-reduced-motion:reduce){
     .mission{ height:auto; padding:110px 0; }
     .mission-pin{ position:static; height:auto; }
-    .mission.dimmable p span{ color:var(--fg); }
+    .mission.dimmable p span{ color:var(--ink); }
   }
 
-  /* ---- features: the four pain points ---- */
-  .pain{ display:grid; grid-template-columns:1fr .9fr; gap:44px;
-    align-items:center; margin-top:56px; padding-top:46px;
-    border-top:1px solid var(--border); }
-  .pain:first-of-type{ border-top:0; padding-top:0; }
-  .pain.flip{ grid-template-columns:.9fr 1fr; }
-  .pain .shots{ display:flex; gap:14px; justify-content:center; }
-  .pain .phone{ max-width:250px; flex:1; }
-  .pain .shots.single .phone{ max-width:290px; }
-  .pain h3{ font-size:clamp(22px,3vw,30px); font-weight:800;
-    letter-spacing:-.02em; margin:10px 0 12px; }
-  .pain .prose{ font-size:16px; }
-  .painlab{ font-family:var(--mono); font-weight:500; font-size:12px;
-    letter-spacing:.1em; text-transform:uppercase; color:var(--gold); }
-
-  /* ---- testimonials ---- */
-  .cards{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:14px; margin-top:38px; }
-  .tcard{ display:flex; flex-direction:column; gap:12px;
-    padding:22px; border-radius:18px; background:var(--card);
-    border:1px solid var(--border); }
-  .tcard h3{ margin:0; font-size:16px; font-weight:700; }
-  .tcard blockquote{ margin:0; font-size:15px; line-height:1.6;
-    color:var(--muted); flex:1; }
-  .stars{ color:var(--gold); font-size:13px; letter-spacing:2px; }
-  .tcard .who{ font-family:var(--mono); font-size:12px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--fg); }
-  .tcard .who span{ color:var(--dim); }
-
-  /* ---- the wall ---- */
-  .wall{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:14px; margin-top:38px; }
-  .wall .q{ padding:20px 22px; border-radius:18px; background:var(--card-soft);
-    border:1px solid var(--border); }
-  .wall .q.verbatim{ background:var(--card); }
-  .wall .q p{ margin:0 0 10px; font-size:16.5px; line-height:1.55; color:var(--muted); }
-  .wall .q.verbatim p{ color:var(--fg); font-weight:500; font-size:18px; }
-  .wall .who{ font-family:var(--mono); font-weight:500; font-size:12px;
-    letter-spacing:.08em; text-transform:uppercase; color:var(--gold); }
-  .wallnote{ margin-top:16px; font-size:13px; color:var(--dim); max-width:62ch; }
-
-  /* ---- research figures ---- */
-  .figs{ display:grid; gap:0; margin-top:16px; }
-  .figs.three{ grid-template-columns:repeat(3,minmax(0,1fr)); }
-  .figs > div{ border-top:1px solid var(--border); padding:30px 34px 28px 0; }
-  .figs > div + div{ border-left:1px solid var(--border); padding-left:34px; }
-  .figkick{ display:block; font-family:var(--mono); font-weight:500;
-    font-size:12px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--gold); margin-bottom:10px; }
-  .fig{ font-family:var(--display); font-weight:800; display:block;
-    font-size:clamp(26px,2.6vw,36px); line-height:1; letter-spacing:-.03em;
-    margin-bottom:14px; font-variant-numeric:tabular-nums; color:var(--fg); }
-  .figs p{ margin:0; font-size:15px; color:var(--muted); }
-
-  .sources{ margin-top:48px; border-top:1px solid var(--border); padding-top:22px; }
-  .sources summary{ font-family:var(--mono); font-size:13px; letter-spacing:.06em;
-    text-transform:uppercase; color:var(--muted); cursor:pointer; padding:8px 0; }
-  .sources ol{ padding-left:20px; color:var(--muted); font-size:14px; }
-  .sources li{ margin:0 0 14px; }
-  .sources i{ font-style:italic; }
-
-  .legal{ margin-top:44px; font-size:13px; color:var(--dim); max-width:70ch; }
-
-  /* ---- closer ---- */
-  .closer{ padding:96px 0 90px; text-align:center; }
-  .closer h2{ margin-bottom:14px; }
-  .closer .g{ color:var(--gold); }
-  .closer .prose{ margin:0 auto 30px; }
-  .closer .signup, .closer .done{ max-width:480px; margin:0 auto; text-align:left; }
-
-  /* ---- App Store call to action ---- */
-  .store { margin-top: 28px; }
-  /* 426px is the headline's rendered width ("Make meditation" at the 54px
-     clamp cap), so the centred badge sits on the headline's own centre line.
-     Remeasure if the headline text or its font ever changes. */
-  .hero .store { text-align: center; max-width: 426px; }
-  .store .cta { display: inline-block; text-decoration: none; }
-  .store-badge { display: inline-block; line-height: 0; }
-  .store-badge img { height: 54px; width: auto; display: block; }
-  .store .microcopy { margin-top: 10px; }
-  .store-link { text-decoration: none; }
-  .nowatch { margin-top: 40px; font-size: 1.05rem; }
-  .cta.secondary { background: transparent; color: inherit; border: 1px solid currentColor; opacity: .92; }
-
-  /* ---- persistent waitlist banner ---- */
-  .banner{
-    position:fixed; left:0; right:0; bottom:0; z-index:50;
-    background:rgba(19,16,13,.92); backdrop-filter:blur(14px);
-    border-top:1px solid var(--border);
-    transform:translateY(110%); transition:transform .35s ease;
+  /* ---------- Otto's glow, scrubbable ---------- */
+  .glow{ padding:40px 20px 90px; text-align:center; }
+  .glow-card{ position:relative; max-width:760px; margin:40px auto 0; border-radius:36px; overflow:hidden;
+    background:linear-gradient(var(--sky-top), var(--sky-bot) 70%); padding:40px 24px 30px; }
+  /* The grass's top edge sits just above the stage's floor, so a seated Otto
+     sits IN the grass and a floating one visibly leaves it. */
+  .glow-card .ground{ position:absolute; left:-10%; right:-10%; bottom:0; height:222px;
+    background:linear-gradient(#9BC586,#8DB877); border-radius:50% 50% 0 0 / 46px 46px 0 0; }
+  .glow-stage{ position:relative; height:clamp(260px,40vw,380px); max-width:380px; margin:0 auto; }
+  .glow-stage .halo{ position:absolute; left:50%; top:52%; width:70%; aspect-ratio:1; transform:translate(-50%,-50%);
+    border-radius:50%; background:radial-gradient(circle,rgba(255,232,150,.9),rgba(255,220,120,0) 68%);
+    opacity:0; transition:opacity .5s ease; }
+  .glow-stage img{ position:absolute; left:50%; bottom:0; width:92%; transform:translateX(-50%);
+    opacity:0; transition:opacity .35s ease; }
+  .glow-stage img.on{ opacity:1; }
+  .glow-stage img.float{ bottom:6%; }
+  @media (prefers-reduced-motion:no-preference){
+    .glow-stage img.float.on{ animation:gfloat 5s ease-in-out infinite; }
+    .glow-stage .halo{ animation:pulse 4s ease-in-out infinite; }
   }
-  .banner.show{ transform:translateY(0); }
-  .banner .inner{ max-width:1080px; margin:0 auto; padding:12px 22px;
-    display:flex; align-items:center; gap:16px; }
-  .banner .btext{ flex:1; min-width:0; }
-  .banner b{ font-family:var(--display); font-size:15px; display:block; }
-  .banner small{ color:var(--muted); font-size:12.5px; }
-  .banner .cta{ min-height:46px; padding:0 20px; font-size:15px; white-space:nowrap; }
-  .banner .store-badge img{ height:40px; }
-  @media (prefers-reduced-motion: reduce){ .banner{ transition:none; } }
+  @keyframes gfloat{ 50%{ transform:translate(-50%,-10px); } }
+  @keyframes pulse{ 50%{ transform:translate(-50%,-50%) scale(1.08); } }
+  .glow-name{ position:relative; margin-top:14px; font-weight:900; font-size:26px; }
+  .glow-line{ position:relative; color:#3E4A52; font-weight:700; margin:2px 0 16px; min-height:1.6em; }
+  .scrub{ position:relative; width:min(420px,100%); margin:0 auto; }
+  .scrub input{ width:100%; -webkit-appearance:none; appearance:none; height:14px; border-radius:999px;
+    background:linear-gradient(90deg,#A7A29A,#E9B949 55%,#FFD86B); outline:none; }
+  .scrub input::-webkit-slider-thumb{ -webkit-appearance:none; width:46px; height:46px; border-radius:50%;
+    background:#fff url(img/otto/ottohead.png) center/78% no-repeat; box-shadow:0 3px 10px rgba(0,0,0,.2); cursor:grab; }
+  .scrub input::-moz-range-thumb{ width:46px; height:46px; border:0; border-radius:50%;
+    background:#fff url(img/otto/ottohead.png) center/78% no-repeat; box-shadow:0 3px 10px rgba(0,0,0,.2); cursor:grab; }
+  .scrub .ends{ display:flex; justify-content:space-between; font-size:14px; font-weight:800; color:#3E4A52; margin-top:8px; }
 
-  /* ---- footer ---- */
-  footer{ border-top:1px solid var(--border); margin-top:20px; }
-  .footgrid{ display:grid; grid-template-columns:1.2fr repeat(4,minmax(0,1fr));
-    gap:26px; padding:52px 0 40px; }
-  .footgrid h4{ font-family:var(--mono); font-weight:500; font-size:11.5px;
-    letter-spacing:.1em; text-transform:uppercase; color:var(--dim); margin:0 0 12px; }
-  .footgrid ul{ margin:0; padding:0; list-style:none; }
-  .footgrid li{ margin:0 0 9px; }
-  .footgrid a{ color:var(--muted); font-size:14.5px; padding:4px 0; display:inline-block; }
-  .footgrid a:hover{ color:var(--fg); text-decoration:none; }
-  .footbrand p{ color:var(--dim); font-size:13.5px; max-width:30ch; margin:12px 0 0; }
-  /* Google's "preferred source" badge, as the plain deeplink Google offers for
-     sites that do not load its script. A link, not Google's publisher.js, so
-     the site still loads nothing from a third party. */
-  .prefrow{ padding:0 0 26px; }
-  .prefsource{ display:inline-flex; align-items:center; gap:9px;
-    padding:9px 14px 9px 11px; border:1px solid var(--border); border-radius:999px;
-    color:var(--fg); font-size:13px; line-height:1.2; }
-  .prefsource:hover{ border-color:var(--muted); text-decoration:none; }
-  .prefsource svg{ width:18px; height:18px; flex:none; }
-  .prefsource b{ font-weight:600; }
-  .prefsource span{ white-space:nowrap; }
-  .footnote{ display:flex; flex-wrap:wrap; gap:8px 20px; padding:0 0 34px;
-    font-family:var(--mono); font-size:11.5px; color:var(--dim); }
-
-  /* ---- mobile ---- */
-  @media (max-width:880px){
-    .hero{ grid-template-columns:1fr; padding-top:34px; }
-    .hero .phone{ max-width:270px; }
-    .pain, .pain.flip{ grid-template-columns:1fr; gap:26px; }
-    .pain .shots{ order:2; }
-    .cards{ grid-template-columns:1fr; }
-    .wall{ grid-template-columns:1fr; }
-    .figs.three{ grid-template-columns:1fr; }
-    .figs > div + div{ border-left:0; padding-left:0; }
-    .figs > div{ padding-right:0; }
-    .footgrid{ grid-template-columns:1fr 1fr; }
-    section{ padding:64px 0 8px; }
+  /* Sparkles around the glowing Otto in the hero. */
+  .spark{ position:absolute; width:8px; height:8px; border-radius:50%; background:#FFE9A3;
+    box-shadow:0 0 10px 3px rgba(255,220,120,.8); z-index:3; pointer-events:none; opacity:0; }
+  @media (prefers-reduced-motion:no-preference){
+    .spark{ animation:twinkle 3.2s ease-in-out infinite; }
   }
-  @media (max-width:420px){
-    .pain .shots{ flex-direction:column; align-items:center; }
-    .pain .phone{ max-width:280px; }
-    .banner b{ font-size:14px; }
-    .banner small{ display:none; }
+  @keyframes twinkle{ 0%,100%{ opacity:0; transform:translateY(6px) scale(.6); } 50%{ opacity:1; transform:translateY(-8px) scale(1); } }
+
+  /* ---------- features ---------- */
+  .features{ padding:60px 0 20px; }
+  .sec-head{ text-align:center; padding:0 20px; }
+  .sec-head h2{ font-weight:900; font-size:clamp(34px,5vw,54px); line-height:1.05; }
+  .sec-head p{ max-width:46ch; margin:14px auto 0; color:var(--ink-soft); font-weight:600; }
+  .feat-grid{ display:grid; grid-template-columns:1fr 360px; gap:60px; max-width:1040px; margin:40px auto 0; padding:0 20px; }
+  .feat{ min-height:78vh; display:flex; flex-direction:column; justify-content:center; }
+  .feat .chip{ display:inline-flex; align-items:center; gap:10px; font-weight:800; font-size:15px;
+    color:var(--green-ink); background:#E4F2DE; padding:6px 14px 6px 8px; border-radius:999px; align-self:flex-start; }
+  .feat .chip img{ width:30px; height:30px; object-fit:contain; }
+  .feat h3{ font-weight:900; font-size:clamp(28px,3.6vw,40px); line-height:1.08; margin-top:16px; }
+  .feat p{ color:var(--ink-soft); font-weight:600; max-width:44ch; margin:14px 0 0; font-size:19px; }
+  .feat .inline{ display:none; }
+  .sticky{ position:sticky; top:9vh; height:82vh; display:flex; align-items:center; }
+  .sticky .phone{ width:100%; }
+  .sticky .phone .shots{ position:relative; border-radius:37px; overflow:hidden; aspect-ratio:640/1391; }
+  .sticky .phone .shots img{ position:absolute; inset:0; border-radius:0; opacity:0; transition:opacity .45s ease; }
+  .sticky .phone .shots img.on{ opacity:1; }
+  .fine{ text-align:center; font-size:14px; color:var(--ink-faint); max-width:62ch; margin:20px auto 0; padding:0 20px; font-weight:600; }
+
+  /* ---------- company ---------- */
+  .company{ padding:80px 0 40px; }
+  .wall{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; max-width:1000px; margin:40px auto 0; padding:0 20px; }
+  .q{ background:var(--sand); border-radius:24px; padding:22px 24px; }
+  .q p{ margin:0 0 10px; font-weight:700; color:var(--ink-soft); }
+  .q.verbatim p{ color:var(--ink); font-size:20px; font-weight:800; line-height:1.4; }
+  .q .who{ font-weight:900; color:var(--green-ink); font-size:15px; }
+
+  /* ---------- research ---------- */
+  .research{ padding:80px 0 40px; }
+  .figs{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; max-width:1000px; margin:40px auto 0; padding:0 20px; }
+  .fig{ background:#fff; border:1px solid var(--sand-edge); border-radius:24px; padding:24px; box-shadow:0 4px 0 var(--sand-edge); }
+  .fig .k{ font-weight:900; font-size:15px; color:var(--green-ink); }
+  .fig .n{ display:block; font-weight:900; font-size:clamp(34px,3.6vw,44px); letter-spacing:-.03em; margin:6px 0 10px;
+    font-variant-numeric:tabular-nums; }
+  .fig p{ margin:0; font-size:16px; color:var(--ink-soft); font-weight:600; }
+  .fig sup a{ text-decoration:none; font-weight:800; }
+  .sources{ max-width:1000px; margin:30px auto 0; padding:0 20px; }
+  .sources summary{ cursor:pointer; font-weight:800; color:var(--ink-soft); padding:10px 0; }
+  .sources ol{ color:var(--ink-soft); font-size:15px; padding-left:22px; }
+  .sources li{ margin:0 0 12px; }
+  .sources .note{ font-size:14px; color:var(--ink-soft); }
+
+  /* ---------- closing scene: evening in the valley ---------- */
+  .closer{ position:relative; overflow:hidden; margin:80px 12px 0; border-radius:40px;
+    background:linear-gradient(#5D7FB0,#C9A3B8 52%,#F4C58E 78%); text-align:center; color:#fff; }
+  .closer .copy{ position:relative; z-index:2; padding:80px 20px 0; }
+  .closer h2{ font-weight:900; font-size:clamp(40px,6.4vw,72px); line-height:1.02; text-shadow:0 2px 18px rgba(40,30,60,.25); }
+  .closer .stage{ height:clamp(360px,44vw,560px); margin-top:0; }
+  .closer .moon{ position:absolute; left:50%; top:4%; transform:translateX(-50%); width:clamp(180px,22vw,300px); aspect-ratio:1;
+    border-radius:50%; background:radial-gradient(circle,#FFF6DA 40%,rgba(255,240,200,.35) 58%,rgba(255,240,200,0) 72%); }
+  .closer .otto.float{ position:absolute; left:50%; bottom:14%; width:clamp(190px,22vw,290px); transform:translateX(-50%); }
+  @media (prefers-reduced-motion:no-preference){
+    .closer .otto.float{ animation:float 6s ease-in-out infinite; }
+  }
+  @keyframes float{ 50%{ transform:translate(-50%,-14px); } }
+
+  /* ---------- footer ---------- */
+  footer{ padding:70px 0 40px; }
+  .foot{ display:grid; grid-template-columns:1.4fr repeat(3,minmax(0,1fr)); gap:30px; }
+  .foot h4{ margin:0 0 12px; font-size:14px; font-weight:900; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.08em; }
+  .foot ul{ list-style:none; margin:0; padding:0; }
+  .foot li{ margin:0 0 10px; }
+  .foot a{ color:var(--ink-soft); text-decoration:none; font-weight:700; }
+  .foot a:hover{ color:var(--ink); }
+  .foot .brand{ font-size:34px; }
+  .foot .tag{ color:var(--ink-soft); font-weight:600; margin:12px 0 0; max-width:28ch; }
+  .prefsource{ display:inline-flex; align-items:center; gap:9px; margin-top:34px; padding:9px 14px 9px 11px;
+    border:1px solid var(--sand-edge); border-radius:999px; color:var(--ink); font-size:14px; text-decoration:none; font-weight:600; }
+  .prefsource svg{ width:18px; height:18px; }
+  .legal{ display:flex; flex-wrap:wrap; gap:8px 22px; margin-top:26px; color:var(--ink-faint); font-size:14px; font-weight:600; }
+  .bigmark{ font-weight:900; font-size:clamp(120px,26vw,340px); line-height:.8; letter-spacing:-.06em; color:var(--sand);
+    text-align:center; margin:40px 0 0; user-select:none; }
+
+  /* ---------- small screens ---------- */
+  @media (max-width:900px){
+    .feat-grid{ grid-template-columns:1fr; gap:0; }
+    .sticky{ display:none; }
+    .feat{ min-height:0; padding:34px 0; align-items:center; text-align:center; }
+    .feat .chip{ align-self:center; }
+    .feat p{ margin-left:auto; margin-right:auto; }
+    .feat .inline{ display:block; width:min(280px,72vw); margin:26px auto 0; }
+    .wall, .figs{ grid-template-columns:1fr; }
+    .foot{ grid-template-columns:1fr 1fr; }
+    .foot > div:first-child{ grid-column:1 / -1; }
+    .otto.right{ display:none; }
+    .otto.left{ left:2%; bottom:3%; width:clamp(110px,28vw,160px); }
+  }
+  @media (max-width:520px){
+    .hero .stage{ height:640px; }
+    .hero .phone{ width:250px; bottom:40px; }
   }
 </style>
 </head>
 <body>
 
-<div class="shell">
-  <div class="masthead">
-    <span class="wordmark">
-      <svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#D4AF37" stroke-width="4.5">
-        <ellipse cx="50" cy="28.5" rx="13.5" ry="20.5"/><ellipse cx="50" cy="71.5" rx="13.5" ry="20.5"/>
-        <ellipse cx="28.5" cy="50" rx="20.5" ry="13.5"/><ellipse cx="71.5" cy="50" rx="20.5" ry="13.5"/>
-      </g></svg>
-      808
-    </span>
-    <span class="lab">iPhone + Apple Watch</span>
-    <span class="spacer"></span>
-    <a href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8" class="store-link">Download</a>
+<!-- ================= hero ================= -->
+<header class="hero">
+  <nav class="nav">
+    <a class="brand" href="#top" aria-label="808 home"><img src="img/otto/ottohead.png" alt="" width="38" height="38">808</a>
+    <a class="get" href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8">Download</a>
+  </nav>
+  <div class="hero-copy" id="top">
+    <h1>The meditation app<br>that makes it stick.</h1>
+    <p class="lede">Otto holds the apps that pull you in until you've meditated, and glows brighter every day you do.</p>
+    <!-- Every store link carries the `website` campaign tag, so App Analytics
+         attributes installs to the site (marketing/CAMPAIGN_LINKS.md). -->
+    <a class="badge" href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8"><img src="img/app-store-badge.svg" alt="Download on the App Store" width="162" height="54"></a>
   </div>
+  <div class="stage">
+    <div class="sun"></div>
+    <div class="cloud c1"></div>
+    <div class="cloud c2"></div>
+    <svg class="scene" viewBox="0 0 1440 720" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <path d="M0 470 L170 330 L300 420 L460 290 L640 440 L820 320 L1000 430 L1180 300 L1440 450 V720 H0Z" fill="#AFC6D4"/>
+      <path d="M0 500 L220 390 L400 470 L560 380 L760 480 L960 400 L1150 470 L1320 390 L1440 460 V720 H0Z" fill="#94B3C4"/>
+      <path d="M0 520 Q360 470 720 505 T1440 500 V720 H0Z" fill="#76A374"/>
+      <path d="M0 545 Q380 515 720 535 T1440 530 V720 H0Z" fill="#9BC586"/>
+      <rect x="0" y="640" width="1440" height="80" fill="#8FBC7B"/>
+      <path d="M525 630 l-4.6 -14.7 M525 630 l0.9 -18.4 M525 630 l5.5 -13.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1038 588 l-3.8 -12.0 M1038 588 l0.8 -15.0 M1038 588 l4.5 -11.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1350 547 l-2.9 -9.4 M1350 547 l0.6 -11.8 M1350 547 l3.5 -8.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M505 597 l-3.9 -12.6 M505 597 l0.8 -15.8 M505 597 l4.7 -11.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M353 607 l-4.1 -13.2 M353 607 l0.8 -16.5 M353 607 l5.0 -12.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1127 502 l-2.0 -6.5 M1127 502 l0.4 -8.2 M1127 502 l2.5 -6.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M98 652 l-5.0 -16.2 M98 652 l1.0 -20.2 M98 652 l6.1 -15.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M60 521 l-2.4 -7.8 M60 521 l0.5 -9.7 M60 521 l2.9 -7.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1363 542 l-2.8 -9.1 M1363 542 l0.6 -11.4 M1363 542 l3.4 -8.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M392 613 l-4.3 -13.6 M392 613 l0.9 -17.0 M392 613 l5.1 -12.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M110 618 l-4.4 -13.9 M110 618 l0.9 -17.4 M110 618 l5.2 -13.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1393 507 l-2.1 -6.9 M1393 507 l0.4 -8.6 M1393 507 l2.6 -6.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1053 666 l-5.3 -17.0 M1053 666 l1.1 -21.3 M1053 666 l6.4 -16.0" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1027 614 l-4.3 -13.7 M1027 614 l0.9 -17.1 M1027 614 l5.1 -12.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M730 687 l-5.7 -18.4 M730 687 l1.1 -23.0 M730 687 l6.9 -17.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1110 658 l-5.2 -16.5 M1110 658 l1.0 -20.7 M1110 658 l6.2 -15.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M699 502 l-2.0 -6.5 M699 502 l0.4 -8.1 M699 502 l2.4 -6.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M337 682 l-5.6 -18.1 M337 682 l1.1 -22.6 M337 682 l6.8 -16.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1097 624 l-4.5 -14.3 M1097 624 l0.9 -17.9 M1097 624 l5.4 -13.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1309 690 l-5.8 -18.6 M1309 690 l1.2 -23.2 M1309 690 l7.0 -17.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M736 687 l-5.7 -18.4 M736 687 l1.1 -23.0 M736 687 l6.9 -17.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M155 603 l-4.1 -13.0 M155 603 l0.8 -16.2 M155 603 l4.9 -12.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M594 618 l-4.4 -14.0 M594 618 l0.9 -17.4 M594 618 l5.2 -13.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M199 608 l-4.2 -13.3 M199 608 l0.8 -16.6 M199 608 l5.0 -12.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M610 539 l-2.8 -8.9 M610 539 l0.6 -11.1 M610 539 l3.3 -8.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M734 629 l-4.6 -14.6 M734 629 l0.9 -18.3 M734 629 l5.5 -13.7" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M816 501 l-2.0 -6.5 M816 501 l0.4 -8.1 M816 501 l2.4 -6.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M785 683 l-5.7 -18.1 M785 683 l1.1 -22.6 M785 683 l6.8 -17.0" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M693 593 l-3.9 -12.4 M693 593 l0.8 -15.5 M693 593 l4.6 -11.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1054 522 l-2.4 -7.8 M1054 522 l0.5 -9.7 M1054 522 l2.9 -7.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M446 658 l-5.2 -16.5 M446 658 l1.0 -20.7 M446 658 l6.2 -15.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M981 620 l-4.4 -14.1 M981 620 l0.9 -17.6 M981 620 l5.3 -13.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1207 696 l-5.9 -19.0 M1207 696 l1.2 -23.7 M1207 696 l7.1 -17.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M887 574 l-3.5 -11.1 M887 574 l0.7 -13.9 M887 574 l4.2 -10.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1178 607 l-4.1 -13.3 M1178 607 l0.8 -16.6 M1178 607 l5.0 -12.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M633 562 l-3.2 -10.3 M633 562 l0.6 -12.9 M633 562 l3.9 -9.7" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M690 698 l-6.0 -19.1 M690 698 l1.2 -23.9 M690 698 l7.2 -17.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1168 571 l-3.4 -11.0 M1168 571 l0.7 -13.7 M1168 571 l4.1 -10.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M595 534 l-2.7 -8.6 M595 534 l0.5 -10.8 M595 534 l3.2 -8.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M296 525 l-2.5 -8.0 M296 525 l0.5 -10.0 M296 525 l3.0 -7.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1224 649 l-5.0 -15.9 M1224 649 l1.0 -19.9 M1224 649 l6.0 -14.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M263 514 l-2.3 -7.3 M263 514 l0.5 -9.1 M263 514 l2.7 -6.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1049 613 l-4.3 -13.6 M1049 613 l0.9 -17.0 M1049 613 l5.1 -12.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1010 526 l-2.5 -8.1 M1010 526 l0.5 -10.1 M1010 526 l3.0 -7.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M356 699 l-6.0 -19.1 M356 699 l1.2 -23.9 M356 699 l7.2 -17.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M6 615 l-4.3 -13.8 M6 615 l0.9 -17.2 M6 615 l5.2 -12.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M37 519 l-2.4 -7.6 M37 519 l0.5 -9.5 M37 519 l2.9 -7.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M134 601 l-4.0 -12.9 M134 601 l0.8 -16.1 M134 601 l4.8 -12.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M866 536 l-2.7 -8.7 M866 536 l0.5 -10.9 M866 536 l3.3 -8.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M900 643 l-4.9 -15.5 M900 643 l1.0 -19.4 M900 643 l5.8 -14.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1300 631 l-4.6 -14.8 M1300 631 l0.9 -18.5 M1300 631 l5.6 -13.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M214 598 l-4.0 -12.7 M214 598 l0.8 -15.9 M214 598 l4.8 -11.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1398 575 l-3.5 -11.2 M1398 575 l0.7 -14.0 M1398 575 l4.2 -10.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M876 565 l-3.3 -10.6 M876 565 l0.7 -13.2 M876 565 l4.0 -9.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M25 601 l-4.0 -12.9 M25 601 l0.8 -16.1 M25 601 l4.8 -12.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M311 698 l-6.0 -19.1 M311 698 l1.2 -23.8 M311 698 l7.1 -17.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M682 681 l-5.6 -18.0 M682 681 l1.1 -22.5 M682 681 l6.7 -16.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1164 571 l-3.4 -11.0 M1164 571 l0.7 -13.7 M1164 571 l4.1 -10.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M510 534 l-2.7 -8.6 M510 534 l0.5 -10.8 M510 534 l3.2 -8.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M163 663 l-5.3 -16.8 M163 663 l1.1 -21.0 M163 663 l6.3 -15.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M56 553 l-3.1 -9.8 M56 553 l0.6 -12.2 M56 553 l3.7 -9.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M583 642 l-4.8 -15.5 M583 642 l1.0 -19.3 M583 642 l5.8 -14.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M430 505 l-2.1 -6.7 M430 505 l0.4 -8.4 M430 505 l2.5 -6.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M367 620 l-4.4 -14.1 M367 620 l0.9 -17.6 M367 620 l5.3 -13.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1167 538 l-2.8 -8.8 M1167 538 l0.6 -11.0 M1167 538 l3.3 -8.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M692 541 l-2.8 -9.0 M692 541 l0.6 -11.3 M692 541 l3.4 -8.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M587 506 l-2.1 -6.8 M587 506 l0.4 -8.5 M587 506 l2.6 -6.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1200 604 l-4.1 -13.1 M1200 604 l0.8 -16.3 M1200 604 l4.9 -12.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M259 579 l-3.6 -11.5 M259 579 l0.7 -14.3 M259 579 l4.3 -10.7" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M360 673 l-5.5 -17.5 M360 673 l1.1 -21.8 M360 673 l6.6 -16.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<g transform="translate(874 507)"><path d="M0 0 V7.7" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.0" cy="0.0" r="1.6" fill="#F4A3A3"/><circle cx="0.6" cy="1.9" r="1.6" fill="#F4A3A3"/><circle cx="-1.6" cy="1.2" r="1.6" fill="#F4A3A3"/><circle cx="-1.6" cy="-1.2" r="1.6" fill="#F4A3A3"/><circle cx="0.6" cy="-1.9" r="1.6" fill="#F4A3A3"/><circle r="1.2" fill="#F0A93A"/></g>
+<g transform="translate(294 508)"><path d="M0 0 V7.8" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.0" cy="0.0" r="1.6" fill="#F4A3A3"/><circle cx="0.6" cy="1.9" r="1.6" fill="#F4A3A3"/><circle cx="-1.6" cy="1.2" r="1.6" fill="#F4A3A3"/><circle cx="-1.6" cy="-1.2" r="1.6" fill="#F4A3A3"/><circle cx="0.6" cy="-1.9" r="1.6" fill="#F4A3A3"/><circle r="1.2" fill="#F0A93A"/></g>
+<g transform="translate(797 509)"><path d="M0 0 V7.8" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.0" cy="0.0" r="1.6" fill="#F6D365"/><circle cx="0.6" cy="1.9" r="1.6" fill="#F6D365"/><circle cx="-1.6" cy="1.2" r="1.6" fill="#F6D365"/><circle cx="-1.6" cy="-1.2" r="1.6" fill="#F6D365"/><circle cx="0.6" cy="-1.9" r="1.6" fill="#F6D365"/><circle r="1.2" fill="#F0A93A"/></g>
+<g transform="translate(117 510)"><path d="M0 0 V7.9" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.0" cy="0.0" r="1.6" fill="#FFFFFF"/><circle cx="0.6" cy="1.9" r="1.6" fill="#FFFFFF"/><circle cx="-1.6" cy="1.2" r="1.6" fill="#FFFFFF"/><circle cx="-1.6" cy="-1.2" r="1.6" fill="#FFFFFF"/><circle cx="0.6" cy="-1.9" r="1.6" fill="#FFFFFF"/><circle r="1.2" fill="#F0A93A"/></g>
+<g transform="translate(438 516)"><path d="M0 0 V8.4" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.2" cy="0.0" r="1.7" fill="#F6D365"/><circle cx="0.7" cy="2.1" r="1.7" fill="#F6D365"/><circle cx="-1.7" cy="1.3" r="1.7" fill="#F6D365"/><circle cx="-1.7" cy="-1.3" r="1.7" fill="#F6D365"/><circle cx="0.7" cy="-2.1" r="1.7" fill="#F6D365"/><circle r="1.3" fill="#F0A93A"/></g>
+<g transform="translate(1171 518)"><path d="M0 0 V8.5" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.2" cy="0.0" r="1.8" fill="#F6D365"/><circle cx="0.7" cy="2.1" r="1.8" fill="#F6D365"/><circle cx="-1.8" cy="1.3" r="1.8" fill="#F6D365"/><circle cx="-1.8" cy="-1.3" r="1.8" fill="#F6D365"/><circle cx="0.7" cy="-2.1" r="1.8" fill="#F6D365"/><circle r="1.3" fill="#F0A93A"/></g>
+<g transform="translate(239 519)"><path d="M0 0 V8.5" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.2" cy="0.0" r="1.8" fill="#F7C5D9"/><circle cx="0.7" cy="2.1" r="1.8" fill="#F7C5D9"/><circle cx="-1.8" cy="1.3" r="1.8" fill="#F7C5D9"/><circle cx="-1.8" cy="-1.3" r="1.8" fill="#F7C5D9"/><circle cx="0.7" cy="-2.1" r="1.8" fill="#F7C5D9"/><circle r="1.3" fill="#F0A93A"/></g>
+<g transform="translate(865 519)"><path d="M0 0 V8.6" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.2" cy="0.0" r="1.8" fill="#F7C5D9"/><circle cx="0.7" cy="2.1" r="1.8" fill="#F7C5D9"/><circle cx="-1.8" cy="1.3" r="1.8" fill="#F7C5D9"/><circle cx="-1.8" cy="-1.3" r="1.8" fill="#F7C5D9"/><circle cx="0.7" cy="-2.1" r="1.8" fill="#F7C5D9"/><circle r="1.3" fill="#F0A93A"/></g>
+<g transform="translate(544 520)"><path d="M0 0 V8.6" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.2" cy="0.0" r="1.8" fill="#F4A3A3"/><circle cx="0.7" cy="2.1" r="1.8" fill="#F4A3A3"/><circle cx="-1.8" cy="1.3" r="1.8" fill="#F4A3A3"/><circle cx="-1.8" cy="-1.3" r="1.8" fill="#F4A3A3"/><circle cx="0.7" cy="-2.1" r="1.8" fill="#F4A3A3"/><circle r="1.3" fill="#F0A93A"/></g>
+<g transform="translate(1190 525)"><path d="M0 0 V9.0" stroke="#5E8F55" stroke-width="1.0"/><circle cx="2.3" cy="0.0" r="1.9" fill="#FDF1C7"/><circle cx="0.7" cy="2.2" r="1.9" fill="#FDF1C7"/><circle cx="-1.9" cy="1.4" r="1.9" fill="#FDF1C7"/><circle cx="-1.9" cy="-1.4" r="1.9" fill="#FDF1C7"/><circle cx="0.7" cy="-2.2" r="1.9" fill="#FDF1C7"/><circle r="1.3" fill="#F0A93A"/></g>
+<g transform="translate(1034 534)"><path d="M0 0 V9.6" stroke="#5E8F55" stroke-width="1.1"/><circle cx="2.5" cy="0.0" r="2.0" fill="#FFFFFF"/><circle cx="0.8" cy="2.4" r="2.0" fill="#FFFFFF"/><circle cx="-2.0" cy="1.5" r="2.0" fill="#FFFFFF"/><circle cx="-2.0" cy="-1.5" r="2.0" fill="#FFFFFF"/><circle cx="0.8" cy="-2.4" r="2.0" fill="#FFFFFF"/><circle r="1.4" fill="#F0A93A"/></g>
+<g transform="translate(328 534)"><path d="M0 0 V9.7" stroke="#5E8F55" stroke-width="1.1"/><circle cx="2.5" cy="0.0" r="2.0" fill="#F29A8A"/><circle cx="0.8" cy="2.4" r="2.0" fill="#F29A8A"/><circle cx="-2.0" cy="1.5" r="2.0" fill="#F29A8A"/><circle cx="-2.0" cy="-1.5" r="2.0" fill="#F29A8A"/><circle cx="0.8" cy="-2.4" r="2.0" fill="#F29A8A"/><circle r="1.4" fill="#F0A93A"/></g>
+<g transform="translate(1067 535)"><path d="M0 0 V9.7" stroke="#5E8F55" stroke-width="1.1"/><circle cx="2.5" cy="0.0" r="2.0" fill="#F29A8A"/><circle cx="0.8" cy="2.4" r="2.0" fill="#F29A8A"/><circle cx="-2.0" cy="1.5" r="2.0" fill="#F29A8A"/><circle cx="-2.0" cy="-1.5" r="2.0" fill="#F29A8A"/><circle cx="0.8" cy="-2.4" r="2.0" fill="#F29A8A"/><circle r="1.5" fill="#F0A93A"/></g>
+<g transform="translate(1134 540)"><path d="M0 0 V10.1" stroke="#5E8F55" stroke-width="1.2"/><circle cx="2.6" cy="0.0" r="2.1" fill="#FFFFFF"/><circle cx="0.8" cy="2.5" r="2.1" fill="#FFFFFF"/><circle cx="-2.1" cy="1.5" r="2.1" fill="#FFFFFF"/><circle cx="-2.1" cy="-1.5" r="2.1" fill="#FFFFFF"/><circle cx="0.8" cy="-2.5" r="2.1" fill="#FFFFFF"/><circle r="1.5" fill="#F0A93A"/></g>
+<g transform="translate(814 546)"><path d="M0 0 V10.5" stroke="#5E8F55" stroke-width="1.2"/><circle cx="2.7" cy="0.0" r="2.2" fill="#FFFFFF"/><circle cx="0.8" cy="2.6" r="2.2" fill="#FFFFFF"/><circle cx="-2.2" cy="1.6" r="2.2" fill="#FFFFFF"/><circle cx="-2.2" cy="-1.6" r="2.2" fill="#FFFFFF"/><circle cx="0.8" cy="-2.6" r="2.2" fill="#FFFFFF"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(212 547)"><path d="M0 0 V10.6" stroke="#5E8F55" stroke-width="1.2"/><circle cx="2.7" cy="0.0" r="2.2" fill="#FFFFFF"/><circle cx="0.8" cy="2.6" r="2.2" fill="#FFFFFF"/><circle cx="-2.2" cy="1.6" r="2.2" fill="#FFFFFF"/><circle cx="-2.2" cy="-1.6" r="2.2" fill="#FFFFFF"/><circle cx="0.8" cy="-2.6" r="2.2" fill="#FFFFFF"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(1318 547)"><path d="M0 0 V10.6" stroke="#5E8F55" stroke-width="1.2"/><circle cx="2.7" cy="0.0" r="2.2" fill="#F4A3A3"/><circle cx="0.8" cy="2.6" r="2.2" fill="#F4A3A3"/><circle cx="-2.2" cy="1.6" r="2.2" fill="#F4A3A3"/><circle cx="-2.2" cy="-1.6" r="2.2" fill="#F4A3A3"/><circle cx="0.8" cy="-2.6" r="2.2" fill="#F4A3A3"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(80 551)"><path d="M0 0 V10.9" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#F29A8A"/><circle cx="0.9" cy="2.7" r="2.3" fill="#F29A8A"/><circle cx="-2.3" cy="1.6" r="2.3" fill="#F29A8A"/><circle cx="-2.3" cy="-1.6" r="2.3" fill="#F29A8A"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#F29A8A"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(715 553)"><path d="M0 0 V11.0" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#F7C5D9"/><circle cx="0.9" cy="2.7" r="2.3" fill="#F7C5D9"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#F7C5D9"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#F7C5D9"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#F7C5D9"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(101 553)"><path d="M0 0 V11.0" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#F7C5D9"/><circle cx="0.9" cy="2.7" r="2.3" fill="#F7C5D9"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#F7C5D9"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#F7C5D9"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#F7C5D9"/><circle r="1.7" fill="#F0A93A"/></g>
+<g transform="translate(25 553)"><path d="M0 0 V11.0" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#FFFFFF"/><circle cx="0.9" cy="2.7" r="2.3" fill="#FFFFFF"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#FFFFFF"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#FFFFFF"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#FFFFFF"/><circle r="1.7" fill="#F0A93A"/></g>
+<g transform="translate(772 553)"><path d="M0 0 V11.0" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#F6D365"/><circle cx="0.9" cy="2.7" r="2.3" fill="#F6D365"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#F6D365"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#F6D365"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#F6D365"/><circle r="1.7" fill="#F0A93A"/></g>
+<g transform="translate(309 553)"><path d="M0 0 V11.0" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#F29A8A"/><circle cx="0.9" cy="2.7" r="2.3" fill="#F29A8A"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#F29A8A"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#F29A8A"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#F29A8A"/><circle r="1.7" fill="#F0A93A"/></g>
+<g transform="translate(1245 564)"><path d="M0 0 V11.8" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.1" cy="0.0" r="2.5" fill="#FFFFFF"/><circle cx="0.9" cy="2.9" r="2.5" fill="#FFFFFF"/><circle cx="-2.5" cy="1.8" r="2.5" fill="#FFFFFF"/><circle cx="-2.5" cy="-1.8" r="2.5" fill="#FFFFFF"/><circle cx="0.9" cy="-2.9" r="2.5" fill="#FFFFFF"/><circle r="1.8" fill="#F0A93A"/></g>
+<g transform="translate(1237 568)"><path d="M0 0 V12.1" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.1" cy="0.0" r="2.5" fill="#F7C5D9"/><circle cx="1.0" cy="3.0" r="2.5" fill="#F7C5D9"/><circle cx="-2.5" cy="1.8" r="2.5" fill="#F7C5D9"/><circle cx="-2.5" cy="-1.8" r="2.5" fill="#F7C5D9"/><circle cx="1.0" cy="-3.0" r="2.5" fill="#F7C5D9"/><circle r="1.8" fill="#F0A93A"/></g>
+<g transform="translate(560 569)"><path d="M0 0 V12.1" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.1" cy="0.0" r="2.5" fill="#F6D365"/><circle cx="1.0" cy="3.0" r="2.5" fill="#F6D365"/><circle cx="-2.5" cy="1.8" r="2.5" fill="#F6D365"/><circle cx="-2.5" cy="-1.8" r="2.5" fill="#F6D365"/><circle cx="1.0" cy="-3.0" r="2.5" fill="#F6D365"/><circle r="1.8" fill="#F0A93A"/></g>
+<g transform="translate(1089 571)"><path d="M0 0 V12.3" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.2" cy="0.0" r="2.6" fill="#F4A3A3"/><circle cx="1.0" cy="3.0" r="2.6" fill="#F4A3A3"/><circle cx="-2.6" cy="1.9" r="2.6" fill="#F4A3A3"/><circle cx="-2.6" cy="-1.9" r="2.6" fill="#F4A3A3"/><circle cx="1.0" cy="-3.0" r="2.6" fill="#F4A3A3"/><circle r="1.8" fill="#F0A93A"/></g>
+<g transform="translate(912 572)"><path d="M0 0 V12.4" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.2" cy="0.0" r="2.6" fill="#F29A8A"/><circle cx="1.0" cy="3.1" r="2.6" fill="#F29A8A"/><circle cx="-2.6" cy="1.9" r="2.6" fill="#F29A8A"/><circle cx="-2.6" cy="-1.9" r="2.6" fill="#F29A8A"/><circle cx="1.0" cy="-3.1" r="2.6" fill="#F29A8A"/><circle r="1.9" fill="#F0A93A"/></g>
+<g transform="translate(1090 573)"><path d="M0 0 V12.5" stroke="#5E8F55" stroke-width="1.5"/><circle cx="3.2" cy="0.0" r="2.6" fill="#F7C5D9"/><circle cx="1.0" cy="3.1" r="2.6" fill="#F7C5D9"/><circle cx="-2.6" cy="1.9" r="2.6" fill="#F7C5D9"/><circle cx="-2.6" cy="-1.9" r="2.6" fill="#F7C5D9"/><circle cx="1.0" cy="-3.1" r="2.6" fill="#F7C5D9"/><circle r="1.9" fill="#F0A93A"/></g>
+<g transform="translate(953 579)"><path d="M0 0 V12.9" stroke="#5E8F55" stroke-width="1.5"/><circle cx="3.3" cy="0.0" r="2.7" fill="#FDF1C7"/><circle cx="1.0" cy="3.2" r="2.7" fill="#FDF1C7"/><circle cx="-2.7" cy="2.0" r="2.7" fill="#FDF1C7"/><circle cx="-2.7" cy="-2.0" r="2.7" fill="#FDF1C7"/><circle cx="1.0" cy="-3.2" r="2.7" fill="#FDF1C7"/><circle r="1.9" fill="#F0A93A"/></g>
+<g transform="translate(1028 580)"><path d="M0 0 V12.9" stroke="#5E8F55" stroke-width="1.5"/><circle cx="3.3" cy="0.0" r="2.7" fill="#FFFFFF"/><circle cx="1.0" cy="3.2" r="2.7" fill="#FFFFFF"/><circle cx="-2.7" cy="2.0" r="2.7" fill="#FFFFFF"/><circle cx="-2.7" cy="-2.0" r="2.7" fill="#FFFFFF"/><circle cx="1.0" cy="-3.2" r="2.7" fill="#FFFFFF"/><circle r="1.9" fill="#F0A93A"/></g>
+<g transform="translate(60 587)"><path d="M0 0 V13.5" stroke="#5E8F55" stroke-width="1.6"/><circle cx="3.5" cy="0.0" r="2.8" fill="#FFFFFF"/><circle cx="1.1" cy="3.3" r="2.8" fill="#FFFFFF"/><circle cx="-2.8" cy="2.0" r="2.8" fill="#FFFFFF"/><circle cx="-2.8" cy="-2.0" r="2.8" fill="#FFFFFF"/><circle cx="1.1" cy="-3.3" r="2.8" fill="#FFFFFF"/><circle r="2.0" fill="#F0A93A"/></g>
+<g transform="translate(192 597)"><path d="M0 0 V14.2" stroke="#5E8F55" stroke-width="1.7"/><circle cx="3.7" cy="0.0" r="3.0" fill="#F4A3A3"/><circle cx="1.1" cy="3.5" r="3.0" fill="#F4A3A3"/><circle cx="-3.0" cy="2.2" r="3.0" fill="#F4A3A3"/><circle cx="-3.0" cy="-2.2" r="3.0" fill="#F4A3A3"/><circle cx="1.1" cy="-3.5" r="3.0" fill="#F4A3A3"/><circle r="2.1" fill="#F0A93A"/></g>
+<g transform="translate(979 600)"><path d="M0 0 V14.4" stroke="#5E8F55" stroke-width="1.7"/><circle cx="3.7" cy="0.0" r="3.0" fill="#FDF1C7"/><circle cx="1.1" cy="3.5" r="3.0" fill="#FDF1C7"/><circle cx="-3.0" cy="2.2" r="3.0" fill="#FDF1C7"/><circle cx="-3.0" cy="-2.2" r="3.0" fill="#FDF1C7"/><circle cx="1.1" cy="-3.5" r="3.0" fill="#FDF1C7"/><circle r="2.2" fill="#F0A93A"/></g>
+<g transform="translate(10 600)"><path d="M0 0 V14.4" stroke="#5E8F55" stroke-width="1.7"/><circle cx="3.7" cy="0.0" r="3.0" fill="#F4A3A3"/><circle cx="1.1" cy="3.5" r="3.0" fill="#F4A3A3"/><circle cx="-3.0" cy="2.2" r="3.0" fill="#F4A3A3"/><circle cx="-3.0" cy="-2.2" r="3.0" fill="#F4A3A3"/><circle cx="1.1" cy="-3.5" r="3.0" fill="#F4A3A3"/><circle r="2.2" fill="#F0A93A"/></g>
+<g transform="translate(953 600)"><path d="M0 0 V14.4" stroke="#5E8F55" stroke-width="1.7"/><circle cx="3.7" cy="0.0" r="3.0" fill="#F29A8A"/><circle cx="1.2" cy="3.5" r="3.0" fill="#F29A8A"/><circle cx="-3.0" cy="2.2" r="3.0" fill="#F29A8A"/><circle cx="-3.0" cy="-2.2" r="3.0" fill="#F29A8A"/><circle cx="1.2" cy="-3.5" r="3.0" fill="#F29A8A"/><circle r="2.2" fill="#F0A93A"/></g>
+<g transform="translate(1210 603)"><path d="M0 0 V14.6" stroke="#5E8F55" stroke-width="1.7"/><circle cx="3.8" cy="0.0" r="3.0" fill="#F7C5D9"/><circle cx="1.2" cy="3.6" r="3.0" fill="#F7C5D9"/><circle cx="-3.1" cy="2.2" r="3.0" fill="#F7C5D9"/><circle cx="-3.1" cy="-2.2" r="3.0" fill="#F7C5D9"/><circle cx="1.2" cy="-3.6" r="3.0" fill="#F7C5D9"/><circle r="2.2" fill="#F0A93A"/></g>
+<g transform="translate(517 611)"><path d="M0 0 V15.2" stroke="#5E8F55" stroke-width="1.8"/><circle cx="3.9" cy="0.0" r="3.2" fill="#F7C5D9"/><circle cx="1.2" cy="3.7" r="3.2" fill="#F7C5D9"/><circle cx="-3.2" cy="2.3" r="3.2" fill="#F7C5D9"/><circle cx="-3.2" cy="-2.3" r="3.2" fill="#F7C5D9"/><circle cx="1.2" cy="-3.7" r="3.2" fill="#F7C5D9"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(659 614)"><path d="M0 0 V15.4" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.2" fill="#F6D365"/><circle cx="1.2" cy="3.8" r="3.2" fill="#F6D365"/><circle cx="-3.2" cy="2.3" r="3.2" fill="#F6D365"/><circle cx="-3.2" cy="-2.3" r="3.2" fill="#F6D365"/><circle cx="1.2" cy="-3.8" r="3.2" fill="#F6D365"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(346 617)"><path d="M0 0 V15.6" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.3" fill="#F29A8A"/><circle cx="1.2" cy="3.8" r="3.3" fill="#F29A8A"/><circle cx="-3.3" cy="2.4" r="3.3" fill="#F29A8A"/><circle cx="-3.3" cy="-2.4" r="3.3" fill="#F29A8A"/><circle cx="1.2" cy="-3.8" r="3.3" fill="#F29A8A"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(635 618)"><path d="M0 0 V15.7" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.3" fill="#FFFFFF"/><circle cx="1.3" cy="3.9" r="3.3" fill="#FFFFFF"/><circle cx="-3.3" cy="2.4" r="3.3" fill="#FFFFFF"/><circle cx="-3.3" cy="-2.4" r="3.3" fill="#FFFFFF"/><circle cx="1.3" cy="-3.9" r="3.3" fill="#FFFFFF"/><circle r="2.4" fill="#F0A93A"/></g>
+<g transform="translate(977 618)"><path d="M0 0 V15.7" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.1" cy="0.0" r="3.3" fill="#F6D365"/><circle cx="1.3" cy="3.9" r="3.3" fill="#F6D365"/><circle cx="-3.3" cy="2.4" r="3.3" fill="#F6D365"/><circle cx="-3.3" cy="-2.4" r="3.3" fill="#F6D365"/><circle cx="1.3" cy="-3.9" r="3.3" fill="#F6D365"/><circle r="2.4" fill="#F0A93A"/></g>
+<g transform="translate(427 619)"><path d="M0 0 V15.7" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.1" cy="0.0" r="3.3" fill="#FDF1C7"/><circle cx="1.3" cy="3.9" r="3.3" fill="#FDF1C7"/><circle cx="-3.3" cy="2.4" r="3.3" fill="#FDF1C7"/><circle cx="-3.3" cy="-2.4" r="3.3" fill="#FDF1C7"/><circle cx="1.3" cy="-3.9" r="3.3" fill="#FDF1C7"/><circle r="2.4" fill="#F0A93A"/></g>
+<g transform="translate(1042 623)"><path d="M0 0 V16.1" stroke="#5E8F55" stroke-width="1.9"/><circle cx="4.2" cy="0.0" r="3.3" fill="#F4A3A3"/><circle cx="1.3" cy="3.9" r="3.3" fill="#F4A3A3"/><circle cx="-3.4" cy="2.4" r="3.3" fill="#F4A3A3"/><circle cx="-3.4" cy="-2.4" r="3.3" fill="#F4A3A3"/><circle cx="1.3" cy="-3.9" r="3.3" fill="#F4A3A3"/><circle r="2.4" fill="#F0A93A"/></g>
+<g transform="translate(1236 627)"><path d="M0 0 V16.3" stroke="#5E8F55" stroke-width="1.9"/><circle cx="4.2" cy="0.0" r="3.4" fill="#F6D365"/><circle cx="1.3" cy="4.0" r="3.4" fill="#F6D365"/><circle cx="-3.4" cy="2.5" r="3.4" fill="#F6D365"/><circle cx="-3.4" cy="-2.5" r="3.4" fill="#F6D365"/><circle cx="1.3" cy="-4.0" r="3.4" fill="#F6D365"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(588 629)"><path d="M0 0 V16.5" stroke="#5E8F55" stroke-width="1.9"/><circle cx="4.3" cy="0.0" r="3.4" fill="#FDF1C7"/><circle cx="1.3" cy="4.0" r="3.4" fill="#FDF1C7"/><circle cx="-3.4" cy="2.5" r="3.4" fill="#FDF1C7"/><circle cx="-3.4" cy="-2.5" r="3.4" fill="#FDF1C7"/><circle cx="1.3" cy="-4.0" r="3.4" fill="#FDF1C7"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(1424 631)"><path d="M0 0 V16.6" stroke="#5E8F55" stroke-width="1.9"/><circle cx="4.3" cy="0.0" r="3.5" fill="#F29A8A"/><circle cx="1.3" cy="4.1" r="3.5" fill="#F29A8A"/><circle cx="-3.5" cy="2.5" r="3.5" fill="#F29A8A"/><circle cx="-3.5" cy="-2.5" r="3.5" fill="#F29A8A"/><circle cx="1.3" cy="-4.1" r="3.5" fill="#F29A8A"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(751 631)"><path d="M0 0 V16.7" stroke="#5E8F55" stroke-width="1.9"/><circle cx="4.3" cy="0.0" r="3.5" fill="#F6D365"/><circle cx="1.3" cy="4.1" r="3.5" fill="#F6D365"/><circle cx="-3.5" cy="2.5" r="3.5" fill="#F6D365"/><circle cx="-3.5" cy="-2.5" r="3.5" fill="#F6D365"/><circle cx="1.3" cy="-4.1" r="3.5" fill="#F6D365"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(312 633)"><path d="M0 0 V16.8" stroke="#5E8F55" stroke-width="2.0"/><circle cx="4.3" cy="0.0" r="3.5" fill="#FFFFFF"/><circle cx="1.3" cy="4.1" r="3.5" fill="#FFFFFF"/><circle cx="-3.5" cy="2.5" r="3.5" fill="#FFFFFF"/><circle cx="-3.5" cy="-2.5" r="3.5" fill="#FFFFFF"/><circle cx="1.3" cy="-4.1" r="3.5" fill="#FFFFFF"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(487 634)"><path d="M0 0 V16.9" stroke="#5E8F55" stroke-width="2.0"/><circle cx="4.4" cy="0.0" r="3.5" fill="#FDF1C7"/><circle cx="1.3" cy="4.1" r="3.5" fill="#FDF1C7"/><circle cx="-3.5" cy="2.6" r="3.5" fill="#FDF1C7"/><circle cx="-3.5" cy="-2.6" r="3.5" fill="#FDF1C7"/><circle cx="1.3" cy="-4.1" r="3.5" fill="#FDF1C7"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(486 637)"><path d="M0 0 V17.1" stroke="#5E8F55" stroke-width="2.0"/><circle cx="4.4" cy="0.0" r="3.6" fill="#FDF1C7"/><circle cx="1.4" cy="4.2" r="3.6" fill="#FDF1C7"/><circle cx="-3.6" cy="2.6" r="3.6" fill="#FDF1C7"/><circle cx="-3.6" cy="-2.6" r="3.6" fill="#FDF1C7"/><circle cx="1.4" cy="-4.2" r="3.6" fill="#FDF1C7"/><circle r="2.6" fill="#F0A93A"/></g>
+<g transform="translate(797 638)"><path d="M0 0 V17.1" stroke="#5E8F55" stroke-width="2.0"/><circle cx="4.4" cy="0.0" r="3.6" fill="#F6D365"/><circle cx="1.4" cy="4.2" r="3.6" fill="#F6D365"/><circle cx="-3.6" cy="2.6" r="3.6" fill="#F6D365"/><circle cx="-3.6" cy="-2.6" r="3.6" fill="#F6D365"/><circle cx="1.4" cy="-4.2" r="3.6" fill="#F6D365"/><circle r="2.6" fill="#F0A93A"/></g>
+<g transform="translate(792 639)"><path d="M0 0 V17.2" stroke="#5E8F55" stroke-width="2.0"/><circle cx="4.4" cy="0.0" r="3.6" fill="#F7C5D9"/><circle cx="1.4" cy="4.2" r="3.6" fill="#F7C5D9"/><circle cx="-3.6" cy="2.6" r="3.6" fill="#F7C5D9"/><circle cx="-3.6" cy="-2.6" r="3.6" fill="#F7C5D9"/><circle cx="1.4" cy="-4.2" r="3.6" fill="#F7C5D9"/><circle r="2.6" fill="#F0A93A"/></g>
+<g transform="translate(702 639)"><path d="M0 0 V17.2" stroke="#5E8F55" stroke-width="2.0"/><circle cx="4.5" cy="0.0" r="3.6" fill="#FFFFFF"/><circle cx="1.4" cy="4.2" r="3.6" fill="#FFFFFF"/><circle cx="-3.6" cy="2.6" r="3.6" fill="#FFFFFF"/><circle cx="-3.6" cy="-2.6" r="3.6" fill="#FFFFFF"/><circle cx="1.4" cy="-4.2" r="3.6" fill="#FFFFFF"/><circle r="2.6" fill="#F0A93A"/></g>
+<g transform="translate(726 646)"><path d="M0 0 V17.7" stroke="#5E8F55" stroke-width="2.1"/><circle cx="4.6" cy="0.0" r="3.7" fill="#F6D365"/><circle cx="1.4" cy="4.4" r="3.7" fill="#F6D365"/><circle cx="-3.7" cy="2.7" r="3.7" fill="#F6D365"/><circle cx="-3.7" cy="-2.7" r="3.7" fill="#F6D365"/><circle cx="1.4" cy="-4.4" r="3.7" fill="#F6D365"/><circle r="2.7" fill="#F0A93A"/></g>
+<g transform="translate(810 655)"><path d="M0 0 V18.3" stroke="#5E8F55" stroke-width="2.1"/><circle cx="4.7" cy="0.0" r="3.8" fill="#FFFFFF"/><circle cx="1.5" cy="4.5" r="3.8" fill="#FFFFFF"/><circle cx="-3.8" cy="2.8" r="3.8" fill="#FFFFFF"/><circle cx="-3.8" cy="-2.8" r="3.8" fill="#FFFFFF"/><circle cx="1.5" cy="-4.5" r="3.8" fill="#FFFFFF"/><circle r="2.7" fill="#F0A93A"/></g>
+<g transform="translate(1280 658)"><path d="M0 0 V18.6" stroke="#5E8F55" stroke-width="2.2"/><circle cx="4.8" cy="0.0" r="3.9" fill="#F6D365"/><circle cx="1.5" cy="4.6" r="3.9" fill="#F6D365"/><circle cx="-3.9" cy="2.8" r="3.9" fill="#F6D365"/><circle cx="-3.9" cy="-2.8" r="3.9" fill="#F6D365"/><circle cx="1.5" cy="-4.6" r="3.9" fill="#F6D365"/><circle r="2.8" fill="#F0A93A"/></g>
+<g transform="translate(988 665)"><path d="M0 0 V19.1" stroke="#5E8F55" stroke-width="2.2"/><circle cx="4.9" cy="0.0" r="4.0" fill="#F6D365"/><circle cx="1.5" cy="4.7" r="4.0" fill="#F6D365"/><circle cx="-4.0" cy="2.9" r="4.0" fill="#F6D365"/><circle cx="-4.0" cy="-2.9" r="4.0" fill="#F6D365"/><circle cx="1.5" cy="-4.7" r="4.0" fill="#F6D365"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(1327 669)"><path d="M0 0 V19.3" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.0" cy="0.0" r="4.0" fill="#FDF1C7"/><circle cx="1.5" cy="4.8" r="4.0" fill="#FDF1C7"/><circle cx="-4.0" cy="2.9" r="4.0" fill="#FDF1C7"/><circle cx="-4.0" cy="-2.9" r="4.0" fill="#FDF1C7"/><circle cx="1.5" cy="-4.8" r="4.0" fill="#FDF1C7"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(1183 669)"><path d="M0 0 V19.3" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.0" cy="0.0" r="4.0" fill="#FDF1C7"/><circle cx="1.5" cy="4.8" r="4.0" fill="#FDF1C7"/><circle cx="-4.0" cy="2.9" r="4.0" fill="#FDF1C7"/><circle cx="-4.0" cy="-2.9" r="4.0" fill="#FDF1C7"/><circle cx="1.5" cy="-4.8" r="4.0" fill="#FDF1C7"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(698 673)"><path d="M0 0 V19.7" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.1" cy="0.0" r="4.1" fill="#F4A3A3"/><circle cx="1.6" cy="4.8" r="4.1" fill="#F4A3A3"/><circle cx="-4.1" cy="3.0" r="4.1" fill="#F4A3A3"/><circle cx="-4.1" cy="-3.0" r="4.1" fill="#F4A3A3"/><circle cx="1.6" cy="-4.8" r="4.1" fill="#F4A3A3"/><circle r="3.0" fill="#F0A93A"/></g>
+<g transform="translate(312 674)"><path d="M0 0 V19.8" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.1" cy="0.0" r="4.1" fill="#FDF1C7"/><circle cx="1.6" cy="4.9" r="4.1" fill="#FDF1C7"/><circle cx="-4.1" cy="3.0" r="4.1" fill="#FDF1C7"/><circle cx="-4.1" cy="-3.0" r="4.1" fill="#FDF1C7"/><circle cx="1.6" cy="-4.9" r="4.1" fill="#FDF1C7"/><circle r="3.0" fill="#F0A93A"/></g>
+<g transform="translate(1074 677)"><path d="M0 0 V19.9" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.1" cy="0.0" r="4.2" fill="#FFFFFF"/><circle cx="1.6" cy="4.9" r="4.2" fill="#FFFFFF"/><circle cx="-4.2" cy="3.0" r="4.2" fill="#FFFFFF"/><circle cx="-4.2" cy="-3.0" r="4.2" fill="#FFFFFF"/><circle cx="1.6" cy="-4.9" r="4.2" fill="#FFFFFF"/><circle r="3.0" fill="#F0A93A"/></g>
+<g transform="translate(31 679)"><path d="M0 0 V20.1" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.2" cy="0.0" r="4.2" fill="#F4A3A3"/><circle cx="1.6" cy="4.9" r="4.2" fill="#F4A3A3"/><circle cx="-4.2" cy="3.0" r="4.2" fill="#F4A3A3"/><circle cx="-4.2" cy="-3.0" r="4.2" fill="#F4A3A3"/><circle cx="1.6" cy="-4.9" r="4.2" fill="#F4A3A3"/><circle r="3.0" fill="#F0A93A"/></g>
+<g transform="translate(606 683)"><path d="M0 0 V20.3" stroke="#5E8F55" stroke-width="2.4"/><circle cx="5.3" cy="0.0" r="4.2" fill="#F6D365"/><circle cx="1.6" cy="5.0" r="4.2" fill="#F6D365"/><circle cx="-4.3" cy="3.1" r="4.2" fill="#F6D365"/><circle cx="-4.3" cy="-3.1" r="4.2" fill="#F6D365"/><circle cx="1.6" cy="-5.0" r="4.2" fill="#F6D365"/><circle r="3.1" fill="#F0A93A"/></g>
+<g transform="translate(1319 688)"><path d="M0 0 V20.7" stroke="#5E8F55" stroke-width="2.4"/><circle cx="5.4" cy="0.0" r="4.3" fill="#F7C5D9"/><circle cx="1.7" cy="5.1" r="4.3" fill="#F7C5D9"/><circle cx="-4.3" cy="3.1" r="4.3" fill="#F7C5D9"/><circle cx="-4.3" cy="-3.1" r="4.3" fill="#F7C5D9"/><circle cx="1.7" cy="-5.1" r="4.3" fill="#F7C5D9"/><circle r="3.1" fill="#F0A93A"/></g>
+<g transform="translate(845 689)"><path d="M0 0 V20.8" stroke="#5E8F55" stroke-width="2.4"/><circle cx="5.4" cy="0.0" r="4.3" fill="#FFFFFF"/><circle cx="1.7" cy="5.1" r="4.3" fill="#FFFFFF"/><circle cx="-4.3" cy="3.2" r="4.3" fill="#FFFFFF"/><circle cx="-4.3" cy="-3.2" r="4.3" fill="#FFFFFF"/><circle cx="1.7" cy="-5.1" r="4.3" fill="#FFFFFF"/><circle r="3.1" fill="#F0A93A"/></g>
+<g transform="translate(585 691)"><path d="M0 0 V21.0" stroke="#5E8F55" stroke-width="2.4"/><circle cx="5.4" cy="0.0" r="4.4" fill="#FDF1C7"/><circle cx="1.7" cy="5.2" r="4.4" fill="#FDF1C7"/><circle cx="-4.4" cy="3.2" r="4.4" fill="#FDF1C7"/><circle cx="-4.4" cy="-3.2" r="4.4" fill="#FDF1C7"/><circle cx="1.7" cy="-5.2" r="4.4" fill="#FDF1C7"/><circle r="3.1" fill="#F0A93A"/></g>
+<g transform="translate(1118 695)"><path d="M0 0 V21.2" stroke="#5E8F55" stroke-width="2.5"/><circle cx="5.5" cy="0.0" r="4.4" fill="#FDF1C7"/><circle cx="1.7" cy="5.2" r="4.4" fill="#FDF1C7"/><circle cx="-4.4" cy="3.2" r="4.4" fill="#FDF1C7"/><circle cx="-4.4" cy="-3.2" r="4.4" fill="#FDF1C7"/><circle cx="1.7" cy="-5.2" r="4.4" fill="#FDF1C7"/><circle r="3.2" fill="#F0A93A"/></g>
+<g transform="translate(784 695)"><path d="M0 0 V21.2" stroke="#5E8F55" stroke-width="2.5"/><circle cx="5.5" cy="0.0" r="4.4" fill="#F6D365"/><circle cx="1.7" cy="5.2" r="4.4" fill="#F6D365"/><circle cx="-4.4" cy="3.2" r="4.4" fill="#F6D365"/><circle cx="-4.4" cy="-3.2" r="4.4" fill="#F6D365"/><circle cx="1.7" cy="-5.2" r="4.4" fill="#F6D365"/><circle r="3.2" fill="#F0A93A"/></g>
+    </svg>
+    <span class="spark" style="left:calc(50% - clamp(290px,31vw,430px)); bottom:30%; animation-delay:0s"></span>
+    <span class="spark" style="left:calc(50% - clamp(200px,22vw,300px)); bottom:24%; animation-delay:1.1s"></span>
+    <span class="spark" style="left:calc(50% - clamp(250px,27vw,370px)); bottom:36%; animation-delay:2.2s"></span>
+    <img class="otto left" src="img/otto/ottoaura6.png" alt="Otto the sloth sitting in the meadow, glowing" width="440" height="493">
+    <img class="otto right" src="img/otto/ottogreet.png" alt="" width="600" height="623" loading="lazy">
+    <div class="phone"><img src="img/app/home.jpg" alt="808's home screen: Otto sitting in a valley, his glow at 60%, a streak, and time meditated" width="640" height="1391"></div>
+  </div>
+</header>
 
-  <!-- ============ hero ============ -->
-  <div class="hero">
-    <div>
-      <h1>Make meditation easy <span class="em">with 808.</span></h1>
-      <p class="lede">
-        Meet 808, the first app that <b>scores your meditation from your
-        body</b>, with all the tools to verify, track, and share your practice.
-      </p>
-
-      <!-- Live on the App Store (2026-09-11). Every store link on this page
-           carries the `website` campaign tag (pt=129152995 is Lock Out Inc.'s
-           provider token), so App Analytics attributes installs to the site.
-           All six campaign links live in marketing/CAMPAIGN_LINKS.md. -->
-      <div class="store" id="download">
-        <a class="store-badge" href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8"><img src="img/app-store-badge.svg" alt="Download on the App Store" width="162" height="54"></a>
-        <p class="microcopy">Free to download. iPhone + Apple Watch.</p>
-      </div>
+<!-- ================= intro ================= -->
+<section class="intro">
+  <p>Everyone knows meditation works. <b>The hard part is doing it again tomorrow.</b></p>
+  <p>So 808 is built around tomorrow. You pick the apps you open without thinking, and Otto keeps them closed until you've meditated. Each day you do, he gets a little brighter.</p>
+  <div class="laurels">
+    <div class="laurel">
+      <svg viewBox="0 0 26 56" aria-hidden="true"><path d="M20 54 C6 44 4 26 14 4" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><ellipse cx="9" cy="44" rx="5" ry="2.4" transform="rotate(-40 9 44)"/><ellipse cx="6" cy="34" rx="5" ry="2.4" transform="rotate(-60 6 34)"/><ellipse cx="7" cy="23" rx="5" ry="2.4" transform="rotate(-80 7 23)"/><ellipse cx="11" cy="13" rx="5" ry="2.4" transform="rotate(-100 11 13)"/></g></svg>
+      <div><b>Based on research</b><span>on habits and attention</span></div>
+      <svg class="flip" viewBox="0 0 26 56" aria-hidden="true"><path d="M20 54 C6 44 4 26 14 4" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><ellipse cx="9" cy="44" rx="5" ry="2.4" transform="rotate(-40 9 44)"/><ellipse cx="6" cy="34" rx="5" ry="2.4" transform="rotate(-60 6 34)"/><ellipse cx="7" cy="23" rx="5" ry="2.4" transform="rotate(-80 7 23)"/><ellipse cx="11" cy="13" rx="5" ry="2.4" transform="rotate(-100 11 13)"/></g></svg>
     </div>
-
-    <div class="phone"><img src="img/shot-hero.png" width="644" height="1400"
-      alt="808 home screen: a 7 day streak, a gold practice score sparkline, and a month calendar dotted on practiced days"></div>
+    <div class="laurel">
+      <svg viewBox="0 0 26 56" aria-hidden="true"><path d="M20 54 C6 44 4 26 14 4" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><ellipse cx="9" cy="44" rx="5" ry="2.4" transform="rotate(-40 9 44)"/><ellipse cx="6" cy="34" rx="5" ry="2.4" transform="rotate(-60 6 34)"/><ellipse cx="7" cy="23" rx="5" ry="2.4" transform="rotate(-80 7 23)"/><ellipse cx="11" cy="13" rx="5" ry="2.4" transform="rotate(-100 11 13)"/></g></svg>
+      <div><b>Meditate how you like</b><span>in silence, with sounds, or your own audio</span></div>
+      <svg class="flip" viewBox="0 0 26 56" aria-hidden="true"><path d="M20 54 C6 44 4 26 14 4" fill="none" stroke="currentColor" stroke-width="2"/><g fill="currentColor"><ellipse cx="9" cy="44" rx="5" ry="2.4" transform="rotate(-40 9 44)"/><ellipse cx="6" cy="34" rx="5" ry="2.4" transform="rotate(-60 6 34)"/><ellipse cx="7" cy="23" rx="5" ry="2.4" transform="rotate(-80 7 23)"/><ellipse cx="11" cy="13" rx="5" ry="2.4" transform="rotate(-100 11 13)"/></g></svg>
+    </div>
   </div>
-</div>
+</section>
 
-<!-- ============ the mission, lit word by word ============ -->
+
+<!-- ================= the mission, lit word by word ================= -->
 <div class="mission" id="mission">
   <div class="mission-pin">
-    <p aria-label="The most powerful tool you have is your mind. It shapes your reality. Taking care of your body is mainstream. Taking care of your mind is not. The way you take care of your mind is through meditation. So we built 808 to make meditation measurable, habitual, and universal."><!--
-   --><span>The</span> <span>most</span> <span>powerful</span> <span>tool</span> <span>you</span> <span>have</span> <span>is</span> <span>your</span> <span>mind.</span>
-      <span>It</span> <span>shapes</span> <span>your</span> <span>reality.</span>
-      <span>Taking</span> <span>care</span> <span>of</span> <span>your</span> <span>body</span> <span>is</span> <span>mainstream.</span>
-      <span>Taking</span> <span>care</span> <span>of</span> <span>your</span> <span>mind</span> <span>is</span> <span>not.</span>
-      <span>The</span> <span>way</span> <span>you</span> <span>take</span> <span>care</span> <span>of</span> <span>your</span> <span>mind</span> <span>is</span> <span>through</span> <span>meditation.</span>
-      <span>So</span> <span>we</span> <span>built</span> <span>808</span> <span>to</span> <span>make</span> <span>meditation</span>
-      <span>measurable,</span> <span>habitual,</span> <span>and</span> <span>universal.</span>
-    </p>
-  </div>
-</div>
-<div id="mission-end"></div>
-
-<!-- ============ 01 the four pain points ============ -->
-<div class="shell">
-  <section id="features">
-    <div class="head">
-      <p class="lab"><span class="n">01</span> / What 808 does about it</p>
-      <h2>Four problems, four answers.</h2>
-    </div>
-
-    <div class="pain">
-      <div>
-        <span class="painlab">Pain 1 / &ldquo;Am I even doing this right?&rdquo;</span>
-        <h3>Every session scored, honestly.</h3>
-        <div class="prose">
-          <p>Heart rate, stillness and breathing, drawn as curves you can read.
-            One score out of 100, scored via our proprietary algorithm, first of its kind. A written takeaway in plain words.</p>
-          <p>And when a session goes badly, 808 says so. A restless sit scores
-            a 29, not a participation trophy. That is exactly why the good
-            sessions mean something.</p>
-        </div>
-      </div>
-      <div class="shots">
-        <div class="phone"><img src="img/shot-result-high.png" loading="lazy" width="644" height="1400"
-          alt="A high scoring session: Your practice landed, score 81, heart settled 13 beats, with heart rate and stillness curves"></div>
-        <div class="phone"><img src="img/shot-result-low.png" loading="lazy" width="644" height="1400"
-          alt="A low scoring session: A restless one, that happens. Score 29, heart rate climbing, stillness jagged, breath not read"></div>
-      </div>
-    </div>
-
-    <div class="pain flip">
-      <div class="shots single">
-        <div class="phone"><img src="img/shot-journey.png" loading="lazy" width="644" height="1400"
-          alt="The journey screen: a 7 day streak, awards shelf, and a month calendar dotted on practiced days"></div>
-      </div>
-      <div>
-        <span class="painlab">Pain 2 / &ldquo;Nothing keeps me accountable&rdquo;</span>
-        <h3>A streak that notices, and awards worth chasing.</h3>
-        <div class="prose">
-          <p>Your streak, a calendar of practiced days, and awards earned by
-            things you actually did. A sharper mind and a calmer one are what a
-            steady practice is shown to do.</p>
-          <p>Group meditations and challenges run on
-            <a href="https://instagram.com/808meditate">@808meditate</a>.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="pain">
-      <div>
-        <span class="painlab">Pain 3 / &ldquo;I can't prove I did it&rdquo;</span>
-        <h3>Share the proof.</h3>
-        <div class="prose">
-          <p>Every session becomes a card carrying your measured score, your
-            curves and your streak. Post it to Instagram, X, or anywhere else.</p>
-        </div>
-      </div>
-      <div class="shots single">
-        <div class="phone"><img src="img/shot-share.png" loading="lazy" width="644" height="1400"
-          alt="The share screen: a branded card with practice score 81, minutes, stillness, heart rate settle, breathing, and a 7 day streak"></div>
-      </div>
-    </div>
-
-    <div class="pain flip">
-      <div class="shots single">
-        <div class="phone"><img src="img/shot-guide.png" loading="lazy" width="644" height="1400"
-          alt="The how to meditate guide: a path from First time meditating through Counting Down, Body Scan, Blue Sky, Dual Awareness and more"></div>
-      </div>
-      <div>
-        <span class="painlab">Pain 4 / &ldquo;I don't know how&rdquo;</span>
-        <h3>From first sit to advanced practice.</h3>
-        <div class="prose">
-          <p>A built-in guide, easiest methods first. Complete
-            beginners start with what meditation even is, then counting down
-            and the body scan. Further along: dual awareness, blessing the
-            energy centers, manifestation.</p>
-          <p>Or ignore all of it. Play a guided meditation or frequency track
-            from YouTube or Spotify, or sit in silence. <b>The Watch measures
-            either way.</b></p>
-        </div>
-      </div>
-    </div>
-
-    <p class="legal">
-      Needs an iPhone and an Apple Watch. Start a session from either one.
-      808 is a wellness tool, not a medical device. It doesn't diagnose or
-      treat anything, and your measurements never leave your own devices.
-    </p>
-  </section>
-</div>
-
-<!-- ============ 02 what people say ============ -->
-<div class="shell">
-  <section id="reviews">
-    <div class="head">
-      <p class="lab"><span class="n">02</span> / What people say</p>
-      <h2>From the beta.</h2>
-    </div>
-
-    <div class="cards">
-      <div class="tcard">
-        <h3>Finally know if I'm doing it right</h3>
-        <blockquote>I've started and quit meditating probably six times. The thing that always got me was having no idea if anything was happening. First session with this showed my heart rate dropped 14 beats when i slowed my breathing down and it showed me where on the graph. I know it sounds small but it's the first time I've had any proof I wasn't just sitting there wasting ten minutes.</blockquote>
-        <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span class="who">David <span>/ beta tester</span></span>
-      </div>
-      <div class="tcard">
-        <h3>Use it with my own stuff</h3>
-        <blockquote>Big one for me is I already have meditations I like on YouTube. This just runs in the background on my watch and measures. Don't have to switch to their library or listen to some voice I don't like. And I love seeing the data, like how my heart responds to different parts of the meditation</blockquote>
-        <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span class="who">Julia <span>/ beta tester</span></span>
-      </div>
-      <div class="tcard">
-        <h3>Breathing tracking works</h3>
-        <blockquote>Skeptical it could pick up breathing from a wrist but it caught me slowing down at the start of a session and then speeding up later on, surprisingly accurate</blockquote>
-        <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span class="who">Ayush <span>/ beta tester</span></span>
-      </div>
-      <div class="tcard">
-        <h3>Love sharing my meditations</h3>
-        <blockquote>I meditate a lot and always wanted to have a way of sharing that I do, now I send my friend my meditation score everytime</blockquote>
-        <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span class="who">Maria <span>/ beta tester</span></span>
-      </div>
-      <div class="tcard">
-        <h3>Basically Strava for meditation</h3>
-        <blockquote>I track everything else so figured why not my morning meditation as well. I love the streak, keeps me accountable, and the achievements are also fun to hit</blockquote>
-        <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span class="who">Gabriel <span>/ beta tester</span></span>
-      </div>
-      <div class="tcard">
-        <h3>How to guide was good</h3>
-        <blockquote>Complete beginner to meditating and tried it out with low expectations, the guide turned out to be incredibly helpful in explaining the purpose and technique to meditating. Cant wait to try out some more advanced meditations</blockquote>
-        <span class="stars">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
-        <span class="who">Charlie <span>/ beta tester</span></span>
-      </div>
-    </div>
-  </section>
-</div>
-
-<!-- ============ 03 reasonable company ============ -->
-<div class="shell">
-  <section id="company">
-    <div class="head">
-      <p class="lab"><span class="n">03</span> / Reasonable company</p>
-      <h2>People whose job is measurable performance keep arriving at the same habit.</h2>
-    </div>
-
-    <div class="wall">
-      <div class="q verbatim">
-        <p>&ldquo;It's like having an anchor. If I don't do it, it feels like I'm constantly chasing the day.&rdquo;</p>
-        <span class="who">Kobe Bryant</span>
-      </div>
-      <div class="q verbatim">
-        <p>&ldquo;Transcendental Meditation has probably been the single most important reason for whatever success I've had.&rdquo;</p>
-        <span class="who">Ray Dalio</span>
-      </div>
-      <div class="q verbatim">
-        <p>&ldquo;Meditation reorders the natural flow of life&hellip; Decisions come easily, things fall into place, and there's no conflict.&rdquo;</p>
-        <span class="who">Oprah Winfrey</span>
-      </div>
-      <div class="q verbatim">
-        <p>&ldquo;It helps slow things down so that I can act calmly, even in the face of chaos, like a ninja in a street fight.&rdquo;</p>
-        <span class="who">Ray Dalio</span>
-      </div>
-      <div class="q">
-        <p>Ran mindfulness training through Michael Jordan's and Kobe Bryant's championship years.</p>
-        <span class="who">Phil Jackson's Bulls and Lakers</span>
-      </div>
-      <div class="q">
-        <p>Have practised mindfulness as a team since 2011.</p>
-        <span class="who">The Seattle Seahawks</span>
-      </div>
-      <div class="q">
-        <p>All credit a meditation practice.</p>
-        <span class="who">LeBron James, Novak Djokovic, Derek Jeter</span>
-      </div>
-      <div class="q">
-        <p>Has practised Transcendental Meditation for roughly forty years.</p>
-        <span class="who">Jerry Seinfeld</span>
-      </div>
-    </div>
-    <p class="wallnote">Quoted lines are verbatim and on the record. The rest
-      describe a documented practice without putting words in anyone's mouth.</p>
-  </section>
-</div>
-
-<!-- ============ 04 the research ============ -->
-<div class="shell">
-  <section id="science">
-    <div class="head">
-      <p class="lab"><span class="n">04</span> / The research</p>
-      <h2>Meditation itself has the evidence.</h2>
-    </div>
-
-    <div class="prose" style="margin-top:24px">
-      <p>Not our studies. The field's. What a steady practice has measurably
-        done for other people:</p>
-    </div>
-
-    <div class="figs three">
-      <div>
-        <span class="figkick">A sharper mind</span>
-        <span class="fig">+16 points</span>
-        <p>Two weeks of meditation training moved students 16 percentile points
-          on GRE reading comprehension, in a randomized
-          trial.<sup><a href="#sources">2</a></sup> Fourteen days, and reading
-          the same page got measurably easier.</p>
-      </div>
-      <div>
-        <span class="figkick">A calmer one</span>
-        <span class="fig">3,515 people</span>
-        <p>Across 47 randomized trials, meditation produced real reductions in
-          anxiety and depression.<sup><a href="#sources">3</a></sup> Not a
-          vibe. A measured shift, replicated for years.</p>
-      </div>
-      <div>
-        <span class="figkick">A stronger heart</span>
-        <span class="fig">48% fewer</span>
-        <p>Deaths, heart attacks and strokes in the meditation group of a
-          five-year trial of heart patients.<sup><a href="#sources">5</a></sup>
-          The group that teaches the technique ran it, so hold it loosely. The
-          American Heart Association still calls meditation a reasonable
-          addition to standard care.<sup><a href="#sources">4</a></sup></p>
-      </div>
-    </div>
-
-    <details class="sources" id="sources">
-      <summary>Where these numbers come from</summary>
-      <ol>
-        <li>Killingsworth, M. A., &amp; Gilbert, D. T. (2010). A wandering mind
-          is an unhappy mind. <i>Science</i>, 330(6006), 932.
-          <a href="https://doi.org/10.1126/science.1192439">doi:10.1126/science.1192439</a>.
-          2,250 adults, experience sampling. Mind wandering in 46.9% of samples.</li>
-        <li>Mrazek, M. D., Franklin, M. S., Phillips, D. T., Baird, B., &amp;
-          Schooler, J. W. (2013). Mindfulness training improves working memory
-          capacity and GRE performance while reducing mind wandering.
-          <i>Psychological Science</i>, 24(5), 776&ndash;781.
-          <a href="https://doi.org/10.1177/0956797612459659">doi:10.1177/0956797612459659</a>.</li>
-        <li>Goyal, M., et al. (2014). Meditation programs for psychological
-          stress and well-being. <i>JAMA Internal Medicine</i>, 174(3),
-          357&ndash;368.
-          <a href="https://doi.org/10.1001/jamainternmed.2013.13018">doi:10.1001/jamainternmed.2013.13018</a>.
-          47 trials with active controls, 3,515 participants. Moderate evidence,
-          effect sizes around 0.3.</li>
-        <li>Levine, G. N., et al. (2017). Meditation and cardiovascular risk
-          reduction: a scientific statement from the American Heart Association.
-          <i>Journal of the American Heart Association</i>, 6(10), e002218.
-          <a href="https://doi.org/10.1161/JAHA.117.002218">doi:10.1161/JAHA.117.002218</a>.
-          A systematic review by the AHA's own councils. Its verdict is
-          deliberately modest: meditation may be considered as an adjunct to
-          guideline-directed care, never as a replacement for it, and the
-          overall quality and quantity of the data are described as modest.</li>
-        <li>Schneider, R. H., et al. (2012). Stress reduction in the secondary
-          prevention of cardiovascular disease. <i>Circulation: Cardiovascular
-          Quality and Outcomes</i>, 5(6), 750&ndash;758.
-          <a href="https://doi.org/10.1161/CIRCOUTCOMES.112.967406">doi:10.1161/CIRCOUTCOMES.112.967406</a>.
-          201 Black adults with existing coronary heart disease, randomized to
-          Transcendental Meditation or health education, followed a median 5.4
-          years. 48% relative reduction in the composite of death, myocardial
-          infarction and stroke. Two things you should know: the trial was run
-          by the Maharishi University institute that teaches the technique, and
-          an earlier version of the paper was withdrawn by <i>Archives of
-          Internal Medicine</i> in 2011, then reanalyzed and published here.
-          It studied one technique in one population that was already ill, so
-          it says nothing about what meditation does for a healthy person.</li>
-      </ol>
-      <p style="font-size:13px;color:var(--muted);margin-top:16px">
-        What these do and do not show. The research above establishes that
-        meditation training helps. It does not show that 808 specifically will
-        do any of this for you, and nothing here is medical advice or a reason
-        to change anything your doctor told you. Nobody has run that trial yet,
-        and we won't pretend otherwise.</p>
-    </details>
-  </section>
-</div>
-
-<!-- ============ closer ============ -->
-<div class="shell">
-  <div class="closer" id="closer">
-    <h2>Your mind is worth training. <span class="g">Start with 808.</span></h2>
-    <p class="prose">If you meditate, or you're ready to start, 808 was made
-      for you. Track your progress, understand your mind, and see what your
-      body did.</p>
-    <div class="store">
-      <a class="store-badge" href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8"><img src="img/app-store-badge.svg" alt="Download on the App Store" width="162" height="54"></a>
-      <p class="microcopy">Free to download. iPhone + Apple Watch.</p>
-    </div>
-    <h3 class="nowatch">No Apple Watch yet?</h3>
-    <p class="prose">Leave your email and we'll tell you the moment a session
-      works without one.</p>
-    <form class="signup" id="join" novalidate>
-      <div class="row">
-        <input type="email" required autocomplete="email"
-               placeholder="you@email.com" aria-label="Email address">
-        <button type="submit" class="cta secondary">Tell me</button>
-      </div>
-      <label class="check">
-        <input type="checkbox" name="has_watch" value="yes">
-        <span>I have an Apple Watch</span>
-      </label>
-      <p class="formerr" role="alert"></p>
-      <p class="microcopy">One email when it ships. Nothing else.</p>
-    </form>
-    <div class="done">
-      <b>You're on the list</b>
-      <p>We'll email you when a session works without a Watch.</p>
-    </div>
+    <p aria-label="The most powerful tool you have is your mind. It shapes your reality. Taking care of your body is mainstream. Taking care of your mind is not. The way you take care of your mind is through meditation. So we built 808 to make meditation measurable, habitual, and universal."><span>The</span> <span>most</span> <span>powerful</span> <span>tool</span> <span>you</span> <span>have</span> <span>is</span> <span>your</span> <span>mind.</span> <span>It</span> <span>shapes</span> <span>your</span> <span>reality.</span> <span>Taking</span> <span>care</span> <span>of</span> <span>your</span> <span>body</span> <span>is</span> <span>mainstream.</span> <span>Taking</span> <span>care</span> <span>of</span> <span>your</span> <span>mind</span> <span>is</span> <span>not.</span> <span>The</span> <span>way</span> <span>you</span> <span>take</span> <span>care</span> <span>of</span> <span>your</span> <span>mind</span> <span>is</span> <span>through</span> <span>meditation.</span> <span>So</span> <span>we</span> <span>built</span> <span>808</span> <span>to</span> <span>make</span> <span>meditation</span> <span class="g">measurable,</span> <span class="g">habitual,</span> <span class="g">and</span> <span class="g">universal.</span></p>
   </div>
 </div>
 
-<!-- ============ footer ============ -->
+<!-- ================= Otto's glow ================= -->
+<section class="glow" id="glow">
+  <div class="sec-head">
+    <h2>He glows brighter<br>every day you meditate.</h2>
+    <p>Miss a few days and he starts to fade. Drag the bar to see how he changes.</p>
+  </div>
+  <div class="glow-card">
+    <div class="ground"></div>
+    <div class="glow-stage">
+      <div class="halo"></div>
+      <img src="img/otto/ottoaura1.png" alt="" width="440" height="493" loading="lazy">
+      <img src="img/otto/ottoaura2.png" alt="" width="440" height="493" loading="lazy">
+      <img class="on" src="img/otto/ottoaura3.png" alt="" width="440" height="493" loading="lazy">
+      <img src="img/otto/ottoaura4.png" alt="" width="440" height="493" loading="lazy">
+      <img src="img/otto/ottoaura5.png" alt="" width="440" height="493" loading="lazy">
+      <img class="float" src="img/otto/ottoaura6.png" alt="" width="440" height="493" loading="lazy">
+      <img class="float" src="img/otto/ottoaura7.png" alt="" width="440" height="493" loading="lazy">
+    </div>
+    <div class="glow-name" id="glow-name">Stirring</div>
+    <div class="glow-line" id="glow-line">This is where everyone starts.</div>
+    <div class="scrub">
+      <input type="range" min="1" max="7" step="1" value="3" id="glow-range" aria-label="Otto's glow">
+      <div class="ends"><span>Days off</span><span>Every day</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= features ================= -->
+<section class="features" id="features">
+  <div class="sec-head">
+    <h2>What keeps you<br>coming back.</h2>
+    <p>Each part of 808 is there to help you meditate again tomorrow.</p>
+  </div>
+  <div class="feat-grid">
+    <div class="feats">
+      <article class="feat" data-shot="0">
+        <span class="chip"><img src="img/icons/lock.png" alt="">Block</span>
+        <h3>Otto holds your apps until you've meditated.</h3>
+        <p>Pick the apps that pull you in and the hours to hold them. When you open one, Otto asks for five minutes first. Once you've meditated, they open again.</p>
+        <div class="phone inline"><img src="img/app/intervention.jpg" alt="Otto's screen when a held app is opened: one breath with me, then decide" loading="lazy" width="640" height="1391"></div>
+      </article>
+      <article class="feat" data-shot="1">
+        <span class="chip"><img src="img/icons/home-streak.png" alt="">Otto's glow</span>
+        <h3>Otto gets brighter as you keep going.</h3>
+        <p>Each day you meditate, he gets a little brighter. Skip a few days and he starts to droop.</p>
+        <div class="phone inline"><img src="img/app/home.jpg" alt="Home screen with Otto glowing in the valley" loading="lazy" width="640" height="1391"></div>
+      </article>
+      <article class="feat" data-shot="2">
+        <span class="chip"><img src="img/icons/sit-sound.png" alt="">Meditate your way</span>
+        <h3>Meditate the way you already like to.</h3>
+        <p>Set a timer or keep it open. Play rain, a campfire, a tone, or our 25-minute guided journey. If you already have a meditation you like on YouTube or Spotify, start it and begin a session.</p>
+        <div class="phone inline"><img src="img/app/ready.jpg" alt="The Ready screen with a timer, sound and Do Not Disturb" loading="lazy" width="640" height="1391"></div>
+      </article>
+      <article class="feat" data-shot="3">
+        <span class="chip"><img src="img/icons/shop.png" alt="">Rewards</span>
+        <h3>See what each session added up to.</h3>
+        <p>When a session ends you see your minutes, your streak and the points you earned. Points buy hats for Otto.</p>
+        <div class="phone inline"><img src="img/app/reward.jpg" alt="Session complete: 18 minutes, a 5 day streak and 18 points" loading="lazy" width="640" height="1391"></div>
+      </article>
+      <article class="feat" data-shot="4">
+        <span class="chip"><img src="img/icons/home-best.png" alt="">Progress</span>
+        <h3>Track your streak and every session.</h3>
+        <p>Your streak, every session you've done and the awards you've earned. One rest day a week won't break a streak.</p>
+        <div class="phone inline"><img src="img/app/profile.jpg" alt="Profile with streak, sessions, time practiced and a chart of minutes" loading="lazy" width="640" height="1391"></div>
+      </article>
+      <article class="feat" data-shot="5">
+        <span class="chip"><img src="img/icons/sit-watch.png" alt="">Apple Watch</span>
+        <h3>With an Apple Watch, see what your body did.</h3>
+        <p>808 draws your heart rate, how still you were and your breathing, and gives the session a score out of 100. Without a Watch, everything else works the same.</p>
+        <div class="phone inline"><img src="img/app/results.jpg" alt="A measured session: score 81, heart settled 13 beats, heart rate curve" loading="lazy" width="640" height="1391"></div>
+      </article>
+    </div>
+    <div class="sticky" aria-hidden="true">
+      <div class="phone"><div class="shots">
+        <img class="on" src="img/app/intervention.jpg" alt="" width="640" height="1391">
+        <img src="img/app/home.jpg" alt="" width="640" height="1391" loading="lazy">
+        <img src="img/app/ready.jpg" alt="" width="640" height="1391" loading="lazy">
+        <img src="img/app/reward.jpg" alt="" width="640" height="1391" loading="lazy">
+        <img src="img/app/profile.jpg" alt="" width="640" height="1391" loading="lazy">
+        <img src="img/app/results.jpg" alt="" width="640" height="1391" loading="lazy">
+      </div></div>
+    </div>
+  </div>
+  <p class="fine">808 is a wellness tool, not a medical device. It doesn't diagnose or treat anything, and your measurements never leave your own devices.</p>
+</section>
+
+<!-- ================= company ================= -->
+<section class="company" id="company">
+  <div class="sec-head">
+    <h2>Some well-known<br>people who meditate.</h2>
+    <p>Athletes, investors and entertainers who have talked about it publicly.</p>
+  </div>
+  <div class="wall">
+    <div class="q verbatim"><p>&ldquo;It's like having an anchor. If I don't do it, it feels like I'm constantly chasing the day.&rdquo;</p><span class="who">Kobe Bryant</span></div>
+    <div class="q verbatim"><p>&ldquo;Transcendental Meditation has probably been the single most important reason for whatever success I've had.&rdquo;</p><span class="who">Ray Dalio</span></div>
+    <div class="q verbatim"><p>&ldquo;Meditation reorders the natural flow of life&hellip; Decisions come easily, things fall into place, and there's no conflict.&rdquo;</p><span class="who">Oprah Winfrey</span></div>
+    <div class="q verbatim"><p>&ldquo;It helps slow things down so that I can act calmly, even in the face of chaos, like a ninja in a street fight.&rdquo;</p><span class="who">Ray Dalio</span></div>
+    <div class="q"><p>Ran mindfulness training through Michael Jordan's and Kobe Bryant's championship years.</p><span class="who">Phil Jackson's Bulls and Lakers</span></div>
+    <div class="q"><p>Have practiced mindfulness as a team since 2011.</p><span class="who">The Seattle Seahawks</span></div>
+    <div class="q"><p>All credit a meditation practice.</p><span class="who">LeBron James, Novak Djokovic, Derek Jeter</span></div>
+    <div class="q"><p>Has practiced Transcendental Meditation for roughly forty years.</p><span class="who">Jerry Seinfeld</span></div>
+  </div>
+  <p class="fine">Quoted lines are verbatim and on the record. None of these people endorse 808.</p>
+</section>
+
+<!-- ================= research ================= -->
+<section class="research" id="science">
+  <div class="sec-head">
+    <h2>What the<br>research says.</h2>
+    <p>These are other researchers' studies, not ours. Here is what regular meditation has been shown to do.</p>
+  </div>
+  <div class="figs">
+    <div class="fig"><span class="k">Reading and focus</span><span class="n">+16 points</span>
+      <p>Two weeks of meditation training moved students 16 percentile points on GRE reading comprehension, in a randomized trial.<sup><a href="#sources">2</a></sup></p></div>
+    <div class="fig"><span class="k">Anxiety and depression</span><span class="n">3,515 people</span>
+      <p>Across 47 randomized trials, meditation produced real reductions in anxiety and depression.<sup><a href="#sources">3</a></sup></p></div>
+    <div class="fig"><span class="k">Regular practice</span><span class="n">280,000</span>
+      <p>Meditation sessions analyzed. People who meditated regularly improved more, and the length of each session didn't predict it.<sup><a href="#sources">4</a></sup></p></div>
+  </div>
+  <details class="sources" id="sources">
+    <summary>Where these numbers come from</summary>
+    <ol>
+      <li>Killingsworth, M. A., &amp; Gilbert, D. T. (2010). A wandering mind is an unhappy mind. <i>Science</i>, 330(6006), 932. <a href="https://doi.org/10.1126/science.1192439">doi:10.1126/science.1192439</a>.</li>
+      <li>Mrazek, M. D., Franklin, M. S., Phillips, D. T., Baird, B., &amp; Schooler, J. W. (2013). Mindfulness training improves working memory capacity and GRE performance while reducing mind wandering. <i>Psychological Science</i>, 24(5), 776&ndash;781. <a href="https://doi.org/10.1177/0956797612459659">doi:10.1177/0956797612459659</a>.</li>
+      <li>Goyal, M., et al. (2014). Meditation programs for psychological stress and well-being. <i>JAMA Internal Medicine</i>, 174(3), 357&ndash;368. <a href="https://doi.org/10.1001/jamainternmed.2013.13018">doi:10.1001/jamainternmed.2013.13018</a>. 47 trials with active controls, 3,515 participants. Moderate evidence, effect sizes around 0.3.</li>
+      <li>Cearns, M., &amp; Clark, S. R. (2023). The effects of dose, practice habits, and objects of focus on digital meditation effectiveness and adherence. <i>Scientific Reports</i>.</li>
+    </ol>
+    <p class="note">The research above shows that meditation practice helps. It does not show that 808 specifically will do any of this for you, and nothing here is medical advice. No one has studied 808 itself yet.</p>
+  </details>
+</section>
+
+<!-- ================= closer ================= -->
+<section class="closer" id="closer">
+  <div class="copy">
+    <h2>Meditate<br>with Otto.</h2>
+    <a class="badge" href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8"><img src="img/app-store-badge.svg" alt="Download on the App Store" width="162" height="54"></a>
+  </div>
+  <div class="stage">
+    <div class="moon"></div>
+    <svg class="scene" viewBox="0 0 1440 720" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <path d="M0 520 L200 400 L360 480 L540 380 L720 470 L900 390 L1080 480 L1260 400 L1440 480 V720 H0Z" fill="#7F88A8"/>
+      <path d="M0 560 Q360 510 720 545 T1440 540 V720 H0Z" fill="#5E7F66"/>
+      <path d="M0 585 Q380 560 720 575 T1440 570 V720 H0Z" fill="#78A069"/>
+      <path d="M830 669 l-5.1 -16.3 M830 669 l1.0 -20.4 M830 669 l6.1 -15.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M925 695 l-5.9 -18.7 M925 695 l1.2 -23.4 M925 695 l7.0 -17.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M905 573 l-2.4 -7.6 M905 573 l0.5 -9.5 M905 573 l2.8 -7.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1274 634 l-4.1 -13.2 M1274 634 l0.8 -16.5 M1274 634 l5.0 -12.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1172 672 l-5.2 -16.7 M1172 672 l1.0 -20.9 M1172 672 l6.3 -15.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M601 578 l-2.5 -8.1 M601 578 l0.5 -10.1 M601 578 l3.0 -7.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M346 633 l-4.1 -13.1 M346 633 l0.8 -16.4 M346 633 l4.9 -12.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M64 613 l-3.5 -11.2 M64 613 l0.7 -14.1 M64 613 l4.2 -10.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M364 619 l-3.7 -11.8 M364 619 l0.7 -14.7 M364 619 l4.4 -11.0" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M448 676 l-5.3 -17.0 M448 676 l1.1 -21.2 M448 676 l6.4 -15.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M335 585 l-2.7 -8.7 M335 585 l0.5 -10.9 M335 585 l3.3 -8.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M465 620 l-3.7 -11.9 M465 620 l0.7 -14.9 M465 620 l4.5 -11.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M581 596 l-3.0 -9.7 M581 596 l0.6 -12.1 M581 596 l3.6 -9.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1426 618 l-3.7 -11.7 M1426 618 l0.7 -14.6 M1426 618 l4.4 -11.0" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M634 567 l-2.2 -7.1 M634 567 l0.4 -8.8 M634 567 l2.7 -6.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1234 637 l-4.2 -13.4 M1234 637 l0.8 -16.8 M1234 637 l5.0 -12.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1252 622 l-3.8 -12.1 M1252 622 l0.8 -15.1 M1252 622 l4.5 -11.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1167 693 l-5.8 -18.6 M1167 693 l1.2 -23.2 M1167 693 l7.0 -17.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M630 563 l-2.1 -6.6 M630 563 l0.4 -8.3 M630 563 l2.5 -6.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M810 686 l-5.6 -17.9 M810 686 l1.1 -22.3 M810 686 l6.7 -16.8" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1422 657 l-4.8 -15.3 M1422 657 l1.0 -19.1 M1422 657 l5.7 -14.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M160 660 l-4.9 -15.5 M160 660 l1.0 -19.4 M160 660 l5.8 -14.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M787 594 l-3.0 -9.6 M787 594 l0.6 -11.9 M787 594 l3.6 -9.0" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M457 645 l-4.4 -14.2 M457 645 l0.9 -17.7 M457 645 l5.3 -13.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1345 582 l-2.6 -8.4 M1345 582 l0.5 -10.5 M1345 582 l3.2 -7.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M727 668 l-5.1 -16.2 M727 668 l1.0 -20.3 M727 668 l6.1 -15.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1425 561 l-2.0 -6.5 M1425 561 l0.4 -8.1 M1425 561 l2.4 -6.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M98 661 l-4.9 -15.6 M98 661 l1.0 -19.5 M98 661 l5.8 -14.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M776 605 l-3.3 -10.5 M776 605 l0.7 -13.2 M776 605 l3.9 -9.9" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M250 634 l-4.1 -13.2 M250 634 l0.8 -16.5 M250 634 l4.9 -12.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M911 602 l-3.2 -10.2 M911 602 l0.6 -12.7 M911 602 l3.8 -9.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M293 660 l-4.9 -15.6 M293 660 l1.0 -19.5 M293 660 l5.8 -14.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1018 643 l-4.4 -14.0 M1018 643 l0.9 -17.5 M1018 643 l5.2 -13.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M1292 656 l-4.7 -15.2 M1292 656 l0.9 -19.0 M1292 656 l5.7 -14.2" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M452 683 l-5.5 -17.6 M452 683 l1.1 -22.0 M452 683 l6.6 -16.5" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M997 642 l-4.3 -13.9 M997 642 l0.9 -17.3 M997 642 l5.2 -13.0" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M495 626 l-3.9 -12.4 M495 626 l0.8 -15.5 M495 626 l4.7 -11.6" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M687 598 l-3.1 -9.9 M687 598 l0.6 -12.4 M687 598 l3.7 -9.3" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M816 585 l-2.7 -8.7 M816 585 l0.5 -10.8 M816 585 l3.2 -8.1" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<path d="M474 577 l-2.5 -7.9 M474 577 l0.5 -9.9 M474 577 l3.0 -7.4" stroke="#6E9E60" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+<g transform="translate(190 573)"><path d="M0 0 V9.9" stroke="#5E8F55" stroke-width="1.2"/><circle cx="2.6" cy="0.0" r="2.1" fill="#FFFFFF"/><circle cx="0.8" cy="2.4" r="2.1" fill="#FFFFFF"/><circle cx="-2.1" cy="1.5" r="2.1" fill="#FFFFFF"/><circle cx="-2.1" cy="-1.5" r="2.1" fill="#FFFFFF"/><circle cx="0.8" cy="-2.4" r="2.1" fill="#FFFFFF"/><circle r="1.5" fill="#F0A93A"/></g>
+<g transform="translate(124 573)"><path d="M0 0 V9.9" stroke="#5E8F55" stroke-width="1.2"/><circle cx="2.6" cy="0.0" r="2.1" fill="#F7C5D9"/><circle cx="0.8" cy="2.4" r="2.1" fill="#F7C5D9"/><circle cx="-2.1" cy="1.5" r="2.1" fill="#F7C5D9"/><circle cx="-2.1" cy="-1.5" r="2.1" fill="#F7C5D9"/><circle cx="0.8" cy="-2.4" r="2.1" fill="#F7C5D9"/><circle r="1.5" fill="#F0A93A"/></g>
+<g transform="translate(521 582)"><path d="M0 0 V10.9" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#FFFFFF"/><circle cx="0.9" cy="2.7" r="2.3" fill="#FFFFFF"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#FFFFFF"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#FFFFFF"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#FFFFFF"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(519 582)"><path d="M0 0 V11.0" stroke="#5E8F55" stroke-width="1.3"/><circle cx="2.8" cy="0.0" r="2.3" fill="#FDF1C7"/><circle cx="0.9" cy="2.7" r="2.3" fill="#FDF1C7"/><circle cx="-2.3" cy="1.7" r="2.3" fill="#FDF1C7"/><circle cx="-2.3" cy="-1.7" r="2.3" fill="#FDF1C7"/><circle cx="0.9" cy="-2.7" r="2.3" fill="#FDF1C7"/><circle r="1.6" fill="#F0A93A"/></g>
+<g transform="translate(963 590)"><path d="M0 0 V11.8" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.1" cy="0.0" r="2.5" fill="#FDF1C7"/><circle cx="0.9" cy="2.9" r="2.5" fill="#FDF1C7"/><circle cx="-2.5" cy="1.8" r="2.5" fill="#FDF1C7"/><circle cx="-2.5" cy="-1.8" r="2.5" fill="#FDF1C7"/><circle cx="0.9" cy="-2.9" r="2.5" fill="#FDF1C7"/><circle r="1.8" fill="#F0A93A"/></g>
+<g transform="translate(58 593)"><path d="M0 0 V12.1" stroke="#5E8F55" stroke-width="1.4"/><circle cx="3.1" cy="0.0" r="2.5" fill="#F6D365"/><circle cx="1.0" cy="3.0" r="2.5" fill="#F6D365"/><circle cx="-2.5" cy="1.8" r="2.5" fill="#F6D365"/><circle cx="-2.5" cy="-1.8" r="2.5" fill="#F6D365"/><circle cx="1.0" cy="-3.0" r="2.5" fill="#F6D365"/><circle r="1.8" fill="#F0A93A"/></g>
+<g transform="translate(1250 596)"><path d="M0 0 V12.5" stroke="#5E8F55" stroke-width="1.5"/><circle cx="3.2" cy="0.0" r="2.6" fill="#F6D365"/><circle cx="1.0" cy="3.1" r="2.6" fill="#F6D365"/><circle cx="-2.6" cy="1.9" r="2.6" fill="#F6D365"/><circle cx="-2.6" cy="-1.9" r="2.6" fill="#F6D365"/><circle cx="1.0" cy="-3.1" r="2.6" fill="#F6D365"/><circle r="1.9" fill="#F0A93A"/></g>
+<g transform="translate(1412 603)"><path d="M0 0 V13.2" stroke="#5E8F55" stroke-width="1.5"/><circle cx="3.4" cy="0.0" r="2.8" fill="#F6D365"/><circle cx="1.1" cy="3.2" r="2.8" fill="#F6D365"/><circle cx="-2.8" cy="2.0" r="2.8" fill="#F6D365"/><circle cx="-2.8" cy="-2.0" r="2.8" fill="#F6D365"/><circle cx="1.1" cy="-3.2" r="2.8" fill="#F6D365"/><circle r="2.0" fill="#F0A93A"/></g>
+<g transform="translate(1287 604)"><path d="M0 0 V13.3" stroke="#5E8F55" stroke-width="1.6"/><circle cx="3.4" cy="0.0" r="2.8" fill="#F4A3A3"/><circle cx="1.1" cy="3.3" r="2.8" fill="#F4A3A3"/><circle cx="-2.8" cy="2.0" r="2.8" fill="#F4A3A3"/><circle cx="-2.8" cy="-2.0" r="2.8" fill="#F4A3A3"/><circle cx="1.1" cy="-3.3" r="2.8" fill="#F4A3A3"/><circle r="2.0" fill="#F0A93A"/></g>
+<g transform="translate(14 605)"><path d="M0 0 V13.5" stroke="#5E8F55" stroke-width="1.6"/><circle cx="3.5" cy="0.0" r="2.8" fill="#F29A8A"/><circle cx="1.1" cy="3.3" r="2.8" fill="#F29A8A"/><circle cx="-2.8" cy="2.1" r="2.8" fill="#F29A8A"/><circle cx="-2.8" cy="-2.1" r="2.8" fill="#F29A8A"/><circle cx="1.1" cy="-3.3" r="2.8" fill="#F29A8A"/><circle r="2.0" fill="#F0A93A"/></g>
+<g transform="translate(410 609)"><path d="M0 0 V14.0" stroke="#5E8F55" stroke-width="1.6"/><circle cx="3.6" cy="0.0" r="2.9" fill="#FFFFFF"/><circle cx="1.1" cy="3.4" r="2.9" fill="#FFFFFF"/><circle cx="-2.9" cy="2.1" r="2.9" fill="#FFFFFF"/><circle cx="-2.9" cy="-2.1" r="2.9" fill="#FFFFFF"/><circle cx="1.1" cy="-3.4" r="2.9" fill="#FFFFFF"/><circle r="2.1" fill="#F0A93A"/></g>
+<g transform="translate(527 614)"><path d="M0 0 V14.5" stroke="#5E8F55" stroke-width="1.7"/><circle cx="3.7" cy="0.0" r="3.0" fill="#F6D365"/><circle cx="1.2" cy="3.6" r="3.0" fill="#F6D365"/><circle cx="-3.0" cy="2.2" r="3.0" fill="#F6D365"/><circle cx="-3.0" cy="-2.2" r="3.0" fill="#F6D365"/><circle cx="1.2" cy="-3.6" r="3.0" fill="#F6D365"/><circle r="2.2" fill="#F0A93A"/></g>
+<g transform="translate(256 622)"><path d="M0 0 V15.3" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.2" fill="#F4A3A3"/><circle cx="1.2" cy="3.8" r="3.2" fill="#F4A3A3"/><circle cx="-3.2" cy="2.3" r="3.2" fill="#F4A3A3"/><circle cx="-3.2" cy="-2.3" r="3.2" fill="#F4A3A3"/><circle cx="1.2" cy="-3.8" r="3.2" fill="#F4A3A3"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(256 622)"><path d="M0 0 V15.4" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.2" fill="#F6D365"/><circle cx="1.2" cy="3.8" r="3.2" fill="#F6D365"/><circle cx="-3.2" cy="2.3" r="3.2" fill="#F6D365"/><circle cx="-3.2" cy="-2.3" r="3.2" fill="#F6D365"/><circle cx="1.2" cy="-3.8" r="3.2" fill="#F6D365"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(959 624)"><path d="M0 0 V15.5" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.2" fill="#FDF1C7"/><circle cx="1.2" cy="3.8" r="3.2" fill="#FDF1C7"/><circle cx="-3.2" cy="2.4" r="3.2" fill="#FDF1C7"/><circle cx="-3.2" cy="-2.4" r="3.2" fill="#FDF1C7"/><circle cx="1.2" cy="-3.8" r="3.2" fill="#FDF1C7"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(305 624)"><path d="M0 0 V15.6" stroke="#5E8F55" stroke-width="1.8"/><circle cx="4.0" cy="0.0" r="3.2" fill="#FDF1C7"/><circle cx="1.2" cy="3.8" r="3.2" fill="#FDF1C7"/><circle cx="-3.3" cy="2.4" r="3.2" fill="#FDF1C7"/><circle cx="-3.3" cy="-2.4" r="3.2" fill="#FDF1C7"/><circle cx="1.2" cy="-3.8" r="3.2" fill="#FDF1C7"/><circle r="2.3" fill="#F0A93A"/></g>
+<g transform="translate(1096 632)"><path d="M0 0 V16.5" stroke="#5E8F55" stroke-width="1.9"/><circle cx="4.3" cy="0.0" r="3.4" fill="#F7C5D9"/><circle cx="1.3" cy="4.1" r="3.4" fill="#F7C5D9"/><circle cx="-3.5" cy="2.5" r="3.4" fill="#F7C5D9"/><circle cx="-3.5" cy="-2.5" r="3.4" fill="#F7C5D9"/><circle cx="1.3" cy="-4.1" r="3.4" fill="#F7C5D9"/><circle r="2.5" fill="#F0A93A"/></g>
+<g transform="translate(849 643)"><path d="M0 0 V17.6" stroke="#5E8F55" stroke-width="2.1"/><circle cx="4.6" cy="0.0" r="3.7" fill="#F6D365"/><circle cx="1.4" cy="4.3" r="3.7" fill="#F6D365"/><circle cx="-3.7" cy="2.7" r="3.7" fill="#F6D365"/><circle cx="-3.7" cy="-2.7" r="3.7" fill="#F6D365"/><circle cx="1.4" cy="-4.3" r="3.7" fill="#F6D365"/><circle r="2.6" fill="#F0A93A"/></g>
+<g transform="translate(1235 645)"><path d="M0 0 V17.9" stroke="#5E8F55" stroke-width="2.1"/><circle cx="4.6" cy="0.0" r="3.7" fill="#FFFFFF"/><circle cx="1.4" cy="4.4" r="3.7" fill="#FFFFFF"/><circle cx="-3.7" cy="2.7" r="3.7" fill="#FFFFFF"/><circle cx="-3.7" cy="-2.7" r="3.7" fill="#FFFFFF"/><circle cx="1.4" cy="-4.4" r="3.7" fill="#FFFFFF"/><circle r="2.7" fill="#F0A93A"/></g>
+<g transform="translate(332 651)"><path d="M0 0 V18.6" stroke="#5E8F55" stroke-width="2.2"/><circle cx="4.8" cy="0.0" r="3.9" fill="#FDF1C7"/><circle cx="1.5" cy="4.6" r="3.9" fill="#FDF1C7"/><circle cx="-3.9" cy="2.8" r="3.9" fill="#FDF1C7"/><circle cx="-3.9" cy="-2.8" r="3.9" fill="#FDF1C7"/><circle cx="1.5" cy="-4.6" r="3.9" fill="#FDF1C7"/><circle r="2.8" fill="#F0A93A"/></g>
+<g transform="translate(14 655)"><path d="M0 0 V19.0" stroke="#5E8F55" stroke-width="2.2"/><circle cx="4.9" cy="0.0" r="4.0" fill="#FFFFFF"/><circle cx="1.5" cy="4.7" r="4.0" fill="#FFFFFF"/><circle cx="-4.0" cy="2.9" r="4.0" fill="#FFFFFF"/><circle cx="-4.0" cy="-2.9" r="4.0" fill="#FFFFFF"/><circle cx="1.5" cy="-4.7" r="4.0" fill="#FFFFFF"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(235 657)"><path d="M0 0 V19.3" stroke="#5E8F55" stroke-width="2.2"/><circle cx="5.0" cy="0.0" r="4.0" fill="#F29A8A"/><circle cx="1.5" cy="4.7" r="4.0" fill="#F29A8A"/><circle cx="-4.0" cy="2.9" r="4.0" fill="#F29A8A"/><circle cx="-4.0" cy="-2.9" r="4.0" fill="#F29A8A"/><circle cx="1.5" cy="-4.7" r="4.0" fill="#F29A8A"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(30 660)"><path d="M0 0 V19.6" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.1" cy="0.0" r="4.1" fill="#F6D365"/><circle cx="1.6" cy="4.8" r="4.1" fill="#F6D365"/><circle cx="-4.1" cy="3.0" r="4.1" fill="#F6D365"/><circle cx="-4.1" cy="-3.0" r="4.1" fill="#F6D365"/><circle cx="1.6" cy="-4.8" r="4.1" fill="#F6D365"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(535 661)"><path d="M0 0 V19.6" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.1" cy="0.0" r="4.1" fill="#FDF1C7"/><circle cx="1.6" cy="4.8" r="4.1" fill="#FDF1C7"/><circle cx="-4.1" cy="3.0" r="4.1" fill="#FDF1C7"/><circle cx="-4.1" cy="-3.0" r="4.1" fill="#FDF1C7"/><circle cx="1.6" cy="-4.8" r="4.1" fill="#FDF1C7"/><circle r="2.9" fill="#F0A93A"/></g>
+<g transform="translate(133 662)"><path d="M0 0 V19.8" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.1" cy="0.0" r="4.1" fill="#F4A3A3"/><circle cx="1.6" cy="4.9" r="4.1" fill="#F4A3A3"/><circle cx="-4.1" cy="3.0" r="4.1" fill="#F4A3A3"/><circle cx="-4.1" cy="-3.0" r="4.1" fill="#F4A3A3"/><circle cx="1.6" cy="-4.9" r="4.1" fill="#F4A3A3"/><circle r="3.0" fill="#F0A93A"/></g>
+<g transform="translate(47 664)"><path d="M0 0 V20.0" stroke="#5E8F55" stroke-width="2.3"/><circle cx="5.2" cy="0.0" r="4.2" fill="#FFFFFF"/><circle cx="1.6" cy="4.9" r="4.2" fill="#FFFFFF"/><circle cx="-4.2" cy="3.0" r="4.2" fill="#FFFFFF"/><circle cx="-4.2" cy="-3.0" r="4.2" fill="#FFFFFF"/><circle cx="1.6" cy="-4.9" r="4.2" fill="#FFFFFF"/><circle r="3.0" fill="#F0A93A"/></g>
+<g transform="translate(101 675)"><path d="M0 0 V21.3" stroke="#5E8F55" stroke-width="2.5"/><circle cx="5.5" cy="0.0" r="4.4" fill="#F29A8A"/><circle cx="1.7" cy="5.2" r="4.4" fill="#F29A8A"/><circle cx="-4.4" cy="3.2" r="4.4" fill="#F29A8A"/><circle cx="-4.4" cy="-3.2" r="4.4" fill="#F29A8A"/><circle cx="1.7" cy="-5.2" r="4.4" fill="#F29A8A"/><circle r="3.2" fill="#F0A93A"/></g>
+<g transform="translate(1233 683)"><path d="M0 0 V22.1" stroke="#5E8F55" stroke-width="2.6"/><circle cx="5.7" cy="0.0" r="4.6" fill="#FFFFFF"/><circle cx="1.8" cy="5.4" r="4.6" fill="#FFFFFF"/><circle cx="-4.6" cy="3.4" r="4.6" fill="#FFFFFF"/><circle cx="-4.6" cy="-3.4" r="4.6" fill="#FFFFFF"/><circle cx="1.8" cy="-5.4" r="4.6" fill="#FFFFFF"/><circle r="3.3" fill="#F0A93A"/></g>
+<g transform="translate(1157 686)"><path d="M0 0 V22.5" stroke="#5E8F55" stroke-width="2.6"/><circle cx="5.8" cy="0.0" r="4.7" fill="#F6D365"/><circle cx="1.8" cy="5.5" r="4.7" fill="#F6D365"/><circle cx="-4.7" cy="3.4" r="4.7" fill="#F6D365"/><circle cx="-4.7" cy="-3.4" r="4.7" fill="#F6D365"/><circle cx="1.8" cy="-5.5" r="4.7" fill="#F6D365"/><circle r="3.4" fill="#F0A93A"/></g>
+<g transform="translate(863 687)"><path d="M0 0 V22.5" stroke="#5E8F55" stroke-width="2.6"/><circle cx="5.8" cy="0.0" r="4.7" fill="#F29A8A"/><circle cx="1.8" cy="5.5" r="4.7" fill="#F29A8A"/><circle cx="-4.7" cy="3.4" r="4.7" fill="#F29A8A"/><circle cx="-4.7" cy="-3.4" r="4.7" fill="#F29A8A"/><circle cx="1.8" cy="-5.5" r="4.7" fill="#F29A8A"/><circle r="3.4" fill="#F0A93A"/></g>
+<g transform="translate(333 689)"><path d="M0 0 V22.7" stroke="#5E8F55" stroke-width="2.7"/><circle cx="5.9" cy="0.0" r="4.7" fill="#FFFFFF"/><circle cx="1.8" cy="5.6" r="4.7" fill="#FFFFFF"/><circle cx="-4.8" cy="3.5" r="4.7" fill="#FFFFFF"/><circle cx="-4.8" cy="-3.5" r="4.7" fill="#FFFFFF"/><circle cx="1.8" cy="-5.6" r="4.7" fill="#FFFFFF"/><circle r="3.4" fill="#F0A93A"/></g>
+<g transform="translate(1034 698)"><path d="M0 0 V23.8" stroke="#5E8F55" stroke-width="2.8"/><circle cx="6.1" cy="0.0" r="4.9" fill="#F4A3A3"/><circle cx="1.9" cy="5.8" r="4.9" fill="#F4A3A3"/><circle cx="-5.0" cy="3.6" r="4.9" fill="#F4A3A3"/><circle cx="-5.0" cy="-3.6" r="4.9" fill="#F4A3A3"/><circle cx="1.9" cy="-5.8" r="4.9" fill="#F4A3A3"/><circle r="3.6" fill="#F0A93A"/></g>
+<g transform="translate(1205 698)"><path d="M0 0 V23.8" stroke="#5E8F55" stroke-width="2.8"/><circle cx="6.1" cy="0.0" r="5.0" fill="#F4A3A3"/><circle cx="1.9" cy="5.8" r="5.0" fill="#F4A3A3"/><circle cx="-5.0" cy="3.6" r="5.0" fill="#F4A3A3"/><circle cx="-5.0" cy="-3.6" r="5.0" fill="#F4A3A3"/><circle cx="1.9" cy="-5.8" r="5.0" fill="#F4A3A3"/><circle r="3.6" fill="#F0A93A"/></g>
+<g transform="translate(1415 699)"><path d="M0 0 V23.9" stroke="#5E8F55" stroke-width="2.8"/><circle cx="6.2" cy="0.0" r="5.0" fill="#F6D365"/><circle cx="1.9" cy="5.9" r="5.0" fill="#F6D365"/><circle cx="-5.0" cy="3.6" r="5.0" fill="#F6D365"/><circle cx="-5.0" cy="-3.6" r="5.0" fill="#F6D365"/><circle cx="1.9" cy="-5.9" r="5.0" fill="#F6D365"/><circle r="3.6" fill="#F0A93A"/></g>
+    </svg>
+    <img class="otto float" src="img/otto/ottoaura7.png" alt="Otto at his brightest, floating above the meadow" width="440" height="493" loading="lazy">
+  </div>
+</section>
+
+<!-- ================= footer ================= -->
 <footer>
-  <div class="shell">
-    <div class="footgrid">
-      <div class="footbrand">
-        <span class="wordmark">
-          <svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#D4AF37" stroke-width="4.5">
-            <ellipse cx="50" cy="28.5" rx="13.5" ry="20.5"/><ellipse cx="50" cy="71.5" rx="13.5" ry="20.5"/>
-            <ellipse cx="28.5" cy="50" rx="20.5" ry="13.5"/><ellipse cx="71.5" cy="50" rx="20.5" ry="13.5"/>
-          </g></svg>
-          808
-        </span>
-        <p>Meditation, measured on your Apple Watch.</p>
-      </div>
+  <div class="wrap">
+    <div class="foot">
       <div>
-        <h4>Product</h4>
-        <ul>
-          <li><a href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8">Download</a></li>
-          <li><a href="#join">No Apple Watch yet?</a></li>
-          <li><a href="#features">Features</a></li>
-          <li><a href="#science">The research</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Company</h4>
-        <ul>
-          <li><a href="#mission">About 808</a></li>
-          <li><a href="survey.html">Questionnaire</a></li>
-        </ul>
+        <a class="brand" href="#top"><img src="img/otto/ottohead.png" alt="" width="38" height="38">808</a>
+        <p class="tag">The meditation app that makes it stick.</p>
       </div>
       <div>
         <h4>Legal</h4>
         <ul>
-          <li><a href="terms.html">Terms &amp; Conditions</a></li>
           <li><a href="privacy.html">Privacy Policy</a></li>
+          <li><a href="terms.html">Terms &amp; Conditions</a></li>
         </ul>
       </div>
       <div id="support">
         <h4>Support</h4>
         <ul>
-          <li><a href="mailto:support@meditate808.com">support@meditate808.com</a></li>
+          <li><a href="mailto:support@meditate808.com">Contact us</a></li>
+          <li><a href="https://apps.apple.com/account/subscriptions">Manage subscription</a></li>
+          <li><a href="survey.html">Questionnaire</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#features">Features</a></li>
+          <li><a href="#science">The research</a></li>
           <li><a href="https://instagram.com/808meditate">Instagram</a></li>
           <li><a href="https://tiktok.com/@808meditate">TikTok</a></li>
         </ul>
       </div>
     </div>
-    <div class="prefrow">
-    <a class="prefsource" href="https://www.google.com/preferences/source?q=meditate808.com"
-       target="_blank" rel="noopener" aria-label="Add 808 as a preferred source on Google">
+    <a class="prefsource" href="https://www.google.com/preferences/source?q=meditate808.com" target="_blank" rel="noopener" aria-label="Add 808 as a preferred source on Google">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z"/>
         <path fill="#34A853" d="M12 23c3 0 5.4-1 7.2-2.7l-3.5-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.2v2.8A11 11 0 0 0 12 23z"/>
@@ -709,175 +723,106 @@
       </svg>
       <span>Add us as a <b>preferred source</b> on Google</span>
     </a>
-    </div>
-    <div class="footnote">
+    <div class="legal">
       <span>&copy; 2026 Lock Out Inc.</span>
       <span>808 is a wellness tool, not a medical device.</span>
     </div>
+    <div class="bigmark" aria-hidden="true">808</div>
   </div>
 </footer>
 
-<!-- ============ persistent waitlist banner ============ -->
-<div class="banner" id="banner" aria-hidden="true">
-  <div class="inner">
-    <div class="btext">
-      <b>808 is on the App Store</b>
-      <small>Scored from your body. iPhone + Apple Watch.</small>
-    </div>
-    <a class="store-badge" id="banner-cta" href="https://apps.apple.com/app/apple-store/id6806785308?pt=129152995&ct=website&mt=8"><img src="img/app-store-badge.svg" alt="Download on the App Store" width="120" height="40"></a>
-  </div>
-</div>
-
 <script>
+// ---- the mission, lit word by word ----
+// Ships fully lit so it reads with JavaScript off; this dims it and lights it
+// back up from scroll position. Never a timer.
 (function () {
-  'use strict';
-
-  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  // ---- the mission, lit word by word --------------------------------------
-  // Ships fully lit so it reads with JavaScript off; this dims it on load and
-  // lights it back up from scroll position. Never a timer.
   var mission = document.getElementById('mission');
-  if (mission && !reduced) {
-    var words = mission.querySelectorAll('span');
-    mission.classList.add('dimmable');
-    var lit = -1;
-    function paint() {
-      var rect = mission.getBoundingClientRect();
-      var total = rect.height - window.innerHeight;
-      var progress = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 1;
-      var want = Math.floor(Math.min(1, progress / 0.92) * words.length);
-      if (want === lit) return;
-      for (var i = 0; i < words.length; i++) {
-        words[i].classList.toggle('lit', i < want);
-      }
-      lit = want;
+  if (!mission || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var words = mission.querySelectorAll('span');
+  mission.classList.add('dimmable');
+  var lit = -1, ticking = false;
+  function paint() {
+    ticking = false;
+    var r = mission.getBoundingClientRect();
+    var total = r.height - window.innerHeight;
+    var progress = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 1;
+    var want = Math.floor(Math.min(1, progress / 0.9) * words.length);
+    if (want === lit) return;
+    for (var i = 0; i < words.length; i++) words[i].classList.toggle('lit', i < want);
+    lit = want;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(paint); }
+  }, { passive: true });
+  paint();
+})();
+
+// ---- Otto's glow: the bar moves him through his seven looks ----
+(function () {
+  var range = document.getElementById('glow-range');
+  if (!range) return;
+  var imgs = document.querySelectorAll('.glow-stage img');
+  var halo = document.querySelector('.glow-stage .halo');
+  var nameEl = document.getElementById('glow-name'), lineEl = document.getElementById('glow-line');
+  var stages = [
+    ['Withered', 'Weeks without a session.'],
+    ['Faded', 'A few days off.'],
+    ['Stirring', 'This is where everyone starts.'],
+    ['Steady', 'One session brings his color back.'],
+    ['Bright', 'A few days in a row.'],
+    ['Radiant', 'Most days lately. He starts to float.'],
+    ['Nirvana', 'How he looks when you meditate every day.']
+  ];
+  function show(v) {
+    for (var i = 0; i < imgs.length; i++) imgs[i].classList.toggle('on', i === v - 1);
+    nameEl.textContent = stages[v - 1][0];
+    lineEl.textContent = stages[v - 1][1];
+    halo.style.opacity = Math.max(0, (v - 3) / 4);
+  }
+  range.addEventListener('input', function () { show(+range.value); });
+  // Once, when the card first comes into view, the bar walks up to the top
+  // and back to the start, so the drag is discovered rather than explained.
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+    var played = false;
+    new IntersectionObserver(function (entries, obs) {
+      if (played || !entries[0].isIntersecting) return;
+      played = true; obs.disconnect();
+      var seq = [4, 5, 6, 7, 7, 6, 5, 4, 3], i = 0;
+      (function step() {
+        if (i >= seq.length || range.dataset.touched) return;
+        range.value = seq[i++]; show(+range.value);
+        setTimeout(step, 520);
+      })();
+    }, { threshold: 0.6 }).observe(range.closest('.glow-card'));
+    range.addEventListener('pointerdown', function () { range.dataset.touched = '1'; });
+  }
+})();
+
+// Swaps the sticky phone to the feature nearest the middle of the screen.
+// Computed from positions on each scroll frame, never a timer, so a fast
+// flick can't skip past a feature and leave the wrong screen up.
+(function () {
+  var feats = document.querySelectorAll('.feat');
+  var shots = document.querySelectorAll('.sticky .shots img');
+  if (!feats.length || !shots.length) return;
+  var current = 0, ticking = false;
+  function sync() {
+    ticking = false;
+    var mid = window.innerHeight / 2, best = 0, dist = Infinity;
+    for (var i = 0; i < feats.length; i++) {
+      var r = feats[i].getBoundingClientRect();
+      var d = Math.abs(r.top + r.height / 2 - mid);
+      if (d < dist) { dist = d; best = i; }
     }
-    var ticking = false;
-    window.addEventListener('scroll', function () {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () { paint(); ticking = false; });
-    }, { passive: true });
-    paint();
+    if (best === current) return;
+    shots[current].classList.remove('on');
+    shots[best].classList.add('on');
+    current = best;
   }
-
-  // ---- persistent waitlist banner ------------------------------------------
-  // Appears once the mission has been read past, stays for the rest of the
-  // page, and hides while the closer's own form is on screen so it never
-  // covers the thing it points at. JS off = no banner; both real forms remain.
-  // Position is computed from rects on every scroll frame rather than from an
-  // IntersectionObserver: an anchor click or fast flick can jump PAST a
-  // sentinel in one frame, and an observer that never saw it never fires.
-  var banner = document.getElementById('banner');
-  var missionEnd = document.getElementById('mission-end');
-  var closer = document.getElementById('closer');
-  if (banner && missionEnd && closer) {
-    var shown = null;
-    function syncBanner() {
-      var pastMission = missionEnd.getBoundingClientRect().top < 0;
-      var c = closer.getBoundingClientRect();
-      var closerVisible = c.top < window.innerHeight && c.bottom > 0;
-      var show = pastMission && !closerVisible;
-      if (show === shown) return;
-      shown = show;
-      banner.classList.toggle('show', show);
-      banner.setAttribute('aria-hidden', show ? 'false' : 'true');
-      document.body.classList.toggle('has-banner', show);
-    }
-    var bTicking = false;
-    window.addEventListener('scroll', function () {
-      if (bTicking) return;
-      bTicking = true;
-      requestAnimationFrame(function () { syncBanner(); bTicking = false; });
-    }, { passive: true });
-    syncBanner();
-  }
-
-  // ---- waitlist ------------------------------------------------------------
-  // Its own endpoint and its own sheet (see waitlist-sheet.gs). Every request
-  // races a rejecting timer: AbortController alone was tested against a
-  // stalled fetch and still hung 18 seconds, and the first live signup sat on
-  // "Joining" forever.
-  var WAITLIST_ENDPOINT = "https://script.google.com/macros/s/AKfycbzNics71jnMMei_jzYCBJEKw0mp8UQWFeXE9SeaEHtxPf1hMhOdsImpkipTWUoU_6oylg/exec";
-  var EMAIL_FALLBACK = "https://formsubmit.co/ajax/support@meditate808.com";
-  var TIMEOUT_MS = 8000;
-
-  function post(url, body, type) {
-    if (!url) return Promise.reject(new Error('no endpoint'));
-    var ctl = ('AbortController' in window) ? new AbortController() : null;
-    var timer;
-    var deadline = new Promise(function (_, reject) {
-      timer = setTimeout(function () {
-        if (ctl) ctl.abort();
-        reject(new Error('timeout'));
-      }, TIMEOUT_MS);
-    });
-    var call = fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': type },
-      body: JSON.stringify(body),
-      signal: ctl ? ctl.signal : undefined
-    });
-    return Promise.race([call, deadline]).then(function (r) {
-      clearTimeout(timer); return r;
-    }, function (e) {
-      clearTimeout(timer); throw e;
-    });
-  }
-
-  function initForm(form, source) {
-    var done = form.parentNode.querySelector('.done');
-    var btn = form.querySelector('button.cta');
-    var emailField = form.querySelector('input[type=email]');
-    var watchField = form.querySelector('input[type=checkbox]');
-    var label = btn.textContent;
-    var err = form.querySelector('.formerr');
-
-    function show(message) { err.textContent = message; err.style.display = 'block'; }
-    function hide() { err.style.display = 'none'; }
-
-    form.addEventListener('submit', function (e) {
-      e.preventDefault();
-      hide();
-      var email = emailField.value.trim();
-      if (!email || email.indexOf('@') < 1 || email.lastIndexOf('.') < email.indexOf('@')) {
-        emailField.focus();
-        show('That email does not look right.');
-        return;
-      }
-      btn.disabled = true;
-      btn.textContent = 'Joining';
-
-      var payload = {
-        email: email,
-        apple_watch: watchField && watchField.checked ? 'Yes' : '',
-        source: source,
-        referrer: document.referrer || ''
-      };
-
-      function succeed() { form.style.display = 'none'; done.style.display = 'block'; }
-      function fail() {
-        btn.disabled = false;
-        btn.textContent = label;
-        show('That did not go through. Try once more, or email us at support@meditate808.com.');
-      }
-
-      post(WAITLIST_ENDPOINT, payload, 'text/plain;charset=utf-8')
-        .then(succeed)
-        .catch(function () {
-          post(EMAIL_FALLBACK, { email: email, _subject: '808 waitlist signup' },
-               'application/json')
-            .then(succeed)
-            .catch(fail);
-        });
-    });
-  }
-
-  var forms = document.querySelectorAll('form.signup');
-  for (var i = 0; i < forms.length; i++) {
-    initForm(forms[i], i === 0 ? 'hero' : 'closer');
-  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(sync); }
+  }, { passive: true });
+  sync();
 })();
 </script>
 </body>

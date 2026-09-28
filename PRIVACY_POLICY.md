@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: September 23, 2026**
+**Last updated: September 28, 2026**
 
 This Privacy Policy explains how **Lock Out Inc. ("we," "us," "808")**
 handles information in the **808** app for iPhone, with optional support for
@@ -16,12 +16,11 @@ Apple Watch.
   heart-rate-variability readings when your Watch produces them) are stored
   **only on the device that recorded them**. The app never uploads them
   anywhere, not even to iCloud.
-- **The one thing we can see is what you post to friends.** If you use
-  Friends, your profile and the sessions you choose to post go to a shared
-  area of iCloud that other people in 808 can read, and so can we. That is
-  what makes it a feed. Nothing goes there unless you put it there, your
-  health results never do, and you can delete any of it. See "Friends and
-  posts" below.
+- **The one thing we can see is your Friends profile.** If you use Friends,
+  your profile and a short summary of how often you meditate go to a shared
+  area of iCloud that other people in 808 can read, and so can we. Nothing
+  goes there unless you set up a profile, your health results never do, and
+  you can delete all of it. See "Friends" below.
 - **If you use Block, nothing about it ever reaches us.** The apps you
   choose to hold, and everything about how and when you open them, stay on
   your phone in Apple's own Screen Time system. See "Block" below.
@@ -45,14 +44,15 @@ them, it also receives your **name** and **email address** (which may be an
 Apple private "Hide My Email" relay address). You may also set a display
 name and choose whether to receive product emails.
 
-**Health and motion data.** An Apple Watch is optional. When you have one paired
-and start a session from it, your **Apple Watch** measures your **heart rate**
+**Health and motion data.** An Apple Watch is optional. When you start a
+session on your Watch, or start one on your iPhone with "Meditate with Apple
+Watch" turned on, your **Apple Watch** measures your **heart rate**
 (via Apple HealthKit) and **movement** (via the motion sensors). The Watch
 processes these into your **session results**: a heart-rate trend
 (averaged, not beat-to-beat), a stillness measure, a breathing rate, Apple's
 heart-rate-variability (SDNN) readings when your Watch happens to produce
-them, and a summary score. A session you start on your iPhone alone runs a
-plain timer: it measures nothing about your body.
+them, and a summary score. A session you start on your iPhone without the
+Watch measuring runs a plain timer: it measures nothing about your body.
 Important details:
 
 - The app requests HealthKit permission only for **heart rate**,
@@ -67,13 +67,14 @@ Important details:
 - **Measurement runs only during a session you start**, and stops when the session
   ends. It does not run in the background at other times.
 - **The camera is used in three places, and never records or saves anything
-  beyond what you choose.** You can take a selfie or profile photo for
-  Friends; you can add photos or videos to a session's own page, either
-  taken with the camera or chosen from your library through Apple's private
-  picker (which hands 808 only the items you pick, never access to your
-  library); and if you use Block, Otto's video-call-style screen shows you a
-  live preview of your own front camera, the way an incoming call would,
-  which is never recorded, saved, or sent anywhere.
+  beyond what you choose.** You can take a profile photo for Friends; you can
+  add photos or videos to a session's own page, either taken with the camera
+  or chosen from your library through Apple's private picker (which hands
+  808 only the items you pick, never access to your library); and if you use
+  Block, Otto's video-call-style screen shows you a live preview of your own
+  front camera, the way an incoming call would, which is never recorded,
+  saved, or sent anywhere. Photos and videos you add to a session stay
+  private to you.
 - **Saving a session card to your Photos is add-only.** If you tap Share on
   a result, 808 can save that card as an image to your photo library. It
   uses **add-only** access, which means it can add that one image and
@@ -85,14 +86,19 @@ the 808 app on your phone. This does not change what we collect: the same heart
 rate and movement, only during a session you started, only on your own devices.
 
 **Session and app data.** Session dates, durations, the type of session, your
-results and streak, and your **preferences** (theme, haptics, reminder time,
-default length).
+results and streak, and your **preferences** (reminder time, default length,
+and similar settings). Otto's glow, your points and the hats you choose for
+him are worked out on your phone from your own sessions. Your answers to the
+questions when you first open the app are kept in the app and are never sent
+to us.
 
-**Notifications.** 808 can send you two kinds of notification, both about
-something you started yourself: a reminder that a timed session you set is
-finishing, and, if you use Block, a note from Otto after you open an app you
-chose to hold. Both are marked Time Sensitive so they can reach you even if
-you have notifications quieted, the same way a timer or an alarm would. You
+**Notifications.** Besides the optional daily reminder, 808 can send you
+three kinds of notification, all about something you started yourself: that
+a timed session you set is finishing; that a session on your phone is still
+running after you left the app, so you can come back to it; and, if you use
+Block, a note from Otto after you open an app you chose to hold. These are
+marked Time Sensitive so they can reach you even if you have notifications
+quieted, the same way a timer or an alarm would. You
 choose whether to allow notifications at all, in the iOS prompt or in
 Settings, and 808 only asks the first time one of these moments happens.
 
@@ -136,13 +142,12 @@ Your information lives in four places, by design:
   and the log of your sessions (dates, durations, types, ratings, notes, and
   any photos or videos you add after a session) sync to **your personal
   private iCloud database** using Apple's CloudKit, so they survive
-  reinstalls and follow your own devices. A photo or video is shared with
-  other people only when you choose to post that session to friends.
-- **What you post to friends is shared.** If you set up a profile in
-  Friends, your username, display name, profile photo, the sessions you post
-  and their photos and videos go to a **shared (public) area of our iCloud
-  container**. Other people using 808 can see it, and so can we. This is the
-  only information you give 808 that we are able to read.
+  reinstalls and follow your own devices. None of it is shared with anyone.
+- **Your Friends profile is shared.** If you set up a profile in Friends,
+  your username, display name, profile photo and practice summary go to a
+  **shared (public) area of our iCloud container**. Other people using 808
+  can see it, and so can we. This is the only information you give 808 that
+  we are able to read.
 - **Block and Screen Time choices stay on your device only.** If you use
   Block, the apps you pick to hold and everything about when you open them
   live in an area your phone shares privately between 808 and its Screen
@@ -153,7 +158,7 @@ Your information lives in four places, by design:
 your private iCloud database.** Apple processes all of this under
 [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
 
-## Friends and posts
+## Friends
 
 Friends is optional. If you never create a profile, nothing in this section
 applies to you and 808 never touches the shared area.
@@ -162,40 +167,40 @@ applies to you and 808 never touches the shared area.
 
 - Your **profile**: the username you choose, your display name, a profile
   photo if you add one, and the month you started practicing.
-- A **post**, only for a session you set to Friends: its length, streak, the
-  technique you tagged, the title and description you wrote, and the photos
-  or videos you chose to include. You can change a session back to Only you
-  at any time, which takes the post down.
-- **Who you have added**, so a feed can exist, and who has added you.
-- A **report** you file about someone, including the reason you type.
+- Your **practice summary**: how many sessions and minutes you meditated in
+  the last seven days, your current streak, your total number of sessions,
+  and when your last session was. The app works these out from your session
+  log and updates them when you open it.
+- **Who you have added**, and who has added you.
+- A **report** you file about someone, including the reason you type, and
+  anyone you **block**.
 
 **What never goes there:** your score, your heart rate, your breathing, your
-stillness, any of the curves, or any other reading behind them. A post
-carries no health measurements and no score, on any session, whether or not
-that session had one. Your private notes stay private, and the session log
-in your own iCloud is separate from all of this.
+stillness, any of the curves or readings behind them, your notes, and the
+photos or videos you add to your sessions.
 
-**Who can see it:** anyone using 808 can find your profile by your username
-and see that you exist. Your posts are shown to the people you are friends
-with. We can read everything in the shared area, because moderating it
-requires that.
+**Posts.** Earlier versions of 808 let you post a session to friends. The app
+no longer does, and posts made in those versions have been deleted.
 
-**Moderation.** Text you post is filtered for objectionable language before
-it is accepted. You can report a post or a person, and you can block someone,
+**Who can see it:** anyone using 808 can find your profile by your username,
+and your practice summary is part of that profile. We can read everything in
+the shared area, because moderating it requires that.
+
+**Moderation.** Usernames and names are filtered for objectionable language
+before they are accepted. You can report a person, and you can block someone,
 which hides you from each other in both directions. We remove content that
 breaks our terms and we can remove accounts that repeatedly break them.
 
-**Deleting it.** Setting a session back to Only you removes its post.
-**Deleting your account removes your profile, your posts and their photos
-and videos, the reactions you gave, the friend requests and connections you
-created, and the blocks you made, from the shared area.** This starts right
+**Deleting it.** **Deleting your account removes your profile, your practice
+summary, the friend requests and connections you created, the reactions you
+gave, and the blocks you made, from the shared area.** This starts right
 away; if the shared area can't be reached at that moment it finishes
 automatically the next time you open the app. Reports you filed are kept as
 a record of what was reported, the way any report stays on file after the
-person who filed it moves on, so we can keep acting on them; they do not
-carry your posts or your photos. A friend request or connection someone else
-made toward you belongs to them, and deleting your account is what removes
-your side of it and empties it of meaning, since your profile is gone.
+person who filed it moves on, so we can keep acting on them. A friend request
+or connection someone else made toward you belongs to them, and deleting your
+account is what removes your side of it and empties it of meaning, since your
+profile is gone.
 
 ## Block
 
@@ -260,24 +265,21 @@ us, not integrated with 808, and not under our control**. We do not embed them,
 communicate with them, or receive any data from them, and your use of them is
 governed by their own terms and privacy policies, not ours.
 
-## Our website and waitlist
+## Our website and earlier waitlists
 
-If you enter your email address on our website to join the launch waitlist, we
-collect **only** that email address and, if you check the box, whether you own an
-Apple Watch. If you fill out our optional questionnaire, we collect only the
-answers you choose to give about your meditation habits and interest in the app.
-We use this to tell you when 808 is available and to shape the product. We do not
-sell or share it, and every email includes an unsubscribe link. You can also email
-us and we will remove you. The website is separate from the app: using it does not
-create an account, and it involves no health data of any kind.
+Our website does not ask for your email and sets no account. If you fill out
+our optional questionnaire, we collect only the answers you choose to give
+about your meditation habits and interest in the app, and use them to shape
+the product. We do not sell or share them.
 
-**The no-Watch waitlist in the app.** If you tell the app you don't have an Apple
-Watch, it offers to let you know when there is a version that works without one.
-If you type your email address and tap "Join the waitlist," the app sends us that
-address and the app's version number, and nothing else: no health data, no
-device details, and nothing that links it to your usage analytics. It is stored
-in a spreadsheet hosted by Google and used only to email you about that version.
-Joining is optional, and you can ask us to remove you at any time.
+**Earlier waitlists.** Before 808 launched, our website offered a waitlist,
+and earlier versions of the app offered a waitlist for a version that works
+without an Apple Watch. If you joined one, we hold only the email address you
+gave (and, for the website list, whether you said you own an Apple Watch; for
+the app list, the app's version number). We use it only to email you about
+808, every email includes an unsubscribe link, and you can email us to be
+removed at any time. Neither list is linked to your app usage or to any
+health data.
 
 ## Third parties
 
@@ -285,11 +287,11 @@ Joining is optional, and you can ask us to remove you at any time.
   CloudKit/iCloud sync, Shortcuts, and App Store distribution, governed by
   Apple's terms.
 - **Email delivery provider**: only your email address, and only if you opt into
-  product emails or join the website waitlist. The provider stores the address in
-  order to send those emails and does not receive any health data.
-- **Website and in-app form processing**: website waitlist and questionnaire
-  responses, and the in-app no-Watch waitlist email, are stored in spreadsheets
-  hosted by Google. No health data is collected there.
+  product emails or joined one of the earlier waitlists. The provider stores the
+  address in order to send those emails and does not receive any health data.
+- **Form processing**: questionnaire responses and the earlier waitlist emails
+  are stored in spreadsheets hosted by Google. No health data is collected
+  there.
 - **PostHog, Inc.**: anonymous usage analytics for the app, as described
   under "Usage analytics." PostHog receives feature-usage events under an
   anonymous identifier and never receives health data, Block or Screen Time
@@ -303,8 +305,7 @@ health data with any third party for advertising.
 
 We keep your data until you delete it. **Settings → Delete Account** signs you out
 and marks your account for deletion; your account and all associated data,
-including your Friends profile and posts as described under "Friends and posts"
-above, are then permanently removed within **30 days**. Signing back in before
+including your Friends profile as described under "Friends" above, are then permanently removed within **30 days**. Signing back in before
 then restores it. You can also delete the app; to remove synced data, delete the
 app's data from your iCloud settings.
 
@@ -330,10 +331,10 @@ This section supplements the rest of this policy for laws that specifically
 protect **consumer health data** (such as the Washington My Health My Data Act)
 and applies to all users.
 
-- **Categories we process:** heart rate measured during a session you start
-  from a paired Apple Watch; motion-derived measurement of how still your
+- **Categories we process:** heart rate measured by your Apple Watch during a
+  session you start with the Watch measuring; motion-derived measurement of how still your
   body was; and the session results computed from them. A session started on
-  your iPhone alone, with no Watch, processes none of this.
+  your iPhone without the Watch measuring processes none of this.
 - **Source:** the sensors of your own Apple Watch, via Apple HealthKit and
   CoreMotion, only while a session you started is running.
 - **Purpose:** solely to compute and show you your own session results. No

@@ -14,7 +14,6 @@ struct OnboardingView: View {
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var community: CommunityModel
-    @Query private var preferences: [Preferences]
 
     @State private var step: Step = .relief
     /// The white page over the valley behind the opening screens. Follows
@@ -192,7 +191,11 @@ struct OnboardingView: View {
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
                  .rating, .watchConnect, .breathe, .sessionResults, .paywall,
                  .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
-                 .auraDemo, .bodyCuriosity, .recovery:
+                 .auraDemo, .bodyCuriosity, .recovery,
+                 // The old questions after the frequency slider: no screen
+                 // asks them while the interview is redone, so a resume
+                 // record on one rejoins the flow (`rejoinPoint`).
+                 .referral, .restarts, .intendedFor, .bodyTracking, .blindSpot:
                 return true
             // Real screens on Block builds, so leaving one belongs in the
             // Back history like any other question. Off Block builds they
@@ -218,11 +221,50 @@ struct OnboardingView: View {
         var allowsBack: Bool {
             switch self {
             case .paywall, .signIn, .profile: return false
+            // The tour comes after sign-in and the profile, both one way, so
+            // Back from it could only land on a screen with no way back.
+            case .tourHome, .watchConnect: return false
             // Mid-practice and mid-result: backing into the interview from a
             // running Watch session would strand the session. The wall sits
             // just after them now, so it gets no chevron either.
             case .breathe, .sessionResults, .wall: return false
             default: return true
+            }
+        }
+
+        /// Screens that move on by themselves. They never enter the Back
+        /// history: Back onto one was undone seconds later when it advanced
+        /// again, so Back from the screen after it goes past it instead.
+        var autoAdvances: Bool {
+            self == .buildingPlan || self == .lifePause
+        }
+
+        /// Cut screens and old questions a resume record may still hold. Each
+        /// sends the reader back to where the flow rejoins (`rejoinPoint`),
+        /// never onward past the offer.
+        var isLegacy: Bool {
+            switch self {
+            case .bodyCuriosity, .bodyProof, .bodyTracking, .restarts, .intendedFor,
+                 .blindSpot, .referral, .hardware, .watchGate, .watchSetup, .waitlist,
+                 .anchor, .you, .calculating, .result, .cost, .proofBody, .sampleStart,
+                 .sampleBuild, .proofYourWay, .commitment, .whatsWaiting, .blockIntro,
+                 .auraDemo:
+                return true
+            default:
+                return false
+            }
+        }
+
+        /// Screens that follow the paywall in today's flow. A resume record
+        /// on one from an older flow (where they came before the offer) must
+        /// not carry someone past it.
+        var comesAfterOffer: Bool {
+            switch self {
+            case .permission, .week, .rating, .health, .wall, .blockApps, .blockSchedule,
+                 .signIn, .profile, .tourHome, .watchConnect, .breathe, .sessionResults:
+                return true
+            default:
+                return false
             }
         }
     }
@@ -231,17 +273,20 @@ struct OnboardingView: View {
     /// This reader's position in their own interview. Nil off the interview.
     /// How far along the interview is once `step` has been answered.
     private func countFraction(after step: InterviewStep) -> Double {
-        let all = answers.interview
+        let all = answers.shownInterview
         guard let i = all.firstIndex(of: step) else { return 0 }
         return Double(i + 1) / Double(max(all.count, 1))
     }
 
     private var interviewCount: InterviewCount {
         guard let here = Self.interviewPairs.first(where: { $0.0 == step })?.1,
-              let i = answers.interview.firstIndex(of: here) else {
-            return InterviewCount(index: 1, total: max(1, answers.interview.count))
+              let i = answers.shownInterview.firstIndex(of: here) else {
+            return InterviewCount(index: 1, total: max(1, answers.shownInterview.count))
         }
-        return InterviewCount(index: i + 1, total: answers.interview.count)
+        // Counted against the questions this person is SHOWN, not the
+        // model's full list: counting the unasked ones left the bar stuck
+        // short of full on the last question.
+        return InterviewCount(index: i + 1, total: answers.shownInterview.count)
     }
 
     /// The interview screens, paired with their pure-Foundation counterpart in
@@ -262,9 +307,29 @@ struct OnboardingView: View {
     /// The interview's first screen, read from the model's order rather than
     /// hardcoded, so reordering `InterviewStep` moves the door with it.
     private var firstInterviewStep: Step {
-        answers.interview.first.flatMap { first in
+        answers.shownInterview.first.flatMap { first in
             Self.interviewPairs.first { $0.1 == first }?.0
         } ?? .baseline
+    }
+
+    /// Where a resume record on a cut or old screen rejoins today's flow: the
+    /// first question, or the ascend screen if the questions are already
+    /// answered (the frequency slider is the last one shown). Both lead to
+    /// the offer; the old routes led straight to the reminder, past it.
+    private var rejoinPoint: Step {
+        answers.currentFrequency != nil ? .ascend : firstInterviewStep
+    }
+
+    /// Whether this run has been through the offer: leaving the ascend
+    /// screen is the only road to it (a payer is waved past it there), or
+    /// there is no offer inside onboarding at all.
+    private var passedOffer: Bool {
+        !Self.paywallInsideOnboarding || store.entitled || history.contains(.ascend)
+    }
+
+    /// `next` if the offer is behind this run, otherwise where it rejoins.
+    private func pastOffer(_ next: Step) -> Step {
+        passedOffer ? next : rejoinPoint
     }
 
     /// The next screen after `current`, skipping every question whose premise
@@ -277,7 +342,7 @@ struct OnboardingView: View {
         guard let here = Self.interviewPairs.first(where: { $0.0 == current })?.1 else {
             return .calculating
         }
-        let remaining = answers.interview.drop { $0 != here }.dropFirst()
+        let remaining = answers.shownInterview.drop { $0 != here }.dropFirst()
         guard let next = remaining.first,
               let step = Self.interviewPairs.first(where: { $0.1 == next })?.0 else {
             return .calculating     // interview over
@@ -693,7 +758,9 @@ struct OnboardingView: View {
         case .age:
             CornerQuestionScreen(title: "How old are you?",
                                  options: AgeRange.allCases, single: true, label: \.label, icon: { _ in nil },
-                                 selected: Binding(get: { answers.ageBracket.flatMap(AgeRange.init(rawValue:)).map { [$0] } ?? [] },
+                                 // Any stored format, so an older resume record's
+                                 // "25–34" shows as picked.
+                                 selected: Binding(get: { AgeRange(stored: answers.ageBracket).map { [$0] } ?? [] },
                                                    set: { answers.ageBracket = $0.first?.rawValue }),
                                  count: interviewCount) { go(.didYouKnow) }
 
@@ -723,26 +790,17 @@ struct OnboardingView: View {
         case .aloneWithThoughts, .doingNothing:
             Color.clear.onAppear { go(nextAfter(.stress)) }
 
-        case .restarts:
-            guarded(.restarts) {
-                RestartScreen(restarts: $answers.restarts,
-                              count: interviewCount) { go(nextAfter(.restarts)) }
-            }
-
-        case .intendedFor:
-            guarded(.intendedFor) {
-                IntendedForScreen(intended: $answers.intendedFor,
-                                  count: interviewCount) { go(nextAfter(.intendedFor)) }
-            }
+        // The old questions after the frequency slider: no screen asks them
+        // while the interview is redone (the flow goes from the slider to
+        // "Tailoring 808 to you"). A resume record on one rejoins the flow
+        // rather than routing on to the reminder, past the offer.
+        case .restarts, .intendedFor, .blindSpot, .referral:
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // Cut 2026-09-23 (Melvin), and `bodyProof` 2026-09-15. The tracking
-        // question comes next and everyone is asked it, so both hop there.
-        case .bodyCuriosity, .bodyProof:
-            Color.clear.onAppear { go(.bodyTracking) }
-
-        case .bodyTracking:
-            BodyTrackingScreen(tracking: $answers.bodyTracking,
-                               count: interviewCount) { go(nextAfter(.bodyTracking)) }
+        // question after them is no longer asked either (see `.referral`).
+        case .bodyCuriosity, .bodyProof, .bodyTracking:
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // No longer on the path (Melvin, 2026-09-14). A tester with no Watch
         // met "$400" mid-interview and read it as an upsell aimed at someone
@@ -750,13 +808,7 @@ struct OnboardingView: View {
         // person who has just declined to pay, where an anchor belongs. The
         // Step case stays so ONBOARDING_STEP can still jump to it.
         case .hardware:
-            HardwareScreen(onContinue: { go(nextAfter(.bodyTracking)) })
-
-        case .blindSpot:
-            guarded(.blindSpot) {
-                BlindSpotScreen(blindSpot: $answers.blindSpot,
-                                count: interviewCount) { go(nextAfter(.blindSpot)) }
-            }
+            HardwareScreen(onContinue: { go(rejoinPoint) })
 
         // CUT 2026-09-22 (Melvin: "get rid of the watch screen"). A session
         // runs on the phone with or without a Watch since Aziz's valley
@@ -765,22 +817,18 @@ struct OnboardingView: View {
         // cases and screens stay for resume records; anyone landing on one
         // goes on to what's waiting, where the interview used to end.
         case .watchGate, .watchSetup, .waitlist:
-            Color.clear.onAppear { go(.whatsWaiting) }
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // Cut 2026-09-15 (Melvin: nobody wants to be made to commit to a
         // time of day). The reminder time is picked on the permission screen.
         case .anchor:
-            Color.clear.onAppear { go(.whatsWaiting) }
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // Cut 2026-09-19 (Melvin): the name is asked on Create your profile
         // beside the handle, and the age was never used. Anyone resuming
         // here goes straight to the sum.
         case .you:
-            Color.clear.onAppear { go(.whatsWaiting) }
-
-        case .referral:
-            ReferralScreen(referral: $answers.referral,
-                           count: interviewCount) { go(nextAfter(.referral)) }
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // CUT 2026-09-20 (Melvin: redo onboarding in Headspace's shape).
         // The whole payoff block goes: calculating, the result, the cost, the
@@ -798,13 +846,15 @@ struct OnboardingView: View {
         // number it was drawing.
         case .calculating, .result, .cost, .proofBody, .sampleStart,
              .sampleBuild, .proofYourWay, .commitment:
-            Color.clear.onAppear { go(.whatsWaiting) }
+            // Back to the questions or the offer, never on to the reminder:
+            // routing on from here skipped the paywall for old records.
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // Cut with the payoff block (2026-09-20). Kept as a case for resume
         // records; `WallScreen` stays in the file because bringing the quotes
         // back is then one line rather than a rewrite.
         case .wall:
-            Color.clear.onAppear { go(afterWall) }
+            Color.clear.onAppear { go(pastOffer(afterWall)) }
 
         // Both cut the same day they were questioned (Melvin, 2026-09-22:
         // "they look AI generated you know, maybe just get rid of them"). A
@@ -812,17 +862,17 @@ struct OnboardingView: View {
         // app TELLING somebody what it does. The screen that replaced them
         // hands them the thing instead. Kept as cases for resume records.
         case .whatsWaiting:
-            Color.clear.onAppear { go(.permission) }
+            Color.clear.onAppear { go(rejoinPoint) }
 
         case .blockIntro:
-            Color.clear.onAppear { go(.permission) }
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // Folded into the stress question the day after it was built
         // (Melvin, 2026-09-22: "'how stressed are you' should show the sloth
         // slider, combine it with that screen instead of them being
         // separate"). Kept as a case for resume records.
         case .auraDemo:
-            Color.clear.onAppear { go(.permission) }
+            Color.clear.onAppear { go(rejoinPoint) }
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,
@@ -830,10 +880,10 @@ struct OnboardingView: View {
                              onSkip: { reminderAllowed = false; go(afterPermission) })
 
         case .week:
-            Color.clear.onAppear { go(afterPermission) }
+            Color.clear.onAppear { go(pastOffer(afterPermission)) }
 
         case .rating:
-            Color.clear.onAppear { go(afterPermission) }
+            Color.clear.onAppear { go(pastOffer(afterPermission)) }
 
         case .health:
             if watchPaired {
@@ -950,7 +1000,13 @@ struct OnboardingView: View {
         // when a purchase completed ON the paywall, advancing twice.
         let next: Step = (requested == .paywall && store.entitled) ? .permission : requested
         guard next != step else { return }
-        if !step.onlyPassesThrough { history.append(step) }
+        // Not remembered for Back: pass-through screens, screens that move on
+        // by themselves (Back onto one was undone seconds later), and the
+        // invitation to breathe once the breaths start (one screen, and it
+        // starts breathing again on arrival, so the first Back did nothing).
+        let remember = !step.onlyPassesThrough && !step.autoAdvances
+            && !(step == .breath && next == .breathing)
+        if remember { history.append(step) }
         // One line covers the whole 26-screen funnel: the step being LEFT is
         // the one that was completed.
         Analytics.track(.onboardingStep(id: String(describing: step)))
@@ -1015,44 +1071,16 @@ struct OnboardingView: View {
         waitlistEmail = saved.waitlistEmail
         planRating = saved.planRating
         reminderAllowed = saved.reminderAllowed
+        // A record from an older flow may sit on a cut screen, or on a
+        // screen that now follows the offer without ever having reached it.
+        // Either way it rejoins the questions or the ascend screen, which
+        // lead to the offer, and Back can no longer reach past it.
+        if target.isLegacy || (target.comesAfterOffer && !passedOffer) {
+            history.removeAll { $0.isLegacy || $0.comesAfterOffer || $0.onlyPassesThrough }
+            target = rejoinPoint
+        }
         step = target
         Analytics.track(.onboardingResumed(id: String(describing: target)))
-    }
-
-    /// Belt and suspenders for the interview's branching (Melvin, 2026-08-29:
-    /// he selected "first time meditating" and was still shown "what made you
-    /// stop?" on an earlier build). The model decides who is asked what and is
-    /// exhaustively tested, but routing has more roads into a screen than
-    /// `nextAfter`: back navigation followed by a changed answer, a resumed
-    /// flow, a future edit. So every persona-gated question also validates its
-    /// own premise on arrival and silently skips itself when the answers
-    /// contradict it. Skips bypass `go()` on purpose: no history entry (or the
-    /// back button would bounce), no analytics step event for a screen never
-    /// seen.
-    @ViewBuilder
-    private func guarded<V: View>(_ step: Step, @ViewBuilder screen: () -> V) -> some View {
-        if let interview = Self.interviewPairs.first(where: { $0.0 == step })?.1,
-           !answers.interview.contains(interview) {
-            Color.clear.onAppear {
-                // NOT nextAfter: that helper assumes its argument is in the
-                // interview, and for a contradicted step it drops the whole
-                // list and lands on .calculating, skipping every remaining
-                // question including the Watch gate (caught in verification,
-                // 2026-08-29). Walk the canonical order instead: the first
-                // question this person IS asked at or after this position.
-                let canonical = Self.interviewPairs.map(\.1)
-                let here = canonical.firstIndex(of: interview) ?? 0
-                let next = answers.interview.first {
-                    (canonical.firstIndex(of: $0) ?? .max) > here
-                }
-                let target = next.flatMap { q in
-                    Self.interviewPairs.first { $0.1 == q }?.0
-                } ?? .calculating
-                withAnimation { self.step = target }
-            }
-        } else {
-            screen()
-        }
     }
 
     private func goBack() {
@@ -1077,9 +1105,13 @@ struct OnboardingView: View {
         if answers.firstName.trimmingCharacters(in: .whitespaces).isEmpty, !name.isEmpty {
             answers.firstName = credential.fullName?.givenName ?? name
         }
+        // Not completing onboarding here: that would swap RootView to the
+        // app on the spot, and the profile, the tour and `finish()` (the
+        // answers, the reminder, `onboarding_completed`) would never run.
         _ = SessionStore.signIn(appleUserID: credential.user,
                                 email: credential.email,
                                 displayName: name.isEmpty ? typedName : name,
+                                completingOnboarding: false,
                                 in: context)
     }
 
@@ -1100,7 +1132,13 @@ struct OnboardingView: View {
     /// Written once, at the end. The anchor becomes the reminder time so we
     /// never ask twice for a fact they already gave us.
     private func persistAnswers() {
-        let user = SessionStore.currentUser(in: context)
+        // The signed-in user if they signed in on the way (the bootstrap row
+        // was adopted, so `currentUser` would mint a SECOND bootstrap user),
+        // otherwise the bootstrap user, created with its Preferences if this
+        // is a clean install that skipped sign-in.
+        let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
+        let user = users.first { $0.appleUserID != "" && $0.deletedAt == nil }
+            ?? SessionStore.currentUser(in: context)
         if let typedName, (user.displayName ?? "").isEmpty {
             user.displayName = typedName
         }
@@ -1124,19 +1162,35 @@ struct OnboardingView: View {
         }
         Analytics.track(.onboardingCompleted)
         OnboardingResume.clear()
-        if let prefs = preferences.first(where: { $0.userID == user.id }) ?? preferences.first {
-            prefs.onboardingComplete = true
-            // The time is stored either way: it is what they picked (or the
-            // 8 AM default) and what Settings offers if they enable reminders
-            // later. Whether the reminder is ON is the permission screen's
-            // answer, never the time's: picking a time of day is not consent
-            // to be notified at it.
-            let time = answers.reminderTime
-                ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())
-            prefs.reminderTime = time
-            prefs.remindersEnabled = reminderAllowed
-            NotificationScheduler.apply(enabled: reminderAllowed, at: time)
+        // Fetched here, not read off the `@Query`: the rows `currentUser`
+        // just inserted on a clean install are not in the query's array yet,
+        // so it came back empty, onboarding was never marked complete and the
+        // tour's Continue did nothing. The user's own row, else the oldest
+        // (the rule `InviteReward`'s ledger uses), else a new one.
+        let userID = user.id
+        let mine = FetchDescriptor<Preferences>(predicate: #Predicate { $0.userID == userID },
+                                                sortBy: [SortDescriptor(\.createdAt)])
+        let oldest = FetchDescriptor<Preferences>(sortBy: [SortDescriptor(\.createdAt)])
+        let found = (try? context.fetch(mine).first) ?? (try? context.fetch(oldest).first)
+        let prefs: Preferences
+        if let found {
+            prefs = found
+        } else {
+            prefs = Preferences(userID: user.id)
+            context.insert(prefs)
         }
+        prefs.onboardingComplete = true
+        prefs.updatedAt = Date()
+        // The time is stored either way: it is what they picked (or the
+        // 8 AM default) and what Settings offers if they enable reminders
+        // later. Whether the reminder is ON is the permission screen's
+        // answer, never the time's: picking a time of day is not consent
+        // to be notified at it.
+        let time = answers.reminderTime
+            ?? Calendar.current.date(bySettingHour: 8, minute: 0, second: 0, of: Date())
+        prefs.reminderTime = time
+        prefs.remindersEnabled = reminderAllowed
+        NotificationScheduler.apply(enabled: reminderAllowed, at: time)
         try? context.save()
     }
 }

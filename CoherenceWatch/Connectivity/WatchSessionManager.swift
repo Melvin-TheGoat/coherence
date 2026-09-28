@@ -89,11 +89,24 @@ final class WatchSessionManager: NSObject, ObservableObject {
     /// user-info, application-context) don't double-trigger and a stale context
     /// doesn't re-launch an old session.
     private var handledSessionIDs: Set<UUID> = []
+    /// Ends that arrived for a session before it was running here: before its
+    /// params landed, or during `begin`'s awaits (authorization, workout
+    /// start). They used to be dropped, so the Watch then ran a session the
+    /// phone had already ended. Applied the moment that session reaches
+    /// `.running`, or instead of starting it at all when the params come after.
+    /// Stamped so a stale end flushed from an old queue ages out.
+    private var pendingEnds: [UUID: Date] = [:]
+    /// Params that arrived while the previous session was still `.sending`
+    /// (workout teardown, HRV settle: several seconds). They used to be
+    /// dropped by the phase guard; now the newest one starts as soon as the
+    /// send completes, subject to the same freshness and dedupe rules.
+    private var queuedParams: SessionParams?
     private let log = Logger(subsystem: "com.lockout.meditate808.watchkitapp", category: "WatchSession")
 
     override init() {
         super.init()
         authorized = workout.isWorkoutAuthorized
+        workout.onFailure = { [weak self] in self?.workoutFailed() }
         activate()
     }
 
@@ -157,6 +170,13 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // .sent is a 3-second cosmetic state; a user starting the next session
         // that fast shouldn't have it silently swallowed.
         if phase == .sent { phase = .idle }
+        // The previous session is still shipping. Hold the newest start
+        // command until it has gone, rather than dropping it.
+        if phase == .sending, !watchInitiated {
+            guard !handledSessionIDs.contains(p.sessionID) else { return }
+            queuedParams = p
+            return
+        }
         // Begin arrived while a session is already running on the wrist. It
         // used to be dropped in silence, so the phone armed a screen for a
         // session the Watch would never start and failed 45 seconds later,
@@ -187,6 +207,15 @@ final class WatchSessionManager: NSObject, ObservableObject {
             }
         }
         handledSessionIDs.insert(p.sessionID)
+        // The phone ended this session before its params reached us. Starting
+        // it now would run a sit nobody is in; say so instead, as a discarded
+        // payload, so the phone's "receiving" screen resolves.
+        if hasPendingEnd(p.sessionID) {
+            log.info("End arrived before params for \(p.sessionID); not starting it")
+            sendDiscard(sessionID: p.sessionID, mode: p.mode, trackID: p.trackID,
+                        startedAt: Date(), durationSec: 0)
+            return
+        }
         params = p
         elapsed = 0
         statusMessage = "Starting…"
@@ -229,6 +258,50 @@ final class WatchSessionManager: NSObject, ObservableObject {
             }
             wc.transferUserInfo(ack)
         }
+
+        // An End (or a workout failure) that landed during the awaits above.
+        if hasPendingEnd(p.sessionID) {
+            await endSession()
+        }
+    }
+
+    /// Consumes a pending end for `id`, dropping any older than the params
+    /// freshness window on the way.
+    private func hasPendingEnd(_ id: UUID) -> Bool {
+        pendingEnds = pendingEnds.filter { Date().timeIntervalSince($0.value) < 180 }
+        return pendingEnds.removeValue(forKey: id) != nil
+    }
+
+    /// HealthKit failed the workout. Mid-session, end it the normal way, which
+    /// ships whatever was captured (or tells the phone there is nothing). While
+    /// `begin` is still starting it, park an end for that session, applied as
+    /// soon as it runs. Otherwise there is no session here to report.
+    private func workoutFailed() {
+        if phase == .running {
+            Task { await endSession() }
+        } else if phase == .idle, let p = params {
+            pendingEnds[p.sessionID] = Date()
+        } else if phase == .idle {
+            workout.abandon()
+        }
+    }
+
+    /// Starts the start command that waited out the previous session's send.
+    private func startQueuedParams() {
+        guard let q = queuedParams else { return }
+        queuedParams = nil
+        Task { await begin(q) }
+    }
+
+    /// Tells the phone a session produced nothing to keep, as a discarded
+    /// payload (the phone persists nothing and resolves its screen: too short,
+    /// or unreadable). Used whenever the Watch would otherwise go quiet.
+    private func sendDiscard(sessionID: UUID, mode: String, trackID: UUID?,
+                             startedAt: Date, durationSec: Int) {
+        send(SessionPayload(sessionID: sessionID, startedAt: startedAt, mode: mode,
+                            trackID: trackID, bellyBreathing: false,
+                            durationSec: durationSec, discard: true,
+                            result: nil, hrv: nil))
     }
 
     /// Re-announces the session already running here, as a start ack for its
@@ -319,11 +392,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
             self.log.error("no heart rate after \(Self.hrWatchdogSec)s — aborting session")
             self.statusMessage = "No heart rate. Check 808 in the iPhone Health app."
-            _ = await self.workout.finish()      // stop the workout, discard the result
+            // Out of .running BEFORE the await, so an End tapped during the
+            // teardown finds nothing to end instead of finishing it twice.
             self.timer?.cancel(); self.timer = nil
+            self.hrWatchdog = nil
+            self.phase = .sending
+            _ = await self.workout.finish(discard: true)   // nothing saved to Health
             self.phase = .idle
             self.report(.heartRateUnavailable, sessionID: sessionID)
             self.params = nil
+            self.startQueuedParams()
         }
     }
 
@@ -349,12 +427,22 @@ final class WatchSessionManager: NSObject, ObservableObject {
         }
 
         guard let finished = await workout.finish() else {
+            // No workout to finish (HealthKit failed it, or it was never
+            // really running). This used to go idle in silence while the
+            // phone waited for a payload that would never come. Always say
+            // something: a discarded payload for the time that passed.
+            log.error("End found no workout for \(p.sessionID); telling the phone")
+            let startedAt = sessionStartedAt ?? Date()
+            sendDiscard(sessionID: p.sessionID, mode: p.mode, trackID: p.trackID,
+                        startedAt: startedAt,
+                        durationSec: Int(Date().timeIntervalSince(startedAt).rounded()))
             phase = .idle
             params = nil
+            startQueuedParams()
             return
         }
 
-        let discard = finished.durationSec < SessionStore.minDurationSec
+        let discard = finished.discarded
         let payload = SessionPayload(
             sessionID: p.sessionID,
             startedAt: finished.startedAt,
@@ -379,6 +467,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
 
         phase = .sent
         params = nil
+        startQueuedParams()
 
         // Return to idle so another session can start.
         Task { @MainActor in
@@ -405,7 +494,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
         // Don't swallow encode failures — a non-finite Double makes JSONEncoder
         // throw, which previously dropped the whole transfer silently (belly-nil bug).
         do {
-            let data = try JSONEncoder().encode(payload)
+            let data = try PayloadCoding.encode(payload)
             let dict: [String: Any] = [WCKeys.payload: data]
 
             // Both channels, deliberately — the same treatment params get in
@@ -416,7 +505,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
             // queue. sendMessage is immediate whenever the phone is reachable.
             // The phone dedupes by sessionID (idempotent persist), so hearing
             // it twice is harmless; hearing it late was the bug.
-            if WCSession.default.isReachable {
+            // Still over the immediate channel's limit after compression (a
+            // session of several hours): don't ask sendMessage for something it
+            // will refuse; the queue carries it.
+            if WCSession.default.isReachable, data.count <= PayloadCoding.messageLimit {
                 deliveredImmediately = true
                 WCSession.default.sendMessage(dict, replyHandler: nil) { error in
                     self.log.error("sendMessage failed (userInfo backstop stands): \(error.localizedDescription)")
@@ -445,8 +537,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
     private nonisolated func handleEnd(_ dict: [String: Any]) {
         guard let raw = dict[WCKeys.end] as? String, let id = UUID(uuidString: raw) else { return }
         Task { @MainActor in
-            guard self.params?.sessionID == id else { return }
-            await self.endSession()
+            if self.params?.sessionID == id, self.phase == .running {
+                await self.endSession()
+            } else if (self.params?.sessionID == id && self.phase == .idle)
+                        || !self.handledSessionIDs.contains(id)
+                        || self.queuedParams?.sessionID == id {
+                // Not running yet: still starting, not arrived, or queued
+                // behind the previous send. Remember it; `begin` applies it.
+                // An id already handled and finished is stale and ignored.
+                self.pendingEnds[id] = Date()
+            }
         }
     }
 }

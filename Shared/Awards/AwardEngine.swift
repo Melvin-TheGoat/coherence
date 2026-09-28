@@ -115,17 +115,22 @@ public enum AwardEngine {
                                   progressText: hit != nil ? nil
                                       : "best \(Int((best * 100).rounded()))")
                 }
+                // A single session's length, like `length15` below: a
+                // hand-logged session never earns one (2026-09-28), since
+                // nothing timed it, and "Record one" must not be the way to
+                // an hour-long award.
                 if let minutes = minuteThreshold(award.id) {
                     let seconds = minutes * 60
-                    let hit = ordered.first { $0.durationSec >= seconds }
-                    let longest = ordered.map(\.durationSec).max() ?? 0
+                    let real = ordered.filter { !$0.isLogged }
+                    let hit = real.first { $0.durationSec >= seconds }
+                    let longest = real.map(\.durationSec).max() ?? 0
                     return Earned(award: award, earnedAt: hit?.startedAt,
                                   progress: hit != nil ? 1
                                           : min(1, Double(longest) / Double(seconds)),
                                   progressText: hit != nil ? nil
                                       : "longest \(longest / 60) min")
                 }
-                // A single session's length, timed for real: unlike `min20`
+                // A single session's length, timed for real: as with `min20`
                 // etc above, a hand-logged sit is excluded, since nothing
                 // measured how long it actually took.
                 if let minutes = lengthThreshold(award.id) {

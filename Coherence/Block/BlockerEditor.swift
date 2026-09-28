@@ -44,6 +44,11 @@ struct BlockerEditor: View {
     /// choice is tapped, which drops it for good: this screen has no way
     /// back into a limit. New blockers never start with one.
     @State private var keepsLimit: Bool
+    /// What the picker showed on arrival, so saving writes a schedule only
+    /// when one was actually changed: an old blocker the picker can only
+    /// approximate keeps exactly what it had.
+    private let initialChoice: BlockWhen
+    private let initialHours: BlockHours
 
     init(original: Blocker, isNew: Bool, pickOnAppear: Bool, block: BlockController,
          onSave: @escaping (Blocker, FamilyActivitySelection?) -> Void,
@@ -56,8 +61,10 @@ struct BlockerEditor: View {
         self.onDelete = onDelete
         _draft = State(initialValue: original)
         _selection = State(initialValue: BlockStore.selection(for: original.id))
-        _choice = State(initialValue: BlockWhen.of(original))
-        _hours = State(initialValue: BlockHours(original))
+        initialChoice = BlockWhen.of(original)
+        initialHours = BlockHours(original)
+        _choice = State(initialValue: initialChoice)
+        _hours = State(initialValue: initialHours)
         _keepsLimit = State(initialValue: original.dailyLimitMinutes != nil)
     }
 
@@ -252,13 +259,20 @@ struct BlockerEditor: View {
 
     private func save() {
         var saved = draft
-        if !keepsLimit {
+        // Only a schedule that was changed is written (a dropped daily limit
+        // counts: tapping any choice is what drops it).
+        let changed = choice != initialChoice || hours != initialHours
+        if !keepsLimit && (changed || original.dailyLimitMinutes != nil) {
             saved.apply(choice, hours: hours)
         }
         // A new blocker is named and symbolled after the choice, the way
         // onboarding's own Mindful day already is; an existing one keeps
-        // whatever it was called and marked with.
-        if isNew {
+        // whatever it was called and marked with. A preset card saved as it
+        // came keeps the preset's own name and symbol ("Wind down" was saved
+        // as "My hours" because its hours read as Custom).
+        let presetAsIs = original.kind != .custom
+            && saved.window == original.window && saved.weekdays == original.weekdays
+        if isNew && !presetAsIs {
             saved.name = choice.blockerName
             saved.symbol = choice.icon
         }

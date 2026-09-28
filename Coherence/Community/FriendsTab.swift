@@ -779,7 +779,9 @@ struct PersonRow<Trailing: View>: View {
 /// What a friend's page and every row in the follow lists and search say
 /// about how often they meditate — never a score, a heart rate, or a curve
 /// (the rule at the top of `CommunityRecords.swift`).
-func practiceLine(_ stats: PracticeStats) -> String {
+func practiceLine(_ published: PracticeStats) -> String {
+    // As they stand today, not as they were when last published.
+    let stats = published.asSeen()
     guard stats.totalSessions > 0 else { return "No sessions yet" }
     if stats.sessions7d > 0 {
         var parts = ["\(stats.sessions7d) session\(stats.sessions7d == 1 ? "" : "s") this week"]
@@ -1137,7 +1139,7 @@ struct PersonView: View {
     /// `PracticeStats` (Melvin, 2026-09-27) — never a score, which this card
     /// carried nowhere even when it read from posts.
     private var stats: some View {
-        let p = profile?.practice ?? .empty
+        let p = (profile?.practice ?? .empty).asSeen()
         return HStack(spacing: 0) {
             statColumn("\(p.currentStreak)", "day streak")
             statColumn("\(p.sessions7d)", "this week")

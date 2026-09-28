@@ -42,14 +42,22 @@ enum SessionStore {
     /// (`appleUserID == ""`) — fill in its identity so pre-account sessions +
     /// streak survive; (c) else create a new User. Never creates a second User
     /// while a bootstrap exists. Returns the signed-in User.
+    ///
+    /// `completingOnboarding: false` is onboarding's own sign-in screen: it
+    /// signs in WITHOUT marking onboarding complete, because doing so swaps
+    /// `RootView` to the app at once and the rest of the flow (profile, tour,
+    /// `finish()`, which writes the answers and schedules the reminder)
+    /// never runs. Onboarding marks itself complete when it finishes.
     @discardableResult
-    static func signIn(appleUserID: String, email: String?, displayName: String?, in context: ModelContext) -> User {
+    static func signIn(appleUserID: String, email: String?, displayName: String?,
+                       completingOnboarding: Bool = true,
+                       in context: ModelContext) -> User {
         // a. Returning user? (Clear any pending soft-delete — signing back in
         // reactivates the account.)
         let byApple = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == appleUserID })
         if let user = try? context.fetch(byApple).first {
             user.deletedAt = nil
-            markOnboardingComplete(userID: user.id, in: context)
+            if completingOnboarding { markOnboardingComplete(userID: user.id, in: context) }
             try? context.save()
             return user
         }
@@ -63,14 +71,14 @@ enum SessionStore {
             if let displayName { user.displayName = displayName }
             user.deletedAt = nil
             user.updatedAt = Date()
-            markOnboardingComplete(userID: user.id, in: context)
+            if completingOnboarding { markOnboardingComplete(userID: user.id, in: context) }
             try? context.save()
             return user
         }
         // c. Fresh account.
         let user = User(appleUserID: appleUserID, email: email, displayName: displayName)
         context.insert(user)
-        context.insert(Preferences(userID: user.id, onboardingComplete: true))
+        context.insert(Preferences(userID: user.id, onboardingComplete: completingOnboarding))
         try? context.save()
         return user
     }
@@ -179,35 +187,76 @@ enum SessionStore {
         }
     }
 
-    /// Persists a finished session + its stats in ONE save. Idempotent: never
-    /// writes a second `MeditationStats`/`Session` for a `sessionID`; skips
-    /// discarded, too-short, or result-less payloads. Returns the written
-    /// `Session`, or `nil` if nothing was written. `frequencyID` is the sound
-    /// preset that played (phone-side knowledge — the Watch never carries it).
+    /// What `store` did with a payload. The coordinator needs all three apart,
+    /// because the Watch sends every payload TWICE (sendMessage for speed,
+    /// transferUserInfo as the backstop): a second copy of a saved session
+    /// comes back `.alreadyStored`, and reading that as "nothing written"
+    /// used to put up the "couldn't read that one" screen after every Watch
+    /// session.
+    enum PersistOutcome {
+        /// Written now: a new Session with its stats, or stats attached to a
+        /// Session the phone had already written for the same sit.
+        case saved(Session)
+        /// This session's stats are already stored. A duplicate copy; do
+        /// nothing with it.
+        case alreadyStored
+        /// Discarded, too short, or no result: nothing to write.
+        case rejected
+
+        var session: Session? {
+            if case .saved(let session) = self { return session }
+            return nil
+        }
+    }
+
+    /// Persists a finished session + its stats in ONE save. Returns the
+    /// written `Session`, or `nil` if nothing was written. See `store` for
+    /// the three outcomes this flattens.
     @discardableResult
     static func persist(_ payload: SessionPayload, frequencyID: String? = nil,
                         in context: ModelContext) -> Session? {
+        store(payload, frequencyID: frequencyID, in: context).session
+    }
+
+    /// Persists a finished session + its stats in ONE save. Idempotent: never
+    /// writes a second `MeditationStats`/`Session` for a `sessionID`; rejects
+    /// discarded, too-short, or result-less payloads. `frequencyID` is the
+    /// sound preset that played (phone-side knowledge: the Watch never
+    /// carries it).
+    ///
+    /// **A Session with no stats gets them attached rather than refused.**
+    /// A Watch sit the phone took over (the Watch never confirmed in time, or
+    /// End was tapped before it did) is written by the phone as a phone sit.
+    /// If the Watch then ships its measurements for the same id, they belong
+    /// to that sit, and throwing them away lost a measured session for
+    /// nothing. The row keeps the phone's start and length (the sit the
+    /// person actually did) and stops reading as unmeasured.
+    static func store(_ payload: SessionPayload, frequencyID: String? = nil,
+                      in context: ModelContext) -> PersistOutcome {
         guard !payload.discard,
               payload.durationSec >= minDurationSec,
-              let result = payload.result else { return nil }
+              let result = payload.result else { return .rejected }
 
-        // Idempotency: bail if a Stats already exists for this session.
+        // Idempotency: this session's stats are already written.
         let sid = payload.sessionID
         let statsDescriptor = FetchDescriptor<MeditationStats>(
             predicate: #Predicate { $0.sessionID == sid }
         )
         if let existing = try? context.fetch(statsDescriptor), !existing.isEmpty {
-            return nil
+            return .alreadyStored
         }
-        // And bail if the SESSION is already written, which stats alone does
-        // not catch: a sit the phone finished on its own (the Watch never
-        // answered, the watchdog handed it over) has a Session row and no
-        // stats, and a payload arriving late would otherwise insert a second
-        // row under the same id. SwiftData enforces no uniqueness, by design
-        // here, so nothing downstream would have complained.
+        // A Session row with no stats: the phone wrote this sit itself. Attach
+        // the measurements to it rather than insert a second row under the
+        // same id (SwiftData enforces no uniqueness, by design here).
         let sessionDescriptor = FetchDescriptor<Session>(predicate: #Predicate { $0.id == sid })
-        if let existing = try? context.fetch(sessionDescriptor), !existing.isEmpty {
-            return nil
+        if let existing = try? context.fetch(sessionDescriptor).first {
+            // A hand-recorded sit never carries a Watch's measurements.
+            guard !existing.isLogged else { return .alreadyStored }
+            if existing.source == "phone" { existing.source = "watch" }
+            if existing.frequencyID == nil { existing.frequencyID = frequencyID }
+            context.insert(makeStats(for: payload, result: result))
+            try? context.save()
+            return .saved(existing)
         }
 
         let user = currentUser(in: context)
@@ -222,7 +271,17 @@ enum SessionStore {
             startedAt: payload.startedAt,
             durationSec: payload.durationSec
         )
-        let stats = MeditationStats(
+        let stats = makeStats(for: payload, result: result)
+        context.insert(session)
+        context.insert(stats)
+        try? context.save()
+        return .saved(session)
+    }
+
+    /// The stats row for a payload, one place for both the new-session and
+    /// the attach path in `store`.
+    private static func makeStats(for payload: SessionPayload, result: SignalResult) -> MeditationStats {
+        MeditationStats(
             sessionID: payload.sessionID,
             heartRateTimeseries: result.heartRateTimeseries,
             meanHR: result.meanHR,
@@ -250,10 +309,6 @@ enum SessionStore {
             hopSec: result.hopSec,
             algorithmVersion: result.algorithmVersion
         )
-        context.insert(session)
-        context.insert(stats)
-        try? context.save()
-        return session
     }
 
     /// Persists a session the **phone** ran on its own, with no Watch and so

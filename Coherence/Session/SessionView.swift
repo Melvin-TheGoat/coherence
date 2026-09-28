@@ -55,9 +55,11 @@ struct SessionView: View {
                             band(width: proxy.size.width, topInset: proxy.safeAreaInsets.top)
                             VStack(alignment: .leading, spacing: 10) {
                                 identityCard(session)
+                                // The Watch's readings lead, straight under
+                                // who and when (`mockups/apple-watch/`).
+                                if let stats { measurementsCard(stats, session: session) }
                                 whatCard(session)
                                 if !privateNote.isEmpty { notesCard }
-                                if let stats { measurementsCard(stats, session: session) }
                             }
                             .padding(.horizontal, AppMetrics.screenPadding)
                             .padding(.top, -Self.overlap)
@@ -330,42 +332,12 @@ struct SessionView: View {
 
     // MARK: - What a Watch measured
 
-    /// A small score ring, "Measured on your Watch", and one line from the
-    /// same rule-based verdict the results screen speaks — never an empty
-    /// ring: this card is only ever built when `stats` exists.
+    /// "Your body": the score ring and the three readings in words, the
+    /// graphs one tap in (`BodyCard`). Only built when `stats` exists.
     private func measurementsCard(_ stats: MeditationStats, session: Session) -> some View {
-        let verdict = VerdictEngine.verdict(for: .init(
-            overallScore: stats.overallScore,
-            stillnessScore: stats.stillnessScore,
-            hrDecline: stats.hrDecline,
-            meanBreathingRate: stats.meanBreathingRate,
-            resonanceMatchScore: stats.resonanceMatchScore,
-            breathDoorwayRate: stats.breathDoorwayRate,
-            breathDoorwayHeldSec: stats.breathDoorwayHeldSec,
-            bellyBreathing: session.bellyBreathing))
-        return Button { showResults = true } label: {
-            HStack(spacing: 12) {
-                ScoreRing(score: stats.overallScore, size: 44, lineWidth: 5)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Measured on your Watch")
-                        .font(.system(size: 14.5, weight: .bold))
-                        .foregroundStyle(AppColor.textPrimary)
-                    Text(verdict.sentence)
-                        .font(AppFont.caption)
-                        .foregroundStyle(AppColor.textSecondary)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.leading)
-                }
-                Spacer(minLength: 8)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(AppColor.textSecondary)
-            }
-            .padding(Self.inset)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(CardButtonStyle())
-        .whiteCard(radius: 18)
+        BodyCard(readings: BodyReadings(stats), score: stats.overallScore,
+                 seeGraphs: { showResults = true }, inset: Self.inset)
+            .whiteCard(radius: 18)
     }
 
     // MARK: - Load

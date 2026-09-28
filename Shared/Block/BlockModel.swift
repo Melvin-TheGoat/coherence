@@ -54,10 +54,16 @@ struct Blocker: Codable, Identifiable, Equatable {
     /// (Aziz, 2026-09-22, from Brainrot's editor). nil draws the kind's own,
     /// which is what every blocker saved before this field existed shows.
     var symbol: String?
+    /// "From 8 pm until I meditate" (Aziz, 2026-09-28): a Custom window whose
+    /// only end is a session, or midnight at the latest. Stored as hours
+    /// running to midnight (every window already opens on a session), and
+    /// marked so it reads back as what was chosen rather than as "8 pm to
+    /// midnight". nil on every blocker saved before it.
+    var untilSession: Bool?
 
     enum CodingKeys: String, CodingKey {
         case id, kind, name, isOn, weekdays, window
-        case dailyLimitMinutes, hasApps, createdAt, symbol
+        case dailyLimitMinutes, hasApps, createdAt, symbol, untilSession
     }
 
     /// The symbol to draw: the one picked, else the kind's.
@@ -124,6 +130,9 @@ struct Blocker: Codable, Identifiable, Equatable {
     /// Why Screen Time would refuse these hours, in words, or nil.
     var windowProblem: String? {
         guard case .hours(let start, let end) = window else { return nil }
+        // Midnight to the next midnight is the whole day, not an empty
+        // window: "From midnight until I meditate" is saved that way.
+        if end - start == 1440 { return nil }
         if start % 1440 == end % 1440 { return "Pick an end time after the start." }
         let length = end > start ? end - start : end + 1440 - start
         if length < Self.shortestWindowMinutes { return "A window needs at least 15 minutes." }
@@ -148,7 +157,9 @@ struct Blocker: Codable, Identifiable, Equatable {
         case .allDay:
             when = dailyLimitMinutes.map { "After \($0) minutes a day" } ?? "All day"
         case .hours(let start, let end):
-            when = "\(Self.clock(start)) to \(Self.clock(end))"
+            when = untilSession == true
+                ? "From \(Self.clock(start)) until you meditate"
+                : "\(Self.clock(start)) to \(Self.clock(end))"
         }
         return "\(when), \(Self.days(weekdays))"
     }
@@ -244,12 +255,36 @@ extension Blocker {
         if let v = try? c.decodeIfPresent(Bool.self, forKey: .isOn) { isOn = v }
         if let v = try? c.decodeIfPresent(Set<Int>.self, forKey: .weekdays), !v.isEmpty { weekdays = v }
         if let v = try? c.decodeIfPresent(BlockWindow.self, forKey: .window) { window = v }
-        if c.contains(.dailyLimitMinutes) {
-            dailyLimitMinutes = try? c.decodeIfPresent(Int.self, forKey: .dailyLimitMinutes)
-        }
+        // A missing limit is NO limit, whatever the kind: the encoder below
+        // writes the key every time, and the synthesized one it replaced
+        // left it out when nil, so a limit cleared in the editor used to come
+        // back as the Daily limit preset's 30 minutes.
+        dailyLimitMinutes = try? c.decodeIfPresent(Int.self, forKey: .dailyLimitMinutes)
         if let v = try? c.decodeIfPresent(Bool.self, forKey: .hasApps) { hasApps = v }
         if let v = try? c.decodeIfPresent(Date.self, forKey: .createdAt) { createdAt = v }
         symbol = try? c.decodeIfPresent(String.self, forKey: .symbol)
+        untilSession = try? c.decodeIfPresent(Bool.self, forKey: .untilSession)
+    }
+
+    /// Writes `dailyLimitMinutes` even when it is nil, so "no limit" is on
+    /// the record rather than inferred from a missing key.
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(kind, forKey: .kind)
+        try c.encode(name, forKey: .name)
+        try c.encode(isOn, forKey: .isOn)
+        try c.encode(weekdays, forKey: .weekdays)
+        try c.encode(window, forKey: .window)
+        if let dailyLimitMinutes {
+            try c.encode(dailyLimitMinutes, forKey: .dailyLimitMinutes)
+        } else {
+            try c.encodeNil(forKey: .dailyLimitMinutes)
+        }
+        try c.encode(hasApps, forKey: .hasApps)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encodeIfPresent(symbol, forKey: .symbol)
+        try c.encodeIfPresent(untilSession, forKey: .untilSession)
     }
 }
 
@@ -317,11 +352,19 @@ enum BlockRules {
         var opened: [UUID] = []
         for blocker in holding(state, at: now, calendar: calendar) {
             guard let window = blocker.openWindow(at: now, calendar: calendar) else { continue }
-            let end = min(now.addingTimeInterval(TimeInterval(minutes * 60)), window.end)
+            let end = wholeSecond(min(now.addingTimeInterval(TimeInterval(minutes * 60)), window.end))
             state.passes.append(BlockPass(blockerID: blocker.id, start: now, end: end, window: window))
             opened.append(blocker.id)
         }
         return opened
+    }
+
+    /// `date` rounded UP to a whole second. A pass ends on one, because
+    /// Screen Time is told its end in whole seconds and truncates the rest:
+    /// an end of 10:05:03.7 woke the monitor at 10:05:03, a hair before the
+    /// pass had run out, so the apps stayed open until something else woke it.
+    static func wholeSecond(_ date: Date) -> Date {
+        Date(timeIntervalSinceReferenceDate: date.timeIntervalSinceReferenceDate.rounded(.up))
     }
 
     /// A session ended at `end`, lasting `durationSec`. Every blocker whose

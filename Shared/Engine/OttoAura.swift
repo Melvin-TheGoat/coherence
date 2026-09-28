@@ -21,11 +21,12 @@ import Foundation
 /// **Missed days cost more the longer the run (Melvin and Aziz, 2026-09-23:
 /// "first day missed -10, second day in a row missed -15, then -20 for third
 /// etc.").** The first day missed in a row costs 10 and each further day in
-/// the same run 5 more (`missCost(run:)`). One missed day a week is a rest
-/// day and costs nothing, the streak's own rule
-/// (`StreakCalculator.restAvailable`), so the two can never disagree; it
-/// still counts as a day of the run, so the day after it is the second day
-/// missed in a row. A day meditated ends the run.
+/// the same run 5 more (`missCost(run:)`). A missed day costs nothing when
+/// the streak forgives it as a rest day, which is the streak's own rule read
+/// from `StreakCalculator.runs` (`forgivenDays`), so the two can never
+/// disagree: a lone missed day between practised days, once a week. The
+/// first day of a longer gap is not a rest day and costs 10. A day
+/// meditated ends the run.
 ///
 /// So a ten-minute first session lifts him from Stirring to Steady (his
 /// colour comes back, +5 to 45), and five twenty-minute days in a row from
@@ -182,6 +183,24 @@ enum OttoAura {
         return minutes
     }
 
+    /// The missed days the streak forgives as rest days, and only those, so
+    /// Otto's glow and the streak can never disagree about a day (the bug
+    /// of 2026-09-28: the glow kept one rest-day list for the whole history
+    /// and spent it on the first day of ANY gap, while the streak forgives
+    /// only a lone missed day between practised days, and starts its weekly
+    /// allowance over when a run breaks). The rest days come from
+    /// `StreakCalculator.runs`; yesterday is added while the streak is
+    /// carrying it as today's rest day (`restDayUsed`), exactly as Home says.
+    static func forgivenDays(practised: Set<Date>, today: Date, calendar: Calendar) -> Set<Date> {
+        let dates = Array(practised)
+        var forgiven = Set(StreakCalculator.runs(from: dates, calendar: calendar).flatMap(\.restDays))
+        if StreakCalculator.streak(from: dates, today: today, calendar: calendar).restDayUsed,
+           let yesterday = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: today)) {
+            forgiven.insert(yesterday)
+        }
+        return forgiven
+    }
+
     /// - Parameter notNow: every window Otto was told "Not now" in, as the
     ///   whole window the apps were held for that day (Mindful day is
     ///   midnight to midnight). A window costs only once it has closed with no
@@ -206,8 +225,8 @@ enum OttoAura {
         guard let first = practised.union(skipped.keys).min() else { return startLevel }
         let todayStart = calendar.startOfDay(for: today)
 
+        let forgiven = forgivenDays(practised: practised, today: today, calendar: calendar)
         var level = Double(startLevel)
-        var rests: [Date] = []
         var run = 0          // days missed in a row, the rest day included
         var day = first
         while day <= todayStart {
@@ -217,8 +236,7 @@ enum OttoAura {
                 level = min(100, level + Double(gain(minutes: dayMinutes))) - windows
             } else if day < todayStart {
                 run += 1
-                if StreakCalculator.restAvailable(on: day, after: rests, calendar: calendar) {
-                    rests.append(day)
+                if forgiven.contains(day) {
                     level -= windows
                 } else {
                     level -= max(Double(missCost(run: run)), windows)
@@ -258,8 +276,11 @@ enum OttoAura {
         let minutes = minutesByDay(sits, calendar: calendar)
         guard let first = minutes.keys.min(), let last = minutes.keys.max() else { return nil }
 
+        // Every missed day in this walk lies between two practised days, so
+        // the streak's runs alone say which were rest days.
+        let forgiven = Set(StreakCalculator.runs(from: Array(minutes.keys), calendar: calendar)
+            .flatMap(\.restDays))
         var level = Double(startLevel)
-        var rests: [Date] = []
         var run = 0
         var day = first
         while day <= last {
@@ -269,9 +290,7 @@ enum OttoAura {
                 if Stage(level: Int(level.rounded())) >= stage { return day }
             } else {
                 run += 1
-                if StreakCalculator.restAvailable(on: day, after: rests, calendar: calendar) {
-                    rests.append(day)
-                } else {
+                if !forgiven.contains(day) {
                     level = max(0, level - Double(missCost(run: run)))
                 }
             }

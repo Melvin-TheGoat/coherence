@@ -29,10 +29,15 @@ enum SessionEndNotice {
         _ = try? await center.requestAuthorization(options: [.alert, .sound])
     }
 
-    static func schedule(for session: UUID, afterSeconds seconds: Int) {
+    /// `afterSeconds` is when it rings; `plannedSec` is the length that was
+    /// set, which the title names. They differ whenever the clock is re-armed
+    /// partway through (a sit handed back from the Watch, a return to the
+    /// app): nine minutes left of a ten-minute sit still says "That's 10
+    /// minutes".
+    static func schedule(for session: UUID, afterSeconds seconds: Int, plannedSec: Int? = nil) {
         guard seconds > 0 else { return }
         let content = UNMutableNotificationContent()
-        content.title = SessionLength.endTitle(minutes: max(1, seconds / 60))
+        content.title = SessionLength.endTitle(minutes: max(1, (plannedSec ?? seconds) / 60))
         content.body = "Your session is done. Take a breath before you get up."
         content.sound = .default
         content.interruptionLevel = .timeSensitive

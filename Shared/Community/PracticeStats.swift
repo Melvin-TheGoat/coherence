@@ -49,4 +49,28 @@ struct PracticeStats: Equatable, Codable {
                              totalSessions: sessions.count,
                              lastSessionAt: sessions.map(\.startedAt).max())
     }
+
+    /// These numbers as they stand at `now` for someone READING them: they
+    /// were published when the person last opened 808, and nothing updates
+    /// them while they stay away, so "5 sessions this week, 9 day streak"
+    /// would otherwise read true forever. Judged from `lastSessionAt` alone,
+    /// the only date on the record:
+    /// - the streak is over once the last session is before the day before
+    ///   yesterday (yesterday may be their rest day, the streak's own rule);
+    /// - the week's counts are zero once the last session is over 7 days old.
+    func asSeen(now: Date = Date(), calendar: Calendar = .current) -> PracticeStats {
+        guard let last = lastSessionAt else { return self }
+        var seen = self
+        let today = calendar.startOfDay(for: now)
+        if let dayBefore = calendar.date(byAdding: .day, value: -2, to: today), last < dayBefore {
+            seen.currentStreak = 0
+        }
+        let weekAgo = calendar.date(byAdding: .day, value: -7, to: now)
+            ?? now.addingTimeInterval(-7 * 24 * 3_600)
+        if last < weekAgo {
+            seen.sessions7d = 0
+            seen.minutes7d = 0
+        }
+        return seen
+    }
 }

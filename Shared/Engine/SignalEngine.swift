@@ -138,7 +138,11 @@ extension SignalResult {
 // ceiling. `hrDecline` remains a REPORTED stat; the score uses `heartSettling`.
 enum SignalEngine {
 
-    static let version = "5.3.0"
+    /// 5.3.1: live scoring uses the session's wall-clock duration, the number
+    /// the phone stores as `Session.durationSec`, instead of the trimmed span
+    /// (about ten seconds short). Same formula; the bump makes the back-fill
+    /// bring every 5.3.0 row onto the duration it will be rescored with.
+    static let version = "5.3.1"
 
     private static let breathBandLo = 0.033  // Hz — supports slow held breaths (~2/min)
     private static let breathBandHi = 0.5     // Hz
@@ -379,7 +383,8 @@ enum SignalEngine {
         hr: [HRSample],
         bellyBreathing: Bool,
         windowSec: Int = 30,
-        hopSec: Int = 5
+        hopSec: Int = 5,
+        durationSec: Int? = nil
     ) -> SignalResult {
 
         let totalSec = max(motion.last?.t ?? 0, hr.last?.t ?? 0)
@@ -599,10 +604,17 @@ enum SignalEngine {
         // was leaving the strongest measurement out of the number.
         // Time is a ceiling, not a bonus: it can cap a good session, never
         // rescue a bad one. Shared with the v3 back-fill — see `score`.
+        //
+        // The duration is the caller's wall-clock length when given: the
+        // Watch trims five seconds off each end before analysis, so the span
+        // here runs about ten seconds short, and a perfect 10:00 sit scored 99
+        // live while the back-fill (which reads `Session.durationSec`) gave it
+        // 100. Scoring on the stored number is what keeps the two identical.
+        let scoredDuration = durationSec ?? Int(totalSec.rounded())
         let overallScore = score(stillnessScore: stillnessScore,
                                  heartRateTimeseries: heartRateTimeseries,
                                  breathDoorway: scoredDoorway,
-                                 durationSec: Int(totalSec.rounded()))
+                                 durationSec: scoredDuration)
 
         return SignalResult(
             heartRateTimeseries: heartRateTimeseries, meanHR: meanHR,

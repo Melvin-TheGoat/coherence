@@ -6,10 +6,15 @@ import os
 struct FinishedSession {
     let startedAt: Date
     let durationSec: Int
-    let result: SignalResult
-    /// Apple's SDNN for the session, against the user's own baseline. Always
-    /// present; an empty reading inside it is a real answer, not a failure.
-    let hrv: HRVSnapshot
+    /// True when the session is not kept: under `SessionStore.minDurationSec`,
+    /// or aborted (no heart rate). Nothing was written to Health and nothing
+    /// was analysed, so `result` and `hrv` are nil.
+    let discarded: Bool
+    let result: SignalResult?
+    /// Apple's SDNN for the session, against the user's own baseline. Present
+    /// for every kept session; an empty reading inside it is a real answer,
+    /// not a failure.
+    let hrv: HRVSnapshot?
 }
 
 /// Runs the on-wrist workout and captures CoreMotion (stillness)
@@ -35,6 +40,17 @@ final class WorkoutManager: NSObject, ObservableObject {
 
     private var sessionStart: Date?
     private var hrSamples: [HRSample] = []
+    /// Set while `finish()` is awaiting, so a second caller (the End button
+    /// racing the heart-rate watchdog, or a workout failure) gets nil instead
+    /// of ending the same workout twice.
+    private var finishing = false
+
+    /// Called when HealthKit fails the workout mid-session. The session
+    /// manager owns what happens next (ship what was captured, or tell the
+    /// phone), so the manager does not tear itself down behind its back: that
+    /// used to leave the Watch "running" a session with no workout, and End
+    /// then went idle with nothing sent and the phone waiting forever.
+    var onFailure: (() -> Void)?
 
     private let log = Logger(subsystem: "com.lockout.meditate808.watchkitapp", category: "Workout")
 
@@ -92,7 +108,9 @@ final class WorkoutManager: NSObject, ObservableObject {
                     cont.resume(returning: success)
                 }
             }
-            guard began else {
+            // `self.session === session`: a failure reported during the await
+            // may already have torn this workout down.
+            guard began, self.session === session else {
                 statusMessage = "Couldn't start the session. Try again."
                 teardown()
                 return false
@@ -111,15 +129,33 @@ final class WorkoutManager: NSObject, ObservableObject {
     }
 
     /// Ends the session, then trims edge transients, rebases the clock to 0, and
-    /// runs `SignalEngine`. Returns the analyzed result, or nil if nothing ran.
-    func finish() async -> FinishedSession? {
-        guard let session, let builder, let startedAt = sessionStart else { return nil }
+    /// runs `SignalEngine`. Returns the analyzed result, or nil if nothing ran
+    /// (or another finish is already in flight).
+    ///
+    /// `discard` forces the session to be thrown away (the no-heart-rate
+    /// abort); a session under `SessionStore.minDurationSec` is thrown away
+    /// regardless. A discarded session saves no workout and no mindful
+    /// minutes: Health should not carry a sit 808 itself refuses to count.
+    func finish(discard forceDiscard: Bool = false) async -> FinishedSession? {
+        guard !finishing, let session, let builder, let startedAt = sessionStart else { return nil }
+        finishing = true
+        defer { finishing = false }
         isRunning = false
         // Wall-clock at End — the true session length, unaffected by the HR
         // samples that keep arriving during the ~seconds-long workout teardown.
         let durationSec = Int(Date().timeIntervalSince(startedAt).rounded())
+        let discard = forceDiscard || durationSec < SessionStore.minDurationSec
         motion.stop()
         session.end()
+
+        if discard {
+            await discardBuilder(builder)
+            log.debug("Discarded: \(durationSec)s (forced=\(forceDiscard))")
+            teardown()
+            return FinishedSession(startedAt: startedAt, durationSec: durationSec,
+                                   discarded: true, result: nil, hrv: nil)
+        }
+
         _ = await finishBuilder(builder)
 
         // One mindful-minutes sample per session, so it appears in Health >
@@ -135,6 +171,31 @@ final class WorkoutManager: NSObject, ObservableObject {
 
         let motionAll = motion.snapshot()
         let hrAll = hrSamples
+
+        // Off the main actor: the engine costs roughly a second per hour of
+        // session on a Mac and several on a Watch, and on the main actor that
+        // froze the "sending" screen and every WatchConnectivity callback
+        // behind it. Pure Foundation on value types, so nothing is shared.
+        let result = await Task.detached(priority: .userInitiated) {
+            Self.analyze(motion: motionAll, hr: hrAll, durationSec: durationSec)
+        }.value
+        log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
+
+        // Deliberately after the analysis: this waits a few seconds for the
+        // system to flush the session's SDNN sample, and there's no reason to
+        // make the engine wait behind it.
+        let hrvSnapshot = await hrv.snapshot(end: startedAt.addingTimeInterval(Double(durationSec)))
+
+        teardown()
+        return FinishedSession(startedAt: startedAt, durationSec: durationSec,
+                               discarded: false, result: result, hrv: hrvSnapshot)
+    }
+
+    /// Trims edge transients, rebases the clock and runs the engine. Static and
+    /// nonisolated so `finish()` can run it off the main actor.
+    private nonisolated static func analyze(motion motionAll: [MotionSample],
+                                            hr hrAll: [HRSample],
+                                            durationSec: Int) -> SignalResult {
         let elapsed = max(motionAll.last?.t ?? 0, hrAll.last?.t ?? 0)
 
         // Trim the first/last 5 s (lying down after Start, getting up before End)
@@ -151,17 +212,21 @@ final class WorkoutManager: NSObject, ObservableObject {
 
         // MVP: stillness + heart rate only. The engine still supports the
         // breathing path (see tag v1-full-feature-set); we just don't ask for it.
-        let result = SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: false)
-        log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
+        // Scored on the wall-clock duration the phone stores, not the trimmed
+        // span, so a live score and a back-filled one are the same number.
+        return SignalEngine.analyze(motion: motionTrim, hr: hrTrim, bellyBreathing: false,
+                                    durationSec: durationSec)
+    }
 
-        // Deliberately after the analysis: this waits a few seconds for the
-        // system to flush the session's SDNN sample, and there's no reason to
-        // make the engine wait behind it.
-        let hrvSnapshot = await hrv.snapshot(end: startedAt.addingTimeInterval(Double(durationSec)))
-
+    /// Ends the current workout (if any) with nothing kept: no Health entries,
+    /// no analysis. For the session manager when a failure leaves it nothing
+    /// to finish.
+    func abandon() {
+        guard !finishing else { return }
+        if let builder {
+            builder.endCollection(withEnd: Date()) { _, _ in builder.discardWorkout() }
+        }
         teardown()
-        return FinishedSession(startedAt: startedAt, durationSec: durationSec,
-                               result: result, hrv: hrvSnapshot)
     }
 
     #if DEBUG
@@ -189,6 +254,16 @@ final class WorkoutManager: NSObject, ObservableObject {
         }
         session = nil
         builder = nil
+    }
+
+    /// Stops collection and throws the workout away instead of saving it.
+    private func discardBuilder(_ builder: HKLiveWorkoutBuilder) async {
+        await withCheckedContinuation { continuation in
+            builder.endCollection(withEnd: Date()) { _, _ in
+                builder.discardWorkout()
+                continuation.resume()
+            }
+        }
     }
 
     private func finishBuilder(_ builder: HKLiveWorkoutBuilder) async -> HKWorkout? {
@@ -243,7 +318,14 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
         Task { @MainActor in
             self.log.error("Workout session failed: \(error.localizedDescription)")
             self.statusMessage = "Workout failed: \(error.localizedDescription)"
-            self.teardown()
+            // Only for OUR current workout: a failure reported late for one
+            // already torn down must not end the next.
+            guard self.session === workoutSession else { return }
+            if let onFailure = self.onFailure {
+                onFailure()
+            } else {
+                self.teardown()
+            }
         }
     }
 }

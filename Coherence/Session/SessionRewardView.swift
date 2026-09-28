@@ -17,8 +17,8 @@ struct SessionReward: Identifiable, Equatable {
     let glowBefore: Int
     let glowAfter: Int
 
-    /// Rounded for the headline; a 40 second session still says 1.
-    var minutes: Int { max(1, Int((Double(seconds) / 60).rounded())) }
+    /// A 40 second session still says 1. Floored, like the points (one per whole minute) and every other minute count.
+    var minutes: Int { max(1, seconds / 60) }
 }
 
 /// The moment a session ends (Melvin, 2026-09-27: "super satisfying,

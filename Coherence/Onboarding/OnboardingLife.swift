@@ -1271,8 +1271,14 @@ struct SocialProofScreen: View {
         }
         // Apple's rating sheet, once the screen has settled.
         try? await Task.sleep(for: .milliseconds(600))
-        guard !Task.isCancelled, !asked else { return }
+        // Once per onboarding, not once per visit: `asked` is reset every
+        // time the screen is rebuilt (Back and forward, a resume), so the
+        // flag lives in UserDefaults and is cleared with the resume record
+        // when onboarding ends or someone signs out.
+        guard !Task.isCancelled, !asked,
+              !UserDefaults.standard.bool(forKey: OnboardingResume.reviewAskedKey) else { return }
         asked = true
+        UserDefaults.standard.set(true, forKey: OnboardingResume.reviewAskedKey)
         requestReview()
     }
 

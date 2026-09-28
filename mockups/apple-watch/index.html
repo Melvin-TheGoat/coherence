@@ -1,0 +1,289 @@
+<meta charset="utf-8">
+<title>808 on the Wrist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap">
+<style>
+:root{--ink:#413024;--ink2:#6F5D4F;--sand:#F0E9DC;--meadow:#9CBD86;--sky:#A9CCDE;--skydeep:#3F80AD;--green:#5AB950;--greenshade:#418E3A;--gold:#F0C47B;--goldshade:#D9A45A;--calm:#336A60;--page:#EDF1EA;--pagecard:#FFFFFF;--line:#D8DDD2;--text:#2E2A24;--muted:#5F6B5C;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#171B17;--pagecard:#222822;--line:#343C33;--text:#ECEDE6;--muted:#A9B3A5;color-scheme:dark}}
+:root[data-theme="dark"]{--page:#171B17;--pagecard:#222822;--line:#343C33;--text:#ECEDE6;--muted:#A9B3A5;color-scheme:dark}
+body{background:var(--page);color:var(--text);font-family:Nunito,"SF Pro Rounded",ui-rounded,system-ui,sans-serif;padding-inline:18px;padding-block:28px 60px}
+.wrap{max-width:1320px;margin:0 auto}
+header h1{font-size:clamp(28px,4vw,40px);font-weight:900;letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance}
+header p{max-width:66ch;color:var(--muted);font-size:16px;line-height:1.5;margin:0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--muted)}
+.legend span::before{content:"";display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px;box-shadow:0 0 0 2px #E7B84C inset}
+section{margin-top:34px}
+section h2{font-size:19px;font-weight:900;margin:0 0 4px}
+section>p{margin:0 0 16px;color:var(--muted);font-size:14.5px;max-width:70ch;line-height:1.5}
+.screens{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-start}
+figure{margin:0;display:flex;flex-direction:column;gap:10px;width:300px;max-width:100%}
+figcaption{font-size:13.5px;color:var(--muted);line-height:1.45}
+figcaption b{color:var(--text);display:block;font-size:14.5px;margin-bottom:2px}
+
+.phone{position:relative;width:300px;max-width:100%;aspect-ratio:300/652;border-radius:42px;overflow:hidden;background:var(--meadow);box-shadow:0 0 0 7px #1E1E1E,0 18px 40px rgba(0,0,0,.18);color:var(--ink);font-size:12px}
+.island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:14px;background:#000;z-index:9}
+.ready-bg{position:absolute;inset:0 0 auto 0;height:70%;background:url(ready-top.jpg) top/100% auto no-repeat}
+.cancel{position:absolute;top:44px;left:18px;color:#5D7686;font-weight:700;font-size:14px}
+.controls{position:absolute;left:12px;right:12px;bottom:14px;display:flex;flex-direction:column;gap:7px}
+.row2{display:flex;gap:7px}
+.pill{flex:1;background:#F4EFE5;border-radius:18px;display:flex;align-items:center;gap:7px;padding:9px 10px;box-shadow:0 2px 0 rgba(0,0,0,.06)}
+.pill img{width:26px;height:26px;border-radius:6px}
+.pill div{display:flex;flex-direction:column;flex:1;min-width:0}
+.pill b{font-size:13px;font-weight:800} .pill span{font-size:10.5px;color:var(--ink2)}
+.pill i{font-style:normal;color:var(--ink2);font-size:14px}
+.pill.wide{flex:none}
+.toggle{width:36px;height:21px;border-radius:12px;background:#CFC8BC;position:relative;flex:none}
+.toggle::after{content:"";position:absolute;left:2px;top:2px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2)}
+.toggle.on{background:var(--green)} .toggle.on::after{left:17px}
+.toggle.small{width:30px;height:18px} .toggle.small::after{width:14px;height:14px} .toggle.small.on::after{left:14px}
+.watchrow{align-self:center;background:#F4EFE5;border-radius:999px;display:flex;align-items:center;gap:6px;padding:5px 7px 5px 11px;font-size:11.5px;box-shadow:0 2px 0 rgba(0,0,0,.06)}
+.watchrow b{font-weight:800}
+.wicon{display:inline-flex;color:var(--ink)} .wsvg{width:15px;height:15px} .wicon.big .wsvg{width:26px;height:26px} .src .wsvg{width:11px;height:11px;vertical-align:-1px}
+.ok{display:inline-flex;align-items:center;gap:3px;color:var(--greenshade);font-weight:800;font-size:11px}
+.tick{display:inline-grid;place-items:center;width:13px;height:13px;border-radius:50%;background:var(--green);color:#fff;font-size:8.5px;font-weight:900}
+.muted{color:var(--ink2);font-size:11px}
+.setup{background:var(--skydeep);color:#fff;border-radius:999px;padding:3px 8px;font-weight:800;font-size:10.5px}
+.begin{background:var(--gold);box-shadow:0 3px 0 var(--goldshade);border-radius:17px;text-align:center;padding:11px;font-weight:900;font-size:15px}
+.new{outline:2.5px dashed #E7B84C;outline-offset:3px}
+
+.dim{position:absolute;inset:0;background:rgba(20,26,30,.38)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#FBF8F2;border-radius:24px 24px 0 0;padding:10px 16px 16px;display:flex;flex-direction:column;gap:8px}
+.grab{width:36px;height:4px;border-radius:2px;background:#CFC8BC;align-self:center;margin-bottom:4px}
+.sheet h4{margin:0;font-size:17px;font-weight:900}
+.sheet-sub{margin:0;color:var(--ink2);font-size:11.5px;line-height:1.4}
+.steps{margin:2px 0 0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:9px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:22px 1fr;column-gap:8px;font-size:11.5px;line-height:1.35}
+.steps li::before{content:counter(s);grid-row:span 2;width:20px;height:20px;border-radius:50%;background:var(--skydeep);color:#fff;display:grid;place-items:center;font-weight:900;font-size:11px}
+.steps b{font-weight:800} .steps span{color:var(--ink2)}
+.status{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;color:var(--ink2);background:#EFE8DC;border-radius:10px;padding:7px 9px}
+.status .dot{width:8px;height:8px;border-radius:50%;background:#C9A99A}
+.btn{text-align:center;border-radius:14px;padding:10px;font-weight:900;font-size:13.5px}
+.btn.green{background:var(--green);color:#fff;box-shadow:0 3px 0 var(--greenshade)}
+.btn.ghost{color:var(--ink2)}
+
+.band{position:absolute;inset:0 0 auto 0;height:118px;background:linear-gradient(#8FC0D9,#C9E0E6 78%,#B6CFA5);}
+.band.tall{height:170px} .band.short{height:112px}
+.set-title{position:absolute;top:58px;left:18px;font-size:24px;font-weight:900;color:#27465B}
+.set-body,.sess-body{position:absolute;left:12px;right:12px;bottom:12px;display:flex;flex-direction:column;gap:8px}
+.set-body{top:122px} .sess-body{top:178px}
+.set-label{color:#fff;font-weight:900;font-size:13px;text-shadow:0 1px 2px rgba(0,0,0,.25);margin:4px 2px 0}
+.set-note{color:#fff;font-size:11px;font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,.25);margin:0 2px}
+.card{background:var(--sand);border-radius:18px;padding:11px 12px;box-shadow:0 2px 0 rgba(0,0,0,.06)}
+.srow{display:flex;align-items:center;gap:9px;justify-content:space-between}
+.srow div{display:flex;flex-direction:column;flex:1}
+.srow b{font-size:12.5px;font-weight:800} .srow span{font-size:10.5px;color:var(--ink2)}
+.srow .ok{font-size:11px;color:var(--greenshade)}
+.srow i{font-style:normal;color:var(--ink2)}
+.hr{height:1px;background:rgba(65,48,36,.1);margin:8px 0}
+
+.band-x{position:absolute;top:44px;left:16px;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.7);display:grid;place-items:center;font-size:12px;font-weight:900}
+.band-len{position:absolute;top:66px;left:0;right:0;text-align:center;font-size:34px;font-weight:900;color:#27465B}
+.band-title{position:absolute;top:108px;left:0;right:0;text-align:center;font-weight:900;font-size:14px;color:#27465B}
+.band-meta{position:absolute;top:128px;left:0;right:0;text-align:center;font-size:10.5px;color:#4E6776}
+.band-otto{position:absolute;right:10px;top:122px;width:54px}
+.body-card{display:flex;flex-direction:column;gap:8px}
+.bc-head{display:flex;justify-content:space-between;align-items:center}
+.bc-head b{font-size:14px;font-weight:900} .src{font-size:10px;font-weight:800;color:var(--calm);background:rgba(51,106,96,.1);border-radius:999px;padding:2px 7px}
+.reading{display:flex;align-items:center;gap:8px}
+.reading>div{display:flex;flex-direction:column;flex:1}
+.rl{font-size:10px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em}
+.rv{font-size:14px;font-weight:900;color:var(--calm)}
+.rn{font-size:10px;color:var(--ink2)}
+.spark{width:84px;height:30px;flex:none}
+.see{text-align:center;font-weight:900;font-size:12px;color:var(--skydeep);padding-top:2px}
+.q b{font-size:12.5px;font-weight:800;display:block} .q-sub{font-size:10.5px;color:var(--ink2)}
+.slider{height:6px;border-radius:3px;background:#DCD4C7;margin:7px 0 4px} .slider span{display:block;height:100%;border-radius:3px;background:var(--skydeep)}
+
+.band-back{position:absolute;top:44px;left:16px;font-size:24px;font-weight:900;color:#27465B}
+.band-h{position:absolute;top:60px;left:0;right:0;text-align:center;font-size:20px;font-weight:900;color:#27465B}
+.band-m{position:absolute;top:86px;left:0;right:0;text-align:center;font-size:10.5px;color:#4E6776}
+.graphs .sess-body{top:118px;gap:7px}
+.chart{padding:9px 11px 8px}
+.ch-head{display:flex;justify-content:space-between;align-items:baseline}
+.ch-head b{font-size:12.5px;font-weight:900}
+.ch-plot{display:flex;gap:4px;margin-top:5px}
+.ch-plot svg{flex:1;height:70px}
+.yl{display:flex;flex-direction:column;justify-content:space-between;font-size:8.5px;color:var(--ink2);width:20px;text-align:right}
+.xl{display:flex;justify-content:space-between;font-size:8.5px;color:var(--ink2);padding-left:24px;margin-top:1px}
+.ch-note{font-size:10.5px;color:var(--ink);margin-top:4px}
+
+.watchfig{width:420px;max-width:100%}
+.watches{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.watches .watch{margin:18px 6px;width:170px}
+.wmark{font-size:30px;font-weight:900;color:#F0C47B;letter-spacing:.02em}
+.wbegin{background:#F0C47B;color:#3A2A1E;border-radius:999px;padding:8px 34px;font-weight:900;font-size:14px}
+.wsound{font-size:10px;color:#9EA59E}
+.wend{background:#3A3A3C;color:#fff;border-radius:999px;padding:5px 26px;font-weight:800;font-size:12px}
+.watch{width:190px;aspect-ratio:190/232;margin:18px auto;border-radius:48px;background:#0C0C0C;box-shadow:0 0 0 9px #2B2B2B,0 16px 30px rgba(0,0,0,.25);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:#fff}
+.watch .t{position:absolute;top:16px;right:22px;font-size:12px;color:#9EA59E;font-weight:700}
+.orb{width:98px;height:98px;border-radius:50%;background:radial-gradient(circle at 50% 45%,rgba(90,185,160,.55),rgba(51,106,96,.25) 60%,transparent 72%);display:grid;place-items:center;font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.watch .lbl{font-size:11px;color:#A8C8BD;display:flex;align-items:center;gap:4px}
+
+
+.notes{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:10px}
+.note{background:var(--pagecard);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.5}
+.note b{display:block;margin-bottom:3px}
+.note p{margin:0;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){.orb{animation:breathe 10s ease-in-out infinite}}
+@keyframes breathe{0%,100%{transform:scale(.88)}40%,60%{transform:scale(1.04)}}
+</style>
+<div class="wrap">
+<header>
+  <h1>Meditating with an Apple Watch</h1>
+  <p>Mockup for review before any code. People with a Watch start a session exactly as they do now and get their readings after; people without one never see a gap. Readings only, no score. Part of premium, like the rest of 808. Numbers on these screens are an example session.</p>
+  <div class="legend"><span>New on the screen</span></div>
+</header>
+
+<section>
+  <h2>1. The + screen</h2>
+  <p>A small Apple Watch switch under Silence notifications, deliberately smaller than the other pills. It only appears when a Watch is paired to the phone; with no Watch paired it does not show at all.</p>
+  <div class="screens">
+    <figure><div class="phone "><div class="island"></div>
+<div class="ready-bg"></div>
+<div class="controls">
+  <div class="row2">
+    <div class="pill"><img src="icon-hourglass.jpg" alt=""><div><b>Meditate</b><span>Timer only</span></div><i>›</i></div>
+    <div class="pill"><img src="icon-bowl.jpg" alt=""><div><b>Sound</b><span>Silence</span></div><i>›</i></div>
+  </div>
+  <div class="pill wide"><img src="icon-moon.jpg" alt=""><div><b>Silence notifications</b><span>Do Not Disturb while you sit</span></div><em class="toggle"></em></div>
+  <div class="watchrow new"><span class="wicon"><svg class="wsvg" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="1.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="6.5" y="18.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v3.8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><b>Apple Watch</b><span class="ok"><span class="tick">✓</span>Connected</span><em class="toggle on small"></em></div>
+  <div class="begin">Begin</div>
+</div></div><figcaption><b>Watch connected</b>Green check, and the switch starts on because this Watch has connected to 808 before and is connected now. A Watch that has never connected, or isn't connected today, starts with it off. Begin starts the session on the phone straight away and asks the Watch to measure it in the background; if the Watch doesn't answer, the session just carries on.</figcaption></figure>
+    <figure><div class="phone "><div class="island"></div>
+<div class="ready-bg"></div>
+<div class="controls">
+  <div class="row2">
+    <div class="pill"><img src="icon-hourglass.jpg" alt=""><div><b>Meditate</b><span>Timer only</span></div><i>›</i></div>
+    <div class="pill"><img src="icon-bowl.jpg" alt=""><div><b>Sound</b><span>Silence</span></div><i>›</i></div>
+  </div>
+  <div class="pill wide"><img src="icon-moon.jpg" alt=""><div><b>Silence notifications</b><span>Do Not Disturb while you sit</span></div><em class="toggle"></em></div>
+  <div class="watchrow new"><span class="wicon"><svg class="wsvg" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="1.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="6.5" y="18.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v3.8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><b>Apple Watch</b><span class="muted">Not connected</span><span class="setup">Set up ›</span></div>
+  <div class="begin">Begin</div>
+</div></div><figcaption><b>Watch paired, 808 not on it yet</b>"Not connected" and a Set up button that opens the steps.</figcaption></figure>
+    <figure><div class="phone "><div class="island"></div>
+<div class="ready-bg"></div>
+<div class="controls">
+  <div class="row2">
+    <div class="pill"><img src="icon-hourglass.jpg" alt=""><div><b>Meditate</b><span>Timer only</span></div><i>›</i></div>
+    <div class="pill"><img src="icon-bowl.jpg" alt=""><div><b>Sound</b><span>Silence</span></div><i>›</i></div>
+  </div>
+  <div class="pill wide"><img src="icon-moon.jpg" alt=""><div><b>Silence notifications</b><span>Do Not Disturb while you sit</span></div><em class="toggle"></em></div>
+  <div class="watchrow new"><span class="wicon"><svg class="wsvg" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="1.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="6.5" y="18.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v3.8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><b>Apple Watch</b><span class="muted">Not connected</span><span class="setup">Set up ›</span></div>
+  <div class="begin">Begin</div>
+</div>
+<div class="dim"></div>
+<div class="sheet">
+  <div class="grab"></div>
+  <h4>Connect your Apple Watch</h4>
+  <p class="sheet-sub">808 reads your heart rate and stillness while you meditate. Your phone works fine without it.</p>
+  <ol class="steps">
+    <li><b>Pair your Watch with this iPhone</b><span>In the Watch app on your iPhone, if it isn't already.</span></li>
+    <li><b>Put 808 on your Watch</b><span>Watch app on iPhone, then My Watch, then 808, then Install. Or turn on Automatic App Install.</span></li>
+    <li><b>Open 808 on your Watch once</b><span>Allow Health access so it can read your heart rate.</span></li>
+    <li><b>Come back here</b><span>The check turns green when 808 can see your Watch.</span></li>
+  </ol>
+  <div class="status off"><span class="dot"></span>Not connected yet</div>
+  <div class="btn green">Open the Watch app</div>
+  <div class="btn ghost">Done</div>
+</div></div><figcaption><b>The steps</b>Four steps, with the status updating live as soon as 808 can see the Watch. The same sheet opens from Settings.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>2. Settings</h2>
+  <p>An Apple Watch section at the top: which Watch, whether it's connected, a switch to stop measuring, and the same connect steps.</p>
+  <div class="screens">
+    <figure><div class="phone "><div class="island"></div>
+<div class="band"></div>
+<div class="set-title">Settings</div>
+<div class="set-body">
+  <div class="set-label">Apple Watch</div>
+  <div class="card">
+    <div class="srow"><span class="wicon big"><svg class="wsvg" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="1.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="6.5" y="18.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v3.8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><b>Aziz's Apple Watch</b><span class="ok"><span class="tick">✓</span>Connected</span></div></div>
+    <div class="hr"></div>
+    <div class="srow"><div><b>Measure my sessions</b><span>Heart rate, stillness and breathing</span></div><em class="toggle on"></em></div>
+    <div class="hr"></div>
+    <div class="srow link"><b>How to connect</b><i>›</i></div>
+  </div>
+  <div class="set-note">No Watch? Everything else in 808 works the same.</div>
+  <div class="set-label">Reminders</div>
+  <div class="card">
+    <div class="srow"><div><b>Daily reminder</b><span>8:00 AM</span></div><em class="toggle on"></em></div>
+  </div>
+  <div class="set-label">Membership</div>
+  <div class="card">
+    <div class="srow link"><b>Restore purchases</b><i>›</i></div>
+  </div>
+</div></div><figcaption><b>Settings</b>The switch here and the one on the + screen are the same setting. It turns itself on the first time a Watch connects, and after that remembers what you chose.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>3. After a measured session</h2>
+  <p>The session page gains a "Your body" card only when the Watch measured the session. Three readings in plain words with a small line each, and a way into the full graphs.</p>
+  <div class="screens">
+    <figure><div class="phone "><div class="island"></div>
+<div class="band tall"><div class="band-x">✕</div>
+  <div class="band-len">12 min</div>
+  <div class="band-title">Evening session</div>
+  <div class="band-meta">Today, 9:14 PM · Silence</div>
+  <img class="band-otto" src="otto-head.png" alt="">
+</div>
+<div class="sess-body">
+  <div class="card body-card new">
+    <div class="bc-head"><b>Your body</b><span class="src"><svg class="wsvg" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="1.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="6.5" y="18.5" width="11" height="4" rx="1.5" fill="currentColor" opacity=".55"/><rect x="4.5" y="4.5" width="15" height="15" rx="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 8.5v3.8l2.4 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg> Apple Watch</span></div>
+    <div class="reading"><div><span class="rl">Heart rate</span><span class="rv">74 → 63 bpm</span><span class="rn">Settled by minute 5</span></div><svg viewBox="0 0 252 92" preserveAspectRatio="none" class="spark"><path d="M6.0 26.0 C9.3 26.0 9.3 27.2 12.7 27.2 C16.0 27.2 16.0 35.4 19.3 35.4 C22.7 35.4 22.7 35.4 26.0 35.4 C29.3 35.4 29.3 41.7 32.7 41.7 C36.0 41.7 36.0 43.5 39.3 43.5 C42.7 43.5 42.7 41.7 46.0 41.7 C49.3 41.7 49.3 48.3 52.7 48.3 C56.0 48.3 56.0 47.9 59.3 47.9 C62.7 47.9 62.7 50.8 66.0 50.8 C69.3 50.8 69.3 52.5 72.7 52.5 C76.0 52.5 76.0 53.8 79.3 53.8 C82.7 53.8 82.7 56.9 86.0 56.9 C89.3 56.9 89.3 54.7 92.7 54.7 C96.0 54.7 96.0 60.0 99.3 60.0 C102.7 60.0 102.7 60.2 106.0 60.2 C109.3 60.2 109.3 62.4 112.7 62.4 C116.0 62.4 116.0 61.9 119.3 61.9 C122.7 61.9 122.7 62.0 126.0 62.0 C129.3 62.0 129.3 59.9 132.7 59.9 C136.0 59.9 136.0 63.5 139.3 63.5 C142.7 63.5 142.7 65.6 146.0 65.6 C149.3 65.6 149.3 65.4 152.7 65.4 C156.0 65.4 156.0 61.8 159.3 61.8 C162.7 61.8 162.7 67.5 166.0 67.5 C169.3 67.5 169.3 64.8 172.7 64.8 C176.0 64.8 176.0 66.5 179.3 66.5 C182.7 66.5 182.7 65.3 186.0 65.3 C189.3 65.3 189.3 67.5 192.7 67.5 C196.0 67.5 196.0 65.8 199.3 65.8 C202.7 65.8 202.7 67.1 206.0 67.1 C209.3 67.1 209.3 66.5 212.7 66.5 C216.0 66.5 216.0 65.4 219.3 65.4 C222.7 65.4 222.7 67.4 226.0 67.4 C229.3 67.4 229.3 70.0 232.7 70.0 C236.0 70.0 236.0 70.6 239.3 70.6 C242.7 70.6 242.7 70.0 246.0 70.0 L246.0 92.0 L6.0 92.0 Z" fill="#336A60" opacity=".16"/><path d="M6.0 26.0 C9.3 26.0 9.3 27.2 12.7 27.2 C16.0 27.2 16.0 35.4 19.3 35.4 C22.7 35.4 22.7 35.4 26.0 35.4 C29.3 35.4 29.3 41.7 32.7 41.7 C36.0 41.7 36.0 43.5 39.3 43.5 C42.7 43.5 42.7 41.7 46.0 41.7 C49.3 41.7 49.3 48.3 52.7 48.3 C56.0 48.3 56.0 47.9 59.3 47.9 C62.7 47.9 62.7 50.8 66.0 50.8 C69.3 50.8 69.3 52.5 72.7 52.5 C76.0 52.5 76.0 53.8 79.3 53.8 C82.7 53.8 82.7 56.9 86.0 56.9 C89.3 56.9 89.3 54.7 92.7 54.7 C96.0 54.7 96.0 60.0 99.3 60.0 C102.7 60.0 102.7 60.2 106.0 60.2 C109.3 60.2 109.3 62.4 112.7 62.4 C116.0 62.4 116.0 61.9 119.3 61.9 C122.7 61.9 122.7 62.0 126.0 62.0 C129.3 62.0 129.3 59.9 132.7 59.9 C136.0 59.9 136.0 63.5 139.3 63.5 C142.7 63.5 142.7 65.6 146.0 65.6 C149.3 65.6 149.3 65.4 152.7 65.4 C156.0 65.4 156.0 61.8 159.3 61.8 C162.7 61.8 162.7 67.5 166.0 67.5 C169.3 67.5 169.3 64.8 172.7 64.8 C176.0 64.8 176.0 66.5 179.3 66.5 C182.7 66.5 182.7 65.3 186.0 65.3 C189.3 65.3 189.3 67.5 192.7 67.5 C196.0 67.5 196.0 65.8 199.3 65.8 C202.7 65.8 202.7 67.1 206.0 67.1 C209.3 67.1 209.3 66.5 212.7 66.5 C216.0 66.5 216.0 65.4 219.3 65.4 C222.7 65.4 222.7 67.4 226.0 67.4 C229.3 67.4 229.3 70.0 232.7 70.0 C236.0 70.0 236.0 70.6 239.3 70.6 C242.7 70.6 242.7 70.0 246.0 70.0" fill="none" stroke="#336A60" stroke-width="5" stroke-linecap="round"/></svg></div>
+    <div class="reading"><div><span class="rl">Stillness</span><span class="rv">Very still</span><span class="rn">Barely moved after minute 3</span></div><svg viewBox="0 0 252 92" preserveAspectRatio="none" class="spark"><path d="M6.0 36.4 C9.3 36.4 9.3 33.3 12.7 33.3 C16.0 33.3 16.0 27.5 19.3 27.5 C22.7 27.5 22.7 25.8 26.0 25.8 C29.3 25.8 29.3 22.8 32.7 22.8 C36.0 22.8 36.0 20.3 39.3 20.3 C42.7 20.3 42.7 20.4 46.0 20.4 C49.3 20.4 49.3 18.7 52.7 18.7 C56.0 18.7 56.0 15.7 59.3 15.7 C62.7 15.7 62.7 17.1 66.0 17.1 C69.3 17.1 69.3 14.1 72.7 14.1 C76.0 14.1 76.0 15.5 79.3 15.5 C82.7 15.5 82.7 13.0 86.0 13.0 C89.3 13.0 89.3 12.4 92.7 12.4 C96.0 12.4 96.0 11.1 99.3 11.1 C102.7 11.1 102.7 11.1 106.0 11.1 C109.3 11.1 109.3 11.8 112.7 11.8 C116.0 11.8 116.0 12.5 119.3 12.5 C122.7 12.5 122.7 12.4 126.0 12.4 C129.3 12.4 129.3 11.0 132.7 11.0 C136.0 11.0 136.0 10.9 139.3 10.9 C142.7 10.9 142.7 12.2 146.0 12.2 C149.3 12.2 149.3 9.4 152.7 9.4 C156.0 9.4 156.0 10.5 159.3 10.5 C162.7 10.5 162.7 9.8 166.0 9.8 C169.3 9.8 169.3 11.3 172.7 11.3 C176.0 11.3 176.0 11.2 179.3 11.2 C182.7 11.2 182.7 11.9 186.0 11.9 C189.3 11.9 189.3 10.7 192.7 10.7 C196.0 10.7 196.0 11.0 199.3 11.0 C202.7 11.0 202.7 10.4 206.0 10.4 C209.3 10.4 209.3 10.5 212.7 10.5 C216.0 10.5 216.0 9.1 219.3 9.1 C222.7 9.1 222.7 8.9 226.0 8.9 C229.3 8.9 229.3 11.1 232.7 11.1 C236.0 11.1 236.0 10.4 239.3 10.4 C242.7 10.4 242.7 11.1 246.0 11.1 L246.0 92.0 L6.0 92.0 Z" fill="#336A60" opacity=".16"/><path d="M6.0 36.4 C9.3 36.4 9.3 33.3 12.7 33.3 C16.0 33.3 16.0 27.5 19.3 27.5 C22.7 27.5 22.7 25.8 26.0 25.8 C29.3 25.8 29.3 22.8 32.7 22.8 C36.0 22.8 36.0 20.3 39.3 20.3 C42.7 20.3 42.7 20.4 46.0 20.4 C49.3 20.4 49.3 18.7 52.7 18.7 C56.0 18.7 56.0 15.7 59.3 15.7 C62.7 15.7 62.7 17.1 66.0 17.1 C69.3 17.1 69.3 14.1 72.7 14.1 C76.0 14.1 76.0 15.5 79.3 15.5 C82.7 15.5 82.7 13.0 86.0 13.0 C89.3 13.0 89.3 12.4 92.7 12.4 C96.0 12.4 96.0 11.1 99.3 11.1 C102.7 11.1 102.7 11.1 106.0 11.1 C109.3 11.1 109.3 11.8 112.7 11.8 C116.0 11.8 116.0 12.5 119.3 12.5 C122.7 12.5 122.7 12.4 126.0 12.4 C129.3 12.4 129.3 11.0 132.7 11.0 C136.0 11.0 136.0 10.9 139.3 10.9 C142.7 10.9 142.7 12.2 146.0 12.2 C149.3 12.2 149.3 9.4 152.7 9.4 C156.0 9.4 156.0 10.5 159.3 10.5 C162.7 10.5 162.7 9.8 166.0 9.8 C169.3 9.8 169.3 11.3 172.7 11.3 C176.0 11.3 176.0 11.2 179.3 11.2 C182.7 11.2 182.7 11.9 186.0 11.9 C189.3 11.9 189.3 10.7 192.7 10.7 C196.0 10.7 196.0 11.0 199.3 11.0 C202.7 11.0 202.7 10.4 206.0 10.4 C209.3 10.4 209.3 10.5 212.7 10.5 C216.0 10.5 216.0 9.1 219.3 9.1 C222.7 9.1 222.7 8.9 226.0 8.9 C229.3 8.9 229.3 11.1 232.7 11.1 C236.0 11.1 236.0 10.4 239.3 10.4 C242.7 10.4 242.7 11.1 246.0 11.1" fill="none" stroke="#336A60" stroke-width="5" stroke-linecap="round"/></svg></div>
+    <div class="reading"><div><span class="rl">Breathing</span><span class="rv">5.8 a minute</span><span class="rn">Slow for the first 3 minutes</span></div><svg viewBox="0 0 252 92" preserveAspectRatio="none" class="spark"><path d="M6.0 62.5 C9.3 62.5 9.3 61.9 12.7 61.9 C16.0 61.9 16.0 63.4 19.3 63.4 C22.7 63.4 22.7 62.3 26.0 62.3 C29.3 62.3 29.3 63.2 32.7 63.2 C36.0 63.2 36.0 63.8 39.3 63.8 C42.7 63.8 42.7 62.3 46.0 62.3 C49.3 62.3 49.3 63.1 52.7 63.1 C56.0 63.1 56.0 63.5 59.3 63.5 C62.7 63.5 62.7 62.9 66.0 62.9 C69.3 62.9 69.3 42.3 72.7 42.3 C76.0 42.3 76.0 41.0 79.3 41.0 C82.7 41.0 82.7 40.8 86.0 40.8 C89.3 40.8 89.3 41.0 92.7 41.0 C96.0 41.0 96.0 39.8 99.3 39.8 C102.7 39.8 102.7 41.9 106.0 41.9 C109.3 41.9 109.3 43.3 112.7 43.3 C116.0 43.3 116.0 43.4 119.3 43.4 C122.7 43.4 122.7 43.2 126.0 43.2 C129.3 43.2 129.3 40.2 132.7 40.2 C136.0 40.2 136.0 41.4 139.3 41.4 C142.7 41.4 142.7 38.2 146.0 38.2 C149.3 38.2 149.3 40.4 152.7 40.4 C156.0 40.4 156.0 38.9 159.3 38.9 C162.7 38.9 162.7 36.9 166.0 36.9 C169.3 36.9 169.3 43.5 172.7 43.5 C176.0 43.5 176.0 43.9 179.3 43.9 C182.7 43.9 182.7 43.0 186.0 43.0 C189.3 43.0 189.3 41.2 192.7 41.2 C196.0 41.2 196.0 39.9 199.3 39.9 C202.7 39.9 202.7 38.6 206.0 38.6 C209.3 38.6 209.3 41.5 212.7 41.5 C216.0 41.5 216.0 37.1 219.3 37.1 C222.7 37.1 222.7 44.0 226.0 44.0 C229.3 44.0 229.3 38.0 232.7 38.0 C236.0 38.0 236.0 42.5 239.3 42.5 C242.7 42.5 242.7 37.7 246.0 37.7 L246.0 92.0 L6.0 92.0 Z" fill="#336A60" opacity=".16"/><path d="M6.0 62.5 C9.3 62.5 9.3 61.9 12.7 61.9 C16.0 61.9 16.0 63.4 19.3 63.4 C22.7 63.4 22.7 62.3 26.0 62.3 C29.3 62.3 29.3 63.2 32.7 63.2 C36.0 63.2 36.0 63.8 39.3 63.8 C42.7 63.8 42.7 62.3 46.0 62.3 C49.3 62.3 49.3 63.1 52.7 63.1 C56.0 63.1 56.0 63.5 59.3 63.5 C62.7 63.5 62.7 62.9 66.0 62.9 C69.3 62.9 69.3 42.3 72.7 42.3 C76.0 42.3 76.0 41.0 79.3 41.0 C82.7 41.0 82.7 40.8 86.0 40.8 C89.3 40.8 89.3 41.0 92.7 41.0 C96.0 41.0 96.0 39.8 99.3 39.8 C102.7 39.8 102.7 41.9 106.0 41.9 C109.3 41.9 109.3 43.3 112.7 43.3 C116.0 43.3 116.0 43.4 119.3 43.4 C122.7 43.4 122.7 43.2 126.0 43.2 C129.3 43.2 129.3 40.2 132.7 40.2 C136.0 40.2 136.0 41.4 139.3 41.4 C142.7 41.4 142.7 38.2 146.0 38.2 C149.3 38.2 149.3 40.4 152.7 40.4 C156.0 40.4 156.0 38.9 159.3 38.9 C162.7 38.9 162.7 36.9 166.0 36.9 C169.3 36.9 169.3 43.5 172.7 43.5 C176.0 43.5 176.0 43.9 179.3 43.9 C182.7 43.9 182.7 43.0 186.0 43.0 C189.3 43.0 189.3 41.2 192.7 41.2 C196.0 41.2 196.0 39.9 199.3 39.9 C202.7 39.9 202.7 38.6 206.0 38.6 C209.3 38.6 209.3 41.5 212.7 41.5 C216.0 41.5 216.0 37.1 219.3 37.1 C222.7 37.1 222.7 44.0 226.0 44.0 C229.3 44.0 229.3 38.0 232.7 38.0 C236.0 38.0 236.0 42.5 239.3 42.5 C242.7 42.5 242.7 37.7 246.0 37.7" fill="none" stroke="#336A60" stroke-width="5" stroke-linecap="round"/></svg></div>
+    <div class="see">See the graphs ›</div>
+  </div>
+  <div class="card q"><b>How did it feel?</b><div class="slider"><span style="width:70%"></span></div><span class="q-sub">7 out of 10</span></div>
+  <div class="card q"><b>What did you do?</b><span class="q-sub">Silence</span></div>
+</div></div><figcaption><b>The session page</b>Same page as today, with the readings card first. Phone-only sessions show no card at all.</figcaption></figure>
+    <figure><div class="phone graphs"><div class="island"></div>
+<div class="band short"><div class="band-back">‹</div><div class="band-h">Your body</div><div class="band-m">12 min · Today, 9:14 PM</div></div>
+<div class="sess-body">
+  <div class="card chart">
+  <div class="ch-head"><b>Heart rate</b><span class="rv">74 → 63 bpm</span></div>
+  <div class="ch-plot"><div class="yl"><span>79</span><span>59</span></div>
+  <svg viewBox="0 0 252 92" preserveAspectRatio="none">
+    <line x1="0" y1="46.0" x2="252" y2="46.0" stroke="#6F5D4F" stroke-opacity=".12"/>
+    <path d="M6.0 26.0 C9.3 26.0 9.3 27.2 12.7 27.2 C16.0 27.2 16.0 35.4 19.3 35.4 C22.7 35.4 22.7 35.4 26.0 35.4 C29.3 35.4 29.3 41.7 32.7 41.7 C36.0 41.7 36.0 43.5 39.3 43.5 C42.7 43.5 42.7 41.7 46.0 41.7 C49.3 41.7 49.3 48.3 52.7 48.3 C56.0 48.3 56.0 47.9 59.3 47.9 C62.7 47.9 62.7 50.8 66.0 50.8 C69.3 50.8 69.3 52.5 72.7 52.5 C76.0 52.5 76.0 53.8 79.3 53.8 C82.7 53.8 82.7 56.9 86.0 56.9 C89.3 56.9 89.3 54.7 92.7 54.7 C96.0 54.7 96.0 60.0 99.3 60.0 C102.7 60.0 102.7 60.2 106.0 60.2 C109.3 60.2 109.3 62.4 112.7 62.4 C116.0 62.4 116.0 61.9 119.3 61.9 C122.7 61.9 122.7 62.0 126.0 62.0 C129.3 62.0 129.3 59.9 132.7 59.9 C136.0 59.9 136.0 63.5 139.3 63.5 C142.7 63.5 142.7 65.6 146.0 65.6 C149.3 65.6 149.3 65.4 152.7 65.4 C156.0 65.4 156.0 61.8 159.3 61.8 C162.7 61.8 162.7 67.5 166.0 67.5 C169.3 67.5 169.3 64.8 172.7 64.8 C176.0 64.8 176.0 66.5 179.3 66.5 C182.7 66.5 182.7 65.3 186.0 65.3 C189.3 65.3 189.3 67.5 192.7 67.5 C196.0 67.5 196.0 65.8 199.3 65.8 C202.7 65.8 202.7 67.1 206.0 67.1 C209.3 67.1 209.3 66.5 212.7 66.5 C216.0 66.5 216.0 65.4 219.3 65.4 C222.7 65.4 222.7 67.4 226.0 67.4 C229.3 67.4 229.3 70.0 232.7 70.0 C236.0 70.0 236.0 70.6 239.3 70.6 C242.7 70.6 242.7 70.0 246.0 70.0 L246.0 92.0 L6.0 92.0 Z" fill="#336A60" opacity=".12"/><path d="M6.0 26.0 C9.3 26.0 9.3 27.2 12.7 27.2 C16.0 27.2 16.0 35.4 19.3 35.4 C22.7 35.4 22.7 35.4 26.0 35.4 C29.3 35.4 29.3 41.7 32.7 41.7 C36.0 41.7 36.0 43.5 39.3 43.5 C42.7 43.5 42.7 41.7 46.0 41.7 C49.3 41.7 49.3 48.3 52.7 48.3 C56.0 48.3 56.0 47.9 59.3 47.9 C62.7 47.9 62.7 50.8 66.0 50.8 C69.3 50.8 69.3 52.5 72.7 52.5 C76.0 52.5 76.0 53.8 79.3 53.8 C82.7 53.8 82.7 56.9 86.0 56.9 C89.3 56.9 89.3 54.7 92.7 54.7 C96.0 54.7 96.0 60.0 99.3 60.0 C102.7 60.0 102.7 60.2 106.0 60.2 C109.3 60.2 109.3 62.4 112.7 62.4 C116.0 62.4 116.0 61.9 119.3 61.9 C122.7 61.9 122.7 62.0 126.0 62.0 C129.3 62.0 129.3 59.9 132.7 59.9 C136.0 59.9 136.0 63.5 139.3 63.5 C142.7 63.5 142.7 65.6 146.0 65.6 C149.3 65.6 149.3 65.4 152.7 65.4 C156.0 65.4 156.0 61.8 159.3 61.8 C162.7 61.8 162.7 67.5 166.0 67.5 C169.3 67.5 169.3 64.8 172.7 64.8 C176.0 64.8 176.0 66.5 179.3 66.5 C182.7 66.5 182.7 65.3 186.0 65.3 C189.3 65.3 189.3 67.5 192.7 67.5 C196.0 67.5 196.0 65.8 199.3 65.8 C202.7 65.8 202.7 67.1 206.0 67.1 C209.3 67.1 209.3 66.5 212.7 66.5 C216.0 66.5 216.0 65.4 219.3 65.4 C222.7 65.4 222.7 67.4 226.0 67.4 C229.3 67.4 229.3 70.0 232.7 70.0 C236.0 70.0 236.0 70.6 239.3 70.6 C242.7 70.6 242.7 70.0 246.0 70.0" fill="none" stroke="#336A60" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+  <div class="xl"><span>0</span><span>6 min</span><span>12 min</span></div>
+  <div class="ch-note">Your heart settled 11 beats and stayed there.</div>
+</div>
+  <div class="card chart">
+  <div class="ch-head"><b>Stillness</b><span class="rv">Very still</span></div>
+  <div class="ch-plot"><div class="yl"><span>100%</span><span>0</span></div>
+  <svg viewBox="0 0 252 92" preserveAspectRatio="none">
+    <line x1="0" y1="46.0" x2="252" y2="46.0" stroke="#6F5D4F" stroke-opacity=".12"/>
+    <path d="M6.0 36.4 C9.3 36.4 9.3 33.3 12.7 33.3 C16.0 33.3 16.0 27.5 19.3 27.5 C22.7 27.5 22.7 25.8 26.0 25.8 C29.3 25.8 29.3 22.8 32.7 22.8 C36.0 22.8 36.0 20.3 39.3 20.3 C42.7 20.3 42.7 20.4 46.0 20.4 C49.3 20.4 49.3 18.7 52.7 18.7 C56.0 18.7 56.0 15.7 59.3 15.7 C62.7 15.7 62.7 17.1 66.0 17.1 C69.3 17.1 69.3 14.1 72.7 14.1 C76.0 14.1 76.0 15.5 79.3 15.5 C82.7 15.5 82.7 13.0 86.0 13.0 C89.3 13.0 89.3 12.4 92.7 12.4 C96.0 12.4 96.0 11.1 99.3 11.1 C102.7 11.1 102.7 11.1 106.0 11.1 C109.3 11.1 109.3 11.8 112.7 11.8 C116.0 11.8 116.0 12.5 119.3 12.5 C122.7 12.5 122.7 12.4 126.0 12.4 C129.3 12.4 129.3 11.0 132.7 11.0 C136.0 11.0 136.0 10.9 139.3 10.9 C142.7 10.9 142.7 12.2 146.0 12.2 C149.3 12.2 149.3 9.4 152.7 9.4 C156.0 9.4 156.0 10.5 159.3 10.5 C162.7 10.5 162.7 9.8 166.0 9.8 C169.3 9.8 169.3 11.3 172.7 11.3 C176.0 11.3 176.0 11.2 179.3 11.2 C182.7 11.2 182.7 11.9 186.0 11.9 C189.3 11.9 189.3 10.7 192.7 10.7 C196.0 10.7 196.0 11.0 199.3 11.0 C202.7 11.0 202.7 10.4 206.0 10.4 C209.3 10.4 209.3 10.5 212.7 10.5 C216.0 10.5 216.0 9.1 219.3 9.1 C222.7 9.1 222.7 8.9 226.0 8.9 C229.3 8.9 229.3 11.1 232.7 11.1 C236.0 11.1 236.0 10.4 239.3 10.4 C242.7 10.4 242.7 11.1 246.0 11.1 L246.0 92.0 L6.0 92.0 Z" fill="#336A60" opacity=".12"/><path d="M6.0 36.4 C9.3 36.4 9.3 33.3 12.7 33.3 C16.0 33.3 16.0 27.5 19.3 27.5 C22.7 27.5 22.7 25.8 26.0 25.8 C29.3 25.8 29.3 22.8 32.7 22.8 C36.0 22.8 36.0 20.3 39.3 20.3 C42.7 20.3 42.7 20.4 46.0 20.4 C49.3 20.4 49.3 18.7 52.7 18.7 C56.0 18.7 56.0 15.7 59.3 15.7 C62.7 15.7 62.7 17.1 66.0 17.1 C69.3 17.1 69.3 14.1 72.7 14.1 C76.0 14.1 76.0 15.5 79.3 15.5 C82.7 15.5 82.7 13.0 86.0 13.0 C89.3 13.0 89.3 12.4 92.7 12.4 C96.0 12.4 96.0 11.1 99.3 11.1 C102.7 11.1 102.7 11.1 106.0 11.1 C109.3 11.1 109.3 11.8 112.7 11.8 C116.0 11.8 116.0 12.5 119.3 12.5 C122.7 12.5 122.7 12.4 126.0 12.4 C129.3 12.4 129.3 11.0 132.7 11.0 C136.0 11.0 136.0 10.9 139.3 10.9 C142.7 10.9 142.7 12.2 146.0 12.2 C149.3 12.2 149.3 9.4 152.7 9.4 C156.0 9.4 156.0 10.5 159.3 10.5 C162.7 10.5 162.7 9.8 166.0 9.8 C169.3 9.8 169.3 11.3 172.7 11.3 C176.0 11.3 176.0 11.2 179.3 11.2 C182.7 11.2 182.7 11.9 186.0 11.9 C189.3 11.9 189.3 10.7 192.7 10.7 C196.0 10.7 196.0 11.0 199.3 11.0 C202.7 11.0 202.7 10.4 206.0 10.4 C209.3 10.4 209.3 10.5 212.7 10.5 C216.0 10.5 216.0 9.1 219.3 9.1 C222.7 9.1 222.7 8.9 226.0 8.9 C229.3 8.9 229.3 11.1 232.7 11.1 C236.0 11.1 236.0 10.4 239.3 10.4 C242.7 10.4 242.7 11.1 246.0 11.1" fill="none" stroke="#336A60" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+  <div class="xl"><span>0</span><span>6 min</span><span>12 min</span></div>
+  <div class="ch-note">You barely moved after minute 3.</div>
+</div>
+  <div class="card chart">
+  <div class="ch-head"><b>Breathing</b><span class="rv">5.8 a minute</span></div>
+  <div class="ch-plot"><div class="yl"><span>20</span><span>0</span></div>
+  <svg viewBox="0 0 252 92" preserveAspectRatio="none"><rect x="6.0" y="0" width="64.0" height="92" fill="#336A60" opacity=".10"/>
+    <line x1="0" y1="46.0" x2="252" y2="46.0" stroke="#6F5D4F" stroke-opacity=".12"/>
+    <path d="M6.0 62.5 C9.3 62.5 9.3 61.9 12.7 61.9 C16.0 61.9 16.0 63.4 19.3 63.4 C22.7 63.4 22.7 62.3 26.0 62.3 C29.3 62.3 29.3 63.2 32.7 63.2 C36.0 63.2 36.0 63.8 39.3 63.8 C42.7 63.8 42.7 62.3 46.0 62.3 C49.3 62.3 49.3 63.1 52.7 63.1 C56.0 63.1 56.0 63.5 59.3 63.5 C62.7 63.5 62.7 62.9 66.0 62.9 C69.3 62.9 69.3 42.3 72.7 42.3 C76.0 42.3 76.0 41.0 79.3 41.0 C82.7 41.0 82.7 40.8 86.0 40.8 C89.3 40.8 89.3 41.0 92.7 41.0 C96.0 41.0 96.0 39.8 99.3 39.8 C102.7 39.8 102.7 41.9 106.0 41.9 C109.3 41.9 109.3 43.3 112.7 43.3 C116.0 43.3 116.0 43.4 119.3 43.4 C122.7 43.4 122.7 43.2 126.0 43.2 C129.3 43.2 129.3 40.2 132.7 40.2 C136.0 40.2 136.0 41.4 139.3 41.4 C142.7 41.4 142.7 38.2 146.0 38.2 C149.3 38.2 149.3 40.4 152.7 40.4 C156.0 40.4 156.0 38.9 159.3 38.9 C162.7 38.9 162.7 36.9 166.0 36.9 C169.3 36.9 169.3 43.5 172.7 43.5 C176.0 43.5 176.0 43.9 179.3 43.9 C182.7 43.9 182.7 43.0 186.0 43.0 C189.3 43.0 189.3 41.2 192.7 41.2 C196.0 41.2 196.0 39.9 199.3 39.9 C202.7 39.9 202.7 38.6 206.0 38.6 C209.3 38.6 209.3 41.5 212.7 41.5 C216.0 41.5 216.0 37.1 219.3 37.1 C222.7 37.1 222.7 44.0 226.0 44.0 C229.3 44.0 229.3 38.0 232.7 38.0 C236.0 38.0 236.0 42.5 239.3 42.5 C242.7 42.5 242.7 37.7 246.0 37.7 L246.0 92.0 L6.0 92.0 Z" fill="#336A60" opacity=".12"/><path d="M6.0 62.5 C9.3 62.5 9.3 61.9 12.7 61.9 C16.0 61.9 16.0 63.4 19.3 63.4 C22.7 63.4 22.7 62.3 26.0 62.3 C29.3 62.3 29.3 63.2 32.7 63.2 C36.0 63.2 36.0 63.8 39.3 63.8 C42.7 63.8 42.7 62.3 46.0 62.3 C49.3 62.3 49.3 63.1 52.7 63.1 C56.0 63.1 56.0 63.5 59.3 63.5 C62.7 63.5 62.7 62.9 66.0 62.9 C69.3 62.9 69.3 42.3 72.7 42.3 C76.0 42.3 76.0 41.0 79.3 41.0 C82.7 41.0 82.7 40.8 86.0 40.8 C89.3 40.8 89.3 41.0 92.7 41.0 C96.0 41.0 96.0 39.8 99.3 39.8 C102.7 39.8 102.7 41.9 106.0 41.9 C109.3 41.9 109.3 43.3 112.7 43.3 C116.0 43.3 116.0 43.4 119.3 43.4 C122.7 43.4 122.7 43.2 126.0 43.2 C129.3 43.2 129.3 40.2 132.7 40.2 C136.0 40.2 136.0 41.4 139.3 41.4 C142.7 41.4 142.7 38.2 146.0 38.2 C149.3 38.2 149.3 40.4 152.7 40.4 C156.0 40.4 156.0 38.9 159.3 38.9 C162.7 38.9 162.7 36.9 166.0 36.9 C169.3 36.9 169.3 43.5 172.7 43.5 C176.0 43.5 176.0 43.9 179.3 43.9 C182.7 43.9 182.7 43.0 186.0 43.0 C189.3 43.0 189.3 41.2 192.7 41.2 C196.0 41.2 196.0 39.9 199.3 39.9 C202.7 39.9 202.7 38.6 206.0 38.6 C209.3 38.6 209.3 41.5 212.7 41.5 C216.0 41.5 216.0 37.1 219.3 37.1 C222.7 37.1 222.7 44.0 226.0 44.0 C229.3 44.0 229.3 38.0 232.7 38.0 C236.0 38.0 236.0 42.5 239.3 42.5 C242.7 42.5 242.7 37.7 246.0 37.7" fill="none" stroke="#336A60" stroke-width="2.4" stroke-linecap="round"/></svg></div>
+  <div class="xl"><span>0</span><span>6 min</span><span>12 min</span></div>
+  <div class="ch-note">Slow breathing for the first 3 minutes, then natural.</div>
+</div>
+</div></div><figcaption><b>The graphs</b>Heart rate, stillness and breathing across the session, each with one sentence saying what happened. The shaded stretch is the slow breathing.</figcaption></figure>
+    <figure class="watchfig"><div class="watches">
+  <div class="watch"><span class="t">9:14</span><div class="wmark">808</div><div class="wbegin">Begin</div><div class="wsound">Silence · Open ›</div></div>
+  <div class="watch"><span class="t">9:26</span><div class="orb">12:48</div><div class="lbl">♥ Measuring</div><div class="wend">End</div></div>
+</div><figcaption><b>On the wrist</b>Start a session from the Watch, or end one there, whichever device you have in hand. Either way it's the same session on the phone and the same readings after. A quiet timer, no buzzing, per the no-haptics rule.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>Decided</h2>
+  <div class="notes">
+    <div class="note"><b>Decided</b><p>Readings only, no score. Part of premium. Start and end from the phone or the Watch. No Watch is never a problem and never mentioned to people without one.</p></div>
+    <div class="note"><b>Later</b><p>A question in onboarding about owning a Watch, so 808 can offer to set it up. Parked for now, as you said.</p></div>
+    <div class="note"><b>Default</b><p>On when your Watch has connected to 808 before and is connected now. Off otherwise, and never shown without a paired Watch.</p></div>
+  </div>
+</section>
+</div>

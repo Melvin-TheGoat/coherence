@@ -73,19 +73,10 @@ final class PhoneSessionTests: XCTestCase {
 }
 
 extension PhoneSessionTests {
-    /// The watchdog can hand a sit to the phone and the Watch's payload can
-    /// still land afterwards. Without this the late payload inserts a second
-    /// Session under the same id, and nothing in SwiftData objects.
-    func test_aLatePayloadDoesNotDuplicateAPhoneSession() throws {
-        let ctx = ModelContext(Persistence.inMemory())
-        let id = UUID()
-        let started = Date().addingTimeInterval(-600)
-        SessionStore.persistPhoneSession(id: id, startedAt: started,
-                                         mode: "silence", durationSec: 600, in: ctx)
-
-        let payload = SessionPayload(
-            sessionID: id, startedAt: started, mode: "silence",
-            bellyBreathing: false, durationSec: 600, discard: false,
+    private func measuredPayload(id: UUID, startedAt: Date, durationSec: Int = 600) -> SessionPayload {
+        SessionPayload(
+            sessionID: id, startedAt: startedAt, mode: "silence",
+            bellyBreathing: false, durationSec: durationSec, discard: false,
             result: SignalResult(
                 heartRateTimeseries: [70, 68], meanHR: 69, startHR: 70, endHR: 68,
                 hrDecline: 2,
@@ -98,7 +89,51 @@ extension PhoneSessionTests {
                 breathClarityTimeseries: [],
                 overallScore: 0.8, windowSec: 30, hopSec: 5,
                 algorithmVersion: "5.3.0"))
-        XCTAssertNil(SessionStore.persist(payload, in: ctx))
+    }
+
+    /// The phone can take a Watch sit over (the Watch never confirmed in
+    /// time, or End was tapped first) and write it as a phone sit. When the
+    /// Watch's measurements land afterwards they belong to that sit: attached
+    /// to the one row, never a second Session under the same id, and never
+    /// thrown away.
+    func test_aLatePayloadAttachesToThePhoneSessionItTookOver() throws {
+        let ctx = ModelContext(Persistence.inMemory())
+        let id = UUID()
+        let started = Date().addingTimeInterval(-600)
+        SessionStore.persistPhoneSession(id: id, startedAt: started,
+                                         mode: "silence", durationSec: 600, in: ctx)
+
+        let outcome = SessionStore.store(measuredPayload(id: id, startedAt: started.addingTimeInterval(20),
+                                                         durationSec: 560), in: ctx)
+        guard case .saved(let session) = outcome else {
+            return XCTFail("the readings attach to the phone's session")
+        }
+        XCTAssertEqual(session.id, id)
         XCTAssertEqual(try ctx.fetch(FetchDescriptor<Session>()).count, 1)
+        let stats = try ctx.fetch(FetchDescriptor<MeditationStats>(
+            predicate: #Predicate { $0.sessionID == id }))
+        XCTAssertEqual(stats.count, 1)
+        // It was measured after all, so it stops reading as unmeasured, and
+        // keeps the length the person actually sat.
+        XCTAssertFalse(session.isPhoneOnly)
+        XCTAssertEqual(session.durationSec, 600)
+        XCTAssertEqual(session.startedAt, started)
+
+        // The Watch's second copy is a duplicate, not a second attach.
+        guard case .alreadyStored = SessionStore.store(measuredPayload(id: id, startedAt: started),
+                                                       in: ctx) else {
+            return XCTFail("a second copy is a duplicate")
+        }
+        XCTAssertEqual(try ctx.fetch(FetchDescriptor<MeditationStats>()).count, 1)
+    }
+
+    /// A sit recorded by hand never takes a Watch's readings.
+    func test_aLoggedSessionNeverTakesAPayload() throws {
+        let ctx = ModelContext(Persistence.inMemory())
+        let id = UUID()
+        SessionStore.persistPhoneSession(id: id, startedAt: Date(), mode: "silence",
+                                         durationSec: 600, source: "logged", in: ctx)
+        XCTAssertNil(SessionStore.persist(measuredPayload(id: id, startedAt: Date()), in: ctx))
+        XCTAssertTrue(try ctx.fetch(FetchDescriptor<MeditationStats>()).isEmpty)
     }
 }

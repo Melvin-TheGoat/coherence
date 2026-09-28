@@ -49,8 +49,14 @@ public struct OnboardingResume: Codable, Equatable {
         return progress
     }
 
+    /// Set once onboarding's rating screen has asked for an App Store
+    /// rating, so a return visit to it does not ask again. Cleared with the
+    /// record, so each run of onboarding asks at most once.
+    public static let reviewAskedKey = "onboarding.reviewAsked.v1"
+
     public static func clear(from defaults: UserDefaults = .standard) {
         defaults.removeObject(forKey: key)
+        defaults.removeObject(forKey: reviewAskedKey)
     }
 
     /// The screen to reopen on. Some screens cannot be resumed because what
