@@ -179,7 +179,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "Seven days in a row, every single one.",
               group: .consistency, face: .number("7", unit: "days"),
               meaning: """
-              Every day of one calendar week had a sit in it. No rest day \
+              Every day of one calendar week had a session in it. No rest day \
               needed to bridge it, just seven days that all had time in them.
               """),
 
@@ -187,7 +187,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "Two sessions in the same day.",
               group: .consistency, face: .number("2", unit: "in a day"),
               meaning: """
-              Some days ask for more than one sit. This was one of them, and \
+              Some days ask for more than one session. This was one of them, and \
               you took it twice.
               """),
 
@@ -195,7 +195,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "Back after a week or more away.",
               group: .consistency, face: .mark,
               meaning: """
-              A week or longer between sits, and then another one anyway. \
+              A week or longer between sessions, and then another one anyway. \
               Coming back counts for just as much as never having stopped.
               """),
 
@@ -238,7 +238,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "A session around midday.",
               group: .timeOfDay, face: .mark,
               meaning: """
-              A sit tucked into the middle of the day, instead of at either \
+              A session tucked into the middle of the day, instead of at either \
               end of it.
               """),
 
@@ -262,7 +262,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "A session in every part of the day.",
               group: .timeOfDay, face: .mark,
               meaning: """
-              Morning, midday, evening, and late at night have each had a sit \
+              Morning, midday, evening, and late at night have each had a session \
               in them. There is no wrong hour for this.
               """),
 
@@ -272,7 +272,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "Three different sounds tried.",
               group: .variety, face: .number("3", unit: "sounds"),
               meaning: """
-              Three different sounds behind three different sits. The \
+              Three different sounds behind three different sessions. The \
               measurement is the same either way; this is just about what \
               you like to sit with.
               """),
@@ -301,18 +301,18 @@ public struct Award: Identifiable, Hashable {
               """),
 
         Award(id: "sessionRated", title: "Rated a session",
-              blurb: "Said how a sit felt, out of ten.",
+              blurb: "Said how a session felt, out of ten.",
               group: .variety, face: .mark,
               meaning: """
               Putting a number on how it felt is its own small habit, \
-              separate from the sit itself.
+              separate from the session itself.
               """),
 
         Award(id: "wroteANote", title: "Put it in words",
               blurb: "Wrote a note about a session.",
               group: .variety, face: .mark,
               meaning: """
-              A few words about a sit, kept alongside it, for whenever you \
+              A few words about a session, kept alongside it, for whenever you \
               want to remember what that day was like.
               """),
 
@@ -320,7 +320,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "Added a photo or video to a session.",
               group: .variety, face: .mark,
               meaning: """
-              A picture kept with a sit, so the log is more than just a list \
+              A picture kept with a session, so the log is more than just a list \
               of numbers.
               """),
 
@@ -330,7 +330,7 @@ public struct Award: Identifiable, Hashable {
               blurb: "Brought his colour back.",
               group: .otto, face: .mark,
               meaning: """
-              Otto starts the way everyone does, half gray. One sit was \
+              Otto starts the way everyone does, half gray. One session was \
               enough to bring his colour back.
               """),
 
@@ -387,7 +387,7 @@ public struct Award: Identifiable, Hashable {
         Award(id: "practicedDays\(n)", title: title, blurb: blurb,
               group: .consistency, face: .number("\(n)", unit: "days"),
               meaning: """
-              \(n) different days with a sit in them, in any order and with \
+              \(n) different days with a session in them, in any order and with \
               any gaps between. Not a streak, just a lot of days you showed \
               up.
               """)

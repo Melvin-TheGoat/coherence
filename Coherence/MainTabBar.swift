@@ -76,7 +76,7 @@ struct MainTabBar: View {
             }
             plus
             if FeatureFlags.shop {
-                item(.store, icon: "bag", label: "Store", tour: .store)
+                item(.store, icon: "bag", label: "Shop", tour: .store)
             } else if FeatureFlags.friends {
                 item(.friends, icon: "person.2", label: "Friends", tour: .friends)
             } else {

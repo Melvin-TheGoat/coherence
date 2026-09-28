@@ -29,7 +29,7 @@ struct InkTabBar: View {
             item(.block, art: "ink-block", label: "Block", wash: (180, true), tour: .block)
             plus
             if FeatureFlags.shop {
-                item(.store, art: "ink-store", label: "Store", wash: (180, false), tour: .store)
+                item(.store, art: "ink-store", label: "Shop", wash: (180, false), tour: .store)
             } else {
                 item(.friends, art: "ink-friends", label: "Friends", wash: (180, false), tour: .friends)
             }

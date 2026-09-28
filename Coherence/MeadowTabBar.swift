@@ -25,7 +25,7 @@ struct MeadowTabBar: View {
             item(.block, art: "tab-block", label: "Block", tour: .block)
             begin
             if FeatureFlags.shop {
-                item(.store, art: "tab-store", label: "Store", tour: .store)
+                item(.store, art: "tab-store", label: "Shop", tour: .store)
             } else {
                 item(.friends, art: "tab-friends", label: "Friends", tour: .friends)
             }

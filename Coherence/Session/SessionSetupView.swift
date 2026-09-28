@@ -685,9 +685,10 @@ struct SitPill<Trailing: View>: View {
     /// block and lifts Otto to clear it, so nothing else had to move. A short
     /// phone (`compact`) keeps the old sizes; it has no sky to give.
     var body: some View {
-        // The art has no circle behind it, so it is drawn a little larger
-        // than the roundel it replaced to carry the same weight.
-        let roundel: CGFloat = compact ? 36 : (half ? 46 : 54)
+        // Much smaller since 2026-09-28 (Melvin: "make the icons much
+        // smaller in the meditation screen, like the moon and timer"): the
+        // words carry the pill, the object only marks it.
+        let roundel: CGFloat = compact ? 24 : (half ? 28 : 32)
         HStack(spacing: compact ? (half ? 8 : 11) : (half ? 9 : 13)) {
             SitArt(name: art, size: roundel)
             VStack(alignment: .leading, spacing: 2) {

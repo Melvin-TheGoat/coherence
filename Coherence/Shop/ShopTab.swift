@@ -1,8 +1,9 @@
 import SwiftUI
 import SwiftData
 
-/// The Store tab (Melvin, 2026-09-27): "A store tab where you can buy Otto
-/// hats with points that you get from meditating." Points are earned by
+/// The Shop tab (Melvin, 2026-09-27): "A store tab where you can buy Otto
+/// hats with points that you get from meditating." Called the Store until
+/// 2026-09-28 ("call it shop instead of store"). Points are earned by
 /// meditating, one per minute (`OttoPoints`), and never stored as a balance
 /// the same way the streak and Otto's own glow are derived, not saved.
 /// Buying and wearing write to `Preferences` through `OttoShop`.
@@ -33,7 +34,7 @@ struct ShopTab: View {
 
     private static var day: DayLight { DayLight.now }
     private static var meadow: Color { day.field[1] }
-    private static let sceneShare: CGFloat = 0.42
+    private static let sceneShare: CGFloat = 0.38
 
     /// The oldest row, the same rule `InviteReward`'s ledger uses: there can
     /// be more than one Preferences row (a bootstrap row and a synced one),
@@ -59,9 +60,14 @@ struct ShopTab: View {
     var body: some View {
         GeometryReader { proxy in
             let sceneHeight = proxy.safeAreaInsets.top + proxy.size.height * Self.sceneShare
-            ScrollView {
-                VStack(spacing: 0) {
-                    scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
+            // Otto stays put while the closet scrolls under him (Melvin,
+            // 2026-09-28: "make it so otto is always visible at the top even
+            // when you scroll down"): trying a hat on is the point of the
+            // screen, and the cards are how you pick one, so the one you are
+            // trying never scrolls away from the one who wears it.
+            VStack(spacing: 0) {
+                scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
+                ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
                         // Standing on the grass, so white with a faint shadow, as
                         // every heading on the meadow is: brown vanished into the
@@ -82,13 +88,18 @@ struct ShopTab: View {
                         }
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
-                    .padding(.top, 20)
+                    .padding(.top, 14)
                     .padding(.bottom, 24)
                 }
+                .scrollIndicators(.hidden)
+                // Cards slip into the grass under his feet rather than
+                // stopping on a line.
+                .mask(LinearGradient(stops: [.init(color: .clear, location: 0),
+                                             .init(color: .black, location: 0.05)],
+                                     startPoint: .top, endPoint: .bottom))
+                .safeAreaInset(edge: .bottom) { actionBar }
             }
             .ignoresSafeArea(edges: .top)
-            .scrollIndicators(.hidden)
-            .safeAreaInset(edge: .bottom) { actionBar }
         }
         .background(Self.meadow.ignoresSafeArea())
     }
