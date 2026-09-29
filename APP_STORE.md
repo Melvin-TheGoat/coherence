@@ -10,11 +10,27 @@ Everything App Store Connect asks for, with the reasoning behind each answer.
   paywall without buying or restoring. **The app fails closed**: if the plans
   cannot load, the paywall says "Plans aren't loading" with Try again and
   Restore, so the products MUST be attached and loadable for App Review.
-- **Updated later the same day (Melvin, 2026-09-29): the free trial is back.**
-  Monthly ($7.99) and Yearly ($29.99) each carry a **3-day free trial**
-  (`Monetization.freeTrial = true`), Lifetime ($99.99, one payment) is the
-  paywall's third card again, and the ladder is one rung, `monthly50` ($3.99 a
-  month after a 3-day free trial). `monthlytrial` is dormant.
+- **The free trial is an UPSELL (Melvin, 2026-09-29; code in commit
+  9ffa513).** The paywall sells Monthly ($7.99), Yearly ($29.99) and Lifetime
+  ($99.99, one payment, the third card again) with **no free trial** and a
+  plain Continue (`Monetization.freeTrial = false`). The trial stays hidden
+  until someone declines: "No, I don't want to pay" offers **rung 1**, a
+  3-day free trial on Monthly or Yearly (`monthlytrial`, then $7.99 a month;
+  `yearlytrial`, then $29.99 a year, added the same afternoon in commit
+  58281f4), and if that is declined, **rung 2**, `monthly50` ("Monthly, half
+  price", a 3-day free trial, then $3.99 a month). Rung 1 returns to the
+  paywall with both trial plans in Monthly's and Yearly's places, Yearly
+  preselected ("Best value"), Lifetime unchanged; rung 2 returns with its plan
+  selected. The purchase always happens on the paywall. Without `yearlytrial`
+  rung 1 falls back to the monthly trial alone. `yearly50` is dormant.
+- ~~**Updated later the same day (Melvin, 2026-09-29): the free trial is
+  back.** Monthly ($7.99) and Yearly ($29.99) each carry a **3-day free
+  trial** (`Monetization.freeTrial = true`), Lifetime ($99.99, one payment) is
+  the paywall's third card again, and the ladder is one rung, `monthly50`
+  ($3.99 a month after a 3-day free trial). `monthlytrial` is dormant.~~
+  **A misreading, held for a few hours on 2026-09-29** ("same as before, 3
+  day offer" meant the upsell ladder, not a trial on the paywall). Lifetime
+  as the third card was right and stays.
 - **Friends is ON, as profiles only**: name, @username, optional photo and a
   practice summary. No posts, reactions, feed or comments. It opens from a
   circle on Home. Blocks are private and one-sided.
@@ -27,7 +43,9 @@ Everything App Store Connect asks for, with the reasoning behind each answer.
 
 *Superseded the same day, kept for the record:* the morning's version of this
 list said no trial on Monthly or Yearly, a two-rung ladder, and Block, the
-Shop and Otto's chat all off.
+Shop and Otto's chat all off. (Its trial setup turned out to be right: after
+a few hours of the misread "trial on Monthly and Yearly, one rung", the
+founders' actual decision is no trial on the paywall and the two rungs.)
 
 The paste-ready values (description, promotional text, keywords, What's New,
 review notes, age-rating answers) live in **`marketing/APP_STORE_PASTE.md` and
@@ -121,12 +139,17 @@ because copies drift and the drifted copy is the one that gets pasted.
   price, renewal statement, and functional Terms of Use and Privacy links in
   the metadata itself). It is one of the most-rejected 3.1.2 items. The prices
   there must match App Store Connect exactly; change both or neither.
-  **Since 2026-09-29 (evening) it also states each plan's free trial** (3 days
-  on Monthly, Yearly and the half price plan), that Lifetime is one payment
-  that never renews, that a free trial is available once per Apple Account
-  across the group, that payment is charged when a free trial ends, and that
-  cancelling at least 24 hours before the trial ends avoids the charge. The
-  trial length there must match Connect, the same as the prices.
+  ~~**Since 2026-09-29 (evening) it also states each plan's free trial** (3
+  days on Monthly, Yearly and the half price plan),~~ **Corrected later on
+  2026-09-29 (the trial is an upsell): it states Monthly and Yearly with NO
+  trial, that the app may offer, after a decline, Monthly or Yearly with a 3
+  day free trial (then $7.99 a month or $29.99 a year) and then Monthly, half
+  price (a 3 day free trial, then $3.99 a month),** that Lifetime is one payment that never renews, that
+  a free trial is available once per Apple Account across the group, that
+  payment is charged when a free trial ends, and that cancelling at least 24
+  hours before the trial ends avoids the charge. The trial length there must
+  match Connect (on `monthlytrial`, `yearlytrial` and `monthly50`), the same as
+  the prices.
 
 **Block ships in 1.1, so the description leads with it (done 2026-09-29).**
 Its App Review purpose (Apple's purpose 2 for Family Controls, individuals
@@ -244,11 +267,16 @@ with Try again and Restore, and nobody without a membership gets past it. **A
 reviewer whose sandbox cannot load the products is therefore locked out**, so
 every product below marked "attach" must be attached to the version and
 "Ready to Submit" before pressing Add for Review. The optional products fail
-softly: without `monthly50` the "No, I don't want to pay" link does not
-appear, and without `lifetime` its card is hidden.
+softly: ~~without `monthly50` the "No, I don't want to pay" link does not
+appear~~ without `monthlytrial` the trial rung is skipped (it keys on the
+monthly trial), without `yearlytrial` the trial rung offers the monthly trial
+alone and Yearly stays as it was, without `monthly50` the ladder ends after
+the trial rung, without both the "No, I don't want to pay" link does not
+appear (corrected later on 2026-09-29), and without `lifetime` its card is
+hidden.
 
-**Subscription group.** Every auto-renewable, the ladder plan included, sits
-in ONE group so a person can move between them without double-paying.
+**Subscription group.** Every auto-renewable, all three ladder plans included,
+sits in ONE group so a person can move between them without double-paying.
 
 - Reference name (internal): `808 Membership` (can stay).
 - **Group display name (USER VISIBLE, in Manage Subscriptions): recommend
@@ -261,28 +289,49 @@ in ONE group so a person can move between them without double-paying.
 **Rank (level) in the group**, top to bottom. Rank decides upgrade, downgrade
 or crossgrade:
 
-1. Yearly (and yearly50, which is not sold)
-2. Monthly (and monthlytrial, dormant, if it was ever created: same price,
-   same length)
-3. Half price monthly
+1. Yearly and yearlytrial (ladder rung 1: same price, same length), and
+   yearly50, which is not sold
+2. Monthly and monthlytrial (ladder rung 1: same price, same length)
+3. Monthly, half price (monthly50, ladder rung 2)
+
+~~2. Monthly (and monthlytrial, dormant, if it was ever created: same price,
+   same length)~~ (the misread version; monthlytrial is sold again)
 
 Lifetime is a non-consumable and sits outside the group.
 
 **Introductory-offer eligibility is per GROUP, not per product.** Someone who
-used any free trial in this group (including 1.0's 7-day trial, or the 3-day
-trial on Monthly or Yearly in 1.1) is not eligible for another, so a person
-who starts the Monthly trial and cancels is not offered the half price rung's
-trial either. The app reads eligibility (`Store.freeTrialDays(for:)`), so the
-paywall and the rung shown to an ineligible person say what each plan costs
-from today instead of promising free days. Nothing to configure; worth knowing
-when a sandbox tester "doesn't see the trial".
+used any free trial in this group (including 1.0's 7-day trial on Monthly or
+Yearly, or rung 1's 3-day trial on either trial plan in 1.1) is not eligible
+for another. So a person who takes rung 1's trial and cancels is offered the
+half price plan priced from today, and someone ineligible from the start never sees rung 1 at
+all: `available(_:)` in `OnboardingOffer.swift` skips it, because "Try it free
+first" over a charge would be a lie. They meet the half price rung, without
+its trial. The app reads eligibility (`Store.freeTrialDays(for:)`), so every
+rung shown to an ineligible person says what the plan costs from today instead
+of promising free days. Nothing to configure; worth knowing when a sandbox
+tester "doesn't see the trial". (Corrected later on 2026-09-29; the misread
+version spoke of a trial on Monthly or Yearly, which 1.1 does not have.)
 
 **The products:**
 
+**Corrected later on 2026-09-29 (Melvin: "the free trial is only an upsell,
+we want them to not know it exists unless they deny the initial offer"; code
+in commit 9ffa513, and the yearly trial in 58281f4).** The paywall's plans
+carry NO trial; the trial lives on the three ladder products.
+
 | Product ID | Type | Duration | Price | Introductory offer | Where the app sells it | Attach to 1.1? |
 |---|---|---|---|---|---|---|
-**Rewritten later the same day, 2026-09-29 (Melvin: the free trial is back,
-"same as before, 3 day offer", and Lifetime is a card again).**
+| `com.lockout.meditate808.monthly` | Auto-renewable | 1 month | $7.99 | **None.** Remove whatever offer it carries (a 3-day one added for the misread version, or 1.0's 7-day one). Remove the OFFER only, never the product. | Paywall | Yes |
+| `com.lockout.meditate808.yearly` | Auto-renewable | 1 year | $29.99 | **None.** Remove the 3-day offer if one was added. | Paywall | Yes |
+| `com.lockout.meditate808.lifetime` | Non-consumable | n/a | $99.99 | None ("charged today, nothing renews") | Paywall, third card | Yes, if Connect offers it (approved with 1.0); confirm **Cleared for Sale** |
+| `com.lockout.meditate808.monthlytrial` | Auto-renewable | 1 month | $7.99 | **Free trial, 3 days** | **Ladder, rung 1** ("No worries. Try it free first."), the Monthly card after it | **Yes, new** |
+| `com.lockout.meditate808.yearlytrial` | Auto-renewable | 1 year | $29.99 | **Free trial, 3 days** | **Ladder, rung 1**, the Yearly card after it (preselected, "Best value"); added 2026-09-29, commit 58281f4 | **Yes, new** |
+| `com.lockout.meditate808.monthly50` | Auto-renewable | 1 month | $3.99 | **Free trial, 3 days** | **Ladder, rung 2** ("Then have 808 at half price.") | **Yes, new.** Use the FULL ID: the first one was created as bare `monthly50`, which the app never fetches. Delete that one (never sold, so it is safe) and create this ID. |
+| `com.lockout.meditate808.yearly50` | Auto-renewable | 1 year | $29.99, first year $14.99 | Pay up front | **No screen sells it** | **No** |
+
+*Superseded, the misread version (labelled "evening"), kept for the record; do
+NOT act on it:* **Rewritten later the same day, 2026-09-29 (Melvin: the free
+trial is back, "same as before, 3 day offer", and Lifetime is a card again).**
 
 | Product ID | Type | Duration | Price | Introductory offer | Where the app sells it | Attach to 1.1? |
 |---|---|---|---|---|---|---|
@@ -295,9 +344,31 @@ when a sandbox tester "doesn't see the trial".
 
 ~~`monthly` and `yearly`: None. Delete the 7-day free trial. `monthlytrial`:
 ladder rung 1, attach, new. `lifetime`: restore only, do not attach.~~ (The
-morning's 2026-09-29 table.)
+morning's 2026-09-29 table. Its trial setup was right and is what ships; only
+Lifetime changed, to a paywall card.)
 
-**Why the trials are back on Monthly and Yearly (2026-09-29).** From
+**Why the trial lives only on the ladder (Melvin, 2026-09-29).** The free
+trial is an upsell: the founders want nobody to know it exists until they have
+said no to the plans. So the paywall sells Monthly, Yearly and Lifetime at
+their prices with a plain Continue. The first "no" is answered with the trial
+(rung 1), on Monthly or Yearly, which meets the risk objection ("I don't know
+if it works for me") without touching the price. Yearly carries it too
+(Melvin: "should i not make a free trial version for yearly?"), because a
+trial on Monthly alone would steer everyone who takes it away from the best
+value; the paywall preselects the yearly trial. Only a second "no" gets a
+price concession (rung 2): half price every month, still opening with a 3-day
+trial. Each plan sells as its own product because Apple gives a product
+exactly ONE introductory offer, and the paywall's Monthly and Yearly must
+carry none. **So Connect must hold: no introductory offer on `monthly` or
+`yearly`, and a 3-day free trial on `monthlytrial`, `yearlytrial` and
+`monthly50`.** If `monthly` or `yearly` keeps an offer, Apple's purchase sheet grants a trial the paywall never mentions (a 3.1.2
+mismatch between the screen and the sheet), and the upsell is gone, because
+every buyer gets the trial anyway. Each rung reads its own product's real
+offer and this person's eligibility (`Store.freeTrialDays(for:)`), so the
+screen and the sheet agree on whatever Connect holds; the listing and review
+notes say 3 days.
+
+~~**Why the trials are back on Monthly and Yearly (2026-09-29).** From
 2026-09-26 the paywall sold no trial, and a live 7-day offer on either product
 would have made the screen and Apple's purchase sheet disagree (a 3.1.2
 mismatch), which is why this section used to say "delete the 7-day free
@@ -307,18 +378,19 @@ eligibility, so the screen and the sheet always agree on whatever App Store
 Connect holds. **Connect must hold what the founders decided: 3 days free on
 BOTH.** Left as it is today, Monthly would say 7 days and Yearly would sell
 with no trial at all, and the listing and What's New (which say 3 days) would
-be wrong.
+be wrong.~~ (The misread version, held for a few hours on 2026-09-29.)
 
 **Lifetime is sold again** as the paywall's third card ("Buy Lifetime",
 "charged today, nothing renews"), shown only when its product loads. It was
 restore-only from 2026-09-26. Existing Lifetime buyers keep restoring it, so
 **never delete the product.**
 
-**yearly50** is a leftover of the 2026-09-22 ladder, and **monthlytrial** of
+**yearly50** is a leftover of the 2026-09-22 ladder ~~, and **monthlytrial** of
 the 2026-09-27 one (dormant since 2026-09-29, when the paywall's own plans got
-the trial back). A product attached to a submission that no screen sells makes
-a reviewer hunt for it (a 2.1 "we could not locate the in-app purchase"
-reply). Leave both unattached. Both stay in `Store.ProductID.all` so any past
+the trial back)~~ (monthlytrial is rung 1 again, corrected later on
+2026-09-29). A product attached to a submission that no screen sells makes a
+reviewer hunt for it (a 2.1 "we could not locate the in-app purchase" reply).
+Leave yearly50 unattached. It stays in `Store.ProductID.all` so any past
 purchase still restores.
 
 **Localized display name and description** (user visible in the purchase
@@ -330,22 +402,41 @@ a phone session. Replace them:
 |---|---|---|
 | monthly | `Monthly` | `All of 808, billed every month.` (31) |
 | yearly | `Yearly` | `All of 808, billed once a year.` (31) |
+| monthlytrial | `Monthly` | `All of 808, monthly after a free trial.` (39) |
+| yearlytrial | `Yearly` | `All of 808, yearly after a free trial.` (38) |
 | monthly50 | `Monthly, half price` | `All of 808 at half the monthly price.` (37) |
 | lifetime | `Lifetime` | `All of 808 with one payment.` (28) |
 
 With the group named `808 Premium`, Manage Subscriptions reads "808 Premium,
-Monthly". monthly50's name matches its card in the app (2026-09-29). `808.storekit`
-uses the same names except `Half price` for monthly50; align it when convenient.
+Monthly". monthly50's name matches its card in the app (2026-09-29), and so do
+the trial plans': their paywall cards are titled "Monthly" and "Yearly", the
+trial stated on the cadence line. `808.storekit` uses the same names except
+`Half price` for monthly50 and `Monthly with free trial` for monthlytrial;
+align it when convenient (it already carries yearlytrial's name and
+description as above).
 
 **Review screenshots** (one per product, required):
 
 - monthly, yearly and lifetime (if Connect asks for one): the paywall with
-  the three plans. **The committed `marketing/appstore/iap/paywall-review.png`
-  is from 2026-09-01** and shows the old paywall; re-shoot it from the 1.1
-  Release build (the valley paywall, "Keep Otto glowing.").
-- monthly50: the rung's sheet ("No worries. Have 808 at half price.").
+  the three plans and no trial. **The committed
+  `marketing/appstore/iap/paywall-review.png` is from 2026-09-01** and shows
+  the old paywall; re-shoot it from the 1.1 Release build (the valley paywall,
+  "Keep Otto glowing.").
+- monthlytrial: rung 1's screen ("No worries. Try it free first.", "Choose
+  this plan").
+- yearlytrial: the paywall after taking rung 1, the Monthly and Yearly cards
+  both showing the trial, Yearly selected.
+- monthly50: rung 2's screen ("Then have 808 at half price.", "Choose half
+  price").
+- The rung screens and the trial paywall can be captured only once those
+  products exist in the sandbox (without them the rungs do not appear in
+  Release), with a tester new to the group, since an ineligible tester never
+  sees rung 1.
+- ~~monthly50: the rung's sheet ("No worries. Have 808 at half price.").~~
+  (The misread one-rung title.)
 - ~~monthlytrial: the first rung's sheet ("No worries. Try it free first.").~~
-  Dormant since 2026-09-29; nothing to shoot.
+  ~~Dormant since 2026-09-29; nothing to shoot.~~ (Not dormant: rung 1 again,
+  corrected later on 2026-09-29.)
 
 **Small Business Program**: enrolled with the agreements (15% instead of 30%).
 
@@ -480,13 +571,19 @@ what they say:
   sandbox did not return them (Try again retries). The real protection is
   attaching them; the sentence only keeps a reviewer from reading a sandbox
   hiccup as a missing paywall.
-- **The free trial is stated with its eligibility**: 3 days on Monthly and
-  Yearly, one trial per account across the group, so a sandbox account that
-  already had one sees the plans without it.
-- **The ladder is described as returning to the paywall**, because the rung
-  (one since 2026-09-29, `monthly50`) sells nothing itself: it preselects its
-  plan and hands back to the screen that carries price, renewal, Restore,
-  Privacy and Terms (3.1.2).
+- **The paywall is stated as having no free trial, and the trial as what "No,
+  I don't want to pay" offers first** (corrected later on 2026-09-29: the
+  trial is an upsell). ~~**The free trial is stated with its eligibility**: 3
+  days on Monthly and Yearly, one trial per account across the group, so a
+  sandbox account that already had one sees the plans without it.~~ (The
+  misread version.) Eligibility is still stated: one trial per account across
+  the group, so a sandbox account that already had one skips the trial offer
+  and sees half price from today.
+- **The ladder is described as returning to the paywall**, because ~~the rung
+  (one since 2026-09-29, `monthly50`)~~ neither rung (the 3-day trial on
+  Monthly or Yearly, then `monthly50`) sells anything itself: each preselects
+  its plan (rung 1, the yearly trial) and hands back to the screen that carries
+  price, renewal, Restore, Privacy and Terms (3.1.2).
 - **1.0 users meet the paywall** (decided 2026-09-25); past buyers keep access.
   Said up front so a reviewer with an old install is not surprised.
 - **The rating prompt inside onboarding is disclosed**, unconditional and not
@@ -518,6 +615,9 @@ what they say:
   (`available(_:)` in `OnboardingOffer.swift`) and~~ sees ~~the half price
   rung~~ **every plan** without its trial (updated 2026-09-29, evening: the
   trial rung is dormant, and Monthly and Yearly carry the trial themselves).
+  **Corrected back later on 2026-09-29: the struck words were right.** An
+  ineligible account is not offered the trial rung (`available(_:)` in
+  `OnboardingOffer.swift`) and sees the half price rung without its trial.
   Without the sentence, a reviewer reads a missing trial as a broken
   paywall.
 - **"Plans aren't loading"** is the Release paywall's state when the core
@@ -565,8 +665,10 @@ git history.
 **In `marketing/APP_STORE_PASTE.md`.** It names Block, Otto (and that his
 glow starts at 50% for everyone while history, streaks and awards carry over),
 points and hats in the Shop, phone sessions with or without a Watch, Record
-one, Friends as it is, that 808 is now a subscription with a 3-day free trial
-and that existing subscribers and Lifetime owners keep everything, and the
+one, Friends as it is, that 808 is now a membership with every feature
+included ~~with a 3-day free trial~~ (no trial named: the trial is an upsell,
+offered only after a "no", corrected later on 2026-09-29) and that existing
+subscribers and Lifetime owners keep everything, and the
 one-line note that past Watch scores were rescored (`RELEASE_CHECKLIST.md`, "1.1
 RESCORES EVERY EXISTING USER'S HISTORY"; migrations `scoreBackfillDone.v8` and
 `.v9`).

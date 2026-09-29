@@ -40,9 +40,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 
     /// The free trial's length until the App Store says otherwise
-    /// (`Store.trialDays` reads the real one off the monthly product). Three:
-    /// the length the founders set (Melvin, 2026-09-29: "same as before, 3
-    /// day offer"); only a build with no products ever shows it.
+    /// (`Store.trialDays` reads the real one off the trial rung's product).
+    /// Three: the length the founders set (Melvin, 2026-09-29); only a build
+    /// with no products ever shows it.
     static let fallbackTrialDays = 3
 
     /// The cards the paywall shows. `yearHalf` is not among them until
@@ -315,9 +315,9 @@ struct RatingScreen: View {
 
 // MARK: - 23 · Paywall
 
-/// The plans, with the free trial when this person can still have one, and
-/// one answer to a "no": the half-price plan (`DownsellRung.ladder`), which
-/// comes back to this screen to be bought. No chevron back into the
+/// The plans, with no free trial (it is an upsell, Melvin, 2026-09-29), and
+/// two answers to a "no" (`DownsellRung.ladder`): the free trial on Monthly
+/// or Yearly, then half price. Each comes back to this screen to be bought. No chevron back into the
 /// interview. The paywall owns every purchase and every disclosure.
 ///
 /// **It fails closed** (Melvin, 2026-09-29). When the App Store cannot give
@@ -564,8 +564,8 @@ struct PaywallScreen: View {
     }
 
     /// A rung can be offered only if it is on the ladder and its product
-    /// exists (a DEBUG build demos it), and the dormant trial rung only to
-    /// someone its product would give free days to.
+    /// exists (a DEBUG build demos it), and the trial rung only to someone
+    /// its product would give free days to.
     private func available(_ rung: DownsellRung) -> Bool {
         guard selling, DownsellRung.ladder.contains(rung) else { return false }
         let exists = store.product(for: rung.plan) != nil || Self.demoSelling
@@ -742,7 +742,7 @@ struct PaywallScreen: View {
         .fullScreenCover(item: $route) { destination in
             switch destination {
             case .rung(let current):
-                DownsellSheet(rung: current, plan: plan,
+                DownsellSheet(rung: current, plan: plan, first: firstRung() == current,
                               yearlyPrice: store.displayPrice(for: .yearly)
                                   ?? SubscriptionPlan.yearly.price,
                               monthlyPrice: store.displayPrice(for: .monthly)
@@ -939,9 +939,9 @@ struct PaywallScreen: View {
             links
 
             // No free version to decline into (Aziz, 2026-09-26), but a "no"
-            // is answered with the ladder: since 2026-09-29 one rung, the
-            // free trial plus half price every month (Melvin). Once it is
-            // declined the link goes, and the plans are what is left.
+            // is answered with the ladder (Melvin, 2026-09-29): the free trial
+            // on Monthly or Yearly, then half price every month. Once both
+            // are declined the link goes, and the plans are what is left.
             if !declinedAll, let first = firstRung() {
                 Button("No, I don't want to pay") { showRung(first) }
                     .font(.caption.weight(.semibold))
@@ -1169,8 +1169,8 @@ struct LegalDocSheet: View {
 
 // MARK: - 24 · (removed)
 
-// The thirty-day exit offer is gone. The one answer to a "no" is the ladder's
-// half-price plan (`DownsellRung.ladder`), a real cheaper plan rather than a
+// The thirty-day exit offer is gone. The answers to a "no" are the ladder's
+// free trial and its half-price plan (`DownsellRung.ladder`), a real cheaper plan rather than a
 // second, better price for the same one, which would teach people that the
 // first price was never the real one.
 

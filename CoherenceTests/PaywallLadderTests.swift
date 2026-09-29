@@ -59,6 +59,13 @@ final class PaywallLadderTests: XCTestCase {
 
     /// The first rung is the first thing said after a "no", so it cannot open
     /// as though a rung came before it.
+    /// Someone who already used a free trial skips the trial rung, so half
+    /// price is the first thing they hear and must not open "Then".
+    func test_halfPriceShownFirstDoesNotOpenWithThen() {
+        XCTAssertFalse(DownsellRung.halfMonth.title(first: true).hasPrefix("Then"))
+        XCTAssertTrue(DownsellRung.halfMonth.title(first: false).hasPrefix("Then"))
+    }
+
     func test_theFirstRungDoesNotFollowAnother() {
         let first = DownsellRung.ladder[0]
         XCTAssertFalse(first.title.hasPrefix("Then"), first.title)

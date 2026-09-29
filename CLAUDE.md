@@ -6655,15 +6655,28 @@ The decisions it produced, so nobody undoes them:
 
 ## 1.1 DECISIONS AFTER THE AUDIT (2026-09-29, Melvin). These supersede older notes.
 
-- **The free trial is back: 3 days on Monthly and Yearly** (`Monetization.freeTrial
-  = true`), read from App Store Connect, eligibility-aware. App Store Connect must
-  carry a 3-day intro offer on BOTH (the sandbox still has 7 on monthly and none on
-  yearly). Supersedes "NO FREE TRIAL" (2026-09-26).
+- **The free trial is an UPSELL, never on the paywall** (Melvin: "the free trial
+  is only an upsell, we want them to not know it exists unless they deny the
+  initial offer"; commits 9ffa513, 58281f4). `Monetization.freeTrial = false`: the
+  paywall sells Monthly ($7.99), Yearly ($29.99) and Lifetime with no trial and a
+  plain Continue. "No, I don't want to pay" walks two rungs
+  (`DownsellRung.ladder = [.trial, .halfMonth]`): **rung 1**, "No worries. Try it
+  free first.", a 3-day free trial on Monthly or Yearly (`monthlytrial` $7.99/mo,
+  `yearlytrial` $29.99/yr); "Choose this plan" returns to the paywall with both
+  trial cards, Yearly preselected (without `yearlytrial`, the monthly trial alone).
+  **Rung 2**, "Then have 808 at half price.", `monthly50`, $3.99 every month after
+  a 3-day trial. A rung only selects; the purchase is on the paywall. A trial is
+  once per group per Apple ID, so an ineligible person skips rung 1 and sees rung
+  2 priced from today. `yearly50` dormant. **App Store Connect must match: NO intro
+  offer on `monthly` or `yearly`** (or Apple's sheet grants a trial the paywall
+  never mentions, a 3.1.2 mismatch, and the upsell is gone), and a 3-day free trial
+  on `monthlytrial`, `yearlytrial` and `monthly50`. **Misread for a few hours that
+  day** ("same as before, 3 day offer" taken as a trial on Monthly and Yearly with
+  one rung); the code and docs were corrected the same afternoon. Supersedes "NO
+  FREE TRIAL" (2026-09-26); "THE LADDER IS BACK" (2026-09-27) stands, with
+  `yearlytrial` added to rung 1.
 - **Lifetime ($99.99) is a third card on the paywall again.** It was cut by an
   agent, not by a founder. Hidden only while the store is ready without it.
-- **Declining offers ONE rung:** `monthly50`, $3.99 every month after a 3-day free
-  trial (`DownsellRung.ladder = [.halfMonth]`). `monthlytrial` and `yearly50` are
-  dormant. Supersedes "THE LADDER IS BACK" (two rungs).
 - **The struck-through "was" price always shows**, in the product's own currency:
   the live price scaled by the cleared USD ratio and snapped to a price
   (`Store.anchorPrice`); monthly50's anchor is Monthly's live price.

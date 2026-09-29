@@ -4,21 +4,29 @@ Values only, in the order the forms ask for them. Reasoning lives in
 `APP_STORE.md`; this file exists to be copied from without reading.
 
 **Rewritten 2026-09-29 for 1.1** against the Release build on branch `block`,
-and **rewritten again the same evening for the founders' decisions (Melvin)**:
-808 is premium only and fails closed (no free tier; if the plans cannot load,
-nobody without a membership gets past the paywall); Monthly ($7.99) and Yearly
-($29.99) each carry a 3-day free trial; Lifetime ($99.99) is sold on the
-paywall again; declining offers one rung, Half price monthly ($3.99 a month
-after a 3-day free trial); **Block and the Shop (points and hats) ship**;
-Friends is profiles and practice summaries with no posts, opened from a circle
-on Home; Otto's chat is off. Sessions run on the iPhone with or without a
-Watch, and count from one minute. Verified in code: 58 awards in the catalog
-(three score awards stay hidden until earned), the 25-minute guided journey,
-4 nature sounds, 3 brainwave tones, 4 tunings, 11 hats.
+and **corrected later the same day for the founders' decisions (Melvin; code
+in commit 9ffa513)**: 808 is premium only and fails closed (no free tier; if
+the plans cannot load, nobody without a membership gets past the paywall).
+**The paywall sells Monthly ($7.99), Yearly ($29.99) and Lifetime ($99.99, one
+payment) with NO free trial.** The free trial is an upsell, hidden until
+someone declines: "No, I don't want to pay" offers a 3-day free trial on
+Monthly or Yearly (`monthlytrial`, then $7.99 a month; `yearlytrial`, then
+$29.99 a year; the paywall returns with both, Yearly preselected), and if that
+is declined too, Monthly, half price (`monthly50`, a 3-day free trial, then
+$3.99 a month).
+**Block and the Shop (points and hats) ship**; Friends is profiles and
+practice summaries with no posts, opened from a circle on Home; Otto's chat
+is off. Sessions run on the iPhone with or without a Watch, and count from one
+minute. Verified in code: 58 awards in the catalog (three score awards stay
+hidden until earned), the 25-minute guided journey, 4 nature sounds, 3
+brainwave tones, 4 tunings, 11 hats.
 
-*Superseded the same day:* the morning's version of this sheet had no trial on
-Monthly or Yearly, a two-rung ladder, Lifetime restore-only, and Block and the
-Shop off.
+*Superseded the same day:* the morning's version of this sheet had Lifetime
+restore-only and Block and the Shop off; its trial setup (none on Monthly or
+Yearly, two rungs) was right. A rewrite labelled "evening" in these files then
+put a 3-day free trial on Monthly and Yearly and cut the ladder to one rung.
+That misread Melvin's "same as before, 3 day offer" and held for a few hours;
+every trial line below is corrected.
 
 **This file is the ONE source for the description, promotional text, What's
 New and the review notes.** `APP_STORE.md` points here rather than carrying
@@ -27,10 +35,14 @@ copies, because copies drift and the drifted one is the one that gets pasted.
 **Before pasting the review notes, replace `@REVIEWER_HANDLE`** with the
 reviewer account's username (`RELEASE_CHECKLIST.md`, item R1).
 
-**The description, What's New and the notes say "3 day free trial".** That
-must be what App Store Connect holds on `monthly`, `yearly` and `monthly50`
-(`RELEASE_CHECKLIST.md`, step 0 and R25). If Connect ends up with any other
-length, change every "3 day" in this file before pasting.
+**The description's subscription block and the review notes say "3 day free
+trial" for the ladder plans only.** That must be what App Store Connect
+holds on `monthlytrial`, `yearlytrial` and `monthly50`, and `monthly` and
+`yearly` must carry
+NO introductory offer (`RELEASE_CHECKLIST.md`, step 0 and R25). If Connect
+ends up with any other trial length, change every "3 day" in this file before
+pasting. What's New and the promotional text mention no trial, on purpose: the
+trial is only offered after a "no".
 
 ---
 
@@ -112,7 +124,7 @@ review)
 Hold your most distracting apps until you've meditated. Otto glows brighter every day you sit, and every minute you meditate earns points for hats in his Shop.
 ```
 
-**Description** (4000 max; this one is 3931)
+**Description** (4000 max; this one is 3958)
 
 ```
 Meditation is easy to start and hard to keep doing. 808 makes it a daily habit: pick the apps that pull you away, and 808 holds them until you've meditated.
@@ -153,10 +165,10 @@ The Watch readings are grounded in peer reviewed research on wrist worn motion s
 808 is a membership, and every feature is included in it.
 
 SUBSCRIPTION INFORMATION
-808 Premium Monthly: $7.99 per month, starting with a 3 day free trial.
-808 Premium Yearly: $29.99 per year, starting with a 3 day free trial.
+808 Premium Monthly: $7.99 per month.
+808 Premium Yearly: $29.99 per year.
 808 Premium Lifetime: $99.99, a single payment that never renews.
-If you decline the plans above, the app may also offer Half price monthly: a 3 day free trial, then $3.99 per month.
+If you decline the plans above, the app may offer Monthly or Yearly with a 3 day free trial, then $7.99 per month or $29.99 per year, and after that Monthly, half price: a 3 day free trial, then $3.99 per month.
 A free trial is available once per Apple Account across 808's subscriptions. Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period or free trial, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
 Restore, on the paywall or in Settings, brings a purchase back on a new device.
 
@@ -201,7 +213,7 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
-**What's New in This Version** (4000 max; this one is 1028)
+**What's New in This Version** (4000 max; this one is 985)
 
 ```
 Block: pick the apps that pull you away, and 808 holds them until you've meditated. Five minutes of meditation opens them for the rest of the window you set.
@@ -216,7 +228,7 @@ Add friends by username and see how often each of them meditates this week.
 
 More than fifty awards, and a fresh look throughout.
 
-808 is now a membership, with every feature included and a 3 day free trial for new subscribers. If you already subscribe or bought Lifetime, everything carries over, and Restore brings it back on a new phone.
+808 is now a membership, with every feature included. If you already subscribe or bought Lifetime, everything carries over, and Restore brings it back on a new phone.
 
 We also refined how an Apple Watch session's score adds up, so past scores may read a little differently. What was measured has not changed.
 ```
@@ -268,21 +280,26 @@ own sandbox Apple Account.
 `818-422-1140`, email `support@meditate808.com` (never a personal Gmail;
 Apple emails this address about the review).
 
-**Notes** (4000 max; this is 3,944 with the placeholder in it, rewritten
-against the code the evening of 2026-09-29, Block paragraph included).
-Replace `@REVIEWER_HANDLE` first, then count again.
+**Notes** (4000 max; this is 3,959 with the placeholder in it, rewritten
+against the code the evening of 2026-09-29, Block paragraph included, and
+corrected later that day for the trial upsell: the paywall has no trial, and
+"No, I don't want to pay" offers the trial on Monthly or Yearly, then half
+price). A real
+@username is at most 21 characters against the placeholder's 16, so the notes
+stay under 4,000 either way. Replace `@REVIEWER_HANDLE` first, then count
+again.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
 
 SUBSCRIPTION
-Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version and must load from the sandbox. Sign in with Apple is optional, so no demo account is needed. Please buy with a sandbox account that has no active 808 subscription; onboarding skips the paywall for one that has.
+Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version and must load from the sandbox. Please buy with a sandbox account that has no active 808 subscription; onboarding skips the paywall for one that has.
 To reach the paywall, go through onboarding (about 30 short screens). On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
-It sells Monthly ($7.99) and Yearly ($29.99), each starting with a 3 day free trial, and Lifetime ($99.99, one payment), with Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" offers Half price monthly ($3.99 a month after a 3 day free trial); choosing it returns to the paywall with that plan selected, where the purchase happens.
-One free trial per account across the group: a sandbox account that already had an 808 trial sees the plans without one.
-If the paywall says "Plans aren't loading", the sandbox did not return the products; Try again asks again.
+It sells Monthly ($7.99), Yearly ($29.99) and Lifetime ($99.99, one payment), with no free trial, plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" then offers, one at a time: a 3 day free trial on Monthly or Yearly (then $7.99 a month or $29.99 a year), then Monthly, half price ($3.99 a month after a 3 day free trial). Choosing either returns to the paywall with those plans, where the purchase happens.
+One free trial per account across the group: a sandbox account that already had an 808 trial skips the trial offer and sees half price from today; one new to 808 sees both.
+If the paywall says "Plans aren't loading", the sandbox returned no products; Try again retries.
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
-Apple's rating prompt may appear once during onboarding. It is not tied to any answer.
+Apple's rating prompt may appear once in onboarding, tied to no answer.
 
 BLOCK (part of 808 Premium)
 Uses Apple's Family Controls with individual authorization: a person manages their own iPhone. It is not a parental control. After the paywall, onboarding (or later the Block tab) asks for Screen Time permission, then apps are picked with Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. Nothing from Screen Time leaves the device. A screen recording is available on request.
@@ -292,7 +309,7 @@ Tap the plus in the tab bar, then the first button ("Meditate") to choose:
 - Meditate: a timer on the iPhone. Nothing is measured.
 - With Apple Watch: dimmed unless a Watch is paired; it wakes the Watch app to measure.
 - Record one: logs a session done elsewhere.
-Sessions count from one minute. Please keep 808 open during an iPhone session (the screen stays on, dimmed). After more than 10 seconds away, including a locked screen, 808 says the session won't count, and "I was still meditating" keeps it.
+Sessions count from one minute. Please keep 808 open during an iPhone session. After more than 10 seconds away, including a locked screen, 808 says the session won't count, and "I was still meditating" keeps it.
 "Silence notifications" runs two Shortcuts, "808 Silence" and "808 Restore", added once from iCloud links the app opens. 808 never changes Focus itself.
 
 POINTS AND THE SHOP
@@ -322,9 +339,18 @@ that is a rejection. Change them together, always.
 
 The app is **free** to download; everything inside it is in 808 Premium.
 Products, prices, display names, descriptions and which ones to attach to 1.1
-are in `APP_STORE.md` ("In-app purchases"). In short (2026-09-29, evening):
-`monthly` and `yearly` each with a **3-day free trial** introductory offer,
-`lifetime` for sale (confirm Cleared for Sale), and `monthly50` at $3.99 a
-month with a 3-day free trial; attach all four. `monthlytrial` is not needed
-and `yearly50` is sold by no screen: attach neither. **The app fails closed,
-so a product that is not attached and loadable locks the reviewer out.**
+are in `APP_STORE.md` ("In-app purchases"). In short (corrected later on
+2026-09-29): `monthly` and `yearly` with **NO introductory offer** (remove any
+they carry), `lifetime` for sale (confirm Cleared for Sale),
+`monthlytrial` at $7.99 a month and `yearlytrial` at $29.99 a year, each with
+a **3-day free trial** (ladder rung 1), and `monthly50` at $3.99 a month with a
+**3-day free trial** (ladder rung 2); attach all six (`lifetime` if Connect
+offers it). `yearly50` is sold by no screen: do not attach it. **The app
+fails closed, so a product that is not attached and loadable locks the
+reviewer out.**
+
+~~In short (2026-09-29, evening): `monthly` and `yearly` each with a 3-day
+free trial introductory offer, `lifetime` for sale (confirm Cleared for Sale),
+and `monthly50` at $3.99 a month with a 3-day free trial; attach all four.
+`monthlytrial` is not needed and `yearly50` is sold by no screen: attach
+neither.~~ (The misread version, kept for the record.)

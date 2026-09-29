@@ -6,22 +6,36 @@
 > buying or restoring, onboarding ends on the paywall, and anyone without a
 > membership meets it again at launch.
 >
-> - **The free trial is back: `Monetization.freeTrial = true`.** Monthly
->   ($7.99) and Yearly ($29.99) each carry a **3-day free trial** as their App
->   Store introductory offer; the app reads the length from App Store Connect
->   (`808.storekit` uses P3D on both), and every trial line is
->   eligibility-aware, so someone who already used a trial in the group is
->   never promised one. (It was `false` from 2026-09-26 to 2026-09-29, Aziz:
->   "no free trial and only monthly and yearly".)
+> - **The free trial is an UPSELL: `Monetization.freeTrial = false`**
+>   (Melvin, 2026-09-29: "the free trial is only an upsell, we want them to
+>   not know it exists unless they deny the initial offer"; commits 9ffa513
+>   and 58281f4). The paywall sells Monthly ($7.99) and Yearly ($29.99) with
+>   NO introductory offer and a plain Continue; `808.storekit` carries none on
+>   either.
 > - **Lifetime ($99.99, one payment, no trial, "charged today, nothing
 >   renews") is the paywall's third card again**, hidden if its product does
 >   not load.
-> - **The ladder is ONE rung.** "No, I don't want to pay" offers
->   `monthly50`, "Monthly, half price", $3.99 every month after a 3-day free
->   trial; taking it returns to the paywall with that plan selected, where
->   the purchase happens. `monthlytrial` and `yearly50` are DORMANT: no
->   screen sells them, and they stay in `Store.ProductID.all` only so any
->   past purchase still restores.
+> - **The ladder is TWO rungs, and the trial lives only there.** "No, I
+>   don't want to pay" offers **rung 1**, a 3-day free trial on Monthly or
+>   Yearly: `monthlytrial` ($7.99 a month after the trial) and `yearlytrial`
+>   ($29.99 a year after the trial). Taking it returns to the paywall with
+>   both trial plans in Monthly's and Yearly's places, Yearly preselected,
+>   Lifetime unchanged; without `yearlytrial` it falls back to the monthly
+>   trial alone. Declining it offers **rung 2**, `monthly50`, "Monthly, half
+>   price", $3.99 every month after a 3-day free trial, which returns to the
+>   paywall with that plan selected. The purchase always happens on the
+>   paywall. Each rung's trial is its own product's introductory offer, read
+>   from App Store Connect (P3D in `808.storekit`) and eligibility-aware: a
+>   trial is offered once per subscription group, so someone who already used
+>   one skips rung 1 and sees rung 2 priced from today. `yearly50` is
+>   DORMANT: no screen sells it, and it stays in `Store.ProductID.all` only so
+>   any past purchase still restores.
+> - ~~**The free trial is back: `Monetization.freeTrial = true`.** Monthly
+>   and Yearly each carry a 3-day free trial; the ladder is ONE rung,
+>   `monthly50`; `monthlytrial` is dormant.~~ **A misreading of "same as
+>   before, 3 day offer", held for a few hours on 2026-09-29 and corrected the
+>   same afternoon.** (`freeTrial` was also `false` from 2026-09-26, Aziz:
+>   "no free trial and only monthly and yearly".)
 > - **The app fails CLOSED.** Without a membership it shows the paywall; if
 >   the plans cannot load it says "Plans aren't loading" with Try again,
 >   Restore and (on the launch lock, or wherever the phone already holds an
@@ -40,14 +54,16 @@
 >
 > *Superseded, kept for the record:* the morning's 2026-09-29 status said
 > `freeTrial = false`, a two-rung ladder (`monthlytrial` then `monthly50`),
-> and Lifetime restore-only.
+> and Lifetime restore-only. (Its trial setup was right and is what ships,
+> with `yearlytrial` added to rung 1; only Lifetime changed.)
 >
 > **Changed since (checked in the 2026-09-23 sweep).** The gate is now
 > `paid: entitled || state == .loading` (2026-09-12), so `.unavailable` is
 > FREE; the code sample under "Where the gate lives" shows the older rule
 > (see `Entitlements.resolve` and CLAUDE.md "FREE TIER"). ~~The ladder is two
 > rungs, the free week and then half off the first year
-> (`com.lockout.meditate808.yearly50`, 2026-09-22).~~ (2026-09-29: one rung,
+> (`com.lockout.meditate808.yearly50`, 2026-09-22).~~ (2026-09-29: ~~one rung,
+> `monthly50`~~ two rungs, the 3-day trial on Monthly or Yearly and then
 > `monthly50`; see the status above.) Otto's chat and Block are paid, and the
 > invite reward can open one session's evidence (`evidenceGranted`).
 

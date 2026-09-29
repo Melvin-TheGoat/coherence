@@ -46,10 +46,15 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     /// ever shown; `allCases` also holds the dormant ones.
     static let ladder: [DownsellRung] = [.trial, .halfMonth]
 
-    var title: String {
+    var title: String { title(first: self == Self.ladder.first) }
+
+    /// `first` is whether this is the first rung THIS person is shown. Someone
+    /// who already used a free trial skips the trial rung, and half price is
+    /// then the first thing said after their "no", so it cannot open "Then".
+    func title(first: Bool) -> String {
         switch self {
         case .trial:     return "No worries.\nTry it free first."
-        case .halfMonth: return "Then have 808\nat half price."
+        case .halfMonth: return first ? "No worries.\nHave 808 at half price." : "Then have 808\nat half price."
         }
     }
 
@@ -130,6 +135,8 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
 struct DownsellSheet: View {
     let rung: DownsellRung
     let plan: SubscriptionPlan
+    /// The first rung this person is shown, so its title never opens "Then".
+    var first: Bool = true
     /// Apple's localized yearly price when available; our fallback otherwise.
     let yearlyPrice: String
     /// Apple's localized monthly, half-month and trial-plan prices when
@@ -159,7 +166,7 @@ struct DownsellSheet: View {
                 .allowsHitTesting(false)
 
             VStack(spacing: 12) {
-                Text(rung.title)
+                Text(rung.title(first: first))
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
                 Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, monthlyPrice: monthlyPrice,
