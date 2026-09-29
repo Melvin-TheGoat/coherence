@@ -4,8 +4,15 @@ import Foundation
 /// durations, and the windows Otto was told "Not now" in.
 ///
 /// **The rule (Melvin, 2026-09-21, from `mockups/otto-aura.html`):** everyone
-/// starts at 40, so a new person is never greeted by a sad sloth. Today only
+/// starts at 50 (40 until 2026-09-29, Melvin: "have otto start at 50% for
+/// everyone"), so a new person is never greeted by a sad sloth. Today only
 /// counts once it is practised: an unfinished day is not a missed one.
+///
+/// **1.1 starts everyone fresh.** The glow counts only sessions from the
+/// day this version first opened on the phone (`glowStart`), so a person
+/// updating from 1.0 meets Otto at 50 however long ago they last sat, while
+/// their history, streak and awards carry over untouched. Awards that come
+/// from the glow (`dateStageFirstReached`) still read the whole history.
 ///
 /// **A day's gain is proportional to how long it was practised (Melvin,
 /// 2026-09-28): "His glow should increase proportional to the length of the
@@ -28,11 +35,10 @@ import Foundation
 /// first day of a longer gap is not a rest day and costs 10. A day
 /// meditated ends the run.
 ///
-/// So a ten-minute first session lifts him from Stirring to Steady (his
-/// colour comes back, +5 to 45), and five twenty-minute days in a row from
-/// the start reach 90, Nirvana (+10 a day, the same climb a flat daily gain
-/// used to make). A week away from Nirvana still brings him to Withered, the
-/// missed-day costs being unchanged.
+/// So from the start of 50 (Steady), a ten-minute first session takes him to
+/// 55 and a twenty-minute one to 60 (Bright), and four twenty-minute days in
+/// a row reach 90, Nirvana (+10 a day). A week away from Nirvana still brings
+/// him to Withered, the missed-day costs being unchanged.
 ///
 /// **"Not now" (Melvin, 2026-09-22).** Telling Otto "Not now" costs nothing if
 /// a session follows inside the same window. If the window closes with no
@@ -50,7 +56,24 @@ import Foundation
 /// Pure Foundation. Pass `today` and `calendar` in tests.
 enum OttoAura {
 
-    static let startLevel = 40
+    static let startLevel = 50
+
+    /// The day the glow began counting on this phone: the first launch of
+    /// 1.1, kept in UserDefaults. Nil until `markGlowStartIfNeeded` runs.
+    static let glowStartKey = "otto.glowStartedOn.v1"
+
+    static func glowStart(defaults: UserDefaults = .standard) -> Date? {
+        defaults.object(forKey: glowStartKey) as? Date
+    }
+
+    /// Called at every launch; only the first ever call writes. Midnight of
+    /// that day, so a session earlier the same day still counts.
+    static func markGlowStartIfNeeded(now: Date = Date(),
+                                      calendar: Calendar = .current,
+                                      defaults: UserDefaults = .standard) {
+        guard glowStart(defaults: defaults) == nil else { return }
+        defaults.set(calendar.startOfDay(for: now), forKey: glowStartKey)
+    }
     /// The first day missed in a row, and what each further day in the same
     /// run adds: 10, 15, 20, 25 ...
     static let firstMissCost = 10
@@ -109,8 +132,7 @@ enum OttoAura {
         case withered = 1, faded, stirring, steady, bright, radiant, nirvana
 
         /// Seven bands of fifteen, the top one a point wider. Everyone starts
-        /// at 40, in Stirring, so the first session is the one that brings
-        /// his colour back.
+        /// at 50, in Steady.
         init(level: Int) {
             switch level {
             case ..<15: self = .withered
@@ -143,9 +165,8 @@ enum OttoAura {
     /// takes 10, 15, 20 ..., and a day's gain (2026-09-28, `gain(minutes:)`)
     /// is usually a multiple of five too (5 at ten minutes, 10 at twenty), so
     /// the level still lands on or near a multiple of five most of the time,
-    /// and each multiple of ten gets its own drawing: start (40) is Stirring
-    /// and a twenty-minute-or-longer first session (50) is Steady, exactly as
-    /// the stages promise, and 90 shows the drawing just short of Nirvana
+    /// and each multiple of ten gets its own drawing: the start (50) is
+    /// Steady's own drawing, and 90 shows the drawing just short of Nirvana
     /// (the faint wheel) with the full one at 100. The two in-betweens that
     /// fall between tens (6 at 45-49, 10 at 75-79) show after an
     /// odd-numbered missed day (15, 25 ...), a skipped "Not now" window, or a
@@ -205,10 +226,15 @@ enum OttoAura {
     ///   whole window the apps were held for that day (Mindful day is
     ///   midnight to midnight). A window costs only once it has closed with no
     ///   session started inside it, and it belongs to the day it opened.
+    /// - Parameter since: when the glow began counting (`glowStart`); sessions
+    ///   and windows before it are not counted. Nil counts everything.
     static func level(from sits: [Sit],
                       notNow: [DateInterval] = [],
+                      since: Date? = nil,
                       today: Date = Date(),
                       calendar: Calendar = .current) -> Int {
+        let sits = since.map { start in sits.filter { $0.date >= start } } ?? sits
+        let notNow = since.map { start in notNow.filter { $0.start >= start } } ?? notNow
         let minutes = minutesByDay(sits, calendar: calendar)
         let practised = Set(minutes.keys)
 
@@ -254,9 +280,10 @@ enum OttoAura {
 
     static func stage(from sits: [Sit],
                       notNow: [DateInterval] = [],
+                      since: Date? = nil,
                       today: Date = Date(),
                       calendar: Calendar = .current) -> Stage {
-        Stage(level: level(from: sits, notNow: notNow, today: today, calendar: calendar))
+        Stage(level: level(from: sits, notNow: notNow, since: since, today: today, calendar: calendar))
     }
 
     /// The day practice first raised Otto to at least `stage`, replayed from

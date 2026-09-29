@@ -34,13 +34,26 @@ enum CommunityType {
 
 /// Record names are deterministic wherever a second save should overwrite
 /// rather than duplicate: one profile per iCloud user, one edge per direction
-/// per pair, one reaction per person per post, one block per pair. Posts and
-/// reports are genuinely many, so they get UUIDs.
+/// per pair, one reaction per person per post. Posts and reports are
+/// genuinely many, so they get UUIDs.
+///
+/// **Blocks get UUIDs too, on purpose (2026-09-29, Melvin: "don't want others
+/// to see who I blocked").** A Block is readable only by its creator, but a
+/// name anyone can work out (`block-<from>-<to>`, built from two public
+/// profile names) would still let anyone ask CloudKit whether that record
+/// exists, by fetching it or by trying to create it, and learn who blocked
+/// whom without reading a field. A random name gives nothing to ask for. It
+/// also means nobody can create my block's name before I do and so stop me
+/// blocking them. One block per pair is kept by the store instead
+/// (`CommunityStore.block` looks before it writes). Blocks written by builds
+/// before this change still carry the old `block-<from>-<to>` names; the
+/// store finds and removes them the same way, by querying my own.
 enum CommunityNames {
     static func profile(user userRecordName: String) -> String { "profile-" + userRecordName }
     static func edge(from: String, to: String) -> String { "edge-" + from + "-" + to }
     static func reaction(post: String, by author: String) -> String { "react-" + post + "-" + author }
-    static func block(from: String, to: String) -> String { "block-" + from + "-" + to }
+    /// A fresh, unguessable name for a new Block record.
+    static func newBlock() -> String { "block-" + UUID().uuidString }
     static func username(_ handle: String) -> String { "username-" + handle }
 }
 
@@ -277,20 +290,27 @@ struct Reaction: Identifiable, Equatable {
     }
 }
 
+/// Someone I blocked. **Private to the blocker**: the `Block` record type is
+/// readable only by its creator (Security Roles in `CLOUDKIT_SETUP.md`), and
+/// the app only ever reads the blocks the current person wrote. See
+/// `CommunityStore`'s header for what that means for the blocked person.
 struct Block: Identifiable, Equatable {
+    /// The record name: a UUID for every new block (`CommunityNames.newBlock`),
+    /// or the old `block-<from>-<to>` for one written before 2026-09-29.
+    let id: String
     let from: String
     let to: String
-
-    var id: String { CommunityNames.block(from: from, to: to) }
 
     init?(record: CKRecord) {
         guard record.recordType == CommunityType.block,
               let from = (record["from"] as? CKRecord.Reference)?.recordID.recordName,
               let to = (record["to"] as? CKRecord.Reference)?.recordID.recordName else { return nil }
-        self.init(from: from, to: to)
+        self.init(id: record.recordID.recordName, from: from, to: to)
     }
 
-    init(from: String, to: String) { self.from = from; self.to = to }
+    init(id: String = CommunityNames.newBlock(), from: String, to: String) {
+        self.id = id; self.from = from; self.to = to
+    }
 
     func apply(to record: CKRecord) {
         record["from"] = CommunityRecordValue.reference(from).ckValue

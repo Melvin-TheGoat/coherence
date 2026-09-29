@@ -15,10 +15,16 @@ final class EntitlementsTests: XCTestCase {
                        "no network must not mean premium")
     }
 
-    /// `.loading` is the one grace state: it lasts a single product fetch and
-    /// exists so a payer's cached entitlement resolves before any lock draws.
-    func test_loadingIsTheOnlyGraceState() {
-        XCTAssertTrue(Entitlements.resolve(state: .loading, entitled: false).paid)
+    /// **No store state grants anything** (Melvin, 2026-09-29: fail closed).
+    /// `.loading` used to be a one-fetch grace so a payer's cached
+    /// entitlement could resolve before any lock drew; the launch now waits
+    /// on that record itself (`LaunchLock`), so the grace only ever opened
+    /// the evidence to strangers for the length of a slow fetch.
+    func test_noStoreStateGrantsAnything() {
+        for state in [Store.State.loading, .ready, .unavailable] {
+            XCTAssertFalse(Entitlements.resolve(state: state, entitled: false).paid,
+                           "\(state) must not stand in for a membership")
+        }
     }
 
     /// A payer is paid in every state: online, offline, products or none.
@@ -102,5 +108,73 @@ final class ShareCardLeakTests: XCTestCase {
         let all = ShareCardStyle.available(for: data(withEvidence: true))
         XCTAssertTrue(all.contains(.full))
         XCTAssertTrue(all.contains(.receipt))
+    }
+}
+
+/// The launch fails CLOSED (Melvin, 2026-09-29: "The app must NEVER open free
+/// because the App Store could not load"). `RootView` asks `LaunchLock` in
+/// Release, so the whole rule is pinned here.
+final class LaunchLockTests: XCTestCase {
+
+    private func verdict(_ state: Store.State, entitled: Bool = false, known: Bool = true,
+                         expired: Bool = false, beta: Bool = false) -> LaunchLock.Verdict {
+        LaunchLock.verdict(state: state, entitled: entitled, entitlementKnown: known,
+                           waitExpired: expired, sideBySideBeta: beta)
+    }
+
+    /// Offline, a sandbox that did not answer, or a store that is selling:
+    /// all of them are the paywall for somebody without a membership.
+    func test_aStoreThatAnsweredLocksTheUnentitled() {
+        XCTAssertEqual(verdict(.ready), .lock)
+        XCTAssertEqual(verdict(.unavailable), .lock, "no network must not mean premium")
+    }
+
+    /// The first fetch is waited on, and a wait that runs out ends in the
+    /// paywall (whose Try again keeps asking), never in the app.
+    func test_theWaitEndsInThePaywallNeverTheApp() {
+        XCTAssertEqual(verdict(.loading), .wait)
+        XCTAssertEqual(verdict(.loading, expired: true), .lock)
+    }
+
+    /// Until StoreKit's on-device record has been read a payer and a
+    /// stranger look the same, so nothing is decided, however long it takes.
+    func test_anUnreadRecordWaitsWithNoTimeout() {
+        for state in [Store.State.loading, .ready, .unavailable] {
+            XCTAssertEqual(verdict(state, known: false, expired: true), .wait, "\(state)")
+        }
+    }
+
+    /// A payer opens the app in every state: online, offline, loading.
+    func test_aPayerIsNeverLocked() {
+        for state in [Store.State.loading, .ready, .unavailable] {
+            for expired in [false, true] {
+                XCTAssertEqual(verdict(state, entitled: true, expired: expired), .open, "\(state)")
+            }
+        }
+    }
+
+    /// The side-by-side beta owns no products, so it is the one build left
+    /// open without a membership.
+    func test_theSideBySideBetaIsNeverLocked() {
+        for state in [Store.State.loading, .ready, .unavailable] {
+            XCTAssertEqual(verdict(state, known: false, expired: true, beta: true), .open, "\(state)")
+        }
+        XCTAssertTrue(Monetization.isSideBySideBeta(bundleID: "com.lockout.meditate808.dev"))
+        XCTAssertFalse(Monetization.isSideBySideBeta(bundleID: "com.lockout.meditate808"))
+        XCTAssertFalse(Monetization.isSideBySideBeta(bundleID: "com.lockout.meditate808.devices"))
+        XCTAssertFalse(Monetization.isSideBySideBeta(bundleID: nil))
+    }
+
+    /// Exhaustively: without a membership, outside the beta, nothing opens
+    /// the app.
+    func test_nothingButAMembershipOpensTheApp() {
+        for state in [Store.State.loading, .ready, .unavailable] {
+            for known in [false, true] {
+                for expired in [false, true] {
+                    XCTAssertNotEqual(verdict(state, known: known, expired: expired), .open,
+                                      "\(state) known:\(known) expired:\(expired)")
+                }
+            }
+        }
     }
 }

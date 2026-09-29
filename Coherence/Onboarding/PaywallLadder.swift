@@ -2,55 +2,56 @@ import SwiftUI
 
 /// What happens when someone says no.
 ///
-/// **The order is deliberate and it is not "discount, bigger discount".** Each
-/// rung removes a different objection, cheapest concession first:
+/// **One rung since 2026-09-29** (Melvin: "If they deny that, then 3 day free
+/// trial plus half off forever"). The paywall itself offers the free trial
+/// again (`Monetization.freeTrial`), so the risk objection is answered before
+/// anybody says no, and the one concession left to make is money: 808 at
+/// half price, every month, starting with the same free trial.
 ///
-/// 1. **Risk.** A free week answers "I don't know if it works for me" without
-///    touching price at all. Onboarding placement accounts for roughly half of
-///    all trial starts, because the person is at peak motivation and the trial
-///    costs them nothing to accept.
-/// 2. **Money, once.** Half off the first year, on its own product with its
-///    own introductory offer, renewing at the full price and saying so.
+/// **The trial rung is DORMANT, not deleted.** From 2026-09-27 it offered the
+/// free trial on its own product (`...monthlytrial`) while the paywall's
+/// monthly carried none; with the trial back on the paywall it would offer
+/// the same thing twice. The case, its copy and its product stay, so a past
+/// purchase restores and the rung can come back by adding it to `ladder`.
 ///
-/// **Two rungs, and the second exists only because it is a real discount**
-/// (Melvin, 2026-09-22: "you shouldnt be showing more than like 1 follow up
-/// screen, unless it includes a discount, which i actually do want to do").
-/// What was here before was three screens with nothing to give: a hardware
-/// anchor, the free week, and the year's price restated in smaller words.
-/// Restating a price is not a concession, and a third screen of it reads as
-/// nagging.
+/// **A follow-up exists only if it concedes something** (Melvin, 2026-09-22:
+/// "you shouldnt be showing more than like 1 follow up screen, unless it
+/// includes a discount, which i actually do want to do"). Restating a price
+/// is not a concession, and a second screen of it reads as nagging.
 ///
-/// Declining the last rung no longer ends the conversation. It lands on
-/// `FreeTierScreen`, because 808 stopped being a hard paywall on 2026-08-24.
-/// That is the real terminal rung, and it is the honest one: the app is
-/// useful without paying, so the ladder should end by saying so.
+/// While 808 is premium only, declining the rung returns to the plans and
+/// the "No" link goes. With a free tier it would land on `FreeTierScreen`.
 ///
-/// **The second rung is 808 at half price, with the free trial first**
+/// **The half-price plan is a cheaper plan, not a cheaper first month**
 /// (Melvin, 2026-09-27: "give them the 3 day free trial if they choose to
 /// accept the month half off"). Apple gives a purchase ONE introductory
 /// offer, so "free days, then a half-price first month" cannot be one
-/// purchase; he chose a cheaper plan instead: the monthly50 product is $3.99
-/// EVERY month, and its one introductory offer is the free trial. A rung
-/// selling half off only the first month came back earlier that day, on its
-/// own product (`com.lockout.meditate808.monthly50`). It was removed on
-/// 2026-08-24 because it sold `.monthly`, whose one introductory offer was the
-/// free week, so the screen promised a discount the purchase sheet would
-/// contradict. The trial rung likewise sells its own product
-/// (`...monthlytrial`), since the paywall's monthly now carries no trial.
+/// purchase: the monthly50 product is $3.99 EVERY month, and its one
+/// introductory offer is the free trial. An earlier half-off-month rung was
+/// removed on 2026-08-24 because it sold `.monthly`, whose one introductory
+/// offer was the free week, so the screen promised a discount the purchase
+/// sheet would contradict. Every rung sells its own product.
 /// `test_noTwoRungsSellTheSameProductWithDifferentOffers` is the tripwire.
 ///
 /// **What we refuse, same as the paywall itself:** no countdown, no "94% off",
 /// no "spots remaining", no "you will never see this again". A meditation app
 /// manufacturing panic contradicts the thing it sells.
 enum DownsellRung: Int, CaseIterable, Identifiable {
-    case trial, halfMonth
+    /// DORMANT since 2026-09-29: not in `ladder`. See the type's comment.
+    case trial
+    case halfMonth
 
     var id: Int { rawValue }
+
+    /// The rungs a "No, I don't want to pay" walks, in order. Only these are
+    /// ever shown; `allCases` also holds the dormant ones.
+    static let ladder: [DownsellRung] = [.halfMonth]
 
     var title: String {
         switch self {
         case .trial:     return "No worries.\nTry it free first."
-        case .halfMonth: return "Then have 808\nat half price."
+        // The first thing said after a "no", now that it is the only rung.
+        case .halfMonth: return "No worries.\nHave 808 at half price."
         }
     }
 
@@ -113,8 +114,11 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         }
     }
 
+    /// The rung after this one on `ladder`, or nil at its end (and for a
+    /// dormant rung, which is on no ladder).
     var next: DownsellRung? {
-        DownsellRung(rawValue: rawValue + 1)
+        guard let i = Self.ladder.firstIndex(of: self), i + 1 < Self.ladder.count else { return nil }
+        return Self.ladder[i + 1]
     }
 }
 
@@ -188,8 +192,8 @@ struct DownsellSheet: View {
 
 extension ProcessInfo {
     /// `SIMCTL_CHILD_PREVIEW_DOWNSELL=1` reveals the pass control even when
-    /// nothing is on sale, so the three rungs can be reviewed before billing
-    /// exists. Without it they are unreachable until the day they go live,
+    /// nothing is on sale, so the ladder can be reviewed before billing
+    /// exists. Without it it is unreachable until the day it goes live,
     /// which is how screens ship unlooked-at.
     var isPreviewingDownsell: Bool {
         #if DEBUG
@@ -222,8 +226,9 @@ extension ProcessInfo {
 /// What it must never do is shame anyone for not paying. The columns state
 /// what is true on each side and stop there.
 struct FreeTierScreen: View {
-    /// Whether the free week may still be promised. A lapsed subscriber sees
-    /// "See the plans" instead; the paywall then shows what is actually true.
+    /// Whether the free trial may still be promised. Somebody who already
+    /// used one sees "See the plans" instead; the paywall then shows what is
+    /// actually true.
     var trialEligible: Bool = true
     var trialDays: Int = SubscriptionPlan.fallbackTrialDays
     let onStartTrial: () -> Void

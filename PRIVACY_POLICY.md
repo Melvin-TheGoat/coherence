@@ -23,10 +23,9 @@ support for Apple Watch.
   optional photo, a summary of how often you meditate, and who you have added
   and who has added you go to a shared area of iCloud where anyone using 808
   can look them up. Your health results never go there.
-- **In versions of 808 that include Block, nothing about Block reaches us.**
-  The apps you choose to hold, and everything about how and when you open
-  them, stay on your phone in Apple's own Screen Time system. See "Block"
-  below.
+- **Nothing about Block reaches us.** The apps you choose to hold, and
+  everything about how and when you open them, stay on your phone in Apple's
+  own Screen Time system. See "Block" below.
 - **We don't sell your data, run ads, or track you.** There are no advertising
   identifiers and no cross-app tracking. We collect pseudonymous usage
   analytics (which features are used, on what kind of iPhone, and roughly
@@ -82,8 +81,8 @@ your body. Important details:
   Friends, and you can add photos or videos to a session's own page, taken with
   the camera or chosen from your library through Apple's private picker (which
   hands 808 only the items you pick, never access to your library). Photos and
-  videos you add to a session stay private to you. In versions of 808 that
-  include Block, Otto's video-call-style screen also shows you a live preview
+  videos you add to a session stay private to you. When Block invites you to
+  meditate, Otto's video-call-style screen can also show you a live preview
   of your own front camera, the way an incoming call would; that preview is
   never recorded, saved, or sent anywhere.
 - **Saving a session card to your Photos is add-only.** If you tap Share on
@@ -98,24 +97,23 @@ rate and movement, only during a session you started, only on your own devices.
 
 **Session and app data.** Session dates, durations, the type of session, your
 results and streak, and your **preferences** (reminder time, default length,
-and similar settings). Otto's glow, and in versions of 808 that include them,
-your points and the hats you choose for him, are worked out on your phone from
-your own sessions. In 808 1.1 and later, your answers to the questions when
-you first open the app are kept in the app and are never sent to us. The one
-exception is what you choose to put on a Friends profile, such as your name
-and username. Versions before 1.1 sent one answer with usage analytics:
-whether you said during setup that you own an Apple Watch.
+and similar settings). Otto's glow, your points, and the hats you choose for
+him are worked out on your phone from your own sessions. In 808 1.1 and later,
+your answers to the questions when you first open the app are kept in the app
+and are never sent to us. The one exception is what you choose to put on a
+Friends profile, such as your name and username. Versions before 1.1 sent one
+answer with usage analytics: whether you said during setup that you own an
+Apple Watch.
 
-**Notifications.** Besides the optional daily reminder, 808 can send you
-three kinds of notification, all about something you started yourself: that
-a timed session you set is finishing; that a session on your phone is still
-running after you left the app, so you can come back to it; and, in versions
-of 808 that include Block, a note from Otto after you open an app you chose
-to hold. These are marked Time Sensitive so they can reach you even if you
-have notifications quieted, the same way a timer or an alarm would. You
-choose whether to allow notifications at all, in the iOS prompt or in
-Settings. 808 asks during setup or the first time one of these moments
-happens.
+**Notifications.** Besides the optional daily reminder, 808 can send you three
+kinds of notification, all about something you started yourself: that a timed
+session you set is finishing; that a session on your phone is still running
+after you left the app, so you can come back to it; and a note from Otto after
+you open an app you chose to hold with Block. These are marked Time Sensitive
+so they can reach you even if you have notifications quieted, the same way a
+timer or an alarm would. You choose whether to allow notifications at all, in
+the iOS prompt or in Settings. 808 asks during setup or the first time one of
+these moments happens.
 
 **Silencing notifications during a sit.** If you set it up, the session
 screen can offer a switch that turns Do Not Disturb on while you sit and
@@ -136,7 +134,7 @@ us by PostHog, Inc. on servers in the United States, and they include:
   streak (in bands such as "3 to 7 minutes"), whether a session with your Watch saved its readings
   (never the readings themselves), sessions recorded by hand or deleted, Otto's
   glow moving to a new stage, awards earned, which of 808's own notifications
-  you opened, which hat Otto wears in versions that include hats, and counts of
+  you opened, which hat Otto wears, and counts of
   Friends actions such as creating a profile, sending a request, or blocking
   someone.
 - **Subscriptions:** when a plan screen or offer is shown, the plan you pick,
@@ -203,10 +201,10 @@ Your information lives in these places, by design:
   PostHog, with a copy in a Google Sheet, as described under "Usage
   analytics." A report you file is stored in the shared area and sent to us,
   as described under "Friends."
-- **Block and Screen Time choices stay on your device only.** In versions of
-  808 that include Block, the apps you pick to hold and everything about when
-  you open them live in an area your phone shares privately between 808 and
-  its Screen Time extensions. It is never synced to iCloud or sent to any
+- **Block and Screen Time choices stay on your device only.** The apps you
+  pick to hold with Block and everything about when you open them live in an
+  area your phone shares privately between 808 and its Screen Time
+  extensions. It is never synced to iCloud or sent to any
   server, ours or anyone else's; like the rest of your phone, it can be part
   of your own device backup. See "Block" below.
 
@@ -257,11 +255,12 @@ people you have added.
 
 Everything else 808 writes to the shared area is stored where other
 people's copies of 808 can read it too, even though the app does not show it
-to them. That includes who you have blocked, and the exact dates and times
-you created your profile, first meditated with 808, and last meditated.
-Reports are the one exception: they are kept where only we and the person
-who filed one can read them. We can read everything in the shared
-area, reports included, because moderating it requires that.
+to them. That includes the exact dates and times you created your profile,
+first meditated with 808, and last meditated. Reports and blocks are the
+exceptions: a report is kept where only we and the person who filed it can
+read it, and a block where only we and the person who made it can read it.
+We can read everything in the shared area, reports and blocks included,
+because moderating it requires that.
 
 **Reports.** When you report someone, the report (who filed it, who it is
 about, and the reason you give) is stored in the shared area. A copy with the
@@ -271,9 +270,13 @@ Google Sheet and emails us so we can act on it quickly. The person you report
 is not told who reported them.
 
 **Moderation.** Usernames and names are filtered for objectionable language
-before they are accepted. You can report a person, and you can block someone,
-which hides you from each other in both directions. We remove content that
-breaks our terms and we can remove accounts that repeatedly break them.
+before they are accepted. You can report a person, and you can block someone.
+A block is private and one-sided: the person you block is not told, their
+friend requests never reach you and cannot be accepted, and you stop seeing
+them anywhere in Friends. Because profiles are public, they can still look up
+your profile (your name, username, photo and practice summary). We remove
+content that breaks our terms and we can remove accounts that repeatedly break
+them.
 
 **Deleting it.** **Deleting your account deletes your profile, your username,
 your practice summary, the friend requests and connections you created, and
@@ -288,9 +291,8 @@ no longer points to anyone.
 
 ## Block
 
-In versions of 808 that include it, Block is part of 808's paid membership.
-It is optional: if you never turn on a blocker, nothing in this section
-applies to you.
+Block, part of 808's paid membership since version 1.1, is optional: if you
+never turn on a blocker, nothing in this section applies to you.
 
 Block uses Apple's own Screen Time tools (the Family Controls framework) so
 you can hold apps you find distracting until you've meditated. You pick the
@@ -299,11 +301,12 @@ window you choose. **808 never learns which apps you picked.** Apple hands
 the app your choices as sealed tokens that identify what to shield without
 identifying it to us, and we never ask for anything more specific.
 
-When a held app is shielded, you can ask Otto for a few minutes or start a
-meditation; finishing a short one releases the apps for the rest of that
-window. Every part of that, including whether you've meditated today, which
-apps are currently held, and how many times you've asked for a few more
-minutes, is worked out on your phone and stays there.
+When a held app is shielded, you can ask Otto, who invites you to meditate.
+A meditation of five minutes or more opens the apps for the rest of that
+window, or you can tell Otto "Not now" for 10, 20 or 30 minutes. Every part
+of that, including whether you've meditated today, which apps are currently
+held, and when you told Otto "Not now", is worked out on your phone and stays
+there.
 
 **Nothing from Block is ever sent anywhere.** Apple's own terms for the
 Family Controls framework say this plainly: this kind of data "may only be
@@ -334,9 +337,8 @@ timing, or leave it on hold for a while, at any time in the app.
 
 - To provide the app: run sessions, compute and show your evidence and history,
   and sync across your own devices.
-- To let you know when a timed session is ending, or, in versions that include
-  Block, when Otto has something to say after Block held an app, as described
-  under "Notifications" above.
+- To let you know when a timed session is ending, or when Otto has something
+  to say after Block held an app, as described under "Notifications" above.
 - To send a **daily reminder**, only if you enable it (a local notification
   scheduled on your device).
 - To show your Friends profile to other people using 808, only if you create

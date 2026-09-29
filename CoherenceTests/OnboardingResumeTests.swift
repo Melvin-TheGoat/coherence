@@ -92,17 +92,11 @@ final class OnboardingResumeTests: XCTestCase {
 /// the thing that would hold the release up, and a locked row would sell
 /// what the build does not contain.
 final class FeatureFlagTests: XCTestCase {
-    /// Block holds apps through Screen Time, which the simulator cannot show,
-    /// so it ships only once it has been seen working on a phone.
-    func test_blockIsOffForTheAppStoreUntilItRunsOnAPhone() {
-        XCTAssertFalse(FeatureFlags.blockInRelease,
-                       "Block ships once shields, passes and the notification are verified on a phone")
-    }
-
-    /// The hats are placeholders until their art exists.
-    func test_storeIsOffForTheAppStoreUntilTheHatsHaveArt() {
-        XCTAssertFalse(FeatureFlags.shopInRelease,
-                       "The Store ships once every hat has its art")
+    /// Block and the Shop are half of 1.1 (Melvin, 2026-09-29). Turning either
+    /// off for the App Store would ship a different app from the listing.
+    func test_blockAndTheShopShipInTheAppStoreBuild() {
+        XCTAssertTrue(FeatureFlags.blockInRelease, "Block ships in 1.1")
+        XCTAssertTrue(FeatureFlags.shopInRelease, "The Shop and its hats ship in 1.1")
     }
 
     func test_ottoIsOffForTheAppStore() {

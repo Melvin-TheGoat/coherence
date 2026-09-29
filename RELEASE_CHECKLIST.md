@@ -6,7 +6,7 @@ Claude session asked to submit must go through it with you first.
 
 Tick an item by moving it to DONE with the date. Never delete a line.
 
-## NEXT RELEASE: 1.1 (Friends, and Block if verified)
+## NEXT RELEASE: 1.1 (Friends, Block and the Shop)
 
 **Added 2026-09-23, App Review prep pass.** This section is the ORDER the
 remaining human steps happen in, for whichever build actually ships next
@@ -18,8 +18,9 @@ corrected to match. Do every step below it before returning here.
 
 **Release-docs pass, 2026-09-29.** The store listing, review notes, What's
 New, IAP setup and privacy label were rewritten for the 1.1 that actually
-ships (premium only, no trial on Monthly or Yearly, the two ladder products,
-Friends as profiles only, Block / Shop / Otto chat off). Everything to paste is
+ships (premium only, ~~no trial on Monthly or Yearly, the two ladder products,~~
+Friends as profiles only, ~~Block / Shop /~~ Otto chat off; struck the same
+evening, see "Founders' decisions" below). Everything to paste is
 in `marketing/APP_STORE_PASTE.md`; the reasoning and the product table are in
 `APP_STORE.md`. Items this pass found are **R1 to R18** in the `## OPEN for
 1.1: release-docs pass` section right after this one, and the calls only the
@@ -34,6 +35,40 @@ line by line against the Release build). New items are **R19 to R24** at the
 end of the release-docs pass section, and three more founder decisions. **Do R1
 and R2 first: R2 is a BLOCKER, and R1 is the one placeholder left in the
 review notes.**
+
+**Founders' decisions, the evening of 2026-09-29 (Melvin). The code already
+does all of it; this file, the listing and the legal docs were brought in
+line the same night.**
+
+1. **The free trial is back.** Monthly ($7.99) and Yearly ($29.99) each carry
+   a **3-day free trial** as their App Store introductory offer (the app reads
+   the length from App Store Connect; `808.storekit` uses P3D on both). The
+   paywall sells **Lifetime ($99.99, one payment, no trial)** as a third card
+   again. "No, I don't want to pay" offers ONE rung, `monthly50` ("Monthly,
+   half price", $3.99 every month after a 3-day free trial), which returns to
+   the paywall with that plan selected. `monthlytrial` and `yearly50` are
+   dormant. Trial lines are eligibility-aware. Step 0 and 0a below are
+   rewritten for it.
+2. **The app fails closed.** Without a membership it shows the paywall; if
+   the plans cannot load it says "Plans aren't loading" with Try again,
+   Restore and (on the launch lock) the Account link. Payers are recognized
+   offline from StoreKit's on-device record. **So App Review MUST have the
+   products attached to the version, or the reviewer cannot get in.**
+3. **Block and the Shop (points and hats) ship in 1.1**
+   (`blockInRelease = true`, `shopInRelease = true`). Otto's chat stays off;
+   camera vision is not in 1.1. The Release tab bar is the sloth bar (Home,
+   Block, plus, Shop, Profile); Friends opens from a circle on Home. **The
+   on-phone Block verification (step 7) is now REQUIRED before submitting.**
+4. **Sessions count from one minute** (`SessionStore.minDurationSec = 60`,
+   was 30 seconds). Shorter ones are discarded.
+5. **Otto's glow starts at 50% for everyone** on 1.1's first launch; history,
+   streaks and awards carry over untouched.
+6. **Blocks are private and one-sided.** Only the blocker's own app reads a
+   block; `Block.to` is no longer indexed; the CloudKit role change is a human
+   step (`CLOUDKIT_SETUP.md`, "Making Block private").
+7. **1.0 updaters:** paid subscribers and Lifetime owners keep full access;
+   free 1.0 users meet the paywall on updating (no grandfathering). History
+   carries over.
 
 0b. **FRIENDS WITHOUT POSTS, AND THE STORE (Melvin, 2026-09-27).** The
    feed and all photo and video posting are gone; friends see each other's
@@ -59,11 +94,32 @@ review notes.**
      label is in `APP_STORE.md`.)
    - [ ] Existing posts are deleted from iCloud once, on each person's next
      launch (`CommunityModel.clearMyPostsIfNeeded`). Nothing to do but know.
-   - [ ] The Store is behind `FeatureFlags.shopInRelease` (off). Flip it
+   - [x] ~~The Store is behind `FeatureFlags.shopInRelease` (off). Flip it
      only when every hat has its art (`Coherence/Shop/Hats/hat-<id>.png`)
      and the Store tab has its icon (`sloth-store`); until then Release keeps
-     the Friends tab where the Store would be.
-0a. **THE LADDER'S TWO PRODUCTS (Melvin, 2026-09-27).** In the same
+     the Friends tab where the Store would be.~~ **DECIDED 2026-09-29
+     (Melvin): the Shop ships; `shopInRelease = true`.** Checked the same
+     day: all eleven hats in `HatCatalog` have art in
+     `Coherence/Shop/Hats/`, and `Coherence/TabBar/sloth-store.png` exists.
+     Release draws the sloth tab bar (Home, Block, plus, Shop, Profile), and
+     Friends opens from a circle on Home. The on-phone check is in step 7.
+0a. **THE LADDER'S ONE PRODUCT (rewritten 2026-09-29, evening, Melvin).**
+   In the same subscription group as Monthly and Yearly, create
+   `com.lockout.meditate808.monthly50` at **$3.99 a month, every month**,
+   with a **3-day free trial** as its introductory offer, and attach it to
+   the version.
+   - [ ] `monthly50` created, 3-day free intro offer, attached.
+   - [ ] **`monthlytrial` is NOT needed.** It is dormant (no screen sells it,
+     because the paywall's own Monthly and Yearly carry the trial again). Do
+     not create it; if it already exists, leave it unattached.
+   - [ ] One sandbox purchase from "No, I don't want to pay" on the Release
+     build, with a tester who has never taken a trial in this group: the rung
+     reads "No worries. Have 808 at half price.", "Choose half price" returns
+     to the paywall with that plan selected, and Apple's sheet shows 3 days
+     free, then $3.99 a month.
+
+   *Superseded 2026-09-29, evening (one rung now), kept for the record; do
+   not act on it:* **THE LADDER'S TWO PRODUCTS (Melvin, 2026-09-27).** In the same
    subscription group as Monthly and Yearly, create
    `com.lockout.meditate808.monthlytrial` ($7.99 a month, introductory offer:
    free trial, the length you want; the app reads it) and
@@ -80,11 +136,35 @@ review notes.**
    tester who has never taken a trial in this group: eligibility for an
    introductory offer is per subscription group, so a tester who took 1.0's
    7-day trial is shown the rung's price from today, correctly.
-0. **NO FREE TRIAL (Aziz, 2026-09-26), App Store Connect must match the
-   build.** The app no longer offers or mentions a trial
+0. **THE FREE TRIAL IS BACK (Melvin, 2026-09-29, evening: "same as before, 3
+   day offer"). App Store Connect must match the build**
+   (`Monetization.freeTrial = true`).
+   - [ ] **A 3-day free introductory offer on BOTH
+     `com.lockout.meditate808.monthly` and `com.lockout.meditate808.yearly`.**
+     The sandbox shows **7 days on monthly and none on yearly** today: change
+     monthly to 3 days and add 3 days to yearly. The paywall reads each
+     product's real offer, so it will say whatever Connect holds; the
+     description, the review notes and What's New all say 3 days.
+   - [ ] **`com.lockout.meditate808.lifetime` is sold on the paywall again**
+     (third card, $99.99, one payment). Confirm it is **Cleared for Sale**.
+     Never delete it: past buyers restore it.
+   - [ ] **Attach to the version: `monthly`, `yearly`, `lifetime` (if Connect
+     offers it; it was approved with 1.0) and `monthly50`**, each "Ready to
+     Submit" with its review screenshot (`APP_STORE.md`, "In-app purchases").
+     **Because the app fails closed, a reviewer whose sandbox cannot load
+     `monthly` and `yearly` is locked out on "Plans aren't loading"**; that is
+     a 2.1 rejection. Do not submit until a sandbox account on the Release
+     build sees all three cards.
+   - [ ] One sandbox purchase each of Monthly (trial shown on the sheet),
+     Yearly (trial shown) and Lifetime ("charged today, nothing renews") on
+     the Release build, with a tester new to the group.
+
+   *Superseded 2026-09-29, evening (the trial is back), kept for the record;
+   do NOT act on these three items:* **NO FREE TRIAL (Aziz, 2026-09-26), App
+   Store Connect must match the build.** The app no longer offers or mentions a trial
    (`Monetization.freeTrial = false`), and sells only Monthly and Yearly
    with no way past the paywall but buying or restoring.
-   - [ ] Delete the introductory offer ~~(the 3-day free trial) on
+   - (superseded) Delete the introductory offer ~~(the 3-day free trial) on
      `com.lockout.meditate808.monthly`, and on `.yearly` if it carries one~~
      **(the 7-day free trial) on BOTH `com.lockout.meditate808.monthly` and
      `com.lockout.meditate808.yearly`** (corrected 2026-09-29: both 1.0
@@ -92,13 +172,15 @@ review notes.**
      step 3 below, and the 3-day trial was only ever a plan).
      While it exists, Apple's purchase sheet still grants a trial the paywall
      never mentions: a 3.1.2 mismatch between the screen and the sheet.
-   - [ ] Leave `com.lockout.meditate808.lifetime` for sale or not (the
+   - (superseded: Lifetime is sold again) Leave `com.lockout.meditate808.lifetime` for sale or not (the
      founders' call): the paywall no longer shows it, but existing Lifetime
      buyers must keep restoring it, so do NOT delete the product.
-   - [ ] Update the store description, review notes and the subscription
+   - (superseded) Update the store description, review notes and the subscription
      block in `APP_STORE.md` so none of them promise a trial or Lifetime.
      (2026-09-29: written, in `marketing/APP_STORE_PASTE.md`. Tick this once
      it is pasted into App Store Connect.)
+     **Superseded 2026-09-29, evening:** all three now state the 3-day trial
+     and Lifetime; paste them from `marketing/APP_STORE_PASTE.md` (R16).
 
 1. **Developer portal (Certificates, Identifiers & Profiles), done once, by
    the Account Holder:**
@@ -134,24 +216,31 @@ review notes.**
    - [ ] PUBLIC database (`iCloud.com.lockout.meditate808`): confirm all
      seven Friends record types, add any missing fields including the four
      newer `Post` media List fields (`media`, `mediaPosters`, `mediaKinds`,
-     `mediaAspects`, replacing the single `photo` field), add the eight
-     documented indexes (QUERYABLE on `FriendEdge.from`/`.to`,
-     `Post.author`, `Reaction.post`, `Reaction.author`, `Block.from`/`.to`;
-     SORTABLE on `Post.practicedAt`).
+     `mediaAspects`, replacing the single `photo` field), add the ~~eight~~
+     **seven** documented indexes (QUERYABLE on `FriendEdge.from`/`.to`,
+     `Post.author`, `Reaction.post`, `Reaction.author`, `Block.from`;
+     SORTABLE on `Post.practicedAt`). **`Block.to` is no longer needed
+     (2026-09-29, blocks are private):** do not add it; if it already exists,
+     leave it (an index grants no read access).
    - [ ] **One more index, now in `CLOUDKIT_SETUP.md` (the account deletion
      that needs it landed in code 2026-09-23): QUERYABLE on
      `Reaction.author`.** Deleting an account deletes the reactions that
-     person gave, across every post, and that query needs this index. Eight
-     indexes in all.
+     person gave, across every post, and that query needs this index. ~~Eight
+     indexes in all.~~ Seven in all since `Block.to` was dropped (2026-09-29).
    - [ ] Security roles `_world` read / `_creator` write confirmed on all
      seven public types. (2026-09-29: **except Report**, which must NOT be
      world-readable: a report carries the reporter and their words. See
-     `CLOUDKIT_SETUP.md` Step 4 and R4.)
+     `CLOUDKIT_SETUP.md` Step 4 and R4.) **(2026-09-29, evening: and except
+     `Block`, which becomes creator-only too: `_world` none, `_icloud`
+     Create, `_creator` Read/Write. Follow `CLOUDKIT_SETUP.md`, "Making Block
+     private", including its order: every tester phone on the new build
+     first, Development before Production, and old-format `block-<from>-<to>`
+     records re-made or deleted.)**
    - [ ] (2026-09-29) The five practice-summary fields on the public
      `Profile` type (`sessions7d`, `minutes7d`, `currentStreak`,
      `totalSessions`, `lastSessionAt`, from 0b) are in Development before the
-     deploy. Seven record types and eight indexes in all; nothing new to
-     index.
+     deploy. Seven record types and ~~eight~~ **seven** indexes in all
+     (`Block.to` dropped 2026-09-29); nothing new to index.
    - [ ] PRIVATE database (the per-user CloudKit sync): confirm
      `CD_SessionPhoto` (including the newer `order` and `video` fields),
      `CD_Session.source`, and `CD_User.username` are all present in
@@ -179,25 +268,38 @@ review notes.**
        monthly product, so nothing else changes.~~ **Superseded 2026-09-29:**
        Monthly and Yearly carry NO trial since 2026-09-26 (step 0 deletes
        it); the only trials are on the two ladder products (0a), and the
-       app reads the trial length off `monthlytrial`.
+       app reads the trial length off `monthlytrial`. **Superseded AGAIN
+       2026-09-29, evening: the original line was right after all.** Both
+       Monthly and Yearly carry a 3-day free trial; see step 0.
      - ~~The description and promotional text say plainly that 808 is a
        subscription with a free trial.~~ **Superseded 2026-09-29:** they say
        808 is a subscription with every feature included; trials are
        described only for the two ladder plans, in the subscription block.
+       **(Evening: the description's subscription block now states the 3-day
+       trial on Monthly and Yearly, Lifetime, and the half price plan.)**
      - ~~Review notes: "808 is a subscription app. The paywall at the end of
        onboarding offers a free trial; start it with the sandbox account to
        reach everything. Restore purchase is on the same screen."~~
        **Superseded 2026-09-29:** the paywall offers no trial. The notes are
        in `marketing/APP_STORE_PASTE.md` (how to pass the press-and-hold
-       screen, the ladder, the Account link, 1.0 users).
-     - ~~All four products attached to the version~~ **The real set
+       screen, the ladder, the Account link, 1.0 users). **(Evening: the
+       notes now say the paywall's Monthly and Yearly start with a 3-day free
+       trial, list Lifetime, describe the one rung, and carry the Block
+       paragraph.)**
+     - ~~All four products attached to the version~~ ~~The real set
        (corrected 2026-09-29): attach `monthly`, `yearly`, `monthlytrial` and
        `monthly50`; do NOT attach `lifetime` (restore only, already approved
-       with 1.0) or `yearly50` (no screen sells it)** and their review
-       screenshots uploaded: if the sandbox cannot return them, the app stays
-       open instead of showing a paywall that cannot sell, which a reviewer
-       reads as "the paywall is missing". (Only `monthly` and `yearly` decide
-       that; the ladder link just hides if its two are missing.)
+       with 1.0) or `yearly50` (no screen sells it)~~ **The set (corrected
+       again 2026-09-29, evening): attach `monthly`, `yearly`, `lifetime`
+       (confirm Cleared for Sale) and `monthly50`; do NOT attach
+       `monthlytrial` (dormant, not needed) or `yearly50` (no screen sells
+       it)**, with their review screenshots uploaded. ~~If the sandbox cannot
+       return them, the app stays open instead of showing a paywall that
+       cannot sell.~~ **The app now FAILS CLOSED: if the sandbox cannot return
+       `monthly` and `yearly`, the reviewer sits on "Plans aren't loading"
+       and cannot get in.** Attached and "Ready to Submit" is not optional.
+       (The rung link hides if `monthly50` is missing, and the Lifetime card
+       hides if `lifetime` is.)
      - Decide what people who installed 1.0 or 1.0.1 for free get when they
        update (BACKLOG.md "Decisions from the 2026-09-23 call"): today they
        meet the paywall at launch. **Moved to DONE 2026-09-29** (decided
@@ -223,8 +325,9 @@ review notes.**
      (Watch is optional, how to test Friends, how to test Block if it
      ships, offer to provide a screen recording for the Screen Time parts)~~
      **from `marketing/APP_STORE_PASTE.md`, after R1 fills in the reviewer
-     handle** (corrected 2026-09-29; the Block paragraph is in
-     `APP_STORE.md` for a build that ships Block).
+     handle** (corrected 2026-09-29; ~~the Block paragraph is in
+     `APP_STORE.md` for a build that ships Block~~ the Block paragraph is IN
+     the paste-ready notes, since Block ships in 1.1).
    - [ ] What's New set to the ~~matching 1.1 variant in `APP_STORE.md`~~
      **1.1 text in `marketing/APP_STORE_PASTE.md`** (2026-09-29; it says 808
      is now a subscription and existing subscribers and Lifetime owners keep
@@ -232,10 +335,13 @@ review notes.**
      (see "1.1 RESCORES EVERY EXISTING USER'S HISTORY" below).
    - [ ] Store screenshots re-shot wherever the tab bar shows (Search is
      now Friends) and wherever Block appears, if it ships. **Superseded
-     2026-09-29 by R6: every screenshot must be re-shot.**
+     2026-09-29 by R6: every screenshot must be re-shot.** (Evening: Block
+     ships and leads the proposed order; the Release tab bar is Home, Block,
+     plus, Shop, Profile.)
    - [ ] Confirm the existing IAP/subscription products are attached to
      this version; ~~nothing new needs creating for Friends~~ (2026-09-29:
-     two new products, `monthlytrial` and `monthly50`, see 0a). If Block ships
+     ~~two new products, `monthlytrial` and `monthly50`~~ **one new product,
+     `monthly50`**, corrected the same evening; see 0 and 0a). If Block ships
      paid through the same subscription group, confirm its paywall entry
      point carries the same required disclosures (price, length, renewal,
      Privacy Policy and Terms links) as the main paywall. Checked in code
@@ -286,14 +392,25 @@ review notes.**
    delete an account and confirm the profile and username vanish from the
    other phone. Same steps as `CLOUDKIT_SETUP.md` Step 5, on TestFlight
    (Production) instead of Development.
-7. **On-phone Block verification**, only if this build flips
-   `blockInRelease`: everything already listed under "OPEN for the build
-   that flips `FeatureFlags.blockInRelease`" below, unchanged by this pass.
+7. **On-phone Block verification: REQUIRED for 1.1** (2026-09-29, evening:
+   1.1 flips `blockInRelease`). ~~Only if this build flips `blockInRelease`.~~
+   Everything listed under "OPEN for the build that flips
+   `FeatureFlags.blockInRelease`" below must be seen working on a phone, on
+   the Release build, before pressing Add for Review. Plus the Shop, since it
+   ships too:
+   - [ ] On the Release build on a phone: sit a session of a few minutes,
+     see the points land, buy a hat in the Shop, wear it, and see it on Otto
+     on Home. Check that a session recorded by hand earns no points.
+   - [ ] The Release tab bar reads Home, Block, plus, Shop, Profile, and the
+     Friends circle on Home opens Friends.
+   - [ ] A session shorter than one minute is discarded with the "too short"
+     screen (`SessionStore.minDurationSec = 60`, changed from 30 seconds on
+     2026-09-29).
 
 Nothing above is a substitute for reading the rest of this file; it is the
 order to read it in.
 
-## OPEN for 1.1: release-docs pass (R1 to R18, added 2026-09-29)
+## OPEN for 1.1: release-docs pass (R1 to R27, added 2026-09-29)
 
 Under an `## OPEN` heading so `tools/archive.sh` prints them at the end of
 every archive.
@@ -336,11 +453,13 @@ every archive.
   captions are in `marketing/APP_STORE_PASTE.md`, "Screenshots". Media
   Manager orders by upload completion: upload one at a time, in order.
 - [ ] **R7. In-app purchase metadata.** Review screenshots and localizations
-  (display name, description) for `monthlytrial` and `monthly50`; new
+  (display name, description) for ~~`monthlytrial` and~~ `monthly50`
+  (`monthlytrial` is dormant since 2026-09-29, evening: nothing to set); new
   descriptions for `monthly`, `yearly` and `lifetime` (the 1.0 ones say
   "Every session measured and scored", false for a phone session); re-shoot
   `marketing/appstore/iap/paywall-review.png` (from 2026-09-01, the old
-  paywall). All values in `APP_STORE.md`, "In-app purchases".
+  paywall) showing the three cards, Monthly and Yearly with their 3-day
+  trial and Lifetime. All values in `APP_STORE.md`, "In-app purchases".
 - [ ] **R8. Subscription group display name**: recommend `808 Premium`, the
   name the app uses, instead of the 1.0 `808 Membership`. Set the rank per
   `APP_STORE.md`.
@@ -366,16 +485,22 @@ every archive.
   the website, not the bundled copies.
 - [ ] **R13. Content Rights answer** in App Information depends on the
   photos decision below: No third-party content only if the famous-meditator
-  photos and university crests are removed.
-- [ ] **R14. Lifetime: remove from sale or not** (founders). No screen sells
-  it in 1.1. Never delete the product; buyers must keep restoring it.
+  photos and university crests are removed. **(2026-09-29, evening: the
+  photos ship, so the answer is Yes. Keep the CC BY-SA licence pages for the
+  three photos on file; `marketing/APP_STORE_PASTE.md` has the wording.)**
+- [x] **R14. Lifetime: remove from sale or not** (founders). ~~No screen
+  sells it in 1.1.~~ **DECIDED 2026-09-29, evening (Melvin): Lifetime is sold
+  on the paywall again, $99.99, as the third card.** Keep it Cleared for Sale
+  (step 0). Never delete the product; buyers must keep restoring it.
 - [ ] **R15. Copyright field**: `© 2026 Lock Out Inc.` exactly.
 - [ ] **R16. Paste the 1.1 subtitle, promotional text, description,
   keywords and What's New** from `marketing/APP_STORE_PASTE.md`.
 - [ ] **R17. One real purchase of each ladder plan** in the sandbox on the
   Release build, from "No, I don't want to pay", confirming each rung
   returns to the paywall with its plan selected and the purchase sheet
-  agrees with the screen.
+  agrees with the screen. **(2026-09-29, evening: one rung, `monthly50`;
+  plus one purchase each of Monthly, Yearly and Lifetime from the paywall,
+  step 0. On every one, the sheet's trial must match the screen's.)**
 - [ ] **R18. The launch paywall's Account link works for someone who never
   pays**: Manage subscription, Redeem a code, Restore, Sign out and Delete
   account (5.1.1(v) needs deletion reachable without buying). ~~It shows only
@@ -399,7 +524,9 @@ every archive.
   asks.
 - [ ] **R20. The reviewer's sandbox account holds no active 808
   subscription.** Onboarding sends a payer straight past the paywall, so a
-  reviewer on a subscribed account would never see it. The review notes ask
+  reviewer on a subscribed account would never see it. (2026-09-29, evening:
+  the notes also explain that an account which already had an 808 free
+  trial sees the plans without one.) The review notes ask
   for this; make sure the account named in App Store Connect (if any) and the
   one used for R17 are clean. (R1's reviewer handle account is the opposite
   case: it needs a subscription to reach Friends. Keep the two separate.)
@@ -419,29 +546,76 @@ every archive.
   Account settings on the iPhone. Record it for counsel
   (`LEGAL_ACTION_ITEMS.md`, question 9) and revisit if review asks.
 - [ ] **R24. The Report roles in R4 are what the privacy policy promises.**
-  The policy now says reports are the one part of the shared area other
-  people's copies of 808 cannot read. That is true only once R4's Security
-  Roles are set in Production; do R4 before the policy goes live.
+  The policy now says reports ~~are the one part~~ **and blocks (2026-09-29,
+  evening) are the parts** of the shared area other people's copies of 808
+  cannot read. That is true only once R4's Security Roles, and the `Block`
+  roles in `CLOUDKIT_SETUP.md` "Making Block private", are set in
+  Production; do both before the policy goes live.
+- [ ] **R25. Products attached and loadable, because the app fails closed**
+  (added 2026-09-29, evening). App Store Connect carries a 3-day free intro
+  offer on BOTH `monthly` and `yearly` (the sandbox shows 7 days on monthly
+  and none on yearly today), `lifetime` Cleared for Sale, and `monthly50` at
+  $3.99 a month with a 3-day free intro offer; `monthly`, `yearly`,
+  `lifetime` (if Connect offers it) and `monthly50` attached to the version
+  and "Ready to Submit". Then a sandbox account on the Release build sees
+  three cards on the paywall and the rung behind "No, I don't want to pay".
+  If `monthly` or `yearly` does not load, the reviewer is locked out. Step 0
+  and 0a have the detail. `monthlytrial` is not needed.
+- [ ] **R26. `Block` becomes creator-only in CloudKit** (added 2026-09-29,
+  evening): `_world` none, `_icloud` Create, `_creator` Read/Write, in the
+  order `CLOUDKIT_SETUP.md` gives under "Making Block private" (the new build
+  on every tester phone first, Development, then Production; old-format
+  `block-<from>-<to>` records re-made or deleted). The privacy policy and
+  terms already say blocks are private (R24).
+- [ ] **R27. Block and the Shop seen working on a phone, on the Release
+  build** (added 2026-09-29, evening; both ship in 1.1). Step 7 and "OPEN for
+  the build that flips `FeatureFlags.blockInRelease`" below are the list.
+  Make the Block screen recording the review notes offer while doing it.
 
 ## OPEN for 1.1: FOUNDER DECISIONS pending before submitting (added 2026-09-29)
 
 Only Melvin and Aziz can make these. Each is a real rejection or legal risk;
 none is a code task until they decide.
 
-- [ ] **Ship Block in 1.1, or strip it from the archive.** Its three
+**Decided the evening of 2026-09-29 (Melvin), all already in code:** the
+free trial (3 days on Monthly and Yearly), Lifetime on the paywall again, the
+app failing closed, private one-sided blocks, and Block and the Shop shipping
+in 1.1. Each is marked below where it had an entry, and recorded in DONE.
+
+- [x] **Ship Block in 1.1, or strip it from the archive.** ~~Its three
   extensions and the Family Controls entitlement ship in the binary even
   with `blockInRelease = false`. App Review may read an entitlement for a
   feature nobody can reach as a hidden or dormant feature (2.3.1).
   Recommended: ship it once verified on a phone (section above), or take the
-  extensions and the entitlement out of the 1.1 archive.
-- [ ] **Remove the celebrity photos on "808 was made for people like you"
+  extensions and the entitlement out of the 1.1 archive.~~ **DECIDED
+  2026-09-29 (Melvin: "Block and hats is 100% a vital part of this new
+  update"): Block ships, `blockInRelease = true`, and so does the Shop
+  (`shopInRelease = true`).** The on-phone verification (step 7 and the
+  "OPEN for the build that flips `FeatureFlags.blockInRelease`" section) is
+  now REQUIRED before submitting.
+- [x] **Remove the celebrity photos on "808 was made for people like you"
   and the university crests on the research screen.** A famous person's face
   in an ad-like screen raises right-of-publicity claims, and a crest implies
   an affiliation none of them gave (5.2.1). The footnotes disclaiming
-  endorsement reduce the risk; they do not remove it.
-- [ ] **The website advertises Block and hats** (the "Block" chip and
-  points buying hats in `website/index.html`) while both are off in 1.1.
-  Change the page or ship the features before the 1.1 listing links to it.
+  endorsement reduce the risk; they do not remove it. (Split 2026-09-29: the
+  photos are decided below; the crests are their own open item next.)
+  - **The celebrity photos: DECIDED 2026-09-29, they stay.** The
+    onboarding "808 was made for people like you" screen shows Kobe Bryant,
+    Oprah Winfrey and Ray Dalio photos with a footnote saying none of them
+    endorse 808 and the CC BY-SA photo credits (Steve Lipofsky, John Mathew
+    Smith, Locksteel888). The founders accept the likeness risk. **Fallback,
+    keep it ready: if App Review cites 5.2.1 or 4.0, ship the same quotes
+    without the photos (a one-line change).** The Content Rights answer is
+    Yes (R13). The review notes deliberately do not name this screen.
+- [ ] **The university crests on the research screen** (split out of the
+  item above, 2026-09-29): a crest implies an affiliation none of the
+  universities gave (5.2.1); the non-affiliation footnote reduces the risk
+  and does not remove it. Still the founders' call.
+- [x] **The website advertises Block and hats** (the "Block" chip and
+  points buying hats in `website/index.html`) ~~while both are off in 1.1.
+  Change the page or ship the features before the 1.1 listing links to it.~~
+  **Resolved 2026-09-29: both ship in 1.1, so the page is true of it.**
+  Deploy the site the day 1.1 goes live (R12), not before.
 - [ ] **The struck-through anchor prices, $59.99 (Yearly) and $199
   (Lifetime)** (`SubscriptionPlan.anchorPrice`). They show only beside our
   fallback prices, when the App Store's prices fail to load, and Lifetime is
@@ -452,6 +626,9 @@ none is a code task until they decide.
   intent to market at them, which is not the same thing as a prior selling
   price. Remove them, or document a real prior selling price. (The half-off
   rung's struck $7.99 is a true reference: Monthly sells at $7.99.)
+  **(2026-09-29, evening: Lifetime is a card on the paywall again, so the
+  $199 anchor can show beside Lifetime's fallback price too, not only the
+  $59.99 on Yearly. Still open.)**
 - [ ] **Locking the phone during a phone session counts as leaving** after
   10 seconds, so a reviewer (or anyone) who locks the phone to meditate is
   told the session won't count. The review notes now say so, and "I was
@@ -468,6 +645,10 @@ none is a code task until they decide.
   App Review for pseudonymous first-party analytics, but the policy now
   discloses approximate location, and a switch is the honest companion to
   that sentence (and helps under GDPR).
+- [x] **The free trial and Lifetime** (added and DECIDED 2026-09-29,
+  evening, Melvin: "same as before, 3 day offer"). Monthly and Yearly each
+  carry a 3-day free trial; Lifetime is the paywall's third card again; the
+  ladder is one rung, `monthly50`. App Store Connect steps are step 0 and 0a.
 - [ ] **"Regulate your emotions and stress"** (added 2026-09-29, second
   pass). Onboarding's "In 1 week, 808 will help you:" screen lists it as an
   outcome. It is the one row that promises an effect on the person rather
@@ -476,20 +657,39 @@ none is a code task until they decide.
   time to settle when you're stressed"), or cut it; the listing already
   avoids outcome claims, and a reviewer reading onboarding can hold the app
   to the same line (1.4.1, 2.3.1).
-- [ ] **Who blocked whom is readable by anyone** (added 2026-09-29, second
-  pass). `Block` records are world-readable in the public database, as
+- [x] **Who blocked whom is readable by anyone** (added 2026-09-29, second
+  pass). ~~`Block` records are world-readable in the public database, as
   `FriendEdge` records are, because the app checks blocks in both directions.
   The privacy policy now discloses it. Keep it that way, or redesign blocks
-  so they are not exposed; the options are in `CLOUDKIT_SETUP.md`, Step 4.
-- [ ] **808 opens for free when StoreKit cannot load** (added 2026-09-29,
-  second pass). If Monthly or Yearly fail to load (offline at first launch,
+  so they are not exposed; the options are in `CLOUDKIT_SETUP.md`, Step 4.~~
+  **DECIDED 2026-09-29, evening (Melvin: "Don't want others to see who I
+  blocked"), and DONE in code:** blocks are private and one-sided. The app
+  reads only the blocks the current person made (`Block.from == me`), new
+  blocks get random record names, the blocked person is not told, their
+  requests to the blocker never arrive and cannot be accepted, and they may
+  still see the blocker's public profile. The privacy policy, terms and
+  `COMMUNITY.md` say so. **The human step is still owed:** the CloudKit role
+  change on `Block` (`_world` none, `_icloud` Create, `_creator` Read/Write),
+  in the order `CLOUDKIT_SETUP.md` gives under "Making Block private" (step 2
+  above, and R26).
+- [x] **808 opens for free when StoreKit cannot load** (added 2026-09-29,
+  second pass). ~~If Monthly or Yearly fail to load (offline at first launch,
   products missing in App Store Connect, an App Store outage), the paywall
   reads "Plans aren't loading" and lets the person continue, so a
   premium-only app runs unpaid until the next successful load. That is the
   safe choice for App Review (a paywall that cannot sell is a 2.1 rejection)
   and for payers (cached entitlements still unlock). The cost is that
   anyone who starts 808 offline gets in. Decide whether that is acceptable,
-  or whether the lock should hold after the first successful load.
+  or whether the lock should hold after the first successful load.~~
+  **DECIDED 2026-09-29, evening (Melvin), and DONE in code: the app fails
+  closed.** Without a membership it shows the paywall; if the plans cannot
+  load it says "Plans aren't loading" with Try again, Restore and (on the
+  launch lock) the Account link, and never lets a non-member through
+  (`LaunchLock` in `Monetization.swift`). Payers are recognized offline from
+  StoreKit's on-device record. **The cost moved to App Review:** a reviewer
+  whose sandbox cannot load the products is locked out, so the products must
+  be attached and "Ready to Submit" (step 0). The side-by-side `.dev` beta
+  is the one build that stays open.
 
 ## HOLD
 
@@ -505,10 +705,19 @@ none is a code task until they decide.
 Archive the 1.1 build from the branch the founders name for it (the work is on
 `block` as of 2026-09-29; `mvp` and `main` were fast-forwarded to it on
 2026-09-23 and have not followed since). `MARKETING_VERSION` is 1.1. In
-Release it ships:
-- **Premium only, no trial on Monthly or Yearly** (`Monetization`): the
+Release it ships (updated the evening of 2026-09-29 for the founders'
+decisions):
+- ~~**Premium only, no trial on Monthly or Yearly** (`Monetization`): the
   launch paywall for anyone without a subscription, the two-rung ladder
-  (`monthlytrial`, `monthly50`), and the Account link on the paywall.
+  (`monthlytrial`, `monthly50`), and the Account link on the paywall.~~
+- **Premium only, failing closed** (`Monetization`, `LaunchLock`): the
+  paywall for anyone without a membership, and "Plans aren't loading" with
+  Try again, Restore and the Account link when the plans cannot load. Payers
+  are recognized offline. **Monthly and Yearly each with a 3-day free
+  trial** (`freeTrial = true`, read from App Store Connect, eligibility-aware),
+  **Lifetime** as the third card, and ONE rung behind "No, I don't want to
+  pay": `monthly50`, $3.99 a month after a 3-day free trial. `monthlytrial`
+  and `yearly50` dormant.
 - **Sessions on the iPhone with or without a Watch**: the plus offers
   Meditate, With Apple Watch and Record one.
 - **Onboarding in its 2026-09-26 shape**: about thirty screens, the paywall
@@ -516,9 +725,20 @@ Release it ships:
   Watch only), Sign in with Apple (optional), Create your profile
   (optional), the tour.
 - **Friends ON as profiles only** (`friendsInRelease = true`): name,
-  @username, optional photo, practice summary; no posts.
-- **Block, the Shop (hats, points) and Otto's chat OFF**; Block's extensions
-  and Family Controls ship in the binary (founder decision above).
+  @username, optional photo, practice summary; no posts. Opens from a circle
+  on Home. Blocks are private and one-sided.
+- ~~**Block, the Shop (hats, points) and Otto's chat OFF**; Block's extensions
+  and Family Controls ship in the binary (founder decision above).~~
+- **Block ON and the Shop ON** (`blockInRelease = true`,
+  `shopInRelease = true`, 2026-09-29): Block is set up in onboarding after
+  the paywall or in the Block tab; one point per whole minute meditated
+  (hand-logged sessions earn none) buys hats for Otto. The Release tab bar is
+  the sloth bar: Home, Block, plus, Shop, Profile. **Otto's chat stays OFF;
+  camera vision is not in 1.1.**
+- **Sessions count from one minute** (`SessionStore.minDurationSec = 60`,
+  was 30 seconds).
+- **Otto's glow starts at 50% for everyone** on 1.1's first launch
+  (`OttoAura.glowStart`); history, streaks and awards carry over.
 - 58 awards in the catalog; score migrations `scoreBackfillDone.v8` and
   `.v9` rescore past Watch sessions.
 
@@ -562,6 +782,11 @@ this release needs a NEW archive.
 
 ## OPEN for the build that flips `FeatureFlags.blockInRelease` (Block, 2026-09-22)
 
+**REQUIRED for 1.1 (2026-09-29, evening): 1.1 flips `blockInRelease` and
+`shopInRelease`, so every item here is done on a phone, on the Release build,
+before submitting** (R27; step 7 adds the Shop checks). The documentation
+items were done the same day and are marked where they are.
+
 - [ ] **Seen working on a phone** (the simulator cannot draw a shield):
       a held app shows Otto's shield; Ask Otto sends "Otto wants a word";
       tapping it opens one of Otto's screens; a 5 minute pass closes the apps
@@ -585,20 +810,27 @@ this release needs a NEW archive.
 - [ ] Privacy policy, both copies: 808 uses Apple's Screen Time to hold the
       apps the person picks; the picks are opaque tokens even to 808; nothing
       from Screen Time leaves the phone or reaches analytics. Redeploy the
-      website.
+      website. (2026-09-29: written, the "Block" section of
+      `PRIVACY_POLICY.md` and terms section 6b, regenerated into
+      `website/`; only the redeploy is left, R12.)
 - [ ] App Privacy labels: no change needed if nothing from Block is
       collected (it is not); confirm, and keep PostHog free of Block events
-      (Apple's Family Controls terms).
+      (Apple's Family Controls terms). (2026-09-29: `APP_STORE.md` states
+      there is no Block row, and why.)
 - [ ] Review notes: how to try Block (the Block tab, Mindful day, Ask Otto
       on a held app), that it is individual Screen Time authorization and not
-      parental control, and that Block is part of 808 Premium.
+      parental control, and that Block is part of 808 Premium. (2026-09-29:
+      written, the BLOCK paragraph in `marketing/APP_STORE_PASTE.md`; it
+      offers a screen recording, so make one on a phone, R27.)
 - [ ] Camera usage string now also names Otto's ~~FaceTime~~ video call
       screen (live preview only, nothing recorded; renamed 2026-09-23 so the
       string does not borrow Apple's mark, 5.2.5). A changed usage string is
       reviewed.
 - [ ] Store description, screenshots and the website lead with consistency
       and Block (the app's primary purpose must be Apple's purpose 2 for
-      Family Controls; see CONSISTENCY.md).
+      Family Controls; see CONSISTENCY.md). (2026-09-29: the description and
+      promotional text now lead with Block, and the proposed screenshot order
+      opens on it; the screenshots themselves are R6.)
 
 ## OPEN: must be done in the submission that ships the next build
 
@@ -680,15 +912,18 @@ plus the premium-only model; see "WHAT 1.1 CONTAINS". Posting was removed
   to run before promoting. Summary, `iCloud.com.lockout.meditate808`: the six PUBLIC
   **SEVEN** public record types (Profile, Username, FriendEdge, Post,
   Reaction, Block, Report: the earlier count of six missed Username, and
-  without it no handle can be claimed) and exactly ~~SEVEN~~ **EIGHT**
-  indexes (corrected 2026-09-29: `Reaction.author` was added 2026-09-23 for
-  account deletion; this line predates it), which are
+  without it no handle can be claimed) and exactly ~~SEVEN~~ ~~**EIGHT**~~
+  **SEVEN** indexes (corrected 2026-09-29: `Reaction.author` was added
+  2026-09-23 for account deletion, and `Block.to` was dropped the evening of
+  2026-09-29 when blocks became private), which are
   fewer and different from what this line used to claim: QUERYABLE on
   `FriendEdge.from`, `FriendEdge.to`, `Post.author`, `Reaction.post`,
   **`Reaction.author`**,
-  `Block.from`, `Block.to`, and SORTABLE on `Post.practicedAt`. Profile and
+  `Block.from`, ~~`Block.to`,~~ and SORTABLE on `Post.practicedAt`. Profile and
   Username are fetched by record name and never queried, so they need no
-  index. Security roles `_world` read / `_creator` write on each; AND the
+  index. Security roles `_world` read / `_creator` write on each (2026-09-29:
+  except `Report` and `Block`, both creator-only; `CLOUDKIT_SETUP.md` Step 4);
+  AND the
   four new `CD_Preferences` fields
   (`evidenceGrantRemaining`, `evidenceGrantSince`, `rewardedFriends`,
   `grantedSessionIDs`). Run the schema primer on a dev build, then deploy
@@ -799,8 +1034,12 @@ that way, a stranger will file a one-star review.
   so it cannot reach an archived Release build whatever its value, and 1.1
   has no free tier to preview. Checked instead, below.
 - [ ] `Monetization.premiumOnly` and `Monetization.freeTrial` match App Store
-  Connect: no introductory offer on `monthly` or `yearly` while `freeTrial`
-  is false, and every product the paywall and ladder sell is attached.
+  Connect: ~~no introductory offer on `monthly` or `yearly` while `freeTrial`
+  is false~~ **while `freeTrial` is true (since 2026-09-29), `monthly` and
+  `yearly` each carry the free introductory offer the listing and What's New
+  state (3 days for 1.1); while it is false, neither carries one**, and every
+  product the paywall and ladder sell is attached. The app fails closed, so an
+  unattached core product locks the reviewer out.
 - [ ] Every `FeatureFlags.*InRelease` value is the one the founders chose for
   this build, and the listing, review notes and screenshots describe only
   what those flags switch on.
@@ -834,3 +1073,15 @@ that way, a stranger will file a one-star review.
   label table and age-rating answers rewritten for 1.1
   (`marketing/APP_STORE_PASTE.md`, `APP_STORE.md`). Pasting them into App
   Store Connect is still open (R16).
+- [x] **2026-09-29, evening (decided by Melvin; in code the same day):** the
+  free trial is back (3 days on Monthly and Yearly), Lifetime is sold on the
+  paywall again (R14), the ladder is one rung (`monthly50`), the app fails
+  closed, Block and the Shop ship in 1.1, sessions count from one minute,
+  Otto's glow starts at 50% for everyone, and blocks are private and
+  one-sided. The privacy policy, terms (regenerated into `website/`),
+  `COMMUNITY.md`, `ENTITLEMENTS.md`, `APP_STORE.md` and
+  `marketing/APP_STORE_PASTE.md` were brought in line the same night. The
+  human steps it created are R25 to R27 and the rewritten steps 0, 0a and 7.
+- [x] **2026-09-29, evening:** the celebrity photos on "808 was made for
+  people like you" stay (founders accept the likeness risk; fallback: the
+  quotes without photos if App Review cites 5.2.1 or 4.0).

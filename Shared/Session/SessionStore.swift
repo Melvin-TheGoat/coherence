@@ -14,7 +14,9 @@ import SwiftData
 enum SessionStore {
 
     /// Sessions shorter than this are treated as accidental and never written.
-    static let minDurationSec = 30
+    /// One minute (Melvin, 2026-09-29; was 30 seconds). The Watch and the
+    /// phone both read this, so a sit under a minute is never written.
+    static let minDurationSec = 60
 
     /// The account this device writes to: the signed-in account when there
     /// is one, otherwise the bootstrap `User` (`appleUserID == ""`), created

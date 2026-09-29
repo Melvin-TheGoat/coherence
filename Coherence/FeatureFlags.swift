@@ -42,14 +42,14 @@ enum FeatureFlags {
         #endif
     }
 
-    /// **Block (2026-09-22) is OFF in Release** until it has run on a phone:
-    /// the simulator cannot show a shield, so nothing about the holding has
-    /// been seen working yet. DEBUG builds (the simulator and the side-by-side
-    /// beta) keep it on. Off means the Guide tab where Block would be, and no
-    /// Block screen in onboarding. The extensions and the Family Controls
-    /// entitlement are compiled in either way; Apple approved the entitlement
-    /// for all four App IDs on 2026-09-22.
-    static let blockInRelease = false
+    /// **Block ships in 1.1** (Melvin, 2026-09-29: "Block and hats is 100% a
+    /// vital part of this new update"). It was off in Release until it had run
+    /// on a phone, because the simulator cannot show a shield: the phone test
+    /// list in RELEASE_CHECKLIST.md must be done before submitting. Off would
+    /// mean the Guide tab where Block is, and no Block screens in onboarding.
+    /// Apple approved the Family Controls entitlement for all four App IDs on
+    /// 2026-09-22.
+    static let blockInRelease = true
 
     static var block: Bool {
         #if DEBUG
@@ -59,11 +59,9 @@ enum FeatureFlags {
         #endif
     }
 
-    /// **The Store (2026-09-27) is OFF in Release** until the hats have
-    /// their art: points and hats are built and tested, but every hat is a
-    /// placeholder shape. On, it takes the Friends tab's place and Friends
-    /// opens from a circle on Home. DEBUG keeps it on.
-    static let shopInRelease = false
+    /// **The Shop and its hats ship in 1.1** (Melvin, 2026-09-29). It takes
+    /// the Friends tab's place and Friends opens from a circle on Home.
+    static let shopInRelease = true
 
     static var shop: Bool {
         #if DEBUG

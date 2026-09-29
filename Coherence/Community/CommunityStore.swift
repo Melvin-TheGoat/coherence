@@ -10,10 +10,24 @@ import os
 /// record name is derived from it, so "me" is always `CommunityNames
 /// .profile(user:)` and never needs a lookup.
 ///
-/// Blocks are honoured on every read and write that could cross one: a blocked
-/// person's posts, requests and profile vanish for the blocker, and the blocked
-/// person cannot send a request to, react to, or view the blocker. Both
-/// directions, because a block record is public and readable by both sides.
+/// **Blocks are private, and enforced entirely on the blocker's side**
+/// (Melvin, 2026-09-29: "Don't want others to see who I blocked"). The
+/// `Block` record type is readable only by its creator, so this store reads
+/// ONLY the blocks the current person wrote (`myBlocks`, one query,
+/// `from == me`) and never anyone else's: no query on `Block.to`, no fetch of
+/// another person's block by name. With those blocks it hides the blocked
+/// person from the blocker everywhere: search, profile pages, friends,
+/// requests (theirs never arrive, and can never be accepted), follower and
+/// following lists, and their practice summary. Blocking also deletes the
+/// friend edge the blocker wrote, which ends the friendship for both apps.
+///
+/// **What a creator-only block cannot do, stated plainly:** the blocked
+/// person's app can no longer learn that it was blocked. It can still look up
+/// the blocker's public profile (anyone can, by username) and still send a
+/// friend request. That request simply never arrives: the blocker's app
+/// filters it out and will not accept it, so from the blocked side it reads
+/// as a request nobody has answered, which is exactly what "they won't be
+/// told" means.
 actor CommunityStore {
     private let db: CommunityDatabase
     private var cachedUser: String?
@@ -181,29 +195,45 @@ actor CommunityStore {
 
     // MARK: - Finding people
 
+    /// Someone's profile page. nil for anyone I blocked.
     func profile(named recordName: String) async throws -> Profile? {
         let mine = try await me()
-        if recordName != mine, try await isBlocked(between: mine, and: recordName) { return nil }
+        if recordName != mine, try await iBlocked(recordName) { return nil }
         guard let record = try await db.fetch(recordName) else { return nil }
         return Profile(record: record)
     }
 
+    /// Finds a profile by username. nil for anyone I blocked. (The person I
+    /// blocked can still find me: see the header.)
     func search(username raw: String) async throws -> Profile? {
         guard let handle = Username.normalize(raw), let owner = try await holder(of: handle) else { return nil }
         guard let record = try await db.fetch(owner), let profile = Profile(record: record),
               profile.username == handle else { return nil }
         let mine = try await me()
-        if profile.id != mine, try await isBlocked(between: mine, and: profile.id) { return nil }
+        if profile.id != mine, try await iBlocked(profile.id) { return nil }
         return profile
     }
 
+    /// Profiles for the lists the model caches. Anyone I blocked comes back
+    /// as a name only (`nameOnly`), which is all my Blocked list needs, so
+    /// their practice summary never reaches my screen.
     func profiles(named names: [String]) async throws -> [Profile] {
         guard !names.isEmpty else { return [] }
+        let blocked = try await myBlockedSet()
         var out: [Profile] = []
         for name in names {
-            if let record = try await db.fetch(name), let p = Profile(record: record) { out.append(p) }
+            if let record = try await db.fetch(name), let p = Profile(record: record) {
+                out.append(blocked.contains(name) ? Self.nameOnly(p) : p)
+            }
         }
         return out
+    }
+
+    /// What I may still hold about someone I blocked: their name and handle,
+    /// for the Blocked list and its Unblock button. No photo, no practice
+    /// summary, no first-session date, no "practicing since".
+    static func nameOnly(_ p: Profile) -> Profile {
+        Profile(id: p.id, username: p.username, displayName: p.displayName)
     }
 
     // MARK: - Friends
@@ -226,7 +256,10 @@ actor CommunityStore {
         return Set(records.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:)).map(\.from))
     }
 
+    /// `.none` for anyone I blocked, whatever edges exist: a request of theirs
+    /// never reads as `.incoming`, so their page never offers Accept.
     func relationship(with other: String) async throws -> Relationship {
+        if try await iBlocked(other) { return .none }
         let out = try await edgesFromMe().contains(other)
         let back = try await edgesToMe().contains(other)
         switch (out, back) {
@@ -269,8 +302,9 @@ actor CommunityStore {
     /// directional (`from` asked, `to` was asked), so "following" is the
     /// edges a person wrote and "followers" the edges written at them. A
     /// mutual pair is a friendship, which is why the two numbers differ only
-    /// by the requests either side has not answered. Blocks are honoured both
-    /// ways, as everywhere else.
+    /// by the requests either side has not answered. Anyone I blocked is left
+    /// out of both lists, and a person I blocked has no lists at all for me.
+    /// (Only MY blocks: nobody else's are readable.)
     ///
     /// For my OWN profile the model already holds the lists and does this
     /// arithmetic without a query (`CommunityModel.follow`).
@@ -281,12 +315,13 @@ actor CommunityStore {
 
     /// The two lists behind `followCounts`.
     func follows(of person: String) async throws -> (followers: [String], following: [String]) {
+        let blocked = try await myBlockedSet()
+        if blocked.contains(person) { return ([], []) }
         async let outRecords = db.query(CommunityQuery(type: CommunityType.edge,
                                                        filters: [.equals("from", .reference(person))], limit: 500))
         async let inRecords = db.query(CommunityQuery(type: CommunityType.edge,
                                                       filters: [.equals("to", .reference(person))], limit: 500))
         let (out, inn) = try await (outRecords, inRecords)
-        let blocked = try await blockedEitherWay()
         // `authored` cannot vouch for someone else's edges the way it does
         // for mine (only CloudKit's creator field proves an author, and it
         // names the edge's own writer), so an edge counts when its writer
@@ -297,32 +332,45 @@ actor CommunityStore {
     }
 
     /// Profile record names of everyone with edges in BOTH directions, minus
-    /// anyone blocked either way.
+    /// anyone I blocked.
+    ///
+    /// Someone who blocked ME drops out without my app reading their block:
+    /// blocking deleted the edge they wrote towards me, so the pair is no
+    /// longer mutual.
     func friends() async throws -> [String] {
         let mutual = try await edgesFromMe().intersection(edgesToMe())
-        let blocked = try await blockedEitherWay()
+        let blocked = try await myBlockedSet()
         return mutual.subtracting(blocked).sorted()
     }
 
-    /// People who asked me and whom I have not answered.
+    /// People who asked me and whom I have not answered, minus anyone I
+    /// blocked: a request from someone I blocked never arrives.
     func incomingRequests() async throws -> [String] {
         let pending = try await edgesToMe().subtracting(edgesFromMe())
-        let blocked = try await blockedEitherWay()
+        let blocked = try await myBlockedSet()
         return pending.subtracting(blocked).sorted()
     }
 
-    /// People I asked who have not answered.
+    /// People I asked who have not answered, minus anyone I blocked (blocking
+    /// deletes my edge; this covers a block whose edge delete failed).
+    ///
+    /// Someone who blocked me stays here, as a request nobody answers. My app
+    /// cannot read their block, and that is the point.
     func sentRequests() async throws -> [String] {
         let pending = try await edgesFromMe().subtracting(edgesToMe())
-        return pending.sorted()
+        let blocked = try await myBlockedSet()
+        return pending.subtracting(blocked).sorted()
     }
 
-    /// Ask, or accept: both are "write my edge towards them". Refused across
-    /// a block in either direction.
+    /// Ask, or accept: both are "write my edge towards them". Refused towards
+    /// anyone I blocked, so I can never accept a blocked person's request.
+    ///
+    /// NOT refused when the other person blocked me: my app cannot know. My
+    /// edge is written, and their app never shows it (see the header).
     func sendRequest(to other: String) async throws {
         let mine = try await me()
         guard other != mine else { return }
-        if try await isBlocked(between: mine, and: other) { throw CommunityError.blocked }
+        if try await iBlocked(other) { throw CommunityError.blocked }
         // Already asked (or already friends): leave the edge alone. Re-saving
         // would reset `createdAt`, which decides who asked first and so who
         // earns the invite reward.
@@ -513,60 +561,81 @@ actor CommunityStore {
         let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
                                                         filters: [.isIn("post", postIDs.map { .reference($0) })],
                                                         limit: 1000))
+        let blocked = try await myBlockedSet()
         var out: [String: [String]] = [:]
-        for r in records.filter({ authored($0, by: "author") }).compactMap(Reaction.init(record:)) {
+        for r in records.filter({ authored($0, by: "author") }).compactMap(Reaction.init(record:))
+        where !blocked.contains(r.author) {
             out[r.post, default: []].append(r.author)
         }
         return out.mapValues { $0.sorted() }
     }
 
-    /// Who reacted to a post, as profile record names.
+    /// Who reacted to a post, as profile record names, minus anyone I blocked.
     func reactors(to postID: String) async throws -> [String] {
         _ = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.reaction,
                                                         filters: [.equals("post", .reference(postID))], limit: 500))
-        return records.filter { authored($0, by: "author") }.compactMap(Reaction.init(record:)).map(\.author).sorted()
+        let blocked = try await myBlockedSet()
+        return records.filter { authored($0, by: "author") }.compactMap(Reaction.init(record:))
+            .map(\.author).filter { !blocked.contains($0) }.sorted()
     }
 
     // MARK: - Block and report
 
+    /// Blocks someone, privately (see the header). Ends the friendship from
+    /// my side (deletes the edge I wrote, today's behaviour kept), then writes
+    /// one Block record under a random name, unless I already hold one.
+    ///
+    /// The edge goes FIRST, so a block can never exist with my edge still
+    /// standing: that edge plus theirs would read as a friendship in THEIR
+    /// app, which cannot see the block.
     func block(_ other: String) async throws {
         let mine = try await me()
         guard other != mine else { return }
+        try await removeFriend(other)
+        // One block per pair. The record name no longer says who it is about,
+        // so a second save would be a second record, not an overwrite.
+        if try await iBlocked(other) { return }
         let block = Block(from: mine, to: other)
         let record = CKRecord(recordType: CommunityType.block, recordID: CKRecord.ID(recordName: block.id))
         block.apply(to: record)
         _ = try await db.save(record)
-        // A block ends the friendship from my side too.
-        try await removeFriend(other)
     }
 
+    /// Deletes every block I hold on them: normally one, but an old
+    /// `block-<from>-<to>` record and a newer random one would both go.
     func unblock(_ other: String) async throws {
-        let mine = try await me()
-        try await db.delete(CommunityNames.block(from: mine, to: other))
+        for block in try await myBlocks() where block.to == other {
+            try await db.delete(block.id)
+        }
     }
 
+    /// Everyone I blocked, for the Blocked list.
     func blockedByMe() async throws -> [String] {
+        try await myBlockedSet().sorted()
+    }
+
+    /// The ONLY read of the Block type anywhere in the app: blocks I created,
+    /// by `from == me`. The Block type is readable by its creator alone, and
+    /// no code here may query `to == me` or fetch another person's block. A
+    /// record naming me in `from` that someone else created is dropped by
+    /// `authored` (and, with creator-only read, is never returned anyway).
+    private func myBlocks() async throws -> [Block] {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.block,
                                                         filters: [.equals("from", .reference(mine))], limit: 500))
-        return records.filter { authored($0, by: "from") }.compactMap(Block.init(record:)).map(\.to).sorted()
+        return records.filter { authored($0, by: "from") }
+            .compactMap(Block.init(record:))
+            .filter { $0.from == mine }
     }
 
-    private func blockedEitherWay() async throws -> Set<String> {
-        let mine = try await me()
-        let out = try await db.query(CommunityQuery(type: CommunityType.block,
-                                                    filters: [.equals("from", .reference(mine))], limit: 500))
-        let inn = try await db.query(CommunityQuery(type: CommunityType.block,
-                                                    filters: [.equals("to", .reference(mine))], limit: 500))
-        let trusted = (out + inn).filter { authored($0, by: "from") }.compactMap(Block.init(record:))
-        return Set(trusted.filter { $0.from == mine }.map(\.to) + trusted.filter { $0.to == mine }.map(\.from))
+    private func myBlockedSet() async throws -> Set<String> {
+        Set(try await myBlocks().map(\.to))
     }
 
-    private func isBlocked(between a: String, and b: String) async throws -> Bool {
-        if let r = try await db.fetch(CommunityNames.block(from: a, to: b)), authored(r, by: "from") { return true }
-        if let r = try await db.fetch(CommunityNames.block(from: b, to: a)), authored(r, by: "from") { return true }
-        return false
+    /// Whether I blocked them. Never whether they blocked me: that is theirs.
+    private func iBlocked(_ other: String) async throws -> Bool {
+        try await myBlockedSet().contains(other)
     }
 
     @discardableResult
@@ -600,7 +669,8 @@ actor CommunityStore {
     /// **What this deliberately leaves alone:** Report records (moderation
     /// keeps them, whoever they are about), and any edge or block someone
     /// ELSE wrote pointing at me — the public database only lets a record's
-    /// creator modify it, so those stay theirs to keep. A friend whose
+    /// creator modify it, so those stay theirs to keep (and another person's
+    /// block is not even readable here: `myBlocks`). A friend whose
     /// account went through this simply stops resolving afterwards:
     /// `profile(named:)` returns nil for them, which every reader of
     /// `people[id]` already treats as "unknown" rather than a crash.

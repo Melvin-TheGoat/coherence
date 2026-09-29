@@ -34,8 +34,16 @@ struct RootView: View {
     /// ENTITLEMENTS.md and whose code is still here, unreachable while
     /// `Monetization.premiumOnly` is true.
     ///
-    /// **Only a store that can sell locks anything.** Offline, or before the
-    /// products exist, the app stays open; see `Monetization`.
+    /// **It fails CLOSED** (Melvin, 2026-09-29: the app must never open free
+    /// because the App Store could not load). An onboarded person with no
+    /// entitlement meets the paywall whatever the store's state: `.ready`,
+    /// `.unavailable` (offline, or a sandbox that did not answer), or a first
+    /// fetch that has not answered in `storeWaitLimit`. The paywall then says
+    /// the plans are not loading and offers Try again, Restore and Account.
+    /// The rule itself is `LaunchLock.verdict`, pure and tested. A payer never
+    /// meets it: StoreKit's on-device record is read before the plans. The
+    /// side-by-side ".dev" beta, which owns no products, is the one build
+    /// left open (`Monetization.isSideBySideBeta`).
     private var premiumLock: Bool {
         guard Monetization.premiumOnly else { return false }
         #if DEBUG
@@ -51,14 +59,14 @@ struct RootView: View {
         // on a paywall it could not get past without a sandbox account.
         return false
         #else
-        return store.state == .ready && !store.entitled
+        return launchVerdict == .lock
         #endif
     }
 
     /// The App Store has not answered yet, for somebody who may be locked.
     ///
     /// **The lock arrived a second late** (App Review, Melvin, 2026-09-29).
-    /// The lock waits for `.ready`, so during the launch fetch the app itself
+    /// The lock waited for `.ready`, so during the launch fetch the app itself
     /// showed, Home and all, and then the paywall slid in over it: a screen
     /// that reads as the app changing its mind, and a second of a paid app
     /// shown for free. So until the first answer, a non-member sees the
@@ -67,11 +75,12 @@ struct RootView: View {
     /// `.loading` is only ever the launch state (`Store.load` moves it to
     /// `.ready` or `.unavailable` and never back), so this cannot come back
     /// mid-use. A payer is recognised from StoreKit's on-device record before
-    /// the product fetch starts, so they go straight to the app. What stays
-    /// exactly as before: `.unavailable` opens the app (the founders'
-    /// fail-open), and a fetch that has not answered in `storeWaitLimit`
-    /// opens it too, because a valley with no way forward is worse than a
-    /// late lock.
+    /// the product fetch starts, so they go straight to the app.
+    ///
+    /// **The wait no longer ends in the app** (Melvin, same day, fail
+    /// closed). A fetch that has not answered in `storeWaitLimit` ends in the
+    /// paywall, whose Try again keeps asking; before, it opened the app, and
+    /// so did `.unavailable`.
     private var awaitingStore: Bool {
         guard Monetization.premiumOnly else { return false }
         #if DEBUG
@@ -79,11 +88,21 @@ struct RootView: View {
         // never has a reason to wait for it.
         return false
         #else
-        return store.state == .loading && !store.entitled && !storeWaitExpired
+        return launchVerdict == .wait
         #endif
     }
 
-    /// How long the launch waits for the App Store before opening the app.
+    /// What the store's answer means for this launch (`LaunchLock`).
+    private var launchVerdict: LaunchLock.Verdict {
+        LaunchLock.verdict(state: store.state, entitled: store.entitled,
+                           entitlementKnown: store.entitlementKnown,
+                           waitExpired: storeWaitExpired,
+                           sideBySideBeta: Monetization.isSideBySideBeta)
+    }
+
+    /// How long the launch waits for the App Store before showing the
+    /// paywall in its "Plans aren't loading" state. Never before opening the
+    /// app: that took a membership since 2026-09-29.
     private static let storeWaitLimit: Duration = .seconds(5)
     @State private var storeWaitExpired = false
 
@@ -163,8 +182,8 @@ struct RootView: View {
         .onChange(of: face, initial: true) { _, now in appOnScreen = now == .app }
         .task {
             try? await Task.sleep(for: Self.storeWaitLimit)
-            // A cancelled sleep throws and falls through; it must not open
-            // anything.
+            // A cancelled sleep throws and falls through; it must not end
+            // the wait early.
             guard !Task.isCancelled else { return }
             storeWaitExpired = true
         }

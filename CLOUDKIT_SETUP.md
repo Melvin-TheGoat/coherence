@@ -35,6 +35,16 @@ build).** Four changes since the 2026-09-23 note below:
 
 The round trip (Step 5) is rewritten for profiles without posts.
 
+**2026-09-29, later the same day: `Block` becomes private (Melvin: "Don't
+want others to see who I blocked").** The code on `block` no longer reads
+anyone else's blocks: the one Block read left is `from == me`
+(`CommunityStore.myBlocks`), and a block is enforced entirely on the
+blocker's side. That lets `Block` lose world Read (Step 4), drops the need
+for the `Block.to` index (Step 3), and new blocks get random record names
+(`block-<UUID>`, the Block table). **Order matters: ship the build that no
+longer reads others' blocks BEFORE removing world Read in Production.** See
+"Making Block private" at the end of Step 4.
+
 **2026-09-23 update, NOT reflected in the snapshot table below (it is dated
 2026-09-19 on purpose):** `Post` gained four fields and lost one — several
 photos and videos per post replaced the single `photo` Asset with `media`,
@@ -190,11 +200,19 @@ either; account deletion still queries them by `author`.
 | `author` | Reference |
 | `createdAt` | Date/Time |
 
-**Block** — record name `block-<from>-<to>`
+**Block** — record name `block-<UUID>` (random since 2026-09-29; blocks
+written earlier carry `block-<from>-<to>`, and the app still finds and
+removes those by querying its own). **Readable by its creator only** (Step 4).
 | Field | Type |
 |---|---|
 | `from` | Reference |
 | `to` | Reference |
+
+Why random: with creator-only Read, a name anyone can work out from two
+public profile names would still let someone ask CloudKit whether that
+record exists (by fetching it, or by trying to create it) and learn who
+blocked whom without reading a field. It would also let someone create my
+block's name before I do and stop me blocking them.
 
 **Report**. Written by the app, never read by it. Not world-readable (Step 4).
 | Field | Type |
@@ -222,10 +240,14 @@ record name, never queried**, which is why they need no index at all.
 | Reaction | `post` | QUERYABLE |
 | Reaction | `author` | QUERYABLE |
 | Block | `from` | QUERYABLE |
-| Block | `to` | QUERYABLE |
 
-Eight indexes, five record types. Where they come from, so you can check the
-reasoning rather than trust the table:
+Seven indexes, five record types. **`Block.to` is no longer needed
+(2026-09-29)**: no code queries it any more, because nobody's app may read
+another person's blocks. If it is already in Development or Production,
+leave it: an index grants no read access (Security Roles decide that), and a
+deploy never removes one anyway. Do not add it anywhere it is missing. Where
+the rest come from, so you can check the reasoning rather than trust the
+table:
 
 - `FriendEdge.from` / `.to`: every friends, followers, following, requests
   and relationship read is an equality query on one of them.
@@ -244,12 +266,16 @@ reasoning rather than trust the table:
   feed. Add it in Development and deploy it the same way as the rest of this
   table; without it, deleting an account leaves the person's reactions
   visible on other people's posts forever.
-- `Block.from` / `.to`: blocks are checked in both directions on every read
-  and every write.
+- `Block.from`: the only Block query left (`CommunityStore.myBlocks`), my own
+  blocks, run by search, profile pages, every friends and requests list, the
+  follower and following lists, and account deletion. It needs the
+  creator-only role in Step 4 to still answer, which it does: every record it
+  asks for is one the asker created.
 
 ## Step 4: security roles
 
-On each of the seven types, **Security Roles**:
+On each of the seven types EXCEPT `Report` and `Block` (both below),
+**Security Roles**:
 
 - `_world`: **Read**
 - `_creator`: **Read, Write, Create**
@@ -258,22 +284,22 @@ Only the creator can ever modify a record, which is the constraint the whole
 design is built on: a friendship is two edges because each person can only
 write their own half.
 
-**`FriendEdge` and `Block` are world-readable, and that is a disclosure, not
-an accident (2026-09-29, second pass).** With `_world` Read, anyone signed in
-to iCloud can query who follows whom (`FriendEdge.from` / `.to`, which are
-also what a profile's followers and following show) and **who blocked whom**
-(`Block.from` / `.to`), even though the app never shows anyone's blocks. The
-privacy policy now says exactly this: everything 808 writes to the shared
-area except reports is readable by other people's copies of the app. The
-roles can't be narrowed from the app side, because the app itself needs to
-read both types across users: edges for every friends, followers, following
-and request list, and blocks in both directions on every read and write
-(`CommunityStore.isBlocked`). **Founder decision:** keep `Block` world-readable
-(and disclosed), or change the design so a block is checked without exposing
-it (for example, store it only as the blocker's own record and have each
-side filter with what it can read, accepting that the blocked person's app
-no longer hides the blocker). Until that is decided, leave the roles as
-Step 4 says and keep the policy's sentence.
+**`FriendEdge` is world-readable, and that is a disclosure, not an accident
+(2026-09-29, second pass).** With `_world` Read, anyone signed in to iCloud
+can query who follows whom (`FriendEdge.from` / `.to`, which are also what a
+profile's followers and following show). The app needs it: every friends,
+followers, following and request list reads other people's edges.
+
+**`Block` is NOT world-readable any more. DECIDED 2026-09-29 (Melvin: "Don't
+want others to see who I blocked").** It was, because the app used to check
+blocks in both directions (`CommunityStore.isBlocked` fetched the other
+person's block, and every list queried `Block.to == me`). The code on
+`block` now reads only the blocks the current person created, so the type
+can be creator-only. Taken from the second option this section used to
+offer, with its cost accepted: the blocked person's app can no longer learn
+it was blocked, so it can still see the blocker's public profile and send a
+request, which never arrives (the blocker's app filters it out and refuses
+to accept it). See "Making Block private" below for the roles and the order.
 
 **Except `Report` (2026-09-29): take Read away from `_world`.** A report holds
 the reporter's profile reference and the words they wrote about someone else;
@@ -288,6 +314,47 @@ so it loses nothing. On `Report`:
 Set it in Development and confirm Production after the deploy; a Security
 Roles change is part of the schema that a deploy promotes, but check it in the
 Production Console anyway.
+
+### Making Block private (2026-09-29)
+
+On `Block`, the same roles as `Report`:
+
+- `_world`: **no permissions** (take Read away)
+- `_icloud`: **Create** (any signed-in person can block someone)
+- `_creator`: **Read, Write** (the blocker can list, and delete, their own:
+  the Blocked list, Unblock, and account deletion all need both)
+
+**Order, and it matters:**
+
+1. **Ship the code first.** Every build that reads another person's blocks
+   (anything built from before this change: it fetched `block-<them>-<me>`
+   and queried `Block.to == me` on every Friends list) stops working the
+   moment world Read goes, so Production keeps world Read until the build
+   that never reads others' blocks is the one people run. Friends has not
+   been on the App Store yet, so in practice "people" means testers: have
+   every tester phone on a build with this change before step 3.
+2. **Development first.** Change the role in Development, run the Step 5
+   round trip there (block, unblock, and check that blocking still works on
+   BOTH phones), then deploy Development to Production (Step 6).
+3. **Production.** Confirm in the Production Console that `Block` shows
+   `_world` with no Read after the deploy; a role change is promoted with the
+   schema, but check it.
+
+**Check once in Development, before relying on it:** that a query of
+`Block.from == me` still answers normally when other people's Block records
+exist (CloudKit should leave out records the asker cannot read; a query that
+failed outright instead would break every Friends list). Two phones: block
+someone on each, then open Friends on both. `CommunityStore.myBlocks` also
+drops anything not authored by the asker, so a stray record could only ever
+be ignored, never believed.
+
+**Old-format blocks.** Blocks written before this change are named
+`block-<from>-<to>`. They keep working (the app finds them by `from == me`
+and Unblock deletes them), but their NAME still says who blocked whom, which
+a fetch-by-name probe could test for. Only testers have any. Have each
+tester unblock and block again (the new block gets a random name), or delete
+Block records with that name shape in the Console, which unblocks them, and
+let the tester block again. Do it before counting the change as done.
 
 **The ban path (check in Production, 2026-09-29).** The app cannot remove
 anyone else's records, by design. Removing an abusive profile therefore means
@@ -339,8 +406,13 @@ without posts.**
    and last session update (a relaunch of A forces the publish if it lags).
 6. **Report** phone A's profile from phone B. The report saves without an
    error (and, once `ReportClient.endpoint` is set, the email arrives).
-7. **Block** phone A from phone B: the friendship ends and neither can find
-   the other. Unblock from Requests > Blocked.
+7. **Block** phone A from phone B (one-sided and private since 2026-09-29):
+   the friendship ends on BOTH phones. On B, A is gone from search, lists
+   and requests. On A nothing says it was blocked: A can still find B and
+   send a request, which never shows on B, and B cannot accept it. Unblock
+   from Requests > Blocked on B. Run this with `Block` already creator-only
+   in Development (Step 4, "Making Block private"), so every Friends screen
+   is proven to work without world Read.
 8. **Delete account** on phone A (Settings, Profile tab, gear). On phone B,
    searching A's username finds nothing and A leaves the friends list. The
    handle can be claimed again.

@@ -32,15 +32,14 @@ unwell.
 
 The App runs meditation sessions and helps you keep meditating: Otto, the
 App's sloth, gets brighter as you practice, and your streak and awards are
-tracked for you. In versions of the App that include them, your sessions also
-earn points you can spend on hats for Otto. An Apple Watch is optional: when
-it measures a session, the App shows you evidence of how your body responded,
-generated **after** the session and not as a live score: a heart-rate trend,
-a measure of how still you were, a breathing rate, and a score. A session
-started on your iPhone without the Watch measuring runs a plain timer and
-measures nothing about your body. In versions of the App that include Block,
-the App can also hold apps you find distracting until you've meditated.
-Features may change over time.
+tracked for you. Your sessions also earn points you can spend on hats for
+Otto. An Apple Watch is optional: when it measures a session, the App shows
+you evidence of how your body responded, generated **after** the session and
+not as a live score: a heart-rate trend, a measure of how still you were, a
+breathing rate, and a score. A session started on your iPhone without the
+Watch measuring runs a plain timer and measures nothing about your body. With
+Block, the App can also hold apps you find distracting on your own iPhone
+until you've meditated. Features may change over time.
 
 **Sessions run in the background.** So that you can listen to whatever you like
 while you practice, a session continues measuring on your Apple Watch after you
@@ -63,21 +62,25 @@ your account and for keeping your Apple ID secure.
 
 ## 3a. Subscriptions and payments
 
-Using the App requires a subscription, which you can buy in the App. Each
-plan's price, billing period, and any introductory offer are shown before you
-buy.
+Using the App requires a membership: a subscription or a Lifetime purchase,
+which you can buy in the App. Each plan's price, billing period, and any free
+trial or introductory offer are shown before you buy.
 
 - **Payment is handled by Apple.** It is charged to your Apple ID when you
-  confirm the purchase, under the App Store's terms.
+  confirm the purchase, or when a free trial ends, under the App Store's
+  terms.
 - **Subscriptions renew automatically** for the same period at the
   then-current price unless you turn off auto-renew at least 24 hours before
   the current period ends. Your Apple ID is charged for the renewal within
   the 24 hours before the current period ends.
-- **Introductory offers.** Some plans may include a free trial or an
-  introductory price; when one does, it is shown before you buy, and not
-  every plan includes one. When a free trial or introductory period ends, the
-  subscription renews at the regular price shown before you bought unless you
-  cancel at least 24 hours before it ends.
+- **Free trials and introductory offers.** A plan may include a free trial
+  or an introductory price; when one does, it is shown with the plan before
+  you buy. Apple decides who is eligible, and a free trial is offered once
+  per Apple ID across the App's subscriptions. When a free trial or
+  introductory period ends, your Apple ID is charged the regular price shown
+  before you bought and the subscription renews from then on, unless you
+  cancel at least 24 hours before the trial or introductory period ends. Any
+  unused part of a free trial ends when you buy a subscription.
 - **Price changes.** If the price of your subscription changes, Apple tells
   you before it takes effect and, where Apple's rules or the law require it,
   asks for your consent before you are charged the new price.
@@ -88,14 +91,15 @@ buy.
   subscription; it keeps renewing until you cancel it there.
 - **Refunds** are handled by Apple under its policies; we cannot issue them
   directly.
-- A lifetime purchase made in an earlier version of the App remains valid,
-  and you can restore any purchase from the membership screen or from
-  Settings.
+- **Lifetime.** A Lifetime purchase is a single payment, charged when you
+  confirm it, and it does not renew. Lifetime purchases, including ones made
+  in earlier versions of the App, remain valid, and you can restore any
+  purchase from the membership screen or from Settings.
 
-**Points and hats.** In versions of the App that include them, points are
-earned by meditating and can be spent on hats for Otto inside the App. Points
-have no cash value, cannot be bought, sold or transferred, and are not a
-currency. We may change how points are earned or what they can be spent on.
+**Points and hats.** Points are earned by meditating in the App and can be
+spent on hats for Otto inside the App. Points have no cash value, cannot be
+bought, sold or transferred, and are not a currency. We may change how points
+are earned or what they can be spent on.
 
 ## 4. License
 
@@ -145,14 +149,16 @@ consent, and do not impersonate anyone or spam other users.
 
 **How this is enforced.** Usernames and names are filtered before they are
 accepted. Every person can be reported from the app, and you can block
-someone, which hides you from each other in both directions. We review
-reports and act on them, normally within 24 hours: content that breaks these
-rules is removed, and accounts that break them repeatedly are removed with
-it. We may remove content or an account without notice where the rules are
-plainly broken.
+someone. A block is private and one-sided: the person you block is not told,
+their friend requests never reach you, and you stop seeing them anywhere in
+Friends. Because profiles are public, they may still see your profile. We
+review reports and act on them, normally within 24 hours: content that
+breaks these rules is removed, and accounts that break them repeatedly are
+removed with it. We may remove content or an account without notice where
+the rules are plainly broken.
 
-**Reports go to us**, not to the person reported. Blocking is between you and
-them and is not announced.
+**Reports go to us**, not to the person reported. A block is visible only to
+you and to us, and is not announced.
 
 **Deleting your account** removes your Friends profile and the connections
 and blocks you created right away, as described in our
@@ -162,8 +168,7 @@ can continue acting on them.
 
 ## 6b. Block: managing your own device use
 
-In versions of the App that include it, Block is an optional part of 808's
-paid membership. It uses Apple's own
+Block is an optional part of 808's paid membership. It uses Apple's own
 Screen Time tools so you can hold apps you find distracting on your own
 iPhone until you've meditated. It is a self-management feature: it manages
 only the device you set it up on, for you, and it is not a parental control

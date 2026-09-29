@@ -137,7 +137,8 @@ final class CommunityResetTests: XCTestCase {
         try await broken.deleteEverythingOfMine()
 
         XCTAssertNil(inner.records[meID])
-        XCTAssertNil(inner.records[CommunityNames.block(from: meID, to: CommunityNames.profile(user: "_other"))])
+        XCTAssertFalse(inner.records.values.contains { $0.recordType == CommunityType.block },
+                       "my block went with the rest")
     }
 
     /// No network is still worth retrying, even on a retired type.

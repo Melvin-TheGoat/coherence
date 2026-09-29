@@ -46,7 +46,14 @@
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Monthly",
           "subscriptionGroupID" : "808100001",
-          "type" : "RecurringSubscription"
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D",
+            "internalID" : "808200001"
+          }
         },
         {
           "adHocOffers" : [],
@@ -66,7 +73,14 @@
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Yearly",
           "subscriptionGroupID" : "808100001",
-          "type" : "RecurringSubscription"
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "numberOfPeriods" : 1,
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D",
+            "internalID" : "808200002"
+          }
         },
         {
           "adHocOffers" : [],
@@ -74,7 +88,7 @@
           "displayPrice" : "29.99",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "808000003",
+          "internalID" : "808000006",
           "localizations" : [
             {
               "description" : "808, first year at half price.",

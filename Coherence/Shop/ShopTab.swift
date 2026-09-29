@@ -31,6 +31,7 @@ struct ShopTab: View {
     /// "whatever is actually worn."
     @State private var previewing: String?
     @StateObject private var rig = OttoRigHolder()
+    @ObservedObject private var block = BlockController.shared
 
     private static var day: DayLight { DayLight.now }
     private static var meadow: Color { day.field[1] }
@@ -53,8 +54,12 @@ struct ShopTab: View {
     /// option rather than none.
     private var selected: String { previewing ?? wornHatID ?? HatCatalog.all[0].id }
 
+    /// The same glow Home shows: the same Not-now windows and the same start
+    /// date (2026-09-29), so the Shop's Otto never disagrees with Home's.
     private var currentStage: OttoAura.Stage {
-        OttoAura.stage(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) })
+        OttoAura.stage(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
+                       notNow: FeatureFlags.block ? block.notNowWindows : [],
+                       since: OttoAura.glowStart())
     }
 
     var body: some View {

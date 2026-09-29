@@ -18,11 +18,12 @@ import StoreKit
 ///   passes in minutes. "Nothing happens" is wrong; "no money moves" is right.
 /// - App Store: identical code, real money.
 ///
-/// Until the Paid Applications agreement is signed (which needs the entity's
-/// bank and tax details) no products can exist in App Store Connect, so
-/// `state` will settle on `.unavailable` everywhere. That is a supported
-/// state, not a failure: the paywall shows honest beta copy instead of
-/// pretending to sell something. See `PaywallScreen`.
+/// When the plans cannot be fetched (offline, a slow sandbox, a build whose
+/// bundle owns no products) `state` settles on `.unavailable`. **That never
+/// opens the app** (Melvin, 2026-09-29): the paywall says the plans are not
+/// loading and offers Try again, Restore and the Account link, and a payer
+/// never meets it because their entitlement is read from StoreKit's
+/// on-device record first. See `LaunchLock` and `PaywallScreen`.
 @MainActor
 final class Store: ObservableObject {
 
@@ -43,20 +44,28 @@ final class Store: ObservableObject {
         static let yearHalf = "com.lockout.meditate808.yearly50"
 
         /// The ladder's rungs (2026-09-27), each carrying its own
-        /// introductory offer: a free trial, and the first month at half.
+        /// introductory offer.
+        ///
+        /// `monthTrial` is DORMANT since 2026-09-29 (Melvin): the paywall's
+        /// own Monthly and Yearly carry the free trial again, so a rung
+        /// offering the same trial on a copy of the monthly had nothing left
+        /// to give. It stays in `all` so anybody who bought it still restores
+        /// and stays entitled. `monthHalf` is the ladder's one rung: $3.99
+        /// every month, starting with a free trial.
         static let monthTrial = "com.lockout.meditate808.monthlytrial"
         static let monthHalf = "com.lockout.meditate808.monthly50"
 
         static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf]
-        /// What must load for the store to count as selling: the two plans
-        /// the paywall shows (Aziz, 2026-09-26). The rungs are NOT in it:
+        /// What must load for the store to count as selling: the two
+        /// subscriptions every paywall shows (Aziz, 2026-09-26). The rungs
+        /// are NOT in it:
         /// until they exist in App Store Connect the ladder simply does not
         /// appear, where counting them would stop the whole paywall selling
-        /// and, with that, lift the lock for everyone. Nor are Lifetime (no
-        /// longer sold, kept only so a past purchase restores) and the
-        /// half-off year (no screen offers it): both load when present and
-        /// are never required, or a missing one would leave the paywall
-        /// reading "Plans aren't loading" with the lock off.
+        /// and, since 2026-09-29 (fail closed), leave everybody without a
+        /// membership on "Plans aren't loading". Nor are Lifetime (a card
+        /// again since 2026-09-29, hidden when its product did not load) and
+        /// the half-off year (no screen offers it): both load when present
+        /// and are never required.
         static let core = [monthly, yearly]
 
         static func of(_ plan: SubscriptionPlan) -> String {
@@ -91,14 +100,15 @@ final class Store: ObservableObject {
     /// it stays correct offline, and it goes false by itself when a lapsed
     /// subscription expires, which is what re-locks the app.
     @Published private(set) var entitled = false
-    /// Whether this person can still claim the 7-day introductory offer.
-    /// The paywall must not promise a free week to someone StoreKit will
+    /// Whether this person can still claim the free-trial introductory
+    /// offer. The paywall must not promise free days to someone StoreKit will
     /// charge immediately: that is the difference between an offer and a lie,
     /// and reviewers check the claim against the purchase sheet.
     @Published private(set) var trialEligible = true
     /// How many days the free trial runs: the monthly product's introductory
-    /// offer, read when the products load, and the plan's fallback before
-    /// that. Every line that states the trial's length reads this
+    /// offer (the paywall's own trial since 2026-09-29), read when the
+    /// products load, and the plan's fallback before that. Every line that
+    /// states the trial's length reads this or `freeTrialDays(for:)`
     /// (`TrialCopy`), so App Store Connect is the one place it is set.
     @Published private(set) var trialDays = SubscriptionPlan.fallbackTrialDays
     /// Each loaded product's free-trial introductory offer, in days, keyed by
@@ -106,12 +116,17 @@ final class Store: ObservableObject {
     /// product with no free-trial offer (or a pay-up-front one, like the
     /// half-off year), or one they already used, has no entry.
     @Published private(set) var freeTrialDaysByProduct: [String: Int] = [:]
+    /// StoreKit's on-device record has been read at least once. Until it
+    /// has, a payer and a stranger look the same, so the launch waits on it
+    /// (`LaunchLock`) instead of flashing a payer the paywall. It is local
+    /// and needs no network, so this turns true within moments of launch.
+    @Published private(set) var entitlementKnown = false
 
     /// The free days buying `plan` would start with for THIS person, or nil
     /// when it starts with none: the product carries no free-trial offer, or
     /// StoreKit says they already used one. Before the plans load (a DEBUG
-    /// demo, or never in Release, where nothing sells until `.ready`) the
-    /// ladder's rungs are assumed to carry the trial they are designed with.
+    /// demo, or never in Release, where nothing sells until `.ready`) a plan
+    /// is assumed to carry the trial it is designed with.
     func freeTrialDays(for plan: SubscriptionPlan) -> Int? {
         guard state == .ready else {
             return plan.designedWithTrial ? SubscriptionPlan.fallbackTrialDays : nil
@@ -182,8 +197,9 @@ final class Store: ObservableObject {
             products = found.sorted { $0.price < $1.price }
             // Both core plans or none: a partial fetch would render hardcoded
             // fallback prices beside live rows and a buy button that silently
-            // no-ops on the missing product. Unavailable means free (the
-            // paywall shows "Plans aren't loading" with a retry).
+            // no-ops on the missing product. Unavailable never opens the app
+            // (2026-09-29): the paywall shows "Plans aren't loading" with a
+            // Try again.
             state = ProductID.core.allSatisfy { id in found.contains { $0.id == id } } ? .ready : .unavailable
         } catch {
             state = .unavailable
@@ -193,11 +209,15 @@ final class Store: ObservableObject {
         if let sub = products.first(where: { $0.subscription != nil })?.subscription {
             trialEligible = await sub.isEligibleForIntroOffer
         }
-        // The ladder's trial product is where the trial lives now; the
-        // monthly's own, if any, is the fallback.
-        if let offer = (product(for: .monthTrial) ?? product(for: .monthly))?.subscription?.introductoryOffer,
-           offer.paymentMode == .freeTrial {
-            trialDays = Self.days(in: offer.period)
+        // The paywall's own plans carry the trial again (2026-09-29), so the
+        // monthly's offer is the one every "Start 3 days free" states; the
+        // yearly's, then the half-price rung's, only if it has none.
+        for source in [SubscriptionPlan.monthly, .yearly, .monthHalf, .monthTrial] {
+            if let offer = product(for: source)?.subscription?.introductoryOffer,
+               offer.paymentMode == .freeTrial {
+                trialDays = Self.days(in: offer.period)
+                break
+            }
         }
         // Every product's own trial, so a rung states the length (or the
         // absence) of the offer IT carries, never another product's.
@@ -237,6 +257,87 @@ final class Store: ObservableObject {
     /// or it will be wrong in every country but one.
     func displayPrice(for plan: SubscriptionPlan) -> String? {
         product(for: plan)?.displayPrice
+    }
+
+    /// The struck-through "was" price, shown EVERY time (Melvin, 2026-09-29),
+    /// not only when the App Store's prices failed to load.
+    ///
+    /// It used to render only beside our fallback, because
+    /// `SubscriptionPlan.anchorPrice` is a dollar string and a dollar anchor
+    /// beside a euro price is nonsense. Now it is said in the product's own
+    /// currency:
+    ///
+    /// - The half-price month's anchor is the monthly product's REAL live
+    ///   price, which it is genuinely half of.
+    /// - Every other anchor is the same reference price in that currency: the
+    ///   live price scaled by the plan's anchor-to-price ratio (the yearly's
+    ///   $59.99 against $29.99), snapped to the live price's own ending
+    ///   (`scaledAnchor`), and formatted by the product's `priceFormatStyle`.
+    /// - The dollar string only when no product loaded, beside the dollar
+    ///   fallback price.
+    ///
+    /// Monthly has none, and gets none here: see `SubscriptionPlan.anchorPrice`
+    /// for why, and for the legal note on these reference prices.
+    func anchorPrice(for plan: SubscriptionPlan) -> String? {
+        guard let listAnchor = plan.anchorPrice else { return nil }
+        guard let live = product(for: plan) else { return listAnchor }
+        if plan == .monthHalf, let monthly = product(for: .monthly) {
+            return monthly.price > live.price ? monthly.displayPrice : nil
+        }
+        return Self.formattedAnchor(livePrice: live.price, plan: plan, style: live.priceFormatStyle)
+    }
+
+    /// `anchorPrice(for:)`'s arithmetic, apart from StoreKit so it can be
+    /// tested: nil when the plan has no anchor, or when the result would not
+    /// sit above the price (a strikethrough at or under the price is not a
+    /// reference price, it is a mistake someone will screenshot).
+    nonisolated static func formattedAnchor(livePrice: Decimal, plan: SubscriptionPlan,
+                                            style: Decimal.FormatStyle.Currency) -> String? {
+        guard let ratio = plan.anchorRatio else { return nil }
+        let anchor = scaledAnchor(livePrice: livePrice, ratio: ratio, keepsCents: plan.anchorKeepsCents)
+        guard anchor > livePrice else { return nil }
+        // A whole anchor reads the way the reference price is written: "$199",
+        // not "$199.00".
+        var input = anchor
+        var whole = Decimal()
+        NSDecimalRound(&whole, &input, 0, .plain)
+        return anchor.formatted(whole == anchor ? style.precision(.fractionLength(0)) : style)
+    }
+
+    /// The live price times the ratio, snapped so it reads as a price rather
+    /// than a sum, the way the dollar anchor reads beside the dollar price:
+    ///
+    /// - `keepsCents` (the yearly's $59.99 beside $29.99): a price with cents
+    ///   keeps its own cents, so "29,99 €" scales to "59,99 €" and "£24.99"
+    ///   to "£49.99".
+    /// - Otherwise (Lifetime's $199 beside $99.99) it rounds to a whole unit.
+    /// - A whole price rounds to its own step: "¥4,500" scales to "¥9,000",
+    ///   not "¥9,002".
+    ///
+    /// In dollars it gives back every cleared reference price exactly.
+    nonisolated static func scaledAnchor(livePrice: Decimal, ratio: Decimal,
+                                         keepsCents: Bool = true) -> Decimal {
+        func round(_ value: Decimal) -> Decimal {
+            var input = value
+            var output = Decimal()
+            NSDecimalRound(&output, &input, 0, .plain)
+            return output
+        }
+        func isWhole(_ value: Decimal) -> Bool { round(value) == value }
+
+        let scaled = livePrice * ratio
+        var whole = Decimal()
+        var price = livePrice
+        NSDecimalRound(&whole, &price, 0, .down)
+        let cents = livePrice - whole
+        if cents != 0 {
+            return keepsCents ? round(scaled - cents) + cents : round(scaled)
+        }
+        var step: Decimal = 1
+        while step * 10 <= livePrice, isWhole(livePrice / (step * 10)) {
+            step *= 10
+        }
+        return round(scaled / step) * step
     }
 
     enum PurchaseOutcome { case bought, cancelled, pending, unavailable }
@@ -300,6 +401,7 @@ final class Store: ObservableObject {
         }
         if entitled && !active { Analytics.track(.entitlementLost) }
         entitled = active
+        entitlementKnown = true
         // Whether this install pays, and for which plan, on the anonymous
         // PostHog person (the SDK drops a repeat of the same values).
         Analytics.setPersonProperties(["is_subscriber": active,

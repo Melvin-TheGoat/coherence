@@ -474,16 +474,16 @@
       <div class="halo"></div>
       <img src="img/otto/ottoaura1.png" alt="" width="440" height="493" loading="lazy">
       <img src="img/otto/ottoaura2.png" alt="" width="440" height="493" loading="lazy">
-      <img class="on" src="img/otto/ottoaura3.png" alt="" width="440" height="493" loading="lazy">
-      <img src="img/otto/ottoaura4.png" alt="" width="440" height="493" loading="lazy">
+      <img src="img/otto/ottoaura3.png" alt="" width="440" height="493" loading="lazy">
+      <img class="on" src="img/otto/ottoaura4.png" alt="" width="440" height="493" loading="lazy">
       <img src="img/otto/ottoaura5.png" alt="" width="440" height="493" loading="lazy">
       <img class="float" src="img/otto/ottoaura6.png" alt="" width="440" height="493" loading="lazy">
       <img class="float" src="img/otto/ottoaura7.png" alt="" width="440" height="493" loading="lazy">
     </div>
-    <div class="glow-name" id="glow-name">Stirring</div>
+    <div class="glow-name" id="glow-name">Steady</div>
     <div class="glow-line" id="glow-line">This is where everyone starts.</div>
     <div class="scrub">
-      <input type="range" min="1" max="7" step="1" value="3" id="glow-range" aria-label="Otto's glow">
+      <input type="range" min="1" max="7" step="1" value="4" id="glow-range" aria-label="Otto's glow">
       <div class="ends"><span>Days off</span><span>Every day</span></div>
     </div>
   </div>
@@ -770,8 +770,8 @@
   var stages = [
     ['Withered', 'Weeks without a session.'],
     ['Faded', 'A few days off.'],
-    ['Stirring', 'This is where everyone starts.'],
-    ['Steady', 'One session brings his color back.'],
+    ['Stirring', 'A couple of days off.'],
+    ['Steady', 'This is where everyone starts.'],
     ['Bright', 'A few days in a row.'],
     ['Radiant', 'Most days lately. He starts to float.'],
     ['Nirvana', 'How he looks when you meditate every day.']
@@ -790,7 +790,7 @@
     new IntersectionObserver(function (entries, obs) {
       if (played || !entries[0].isIntersecting) return;
       played = true; obs.disconnect();
-      var seq = [4, 5, 6, 7, 7, 6, 5, 4, 3], i = 0;
+      var seq = [5, 6, 7, 7, 6, 5, 4], i = 0;
       (function step() {
         if (i >= seq.length || range.dataset.touched) return;
         range.value = seq[i++]; show(+range.value);

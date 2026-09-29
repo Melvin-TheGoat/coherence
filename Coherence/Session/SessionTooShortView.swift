@@ -64,7 +64,7 @@ struct SessionTooShortView: View {
             ? "\(discard.durationSec) second\(discard.durationSec == 1 ? "" : "s")"
             : "\(discard.durationSec / 60) min"
         if discard.tooShort {
-            return "**That was \(length).** Sessions count from \(SessionStore.minDurationSec) seconds. Want to go again?"
+            return "**That was \(length).** Sessions count from one minute. Want to go again?"
         }
         return "**Your Watch couldn't read that one.** No readings came back, so it wasn't saved. Keep it snug and try again."
     }

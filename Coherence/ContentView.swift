@@ -429,14 +429,14 @@ struct ContentView: View {
                 let parts = raw.split(separator: ":").compactMap { Int($0) }
                 sheet = .reward(SessionReward(id: UUID(), seconds: 18 * 60, streakBefore: 4, streakAfter: 5,
                                               points: 18, bankBefore: 124,
-                                              glowBefore: parts.first ?? 40,
+                                              glowBefore: parts.first ?? OttoAura.startLevel,
                                               glowAfter: parts.count > 1 ? parts[1] : 50))
             }
             // PREVIEW_AURA=<from>:<to> replays a landed session's glow on
             // Home, without waiting a day for a real one to earn it.
             if let raw = ProcessInfo.processInfo.environment["PREVIEW_AURA"] {
                 let parts = raw.split(separator: ":").compactMap { Int($0) }
-                let from = parts.first ?? 40
+                let from = parts.first ?? OttoAura.startLevel
                 let to = parts.count > 1 ? parts[1] : from + 10
                 Task { @MainActor in
                     try? await Task.sleep(for: .milliseconds(700))
@@ -880,7 +880,8 @@ struct ContentView: View {
         // The windows come from the phone's own Screen Time state and are
         // never sent anywhere.
         return OttoAura.level(from: sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) },
-                              notNow: FeatureFlags.block ? block.notNowWindows : [])
+                              notNow: FeatureFlags.block ? block.notNowWindows : [],
+                              since: OttoAura.glowStart())
     }
 
     /// The streak in the top-left corner, Brainrot's flame and number, bare
@@ -1058,8 +1059,8 @@ struct ContentView: View {
         // (Melvin, 2026-09-28: a day's gain is summed once, not per session).
         let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
         let otherSits = sits.filter { $0.date != landed.startedAt }
-        let before = OttoAura.level(from: otherSits, notNow: windows)
-        let after = OttoAura.level(from: sits, notNow: windows)
+        let before = OttoAura.level(from: otherSits, notNow: windows, since: OttoAura.glowStart())
+        let after = OttoAura.level(from: sits, notNow: windows, since: OttoAura.glowStart())
         // Derived from session dates and lengths ONLY, never from anything
         // measured and never from the Not-now windows the glow on screen
         // uses (`sessionOnlyStages`). Once per landed session: `celebrate`
@@ -1102,8 +1103,9 @@ struct ContentView: View {
     private func sessionOnlyStages(landing id: UUID) -> (before: OttoAura.Stage, after: OttoAura.Stage)? {
         guard let landed = sessions.first(where: { $0.id == id }) else { return nil }
         let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
-        let before = OttoAura.level(from: sits.filter { $0.date != landed.startedAt })
-        let after = OttoAura.level(from: sits)
+        let before = OttoAura.level(from: sits.filter { $0.date != landed.startedAt },
+                                    since: OttoAura.glowStart())
+        let after = OttoAura.level(from: sits, since: OttoAura.glowStart())
         return (OttoAura.Stage(level: before), OttoAura.Stage(level: after))
     }
 

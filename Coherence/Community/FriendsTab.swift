@@ -1084,6 +1084,9 @@ struct PersonView: View {
 
     private var profile: Profile? { model.person(id) }
     private var isMe: Bool { id == model.myID }
+    /// Someone I blocked: the page keeps their name and offers Unblock, and
+    /// shows nothing else of theirs (no stats, no follow lists, no "since").
+    private var blocked: Bool { model.isBlocked(id) }
 
     private static let portrait: CGFloat = 92
 
@@ -1103,7 +1106,7 @@ struct PersonView: View {
                         .zIndex(1)
                     VStack(spacing: 12) {
                         identity
-                        stats
+                        if !blocked { stats }
                     }
                     .padding(.horizontal, AppMetrics.screenPadding)
                     .padding(.top, -6)
@@ -1122,11 +1125,15 @@ struct PersonView: View {
             if !isMe {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        if relationship == .friends {
+                        if relationship == .friends && !blocked {
                             Button("Remove friend") { Task { await model.remove(id); await reload() } }
                         }
                         Button("Report", role: .destructive) { reportTarget = .profile(id) }
-                        Button("Block", role: .destructive) { confirmBlock = true }
+                        if blocked {
+                            Button("Unblock") { Task { await model.unblock(id); await reload() } }
+                        } else {
+                            Button("Block", role: .destructive) { confirmBlock = true }
+                        }
                     } label: {
                         Image(systemName: "ellipsis").onValley()
                     }
@@ -1139,7 +1146,11 @@ struct PersonView: View {
                 Task { await model.block(id); dismiss() }
             }
         } message: {
-            Text("They will not find you, and you will not see them. You can undo this from Friends → Requests → Blocked.")
+            // True of a private, one-sided block (CommunityStore's header):
+            // their requests never arrive and nothing tells them. It does
+            // NOT say they can't find you: your profile stays public to
+            // anyone with your username, them included.
+            Text("They won't be able to reach you, and they won't be told. You won't see them in Friends. You can undo this from Friends → Requests → Blocked.")
         }
         .task { await reload(); await model.loadFollowCounts(id) }
     }
@@ -1157,15 +1168,24 @@ struct PersonView: View {
                 .font(DisplayFont.display(22, .heavy))
                 .foregroundStyle(AppColor.textPrimary)
             Text(["@" + (profile?.username ?? ""),
-                  profile.map { "practicing since " + $0.createdAt.formatted(.dateTime.month(.abbreviated).year()) }]
+                  blocked ? nil : profile.map { "practicing since " + $0.createdAt.formatted(.dateTime.month(.abbreviated).year()) }]
                 .compactMap { $0 }.joined(separator: " \u{00B7} "))
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
-            if let counts = model.followCounts[id] {
+            if !blocked, let counts = model.followCounts[id] {
                 FollowLine(followers: counts.followers, following: counts.following, personID: id)
                     .padding(.top, 2)
             }
-            if !isMe { relationshipButton.padding(.top, 8) }
+            if blocked {
+                Text("Blocked")
+                    .font(AppFont.caption.weight(.bold))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
+                    .overlay(Capsule().stroke(AppColor.textSecondary.opacity(0.35), lineWidth: 1))
+                    .padding(.top, 8)
+            } else if !isMe {
+                relationshipButton.padding(.top, 8)
+            }
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)

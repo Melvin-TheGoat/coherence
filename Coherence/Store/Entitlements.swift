@@ -59,7 +59,7 @@ struct Entitlements {
     var otto: Bool { paid }
     /// Block, Otto holding the apps you picked (Melvin, 2026-09-22: "Paid").
     /// A free person finds Mindful day set up and waiting; switching it on
-    /// opens the free-week offer.
+    /// opens the plans.
     var block: Bool { paid }
 
     func canUse(_ skin: CardSkin) -> Bool { paid || skin == .free }
@@ -69,22 +69,25 @@ struct Entitlements {
         Entitlements(paid: paid, evidenceGranted: covered)
     }
 
-    /// Everything unlocked. The state the app is in whenever it cannot sell.
+    /// Everything unlocked: a payer, or a DEBUG preview switch.
     static let unlocked = Entitlements(paid: true)
 
     /// The rule, as a pure function, so it can be tested without a live
     /// StoreKit session. `Store.entitlements` is this and nothing else.
     ///
-    /// Paid means: StoreKit's on-device record says so, OR the store has not
-    /// finished its first load yet. `.loading` is unlocked only so a payer's
-    /// cached entitlement can resolve before any lock is drawn; it lasts one
-    /// product fetch. `.unavailable` is FREE. It used to unlock everyone, and
-    /// the day billing went live that became "airplane mode at launch = the
-    /// curves for nothing" (Melvin, 2026-09-12). A real payer never needed
-    /// it: `Transaction.currentEntitlements` is cached on device and is read
-    /// before products are fetched.
+    /// Paid means StoreKit's on-device record says so, and nothing else.
+    ///
+    /// **No store state grants anything** (Melvin, 2026-09-29: the app fails
+    /// closed). `.unavailable` stopped unlocking everyone on 2026-09-12
+    /// ("airplane mode at launch = the curves for nothing"), and `.loading`,
+    /// kept then as a one-fetch grace so a payer's cached entitlement could
+    /// resolve before any lock drew, is gone too: the launch now waits on
+    /// that record itself (`Store.entitlementKnown`, `LaunchLock`), so the
+    /// grace protected nobody and opened the evidence to anyone for the
+    /// length of a slow fetch. `state` stays in the signature so every call
+    /// site says what it knew.
     static func resolve(state: Store.State, entitled: Bool) -> Entitlements {
-        Entitlements(paid: entitled || state == .loading)
+        Entitlements(paid: entitled)
     }
 }
 
@@ -95,11 +98,12 @@ extension Store {
     /// Until 2026-09-12 this treated every state but `.ready` as paid, which
     /// kept the pre-billing beta open with no flag to remember. With products
     /// live that same clause was a hole: launch with no network and the store
-    /// reports `.unavailable`, and the curves unlock for anyone. The rule is
-    /// now `entitled || state == .loading`; see `Entitlements.resolve`. Payers
-    /// are safe offline because their entitlement is read from StoreKit's
-    /// on-device cache before the network fetch, and `load()` retries on
-    /// every return to the foreground so an offline launch can still buy.
+    /// reports `.unavailable`, and the curves unlock for anyone. Since
+    /// 2026-09-29 the rule is `entitled` alone; see `Entitlements.resolve`.
+    /// Payers are safe offline because their entitlement is read from
+    /// StoreKit's on-device cache before the network fetch, and `load()`
+    /// retries on every return to the foreground so an offline launch can
+    /// still buy.
     #if DEBUG
     /// **REVIEW BUILD SWITCH. Set back to `false` before committing.**
     ///

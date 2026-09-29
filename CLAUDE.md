@@ -6652,3 +6652,46 @@ The decisions it produced, so nobody undoes them:
   declared; the policy covers followers/following, world-readable edges and
   blocks, the two facts pre-1.1 analytics sent, an EEA/UK section (for
   counsel), and that deleting the account does not cancel the subscription.
+
+## 1.1 DECISIONS AFTER THE AUDIT (2026-09-29, Melvin). These supersede older notes.
+
+- **The free trial is back: 3 days on Monthly and Yearly** (`Monetization.freeTrial
+  = true`), read from App Store Connect, eligibility-aware. App Store Connect must
+  carry a 3-day intro offer on BOTH (the sandbox still has 7 on monthly and none on
+  yearly). Supersedes "NO FREE TRIAL" (2026-09-26).
+- **Lifetime ($99.99) is a third card on the paywall again.** It was cut by an
+  agent, not by a founder. Hidden only while the store is ready without it.
+- **Declining offers ONE rung:** `monthly50`, $3.99 every month after a 3-day free
+  trial (`DownsellRung.ladder = [.halfMonth]`). `monthlytrial` and `yearly50` are
+  dormant. Supersedes "THE LADDER IS BACK" (two rungs).
+- **The struck-through "was" price always shows**, in the product's own currency:
+  the live price scaled by the cleared USD ratio and snapped to a price
+  (`Store.anchorPrice`); monthly50's anchor is Monthly's live price.
+- **The app FAILS CLOSED.** `LaunchLock.verdict` opens the app only for a
+  membership (read offline from StoreKit's on-device record) or the `.dev` beta.
+  Plans that cannot load show "Plans aren't loading" with Try again, Restore and
+  Account; the wait ends on the paywall, never the app; Continue while not selling
+  retries. `Entitlements.paid == entitled`, no grace for `.loading`. Supersedes
+  "only a store that has its plans locks anything". **So App Review MUST have the
+  products attached, or the reviewer is locked out.** DEBUG still never locks
+  (`HARD_PAYWALL=1`).
+- **Block and the Shop ship in 1.1** (`blockInRelease`, `shopInRelease` true;
+  tripwire `test_blockAndTheShopShipInTheAppStoreBuild`). Release draws the sloth
+  tab bar (`TestTabBar.debugDefault`). Otto's chat stays off. The paywall's
+  includes line names Block and hats by their flags.
+- **The shortest session is one minute** (`SessionStore.minDurationSec = 60`).
+- **Otto's glow starts at 50 for everyone on 1.1's first launch**
+  (`OttoAura.startLevel`, `markGlowStartIfNeeded` stores the day in
+  `otto.glowStartedOn.v1`, every level call passes `since: OttoAura.glowStart()`).
+  History, streaks and awards are untouched. Every new caller of `OttoAura.level`
+  or `.stage` must pass `since:` or it will disagree with Home.
+- **Blocks are private and one-sided.** The app only reads blocks it created
+  (`from == me`), new blocks get random record names, the blocked person is not
+  told and their requests never arrive. CloudKit Block role: `_world` none,
+  `_icloud` Create, `_creator` Read/Write (`CLOUDKIT_SETUP.md`, "Making Block
+  private"); no `Block.to` index. The fake database models creator-only reads
+  (`acting(as:)`).
+- **The celebrity photos stay** (Melvin: fine if it passes review). The
+  non-endorsement footnote and CC credits must stay; the fallback if App Review
+  objects is quotes without photos.
+- **Never generate video for 808.** Melvin makes the clips.

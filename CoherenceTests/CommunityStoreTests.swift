@@ -12,14 +12,12 @@ final class CommunityStoreTests: XCTestCase {
 
     override func setUp() async throws {
         db = MemoryCommunityDatabase(user: "_aziz")
-        aziz = CommunityStore(database: db)
-        // A second store over the SAME database, acting as Melvin. The fake's
-        // `user` is read once per store (cached), so each store keeps its
-        // identity after the switch.
-        db.user = "_melvin"
-        melvin = CommunityStore(database: db)
+        // Two stores over the SAME database, each acting as its own person
+        // (`acting(as:)`), so the fake knows who is reading: Block records
+        // are readable by their creator only.
+        aziz = CommunityStore(database: db.acting(as: "_aziz"))
+        melvin = CommunityStore(database: db.acting(as: "_melvin"))
         _ = try await melvin.me()
-        db.user = "_aziz"
         _ = try await aziz.me()
     }
 
@@ -53,6 +51,11 @@ final class CommunityStoreTests: XCTestCase {
     /// The reservation is fetched by name, never queried: a fresh CloudKit
     /// container has no record types and no indexes, and a query-based check
     /// silently failed on a real phone (2026-09-14).
+    ///
+    /// Search makes one query since 2026-09-29, and it is not about the
+    /// handle: whether I blocked the person found, from my own blocks
+    /// (`Block.from == me`). Blocks have random record names now, so there is
+    /// no name to fetch; the handle itself is still never queried.
     func test_claimNeverQueries() async throws {
         let counting = CountingDatabase(inner: db)
         let store = CommunityStore(database: counting)
@@ -61,7 +64,12 @@ final class CommunityStoreTests: XCTestCase {
         let ok = try await store.isUsernameAvailable("aziz")
         XCTAssertTrue(ok)
         _ = try await store.search(username: "aziz")
-        XCTAssertEqual(counting.queries, 0)
+        XCTAssertEqual(counting.queries, 0, "claiming, checking and finding my own handle never query")
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        let found = try await store.search(username: "melvin")
+        XCTAssertEqual(found?.id, melvinID)
+        XCTAssertEqual(counting.queried.map(\.type), [CommunityType.block],
+                       "finding someone else queries only my own blocks, never Username or Profile")
     }
 
     func test_changingHandleReleasesTheOldOne() async throws {
@@ -356,39 +364,212 @@ final class CommunityStoreTests: XCTestCase {
         XCTAssertEqual(who, [])
     }
 
-    // MARK: Blocks
+    // MARK: Blocks (private and one-sided since 2026-09-29)
+    //
+    // Melvin: "Don't want others to see who I blocked." A Block is readable by
+    // its creator only, so the app reads nothing but its own blocks and
+    // enforces them on the blocker's side. These tests run over a fake that
+    // models creator-only read (`MemoryCommunityDatabase.creatorOnlyRead`).
 
-    func test_blockEndsFriendshipAndHidesBothWays() async throws {
+    /// Blocking ends the friendship in both apps (by deleting the blocker's
+    /// edge, which the blocked person's app can see is gone) and the blocker
+    /// never sees the blocked person again.
+    func test_blockEndsFriendshipAndTheBlockerNeverSeesThem() async throws {
         try await melvin.claimUsername("melvin", displayName: "Melvin")
         try await aziz.claimUsername("aziz", displayName: "Aziz")
         try await aziz.sendRequest(to: melvinID)
         try await melvin.accept(azizID)
 
         try await aziz.block(melvinID)
+        try await aziz.block(melvinID)   // a second tap writes nothing new
 
+        XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.block }.count, 1)
+        XCTAssertNil(db.records[CommunityNames.edge(from: azizID, to: melvinID)], "the blocker's own edge is deleted")
         let mine = try await aziz.friends()
         XCTAssertEqual(mine, [])
         let his = try await melvin.friends()
-        XCTAssertEqual(his, [], "a block removes the friendship from BOTH views, even though Melvin's edge still exists")
-        let seenByMelvin = try await melvin.search(username: "aziz")
-        XCTAssertNil(seenByMelvin, "the blocked person cannot find the blocker")
-        let seenByAziz = try await aziz.profile(named: melvinID)
-        XCTAssertNil(seenByAziz, "and the blocker no longer sees them")
-
-        do {
-            try await melvin.sendRequest(to: azizID)
-            XCTFail("a request across a block must be refused")
-        } catch let e as CommunityError {
-            XCTAssertEqual(e, .blocked)
-        }
+        XCTAssertEqual(his, [], "the friendship ends in Melvin's app too, from the deleted edge alone")
+        let found = try await aziz.search(username: "melvin")
+        XCTAssertNil(found, "the blocker cannot find them")
+        let page = try await aziz.profile(named: melvinID)
+        XCTAssertNil(page, "or open their page")
+        let rel = try await aziz.relationship(with: melvinID)
+        XCTAssertEqual(rel, .none, "Melvin's standing edge must not read as a request to accept")
+        let incoming = try await aziz.incomingRequests()
+        XCTAssertEqual(incoming, [])
+        let names = try await aziz.profiles(named: [melvinID])
+        XCTAssertEqual(names.map(\.displayName), ["Melvin"], "the Blocked list can still name them")
+        XCTAssertEqual(names.first?.practice, Coherence.PracticeStats.empty, "and nothing more")
         let blocked = try await aziz.blockedByMe()
         XCTAssertEqual(blocked, [melvinID])
 
         try await aziz.unblock(melvinID)
-        let after = try await melvin.search(username: "aziz")
-        XCTAssertEqual(after?.id, azizID)
+        let back = try await aziz.search(username: "melvin")
+        XCTAssertEqual(back?.id, melvinID)
+        let none = try await aziz.blockedByMe()
+        XCTAssertEqual(none, [])
+        XCTAssertFalse(db.records.values.contains { $0.recordType == CommunityType.block })
     }
 
+    /// A request from someone I blocked never arrives and can never be
+    /// accepted. Their app cannot know: it can still find me and ask, and
+    /// sees a request nobody answers.
+    func test_requestFromABlockedPersonNeverArrivesAndIsNeverAccepted() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        try await aziz.block(melvinID)
+
+        let seen = try await melvin.search(username: "aziz")
+        XCTAssertEqual(seen?.id, azizID, "the blocked person can still see the blocker's public profile")
+        try await melvin.sendRequest(to: azizID)
+        let waiting = try await melvin.sentRequests()
+        XCTAssertEqual(waiting, [azizID], "to Melvin it reads as a request nobody has answered")
+        let theirs = try await melvin.relationship(with: azizID)
+        XCTAssertEqual(theirs, .requested)
+
+        let incoming = try await aziz.incomingRequests()
+        XCTAssertEqual(incoming, [], "it never arrives")
+        let rel = try await aziz.relationship(with: melvinID)
+        XCTAssertEqual(rel, .none)
+        let followers = try await aziz.follows(of: azizID).followers
+        XCTAssertEqual(followers, [], "not even as a follower")
+        do {
+            try await aziz.accept(melvinID)
+            XCTFail("accepting a blocked person must be refused")
+        } catch let e as CommunityError {
+            XCTAssertEqual(e, .blocked)
+        }
+        XCTAssertNil(db.records[CommunityNames.edge(from: azizID, to: melvinID)], "no edge was written back")
+        let friends = try await melvin.friends()
+        XCTAssertEqual(friends, [], "so Melvin never becomes a friend")
+    }
+
+    /// The blocker does not see the blocked person in someone else's
+    /// follower or following list either.
+    func test_blockedPersonLeavesOtherPeoplesListsForTheBlocker() async throws {
+        let lenaID = CommunityNames.profile(user: "_lena")
+        let lena = CommunityStore(database: db.acting(as: "_lena"))
+        _ = try await lena.me()
+        try await lena.sendRequest(to: melvinID)
+        try await melvin.accept(lenaID)
+        var lists = try await aziz.follows(of: lenaID)
+        XCTAssertEqual(lists.followers, [melvinID])
+
+        try await aziz.block(melvinID)
+
+        lists = try await aziz.follows(of: lenaID)
+        XCTAssertEqual(lists.followers, [])
+        XCTAssertEqual(lists.following, [])
+        let his = try await aziz.follows(of: melvinID)
+        XCTAssertTrue(his.followers.isEmpty && his.following.isEmpty, "and a blocked person has no lists for me")
+    }
+
+    /// Nobody but the blocker can read a block: not a third person, not the
+    /// person blocked. By who it is about, by who made it, or by name.
+    func test_nobodyElseCanReadWhoBlockedWhom() async throws {
+        try await aziz.block(melvinID)
+        let record = try XCTUnwrap(db.records.values.first { $0.recordType == CommunityType.block })
+        let name = record.recordID.recordName
+        XCTAssertFalse(name.contains("_aziz") || name.contains("_melvin"),
+                       "the record name must not say who blocked whom: \(name)")
+
+        for reader in ["_lena", "_melvin"] {
+            let view = db.acting(as: reader)
+            let byTo = try await view.query(CommunityQuery(type: CommunityType.block,
+                                                           filters: [.equals("to", .reference(melvinID))]))
+            let byFrom = try await view.query(CommunityQuery(type: CommunityType.block,
+                                                             filters: [.equals("from", .reference(azizID))]))
+            let fetched = try await view.fetch(name)
+            XCTAssertTrue(byTo.isEmpty, "\(reader) must not find the block by who it is about")
+            XCTAssertTrue(byFrom.isEmpty, "\(reader) must not find it by who made it")
+            XCTAssertNil(fetched, "\(reader) must not fetch it by name")
+            let theirOwn = try await CommunityStore(database: view).blockedByMe()
+            XCTAssertEqual(theirOwn, [], "\(reader)'s store sees only their own blocks")
+        }
+        let own = try await db.acting(as: "_aziz").query(CommunityQuery(type: CommunityType.block,
+                                                                        filters: [.equals("from", .reference(azizID))]))
+        XCTAssertEqual(own.count, 1, "the blocker reads their own")
+    }
+
+    /// A block someone ELSE writes naming me as the blocker does nothing:
+    /// my app never reads it, so it cannot hide a friend from me.
+    func test_aPlantedBlockInMyNameDoesNothing() async throws {
+        try await aziz.sendRequest(to: melvinID)
+        try await melvin.accept(azizID)
+        let planted = CKRecord(recordType: CommunityType.block, recordID: CKRecord.ID(recordName: CommunityNames.newBlock()))
+        Block(from: azizID, to: melvinID).apply(to: planted)
+        _ = try await db.acting(as: "_lena").save(planted)
+
+        let blocked = try await aziz.blockedByMe()
+        XCTAssertEqual(blocked, [])
+        let friends = try await aziz.friends()
+        XCTAssertEqual(friends, [melvinID])
+    }
+
+    /// Every read of the Block type, across every store call the screens
+    /// make, is `from == me`: nothing queries `Block.to` or fetches a block by
+    /// name, so the Console can take world read off Block without any query
+    /// failing. Run as the BLOCKED person too: their app never needs the
+    /// blocker's record.
+    func test_theOnlyBlockReadIsMyOwn() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        try await aziz.sendRequest(to: melvinID)
+        try await melvin.accept(azizID)
+        try await aziz.block(melvinID)
+
+        for (user, other, handle) in [("_aziz", melvinID, "melvin"), ("_melvin", azizID, "aziz")] {
+            let me = CommunityNames.profile(user: user)
+            let recording = BlockReadRecordingDatabase(inner: db.acting(as: user))
+            let store = CommunityStore(database: recording)
+            _ = try await store.me()
+            _ = try await store.friends()
+            _ = try await store.incomingRequests()
+            _ = try await store.sentRequests()
+            _ = try await store.blockedByMe()
+            _ = try await store.relationship(with: other)
+            _ = try await store.search(username: handle)
+            _ = try await store.profile(named: other)
+            _ = try await store.profiles(named: [other])
+            _ = try await store.follows(of: other)
+            _ = try await store.follows(of: me)
+            _ = try await store.friendFacts()
+            _ = try await store.reactors(to: "post-x")
+            _ = try await store.reactions(for: ["post-x"])
+            try? await store.sendRequest(to: other)
+            try await store.block(CommunityNames.profile(user: "_someone"))
+            try await store.unblock(CommunityNames.profile(user: "_someone"))
+            try await store.deleteEverythingOfMine()
+
+            XCTAssertFalse(recording.blockQueries.isEmpty)
+            for q in recording.blockQueries {
+                XCTAssertEqual(q.filters, [.equals("from", .reference(me))], "\(user) read a Block that is not their own: \(q)")
+            }
+            XCTAssertEqual(recording.fetchedBlockNames, [], "\(user) fetched a Block by name")
+        }
+    }
+
+    /// A block written before 2026-09-29 carries the old `block-<from>-<to>`
+    /// name. It still counts, blocking again adds nothing, and Unblock
+    /// removes it.
+    func test_anOldNamedBlockStillCountsAndUnblocks() async throws {
+        let legacyName = "block-" + azizID + "-" + melvinID
+        let legacy = CKRecord(recordType: CommunityType.block, recordID: CKRecord.ID(recordName: legacyName))
+        Block(id: legacyName, from: azizID, to: melvinID).apply(to: legacy)
+        _ = try await db.acting(as: "_aziz").save(legacy)
+
+        var blocked = try await aziz.blockedByMe()
+        XCTAssertEqual(blocked, [melvinID])
+        try await aziz.block(melvinID)
+        XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.block }.count, 1)
+        try await aziz.unblock(melvinID)
+        blocked = try await aziz.blockedByMe()
+        XCTAssertEqual(blocked, [])
+        XCTAssertNil(db.records[legacyName])
+    }
+
+    /// Being blocked drops their posts from my feed without my app reading
+    /// their block: their edge is gone, so we are no longer friends.
     func test_blockedPersonsPostsLeaveTheFeed() async throws {
         try await aziz.sendRequest(to: melvinID)
         try await melvin.accept(azizID)
@@ -397,7 +578,7 @@ final class CommunityStoreTests: XCTestCase {
         XCTAssertEqual(feed.count, 1)
         try await melvin.block(azizID)
         feed = try await aziz.feed()
-        XCTAssertEqual(feed, [], "being blocked also drops their posts from my feed")
+        XCTAssertEqual(feed, [], "the friendship ended, so their posts leave my feed")
     }
 
     // MARK: Reports and first session
@@ -487,13 +668,35 @@ final class CommunityStoreTests: XCTestCase {
 /// Counts queries so a test can assert a path never needs an index.
 private final class CountingDatabase: CommunityDatabase {
     let inner: MemoryCommunityDatabase
-    var queries = 0
+    var queried: [CommunityQuery] = []
+    var queries: Int { queried.count }
     init(inner: MemoryCommunityDatabase) { self.inner = inner }
     func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
     func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
     func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
     func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
-    func query(_ query: CommunityQuery) async throws -> [CKRecord] { queries += 1; return try await inner.query(query) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { queried.append(query); return try await inner.query(query) }
+    func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
+}
+
+/// Records every read of the Block type: queries with their filters, and
+/// fetches of a `block-` record name. The app may only ever read its own.
+private final class BlockReadRecordingDatabase: CommunityDatabase {
+    let inner: CommunityDatabase
+    var blockQueries: [CommunityQuery] = []
+    var fetchedBlockNames: [String] = []
+    init(inner: CommunityDatabase) { self.inner = inner }
+    func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
+    func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
+    func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
+    func fetch(_ recordName: String) async throws -> CKRecord? {
+        if recordName.hasPrefix("block-") { fetchedBlockNames.append(recordName) }
+        return try await inner.fetch(recordName)
+    }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] {
+        if query.type == CommunityType.block { blockQueries.append(query) }
+        return try await inner.query(query)
+    }
     func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
 }
 
@@ -715,5 +918,51 @@ final class FriendsOptionalTests: XCTestCase {
         await model.clearAvatar()
         XCTAssertNil(db.records[meID]?["avatar"])
         XCTAssertNil(model.profile?.avatarURL)
+    }
+}
+
+/// What the phone keeps about someone I blocked (Melvin, 2026-09-29: the
+/// blocker never sees the blocked person, practice summary included).
+@MainActor
+final class BlockPrivacyModelTests: XCTestCase {
+    private let otherID = CommunityNames.profile(user: "_other")
+
+    func test_blockingDropsEverythingButTheirName() async throws {
+        UserDefaults.standard.removeObject(forKey: CommunityModel.pendingDeletionKey)
+        let db = MemoryCommunityDatabase(user: "_other")
+        let other = CommunityStore(database: db.acting(as: "_other"))
+        try await other.claimUsername("melvin", displayName: "Melvin")
+        try await other.updatePracticeStats(Coherence.PracticeStats(sessions7d: 4, minutes7d: 60, currentStreak: 9,
+                                                                   totalSessions: 41, lastSessionAt: Date()))
+        let model = CommunityModel(store: CommunityStore(database: db.acting(as: "_me")))
+        await model.load()
+        _ = await model.claim("aziz", displayName: "Aziz")
+        await model.request(otherID)
+        XCTAssertEqual(model.person(otherID)?.practice.totalSessions, 41, "cached in full while not blocked")
+
+        await model.block(otherID)
+
+        XCTAssertTrue(model.isBlocked(otherID))
+        XCTAssertEqual(model.blocked, [otherID])
+        XCTAssertTrue(model.sent.isEmpty)
+        XCTAssertEqual(model.person(otherID)?.displayName, "Melvin", "the Blocked list can still name them")
+        XCTAssertEqual(model.person(otherID)?.practice, Coherence.PracticeStats.empty, "their practice summary is gone")
+        await model.loadFollowCounts(otherID)
+        XCTAssertNil(model.followCounts[otherID], "no follow lists for a blocked person")
+        await model.loadPerson(otherID)
+        XCTAssertEqual(model.person(otherID)?.practice, Coherence.PracticeStats.empty, "opening their page loads nothing")
+
+        // A fresh model on the same phone, as after a relaunch.
+        let fresh = CommunityModel(store: CommunityStore(database: db.acting(as: "_me")))
+        await fresh.load()
+        await fresh.loadBlocked()
+        XCTAssertEqual(fresh.blocked, [otherID])
+        XCTAssertEqual(fresh.person(otherID)?.displayName, "Melvin")
+        XCTAssertEqual(fresh.person(otherID)?.practice, Coherence.PracticeStats.empty)
+
+        await fresh.unblock(otherID)
+        XCTAssertFalse(fresh.isBlocked(otherID))
+        await fresh.loadPerson(otherID)
+        XCTAssertEqual(fresh.person(otherID)?.practice.totalSessions, 41, "unblocking brings them back in full")
     }
 }

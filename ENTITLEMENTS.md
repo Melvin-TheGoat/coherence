@@ -1,26 +1,55 @@
 # Entitlements: the free tier and what paying unlocks
 
-> **STATUS 2026-09-29: 1.1 is PREMIUM ONLY, and the free tier below is
-> DORMANT.** `Monetization.premiumOnly = true` (Melvin and Aziz, 2026-09-23):
-> nothing past the paywall opens without buying or restoring, onboarding ends
-> on the paywall, and anyone without a subscription meets it again at launch.
-> `Monetization.freeTrial = false` (Aziz, 2026-09-26): Monthly and Yearly carry
-> no trial. Declining opens a two-rung ladder, `monthlytrial` (a free trial)
-> then `monthly50` ($3.99 a month after a 3-day free trial), and each rung
-> returns to the paywall to buy. Lifetime is restore-only; `yearly50` is sold
-> by no screen. Everything below (`Entitlements`, `FreeTierScreen`, the
-> numberless verdict, the locked panels) still compiles and is still tested,
-> and describes what switching `premiumOnly` off would bring back. It is not
-> what 1.1 ships. Current product setup: `APP_STORE.md`, "In-app purchases".
+> **STATUS 2026-09-29 (updated later the same day, Melvin): 1.1 is PREMIUM
+> ONLY, and the free tier below is DORMANT.** `Monetization.premiumOnly =
+> true` (Melvin and Aziz, 2026-09-23): nothing past the paywall opens without
+> buying or restoring, onboarding ends on the paywall, and anyone without a
+> membership meets it again at launch.
+>
+> - **The free trial is back: `Monetization.freeTrial = true`.** Monthly
+>   ($7.99) and Yearly ($29.99) each carry a **3-day free trial** as their App
+>   Store introductory offer; the app reads the length from App Store Connect
+>   (`808.storekit` uses P3D on both), and every trial line is
+>   eligibility-aware, so someone who already used a trial in the group is
+>   never promised one. (It was `false` from 2026-09-26 to 2026-09-29, Aziz:
+>   "no free trial and only monthly and yearly".)
+> - **Lifetime ($99.99, one payment, no trial, "charged today, nothing
+>   renews") is the paywall's third card again**, hidden if its product does
+>   not load.
+> - **The ladder is ONE rung.** "No, I don't want to pay" offers
+>   `monthly50`, "Monthly, half price", $3.99 every month after a 3-day free
+>   trial; taking it returns to the paywall with that plan selected, where
+>   the purchase happens. `monthlytrial` and `yearly50` are DORMANT: no
+>   screen sells them, and they stay in `Store.ProductID.all` only so any
+>   past purchase still restores.
+> - **The app fails CLOSED.** Without a membership it shows the paywall; if
+>   the plans cannot load it says "Plans aren't loading" with Try again,
+>   Restore and (on the launch lock, or wherever the phone already holds an
+>   account's data) the Account link. Payers are recognized offline from
+>   StoreKit's on-device record. The gate note below ("`.unavailable` is
+>   FREE") describes the dormant free tier, not the launch lock
+>   (`LaunchLock` in `Monetization.swift`).
+> - **Free 1.0 users meet the paywall on updating** (decided 2026-09-25, no
+>   grandfathering); paid subscribers and Lifetime owners keep full access,
+>   and history carries over.
+>
+> Everything below (`Entitlements`, `FreeTierScreen`, the numberless verdict,
+> the locked panels) still compiles and is still tested, and describes what
+> switching `premiumOnly` off would bring back. It is not what 1.1 ships.
+> Current product setup: `APP_STORE.md`, "In-app purchases".
+>
+> *Superseded, kept for the record:* the morning's 2026-09-29 status said
+> `freeTrial = false`, a two-rung ladder (`monthlytrial` then `monthly50`),
+> and Lifetime restore-only.
 >
 > **Changed since (checked in the 2026-09-23 sweep).** The gate is now
 > `paid: entitled || state == .loading` (2026-09-12), so `.unavailable` is
 > FREE; the code sample under "Where the gate lives" shows the older rule
-> (see `Entitlements.resolve` and CLAUDE.md "FREE TIER"). The ladder is two
+> (see `Entitlements.resolve` and CLAUDE.md "FREE TIER"). ~~The ladder is two
 > rungs, the free week and then half off the first year
-> (`com.lockout.meditate808.yearly50`, 2026-09-22). Otto's chat and Block are
-> paid, and the invite reward can open one session's evidence
-> (`evidenceGranted`).
+> (`com.lockout.meditate808.yearly50`, 2026-09-22).~~ (2026-09-29: one rung,
+> `monthly50`; see the status above.) Otto's chat and Block are paid, and the
+> invite reward can open one session's evidence (`evidenceGranted`).
 
 **BUILT 2026-08-24.** 198 tests green, verified on the simulator. This document
 is now the record of what shipped, not a proposal. Read `ONBOARDING.md` for the

@@ -38,7 +38,10 @@ final class CommunityModel: ObservableObject {
     @Published private(set) var friends: [String] = []
     @Published private(set) var incoming: [String] = []
     @Published private(set) var sent: [String] = []
-    /// People I blocked, for the Unblock list the block dialog points to.
+    /// People I blocked, for the Unblock list the block dialog points to, and
+    /// so a person page opened for one of them shows nothing of theirs.
+    /// Loaded with every list refresh. Only ever MY blocks: nobody else's are
+    /// readable (see `CommunityStore`'s header).
     @Published private(set) var blocked: [String] = []
     /// Reactor profile names by post id.
     @Published private(set) var reactions: [String: [String]] = [:]
@@ -165,7 +168,7 @@ final class CommunityModel: ObservableObject {
     }
 
     func loadFollowCounts(_ id: String) async {
-        guard let store, phase == .ready, followCounts[id] == nil else { return }
+        guard let store, phase == .ready, followCounts[id] == nil, !isBlocked(id) else { return }
         guard let counts = try? await store.followCounts(of: id) else { return }
         followCounts[id] = counts
     }
@@ -280,8 +283,11 @@ final class CommunityModel: ObservableObject {
         async let f = store.friends()
         async let i = store.incomingRequests()
         async let s = store.sentRequests()
-        let (fr, inc, sn) = try await (f, i, s)
-        friends = fr; incoming = inc; sent = sn
+        async let b = store.blockedByMe()
+        let (fr, inc, sn, bl) = try await (f, i, s, b)
+        friends = fr; incoming = inc; sent = sn; blocked = bl
+        // Anything cached about them from before the block goes too.
+        for id in bl { forgetBlockedPerson(id) }
         // No feed and no reactions any more (Melvin, 2026-09-29). Posting was
         // removed on 2026-09-27, but every open of Friends still queried the
         // Post and Reaction types, and in a Production container where either
@@ -569,19 +575,34 @@ final class CommunityModel: ObservableObject {
 
     // MARK: - Block and report
 
+    /// Blocks someone. Private and one-sided: they are not told, and from
+    /// now on this phone shows nothing of theirs (see `CommunityStore`).
     func block(_ id: String) async {
         guard let store else { return }
         do {
             try await store.block(id)
             Analytics.track(.userBlocked)
+            if !blocked.contains(id) { blocked = (blocked + [id]).sorted() }
+            forgetBlockedPerson(id)
             try await refreshLists(store)
         } catch { errorText = Self.plain(error) }
+    }
+
+    func isBlocked(_ id: String) -> Bool { blocked.contains(id) }
+
+    /// Keeps only a blocked person's name (for the Blocked list): their
+    /// photo, practice summary and follow counts, cached from before the
+    /// block, are dropped so no screen can show them.
+    private func forgetBlockedPerson(_ id: String) {
+        if let p = people[id] { people[id] = CommunityStore.nameOnly(p) }
+        followCounts[id] = nil
     }
 
     func loadBlocked() async {
         guard let store else { return }
         do {
             blocked = try await store.blockedByMe()
+            for id in blocked { forgetBlockedPerson(id) }
             try await cache(names: Set(blocked))
         } catch { errorText = Self.plain(error) }
     }
@@ -591,6 +612,8 @@ final class CommunityModel: ObservableObject {
         do {
             try await store.unblock(id)
             blocked.removeAll { $0 == id }
+            // The name-only copy goes, so their page loads them in full again.
+            people[id] = nil
             try await refreshLists(store)
         } catch { errorText = Self.plain(error) }
     }

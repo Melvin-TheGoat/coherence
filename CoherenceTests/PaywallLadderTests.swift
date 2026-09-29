@@ -5,18 +5,38 @@ import XCTest
 /// so its shape is asserted rather than trusted to review.
 final class PaywallLadderTests: XCTestCase {
 
-    /// Cheapest concession first: risk, then money. A ladder that opens with
-    /// money has nothing left to offer and teaches people to wait for the
-    /// discount.
+    /// **One rung since 2026-09-29** (Melvin: "If they deny that, then 3 day
+    /// free trial plus half off forever"). The paywall answers the risk
+    /// objection itself with the free trial, so the only concession left is
+    /// money: half price, every month, after the same free trial.
     ///
-    /// **Two rungs, and no more** (Melvin, 2026-09-22): a follow-up may only
-    /// exist if it concedes something, and after the discount there is
-    /// nothing left to concede.
-    func test_rungsGoRiskThenMoney() {
-        XCTAssertEqual(DownsellRung.allCases, [.trial, .halfMonth])
-        XCTAssertEqual(DownsellRung.trial.next, .halfMonth)
+    /// A follow-up may only exist if it concedes something (2026-09-22), and
+    /// after the discount there is nothing left to concede, so the ladder
+    /// can never grow past two.
+    func test_theLadderIsOneRungOfMoney() {
+        XCTAssertEqual(DownsellRung.ladder, [.halfMonth])
         XCTAssertNil(DownsellRung.halfMonth.next, "the ladder must end")
-        XCTAssertLessThanOrEqual(DownsellRung.allCases.count, 2)
+        XCTAssertLessThanOrEqual(DownsellRung.ladder.count, 2)
+        XCTAssertEqual(DownsellRung.ladder.first?.plan, .monthHalf)
+    }
+
+    /// The trial rung is dormant, not deleted: the paywall's own plans carry
+    /// the trial again, so a rung offering it on a copy of the monthly would
+    /// offer the same thing twice. Its product stays so a purchase restores.
+    func test_theTrialRungIsDormantButItsProductStillRestores() {
+        XCTAssertFalse(DownsellRung.ladder.contains(.trial))
+        XCTAssertNil(DownsellRung.trial.next, "a dormant rung leads nowhere")
+        XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthTrial),
+                      "a past purchase of the trial plan must still restore and entitle")
+        XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthHalf))
+    }
+
+    /// The only rung is the first thing said after a "no", so it cannot open
+    /// as though a rung came before it.
+    func test_theOnlyRungDoesNotFollowAnother() {
+        let first = DownsellRung.ladder[0]
+        XCTAssertFalse(first.title.hasPrefix("Then"), first.title)
+        XCTAssertFalse(first.title.contains("\u{2014}"), "no em dashes")
     }
 
     /// **A rung may only sell an offer the product it buys can actually
@@ -37,7 +57,7 @@ final class PaywallLadderTests: XCTestCase {
     /// No rung may repeat, or someone who declines is walked in a circle.
     func test_theLadderTerminates() {
         var seen: Set<DownsellRung> = []
-        var current: DownsellRung? = .trial
+        var current: DownsellRung? = DownsellRung.ladder.first
         var steps = 0
         while let rung = current {
             XCTAssertTrue(seen.insert(rung).inserted, "\(rung) appeared twice")
@@ -45,7 +65,7 @@ final class PaywallLadderTests: XCTestCase {
             steps += 1
             XCTAssertLessThan(steps, 10, "the ladder loops")
         }
-        XCTAssertEqual(steps, DownsellRung.allCases.count)
+        XCTAssertEqual(steps, DownsellRung.ladder.count)
     }
 
     /// Each rung sells the plan it describes. A rung that talked about a year
@@ -60,8 +80,9 @@ final class PaywallLadderTests: XCTestCase {
     }
 
     /// Every rung sells its own product, never the paywall's plain monthly:
-    /// the paywall's monthly carries no trial (Aziz, 2026-09-26), so a rung
-    /// selling it would promise an offer the purchase sheet contradicts.
+    /// a product carries one introductory offer, and the monthly's is the
+    /// paywall's own free trial, so a rung selling it could not also carry
+    /// its discount.
     func test_rungsSellTheirOwnProducts() {
         for rung in DownsellRung.allCases {
             XCTAssertNotEqual(Store.ProductID.of(rung.plan), Store.ProductID.monthly)
@@ -100,10 +121,10 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertEqual(SubscriptionPlan.yearly.cadence(withTrial: false), SubscriptionPlan.yearly.cadence)
     }
 
-    /// Only the two plans the paywall shows must load for it to sell. A
-    /// missing Lifetime (no longer sold) or half-off year (no screen offers
-    /// it) must not leave the paywall reading "Plans aren't loading" with the
-    /// premium lock off.
+    /// Only the two subscriptions must load for the paywall to sell. A
+    /// missing Lifetime (its card hides) or half-off year (no screen offers
+    /// it) must not leave everybody on "Plans aren't loading", which since
+    /// 2026-09-29 is a locked app, not an open one.
     func test_onlyThePaywallsPlansAreRequired() {
         XCTAssertEqual(Set(Store.ProductID.core), [Store.ProductID.monthly, Store.ProductID.yearly])
         XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.lifetime),
@@ -119,11 +140,60 @@ final class PaywallLadderTests: XCTestCase {
 
     /// The discounted year replaces the year on the paywall rather than
     /// sitting beside it: two yearly cards at two prices is a shell game.
+    /// A rung's plan takes the monthly's place the same way.
     func test_theDiscountedYearTakesTheYearsPlace() {
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.monthTrial, .yearly])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthHalf), [.monthHalf, .yearly])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.monthTrial, .yearly, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthHalf), [.monthHalf, .yearly, .lifetime])
+    }
+
+    // MARK: Lifetime is back (Melvin, 2026-09-29: "that should def be a thing")
+
+    /// Lifetime is the third card whatever is selected, and nothing ever
+    /// takes its place: a rung replaces only the monthly.
+    func test_lifetimeIsAlwaysTheThirdCard() {
+        for plan in SubscriptionPlan.allCases {
+            let cards = SubscriptionPlan.cards(selecting: plan)
+            XCTAssertEqual(cards.count, 3, "\(plan)")
+            XCTAssertEqual(cards.last, .lifetime, "\(plan)")
+            XCTAssertEqual(cards.filter { $0 == .lifetime }.count, 1, "\(plan)")
+        }
+        for rung in DownsellRung.ladder {
+            XCTAssertEqual(SubscriptionPlan.cards(selecting: rung.plan),
+                           [rung.plan, .yearly, .lifetime], "a rung replaces the monthly card only")
+        }
+    }
+
+    /// One charge, today, nothing renews: the button and the terms say so,
+    /// and neither mentions a trial or cancelling, which Lifetime has none of.
+    func test_lifetimeIsOneChargeWithNoTrial() {
+        XCTAssertFalse(SubscriptionPlan.lifetime.designedWithTrial)
+        XCTAssertEqual(SubscriptionPlan.lifetime.cadence(withTrial: true), "once")
+        XCTAssertEqual(PaywallScreen.buyButtonTitle(for: .lifetime, trialDays: 3), "Buy Lifetime")
+        let terms = PaywallScreen.terms(for: .lifetime, priceLine: "$99.99 once", trialDays: 3)
+        XCTAssertEqual(terms, "$99.99 once, charged today. Nothing renews.")
+        for word in ["trial", "free", "renews automatically", "cancel"] {
+            XCTAssertFalse(terms.lowercased().contains(word), word)
+        }
+        XCTAssertNotNil(SubscriptionPlan.lifetime.anchorPrice, "its $199 anchor shows like the others")
+    }
+
+    /// The subscriptions' terms say the trial, the price after it, that it
+    /// renews, and where to cancel; without a trial, no free days are named.
+    func test_subscriptionTermsSayWhatTheyRenewAt() {
+        let trial = PaywallScreen.terms(for: .monthly, priceLine: "$7.99 per month", trialDays: 3)
+        XCTAssertTrue(trial.hasPrefix("3 days free, then $7.99 per month."), trial)
+        XCTAssertTrue(trial.contains("Renews automatically"), trial)
+        XCTAssertTrue(trial.contains("Settings app"), trial)
+        let none = PaywallScreen.terms(for: .yearly, priceLine: "$29.99 per year", trialDays: nil)
+        XCTAssertFalse(none.lowercased().contains("free"), none)
+        XCTAssertTrue(none.contains("Renews automatically"), none)
+        XCTAssertEqual(PaywallScreen.buyButtonTitle(for: .monthly, trialDays: 3), "Start my free trial")
+        XCTAssertEqual(PaywallScreen.buyButtonTitle(for: .yearly, trialDays: nil), "Continue")
+        for text in [trial, none] {
+            XCTAssertFalse(text.contains("\u{2014}"), "no em dashes")
+        }
     }
 
     /// The rules from the paywall above it apply the whole way down.
@@ -198,6 +268,125 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(text.contains("renews"), "the month rung hides the renewal")
     }
 
+    // MARK: The free trial is back (2026-09-29)
+
+    /// "Same as before, 3 day offer" (Melvin). The paywall's own two plans
+    /// are designed with it; Lifetime and the half-off year never are.
+    func test_thePaywallsPlansCarryTheTrial() {
+        XCTAssertTrue(Monetization.freeTrial)
+        XCTAssertTrue(SubscriptionPlan.monthly.designedWithTrial)
+        XCTAssertTrue(SubscriptionPlan.yearly.designedWithTrial)
+        XCTAssertFalse(SubscriptionPlan.lifetime.designedWithTrial)
+        XCTAssertFalse(SubscriptionPlan.yearHalf.designedWithTrial)
+        XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 3)
+    }
+
+    /// A card says "after the trial" only when this person's purchase of it
+    /// would start with one, and never changes what Lifetime or the
+    /// half-off year say.
+    func test_aCardMentionsTheTrialOnlyWhenItGivesOne() {
+        for plan in [SubscriptionPlan.monthly, .yearly, .monthTrial, .monthHalf] {
+            XCTAssertTrue(plan.cadence(withTrial: true).contains("after the trial"), "\(plan)")
+            XCTAssertFalse(plan.cadence(withTrial: false).contains("trial"), "\(plan)")
+        }
+        XCTAssertEqual(SubscriptionPlan.monthly.cadence(withTrial: false), "per month")
+        XCTAssertEqual(SubscriptionPlan.yearly.cadence(withTrial: false), "per year")
+        for plan in [SubscriptionPlan.lifetime, .yearHalf] {
+            XCTAssertEqual(plan.cadence(withTrial: true), plan.cadence)
+            XCTAssertEqual(plan.cadence(withTrial: false), plan.cadence)
+        }
+    }
+
+    /// The half-price rung states the trial its own product gives, in the
+    /// App Store's length, and says nothing of one when it gives none.
+    func test_theHalfPriceRungSaysItsOwnTrialLength() {
+        let three = DownsellRung.halfMonth.subtitle(plan: .monthHalf, yearlyPrice: "$29.99", trialDays: 3)
+        let seven = DownsellRung.halfMonth.subtitle(plan: .monthHalf, yearlyPrice: "$29.99", trialDays: 7)
+        XCTAssertTrue(three.hasPrefix("3 days free, then $3.99 a month"), three)
+        XCTAssertTrue(seven.hasPrefix("7 days free"), seven)
+        let euros = DownsellRung.halfMonth.subtitle(plan: .monthHalf, yearlyPrice: "29,99 €",
+                                                    monthlyPrice: "7,99 €", halfMonthPrice: "3,99 €",
+                                                    trialDays: 3)
+        XCTAssertTrue(euros.contains("3,99 € a month instead of 7,99 €"), euros)
+        XCTAssertFalse(euros.contains("$"), "a dollar figure beside a euro charge")
+    }
+
+    // MARK: The "was" price, every time (2026-09-29)
+
+    /// The anchor is the same reference price in the live product's own
+    /// currency: the live price scaled by the dollar anchor-to-price ratio,
+    /// snapped to the live price's own ending.
+    func test_theAnchorScalesIntoTheLiveCurrency() throws {
+        let yearly = try XCTUnwrap(SubscriptionPlan.yearly.anchorRatio)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "29.99")!, ratio: yearly),
+                       Decimal(string: "59.99")!, "the dollar case reproduces the cleared $59.99")
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "24.99")!, ratio: yearly),
+                       Decimal(string: "49.99")!, "a price with cents keeps its cents")
+        XCTAssertEqual(Store.scaledAnchor(livePrice: 4500, ratio: yearly), 9000,
+                       "a whole price rounds to its own step, not to ¥9,002")
+        XCTAssertEqual(Store.scaledAnchor(livePrice: 2499, ratio: yearly), 4999)
+
+        let yearHalf = try XCTUnwrap(SubscriptionPlan.yearHalf.anchorRatio)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "14.99")!, ratio: yearHalf),
+                       Decimal(string: "29.99")!)
+        let monthHalf = try XCTUnwrap(SubscriptionPlan.monthHalf.anchorRatio)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "3.99")!, ratio: monthHalf),
+                       Decimal(string: "7.99")!)
+        // Lifetime's anchor is a whole $199 beside $99.99, so it stays whole.
+        let lifetime = try XCTUnwrap(SubscriptionPlan.lifetime.anchorRatio)
+        XCTAssertFalse(SubscriptionPlan.lifetime.anchorKeepsCents)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "99.99")!, ratio: lifetime,
+                                          keepsCents: false), 199)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "109.99")!, ratio: lifetime,
+                                          keepsCents: false), 219)
+    }
+
+    /// In dollars, the scaled anchor is exactly the reference price the
+    /// attorney cleared: the arithmetic may not move a cleared number.
+    func test_inDollarsTheAnchorIsTheClearedPrice() {
+        let dollars = Decimal.FormatStyle.Currency(code: "USD", locale: Locale(identifier: "en_US"))
+        for plan in SubscriptionPlan.allCases {
+            guard let cleared = plan.anchorPrice else { continue }
+            let price = Decimal(string: plan.price.replacingOccurrences(of: "$", with: ""))!
+            let live = Store.formattedAnchor(livePrice: price, plan: plan, style: dollars)
+            XCTAssertEqual(live, cleared, "\(plan)")
+        }
+    }
+
+    /// Formatted by the product's own currency style, never in dollars
+    /// beside a euro price.
+    func test_theAnchorIsSaidInTheLiveCurrency() {
+        let euros = Decimal.FormatStyle.Currency(code: "EUR", locale: Locale(identifier: "de_DE"))
+        let text = Store.formattedAnchor(livePrice: Decimal(string: "29.99")!, plan: .yearly, style: euros)
+        XCTAssertNotNil(text)
+        XCTAssertTrue(text?.contains("59,99") == true, text ?? "nil")
+        XCTAssertTrue(text?.contains("€") == true, text ?? "nil")
+        XCTAssertFalse(text?.contains("$") == true, text ?? "nil")
+
+        let dollars = Decimal.FormatStyle.Currency(code: "USD", locale: Locale(identifier: "en_US"))
+        XCTAssertEqual(Store.formattedAnchor(livePrice: Decimal(string: "29.99")!, plan: .yearly,
+                                             style: dollars), "$59.99")
+    }
+
+    /// Monthly sells at its old anchor, so it has none in any currency; and
+    /// no anchor may come out at or under the price it strikes through.
+    func test_noAnchorIsFakeInAnyCurrency() {
+        let dollars = Decimal.FormatStyle.Currency(code: "USD", locale: Locale(identifier: "en_US"))
+        XCTAssertNil(SubscriptionPlan.monthly.anchorRatio)
+        XCTAssertNil(Store.formattedAnchor(livePrice: Decimal(string: "7.99")!, plan: .monthly, style: dollars))
+        XCTAssertNil(SubscriptionPlan.monthTrial.anchorRatio)
+        let prices: [Decimal] = [Decimal(string: "0.99")!, Decimal(string: "2.49")!, Decimal(string: "14.99")!,
+                                 Decimal(string: "29.99")!, 30, 250, 999, 4500, 12000]
+        for plan in SubscriptionPlan.allCases {
+            guard let ratio = plan.anchorRatio else { continue }
+            for price in prices {
+                XCTAssertGreaterThan(Store.scaledAnchor(livePrice: price, ratio: ratio,
+                                                        keepsCents: plan.anchorKeepsCents), price,
+                                     "\(plan) at \(price)")
+            }
+        }
+    }
+
     // MARK: Disclosures (2026-09-29, 3.1.2)
 
     /// The trial rung states the condition that decides the charge, not a
@@ -245,12 +434,15 @@ final class PaywallLadderTests: XCTestCase {
     }
 
     /// What a membership opens is said on the purchase screen, and only what
-    /// this build contains: nothing about Block, hats, points or Otto's chat.
+    /// this build contains: Block, hats and Friends by their flags, never
+    /// points (never sold) or Otto's chat.
     func test_theIncludesLineNamesOnlyWhatThisBuildHas() {
         let line = PaywallScreen.includesLine
-        for absent in ["block", "hats", "points", "shop", "chat"] {
+        for absent in ["points", "shop", "chat"] {
             XCTAssertFalse(line.lowercased().contains(absent), absent)
         }
+        XCTAssertEqual(line.contains("Block"), FeatureFlags.block)
+        XCTAssertEqual(line.contains("hats"), FeatureFlags.shop)
         XCTAssertEqual(line.contains("Friends"), FeatureFlags.friends)
         XCTAssertTrue(line.hasPrefix("808 Premium: "), "the subscription is named before purchase (3.1.2)")
         XCTAssertFalse(line.contains("\u{2014}") || line.contains("\u{2013}"), "no em dashes")

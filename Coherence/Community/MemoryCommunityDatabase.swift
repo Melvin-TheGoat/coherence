@@ -7,32 +7,83 @@ import AVFoundation
 /// An in-memory public database: a dictionary of records keyed by name, the
 /// way CloudKit's default zone is (so a name collision between types shows up
 /// here too). `user` is who the caller is; tests and the demo swap it to act
-/// as someone else. Used by `CommunityStoreTests` and by `PREVIEW_FRIENDS=1`,
-/// so the tab can be looked at on a simulator with no iCloud account.
+/// as someone else, or take a fixed view with `acting(as:)`. Used by
+/// `CommunityStoreTests` and by `PREVIEW_FRIENDS=1`, so the tab can be looked
+/// at on a simulator with no iCloud account.
+///
+/// **Security roles, modelled for reading (2026-09-29).** The types in
+/// `creatorOnlyRead` (Block, Report) are readable only by whoever created
+/// the record, as their Security Roles in `CLOUDKIT_SETUP.md` say: a fetch of
+/// someone else's returns nil and a query leaves it out. Writing is NOT
+/// modelled (real CloudKit lets only the creator modify a record; this fake
+/// lets anyone), and `creatorUserRecordID` stays nil, which `authored`
+/// trusts. A record put straight into `records` has no creator, so a
+/// creator-only one of those is readable by nobody.
+///
+/// **Thread-safe.** The store is an actor, but a nonisolated async call into
+/// this class runs off it, so two store calls in flight at once (a
+/// `Task { await syncPracticeStats() }` beside the caller's own, say) reach
+/// the dictionaries from two threads. One lock guards them; before it, that
+/// race crashed a test run with SIGSEGV inside `Dictionary` (2026-09-29).
 final class MemoryCommunityDatabase: CommunityDatabase {
     var user: String
-    var records: [String: CKRecord] = [:]
-    var saves = 0
+    private let lock = NSLock()
+    private var _records: [String: CKRecord] = [:]
+    private var _creators: [String: String] = [:]
+    private var _saves = 0
+
+    /// Every record by name, as the server holds it. Tests read and poke this
+    /// directly, bypassing the reading rules below, the way the Console would.
+    var records: [String: CKRecord] {
+        get { lock.withLock { _records } }
+        set { lock.withLock { _records = newValue } }
+    }
+    var saves: Int { lock.withLock { _saves } }
+    /// Who first saved each record, by record name: the fake's stand-in for
+    /// CloudKit's `creatorUserRecordID`.
+    var creators: [String: String] { lock.withLock { _creators } }
+
+    /// Record types whose `_world` role has no Read.
+    static let creatorOnlyRead: Set<String> = [CommunityType.block, CommunityType.report]
 
     init(user: String) { self.user = user }
 
+    /// This database as one fixed iCloud user sees it, whatever `user` is
+    /// switched to later. Stores built over a view keep acting as that
+    /// person, which the reading rules above need.
+    func acting(as caller: String) -> CommunityDatabase { Caller(db: self, caller: caller) }
+
+    // MARK: CommunityDatabase, acting as `user`
+
     func currentUserRecordName() async throws -> String { user }
+    func save(_ record: CKRecord) async throws -> CKRecord { save(record, by: user) }
+    func create(_ record: CKRecord) async throws -> CKRecord { try create(record, by: user) }
+    func fetch(_ recordName: String) async throws -> CKRecord? { fetch(recordName, by: user) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { run(query, by: user) }
+    func delete(_ recordName: String) async throws { remove(recordName) }
 
-    func save(_ record: CKRecord) async throws -> CKRecord {
-        saves += 1
-        records[record.recordID.recordName] = record
-        return record
+    // MARK: The storage, for any caller
+
+    fileprivate func save(_ record: CKRecord, by caller: String) -> CKRecord {
+        lock.withLock { put(record, by: caller) }
     }
 
-    func create(_ record: CKRecord) async throws -> CKRecord {
-        guard records[record.recordID.recordName] == nil else { throw CommunityError.alreadyExists }
-        return try await save(record)
+    fileprivate func create(_ record: CKRecord, by caller: String) throws -> CKRecord {
+        try lock.withLock {
+            guard _records[record.recordID.recordName] == nil else { throw CommunityError.alreadyExists }
+            return put(record, by: caller)
+        }
     }
 
-    func fetch(_ recordName: String) async throws -> CKRecord? { records[recordName] }
+    fileprivate func fetch(_ recordName: String, by caller: String) -> CKRecord? {
+        lock.withLock {
+            guard let record = _records[recordName], readable(record, by: caller) else { return nil }
+            return record
+        }
+    }
 
-    func query(_ query: CommunityQuery) async throws -> [CKRecord] {
-        var hits = records.values.filter(query.matches)
+    fileprivate func run(_ query: CommunityQuery, by caller: String) -> [CKRecord] {
+        var hits = lock.withLock { _records.values.filter { query.matches($0) && readable($0, by: caller) } }
         if let field = query.sortField {
             hits.sort {
                 guard let a = $0[field] as? Date, let b = $1[field] as? Date else { return false }
@@ -42,7 +93,40 @@ final class MemoryCommunityDatabase: CommunityDatabase {
         return Array(hits.prefix(query.limit))
     }
 
-    func delete(_ recordName: String) async throws { records[recordName] = nil }
+    fileprivate func remove(_ recordName: String) {
+        lock.withLock {
+            _records[recordName] = nil
+            _creators[recordName] = nil
+        }
+    }
+
+    /// Call with the lock held.
+    private func put(_ record: CKRecord, by caller: String) -> CKRecord {
+        _saves += 1
+        let name = record.recordID.recordName
+        _records[name] = record
+        if _creators[name] == nil { _creators[name] = caller }
+        return record
+    }
+
+    /// Call with the lock held.
+    private func readable(_ record: CKRecord, by caller: String) -> Bool {
+        guard Self.creatorOnlyRead.contains(record.recordType) else { return true }
+        return _creators[record.recordID.recordName] == caller
+    }
+
+    /// One user's view, from `acting(as:)`.
+    private final class Caller: CommunityDatabase {
+        let db: MemoryCommunityDatabase
+        let caller: String
+        init(db: MemoryCommunityDatabase, caller: String) { self.db = db; self.caller = caller }
+        func currentUserRecordName() async throws -> String { caller }
+        func save(_ record: CKRecord) async throws -> CKRecord { db.save(record, by: caller) }
+        func create(_ record: CKRecord) async throws -> CKRecord { try db.create(record, by: caller) }
+        func fetch(_ recordName: String) async throws -> CKRecord? { db.fetch(recordName, by: caller) }
+        func query(_ query: CommunityQuery) async throws -> [CKRecord] { db.run(query, by: caller) }
+        func delete(_ recordName: String) async throws { db.remove(recordName) }
+    }
 }
 
 /// A seeded tab for design review: me (@aziz, claimed), Melvin as a friend

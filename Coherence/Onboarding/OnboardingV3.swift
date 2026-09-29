@@ -1791,21 +1791,23 @@ struct WhatsWaitingScreen: View {
 struct AuraDemoScreen: View {
     let onContinue: () -> Void
 
-    @State private var level: Double = 40
+    @State private var level: Double = 50
     @State private var demoed = false
     @StateObject private var rig = OttoRigHolder()
 
     private var stage: OttoAura.Stage { OttoAura.Stage(level: Int(level.rounded())) }
 
     /// What this much glow means in days, from the rule itself: everyone
-    /// starts at 40, a day meditated adds 10, a day missed takes 20.
+    /// starts at 50, a twenty-minute day adds 10, and missed days in a row
+    /// take 10, then 15, then 20 ...
     private var caption: String {
         switch Int(level.rounded()) {
-        case 90...:  return "Five days in a row"
-        case 70..<90: return "Three or four days in a row"
-        case 50..<70: return "A session or two"
-        case 40..<50: return "Where everyone starts"
-        case 20..<40: return "A day missed"
+        case 90...:  return "Four days in a row"
+        case 70..<90: return "Two or three days in a row"
+        case 60..<70: return "A session"
+        case 50..<60: return "Where everyone starts"
+        case 35..<50: return "A day missed"
+        case 15..<35: return "Two days missed"
         default:      return "A few days missed"
         }
     }
@@ -1859,7 +1861,7 @@ struct AuraDemoScreen: View {
             try? await Task.sleep(for: .milliseconds(1250))
             withAnimation(.easeInOut(duration: 1.3)) { level = 6 }
             try? await Task.sleep(for: .milliseconds(1450))
-            withAnimation(.easeInOut(duration: 0.8)) { level = 40 }
+            withAnimation(.easeInOut(duration: 0.8)) { level = 50 }
         }
     }
 

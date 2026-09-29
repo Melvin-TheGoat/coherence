@@ -25,21 +25,33 @@ final class OttoAuraTests: XCTestCase {
         OttoAura.level(from: asSits(days.map { day($0) }), today: day(today), calendar: cal)
     }
 
-    func test_aNewPersonMeetsStirringOttoNotAWitheredOne() {
-        XCTAssertEqual(OttoAura.level(from: [], today: day(10), calendar: cal), 40)
-        XCTAssertEqual(OttoAura.stage(from: [], today: day(10), calendar: cal), .stirring)
+    /// Everyone starts at 50, in Steady, his colour already in (Melvin,
+    /// 2026-09-29: "have otto start at 50% for everyone"; it was 40, in
+    /// Stirring, before).
+    func test_aNewPersonMeetsSteadyOttoNotAWitheredOne() {
+        XCTAssertEqual(OttoAura.startLevel, 50)
+        XCTAssertEqual(OttoAura.level(from: [], today: day(10), calendar: cal), 50)
+        XCTAssertEqual(OttoAura.stage(from: [], today: day(10), calendar: cal), .steady)
     }
 
-    /// A twenty-minute-or-longer first session is the one that brings his
-    /// colour back.
-    func test_theFirstSessionLiftsHimToSteady() {
-        XCTAssertEqual(level([10], today: 10), 50)
-        XCTAssertEqual(OttoAura.Stage(level: 50), .steady)
+    /// A twenty-minute first session (+10) lifts him from Steady to Bright;
+    /// a ten-minute one (+5) keeps him Steady, a little brighter.
+    func test_aTwentyMinuteFirstSessionLiftsHimToBright() {
+        XCTAssertEqual(level([10], today: 10), 60)
+        XCTAssertEqual(OttoAura.Stage(level: 60), .bright)
+        let ten = OttoAura.level(from: asSits([day(10)], minutes: 10), today: day(10), calendar: cal)
+        XCTAssertEqual(ten, 55)
+        XCTAssertEqual(OttoAura.Stage(level: ten), .steady)
     }
 
-    func test_fiveDaysInARowReachNirvana() {
-        XCTAssertEqual(level([6, 7, 8, 9, 10], today: 10), 90)
+    /// 50 +10 a day: four twenty-minute days reach 90, Nirvana, and a fifth
+    /// takes him to the cap.
+    func test_fourDaysInARowReachNirvana() {
+        XCTAssertEqual(level([7, 8, 9], today: 9), 80)
+        XCTAssertEqual(OttoAura.Stage(level: 80), .radiant)
+        XCTAssertEqual(level([7, 8, 9, 10], today: 10), 90)
         XCTAssertEqual(OttoAura.Stage(level: 90), .nirvana)
+        XCTAssertEqual(level([6, 7, 8, 9, 10], today: 10), 100)
     }
 
     func test_itNeverPassesOneHundred() {
@@ -48,11 +60,13 @@ final class OttoAuraTests: XCTestCase {
 
     /// Today is not over, so not having sat yet costs nothing.
     func test_anUnfinishedTodayIsNotAMissedDay() {
-        XCTAssertEqual(level([8, 9], today: 10), 60)
+        // 50 +10 (8) +10 (9) = 70; today (10) not sat yet costs nothing.
+        XCTAssertEqual(level([8, 9], today: 10), 70)
     }
 
     func test_oneMissedDayIsARestDayAndFree() {
-        XCTAssertEqual(level([8, 10], today: 10), 60)
+        // 50 +10 (8) = 60; 9 is the rest day; +10 (10) = 70.
+        XCTAssertEqual(level([8, 10], today: 10), 70)
     }
 
     /// Two days missed in a row: the streak forgives neither (it only
@@ -60,30 +74,32 @@ final class OttoAuraTests: XCTestCase {
     /// This pinned 45 before 2026-09-28, when the glow spent the rest day on
     /// the first day of any gap while the streak broke; the two disagreed.
     func test_theSecondMissedDayInARowCostsFifteen() {
-        // 40 +10 (7) = 50; 8 -10; 9 -15 = 25; +10 (10) = 35.
-        XCTAssertEqual(level([7, 10], today: 10), 35)
+        // 50 +10 (7) = 60; 8 -10; 9 -15 = 35; +10 (10) = 45.
+        XCTAssertEqual(level([7, 10], today: 10), 45)
     }
 
     /// Melvin and Aziz, 2026-09-23: "first day missed -10, second day in a
     /// row missed -15, then -20 for third etc."
     func test_missedDaysCostMoreTheLongerTheRun() {
         XCTAssertEqual((1...5).map { OttoAura.missCost(run: $0) }, [10, 15, 20, 25, 30])
-        // 100 by the 6th; 7 -10 (the streak broke, so no rest day); 8 -15;
-        // 9 -20; 10 -25; today (11) unfinished.
+        // 100 by the 5th (50 +10 a day), still 100 on the 6th; 7 -10 (the
+        // streak broke, so no rest day) = 90; 8 -15 = 75; 9 -20 = 55; 10 -25
+        // = 30; today (11) unfinished.
         XCTAssertEqual(level([1, 2, 3, 4, 5, 6], today: 11), 30)
     }
 
     /// A day meditated ends the run: the next miss is a first miss again.
     func test_meditatingStartsTheRunOver() {
-        // 1..5 = 90; 6 -10, 7 -15 = 65 (two in a row, no rest day); 8 +10 =
-        // 75; 9 is a lone miss in a new run, forgiven as its rest day; 10 +10
-        // = 85.
-        XCTAssertEqual(level([1, 2, 3, 4, 5, 8, 10], today: 10), 85)
+        // 1..5 = 100 (capped); 6 -10, 7 -15 = 75 (two in a row, no rest
+        // day); 8 +10 = 85; 9 is a lone miss in a new run, forgiven as its
+        // rest day; 10 +10 = 95.
+        XCTAssertEqual(level([1, 2, 3, 4, 5, 8, 10], today: 10), 95)
     }
 
     func test_aWeekAwayFromNirvanaBringsHimToWithered() {
-        // Nirvana by the 5th, then seven days missed: 10, 15, 20, 25, 30, 35
-        // and 40.
+        // 100 by the 5th, then seven days missed (6 to 12): 10, 15, 20, 25
+        // and 30 already take him to 0 by the 10th; 35 and 40 find nothing
+        // left.
         let away = level([1, 2, 3, 4, 5], today: 13)
         XCTAssertEqual(away, 0)
         XCTAssertEqual(OttoAura.Stage(level: away), .withered)
@@ -99,20 +115,26 @@ final class OttoAuraTests: XCTestCase {
     func test_twoSessionsOnOneDayCountOnce() {
         let sits = [OttoAura.Sit(date: day(10, 8), seconds: 10 * 60),
                     OttoAura.Sit(date: day(10, 20), seconds: 10 * 60)]
-        XCTAssertEqual(OttoAura.level(from: sits, today: day(10), calendar: cal), 50)
+        XCTAssertEqual(OttoAura.level(from: sits, today: day(10), calendar: cal), 60)
     }
 
     /// One rest day a week, the streak's spacing: a second single miss inside
     /// seven days costs, one a week later is free again.
     func test_restDaysComeOncePerSevenDays() {
-        // 1 +10=50; 2 rest; 3 +10=60; 4 missed within the week, a first miss:
-        // -10=50; 5 +10=60.
-        XCTAssertEqual(level([1, 3, 5], today: 5), 60)
-        // 1 +10=50; 2 rest; 3..8 +60 capped=100; 9 rest again (7 days on); 10 +10.
+        // 1 +10=60; 2 rest; 3 +10=70; 4 missed within the week, a first miss:
+        // -10=60; 5 +10=70.
+        XCTAssertEqual(level([1, 3, 5], today: 5), 70)
+        // 1 +10=60; 2 rest; 3..8 +60 capped=100; 9 rest again (7 days on); 10 +10.
+        // At the cap this cannot tell a forgiven 9 from a charged one
+        // (100 -10 +10 is 100 too), so the two-minute run below does.
         XCTAssertEqual(level([1, 3, 4, 5, 6, 7, 8, 10], today: 10), 100)
-        // 1..5 = 80 with 2 as the rest; 6 and 7 missed inside the week: -10
-        // then -15; 8 +10.
-        XCTAssertEqual(level([1, 3, 4, 5, 8], today: 8), 65)
+        // Two minutes a day (+1): 1 = 51; 2 rest; 3..8 = 57; 9 forgiven
+        // seven days after 2 = 57; 10 = 58. Charged, 9 would leave 48.
+        let small = asSits([1, 3, 4, 5, 6, 7, 8, 10].map { day($0) }, minutes: 2)
+        XCTAssertEqual(OttoAura.level(from: small, today: day(10), calendar: cal), 58)
+        // 1..5 = 90 with 2 as the rest; 6 and 7 missed inside the week: -10
+        // then -15 = 65; 8 +10 = 75.
+        XCTAssertEqual(level([1, 3, 4, 5, 8], today: 8), 75)
     }
 
     /// The glow forgives exactly the days the streak forgives (2026-09-28).
@@ -123,11 +145,11 @@ final class OttoAuraTests: XCTestCase {
         let dates = [1, 4, 6].map { day($0) }
         let runs = StreakCalculator.runs(from: dates, calendar: cal)
         XCTAssertEqual(runs.flatMap(\.restDays), [cal.startOfDay(for: day(5))])
-        // 1 +10 = 50; 2 -10; 3 -15 = 25; 4 +10 = 35; 5 rest; 6 +10 = 45.
-        XCTAssertEqual(level([1, 4, 6], today: 6), 45)
+        // 1 +10 = 60; 2 -10; 3 -15 = 35; 4 +10 = 45; 5 rest; 6 +10 = 55.
+        XCTAssertEqual(level([1, 4, 6], today: 6), 55)
         // While yesterday is the streak's rest day, the glow does not charge it.
         XCTAssertTrue(StreakCalculator.streak(from: [day(8)], today: day(10), calendar: cal).restDayUsed)
-        XCTAssertEqual(level([8], today: 10), 50)
+        XCTAssertEqual(level([8], today: 10), 60)
     }
 
     // MARK: - Length-based gain (Melvin, 2026-09-28)
@@ -164,14 +186,14 @@ final class OttoAuraTests: XCTestCase {
         let fromTwo = OttoAura.level(from: twoTens, today: day(10), calendar: cal)
         let fromOne = OttoAura.level(from: oneTwenty, today: day(10), calendar: cal)
         XCTAssertEqual(fromTwo, fromOne)
-        XCTAssertEqual(fromTwo, 50)
+        XCTAssertEqual(fromTwo, 60)
     }
 
     /// Three thirty-minute sits in a day sum to ninety minutes, well past
     /// the hour cap, so the day is still worth only +20.
     func test_gain_perDaySumCapsAtTwenty() {
         let threeThirties = (0..<3).map { OttoAura.Sit(date: day(10, 8 + $0 * 4), seconds: 30 * 60) }
-        XCTAssertEqual(OttoAura.level(from: threeThirties, today: day(10), calendar: cal), 60)
+        XCTAssertEqual(OttoAura.level(from: threeThirties, today: day(10), calendar: cal), 70)
     }
 
     /// `ContentView.celebrate(_:)` computes before/after this exact way: the
@@ -183,9 +205,9 @@ final class OttoAuraTests: XCTestCase {
         let second = OttoAura.Sit(date: day(10, 20), seconds: 10 * 60)
         let before = OttoAura.level(from: [first], today: day(10), calendar: cal)
         let after = OttoAura.level(from: [first, second], today: day(10), calendar: cal)
-        // 10 min alone is +5 (45); the two together sum to 20 min, +10 (50).
-        XCTAssertEqual(before, 45)
-        XCTAssertEqual(after, 50)
+        // 10 min alone is +5 (55); the two together sum to 20 min, +10 (60).
+        XCTAssertEqual(before, 55)
+        XCTAssertEqual(after, 60)
         XCTAssertEqual(after - before, 5, "the second ten minutes only buys the marginal five")
     }
 
@@ -200,7 +222,8 @@ final class OttoAuraTests: XCTestCase {
     func test_notNowThenMeditatingInsideTheWindowCostsNothing() {
         let sits = asSits([day(8), day(9), day(10, 8)])
         let morning = [window(10, from: 6, hours: 4)]
-        XCTAssertEqual(OttoAura.level(from: sits, notNow: morning, today: day(10), calendar: cal), 70)
+        // 50 +10 (8) +10 (9) +10 (10), the 10th's session inside the window.
+        XCTAssertEqual(OttoAura.level(from: sits, notNow: morning, today: day(10), calendar: cal), 80)
     }
 
     /// Melvin's formula: glow lost = 20 × hours held / 24.
@@ -211,58 +234,64 @@ final class OttoAuraTests: XCTestCase {
         XCTAssertEqual(OttoAura.skipCost(for: window(9, from: 0, hours: 1)), 20.0 / 24, accuracy: 0.0001)
 
         // Sessions every evening, so each held window closes empty and only
-        // the window moves the number: 70 without one.
+        // the window moves the number: 80 without one (50 +10 +10 +10).
         let evenings = asSits([day(8, 20), day(9, 20), day(10, 20)])
         func held(_ hours: Double) -> Int {
             OttoAura.level(from: evenings, notNow: [window(9, from: 0, hours: hours)],
                            today: day(10, 21), calendar: cal)
         }
-        XCTAssertEqual(held(12), 60)
-        XCTAssertEqual(held(6), 65)
-        XCTAssertEqual(held(1), 69)
+        XCTAssertEqual(held(12), 70)   // -10
+        XCTAssertEqual(held(6), 75)    // -5
+        XCTAssertEqual(held(1), 79)    // -0.83, 79.17 rounds to 79
     }
 
     /// The whole day held and skipped costs 20, and the rest day does not
     /// cover it: it forgives the missed day, never the "Not now".
     func test_aSkippedMindfulDayCostsTwentyEvenOnARestDay() {
-        XCTAssertEqual(level([7, 8, 10], today: 10), 70)
+        // 7 = 60, 8 = 70, 9 rest, 10 = 80.
+        XCTAssertEqual(level([7, 8, 10], today: 10), 80)
+        // The same days with the 9th held and skipped: 70 -20 = 50, 10 = 60.
         let mindfulDay = [window(9, from: 0, hours: 24)]
         XCTAssertEqual(OttoAura.level(from: asSits([day(7), day(8), day(10)]), notNow: mindfulDay,
-                                      today: day(10), calendar: cal), 50)
+                                      today: day(10), calendar: cal), 60)
     }
 
     /// A missed day and its skipped windows are never added together: the
     /// day costs whichever is larger, and its windows at most 20.
     func test_aMissedDayAndItsWindowsAreNeverAddedTogether() {
         let both = [window(9, from: 0, hours: 24), window(9, from: 21, hours: 3)]
-        // 7 +10 = 50; 8 -10 (a first miss, no rest across two days); day 9
-        // is the second missed day (15) with 20 of windows: 20, not 35; so
-        // 20, then 10 +10 = 30.
+        // 7 +10 = 60; 8 -10 (a first miss, no rest across two days) = 50;
+        // day 9 is the second missed day (15) with 20 of windows: 20, not
+        // 35, so 30; then 10 +10 = 40.
         XCTAssertEqual(OttoAura.level(from: asSits([day(7), day(10)]), notNow: both,
-                                      today: day(10), calendar: cal), 30)
-        // On a rest day the two windows are capped at 20 together.
+                                      today: day(10), calendar: cal), 40)
+        // On a rest day the two windows are capped at 20 together: 7 = 60,
+        // 8 = 70, 9 -20 = 50, 10 = 60.
         XCTAssertEqual(OttoAura.level(from: asSits([day(7), day(8), day(10)]), notNow: both,
-                                      today: day(10), calendar: cal), 50)
+                                      today: day(10), calendar: cal), 60)
     }
 
     func test_aWindowCostsOnlyOnceItHasClosed() {
         let morning = [window(10, from: 6, hours: 4)]
         let before = [day(8), day(9)]
-        // 8 o'clock: still open, nothing lost yet.
-        XCTAssertEqual(OttoAura.level(from: asSits(before), notNow: morning, today: day(10, 8), calendar: cal), 60)
-        // Noon: closed with no session, 20 × 4 / 24 = 3.3 gone.
-        XCTAssertEqual(OttoAura.level(from: asSits(before), notNow: morning, today: day(10, 12), calendar: cal), 57)
-        // Meditating that evening still lifts him; the morning still cost.
+        // 8 o'clock: still open, nothing lost yet (50 +10 +10).
+        XCTAssertEqual(OttoAura.level(from: asSits(before), notNow: morning, today: day(10, 8), calendar: cal), 70)
+        // Noon: closed with no session, 20 × 4 / 24 = 3.3 gone: 66.7.
+        XCTAssertEqual(OttoAura.level(from: asSits(before), notNow: morning, today: day(10, 12), calendar: cal), 67)
+        // Meditating that evening still lifts him; the morning still cost:
+        // 70 +10 -3.3 = 76.7.
         XCTAssertEqual(OttoAura.level(from: asSits(before + [day(10, 18)]), notNow: morning,
-                                      today: day(10, 19), calendar: cal), 67)
+                                      today: day(10, 19), calendar: cal), 77)
     }
 
     /// Someone who set Otto to hold their apps has started, meditated or not.
     func test_aSkippedWindowCountsBeforeTheFirstSession() {
+        // The 9th, held all day and skipped, is a first missed day with 20 of
+        // windows (no session anywhere, so no rest day): 50 -20 = 30.
         let level = OttoAura.level(from: [], notNow: [window(9, from: 0, hours: 24)],
                                    today: day(10), calendar: cal)
-        XCTAssertEqual(level, 20)
-        XCTAssertEqual(OttoAura.Stage(level: level), .faded)
+        XCTAssertEqual(level, 30)
+        XCTAssertEqual(OttoAura.Stage(level: level), .stirring)
     }
 
     func test_stageBoundaries() {
@@ -332,8 +361,9 @@ final class OttoAuraTests: XCTestCase {
     }
 
     func test_theDrawingKeepsTheStagesPromises() {
-        XCTAssertEqual(OttoAura.look(level: 40), OttoAura.Stage.stirring.look, "everyone starts in Stirring")
-        XCTAssertEqual(OttoAura.look(level: 50), OttoAura.Stage.steady.look, "a twenty-minute first session brings his colour back")
+        XCTAssertEqual(OttoAura.look(level: 50), OttoAura.Stage.steady.look, "everyone starts on Steady's own drawing")
+        XCTAssertGreaterThan(OttoAura.look(level: 60), OttoAura.look(level: 50),
+                             "a twenty-minute first session changes the drawing")
         XCTAssertEqual(OttoAura.look(level: 0), OttoAura.Stage.withered.look)
         XCTAssertEqual(OttoAura.look(level: 100), OttoAura.Stage.nirvana.look)
     }
@@ -354,21 +384,23 @@ final class OttoAuraTests: XCTestCase {
     // MARK: - dateStageFirstReached (2026-09-28, the aura awards)
 
     /// Matches `level`'s own history exactly: five twenty-minute days in a
-    /// row reach Steady on day one and Nirvana on day five, the same numbers
-    /// `test_theFirstSessionLiftsHimToSteady` and
-    /// `test_fiveDaysInARowReachNirvana` already pin.
+    /// row reach Bright on day one and Nirvana on day four, the same numbers
+    /// `test_aTwentyMinuteFirstSessionLiftsHimToBright` and
+    /// `test_fourDaysInARowReachNirvana` already pin. He starts Steady, and
+    /// the walk only checks after a day's gain, so Steady's date is simply
+    /// the first session's.
     func test_dateStageFirstReachedMatchesTheLevelHistory() {
-        // 40 start; day6 +10=50 (Steady); day7 +10=60 (Bright); day8=70;
-        // day9=80 (Radiant); day10=90 (Nirvana).
+        // 50 start (Steady); day6 +10=60 (Bright); day7=70; day8=80
+        // (Radiant); day9=90 (Nirvana); day10=100.
         let sits = asSits([6, 7, 8, 9, 10].map { day($0) })
         XCTAssertEqual(OttoAura.dateStageFirstReached(.steady, from: sits, calendar: cal),
                        day(6, 0))
         XCTAssertEqual(OttoAura.dateStageFirstReached(.bright, from: sits, calendar: cal),
-                       day(7, 0))
+                       day(6, 0))
         XCTAssertEqual(OttoAura.dateStageFirstReached(.radiant, from: sits, calendar: cal),
-                       day(9, 0))
+                       day(8, 0))
         XCTAssertEqual(OttoAura.dateStageFirstReached(.nirvana, from: sits, calendar: cal),
-                       day(10, 0))
+                       day(9, 0))
     }
 
     func test_dateStageFirstReachedIsNilWhenTheStageWasNeverReached() {
@@ -380,10 +412,95 @@ final class OttoAuraTests: XCTestCase {
     /// moment it first happened, the same "did this ever happen" rule as
     /// every other award, and it needs no "today" to know that.
     func test_dateStageFirstReachedSurvivesALaterDip() {
-        // Five days reach Nirvana on day 10; a gap and a low restart
-        // afterward must not move that earlier date.
+        // Nirvana on day 9 (50 +40); a gap and a low restart afterward must
+        // not move that earlier date.
         let sits = asSits([6, 7, 8, 9, 10].map { day($0) } + [day(30)])
         XCTAssertEqual(OttoAura.dateStageFirstReached(.nirvana, from: sits, calendar: cal),
-                       day(10, 0))
+                       day(9, 0))
+    }
+
+    // MARK: - 1.1 starts the glow fresh (Melvin, 2026-09-29)
+
+    /// Sessions before `since` are not counted; one after it is.
+    func test_sinceExcludesSessionsBeforeIt() {
+        let since = day(8, 0)
+        let sits = asSits([1, 2, 3, 4, 5, 10].map { day($0) })
+        // Only the 10th counts: 50 +10.
+        XCTAssertEqual(OttoAura.level(from: sits, since: since, today: day(10), calendar: cal), 60)
+        // Without it, the old run (100 by the 5th) and the four days missed
+        // after it (10 + 15 + 20 + 25) are all read: 30, then +10.
+        XCTAssertEqual(OttoAura.level(from: sits, today: day(10), calendar: cal), 40)
+    }
+
+    /// A session at `since` itself counts, and so does one earlier the same
+    /// day, because the stored start is that day's midnight.
+    func test_sinceCountsTheWholeFirstDay() {
+        let sits = asSits([day(8, 6)])
+        XCTAssertEqual(OttoAura.level(from: sits, since: day(8, 0), today: day(8), calendar: cal), 60)
+        XCTAssertEqual(OttoAura.level(from: asSits([day(8, 0)]), since: day(8, 0),
+                                      today: day(8), calendar: cal), 60)
+    }
+
+    /// "Not now" windows that opened before `since` are not counted either,
+    /// even one that closes after it (a window belongs to the day it opened);
+    /// one that opens after it still costs.
+    func test_sinceExcludesNotNowWindowsBeforeIt() {
+        let since = day(8, 0)
+        let sits = asSits([day(10)])
+        let early = [window(3, from: 0, hours: 24)]
+        // Only the 10th counts: 60.
+        XCTAssertEqual(OttoAura.level(from: sits, notNow: early, since: since,
+                                      today: day(10), calendar: cal), 60)
+        // Without `since` the 3rd starts the history: -20 = 30, then 4 to 9
+        // missed (15, 20, 25 ... hits 0), then +10.
+        XCTAssertEqual(OttoAura.level(from: sits, notNow: early, today: day(10), calendar: cal), 10)
+        // Opened at 22:00 on the 7th, closed at 02:00 on the 8th: before.
+        let straddling = [window(7, from: 22, hours: 4)]
+        XCTAssertEqual(OttoAura.level(from: sits, notNow: straddling, since: since,
+                                      today: day(10), calendar: cal), 60)
+        // The 9th, held all day and skipped, after `since`: a first missed
+        // day with 20 of windows, 50 -20 = 30, then +10.
+        let after = [window(9, from: 0, hours: 24)]
+        XCTAssertEqual(OttoAura.level(from: sits, notNow: after, since: since,
+                                      today: day(10), calendar: cal), 40)
+    }
+
+    /// Someone updating from 1.0 meets Otto at exactly 50, however their old
+    /// history ended, as long as they have not sat since.
+    func test_aLongHistoryBeforeSinceAndNothingAfterSitsAtFifty() {
+        let since = day(25, 0)
+        // A long, strong run: 100 at the time.
+        let strong = asSits((1...20).map { day($0) })
+        let fresh = OttoAura.level(from: strong, since: since, today: day(28), calendar: cal)
+        XCTAssertEqual(fresh, 50)
+        XCTAssertEqual(OttoAura.Stage(level: fresh), .steady)
+        // A history that had left him withered: 0 without `since`, 50 with it.
+        let lapsed = asSits([day(1)])
+        XCTAssertEqual(OttoAura.level(from: lapsed, today: day(28), calendar: cal), 0)
+        XCTAssertEqual(OttoAura.level(from: lapsed, since: since, today: day(28), calendar: cal), 50)
+    }
+
+    /// The glow's start is written once, at midnight of the first launch,
+    /// and never moved by a later launch.
+    func test_markGlowStartWritesMidnightOnceAndNeverOverwrites() {
+        let suite = "OttoAuraTests.glowStart.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        // The key is load-bearing: renaming it would start everyone over.
+        XCTAssertEqual(OttoAura.glowStartKey, "otto.glowStartedOn.v1")
+        XCTAssertNil(OttoAura.glowStart(defaults: defaults))
+
+        OttoAura.markGlowStartIfNeeded(now: day(10, 15), calendar: cal, defaults: defaults)
+        XCTAssertEqual(OttoAura.glowStart(defaults: defaults), day(10, 0))
+        XCTAssertEqual(defaults.object(forKey: OttoAura.glowStartKey) as? Date, day(10, 0))
+
+        OttoAura.markGlowStartIfNeeded(now: day(20, 9), calendar: cal, defaults: defaults)
+        XCTAssertEqual(OttoAura.glowStart(defaults: defaults), day(10, 0), "a later launch moved the start")
+
+        // A session earlier on the first-launch day still counts.
+        let morning = asSits([day(10, 8)])
+        XCTAssertEqual(OttoAura.level(from: morning, since: OttoAura.glowStart(defaults: defaults),
+                                      today: day(10, 15), calendar: cal), 60)
     }
 }

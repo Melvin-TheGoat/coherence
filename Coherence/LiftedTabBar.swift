@@ -54,9 +54,9 @@ struct LiftedTabBar: View {
             item(.block, art: "\(prefix)-block", label: "Block", tint: .blue, tour: .block)
             plus
             if FeatureFlags.shop {
-                item(.store, art: "\(prefix)-store", label: "Shop", tint: .green, tour: .store)
+                item(.store, art: "\(prefix)-store", label: "Shop", tint: .blue, tour: .store)
             } else {
-                item(.friends, art: "\(prefix)-friends", label: "Friends", tint: .green, tour: .friends)
+                item(.friends, art: "\(prefix)-friends", label: "Friends", tint: .blue, tour: .friends)
             }
             item(.profile, art: "\(prefix)-profile", label: "Profile", tint: .blue, tour: .profile)
         }

@@ -17,11 +17,11 @@ final class CommunityDeletionTests: XCTestCase {
 
     override func setUp() async throws {
         db = MemoryCommunityDatabase(user: "_aziz")
-        aziz = CommunityStore(database: db)
-        db.user = "_melvin"
-        melvin = CommunityStore(database: db)
+        // Each store acts as its own person (`acting(as:)`): Block records are
+        // readable by their creator only, so the fake needs to know who reads.
+        aziz = CommunityStore(database: db.acting(as: "_aziz"))
+        melvin = CommunityStore(database: db.acting(as: "_melvin"))
         _ = try await melvin.me()
-        db.user = "_aziz"
         _ = try await aziz.me()
     }
 
@@ -109,6 +109,23 @@ final class CommunityDeletionTests: XCTestCase {
         XCTAssertNotNil(db.records[theirPost.id], "Melvin's own post must survive")
         XCTAssertEqual(db.records.values.filter { self.authoredByMelvinFixture($0) }.count, melvinRecordsBefore,
                        "nothing Melvin wrote should be removed by someone else's account deletion")
+    }
+
+    /// My blocks go with my account (they are mine: `deleteEverythingOfMine`
+    /// queries `Block.from == me`). A block someone else made on me stays
+    /// theirs, and was never readable to me in the first place.
+    func test_myBlocksAreDeletedAndTheirsAreNot() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await aziz.block(melvinID)
+        try await melvin.block(azizID)
+        XCTAssertEqual(db.records.values.filter { $0.recordType == CommunityType.block }.count, 2)
+
+        try await aziz.deleteEverythingOfMine()
+
+        let left = db.records.values.filter { $0.recordType == CommunityType.block }.compactMap(Block.init(record:))
+        XCTAssertEqual(left.map(\.from), [melvinID], "Aziz's block is gone; Melvin's is his to keep")
+        let melvinsBlocks = try await melvin.blockedByMe()
+        XCTAssertEqual(melvinsBlocks, [azizID])
     }
 
     /// A record is "Melvin's" in this fixture if its creator field (`from`
@@ -204,8 +221,8 @@ final class CommunityDeletionTests: XCTestCase {
         }
 
         XCTAssertNil(db.records[post.id], "a category that succeeded must not be rolled back by a later one failing")
-        XCTAssertNotNil(db.records[CommunityNames.block(from: azizID, to: melvinID)],
-                        "the category that failed to query is, correctly, still there")
+        XCTAssertTrue(db.records.values.contains { $0.recordType == CommunityType.block },
+                      "the category that failed to query is, correctly, still there")
     }
 }
 

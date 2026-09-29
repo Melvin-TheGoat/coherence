@@ -28,37 +28,43 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// half-off-month rung made. It renews at the full yearly price, and
     /// every screen that shows it says so.
     case yearHalf
-    /// The ladder's two rungs (Melvin, 2026-09-27: "no i dont want to pay"
-    /// offers the free trial, then the first month half off). Each is its
-    /// own product because a product carries exactly one introductory offer:
-    /// `monthTrial` is the monthly price with a free trial, `monthHalf` the
-    /// monthly price with its first month at half. The paywall itself still
-    /// sells `monthly` with no trial (Aziz, 2026-09-26).
+    /// The ladder's plans, each its own product because a product carries
+    /// exactly one introductory offer. `monthHalf` is the one rung since
+    /// 2026-09-29 (Melvin: "3 day free trial plus half off forever"): $3.99
+    /// every month, starting with a free trial. `monthTrial`, the monthly
+    /// price with a free trial, is DORMANT: the paywall's own monthly and
+    /// yearly carry the trial again, so nothing offers it, and it stays so a
+    /// past purchase restores.
     case monthTrial, monthHalf
 
     var id: String { rawValue }
 
     /// The free trial's length until the App Store says otherwise
     /// (`Store.trialDays` reads the real one off the monthly product). Three:
-    /// the length the founders expect to set (2026-09-23, "likely with a 3
-    /// day free trial"); only a build with no products ever shows it.
+    /// the length the founders set (Melvin, 2026-09-29: "same as before, 3
+    /// day offer"); only a build with no products ever shows it.
     static let fallbackTrialDays = 3
 
     /// The cards the paywall shows. `yearHalf` is not among them until
     /// somebody has been offered it, and then it takes the year's place
     /// rather than sitting beside it, because two yearly cards at different
     /// prices is a shell game.
+    ///
+    /// **Lifetime is back as the third card** (Melvin, 2026-09-29: "that
+    /// should def be a thing"), as it was before Aziz's monthly-and-yearly-only
+    /// paywall of 2026-09-26: one charge, no trial, nothing renews. The
+    /// paywall still hides it while the App Store is selling without it
+    /// (`PaywallScreen.cardsShown`), so a missing product never shows a
+    /// fallback price beside live ones.
     static func cards(selecting plan: SubscriptionPlan) -> [SubscriptionPlan] {
-        // Monthly and yearly only (Aziz, 2026-09-26). Lifetime stays a
-        // product, so anyone who bought it still restores it.
         // A rung's plan takes the monthly card's place, the way the half-off
         // year takes the year's: two monthly cards at two prices is a shell
-        // game.
+        // game. Nothing ever takes Lifetime's.
         switch plan {
-        case .yearHalf: return [.monthly, .yearHalf]
-        case .monthTrial: return [.monthTrial, .yearly]
-        case .monthHalf: return [.monthHalf, .yearly]
-        default: return [.monthly, .yearly]
+        case .yearHalf: return [.monthly, .yearHalf, .lifetime]
+        case .monthTrial: return [.monthTrial, .yearly, .lifetime]
+        case .monthHalf: return [.monthHalf, .yearly, .lifetime]
+        default: return [.monthly, .yearly, .lifetime]
         }
     }
 
@@ -101,6 +107,11 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// repriced stack ($7.99 / $29.99 / $99.99) makes $7.99 the real monthly
     /// price, and a strikethrough equal to the sale price is the fake
     /// reference this comment forbids. nil = no anchor shown.
+    ///
+    /// **Shown every time since 2026-09-29** (Melvin), not only beside our
+    /// fallback prices: `Store.anchorPrice(for:)` says the same reference
+    /// price in the live product's own currency. These dollar strings are the
+    /// reference prices themselves, and the fallback when no product loaded.
     var anchorPrice: String? {
         switch self {
         case .monthly:  return nil
@@ -117,17 +128,62 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         }
     }
 
-    /// The ladder's rungs are designed to open with a free trial. Whether a
+    /// The anchor against the price it anchors, both in dollars: the factor
+    /// `Store.anchorPrice(for:)` scales a live price by (the yearly's
+    /// $59.99 / $29.99). nil when the plan has no anchor.
+    var anchorRatio: Decimal? {
+        guard let anchor = anchorPrice.flatMap(Self.dollars),
+              let price = Self.dollars(price), price > 0 else { return nil }
+        return anchor / price
+    }
+
+    /// Whether the dollar anchor ends the way the dollar price does ($59.99
+    /// beside $29.99), so a live anchor keeps the live price's cents; or not
+    /// (Lifetime's $199 beside $99.99), so it rounds to a whole unit.
+    var anchorKeepsCents: Bool {
+        guard let anchor = anchorPrice.flatMap(Self.dollars),
+              let price = Self.dollars(price) else { return true }
+        return Self.cents(anchor) == Self.cents(price)
+    }
+
+    private static func cents(_ value: Decimal) -> Decimal {
+        var input = value
+        var whole = Decimal()
+        NSDecimalRound(&whole, &input, 0, .down)
+        return value - whole
+    }
+
+    /// "$59.99" as a Decimal.
+    private static func dollars(_ text: String) -> Decimal? {
+        Decimal(string: text.replacingOccurrences(of: "$", with: ""),
+                locale: Locale(identifier: "en_US"))
+    }
+
+    /// The plans designed to open with a free trial: the paywall's own two
+    /// while `Monetization.freeTrial` is on, and the ladder's. Whether a
     /// given person actually gets one is the App Store's answer
     /// (`Store.freeTrialDays(for:)`), never this.
     var designedWithTrial: Bool {
-        self == .monthTrial || self == .monthHalf
+        switch self {
+        case .monthTrial, .monthHalf: return true
+        case .monthly, .yearly: return Monetization.freeTrial
+        case .lifetime, .yearHalf: return false
+        }
     }
 
-    /// The cadence as it is true right now: a rung whose trial this person
-    /// will not get says "per month", not "per month after the trial".
+    /// The cadence as it is true right now. A plan whose trial this person
+    /// gets says what the price follows ("per month after the trial"); one
+    /// whose trial they will not get says "per month", never promising a
+    /// trial the purchase sheet will not give.
     func cadence(withTrial trial: Bool) -> String {
-        designedWithTrial && !trial ? "per month" : cadence
+        switch self {
+        case .monthly, .monthTrial, .monthHalf:
+            return trial ? "per month after the trial" : "per month"
+        case .yearly:
+            return trial ? "per year after the trial" : "per year"
+        case .lifetime, .yearHalf:
+            return cadence
+        }
     }
 
     var cadence: String {
@@ -251,9 +307,14 @@ struct RatingScreen: View {
 
 // MARK: - 23 · Paywall
 
-/// The end of the road, not a negotiation. Seven days free or nothing: no
-/// decline, no second offer, and no chevron back into the interview. A larger
-/// offer one tap behind a "no" teaches people the first price was never real.
+/// The plans, with the free trial when this person can still have one, and
+/// one answer to a "no": the half-price plan (`DownsellRung.ladder`), which
+/// comes back to this screen to be bought. No chevron back into the
+/// interview. The paywall owns every purchase and every disclosure.
+///
+/// **It fails closed** (Melvin, 2026-09-29). When the App Store cannot give
+/// the plans, the screen says so and Continue becomes Try again. It never
+/// walks a non-member into the app; only a purchase or a restore does.
 ///
 /// **Restore is not optional.** Apple requires a restore mechanism on any
 /// screen selling an auto-renewable subscription (3.1.1), and with no decline
@@ -411,7 +472,9 @@ struct PaywallScreen: View {
         #if DEBUG
         "Nothing is charged. There is no payment set up on this build."
         #else
-        "Nothing is charged while plans can't load."
+        Monetization.isSideBySideBeta
+            ? "Nothing is charged. This test build has no plans to sell."
+            : "Nothing is charged while plans can't load."
         #endif
     }
 
@@ -419,57 +482,90 @@ struct PaywallScreen: View {
         #if DEBUG
         "Free while we're testing."
         #else
-        "Plans aren't loading."
+        // The launch's first fetch has not answered yet: it is on its way,
+        // not failing.
+        store.state == .loading ? "Loading the plans." : "Plans aren't loading."
         #endif
     }
 
+    /// The Release copy says what to do about it, and nothing about walking
+    /// on: since 2026-09-29 there is no way past this screen but a purchase
+    /// or a restore (Melvin: the app never opens free because the App Store
+    /// could not load). The side-by-side beta, which owns no products, is the
+    /// one build that may carry on.
     private var notSellingSubtitle: String {
         #if DEBUG
         "Billing isn't switched on yet, so there's nothing to buy. Here's what it will cost when it is, and we'd genuinely like to know what you make of it."
         #else
-        "The App Store didn't answer just now. You can keep going, and the plans will be here the next time you open 808."
+        if Monetization.isSideBySideBeta {
+            "This test build has no plans to sell, so you can carry on."
+        } else if store.state == .loading {
+            "They'll be here in a moment."
+        } else {
+            "The App Store didn't answer just now. Check your connection, then tap Try again."
+        }
         #endif
     }
 
-    /// "Three days free.", from the App Store's trial length.
-    private var trialTitle: String {
-        store.trialDays == 1 ? "One day free." : "\(TrialCopy.spelled(store.trialDays)) days free."
+    /// Continue while nothing can be sold: Try again, which asks the App
+    /// Store for the plans once more.
+    private var notSellingButton: String {
+        if Monetization.isSideBySideBeta { return "Continue" }
+        return waitingOnStore ? "One moment" : "Try again"
+    }
+
+    /// The App Store is being asked right now: the launch's first fetch, or
+    /// a Try again. The button waits rather than asking twice.
+    private var waitingOnStore: Bool {
+        retrying || (store.state == .loading && !Monetization.isSideBySideBeta)
+    }
+
+    /// A Try again is asking the App Store right now.
+    @State private var retrying = false
+
+    /// "Three days free.", from the chosen plan's own trial length.
+    private func trialTitle(_ days: Int) -> String {
+        days == 1 ? "One day free." : "\(TrialCopy.spelled(days)) days free."
     }
 
     /// Whether the free trial may be promised: 808 offers one at all
-    /// (`Monetization.freeTrial`, off since 2026-09-26), and StoreKit says
-    /// this person has not used it. Promising it anyway would put a claim on
-    /// screen that the purchase sheet contradicts one tap later.
+    /// (`Monetization.freeTrial`, back on since 2026-09-29), and StoreKit
+    /// says this person has not used it. Promising it anyway would put a
+    /// claim on screen that the purchase sheet contradicts one tap later.
     private var offerTrial: Bool { store.trialOffered }
-    /// The plan being bought right now starts with a free trial: the main
-    /// offer when trials are on, or the ladder's trial rung, which exists
-    /// even while the paywall itself sells none.
+    /// The plan being bought right now starts with a free trial.
     private var trialNow: Bool { trialLength != nil }
 
-    /// The free days the plan being bought starts with, or nil for none. A
-    /// rung's trial is its OWN product's offer and eligibility, never the
-    /// monthly's: the half-price plan must not promise days its purchase
-    /// sheet will not give. Lifetime and the half-off year carry no free
-    /// trial (the year's offer is a discount paid up front).
-    private var trialLength: Int? {
-        switch plan {
-        case .monthTrial, .monthHalf: return store.freeTrialDays(for: plan)
+    /// The free days the plan being bought starts with, or nil for none.
+    /// Every plan's trial is its OWN product's offer and this person's
+    /// eligibility for it (`Store.freeTrialDays(for:)`), never another
+    /// product's: a yearly with no trial in App Store Connect must not
+    /// borrow the monthly's, and the half-price plan must not promise days
+    /// its purchase sheet will not give. Lifetime and the half-off year
+    /// carry no free trial (the year's offer is a discount paid up front).
+    private var trialLength: Int? { trialLength(for: plan) }
+
+    /// The same for any plan, so each card's cadence says exactly what its
+    /// own purchase would start with.
+    private func trialLength(for p: SubscriptionPlan) -> Int? {
+        switch p {
+        case .monthTrial, .monthHalf: return store.freeTrialDays(for: p)
         case .lifetime, .yearHalf: return nil
-        case .monthly, .yearly: return offerTrial ? store.trialDays : nil
+        case .monthly, .yearly: return offerTrial ? store.freeTrialDays(for: p) : nil
         }
     }
 
-    /// A rung can be offered only if its product exists (a DEBUG build demos
-    /// them all), and the trial only to someone who has never had one.
+    /// A rung can be offered only if it is on the ladder and its product
+    /// exists (a DEBUG build demos it), and the dormant trial rung only to
+    /// someone its product would give free days to.
     private func available(_ rung: DownsellRung) -> Bool {
-        guard selling else { return false }
+        guard selling, DownsellRung.ladder.contains(rung) else { return false }
         let exists = store.product(for: rung.plan) != nil || Self.demoSelling
-        // The trial rung only to someone its product would actually give
-        // free days to; "Try it free first" over a charge is the lie.
+        // "Try it free first" over a charge is the lie.
         return exists && (rung != .trial || store.freeTrialDays(for: .monthTrial) != nil)
     }
     private func firstRung(after rung: DownsellRung? = nil) -> DownsellRung? {
-        var next = rung.map { $0.next } ?? DownsellRung.allCases.first
+        var next = rung.map { $0.next } ?? DownsellRung.ladder.first
         while let r = next, !available(r) { next = r.next }
         return next
     }
@@ -481,11 +577,13 @@ struct PaywallScreen: View {
     /// The pale green the onboarding cards use, for the chosen plan.
     private static let chosenWash = Color(red: 0.87, green: 0.95, blue: 0.85)
 
-    /// The headline: the trial when one is on offer, otherwise Otto, who the
-    /// reader just raised to his brightest on the ascend screen.
+    /// The headline: the chosen plan's free trial when this person gets one,
+    /// otherwise Otto, who the reader just raised to his brightest on the
+    /// ascend screen.
     private var title: String {
         guard selling else { return notSellingTitle }
-        return offerTrial ? trialTitle : "Keep Otto glowing."
+        if let days = trialLength { return trialTitle(days) }
+        return "Keep Otto glowing."
     }
 
     private var subtitle: String {
@@ -493,21 +591,24 @@ struct PaywallScreen: View {
         if memberNotice {
             return "808 is now a membership. Your sessions, streak and awards are saved and waiting."
         }
-        return offerTrial
-            ? "Try all of 808 first. Cancel at least 24 hours before the trial ends and you pay nothing."
-            : Self.includesLine
+        // The trial's cancel terms live in the footnote under the button,
+        // said once. Repeating them here pushed Otto off the screen on an
+        // iPhone 17 (Melvin, 2026-09-29).
+        return trialNow ? "Try all of 808 first." : Self.includesLine
     }
 
     /// What a membership opens, stated on the purchase screen itself (3.1.2:
     /// a subscription says what it gives; Melvin, 2026-09-29). Only what THIS
-    /// build contains: Friends only while it is on, and nothing about Block,
-    /// hats or Otto's chat, which are switched off in Release.
+    /// build contains, read off the flags: Block, hats and Friends while each
+    /// is on (all three ship in 1.1), never Otto's chat, which is off.
     static var includesLine: String {
+        let block = FeatureFlags.block ? "Block, " : ""
+        let hats = FeatureFlags.shop ? " and hats" : ""
         let friends = FeatureFlags.friends ? ", Friends" : ""
         // Named before anything is bought (3.1.2: the purchase screen names
         // the subscription; Melvin, 2026-09-29), and the same name the App
         // Store listing and the purchase sheet use.
-        return "808 Premium: full access to timed and guided sessions, sounds, Otto's glow, streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
+        return "808 Premium: full access to \(block)timed and guided sessions, sounds, Otto's glow\(hats), streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
     }
 
     /// The includes line in small type under a subtitle that says something
@@ -521,11 +622,44 @@ struct PaywallScreen: View {
     /// which cannot cancel anything.
     private var footnote: String {
         guard selling else { return notSellingFootnote }
+        return Self.terms(for: plan, priceLine: priceLine(withTrial: false), trialDays: trialLength)
+    }
+
+    /// The terms under the button, for the plan it buys. Pure, so the one
+    /// sentence that must never be wrong is tested.
+    ///
+    /// Lifetime is one charge today and never renews, so it says exactly
+    /// that and nothing about a trial or cancelling (restored 2026-09-29 as
+    /// it read before 2026-09-26): claiming it renews would be its own lie.
+    nonisolated static func terms(for plan: SubscriptionPlan, priceLine: String, trialDays: Int?) -> String {
+        if plan == .lifetime {
+            return "\(priceLine), charged today. Nothing renews."
+        }
         let whereToCancel = "in the Settings app under your name, then Subscriptions."
-        if let days = trialLength {
-            return "\(TrialCopy.length(days)) free, then \(priceLine(withTrial: false)). Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, \(whereToCancel)"
+        if let days = trialDays {
+            return "\(TrialCopy.length(days)) free, then \(priceLine). Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, \(whereToCancel)"
         }
         return "\(priceLine). Renews automatically until you cancel. Cancel any time, at least 24 hours before it renews, \(whereToCancel)"
+    }
+
+    /// The button that buys: "Buy Lifetime" for the one charge (restored
+    /// 2026-09-29), "Start my free trial" when the plan starts with one,
+    /// otherwise "Continue".
+    nonisolated static func buyButtonTitle(for plan: SubscriptionPlan, trialDays: Int?) -> String {
+        if plan == .lifetime { return "Buy Lifetime" }
+        return trialDays != nil ? "Start my free trial" : "Continue"
+    }
+
+    /// The cards on screen. Lifetime shows whenever its product loaded, and
+    /// beside the fallback prices when nothing has; while the App Store is
+    /// selling WITHOUT it, it hides rather than show a dollar fallback
+    /// beside live prices and a button that could not buy it.
+    private var cardsShown: [SubscriptionPlan] {
+        SubscriptionPlan.cards(selecting: plan).filter { $0 != .lifetime || lifetimeOnSale }
+    }
+
+    private var lifetimeOnSale: Bool {
+        store.state != .ready || store.product(for: .lifetime) != nil
     }
 
     /// In the valley, like the rest of onboarding (Aziz, 2026-09-26: "make it
@@ -550,20 +684,14 @@ struct PaywallScreen: View {
                 // wherever it fits whole, so the default size looks exactly as
                 // before, and falls back to one scroll holding everything.
                 ViewThatFits(in: .vertical) {
-                    VStack(spacing: 0) {
-                        header(compact: compact)
-
-                        Spacer(minLength: 0)
-                        // Smaller on a short phone when the includes line sits
-                        // under the subtitle, or his halo rises into the words.
-                        OttoAuraFigure(stage: .nirvana, look: 13,
-                                       size: compact ? (showsIncludesBelow ? 90 : 110) : 150, rig: otto)
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
-                        Spacer(minLength: 12)
-
-                        panel(compact: compact, bottomInset: geo.safeAreaInsets.bottom)
-                    }
+                    // Otto at full size where he fits, then smaller, before
+                    // giving him up for the scroll (Melvin, 2026-09-29): with
+                    // the trial header and Lifetime back as a third card, the
+                    // full-size layout ran about 40pt over on an iPhone 17.
+                    fixedLayout(compact: compact, geo: geo,
+                                ottoSize: compact ? (showsIncludesBelow ? 90 : 110) : 150)
+                    fixedLayout(compact: compact, geo: geo,
+                                ottoSize: compact ? 72 : 96)
 
                     // No Otto here: at a text size this large the screen is
                     // for reading, and a second rig beside the first is not
@@ -651,9 +779,10 @@ struct PaywallScreen: View {
         .sensoryFeedback(.success, trigger: started)
         .onAppear {
             holdsAccountData = Self.deviceHoldsAccountData(in: context)
-            // Lifetime is no longer offered; a plan carried over from before
-            // lands on monthly rather than on a card that isn't there.
-            if plan == .lifetime { plan = .monthly }
+            // Lifetime is offered again (2026-09-29), but only while its
+            // product is on sale; a plan that lands on a card not shown
+            // falls back to monthly.
+            if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
             // A transient fetch failure should not be a permanent state:
             // every arrival at the paywall retries the load.
             if store.state != .ready {
@@ -662,6 +791,11 @@ struct PaywallScreen: View {
             guard !trackedView else { return }
             trackedView = true
             Analytics.track(.paywallViewed(placement: placement))
+        }
+        // The plans arriving can take Lifetime away (App Store Connect
+        // selling without it); the choice moves to a card that is there.
+        .onChange(of: store.state) { _, _ in
+            if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
         }
         // Closed without buying: a sheet swiped away, or moved past while the
         // plans could not load. Not while a rung covers the prices (a full
@@ -675,6 +809,23 @@ struct PaywallScreen: View {
     }
 
     /// The headline, the line under it, and what a membership includes.
+    /// The whole screen without a scroll: words, Otto floating between them
+    /// and the plans, the panel. Smaller on a short phone when the includes
+    /// line sits under the subtitle, or his halo rises into the words.
+    private func fixedLayout(compact: Bool, geo: GeometryProxy, ottoSize: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            header(compact: compact)
+
+            Spacer(minLength: 0)
+            OttoAuraFigure(stage: .nirvana, look: 13, size: ottoSize, rig: otto)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+            Spacer(minLength: 12)
+
+            panel(compact: compact, bottomInset: geo.safeAreaInsets.bottom)
+        }
+    }
+
     private func header(compact: Bool) -> some View {
         VStack(spacing: 8) {
             Text(title)
@@ -711,10 +862,11 @@ struct PaywallScreen: View {
         .multilineTextAlignment(.center)
     }
 
+    /// Restore is here even while the plans cannot load (2026-09-29): with
+    /// no way past this screen but a purchase or a restore, a payer whose
+    /// on-device record went missing must always have the second.
     @ViewBuilder private var linkButtons: some View {
-        if selling {
-            Button("Restore") { restore() }
-        }
+        Button("Restore") { restore() }
         Button("Privacy Policy") { sheet = .legal(.privacy) }
         Button("Terms of Use") { sheet = .legal(.terms) }
         if offersAccount {
@@ -726,11 +878,12 @@ struct PaywallScreen: View {
     /// (price, renewal, Restore, Privacy Policy, Terms of Use: 3.1.1, 3.1.2).
     private func panel(compact: Bool, bottomInset: CGFloat) -> some View {
         VStack(spacing: compact ? 9 : 12) {
-            ForEach(SubscriptionPlan.cards(selecting: plan)) { p in
+            ForEach(cardsShown) { p in
                 planCard(p, compact: compact)
             }
 
-            OnboardingCTA(title: selling ? (trialNow ? "Start my free trial" : "Continue") : "Continue",
+            OnboardingCTA(title: selling ? Self.buyButtonTitle(for: plan, trialDays: trialLength) : notSellingButton,
+                          enabled: selling || !waitingOnStore,
                           action: { advance() })
                 .padding(.top, 4)
 
@@ -760,9 +913,9 @@ struct PaywallScreen: View {
             links
 
             // No free version to decline into (Aziz, 2026-09-26), but a "no"
-            // is answered with the ladder (Melvin, 2026-09-27): the free
-            // trial, then the first month at half. Once both are declined the
-            // link goes, and the plans are what is left.
+            // is answered with the ladder: since 2026-09-29 one rung, the
+            // free trial plus half price every month (Melvin). Once it is
+            // declined the link goes, and the plans are what is left.
             if !declinedAll, let first = firstRung() {
                 Button("No, I don't want to pay") { showRung(first) }
                     .font(.caption.weight(.semibold))
@@ -814,13 +967,15 @@ struct PaywallScreen: View {
                 Spacer(minLength: 0)
                 VStack(alignment: .trailing, spacing: 1) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        // Only against OUR price: a dollar anchor beside a
-                        // euro price is nonsense.
-                        if store.displayPrice(for: p) == nil, let anchor = p.anchorPrice {
+                        // Every time, in the live price's own currency
+                        // (Melvin, 2026-09-29; `Store.anchorPrice(for:)`),
+                        // and in dollars only beside the dollar fallback.
+                        if let anchor = store.anchorPrice(for: p) {
                             Text(anchor)
                                 .font(.system(size: 13, weight: .medium, design: .rounded))
                                 .foregroundStyle(AppColor.textSecondary.opacity(0.7))
                                 .strikethrough(true, color: AppColor.textSecondary.opacity(0.7))
+                                .accessibilityLabel("Was \(anchor)")
                         }
                         Text(store.displayPrice(for: p) ?? p.price)
                             .font(.system(size: 19, weight: .heavy, design: .rounded))
@@ -828,7 +983,7 @@ struct PaywallScreen: View {
                     }
                     // Wraps rather than truncating: the half-off year's
                     // renewal price rides this line and must be read whole.
-                    Text(p.cadence(withTrial: store.freeTrialDays(for: p) != nil))
+                    Text(p.cadence(withTrial: trialLength(for: p) != nil))
                         .font(.caption)
                         .foregroundStyle(AppColor.textSecondary)
                         .multilineTextAlignment(.trailing)
@@ -863,10 +1018,14 @@ struct PaywallScreen: View {
         .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 
-    /// Continue. When nothing is on sale this is navigation; when something
-    /// is, it is a purchase, and the screen only moves once StoreKit confirms.
-    /// A cancelled or failed purchase stays put without comment, because the
-    /// system sheet the user just dismissed IS the comment.
+    /// Continue. When something is on sale it is a purchase, and the screen
+    /// only moves once StoreKit confirms. A cancelled or failed purchase stays
+    /// put without comment, because the system sheet the user just dismissed
+    /// IS the comment.
+    ///
+    /// **When nothing is on sale it is Try again, never a way in** (Melvin,
+    /// 2026-09-29). It used to call `onDone(false)`, which walked onboarding
+    /// on into a paid app whenever the App Store was slow or unreachable.
     private func advance() {
         // One sale per visit to this screen. StoreKit returns `.bought`
         // IMMEDIATELY for a product this Apple ID already owns, so a second
@@ -883,7 +1042,12 @@ struct PaywallScreen: View {
             store.setPreviewEntitled(true)
             onDone(true)
             #else
-            onDone(false)
+            if Monetization.isSideBySideBeta {
+                // Owns no products, so there is nothing to wait for.
+                onDone(false)
+            } else {
+                retryLoad()
+            }
             #endif
             return
         }
@@ -896,7 +1060,7 @@ struct PaywallScreen: View {
             case .bought:
                 // Lifetime carries no introductory offer, so it can never be a
                 // trial however eligible the buyer still is for the
-                // subscription group's free week.
+                // subscription group's free trial.
                 if trialNow { Analytics.track(.trialStarted(plan: buyingPlan.rawValue)) }
                 Analytics.track(.purchase(plan: buyingPlan.rawValue, placement: placement))
                 started = true
@@ -908,6 +1072,17 @@ struct PaywallScreen: View {
             case .unavailable:
                 Analytics.track(.purchaseFailed(plan: buyingPlan.rawValue, placement: placement, reason: "failed"))
             }
+        }
+    }
+
+    /// Try again: ask the App Store for the plans once more. The screen
+    /// turns into the selling paywall by itself when they arrive.
+    private func retryLoad() {
+        guard !retrying else { return }
+        retrying = true
+        Task { @MainActor in
+            await store.load()
+            retrying = false
         }
     }
 
@@ -968,10 +1143,10 @@ struct LegalDocSheet: View {
 
 // MARK: - 24 · (removed)
 
-// The thirty-day exit offer is gone, along with the paywall's decline. The
-// offer is seven days free or nothing, and the paywall is the end of the
-// road rather than a negotiation. Anything that reads as a second, better
-// price teaches people that the first one was never the real one.
+// The thirty-day exit offer is gone. The one answer to a "no" is the ladder's
+// half-price plan (`DownsellRung.ladder`), a real cheaper plan rather than a
+// second, better price for the same one, which would teach people that the
+// first price was never the real one.
 
 // MARK: - 25 · Sign in
 

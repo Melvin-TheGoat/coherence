@@ -38,20 +38,22 @@ struct MainTabBar: View {
     @Binding var selection: MainTab
     let onPlus: () -> Void
 
-    /// New bars are under TEST (`TestTabBar`, 2026-09-25): chosen in
-    /// Settings > Block (debug) > "Tab bar (test)", the newest by default,
-    /// the classic bar with `CLASSIC_TAB_BAR=1`, and never in Release. They
-    /// all draw the Block and Friends tabs, so they step aside when either
-    /// flag is off.
+    /// The bars under test (`TestTabBar`, 2026-09-25) are chosen in
+    /// Settings > Block (debug) > "Tab bar (test)", the classic bar with
+    /// `CLASSIC_TAB_BAR=1`. **Release draws `TestTabBar.debugDefault`, the
+    /// sloth bar** (2026-09-29): it drew the plain classic bar, so the App
+    /// Store build would have shipped a different tab bar from the one the
+    /// founders were testing. They all draw the Block and Friends tabs, so
+    /// they step aside when either flag is off.
     @AppStorage(TestTabBar.storageKey) private var testStyle = TestTabBar.debugDefault.rawValue
 
     private var style: TestTabBar {
+        guard FeatureFlags.block, FeatureFlags.friends else { return .classic }
         #if DEBUG
-        guard FeatureFlags.block, FeatureFlags.friends,
-              ProcessInfo.processInfo.environment["CLASSIC_TAB_BAR"] != "1" else { return .classic }
+        guard ProcessInfo.processInfo.environment["CLASSIC_TAB_BAR"] != "1" else { return .classic }
         return TestTabBar(rawValue: testStyle) ?? .debugDefault
         #else
-        return .classic
+        return .debugDefault
         #endif
     }
 

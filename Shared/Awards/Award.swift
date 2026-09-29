@@ -327,11 +327,11 @@ public struct Award: Identifiable, Hashable {
         // MARK: Otto
 
         Award(id: "ottoSteady", title: "Otto's steady",
-              blurb: "Brought his colour back.",
+              blurb: "Added to Otto's glow for the first time.",
               group: .otto, face: .mark,
               meaning: """
-              Otto starts the way everyone does, half gray. One session was \
-              enough to bring his colour back.
+              Otto starts steady for everyone, his colour already in. Your \
+              first session was the first to add to his glow.
               """),
 
         Award(id: "ottoBright", title: "Otto's bright",

@@ -14,7 +14,8 @@ final class TrialCopyTests: XCTestCase {
         XCTAssertEqual(TrialCopy.startButton(3), "Start 3 days free")
     }
 
-    /// The ladder's trial rung states the real length, never a hardcoded one.
+    /// The dormant trial rung (off the ladder since 2026-09-29) still states
+    /// the real length, never a hardcoded one, should it come back.
     func test_theTrialRungSaysTheStoresLength() {
         let three = DownsellRung.trial.subtitle(plan: .monthly, yearlyPrice: "$29.99", trialDays: 3)
         let seven = DownsellRung.trial.subtitle(plan: .monthly, yearlyPrice: "$29.99", trialDays: 7)
@@ -29,5 +30,14 @@ final class TrialCopyTests: XCTestCase {
     /// Premium only (2026-09-23): there is no free 808 for the ladder to end on.
     func test_premiumOnlyIsOn() {
         XCTAssertTrue(Monetization.premiumOnly)
+    }
+
+    /// The free trial is back (Melvin, 2026-09-29: "same as before, 3 day
+    /// offer"), and its fallback length is the three days App Store Connect
+    /// is set to.
+    func test_theFreeTrialIsOn() {
+        XCTAssertTrue(Monetization.freeTrial)
+        XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 3)
+        XCTAssertEqual(TrialCopy.startButton(SubscriptionPlan.fallbackTrialDays), "Start 3 days free")
     }
 }

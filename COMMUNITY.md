@@ -10,6 +10,12 @@
 > — see "The rule for what a post may carry" below); the tab is in the
 > valley (2026-09-22). Ideas still open are in `BACKLOG.md` > Potential
 > features.
+>
+> **2026-09-29.** Posting is gone since 2026-09-27: Friends is profiles and
+> practice summaries only (CLAUDE.md, "EVERY SCREEN FOLLOWS THE CLOCK; THE
+> STORE TAKES FRIENDS' TAB"). And **blocks are private and one-sided**
+> (Melvin: "Don't want others to see who I blocked"); see the dated note in
+> the Blocks bullet below and `CLOUDKIT_SETUP.md`, "Making Block private".
 
 Aziz's ask: after a meditation, post the session with a photo to your
 friends, the way a Strava run goes to your feed. Friends, not followers.
@@ -95,7 +101,7 @@ Record types (public database, `iCloud.com.lockout.meditate808`):
 | `FriendEdge` | `from` (ref Profile), `to` (ref Profile), `createdAt` | the `from` user |
 | `Post` | `author` (ref), `minutes`, `streak`, `technique`, `caption`, `photo` (asset), `practicedAt`, `createdAt` | the author |
 | `Reaction` | `post` (ref), `author` (ref), `createdAt` | the reactor |
-| `Block` | `from` (ref), `to` (ref) | the blocker |
+| `Block` | `from` (ref), `to` (ref); record name `block-<UUID>` since 2026-09-29 | the blocker, readable only by the blocker |
 | `Report` | `reporter`, `target` (ref Post or Profile), `reason`, `createdAt` | the reporter |
 
 - **A friendship is two edges.** A request is A writing `A → B`; accepting is
@@ -107,11 +113,22 @@ Record types (public database, `iCloud.com.lockout.meditate808`):
 - **Reactions are one per person per post,** enforced by the client
   (record name = `post.id + author.id`, so a second save overwrites, never
   duplicates).
-- **Blocks live in the public database so they cut both ways** on honest
+- ~~**Blocks live in the public database so they cut both ways** on honest
   clients: a blocked person's posts and requests vanish for the blocker, and
   the blocked person's client refuses to friend or view the blocker. A
   modified client could ignore that; at our size that is an accepted limit,
-  and the same limit every CloudKit-only social app has.
+  and the same limit every CloudKit-only social app has.~~
+  **Superseded 2026-09-29 (Melvin: "Don't want others to see who I
+  blocked"). Blocks are private and one-sided.** Only the blocker's own app
+  can read a block: the CloudKit role on `Block` is `_world` none, `_icloud`
+  Create, `_creator` Read/Write, and new blocks get random record names
+  (`block-<UUID>`), so a name no longer says who blocked whom. The blocked
+  person is not told. Their requests to the blocker never arrive and cannot
+  be accepted, and the blocker stops seeing them anywhere in Friends. The
+  blocked person may still see the blocker's public profile (name, handle,
+  photo, practice summary), because profiles are public. The one Block query
+  left is `Block.from == me` (`CommunityStore.myBlocks`), so the `Block.to`
+  index is no longer needed. Reports are still kept as moderation records.
 - **Photos:** JPEG, longest side 1080, about 200 KB. `CKAsset`.
 - **Usernames become real.** `Profile.username` is claimed on first use of
   the tab by querying for an existing one, then saving. The race between two
@@ -161,7 +178,8 @@ reviewers look for exactly this.
    record is written AND the same payload is posted to an Apps Script web
    app (the waitlist pattern) that emails support@meditate808.com, so a
    report reaches a person within minutes without a server.
-3. **Block.** Every profile has Block. See the model above.
+3. **Block.** Every profile has Block. See the model above (private and
+   one-sided since 2026-09-29).
 4. **Contact.** support@meditate808.com is published in the app and on
    the store page already.
 
@@ -229,9 +247,13 @@ Pages) can come later and would open straight to the friend's profile.
 - **CloudKit Console:** the six new public record types, indexes on
   `author`, `from`, `to`, `post`, `createdAt`; promote Development →
   Production before the build ships (this is a release step; see CLAUDE.md,
-  the 1.0 lesson).
+  the 1.0 lesson). (2026-09-29: seven types with `Username`, and seven
+  indexes; `Block.to` is no longer needed. `CLOUDKIT_SETUP.md` has the
+  current list.)
 - **Public database security roles:** `_world` read, `_creator` write, on
   every type. Confirm in the Console; the defaults are right but check.
+  (2026-09-29: except `Report` and `Block`, which are `_world` none,
+  `_icloud` Create, `_creator` Read/Write; `CLOUDKIT_SETUP.md` Step 4.)
 
 ## Build order
 

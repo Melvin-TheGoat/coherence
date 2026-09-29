@@ -30,6 +30,7 @@ struct CoherenceApp: App {
         TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks
         SessionStore.purgeExpired(in: setup)                    // Phase 7: 30-day account purge
         SessionStore.repairOwnership(in: setup)                 // sessions filed under a stray bootstrap row (2026-09-29)
+        OttoAura.markGlowStartIfNeeded()                        // Otto's glow counts from 1.1's first launch, at 50
         ScoreMigration.backfillIfNeeded(in: setup)              // v3 score across all history
         _coordinator = StateObject(wrappedValue: SessionCoordinator(container: container))
         // The invite reward's balance lives on Preferences; the store reads it
