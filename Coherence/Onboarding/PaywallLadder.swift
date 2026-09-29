@@ -2,17 +2,17 @@ import SwiftUI
 
 /// What happens when someone says no.
 ///
-/// **One rung since 2026-09-29** (Melvin: "If they deny that, then 3 day free
-/// trial plus half off forever"). The paywall itself offers the free trial
-/// again (`Monetization.freeTrial`), so the risk objection is answered before
-/// anybody says no, and the one concession left to make is money: 808 at
-/// half price, every month, starting with the same free trial.
+/// **Two rungs, cheapest concession first** (Melvin, 2026-09-29: "3 day
+/// offer, and then if they deny that then 3 day free trial plus half off
+/// forever"; "the free trial is only an upsell, we want them to not know it
+/// exists unless they deny the initial offer"):
 ///
-/// **The trial rung is DORMANT, not deleted.** From 2026-09-27 it offered the
-/// free trial on its own product (`...monthlytrial`) while the paywall's
-/// monthly carried none; with the trial back on the paywall it would offer
-/// the same thing twice. The case, its copy and its product stay, so a past
-/// purchase restores and the rung can come back by adding it to `ladder`.
+/// 1. **Risk.** The 3-day free trial, on its own product (`...monthlytrial`),
+///    because the paywall's Monthly carries none (`Monetization.freeTrial`).
+///    It answers "I don't know if it works for me" without touching price.
+/// 2. **Money.** 808 at half price, every month, starting with a 3-day trial
+///    (`...monthly50`). A trial is offered once per subscription group, so
+///    someone who took rung 1's is shown this rung's price from today.
 ///
 /// **A follow-up exists only if it concedes something** (Melvin, 2026-09-22:
 /// "you shouldnt be showing more than like 1 follow up screen, unless it
@@ -37,7 +37,6 @@ import SwiftUI
 /// no "spots remaining", no "you will never see this again". A meditation app
 /// manufacturing panic contradicts the thing it sells.
 enum DownsellRung: Int, CaseIterable, Identifiable {
-    /// DORMANT since 2026-09-29: not in `ladder`. See the type's comment.
     case trial
     case halfMonth
 
@@ -45,13 +44,12 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
 
     /// The rungs a "No, I don't want to pay" walks, in order. Only these are
     /// ever shown; `allCases` also holds the dormant ones.
-    static let ladder: [DownsellRung] = [.halfMonth]
+    static let ladder: [DownsellRung] = [.trial, .halfMonth]
 
     var title: String {
         switch self {
         case .trial:     return "No worries.\nTry it free first."
-        // The first thing said after a "no", now that it is the only rung.
-        case .halfMonth: return "No worries.\nHave 808 at half price."
+        case .halfMonth: return "Then have 808\nat half price."
         }
     }
 

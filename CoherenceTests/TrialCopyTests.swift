@@ -32,11 +32,11 @@ final class TrialCopyTests: XCTestCase {
         XCTAssertTrue(Monetization.premiumOnly)
     }
 
-    /// The free trial is back (Melvin, 2026-09-29: "same as before, 3 day
-    /// offer"), and its fallback length is the three days App Store Connect
-    /// is set to.
-    func test_theFreeTrialIsOn() {
-        XCTAssertTrue(Monetization.freeTrial)
+    /// The free trial is an upsell on the ladder, never on the paywall's own
+    /// plans (Melvin, 2026-09-29), and its fallback length is the three days
+    /// App Store Connect is set to.
+    func test_theFreeTrialIsOnlyOnTheLadder() {
+        XCTAssertFalse(Monetization.freeTrial)
         XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 3)
         XCTAssertEqual(TrialCopy.startButton(SubscriptionPlan.fallbackTrialDays), "Start 3 days free")
     }

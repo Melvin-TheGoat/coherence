@@ -46,14 +46,7 @@
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Monthly",
           "subscriptionGroupID" : "808100001",
-          "type" : "RecurringSubscription",
-          "introductoryOffer" : {
-            "displayPrice" : "0.00",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D",
-            "internalID" : "808200001"
-          }
+          "type" : "RecurringSubscription"
         },
         {
           "adHocOffers" : [],
@@ -73,14 +66,7 @@
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Yearly",
           "subscriptionGroupID" : "808100001",
-          "type" : "RecurringSubscription",
-          "introductoryOffer" : {
-            "displayPrice" : "0.00",
-            "numberOfPeriods" : 1,
-            "paymentMode" : "free",
-            "subscriptionPeriod" : "P3D",
-            "internalID" : "808200002"
-          }
+          "type" : "RecurringSubscription"
         },
         {
           "adHocOffers" : [],

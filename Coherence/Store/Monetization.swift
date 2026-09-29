@@ -21,18 +21,20 @@ import Foundation
 enum Monetization {
     static let premiumOnly = true
 
-    /// The free trial is back (Melvin, 2026-09-29: "same as before, 3 day
-    /// offer"). The paywall's Monthly and Yearly sell with their own App
-    /// Store introductory offer, and every line that states it reads the
-    /// product's real offer and this person's eligibility (`Store`), so
-    /// somebody who already used a trial is never promised one.
+    /// Whether the paywall's OWN Monthly and Yearly sell with a free trial.
+    /// **Off: the free trial is an upsell** (Melvin, 2026-09-29: "we want them
+    /// to not know it exists unless they deny the initial offer"). The paywall
+    /// sells Monthly, Yearly and Lifetime with no trial; "No, I don't want to
+    /// pay" offers the 3-day free trial (`...monthlytrial`), and declining that
+    /// offers half price after a 3-day trial (`...monthly50`). Each rung's
+    /// trial is its own product's introductory offer.
     ///
-    /// It was off from 2026-09-26 (Aziz: "no free trial and only monthly and
-    /// yearly"). **App Store Connect must match:** the trial IS each
-    /// product's introductory offer, 3 days free on
-    /// `com.lockout.meditate808.monthly` and `.yearly`. A product without one
-    /// simply sells without a trial, and this screen says so.
-    static let freeTrial = true
+    /// For a few hours that day it was on, a misreading of "same as before, 3
+    /// day offer": the trial sat on the paywall and the trial rung went
+    /// dormant. **App Store Connect must match:** `monthly` and `yearly` carry
+    /// NO introductory offer, or Apple's purchase sheet grants a trial this
+    /// screen never mentions (the 3.1.2 mismatch) and the upsell is gone.
+    static let freeTrial = false
 
     /// The founders' side-by-side beta: the same app under a bundle ID ending
     /// in ".dev" (`tools/beta_install.sh`), which owns no products in App

@@ -46,12 +46,9 @@ final class Store: ObservableObject {
         /// The ladder's rungs (2026-09-27), each carrying its own
         /// introductory offer.
         ///
-        /// `monthTrial` is DORMANT since 2026-09-29 (Melvin): the paywall's
-        /// own Monthly and Yearly carry the free trial again, so a rung
-        /// offering the same trial on a copy of the monthly had nothing left
-        /// to give. It stays in `all` so anybody who bought it still restores
-        /// and stays entitled. `monthHalf` is the ladder's one rung: $3.99
-        /// every month, starting with a free trial.
+        /// `monthTrial` is the first rung (the 3-day free trial, the only
+        /// place it is offered, since the paywall's Monthly carries none);
+        /// `monthHalf` the second, $3.99 every month after a free trial.
         static let monthTrial = "com.lockout.meditate808.monthlytrial"
         static let monthHalf = "com.lockout.meditate808.monthly50"
 
@@ -209,10 +206,10 @@ final class Store: ObservableObject {
         if let sub = products.first(where: { $0.subscription != nil })?.subscription {
             trialEligible = await sub.isEligibleForIntroOffer
         }
-        // The paywall's own plans carry the trial again (2026-09-29), so the
-        // monthly's offer is the one every "Start 3 days free" states; the
-        // yearly's, then the half-price rung's, only if it has none.
-        for source in [SubscriptionPlan.monthly, .yearly, .monthHalf, .monthTrial] {
+        // The free trial is the ladder's (2026-09-29), so the trial rung's
+        // offer is the length every general trial line states; the
+        // half-price rung's only if it has none.
+        for source in [SubscriptionPlan.monthTrial, .monthHalf, .monthly, .yearly] {
             if let offer = product(for: source)?.subscription?.introductoryOffer,
                offer.paymentMode == .freeTrial {
                 trialDays = Self.days(in: offer.period)

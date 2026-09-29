@@ -5,35 +5,32 @@ import XCTest
 /// so its shape is asserted rather than trusted to review.
 final class PaywallLadderTests: XCTestCase {
 
-    /// **One rung since 2026-09-29** (Melvin: "If they deny that, then 3 day
-    /// free trial plus half off forever"). The paywall answers the risk
-    /// objection itself with the free trial, so the only concession left is
-    /// money: half price, every month, after the same free trial.
+    /// **The free trial is an upsell** (Melvin, 2026-09-29: "we want them to
+    /// not know it exists unless they deny the initial offer"). A "no" is
+    /// answered first with the 3-day trial, then with half price after a
+    /// 3-day trial.
     ///
     /// A follow-up may only exist if it concedes something (2026-09-22), and
     /// after the discount there is nothing left to concede, so the ladder
     /// can never grow past two.
-    func test_theLadderIsOneRungOfMoney() {
-        XCTAssertEqual(DownsellRung.ladder, [.halfMonth])
+    func test_theLadderIsTheTrialThenHalfPrice() {
+        XCTAssertEqual(DownsellRung.ladder, [.trial, .halfMonth])
+        XCTAssertEqual(DownsellRung.trial.next, .halfMonth)
         XCTAssertNil(DownsellRung.halfMonth.next, "the ladder must end")
         XCTAssertLessThanOrEqual(DownsellRung.ladder.count, 2)
-        XCTAssertEqual(DownsellRung.ladder.first?.plan, .monthHalf)
+        XCTAssertEqual(DownsellRung.trial.plan, .monthTrial)
+        XCTAssertEqual(DownsellRung.halfMonth.plan, .monthHalf)
     }
 
-    /// The trial rung is dormant, not deleted: the paywall's own plans carry
-    /// the trial again, so a rung offering it on a copy of the monthly would
-    /// offer the same thing twice. Its product stays so a purchase restores.
-    func test_theTrialRungIsDormantButItsProductStillRestores() {
-        XCTAssertFalse(DownsellRung.ladder.contains(.trial))
-        XCTAssertNil(DownsellRung.trial.next, "a dormant rung leads nowhere")
-        XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthTrial),
-                      "a past purchase of the trial plan must still restore and entitle")
+    /// Both rungs sell their own products, and both must restore and entitle.
+    func test_bothRungProductsRestore() {
+        XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthTrial))
         XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthHalf))
     }
 
-    /// The only rung is the first thing said after a "no", so it cannot open
+    /// The first rung is the first thing said after a "no", so it cannot open
     /// as though a rung came before it.
-    func test_theOnlyRungDoesNotFollowAnother() {
+    func test_theFirstRungDoesNotFollowAnother() {
         let first = DownsellRung.ladder[0]
         XCTAssertFalse(first.title.hasPrefix("Then"), first.title)
         XCTAssertFalse(first.title.contains("\u{2014}"), "no em dashes")
@@ -268,14 +265,16 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(text.contains("renews"), "the month rung hides the renewal")
     }
 
-    // MARK: The free trial is back (2026-09-29)
+    // MARK: The free trial lives on the ladder only (2026-09-29)
 
-    /// "Same as before, 3 day offer" (Melvin). The paywall's own two plans
-    /// are designed with it; Lifetime and the half-off year never are.
-    func test_thePaywallsPlansCarryTheTrial() {
-        XCTAssertTrue(Monetization.freeTrial)
-        XCTAssertTrue(SubscriptionPlan.monthly.designedWithTrial)
-        XCTAssertTrue(SubscriptionPlan.yearly.designedWithTrial)
+    /// The paywall's own plans carry no trial; only the two rungs' plans are
+    /// designed with one. Lifetime and the half-off year never are.
+    func test_onlyTheRungPlansCarryTheTrial() {
+        XCTAssertFalse(Monetization.freeTrial)
+        XCTAssertFalse(SubscriptionPlan.monthly.designedWithTrial)
+        XCTAssertFalse(SubscriptionPlan.yearly.designedWithTrial)
+        XCTAssertTrue(SubscriptionPlan.monthTrial.designedWithTrial)
+        XCTAssertTrue(SubscriptionPlan.monthHalf.designedWithTrial)
         XCTAssertFalse(SubscriptionPlan.lifetime.designedWithTrial)
         XCTAssertFalse(SubscriptionPlan.yearHalf.designedWithTrial)
         XCTAssertEqual(SubscriptionPlan.fallbackTrialDays, 3)
