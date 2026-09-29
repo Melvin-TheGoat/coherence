@@ -51,6 +51,10 @@ final class WatchLink: ObservableObject {
             next = .noWatch
         }
         if next != status { status = next }
+        // On the anonymous PostHog person, so any funnel can be split by it.
+        // Paired, not connected: whether the phone HAS a Watch, which is the
+        // question the no-Watch session work has to answer.
+        Analytics.setPersonProperties(["has_paired_watch": next != .noWatch])
     }
 
     /// The Watch has answered 808: a start ack arrived, or a measured
@@ -61,6 +65,8 @@ final class WatchLink: ObservableObject {
         let d = UserDefaults.standard
         guard let choice = WatchDefault.choiceOnConnect(everConnected: d.bool(forKey: Self.everConnectedKey)) else { return }
         d.set(true, forKey: Self.everConnectedKey)
+        // Once per install: `everConnected` has just flipped to true.
+        Analytics.track(.watchConnected)
         if choice { d.set(SitKind.watch.rawValue, forKey: Self.choiceKey) }
     }
 }

@@ -681,10 +681,23 @@ struct GrassHeading: View {
     var body: some View {
         Text(title)
             .font(DisplayFont.display(15, .heavy))
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
+            .onValley()
             .padding(.horizontal, 4)
             .padding(.top, 6)
+    }
+}
+
+extension View {
+    /// Words drawn straight on the valley, sky or grass, never on a card or
+    /// pill (Aziz, 2026-09-29). Dark ink by day, cream by night, switching at
+    /// `DayLight.inkTurn`, with a faint halo of the opposite shade so a line
+    /// that runs from sky onto grass, or over a cloud or flower, still reads.
+    /// Pass the screen's own `DayLight` where it is not the clock's (the sit
+    /// runs its own day). Words on a cream surface keep the daytime ink.
+    func onValley(soft: Bool = false, _ light: DayLight = .now) -> some View {
+        foregroundStyle(soft ? light.inkSoft : light.ink)
+            .shadow(color: light.inkIsDark ? .white.opacity(0.25) : .black.opacity(0.35),
+                    radius: 3, y: light.inkIsDark ? 0 : 1)
     }
 }
 

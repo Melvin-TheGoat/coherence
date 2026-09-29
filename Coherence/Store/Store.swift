@@ -272,21 +272,42 @@ final class Store: ObservableObject {
     /// Apple requires a restore path on any screen selling a subscription
     /// (guideline 3.1.1), and it is the only honest way through for someone
     /// who already paid and is reinstalling.
-    func restore() async {
-        try? await AppStore.sync()
+    /// Returns false when the App Store could not be reached (or the sign-in
+    /// prompt was cancelled), so "nothing to restore" and "couldn't ask" can
+    /// be told apart.
+    @discardableResult
+    func restore() async -> Bool {
+        var synced = true
+        do { try await AppStore.sync() } catch { synced = false }
         await refreshEntitlement()
+        return synced
     }
 
     private func refreshEntitlement() async {
         var active = false
+        var owned: [String] = []
         for await result in Transaction.currentEntitlements {
             guard case .verified(let transaction) = result else { continue }
             guard ProductID.all.contains(transaction.productID) else { continue }
             if transaction.revocationDate != nil { continue }
             if let expiry = transaction.expirationDate, expiry < Date() { continue }
             active = true
+            owned.append(transaction.productID)
         }
         if entitled && !active { Analytics.track(.entitlementLost) }
         entitled = active
+        // Whether this install pays, and for which plan, on the anonymous
+        // PostHog person (the SDK drops a repeat of the same values).
+        Analytics.setPersonProperties(["is_subscriber": active,
+                                       "plan": Self.planName(owning: owned)])
+    }
+
+    /// The plan a set of owned product IDs amounts to, for the `plan` person
+    /// property: a `SubscriptionPlan` raw value, or "none". Lifetime outranks
+    /// a year, a year outranks a month, so a person mid-upgrade reads as the
+    /// bigger plan.
+    nonisolated static func planName(owning productIDs: [String]) -> String {
+        let ranked: [SubscriptionPlan] = [.lifetime, .yearly, .yearHalf, .monthly, .monthHalf, .monthTrial]
+        return ranked.first { productIDs.contains(ProductID.of($0)) }?.rawValue ?? "none"
     }
 }

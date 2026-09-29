@@ -30,6 +30,9 @@ struct ContentView: View {
     /// Block (2026-09-22): the blockers, the passes, and the "Ask Otto" that
     /// opens one of his screens.
     @ObservedObject private var block = BlockController.shared
+    /// For Otto's nudge toward measuring with the Apple Watch.
+    @ObservedObject private var watchLink = WatchLink.shared
+    @AppStorage(WatchLink.choiceKey) private var sitKindRaw = SitKind.unmeasured.rawValue
     /// "Okay, let's meditate" on one of Otto's screens starts a session the
     /// moment his screen is down, so two covers never overlap. nil: nothing
     /// waiting; 0: open-ended; otherwise a timed session of that many minutes.
@@ -231,6 +234,9 @@ struct ContentView: View {
             set: { _ in })) { item in
             AwardUnlockView(item: item) {
                 AwardsInbox.markAnnounced(item.award.id)
+                // Sent once, as it is announced: the inbox never announces an
+                // award twice. Score awards are never sent (`awardUnlocked`).
+                if let event = Analytics.awardUnlocked(item.award) { Analytics.track(event) }
                 unlockQueue.removeFirst()
             }
         }
@@ -361,6 +367,10 @@ struct ContentView: View {
                 SessionRewardView(reward: reward) {
                     holdAwards = false
                     sheet = nil
+                }
+                .onAppear {
+                    Analytics.track(.rewardViewed(
+                        stageUp: OttoAura.Stage(level: reward.glowAfter) > OttoAura.Stage(level: reward.glowBefore)))
                 }
             }
         }
@@ -594,7 +604,6 @@ struct ContentView: View {
     /// The valley with Otto in it, and the three things laid on the sky.
     private func homeScene(width: CGFloat, height: CGFloat, topInset: CGFloat) -> some View {
         let size = CGSize(width: width, height: height)
-        let ink = Self.homeDay.ink
         let ottoTop = SitLayout.ottoTop(in: size)
         let ottoSize = 186 * SitLayout.scale(in: size)
         return ZStack(alignment: .top) {
@@ -607,39 +616,40 @@ struct ContentView: View {
             VStack(spacing: 2) {
                 Text(greeting)
                     .font(DisplayFont.display(24, .heavy))
-                    .foregroundStyle(ink)
+                    .onValley()
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(Date().formatted(.dateTime.weekday(.wide).day().month(.wide)))
                     .font(AppFont.caption)
-                    .foregroundStyle(ink.opacity(0.7))
+                    .onValley(soft: true)
             }
             .padding(.horizontal, 84)
             .frame(maxWidth: .infinity)
             .padding(.top, topInset + 10)
 
-            // The streak, and under it the guide in the same circle
-            // (Melvin, 2026-09-21: the Guide leaves the tab bar for Block).
+            // The streak, top left, bare on the sky: a bigger flame and its
+            // number, no circle (Aziz, 2026-09-29).
+            streakBadge
+                .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.leading, AppMetrics.screenPadding)
+                .padding(.top, topInset + 2)
+
+            // Top right: Friends, once the Store has its tab (Melvin,
+            // 2026-09-27: "make friends a button"; moved from the left,
+            // Aziz, 2026-09-29), and under it the guide (Melvin, 2026-09-21:
+            // the Guide leaves the tab bar for Block).
             VStack(spacing: 10) {
-                streakBadge
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.streak: $0] }
+                if FeatureFlags.friends && FeatureFlags.shop {
+                    friendsBadge
+                        .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.friendsCircle: $0] }
+                }
                 guideBadge
                     .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.guide: $0] }
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
             .padding(.trailing, AppMetrics.screenPadding)
             .padding(.top, topInset + 6)
-
-            // Friends, in the opposite corner, once the Store has its tab
-            // (Melvin, 2026-09-27: "make friends a button"). Top left rather
-            // than under the guide, where a third circle ran into his bubble.
-            if FeatureFlags.friends && FeatureFlags.shop {
-                friendsBadge
-                    .anchorPreference(key: TourTargetKey.self, value: .bounds) { [.friendsCircle: $0] }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.leading, AppMetrics.screenPadding)
-                    .padding(.top, topInset + 6)
-            }
 
             // The glow a landed session just earned. Under his bubble, so
             // the sparks pass behind the words rather than across them.
@@ -709,9 +719,12 @@ struct ContentView: View {
     /// twenty-five lines of his own and of famous meditators, started at a
     /// different one each day.
     ///
-    /// Nothing here mentions a score, a doorway or a Watch (Melvin,
-    /// 2026-09-22): a session on the phone is the product, and there are
-    /// endless ways to meditate, so he never prescribes one.
+    /// Nothing here mentions a score or a doorway (Melvin, 2026-09-22): a
+    /// session on the phone is the product, and there are endless ways to
+    /// meditate, so he never prescribes one. The one exception is the Apple
+    /// Watch (Aziz, 2026-09-29): with a Watch paired and not yet measuring,
+    /// he nudges toward it. Never without a paired Watch, so nobody is told
+    /// about hardware they do not own.
     private var ottoLines: [String] {
         let cal = Calendar.current
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
@@ -733,6 +746,7 @@ struct ContentView: View {
         if FeatureFlags.block, !block.holding().isEmpty {
             lines.append("I'm holding your apps. A short session and they're yours.")
         }
+        if let nudge = watchNudge { lines.append(nudge) }
         // His mood leads when it is the news: a sad Otto who says nothing
         // about it reads as a bug, and a glowing one has earned a word.
         switch auraStage {
@@ -764,6 +778,19 @@ struct ContentView: View {
             lines.append("Whenever you're ready. One session is all today asks.")
         }
         return lines + OttoSayings.forDay(Date())
+    }
+
+    /// Otto pointing at the Apple Watch, until it is measuring.
+    private var watchNudge: String? {
+        switch watchLink.status {
+        case .noWatch:
+            return nil
+        case .notInstalled:
+            return "Put 808 on your Apple Watch to see how your body settled."
+        case .connected:
+            return sitKindRaw == SitKind.watch.rawValue ? nil
+                : "Turn on your Apple Watch at the plus to see how you settled."
+        }
     }
 
     /// The level the card is showing: the real one, or the one climbing to it
@@ -853,25 +880,26 @@ struct ContentView: View {
                               notNow: FeatureFlags.block ? block.notNowWindows : [])
     }
 
-    /// The streak in the corner, Brainrot's flame and number, on the same
-    /// frosted cream as the Ready screen's rows.
+    /// The streak in the top-left corner, Brainrot's flame and number, bare
+    /// on the sky (Aziz, 2026-09-29: no circle, bigger). The number takes
+    /// the sky's ink for the hour, like the greeting, with a soft shadow so
+    /// it holds on a bright sky and a dark one.
     private var streakBadge: some View {
         let streak = StreakCalculator.streak(from: sessions.map(\.startedAt))
-        return VStack(spacing: 0) {
-            SitArt(name: "home-streak", size: 24)
+        return VStack(spacing: -2) {
+            SitArt(name: "home-streak", size: 44)
+                .shadow(color: .black.opacity(0.18), radius: 4, y: 1)
             Text("\(streak.current)")
-                .font(DisplayFont.display(16, .heavy))
-                .foregroundStyle(AppColor.streakBlushText)
+                .font(DisplayFont.display(26, .heavy))
+                .onValley()
                 .monospacedDigit()
         }
-        .frame(width: 54, height: 54)
-        .background(TileFill(shape: Circle(), opacity: 0.9))
-        .shadow(color: .black.opacity(0.10), radius: 5, y: 2)
+        .frame(minWidth: 54)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(streak.current) day streak")
     }
 
-    /// The how-to guide, in the streak's circle so the two read as a pair.
+    /// The how-to guide, in a circle under Friends.
     private var guideBadge: some View {
         Button { sheet = .guide } label: {
             // No label under it (Melvin, 2026-09-27): the book says it, and
@@ -885,7 +913,7 @@ struct ContentView: View {
         .accessibilityLabel("How to meditate guide")
     }
 
-    /// Friends, in the streak's circle: the two sloths from the tab bar.
+    /// Friends, in a circle, top right: the two sloths from the tab bar.
     private var friendsBadge: some View {
         Button { sheet = .friends } label: {
             // No label under it, like the guide's circle.
@@ -1029,6 +1057,14 @@ struct ContentView: View {
         let otherSits = sits.filter { $0.date != landed.startedAt }
         let before = OttoAura.level(from: otherSits, notNow: windows)
         let after = OttoAura.level(from: sits, notNow: windows)
+        // Derived from session dates and lengths, like the glow itself; never
+        // from anything measured. Once per landed session: `celebrate` runs
+        // once per session (PendingSave is cleared above).
+        let stageBefore = OttoAura.Stage(level: before), stageAfter = OttoAura.Stage(level: after)
+        if stageBefore != stageAfter {
+            Analytics.track(.glowStageChanged(from: String(describing: stageBefore),
+                                              to: String(describing: stageAfter)))
+        }
         ottoLineIndex = 0
         // The reward screen, not a glow on Home (Melvin, 2026-09-27).
         let owned = prefsRows.first?.ownedHatIDList ?? []
@@ -1099,7 +1135,6 @@ struct ContentView: View {
         // queue up as breaking news the moment this build first runs.
         AwardsInbox.catchUpCatalogIfNeeded(with: earned)
         unlockQueue = AwardsInbox.pending(from: earned)
-        for award in unlockQueue { Analytics.track(.awardUnlocked(id: award.id)) }
     }
 
     // MARK: - Header
@@ -1231,7 +1266,7 @@ struct ContentView: View {
     private var debugButtons: some View {
         VStack(alignment: .leading, spacing: 8) {
             Button("Preview the sit") { sitPreviewElapsed = 1 }
-                .font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                .font(AppFont.caption).onValley(soft: true)
         }
     }
     #endif

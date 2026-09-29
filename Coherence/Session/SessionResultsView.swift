@@ -294,10 +294,10 @@ struct SessionResultsView: View {
                     VStack(spacing: 2) {
                         Text(stats == nil ? "Your session" : "Your body")
                             .font(DisplayFont.display(24, .heavy))
-                            .foregroundStyle(ValleyGround.skyInk)
+                            .onValley()
                         Text(metaLine(session))
                             .font(.system(size: 13, weight: .semibold, design: .rounded))
-                            .foregroundStyle(ValleyGround.skyInk.opacity(0.7))
+                            .onValley(soft: true)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 90)
@@ -348,10 +348,10 @@ struct SessionResultsView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(headerWhen(session))
                     .font(AppFont.headline)
-                    .foregroundStyle(AppColor.textPrimary)
+                    .onValley()
                 Text(SessionListSupport.duration(session.durationSec))
                     .font(AppFont.caption)
-                    .foregroundStyle(AppColor.textSecondary)
+                    .onValley(soft: true)
             }
             Spacer()
             HStack(spacing: 6) {
@@ -977,7 +977,7 @@ struct SessionResultsView: View {
             try? await Task.sleep(for: .seconds(2.5))
             guard !Task.isCancelled else { return }
             UserDefaults.standard.set(Date(), forKey: ReviewPrompt.lastAskedKey)
-            Analytics.track(.ratingPrompted)
+            Analytics.track(.ratingPrompted(placement: "results"))
             requestReview()
         }
     }

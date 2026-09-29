@@ -775,6 +775,9 @@ struct DayLight {
     var ringTrack: Color
     var ink: Color
     var inkSoft: Color
+    /// Whether `ink` is the dark (daytime) one. Words drawn on the valley
+    /// take a pale halo when it is and a dark one when it is not.
+    var inkIsDark: Bool
 
     private struct Stop {
         let t: Double
@@ -878,9 +881,31 @@ struct DayLight {
             starOpacity: mix(lo.stars, hi.stars),
             light: mix(lo.light, hi.light),
             ringTrack: c(lo.track, hi.track, mix(lo.trackA, hi.trackA)),
-            ink: c(lo.ink, hi.ink),
-            inkSoft: c(lo.inkSoft, hi.inkSoft)
+            ink: ink(t, soft: false),
+            inkSoft: ink(t, soft: true),
+            inkIsDark: t < inkTurn
         )
+    }
+
+    /// Where words on the valley change from dark to cream (Aziz,
+    /// 2026-09-29: "make sure the contrast is good for all the times in the
+    /// day"). Blending the two inks across the sunset, as the stops used to,
+    /// passed through a mid grey on a mid sky and read at barely 2:1 around
+    /// half past seven. So there is no blend: the ink is dark, then cream.
+    /// Measured against the sky: at 0.36 dark and cream both hold about 3:1
+    /// at the top of the sky, where most words sit, and past it cream wins
+    /// there first. Checked on the simulator at 19.2, 19.75, 19.85 and 23h.
+    static let inkTurn = 0.36
+    private static let dayInk: UInt32 = 0x1F3643, dayInkSoft: UInt32 = 0x3A5767
+    private static let duskInk: UInt32 = 0xFFF6EB, duskInkSoft: UInt32 = 0xF0DCC9
+    private static let nightInk: UInt32 = 0xF3E7D8, nightInkSoft: UInt32 = 0xD2C3B6
+
+    private static func ink(_ t: Double, soft: Bool) -> Color {
+        let dark = soft ? dayInkSoft : dayInk
+        let dusk = soft ? duskInkSoft : duskInk
+        let night = soft ? nightInkSoft : nightInk
+        if t < inkTurn { return blend(dark, dark, 0) }
+        return blend(dusk, night, (t - inkTurn) / (1 - inkTurn))
     }
 
     private static func blend(_ a: UInt32, _ b: UInt32, _ k: Double) -> Color {

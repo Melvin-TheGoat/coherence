@@ -164,16 +164,16 @@ struct SessionActiveView: View {
                 Text(timeString(displaySeconds))
                     .font(DisplayFont.display(ring * 0.26, .heavy))
                     .monospacedDigit()
-                    .foregroundStyle(day.ink)
+                    .onValley(day)
                     .position(x: geo.size.width / 2, y: ringCentreY)
 
                 VStack(spacing: 5) {
                     Text(headline)
                         .font(DisplayFont.display(17))
-                        .foregroundStyle(day.ink)
+                        .onValley(day)
                     Text(subhead)
                         .font(AppFont.caption)
-                        .foregroundStyle(day.inkSoft)
+                        .onValley(soft: true, day)
                     if let planChip, arriving {
                         Text(planChip)
                             .font(AppFont.caption.weight(.bold))

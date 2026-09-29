@@ -148,12 +148,13 @@ struct SaveSessionView: View {
                     Text("\(minutes)")
                         .font(.system(size: 44, weight: .heavy, design: .rounded))
                         .monospacedDigit()
+                        .onValley(day)
                     Text("min")
                         .font(.system(size: 16, weight: .heavy, design: .rounded))
-                        .foregroundStyle(day.inkSoft)
+                        .onValley(soft: true, day)
                 }
-                .foregroundStyle(day.ink)
-                TextField("Title your session", text: $title)
+                TextField("Title your session", text: $title,
+                          prompt: Text("Title your session").foregroundStyle(day.inkSoft))
                     .font(DisplayFont.display(18, .heavy))
                     .foregroundStyle(day.ink)
                     .focused($focused, equals: .title)
@@ -165,7 +166,7 @@ struct SaveSessionView: View {
                     }
                 Text(when)
                     .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(day.inkSoft)
+                    .onValley(soft: true, day)
             }
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.top, 54)
@@ -174,7 +175,7 @@ struct SaveSessionView: View {
             Button(action: onDone) {
                 Image(systemName: "xmark")
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(day.ink)
+                    .foregroundStyle(ValleyGround.ink)
                     .frame(width: 34, height: 34)
                     .background(AppColor.backgroundPrimary.opacity(0.9), in: Circle())
                     .shadow(color: .black.opacity(0.12), radius: 5, y: 2)

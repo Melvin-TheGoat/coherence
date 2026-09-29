@@ -150,7 +150,7 @@ private struct InterventionScene: View {
             ValleyStage(pose: "OttoSit", line: "Zzz... oh, hey. Morning meditation?", doors: doors) { size, ottoTop in
                 Text("z z")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
-                    .foregroundStyle(DayLight.now.inkSoft)
+                    .onValley(soft: true)
                     .position(x: size.width * 0.66, y: ottoTop + 18)
             }
         case .sign:
@@ -613,7 +613,7 @@ private struct BreatheWithMeScene: View {
                     let t = context.date.timeIntervalSince(start).truncatingRemainder(dividingBy: 10)
                     Text(t < 5 ? "Breathe in" : "Breathe out")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(day.ink)
+                        .onValley(day)
                         .position(x: size.width / 2, y: size.height * 0.30)
                 }
                 Image("OttoSit")
@@ -624,7 +624,7 @@ private struct BreatheWithMeScene: View {
                 VStack {
                     Text("One breath with me, then decide.")
                         .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(day.ink)
+                        .onValley(day)
                         .padding(.top, 70)
                     Spacer()
                     DoorButtons(doors: doors, ink: day.ink)
@@ -811,7 +811,7 @@ private struct CountdownScene: View {
                     Text(done ? "Your call" : "Counting down")
                         .font(.system(size: 15, weight: .medium))
                 }
-                .foregroundStyle(DayLight.now.ink)
+                .onValley()
                 .position(x: size.width / 2, y: 118)
             }
         }

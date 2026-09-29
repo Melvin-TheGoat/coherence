@@ -380,8 +380,14 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
-        if response.notification.request.content.userInfo["block"] != nil {
+        let request = response.notification.request
+        if request.content.userInfo["block"] != nil {
             Task { @MainActor in BlockController.shared.requestIntervention() }
+        } else if let kind = Analytics.notificationKind(identifier: request.identifier,
+                                                        userInfo: request.content.userInfo) {
+            // 808's own notifications only. Block's ask is never tracked:
+            // Screen Time's terms keep what Block does on the phone.
+            Analytics.track(.notificationOpened(kind: kind))
         }
         completionHandler()
     }

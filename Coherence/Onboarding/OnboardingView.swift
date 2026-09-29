@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import AuthenticationServices
 import WatchConnectivity
+import HealthKit
 
 /// The onboarding flow — the interview, the reflection, the proof, the offer.
 /// Spec and copy decisions live in `ONBOARDING.md`; the arithmetic behind the
@@ -398,6 +399,11 @@ struct OnboardingView: View {
         HealthConsentScreen {
             Task {
                 await HealthScope.request()
+                // Read access is private to HealthKit; the workout SHARE
+                // answer is not, and it is the one a measured session needs.
+                // A permission state, never a reading.
+                let allowed = HKHealthStore().authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized
+                Analytics.track(.healthPermission(outcome: allowed ? "allowed" : "declined"))
                 // Route after the sheet is dismissed, so the tour never
                 // starts underneath a system prompt.
                 await MainActor.run { go(.wall) }
@@ -876,8 +882,18 @@ struct OnboardingView: View {
 
         case .permission:
             PermissionScreen(reminderTime: $answers.reminderTime,
-                             onAllow: { Task { reminderAllowed = await requestNotifications(); go(afterPermission) } },
-                             onSkip: { reminderAllowed = false; go(afterPermission) })
+                             onAllow: {
+                                 Task {
+                                     reminderAllowed = await requestNotifications()
+                                     Analytics.track(.reminderPermission(outcome: reminderAllowed ? "allowed" : "denied"))
+                                     go(afterPermission)
+                                 }
+                             },
+                             onSkip: {
+                                 reminderAllowed = false
+                                 Analytics.track(.reminderPermission(outcome: "skipped"))
+                                 go(afterPermission)
+                             })
 
         case .week:
             Color.clear.onAppear { go(pastOffer(afterPermission)) }
@@ -953,9 +969,13 @@ struct OnboardingView: View {
         case .signIn:
             SignInScreen(onSignedIn: { credential in
                              signInCredential(credential)
+                             Analytics.track(.signIn(outcome: "signed_in"))
                              afterSignIn()
                          },
-                         onSkip: afterSignIn)
+                         onSkip: {
+                             Analytics.track(.signIn(outcome: "skipped"))
+                             afterSignIn()
+                         })
 
         case .profile:
             // Friends builds only: routing never reaches here when the flag
@@ -1007,10 +1027,27 @@ struct OnboardingView: View {
         let remember = !step.onlyPassesThrough && !step.autoAdvances
             && !(step == .breath && next == .breathing)
         if remember { history.append(step) }
-        // One line covers the whole 26-screen funnel: the step being LEFT is
-        // the one that was completed.
-        Analytics.track(.onboardingStep(id: String(describing: step)))
+        // One line covers the whole funnel: the step being LEFT is the one
+        // that was completed. Hops that were never on screen (a cut step, a
+        // Block or Watch screen this phone skips) send nothing, or the funnel
+        // would count people through screens they never saw.
+        if showedScreen(step) {
+            Analytics.track(.onboardingStep(id: String(describing: step)))
+        }
         show(next, motion: .forward)
+    }
+
+    /// Whether `s` was a real screen on this phone rather than a hop that
+    /// routed straight past on appear. Mirrors the routing in `content`.
+    private func showedScreen(_ s: Step) -> Bool {
+        switch s {
+        // In `onlyPassesThrough` for Back's sake, but a real screen whenever
+        // onboarding sells.
+        case .paywall: return Self.paywallInsideOnboarding
+        case .health: return watchPaired
+        case .profile: return FeatureFlags.friends
+        default: return !s.onlyPassesThrough && !s.isLegacy
+        }
     }
 
     /// Changes the screen with the given motion.
@@ -1126,6 +1163,9 @@ struct OnboardingView: View {
     }
 
     private func finish() {
+        // The tour ends onboarding rather than going to another step, so
+        // `go` never sees it left.
+        if step == .tourHome { Analytics.track(.onboardingStep(id: String(describing: step))) }
         persistAnswers()
     }
 

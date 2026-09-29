@@ -25,39 +25,81 @@ enum Analytics {
 
     /// Every event the app emits. One enum so the full surface is reviewable
     /// in one place; adding a case is a deliberate act, not a string typo.
+    ///
+    /// Rebuilt for 1.1 (2026-09-28). Three more rules on top of the ones
+    /// above, each a promise the privacy policy now makes:
+    /// - **Nothing Block or Screen Time learns** (apps, shield taps, passes,
+    ///   skipped windows, Otto's ask). Apple's Family Controls terms forbid
+    ///   it leaving the phone. The only Block-adjacent event is
+    ///   `paywall_viewed` with placement "block".
+    /// - **No onboarding answers.** Which screen was left, never what was
+    ///   picked on it.
+    /// - **No award that is a threshold on the score** (`Award.Group.depth`):
+    ///   "reached 90" is a banded score by another name.
     enum Event {
         // Onboarding
+        /// A screen was LEFT. Pass-through hops never send it.
         case onboardingStep(id: String)
         case onboardingCompleted
         /// Reopened onboarding on the screen they left (`OnboardingResume`).
         case onboardingResumed(id: String)
-        case watchGate(outcome: String)          // "hasWatch" | "waitlist" | "notYet" | "declined"
+        case signIn(outcome: String)              // "signed_in" | "skipped"
+        case reminderPermission(outcome: String)  // "allowed" | "denied" | "skipped"
+        case healthPermission(outcome: String)    // "allowed" | "declined"
 
         // Core loop
         case sessionStarted(source: String, sound: String)   // source: "phone" | "watch" | "phone_watch"
         /// A sit done without the app, recorded by hand. Nothing about it.
         case sessionLogged
-        case sessionCompleted(durationBand: String, streakBand: String)
+        /// `measured` is whether the Watch's readings were saved with it:
+        /// false on a "phone_watch" or "watch" session is the failure signal
+        /// (the Watch was asked and nothing came back). Never what they read.
+        case sessionCompleted(source: String, measured: Bool, durationBand: String, streakBand: String)
+        /// A Watch-measured sit carried on as a phone sit:
+        /// "no_ack" | "launch_failed" | "ended_before_start".
+        case watchFallback(reason: String)
         /// A session the Watch ended but did not score: "too_short" (under the
-        /// minimum, an accidental Begin/End, not a failure) or "unreadable".
+        /// minimum, an accidental Begin/End, not a failure), "unreadable", or
+        /// "left_app" (a phone sit voided for leaving 808 too long).
         case sessionDiscarded(reason: String, durationBand: String)
+        /// Left 808 mid phone sit; the "come back" notice is armed.
+        case sessionLeftApp
+        /// Came back inside the grace period and the sit carried on.
+        case sessionReturned
         /// The user removed a session from their history. Name only.
         case sessionDeleted
         case sessionStartFailed(reason: String)
+        /// The after-session reward screen. `stageUp` is whether Otto moved
+        /// to a brighter stage, which is practice-derived, never measured.
+        case rewardViewed(stageUp: Bool)
+        /// Otto's glow stage changed with a landed session
+        /// (`OttoAura.Stage` names). Derived from session dates only.
+        case glowStageChanged(from: String, to: String)
         case resultViewed
-        case resultMissing                        // a session ended with no stats: the failure metric
-        case ratingPrompted                       // Apple's rating sheet was requested (it decides whether to show)
+        case resultMissing                        // a measured session with no stats on this phone
+        /// Apple's rating sheet was requested (it decides whether to show):
+        /// "onboarding" | "results".
+        case ratingPrompted(placement: String)
 
         // Monetization
         case paywallViewed(placement: String)
-        case paywallDismissed
-        case trialStarted
-        case purchase(plan: String)
-        case restore
+        /// Closed without buying: swiped away, or moved past while plans
+        /// could not load.
+        case paywallDismissed(placement: String)
+        case planSelected(plan: String, placement: String)
+        case purchaseStarted(plan: String, placement: String)
+        case purchase(plan: String, placement: String)
+        /// "cancelled" | "pending" | "failed"
+        case purchaseFailed(plan: String, placement: String, reason: String)
+        case trialStarted(plan: String)
+        /// The "No, I don't want to pay" ladder. `rung` is
+        /// `DownsellRung.analyticsName`: "trial" | "half_month".
+        case offerViewed(rung: String)
+        case offerAccepted(rung: String)
+        case offerDeclined(rung: String)
+        /// source: "paywall" | "settings"; outcome: "restored" | "nothing" | "failed".
+        case restore(source: String, outcome: String)
         case entitlementLost
-        /// Settled for free 808. `afterRung` is how far down the ladder they
-        /// got first, so we learn whether the downsells do anything at all.
-        case freeTierEntered(afterRung: String)
         /// Tapped a locked curve, tile or trend. The single most useful signal
         /// we have for which piece of evidence actually sells.
         ///
@@ -70,12 +112,26 @@ enum Analytics {
         /// worth developing into a real line.
         case skinLockedTapped(skin: String)
 
+        // Otto's hats, bought with minutes meditated.
+        case hatBought(id: String)
+        case hatWorn(id: String)                  // a hat id, or "none" when taken off
+
+        // Apple Watch
+        /// The "measure with Apple Watch" switch: source "ready" | "settings".
+        case watchSwitch(on: Bool, source: String)
+        case watchSetupOpened(source: String)     // "ready" | "settings"
+        /// The first time a Watch ever answered 808 on this install.
+        case watchConnected
+
         // Engagement
         case shareOpened
         case guideOpened
         case reminderEnabled
-        case notificationOpened
+        /// A tapped notification: "reminder" | "session_end" | "come_back".
+        /// Never Block's "Otto wants a word".
+        case notificationOpened(kind: String)
         case awardUnlocked(id: String)
+        case signedOut
         case accountDeleted
         /// Otto, the on-device data interpreter. Two names and nothing else:
         /// the chat holds heart rates and scores in its prompt, so no
@@ -91,10 +147,8 @@ enum Analytics {
         case friendRequestSent
         case friendAccepted
         case inviteShared
-        case postCreated(photo: Bool)
-        case reactionGiven
         case userBlocked
-        case contentReported(kind: String)   // "post" | "profile"
+        case contentReported(kind: String)   // "profile" (posts are gone)
         case inviteRewarded                  // a brought friend sat; the grant landed
         case profileCreated(photo: Bool)
         case friendsIntroShown               // the one-time prompt for pre-Friends users
@@ -104,30 +158,48 @@ enum Analytics {
             case .onboardingStep: "onboarding_step"
             case .onboardingCompleted: "onboarding_completed"
             case .onboardingResumed: "onboarding_resumed"
-            case .watchGate: "watch_gate"
+            case .signIn: "sign_in"
+            case .reminderPermission: "reminder_permission"
+            case .healthPermission: "health_permission"
             case .sessionStarted: "session_started"
             case .sessionLogged: "session_logged"
             case .sessionCompleted: "session_completed"
+            case .watchFallback: "watch_fallback"
             case .sessionDiscarded: "session_discarded"
+            case .sessionLeftApp: "session_left_app"
+            case .sessionReturned: "session_returned"
             case .sessionDeleted: "session_deleted"
             case .sessionStartFailed: "session_start_failed"
+            case .rewardViewed: "reward_viewed"
+            case .glowStageChanged: "glow_stage_changed"
             case .resultViewed: "result_viewed"
             case .resultMissing: "result_missing"
             case .ratingPrompted: "rating_prompted"
             case .paywallViewed: "paywall_viewed"
             case .paywallDismissed: "paywall_dismissed"
-            case .trialStarted: "trial_started"
+            case .planSelected: "plan_selected"
+            case .purchaseStarted: "purchase_started"
             case .purchase: "purchase"
+            case .purchaseFailed: "purchase_failed"
+            case .trialStarted: "trial_started"
+            case .offerViewed: "offer_viewed"
+            case .offerAccepted: "offer_accepted"
+            case .offerDeclined: "offer_declined"
             case .restore: "restore"
             case .entitlementLost: "entitlement_lost"
-            case .freeTierEntered: "free_tier_entered"
             case .lockedTapped: "locked_tapped"
             case .skinLockedTapped: "skin_locked_tapped"
+            case .hatBought: "hat_bought"
+            case .hatWorn: "hat_worn"
+            case .watchSwitch: "watch_switch"
+            case .watchSetupOpened: "watch_setup_opened"
+            case .watchConnected: "watch_connected"
             case .shareOpened: "share_opened"
             case .guideOpened: "guide_opened"
             case .reminderEnabled: "reminder_enabled"
             case .notificationOpened: "notification_opened"
             case .awardUnlocked: "award_unlocked"
+            case .signedOut: "signed_out"
             case .accountDeleted: "account_deleted"
             case .ottoOpened: "otto_opened"
             case .ottoAsked: "otto_asked"
@@ -136,8 +208,6 @@ enum Analytics {
             case .friendRequestSent: "friend_request_sent"
             case .friendAccepted: "friend_accepted"
             case .inviteShared: "invite_shared"
-            case .postCreated: "post_created"
-            case .reactionGiven: "reaction_given"
             case .userBlocked: "user_blocked"
             case .contentReported: "content_reported"
             case .inviteRewarded: "invite_rewarded"
@@ -146,31 +216,72 @@ enum Analytics {
             }
         }
 
-        var properties: [String: String] {
+        /// Strings, plus real booleans where a property is a yes or no, so
+        /// PostHog types them as booleans. The two older yes/no properties
+        /// (`photo`) keep their "yes"/"no" strings so old data still lines up.
+        /// `duration` and `streak` keep their pre-1.1 keys for the same reason.
+        var properties: [String: Any] {
             switch self {
             // `step` is the routing id (what the code calls the screen);
             // `screen` is the numbered human name a dashboard can be read by.
             // Both ship, so old funnels keep working and new ones read plainly.
-            case .onboardingStep(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
+            case .onboardingStep(let id):
+                ["step": id, "screen": Analytics.onboardingScreenName(for: id), "flow": Analytics.appFlow]
             case .onboardingResumed(let id): ["step": id, "screen": Analytics.onboardingScreenName(for: id)]
-            case .watchGate(let outcome): ["outcome": outcome]
+            case .signIn(let outcome), .reminderPermission(let outcome), .healthPermission(let outcome):
+                ["outcome": outcome]
             case .sessionStarted(let source, let sound): ["source": source, "sound": sound]
-            case .sessionLogged: [:]
-            case .sessionCompleted(let d, let s): ["duration": d, "streak": s]
+            case .sessionCompleted(let source, let measured, let d, let s):
+                ["source": source, "measured": measured, "duration": d, "streak": s]
+            case .watchFallback(let reason): ["reason": reason]
             case .sessionDiscarded(let reason, let d): ["reason": reason, "duration": d]
             case .sessionStartFailed(let reason): ["reason": reason]
-            case .paywallViewed(let placement): ["placement": placement]
-            case .purchase(let plan): ["plan": plan]
-            case .awardUnlocked(let id): ["id": id]
-            case .freeTierEntered(let rung): ["after_rung": rung]
+            case .rewardViewed(let stageUp): ["stage_up": stageUp]
+            case .glowStageChanged(let from, let to): ["from": from, "to": to]
+            case .ratingPrompted(let placement): ["placement": placement]
+            case .paywallViewed(let placement), .paywallDismissed(let placement): ["placement": placement]
+            case .planSelected(let plan, let placement), .purchaseStarted(let plan, let placement),
+                 .purchase(let plan, let placement):
+                ["plan": plan, "placement": placement]
+            case .purchaseFailed(let plan, let placement, let reason):
+                ["plan": plan, "placement": placement, "reason": reason]
+            case .trialStarted(let plan): ["plan": plan]
+            case .offerViewed(let rung), .offerAccepted(let rung), .offerDeclined(let rung): ["rung": rung]
+            case .restore(let source, let outcome): ["source": source, "outcome": outcome]
             case .lockedTapped(let signal): ["signal": signal]
             case .skinLockedTapped(let skin): ["skin": skin]
-            case .postCreated(let photo): ["photo": photo ? "yes" : "no"]
+            case .hatBought(let id), .hatWorn(let id): ["hat_id": id]
+            case .watchSwitch(let on, let source): ["on": on, "source": source]
+            case .watchSetupOpened(let source): ["source": source]
+            case .notificationOpened(let kind): ["kind": kind]
+            case .awardUnlocked(let id): ["id": id]
             case .contentReported(let kind): ["kind": kind]
             case .profileCreated(let photo): ["photo": photo ? "yes" : "no"]
             default: [:]
             }
         }
+    }
+
+    /// Which onboarding the person went through, on every step and as a
+    /// person property, so funnels can be split by flow as it keeps changing.
+    static let appFlow = "1.1"
+
+    /// The award event, or nil for an award that must never be sent: the
+    /// `.depth` group is a threshold on the score (score50/75/90), and a
+    /// score inherits HealthKit's 5.1.3 disclosure ban.
+    static func awardUnlocked(_ award: Award) -> Event? {
+        award.group == .depth ? nil : .awardUnlocked(id: award.id)
+    }
+
+    /// Which of 808's own notifications was tapped, or nil for anything
+    /// else. Block's "Otto wants a word" is deliberately nil: Screen Time's
+    /// terms keep everything Block does on the phone.
+    static func notificationKind(identifier: String, userInfo: [AnyHashable: Any]) -> String? {
+        if userInfo["block"] != nil { return nil }
+        if userInfo[SessionEndNotice.userInfoKey] != nil { return "session_end" }
+        if userInfo[LeftAppNotice.userInfoKey] != nil { return "come_back" }
+        if identifier == NotificationScheduler.reminderID { return "reminder" }
+        return nil
     }
 
     /// The PostHog project API key. A PUBLISHABLE client key, not a secret,
@@ -211,6 +322,54 @@ enum Analytics {
         sink = { event in
             PostHogSDK.shared.capture(event.name, properties: event.properties)
         }
+        personSink = { props in
+            PostHogSDK.shared.setPersonProperties(userPropertiesToSet: props)
+        }
+        started = true
+        // Anything set before the SDK existed (WatchLink reads the pairing
+        // at launch, before this runs) goes now.
+        personSink(person)
+        #endif
+    }
+
+    /// Whether `start()` set the SDK up. Release only; DEBUG never does.
+    private static var started = false
+
+    // MARK: - Person properties
+
+    /// Facts about this install, set on the ANONYMOUS PostHog person so a
+    /// funnel can be split by them. Never an identify, never a name. Approved
+    /// with the product owner (2026-09-28), and the list is closed:
+    /// - `is_subscriber` (Bool) and `plan` (a `SubscriptionPlan` raw value,
+    ///   or "none"), from the store's entitlement.
+    /// - `has_paired_watch` (Bool), from WatchConnectivity.
+    /// - `app_flow` ("1.1").
+    /// Nothing measured, nothing Block knows, no onboarding answer.
+    private static var person: [String: Any] = ["app_flow": appFlow]
+
+    static func setPersonProperties(_ props: [String: Any]) {
+        person.merge(props) { _, new in new }
+        personSink(props)
+    }
+
+    /// Where person properties go. Swapped for PostHog by `start()`.
+    private static var personSink: ([String: Any]) -> Void = { props in
+        #if DEBUG
+        Logger(subsystem: "com.lockout.meditate808", category: "analytics")
+            .debug("person \(props, privacy: .public)")
+        #endif
+    }
+
+    /// A new anonymous person: after sign-out and account deletion, so the
+    /// next person on this phone is not stitched to the last one. The
+    /// device facts (`person`) and the team flag are true of the phone, not
+    /// the person, so they are set again straight away.
+    static func reset() {
+        #if !DEBUG
+        guard started else { return }
+        PostHogSDK.shared.reset()
+        applyTeamDevice()
+        personSink(person)
         #endif
     }
 
@@ -250,90 +409,97 @@ enum Analytics {
     /// The numbered human name for each onboarding screen, keyed by the
     /// routing id (`String(describing: OnboardingView.Step)`). Read by the
     /// PostHog funnels, which nobody but the author could follow while they
-    /// showed `relief` and `proofYourWay`. Letters mark branch screens a
-    /// persona may never see, so a funnel over the numbered ones is one every
-    /// user walks. `AnalyticsScreenNamesTests` fails the build if a Step case
-    /// is added without a name here.
+    /// showed `relief` and `proofYourWay`.
+    ///
+    /// **Renumbered for 1.1 (2026-09-28) in today's order**, walked from
+    /// `OnboardingView`'s routing. Two digits are screens every person sees,
+    /// in the order they see them; a letter marks a screen only some phones
+    /// show (a paired Watch, a Block or Friends build), so a funnel over the
+    /// plain numbers is one everyone walks. Cut screens start "zz" so they
+    /// sort last and read as gone; they keep a name because an old resume
+    /// record can still land on one. The KEYS never change, so funnels built
+    /// on `step` survive every renumbering. `AnalyticsScreenNamesTests` fails
+    /// the build if a Step case is added without a name here.
     static func onboardingScreenName(for id: String) -> String {
         onboardingScreenNames[id] ?? "?? \(id)"
     }
 
     private static let onboardingScreenNames: [String: String] = [
-        // Renamed for the v3 opening (2026-09-20). The KEYS are unchanged, so
-        // every funnel built on them keeps working across the change; only
-        // what a human reads in the sheet moves.
         "relief":            "01 Welcome, Otto waves",
-        "breath":            "02 Let's take three breaths",
-        "breathing":         "03 Breathe in, breathe out",
-        "meetOtto":          "03a Meet your meditating partner: Otto",
-        "ottoGrows":         "03a2 The more you meditate, the more enlightened he becomes",
-        "seeForYourself":    "03a3 See for yourself: drag Otto through his looks",
-        "clutter":           "03a4 Clarity is within reach; your mind is just cluttered",
-        "questionCount":     "03b Let's personalize 808 for you (how many questions)",
-        "whatsWaiting":      "23b Here's what's waiting (cut 2026-09-22)",
-        "blockIntro":        "23c Otto can hold your apps (cut 2026-09-22)",
-        "auraDemo":          "23d Drag to see Otto brighten (cut 2026-09-22, now the stress screen)",
-        "baseline":          "04g How often do you meditate right now? (slider, after Did you know since 2026-09-25)",
-        "wandering":         "04b1 How much of your day is your mind somewhere else?",
-        "recovery":          "04b2 How quickly do you settle back down? (cut 1.1)",
-        "whyItWorks":        "04p How 808 makes meditation stick",
-        "research":          "04q 808 is built on research",
-        "socialProof":       "04r Made for people like you (rating ask)",
-        "thisWeek":          "04s In 1 week, 808 will help you",
-        "ascend":            "04t Ready to take control? (hold to ascend)",
-        "attentionHacked":   "04o Your attention has been hacked",
-        "lifeMoments":       "04n N more years of family, fun, the beauty of this world",
-        "goodNews":          "04m The good news is (a quarter of it back)",
-        "lifeDots":          "04l This is your life (the dots)",
-        "lifePause":         "04k What would you do with N years of being fully here?",
-        "lifeNumber":        "04j You're on track to spend N years (the seasons clip)",
-        "mindProfile":       "04i Your mind profile (five Ottos, Headspace and Emotional balance)",
-        "buildingPlan":      "04h Putting together your plan (reads the answers back)",
-        "age":               "04e2 How old are you?",
-        "didYouKnow":        "04f Did you know? (four sourced facts)",
-        "habitHistory":      "04e Have you tried to make meditation a habit before?",
-        "quietTime":         "04d When could you fit in a few quiet minutes?",
-        "role":              "04c Which one sounds most like you?",
-        "obstacles":         "04b What usually gets in the way of meditating?",
-        "motivation":        "04 What's your goal with meditation? (pick any, first question since 2026-09-23)",
-        "stress":            "05 How stressed lately?",
-        "aloneWithThoughts": "06a Alone with your thoughts? (cut 1.1)",
-        "doingNothing":      "06b How long doing nothing? (cut 1.0.2)",
-        "restarts":          "07a What made you stop? (restarters)",
-        "intendedFor":       "07b How long meaning to start? (newcomers)",
-        "bodyCuriosity":     "08a Wonder what your body is doing? (not newcomers) (cut 2026-09-23)",
-        "bodyProof":         "08b How do you know it worked? (cut 1.0.2)",
-        "bodyTracking":      "09 What do you already track?",
-        "hardware":          "10 The hardware you'd otherwise need (off the path since 1.0.2)",
-        "blindSpot":         "11 What can't you tell about your practice? (regulars)",
-        "watchGate":         "12 Do you have an Apple Watch? (cut 2026-09-22)",
-        "watchSetup":        "12a 808 goes on your Watch (cut 2026-09-22)",
-        "waitlist":          "12b No-Watch waitlist (cut 2026-09-22)",
-        "anchor":            "13 When will you actually meditate? (cut 1.0.2)",
-        "you":               "14 What should we call you? (cut 1.1)",
-        "referral":          "02b How did you find us?",   // first question since 1.0.2; was 15
-        "calculating":       "16 Calculating your plan (cut 1.1)",
-        "result":            "17 Here's what you told us (cut 1.1)",
-        "cost":              "17b The cost (not routed to) (cut 1.1)",
-        "wall":              "31b The wall: you'd be in company (before the paywall since 1.0.2) (cut 1.1)",
-        "blockApps":         "31c Which apps should Otto hold? (Block builds only)",
-        "blockSchedule":     "31d When should Otto hold them? (Block builds only)",
-        "proofBody":         "19 Proof: the body is visible (cut 1.0.2)",
-        "sampleStart":       "20 Sample session: start (cut 1.1)",
-        "sampleBuild":       "21 Sample session: the score builds (cut 1.1)",
-        "proofYourWay":      "22 Proof: your way (cut 1.0.2)",
-        "commitment":        "23 Make it a promise (cut 1.1)",
-        "permission":        "24 One nudge at your time (notifications)",
-        "week":              "25 Your first week (cut 1.0.2)",
-        "rating":            "26 Does this sound like it'd work? (cut 1.0.2)",
-        "health":            "27 Health data consent (Watch paired only since 2026-09-22)",
-        "tourHome":          "28 Tour: this is home",
-        "watchConnect":      "29 Tour: put your Watch on (cut 1.1)",
-        "breathe":           "30 Tour: two-minute demo (cut 1.0.2)",
-        "sessionResults":    "31 Tour: demo results (cut 1.0.2)",
-        "paywall":           "32 Paywall (after the ascend screen since 1.1)",
-        "signIn":            "33 Sign in with Apple",
-        "profile":           "34 Create your profile (Friends builds)",
+        "breath":            "02 One breath (starts by itself)",
+        "breathing":         "03 One breath done (in 4, hold 2, out 4)",
+        "meetOtto":          "04 Meet your meditating partner: Otto",
+        "ottoGrows":         "05 The more you meditate, the brighter he gets",
+        "seeForYourself":    "06 See for yourself (drag Otto's glow)",
+        "clutter":           "07 Your mind is just cluttered",
+        "questionCount":     "08 Let's personalize 808 for you",
+        "motivation":        "09 What's your goal with meditation?",
+        "obstacles":         "10 What usually gets in the way?",
+        "stress":            "11 How stressed have you been lately?",
+        "wandering":         "12 How much of your day is your mind elsewhere?",
+        "role":              "13 Which one sounds most like you?",
+        "quietTime":         "14 When could you fit in a few quiet minutes?",
+        "habitHistory":      "15 Tried to make meditation a habit before?",
+        "age":               "16 How old are you?",
+        "didYouKnow":        "17 Did you know? (four sourced facts)",
+        "baseline":          "18 How often do you meditate right now?",
+        "buildingPlan":      "19 Tailoring 808 to you",
+        "mindProfile":       "20 Your mind profile",
+        "lifeNumber":        "21 N years with your mind elsewhere (seasons clip)",
+        "lifePause":         "22 What would you do with N years?",
+        "lifeDots":          "23 This is your life (the dots)",
+        "goodNews":          "24 The good news (a quarter back)",
+        "lifeMoments":       "25 N more years of family, fun, this world",
+        "attentionHacked":   "26 Your attention has been hacked",
+        "whyItWorks":        "27 How 808 makes meditation stick",
+        "research":          "28 808 is built on research",
+        "socialProof":       "29 Made for people like you (rating ask)",
+        "thisWeek":          "30 In 1 week, 808 will help you",
+        "ascend":            "31 Ready to take control? (hold to ascend)",
+        "paywall":           "32 Paywall",
+        "permission":        "33 One nudge at your time (notifications)",
+        "health":            "33a Health consent (Watch paired)",
+        "blockApps":         "33b Which apps should Otto hold? (Block builds)",
+        "blockSchedule":     "33c When should Otto hold them? (Block builds)",
+        "signIn":            "34 Sign in with Apple",
+        "profile":           "34a Create your profile (Friends builds)",
+        "tourHome":          "35 Tour: this is home",
+
+        // Cut. Never sent any more (`go` skips pass-through hops); named so
+        // an old resume record, or an old event in a breakdown, still reads.
+        "recovery":          "zz How quickly do you settle back down? (cut)",
+        "whatsWaiting":      "zz Here's what's waiting (cut)",
+        "blockIntro":        "zz Otto can hold your apps (cut)",
+        "auraDemo":          "zz Drag to see Otto brighten (cut)",
+        "aloneWithThoughts": "zz Alone with your thoughts? (cut)",
+        "doingNothing":      "zz How long doing nothing? (cut)",
+        "referral":          "zz How did you find us? (cut)",
+        "restarts":          "zz What made you stop? (cut)",
+        "intendedFor":       "zz How long meaning to start? (cut)",
+        "bodyCuriosity":     "zz Wonder what your body is doing? (cut)",
+        "bodyProof":         "zz How do you know it worked? (cut)",
+        "bodyTracking":      "zz What do you already track? (cut)",
+        "hardware":          "zz The hardware you'd otherwise need (cut)",
+        "blindSpot":         "zz What can't you tell about your practice? (cut)",
+        "watchGate":         "zz Do you have an Apple Watch? (cut)",
+        "watchSetup":        "zz 808 goes on your Watch (cut)",
+        "waitlist":          "zz No-Watch waitlist (cut)",
+        "anchor":            "zz When will you actually meditate? (cut)",
+        "you":               "zz What should we call you? (cut)",
+        "calculating":       "zz Calculating your plan (cut)",
+        "result":            "zz Here's what you told us (cut)",
+        "cost":              "zz The cost (cut)",
+        "wall":              "zz The wall: you'd be in company (cut)",
+        "proofBody":         "zz Proof: the body is visible (cut)",
+        "sampleStart":       "zz Sample session: start (cut)",
+        "sampleBuild":       "zz Sample session: the score builds (cut)",
+        "proofYourWay":      "zz Proof: your way (cut)",
+        "commitment":        "zz Make it a promise (cut)",
+        "week":              "zz Your first week (cut)",
+        "rating":            "zz Does this sound like it'd work? (cut)",
+        "watchConnect":      "zz Tour: put your Watch on (cut)",
+        "breathe":           "zz Tour: two-minute demo (cut)",
+        "sessionResults":    "zz Tour: demo results (cut)",
     ]
 
     /// Where events go. `start()` swaps this to PostHog when a key is set;

@@ -265,9 +265,8 @@ struct PaywallScreen: View {
     /// A purchase is in flight. Without it, taps landing while the StoreKit
     /// sheet animates up each queue their own purchase.
     @State private var buying = false
-    /// The deepest rung the user actually saw, so `free_tier_entered` can say
-    /// how far the ladder got before they settled.
-    @State private var lastRung: DownsellRung?
+    /// `paywall_dismissed` is sent at most once per visit.
+    @State private var trackedDismiss = false
     @State private var legalDoc: LegalDoc?
     /// What is covering the prices right now. Nil means the prices are showing.
     ///
@@ -491,20 +490,21 @@ struct PaywallScreen: View {
                     // price, no renewal statement and no legal links: the
                     // textbook 3.1.2 rejection. One screen holds every
                     // disclosure; every sale goes through it.
+                    Analytics.track(.offerAccepted(rung: current.analyticsName))
                     plan = current.plan
                     route = nil
                 } onDecline: {
+                    Analytics.track(.offerDeclined(rung: current.analyticsName))
                     // Straight to the next rung. After the last one: the
                     // free tier, or, while 808 is premium only
                     // (`Monetization`), back to the plans, since there is
                     // no free 808 to settle into.
                     if let next = firstRung(after: current) {
-                        route = .rung(next)
+                        showRung(next)
                     } else {
                         declinedAll = true
                         route = Monetization.premiumOnly ? nil : .freeTier
                     }
-                    lastRung = current
                 }
             case .freeTier:
                 FreeTierScreen(trialEligible: offerTrial, trialDays: store.trialDays) {
@@ -517,8 +517,6 @@ struct PaywallScreen: View {
                     plan = .monthly
                     route = nil
                 } onContinueFree: {
-                    Analytics.track(.freeTierEntered(
-                        afterRung: lastRung?.analyticsName ?? "none"))
                     route = nil
                     onDone(false)
                 }
@@ -545,6 +543,15 @@ struct PaywallScreen: View {
             guard !trackedView else { return }
             trackedView = true
             Analytics.track(.paywallViewed(placement: placement))
+        }
+        // Closed without buying: a sheet swiped away, or moved past while the
+        // plans could not load. Not while a rung covers the prices (a full
+        // screen cover takes the paywall off screen too), and not once they
+        // own it: a purchase or restore is not a dismissal.
+        .onDisappear {
+            guard route == nil, !started, !store.entitled, !trackedDismiss else { return }
+            trackedDismiss = true
+            Analytics.track(.paywallDismissed(placement: placement))
         }
     }
 
@@ -581,7 +588,7 @@ struct PaywallScreen: View {
             // trial, then the first month at half. Once both are declined the
             // link goes, and the plans are what is left.
             if !declinedAll, let first = firstRung() {
-                Button("No, I don't want to pay") { route = .rung(first) }
+                Button("No, I don't want to pay") { showRung(first) }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary.opacity(0.8))
             }
@@ -600,7 +607,7 @@ struct PaywallScreen: View {
 
     private func planCard(_ p: SubscriptionPlan, compact: Bool) -> some View {
         let chosen = plan == p
-        return Button { plan = p } label: {
+        return Button { select(p) } label: {
             HStack(spacing: 13) {
                 ZStack {
                     Circle()
@@ -701,25 +708,48 @@ struct PaywallScreen: View {
             return
         }
         buying = true
+        let buyingPlan = plan
+        Analytics.track(.purchaseStarted(plan: buyingPlan.rawValue, placement: placement))
         Task { @MainActor in
             defer { buying = false }
-            if await store.purchase(plan) == .bought {
+            switch await store.purchase(buyingPlan) {
+            case .bought:
                 // Lifetime carries no introductory offer, so it can never be a
                 // trial however eligible the buyer still is for the
                 // subscription group's free week.
-                if trialNow { Analytics.track(.trialStarted) }
-                Analytics.track(.purchase(plan: plan.rawValue))
+                if trialNow { Analytics.track(.trialStarted(plan: buyingPlan.rawValue)) }
+                Analytics.track(.purchase(plan: buyingPlan.rawValue, placement: placement))
                 started = true
                 onDone(true)
+            case .cancelled:
+                Analytics.track(.purchaseFailed(plan: buyingPlan.rawValue, placement: placement, reason: "cancelled"))
+            case .pending:
+                Analytics.track(.purchaseFailed(plan: buyingPlan.rawValue, placement: placement, reason: "pending"))
+            case .unavailable:
+                Analytics.track(.purchaseFailed(plan: buyingPlan.rawValue, placement: placement, reason: "failed"))
             }
         }
     }
 
+    /// A plan card tapped. Only a change is sent: a second tap on the lit
+    /// card says nothing new.
+    private func select(_ p: SubscriptionPlan) {
+        if p != plan { Analytics.track(.planSelected(plan: p.rawValue, placement: placement)) }
+        plan = p
+    }
+
+    /// Covers the prices with a rung of the "No, I don't want to pay" ladder.
+    private func showRung(_ rung: DownsellRung) {
+        Analytics.track(.offerViewed(rung: rung.analyticsName))
+        route = .rung(rung)
+    }
+
     private func restore() {
         Task { @MainActor in
-            await store.restore()
+            let synced = await store.restore()
+            let outcome = store.entitled ? "restored" : synced ? "nothing" : "failed"
+            Analytics.track(.restore(source: "paywall", outcome: outcome))
             if store.entitled {
-                Analytics.track(.restore)
                 onDone(true)
             }
         }
