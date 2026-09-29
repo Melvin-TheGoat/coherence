@@ -1,9 +1,9 @@
 # The Science Behind 808
 
-**The short version:** 808 measures three things from your Apple Watch. How **still** your body
-is, how your **heart rate settles**, and, when you breathe slowly, your **breathing rate**. All
-three are bodily signs of a deep meditative state. You see them after the session, never during,
-because a number you can watch is a number you start chasing.
+**The short version:** when you meditate with an Apple Watch, 808 measures three things from it.
+How **still** your body is, how your **heart rate settles**, and, when you breathe slowly, your
+**breathing rate**. All three are bodily signs of a deep meditative state. You see them after the
+session, never during, because a number you can watch is a number you start chasing.
 
 ## The state you're reaching for
 
@@ -31,15 +31,15 @@ There is no posture to hold and no placement to get right. Sit or lie however yo
 wherever they fall.
 
 Slow breathing is what it reads best. Around four to seven breaths a minute, the movement is
-large enough and regular enough to come back clearly, which is also the pace worth practising
+large enough and regular enough to come back clearly, which is also the pace worth practicing
 for its own sake. See below.
 
 ## Why about six breaths a minute
 
 Near six breaths per minute, breathing, heart and blood pressure fall into step, through
 respiratory sinus arrhythmia and the baroreflex, and the nervous system settles into one ordered
-rhythm.<sup>[5]</sup> That slow, even pace is the quickest way into the state 808 is looking for,
-which is why your breath counts for more of your score than anything else we measure.
+rhythm.<sup>[5]</sup> That slow, even pace is a quick way into the state 808 is looking for,
+which is why slowing your breath early in a session counts toward your score.
 
 ## What the practice does
 
@@ -55,14 +55,16 @@ cardiovascular risk, while saying plainly that the overall quality and quantity 
 are modest, and that it is an addition and never a replacement for the treatment your doctor
 prescribes.<sup>[9]</sup>
 
-The most cited long-term trial randomized 201 Black adults who already had coronary heart
-disease to Transcendental Meditation or a health education class, and followed them a median of
-5.4 years. The meditation group had **48% fewer deaths, heart attacks and strokes**.<sup>[10]</sup>
-That is a real result and we are not going to oversell it. The trial was run by the university
+The most cited long-term trial, which had nothing to do with 808, randomized 201 Black adults who
+already had coronary heart disease to Transcendental Meditation or a health education class, and
+followed them a median of 5.4 years. The researchers reported that the meditation group had
+**48% fewer deaths, heart attacks and strokes** than the health education group.<sup>[10]</sup>
+That is their result, and we are not going to oversell it. The trial was run by the university
 institute that teaches the technique, an earlier version of the paper was withdrawn by
 *Archives of Internal Medicine* before being reanalyzed and published elsewhere, and it studied
-one technique in one population that was already ill. It is a reason to take the practice
-seriously. It is not a promise about your heart, and 808 measures nothing cardiovascular.
+one technique in one population that was already ill. It is a reason researchers take the
+practice seriously. It is not a finding about 808 and not a promise about your heart: 808
+measures nothing cardiovascular, and it is no substitute for the care your doctor provides.
 
 ## What none of this proves
 

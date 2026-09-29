@@ -5,9 +5,12 @@ import HealthKit
 /// target — the iOS target only calls `startWatchApp` (Phase 4) and reads no
 /// biometric data.
 ///
-/// Scope: heart-rate READ (the deceleration signal), **HRV SDNN READ**, and
-/// workout SHARE (to run the `.mindAndBody` session that keeps the app active
-/// and streams HR).
+/// Scope: heart-rate READ (the deceleration signal) and workout SHARE (to run
+/// the `.mindAndBody` session that keeps the app active and streams HR).
+/// **HRV SDNN is no longer requested** (2026-09-29, App Review 5.1.1(iii)):
+/// the pipeline below was never switched on, so the permission bought the
+/// user nothing. The history stays because it explains why HRV is reachable
+/// when there is a feature that needs it.
 ///
 /// **HRV and heart coherence are not the same thing, and only one of them is
 /// out of reach.** This file used to say "no HRV / heartbeat-series, those were

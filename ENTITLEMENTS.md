@@ -1,5 +1,18 @@
 # Entitlements: the free tier and what paying unlocks
 
+> **STATUS 2026-09-29: 1.1 is PREMIUM ONLY, and the free tier below is
+> DORMANT.** `Monetization.premiumOnly = true` (Melvin and Aziz, 2026-09-23):
+> nothing past the paywall opens without buying or restoring, onboarding ends
+> on the paywall, and anyone without a subscription meets it again at launch.
+> `Monetization.freeTrial = false` (Aziz, 2026-09-26): Monthly and Yearly carry
+> no trial. Declining opens a two-rung ladder, `monthlytrial` (a free trial)
+> then `monthly50` ($3.99 a month after a 3-day free trial), and each rung
+> returns to the paywall to buy. Lifetime is restore-only; `yearly50` is sold
+> by no screen. Everything below (`Entitlements`, `FreeTierScreen`, the
+> numberless verdict, the locked panels) still compiles and is still tested,
+> and describes what switching `premiumOnly` off would bring back. It is not
+> what 1.1 ships. Current product setup: `APP_STORE.md`, "In-app purchases".
+>
 > **Changed since (checked in the 2026-09-23 sweep).** The gate is now
 > `paid: entitled || state == .loading` (2026-09-12), so `.unavailable` is
 > FREE; the code sample under "Where the gate lives" shows the older rule

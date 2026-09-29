@@ -54,6 +54,14 @@ struct RootView: View {
         #endif
     }
 
+    /// Whether any session is stored on this phone. A count with a limit of
+    /// one, read only while the lock is up, so it costs nothing elsewhere.
+    private var hasPastSession: Bool {
+        var d = FetchDescriptor<Session>()
+        d.fetchLimit = 1
+        return ((try? context.fetchCount(d)) ?? 0) > 0
+    }
+
     var body: some View {
         Group {
             #if DEBUG
@@ -74,7 +82,12 @@ struct RootView: View {
         Group {
             if preferences.contains(where: { $0.onboardingComplete }) {
                 if premiumLock {
-                    PaywallScreen(placement: "root_lock", plan: $lockPlan) { _ in }
+                    // It carries an Account link (manage, redeem, sign out,
+                    // delete: 5.1.1(v)), and for somebody who already has
+                    // sessions here, which is every 1.0 user who updates, the
+                    // line that says none of it is gone (Melvin, 2026-09-29).
+                    PaywallScreen(placement: "root_lock", memberNotice: hasPastSession,
+                                  plan: $lockPlan) { _ in }
                 } else {
                     // Home's night dim, for every tab and every sheet.
                     ContentView().environment(\.tileDim, ContentView.tileDim)

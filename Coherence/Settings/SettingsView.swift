@@ -19,23 +19,11 @@ struct SettingsView: View {
                 if let user = currentUser, let prefs = preferences.first {
                     SettingsForm(user: user, prefs: prefs, onDone: { dismiss() },
                                  onSignOut: {
-                                     Analytics.track(.signedOut)
-                                     // A new anonymous person from here: the
-                                     // next one on this phone is not them.
-                                     Analytics.reset()
-                                     SessionStore.signOut(in: context); OttoChatStore.deleteAll(); dismiss()
+                                     AccountActions.signOut(in: context)
+                                     dismiss()
                                  },
                                  onDelete: {
-                                     Analytics.track(.accountDeleted)
-                                     Analytics.reset()
-                                     SessionStore.softDeleteCurrentUser(in: context); OttoChatStore.deleteAll()
-                                     // Friends: the public profile, posts and
-                                     // reactions go too, not just the local
-                                     // sign-out (5.1.1(v)). Fire-and-forget —
-                                     // a slow or offline delete must not hold
-                                     // up the sheet dismissing, and a failure
-                                     // retries on the next launch.
-                                     Task { await community.deleteAccountData() }
+                                     AccountActions.deleteAccount(in: context, community: community)
                                      dismiss() })
                 } else {
                     Text("No account").foregroundStyle(AppColor.textSecondary)
@@ -49,6 +37,251 @@ struct SettingsView: View {
     }
 }
 
+// MARK: - Account actions, shared
+
+/// Sign out, account deletion and the App Store's own membership sheets: the
+/// ONE code path Settings and the launch paywall's Account page both run
+/// (Melvin, 2026-09-29). The launch lock is the only 808 a lapsed or updating
+/// member can reach, and App Review 5.1.1(v) wants deletion reachable from
+/// inside the app, so these could not stay private to Settings, and two
+/// copies would drift the first time one of them was touched.
+@MainActor
+enum AccountActions {
+    static let signOutTitle = "Sign out?"
+    /// Signing out is allowed (paid or not), but it has to say what it costs:
+    /// the local data stays, the roaming stops. Without this line a paid user
+    /// could sign out, lose the phone, and discover the streak they were
+    /// paying to protect died with it.
+    static let signOutMessage = "Your sessions and streak stay on this phone, but they stop syncing to iCloud until you sign back in. A lost phone would mean losing them."
+
+    static let deleteTitle = "Delete your account?"
+    /// The 30-day grace period is real, but it only covers the local account;
+    /// a public Friends profile is not something we can leave sitting around
+    /// in the meantime for other people to see. No mention of posts: there
+    /// are none to delete since posting was removed (2026-09-27).
+    static var deleteMessage: String {
+        FeatureFlags.friends
+            ? "Your account and sessions are removed after 30 days. Sign back in before then to restore them. Your Friends profile and connections are deleted right away."
+            : "Your account and sessions are removed after 30 days. Sign back in before then to restore them."
+    }
+
+    static func signOut(in context: ModelContext) {
+        Analytics.track(.signedOut)
+        // A new anonymous person from here: the next one on this phone is not
+        // them.
+        Analytics.reset()
+        SessionStore.signOut(in: context)
+        OttoChatStore.deleteAll()
+    }
+
+    static func deleteAccount(in context: ModelContext, community: CommunityModel) {
+        Analytics.track(.accountDeleted)
+        Analytics.reset()
+        SessionStore.softDeleteCurrentUser(in: context)
+        OttoChatStore.deleteAll()
+        // Friends: the public profile and everything it wrote go too, not
+        // just the local sign-out (5.1.1(v)). Fire-and-forget: a slow or
+        // offline delete must not hold up the screen, and a failure retries
+        // on the next launch (`CommunityModel.retryPendingDeletion`).
+        Task { await community.deleteAccountData() }
+    }
+
+    private static var scene: UIWindowScene? {
+        UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+    }
+
+    /// Apple's own subscription page: change plan or cancel. 808 cannot
+    /// cancel anything itself, so this is where "cancel" leads.
+    static func manageSubscription() {
+        guard let scene else { return }
+        Task { try? await AppStore.showManageSubscriptions(in: scene) }
+    }
+
+    /// Apple's own redemption sheet. The purchase it produces arrives on
+    /// `Transaction.updates`, which `Store` has listened to since launch, so
+    /// nothing here needs to handle the result.
+    static func redeemCode() {
+        guard let scene else { return }
+        Task { try? await AppStore.presentOfferCodeRedeemSheet(in: scene) }
+    }
+}
+
+/// What a Restore found, said in one short alert (Melvin, 2026-09-29). A
+/// Restore that finds nothing used to say nothing at all, which reads as a
+/// button that does not work.
+enum RestoreFeedback: Equatable {
+    case restored, nothing, failed
+
+    /// nil when the screen has nothing to add: a restore that worked on a
+    /// screen that simply opens the app (the paywall).
+    init?(entitled: Bool, synced: Bool, announceSuccess: Bool = false) {
+        if entitled {
+            guard announceSuccess else { return nil }
+            self = .restored
+        } else {
+            self = synced ? .nothing : .failed
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .restored: return "Membership restored"
+        case .nothing:  return "Nothing to restore"
+        case .failed:   return "Couldn't reach the App Store"
+        }
+    }
+
+    var message: String {
+        switch self {
+        case .restored: return "Everything in 808 is open."
+        case .nothing:  return "Restore brings back a membership bought with this Apple ID. If you bought 808 with a different one, sign in with it in the App Store and restore again."
+        case .failed:   return "Check your connection and try again."
+        }
+    }
+}
+
+extension View {
+    /// The Restore alert, the same on every screen that restores.
+    func restoreFeedbackAlert(_ feedback: Binding<RestoreFeedback?>) -> some View {
+        alert(feedback.wrappedValue?.title ?? "",
+              isPresented: Binding(get: { feedback.wrappedValue != nil },
+                                   set: { if !$0 { feedback.wrappedValue = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(feedback.wrappedValue?.message ?? "")
+        }
+    }
+}
+
+/// The launch paywall's Account page (Melvin, 2026-09-29). Somebody whose
+/// membership lapsed, or who updated from the free 1.0, meets the paywall
+/// before anything else, and without this they could not delete their
+/// account, sign out, redeem a code or manage the subscription they are
+/// being asked about (App Review 5.1.1(v)). Every action is Settings' own,
+/// through `AccountActions`.
+struct AccountSheet: View {
+    @Environment(\.modelContext) private var context
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var store: Store
+    @EnvironmentObject private var community: CommunityModel
+
+    @State private var confirmSignOut = false
+    @State private var confirmDelete = false
+    @State private var restoring = false
+    @State private var restoreFeedback: RestoreFeedback?
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        row(icon: "creditcard", title: "Manage subscription",
+                            subtitle: "Change or cancel your plan with Apple") {
+                            AccountActions.manageSubscription()
+                        }
+                        divider
+                        row(icon: "ticket", title: "Redeem a code",
+                            subtitle: "An offer code from a friend or a creator") {
+                            AccountActions.redeemCode()
+                        }
+                        divider
+                        row(icon: "arrow.clockwise", title: restoring ? "Restoring…" : "Restore purchases",
+                            subtitle: "Bought on another device, or reinstalled") {
+                            restore()
+                        }
+                    }
+                    .padding(.horizontal, 13)
+                    .padding(.vertical, 4)
+                    .whiteCard(radius: 16)
+
+                    VStack(spacing: 10) {
+                        Button("Sign out") { confirmSignOut = true }
+                            .font(AppFont.callout.weight(.medium))
+                            .foregroundStyle(AppColor.textSecondary)
+                            .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
+                                                titleVisibility: .visible) {
+                                Button("Sign out", role: .destructive) {
+                                    AccountActions.signOut(in: context)
+                                    dismiss()
+                                }
+                                Button("Cancel", role: .cancel) {}
+                            } message: {
+                                Text(AccountActions.signOutMessage)
+                            }
+                        Button("Delete account") { confirmDelete = true }
+                            .font(AppFont.caption)
+                            .foregroundStyle(.red.opacity(0.75))
+                            .confirmationDialog(AccountActions.deleteTitle, isPresented: $confirmDelete,
+                                                titleVisibility: .visible) {
+                                Button("Delete account", role: .destructive) {
+                                    AccountActions.deleteAccount(in: context, community: community)
+                                    dismiss()
+                                }
+                                Button("Cancel", role: .cancel) {}
+                            } message: {
+                                Text(AccountActions.deleteMessage)
+                            }
+                    }
+                    .padding(14)
+                    .frame(maxWidth: .infinity)
+                    .whiteCard(radius: 16)
+                }
+                .padding(AppMetrics.screenPadding)
+            }
+            .background(ValleyGround.meadow.ignoresSafeArea())
+            .navigationTitle("Account")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .restoreFeedbackAlert($restoreFeedback)
+    }
+
+    private var divider: some View {
+        Divider().overlay(AppColor.textSecondary.opacity(0.1))
+    }
+
+    private func restore() {
+        guard !restoring else { return }
+        restoring = true
+        Task { @MainActor in
+            let synced = await store.restore()
+            restoring = false
+            let outcome = store.entitled ? "restored" : synced ? "nothing" : "failed"
+            Analytics.track(.restore(source: "account", outcome: outcome))
+            // A restored membership lifts the lock by itself (RootView reads
+            // `entitled`), so there is nothing to say, only a page to close.
+            if store.entitled { dismiss() } else {
+                restoreFeedback = RestoreFeedback(entitled: false, synced: synced)
+            }
+        }
+    }
+
+    private func row(icon: String, title: String, subtitle: String,
+                     action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(width: 26)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(AppFont.callout).foregroundStyle(AppColor.textPrimary)
+                    Text(subtitle).font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+                }
+                Spacer(minLength: 8)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(CardButtonStyle())
+    }
+}
+
 private struct SettingsForm: View {
     @Bindable var user: User
     @Bindable var prefs: Preferences
@@ -59,6 +292,8 @@ private struct SettingsForm: View {
     @State private var confirmDelete = false
     @State private var confirmSignOut = false
     @State private var editingName = false
+    /// What the last Restore found (Melvin, 2026-09-29).
+    @State private var restoreFeedback: RestoreFeedback?
     @EnvironmentObject private var store: Store
     #if DEBUG
     @Environment(\.modelContext) private var context
@@ -207,20 +442,31 @@ private struct SettingsForm: View {
 
                 GrassHeading(title: "Membership")
                 settingsCard {
+                    // Apple's own page (Melvin, 2026-09-29): the paywall's
+                    // footnote says where to cancel, and this is the door to
+                    // it from inside 808.
+                    membershipRow(icon: "creditcard", title: "Manage subscription",
+                                  subtitle: "Change or cancel your plan with Apple") {
+                        AccountActions.manageSubscription()
+                    }
+                    divider
                     membershipRow(icon: "arrow.clockwise", title: "Restore purchases",
                                   subtitle: "Bought on another device, or reinstalled") {
                         Task {
                             let synced = await store.restore()
                             let outcome = store.entitled ? "restored" : synced ? "nothing" : "failed"
                             Analytics.track(.restore(source: "settings", outcome: outcome))
+                            restoreFeedback = RestoreFeedback(entitled: store.entitled, synced: synced,
+                                                              announceSuccess: true)
                         }
                     }
                     divider
                     membershipRow(icon: "ticket", title: "Redeem a code",
                                   subtitle: "An offer code from a friend or a creator") {
-                        redeemCode()
+                        AccountActions.redeemCode()
                     }
                 }
+                .restoreFeedbackAlert($restoreFeedback)
 
                 GrassHeading(title: "The foundation")
                 settingsCard {
@@ -252,16 +498,11 @@ private struct SettingsForm: View {
                     .whiteCard(radius: 16)
             }
             .padding(AppMetrics.screenPadding)
-        .confirmationDialog("Delete your account?", isPresented: $confirmDelete, titleVisibility: .visible) {
+        .confirmationDialog(AccountActions.deleteTitle, isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete account", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
         } message: {
-            // The 30-day grace period is real, but it only covers the local
-            // account; a public Friends profile is not something we can
-            // leave sitting around in the meantime for other people to see.
-            Text(FeatureFlags.friends
-                 ? "Your account and sessions are removed after 30 days. Sign back in before then to restore them. Your Friends profile and posts are deleted right away."
-                 : "Your account and sessions are removed after 30 days. Sign back in before then to restore them.")
+            Text(AccountActions.deleteMessage)
         }
     }
 
@@ -521,9 +762,13 @@ private struct SettingsForm: View {
                 .font(AppFont.callout)
                 .padding(10)
                 .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 10))
-                Toggle("Product emails", isOn: $user.marketingOptIn)
-                    .font(AppFont.caption)
-                    .tint(AppColor.calmAccent)
+                // "Product emails" was a switch here, and nothing ever read
+                // it: no export, no mailing, and the no-Watch waitlist sends
+                // its address the moment it is typed. A setting that does
+                // nothing is a small lie in a product selling honesty, so the
+                // row is gone (Melvin, 2026-09-29). `User.marketingOptIn`
+                // stays in the synced schema, unread: dropping a stored
+                // property is a migration hazard.
             }
         }
         .card(padding: 14)
@@ -617,15 +862,6 @@ private struct SettingsForm: View {
         if let url = parts.url { UIApplication.shared.open(url) }
     }
 
-    /// Apple's own redemption sheet. The purchase it produces arrives on
-    /// `Transaction.updates`, which `Store` has listened to since launch, so
-    /// nothing here needs to handle the result.
-    private func redeemCode() {
-        guard let scene = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene }).first else { return }
-        Task { try? await AppStore.presentOfferCodeRedeemSheet(in: scene) }
-    }
-
     // MARK: Building blocks
 
     private func settingsCard(@ViewBuilder _ content: () -> some View) -> some View {
@@ -681,16 +917,13 @@ private struct SettingsForm: View {
             Button("Sign out") { confirmSignOut = true }
                 .font(AppFont.callout.weight(.medium))
                 .foregroundStyle(AppColor.textSecondary)
-                // Signing out is allowed (paid or not), but it has to say what
-                // it costs: the local data stays, the roaming stops. Without
-                // this line a paid user could sign out, lose the phone, and
-                // discover the streak they were paying to protect died with it.
-                .confirmationDialog("Sign out?", isPresented: $confirmSignOut,
+                // What signing out costs is said first (`AccountActions`).
+                .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
                                     titleVisibility: .visible) {
                     Button("Sign out", role: .destructive, action: onSignOut)
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("Your sessions and streak stay on this phone, but they stop syncing to iCloud until you sign back in. A lost phone would mean losing them.")
+                    Text(AccountActions.signOutMessage)
                 }
             Button("Delete account") { confirmDelete = true }
                 .font(AppFont.caption)

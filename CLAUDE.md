@@ -6567,3 +6567,50 @@ longer white (white on the daytime grass was 2:1).
   his paws) was generated and rejected; do not generate video for 808, write
   the prompt and the start frame for him instead.
 
+
+## THE PRE-1.1 AUDIT (2026-09-29, Melvin: "a HUGE FULL AUDIT ... then review it AGAIN")
+
+Four reviewers (privacy vs code, terms and selling, App Review vs code, the
+listing and docs vs the build), then three fixers, then a second full pass.
+The decisions it produced, so nobody undoes them:
+
+- **THE STORES LIVE IN THE APP'S OWN CONTAINER. NEVER THE APP GROUP'S.**
+  `ModelConfiguration` defaults to `groupContainer: .automatic`, which moves
+  the stores into the App Group's container the moment the app holds one, and
+  it has since Block added the group (2026-09-22). Every 1.0 install keeps
+  its stores in the app's own container, so 1.1 on the default would have
+  opened an EMPTY database on update: onboarding again, and the device-local
+  health results gone. `Persistence.storeContainer = .none` pins them, and
+  `moveStoresOutOfAppGroupIfNeeded()` moves a newer group copy back on
+  phones that ran a build between 2026-09-22 and today (the old copy is
+  renamed `.before-group-move`, never deleted). Verified on a simulator
+  seeded by the pre-fix build: stores moved, the app opened on its history.
+  **Any new ModelConfiguration must pass `groupContainer: storeContainer`.**
+  Found by the code fixer, not by any of the four reviewers.
+- **Friends is optional again** (reverses "Required, per Aziz"; a forced
+  public profile before you can meditate is a 5.1.1 rejection). "Not now"
+  everywhere, the intro shows once, and creating a profile needs a ticked
+  "I agree to the community rules" (1.2), stored as
+  `friends.rulesAcceptedAt.v1`. Practice stats publish only with a profile.
+- **The launch paywall has an Account link** (5.1.1(v)): Manage subscription,
+  Redeem a code, Restore, Sign out, Delete account, through the same
+  `AccountActions` Settings uses. Its subtitle tells updating 1.0 users that
+  808 is now a membership and their history is waiting.
+- **Paywall disclosures:** what the membership includes, where to cancel
+  (the Settings app, not ours), "By continuing you agree to the Terms of Use
+  and Privacy Policy." Rung cards are titled "Monthly" / "Monthly, half
+  price". Billing grace period no longer locks payers out (`Store`).
+- **Data minimisation:** HRV is off the Health permission sheet and no
+  longer read; the HealthLocal store is excluded from iCloud Backup
+  (`excludeFromBackup`, every launch); points are hidden while the Shop is
+  off; analytics glow stages are computed from sessions only (no Screen Time
+  data can reach PostHog); usernames get a substring slur check and reserved
+  handles (`ContentFilter.checkHandle`).
+- **Documents:** the privacy policy now discloses IP-derived approximate
+  location, device info, pseudonymous IDs, the Google Sheet copy, FormSubmit,
+  reports and what Delete Account does NOT remove; the manifest declares ten
+  data types; the terms carry Apple's minimum EULA terms and "in versions of
+  the App that include it" for Block, points and hats; the listing, review
+  notes and What's New are rewritten for a premium-only 1.1 in
+  `marketing/APP_STORE_PASTE.md`; RELEASE_CHECKLIST.md carries every human
+  step (R1 to R18) and a FOUNDER DECISIONS list.

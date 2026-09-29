@@ -198,4 +198,46 @@ final class PaywallLadderTests: XCTestCase {
             .lowercased()
         XCTAssertTrue(text.contains("renews"), "the month rung hides the renewal")
     }
+
+    // MARK: Disclosures (2026-09-29, 3.1.2)
+
+    /// The trial rung states the condition that decides the charge, not a
+    /// promise about whether it helped.
+    func test_theTrialRungStatesTheConditionForPayingNothing() {
+        let text = DownsellRung.trial.subtitle(plan: .monthTrial, yearlyPrice: SubscriptionPlan.yearly.price)
+        XCTAssertTrue(text.contains("24 hours"), text)
+        XCTAssertFalse(text.lowercased().contains("help you"), text)
+    }
+
+    /// A card is named for the plan it buys. "Free trial" as the title of a
+    /// card that renews at the monthly price read as a free card.
+    func test_rungCardsAreNamedForThePlan() {
+        XCTAssertEqual(SubscriptionPlan.monthTrial.title, "Monthly")
+        XCTAssertEqual(SubscriptionPlan.monthHalf.title, "Monthly, half price")
+        XCTAssertTrue(SubscriptionPlan.monthTrial.cadence(withTrial: true).contains("trial"),
+                      "the trial is still stated, on the cadence line")
+    }
+
+    /// What a membership opens is said on the purchase screen, and only what
+    /// this build contains: nothing about Block, hats, points or Otto's chat.
+    func test_theIncludesLineNamesOnlyWhatThisBuildHas() {
+        let line = PaywallScreen.includesLine
+        for absent in ["block", "hats", "points", "shop", "chat"] {
+            XCTAssertFalse(line.lowercased().contains(absent), absent)
+        }
+        XCTAssertEqual(line.contains("Friends"), FeatureFlags.friends)
+        XCTAssertFalse(line.contains("\u{2014}") || line.contains("\u{2013}"), "no em dashes")
+    }
+
+    /// A Restore always says what happened, except where success simply
+    /// opens the app.
+    func test_restoreSaysWhatItFound() {
+        XCTAssertNil(RestoreFeedback(entitled: true, synced: true))
+        XCTAssertEqual(RestoreFeedback(entitled: true, synced: true, announceSuccess: true), .restored)
+        XCTAssertEqual(RestoreFeedback(entitled: false, synced: true), .nothing)
+        XCTAssertEqual(RestoreFeedback(entitled: false, synced: false), .failed)
+        for f in [RestoreFeedback.restored, .nothing, .failed] {
+            XCTAssertFalse((f.title + f.message).contains("\u{2014}"), f.title)
+        }
+    }
 }

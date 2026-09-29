@@ -106,7 +106,10 @@ struct TourStop: Equatable {
                                   stand: .bottom))
         } else if friends {
             stops.append(TourStop(tab: .friends, targets: [.friends],
-                                  line: "Bring your friends here, and cheer on each other's sessions.",
+                                  // Friends see how often each other meditates;
+                                  // there is nothing to cheer on since posting
+                                  // was removed (Melvin, 2026-09-29).
+                                  line: "Bring your friends here, and see how often each of you meditates.",
                                   stand: .bottom))
         }
         stops.append(TourStop(tab: .profile, targets: [.profile],

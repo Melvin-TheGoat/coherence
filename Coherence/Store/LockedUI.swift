@@ -31,11 +31,14 @@ enum LockedSignal: String, Identifiable {
     /// score inherits the same problem.
     var analyticsName: String { rawValue }
 
+    /// Said as what a membership shows, never as what "free 808" withholds
+    /// (Melvin, 2026-09-29): 1.1 has no free 808 to name, and the copy rule
+    /// is to state the positive.
     var title: String {
         switch self {
-        case .heart:     return "Your heart rate fell during this session. Free 808 will not tell you by how much."
-        case .breath:    return "Your breathing was measured the whole way through. Free 808 will not show you the shape of it."
-        case .stillness: return "Your body settled. Free 808 will not show you when."
+        case .heart:     return "Your heart rate fell during this session. A membership shows you by how much."
+        case .breath:    return "Your breathing was measured the whole way through. A membership shows you the shape of it."
+        case .stillness: return "Your body settled. A membership shows you when."
         }
     }
 

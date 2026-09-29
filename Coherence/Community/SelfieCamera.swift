@@ -185,7 +185,7 @@ struct SelfieCamera: View {
             Image(systemName: "camera.fill").font(.system(size: 28)).foregroundStyle(.white.opacity(0.7))
             Text("808 can't use the camera")
                 .font(AppFont.headline).foregroundStyle(.white)
-            Text("Turn it on in Settings to take your selfie.")
+            Text("Turn it on in Settings to take a photo of your session.")
                 .font(AppFont.caption).foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
             Button("Open Settings") {

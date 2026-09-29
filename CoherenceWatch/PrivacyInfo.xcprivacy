@@ -1,21 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Privacy manifest (required since 2024 for required-reason APIs).
+  Privacy manifest for the watchOS app (required since 2024 for
+  required-reason APIs). Comment rewritten for 1.1 (2026-09-29).
 
   Accessed APIs: UserDefaults only, reason CA92.1 (the app reading its own
-  preferences: migration flags on shared code compiled into this target, plus session state). Nothing else
-  on Apple's required-reason list is used: no file-timestamp reads, no disk
-  space, no boot time, no keyboard APIs.
+  preferences: migration flags on shared code compiled into this target,
+  plus session state). Nothing else on Apple's required-reason list is used:
+  no file-timestamp reads, no disk space, no boot time, no keyboard APIs.
 
-  Collected data is EMPTY on purpose, and the App Privacy labels at submission
-  must say the same thing ("Data Not Collected"). Apple defines "collect" as
-  transmitting data off device in a way the developer or a third party can
-  read. 808 transmits nothing we can read: health results never leave the
-  device at all, and the account/session log syncs to the user's own PRIVATE
-  CloudKit database, which we cannot access. No analytics, no ads, no
-  tracking, no server of ours. If any of that ever changes, this file and the
-  submission labels change together.
+  Collected data is EMPTY for this target, on purpose. Apple defines
+  "collect" as sending data off the device where the developer or a third
+  party can read it. The Watch app links no analytics SDK and makes no
+  network call of its own: it reads heart rate (HealthKit) and motion
+  (CoreMotion) only during a session, computes the results on the wrist,
+  and hands the payload to the paired iPhone over WatchConnectivity, where
+  it stays in on-device storage. Workouts and mindful minutes it saves go
+  to the user's own Apple Health.
+
+  What the iOS app collects (PostHog analytics, the Friends profile in the
+  public CloudKit database, reports, the earlier waitlist) is declared in
+  `Coherence/PrivacyInfo.xcprivacy`, and the App Privacy labels are one set
+  for the whole app. If this target ever sends anything off the device
+  itself, this file and the labels change together.
 -->
 <plist version="1.0">
 <dict>

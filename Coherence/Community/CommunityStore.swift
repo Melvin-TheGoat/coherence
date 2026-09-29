@@ -71,6 +71,11 @@ actor CommunityStore {
     /// free, so re-saving my own name never reads as taken.
     func isUsernameAvailable(_ raw: String) async throws -> Bool {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
+        switch ContentFilter.checkHandle(handle) {
+        case .blocked: throw CommunityError.contentBlocked
+        case .reserved: return false
+        case .ok: break
+        }
         let mine = try await me()
         let owner = try await holder(of: handle)
         return owner == nil || owner == mine
@@ -86,6 +91,15 @@ actor CommunityStore {
     func claimUsername(_ raw: String, displayName: String) async throws -> Profile {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
         guard ContentFilter.check([handle, displayName]) == .ok else { throw CommunityError.contentBlocked }
+        // A handle is one word, so it gets the substring check too
+        // ("fuckyou" is a single word in no list), and handles that would
+        // read as 808 or its staff are never handed out (Melvin, 2026-09-29).
+        // Enforced here, not only on the screen, so no door can skip it.
+        switch ContentFilter.checkHandle(handle) {
+        case .blocked: throw CommunityError.contentBlocked
+        case .reserved: throw CommunityError.usernameTaken
+        case .ok: break
+        }
         let mine = try await me()
 
         var reservedNow = false

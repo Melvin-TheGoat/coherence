@@ -18,13 +18,18 @@ import HealthKit
 /// architecture rule in CLAUDE.md and remains true.
 enum HealthScope {
 
-    /// Live heart rate (the deceleration signal), HRV SDNN (the dormant
-    /// baseline pipeline), and workouts. Never `heartbeatSeries`: that one is
-    /// genuinely unavailable to a third-party workout.
+    /// Live heart rate (the deceleration signal) and workouts. Never
+    /// `heartbeatSeries`: that one is genuinely unavailable to a third-party
+    /// workout.
+    ///
+    /// **No HRV (SDNN) since 2026-09-29** (Melvin, App Review 5.1.1(iii),
+    /// data minimisation). It fed a pipeline that was never switched on: the
+    /// Watch generates no SDNN sample during a session, so the permission
+    /// asked for data 808 never used. `HRVRecorder` and the HRV fields on
+    /// `MeditationStats` stay in place, unused.
     static var read: Set<HKObjectType> {
         [
             HKQuantityType(.heartRate),
-            HKQuantityType(.heartRateVariabilitySDNN),
             HKObjectType.workoutType(),
         ]
     }

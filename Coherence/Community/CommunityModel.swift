@@ -202,7 +202,10 @@ final class CommunityModel: ObservableObject {
     /// `SessionSetupView.saveLog`); a plain app-foreground tick keeps it, so
     /// coming back to the app a dozen times an hour costs one write at most.
     func syncPracticeStats(force: Bool = false) async {
-        guard FeatureFlags.friends, let store, phase == .ready, let allSessions else { return }
+        // A claimed handle, not just a ready tab: Friends is optional
+        // (Melvin, 2026-09-29), and nothing about how often somebody
+        // meditates is published for a person who never made a profile.
+        guard FeatureFlags.friends, let store, phase == .ready, hasProfile, let allSessions else { return }
         if !force, let last = lastPracticeStatsAttemptAt, Date().timeIntervalSince(last) < 180 { return }
         lastPracticeStatsAttemptAt = Date()
         let stats = PracticeStats.compute(from: allSessions())
@@ -257,10 +260,13 @@ final class CommunityModel: ObservableObject {
         async let s = store.sentRequests()
         let (fr, inc, sn) = try await (f, i, s)
         friends = fr; incoming = inc; sent = sn
-        let posts = try await store.feed(limit: 40)
-        feed = posts
-        reactions = try await store.reactions(for: posts.map(\.id))
-        try await cache(names: Set(fr + inc + sn + posts.map(\.author) + reactions.values.flatMap { $0 }))
+        // No feed and no reactions any more (Melvin, 2026-09-29). Posting was
+        // removed on 2026-09-27, but every open of Friends still queried the
+        // Post and Reaction types, and in a Production container where either
+        // type or its index is missing that query fails and the whole tab
+        // reads as broken. `clearMyPostsIfNeeded` still takes down anything
+        // already shared, on its own path.
+        try await cache(names: Set(fr + inc + sn))
         try await checkRewards(store)
     }
 
@@ -285,6 +291,11 @@ final class CommunityModel: ObservableObject {
 
     func person(_ id: String) -> Profile? { people[id] }
 
+    /// A claimed handle. Friends is optional (Melvin, 2026-09-29), and
+    /// everything that reaches another person (search, requests, published
+    /// practice stats) waits for a profile first.
+    var hasProfile: Bool { !(profile?.username ?? "").isEmpty }
+
     /// Loads one profile into the cache (a profile page opened for someone
     /// the lists never mentioned).
     func loadPerson(_ id: String) async {
@@ -296,6 +307,8 @@ final class CommunityModel: ObservableObject {
 
     enum Availability: Equatable {
         case available, taken, invalid
+        /// A handle the handle filter refuses (guideline 1.2).
+        case notAllowed
         /// The check itself failed. Shown on screen; never swallowed (the
         /// first version turned every iCloud error into a silently disabled
         /// button).
@@ -304,7 +317,15 @@ final class CommunityModel: ObservableObject {
 
     func availability(of handle: String) async -> Availability {
         guard let store else { return .failed(CommunityError.unavailable.localizedDescription) }
-        guard Username.normalize(handle) != nil else { return .invalid }
+        guard let normalized = Username.normalize(handle) else { return .invalid }
+        // Decided on the phone, before any network: an offensive handle is
+        // refused outright, and a reserved one ("admin", "otto", "808
+        // support") reads as taken, which is what it is (Melvin, 2026-09-29).
+        switch ContentFilter.checkHandle(normalized) {
+        case .blocked: return .notAllowed
+        case .reserved: return .taken
+        case .ok: break
+        }
         do {
             return try await store.isUsernameAvailable(handle) ? .available : .taken
         } catch {
@@ -341,6 +362,18 @@ final class CommunityModel: ObservableObject {
         }
     }
 
+    /// Takes the published profile photo down (Melvin, 2026-09-29: "Remove
+    /// photo" on Edit profile used to clear only the local pick, so the
+    /// photo everyone else saw stayed up). Everyone sees the empty person
+    /// after this.
+    func clearAvatar() async {
+        guard let store, hasProfile else { return }
+        do {
+            profile = try await store.setAvatar(nil)
+            if let profile { people[profile.id] = profile }
+        } catch { errorText = Self.plain(error) }
+    }
+
     /// Uploads a profile photo (prepared like a post photo). Failures are
     /// shown but never undo the profile that was just created.
     func setAvatar(_ image: UIImage) async {
@@ -359,7 +392,7 @@ final class CommunityModel: ObservableObject {
     // MARK: - People
 
     func search(_ handle: String) async -> Profile? {
-        guard let store else { return nil }
+        guard let store, hasProfile else { return nil }
         let found = try? await store.search(username: handle)
         if let found { people[found.id] = found }
         return found
@@ -372,6 +405,7 @@ final class CommunityModel: ObservableObject {
 
     func request(_ id: String) async {
         guard let store else { return }
+        guard hasProfile else { errorText = CommunityError.noProfile.localizedDescription; return }
         do {
             try await store.sendRequest(to: id)
             Analytics.track(.friendRequestSent)
@@ -381,6 +415,7 @@ final class CommunityModel: ObservableObject {
 
     func accept(_ id: String) async {
         guard let store else { return }
+        guard hasProfile else { errorText = CommunityError.noProfile.localizedDescription; return }
         do {
             try await store.accept(id)
             Analytics.track(.friendAccepted)

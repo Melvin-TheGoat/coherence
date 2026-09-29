@@ -29,9 +29,39 @@
 Members: Aziz Mahmud, Melvin Alirio Van Cleave
 
 Priority order. Items 1–3 block launch; 4–6 should start now because they get
-more expensive the longer we wait; 7 is housekeeping we handle ourselves.
+more expensive the longer we wait; 7 is housekeeping we handle ourselves; 8
+(added 2026-09-29) is the set of questions the 1.1 release raised.
 
-**Scope note (August 5, 2026).** We have deliberately simplified the app for v1.
+**Scope note, updated September 29, 2026 (read this one; the August 5 note
+below is superseded).** 808 1.1 is what counsel should review:
+
+- **Sessions run on the iPhone with or without an Apple Watch.** A phone
+  session measures nothing. With a Watch, 808 reads **heart rate, stillness
+  and breathing** (breathing from the wrist's motion, restored in August) and
+  shows a score afterwards. Results stay on the device.
+- **The camera is used, for pictures only**: an optional profile photo and
+  optional photos or videos a person adds to their own sessions. No
+  camera-based pulse reading, no face recognition, no biometric identifiers.
+  Profile photos are public (anyone who looks up the username); session
+  photos sync only to the person's own private iCloud.
+- **Friends (social features)**: a public profile with name, @username,
+  optional photo and a practice summary (sessions and minutes this week,
+  streak, total sessions, last session date), friend requests, Report and
+  Block. No posts, comments or messages.
+- **App Store age rating 13+**, with User-Generated Content and Social Media
+  both declared. The Terms require users to be 13 or older; there is no age
+  verification.
+- **Premium only**: a subscription is required to use the app (Monthly
+  $7.99, Yearly $29.99, plus two monthly plans with free trials offered to
+  people who decline). No free tier.
+- **Block** (holding chosen apps until the person meditates, via Apple's
+  Family Controls / Screen Time) is built and approved by Apple, and may ship
+  in 1.1 or later.
+- **Analytics** (PostHog): pseudonymous install ID, named product events,
+  purchase events, and approximate location derived from the IP address.
+  Never a health value.
+
+**Superseded scope note (August 5, 2026), kept for the record.** We have deliberately simplified the app for v1.
 It now measures only **heart rate and stillness** on the Apple Watch during a
 session, and runs in the background so the user can play a meditation from
 YouTube or any other app. We have **removed** the camera-based pulse reader and
@@ -81,6 +111,14 @@ meaningfully smaller: **the camera-based pulse feature has been cut**, so there
 is no camera access, no image capture, and no biometric-identifier exposure
 (Illinois BIPA, Texas CUBI) to address. Breathing measurement is also gone.
 
+> **Corrected 2026-09-29:** the camera IS used again, for an optional
+> profile photo and session photos or videos (no pulse reading, no face
+> recognition), and wrist-based breathing readings are back for Watch
+> sessions. The policy was rewritten for 1.1 on 2026-09-28 and 2026-09-29;
+> review the current `PRIVACY_POLICY.md`, not an earlier attachment. The
+> BIPA / CUBI point still holds only if nothing derives a face template from
+> a photo, which nothing does; please confirm that is enough.
+
 What remains:
 
 - The **"Consumer health data"** section is modeled on Washington's My Health
@@ -93,8 +131,13 @@ What remains:
 - **Website data**: the waitlist collects email plus one question; the
   questionnaire at meditate808.com/survey collects optional answers about
   meditation habits and willingness to pay, stored in a Google Sheet. Confirm
-  both are adequately disclosed.
+  both are adequately disclosed. (2026-09-29: the website no longer has a
+  waitlist form; the questionnaire remains. The app's old no-Watch waitlist
+  can still send an email from a saved onboarding record, so it stays
+  disclosed.)
 - **COPPA posture** — app is rated 4+ and we do not distinguish minor accounts.
+  (Corrected 2026-09-29: 1.1 is rated **13+** with user-generated content and
+  social features; see question 8.1.)
 - **Deletion** — account deletion soft-deletes and hard-purges after 30 days.
   Confirm that satisfies the deletion rights we assert.
 
@@ -157,10 +200,13 @@ protect and we want an honest read before we invest further in the brand.**
 - **Apple Developer Program.** We are launching under Aziz's personal developer
   account and will migrate to a company account (§7.2 of the Operating
   Agreement). Any exposure in the interim, given the LLC will be receiving
-  revenue paid to an individual account?
+  revenue paid to an individual account? (Resolved 2026-09-01: the app is
+  published by Lock Out Inc.'s Organization account; no personal account
+  receives revenue.)
 - **Subscriptions.** Once we charge, auto-renewal disclosure laws (federal
   ROSCA and the state auto-renewal statutes) apply. What do we need in place
-  before turning on billing?
+  before turning on billing? (2026-09-29: billing is live and 1.1 is
+  subscription-only; the sharper version is question 8.3.)
 
 ---
 
@@ -203,6 +249,62 @@ Listing so nothing falls through:
 - **Form 1065 partnership return** — due **03/15/2027**.
 - **Registered agent.** Aziz's home address is currently public on the state
   record. Worth asking whether a registered agent service is advisable.
+
+---
+
+## 8. Questions for counsel before 1.1 (added 2026-09-29)
+
+These come out of the 1.1 release review. Each is a decision we would rather
+make with advice than without it; the founder-side list is in
+`RELEASE_CHECKLIST.md`, "OPEN for 1.1: FOUNDER DECISIONS".
+
+1. **User-generated content and a 13+ audience.** Public profiles (name,
+   @username, photo, practice summary) visible to anyone who looks up a
+   username, friend requests, Report and Block, no messaging. Users may be 13
+   to 17. What do we owe minors here: COPPA is out of scope at 13+, but do the
+   state age-assurance laws (Texas SB 2420, Utah SB 142; see
+   `RELEASE_CHECKLIST.md` item 4) require Apple's Declared Age Range check
+   and parental consent for Friends? Is our moderation (a text filter,
+   on-device photo screening, reports emailed to us with a 24-hour response
+   target in the Terms, a manual ban in the CloudKit Console) adequate, and what must the CSAM reporting procedure
+   (18 U.S.C. § 2258A) look like for public profile photos?
+2. **Family Controls (Block).** Apple's Family Controls terms forbid sharing
+   Screen Time data beyond the person and their device, and we send none of it
+   anywhere. Anything else in those terms, or in state law on apps that
+   restrict a person's own phone use, that the Terms or the policy should
+   say? Block may ship in 1.1 or later.
+3. **The hard paywall and auto-renewal.** Nothing past the paywall opens
+   without subscribing. Two further monthly plans with free trials are offered
+   to people who decline. Is our disclosure (price, period, automatic renewal,
+   cancel in App Store settings, on the purchase screen and in the listing)
+   enough under ROSCA and **California's Automatic Renewal Law** as amended in
+   2024 (its consent, reminder and online-cancellation requirements), given
+   that Apple, not we, handles billing and cancellation? Do we need our own
+   reminder before a free trial converts?
+4. **Celebrity likeness and university marks.** Onboarding shows photos of
+   Kobe Bryant, Oprah Winfrey and Ray Dalio (Wikimedia Commons, CC BY-SA, with
+   credit and a line saying none of them endorse 808) beside their verbatim
+   quotes, and, on a "808 is built on research" screen, the crests of Harvard,
+   Heidelberg University, the Max Planck Institute and UCL, whose researchers
+   ran the studies we cite (logos only, with a line saying 808 is not
+   affiliated). A CC license covers the photographer's copyright, not the
+   subject's right of publicity or the trademark. Should both come out
+   before 1.1?
+5. **Approximate location and pseudonymous analytics.** Our analytics
+   provider derives city, region and country from each event's IP address and
+   keeps a random install ID. The policy now discloses both. Is that enough
+   under **GDPR** (legal basis for analytics without consent; do we need an
+   opt-in for EU users, or an opt-out switch in the app) and under
+   **Washington's My Health My Data Act** (could product events from a
+   meditation app, such as "session completed", be consumer health data even
+   with no measurements in them)?
+6. **The struck-through anchor prices.** When the App Store's prices fail to
+   load, the paywall shows our fallback prices beside a struck-through "was"
+   price of $59.99 for Yearly (the code also carries $199 for Lifetime, which
+   no screen shows now). Neither product ever sold at those prices. The
+   August 18 clearance rested on documented intent to market at them. Does
+   that satisfy the FTC's former-price rule (16 CFR 233.1) and state
+   equivalents, or should they come out?
 
 ---
 

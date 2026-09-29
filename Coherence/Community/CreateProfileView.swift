@@ -12,10 +12,17 @@ import PhotosUI
 ///   a fourth door, back when it could open Friends sharing; posting was
 ///   removed 2026-09-27 and took that door with it.)
 ///
-/// Required, per Aziz, with the one unavoidable exit: with no iCloud account a
-/// username cannot be saved at all, so that case (and only that case) offers
-/// "Continue without a profile". Mockup: `mockups/friends-v2.html`, sections
-/// 1 and 2. Friends-gated.
+/// **Optional** (Melvin, 2026-09-29, reversing "required, per Aziz"). Every
+/// door offers "Not now": App Review 5.1.1 does not let an app require a
+/// public profile its core function does not need, and a meditation timer
+/// does not need one. Onboarding moves on exactly as it would after a
+/// profile, the Friends screen closes, and the one-time intro never comes
+/// back. With no iCloud the same exit reads "Continue without a profile".
+///
+/// **Claiming a handle needs the community rules agreed first** (guideline
+/// 1.2): a required tick, a link to the Terms (section 6a), and one line
+/// saying what anyone who looks the handle up will see. Mockup:
+/// `mockups/friends-v2.html`, sections 1 and 2. Friends-gated.
 struct CreateProfileView: View {
     @ObservedObject var model: CommunityModel
     /// The username typed earlier (onboarding's old field, or 1.0's cosmetic
@@ -23,11 +30,18 @@ struct CreateProfileView: View {
     let suggested: String
     /// The nickname so far. Editable here so the difference is visible.
     let nickname: String
-    /// Called with the claimed handle, or nil when the user continued without
-    /// a profile (no-iCloud only).
+    /// Called with the claimed handle, or nil when the user chose "Not now"
+    /// (or continued without iCloud).
     let onDone: (String?) -> Void
 
+    /// When the community rules were agreed to, set when a handle is claimed
+    /// with the box ticked. A ticked box on a later Edit profile reads it.
+    static let rulesAcceptedKey = "friends.rulesAcceptedAt.v1"
+
     @Environment(\.modelContext) private var context
+    /// Non-zero when this is the Friends TAB: the tab bar's raised plus
+    /// stands above the bar, so the buttons sit higher to clear it.
+    @Environment(\.tabBarClearance) private var tabBarClearance
     @Query private var users: [User]
 
     @State private var handle = ""
@@ -50,9 +64,27 @@ struct CreateProfileView: View {
     @State private var showLibraryPicker = false
     @State private var suggestions: [String] = []
     @FocusState private var focused: Bool
+    /// The community rules box (guideline 1.2). Starts ticked only for
+    /// somebody who agreed on an earlier claim.
+    @State private var agreed = UserDefaults.standard.object(forKey: CreateProfileView.rulesAcceptedKey) != nil
+    /// The Terms, opened from the rules row. Presented from that row, not
+    /// from this view, which already carries a camera cover and the photo
+    /// picker (stacked presentations on one view are the only-one-presents
+    /// trap).
+    @State private var legalDoc: LegalDoc?
+    /// "Remove photo" on a profile that already has one: the published photo
+    /// comes down when the profile is saved (Melvin, 2026-09-29). It used to
+    /// clear only a photo picked on this screen, so the one friends saw
+    /// stayed up.
+    @State private var removePublishedPhoto = false
 
     /// A profile already exists: same screen, edit wording.
     private var editing: Bool { !(model.profile?.username ?? "").isEmpty }
+
+    /// The photo friends currently see, unless it is on its way out.
+    private var publishedPhoto: URL? { removePublishedPhoto ? nil : model.profile?.avatarURL }
+
+    private var canSave: Bool { availability == .available && agreed && !claiming }
 
     /// In the valley (Melvin, 2026-09-27: "looks plain, make it on theme"):
     /// the words on a band of sky, the portrait sitting on the seam the way
@@ -111,6 +143,8 @@ struct CreateProfileView: View {
                             .foregroundStyle(AppColor.textPrimary)
                             .padding(14)
                             .background(AppColor.backgroundPrimary, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                        rulesAgreement.padding(.top, 20)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 2)
@@ -142,18 +176,20 @@ struct CreateProfileView: View {
                     Text(claiming ? "Saving…" : (editing ? "Save" : "Create profile"))
                 }
                 .buttonStyle(PrimaryButtonStyle())
-                .disabled(availability != .available || claiming)
-                .saturation(availability == .available ? 1 : 0.2)
-                .brightness(availability == .available ? 0 : -0.25)
-                if model.phase == .unavailable {
-                    Button("Continue without a profile") { onDone(nil) }
+                .disabled(!canSave)
+                .saturation(canSave || claiming ? 1 : 0.2)
+                .brightness(canSave || claiming ? 0 : -0.25)
+                // Friends is optional: every door that creates a profile can
+                // also decline one. Edit profile has its own Cancel.
+                if !editing {
+                    Button(model.phase == .unavailable ? "Continue without a profile" : "Not now") { notNow() }
                         .font(AppFont.callout.weight(.semibold))
                         .onValley()
                 }
             }
             .padding(.horizontal, AppMetrics.screenPadding)
             .padding(.top, 10)
-            .padding(.bottom, 8)
+            .padding(.bottom, tabBarClearance > 0 ? 32 : 8)
             .background(
                 LinearGradient(stops: [.init(color: ValleyGround.meadow.opacity(0), location: 0),
                                        .init(color: ValleyGround.meadow, location: 0.4)],
@@ -209,8 +245,11 @@ struct CreateProfileView: View {
             Button { showLibraryPicker = true } label: {
                 Label("Choose from library", systemImage: "photo.on.rectangle")
             }
-            if photo != nil {
-                Button("Remove photo", role: .destructive) { photo = nil }
+            if photo != nil || publishedPhoto != nil {
+                Button("Remove photo", role: .destructive) {
+                    photo = nil
+                    if model.profile?.avatarURL != nil { removePublishedPhoto = true }
+                }
             }
         } label: {
             VStack(spacing: 8) {
@@ -218,7 +257,7 @@ struct CreateProfileView: View {
                     if let photo {
                         Image(uiImage: photo).resizable().scaledToFill()
                             .frame(width: 104, height: 104).clipShape(Circle())
-                    } else if let current = model.profile?.avatarURL {
+                    } else if let current = publishedPhoto {
                         PersonAvatar(name: name, size: 104, photoURL: current)
                     } else {
                         // The empty person until they pick one, the default
@@ -260,6 +299,8 @@ struct CreateProfileView: View {
                         .foregroundStyle(AppColor.textSecondary)
                 case .invalid:
                     Text("Letters, numbers, dots and underscores only.").foregroundStyle(AppColor.textSecondary)
+                case .notAllowed:
+                    Text("That username isn't allowed on 808. Try another.").foregroundStyle(AppColor.textSecondary)
                 case .failed(let why):
                     Text(why).foregroundStyle(AppColor.textSecondary)
                 case .none:
@@ -298,7 +339,50 @@ struct CreateProfileView: View {
             .compactMap(Username.normalize)
     }
 
+    /// The community rules, agreed before a handle can be claimed
+    /// (guideline 1.2, Melvin, 2026-09-29), with the one line that says what
+    /// a handle makes public.
+    private var rulesAgreement: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button { agreed.toggle() } label: {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: agreed ? "checkmark.square.fill" : "square")
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(agreed ? AppColor.skyDeep : AppColor.textSecondary)
+                    Text("I agree to the community rules")
+                        .font(AppFont.callout.weight(.semibold))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(agreed ? .isSelected : [])
+            .accessibilityHint("Required to create a profile")
+
+            Button("Read the community rules") { legalDoc = .terms }
+                .font(AppFont.caption.weight(.semibold))
+                .foregroundStyle(AppColor.skyDeep)
+                .padding(.leading, 30)
+
+            Text("Anyone who looks up your @username sees your name, photo, streak and how often you meditate.")
+                .font(AppFont.caption)
+                .foregroundStyle(AppColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .sheet(item: $legalDoc) { LegalDocSheet(doc: $0) }
+    }
+
+    /// "Not now" (or, with no iCloud, "Continue without a profile"). It also
+    /// retires the one-time Friends intro, so somebody who declined here is
+    /// not asked again the moment onboarding ends.
+    private func notNow() {
+        UserDefaults.standard.set(true, forKey: FriendsIntroView.shownKey)
+        onDone(nil)
+    }
+
     private func claim() {
+        guard agreed else { return }
         claiming = true
         Task { @MainActor in
             let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -307,7 +391,12 @@ struct CreateProfileView: View {
                 availability = await model.availability(of: handle)
                 return
             }
-            if let photo { await model.setAvatar(photo) }
+            UserDefaults.standard.set(Date(), forKey: Self.rulesAcceptedKey)
+            if let photo {
+                await model.setAvatar(photo)
+            } else if removePublishedPhoto {
+                await model.clearAvatar()
+            }
             if let user = users.first {
                 user.username = handle
                 if !trimmedName.isEmpty { user.displayName = trimmedName }
@@ -321,13 +410,18 @@ struct CreateProfileView: View {
 }
 
 /// The one-time "Meditate with your friends" prompt for people who finished
-/// onboarding before Friends existed. No skip (Aziz: the username is
-/// required); the no-iCloud case is handled inside `CreateProfileView`.
+/// onboarding before Friends existed. Shown at most once, and "Not now"
+/// closes it (Melvin, 2026-09-29, reversing "no skip"): Friends is optional,
+/// and the circle on Home still offers a profile whenever they want one.
 struct FriendsIntroView: View {
     @ObservedObject var model: CommunityModel
     let suggested: String
     let nickname: String
     let onDone: () -> Void
+
+    /// Set the first time the intro shows, and by any "Not now" on Create
+    /// your profile, so it never comes back.
+    static let shownKey = "friends.introShown.v1"
 
     @State private var creating = false
 
@@ -363,6 +457,11 @@ struct FriendsIntroView: View {
 
                 Button { creating = true } label: { Text("Pick your username") }
                     .buttonStyle(PrimaryButtonStyle())
+                Button("Not now") { onDone() }
+                    .font(AppFont.callout.weight(.semibold))
+                    .foregroundStyle(AppColor.textSecondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 12)
                     .padding(.bottom, 8)
             }
             .padding(.horizontal, AppMetrics.screenPadding)
@@ -372,7 +471,6 @@ struct FriendsIntroView: View {
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
-        .interactiveDismissDisabled()
         .onAppear { Analytics.track(.friendsIntroShown) }
     }
 

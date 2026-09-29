@@ -11,9 +11,12 @@ struct FinishedSession {
     /// was analysed, so `result` and `hrv` are nil.
     let discarded: Bool
     let result: SignalResult?
-    /// Apple's SDNN for the session, against the user's own baseline. Present
-    /// for every kept session; an empty reading inside it is a real answer,
-    /// not a failure.
+    /// Apple's SDNN for the session, against the user's own baseline. Always
+    /// nil since 2026-09-29: 808 no longer asks HealthKit for HRV (see
+    /// `HealthScope.read`), so there is nothing to read. The field, the
+    /// payload's and the four on `MeditationStats` stay, unwritten, because
+    /// dropping stored properties is a migration hazard and old rows still
+    /// carry them.
     let hrv: HRVSnapshot?
 }
 
@@ -34,7 +37,11 @@ final class WorkoutManager: NSObject, ObservableObject {
 
     private let store = HealthKitAuth.store
     private let motion = MotionRecorder()
-    private let hrv = HRVRecorder()
+    // No `HRVRecorder` (Melvin, 2026-09-29, App Review 5.1.1(iii)): the
+    // pipeline was dormant, the Watch never produces an SDNN sample during a
+    // session, and asking for HRV put a permission on the Health sheet that
+    // bought the user nothing. The recorder file stays for when there is a
+    // reason to read it.
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
 
@@ -118,7 +125,6 @@ final class WorkoutManager: NSObject, ObservableObject {
             sessionStart = startDate
             isRunning = true
             motion.start(reference: startDate)   // share the HR clock
-            hrv.start(reference: startDate)
             return true
         } catch {
             log.error("Failed to create workout session: \(error.localizedDescription)")
@@ -181,14 +187,9 @@ final class WorkoutManager: NSObject, ObservableObject {
         }.value
         log.debug("Finished: \(durationSec)s, motion=\(motionAll.count) hr=\(hrAll.count) overall=\(String(describing: result.overallScore))")
 
-        // Deliberately after the analysis: this waits a few seconds for the
-        // system to flush the session's SDNN sample, and there's no reason to
-        // make the engine wait behind it.
-        let hrvSnapshot = await hrv.snapshot(end: startedAt.addingTimeInterval(Double(durationSec)))
-
         teardown()
         return FinishedSession(startedAt: startedAt, durationSec: durationSec,
-                               discarded: false, result: result, hrv: hrvSnapshot)
+                               discarded: false, result: result, hrv: nil)
     }
 
     /// Trims edge transients, rebases the clock and runs the engine. Static and
@@ -240,7 +241,6 @@ final class WorkoutManager: NSObject, ObservableObject {
     /// Drops references and marks the manager idle so a fresh `start()` can run.
     private func teardown() {
         isRunning = false
-        hrv.stop()
         motion.stop()
         // END the session, don't just forget it.
         //

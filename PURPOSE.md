@@ -5,11 +5,12 @@ create. However, while it's mainstream to take care of your physical body, takin
 mind is not. The way you take care of your mind is through meditation.
 
 To combat this issue, we built 808 to make meditation straightforward, habitual, and universal.
-We do this through 3 features. First, we track your biofeedback (Heartbeat, Stillness, and
-Breathing) and subjective rating to reaffirm what is and isn't working. Second, we promote your
-progress and consistency via streaks, awards, and meditation history. Finally, we support and
-encourage sharing your meditation proof with others via any social platform.
+We do this in three ways. First, if you meditate with an Apple Watch, we measure your biofeedback
+(heart rate, stillness, and breathing), and you can rate each session yourself, to reaffirm what
+is and isn't working. Everything else in 808 works without a Watch. Second, we promote your
+progress and consistency via Otto's glow, streaks, awards, and meditation history. Finally, we
+support and encourage sharing your practice: Friends shows you how often your friends meditate,
+and you can share your sessions on any social platform.
 
 If you meditate, or would like to start, 808 was made for you. Our app enhances the experience
-of meditation and aims to connect millions of practitioners around the world. We're the social
-network for those who breathe. Join us.
+of meditation and aims to connect millions of practitioners around the world. Join us.

@@ -71,7 +71,11 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         switch self {
         case .trial:
             let days = trialDays ?? SubscriptionPlan.fallbackTrialDays
-            return "\(TrialCopy.length(days)) free, everything unlocked, cancel any time. If it doesn't help you meditate more, you pay nothing."
+            // The condition is stated, not implied (Melvin, 2026-09-29): "if
+            // it doesn't help, you pay nothing" read as a refund promise the
+            // App Store does not make. What actually decides the charge is
+            // cancelling in time.
+            return "\(TrialCopy.length(days)) free, everything unlocked. Cancel at least 24 hours before the trial ends and you pay nothing."
         case .halfMonth:
             let price = "\(halfMonthPrice) a month instead of \(monthlyPrice). Everything unlocked. It renews every month, and you can cancel any time."
             guard let trialDays else { return price }

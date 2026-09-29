@@ -73,22 +73,88 @@ enum Persistence {
             "HealthLocal",
             schema: healthLocalSchema,
             isStoredInMemoryOnly: false,
+            groupContainer: storeContainer,
             cloudKitDatabase: .none
         )
+    }
+
+    /// Where the stores live: the app's own container, never the App Group's
+    /// (Melvin, 2026-09-29, found in the pre-1.1 audit).
+    ///
+    /// `ModelConfiguration` defaults to `groupContainer: .automatic`, which
+    /// puts the stores in the App Group's container as soon as the app holds
+    /// one, and it has since Block added the group on 2026-09-22. Every 1.0
+    /// install keeps its stores in the app's own container, so a 1.1 on the
+    /// default would open an EMPTY database on update: onboarding again, and
+    /// the device-local health results gone for good. Nothing else reads
+    /// these stores; Block shares only UserDefaults through the group.
+    static let storeContainer: ModelConfiguration.GroupContainer = .none
+
+    private static var storesPlaced = false
+
+    /// Phones that ran a build between 2026-09-22 and 2026-09-29 (the
+    /// founders' phones, the beta, the simulators) wrote their stores into
+    /// the App Group's container. Before anything opens a store, a group copy
+    /// that is newer than the app container's (or the only one) is moved back
+    /// to where every build now looks. The app container's older copy is
+    /// renamed aside, never deleted. Once per launch, and on a phone that
+    /// never had a group store it is a directory lookup and nothing else.
+    static func moveStoresOutOfAppGroupIfNeeded() {
+        guard !storesPlaced else { return }
+        storesPlaced = true
+        let fm = FileManager.default
+        guard let bundle = Bundle.main.bundleIdentifier,
+              let group = fm.containerURL(forSecurityApplicationGroupIdentifier: "group." + bundle)
+        else { return }
+        let from = group.appending(path: "Library/Application Support")
+        let to = URL.applicationSupportDirectory
+        // Everything Core Data keeps for one store: the SQLite file, its
+        // write-ahead log and shared memory (most recent writes live in the
+        // log), and the support folder with the photos kept as external data.
+        func parts(_ dir: URL, _ store: String) -> [URL] {
+            [dir.appending(path: store + ".store"), dir.appending(path: store + ".store-wal"),
+             dir.appending(path: store + ".store-shm"), dir.appending(path: "." + store + "_SUPPORT")]
+        }
+        func lastWritten(_ dir: URL, _ store: String) -> Date? {
+            parts(dir, store).prefix(2).compactMap {
+                (try? fm.attributesOfItem(atPath: $0.path))?[.modificationDate] as? Date
+            }.max()
+        }
+        for store in ["default", "HealthLocal"] {
+            guard let groupDate = lastWritten(from, store) else { continue }
+            if let appDate = lastWritten(to, store), appDate >= groupDate { continue }
+            do {
+                try fm.createDirectory(at: to, withIntermediateDirectories: true)
+                for old in parts(to, store) where fm.fileExists(atPath: old.path) {
+                    let aside = URL(fileURLWithPath: old.path + ".before-group-move")
+                    try? fm.removeItem(at: aside)
+                    try fm.moveItem(at: old, to: aside)
+                }
+                for (src, dst) in zip(parts(from, store), parts(to, store)) where fm.fileExists(atPath: src.path) {
+                    try fm.moveItem(at: src, to: dst)
+                }
+            } catch {
+                print("Moving the \(store) store out of the App Group failed: \(error)")
+            }
+        }
     }
 
     /// Persistent local store, CloudKit disabled. Also the fallback for
     /// `cloudKit()`. Uses the same two-store split so mode switches never move
     /// data between files.
     static func local() -> ModelContainer {
+        moveStoresOutOfAppGroupIfNeeded()
         let main = ModelConfiguration(
             schema: cloudSyncedSchema,
             isStoredInMemoryOnly: false,
+            groupContainer: storeContainer,
             cloudKitDatabase: .none
         )
         do {
-            let container = try ModelContainer(for: schema, configurations: [main, healthConfig()])
+            let health = healthConfig()
+            let container = try ModelContainer(for: schema, configurations: [main, health])
             if mode == .localByDesign { mode = .localByDesign }
+            excludeFromBackup(storeAt: health.url)
             return container
         } catch {
             fatalError("Failed to create local ModelContainer: \(error)")
@@ -100,14 +166,18 @@ enum Persistence {
     /// container if the CloudKit container can't be created — so the app never
     /// crashes on a device/simulator without a provisioned iCloud account.
     static func cloudKit() -> ModelContainer {
+        moveStoresOutOfAppGroupIfNeeded()
         let synced = ModelConfiguration(
             schema: cloudSyncedSchema,
             isStoredInMemoryOnly: false,
+            groupContainer: storeContainer,
             cloudKitDatabase: .automatic
         )
         do {
-            let container = try ModelContainer(for: schema, configurations: [synced, healthConfig()])
+            let health = healthConfig()
+            let container = try ModelContainer(for: schema, configurations: [synced, health])
             mode = .cloudKit
+            excludeFromBackup(storeAt: health.url)
             return container
         } catch {
             // Deliberately not fatal: a dev machine or an unprovisioned build
@@ -117,6 +187,29 @@ enum Persistence {
             let fallback = local()
             mode = .localFallback(String(describing: error))
             return fallback
+        }
+    }
+
+    /// Keeps the health store out of iCloud Backup (Melvin, 2026-09-29, App
+    /// Review 5.1.3(ii): personal health information may not be stored in
+    /// iCloud). Keeping `MeditationStats` out of CloudKit was half of it; a
+    /// device backup would have carried the same file to iCloud anyway.
+    ///
+    /// Set on the store, its SQLite sidecars and Core Data's support folder
+    /// beside it (external blobs land there) on EVERY launch, because SQLite
+    /// deletes and recreates `-wal` and `-shm`, and a recreated file does not
+    /// inherit the flag. A file that does not exist yet is skipped silently;
+    /// the next launch catches it. Four attribute writes, cheap. `url` is
+    /// the configuration's own, so this follows the store wherever SwiftData
+    /// put it.
+    static func excludeFromBackup(storeAt url: URL) {
+        let support = url.deletingLastPathComponent()
+            .appendingPathComponent("." + url.deletingPathExtension().lastPathComponent + "_SUPPORT").path
+        for path in [url.path, url.path + "-wal", url.path + "-shm", support] {
+            var file = URL(fileURLWithPath: path)
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? file.setResourceValues(values)
         }
     }
 
@@ -141,6 +234,8 @@ enum Persistence {
     }
 
     static func rescueOrphanedHealthStatsIfNeeded() -> [MeditationStats] {
+        // The rescue reads the main store's file, so it must be in place first.
+        moveStoresOutOfAppGroupIfNeeded()
         guard !UserDefaults.standard.bool(forKey: healthRescueDoneKey) else { return [] }
         guard let rescued = extractOrphanedHealthStats(mainStoreURL: defaultMainStoreURL) else {
             return []   // extraction errored — leave the flag unset so a fix can retry

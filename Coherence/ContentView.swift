@@ -186,7 +186,7 @@ struct ContentView: View {
             case .block:
                 BlockTab(block: block, entitlements: store.entitlements) { present(.blockPaywall) }
             case .friends:
-                if FeatureFlags.friends { FriendsTab() } else { SearchTab() }
+                if FeatureFlags.friends { FriendsTab(onDecline: { tab = .home }) } else { SearchTab() }
             case .store:
                 ShopTab()
             case .profile:
@@ -369,8 +369,11 @@ struct ContentView: View {
                     sheet = nil
                 }
                 .onAppear {
-                    Analytics.track(.rewardViewed(
-                        stageUp: OttoAura.Stage(level: reward.glowAfter) > OttoAura.Stage(level: reward.glowBefore)))
+                    // Judged from sessions alone, never the glow on screen,
+                    // which counts Block's "Not now" windows (see
+                    // `sessionOnlyStages`).
+                    let stages = sessionOnlyStages(landing: reward.id)
+                    Analytics.track(.rewardViewed(stageUp: stages.map { $0.after > $0.before } ?? false))
                 }
             }
         }
@@ -383,11 +386,12 @@ struct ContentView: View {
         let dates = sessions.map(\.startedAt)
         let friend: String? = {
             guard FeatureFlags.friends else { return nil }
-            let today = community.feed.first {
-                Calendar.current.isDateInToday($0.practicedAt) && $0.author != community.myID
+            // From the practice stats friends publish, not the feed, which is
+            // no longer loaded (posting was removed 2026-09-27).
+            let today = community.friends.compactMap { community.person($0) }.first {
+                $0.practice.lastSessionAt.map(Calendar.current.isDateInToday) ?? false
             }
-            guard let author = today?.author,
-                  let name = community.person(author)?.displayName,
+            guard let name = today?.displayName,
                   let first = name.split(separator: " ").first else { return nil }
             return String(first)
         }()
@@ -1055,13 +1059,13 @@ struct ContentView: View {
         let otherSits = sits.filter { $0.date != landed.startedAt }
         let before = OttoAura.level(from: otherSits, notNow: windows)
         let after = OttoAura.level(from: sits, notNow: windows)
-        // Derived from session dates and lengths, like the glow itself; never
-        // from anything measured. Once per landed session: `celebrate` runs
-        // once per session (PendingSave is cleared above).
-        let stageBefore = OttoAura.Stage(level: before), stageAfter = OttoAura.Stage(level: after)
-        if stageBefore != stageAfter {
-            Analytics.track(.glowStageChanged(from: String(describing: stageBefore),
-                                              to: String(describing: stageAfter)))
+        // Derived from session dates and lengths ONLY, never from anything
+        // measured and never from the Not-now windows the glow on screen
+        // uses (`sessionOnlyStages`). Once per landed session: `celebrate`
+        // runs once per session (PendingSave is cleared above).
+        if let stages = sessionOnlyStages(landing: id), stages.before != stages.after {
+            Analytics.track(.glowStageChanged(from: String(describing: stages.before),
+                                              to: String(describing: stages.after)))
         }
         ottoLineIndex = 0
         // The reward screen, not a glow on Home (Melvin, 2026-09-27).
@@ -1084,6 +1088,22 @@ struct ContentView: View {
             bankBefore: bankBefore,
             glowBefore: before, glowAfter: after)
         if sheet == nil { sheet = .reward(reward) } else { pendingSheet = .reward(reward) }
+    }
+
+    /// Otto's stage either side of a landed session, for ANALYTICS, worked
+    /// out from the sessions alone with no Block "Not now" windows (Melvin,
+    /// 2026-09-29). The glow on screen does count those windows, and they
+    /// come from Screen Time. NEVER SEND SCREEN TIME DATA OFF THE PHONE
+    /// (Apple's Family Controls terms, CLAUDE.md): a stage change reported
+    /// from the on-screen level would leak whether somebody skipped a Block
+    /// window, so analytics reads this instead, even while Block is off in
+    /// Release. nil for a session that is not in the store (a DEBUG preview).
+    private func sessionOnlyStages(landing id: UUID) -> (before: OttoAura.Stage, after: OttoAura.Stage)? {
+        guard let landed = sessions.first(where: { $0.id == id }) else { return nil }
+        let sits = sessions.map { OttoAura.Sit(date: $0.startedAt, seconds: $0.durationSec) }
+        let before = OttoAura.level(from: sits.filter { $0.date != landed.startedAt })
+        let after = OttoAura.level(from: sits)
+        return (OttoAura.Stage(level: before), OttoAura.Stage(level: after))
     }
 
     /// The bar and its number climb to what the sit earned, then the card
@@ -1315,6 +1335,15 @@ private struct FriendsHooks: ViewModifier {
     /// profile prompt opening then would cover the tour.
     let touring: Bool
 
+    /// The intro has been shown (or declined on Create your profile).
+    @AppStorage(FriendsIntroView.shownKey) private var introShown = false
+    @State private var showIntro = false
+
+    /// Somebody with no profile, nothing else on screen, and no intro yet.
+    private var introDue: Bool {
+        community.phase == .needsUsername && !introShown && !sessionActive && !awardShowing && !touring
+    }
+
     func body(content: Content) -> some View {
         if FeatureFlags.friends {
             content
@@ -1323,14 +1352,31 @@ private struct FriendsHooks: ViewModifier {
                                      set: { community.rewardNews = $0 })) { news in
                     InviteRewardSheet(news: news).presentationDetents([.medium])
                 }
-                // People who finished onboarding before Friends: one required
-                // prompt to create a profile, whenever iCloud says they have none.
-                .fullScreenCover(isPresented: Binding(
-                    get: { community.phase == .needsUsername && !sessionActive && !awardShowing && !touring },
-                    set: { _ in })) {
+                // People who finished onboarding before Friends: ONE prompt,
+                // ever, and "Not now" closes it (Melvin, 2026-09-29). It used
+                // to be required and came back on every launch while iCloud
+                // said there was no profile; App Review 5.1.1 does not let an
+                // app require a public profile its core function does not
+                // need. Marked shown the moment it opens, so a kill mid-way
+                // does not bring it back either.
+                .fullScreenCover(isPresented: $showIntro) {
                     FriendsIntroView(model: community,
                                      suggested: users.first?.username ?? "",
-                                     nickname: users.first?.displayName ?? "") {}
+                                     nickname: users.first?.displayName ?? "") { showIntro = false }
+                }
+                .onChange(of: introDue, initial: true) { _, due in
+                    guard due else { return }
+                    introShown = true
+                    showIntro = true
+                }
+                // A session or an award has the screen now; the intro yields
+                // and, having been shown, does not return.
+                .onChange(of: sessionActive || awardShowing || touring) { _, busy in
+                    if busy { showIntro = false }
+                }
+                // A profile claimed from inside the intro closes it too.
+                .onChange(of: community.phase) { _, phase in
+                    if phase == .ready { showIntro = false }
                 }
         } else {
             content

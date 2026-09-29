@@ -68,6 +68,11 @@ struct SessionRewardView: View {
 
     private static let space = "reward"
     private var haptics: Bool { prefsRows.first?.hapticsEnabled ?? true }
+    /// Points exist to spend in the Shop, so with the Shop off (Release, until
+    /// the hats have their art) the screen shows none of them: no points
+    /// card, no bank, no coins, no spoken count (Melvin, 2026-09-29). A
+    /// currency with nothing to buy is a promise the build cannot keep.
+    private var showsPoints: Bool { FeatureFlags.shop }
     private var stageUp: OttoAura.Stage? {
         let before = OttoAura.Stage(level: reward.glowBefore), after = OttoAura.Stage(level: reward.glowAfter)
         return after.rawValue > before.rawValue ? after : nil
@@ -192,23 +197,9 @@ struct SessionRewardView: View {
         VStack(spacing: 0) {
             HStack {
                 Spacer()
-                HStack(spacing: 6) {
-                    PointCoin(size: 22)
-                    Text("\(bank)")
-                        .font(.system(size: 16, weight: .black, design: .rounded))
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                }
-                .foregroundStyle(AppColor.textPrimary)
-                .padding(.leading, 6).padding(.trailing, 12).padding(.vertical, 5)
-                .background(AppColor.backgroundPrimary.opacity(0.96), in: Capsule())
-                .shadow(color: .black.opacity(0.14), radius: 5, y: 3)
-                .keyframeAnimator(initialValue: 1.0, trigger: bankBump) { c, v in c.scaleEffect(v) } keyframes: { _ in
-                    SpringKeyframe(1.16, duration: 0.08)
-                    SpringKeyframe(1, duration: 0.14)
-                }
-                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { bankFrame = $0 }
+                if showsPoints { bankCapsule }
             }
+            .frame(minHeight: 32)
             .padding(.horizontal, 18)
             .padding(.top, SitLayout.skyTop(in: size) - 6)
 
@@ -232,8 +223,10 @@ struct SessionRewardView: View {
                     tile(0, art: "home-time", value: "\(minutesShown)", label: reward.minutes == 1 ? "Minute" : "Minutes")
                     tile(1, art: "home-streak", value: "\(streakShown)", label: "Day streak",
                          tint: Color(red: 0.84, green: 0.42, blue: 0.2))
-                    tile(2, coin: true, value: "+\(pointsShown)", label: "Points")
-                        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { tileFrame = $0 }
+                    if showsPoints {
+                        tile(2, coin: true, value: "+\(pointsShown)", label: "Points")
+                            .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { tileFrame = $0 }
+                    }
                 }
                 glowBar
                 Button(action: close) { Text("Continue") }
@@ -246,6 +239,26 @@ struct SessionRewardView: View {
             .padding(.bottom, 40)
             .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.space)).minY } action: { stackTop = $0 }
         }
+    }
+
+    /// The bank in the corner, counting up as the coins land.
+    private var bankCapsule: some View {
+        HStack(spacing: 6) {
+            PointCoin(size: 22)
+            Text("\(bank)")
+                .font(.system(size: 16, weight: .black, design: .rounded))
+                .monospacedDigit()
+                .contentTransition(.numericText())
+        }
+        .foregroundStyle(AppColor.textPrimary)
+        .padding(.leading, 6).padding(.trailing, 12).padding(.vertical, 5)
+        .background(AppColor.backgroundPrimary.opacity(0.96), in: Capsule())
+        .shadow(color: .black.opacity(0.14), radius: 5, y: 3)
+        .keyframeAnimator(initialValue: 1.0, trigger: bankBump) { c, v in c.scaleEffect(v) } keyframes: { _ in
+            SpringKeyframe(1.16, duration: 0.08)
+            SpringKeyframe(1, duration: 0.14)
+        }
+        .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { bankFrame = $0 }
     }
 
     private func tile(_ i: Int, art: String? = nil, coin: Bool = false, value: String, label: String,
@@ -342,11 +355,13 @@ struct SessionRewardView: View {
         buzz(.medium)
         withAnimation(.spring(response: 0.38, dampingFraction: 0.6)) { streakShown = reward.streakAfter }
         guard await pause(380) else { return }
-        showTile(2)
-        guard await pause(400) else { return }
+        if showsPoints {
+            showTile(2)
+            guard await pause(400) else { return }
 
-        // The coins.
-        guard await coins() else { return }
+            // The coins.
+            guard await coins() else { return }
+        }
         guard await pause(500) else { return }
 
         // The glow.
@@ -484,8 +499,8 @@ struct SessionRewardView: View {
 
     private var accessibilitySummary: String {
         var parts = ["Session complete. \(reward.minutes) minutes.",
-                     "Day streak \(reward.streakAfter).",
-                     "\(reward.points) points."]
+                     "Day streak \(reward.streakAfter)."]
+        if showsPoints { parts.append("\(reward.points) points.") }
         parts.append("Otto's glow \(reward.glowAfter) percent.")
         if let stage = stageUp { parts.append("Otto reached \(Self.name(stage)).") }
         return parts.joined(separator: " ")

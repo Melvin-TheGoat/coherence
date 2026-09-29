@@ -290,7 +290,11 @@ final class Store: ObservableObject {
             guard case .verified(let transaction) = result else { continue }
             guard ProductID.all.contains(transaction.productID) else { continue }
             if transaction.revocationDate != nil { continue }
-            if let expiry = transaction.expirationDate, expiry < Date() { continue }
+            // No expiry check here (Melvin, 2026-09-29). `currentEntitlements`
+            // already leaves out expired subscriptions, and it deliberately
+            // INCLUDES one in its Billing Grace Period, whose expiration date
+            // is already past while Apple retries the card. Skipping past
+            // expiries locked out exactly the people Apple is still honouring.
             active = true
             owned.append(transaction.productID)
         }

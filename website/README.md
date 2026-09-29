@@ -30,23 +30,32 @@ skill (`.claude/skills/deploy-website/`), which does all of it.
 
 ## Forms
 
-Both forms post to a Google Apps Script web app that appends a row to a
-sheet, with FormSubmit email as the fallback so nothing is lost if a script
-breaks: `waitlist-sheet.gs` (the "808 waitlist" sheet, `WAITLIST_ENDPOINT`
-in `index.html`) and `survey-sheet.gs` (the "808 survey" sheet,
-`SHEET_ENDPOINT` in `survey.html`). Setup steps are in each script's header.
+**One form: the questionnaire.** `survey.html` posts to a Google Apps Script
+web app (`survey-sheet.gs`, the "808 survey" sheet, `SHEET_ENDPOINT` in
+`survey.html`) that appends a row, with FormSubmit email as the fallback so
+nothing is lost if the script breaks. Setup steps are in the script's header.
+
+**The landing page has no waitlist form since the 2026-09-28 rebuild**
+(checked 2026-09-29: `index.html` carries no `<form>` and no
+`WAITLIST_ENDPOINT`). `waitlist-sheet.gs` stays in the folder as the record of
+the "808 waitlist" sheet's script; nothing on the site posts to it. The
+app's own no-Watch waitlist is a different sheet
+(`tools/nowatch-waitlist.gs`).
 
 - The JSON is posted as `text/plain` on purpose: Apps Script does not answer
   CORS preflight requests, and that content type keeps it a simple request.
-- After editing a script, redeploy it as a NEW VERSION of the same
+- After editing the script, redeploy it as a NEW VERSION of the same
   deployment (Deploy > Manage deployments > pencil > New version). A new
   deployment changes the URL and strands the page.
 - FormSubmit needs a one-time activation: the first delivery sends a
   confirmation email that must be clicked, or nothing arrives.
-- Every form races an 8-second rejecting timer; AbortController alone was
+- The form races an 8-second rejecting timer; AbortController alone was
   not enough (CLAUDE.md, "WEBSITE REBUILT").
 
 ## App Store Connect fields
 
-Privacy Policy URL `https://meditate808.com/privacy.html`, Support URL
+Privacy Policy URL `https://meditate808.com/privacy`, Support URL
 `https://meditate808.com/#support`, Marketing URL `https://meditate808.com`.
+The listing's Terms of Use link is `https://meditate808.com/terms`.
+Cloudflare Pages serves `privacy.html` and `terms.html` at the paths without
+the extension; the `.html` forms keep working.

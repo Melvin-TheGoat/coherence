@@ -67,8 +67,11 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearly:   return "Yearly"
         case .lifetime: return "Lifetime"
         case .yearHalf: return "First year"
-        case .monthTrial: return "Free trial"
-        case .monthHalf: return "Half price"
+        // Named for what is bought, a monthly plan (Melvin, 2026-09-29). "Free
+        // trial" as the title of a card that renews at $7.99 read as if the
+        // card itself were free; the trial is stated on the cadence line.
+        case .monthTrial: return "Monthly"
+        case .monthHalf: return "Monthly, half price"
         }
     }
 
@@ -257,8 +260,13 @@ struct RatingScreen: View {
 /// and is reinstalling. It is wired to nothing today because StoreKit is not
 /// wired to anything today; it must do real work before submission.
 struct PaywallScreen: View {
-    /// Where this paywall stands: "onboarding" or "root_lock". Analytics only.
+    /// Where this paywall stands: "onboarding", "block" or "root_lock".
+    /// Analytics, plus the Account link only the launch lock carries.
     var placement: String = "onboarding"
+    /// The launch lock for somebody with sessions on this phone: 1.0 was
+    /// free, so an update meets them here, and the first thing to say is that
+    /// nothing they did is gone (Melvin, 2026-09-29).
+    var memberNotice: Bool = false
     @State private var trackedView = false
 
     @State private var started = false
@@ -267,7 +275,29 @@ struct PaywallScreen: View {
     @State private var buying = false
     /// `paywall_dismissed` is sent at most once per visit.
     @State private var trackedDismiss = false
-    @State private var legalDoc: LegalDoc?
+    /// The one sheet this screen presents: a legal document, or the launch
+    /// lock's Account page. One `.sheet(item:)` over an enum, never two
+    /// stacked `.sheet` modifiers (the only-one-presents trap).
+    @State private var sheet: PaywallSheet?
+    /// What a Restore found, when there is something to say.
+    @State private var restoreFeedback: RestoreFeedback?
+
+    private enum PaywallSheet: Identifiable {
+        case legal(LegalDoc)
+        case account
+        var id: String {
+            switch self {
+            case .legal(let doc): return "legal-" + doc.rawValue
+            case .account: return "account"
+            }
+        }
+    }
+
+    /// The launch lock is the only 808 a lapsed or updating member can reach,
+    /// so it carries the way to their account: manage the subscription,
+    /// redeem a code, sign out, delete (App Review 5.1.1(v), Melvin,
+    /// 2026-09-29).
+    private var offersAccount: Bool { placement == "root_lock" }
     /// What is covering the prices right now. Nil means the prices are showing.
     ///
     /// One cover, switching on a route, for the same reason the results screen
@@ -431,19 +461,39 @@ struct PaywallScreen: View {
 
     private var subtitle: String {
         guard selling else { return notSellingSubtitle }
+        if memberNotice {
+            return "808 is now a membership. Your sessions, streak and awards are saved and waiting."
+        }
         return offerTrial
-            ? "Try all of 808 first. If it doesn't help you meditate more, cancel and pay nothing."
-            : "Unlock everything in 808 and make meditation part of your day."
+            ? "Try all of 808 first. Cancel at least 24 hours before the trial ends and you pay nothing."
+            : Self.includesLine
     }
 
+    /// What a membership opens, stated on the purchase screen itself (3.1.2:
+    /// a subscription says what it gives; Melvin, 2026-09-29). Only what THIS
+    /// build contains: Friends only while it is on, and nothing about Block,
+    /// hats or Otto's chat, which are switched off in Release.
+    static var includesLine: String {
+        let friends = FeatureFlags.friends ? ", Friends" : ""
+        return "Full access: timed and guided sessions, sounds, Otto's glow, streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
+    }
+
+    /// The includes line in small type under a subtitle that says something
+    /// else (the member notice, the trial), so what a membership opens is on
+    /// every selling version of this screen.
+    private var showsIncludesBelow: Bool { selling && subtitle != Self.includesLine }
+
     /// 3.1.2 wants auto-renewal SAID, not implied: "cancel any time" hints at
-    /// it and reviewers reject paywalls that only hint.
+    /// it and reviewers reject paywalls that only hint. And WHERE to cancel is
+    /// named (Melvin, 2026-09-29): "in Settings" read as 808's own Settings,
+    /// which cannot cancel anything.
     private var footnote: String {
         guard selling else { return notSellingFootnote }
+        let whereToCancel = "in the Settings app under your name, then Subscriptions."
         if let days = trialLength {
-            return "\(TrialCopy.length(days)) free, then \(priceLine). Renews automatically until you cancel in Settings."
+            return "\(TrialCopy.length(days)) free, then \(priceLine). Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, \(whereToCancel)"
         }
-        return "\(priceLine). Renews automatically until you cancel in Settings."
+        return "\(priceLine). Renews automatically until you cancel. Cancel any time, at least 24 hours before it renews, \(whereToCancel)"
     }
 
     /// In the valley, like the rest of onboarding (Aziz, 2026-09-26: "make it
@@ -466,6 +516,11 @@ struct PaywallScreen: View {
                         Text(subtitle)
                             .font(.system(size: compact ? 16 : 18, weight: .semibold, design: .rounded))
                             .foregroundStyle(AppColor.textPrimary.opacity(0.7))
+                        if showsIncludesBelow {
+                            Text(Self.includesLine)
+                                .font(.system(size: compact ? 13 : 14, weight: .semibold, design: .rounded))
+                                .foregroundStyle(AppColor.textPrimary.opacity(0.6))
+                        }
                     }
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -473,8 +528,10 @@ struct PaywallScreen: View {
                     .padding(.top, compact ? 8 : 20)
 
                     Spacer(minLength: 0)
+                    // Smaller on a short phone when the includes line sits
+                    // under the subtitle, or his halo rises into the words.
                     OttoAuraFigure(stage: .nirvana, look: 13,
-                                   size: compact ? 110 : 150, rig: otto)
+                                   size: compact ? (showsIncludesBelow ? 90 : 110) : 150, rig: otto)
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                     Spacer(minLength: 12)
@@ -534,13 +591,13 @@ struct PaywallScreen: View {
                 }
             }
         }
-        .sheet(item: $legalDoc) { doc in
-            NavigationStack {
-                ScrollView { MarkdownView(markdown: DocLoader.load(doc.file)).padding() }
-                    .navigationTitle(doc.title)
-                    .navigationBarTitleDisplayMode(.inline)
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .legal(let doc): LegalDocSheet(doc: doc)
+            case .account: AccountSheet()
             }
         }
+        .restoreFeedbackAlert($restoreFeedback)
         .sensoryFeedback(.success, trigger: plan)
         .sensoryFeedback(.success, trigger: started)
         .onAppear {
@@ -579,21 +636,43 @@ struct PaywallScreen: View {
                           action: { advance() })
                 .padding(.top, 4)
 
+            // Directly under the button that buys, both documents one tap
+            // away (3.1.2, Melvin, 2026-09-29). The links are handled here,
+            // never opened as URLs: they open the same bundled documents the
+            // row below does.
+            if selling {
+                Text("By continuing you agree to the [Terms of Use](legal://terms) and [Privacy Policy](legal://privacy).")
+                    .font(.caption2)
+                    .foregroundStyle(AppColor.textSecondary)
+                    .tint(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .environment(\.openURL, OpenURLAction { url in
+                        sheet = .legal(url.host == "privacy" ? .privacy : .terms)
+                        return .handled
+                    })
+            }
+
             Text(footnote)
                 .font(.caption)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: 18) {
+            HStack(spacing: offersAccount ? 14 : 18) {
                 if selling {
                     Button("Restore") { restore() }
                 }
-                Button("Privacy Policy") { legalDoc = .privacy }
-                Button("Terms of Use") { legalDoc = .terms }
+                Button("Privacy Policy") { sheet = .legal(.privacy) }
+                Button("Terms of Use") { sheet = .legal(.terms) }
+                if offersAccount {
+                    Button("Account") { sheet = .account }
+                }
             }
             .font(.caption.weight(.semibold))
             .foregroundStyle(AppColor.textSecondary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
 
             // No free version to decline into (Aziz, 2026-09-26), but a "no"
             // is answered with the ladder (Melvin, 2026-09-27): the free
@@ -763,17 +842,39 @@ struct PaywallScreen: View {
             Analytics.track(.restore(source: "paywall", outcome: outcome))
             if store.entitled {
                 onDone(true)
+            } else {
+                // A Restore that finds nothing used to say nothing, which
+                // reads as a broken button (Melvin, 2026-09-29).
+                restoreFeedback = RestoreFeedback(entitled: false, synced: synced)
             }
         }
     }
 }
 
 /// The two documents the purchase screen must link to (guideline 3.1.2).
-private enum LegalDoc: String, Identifiable {
+/// Also opened by Create your profile, for the community rules.
+enum LegalDoc: String, Identifiable {
     case privacy, terms
     var id: String { rawValue }
     var file: String { self == .privacy ? "PRIVACY_POLICY" : "TERMS_OF_SERVICE" }
     var title: String { self == .privacy ? "Privacy Policy" : "Terms of Use" }
+}
+
+/// One bundled legal document in a sheet, the same way everywhere it opens.
+struct LegalDocSheet: View {
+    let doc: LegalDoc
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollView { MarkdownView(markdown: DocLoader.load(doc.file)).padding() }
+                .navigationTitle(doc.title)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                }
+        }
+    }
 }
 
 // MARK: - 24 · (removed)

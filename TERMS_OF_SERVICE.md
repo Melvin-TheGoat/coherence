@@ -1,6 +1,6 @@
 # Terms of Service
 
-**Last updated: September 28, 2026**
+**Last updated: September 29, 2026**
 
 These Terms of Service ("Terms") are a legal agreement between you and
 **Lock Out Inc. ("we," "us")** governing your use of the **808 Meditate**
@@ -11,10 +11,11 @@ App.
 ## 1. Health and wellness disclaimer: please read
 
 **808 is a wellness and self-reflection tool. It is not a medical device and does
-not provide medical advice, diagnosis, or treatment.** The heart-rate and
-stillness measurements and scores the App shows are **estimates for general
-wellness and informational purposes only**, and are not intended to detect,
-diagnose, treat, cure, or prevent any disease or health condition.
+not provide medical advice, diagnosis, or treatment.** The heart-rate,
+stillness, and breathing measurements and the scores the App shows are
+**estimates for general wellness and informational purposes only**, and are
+not intended to detect, diagnose, treat, cure, or prevent any disease or
+health condition.
 
 - Do not rely on the App for any medical purpose or in any emergency.
 - Always consult a qualified healthcare professional with questions about your
@@ -30,15 +31,16 @@ unwell.
 ## 2. The service
 
 The App runs meditation sessions and helps you keep meditating: Otto, the
-App's sloth, gets brighter as you practice, your sessions earn points you can
-spend on hats for him, and your streak and awards are tracked for you. An
-Apple Watch is optional: when it measures a session, the App shows you
-evidence of how your body responded, a heart-rate trend and a measure of how
-still you were, generated **after** the session, not as a live score. A
-session started on your iPhone without the Watch measuring runs a plain timer
-and measures nothing about your body. If you use Block, the App can also hold
-apps you find distracting until you've meditated. Features may change over
-time.
+App's sloth, gets brighter as you practice, and your streak and awards are
+tracked for you. In versions of the App that include them, your sessions also
+earn points you can spend on hats for Otto. An Apple Watch is optional: when
+it measures a session, the App shows you evidence of how your body responded,
+generated **after** the session and not as a live score: a heart-rate trend,
+a measure of how still you were, a breathing rate, and a score. A session
+started on your iPhone without the Watch measuring runs a plain timer and
+measures nothing about your body. In versions of the App that include Block,
+the App can also hold apps you find distracting until you've meditated.
+Features may change over time.
 
 **Sessions run in the background.** So that you can listen to whatever you like
 while you practice, a session continues measuring on your Apple Watch after you
@@ -55,34 +57,44 @@ by their terms, not ours.
 ## 3. Eligibility and your account
 
 You must be at least 13 years old (or the minimum age of digital consent where you
-live) to use the App. You sign in with **Sign in with Apple**; you're responsible
-for activity under your account and for keeping your Apple ID secure.
+live) to use the App. Signing in is optional. If you create an account, you
+sign in with **Sign in with Apple**; you're responsible for activity under
+your account and for keeping your Apple ID secure.
 
 ## 3a. Subscriptions and payments
 
-Using the App requires a subscription, which you can buy in the App, monthly
-or yearly. The price, the billing period and any introductory offer are shown
-before you buy.
+Using the App requires a subscription, which you can buy in the App. Each
+plan's price, billing period, and any introductory offer are shown before you
+buy.
 
 - **Payment is handled by Apple.** It is charged to your Apple ID when you
   confirm the purchase, under the App Store's terms.
-- **Subscriptions renew automatically** at the same price and for the same
-  period unless you turn off auto-renew at least 24 hours before the current
-  period ends. You can manage or cancel your subscription at any time in your
-  Apple ID's subscription settings; cancelling stops the next renewal and you
-  keep access until the end of the period you paid for.
-- **Free trials and introductory prices**, when offered, are shown before you
-  buy. A free trial becomes a paid subscription at its end unless you cancel
-  at least 24 hours before it ends.
+- **Subscriptions renew automatically** for the same period at the
+  then-current price unless you turn off auto-renew at least 24 hours before
+  the current period ends. Your Apple ID is charged for the renewal within
+  the 24 hours before the current period ends.
+- **Introductory offers.** Some plans may include a free trial or an
+  introductory price; when one does, it is shown before you buy, and not
+  every plan includes one. When a free trial or introductory period ends, the
+  subscription renews at the regular price shown before you bought unless you
+  cancel at least 24 hours before it ends.
+- **Price changes.** If the price of your subscription changes, Apple tells
+  you before it takes effect and, where Apple's rules or the law require it,
+  asks for your consent before you are charged the new price.
+- **Cancelling.** You can manage or cancel your subscription at any time in
+  the Settings app on your iPhone: tap your name, then Subscriptions.
+  Cancelling stops the next renewal, and you keep access until the end of the
+  period you paid for.
 - **Refunds** are handled by Apple under its policies; we cannot issue them
   directly.
 - A lifetime purchase made in an earlier version of the App remains valid,
-  and you can restore any purchase from the paywall or from Settings.
+  and you can restore any purchase from the membership screen or from
+  Settings.
 
-**Points and hats.** Points are earned by meditating and can be spent on hats
-for Otto inside the App. They have no cash value, cannot be bought, sold or
-transferred, and are not a currency. We may change how points are earned or
-what they can be spent on.
+**Points and hats.** In versions of the App that include them, points are
+earned by meditating and can be spent on hats for Otto inside the App. Points
+have no cash value, cannot be bought, sold or transferred, and are not a
+currency. We may change how points are earned or what they can be spent on.
 
 ## 4. License
 
@@ -102,18 +114,24 @@ redistribute, or provide the App as a service to others.
 ## 6. Your content and data
 
 You own your data. Our handling of your information is described in our
-[Privacy Policy](https://meditate808.com/privacy). In short: your health results stay only on
-your device; your account and session log sync through your own private iCloud;
-we operate no servers of our own; and you can delete everything from
-Settings → Delete Account.
+[Privacy Policy](https://meditate808.com/privacy). In short: your health
+results stay only on your device; your account and session log sync through
+your own private iCloud; we run no servers of our own, and the limited
+information that does reach us (pseudonymous usage analytics, a Friends
+profile if you create one, and reports you file) is described in the Privacy
+Policy. You can delete your account from Settings, or from Account on the
+App's membership screen. Deleting your account does not remove workouts and
+mindful minutes saved to Apple Health, usage analytics already sent, or
+reports you filed.
 
 ## 6a. Friends: your profile, and what we will not tolerate
 
-Friends is optional. If you create a profile, your username, display name,
-profile photo and a summary of how often you meditate become visible to other
-people using 808. You keep ownership of what you add. You give us permission
-to store it, show it to other people using 808, and remove it, for as long as
-you keep it in the app.
+Friends is optional. Creating a profile requires you to agree to the rules
+in this section in the App. If you create a profile, your username, display
+name, profile photo and a summary of how often you meditate become visible to
+anyone using 808 who looks up your username. You keep ownership of what you
+add. You give us permission to store it, show it to other people using 808,
+and remove it, for as long as you keep it in the app.
 
 **By adding a profile photo you confirm** that it is yours to use, that any
 person in it is you, and that it does not infringe anyone's rights.
@@ -135,13 +153,15 @@ plainly broken.
 them and is not announced.
 
 **Deleting your account** removes your Friends profile and the connections
-and blocks you created, as described in our
-[Privacy Policy](https://meditate808.com/privacy). Reports you filed are
-kept as moderation records so we can continue acting on them.
+and blocks you created right away, as described in our
+[Privacy Policy](https://meditate808.com/privacy). Signing back in does not
+restore your profile. Reports you filed are kept as moderation records so we
+can continue acting on them.
 
 ## 6b. Block: managing your own device use
 
-Block is an optional part of 808's paid membership. It uses Apple's own
+In versions of the App that include it, Block is an optional part of 808's
+paid membership. It uses Apple's own
 Screen Time tools so you can hold apps you find distracting on your own
 iPhone until you've meditated. It is a self-management feature: it manages
 only the device you set it up on, for you, and it is not a parental control
@@ -196,7 +216,8 @@ sensor placement and conditions and may be imprecise.
 TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE WILL NOT BE LIABLE FOR ANY INDIRECT,
 INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF DATA,
 ARISING FROM YOUR USE OF THE APP. OUR TOTAL LIABILITY FOR ANY CLAIM RELATING TO THE
-APP WILL NOT EXCEED THE GREATER OF THE AMOUNT YOU PAID FOR THE APP OR US $50. Some
+APP WILL NOT EXCEED THE GREATER OF (A) THE AMOUNTS YOU PAID FOR THE APP AND ANY
+SUBSCRIPTION IN THE 12 MONTHS BEFORE THE CLAIM, OR (B) US $50. Some
 jurisdictions don't allow certain limitations, so some of the above may not apply
 to you.
 
@@ -264,6 +285,12 @@ licensed-application end user license agreement for the App:
 
 - This license is valid only for the App on Apple-branded devices you own or
   control, and as permitted by the App Store Terms of Service.
+- **We, not Apple, are solely responsible** for the App and its content, for
+  any maintenance and support of it, and for any claims relating to the App or
+  your possession or use of it, including product-liability claims, claims
+  that the App fails to meet any legal or regulatory requirement, claims
+  under consumer-protection, privacy, or similar laws, and claims relating to
+  its use of HealthKit.
 - **Apple has no obligation** to furnish any maintenance or support for the App.
 - Apple is **not responsible** for any product warranties, whether express or
   implied. In the event of any failure of the App to conform to any applicable
@@ -274,6 +301,11 @@ licensed-application end user license agreement for the App:
   protection claims.
 - Apple is **not responsible** for investigating, defending, or resolving any
   third-party intellectual-property infringement claim regarding the App.
+- **Third-party terms.** When you use the App, you must comply with any
+  third-party terms that apply to you, such as your wireless data service
+  agreement.
+- **Questions and claims** about the App go to us: Lock Out Inc., 8 The
+  Green, Ste A, Dover, DE 19901, United States, **support@meditate808.com**.
 - You represent that you are not located in a country subject to a U.S. Government
   embargo or designated as "terrorist supporting," and are not on any U.S.
   restricted-parties list.
@@ -282,4 +314,5 @@ licensed-application end user license agreement for the App:
 
 ## 17. Contact
 
-Questions about these Terms: **support@meditate808.com**.
+Questions about these Terms: **support@meditate808.com**, or Lock Out Inc.,
+8 The Green, Ste A, Dover, DE 19901, United States.

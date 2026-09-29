@@ -43,17 +43,22 @@
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
 	<key>NSHealthShareUsageDescription</key>
-	<string>808 uses heart data recorded on your Apple Watch to measure how your body settled after a session.</string>
+	<string>808 reads the heart rate your Apple Watch measures during a session you start, to show you how your body settled.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>808 records a mindful workout on your Apple Watch so it can capture your heartbeat during a session.</string>
-	<!-- Camera returned 2026-09-14 for ONE use: the optional photo on a
-	     session posted to friends (PostComposer). The string says exactly
-	     that. It was removed 2026-08-11 with the fingertip-PPG check because a
-	     permission for a feature that does not exist is a false statement;
-	     the same rule means the string must go again if the composer ever
-	     loses its camera button. App Privacy labels: Photos or Videos. -->
+	<string>808 saves each measured session to Apple Health as a Mind and Body workout and as mindful minutes.</string>
+	<!-- Camera, as 1.1 ships (2026-09-29): two uses, both started by the
+	     person. The Friends profile photo (CreateProfileView, CameraPicker)
+	     and a photo for a session's own page (SaveSessionView, SelfieCamera).
+	     Posting to friends is gone, so the "selfie you post" wording went
+	     with it. Otto's video call screen (Block, FaceTimeCamera) also opens
+	     the front camera, but Block is off in 1.1: when blockInRelease flips,
+	     name that screen here again ("and to show you on Otto's video call
+	     screen; nothing from it is recorded or saved"). A permission string
+	     for a feature the build does not show is a false statement, which is
+	     why the camera string was removed on 2026-08-11 and must stay true to
+	     the build. App Privacy labels: Photos or Videos (profile photo). -->
 	<key>NSCameraUsageDescription</key>
-	<string>808 uses the front camera for the selfie you take when you post a meditation to friends, and to show you on Otto's video call screen. Nothing from that screen is recorded or saved.</string>
+	<string>808 uses the camera when you choose to take a photo, for your Friends profile picture or for a session's page.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>808 saves your share card to your photo library so you can post it to your Instagram story.</string>
 	<key>LSApplicationQueriesSchemes</key>

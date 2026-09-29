@@ -21,6 +21,9 @@ struct FriendsTab: View {
     /// button — a host that still wants this embedded in a tab bar passes
     /// nothing and gets exactly the old behaviour.
     var onClose: (() -> Void)? = nil
+    /// "Not now" on Create your profile when this is a tab rather than a
+    /// sheet: the host moves to Home. As a sheet, `onClose` does the job.
+    var onDecline: (() -> Void)? = nil
 
     private var user: User? { users.first }
     @Environment(\.tabBarClearance) private var tabBarClearance
@@ -62,9 +65,13 @@ struct FriendsTab: View {
                     .modifier(NoTopEdgeHaze())
                     .toolbar(.hidden, for: .navigationBar)
                 case .needsUsername:
+                    // Optional (Melvin, 2026-09-29): "Not now" leaves the
+                    // screen, and it offers the profile again next time.
                     CreateProfileView(model: model,
                                       suggested: user?.username ?? "",
-                                      nickname: user?.displayName ?? "") { _ in }
+                                      nickname: user?.displayName ?? "") { handle in
+                        if handle == nil { (onClose ?? onDecline)?() }
+                    }
                 case .ready:
                     FriendsHomeView(model: model, myDisplayName: user?.displayName ?? "",
                                     roomForClose: onClose != nil)
@@ -310,12 +317,24 @@ struct UnavailableCard: View {
 /// here yet. The mechanics live in feature 4 (the grant); the copy is here so
 /// the promise and the code ship in the same build.
 private struct InviteRewardNote: View {
+    /// While 808 is premium only, every member already sees every result, so
+    /// banked sessions of evidence would be a reward with nothing in it
+    /// (Melvin, 2026-09-29). The award is what a friend brings then.
+    private var title: String {
+        Monetization.premiumOnly ? "Bring a friend." : "Bring a friend, see the evidence."
+    }
+    private var detail: String {
+        Monetization.premiumOnly
+            ? "When a friend you invite accepts and finishes their first session, the Brought a friend award lands on your shelf."
+            : "When a friend you invite accepts and finishes their first session, your next \(InviteReward.sessionsPerFriend) sessions show the full results: every curve and every reading."
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Bring a friend, see the evidence.")
+            Text(title)
                 .font(AppFont.callout.weight(.semibold))
                 .foregroundStyle(AppColor.calmAccent)
-            Text("When a friend you invite accepts and finishes their first session, your next \(InviteReward.sessionsPerFriend) sessions show the full results: every curve and every reading.")
+            Text(detail)
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
         }
@@ -621,6 +640,18 @@ struct InviteRewardSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: Store
 
+    /// While 808 is premium only, a lapsed membership meets the paywall at
+    /// launch, so sessions "banked in case your membership lapses" could
+    /// never be used. The award is the whole of it then (Melvin, 2026-09-29).
+    private var detail: String {
+        if Monetization.premiumOnly {
+            return "You brought them here. The Brought a friend award is on your shelf."
+        }
+        return store.entitlements.paid
+            ? "You brought them here. The Brought a friend award is on your shelf, and \(news.remaining) sessions of full evidence are banked in case your membership ever lapses."
+            : "You brought them here. Your next \(news.remaining) sessions show the full evidence: every curve, every reading."
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("🙏").font(.system(size: 36)).padding(.top, 8)
@@ -628,13 +659,11 @@ struct InviteRewardSheet: View {
                 .font(AppFont.title)
                 .foregroundStyle(AppColor.textPrimary)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(store.entitlements.paid
-                 ? "You brought them here. The Brought a friend award is on your shelf, and \(news.remaining) sessions of full evidence are banked in case your membership ever lapses."
-                 : "You brought them here. Your next \(news.remaining) sessions show the full evidence: every curve, every reading.")
+            Text(detail)
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            if !store.entitlements.paid {
+            if !Monetization.premiumOnly && !store.entitlements.paid {
                 HStack(spacing: 8) {
                     Image(systemName: "person.2").foregroundStyle(AppColor.calmAccent)
                     Text("\(news.remaining) sessions of evidence · starts with your next session")

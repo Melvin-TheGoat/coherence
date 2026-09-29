@@ -1,75 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Privacy manifest (required since 2024 for required-reason APIs).
+  Privacy manifest for the iOS app (required since 2024 for required-reason
+  APIs). Rewritten for 1.1 (2026-09-29).
 
   Accessed APIs: UserDefaults only. CA92.1 is the app reading its own
   preferences (migration flags, AppStorage-backed setup choices). 1C8F.1
   (added 2026-09-23, Block) is `BlockKit/BlockStore.swift` reading and
   writing the App Group (`group.com.lockout.meditate808`) that this app
-  shares with its three Block extensions (Monitor, Shield, ShieldAction) —
+  shares with its three Block extensions (Monitor, Shield, ShieldAction):
   the blockers, passes and holds Screen Time has to see across processes.
-  Nothing in the App Group leaves the phone; see BlockKit's own header
-  comment.
+  The Block code ships in the binary even while `blockInRelease` is off.
+  Nothing in the App Group leaves the phone; see BlockKit's own header.
 
-  Collected data: PRODUCT INTERACTION only, for analytics, since 2026-08-17
-  (PostHog, behavioral events: screens completed, sessions started and
-  finished, paywall and purchase funnel, feature usage). Not linked to
-  identity: the ID is an anonymous install-scoped UUID. NSPrivacyTracking
-  stays FALSE because nothing is used for cross-app tracking or advertising.
+  Collected data, as 1.1 ships (Friends ON with profiles only and no posts,
+  Block OFF, Shop OFF, Otto chat OFF). Apple's "collect" means sent off the
+  device where we or a third party can read it. Each type appears ONCE, so
+  where two uses share a type the entry carries the stronger linkage and
+  every purpose. Nothing is tracking.
+
+  PostHog analytics (`Coherence/Analytics/Analytics.swift`, Release only):
+    - Product Interaction: named behavioral events. Not linked. Analytics.
+    - Purchase History: plan picked, purchase, trial, restore, entitlement
+      lost, and the `is_subscriber` / `plan` person properties. No payment
+      details, so Financial Info stays off. Not linked. Analytics.
+    - Coarse Location: PostHog derives country, region and city from the IP
+      address of every request (GeoIP), and the founders read it in the
+      Google Sheet copy (`tools/posthog_sheet.gs`). Not linked. Analytics.
+    - Other Usage Data: the device and app metadata the SDK attaches to every
+      event (iPhone model, iOS and app version, language, time zone, screen
+      size, Wi-Fi or cellular). Not linked. Analytics.
+    - User ID: the random install-scoped distinct_id (a UUID in the SDK's
+      own storage, never the IDFA or identifierForVendor), reset on sign-out
+      and account deletion. Shares the type with the Friends @username
+      below, so the single entry is LINKED with both purposes.
+
+  Friends (public CloudKit database of our own container, which we can
+  read, so by Apple's definition collected; all LINKED, a profile is the
+  person; App Functionality):
+    - User ID: the @username, chosen and public.
+    - Name: the display name on a profile.
+    - Photos or Videos: the optional profile photo. (Session photos and
+      videos stay in the user's PRIVATE iCloud and are not collected.)
+    - Other Data Types: the practice summary on the profile (sessions and
+      minutes in the last 7 days, streak, total sessions, last session
+      date) plus the first-session and created dates. Derived from session
+      dates and lengths, never from the body.
+    - Other User Content: the reason text on a report, which is stored in
+      the public database and sent to the reports web app
+      (`ReportClient`, `tools/community-reports.gs`).
+
+  Earlier waitlist (`WaitlistClient`): the no-Watch waitlist screen is cut,
+  but a queued sign-up from an older version still flushes on launch.
+    - Email Address: LINKED, Developer's Advertising or Marketing.
 
   What is deliberately NOT collected, and must never appear here: health and
   fitness data. Heart rate, breathing, stillness, scores, and every value
   derived from them stay on device (HealthKit data may not be disclosed to
-  third parties, guideline 5.1.3). Health results never leave the device;
-  the account/session log syncs only to the user's own PRIVATE CloudKit
-  database, which we cannot read.
+  third parties, guideline 5.1.3). No analytics event carries one, and a
+  Friends profile never does. The private CloudKit database (account,
+  sessions, notes, session photos) is the user's own and is not collected:
+  we cannot read it. Nothing Block or Screen Time learns ever leaves the
+  phone (Apple's Family Controls terms).
 
-  The App Privacy labels in App Store Connect must match this file. As of
-  2026-09-01 that is THREE types, all Analytics, none linked, none tracking:
-  Product Interaction, User ID, and Purchases.
-
-  User ID is declared because the analytics SDK generates a persistent
-  install-scoped UUID (a random UUID v7 in its own storage, never the IDFA or
-  identifierForVendor) and transmits it with every event as the distinct_id.
-  It is anonymous, which is why it is NOT linked, but it is collected.
-
-  Purchases is declared because the monetization events name the plan bought
-  (purchase, trial started, restore, entitlement lost). No payment details ever
-  touch this path, so Financial Info stays off.
-
-  Email Address is declared since 2026-09-14 (ships in the build after
-  1.0.1): the no-Watch waitlist screen sends the address the person types,
-  and only when they tap Join, to our own Google Sheet so we can write to them
-  when a session works without a Watch. It IS linked (an email identifies
-  the person by definition), purpose Developer's Advertising or Marketing,
-  not tracking. The App Privacy labels must add it at that submission.
-
-  Friends (1.1, 2026-09-18) adds FOUR more, and these are different in kind
-  from the analytics above: they are things the person writes and we can
-  read. Posts, profiles and photos go to the PUBLIC CloudKit database of our
-  own container, which the developer can read, so by Apple's definition they
-  are collected. All four are LINKED (a profile is the person) and none are
-  tracking:
-
-    - Photos or Videos: the selfie on a post, and the profile photo.
-    - Other User Content: the post's title and description, and the reason
-      text on a report.
-    - Name: the display name on a profile.
-    - User ID: the @username, which is chosen and public. (The analytics
-      entry above is also User ID but anonymous and unlinked; the label in
-      App Store Connect must be the stronger of the two, linked.)
-
-  What Friends does NOT put in the public database, and must never: heart
-  rate, breathing, stillness, a curve, or any reading behind the score. A
-  post carries only the free share card's fields (score, minutes, streak,
-  technique). 5.1.3 still binds, and `test_postCarriesOnlyTheFreeCardFields`
-  is the guard.
-
-  The private CloudKit database (account, sessions, streak) is still the
-  user's own and still not collected: we cannot read it.
-
-  Change the manifest and the labels together, always.
+  The App Privacy labels in App Store Connect must match this file. Change
+  the manifest, PRIVACY_POLICY.md and the labels together, always.
 -->
 <plist version="1.0">
 <dict>
@@ -93,7 +88,7 @@
 		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeUserID</string>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
@@ -105,7 +100,7 @@
 		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
@@ -113,6 +108,43 @@
 			<key>NSPrivacyCollectedDataTypePurposes</key>
 			<array>
 				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeOtherUsageData</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeUserID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+				<string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeName</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<true/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
 			</array>
 		</dict>
 		<dict>
@@ -129,7 +161,7 @@
 		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+			<string>NSPrivacyCollectedDataTypeOtherDataTypes</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
@@ -141,7 +173,7 @@
 		</dict>
 		<dict>
 			<key>NSPrivacyCollectedDataType</key>
-			<string>NSPrivacyCollectedDataTypeName</string>
+			<string>NSPrivacyCollectedDataTypeOtherUserContent</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
 			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>

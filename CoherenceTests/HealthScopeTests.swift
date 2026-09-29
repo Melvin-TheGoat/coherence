@@ -8,12 +8,18 @@ import HealthKit
 /// silently dropped is a signal that stops arriving with no error anywhere.
 final class HealthScopeTests: XCTestCase {
 
-    func test_readScopeIsExactlyHeartRateHRVAndWorkouts() {
+    func test_readScopeIsExactlyHeartRateAndWorkouts() {
         XCTAssertEqual(HealthScope.read, [
             HKQuantityType(.heartRate),
-            HKQuantityType(.heartRateVariabilitySDNN),
             HKObjectType.workoutType(),
         ])
+    }
+
+    /// HRV left the permission sheet on 2026-09-29 (5.1.1(iii)): nothing
+    /// read it. Asking again needs a feature that uses it, and the policy,
+    /// the usage strings and the App Privacy labels moving with it.
+    func test_neverAsksForHRV() {
+        XCTAssertFalse(HealthScope.read.contains(HKQuantityType(.heartRateVariabilitySDNN)))
     }
 
     /// `heartbeatSeries` is the beat-to-beat series the dropped coherence path

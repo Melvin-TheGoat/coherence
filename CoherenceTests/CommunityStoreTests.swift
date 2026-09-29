@@ -90,6 +90,21 @@ final class CommunityStoreTests: XCTestCase {
         }
     }
 
+    /// The handle check is enforced in the store, so no screen can claim
+    /// around it: an offensive handle is refused as content, a reserved one
+    /// as taken, and neither reserves anything (2026-09-29).
+    func test_handleFilterIsEnforcedAtClaim() async throws {
+        do { try await aziz.claimUsername("fuckyou", displayName: "Aziz"); XCTFail() }
+        catch let e as CommunityError { XCTAssertEqual(e, .contentBlocked) }
+        do { try await aziz.claimUsername("808_support", displayName: "Aziz"); XCTFail() }
+        catch let e as CommunityError { XCTAssertEqual(e, .usernameTaken) }
+        let available = try await aziz.isUsernameAvailable("admin")
+        XCTAssertFalse(available, "a reserved handle reads as taken")
+        XCTAssertTrue(db.records.values.filter { $0.recordType == CommunityType.username }.isEmpty)
+        let profile = try await aziz.myProfile()
+        XCTAssertNil(profile, "a refused claim creates no profile")
+    }
+
     func test_emptyHandleIsInvalid() async throws {
         do {
             try await aziz.claimUsername("@@", displayName: "x")
@@ -626,5 +641,79 @@ final class PostRemovalTests: XCTestCase {
 
         let justNow = CommunityModel.placing(post("justNow", hoursAgo: 0), in: feed)
         XCTAssertEqual(justNow.first?.id, "justNow")
+    }
+}
+
+/// Records every record type queried, to prove what a screen never asks for.
+private final class TypeRecordingDatabase: CommunityDatabase {
+    let inner: MemoryCommunityDatabase
+    var types: [String] = []
+    init(inner: MemoryCommunityDatabase) { self.inner = inner }
+    func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
+    func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
+    func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
+    func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { types.append(query.type); return try await inner.query(query) }
+    func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
+}
+
+/// Friends is optional (Melvin, 2026-09-29), and the feed is gone.
+@MainActor
+final class FriendsOptionalTests: XCTestCase {
+    private let meID = CommunityNames.profile(user: "_me")
+    private let otherID = CommunityNames.profile(user: "_other")
+
+    /// With no profile, nothing reaches another person: no search, no
+    /// request, no published practice stats.
+    func test_withoutAProfileNothingReachesAnyone() async throws {
+        let db = MemoryCommunityDatabase(user: "_other")
+        let other = CommunityStore(database: db)
+        _ = try await other.me()
+        try await other.claimUsername("melvin", displayName: "Melvin")
+        db.user = "_me"
+        let model = CommunityModel(store: CommunityStore(database: db))
+        model.allSessions = { [(startedAt: Date(), durationSec: 600)] }
+        await model.load()
+        XCTAssertEqual(model.phase, .needsUsername)
+        XCTAssertFalse(model.hasProfile)
+
+        let found = await model.search("melvin")
+        XCTAssertNil(found, "searching waits for a profile")
+        await model.request(otherID)
+        XCTAssertNotNil(model.errorText)
+        XCTAssertNil(db.records[CommunityNames.edge(from: meID, to: otherID)], "no request was written")
+        await model.syncPracticeStats(force: true)
+        XCTAssertNil(db.records[meID], "nothing about how often I meditate was published")
+    }
+
+    /// Opening Friends asks for friends, requests and blocks, never the
+    /// removed feed: in a container missing the Post type or its index that
+    /// query failed and the whole tab read as broken.
+    func test_openingFriendsNeverQueriesPostsOrReactions() async throws {
+        let recording = TypeRecordingDatabase(inner: MemoryCommunityDatabase(user: "_me"))
+        let model = CommunityModel(store: CommunityStore(database: recording))
+        await model.load()
+        _ = await model.claim("aziz", displayName: "Aziz")
+        await model.refresh()
+        XCTAssertEqual(model.phase, .ready)
+        XCTAssertFalse(recording.types.isEmpty, "the lists were loaded")
+        XCTAssertFalse(recording.types.contains(CommunityType.post))
+        XCTAssertFalse(recording.types.contains(CommunityType.reaction))
+    }
+
+    /// Remove photo on Edit profile takes the published photo down, not just
+    /// the one picked on the screen.
+    func test_clearAvatarTakesThePublishedPhotoDown() async throws {
+        let db = MemoryCommunityDatabase(user: "_me")
+        let model = CommunityModel(store: CommunityStore(database: db))
+        await model.load()
+        _ = await model.claim("aziz", displayName: "Aziz")
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("avatar-clear.jpg")
+        try Data([0xFF, 0xD8, 0xFF]).write(to: file)
+        _ = try await model.store?.setAvatar(file)
+        XCTAssertNotNil(db.records[meID]?["avatar"])
+        await model.clearAvatar()
+        XCTAssertNil(db.records[meID]?["avatar"])
+        XCTAssertNil(model.profile?.avatarURL)
     }
 }
