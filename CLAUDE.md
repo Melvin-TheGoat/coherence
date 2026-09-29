@@ -6708,3 +6708,8 @@ The decisions it produced, so nobody undoes them:
   non-endorsement footnote and CC credits must stay; the fallback if App Review
   objects is quotes without photos.
 - **Never generate video for 808.** Melvin makes the clips.
+- **Review screenshots per plan** (DEBUG, simulator): `SIMCTL_CHILD_HARD_PAYWALL=1
+  SIMCTL_CHILD_SKIP_ONBOARDING=1` plus `PREVIEW_PAYWALL_PLAN=<monthTrial|yearTrial|
+  monthHalf>` (that plan selected) or `PREVIEW_PAYWALL_RUNG=<trial|halfMonth>` (that
+  offer open). A plan the App Store is not selling falls back (`yearTrial` to
+  `monthTrial`), so a new product can take a while to show in the sandbox.

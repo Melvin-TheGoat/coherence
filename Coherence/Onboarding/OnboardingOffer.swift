@@ -809,11 +809,24 @@ struct PaywallScreen: View {
             // product is on sale; a plan that lands on a card not shown
             // falls back to monthly.
             if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
+            if plan == .yearTrial && !yearTrialOnSale { plan = .monthTrial }
             // A transient fetch failure should not be a permanent state:
             // every arrival at the paywall retries the load.
             if store.state != .ready {
                 Task { await store.load() }
             }
+            #if DEBUG
+            // Review screenshots for each plan (2026-09-29):
+            // PREVIEW_PAYWALL_PLAN=<plan raw value> preselects a plan, e.g.
+            // yearTrial for the paywall after the trial rung is taken;
+            // PREVIEW_PAYWALL_RUNG=trial|halfMonth opens that rung.
+            let env = ProcessInfo.processInfo.environment
+            if let raw = env["PREVIEW_PAYWALL_PLAN"], let p = SubscriptionPlan(rawValue: raw) { plan = p }
+            if let raw = env["PREVIEW_PAYWALL_RUNG"],
+               let rung = DownsellRung.allCases.first(where: { "\($0)" == raw }) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { showRung(rung) }
+            }
+            #endif
             guard !trackedView else { return }
             trackedView = true
             Analytics.track(.paywallViewed(placement: placement))
@@ -822,6 +835,9 @@ struct PaywallScreen: View {
         // selling without it); the choice moves to a card that is there.
         .onChange(of: store.state) { _, _ in
             if plan == .lifetime && !lifetimeOnSale { plan = .monthly }
+            // A yearly trial the App Store is not selling is not a card, so
+            // the choice moves to the monthly trial beside it.
+            if plan == .yearTrial && !yearTrialOnSale { plan = .monthTrial }
         }
         // Closed without buying: a sheet swiped away, or moved past while the
         // plans could not load. Not while a rung covers the prices (a full
