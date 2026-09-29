@@ -139,6 +139,14 @@ line the same night.**
 0. **THE FREE TRIAL IS BACK (Melvin, 2026-09-29, evening: "same as before, 3
    day offer"). App Store Connect must match the build**
    (`Monetization.freeTrial = true`).
+   - **DELETE THE OFFER, NEVER THE PRODUCT.** Connect cannot edit an
+     introductory offer, so changing 7 days to 3 means removing the OFFER
+     (Subscription Prices > Introductory Offers, the minus on its row) and
+     adding a new one, on the SAME product. Never delete or "Remove from
+     Sale" `monthly`, `yearly` or `lifetime`: a subscription removed from
+     sale stops renewing for everyone already on it, a deleted product ID
+     can never be used again, and this build recognises payers only by
+     those exact IDs.
    - [ ] **A 3-day free introductory offer on BOTH
      `com.lockout.meditate808.monthly` and `com.lockout.meditate808.yearly`.**
      The sandbox shows **7 days on monthly and none on yearly** today: change
