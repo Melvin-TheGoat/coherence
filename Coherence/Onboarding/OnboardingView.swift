@@ -1258,8 +1258,12 @@ struct HealthConsentScreen: View {
                            "Session results are computed on your devices and never uploaded. Not to us, not to iCloud.")
                 consentRow("icloud", "Only your account syncs",
                            "Your account, preferences, and session log sync through your own private iCloud database.")
+                // "Delete everything any time in Settings" was not true:
+                // Delete account leaves the workouts and mindful minutes the
+                // Watch saved to Apple Health, which belong to the person's
+                // Health record (Melvin, 2026-09-29). Say what 808 deletes.
                 consentRow("hand.raised", "Never ads. Never sold.",
-                           "Your health data is never used for advertising, never shared, never sold. Delete everything any time in Settings.")
+                           "Your health data is never used for advertising, never shared, never sold. Delete any session in the app, or your whole account in Settings.")
 
                 Button("Read the full Privacy Policy") { showPrivacyPolicy = true }
                     .font(.footnote.weight(.medium))

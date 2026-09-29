@@ -16,17 +16,23 @@ enum SessionStore {
     /// Sessions shorter than this are treated as accidental and never written.
     static let minDurationSec = 30
 
-    /// The single bootstrap `User` (`appleUserID == ""`), created with its
-    /// `Preferences` on first call. Never creates a second User while
-    /// `appleUserID` is `""` — Phase 7 sign-in adopts this row instead.
+    /// The account this device writes to: the signed-in account when there
+    /// is one, otherwise the bootstrap `User` (`appleUserID == ""`), created
+    /// with its `Preferences` if there is none. A deleted row is never used.
+    ///
+    /// **It used to return the bootstrap row only** (Melvin, 2026-09-29,
+    /// found in the pre-1.1 audit with a failing test). Sign in with Apple
+    /// adopts that row, so the next session found no bootstrap, minted a
+    /// second one and was filed under it, where Delete account never
+    /// reached: the session survived the 30-day purge, on the phone and in
+    /// private iCloud (5.1.1(v)). `adoptStraySessions` repairs installs that
+    /// already did this.
     @discardableResult
     static func currentUser(in context: ModelContext) -> User {
-        let bootstrapID = ""
-        let descriptor = FetchDescriptor<User>(
-            predicate: #Predicate { $0.appleUserID == bootstrapID }
-        )
-        if let existing = try? context.fetch(descriptor).first {
-            return existing
+        let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
+        if let signedIn = signedInUser(among: users) { return signedIn }
+        if let bootstrap = users.first(where: { $0.appleUserID == "" && $0.deletedAt == nil }) {
+            return bootstrap
         }
         let user = User(appleUserID: "")
         let prefs = Preferences(userID: user.id)
@@ -34,6 +40,52 @@ enum SessionStore {
         context.insert(prefs)
         try? context.save()
         return user
+    }
+
+    /// The most recently signed-in account that has not been deleted. More
+    /// than one exists only after signing out and in with another Apple ID;
+    /// sign-in stamps `updatedAt`, so the latest wins.
+    static func signedInUser(among users: [User]) -> User? {
+        users.filter { $0.appleUserID != "" && $0.deletedAt == nil }
+            .max { $0.updatedAt < $1.updatedAt }
+    }
+
+    /// Files every session held by a live bootstrap row under `user`. Such
+    /// sessions exist on installs that signed in before `currentUser` learned
+    /// to prefer the signed-in account; left where they were, Delete account
+    /// would never have reached them. Changes who owns a session, never what
+    /// was measured. Run at sign-in and at launch (`repairOwnership`).
+    static func adoptStraySessions(into user: User, in context: ModelContext) {
+        let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
+        let strays = Set(users.filter { $0.appleUserID == "" && $0.deletedAt == nil && $0.id != user.id }.map(\.id))
+        guard !strays.isEmpty else { return }
+        for session in (try? context.fetch(FetchDescriptor<Session>())) ?? [] {
+            if let owner = session.userID, strays.contains(owner) { session.userID = user.id }
+        }
+    }
+
+    /// Launch-time repair of the ownership bug above, for installs that
+    /// already filed sessions under a stray bootstrap row. A no-op once done.
+    ///
+    /// Also for an account deleted under 1.0, when only the signed-in row was
+    /// stamped: a live bootstrap row created before that deletion belongs to
+    /// the deleted account, so it takes the same deletion date and goes with
+    /// it at the purge. Left live, its sessions would have outlived the
+    /// deletion, and come back if the person started over.
+    static func repairOwnership(in context: ModelContext) {
+        let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
+        for deleted in users where deleted.appleUserID != "" {
+            guard let when = deleted.deletedAt else { continue }
+            for stray in users where stray.appleUserID == "" && stray.deletedAt == nil
+                && stray.createdAt < when {
+                stray.deletedAt = when
+                stray.updatedAt = when
+            }
+        }
+        if let signedIn = signedInUser(among: users) {
+            adoptStraySessions(into: signedIn, in: context)
+        }
+        try? context.save()
     }
 
     /// Signs in with an Apple credential and marks onboarding complete. Account
@@ -57,15 +109,18 @@ enum SessionStore {
         let byApple = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == appleUserID })
         if let user = try? context.fetch(byApple).first {
             user.deletedAt = nil
+            user.updatedAt = Date()
+            adoptStraySessions(into: user, in: context)
             if completingOnboarding { markOnboardingComplete(userID: user.id, in: context) }
             try? context.save()
             return user
         }
         // b. Adopt the bootstrap row (Apple gives name/email only on first sign-in,
-        // so only overwrite when provided).
+        // so only overwrite when provided). Never a deleted one: adopting it
+        // would bring back an account its owner asked us to delete.
         let bootstrapID = ""
         let byBootstrap = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == bootstrapID })
-        if let user = try? context.fetch(byBootstrap).first {
+        if let user = ((try? context.fetch(byBootstrap)) ?? []).first(where: { $0.deletedAt == nil }) {
             user.appleUserID = appleUserID
             if let email { user.email = email }
             if let displayName { user.displayName = displayName }
@@ -79,6 +134,7 @@ enum SessionStore {
         let user = User(appleUserID: appleUserID, email: email, displayName: displayName)
         context.insert(user)
         context.insert(Preferences(userID: user.id, onboardingComplete: completingOnboarding))
+        adoptStraySessions(into: user, in: context)
         try? context.save()
         return user
     }
@@ -102,13 +158,20 @@ enum SessionStore {
         try? context.save()
     }
 
-    /// Soft-deletes the signed-in account (Apple requirement): stamps `deletedAt`
-    /// and signs out. The launch-time `purgeExpired` hard-deletes after 30 days.
+    /// Soft-deletes the account (Apple requirement): stamps `deletedAt` and
+    /// signs out. The launch-time `purgeExpired` hard-deletes after 30 days.
+    ///
+    /// **Every live user row on the device**, signed in or bootstrap, not one
+    /// of them (2026-09-29): a phone holds one person's data, Delete account
+    /// promises all of it goes, and a stray bootstrap row is exactly what let
+    /// sessions survive before. Signing back in with the same Apple ID inside
+    /// the 30 days still reactivates that account and its sessions.
     static func softDeleteCurrentUser(now: Date = Date(), in context: ModelContext) {
         let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
-        let target = users.first { $0.appleUserID != "" && $0.deletedAt == nil } ?? users.first
-        target?.deletedAt = now
-        target?.updatedAt = now
+        for user in users where user.deletedAt == nil {
+            user.deletedAt = now
+            user.updatedAt = now
+        }
         signOut(in: context)
     }
 

@@ -104,11 +104,11 @@ Otto is a sloth who meditates with you. Every day you sit, he glows a little bri
 
 MEDITATE YOUR WAY
 Set a timer or leave the session open. Sit in silence, with rain, ocean, forest or campfire, with brainwave paced tones for delta, theta and alpha, or with traditional tunings at 432, 528, 852 and 963 Hz, each over an ambient bed. Or follow a professionally narrated 25 minute guided journey.
-Have a teacher you like on YouTube or Spotify? Start your audio there first, then begin your session in 808.
+Have a meditation you like in another app? Start its audio there first, then begin your session in 808.
 Meditated somewhere else? Record the session by hand and it counts toward your streak.
 
 WITH AN APPLE WATCH, SEE WHAT YOUR BODY DID
-An Apple Watch is optional. Wear one and 808 also reads your heart rate, how still you became and your breathing, then shows you a score out of 100 and the curves behind it after the session. Start and end a session on your wrist or on your phone.
+An Apple Watch is optional. Wear one and 808 also reads your heart rate, how still you became and your breathing, then shows you a score out of 100 and the curves behind it after the session. Start and end a session on your wrist or on your phone. Each Apple Watch session is saved to Apple Health as a workout and as mindful minutes.
 
 MEDITATE WITH FRIENDS
 Make a profile with your name and @username, add friends, and see how often each of them meditates: sessions and minutes this week, their streak and their total. A profile is optional, and anyone who looks up your username can see it.
@@ -123,7 +123,7 @@ PRIVATE BY DESIGN
 Heart rate and every reading from your Watch stay on your iPhone and are never uploaded to us. Your sessions sync through your own private iCloud, which we cannot read. Our analytics are pseudonymous and never include a body measurement. No ads. No data sales. Sign in with Apple is optional.
 
 HONEST SCIENCE
-The Watch readings are grounded in peer reviewed research on wrist worn motion sensing. Traditional frequencies are labeled as tradition, not sold as proven. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
+The Watch readings are grounded in peer reviewed research on wrist worn motion sensing. The 432, 528, 852 and 963 Hz tunings are offered as a tradition, not as science. 808 is a wellness app, not a medical device, and does not diagnose, treat or prevent any condition.
 
 808 PREMIUM
 808 is a subscription, and every feature is included in it.
@@ -133,17 +133,17 @@ SUBSCRIPTION INFORMATION
 808 Premium Yearly: $29.99 per year.
 The app may also offer two monthly plans after you decline the plans above: Monthly with a free trial, free for the trial period shown before you confirm, then $7.99 per month; and Half price monthly, a 3 day free trial, then $3.99 per month.
 Payment is charged to your Apple Account when you confirm the purchase, or when a free trial ends. Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period, and your account is charged for the renewal within the 24 hours before the period ends. Manage or cancel any time in your App Store account settings. Any unused part of a free trial ends when you buy a subscription.
-Lifetime purchases from earlier versions are restored with Restore on the first screen or in Settings.
+Lifetime purchases from earlier versions carry over; Restore, on the paywall or in Settings, brings a purchase back on a new device.
 
 Terms of Use: https://meditate808.com/terms
 Privacy Policy: https://meditate808.com/privacy
 ```
 
-**Keywords** (100 max; this is 96; no spaces after the commas, and none of the
+**Keywords** (100 max; this is 92; no spaces after the commas, and none of the
 name or subtitle words, which Apple already counts)
 
 ```
-mindful,calm,breathwork,timer,streak,guided,nature,sounds,binaural,528hz,solfeggio,theta,friends
+mindful,relax,breathwork,timer,streak,guided,nature,sounds,rain,528hz,solfeggio,theta,friends
 ```
 
 **Support URL**
@@ -234,38 +234,39 @@ own sandbox Apple Account.
 `818-422-1140`, email `support@meditate808.com` (never a personal Gmail;
 Apple emails this address about the review).
 
-**Notes** (4000 max). Replace `@REVIEWER_HANDLE` first. If Block ships in this
-build, append the Block paragraph from `APP_STORE.md` ("Review notes").
+**Notes** (4000 max; this is 3,853 with the placeholder in it, verified
+against the code 2026-09-29). Replace `@REVIEWER_HANDLE` first. If Block ships
+in this build, append the Block paragraph from `APP_STORE.md` ("Review
+notes") and make the cuts listed there, or the notes run over 4,000.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
 
 SUBSCRIPTION
-808 is a subscription app: nothing past the paywall opens without buying or restoring. Sign in with Apple is optional, so no demo account is needed. Please buy with your sandbox Apple Account.
-To reach the paywall, go through onboarding. On the screen "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
-The paywall sells Monthly ($7.99) and Yearly ($29.99), with no free trial. Restore, Privacy Policy and Terms of Use are on the same screen. "No, I don't want to pay" offers two more plans, one at a time: Monthly with a free trial, then Half price monthly ($3.99 a month after a 3 day free trial). Accepting either returns to the paywall with that plan selected, and the purchase happens there.
-People updating from 1.0 without a subscription meet the paywall when the app opens. That launch paywall also has an Account link beside Privacy and Terms, offering Manage subscription, Redeem a code, Restore, Sign out and Delete account. Anyone who already subscribed or bought Lifetime keeps full access, and Restore brings it back on a new device.
-Apple's rating prompt may appear once during onboarding, on the screen "808 was made for people like you". It is not tied to any answer.
-After the paywall come reminders (optional), Apple Health (only when a Watch is paired), Sign in with Apple (optional), Create your profile (optional, "Not now" skips it) and a short tour.
+Nothing past the paywall opens without buying or restoring. Sign in with Apple is optional, so no demo account is needed. Please buy with a sandbox account that has no active 808 subscription; onboarding skips the paywall for one that has.
+To reach the paywall, go through onboarding (about 30 short screens). On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
+It sells Monthly ($7.99) and Yearly ($29.99), with no free trial, and has Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" offers two more plans, one at a time: Monthly with a free trial, then Half price monthly ($3.99 a month after a 3 day free trial). Choosing either returns to the paywall with that plan selected; the purchase happens there.
+Apple allows one introductory offer per subscription group per account. If your sandbox account already had a free trial in this group, the free trial plan is not offered and the half price plan shows without its trial. A sandbox account new to 808 sees both.
+If the paywall says "Plans aren't loading", the sandbox did not return the products; reopening 808 retries.
+People updating from 1.0 without a subscription meet the paywall at launch. That paywall adds an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
+Apple's rating prompt may appear once during onboarding, on "808 was made for people like you". It is not tied to any answer.
+After the paywall: reminders (optional), Apple Health (only with a paired Watch), Sign in with Apple (optional), Create your profile (optional: "Not now", or "Continue without a profile" with no iCloud) and a short tour.
 
 SESSIONS
-Tap the plus in the tab bar, then choose how to meditate:
+Tap the plus in the tab bar, then the first button ("Meditate") to choose:
 - Meditate: a timer on the iPhone. Nothing is measured.
-- With Apple Watch: wakes the Watch app, which reads heart rate and motion. Without a Watch it carries on as an iPhone session.
-- Record one: logs a session done elsewhere, by hand.
-Please keep 808 open during an iPhone session. After more than 10 seconds away from the app, including a locked screen, 808 says the session won't count, and "I was still meditating" keeps it.
-"Silence notifications" on the same screen runs two Shortcuts, "808 Silence" and "808 Restore", which the person adds once from iCloud links the app opens. They turn Do Not Disturb on and off around a session. 808 never changes Focus itself.
+- With Apple Watch: dimmed unless a Watch is paired. It wakes the Watch app, which reads heart rate and motion.
+- Record one: logs a session done elsewhere, then opens its page for an optional photo or video.
+A timed session asks once for notification permission, for its end chime, unless onboarding already asked. Please keep 808 open during an iPhone session (the screen stays on, dimmed). After more than 10 seconds away, including a locked screen, 808 says the session won't count, and "I was still meditating" keeps it.
+"Silence notifications" runs two Shortcuts, "808 Silence" and "808 Restore", added once from iCloud links the app opens, to turn Do Not Disturb on and off. 808 never changes Focus itself.
 
 FRIENDS
-Friends uses Apple's public CloudKit database, not a server of ours, so the device must be signed in to iCloud. There are no posts, comments or messages. A Friends profile shows a name, @username, an optional photo and a practice summary (sessions and minutes this week, streak, total sessions, last session date). Making one is optional and requires agreeing to the community rules. Anyone who looks up a username can see that profile.
-To try adding a friend, open the Friends tab and search for @REVIEWER_HANDLE, a test account we run. You can send it a request, report it or block it. Every profile has Report and Block in its menu.
-Deleting an account removes its Friends profile, username and connections. Delete account is in Settings (Profile tab, gear icon) and behind the launch paywall's Account link.
+Uses Apple's public CloudKit database, so the device must be signed in to iCloud. No posts, comments or messages. A profile shows a name, @username, optional photo, practice summary (sessions and minutes this week, streak, total, last session date) and followers and following, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
+To try it, open the Friends tab, create a profile (any username, tick "I agree to the community rules"), then search for @REVIEWER_HANDLE, a test account we run: request, report or block it. Every profile has Report and Block in its menu.
+Delete account (Settings: Profile tab, gear icon; or the paywall's Account link) removes the Friends profile, username and connections.
 
 HEALTH DATA
-Heart rate is read only during a session started with an Apple Watch. Results are computed on the device and stay there, in a store excluded from iCloud sync and from device backup (guideline 5.1.3(ii)). Each Watch session is saved to Apple Health as a workout and as mindful minutes. Analytics never include a health value.
-
-AUDIO
-The guided narration was commissioned with a commercial license. The tones are synthesized at runtime. The ambient beds and nature recordings were generated under commercial license.
+Heart rate is read only during a session measured by an Apple Watch. Results are computed and kept on the device, in a store excluded from iCloud sync and device backup (5.1.3(ii)). Each Watch session is saved to Apple Health as a workout and mindful minutes. Analytics never include a health value.
 ```
 
 ---

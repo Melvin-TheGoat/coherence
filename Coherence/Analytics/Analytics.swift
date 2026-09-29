@@ -307,11 +307,31 @@ enum Analytics {
         config.captureScreenViews = false
         config.captureApplicationLifecycleEvents = true   // app_opened powers retention
         config.sessionReplay = false
-        // Element-interaction autocapture is ON by default and slipped a
-        // "Rageclick" with a SwiftUI view-hierarchy string into the live
-        // feed. The policy promises named behavioral events only; every
-        // capture path that invents its own events stays off.
+        // Every capture path that invents its own events stays off: the
+        // policy promises named behavioral events only (Melvin, 2026-09-29).
+        // Element interactions are off by default in this SDK (3.69.6), set
+        // anyway so an update cannot switch them on.
         config.captureElementInteractions = false
+        // Rage clicks are a SEPARATE integration, ON by default and not
+        // governed by `captureElementInteractions`. It is what sent a
+        // `$rageclick` with touch coordinates and a SwiftUI view-hierarchy
+        // string into the live feed; turning element interactions off never
+        // touched it.
+        config.rageClickConfig.enabled = false
+        // Surveys are on by default: a remote survey could be switched on
+        // from PostHog's dashboard and shown inside 808. Nothing we have not
+        // reviewed gets to draw on screen.
+        config.surveys = false
+        // Push capture is on by default and swizzles the app delegate: the
+        // subscription integration would hand PostHog the APNs token that
+        // CloudKit's sync registers for, and the opened integration would
+        // report taps on remote notifications. 808 uses neither.
+        config.capturePushNotificationSubscriptions = false
+        config.capturePushNotificationOpened = false
+        // No feature flags are read anywhere in 808, so there is nothing to
+        // preload; the request would only carry the anonymous ID and person
+        // properties to PostHog on every launch for no reason.
+        config.preloadFeatureFlags = false
         // No crash reports either. Off is the SDK's default, and PostHog's
         // own dashboard can only narrow it further, never switch it on; set
         // here so the App Privacy label ("no diagnostics") rests on this

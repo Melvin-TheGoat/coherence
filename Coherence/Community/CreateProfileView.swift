@@ -34,14 +34,22 @@ struct CreateProfileView: View {
     /// (or continued without iCloud).
     let onDone: (String?) -> Void
 
-    /// When the community rules were agreed to, set when a handle is claimed
-    /// with the box ticked. A ticked box on a later Edit profile reads it.
+    /// When the community rules were agreed to on this phone, set when a
+    /// handle is claimed with the box ticked. Edit profile reads it; a new
+    /// profile never does. Cleared by sign-out and Delete account
+    /// (`CommunityModel.signedOut`), so the next person agrees for themselves.
     static let rulesAcceptedKey = "friends.rulesAcceptedAt.v1"
 
     @Environment(\.modelContext) private var context
     /// Non-zero when this is the Friends TAB: the tab bar's raised plus
     /// stands above the bar, so the buttons sit higher to clear it.
     @Environment(\.tabBarClearance) private var tabBarClearance
+    /// Set while the onboarding tour shows the Friends tab under its dim.
+    /// The field is never focused then: the keyboard would come up over
+    /// Otto's line and the tour's Next (Melvin, 2026-09-29).
+    @Environment(\.tourTab) private var tourTab
+    /// True anywhere inside onboarding, the tour included.
+    @Environment(\.onboardingSharedGround) private var inOnboardingFlow
     @Query private var users: [User]
 
     @State private var handle = ""
@@ -64,9 +72,14 @@ struct CreateProfileView: View {
     @State private var showLibraryPicker = false
     @State private var suggestions: [String] = []
     @FocusState private var focused: Bool
-    /// The community rules box (guideline 1.2). Starts ticked only for
-    /// somebody who agreed on an earlier claim.
-    @State private var agreed = UserDefaults.standard.object(forKey: CreateProfileView.rulesAcceptedKey) != nil
+    /// The community rules box (guideline 1.2). A new profile always starts
+    /// unticked, whoever agreed on this phone before (Melvin, 2026-09-29: the
+    /// box came up ticked for the next person to create a profile here).
+    /// Only Edit profile starts ticked, and only when the rules were agreed
+    /// on this phone (`seedAgreement`).
+    @State private var agreed = false
+    /// The box was tapped, so the screen never overrides the person's choice.
+    @State private var agreementTouched = false
     /// The Terms, opened from the rules row. Presented from that row, not
     /// from this view, which already carries a camera cover and the photo
     /// picker (stacked presentations on one view are the only-one-presents
@@ -80,6 +93,9 @@ struct CreateProfileView: View {
 
     /// A profile already exists: same screen, edit wording.
     private var editing: Bool { !(model.profile?.username ?? "").isEmpty }
+
+    /// Onboarding's own profile step, not the tour passing the Friends tab.
+    private var onboardingStep: Bool { inOnboardingFlow && tourTab == nil }
 
     /// The photo friends currently see, unless it is on its way out.
     private var publishedPhoto: URL? { removePublishedPhoto ? nil : model.profile?.avatarURL }
@@ -180,9 +196,16 @@ struct CreateProfileView: View {
                 .saturation(canSave || claiming ? 1 : 0.2)
                 .brightness(canSave || claiming ? 0 : -0.25)
                 // Friends is optional: every door that creates a profile can
-                // also decline one. Edit profile has its own Cancel.
+                // also decline one. Edit profile has its own Cancel, except on
+                // onboarding's profile step, where somebody who signed back in
+                // meets the profile they already have and needs a way on that
+                // changes nothing (Melvin, 2026-09-29).
                 if !editing {
                     Button(model.phase == .unavailable ? "Continue without a profile" : "Not now") { notNow() }
+                        .font(AppFont.callout.weight(.semibold))
+                        .onValley()
+                } else if onboardingStep {
+                    Button("Continue") { keepAsItIs() }
                         .font(AppFont.callout.weight(.semibold))
                         .onValley()
                 }
@@ -210,14 +233,20 @@ struct CreateProfileView: View {
             }
         }
         .task {
+            seedAgreement()
             await model.load()
+            seedAgreement()
             // A reinstall or Edit profile already has a reserved handle and
             // name in iCloud; those win over anything typed locally.
             if handle.isEmpty { handle = model.profile?.username ?? "" }
             if handle.isEmpty { handle = Username.normalize(suggested) ?? "" }
             if name.isEmpty { name = model.profile?.displayName ?? "" }
             if name.isEmpty { name = nickname }
-            if handle.isEmpty { focused = true } else { check() }
+            if handle.isEmpty {
+                if tourTab == nil { focused = true }
+            } else {
+                check()
+            }
         }
     }
 
@@ -344,7 +373,7 @@ struct CreateProfileView: View {
     /// a handle makes public.
     private var rulesAgreement: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Button { agreed.toggle() } label: {
+            Button { agreed.toggle(); agreementTouched = true } label: {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: agreed ? "checkmark.square.fill" : "square")
                         .font(.system(size: 20, weight: .semibold))
@@ -365,12 +394,29 @@ struct CreateProfileView: View {
                 .foregroundStyle(AppColor.skyDeep)
                 .padding(.leading, 30)
 
-            Text("Anyone who looks up your @username sees your name, photo, streak and how often you meditate.")
+            Text("Anyone who looks up your @username sees your name, photo, streak, how often you meditate, and who you follow and who follows you.")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .sheet(item: $legalDoc) { LegalDocSheet(doc: $0) }
+    }
+
+    /// Edit profile starts ticked when the rules were agreed on this phone
+    /// and the profile being edited exists. Run before and after loading,
+    /// because the profile may only arrive with the load.
+    private func seedAgreement() {
+        guard !agreementTouched, editing,
+              UserDefaults.standard.object(forKey: Self.rulesAcceptedKey) != nil else { return }
+        agreed = true
+    }
+
+    /// "Continue" on onboarding's profile step for somebody who already has
+    /// a profile: moves on with the profile exactly as it is, and lets it be
+    /// published to again, since the person has taken it back up.
+    private func keepAsItIs() {
+        model.resumePublishing()
+        onDone(model.profile?.username)
     }
 
     /// "Not now" (or, with no iCloud, "Continue without a profile"). It also
@@ -419,8 +465,10 @@ struct FriendsIntroView: View {
     let nickname: String
     let onDone: () -> Void
 
-    /// Set the first time the intro shows, and by any "Not now" on Create
-    /// your profile, so it never comes back.
+    /// Set the first time the intro is on screen, and by any "Not now" on
+    /// Create your profile, so it never comes back. Cleared by sign-out and
+    /// Delete account (`CommunityModel.signedOut`), so the next person on
+    /// the phone is asked once too.
     static let shownKey = "friends.introShown.v1"
 
     @State private var creating = false
@@ -457,7 +505,7 @@ struct FriendsIntroView: View {
 
                 Button { creating = true } label: { Text("Pick your username") }
                     .buttonStyle(PrimaryButtonStyle())
-                Button("Not now") { onDone() }
+                Button("Not now") { markShown(); onDone() }
                     .font(AppFont.callout.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary)
                     .frame(maxWidth: .infinity)
@@ -471,7 +519,18 @@ struct FriendsIntroView: View {
                     .navigationBarTitleDisplayMode(.inline)
             }
         }
-        .onAppear { Analytics.track(.friendsIntroShown) }
+        // Marked shown here, when it is actually on screen, not when it was
+        // asked for (Melvin, 2026-09-29): a cover asked for while another
+        // one is up never appears, and marking it then spent the one showing
+        // on nothing.
+        .onAppear {
+            markShown()
+            Analytics.track(.friendsIntroShown)
+        }
+    }
+
+    private func markShown() {
+        UserDefaults.standard.set(true, forKey: Self.shownKey)
     }
 
     private func bullet(_ icon: String, _ text: String) -> some View {

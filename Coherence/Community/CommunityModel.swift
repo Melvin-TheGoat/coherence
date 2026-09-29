@@ -206,6 +206,13 @@ final class CommunityModel: ObservableObject {
         // (Melvin, 2026-09-29), and nothing about how often somebody
         // meditates is published for a person who never made a profile.
         guard FeatureFlags.friends, let store, phase == .ready, hasProfile, let allSessions else { return }
+        // Nothing while the person who made this profile has signed out or
+        // deleted their account (`publishingPausedKey`), and nothing while a
+        // deletion is unfinished: a save now would put back the profile
+        // record the deletion is taking down (the save is an upsert).
+        let defaults = UserDefaults.standard
+        guard !defaults.bool(forKey: Self.publishingPausedKey),
+              !defaults.bool(forKey: Self.pendingDeletionKey) else { return }
         if !force, let last = lastPracticeStatsAttemptAt, Date().timeIntervalSince(last) < 180 { return }
         lastPracticeStatsAttemptAt = Date()
         let stats = PracticeStats.compute(from: allSessions())
@@ -228,6 +235,21 @@ final class CommunityModel: ObservableObject {
         unavailableReason = .noAccount
         do {
             myID = try await store.me()
+            // An account deletion that has not finished yet: finish it before
+            // anything else, and never show the profile it is taking down
+            // (Melvin, 2026-09-29). Without this, Friends and Profile went on
+            // showing the deleted @username, and onboarding's profile step
+            // opened on it in Edit mode.
+            if UserDefaults.standard.bool(forKey: Self.pendingDeletionKey) {
+                do {
+                    try await store.deleteEverythingOfMine()
+                    UserDefaults.standard.removeObject(forKey: Self.pendingDeletionKey)
+                } catch {
+                    profile = nil
+                    phase = .needsUsername
+                    return
+                }
+            }
             profile = try await store.myProfile()
             guard let profile, !profile.username.isEmpty else { phase = .needsUsername; return }
             try await refreshLists(store)
@@ -344,6 +366,9 @@ final class CommunityModel: ObservableObject {
             // unfinished deletion retrying at the next launch would take
             // this profile down with the old one.
             UserDefaults.standard.removeObject(forKey: Self.pendingDeletionKey)
+            // Somebody claimed or saved a profile: it is theirs, and how often
+            // they meditate may be published again.
+            UserDefaults.standard.removeObject(forKey: Self.publishingPausedKey)
             // Sessions sat before the profile existed (the onboarding demo,
             // weeks of practice before 1.1) still count as a first session
             // for whoever invited this person.
@@ -579,13 +604,76 @@ final class CommunityModel: ObservableObject {
         } catch { errorText = Self.plain(error) }
     }
 
-    // MARK: - Account deletion
+    // MARK: - Signing out and deleting the account
 
-    /// UserDefaults key for a Friends deletion that could not finish
-    /// (offline, no iCloud, a network blip at exactly the wrong moment).
-    /// Not `private`, like `testModeKey` above: `retryPendingDeletion` reads
-    /// it from a fresh launch and a test needs to see it too.
+    /// Set when the person on this phone signs out of 808 or deletes their
+    /// account; cleared when somebody claims or saves a profile, keeps the
+    /// one they have on onboarding's profile step, or opens Friends with one
+    /// (`resumePublishing`). While it is set, nothing about how often anybody
+    /// meditates is published (Melvin, 2026-09-29).
+    ///
+    /// Stored, not held in memory, because a Friends profile belongs to the
+    /// phone's iCloud account, not to the 808 account: signing out of 808
+    /// leaves it loadable, and the app loads Friends and publishes practice
+    /// stats at every launch and every return to the foreground. A flag that
+    /// died with the process would have started publishing again, for a
+    /// person who had signed out, the next time the app opened on onboarding.
+    static let publishingPausedKey = "community.practiceStatsPaused.v1"
+
+    /// UserDefaults key for a Friends deletion that has not finished
+    /// (offline, no iCloud, a network blip at exactly the wrong moment, or
+    /// simply still running). Not `private`, like `testModeKey` above:
+    /// `retryPendingDeletion` reads it from a fresh launch and a test needs
+    /// to see it too.
     static let pendingDeletionKey = "community.pendingAccountDeletion.v1"
+
+    /// Everything this model holds about the person who just left, dropped
+    /// at once (Melvin, 2026-09-29, second pass of the pre-1.1 audit). It
+    /// used to survive both sign-out and Delete account: Friends and Profile
+    /// kept showing the old @username, onboarding's profile step opened in
+    /// Edit mode on it, and practice stats kept publishing to it.
+    ///
+    /// Also forgets, on this phone, that anybody agreed to the community
+    /// rules or saw the Friends intro: the next person to use the phone
+    /// agrees for themselves.
+    private func forgetThisPerson() {
+        profile = nil
+        myID = nil
+        feed = []
+        people = [:]
+        friends = []
+        incoming = []
+        sent = []
+        blocked = []
+        reactions = [:]
+        followCounts = [:]
+        rewardNews = nil
+        errorText = nil
+        lastSyncedPracticeStats = nil
+        lastPracticeStatsAttemptAt = nil
+        phase = .loading
+        let defaults = UserDefaults.standard
+        defaults.set(true, forKey: Self.publishingPausedKey)
+        defaults.removeObject(forKey: CreateProfileView.rulesAcceptedKey)
+        defaults.removeObject(forKey: FriendsIntroView.shownKey)
+    }
+
+    /// The person signed out of 808. Their Friends profile stays in iCloud
+    /// (it is the iCloud account's, and they may sign back in), but this
+    /// phone stops showing it and stops publishing to it until someone
+    /// takes it up again (`publishingPausedKey`).
+    func signedOut() {
+        forgetThisPerson()
+    }
+
+    /// Lifts `publishingPausedKey`: the person on this phone has taken their
+    /// profile up again (kept it on onboarding's profile step, or opened
+    /// Friends with it). A claim lifts it too, inside `claim`.
+    func resumePublishing() {
+        guard UserDefaults.standard.bool(forKey: Self.publishingPausedKey) else { return }
+        UserDefaults.standard.removeObject(forKey: Self.publishingPausedKey)
+        Task { await syncPracticeStats(force: true) }
+    }
 
     /// Deletes everything I've written to Friends: my profile, my posts, my
     /// reactions, my friend edges and blocks, my username. Called once, when
@@ -600,25 +688,27 @@ final class CommunityModel: ObservableObject {
     /// Friends itself is switched on in THIS build, and a build that never
     /// turned it on has nothing to clean up.
     ///
-    /// Best effort, and resumable: a failure here (offline, no iCloud, a
-    /// dropped connection) sets `pendingDeletionKey` instead of losing the
-    /// request, and `retryPendingDeletion()` — called from `CoherenceApp`'s
-    /// launch task — tries again on every later launch until one run
-    /// finishes clean.
+    /// Best effort, and resumable: the pending flag is set BEFORE the first
+    /// request and cleared only when a run finishes clean, so a failure, a
+    /// kill mid-way, or a `load()` that races this one all see a deletion
+    /// still owed. `load()` finishes it the next time Friends loads, and
+    /// `retryPendingDeletion()` (from `CoherenceApp`'s launch task) at every
+    /// later launch until one run finishes clean.
     func deleteAccountData() async {
+        forgetThisPerson()
         guard FeatureFlags.friends else { return }
+        UserDefaults.standard.set(true, forKey: Self.pendingDeletionKey)
         // No store yet this launch (iCloud unavailable, or not loaded): the
-        // request is remembered rather than dropped, and a later launch that
-        // reaches iCloud deletes whatever is there.
-        guard let store else {
-            UserDefaults.standard.set(true, forKey: Self.pendingDeletionKey)
-            return
-        }
+        // request stays remembered rather than dropped, and a later launch
+        // that reaches iCloud deletes whatever is there.
+        guard let store else { return }
         do {
             try await store.deleteEverythingOfMine()
             UserDefaults.standard.removeObject(forKey: Self.pendingDeletionKey)
         } catch {
-            UserDefaults.standard.set(true, forKey: Self.pendingDeletionKey)
+            // Still pending: `load()` and the next launch try again. (A
+            // profile claimed meanwhile has already cleared the flag, and is
+            // not taken down by a retry.)
         }
     }
 

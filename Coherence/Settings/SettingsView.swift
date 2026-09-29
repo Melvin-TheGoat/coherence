@@ -19,7 +19,7 @@ struct SettingsView: View {
                 if let user = currentUser, let prefs = preferences.first {
                     SettingsForm(user: user, prefs: prefs, onDone: { dismiss() },
                                  onSignOut: {
-                                     AccountActions.signOut(in: context)
+                                     AccountActions.signOut(in: context, community: community)
                                      dismiss()
                                  },
                                  onDelete: {
@@ -59,19 +59,40 @@ enum AccountActions {
     /// a public Friends profile is not something we can leave sitting around
     /// in the meantime for other people to see. No mention of posts: there
     /// are none to delete since posting was removed (2026-09-27).
+    ///
+    /// **It says the subscription keeps billing** (Melvin, 2026-09-29, App
+    /// Review 5.1.1(v)): deleting an account cannot cancel an App Store
+    /// subscription, only the person can, and an app that lets someone delete
+    /// their account without saying so leaves them paying for nothing. The
+    /// dialog offers Manage subscription beside Delete.
     static var deleteMessage: String {
-        FeatureFlags.friends
+        let account = FeatureFlags.friends
             ? "Your account and sessions are removed after 30 days. Sign back in before then to restore them. Your Friends profile and connections are deleted right away."
             : "Your account and sessions are removed after 30 days. Sign back in before then to restore them."
+        return account + " " + subscriptionNote
     }
 
-    static func signOut(in context: ModelContext) {
+    static let subscriptionNote = "Deleting your account doesn't cancel your subscription. Cancel it in the Settings app under your name, Subscriptions."
+
+    /// Whether anybody is signed in with Apple on this phone. Sign out is
+    /// offered only then (Melvin, 2026-09-29): with only the local account
+    /// there is nothing to sign out of, and the button reset onboarding for
+    /// no reason.
+    static func isSignedIn(_ users: [User]) -> Bool {
+        users.contains { !$0.appleUserID.isEmpty && $0.deletedAt == nil }
+    }
+
+    static func signOut(in context: ModelContext, community: CommunityModel) {
         Analytics.track(.signedOut)
         // A new anonymous person from here: the next one on this phone is not
         // them.
         Analytics.reset()
         SessionStore.signOut(in: context)
         OttoChatStore.deleteAll()
+        // Friends forgets them on this phone too: the profile they had stops
+        // showing and stops being published to, and the next person agrees
+        // to the community rules for themselves.
+        community.signedOut()
     }
 
     static func deleteAccount(in context: ModelContext, community: CommunityModel) {
@@ -80,29 +101,36 @@ enum AccountActions {
         SessionStore.softDeleteCurrentUser(in: context)
         OttoChatStore.deleteAll()
         // Friends: the public profile and everything it wrote go too, not
-        // just the local sign-out (5.1.1(v)). Fire-and-forget: a slow or
-        // offline delete must not hold up the screen, and a failure retries
-        // on the next launch (`CommunityModel.retryPendingDeletion`).
+        // just the local sign-out (5.1.1(v)). The screen forgets them at
+        // once; the deletion itself runs on without holding the screen, and
+        // anything it cannot finish is retried (`CommunityModel.load`, and
+        // `retryPendingDeletion` at every launch).
         Task { await community.deleteAccountData() }
     }
 
-    private static var scene: UIWindowScene? {
-        UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+    /// A confirmation dialog's button runs as the dialog dismisses; Apple's
+    /// subscription page asked for in the same moment can fail to present.
+    /// This small wait lets the dialog finish first.
+    static func afterDialog(_ action: @escaping () -> Void) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: action)
     }
+}
 
-    /// Apple's own subscription page: change plan or cancel. 808 cannot
-    /// cancel anything itself, so this is where "cancel" leads.
-    static func manageSubscription() {
-        guard let scene else { return }
-        Task { try? await AppStore.showManageSubscriptions(in: scene) }
-    }
-
-    /// Apple's own redemption sheet. The purchase it produces arrives on
-    /// `Transaction.updates`, which `Store` has listened to since launch, so
-    /// nothing here needs to handle the result.
-    static func redeemCode() {
-        guard let scene else { return }
-        Task { try? await AppStore.presentOfferCodeRedeemSheet(in: scene) }
+extension View {
+    /// Apple's own membership sheets, presented by SwiftUI from the view
+    /// that asks (Melvin, 2026-09-29). They used to be asked for through the
+    /// window scene with every error swallowed, which from inside a sheet
+    /// (Settings, the paywall's Account page) could silently present
+    /// nothing. The subscription page is where "cancel" leads: 808 cannot
+    /// cancel anything itself. A redeemed code arrives on
+    /// `Transaction.updates`, which `Store` has listened to since launch.
+    func membershipSheets(manage: Binding<Bool>, redeem: Binding<Bool>) -> some View {
+        manageSubscriptionsSheet(isPresented: manage)
+            .offerCodeRedemption(isPresented: redeem) { result in
+                if case .failure(let error) = result {
+                    print("Offer code redemption failed: \(error)")
+                }
+            }
     }
 }
 
@@ -164,11 +192,14 @@ struct AccountSheet: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var community: CommunityModel
+    @Query private var users: [User]
 
     @State private var confirmSignOut = false
     @State private var confirmDelete = false
     @State private var restoring = false
     @State private var restoreFeedback: RestoreFeedback?
+    @State private var showManageSubscriptions = false
+    @State private var showRedeem = false
 
     var body: some View {
         NavigationStack {
@@ -177,12 +208,12 @@ struct AccountSheet: View {
                     VStack(alignment: .leading, spacing: 0) {
                         row(icon: "creditcard", title: "Manage subscription",
                             subtitle: "Change or cancel your plan with Apple") {
-                            AccountActions.manageSubscription()
+                            showManageSubscriptions = true
                         }
                         divider
                         row(icon: "ticket", title: "Redeem a code",
                             subtitle: "An offer code from a friend or a creator") {
-                            AccountActions.redeemCode()
+                            showRedeem = true
                         }
                         divider
                         row(icon: "arrow.clockwise", title: restoring ? "Restoring…" : "Restore purchases",
@@ -195,19 +226,21 @@ struct AccountSheet: View {
                     .whiteCard(radius: 16)
 
                     VStack(spacing: 10) {
-                        Button("Sign out") { confirmSignOut = true }
-                            .font(AppFont.callout.weight(.medium))
-                            .foregroundStyle(AppColor.textSecondary)
-                            .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
-                                                titleVisibility: .visible) {
-                                Button("Sign out", role: .destructive) {
-                                    AccountActions.signOut(in: context)
-                                    dismiss()
+                        if AccountActions.isSignedIn(users) {
+                            Button("Sign out") { confirmSignOut = true }
+                                .font(AppFont.callout.weight(.medium))
+                                .foregroundStyle(AppColor.textSecondary)
+                                .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
+                                                    titleVisibility: .visible) {
+                                    Button("Sign out", role: .destructive) {
+                                        AccountActions.signOut(in: context, community: community)
+                                        dismiss()
+                                    }
+                                    Button("Cancel", role: .cancel) {}
+                                } message: {
+                                    Text(AccountActions.signOutMessage)
                                 }
-                                Button("Cancel", role: .cancel) {}
-                            } message: {
-                                Text(AccountActions.signOutMessage)
-                            }
+                        }
                         Button("Delete account") { confirmDelete = true }
                             .font(AppFont.caption)
                             .foregroundStyle(.red.opacity(0.75))
@@ -216,6 +249,9 @@ struct AccountSheet: View {
                                 Button("Delete account", role: .destructive) {
                                     AccountActions.deleteAccount(in: context, community: community)
                                     dismiss()
+                                }
+                                Button("Manage subscription") {
+                                    AccountActions.afterDialog { showManageSubscriptions = true }
                                 }
                                 Button("Cancel", role: .cancel) {}
                             } message: {
@@ -236,6 +272,7 @@ struct AccountSheet: View {
             }
         }
         .restoreFeedbackAlert($restoreFeedback)
+        .membershipSheets(manage: $showManageSubscriptions, redeem: $showRedeem)
     }
 
     private var divider: some View {
@@ -291,6 +328,8 @@ private struct SettingsForm: View {
 
     @State private var confirmDelete = false
     @State private var confirmSignOut = false
+    @State private var showManageSubscriptions = false
+    @State private var showRedeem = false
     @State private var editingName = false
     /// What the last Restore found (Melvin, 2026-09-29).
     @State private var restoreFeedback: RestoreFeedback?
@@ -447,7 +486,7 @@ private struct SettingsForm: View {
                     // it from inside 808.
                     membershipRow(icon: "creditcard", title: "Manage subscription",
                                   subtitle: "Change or cancel your plan with Apple") {
-                        AccountActions.manageSubscription()
+                        showManageSubscriptions = true
                     }
                     divider
                     membershipRow(icon: "arrow.clockwise", title: "Restore purchases",
@@ -463,7 +502,7 @@ private struct SettingsForm: View {
                     divider
                     membershipRow(icon: "ticket", title: "Redeem a code",
                                   subtitle: "An offer code from a friend or a creator") {
-                        AccountActions.redeemCode()
+                        showRedeem = true
                     }
                 }
                 .restoreFeedbackAlert($restoreFeedback)
@@ -500,10 +539,14 @@ private struct SettingsForm: View {
             .padding(AppMetrics.screenPadding)
         .confirmationDialog(AccountActions.deleteTitle, isPresented: $confirmDelete, titleVisibility: .visible) {
             Button("Delete account", role: .destructive, action: onDelete)
+            Button("Manage subscription") {
+                AccountActions.afterDialog { showManageSubscriptions = true }
+            }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(AccountActions.deleteMessage)
         }
+        .membershipSheets(manage: $showManageSubscriptions, redeem: $showRedeem)
     }
 
     #if DEBUG
@@ -914,17 +957,21 @@ private struct SettingsForm: View {
 
     private var accountFooter: some View {
         VStack(spacing: 6) {
-            Button("Sign out") { confirmSignOut = true }
-                .font(AppFont.callout.weight(.medium))
-                .foregroundStyle(AppColor.textSecondary)
-                // What signing out costs is said first (`AccountActions`).
-                .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
-                                    titleVisibility: .visible) {
-                    Button("Sign out", role: .destructive, action: onSignOut)
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text(AccountActions.signOutMessage)
-                }
+            // Only for somebody signed in with Apple: the local account has
+            // nothing to sign out of (Melvin, 2026-09-29).
+            if !user.appleUserID.isEmpty && user.deletedAt == nil {
+                Button("Sign out") { confirmSignOut = true }
+                    .font(AppFont.callout.weight(.medium))
+                    .foregroundStyle(AppColor.textSecondary)
+                    // What signing out costs is said first (`AccountActions`).
+                    .confirmationDialog(AccountActions.signOutTitle, isPresented: $confirmSignOut,
+                                        titleVisibility: .visible) {
+                        Button("Sign out", role: .destructive, action: onSignOut)
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text(AccountActions.signOutMessage)
+                    }
+            }
             Button("Delete account") { confirmDelete = true }
                 .font(AppFont.caption)
                 .foregroundStyle(.red.opacity(0.75))

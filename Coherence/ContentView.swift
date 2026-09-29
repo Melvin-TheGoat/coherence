@@ -252,6 +252,7 @@ struct ContentView: View {
         .modifier(RootHooks(community: community, users: users,
                             sessionActive: coordinator.active != nil,
                             awardShowing: !unlockQueue.isEmpty && !holdAwards,
+                            coverShowing: sheet != nil,
                             touring: tourTab != nil,
                             lastSessionID: coordinator.lastSessionID,
                             resumedID: landedWhileAway,
@@ -1330,18 +1331,24 @@ private struct FriendsHooks: ViewModifier {
     let users: [User]
     let sessionActive: Bool
     let awardShowing: Bool
+    /// One of ContentView's own covers (setup, settings, results...) is up.
+    let coverShowing: Bool
     /// The onboarding tour is showing this screen. Both of these wait for it
     /// to finish: the tour's Friends stop loads the tab, and a reward or the
     /// profile prompt opening then would cover the tour.
     let touring: Bool
 
-    /// The intro has been shown (or declined on Create your profile).
+    /// The intro has been shown (or declined on Create your profile). Set by
+    /// `FriendsIntroView` itself, once it is actually on screen.
     @AppStorage(FriendsIntroView.shownKey) private var introShown = false
     @State private var showIntro = false
 
+    /// Something else has the screen.
+    private var busy: Bool { sessionActive || awardShowing || coverShowing || touring }
+
     /// Somebody with no profile, nothing else on screen, and no intro yet.
     private var introDue: Bool {
-        community.phase == .needsUsername && !introShown && !sessionActive && !awardShowing && !touring
+        community.phase == .needsUsername && !introShown && !busy
     }
 
     func body(content: Content) -> some View {
@@ -1357,21 +1364,28 @@ private struct FriendsHooks: ViewModifier {
                 // to be required and came back on every launch while iCloud
                 // said there was no profile; App Review 5.1.1 does not let an
                 // app require a public profile its core function does not
-                // need. Marked shown the moment it opens, so a kill mid-way
-                // does not bring it back either.
+                // need.
+                //
+                // Marked shown by the intro itself when it appears (or is
+                // dismissed), not here when it is asked for: a cover asked
+                // for while one of ContentView's covers is up never appears,
+                // and marking it then spent the one showing on nothing. It
+                // also waits for those covers now (`coverShowing`).
                 .fullScreenCover(isPresented: $showIntro) {
                     FriendsIntroView(model: community,
                                      suggested: users.first?.username ?? "",
-                                     nickname: users.first?.displayName ?? "") { showIntro = false }
+                                     nickname: users.first?.displayName ?? "") {
+                        introShown = true
+                        showIntro = false
+                    }
                 }
                 .onChange(of: introDue, initial: true) { _, due in
-                    guard due else { return }
-                    introShown = true
-                    showIntro = true
+                    if due { showIntro = true }
                 }
-                // A session or an award has the screen now; the intro yields
-                // and, having been shown, does not return.
-                .onChange(of: sessionActive || awardShowing || touring) { _, busy in
+                // Something else has the screen now; the intro yields. If it
+                // had appeared it is marked shown and does not return; if it
+                // never did, it is asked for again once the screen is free.
+                .onChange(of: busy) { _, busy in
                     if busy { showIntro = false }
                 }
                 // A profile claimed from inside the intro closes it too.
@@ -1393,6 +1407,8 @@ private struct RootHooks: ViewModifier {
     let users: [User]
     let sessionActive: Bool
     let awardShowing: Bool
+    /// One of ContentView's own covers is up (`ContentView.sheet`).
+    let coverShowing: Bool
     /// The onboarding tour is on screen (`ContentView.tourTab`).
     let touring: Bool
     let lastSessionID: UUID?
@@ -1406,7 +1422,7 @@ private struct RootHooks: ViewModifier {
             .onChange(of: lastSessionID) { _, id in if id != nil, !touring { holdAwards = true } }
             .modifier(FriendsHooks(community: community, users: users,
                                    sessionActive: sessionActive, awardShowing: awardShowing,
-                                   touring: touring))
+                                   coverShowing: coverShowing, touring: touring))
             .modifier(SessionLandedHooks(sessionActive: sessionActive,
                                          awardShowing: awardShowing || touring,
                                          lastSessionID: lastSessionID,

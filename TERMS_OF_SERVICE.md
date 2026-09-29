@@ -84,7 +84,8 @@ buy.
 - **Cancelling.** You can manage or cancel your subscription at any time in
   the Settings app on your iPhone: tap your name, then Subscriptions.
   Cancelling stops the next renewal, and you keep access until the end of the
-  period you paid for.
+  period you paid for. Deleting your account or the App does not cancel a
+  subscription; it keeps renewing until you cancel it there.
 - **Refunds** are handled by Apple under its policies; we cannot issue them
   directly.
 - A lifetime purchase made in an earlier version of the App remains valid,
@@ -129,7 +130,8 @@ reports you filed.
 Friends is optional. Creating a profile requires you to agree to the rules
 in this section in the App. If you create a profile, your username, display
 name, profile photo and a summary of how often you meditate become visible to
-anyone using 808 who looks up your username. You keep ownership of what you
+anyone using 808 who looks up your username, and so do who you have added and
+who has added you. You keep ownership of what you
 add. You give us permission to store it, show it to other people using 808,
 and remove it, for as long as you keep it in the app.
 
@@ -182,7 +184,7 @@ released. Block is a tool to help you build a practice, not a guarantee that
 a particular app will or will not be reachable at a particular moment.
 
 Our handling of Block-related information, including the fact that none of
-it ever leaves your phone, is described in our
+it is ever sent to us or to any server, is described in our
 [Privacy Policy](https://meditate808.com/privacy).
 
 ## 7. Intellectual property

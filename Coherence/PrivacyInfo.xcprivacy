@@ -2,16 +2,25 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
   Privacy manifest for the iOS app (required since 2024 for required-reason
-  APIs). Rewritten for 1.1 (2026-09-29).
+  APIs). Rewritten for 1.1 (2026-09-29); second pass the same day.
 
-  Accessed APIs: UserDefaults only. CA92.1 is the app reading its own
-  preferences (migration flags, AppStorage-backed setup choices). 1C8F.1
-  (added 2026-09-23, Block) is `BlockKit/BlockStore.swift` reading and
-  writing the App Group (`group.com.lockout.meditate808`) that this app
-  shares with its three Block extensions (Monitor, Shield, ShieldAction):
-  the blockers, passes and holds Screen Time has to see across processes.
-  The Block code ships in the binary even while `blockInRelease` is off.
-  Nothing in the App Group leaves the phone; see BlockKit's own header.
+  Accessed APIs (required reasons):
+    - UserDefaults, CA92.1: the app reading its own preferences (migration
+      flags, AppStorage-backed setup choices). 1C8F.1 (added 2026-09-23,
+      Block): `BlockKit/BlockStore.swift` reading and writing the App Group
+      (`group.com.lockout.meditate808`) this app shares with its three Block
+      extensions (Monitor, Shield, ShieldAction): the blockers, passes and
+      holds Screen Time has to see across processes. The Block code ships in
+      the binary even while `blockInRelease` is off. Nothing in the App Group
+      leaves the phone; see BlockKit's own header.
+    - File timestamp, C617.1 (added 2026-09-29): the store-file dates
+      `Shared/Persistence.swift` reads when it moves the SwiftData stores out
+      of the App Group container (files inside the app's own and the group's
+      container only), and the file dates PostHog's SDK reads on its own
+      event queue in the app container.
+    - System boot time, 35F9.1 (added 2026-09-29): PostHog's SDK measures
+      elapsed time between events with it. Never sent off the device as a
+      boot time.
 
   Collected data, as 1.1 ships (Friends ON with profiles only and no posts,
   Block OFF, Shop OFF, Otto chat OFF). Apple's "collect" means sent off the
@@ -19,21 +28,33 @@
   where two uses share a type the entry carries the stronger linkage and
   every purpose. Nothing is tracking.
 
-  PostHog analytics (`Coherence/Analytics/Analytics.swift`, Release only):
-    - Product Interaction: named behavioral events. Not linked. Analytics.
+  PostHog analytics (`Coherence/Analytics/Analytics.swift`, Release only).
+  ALL LINKED since 2026-09-29: every event from an install carries the same
+  random distinct_id, and Apple counts data tied to a pseudonymous
+  identifier as linked to the user. It is never tied to a name, email,
+  Apple ID or Friends username. Named events only: screen views, session
+  replay, element-interaction (rage-click) autocapture, surveys and push
+  capture are all off.
+    - Product Interaction: named behavioral events, with coarse bands
+      (session length, streak) where an event has them. Linked. Analytics.
     - Purchase History: plan picked, purchase, trial, restore, entitlement
       lost, and the `is_subscriber` / `plan` person properties. No payment
-      details, so Financial Info stays off. Not linked. Analytics.
+      details, so Financial Info stays off. Linked. Analytics.
     - Coarse Location: PostHog derives country, region and city from the IP
       address of every request (GeoIP), and the founders read it in the
-      Google Sheet copy (`tools/posthog_sheet.gs`). Not linked. Analytics.
+      Google Sheet copy (`tools/posthog_sheet.gs`). Linked. Analytics.
     - Other Usage Data: the device and app metadata the SDK attaches to every
-      event (iPhone model, iOS and app version, language, time zone, screen
-      size, Wi-Fi or cellular). Not linked. Analytics.
+      event (iPhone model, iOS version, app version and build, TestFlight or
+      not, language, time zone, screen size, Wi-Fi or cellular), the
+      install, update, open and close lifecycle events, and the
+      `has_paired_watch` / `app_flow` person properties. Linked. Analytics.
     - User ID: the random install-scoped distinct_id (a UUID in the SDK's
       own storage, never the IDFA or identifierForVendor), reset on sign-out
       and account deletion. Shares the type with the Friends @username
-      below, so the single entry is LINKED with both purposes.
+      below, so the single entry carries both purposes.
+  No Diagnostics entry: PostHog's bundled crash-reporter manifest declares
+  crash data, but crash capture is off in `Analytics.swift`
+  (`errorTrackingConfig.autoCapture = false`), so nothing is collected.
 
   Friends (public CloudKit database of our own container, which we can
   read, so by Apple's definition collected; all LINKED, a profile is the
@@ -44,20 +65,24 @@
       videos stay in the user's PRIVATE iCloud and are not collected.)
     - Other Data Types: the practice summary on the profile (sessions and
       minutes in the last 7 days, streak, total sessions, last session
-      date) plus the first-session and created dates. Derived from session
-      dates and lengths, never from the body.
+      date), the first-session and created dates, and the friend edges and
+      blocks the person writes. Derived from session dates and lengths,
+      never from the body.
     - Other User Content: the reason text on a report, which is stored in
       the public database and sent to the reports web app
       (`ReportClient`, `tools/community-reports.gs`).
 
   Earlier waitlist (`WaitlistClient`): the no-Watch waitlist screen is cut,
-  but a queued sign-up from an older version still flushes on launch.
+  but an email can still reach the waitlist sheet two ways: a saved
+  onboarding record from an older version that held one
+  (`OnboardingView`, `WaitlistClient.submit`), and a queued sign-up that
+  flushes on launch (`WaitlistClient.flush`).
     - Email Address: LINKED, Developer's Advertising or Marketing.
 
   What is deliberately NOT collected, and must never appear here: health and
   fitness data. Heart rate, breathing, stillness, scores, and every value
   derived from them stay on device (HealthKit data may not be disclosed to
-  third parties, guideline 5.1.3). No analytics event carries one, and a
+  third parties, guideline 5.1.3). No 1.1 analytics event carries one, and a
   Friends profile never does. The private CloudKit database (account,
   sessions, notes, session photos) is the user's own and is not collected:
   we cannot read it. Nothing Block or Screen Time learns ever leaves the
@@ -78,7 +103,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeProductInteraction</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -90,7 +115,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -102,7 +127,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeCoarseLocation</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -114,7 +139,7 @@
 			<key>NSPrivacyCollectedDataType</key>
 			<string>NSPrivacyCollectedDataTypeOtherUsageData</string>
 			<key>NSPrivacyCollectedDataTypeLinked</key>
-			<false/>
+			<true/>
 			<key>NSPrivacyCollectedDataTypeTracking</key>
 			<false/>
 			<key>NSPrivacyCollectedDataTypePurposes</key>
@@ -205,6 +230,22 @@
 			<array>
 				<string>CA92.1</string>
 				<string>1C8F.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategorySystemBootTime</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>35F9.1</string>
 			</array>
 		</dict>
 	</array>

@@ -27,6 +27,14 @@ founders can make are in `## OPEN for 1.1: FOUNDER DECISIONS` after that.
 Lines below that no longer hold are struck through with the date and the
 reason, never deleted.
 
+**Second docs pass, 2026-09-29.** The privacy policy, terms, manifest, label
+table, description, keywords and review notes were corrected against the code
+a second time (all ten label rows are now Linked = Yes; the notes were checked
+line by line against the Release build). New items are **R19 to R24** at the
+end of the release-docs pass section, and three more founder decisions. **Do R1
+and R2 first: R2 is a BLOCKER, and R1 is the one placeholder left in the
+review notes.**
+
 0b. **FRIENDS WITHOUT POSTS, AND THE STORE (Melvin, 2026-09-27).** The
    feed and all photo and video posting are gone; friends see each other's
    name and how often they meditate. Owed before the build that ships it:
@@ -41,7 +49,10 @@ reason, never deleted.
      (session counts, minutes, streak, last session date) ~~to people who
      follow you~~ **to anyone who looks up the username** (corrected
      2026-09-29: a public profile is readable by anyone, which is the
-     decision the policy and the review notes now state), and nothing else.
+     decision the policy and the review notes now state), ~~and nothing
+     else~~ **plus who the person has added and who has added them
+     (following and followers), and the month the profile was created
+     (corrected 2026-09-29, second pass)**.
      Photos or Videos can come off the label
      once no build that posts is in use; the profile photo is still a photo.
      (2026-09-29: it stays on the label, for the profile photo. The full 1.1
@@ -337,7 +348,10 @@ every archive.
   in `APP_STORE.md` was written from the decided list while the manifest was
   being changed in parallel; before publishing the label, compare it with
   `Coherence/PrivacyInfo.xcprivacy` in the build being submitted (ten data
-  types, tracking none).
+  types, tracking none). (2026-09-29, second pass: **all ten are Linked =
+  Yes**; the four PostHog-only rows were flipped because Apple counts data
+  tied to a pseudonymous ID as linked. The manifest also gained FileTimestamp
+  `C617.1` and SystemBootTime `35F9.1`.)
 - [ ] **R10. Age rating, Medical or Treatment Information = Infrequent**,
   plus UGC Yes, Social Yes, Messaging No. Expected 13+.
 - [ ] **R11. PostHog IP and GeoIP.** The privacy policy now discloses
@@ -364,11 +378,50 @@ every archive.
   agrees with the screen.
 - [ ] **R18. The launch paywall's Account link works for someone who never
   pays**: Manage subscription, Redeem a code, Restore, Sign out and Delete
-  account (5.1.1(v) needs deletion reachable without buying). It shows only
+  account (5.1.1(v) needs deletion reachable without buying). ~~It shows only
   on the LAUNCH paywall (`placement == "root_lock"`, an app that finished
-  onboarding with no subscription), not on the onboarding paywall. Test it
+  onboarding with no subscription), not on the onboarding paywall.~~
+  **Corrected 2026-09-29 (second pass):** it shows on the LAUNCH paywall
+  (`placement == "root_lock"`) and also on the onboarding paywall on a device
+  that already holds an account's data. Test it
   on a 1.0 install updated to the 1.1 Release build, or with a sandbox
   subscription left to expire.
+
+- [ ] **R19. Pre-1.1 analytics that 1.1 no longer sends** (added
+  2026-09-29, second pass). Versions before 1.1 sent `award_unlocked` for the
+  three score awards (a score of 50, 75 or 90 reached, derived from heart
+  rate) and `watch_gate` (whether the person said they own an Apple Watch).
+  The privacy policy now discloses both as past behavior. Either delete those
+  events in PostHog (the score-award `award_unlocked` rows and every
+  `watch_gate` row) or leave them under that disclosure; decide, then drop the
+  Watch gate tab and the "Said they have a Watch" row from
+  `tools/posthog_sheet.gs` so the sheet stops reading a question 1.1 never
+  asks.
+- [ ] **R20. The reviewer's sandbox account holds no active 808
+  subscription.** Onboarding sends a payer straight past the paywall, so a
+  reviewer on a subscribed account would never see it. The review notes ask
+  for this; make sure the account named in App Store Connect (if any) and the
+  one used for R17 are clean. (R1's reviewer handle account is the opposite
+  case: it needs a subscription to reach Friends. Keep the two separate.)
+- [ ] **R21. Manage subscription and Redeem a code open from the Account
+  sheet, on a device.** Both are system sheets that do not appear in the
+  simulator the way they do on a phone. Test from the launch paywall's
+  Account link and from Settings on a Release build.
+- [ ] **R22. Regenerate and redeploy the legal pages after this pass.**
+  `python3 tools/legal_pages.py` was run on 2026-09-29 (second pass); the
+  Cloudflare upload is still owed (same as R12).
+- [ ] **R23. Note, not a blocker: Sign in with Apple token revocation on
+  account deletion.** Apple asks apps that offer Sign in with Apple to revoke
+  the user's tokens through its REST API when they delete their account. That
+  call needs a server holding our Sign in with Apple private key, and 808 runs
+  none. Today deletion signs the person out and deletes everything we hold;
+  the person can also stop using Sign in with Apple for 808 in their Apple
+  Account settings on the iPhone. Record it for counsel
+  (`LEGAL_ACTION_ITEMS.md`, question 9) and revisit if review asks.
+- [ ] **R24. The Report roles in R4 are what the privacy policy promises.**
+  The policy now says reports are the one part of the shared area other
+  people's copies of 808 cannot read. That is true only once R4's Security
+  Roles are set in Production; do R4 before the policy goes live.
 
 ## OPEN for 1.1: FOUNDER DECISIONS pending before submitting (added 2026-09-29)
 
@@ -415,6 +468,28 @@ none is a code task until they decide.
   App Review for pseudonymous first-party analytics, but the policy now
   discloses approximate location, and a switch is the honest companion to
   that sentence (and helps under GDPR).
+- [ ] **"Regulate your emotions and stress"** (added 2026-09-29, second
+  pass). Onboarding's "In 1 week, 808 will help you:" screen lists it as an
+  outcome. It is the one row that promises an effect on the person rather
+  than a habit ("Make meditation part of your daily routine"), and 808
+  measures nothing about emotions. Keep it, soften it (for example "Make
+  time to settle when you're stressed"), or cut it; the listing already
+  avoids outcome claims, and a reviewer reading onboarding can hold the app
+  to the same line (1.4.1, 2.3.1).
+- [ ] **Who blocked whom is readable by anyone** (added 2026-09-29, second
+  pass). `Block` records are world-readable in the public database, as
+  `FriendEdge` records are, because the app checks blocks in both directions.
+  The privacy policy now discloses it. Keep it that way, or redesign blocks
+  so they are not exposed; the options are in `CLOUDKIT_SETUP.md`, Step 4.
+- [ ] **808 opens for free when StoreKit cannot load** (added 2026-09-29,
+  second pass). If Monthly or Yearly fail to load (offline at first launch,
+  products missing in App Store Connect, an App Store outage), the paywall
+  reads "Plans aren't loading" and lets the person continue, so a
+  premium-only app runs unpaid until the next successful load. That is the
+  safe choice for App Review (a paywall that cannot sell is a 2.1 rejection)
+  and for payers (cached entitlements still unlock). The cost is that
+  anyone who starts 808 offline gets in. Decide whether that is acceptable,
+  or whether the lock should hold after the first successful load.
 
 ## HOLD
 

@@ -249,6 +249,9 @@ final class AccountDeletionPendingFlagTests: XCTestCase {
 
     override func tearDown() {
         UserDefaults.standard.removeObject(forKey: CommunityModel.pendingDeletionKey)
+        // Deleting also pauses publishing on this phone (2026-09-29); left
+        // set, it would silence practice-stats tests that run after this.
+        UserDefaults.standard.removeObject(forKey: CommunityModel.publishingPausedKey)
     }
 
     func test_aFailedDeletionSetsThePendingFlagAndAHealthyRetryClearsIt() async throws {

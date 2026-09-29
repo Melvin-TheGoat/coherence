@@ -73,4 +73,86 @@ final class AccountLifecycleTests: XCTestCase {
         XCTAssertNil(restored.deletedAt, "signing back in clears the pending delete")
         XCTAssertEqual(users(ctx).count, 1)
     }
+
+    // MARK: - Who owns a session (2026-09-29, the pre-1.1 audit)
+
+    /// Through the real save path, not a hand-made `Session(userID:)`: that
+    /// is how the old tests missed a session filed under a stray bootstrap
+    /// row, which Delete account then never reached.
+    func test_sessionSavedAfterSignIn_isDeletedWithTheAccount() {
+        let ctx = makeContext()
+        let user = SessionStore.signIn(appleUserID: "A", email: nil, displayName: nil, in: ctx)
+        let saved = SessionStore.persistPhoneSession(id: UUID(), startedAt: Date(), mode: "silence",
+                                                     durationSec: 600, in: ctx)
+        XCTAssertEqual(saved?.userID, user.id, "a session belongs to the signed-in account")
+
+        let longAgo = Calendar.current.date(byAdding: .day, value: -40, to: Date())!
+        SessionStore.softDeleteCurrentUser(now: longAgo, in: ctx)
+        SessionStore.purgeExpired(in: ctx)
+
+        XCTAssertTrue(sessions(ctx).isEmpty, "Delete account reaches every session")
+    }
+
+    func test_strayBootstrapSessions_areAdoptedByTheSignedInAccount() {
+        let ctx = makeContext()
+        let user = SessionStore.signIn(appleUserID: "A", email: nil, displayName: nil, in: ctx)
+        // What an install that signed in before the fix holds: a second
+        // bootstrap row owning a session.
+        let stray = User(appleUserID: "")
+        ctx.insert(stray)
+        seedSession(userID: stray.id, in: ctx)
+
+        SessionStore.repairOwnership(in: ctx)
+
+        XCTAssertEqual(sessions(ctx).map(\.userID), [user.id])
+    }
+
+    func test_deleteWithoutSigningIn_newSessionsSurviveThePurge() {
+        let ctx = makeContext()
+        let first = SessionStore.currentUser(in: ctx)
+        seedSession(userID: first.id, in: ctx)
+        let longAgo = Calendar.current.date(byAdding: .day, value: -40, to: Date())!
+        SessionStore.softDeleteCurrentUser(now: longAgo, in: ctx)
+
+        // Starting over after deleting: a fresh bootstrap, never the deleted one.
+        let next = SessionStore.currentUser(in: ctx)
+        XCTAssertNotEqual(next.id, first.id)
+        let kept = SessionStore.persistPhoneSession(id: UUID(), startedAt: Date(), mode: "silence",
+                                                    durationSec: 600, in: ctx)
+        SessionStore.purgeExpired(in: ctx)
+
+        XCTAssertEqual(sessions(ctx).map(\.id), [kept?.id].compactMap { $0 },
+                       "the deleted account's session goes, the new one stays")
+    }
+
+    func test_signIn_neverAdoptsADeletedBootstrap() {
+        let ctx = makeContext()
+        let old = SessionStore.currentUser(in: ctx)
+        SessionStore.softDeleteCurrentUser(in: ctx)
+
+        let user = SessionStore.signIn(appleUserID: "B", email: nil, displayName: nil, in: ctx)
+
+        XCTAssertNotEqual(user.id, old.id)
+        XCTAssertNotNil(users(ctx).first { $0.id == old.id }?.deletedAt, "the deleted row stays deleted")
+    }
+
+    /// An account deleted under 1.0 stamped only the signed-in row; the stray
+    /// bootstrap made while it was signed in must go with it.
+    func test_accountDeletedUnderOldBuild_takesItsStrayRowWithIt() {
+        let ctx = makeContext()
+        let user = SessionStore.signIn(appleUserID: "A", email: nil, displayName: nil, in: ctx)
+        let stray = User(appleUserID: "")
+        ctx.insert(stray)
+        seedSession(userID: stray.id, in: ctx)
+        let longAgo = Calendar.current.date(byAdding: .day, value: -40, to: Date())!
+        stray.createdAt = Calendar.current.date(byAdding: .day, value: -45, to: Date())!
+        user.deletedAt = longAgo              // what the old softDelete did
+        try? ctx.save()
+
+        SessionStore.repairOwnership(in: ctx)
+        SessionStore.purgeExpired(in: ctx)
+
+        XCTAssertTrue(sessions(ctx).isEmpty, "the stray row's sessions go with the deleted account")
+    }
 }
+

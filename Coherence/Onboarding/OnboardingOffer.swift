@@ -1,6 +1,7 @@
 import SwiftUI
 import AuthenticationServices
 import StoreKit
+import SwiftData
 
 /// Screens 23–25: the offer, the exit offer, and sign-in.
 ///
@@ -261,7 +262,7 @@ struct RatingScreen: View {
 /// wired to anything today; it must do real work before submission.
 struct PaywallScreen: View {
     /// Where this paywall stands: "onboarding", "block" or "root_lock".
-    /// Analytics, plus the Account link only the launch lock carries.
+    /// Analytics, plus the Account link (`offersAccount`).
     var placement: String = "onboarding"
     /// The launch lock for somebody with sessions on this phone: 1.0 was
     /// free, so an update meets them here, and the first thing to say is that
@@ -297,7 +298,30 @@ struct PaywallScreen: View {
     /// so it carries the way to their account: manage the subscription,
     /// redeem a code, sign out, delete (App Review 5.1.1(v), Melvin,
     /// 2026-09-29).
-    private var offersAccount: Bool { placement == "root_lock" }
+    ///
+    /// **Onboarding's paywall carries it too, whenever this phone already
+    /// holds somebody's data** (same day). Signing out lands a person back in
+    /// onboarding, and there sign-in comes AFTER the paywall, so a signed-out
+    /// non-member could never reach Delete account again. A first install
+    /// holds nothing yet and sees no Account link.
+    private var offersAccount: Bool {
+        placement == "root_lock" || (placement == "onboarding" && holdsAccountData)
+    }
+    @Environment(\.modelContext) private var context
+    /// Read once on appear (`deviceHoldsAccountData`).
+    @State private var holdsAccountData = false
+
+    /// A signed-in account (a User with an Apple ID) or any session. The
+    /// bootstrap User every install creates at launch has no Apple ID, so a
+    /// first run is not mistaken for a returning one.
+    static func deviceHoldsAccountData(in context: ModelContext) -> Bool {
+        var users = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID != "" })
+        users.fetchLimit = 1
+        if ((try? context.fetchCount(users)) ?? 0) > 0 { return true }
+        var sessions = FetchDescriptor<Session>()
+        sessions.fetchLimit = 1
+        return ((try? context.fetchCount(sessions)) ?? 0) > 0
+    }
     /// What is covering the prices right now. Nil means the prices are showing.
     ///
     /// One cover, switching on a route, for the same reason the results screen
@@ -372,8 +396,13 @@ struct PaywallScreen: View {
     /// Apple's price string when there is a real product, ours otherwise.
     /// A hardcoded dollar amount beside a live purchase button is wrong in
     /// every country but one.
-    private var priceLine: String {
-        let cadence = plan.cadence(withTrial: trialNow)
+    private var priceLine: String { priceLine(withTrial: trialNow) }
+
+    /// `withTrial: false` in the trial footnote, which already says "free,
+    /// then": the rung's "per month after the trial" there read "then $7.99
+    /// per month after the trial".
+    private func priceLine(withTrial trial: Bool) -> String {
+        let cadence = plan.cadence(withTrial: trial)
         return store.displayPrice(for: plan).map { "\($0) \(cadence)" }
             ?? "\(plan.price) \(cadence)"
     }
@@ -475,7 +504,10 @@ struct PaywallScreen: View {
     /// hats or Otto's chat, which are switched off in Release.
     static var includesLine: String {
         let friends = FeatureFlags.friends ? ", Friends" : ""
-        return "Full access: timed and guided sessions, sounds, Otto's glow, streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
+        // Named before anything is bought (3.1.2: the purchase screen names
+        // the subscription; Melvin, 2026-09-29), and the same name the App
+        // Store listing and the purchase sheet use.
+        return "808 Premium: full access to timed and guided sessions, sounds, Otto's glow, streaks and awards\(friends), and heart, stillness and breathing readings with an Apple Watch."
     }
 
     /// The includes line in small type under a subtitle that says something
@@ -491,7 +523,7 @@ struct PaywallScreen: View {
         guard selling else { return notSellingFootnote }
         let whereToCancel = "in the Settings app under your name, then Subscriptions."
         if let days = trialLength {
-            return "\(TrialCopy.length(days)) free, then \(priceLine). Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, \(whereToCancel)"
+            return "\(TrialCopy.length(days)) free, then \(priceLine(withTrial: false)). Renews automatically until you cancel. Cancel at least 24 hours before the trial ends to pay nothing, \(whereToCancel)"
         }
         return "\(priceLine). Renews automatically until you cancel. Cancel any time, at least 24 hours before it renews, \(whereToCancel)"
     }
@@ -508,35 +540,50 @@ struct PaywallScreen: View {
                     .ignoresSafeArea()
                     .allowsHitTesting(false)
 
-                VStack(spacing: 0) {
-                    VStack(spacing: 8) {
-                        Text(title)
-                            .font(.system(size: compact ? 28 : 32, weight: .heavy, design: .rounded))
-                            .foregroundStyle(AppColor.textPrimary)
-                        Text(subtitle)
-                            .font(.system(size: compact ? 16 : 18, weight: .semibold, design: .rounded))
-                            .foregroundStyle(AppColor.textPrimary.opacity(0.7))
-                        if showsIncludesBelow {
-                            Text(Self.includesLine)
-                                .font(.system(size: compact ? 13 : 14, weight: .semibold, design: .rounded))
-                                .foregroundStyle(AppColor.textPrimary.opacity(0.6))
+                // **The screen scrolls when it does not fit** (App Review,
+                // Melvin, 2026-09-29). On an iPhone SE at the largest text
+                // sizes the links row and "No, I don't want to pay" fell below
+                // the screen with no way to reach them, and at accessibility
+                // sizes the renewal terms were cut off mid-sentence: an
+                // unreadable disclosure and an unreachable Account link are
+                // both rejections. `ViewThatFits` keeps today's layout
+                // wherever it fits whole, so the default size looks exactly as
+                // before, and falls back to one scroll holding everything.
+                ViewThatFits(in: .vertical) {
+                    VStack(spacing: 0) {
+                        header(compact: compact)
+
+                        Spacer(minLength: 0)
+                        // Smaller on a short phone when the includes line sits
+                        // under the subtitle, or his halo rises into the words.
+                        OttoAuraFigure(stage: .nirvana, look: 13,
+                                       size: compact ? (showsIncludesBelow ? 90 : 110) : 150, rig: otto)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                        Spacer(minLength: 12)
+
+                        panel(compact: compact, bottomInset: geo.safeAreaInsets.bottom)
+                    }
+
+                    // No Otto here: at a text size this large the screen is
+                    // for reading, and a second rig beside the first is not
+                    // worth drawing.
+                    ScrollView {
+                        VStack(spacing: 0) {
+                            header(compact: compact)
+                            panel(compact: compact, bottomInset: geo.safeAreaInsets.bottom)
+                                .padding(.top, 20)
+                                // White past the panel's end, so pulling the
+                                // scroll up never shows sky under the terms.
+                                .background(alignment: .bottom) {
+                                    Color.white.frame(height: 600).offset(y: 600)
+                                }
                         }
                     }
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, AppMetrics.screenPadding + 4)
-                    .padding(.top, compact ? 8 : 20)
-
-                    Spacer(minLength: 0)
-                    // Smaller on a short phone when the includes line sits
-                    // under the subtitle, or his halo rises into the words.
-                    OttoAuraFigure(stage: .nirvana, look: 13,
-                                   size: compact ? (showsIncludesBelow ? 90 : 110) : 150, rig: otto)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                    Spacer(minLength: 12)
-
-                    panel(compact: compact, bottomInset: geo.safeAreaInsets.bottom)
+                    .scrollIndicators(.visible)
+                    // Kept below the status bar, where the fixed layout
+                    // ends too, so the words never run under the clock.
+                    .clipped()
                 }
             }
         }
@@ -551,6 +598,8 @@ struct PaywallScreen: View {
                                   ?? SubscriptionPlan.monthly.price,
                               halfMonthPrice: store.displayPrice(for: .monthHalf)
                                   ?? SubscriptionPlan.monthHalf.price,
+                              trialPlanPrice: store.displayPrice(for: .monthTrial)
+                                  ?? SubscriptionPlan.monthTrial.price,
                               trialDays: store.freeTrialDays(for: current.plan)) {
                     // Taking a rung PRESELECTS the plan and returns to the
                     // paywall; the purchase happens there and only there.
@@ -601,6 +650,7 @@ struct PaywallScreen: View {
         .sensoryFeedback(.success, trigger: plan)
         .sensoryFeedback(.success, trigger: started)
         .onAppear {
+            holdsAccountData = Self.deviceHoldsAccountData(in: context)
             // Lifetime is no longer offered; a plan carried over from before
             // lands on monthly rather than on a card that isn't there.
             if plan == .lifetime { plan = .monthly }
@@ -621,6 +671,54 @@ struct PaywallScreen: View {
             guard route == nil, !started, !store.entitled, !trackedDismiss else { return }
             trackedDismiss = true
             Analytics.track(.paywallDismissed(placement: placement))
+        }
+    }
+
+    /// The headline, the line under it, and what a membership includes.
+    private func header(compact: Bool) -> some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.system(size: compact ? 28 : 32, weight: .heavy, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary)
+                .accessibilityAddTraits(.isHeader)
+            Text(subtitle)
+                .font(.system(size: compact ? 16 : 18, weight: .semibold, design: .rounded))
+                .foregroundStyle(AppColor.textPrimary.opacity(0.7))
+            if showsIncludesBelow {
+                Text(Self.includesLine)
+                    .font(.system(size: compact ? 13 : 14, weight: .semibold, design: .rounded))
+                    .foregroundStyle(AppColor.textPrimary.opacity(0.6))
+            }
+        }
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(.horizontal, AppMetrics.screenPadding + 4)
+        .padding(.top, compact ? 8 : 20)
+    }
+
+    /// Restore, the two documents and Account. One row wherever the words
+    /// fit on one line unshrunk; a column of full-size links wherever they
+    /// do not (2026-09-29). The row used to shrink its words to fit, which at
+    /// the largest text sizes cut "Terms of Use" and "Account" off.
+    @ViewBuilder private var links: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: offersAccount ? 14 : 18) { linkButtons }
+                .lineLimit(1)
+            VStack(spacing: 12) { linkButtons }
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(AppColor.textSecondary)
+        .multilineTextAlignment(.center)
+    }
+
+    @ViewBuilder private var linkButtons: some View {
+        if selling {
+            Button("Restore") { restore() }
+        }
+        Button("Privacy Policy") { sheet = .legal(.privacy) }
+        Button("Terms of Use") { sheet = .legal(.terms) }
+        if offersAccount {
+            Button("Account") { sheet = .account }
         }
     }
 
@@ -659,20 +757,7 @@ struct PaywallScreen: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
 
-            HStack(spacing: offersAccount ? 14 : 18) {
-                if selling {
-                    Button("Restore") { restore() }
-                }
-                Button("Privacy Policy") { sheet = .legal(.privacy) }
-                Button("Terms of Use") { sheet = .legal(.terms) }
-                if offersAccount {
-                    Button("Account") { sheet = .account }
-                }
-            }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(AppColor.textSecondary)
-            .lineLimit(1)
-            .minimumScaleFactor(0.85)
+            links
 
             // No free version to decline into (Aziz, 2026-09-26), but a "no"
             // is answered with the ladder (Melvin, 2026-09-27): the free
@@ -682,6 +767,7 @@ struct PaywallScreen: View {
                 Button("No, I don't want to pay") { showRung(first) }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppColor.textSecondary.opacity(0.8))
+                    .multilineTextAlignment(.center)
             }
         }
         .padding(.horizontal, AppMetrics.screenPadding)
@@ -772,6 +858,9 @@ struct PaywallScreen: View {
             }
         }
         .buttonStyle(CardButtonStyle())
+        // VoiceOver hears which plan is chosen; the ring and the wash are
+        // colour and shape only.
+        .accessibilityAddTraits(chosen ? .isSelected : [])
     }
 
     /// Continue. When nothing is on sale this is navigation; when something

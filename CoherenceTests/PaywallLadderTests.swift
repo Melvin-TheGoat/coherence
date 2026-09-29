@@ -95,7 +95,6 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(copy.contains(SubscriptionPlan.monthHalf.price))
         XCTAssertTrue(copy.lowercased().contains("renews"))
         XCTAssertFalse(DownsellRung.halfMonth.cta(trialDays: nil).lowercased().contains("free"))
-        XCTAssertTrue(DownsellRung.halfMonth.cta(trialDays: 3).lowercased().contains("free"))
         XCTAssertFalse(SubscriptionPlan.monthHalf.cadence(withTrial: false).contains("trial"))
         XCTAssertTrue(SubscriptionPlan.monthHalf.cadence(withTrial: true).contains("trial"))
         XCTAssertEqual(SubscriptionPlan.yearly.cadence(withTrial: false), SubscriptionPlan.yearly.cadence)
@@ -209,6 +208,33 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertFalse(text.lowercased().contains("help you"), text)
     }
 
+    /// A rung buys nothing: it selects its plan and returns to the paywall,
+    /// which sells it. So no rung's button may say it starts anything
+    /// (App Review, 2026-09-29: "Start my free trial" started nothing).
+    func test_rungButtonsChooseAndStartNothing() {
+        for rung in DownsellRung.allCases {
+            for days in [nil, 3] as [Int?] {
+                let cta = rung.cta(trialDays: days)
+                XCTAssertTrue(cta.hasPrefix("Choose"), cta)
+                XCTAssertFalse(cta.lowercased().contains("start"), cta)
+                XCTAssertFalse(cta.lowercased().contains("trial"), cta)
+            }
+        }
+    }
+
+    /// The trial rung says what the free days turn into, in the rung's own
+    /// product's price (Apple's localized string when there is one).
+    func test_theTrialRungStatesThePriceAfterTheTrial() {
+        let dollars = DownsellRung.trial.subtitle(plan: .monthTrial, yearlyPrice: SubscriptionPlan.yearly.price,
+                                                  trialDays: 3)
+        XCTAssertTrue(dollars.contains("then \(SubscriptionPlan.monthTrial.price) a month"), dollars)
+        let euros = DownsellRung.trial.subtitle(plan: .monthTrial, yearlyPrice: "29,99 €",
+                                                trialPlanPrice: "7,99 €", trialDays: 3)
+        XCTAssertTrue(euros.contains("then 7,99 € a month"), euros)
+        XCTAssertFalse(euros.contains("$"), "a dollar figure beside a euro charge")
+        XCTAssertFalse(euros.contains("\u{2014}"), "no em dashes")
+    }
+
     /// A card is named for the plan it buys. "Free trial" as the title of a
     /// card that renews at the monthly price read as a free card.
     func test_rungCardsAreNamedForThePlan() {
@@ -226,6 +252,7 @@ final class PaywallLadderTests: XCTestCase {
             XCTAssertFalse(line.lowercased().contains(absent), absent)
         }
         XCTAssertEqual(line.contains("Friends"), FeatureFlags.friends)
+        XCTAssertTrue(line.hasPrefix("808 Premium: "), "the subscription is named before purchase (3.1.2)")
         XCTAssertFalse(line.contains("\u{2014}") || line.contains("\u{2013}"), "no em dashes")
     }
 

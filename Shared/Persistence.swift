@@ -108,35 +108,105 @@ enum Persistence {
         else { return }
         let from = group.appending(path: "Library/Application Support")
         let to = URL.applicationSupportDirectory
-        // Everything Core Data keeps for one store: the SQLite file, its
-        // write-ahead log and shared memory (most recent writes live in the
-        // log), and the support folder with the photos kept as external data.
-        func parts(_ dir: URL, _ store: String) -> [URL] {
-            [dir.appending(path: store + ".store"), dir.appending(path: store + ".store-wal"),
-             dir.appending(path: store + ".store-shm"), dir.appending(path: "." + store + "_SUPPORT")]
-        }
-        func lastWritten(_ dir: URL, _ store: String) -> Date? {
-            parts(dir, store).prefix(2).compactMap {
-                (try? fm.attributesOfItem(atPath: $0.path))?[.modificationDate] as? Date
-            }.max()
-        }
         for store in ["default", "HealthLocal"] {
-            guard let groupDate = lastWritten(from, store) else { continue }
-            if let appDate = lastWritten(to, store), appDate >= groupDate { continue }
-            do {
-                try fm.createDirectory(at: to, withIntermediateDirectories: true)
-                for old in parts(to, store) where fm.fileExists(atPath: old.path) {
-                    let aside = URL(fileURLWithPath: old.path + ".before-group-move")
-                    try? fm.removeItem(at: aside)
-                    try fm.moveItem(at: old, to: aside)
-                }
-                for (src, dst) in zip(parts(from, store), parts(to, store)) where fm.fileExists(atPath: src.path) {
-                    try fm.moveItem(at: src, to: dst)
-                }
-            } catch {
-                print("Moving the \(store) store out of the App Group failed: \(error)")
-            }
+            guard let groupDate = lastWritten(storeParts(store, in: from)) else { continue }
+            if let appDate = lastWritten(storeParts(store, in: to)), appDate >= groupDate { continue }
+            moveStore(store, from: from, to: to)
         }
+    }
+
+    /// Everything Core Data keeps for one store: the SQLite file, its
+    /// write-ahead log and shared memory (most recent writes live in the
+    /// log), and the support folder with the photos kept as external data.
+    static func storeParts(_ store: String, in dir: URL) -> [URL] {
+        [dir.appending(path: store + ".store"), dir.appending(path: store + ".store-wal"),
+         dir.appending(path: store + ".store-shm"), dir.appending(path: "." + store + "_SUPPORT")]
+    }
+
+    /// When the store or its log was last written (the log is written on
+    /// every save, the store only at a checkpoint). nil when neither exists.
+    private static func lastWritten(_ parts: [URL]) -> Date? {
+        parts.prefix(2).compactMap {
+            (try? FileManager.default.attributesOfItem(atPath: $0.path))?[.modificationDate] as? Date
+        }.max()
+    }
+
+    /// Moves one store's files from the App Group's folder into the app's,
+    /// all or nothing (Melvin, 2026-09-29, second pass of the pre-1.1 audit).
+    ///
+    /// Two rules, both about never losing a write:
+    /// - **A set-aside copy is never deleted.** Each one gets its own
+    ///   timestamped name (`default.store.before-group-move-20260929T101500Z`),
+    ///   so a second move on a later launch cannot overwrite the first. The
+    ///   first version removed any earlier set-aside file to make room.
+    /// - **A move that fails part way is put back exactly as it was.** Every
+    ///   rename is recorded and, on the first failure, undone in reverse
+    ///   order: the app's own files return to their names and the group copy
+    ///   stays in the group, to be tried again next launch. Without this a
+    ///   `.store` could land here while its `-wal` (which holds the newest
+    ///   writes) stayed behind, or the app's old `-wal` could be left beside
+    ///   a store it does not belong to, which SQLite would replay into it.
+    ///
+    /// `move` is FileManager's in the app; a test passes one that fails on
+    /// cue. Returns whether the store moved.
+    @discardableResult
+    static func moveStore(_ store: String, from: URL, to: URL, now: Date = Date(),
+                          move: (URL, URL) throws -> Void = { try FileManager.default.moveItem(at: $0, to: $1) }) -> Bool {
+        let fm = FileManager.default
+        let stamp = setAsideStamp(now)
+        var done: [(from: URL, to: URL)] = []
+        do {
+            try fm.createDirectory(at: to, withIntermediateDirectories: true)
+            for old in storeParts(store, in: to) where fm.fileExists(atPath: old.path) {
+                let aside = setAsideURL(for: old, stamp: stamp)
+                try move(old, aside)
+                done.append((old, aside))
+                // The set-aside health copy is still health data: it stays
+                // out of iCloud Backup like the live store (5.1.3(ii)).
+                if store == "HealthLocal" {
+                    var file = aside
+                    var values = URLResourceValues()
+                    values.isExcludedFromBackup = true
+                    try? file.setResourceValues(values)
+                }
+            }
+            for (src, dst) in zip(storeParts(store, in: from), storeParts(store, in: to))
+            where fm.fileExists(atPath: src.path) {
+                try move(src, dst)
+                done.append((src, dst))
+            }
+            return true
+        } catch {
+            print("Moving the \(store) store out of the App Group failed; putting everything back: \(error)")
+            for step in done.reversed() {
+                do { try move(step.to, step.from) } catch {
+                    print("Could not put \(step.to.lastPathComponent) back: \(error)")
+                }
+            }
+            return false
+        }
+    }
+
+    /// "20260929T101500Z": sortable, and the same for every file of one move.
+    private static func setAsideStamp(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyyMMdd'T'HHmmss'Z'"
+        return f.string(from: date)
+    }
+
+    /// A name beside `original` that nothing has used yet. Two moves in the
+    /// same second get "-2", "-3".
+    private static func setAsideURL(for original: URL, stamp: String) -> URL {
+        let base = original.path + ".before-group-move-" + stamp
+        var candidate = URL(fileURLWithPath: base)
+        var n = 2
+        while FileManager.default.fileExists(atPath: candidate.path) {
+            candidate = URL(fileURLWithPath: base + "-\(n)")
+            n += 1
+        }
+        return candidate
     }
 
     /// Persistent local store, CloudKit disabled. Also the fallback for

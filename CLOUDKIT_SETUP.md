@@ -258,6 +258,23 @@ Only the creator can ever modify a record, which is the constraint the whole
 design is built on: a friendship is two edges because each person can only
 write their own half.
 
+**`FriendEdge` and `Block` are world-readable, and that is a disclosure, not
+an accident (2026-09-29, second pass).** With `_world` Read, anyone signed in
+to iCloud can query who follows whom (`FriendEdge.from` / `.to`, which are
+also what a profile's followers and following show) and **who blocked whom**
+(`Block.from` / `.to`), even though the app never shows anyone's blocks. The
+privacy policy now says exactly this: everything 808 writes to the shared
+area except reports is readable by other people's copies of the app. The
+roles can't be narrowed from the app side, because the app itself needs to
+read both types across users: edges for every friends, followers, following
+and request list, and blocks in both directions on every read and write
+(`CommunityStore.isBlocked`). **Founder decision:** keep `Block` world-readable
+(and disclosed), or change the design so a block is checked without exposing
+it (for example, store it only as the blocker's own record and have each
+side filter with what it can read, accepting that the blocked person's app
+no longer hides the blocker). Until that is decided, leave the roles as
+Step 4 says and keep the policy's sentence.
+
 **Except `Report` (2026-09-29): take Read away from `_world`.** A report holds
 the reporter's profile reference and the words they wrote about someone else;
 with world Read, anyone signed in to iCloud could query who reported whom. The

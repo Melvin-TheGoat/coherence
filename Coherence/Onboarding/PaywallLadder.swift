@@ -64,9 +64,14 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     /// free-trial offer, or they already used it, and the half-price rung
     /// then says what it costs from today. (The trial rung is never offered
     /// without one.)
+    ///
+    /// `trialPlanPrice` is what the trial rung's own product renews at
+    /// (Apple's localized string when live), because that, not the plain
+    /// monthly's, is the price this person is agreeing to after the trial.
     func subtitle(plan: SubscriptionPlan, yearlyPrice: String,
                   monthlyPrice: String = SubscriptionPlan.monthly.price,
                   halfMonthPrice: String = SubscriptionPlan.monthHalf.price,
+                  trialPlanPrice: String = SubscriptionPlan.monthTrial.price,
                   trialDays: Int? = SubscriptionPlan.fallbackTrialDays) -> String {
         switch self {
         case .trial:
@@ -74,8 +79,10 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
             // The condition is stated, not implied (Melvin, 2026-09-29): "if
             // it doesn't help, you pay nothing" read as a refund promise the
             // App Store does not make. What actually decides the charge is
-            // cancelling in time.
-            return "\(TrialCopy.length(days)) free, everything unlocked. Cancel at least 24 hours before the trial ends and you pay nothing."
+            // cancelling in time. And the price after the free days is on
+            // the rung itself (App Review, same day): a trial offer that does
+            // not say what it turns into is the 3.1.2 rejection.
+            return "\(TrialCopy.length(days)) free, then \(trialPlanPrice) a month. Everything unlocked. Cancel at least 24 hours before the trial ends and you pay nothing."
         case .halfMonth:
             let price = "\(halfMonthPrice) a month instead of \(monthlyPrice). Everything unlocked. It renews every month, and you can cancel any time."
             guard let trialDays else { return price }
@@ -83,11 +90,16 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// The button, true to whether free days come first.
+    /// The button. A rung sells nothing: it selects its plan and returns to
+    /// the paywall, which owns every purchase and disclosure. So the button
+    /// says it chooses (App Review, Melvin, 2026-09-29): "Start my free
+    /// trial" and "Start free, then half price" started nothing, and the
+    /// paywall's own button then had to be tapped to actually start it.
+    /// The free days are stated in the subtitle, where the price is.
     func cta(trialDays: Int?) -> String {
         switch self {
-        case .trial:     return "Start my free trial"
-        case .halfMonth: return trialDays == nil ? "Get half price" : "Start free, then half price"
+        case .trial:     return "Choose this plan"
+        case .halfMonth: return "Choose half price"
         }
     }
 
@@ -113,9 +125,11 @@ struct DownsellSheet: View {
     let plan: SubscriptionPlan
     /// Apple's localized yearly price when available; our fallback otherwise.
     let yearlyPrice: String
-    /// Apple's localized monthly and half-month prices when available.
+    /// Apple's localized monthly, half-month and trial-plan prices when
+    /// available.
     var monthlyPrice: String = SubscriptionPlan.monthly.price
     var halfMonthPrice: String = SubscriptionPlan.monthHalf.price
+    var trialPlanPrice: String = SubscriptionPlan.monthTrial.price
     /// The free days this rung's own product gives this person
     /// (`Store.freeTrialDays(for:)`), nil for none.
     var trialDays: Int? = SubscriptionPlan.fallbackTrialDays
@@ -140,7 +154,8 @@ struct DownsellSheet: View {
                     .font(.system(size: 30, weight: .heavy, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary)
                 Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, monthlyPrice: monthlyPrice,
-                                   halfMonthPrice: halfMonthPrice, trialDays: trialDays))
+                                   halfMonthPrice: halfMonthPrice, trialPlanPrice: trialPlanPrice,
+                                   trialDays: trialDays))
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary.opacity(0.72))
             }

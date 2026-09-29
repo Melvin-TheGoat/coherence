@@ -6614,3 +6614,41 @@ The decisions it produced, so nobody undoes them:
   notes and What's New are rewritten for a premium-only 1.1 in
   `marketing/APP_STORE_PASTE.md`; RELEASE_CHECKLIST.md carries every human
   step (R1 to R18) and a FOUNDER DECISIONS list.
+
+### The second pass (same day): what it found after the first pass's fixes
+
+- **A SESSION BELONGS TO THE SIGNED-IN ACCOUNT, AND DELETE ACCOUNT MARKS
+  EVERY USER ROW.** `SessionStore.currentUser` used to return only the
+  bootstrap row (`appleUserID == ""`); Sign in with Apple adopts that row, so
+  the next session minted a second bootstrap user and was filed under it,
+  where Delete account never reached (found by two reviewers, one with a
+  failing test). Now: `currentUser` prefers `signedInUser` (latest non-deleted
+  signed-in row), then a live bootstrap; sign-in and a launch
+  `repairOwnership` re-home stray bootstrap sessions; `softDeleteCurrentUser`
+  stamps every live row; sign-in never adopts a deleted bootstrap; and a
+  1.0-era deletion takes its stray row with it. **Tests must go through
+  `persist` / `persistPhoneSession`, never a hand-made `Session(userID:)`**:
+  that is how the old tests missed it.
+- **Friends forgets a person on sign-out, revocation and deletion**
+  (`CommunityModel.forgetThisPerson`, `signedOut`), clears the rules and
+  intro flags, and pauses practice-stats publishing in a stored key so a
+  relaunch cannot restart it. Deletion no longer retries forever on the dead
+  Post and Reaction types.
+- **Usernames:** `checkHandle` searches stems within each dot/underscore part
+  (short parts rejoined), allows stems inside names (a 1,300-name corpus test
+  guards it), dropped "porn" as a substring (Thai names), maps v→u, q→g and
+  9/6→g between letters, and splits glued reserved words.
+- **The paywall scrolls when it doesn't fit** (`ViewThatFits`); the Account
+  link also shows on onboarding's paywall once the device holds an account's
+  data; the launch waits on a blank valley (at most 5 s) instead of flashing
+  Home before the lock, and never locks mid-session.
+- **PostHog sends named events only, for real:** rage clicks, surveys, push
+  capture and flag preloading are off in `start()`. Rage clicks were on by
+  default and `captureElementInteractions` never governed them.
+- **The store move keeps every set-aside copy** (timestamped names) and rolls
+  a store's move back on any failure (`StoreMoveTests`).
+- **Documents:** all ten declared data types are Linked (pseudonymous
+  analytics count as linked); FileTimestamp C617.1 and SystemBootTime 35F9.1
+  declared; the policy covers followers/following, world-readable edges and
+  blocks, the two facts pre-1.1 analytics sent, an EEA/UK section (for
+  counsel), and that deleting the account does not cancel the subscription.

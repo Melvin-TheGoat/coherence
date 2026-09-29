@@ -16,6 +16,7 @@ struct RootView: View {
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var coordinator: SessionCoordinator
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var community: CommunityModel
     /// The plan the launch paywall has selected.
     @State private var lockPlan: SubscriptionPlan = .monthly
     @Environment(\.scenePhase) private var scenePhase
@@ -54,6 +55,62 @@ struct RootView: View {
         #endif
     }
 
+    /// The App Store has not answered yet, for somebody who may be locked.
+    ///
+    /// **The lock arrived a second late** (App Review, Melvin, 2026-09-29).
+    /// The lock waits for `.ready`, so during the launch fetch the app itself
+    /// showed, Home and all, and then the paywall slid in over it: a screen
+    /// that reads as the app changing its mind, and a second of a paid app
+    /// shown for free. So until the first answer, a non-member sees the
+    /// valley with nothing on it, and then the lock or the app.
+    ///
+    /// `.loading` is only ever the launch state (`Store.load` moves it to
+    /// `.ready` or `.unavailable` and never back), so this cannot come back
+    /// mid-use. A payer is recognised from StoreKit's on-device record before
+    /// the product fetch starts, so they go straight to the app. What stays
+    /// exactly as before: `.unavailable` opens the app (the founders'
+    /// fail-open), and a fetch that has not answered in `storeWaitLimit`
+    /// opens it too, because a valley with no way forward is worse than a
+    /// late lock.
+    private var awaitingStore: Bool {
+        guard Monetization.premiumOnly else { return false }
+        #if DEBUG
+        // DEBUG never locks on the store's word (see `premiumLock`), so it
+        // never has a reason to wait for it.
+        return false
+        #else
+        return store.state == .loading && !store.entitled && !storeWaitExpired
+        #endif
+    }
+
+    /// How long the launch waits for the App Store before opening the app.
+    private static let storeWaitLimit: Duration = .seconds(5)
+    @State private var storeWaitExpired = false
+
+    /// What the root shows once onboarding is done.
+    private enum Face: Equatable { case onboarding, app, lock, waiting }
+
+    /// Whether the app (`ContentView`) is what is on screen, as of the last
+    /// render. The lock may only replace the app when this says no session
+    /// is running inside it.
+    @State private var appOnScreen = false
+
+    private var face: Face {
+        guard preferences.contains(where: { $0.onboardingComplete }) else { return .onboarding }
+        // **Never swap the lock in over a running session** (Melvin,
+        // 2026-09-29). Replacing ContentView tears down the live session's
+        // cover mid-sit, so a subscription that lapses, or a store that only
+        // now answers, waits until the session ends. Only a session inside
+        // the app already on screen holds it: a Watch-started session arriving
+        // while the lock is up does not open the app.
+        if appOnScreen && coordinator.active != nil { return .app }
+        if premiumLock { return .lock }
+        // The wait is for the first answer only. Once the app is on screen it
+        // stays there however the store's state moves.
+        if awaitingStore && !appOnScreen { return .waiting }
+        return .app
+    }
+
     /// Whether any session is stored on this phone. A count with a limit of
     /// one, read only while the lock is up, so it costs nothing elsewhere.
     private var hasPastSession: Bool {
@@ -80,21 +137,36 @@ struct RootView: View {
 
     @ViewBuilder private var app: some View {
         Group {
-            if preferences.contains(where: { $0.onboardingComplete }) {
-                if premiumLock {
-                    // It carries an Account link (manage, redeem, sign out,
-                    // delete: 5.1.1(v)), and for somebody who already has
-                    // sessions here, which is every 1.0 user who updates, the
-                    // line that says none of it is gone (Melvin, 2026-09-29).
-                    PaywallScreen(placement: "root_lock", memberNotice: hasPastSession,
-                                  plan: $lockPlan) { _ in }
-                } else {
-                    // Home's night dim, for every tab and every sheet.
-                    ContentView().environment(\.tileDim, ContentView.tileDim)
-                }
-            } else {
+            switch face {
+            case .onboarding:
                 OnboardingView()
+            case .lock:
+                // It carries an Account link (manage, redeem, sign out,
+                // delete: 5.1.1(v)), and for somebody who already has
+                // sessions here, which is every 1.0 user who updates, the
+                // line that says none of it is gone (Melvin, 2026-09-29).
+                PaywallScreen(placement: "root_lock", memberNotice: hasPastSession,
+                              plan: $lockPlan) { _ in }
+            case .waiting:
+                // The lock's own daytime valley with nothing on it, so the
+                // lock arrives over the same sky rather than cutting to it.
+                ValleyScene(progress: 0, showsFigure: false)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Loading")
+            case .app:
+                // Home's night dim, for every tab and every sheet.
+                ContentView().environment(\.tileDim, ContentView.tileDim)
             }
+        }
+        .onChange(of: face, initial: true) { _, now in appOnScreen = now == .app }
+        .task {
+            try? await Task.sleep(for: Self.storeWaitLimit)
+            // A cancelled sleep throws and falls through; it must not open
+            // anything.
+            guard !Task.isCancelled else { return }
+            storeWaitExpired = true
         }
         // Everything 808 draws stays light (see `colorScheme`); only what
         // iOS draws around it, the status bar above all, follows the sky.
@@ -135,6 +207,10 @@ struct RootView: View {
                 Analytics.reset()
                 SessionStore.signOut(in: context)
                 OttoChatStore.deleteAll()
+                // Friends forgets them too, exactly as a tapped sign-out does
+                // (`AccountActions.signOut`): the profile stops showing and
+                // stops being published to.
+                community.signedOut()
             }
         }
         #if DEBUG
@@ -172,11 +248,10 @@ struct RootView: View {
     /// status bar style of its own. So after dark iOS is told the app is
     /// dark, which turns the clock and battery white, while every view below
     /// is handed `.light` through the environment and renders exactly as by
-    /// day. Onboarding and the launch paywall always draw a daytime valley,
-    /// so they stay light.
+    /// day. Onboarding, the launch paywall and the wait before it always draw
+    /// a daytime valley, so they stay light.
     private var statusScheme: ColorScheme {
-        let inApp = preferences.contains(where: { $0.onboardingComplete }) && !premiumLock
-        return inApp && nightSky ? .dark : .light
+        face == .app && nightSky ? .dark : .light
     }
 
     /// The same line the valley's words cross from dark ink to cream.

@@ -15,14 +15,14 @@ support for Apple Watch.
   which we cannot read. Your **health results** (heart-rate trend, stillness,
   breathing rate, and score) are stored **only on your iPhone** and are left
   out of your iCloud Backup. The app never uploads them anywhere, not even to
-  iCloud.
+  iCloud, unless you choose to share or save a session card.
 - **What reaches us is limited.** We can read your Friends profile if you
   choose to create one, pseudonymous usage analytics, and any report you file
   about another person. See "Friends" and "Usage analytics" below.
 - **Friends is optional.** If you create a profile, your username, name,
-  optional photo, and a summary of how often you meditate go to a shared area
-  of iCloud where anyone using 808 can look them up. Your health results never
-  go there.
+  optional photo, a summary of how often you meditate, and who you have added
+  and who has added you go to a shared area of iCloud where anyone using 808
+  can look them up. Your health results never go there.
 - **In versions of 808 that include Block, nothing about Block reaches us.**
   The apps you choose to hold, and everything about how and when you open
   them, stay on your phone in Apple's own Screen Time system. See "Block"
@@ -32,9 +32,10 @@ support for Apple Watch.
   analytics (which features are used, on what kind of iPhone, and roughly
   where in the world), never what your body measured. See "Usage analytics"
   below.
-- **808 never sends your health data off your devices.** It's measured on
-  your Apple Watch and turned into your session results on your own devices;
-  we never receive it, never use it for advertising, and never share it.
+- **808 never sends your health data off your devices** unless you choose to
+  share or save a session card. It's measured on your Apple Watch and turned
+  into your session results on your own devices; we never receive it, never
+  use it for advertising, and never share it.
 - **We don't know what you listen to.** 808 measures in the background so you can
   play a meditation from YouTube or any other app. We receive no information about
   what you play, and we have no connection to those services.
@@ -49,11 +50,9 @@ support for Apple Watch.
 identifier. If you choose to share them, it also receives your **name** and
 **email address** (which may be an Apple private "Hide My Email" relay
 address). These stay in the app and in your private iCloud, where we cannot
-read them. You may also set a display name and turn on "Product emails" in
-Settings. Today that switch only records your preference, in the app and in
-your private iCloud; it sends no email address to us. If we ever start
-sending product emails, we will write only to people who opted in, and we
-will update this policy first.
+read them. You may also set a display name. 808 does not send product or
+marketing emails; if that ever changes, we will ask first and update this
+policy.
 
 **Health and motion data.** An Apple Watch is optional. When you start a
 session on your Watch, or start one on your iPhone with Apple Watch measuring
@@ -65,13 +64,15 @@ It sends them straight to your iPhone. A session you start on your iPhone
 without the Watch measuring runs a plain timer: it measures nothing about
 your body. Important details:
 
-- The app requests HealthKit permission only for **heart rate**, **workouts**
-  and **mindful minutes**. Each measured session is saved to Apple Health as a
-  Mind and Body workout and as mindful minutes, so it appears beside Apple's
-  own. Heart rate is read **live during a session** only. Nothing else in your
-  Health history is read. Once saved, those workouts and mindful minutes are
-  part of your Apple Health data and are handled under your own Health
-  settings.
+- The app requests HealthKit permission only to **read heart rate and
+  workouts** and to **save workouts and mindful minutes**. Each measured
+  session is saved to Apple Health as a Mind and Body workout and as mindful
+  minutes, so it appears beside Apple's own. Heart rate is read **live during
+  a session** only. The permission sheet lists reading workouts, but 808
+  never reads your workout history; it only saves the workouts its own
+  sessions create. Nothing else in your Health history is read. Once saved,
+  those workouts and mindful minutes are part of your Apple Health data and
+  are handled under your own Health settings.
 - We store the **computed results**, not raw biometric samples. The iPhone reads
   **no** biometric data directly.
 - **Measurement runs only during a session you start**, and stops when the session
@@ -99,9 +100,11 @@ rate and movement, only during a session you started, only on your own devices.
 results and streak, and your **preferences** (reminder time, default length,
 and similar settings). Otto's glow, and in versions of 808 that include them,
 your points and the hats you choose for him, are worked out on your phone from
-your own sessions. Your answers to the questions when you first open the app
-are kept in the app and are never sent to us. The one exception is what you
-choose to put on a Friends profile, such as your name and username.
+your own sessions. In 808 1.1 and later, your answers to the questions when
+you first open the app are kept in the app and are never sent to us. The one
+exception is what you choose to put on a Friends profile, such as your name
+and username. Versions before 1.1 sent one answer with usage analytics:
+whether you said during setup that you own an Apple Watch.
 
 **Notifications.** Besides the optional daily reminder, 808 can send you
 three kinds of notification, all about something you started yourself: that
@@ -142,10 +145,11 @@ us by PostHog, Inc. on servers in the United States, and they include:
 - **Your Apple Watch setup:** whether a Watch is paired with your iPhone,
   whether you turn Watch measuring on or off, and the first time a Watch
   connects to 808.
-- **When the app is installed, updated, and opened.**
+- **When the app is installed, updated, opened, and closed.**
 - **Device and app information** that PostHog's software adds automatically:
-  your iPhone model, iOS version, app version, language, time zone, screen
-  size, and whether you are on Wi-Fi or cellular.
+  your iPhone model, iOS version, the app's version and build number, whether
+  it was installed from TestFlight, language, time zone, screen size, and
+  whether you are on Wi-Fi or cellular.
 - **Approximate location.** PostHog receives your device's IP address with
   each event, as any internet service does, and uses it to estimate an
   approximate location (country, region, and city). We use it only to
@@ -154,15 +158,21 @@ us by PostHog, Inc. on servers in the United States, and they include:
 These events are tied to a random identifier created for your install. They
 never carry your name, email, Apple ID, or Friends username, and the
 identifier is replaced with a new one when you sign out or delete your
-account. We also keep a copy of these analytics in a Google Sheet so we can
-read them more easily: one row per install, with its app version, iPhone
-model, approximate location, and counts of what was used.
+account. Because every event from one install shares that identifier, the
+App Store lists this data as linked to you; the identifier is the only thing
+it is tied to. We also keep a copy of these analytics in a Google Sheet so
+we can read them more easily: one row per install, with its random
+identifier, when it was installed and last opened, its app and iOS version,
+iPhone model, approximate location, the plan bought if any, and counts of
+what was used.
 
-**Your measurements are never in those events.** No heart rate, breathing
-values, stillness, scores, or anything derived from your body's signals is
-ever included, at any precision. Your health results stay on your device,
-exactly as described above. Nothing about your Block apps or how you use them
-is ever included either; see "Block" below.
+**Your measurements are never in those events.** In 808 1.1 and later, no
+heart rate, breathing values, stillness, scores, or anything derived from
+your body's signals is included, at any precision. Your health results stay
+on your device, exactly as described above. Versions before 1.1 sent one
+fact derived from a score: that you earned an award for reaching a score of
+50, 75 or 90. Nothing about your Block apps or how you use them is ever
+included; see "Block" below.
 
 **What we do NOT collect.** We do not collect your precise location, contacts,
 or browsing activity. We do not access, monitor, or receive any information about
@@ -176,7 +186,8 @@ Your information lives in these places, by design:
 - **Health results stay on your iPhone.** Your session measurements (the
   heart-rate trend, stillness, breathing rate, and score) are stored **only in
   the app's local storage on your iPhone** and are left out of your iCloud
-  Backup. The app never uploads them to iCloud or anywhere else.
+  Backup. The app never uploads them to iCloud or anywhere else unless you
+  choose to share or save a session card.
 - **Account and session log sync privately.** Your account info, preferences,
   and the log of your sessions (dates, durations, types, ratings, notes, and
   any photos or videos you add after a session) sync to **your personal
@@ -184,9 +195,10 @@ Your information lives in these places, by design:
   reinstalls and follow your own devices. None of it is shared with anyone,
   and we cannot read it.
 - **Your Friends profile is shared.** If you create a profile in Friends,
-  your username, display name, profile photo, and practice summary go to a
-  **shared (public) area of our iCloud container**. Anyone using 808 can look
-  it up, and we can read everything in that area. See "Friends" below.
+  your username, display name, profile photo, practice summary, and who you
+  have added and who has added you go to a **shared (public) area of our
+  iCloud container**. Anyone using 808 can look it up, and we can read
+  everything in that area. See "Friends" below.
 - **Usage analytics and reports reach us.** Pseudonymous usage events go to
   PostHog, with a copy in a Google Sheet, as described under "Usage
   analytics." A report you file is stored in the shared area and sent to us,
@@ -194,8 +206,9 @@ Your information lives in these places, by design:
 - **Block and Screen Time choices stay on your device only.** In versions of
   808 that include Block, the apps you pick to hold and everything about when
   you open them live in an area your phone shares privately between 808 and
-  its Screen Time extensions. Nothing about it is stored in iCloud, on any
-  server, or anywhere we or anyone else can reach. See "Block" below.
+  its Screen Time extensions. It is never synced to iCloud or sent to any
+  server, ours or anyone else's; like the rest of your phone, it can be part
+  of your own device backup. See "Block" below.
 
 **We run no servers of our own.** Information reaches us only through
 services we use: PostHog for usage analytics, the shared area of our iCloud
@@ -216,8 +229,8 @@ profile, 808 writes nothing about you to the shared area.
 
 - Your **profile**: the username you choose, your display name, a profile
   photo if you add one, and the dates you created your profile and first
-  meditated with 808. The profile itself shows only the month you started
-  practicing.
+  meditated with 808. The profile itself shows only the month you created
+  it.
 - Your **practice summary**: how many sessions and minutes you meditated in
   the last seven days, your current streak, your total number of sessions,
   and the date and time of your last session. The app works these out from
@@ -236,10 +249,19 @@ App Store version never has, and posts made in those test versions are
 deleted.
 
 **Who can see it:** anyone using 808 who looks up your username can see your
-profile: your name, username, photo if you added one, your streak, your
-sessions and minutes this week, your total number of sessions, and the date
-of your last session. This is not limited to people you have added. We can
-read everything in the shared area, because moderating it requires that.
+profile: your name, username, photo if you added one, the month you created
+your profile, your streak, your sessions and minutes this week, your total
+number of sessions, the date of your last session, and who you have added
+and who has added you (your following and followers). This is not limited to
+people you have added.
+
+Everything else 808 writes to the shared area is stored where other
+people's copies of 808 can read it too, even though the app does not show it
+to them. That includes who you have blocked, and the exact dates and times
+you created your profile, first meditated with 808, and last meditated.
+Reports are the one exception: they are kept where only we and the person
+who filed one can read them. We can read everything in the shared
+area, reports included, because moderating it requires that.
 
 **Reports.** When you report someone, the report (who filed it, who it is
 about, and the reason you give) is stored in the shared area. A copy with the
@@ -283,14 +305,16 @@ window. Every part of that, including whether you've meditated today, which
 apps are currently held, and how many times you've asked for a few more
 minutes, is worked out on your phone and stays there.
 
-**Nothing from Block ever leaves your phone.** Apple's own terms for the
+**Nothing from Block is ever sent anywhere.** Apple's own terms for the
 Family Controls framework say this plainly: this kind of data "may only be
 used for providing family controls, or individual device management," may
 not be shared "beyond... the individual and their device," and may never be
 used or shared "for purposes of advertising or advertising measurements," or
 given to a data broker. 808 follows that to the letter: nothing about your
 blockers, the apps you picked, or how you use Block reaches our usage
-analytics, your Friends profile, or any server, ours or anyone else's.
+analytics, your Friends profile, or any server, ours or anyone else's. It is
+never synced to iCloud; like the rest of your phone, it can be part of your
+own device backup.
 
 **This is self-management, not parental control.** Block only manages the
 iPhone you set it up on, for the person using it. 808 has no way to manage,
@@ -319,7 +343,11 @@ timing, or leave it on hold for a while, at any time in the app.
   one, and to review and act on reports.
 - To understand which features are used and where people get stuck, through
   pseudonymous usage analytics.
-- To send **product emails**, only if you opt in. We do not send them today.
+- To email people who joined an earlier waitlist about 808, as described
+  under "Our website and earlier waitlists."
+
+808 does not send product or marketing emails; if that ever changes, we will
+ask first and update this policy.
 
 We never use your health or motion data for advertising, and we never sell it.
 
@@ -363,18 +391,19 @@ app usage or to any health data.
   location) under a random identifier. It never receives health data, Block
   or Screen Time data, your name, your email, or your Friends username.
 - **Google**: questionnaire responses, the earlier waitlist emails, a copy of
-  the usage analytics (one row per install: app version, iPhone model,
-  approximate location, and counts of what was used), and reports you file
+  the usage analytics (one row per install: its random identifier, when it
+  was installed and last opened, app and iOS version, iPhone model,
+  approximate location, the plan bought if any, and counts of what was
+  used), and reports you file
   are kept in spreadsheets hosted by Google. Reports and app waitlist sign-ups
   reach them through Google Apps Script web apps we control, and reports are
   also emailed to us. No health data is ever sent there.
 - **FormSubmit**: if our questionnaire can't reach Google, FormSubmit
   (formsubmit.co) forwards your answers to us by email.
 - **Cloudflare**: hosts our website.
-- **Email delivery provider**: if we write to people on a waitlist, or to
-  people who opt in to product emails, an email service may receive your
-  email address in order to deliver those emails. It never receives health
-  data.
+- **Email delivery provider**: if we write to people on an earlier
+  waitlist, an email service may receive your email address in order to
+  deliver those emails. It never receives health data.
 - Audio in the app is bundled with the app; playing it sends no data about you.
 
 We otherwise do not share your information with third parties, and we never
@@ -384,8 +413,10 @@ share health data with any third party.
 
 We keep your data until you delete it. You can delete your account from
 **Settings → Delete account**, or from **Account → Delete account** on the
-membership screen, whether or not you have a subscription. Here is exactly
-what happens:
+membership screen, whether or not you have a subscription. Deleting your
+account does not cancel a subscription: an active one keeps billing until
+you cancel it in the Settings app on your iPhone (tap your name, then
+Subscriptions). Here is exactly what happens:
 
 - **Right away:** you are signed out; your Friends profile and everything
   you wrote to the shared area (except reports) is deleted, as described
@@ -398,8 +429,9 @@ what happens:
   are restored, but your Friends profile is not.
 - **What deleting your account does not remove:** the Mind and Body workouts
   and mindful minutes saved to Apple Health (you can delete them in the
-  Health app); usage analytics already sent, which are not linked to your
-  identity; and reports you filed. If you delete the app instead of opening
+  Health app); usage analytics already sent, which are tied only to the
+  random identifier described under "Usage analytics," never to your name,
+  email, Apple ID or Friends username; and reports you filed. If you delete the app instead of opening
   it again, the copy in your private iCloud stays until you remove it: on
   your iPhone, go to Settings, tap your name, then iCloud, and delete 808's
   data from your iCloud storage.
@@ -407,27 +439,57 @@ what happens:
 You can also delete individual sessions in the app at any time.
 
 We keep usage analytics only as long as they help us improve 808, and they
-are never linked to your identity. We keep reports as long as we need them to
-moderate Friends.
+are tied only to the random identifier described under "Usage analytics,"
+never to your name, email, Apple ID or Friends username. We keep reports as
+long as we need them to moderate Friends.
 
 ## Your choices and rights
 
 - **Access / delete:** your data is in the app, and you can delete your
   account and its data as described under "Data retention and deletion."
-- **Product emails:** opt in or out in Settings.
 - **HealthKit:** you control heart-rate, workout, and mindful-minutes
   permissions in the iOS/watchOS Health and privacy settings at any time.
 - **Notifications:** you control them in iOS Settings at any time.
 - **Friends:** creating a profile is your choice, and deleting your account
   deletes it.
 - **Block and Screen Time:** you control every blocker in the app at any time,
-  and your choices never leave your device in the first place.
-- Depending on where you live (e.g., the EU/UK under GDPR, or California under the
-  CCPA/CPRA), you may have additional rights to access, correct, or delete your
-  information, and to not be discriminated against for exercising them. Because we
-  never receive your health data, most requests are fulfilled directly through
-  the app's deletion controls. For anything else, including usage analytics,
-  reports, or waitlist emails, contact us.
+  and your choices are never sent to us or anyone else.
+- Depending on where you live (for example, California under the CCPA/CPRA,
+  or the EEA, UK or Switzerland, described in the next section), you may have
+  additional rights to access, correct, or delete your information, and to
+  not be discriminated against for exercising them. Because we never receive
+  your health data, most requests are fulfilled directly through the app's
+  deletion controls. For anything else, including usage analytics, reports,
+  or waitlist emails, contact us.
+
+## If you are in the EEA, the UK or Switzerland
+
+**Who is responsible.** Lock Out Inc. is the controller of the personal data
+described in this policy. Contact us at **support@meditate808.com** or at the
+address under "Contact."
+
+**Why we may use it (legal bases).**
+
+- **Our contract with you:** providing the app and your subscription,
+  creating and showing a Friends profile you ask us to create, and deleting
+  your account when you ask.
+- **Your consent:** reading Apple Health data during a measured session,
+  sending notifications, and publishing a Friends profile. You can withdraw
+  consent at any time: in the Health app, in iOS Settings, or by deleting
+  your account. Withdrawing does not affect what happened before.
+- **Our legitimate interests:** pseudonymous usage analytics, to understand
+  which features are used and where people get stuck, and handling reports,
+  to keep Friends safe. You can object to either, as described below.
+
+**International transfers.** PostHog, Google and Cloudflare process data for
+us in the United States. Those transfers rely on the European Commission's
+Standard Contractual Clauses or on the EU-US Data Privacy Framework (and its
+UK and Swiss counterparts), as each provider offers.
+
+**Your rights.** You may ask to access, correct, delete or port your personal
+data, and object to our use of it, by writing to
+**support@meditate808.com**. You also have the right to complain to a data
+protection authority where you live or work.
 
 ## Consumer health data
 
@@ -453,6 +515,8 @@ and applies to all users.
   and you can change that permission at any time in your Health settings.
 - **Sharing and sale:** we do **not** sell consumer health data, and we do not
   share it with anyone. It is processed on your devices; we never receive it.
+  (Versions of 808 before 1.1 sent one score-derived fact with usage
+  analytics, as described under "Usage analytics.")
 - **Your rights:** view your results in the app at any time; delete them by
   deleting a session, by deleting your account (as described under "Data
   retention and deletion"), or by deleting the app from the iPhone holding the
@@ -462,8 +526,12 @@ and applies to all users.
 
 ## Children
 
-808 is not directed to children under 13, and we do not knowingly collect personal
-information from children under 13.
+808 is for people at least 13 years old, or the minimum age of digital
+consent where you live, the same age our Terms of Service require. It is not
+directed to anyone younger, and we do not knowingly collect personal
+information from them. If you believe someone younger has created a Friends
+profile or otherwise given us information, write to
+**support@meditate808.com** and we will remove it.
 
 ## Security
 

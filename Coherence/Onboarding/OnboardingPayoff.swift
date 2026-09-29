@@ -1088,12 +1088,18 @@ struct PermissionScreen: View {
     var body: some View {
         OnboardingScreen(section: .win,
                          title: "One nudge,\nat your time.",
-                         // "Nothing else, ever" stopped being true with Block: its
-                         // "Otto wants a word" arrives when the person taps Ask
-                         // Otto on a held app (2026-09-22).
+                         // Every notification 808 sends, named, because this is
+                         // the screen that asks permission for all of them
+                         // (Melvin, 2026-09-29). "Nothing else, ever" was
+                         // untrue on every build: a timed session ends with a
+                         // chime (`SessionEndNotice`) and leaving the app
+                         // mid-session sends "Wait, come back!"
+                         // (`LeftAppNotice`). Block adds "Otto wants a word",
+                         // which arrives when the person taps Ask Otto on a
+                         // held app (2026-09-22).
                          subtitle: FeatureFlags.block
-                            ? "One reminder a day, at the time you pick. Otto also answers when you ask him from a held app."
-                            : "One reminder a day, at the time you pick. Nothing else, ever.",
+                            ? "One reminder a day at the time you pick, a chime when a timed session ends, a heads-up if you leave the app mid-session, and Otto whenever you ask him from a held app."
+                            : "One reminder a day at the time you pick, a chime when a timed session ends, and a heads-up if you leave the app mid-session.",
                          ctaTitle: "Turn on my reminder",
                          // Not a skip either: both buttons continue the flow.
                          // This one declines the iOS permission, and iOS gives

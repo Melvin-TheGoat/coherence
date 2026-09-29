@@ -16,7 +16,10 @@ public enum ContentFilter {
     /// caption saying the session was hard as hell is not abuse.
     static let blocked: Set<String> = [
         // profanity aimed at people
-        "fuck", "fucker", "fucking", "motherfucker", "cunt", "twat", "bitch", "whore", "slut",
+        // "fuk" is the spelling people reach for when "fuck" is refused
+        // (Melvin, 2026-09-29, a reviewer's bypass); as a stem inside a
+        // handle it would catch Fukuda and Fukushima, so it lives here.
+        "fuck", "fuk", "fucker", "fucking", "motherfucker", "cunt", "twat", "bitch", "whore", "slut",
         // explicit sexual
         "porn", "porno", "nude", "nudes", "dick", "cock", "pussy", "cum", "blowjob", "anal",
         "rape", "rapist",
@@ -70,84 +73,182 @@ public enum ContentFilter {
     /// it.** "fuckyou", "bigdick" and "cuntface" are single words that are
     /// in no list, and they passed. Free text keeps the whole-word rule
     /// (a class, an assessment, Scunthorpe); a handle is checked for a short
-    /// list of unambiguous STEMS anywhere inside it. A substring rule is only
-    /// safe with an allowlist beside it, so `handleAllowed` names the real
-    /// words and names that contain a stem (peacock, Dickens, therapist,
-    /// Yamashita, Nazia) and they are taken out before the stems are looked
-    /// for.
+    /// list of unambiguous STEMS anywhere inside it.
+    ///
+    /// **Second pass, same day, after a reviewer ran real names through it.**
+    /// The first version blocked Thai names ending in -porn, Yoshiteru,
+    /// Riddick, Glasscock, Slutsky, Fagg and "crush_it", and let "fvckyou",
+    /// "ni99er" and "applesupport" through. What changed, and why:
+    /// - A stem is looked for inside each part of the handle between dots
+    ///   and underscores, never across one: "crush_it" is two words, and
+    ///   joining them manufactured "shit". Parts of one or two letters are
+    ///   joined back up, so "f_u_c_k" is still one word.
+    /// - An allowed name exempts a stem only where the stem sits INSIDE it,
+    ///   so a name next to a slur never hides the slur.
+    /// - "porn" is no longer a stem (it ends hundreds of Thai names); its
+    ///   compounds are, and the word alone is still caught whole.
+    /// - "shit" between vowels is a name (Yamashita, Yoshiteru, Ishitsuka).
+    /// - "oo" is no longer squeezed to "o" (Poornima is not "pornima").
+    /// - v reads as u, q as g, and 9 or 6 as g, but only between letters, so
+    ///   a birth year ("dani1990", "jenni99") never becomes a slur.
     public static func checkHandle(_ raw: String) -> HandleVerdict {
         var handle = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if handle.hasPrefix("@") { handle.removeFirst() }
+        handle = handle.folding(options: .diacriticInsensitive, locale: nil)
         if isReservedHandle(handle) { return .reserved }
-        for (variant, squeezed) in handleVariants(handle) {
-            var text = variant
-            for safe in squeezed ? allowedSqueezed : allowedAsWritten {
-                text = text.replacingOccurrences(of: safe, with: " ")
+        for part in handleParts(handle) {
+            for variant in handleVariants(part) where containsStem(variant.text, squeezed: variant.squeezed) {
+                return .blocked
             }
-            if handleStems.contains(where: { text.contains($0) }) { return .blocked }
         }
-        return check(handle) == .blocked ? .blocked : .ok
+        return check(withoutAllowedWords(handle)) == .blocked ? .blocked : .ok
     }
 
-    /// Stems no ordinary word or name contains once `handleAllowed` is taken
-    /// out. Chosen short on purpose: each is a slur, an explicit term or the
-    /// strongest profanity, and each was run against the system dictionary
-    /// and names list before it went in. "twat" was tried and left out: it
+    /// Stems no ordinary word or name contains, outside the names in
+    /// `handleAllowed`. Chosen short on purpose: each is a slur, an explicit
+    /// term or the strongest profanity. "twat" was tried and left out: it
     /// sits inside saltwater, sweetwater and outwatch, and the whole-word
-    /// rule still catches it alone.
+    /// rule still catches it alone. "fuk" is left to the whole-word rule for
+    /// the same reason (Fukuda, Fukushima).
     static let handleStems: [String] = [
-        "fuck", "cunt", "nigg", "fagg", "porn", "shit", "dick", "cock", "pussy",
-        "whore", "slut", "bitch", "rapist", "nazi", "hitler", "kkk",
+        "fuck", "phuck", "cunt", "nigg", "nlgg", "faggot", "fagot",
+        "porno", "pornhub", "pornstar", "shit", "dick", "cock", "pussy",
+        "whore", "slut", "bitch", "biatch", "rapist", "nazi", "hitler", "kkk",
     ]
 
-    /// Real words and names that contain a stem.
+    /// Real words and names that contain a stem. A stem found inside one of
+    /// these is not counted; the same stem anywhere else in the handle still
+    /// is.
     static let handleAllowed: [String] = [
         // cock
         "shuttlecock", "weathercock", "hitchcock", "cockatiel", "cockroach", "woodcock",
         "cockatoo", "cocktail", "gamecock", "stopcock", "peacock", "hancock", "babcock",
         "cockpit", "cockburn", "cocker", "cockney", "cockle", "cockapoo",
         "alcock", "adcock", "laycock", "pocock", "silcock", "simcock", "willcock", "maycock",
+        "glasscock", "pidcock", "moorcock", "leacock", "wilcock", "hiscock", "haycock",
+        "heathcock", "hedgecock", "allcock", "handcock", "meacock", "cockrell", "cockrum",
+        "cockayne", "cocking", "cockcroft", "shinnecock",
         // dick
         "dickerson", "dickinson", "dickens", "dickson", "dickey", "dickie", "benedick",
-        // shit: the mushroom, washi tape, and Japanese and Indian names
-        // (Yamashita, Kinoshita, Yoshito, Ishita). A vowel before "shit" is
-        // required, so "noshit" and "shitass" are not let through.
-        "shiitake", "shitake", "shiite", "washi", "kshiti",
-        "ashita", "eshita", "ishita", "oshita", "ushita",
-        "ashito", "eshito", "ishito", "oshito", "ushito",
-        // porn: Thai given names (Pornchai, Pornsak, Pornthip)
-        "pornchai", "pornsak", "pornthip", "pornpimol", "pornpimon", "pornpan",
-        "pornsiri", "pornrat", "pornwilai", "pornpen",
-        // cunt, nigg, rapist, nazi, and the "oo" in poorness that a
-        // squeeze turns into "porn"
-        "scunthorpe", "niggl", "niggard", "therapist", "ashkenaz", "poorness",
-        "nazia", "nazir", "nazim", "nazif", "nazih", "nazish", "naziya",
+        "riddick", "reddick", "braddick", "maddick", "dickman", "dickel", "dickert",
+        "dickstein", "dicko",
+        // shit: the mushroom and Shia Islam; Indian, Nepali, Nigerian,
+        // Ethiopian and Chinese names that start with it or follow a
+        // consonant. Between vowels needs no entry (`shitBetweenVowels`).
+        "shiitake", "shitake", "shiite", "kshiti", "ikshit", "akshit", "arshit", "ishith",
+        "shital", "shitara", "shittu", "shitole", "shitaye", "shitanshu", "shitij",
+        "shiting", "shitong", "shitao", "shitian", "shitou",
+        // slut
+        "slutsk", "sluter",
+        // cunt, nigg, rapist
+        "scunthorpe", "niggl", "niggard", "snigger", "therapist",
+        // nazi
+        "ashkenazi", "anazi", "nazia", "nazir", "nazim", "nazif", "nazih", "nazish",
+        "naziya", "nazik", "nazil", "nazion",
     ]
 
-    /// Each allowed word as written, for the variants read as written, and as
-    /// `handleVariants` squeezes it ("cockatoo" is read as "cockato"), for the
-    /// squeezed ones. Kept apart: the squeezed Shiite is "shite", which must
-    /// stay blocked when somebody types it. Longest first, so a longer word
-    /// is removed whole before a shorter one inside it.
-    private static let allowedAsWritten: [String] = handleAllowed.sorted { $0.count > $1.count }
-    private static let allowedSqueezed: [String] = Array(Set(handleAllowed.map(squeezedRuns)))
-        .sorted { $0.count > $1.count }
+    /// Whole words of a handle the whole-word rule would otherwise refuse
+    /// because squeezing their double letter makes a listed word ("Fagg", an
+    /// English surname, squeezes to "fag").
+    static let handleAllowedWords: Set<String> = ["fagg"]
 
-    /// The handle with separators gone, digits read two ways (as the letters
-    /// they imitate, "sh1t", and as separators, "fuck2you"), each also with
-    /// runs squeezed ("fuuuck", "niiigger"): a vowel run to one, anything
-    /// else to two, so a stem's own double letter survives.
-    private static func handleVariants(_ handle: String) -> [(text: String, squeezed: Bool)] {
-        let lookalike: [Character: Character] = ["0": "o", "1": "i", "3": "e", "4": "a", "5": "s",
-                                                 "7": "t", "@": "a", "$": "s", "!": "i"]
-        let plain = handle.folding(options: .diacriticInsensitive, locale: nil)
-            .filter { $0 != "." && $0 != "_" && $0 != "-" }
-        let mapped = String(plain.compactMap { c -> Character? in
-            if let m = lookalike[c] { return m }
-            return c.isLetter ? c : nil
-        })
-        let stripped = String(plain.filter(\.isLetter))
-        return [(mapped, false), (stripped, false), (squeezedRuns(mapped), true), (squeezedRuns(stripped), true)]
+    /// Each allowed word as written, for the variants read as written, and as
+    /// `handleVariants` squeezes it ("shiitake" is read as "shitake"), for
+    /// the squeezed ones. Kept apart: the squeezed Shiite is "shite", which
+    /// must stay blocked when somebody types it.
+    private static let allowedAsWritten: [[Character]] = handleAllowed.map { Array($0) }
+    private static let allowedSqueezed: [[Character]] = Array(Set(handleAllowed.map(squeezedRuns))).map { Array($0) }
+
+    /// Digits and symbols that stand in for a letter anywhere.
+    private static let lookalike: [Character: Character] = ["0": "o", "1": "i", "3": "e", "4": "a", "5": "s",
+                                                            "7": "t", "@": "a", "$": "s", "!": "i"]
+
+    /// Where the stems are looked for: every part between dots, underscores
+    /// and hyphens, plus each run of two or more one- and two-letter parts
+    /// joined back into the word they spell ("f_u_c_k", "sh_it").
+    static func handleParts(_ handle: String) -> [String] {
+        let parts = handle.split(whereSeparator: { $0 == "." || $0 == "_" || $0 == "-" }).map(String.init)
+        var out = parts
+        var run: [String] = []
+        func close() {
+            if run.count > 1 { out.append(run.joined()) }
+            run = []
+        }
+        for part in parts {
+            if part.count <= 2 { run.append(part) } else { close() }
+        }
+        close()
+        return out
+    }
+
+    /// One part read four ways: with look-alikes as letters ("sh1t", "fvck",
+    /// "niqqa", "ni99er") and with every non-letter dropped ("fuck2you"),
+    /// each also with runs squeezed ("fuuuck", "niiigger"). The squeeze takes
+    /// a run of a, e, i or u to one letter and anything else to two, so a
+    /// stem's own double letter survives, and so does the "oo" of Poornima.
+    private static func handleVariants(_ part: String) -> [(text: [Character], squeezed: Bool)] {
+        let chars = Array(part)
+        var mapped: [Character] = []
+        for (i, c) in chars.enumerated() {
+            if c.isLetter {
+                mapped.append(c == "v" ? "u" : c == "q" ? "g" : c)
+            } else if let letter = lookalike[c] {
+                mapped.append(letter)
+            } else if c == "9" || c == "6", digitRunIsBetweenLetters(chars, at: i) {
+                mapped.append("g")
+            }
+        }
+        let stripped = chars.filter(\.isLetter)
+        return [(mapped, false), (stripped, false),
+                (Array(squeezedRuns(String(mapped))), true), (Array(squeezedRuns(String(stripped))), true)]
+    }
+
+    /// True when the digits around `i` have a letter on both sides: "ni99er"
+    /// yes, the year in "dani1990" and the "99" ending "jenni99" no.
+    private static func digitRunIsBetweenLetters(_ chars: [Character], at i: Int) -> Bool {
+        var lo = i
+        var hi = i
+        while lo > 0, chars[lo - 1].isNumber { lo -= 1 }
+        while hi < chars.count - 1, chars[hi + 1].isNumber { hi += 1 }
+        return lo > 0 && hi < chars.count - 1 && chars[lo - 1].isLetter && chars[hi + 1].isLetter
+    }
+
+    private static func containsStem(_ text: [Character], squeezed: Bool) -> Bool {
+        let safe = occurrences(of: squeezed ? allowedSqueezed : allowedAsWritten, in: text)
+        for stem in handleStems {
+            for found in occurrences(of: [Array(stem)], in: text) {
+                if safe.contains(where: { $0.lowerBound <= found.lowerBound && found.upperBound <= $0.upperBound }) {
+                    continue
+                }
+                if stem == "shit", shitBetweenVowels(text, found) { continue }
+                return true
+            }
+        }
+        return false
+    }
+
+    private static func occurrences(of words: [[Character]], in text: [Character]) -> [Range<Int>] {
+        var out: [Range<Int>] = []
+        for word in words where !word.isEmpty && word.count <= text.count {
+            for start in 0...(text.count - word.count)
+            where text[start..<(start + word.count)].elementsEqual(word) {
+                out.append(start..<(start + word.count))
+            }
+        }
+        return out
+    }
+
+    /// "shit" with a vowel before it and a vowel (or "s" and a vowel) after
+    /// it is Japanese and Indian names: Yamashita, Yoshiteru, Ishitsuka,
+    /// Mashiter, Ashita. At the start or end of a part, or after a
+    /// consonant, it is the word: "shithead", "noshit", "bullshit".
+    private static func shitBetweenVowels(_ text: [Character], _ found: Range<Int>) -> Bool {
+        let vowels: Set<Character> = ["a", "e", "i", "o", "u"]
+        guard found.lowerBound > 0, vowels.contains(text[found.lowerBound - 1]),
+              found.upperBound < text.count else { return false }
+        let next = text[found.upperBound]
+        if vowels.contains(next) { return true }
+        return next == "s" && found.upperBound + 1 < text.count && vowels.contains(text[found.upperBound + 1])
     }
 
     private static func squeezedRuns(_ text: String) -> String {
@@ -155,25 +256,50 @@ public enum ContentFilter {
         var run = 0
         for c in text {
             if c == out.last { run += 1 } else { run = 1 }
-            let limit = "aeiou".contains(c) ? 1 : 2
+            let limit = "aeiu".contains(c) ? 1 : 2
             if run <= limit { out.append(c) }
         }
+        return out
+    }
+
+    /// The handle with every word in `handleAllowedWords` blanked, for the
+    /// whole-word check.
+    private static func withoutAllowedWords(_ handle: String) -> String {
+        var out = ""
+        var word = ""
+        func flush() {
+            out += handleAllowedWords.contains(word) ? " " : word
+            word = ""
+        }
+        for c in handle {
+            if c.isLetter { word.append(c) } else { flush(); out.append(c) }
+        }
+        flush()
         return out
     }
 
     /// Handles that would read as the app, its maker, or its staff.
     static let reservedHandles: Set<String> = [
         "808", "meditate808", "otto", "support", "admin", "administrator", "apple", "app",
-        "official", "staff", "team", "moderator", "mod", "help", "security", "root",
+        "official", "staff", "team", "moderator", "mod", "help", "helpdesk", "security", "root",
         "system", "lockout",
     ]
 
-    /// Reserved when every word in it is a reserved one: "admin", "808_support",
-    /// "otto.official", "apple_help", "admin42" (a number beside a reserved
-    /// word adds nothing), "meditate_808". A reserved word beside anything
-    /// else is somebody's own name ("otto_k", "melvin808", "root_beer"), and
-    /// `CreateProfileView` itself suggests "name.808" when a handle is taken.
+    private static let reservedWords = reservedHandles.union(["meditate"])
+
+    /// Reserved when every word in it is made only of reserved words:
+    /// "admin", "808_support", "otto.official", "apple_help", "admin42" (a
+    /// number beside a reserved word adds nothing), "meditate_808", and the
+    /// same glued together ("applesupport", "808helpdesk", "adminteam") or
+    /// spelled with look-alikes ("supp0rt", "adm1n", "0tto"). A reserved
+    /// word beside anything else is somebody's own name ("otto_k",
+    /// "melvin808", "root_beer", "teamwork"), and `CreateProfileView` itself
+    /// suggests "name.808" when a handle is taken.
     static func isReservedHandle(_ handle: String) -> Bool {
+        readsAsReserved(handle) || readsAsReserved(lookalikeLetters(handle))
+    }
+
+    private static func readsAsReserved(_ handle: String) -> Bool {
         let compact = handle.filter { $0 != "." && $0 != "_" && $0 != "-" }
         if reservedHandles.contains(compact) { return true }
         // Words: letter runs, plus "808" wherever it appears as a number.
@@ -197,8 +323,34 @@ public enum ContentFilter {
             }
         }
         flush()
-        let reservedWords = reservedHandles.union(["meditate"])
-        return !words.isEmpty && words.allSatisfy { reservedWords.contains($0) }
+        return !words.isEmpty && words.allSatisfy(isMadeOfReservedWords)
+    }
+
+    /// Whether a word splits entirely into reserved words ("applesupport" is
+    /// apple + support; "appleseed" is not).
+    private static func isMadeOfReservedWords(_ word: String) -> Bool {
+        let chars = Array(word)
+        guard !chars.isEmpty else { return false }
+        var reachable = [Bool](repeating: false, count: chars.count + 1)
+        reachable[0] = true
+        for end in 1...chars.count {
+            for start in 0..<end where reachable[start] && reservedWords.contains(String(chars[start..<end])) {
+                reachable[end] = true
+                break
+            }
+        }
+        return reachable[chars.count]
+    }
+
+    /// Look-alike digits read as letters where they touch a letter ("0tto",
+    /// "supp0rt"), so "808" itself stays a number.
+    private static func lookalikeLetters(_ handle: String) -> String {
+        let chars = Array(handle)
+        return String(chars.enumerated().map { i, c -> Character in
+            guard let letter = lookalike[c] else { return c }
+            let touchesLetter = (i > 0 && chars[i - 1].isLetter) || (i + 1 < chars.count && chars[i + 1].isLetter)
+            return touchesLetter ? letter : c
+        })
     }
 
     /// Lowercase, common look-alike digits and symbols mapped to letters,

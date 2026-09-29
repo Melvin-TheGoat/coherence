@@ -98,6 +98,11 @@ struct FriendsTab: View {
             // counting it would put every new install in the number.
             if tourTab == nil { Analytics.track(.friendsOpened) }
             await model.load()
+            // Somebody opening Friends with a profile has taken it up, so
+            // publishing may resume after a sign-out paused it (Melvin,
+            // 2026-09-29). Covers the person who signed back in while iCloud
+            // was off and so never met onboarding's profile step with it.
+            if tourTab == nil, model.hasProfile { model.resumePublishing() }
         }
         .alert("Friends", isPresented: Binding(get: { model.errorText != nil }, set: { if !$0 { model.errorText = nil } })) {
             Button("OK") { model.errorText = nil }
@@ -209,8 +214,10 @@ struct FriendsSky<Content: View>: View {
 
 // MARK: - Unavailable
 
-/// Friends live in the user's iCloud account: no server, so iCloud IS the
-/// identity and the storage. The card says why, then exactly what to do
+/// Friends run on iCloud: the phone's iCloud account is who you are, and your
+/// profile, username and friend list are records in 808's PUBLIC CloudKit
+/// database, which Apple runs (808 has no server of its own). The card says
+/// why, then exactly what to do
 /// (Melvin, 2026-09-15: "there's no instructions for this"), and checks
 /// again on request. iOS offers no public link straight to the iCloud
 /// settings page; "Open Settings" lands one tap away from it.
@@ -234,7 +241,11 @@ struct UnavailableCard: View {
             Text("Friends need iCloud")
                 .font(AppFont.headline)
                 .foregroundStyle(AppColor.textPrimary)
-            Text("Your friends and your username are kept in your own iCloud account. 808 has no server of its own, so there is nowhere else to keep them.")
+            // Not "your own iCloud account" (Melvin, 2026-09-29): a profile
+            // is a record in 808's public iCloud database, readable by anyone
+            // who looks the username up. The private database only syncs
+            // sessions.
+            Text("808 uses your iCloud account to know it's you. Your username, profile and friend list are kept in 808's public iCloud database, run by Apple, so friends can find you. 808 has no server of its own.")
                 .font(AppFont.callout)
                 .foregroundStyle(AppColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -1235,7 +1246,9 @@ struct ReportSheet: View {
     @State private var reason: String = ""
     @State private var detail: String = ""
 
-    private let reasons = ["Not a meditation", "Harassment or hate", "Nudity or violence", "Spam", "Something else"]
+    /// About a profile, since there are no posts to report any more (Melvin,
+    /// 2026-09-29: "Not a meditation" was a reason for a post).
+    private let reasons = ["Pretending to be someone else", "Harassment or hate", "Nudity or violence", "Spam", "Something else"]
 
     var body: some View {
         NavigationStack {

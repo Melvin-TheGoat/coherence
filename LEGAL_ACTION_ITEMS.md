@@ -305,6 +305,41 @@ make with advice than without it; the founder-side list is in
    August 18 clearance rested on documented intent to market at them. Does
    that satisfy the FTC's former-price rule (16 CFR 233.1) and state
    equivalents, or should they come out?
+7. **The new EEA, UK and Swiss section of the privacy policy** (added
+   2026-09-29, second pass; "If you are in the EEA, the UK or Switzerland" in
+   `PRIVACY_POLICY.md`). We wrote it ourselves: Lock Out Inc. as controller;
+   contract as the basis for the subscription, a Friends profile a person
+   creates and account deletion; consent for Apple Health, notifications and
+   publishing a Friends profile; legitimate interests for pseudonymous
+   analytics and handling reports; transfers to PostHog, Google and
+   Cloudflare in the United States under Standard Contractual Clauses or the
+   EU-US Data Privacy Framework. Please check the wording and the bases. In
+   particular: (a) do our analytics need **opt-in consent** in the EU and UK
+   under the ePrivacy rules (PECR in the UK), because the PostHog SDK stores
+   an identifier on the device and reads it on every event, whatever the
+   GDPR basis for the later processing; (b) do we need an EU or UK
+   representative (GDPR Article 27) as a company with no establishment there;
+   (c) is listing a Friends profile under both contract and consent right, or
+   should it be one; (d) does each provider actually offer the transfer
+   mechanism we name.
+8. **Washington's My Health My Data Act, the homepage link.** The Act asks a
+   regulated entity to link its consumer health data privacy policy from its
+   homepage, and the Attorney General's guidance reads that as a separate,
+   prominent link. Ours is a section of the general policy
+   ("Consumer health data"), linked from the site's footer as "Privacy
+   Policy".
+   Do we need a standalone consumer health data policy page and its own
+   homepage link, given that we never receive health data (it stays on the
+   device), or is the section enough?
+9. **Sign in with Apple token revocation on account deletion.** Apple asks
+   apps that offer Sign in with Apple to revoke the user's tokens through
+   its REST API when the person deletes their account. That call needs a
+   server holding our Sign in with Apple key, and we run none: deletion signs
+   the person out and deletes everything we hold, and the person can end
+   Sign in with Apple for 808 in their Apple Account settings. Is that an
+   exposure beyond App Review (for example under a deletion right we
+   assert), and is a small serverless endpoint worth building before it is
+   asked for? (`RELEASE_CHECKLIST.md`, R23.)
 
 ---
 

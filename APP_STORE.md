@@ -146,11 +146,18 @@ claim about phone sessions, and label them as early testers, never as
 
 ## Keywords (100 max, comma-separated, never repeat name/subtitle words)
 
-`mindful,calm,breathwork,timer,streak,guided,nature,sounds,binaural,528hz,solfeggio,theta,friends`
-*(96 chars, in the paste sheet.)*
+`mindful,relax,breathwork,timer,streak,guided,nature,sounds,rain,528hz,solfeggio,theta,friends`
+*(92 chars, in the paste sheet.)*
 
 Changed for 1.1: `tracker` and `stillness` out (measurement is no longer the
-lead), `timer`, `nature`, `sounds` and `friends` in. Do not add HRV or
+lead), `timer`, `nature`, `sounds` and `friends` in. **`binaural` out, `rain`
+in (2026-09-29, second pass):** no code path passes headphones, so every tone
+plays isochronic and a binaural beat is unreachable in the app. Each word left
+is true of the build: `breathwork` is the guide's breathing techniques (box
+breathing, 4-7-8) and the "Breath work" technique in the session log; `theta`
+is the Deep Meditation tone ("Theta, about 6 Hz"); `528hz` is Manifest;
+`solfeggio` names the 528, 852 and 963 Hz tunings; `rain` is a nature sound;
+`calm` is also the name of the alpha tone. Do not add HRV or
 coherence: we do not ship either, and keywords promising absent features invite
 a 2.3.7 look. Do not add "Apple Watch" or any other company's mark.
 
@@ -328,9 +335,12 @@ with reactions"; posts were removed 2026-09-27.
 
 ## App Privacy (nutrition labels), 1.1
 
-**Ten data types.** Written 2026-09-29 from the decided manifest list, then
-**checked the same day against `Coherence/PrivacyInfo.xcprivacy` once the
-manifest change landed: every type, linkage and purpose matches.** Check once
+**Ten data types, every one linked.** Written 2026-09-29 from the decided
+manifest list, then **checked the same day against
+`Coherence/PrivacyInfo.xcprivacy` once the manifest change landed: every type,
+linkage and purpose matches.** Second pass the same day: the four PostHog-only
+rows flipped to Linked = Yes with the manifest (see the notes below the
+table). Check once
 more against the manifest in the build you archive before publishing the label
 (`RELEASE_CHECKLIST.md`, item R9). The manifest is the source of truth; a label
 that does not match it is a review flag by itself. The Watch app's manifest
@@ -339,13 +349,13 @@ declares no collected data.
 | Category | Linked to you | Used to track you | Purpose | What it is |
 |---|---|---|---|---|
 | Identifiers → User ID | **Yes** | No | App Functionality, Analytics | The Friends @username and profile (App Functionality), and the analytics install ID sent with every event (Analytics). |
-| Location → Coarse Location | No | No | Analytics | PostHog derives an approximate city, region and country from the IP address each event arrives from. |
-| Usage Data → Product Interaction | No | No | Analytics | Named events only: sessions started and completed, onboarding screens, paywall views, app opens. |
-| Usage Data → Other Usage Data | No | No | Analytics | Coarse facts sent with events: session length band, streak band, whether a Watch is paired, subscriber or not. |
-| Purchases → Purchase History | No | No | Analytics | Which plan was bought, restored or lapsed. No payment details ever travel this path, so Financial Info stays off. |
-| Other Data → Other Data Types | **Yes** | No | App Functionality | The Friends practice summary: sessions and minutes in the last 7 days, current streak, total sessions, last session date. |
+| Location → Coarse Location | **Yes** | No | Analytics | PostHog derives an approximate city, region and country from the IP address each event arrives from. |
+| Usage Data → Product Interaction | **Yes** | No | Analytics | Named events only: sessions started and completed (with coarse length and streak bands), onboarding screens, paywall views, Friends actions, Watch measuring switched on or off. |
+| Usage Data → Other Usage Data | **Yes** | No | Analytics | The device and app metadata PostHog's SDK attaches to every event (iPhone model, iOS version, app version and build, TestFlight or not, language, time zone, screen size, Wi-Fi or cellular), the install, update, open and close lifecycle events, and whether a Watch is paired. |
+| Purchases → Purchase History | **Yes** | No | Analytics | Which plan was bought, restored or lapsed, and whether the install currently subscribes. No payment details ever travel this path, so Financial Info stays off. |
+| Other Data → Other Data Types | **Yes** | No | App Functionality | The Friends practice summary (sessions and minutes in the last 7 days, current streak, total sessions, last session date), the profile's created and first-session dates, and the friend edges and blocks a person writes. |
 | Contact Info → Name | **Yes** | No | App Functionality | The display name on a Friends profile. |
-| Contact Info → Email Address | **Yes** | No | Developer's Advertising or Marketing | The old no-Watch waitlist. No 1.1 screen asks for it, but a saved onboarding record from an earlier version can still send one, so it stays declared while the code can. |
+| Contact Info → Email Address | **Yes** | No | Developer's Advertising or Marketing | The old no-Watch waitlist. No 1.1 screen asks for it, but an email can still reach the waitlist sheet two ways: a saved onboarding record from an earlier version (`WaitlistClient.submit`) and a queued sign-up that flushes on launch (`WaitlistClient.flush`). It stays declared while the code can send one. |
 | User Content → Photos or Videos | **Yes** | No | App Functionality | The optional Friends profile photo. |
 | User Content → Other User Content | **Yes** | No | App Functionality | The text of a report someone files. |
 
@@ -358,6 +368,14 @@ nothing linked across apps or websites.
   with opposite linkage (the analytics ID not linked, the username linked).
   App Store Connect takes one answer per data type, so the row is the union:
   linked, because the @username identifies a person, with both purposes.
+- **Every PostHog row is Linked = Yes (2026-09-29, second pass).** Apple
+  treats data tied to a pseudonymous identifier as linked to the user, and
+  every event from one install carries the same random `distinct_id`. The
+  first pass marked Coarse Location, Product Interaction, Other Usage Data and
+  Purchase History not linked; that answer only holds for data with no
+  identifier at all. The privacy policy says the same thing in words: the
+  data is tied only to that random identifier, never to a name, email, Apple
+  ID or Friends username.
 - **The IP-derived location is collected**, because PostHog resolves it
   server side from each event's IP address. Whether PostHog keeps the IP or
   discards it after GeoIP is a founder decision (`RELEASE_CHECKLIST.md`); the
@@ -373,7 +391,12 @@ nothing linked across apps or websites.
   Block is off in 1.1.
 - **No Diagnostics row, and the code guarantees it.** PostHog's crash capture
   installs only when the app switches it on, and `Analytics.swift` sets it off
-  explicitly.
+  explicitly. **Xcode's privacy report will still show Crash Data**, because
+  PostHog's bundled crash-reporter framework ships its own privacy manifest
+  declaring it. That entry describes what the framework could collect, not
+  what 808 turns on: crash capture is off, so no Diagnostics row goes on the
+  label. Whoever fills in the label from the Xcode report should expect that
+  line and leave it out.
 
 **Superseded 2026-09-29:** the 2026-09-23 table ("Eight data types"), which
 listed two User ID rows and described photos and videos on Friends posts.
@@ -404,17 +427,44 @@ what they say:
 - **Friends needs iCloud** and has no posts, comments or messages. The
   reviewer handle (`@REVIEWER_HANDLE` until the founders create it) gives them
   a profile to find, request, report and block without a second device.
+  **Search needs a profile first** (the Friends tab opens on Create your
+  profile until one exists), so the notes say to create one before searching.
 - **Account deletion is in two places**: Settings, and the Account link on
   the LAUNCH paywall (the one an app that has finished onboarding opens to
   without a subscription, such as a 1.0 install that updates), so someone
-  locked out by the paywall can still delete their account (5.1.1(v)). The
-  onboarding paywall has no Account link; nobody there has an account yet.
+  locked out by the paywall can still delete their account (5.1.1(v)).
+  ~~The onboarding paywall has no Account link; nobody there has an account
+  yet.~~ **Corrected 2026-09-29 (second pass):** the onboarding paywall also
+  shows the Account link on a device that already holds an account's data.
+
+**Added in the second pass, 2026-09-29, each checked against the code:**
+
+- **The sandbox account must hold no active 808 subscription.** A payer is
+  sent straight past the onboarding paywall, so a reviewer on a subscribed
+  sandbox account would never see it.
+- **Introductory-offer eligibility is explained**, because a sandbox account
+  that already took a free trial in the group is not offered the trial rung
+  (`available(_:)` in `OnboardingOffer.swift`) and sees the half price rung
+  without its trial. Without the sentence, a reviewer reads a missing rung as
+  a broken ladder.
+- **"Plans aren't loading"** is the Release paywall's state when the core
+  products do not load; the app retries on the next launch or return to the
+  foreground.
+- **With Apple Watch is dimmed without a paired Watch** ("Needs a paired
+  Apple Watch."); the first draft said it "carries on as an iPhone session",
+  which is the fallback for a Watch that never answers, not what a reviewer
+  with no Watch sees.
+- **The notification ask is conditional**: a timed session asks only if
+  onboarding has not already asked (`SessionEndNotice`).
+- **The AUDIO paragraph is gone**; the Content Rights answer covers it.
 
 **If Block ships in the build**, append this paragraph to the notes. The notes
-are about 3,705 characters today and Apple's limit is 4,000, so with it also
-drop the AUDIO paragraph (the Content Rights answer covers it) and the sentence
-that begins "After the paywall come", which brings them to about 3,910 plus the
-length of the reviewer handle. Count before pasting.
+are 3,853 characters with the `@REVIEWER_HANDLE` placeholder in them
+(2026-09-29) and Apple's limit is 4,000, so the paragraph (580 characters)
+needs about 440 cut: drop the paragraph that begins "Apple allows one
+introductory offer" and the sentence that begins "After the paywall:", which
+brings them to about 3,955 plus whatever the real handle adds over the
+placeholder's 16 characters. Count before pasting.
 
 ```
 BLOCK (part of 808 Premium) uses Apple's Family Controls with individual authorization: a person manages their own iPhone, and it is not a parental control. In the Block tab, Screen Time permission is asked on first use, then apps are picked with Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. Nothing from Screen Time leaves the device. A screen recording is available on request.

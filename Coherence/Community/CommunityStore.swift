@@ -1,5 +1,6 @@
 import Foundation
 import CloudKit
+import os
 
 /// Everything the Friends tab and the post composer do, over any
 /// `CommunityDatabase`. No UI, no SwiftData; callers pass in what they know
@@ -454,7 +455,7 @@ actor CommunityStore {
     /// Reuses the same query-then-delete `deleteEverythingOfMine` already
     /// does for posts, rather than a second implementation of it.
     func deleteMyPosts() async throws {
-        try await deleteMine(CommunityType.post, field: "author")
+        try await deleteMine(CommunityType.post, field: "author", retired: true)
     }
 
     /// Friends' posts and mine, most recently practiced first.
@@ -607,9 +608,9 @@ actor CommunityStore {
         let mine = try await me()
         var firstError: Error?
 
-        do { try await deleteMine(CommunityType.post, field: "author") }
+        do { try await deleteMine(CommunityType.post, field: "author", retired: true) }
         catch { firstError = firstError ?? error }
-        do { try await deleteMine(CommunityType.reaction, field: "author") }
+        do { try await deleteMine(CommunityType.reaction, field: "author", retired: true) }
         catch { firstError = firstError ?? error }
         do { try await deleteMine(CommunityType.edge, field: "from") }
         catch { firstError = firstError ?? error }
@@ -631,11 +632,48 @@ actor CommunityStore {
 
     /// Deletes every record of `type` I created whose `field` names me — the
     /// query-then-delete shape shared by four of the six steps above.
-    private func deleteMine(_ type: String, field: String) async throws {
+    ///
+    /// `retired` is for Post and Reaction, the types the app stopped writing
+    /// when posting was removed (2026-09-27). **A query of one of them that
+    /// fails for any reason but the network counts as nothing to delete**
+    /// (Melvin, 2026-09-29, second pass of the pre-1.1 audit). A Production
+    /// container whose Post or Reaction index was never created answers
+    /// every such query with an error, and before this the account-deletion
+    /// flag stayed set forever, retrying at every launch a deletion that
+    /// could never finish. Nothing can have been written to a type that
+    /// cannot be queried, so there is nothing there to leave behind. The
+    /// four live types (profile, username, edges, blocks) still fail, and
+    /// still retry, on any error.
+    private func deleteMine(_ type: String, field: String, retired: Bool = false) async throws {
         let mine = try await me()
-        let records = try await db.query(CommunityQuery(type: type, filters: [.equals(field, .reference(mine))], limit: 500))
+        let records: [CKRecord]
+        do {
+            records = try await db.query(CommunityQuery(type: type, filters: [.equals(field, .reference(mine))], limit: 500))
+        } catch let error where retired && !Self.isTransient(error) {
+            Self.log.notice("Treating \(type, privacy: .public) as empty: its query failed with \(String(describing: error), privacy: .public)")
+            return
+        }
         for record in records where authored(record, by: field) {
             try await db.delete(record.recordID.recordName)
+        }
+    }
+
+    private static let log = Logger(subsystem: "com.lockout.meditate808", category: "friends")
+
+    /// Errors that say "not now" rather than "not ever": no iCloud account
+    /// yet, no network, CloudKit busy or rate-limiting. Worth retrying. A
+    /// missing record type or index, or any other refusal, is not.
+    static func isTransient(_ error: Error) -> Bool {
+        if let community = error as? CommunityError { return community == .unavailable }
+        if error is URLError { return true }
+        guard let ck = error as? CKError else { return false }
+        switch ck.code {
+        case .networkUnavailable, .networkFailure, .serviceUnavailable, .requestRateLimited,
+             .zoneBusy, .notAuthenticated, .accountTemporarilyUnavailable, .operationCancelled,
+             .serverResponseLost:
+            return true
+        default:
+            return false
         }
     }
 }
