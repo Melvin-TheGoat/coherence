@@ -66,10 +66,10 @@ struct CreateProfileView: View {
                         VStack(spacing: 6) {
                             Text(editing ? "Edit profile" : "Create your profile")
                                 .font(DisplayFont.display(28, .heavy))
-                                .foregroundStyle(ValleyGround.skyInk)
+                                .onValley()
                             Text("Your username is how friends find you. It's yours alone.")
                                 .font(AppFont.callout)
-                                .foregroundStyle(ValleyGround.skyInkSoft)
+                                .onValley(soft: true)
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.horizontal, 30)
@@ -148,8 +148,7 @@ struct CreateProfileView: View {
                 if model.phase == .unavailable {
                     Button("Continue without a profile") { onDone(nil) }
                         .font(AppFont.callout.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
+                        .onValley()
                 }
             }
             .padding(.horizontal, AppMetrics.screenPadding)

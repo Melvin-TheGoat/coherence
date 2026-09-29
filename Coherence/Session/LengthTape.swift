@@ -31,7 +31,7 @@ struct SessionLengthPicker: View {
                     Text(SessionLength.clock(minutes))
                         .font(DisplayFont.display(minutes == nil ? 58 : 60, .heavy))
                         .monospacedDigit()
-                        .foregroundStyle(ink)
+                        .onValley()
                         .contentTransition(.numericText())
                         .animation(.snappy(duration: 0.22), value: minutes)
                         .frame(minWidth: 180)
@@ -43,7 +43,7 @@ struct SessionLengthPicker: View {
 
                 Text("\(SessionLength.words(minutes)) \u{00B7} tap to type")
                     .font(AppFont.caption.weight(.semibold))
-                    .foregroundStyle(inkSoft)
+                    .onValley(soft: true)
 
                 LengthTape(minutes: $minutes, ink: ink)
                     .frame(height: 62)

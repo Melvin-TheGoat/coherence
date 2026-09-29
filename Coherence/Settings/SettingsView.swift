@@ -18,9 +18,16 @@ struct SettingsView: View {
             Group {
                 if let user = currentUser, let prefs = preferences.first {
                     SettingsForm(user: user, prefs: prefs, onDone: { dismiss() },
-                                 onSignOut: { SessionStore.signOut(in: context); OttoChatStore.deleteAll(); dismiss() },
+                                 onSignOut: {
+                                     Analytics.track(.signedOut)
+                                     // A new anonymous person from here: the
+                                     // next one on this phone is not them.
+                                     Analytics.reset()
+                                     SessionStore.signOut(in: context); OttoChatStore.deleteAll(); dismiss()
+                                 },
                                  onDelete: {
                                      Analytics.track(.accountDeleted)
+                                     Analytics.reset()
                                      SessionStore.softDeleteCurrentUser(in: context); OttoChatStore.deleteAll()
                                      // Friends: the public profile, posts and
                                      // reactions go too, not just the local
@@ -105,7 +112,7 @@ private struct SettingsForm: View {
                             HStack(alignment: .firstTextBaseline) {
                                 Text("Settings")
                                     .font(DisplayFont.display(30, .heavy))
-                                    .foregroundStyle(ValleyGround.skyInk)
+                                    .onValley()
                                 Spacer()
                             }
                             .padding(.horizontal, AppMetrics.screenPadding)
@@ -202,7 +209,11 @@ private struct SettingsForm: View {
                 settingsCard {
                     membershipRow(icon: "arrow.clockwise", title: "Restore purchases",
                                   subtitle: "Bought on another device, or reinstalled") {
-                        Task { await store.restore() }
+                        Task {
+                            let synced = await store.restore()
+                            let outcome = store.entitled ? "restored" : synced ? "nothing" : "failed"
+                            Analytics.track(.restore(source: "settings", outcome: outcome))
+                        }
                     }
                     divider
                     membershipRow(icon: "ticket", title: "Redeem a code",
@@ -547,13 +558,17 @@ private struct SettingsForm: View {
                     subtitle: "Heart rate, stillness and breathing", teal: true) {
                     Toggle("", isOn: Binding(
                         get: { sitKindRaw == SitKind.watch.rawValue },
-                        set: { sitKindRaw = ($0 ? SitKind.watch : .unmeasured).rawValue }
+                        set: { on in
+                            sitKindRaw = (on ? SitKind.watch : .unmeasured).rawValue
+                            Analytics.track(.watchSwitch(on: on, source: "settings"))
+                        }
                     )).labelsHidden().tint(OnboardingGreen.fill)
                 }
             }
             divider
             membershipRow(icon: "questionmark.circle", title: "How to connect",
                           subtitle: "Four steps, about a minute") {
+                Analytics.track(.watchSetupOpened(source: "settings"))
                 showWatchSetup = true
             }
         }

@@ -214,17 +214,13 @@ struct SessionRewardView: View {
 
             Text("Session complete!")
                 .font(.system(size: 32, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
-                // Dark enough to hold over a passing cloud.
-                .shadow(color: .black.opacity(0.28), radius: 0, y: 3)
-                .shadow(color: .black.opacity(0.22), radius: 6)
+                .onValley()
                 .scaleEffect(titleIn ? 1 : 0.4)
                 .opacity(titleIn ? 1 : 0)
                 .padding(.top, 18)
             Text(reward.minutes == 1 ? "1 minute, well spent" : "\(reward.minutes) minutes, well spent")
                 .font(.system(size: 15, weight: .heavy, design: .rounded))
-                .foregroundStyle(.white)
-                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+                .onValley(soft: true)
                 .opacity(subIn ? 1 : 0)
                 .offset(y: subIn ? 0 : 8)
                 .padding(.top, 4)
@@ -293,8 +289,7 @@ struct SessionRewardView: View {
                 Text("\(glowShown)%").monospacedDigit().contentTransition(.numericText())
             }
             .font(.system(size: 12, weight: .black, design: .rounded))
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
+            .onValley()
             GeometryReader { g in
                 let fill = max(14, g.size.width * CGFloat(glowShown) / 100)
                 ZStack(alignment: .leading) {
@@ -307,8 +302,7 @@ struct SessionRewardView: View {
                     // percentage over the bar's right end.
                     Text("+\(max(0, reward.glowAfter - reward.glowBefore))%")
                         .font(.system(size: 18, weight: .black, design: .rounded))
-                        .foregroundStyle(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 3, y: 2)
+                        .onValley()
                         .fixedSize()
                         .offset(x: fill - 22, y: gainFloat ? -44 : -16)
                         .opacity(gainFloat ? 0 : (glowIn && reward.glowAfter > reward.glowBefore ? 1 : 0))

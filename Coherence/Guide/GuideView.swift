@@ -157,14 +157,13 @@ private enum GuideGround {
     static let quiet = AppColor.meadowInk.opacity(0.11)
 }
 
-/// A section title on the grass, white, as the blocker editor's are.
+/// A section title on the grass, in the sky's ink for the hour.
 private struct GuideHeading: View {
     let title: String
     var body: some View {
         Text(title)
             .font(DisplayFont.display(15, .heavy))
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.18), radius: 0, y: 1)
+            .onValley()
             .padding(.leading, 4)
             .padding(.top, 14)
             .padding(.bottom, 8)

@@ -69,13 +69,11 @@ struct ShopTab: View {
                 scene(width: proxy.size.width, height: sceneHeight, topInset: proxy.safeAreaInsets.top)
                 ScrollView {
                     VStack(alignment: .leading, spacing: 18) {
-                        // Standing on the grass, so white with a faint shadow, as
-                        // every heading on the meadow is: brown vanished into the
-                        // night grass.
+                        // Standing on the grass, so in the valley's ink for the
+                        // hour, as every heading on the meadow is.
                         Text("Otto's closet")
                             .font(DisplayFont.display(22, .heavy))
-                            .foregroundStyle(.white)
-                            .shadow(color: .black.opacity(0.22), radius: 2, y: 1)
+                            .onValley()
                         LazyVGrid(columns: [GridItem(.flexible(), spacing: 14), GridItem(.flexible())],
                                   spacing: 14) {
                             ForEach(HatCatalog.all) { item in
@@ -201,6 +199,7 @@ struct ShopTab: View {
         guard let prefs else { return }
         if OttoShop.buy(id, prefs: prefs, sessions: sessions) {
             try? context.save()
+            Analytics.track(.hatBought(id: id))
             previewing = id
         }
     }
@@ -209,6 +208,7 @@ struct ShopTab: View {
         guard let prefs else { return }
         if OttoShop.wear(id, prefs: prefs) {
             try? context.save()
+            Analytics.track(.hatWorn(id: id ?? "none"))
             previewing = id
         }
     }

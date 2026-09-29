@@ -1279,6 +1279,7 @@ struct SocialProofScreen: View {
               !UserDefaults.standard.bool(forKey: OnboardingResume.reviewAskedKey) else { return }
         asked = true
         UserDefaults.standard.set(true, forKey: OnboardingResume.reviewAskedKey)
+        Analytics.track(.ratingPrompted(placement: "onboarding"))
         requestReview()
     }
 

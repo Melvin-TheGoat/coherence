@@ -4,7 +4,8 @@ import UserNotifications
 /// Schedules the single daily meditation reminder. One repeating local
 /// notification at the chosen time; rescheduled on change, cancelled when off.
 enum NotificationScheduler {
-    private static let reminderID = "daily-meditation-reminder"
+    /// Also how a tap on it is recognised (`Analytics.notificationKind`).
+    static let reminderID = "daily-meditation-reminder"
 
     /// Requests permission then schedules (or cancels) based on `enabled`.
     /// `onDenied` fires on the main thread when the OS refuses, so the caller

@@ -118,7 +118,7 @@ struct BlockTab: View {
         FriendsSky(height: top + 92, sceneHeight: (top + 92) / 0.62) {
             Text("Block")
                 .font(DisplayFont.display(30, .heavy))
-                .foregroundStyle(ValleyGround.skyInk)
+                .onValley()
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.top, top + 10)
@@ -175,8 +175,7 @@ struct BlockTab: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("Presets")
                 .font(DisplayFont.display(17))
-                .foregroundStyle(AppColor.backgroundPrimary)
-                .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                .onValley()
                 .padding(.top, 8)
             ScrollView(.horizontal) {
                 HStack(spacing: 10) {

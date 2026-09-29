@@ -5,14 +5,15 @@ and a working support URL, and both live here. Rewritten in the 2026-09-23
 sweep: the earlier version described a site that was not live yet (empty
 form endpoints, DRAFT banners, a choice of hosts).
 
-- `index.html`: the landing page, with the waitlist form. Its footer carries
-  `id="support"`, which the App Store support URL points at; keep it.
+- `index.html`: the landing page (rebuilt 2026-09-28 after
+  thebrainrotapp.com). Its footer carries `id="support"`, which the App
+  Store support URL points at; keep it.
 - `survey.html`: the questionnaire for the warm audience. Every question is
   optional, and the page is `noindex`: a link you hand out, not a page to be
   found.
 - `privacy.html`, `terms.html`: generated from the root `PRIVACY_POLICY.md`
-  and `TERMS_OF_SERVICE.md` by `python3 legal_to_html.py` (run from the repo
-  root). The markdown is the source, so regenerate them rather than editing
+  and `TERMS_OF_SERVICE.md` by `python3 tools/legal_pages.py` (run from the
+  repo root). The markdown is the source, so regenerate them rather than editing
   them by hand.
 - `_redirects`: the branded short links (`/ig`, `/tiktok`, `/app` and the
   rest), listed in `marketing/CAMPAIGN_LINKS.md`. `_headers`: security
@@ -21,9 +22,11 @@ form endpoints, DRAFT banners, a choice of hosts).
 
 ## Deploy
 
-Cloudflare Pages, direct upload, not connected to git: drag the `website/`
-folder into Workers & Pages > meditate808 > Create deployment. Pushing to
-GitHub deploys nothing.
+Cloudflare Pages, direct upload, not connected to git. Pushing to GitHub
+deploys nothing. Run `tools/website_dist.sh` to build a zip of only what the
+pages use, then upload it in Workers & Pages > meditate808 > Create
+deployment. In Claude Code, "deploy the website" runs the `deploy-website`
+skill (`.claude/skills/deploy-website/`), which does all of it.
 
 ## Forms
 

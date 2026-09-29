@@ -143,6 +143,10 @@ final class SessionCoordinator: NSObject, ObservableObject {
     /// the phone's finish would then find the row taken and call the sit too
     /// short.
     private var heldPayloads: [UUID: SessionPayload] = [:]
+    /// How each running sit began, for `session_completed`'s `source`:
+    /// "phone", "phone_watch" (Watch asked to measure from here), or
+    /// "watch". Removed when the sit ends, however it ends.
+    private var sessionSources: [UUID: String] = [:]
 
     private static let recentIDLimit = 64
     private static func remember(_ id: UUID, in list: inout [UUID]) {
@@ -224,6 +228,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         currentAttemptID = params.sessionID
         startAcked = false
         if let soundID { pendingSoundIDs[params.sessionID] = soundID }
+        sessionSources[params.sessionID] = "phone"
         Analytics.track(.sessionStarted(source: "phone", sound: soundID ?? "silence"))
         beginOnPhone(params: params, soundID: soundID,
                      headphones: headphones, reason: "phone Begin")
@@ -257,6 +262,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         startFailure = nil
         watchAttemptIDs.insert(params.sessionID)
         if let soundID { pendingSoundIDs[params.sessionID] = soundID }
+        sessionSources[params.sessionID] = "phone_watch"
         Analytics.track(.sessionStarted(source: "phone_watch", sound: soundID ?? "silence"))
         active = ActiveSession(id: params.sessionID,
                                startedAt: Date(),
@@ -286,7 +292,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 Task { @MainActor in
                     guard let self, !success else { return }
                     self.log.error("startWatchApp failed, running on the phone: \(String(describing: error))")
-                    self.convertToPhoneSession(sessionID: params.sessionID)
+                    self.convertToPhoneSession(sessionID: params.sessionID, reason: "launch_failed")
                 }
             }
         }
@@ -307,15 +313,17 @@ final class SessionCoordinator: NSObject, ObservableObject {
             guard !Task.isCancelled, let self, self.currentAttemptID == sessionID,
                   !self.startAcked else { return }
             self.log.error("no start ack from the Watch after \(Self.startAckTimeoutSec)s")
-            self.convertToPhoneSession(sessionID: sessionID)
+            self.convertToPhoneSession(sessionID: sessionID, reason: "no_ack")
         }
     }
 
     /// The Watch never answered: the phone keeps the sit going, unmeasured.
-    private func convertToPhoneSession(sessionID: UUID) {
+    /// `reason` is `watch_fallback`'s: "no_ack" or "launch_failed".
+    private func convertToPhoneSession(sessionID: UUID, reason: String) {
         startWatchdog?.cancel()
         guard let current = active, current.id == sessionID, current.engine == .watch,
               !startAcked else { return }
+        Analytics.track(.watchFallback(reason: reason))
         log.info("The Watch never answered for \(sessionID); finishing on the phone")
         // The Watch may still be waking up with these params. Tell it the sit
         // is not its to run, so it does not start one nobody is watching.
@@ -425,6 +433,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // it, or start it late from queued params.
         releaseWatch(from: current.id)
         let heldPayload = heldPayloads.removeValue(forKey: current.id)
+        let source = sessionSources.removeValue(forKey: current.id) ?? "phone"
 
         var duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
         // A silent timed sit lets iOS suspend 808, so the finish can run
@@ -451,9 +460,11 @@ final class SessionCoordinator: NSObject, ObservableObject {
         }
         // The Watch measured this sit after all (it started late, then shipped
         // before the phone's clock ran out): its readings belong to it.
+        var measured = false
         if let heldPayload,
            SessionStore.store(heldPayload, frequencyID: soundID, in: context).session != nil {
             WatchLink.shared.noteConnected()
+            measured = true
         }
         lastSessionID = session.id
         Self.onSessionSaved?(session.startedAt, session.durationSec)
@@ -461,6 +472,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
         status = "Saved ✓"
         let dates = ((try? context.fetch(FetchDescriptor<Session>())) ?? []).map(\.startedAt)
         Analytics.track(.sessionCompleted(
+            source: source,
+            measured: measured,
             durationBand: Analytics.durationBand(seconds: session.durationSec),
             streakBand: Analytics.streakBand(days: StreakCalculator.streak(from: dates).current)))
     }
@@ -489,6 +502,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // perhaps about to be voided. `rearmPhoneFinish` puts it back.
             SessionEndNotice.cancel(for: current.id)
             Task { await LeftAppNotice.post(for: current.id) }
+            Analytics.track(.sessionLeftApp)
         } else if phase == .active {
             guard let left = awayEnteredAt else { return }
             awayEnteredAt = nil
@@ -497,7 +511,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // blip before it's been answered doesn't need its own verdict.
             guard leftAppPrompt == nil else { return }
             switch LeftAppRule.verdict(awaySec: Date().timeIntervalSince(left)) {
-            case .continues: rearmPhoneFinish(for: current)
+            case .continues:
+                Analytics.track(.sessionReturned)
+                rearmPhoneFinish(for: current)
             case .voided: leftAppPrompt = LeftAppPrompt(id: current.id)
             }
         }
@@ -558,6 +574,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         Self.remember(current.id, in: &endedIDs)
         releaseWatch(from: current.id)
         heldPayloads.removeValue(forKey: current.id)
+        sessionSources.removeValue(forKey: current.id)
         let duration = Int(Date().timeIntervalSince(current.startedAt).rounded())
         pendingSoundIDs.removeValue(forKey: current.id)
         status = "Session discarded (left the app)"
@@ -666,6 +683,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
 
         log.info("Adopting the Watch's running session \(sessionID)")
         finishPhoneSitForWatch()
+        if sessionSources[sessionID] == nil { sessionSources[sessionID] = "watch" }
         startFailure = nil
         currentAttemptID = sessionID
         startAcked = true
@@ -731,6 +749,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // told to stop (`releaseWatch`), and any late ack ignored (`endedIDs`).
         if !startAcked {
             startWatchdog?.cancel()
+            Analytics.track(.watchFallback(reason: "ended_before_start"))
             self.active = ActiveSession(id: active.id, startedAt: active.startedAt,
                                         plannedDurationSec: active.plannedDurationSec,
                                         soundTitle: active.soundTitle, engine: .phone)
@@ -775,6 +794,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         if let id = currentAttemptID {
             Self.remember(id, in: &endedIDs)
             releaseWatch(from: id)
+            sessionSources.removeValue(forKey: id)
         }
         active = nil
         currentAttemptID = nil
@@ -858,6 +878,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
         watchAttemptIDs.remove(id)
 
         let soundID = pendingSoundIDs.removeValue(forKey: id)
+        // A payload is a Watch session unless it began here as "phone_watch".
+        let source = sessionSources.removeValue(forKey: id) ?? "watch"
 
         let context = container.mainContext
         let session: Session
@@ -899,6 +921,8 @@ final class SessionCoordinator: NSObject, ObservableObject {
         status = "Saved ✓"
         let dates = ((try? context.fetch(FetchDescriptor<Session>())) ?? []).map(\.startedAt)
         Analytics.track(.sessionCompleted(
+            source: source,
+            measured: true,
             durationBand: Analytics.durationBand(seconds: session.durationSec),
             streakBand: Analytics.streakBand(days: StreakCalculator.streak(from: dates).current)))
     }
@@ -1026,6 +1050,7 @@ extension SessionCoordinator: WCSessionDelegate {
         finishPhoneSitForWatch()
         currentAttemptID = sessionID
         if let soundID { pendingSoundIDs[sessionID] = soundID }
+        sessionSources[sessionID] = "watch"
         Analytics.track(.sessionStarted(source: "watch", sound: soundID ?? "silence"))
         startAcked = true
         active = ActiveSession(id: sessionID,

@@ -42,8 +42,8 @@ struct SessionLeftAppView: View {
                     Button(action: onOverride) {
                         Text("I was still meditating")
                             .font(AppFont.caption)
-                            .foregroundStyle(.white.opacity(0.55))
-                            .shadow(color: .black.opacity(0.18), radius: 2, y: 1)
+                            .onValley(soft: true, day)
+                            .opacity(0.75)
                             .padding(.vertical, 10)
                             .padding(.horizontal, 16)
                             .contentShape(Rectangle())

@@ -39,7 +39,7 @@ struct FriendsTab: View {
                                 VStack(alignment: .leading) {
                                     Text("Friends")
                                         .font(DisplayFont.display(30, .heavy))
-                                        .foregroundStyle(ValleyGround.skyInk)
+                                        .onValley()
                                         // Clear of the close button in the corner.
                                         .padding(.leading, onClose == nil ? 0 : 44)
                                     Spacer()
@@ -423,11 +423,11 @@ struct FriendsHomeView: View {
                     VStack(alignment: .leading, spacing: 1) {
                         Text("Friends")
                             .font(DisplayFont.display(30, .heavy))
-                            .foregroundStyle(ValleyGround.skyInk)
+                            .onValley()
                         if let handle = model.profile.map({ "@" + $0.username }), handle.count > 1 {
                             Text(handle)
                                 .font(AppFont.caption.weight(.semibold))
-                                .foregroundStyle(ValleyGround.skyInkSoft)
+                                .onValley(soft: true)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                         }
@@ -871,7 +871,7 @@ struct RequestsView: View {
             ToolbarItem(placement: .principal) {
                 Text("Requests")
                     .font(DisplayFont.display(19, .heavy))
-                    .foregroundStyle(ValleyGround.skyInk)
+                    .onValley()
             }
         }
         // No navigationDestination here: FriendsHomeView's, further up the
@@ -1088,7 +1088,7 @@ struct PersonView: View {
                         Button("Report", role: .destructive) { reportTarget = .profile(id) }
                         Button("Block", role: .destructive) { confirmBlock = true }
                     } label: {
-                        Image(systemName: "ellipsis").foregroundStyle(ValleyGround.ink)
+                        Image(systemName: "ellipsis").onValley()
                     }
                 }
             }

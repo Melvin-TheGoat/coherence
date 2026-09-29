@@ -150,7 +150,7 @@ private struct InterventionScene: View {
             ValleyStage(pose: "OttoSit", line: "Zzz... oh, hey. Morning meditation?", doors: doors) { size, ottoTop in
                 Text("z z")
                     .font(.system(size: 22, weight: .heavy, design: .rounded))
-                    .foregroundStyle(DayLight.now.inkSoft)
+                    .onValley(soft: true)
                     .position(x: size.width * 0.66, y: ottoTop + 18)
             }
         case .sign:
@@ -785,7 +785,7 @@ private struct CountdownScene: View {
                     Text(done ? "Your call" : "Counting down")
                         .font(.system(size: 15, weight: .medium))
                 }
-                .foregroundStyle(DayLight.now.ink)
+                .onValley()
                 .position(x: size.width / 2, y: 118)
             }
         }

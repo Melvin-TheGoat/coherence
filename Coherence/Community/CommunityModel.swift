@@ -438,7 +438,6 @@ final class CommunityModel: ObservableObject {
         guard let store else { return false }
         do {
             let p = try await store.post(draft)
-            Analytics.track(.postCreated(photo: !(draft.media ?? []).isEmpty))
             feed = Self.placing(p, in: feed)
             return true
         } catch { errorText = Self.plain(error); return false }
@@ -501,7 +500,6 @@ final class CommunityModel: ObservableObject {
         do {
             if was { try await store.unreact(to: postID) } else {
                 try await store.react(to: postID)
-                Analytics.track(.reactionGiven)
             }
         } catch {
             reactions[postID] = was ? list + [myID] : list.filter { $0 != myID }

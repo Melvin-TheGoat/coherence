@@ -18,6 +18,10 @@ struct RootView: View {
     @EnvironmentObject private var store: Store
     /// The plan the launch paywall has selected.
     @State private var lockPlan: SubscriptionPlan = .monthly
+    @Environment(\.scenePhase) private var scenePhase
+    /// Whether the valley's sky is dark right now, so the status bar turns
+    /// white (`statusScheme`). Re-read every minute and on every return.
+    @State private var nightSky = RootView.skyIsDark
 
     /// **808 is premium only again** (Melvin and Aziz, 2026-09-23;
     /// `Monetization`). A person with no subscription meets the paywall at
@@ -79,7 +83,20 @@ struct RootView: View {
                 OnboardingView()
             }
         }
-        .preferredColorScheme(colorScheme)
+        // Everything 808 draws stays light (see `colorScheme`); only what
+        // iOS draws around it, the status bar above all, follows the sky.
+        .environment(\.colorScheme, .light)
+        .preferredColorScheme(statusScheme)
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { nightSky = Self.skyIsDark }
+        }
+        .task {
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(60))
+                guard !Task.isCancelled else { return }
+                if nightSky != Self.skyIsDark { nightSky = Self.skyIsDark }
+            }
+        }
         // The Watch mirrors the onboarding fact. Reported at launch and on
         // every change, so finishing onboarding unlocks the wrist and signing
         // out re-locks it.
@@ -100,6 +117,9 @@ struct RootView: View {
             let state = try? await ASAuthorizationAppleIDProvider()
                 .credentialState(forUserID: signedIn.appleUserID)
             if state == .revoked {
+                // Signed out by iOS, not by a tap, so no `signed_out`; still a
+                // new anonymous person from here.
+                Analytics.reset()
                 SessionStore.signOut(in: context)
                 OttoChatStore.deleteAll()
             }
@@ -132,4 +152,20 @@ struct RootView: View {
     /// through CloudKit to phones still running older builds, and nothing is
     /// bought by removing it. It is simply no longer read.
     private var colorScheme: ColorScheme? { .light }
+
+    /// What iOS is told, as opposed to what 808 draws (Aziz, 2026-09-29:
+    /// "make the status bar white at night too"). A light app has a dark
+    /// status bar, which vanished into the night sky, and SwiftUI offers no
+    /// status bar style of its own. So after dark iOS is told the app is
+    /// dark, which turns the clock and battery white, while every view below
+    /// is handed `.light` through the environment and renders exactly as by
+    /// day. Onboarding and the launch paywall always draw a daytime valley,
+    /// so they stay light.
+    private var statusScheme: ColorScheme {
+        let inApp = preferences.contains(where: { $0.onboardingComplete }) && !premiumLock
+        return inApp && nightSky ? .dark : .light
+    }
+
+    /// The same line the valley's words cross from dark ink to cream.
+    private static var skyIsDark: Bool { DayLight.clockProgress() >= DayLight.inkTurn }
 }

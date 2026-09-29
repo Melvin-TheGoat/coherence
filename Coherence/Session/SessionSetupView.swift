@@ -78,6 +78,11 @@ struct SessionSetupView: View {
     /// today never takes a sit, whatever was chosen.
     @ObservedObject private var watchLink = WatchLink.shared
     @State private var showWatchSetup = false
+    /// Whether Otto's line is the Watch one or the YouTube one. They take
+    /// turns, one per opening (`ready.lineTurn`), so neither goes missing
+    /// for long.
+    @State private var mentionsWatch = false
+    @State private var lineTurnTaken = false
     /// What this sit will actually be: the choice, unless it asks for a Watch
     /// that is not connected right now.
     private var effectiveKind: SitKind {
@@ -177,7 +182,7 @@ struct SessionSetupView: View {
                     else { cancel() }
                 }
                 .font(AppFont.callout.weight(.semibold))
-                .foregroundStyle(DayLight.now.ink.opacity(0.55))
+                .onValley(soft: true)
                 .padding(.horizontal, 20).padding(.top, 14)
             }
         }
@@ -214,6 +219,13 @@ struct SessionSetupView: View {
         // reach for the switch, which is the moment it is about anything.
         .onAppear {
             focus.refreshStatus()
+            if !lineTurnTaken {
+                lineTurnTaken = true
+                let d = UserDefaults.standard
+                let turn = d.integer(forKey: "ready.lineTurn") + 1
+                d.set(turn, forKey: "ready.lineTurn")
+                mentionsWatch = turn % 2 == 0
+            }
             watchLink.refresh()
             if !lengthLoaded {
                 lengthLoaded = true
@@ -321,7 +333,7 @@ struct SessionSetupView: View {
         } else {
             Text("Turn on Do Not Disturb first, from Control Center.")
                 .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(ink.opacity(0.75))
+                .onValley(soft: true)
                 .multilineTextAlignment(.center)
                 .padding(.top, 2)
         }
@@ -343,9 +355,7 @@ struct SessionSetupView: View {
         let speaks = SitLayout.ottoTop(in: size) - 8 - lift - hatRise(in: size)
         return VStack(spacing: 0) {
             Spacer(minLength: 0)
-            OttoSpeech(text: countdown == nil
-                            ? "Ready when you are. Start any YouTube or Spotify audio first."
-                            : "Get comfortable.",
+            OttoSpeech(text: countdown == nil ? readyLine : "Get comfortable.",
                        tail: .bottom, size: 17,
                        ink: ValleyBubble.now.ink, stroke: ValleyBubble.now.stroke,
                        fill: ValleyBubble.now.fill, alignment: .center,
@@ -353,6 +363,24 @@ struct SessionSetupView: View {
         }
         .frame(width: min(size.width - 56, 320), height: max(120, speaks))
         .position(x: size.width / 2, y: max(120, speaks) / 2)
+    }
+
+    /// What he says before Begin (Aziz, 2026-09-29): sometimes the YouTube
+    /// line, sometimes the Apple Watch, alternating each time the screen
+    /// opens. The Watch line only with a Watch paired.
+    private var readyLine: String {
+        let youtube = "Ready when you are. Start any YouTube or Spotify audio first."
+        guard mentionsWatch else { return youtube }
+        switch watchLink.status {
+        case .noWatch:
+            return youtube
+        case .notInstalled:
+            return "Ready when you are. Put 808 on your Watch to see how you settle."
+        case .connected:
+            return kind == .watch
+                ? "Ready when you are. Your Apple Watch will read how you settle."
+                : "Ready when you are. Switch on your Watch below to see how you settle."
+        }
     }
 
     /// He asks the question, so the list needs no title. The point aims left
@@ -421,9 +449,11 @@ struct SessionSetupView: View {
             EmptyView()
         case .connected:
             Button {
+                let on = kind != .watch
                 withAnimation(.snappy(duration: 0.2)) {
-                    kindRaw = (kind == .watch ? SitKind.unmeasured : .watch).rawValue
+                    kindRaw = (on ? SitKind.watch : .unmeasured).rawValue
                 }
+                Analytics.track(.watchSwitch(on: on, source: "ready"))
             } label: {
                 watchPill {
                     Label("Connected", systemImage: "checkmark.circle.fill")
@@ -442,7 +472,10 @@ struct SessionSetupView: View {
             .accessibilityLabel("Measure with Apple Watch")
             .accessibilityValue(kind == .watch ? "On" : "Off")
         case .notInstalled:
-            Button { showWatchSetup = true } label: {
+            Button {
+                Analytics.track(.watchSetupOpened(source: "ready"))
+                showWatchSetup = true
+            } label: {
                 watchPill {
                     Text("Not connected")
                         .font(.system(size: 12.5, weight: .semibold, design: .rounded))
@@ -502,12 +535,12 @@ struct SessionSetupView: View {
             Text("\(max(n, 1))")
                 .font(DisplayFont.display(60, .heavy))
                 .monospacedDigit()
-                .foregroundStyle(day.ink)
+                .onValley(day)
                 .contentTransition(.numericText(countsDown: true))
                 .frame(minWidth: 180)
             Text("starting in")
                 .font(AppFont.caption.weight(.semibold))
-                .foregroundStyle(day.inkSoft)
+                .onValley(soft: true, day)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Starting in \(max(n, 1))")

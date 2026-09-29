@@ -81,7 +81,7 @@ struct BlockerEditor: View {
                 VStack(spacing: 28) {
                     Text("Which apps steal your time?")
                         .font(.system(size: 28, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColor.textPrimary)
+                        .onValley()
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity)
@@ -92,7 +92,7 @@ struct BlockerEditor: View {
                     VStack(spacing: 14) {
                         Text("When should I hold them?")
                             .font(.system(size: 22, weight: .heavy, design: .rounded))
-                            .foregroundStyle(AppColor.textPrimary)
+                            .onValley()
                             .multilineTextAlignment(.center)
                             .fixedSize(horizontal: false, vertical: true)
                             .frame(maxWidth: .infinity)

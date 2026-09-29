@@ -6446,6 +6446,44 @@ never confirms; the Watch already starts its own sessions and has End.
   that the person's choice is remembered.
 - **Later:** an onboarding question about owning a Watch, to offer setup.
 
+### Otto points at the Watch (2026-09-29, Aziz)
+
+The Watch switch stays where it was, under Silence notifications on the +
+screen. On top of it: Home's Otto leads with a Watch line when a Watch is
+paired and not measuring ("Turn on your Apple Watch at the plus to see how you
+settled", or "Put 808 on your Apple Watch..." when 808 is not on it), and the
++ screen's bubble alternates, one opening the YouTube line, the next a Watch
+line (`ready.lineTurn`). Neither ever mentions a Watch to a phone without one
+paired. A Home corner switch and an automatic pill were tried the same day
+and reverted.
+
+### Home's corners swapped (2026-09-29, Aziz)
+
+The streak is top LEFT now, bare on the sky with no circle, bigger (a 44pt
+flame over its number in the sky's ink for the hour). Friends moved to the top
+RIGHT, above the guide circle. The "Friends in the opposite corner, top left"
+and "streak and under it the guide" notes above are superseded.
+
+### Words on the valley follow the hour; the status bar goes white at night (2026-09-29, Aziz)
+
+**Any word drawn straight on the sky or grass uses `.onValley()`**
+(`DesignKit`; `soft: true` for the second shade; pass the screen's own
+`DayLight` where it is not the clock's, as the sit does). Dark ink by day,
+cream by night, a faint opposite-shade halo. Words on a cream card, pill or
+tile keep the daytime ink. `GrassHeading` uses it, so grass headings are no
+longer white (white on the daytime grass was 2:1).
+- **The ink SNAPS at `DayLight.inkTurn` (0.36, about 7:25 pm), no blend.**
+  The old stops blended dark into cream across the sunset and passed
+  through a mid grey that read at 2:1 around half past seven. Measured: at
+  0.36 both inks hold about 3:1 at the top of the sky, and cream wins there
+  from then on. Checked on the simulator at 12, 19.2, 19.4, 19.75, 19.85
+  and 23h (`VALLEY_HOUR`).
+- **The status bar:** after `inkTurn` RootView tells iOS the app is dark
+  (`.preferredColorScheme(.dark)`), which turns the clock and battery white,
+  and hands every view `.environment(\.colorScheme, .light)`, so everything
+  808 draws, sheets and system pickers included, renders as by day.
+  Onboarding and the launch paywall always draw daytime and stay light.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley
