@@ -476,7 +476,7 @@ struct SessionShareCard: View {
             Circle().stroke(AppColor.trace, lineWidth: 10)
             Circle()
                 .trim(from: 0, to: max(0.001, min(score, 1)))
-                .stroke(OnboardingGreen.fill, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                .stroke(AppColor.measure, style: StrokeStyle(lineWidth: 10, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             VStack(spacing: 2) {
                 Text("\(Int((score * 100).rounded()))")

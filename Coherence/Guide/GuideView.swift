@@ -186,14 +186,14 @@ private struct GuideBubble: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 14).padding(.vertical, 11)
-        .background(SpeechBubbleStyle.fill, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(TileFill(shape: RoundedRectangle(cornerRadius: 16, style: .continuous)))
         .overlay(alignment: .trailing) {
-            Triangle()
-                .fill(SpeechBubbleStyle.fill)
+            TileFill(shape: Triangle())
                 .frame(width: 10, height: 16)
                 .offset(x: 9)
         }
-        .shadow(color: .black.opacity(0.1), radius: 5, y: 2)
+        // Home's card lip, like every Otto bubble (`SpeechBubbleStyle`).
+        .shadow(color: SpeechBubbleStyle.lip, radius: 0, y: 2)
     }
 
     private struct Triangle: Shape {

@@ -594,44 +594,18 @@ private struct FaceTimeScene: View {
 
 // MARK: - 4. Breathe with me
 
+/// Onboarding's breath (`BreathExerciseScreen`): Otto breathing in, holding
+/// and breathing out on the water's 4, 2, 4, then the two doors. It replaced
+/// a circle and looping in / out words in the valley (Melvin, 2026-09-29:
+/// "that ones a lot better"). The doors wait for the breath, as Continue
+/// does in onboarding, and the close button is up the whole time.
 private struct BreatheWithMeScene: View {
     let doors: InterventionDoors
-    @State private var start = Date()
 
     var body: some View {
-        let day = DayLight.now
-        GeometryReader { geo in
-            let size = geo.size
-            let ottoHeight = min(210, size.height * 0.25)
-            let ottoBottom = size.height - 150
-            ZStack {
-                ValleyScene(progress: 0, showsFigure: false, clock: true)
-                BreathCircle(start: start)
-                    .frame(width: 200, height: 200)
-                    .position(x: size.width / 2, y: size.height * 0.30)
-                TimelineView(.periodic(from: start, by: 0.5)) { context in
-                    let t = context.date.timeIntervalSince(start).truncatingRemainder(dividingBy: 10)
-                    Text(t < 5 ? "Breathe in" : "Breathe out")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(day.ink)
-                        .position(x: size.width / 2, y: size.height * 0.30)
-                }
-                Image("OttoSit")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: ottoHeight)
-                    .position(x: size.width / 2, y: ottoBottom - ottoHeight / 2)
-                VStack {
-                    Text("One breath with me, then decide.")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(day.ink)
-                        .padding(.top, 70)
-                    Spacer()
-                    DoorButtons(doors: doors, ink: day.ink)
-                }
-            }
+        BreathExerciseScreen(title: "One breath with me, then decide.") {
+            DoorButtons(doors: doors)
         }
-        .ignoresSafeArea(edges: .top)
     }
 }
 

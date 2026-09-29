@@ -6351,10 +6351,9 @@ on a SwiftUI timer of its own.
   the cone hats at looks 10 to 12. The boxes grew upward to hold the taller
   masks, so `HatArt.placement` changed for the sun hat, bucket, monk's,
   wanderer's and ensō.
-- **Known, not fixed, not a hat bug:** for a moment as the look crosses 9 the
-  rig is drawn huge, when `OttoAuraFigure` swaps its view from wide
-  (`flightSpan`) to tall (`headroom`). Seen in the reel, which changes look
-  every 1.6 s; on Home it happens once, when the glow crosses that line.
+- **FIXED 2026-09-29 (see "THE POP"):** as the look crossed 9 the rig was
+  drawn huge for half a second, when `OttoAuraFigure` swapped its view from
+  wide (`flightSpan`) to tall (`headroom`) inside an animation.
 
 ## THE HATS CLEAR HIS EYE PATCHES AT EVERY LOOK (2026-09-28, Melvin)
 
@@ -6485,3 +6484,48 @@ never confirms; the Watch already starts its own sessions and has End.
 - **Design skills installed** in `~/.claude/skills/`: Anthropic's
   `frontend-design` and Vercel's `web-design-guidelines` (its rules vendored
   as `rules.md` instead of fetched at run time).
+
+## MEASURED NUMBERS ARE LIGHT BLUE; OTTO'S BUBBLES ARE SAND; THE POP IS GONE (2026-09-29, Melvin)
+
+- **A measured number is light blue, `AppColor.measure` (#62A3D4)**, with
+  `measureInk` (#1F4E70) for words on or beside it: the score ring, the score
+  pill, the minutes badge on a session, the Profile bars and "longest", the
+  share card's ring. Green stays for everything you press (buttons, the plus,
+  switches, "Connected", "See all"); on a measured number it blended into the
+  meadow and read as something to tap. White on this blue is under 3:1, which
+  is why the pill's number is the deep ink.
+- **Otto's bubbles are Home's cards everywhere but onboarding**
+  (`SpeechBubbleStyle`: the tile sand, `TileFill` so it dims at night, the 2pt
+  hairline lip). Onboarding keeps Aziz's white bubble with near-black words:
+  `OnboardingView` sets `whiteSpeechBubbles`, which `OttoSpeech` reads, and the
+  onboarding-only `OttoSaysBubble` is white outright. The guide's bubble and
+  Otto's chat bubble take the sand too.
+- **Otto's "Breathe with me" Block screen is onboarding's breath**:
+  `BreathExerciseScreen(title:actions:)`, one 4, 2, 4 breath with the water and
+  the breathing clip, then "Okay, let's meditate" / "Not now" in Continue's
+  place. The close button is up throughout. `BreathCircle` is deleted.
+- **THE POP.** On "See for yourself" Otto swelled for half a second whenever
+  the slider crossed look 9, and again on Continue. `OttoAuraFigure` carried
+  `.animation(.spring, value: stage)`, meant for the stills' lift, and it eased
+  the rig's frame from wide to tall, which is big both ways halfway through;
+  Continue changes screens inside an animation and did the same. The spring now
+  applies to the stills only, and the rig's frame carries
+  `.transaction { $0.animation = nil }`, so the wide/tall switch is always
+  instant. Verified from a recording: his width held at 219 to 224 px across
+  every crossing and through Continue. **A Rive view's frame must never be
+  animated.**
+- **The Simulator buys nothing.** It reaches the App Store sandbox, so the
+  plans load and Continue opened a real purchase that needs an Apple ID the
+  Simulator has not got, and onboarding stuck on the paywall. A DEBUG build on
+  the Simulator now grants the simulated entitlement (`simulatesPurchase` in
+  `PaywallScreen`); `REAL_PURCHASE=1` brings the purchase sheet back.
+- **The years clip ends on a sharp frame.** The seasons race to its last
+  frame, so the mountains, meadow and clock were all smeared on the held
+  ending. `mockups/otto-clock/end-sharp.png` is that frame redrawn sharp (GPT
+  Image 2.5 from the 4.85 s frame) and colour-matched to it, and
+  `clip_fill --end-still ... --end-frames 8` dissolves the clip into it, so the
+  picture comes into focus and holds. Same 98 frames, `clipSeconds` unchanged.
+  **Melvin makes the videos.** A Kling continuation (Otto burying his face in
+  his paws) was generated and rejected; do not generate video for 808, write
+  the prompt and the start frame for him instead.
+

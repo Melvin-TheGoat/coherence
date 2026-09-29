@@ -79,6 +79,8 @@ struct OttoSpeech: View {
     /// Ticks while it types. ON inside onboarding only (set by
     /// `OnboardingView`): Home and the session screens never buzz.
     @Environment(\.typingHaptics) private var typingHaptics
+    /// White, inside onboarding only (`SpeechBubbleStyle.onboardingFill`).
+    @Environment(\.whiteSpeechBubbles) private var white
 
     /// Five characters a frame at 60 frames a second: about 300 a second.
     private static let perTick = 5
@@ -94,7 +96,7 @@ struct OttoSpeech: View {
     private var typed: AttributedString {
         var line = parsed
         let cut = line.index(line.startIndex, offsetByCharacters: min(shown, total))
-        line[line.startIndex..<cut].foregroundColor = SpeechBubbleStyle.ink
+        line[line.startIndex..<cut].foregroundColor = white ? SpeechBubbleStyle.onboardingInk : SpeechBubbleStyle.ink
         line[cut..<line.endIndex].foregroundColor = .clear
         return line
     }
@@ -113,15 +115,19 @@ struct OttoSpeech: View {
             // Room for the point inside the frame, so layout counts it.
             .padding(tail == .bottom ? .bottom : .leading, Self.tailSize)
             .background {
-                // Every bubble is solid white with dark words (Aziz,
-                // 2026-09-28: "not clear, more friendly, white and black").
-                // This replaces the see-through outline and the valley's
-                // glass; `ink`, `stroke`, `fill` and `friendly` are still
-                // accepted so no call site changes, and are ignored.
-                SpeechBubbleShape(edge: tail, cornerRadius: 26, tailWidth: 24,
-                                  tailDepth: Self.tailSize)
-                    .fill(SpeechBubbleStyle.fill)
-                    .shadow(color: .black.opacity(0.14), radius: 10, y: 4)
+                // Home's card material on every screen, white in onboarding
+                // (`SpeechBubbleStyle`). `ink`, `stroke`, `fill` and
+                // `friendly` are still accepted so no call site changes, and
+                // are ignored.
+                let shape = SpeechBubbleShape(edge: tail, cornerRadius: 26, tailWidth: 24,
+                                              tailDepth: Self.tailSize)
+                if white {
+                    shape.fill(SpeechBubbleStyle.onboardingFill)
+                        .shadow(color: .black.opacity(0.14), radius: 10, y: 4)
+                } else {
+                    TileFill(shape: shape)
+                        .shadow(color: SpeechBubbleStyle.lip, radius: 0, y: 2)
+                }
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Otto says: \(String(parsed.characters))")
@@ -156,9 +162,21 @@ struct OttoSpeech: View {
 }
 
 /// The one look every speech bubble shares: white, with near-black words.
+/// Every bubble Otto speaks in is made of Home's cards (Melvin, 2026-09-28:
+/// "i like the text bubble in home, but make it the same everywhere"): the
+/// sand of every tile, their ink, and the same 2pt lip under it. Drawn
+/// through `TileFill` wherever it can be, so it dims with the cards at night.
+/// It was solid white with near-black words from earlier that day (Aziz).
 enum SpeechBubbleStyle {
-    static let fill = Color.white
-    static let ink = Color(red: 0.11, green: 0.11, blue: 0.12)
+    static let fill = AppColor.backgroundSecondary
+    static let ink = AppColor.textPrimary
+    static let lip = AppColor.hairline
+    /// Onboarding keeps Aziz's white bubble with near-black words and a soft
+    /// shadow (Melvin, 2026-09-29: "keep his speech bubble white for the
+    /// entirety of the onboarding, but onboarding only"). `OnboardingView`
+    /// turns it on with `whiteSpeechBubbles`.
+    static let onboardingFill = Color.white
+    static let onboardingInk = Color(red: 0.11, green: 0.11, blue: 0.12)
 }
 
 /// A rounded rectangle with a point, as one continuous outline, the way
@@ -715,7 +733,7 @@ private struct OttoSaysBubble: View {
     var body: some View {
         var line = AttributedString(text)
         let cut = line.index(line.startIndex, offsetByCharacters: min(max(shown, 0), text.count))
-        line[line.startIndex..<cut].foregroundColor = SpeechBubbleStyle.ink
+        line[line.startIndex..<cut].foregroundColor = SpeechBubbleStyle.onboardingInk
         line[cut..<line.endIndex].foregroundColor = .clear
         return Text(line)
             .font(.system(size: 19, weight: .semibold, design: .rounded))
@@ -726,8 +744,9 @@ private struct OttoSaysBubble: View {
             .padding(.vertical, 16)
             .padding(.bottom, Self.tail)
             .background {
+                // Onboarding only, so it keeps the white (`SpeechBubbleStyle`).
                 SpeechBubbleShape(edge: .bottom, cornerRadius: 26, tailWidth: 24, tailDepth: Self.tail)
-                    .fill(.white)
+                    .fill(SpeechBubbleStyle.onboardingFill)
                     .shadow(color: .black.opacity(0.12), radius: 10, y: 4)
             }
             .accessibilityHidden(true)
@@ -1448,10 +1467,28 @@ struct BreathExerciseScreen: View {
     /// one clock, so the water, Otto and the words can never disagree.
     @State private var breathStart: Date?
 
+    /// Above Otto, for the Block screen that borrows this one. Onboarding has
+    /// none.
+    private var title: String?
+    /// What arrives once the breath is done, in Continue's place.
+    private var actions: AnyView?
+
     init(breathing: Bool, onReady: @escaping () -> Void, onContinue: @escaping () -> Void) {
         self.breathing = breathing
         self.onReady = onReady
         self.onContinue = onContinue
+    }
+
+    /// The same breath, with its own line on top and its own buttons at the
+    /// end. Otto's "Breathe with me" Block screen is this one now (Melvin,
+    /// 2026-09-29: "replace that with the one from the onboarding, that ones
+    /// a lot better"); its circle and looping in / out words are gone.
+    init(title: String, @ViewBuilder actions: () -> some View) {
+        self.breathing = true
+        self.onReady = {}
+        self.onContinue = {}
+        self.title = title
+        self.actions = AnyView(actions())
     }
 
     var body: some View {
@@ -1494,14 +1531,31 @@ struct BreathExerciseScreen: View {
                 .padding(.horizontal, AppMetrics.screenPadding)
             }
         }
+        .overlay(alignment: .top) {
+            if let title {
+                Text(title)
+                    .font(OnboardingType.sub.weight(.semibold))
+                    .foregroundStyle(AppColor.textPrimary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 60)
+                    .padding(.top, 16)
+                    .opacity(appeared ? 1 : 0)
+            }
+        }
         .safeAreaInset(edge: .bottom) {
             // Only once the breath is done, and the slot is always laid out,
             // so nothing above it moves when it appears.
-            OnboardingCTA(title: "Continue", action: onContinue)
-                .opacity(finished ? 1 : 0)
-                .allowsHitTesting(finished)
-                .padding(.horizontal, AppMetrics.screenPadding)
-                .padding(.bottom, 10)
+            Group {
+                if let actions {
+                    actions
+                } else {
+                    OnboardingCTA(title: "Continue", action: onContinue)
+                        .padding(.horizontal, AppMetrics.screenPadding)
+                        .padding(.bottom, 10)
+                }
+            }
+            .opacity(finished ? 1 : 0)
+            .allowsHitTesting(finished)
         }
         .onAppear { withAnimation(.easeOut(duration: 0.4)) { appeared = true } }
         // Straight into the breath (Aziz: "no im ready button should j go
@@ -1606,48 +1660,6 @@ struct BreathWater: View {
         }
         .allowsHitTesting(false)
         .accessibilityHidden(true)
-    }
-}
-
-/// The breathing circle from the old breath screen and the walkthrough: a
-/// sage glow inside a sage ring, swelling on the inhale and settling on the
-/// exhale. Its size is read off `start` every frame rather than animated, so
-/// it can never drift from the words or from Otto's ten-second breath. With
-/// no `start` it rests at its smallest.
-struct BreathCircle: View {
-    let start: Date?
-
-    static let diameter: CGFloat = 180
-    private static let period: Double = 10
-    private static let rest: CGFloat = 0.5
-
-    var body: some View {
-        TimelineView(.animation(paused: start == nil)) { context in
-            GeometryReader { geo in
-                let d = min(geo.size.width, geo.size.height, Self.diameter)
-                ZStack {
-                    Circle()
-                        .fill(RadialGradient(colors: [Color.onboardingSage.opacity(0.55),
-                                                      Color.onboardingSage.opacity(0.05)],
-                                             center: .center, startRadius: 6, endRadius: d * 0.56))
-                    Circle()
-                        .stroke(Color.onboardingSage.opacity(0.45), lineWidth: 1.5)
-                }
-                .frame(width: d, height: d)
-                .scaleEffect(scale(at: context.date))
-                .frame(width: geo.size.width, height: geo.size.height)
-            }
-        }
-        .accessibilityHidden(true)
-    }
-
-    /// Smallest at the start of an inhale, largest five seconds in.
-    private func scale(at now: Date) -> CGFloat {
-        guard let start else { return Self.rest }
-        let t = max(0, now.timeIntervalSince(start))
-        let p = t.truncatingRemainder(dividingBy: Self.period) / Self.period
-        let fill = 0.5 - 0.5 * cos(2 * .pi * p)
-        return Self.rest + (1 - Self.rest) * CGFloat(fill)
     }
 }
 
@@ -1893,9 +1905,20 @@ private struct TypingHapticsKey: EnvironmentKey {
     static let defaultValue = false
 }
 
+private struct WhiteSpeechBubblesKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
 extension EnvironmentValues {
     var typingHaptics: Bool {
         get { self[TypingHapticsKey.self] }
         set { self[TypingHapticsKey.self] = newValue }
+    }
+    /// Otto's bubbles are white, as onboarding draws them. ON inside
+    /// onboarding only (set by `OnboardingView`); everywhere else they are
+    /// Home's sand.
+    var whiteSpeechBubbles: Bool {
+        get { self[WhiteSpeechBubblesKey.self] }
+        set { self[WhiteSpeechBubblesKey.self] = newValue }
     }
 }

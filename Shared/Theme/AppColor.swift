@@ -130,4 +130,14 @@ enum AppColor {
     /// green from the meadow, so a screen of unpicked choices does not read
     /// as the brown-on-cream Aziz asked to lose.
     static let meadowInk = Color("MeadowInk")
+    /// A measured number: the score ring and pill, the minutes badge on a
+    /// session, the Profile bars (Melvin, 2026-09-29: "like sky blue except a
+    /// bit lighter"). It was the buttons' green, which blended into the
+    /// meadow and made a number read like something to press. Green stays
+    /// for doing things; this is for what you did.
+    static let measure = Color("Measure")
+    /// Words and numbers on or beside `measure`: the badge's minutes, the
+    /// score pill's number, "longest". Deep enough to read on the pale tint
+    /// and on the sand (6:1 and 7:1).
+    static let measureInk = Color("MeasureInk")
 }

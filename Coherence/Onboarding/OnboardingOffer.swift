@@ -328,6 +328,18 @@ struct PaywallScreen: View {
     private static let demoSelling = false
     #endif
 
+    /// The Simulator reaches the App Store's sandbox, so the plans load and
+    /// Continue opened a real purchase that needs an Apple ID the Simulator
+    /// does not have, which left onboarding stuck on this screen (Melvin,
+    /// 2026-09-28). A DEBUG build on the Simulator grants the simulated
+    /// entitlement instead. `REAL_PURCHASE=1` puts the real purchase sheet
+    /// back, for a StoreKit rehearsal. A phone is untouched.
+    #if DEBUG && targetEnvironment(simulator)
+    private static let simulatesPurchase = ProcessInfo.processInfo.environment["REAL_PURCHASE"] != "1"
+    #else
+    private static let simulatesPurchase = false
+    #endif
+
     /// Apple's price string when there is a real product, ours otherwise.
     /// A hardcoded dollar amount beside a live purchase button is wrong in
     /// every country but one.
@@ -688,7 +700,7 @@ struct PaywallScreen: View {
         // which made every event-count of sales wrong. `buying` also blocks the
         // taps that land while the system sheet is coming up.
         guard !started, !buying else { return }
-        guard store.state == .ready else {
+        guard store.state == .ready, !Self.simulatesPurchase else {
             #if DEBUG
             // The purchase StoreKit cannot run happens as a simulated
             // entitlement instead, so the unlock is real on this build and

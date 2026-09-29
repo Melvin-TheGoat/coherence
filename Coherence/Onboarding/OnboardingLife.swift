@@ -133,7 +133,7 @@ private struct WordSlider: View {
 /// 2026-09-25, Brainrot's "25 years" screen). A generated clip fills the
 /// screen: Otto sits still while the seasons race past him under a clock, and
 /// it ends in spring with him looking afraid (`otto-seasons.mov`, cut at that
-/// frame and held there). The number counts up while the seasons pass, a tick
+/// frame, which dissolves into a sharp redraw of it and holds there). The number counts up while the seasons pass, a tick
 /// a step, and lands with a thump as the clip ends. The words sit at the top
 /// over the sky, Brainrot's layout (Aziz), the disclaimer at the bottom.
 struct LifeNumberScreen: View {

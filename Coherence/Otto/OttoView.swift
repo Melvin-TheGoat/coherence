@@ -553,19 +553,18 @@ struct OttoBubble: View {
             .fixedSize(horizontal: false, vertical: true)
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(SpeechBubbleStyle.fill)
-                    .shadow(color: .black.opacity(0.12), radius: 6, y: 3)
+                TileFill(shape: RoundedRectangle(cornerRadius: 18, style: .continuous))
             }
             .overlay(alignment: .bottomLeading) {
                 // The tail: a small rotated square tucked under the corner
                 // nearest Otto's mouth.
-                Rectangle()
-                    .fill(SpeechBubbleStyle.fill)
+                TileFill(shape: Rectangle())
                     .frame(width: 12, height: 12)
                     .rotationEffect(.degrees(45))
                     .offset(x: -4, y: -12)
             }
+            // Home's card lip, like every Otto bubble (`SpeechBubbleStyle`).
+            .shadow(color: SpeechBubbleStyle.lip, radius: 0, y: 2)
             .accessibilityLabel("Otto says: \(text)")
     }
 }

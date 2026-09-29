@@ -53,9 +53,9 @@ struct ScoreRing: View {
                 Circle()
                     .inset(by: lineWidth / 2)
                     .trim(from: 0, to: max(0.02, min(score, 1)))
-                    // Green, the app's "go" colour (Aziz, 2026-09-28: the
-                    // gold ring didn't match the rest of the app).
-                    .stroke(OnboardingGreen.fill, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
+                    // Light blue, the colour of a measured number (Melvin,
+                    // 2026-09-29). It was gold, then the buttons' green.
+                    .stroke(AppColor.measure, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
             }
             Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
@@ -103,12 +103,13 @@ private struct ScoreCapsule: View {
     var body: some View {
         Text(score.map { "\(Int(($0 * 100).rounded()))" } ?? "—")
             .font(.system(size: 13.5, weight: .bold, design: .rounded))
-            .foregroundStyle(score == nil ? AppColor.textSecondary : .white)
+            // Deep blue on the light blue: white on it read at under 3:1.
+            .foregroundStyle(score == nil ? AppColor.textSecondary : AppColor.measureInk)
             .monospacedDigit()
             .padding(.horizontal, 9)
             .padding(.vertical, 4)
-            // Green, like the score ring (Aziz, 2026-09-28).
-            .background(Capsule().fill(score == nil ? AppColor.trace : OnboardingGreen.fill))
+            // Light blue, like the score ring (Melvin, 2026-09-29).
+            .background(Capsule().fill(score == nil ? AppColor.trace : AppColor.measure))
     }
 }
 
@@ -202,10 +203,10 @@ struct MinutesPuck: View {
                 .tracking(0.6)
                 .opacity(0.75)
         }
-        // Green, not amber (Aziz, 2026-09-28: match the rest of the app).
-        .foregroundStyle(OnboardingGreen.shade)
+        // Light blue, the colour of a measured number (Melvin, 2026-09-29).
+        .foregroundStyle(AppColor.measureInk)
         .frame(width: 44, height: 44)
-        .background(OnboardingGreen.fill.opacity(0.2),
+        .background(AppColor.measure.opacity(0.25),
                     in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }

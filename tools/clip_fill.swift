@@ -23,6 +23,15 @@
 //     clock blurry"). The clock is still for the first second, and the
 //     camera is locked, so its sharp face drops straight onto the ending
 //     and the hands stop. Feathered 3 px so the rim leaves no seam.
+//   * `--end-still PATH --end-frames N` dissolves the last N output frames
+//     into a still the same size as the source, and ends on it, so the
+//     screen holds the still. For otto-seasons (Melvin, 2026-09-29: "the
+//     ending screen is still blurry like the background"): the seasons race
+//     to the last frame, so the mountains, meadow and clock are all smeared
+//     there, and the patch above only fixed the clock. The still is that
+//     frame redrawn sharp (Higgsfield, GPT Image 2.5 from the 4.85 s frame)
+//     and colour-matched to it, `mockups/otto-clock/end-sharp.png`. The
+//     dissolve reads as the picture coming into focus.
 //   * It prints which source frames are identical to the one before. A
 //     REGULAR pattern (one in every four, say) is a generator padding its
 //     frame rate, a stutter to fix before shipping (CLAUDE.md, "CHECK EVERY
@@ -51,6 +60,12 @@ if let i = args.firstIndex(of: "--patch-circle"), i + 1 < args.count {
     if v.count == 3 { patchCircle = (v[0], v[1], v[2]) }
     args.removeSubrange(i...(i + 1))
 }
+var endStill: CIImage?
+if let i = args.firstIndex(of: "--end-still"), i + 1 < args.count {
+    endStill = CIImage(contentsOf: URL(fileURLWithPath: args[i + 1]))
+    args.removeSubrange(i...(i + 1))
+}
+let endFrames = Int(option("--end-frames") ?? 8)
 guard args.count >= 3 else { print("clip_fill in out [--from s --to s]"); exit(1) }
 let inURL = URL(fileURLWithPath: args[1]), outURL = URL(fileURLWithPath: args[2])
 
@@ -145,6 +160,17 @@ Task {
                 .cropped(to: source.extent)
             source = patchImage.applyingFilter("CIBlendWithMask", parameters: [
                 kCIInputBackgroundImageKey: source, kCIInputMaskImageKey: mask])
+        }
+        if var still = endStill, k >= count - endFrames {
+            // Eased in over the last frames, fully the still on the last one.
+            let x = Double(k - (count - endFrames) + 1) / Double(endFrames)
+            let w = x * x * (3 - 2 * x)
+            still = still.transformed(by: CGAffineTransform(
+                scaleX: source.extent.width / still.extent.width,
+                y: source.extent.height / still.extent.height))
+            source = still.applyingFilter("CIColorMatrix", parameters: [
+                "inputAVector": CIVector(x: 0, y: 0, z: 0, w: w)])
+                .composited(over: source)
         }
         let image = source
             .cropped(to: crop)

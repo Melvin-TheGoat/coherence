@@ -122,7 +122,12 @@ struct OttoAuraFigure: View {
             // The hat, inside this same ZStack, rides along for free.
             .offset(y: aura.rig == nil && stage.floats ? -size * (bob ? 0.085 : 0.05) : 0)
             .frame(width: size, height: size, alignment: .bottom)
-            .animation(.spring(duration: 0.5, bounce: 0.2), value: stage)
+            // The stills' lift only. With the rig this spring eased the
+            // rig's frame from wide to tall as the look crossed 9, which is
+            // big both ways halfway through, so he swelled for half a second
+            // on every pass (Melvin, 2026-09-29: "he does a little pop ...
+            // anytime you scroll it happens").
+            .animation(aura.rig == nil ? .spring(duration: 0.5, bounce: 0.2) : nil, value: stage)
             .onAppear { setBob() }
             .onChange(of: stage) { _, _ in setBob() }
             .accessibilityElement()
@@ -283,6 +288,13 @@ struct OttoAuraFigure: View {
                            height: geo.size.height * (tall ? Self.headroom : 1))
                     .position(x: geo.size.width / 2,
                               y: geo.size.height - geo.size.height * (tall ? Self.headroom : 1) / 2)
+                    // The switch between wide and tall must be instant,
+                    // whatever animation the change arrived in. Eased, the
+                    // frame passes through big-both-ways and `.contain` draws
+                    // him larger for the length of the animation: the pop on
+                    // every scroll of "See for yourself", and again on its
+                    // Continue, which changes screens inside an animation.
+                    .transaction { $0.animation = nil }
             }
             // Only the drawing is wider: taps belong to whatever is on top.
             .allowsHitTesting(false)

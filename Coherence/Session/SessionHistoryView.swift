@@ -513,9 +513,9 @@ struct ProfileTab: View {
                         BarMark(x: .value("Session", point.index),
                                 y: .value("Minutes", point.minutes * (settled ? 1 : 0)),
                                 width: .fixed(barWidth))
-                            // Green, like every other session object now
-                            // (Aziz, 2026-09-28).
-                            .foregroundStyle(OnboardingGreen.fill)
+                            // Light blue, the colour of a measured number
+                            // (Melvin, 2026-09-29).
+                            .foregroundStyle(AppColor.measure)
                             .cornerRadius(7)
                     }
                     RuleMark(y: .value("Average", average))
@@ -550,7 +550,7 @@ struct ProfileTab: View {
                     proofStat("\(Int(average.rounded()))m", "average", AppColor.calmAccent)
                     divider
                     // Floored, like every session length in the app (and its points).
-                    proofStat("\(Int(longest))m", "longest", OnboardingGreen.shade)
+                    proofStat("\(Int(longest))m", "longest", AppColor.measureInk)
                     divider
                     proofStat("\(sessions.count)", "in total", AppColor.textPrimary)
                 }

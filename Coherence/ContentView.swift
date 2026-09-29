@@ -667,12 +667,10 @@ struct ContentView: View {
             if tourTab == nil {
                 VStack(spacing: 0) {
                     Spacer(minLength: 0)
-                    // See-through and centred, and pale words on dark glass
-                    // once the sky is dark (`ValleyBubble`).
-                    let look = ValleyBubble.look(at: DayLight.clockProgress())
+                    // Made of the same sand as the cards below it, and dimmed
+                    // with them at night (`SpeechBubbleStyle`).
                     OttoSpeech(text: ottoLines[ottoLineIndex % ottoLines.count],
                                tail: .bottom, size: 17,
-                               ink: look.ink, stroke: look.stroke, fill: look.fill,
                                alignment: .center,
                                speaking: .constant(false))
                 }
