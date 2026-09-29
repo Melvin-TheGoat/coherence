@@ -330,12 +330,12 @@ a phone session. Replace them:
 |---|---|---|
 | monthly | `Monthly` | `All of 808, billed every month.` (31) |
 | yearly | `Yearly` | `All of 808, billed once a year.` (31) |
-| monthly50 | `Half price monthly` | `All of 808 at half the monthly price.` (37) |
+| monthly50 | `Monthly, half price` | `All of 808 at half the monthly price.` (37) |
 | lifetime | `Lifetime` | `All of 808 with one payment.` (28) |
 
 With the group named `808 Premium`, Manage Subscriptions reads "808 Premium,
-Monthly". `808.storekit` uses the same names except `Half price` for
-monthly50; align it when convenient.
+Monthly". monthly50's name matches its card in the app (2026-09-29). `808.storekit`
+uses the same names except `Half price` for monthly50; align it when convenient.
 
 **Review screenshots** (one per product, required):
 
