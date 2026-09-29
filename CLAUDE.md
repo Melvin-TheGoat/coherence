@@ -6713,3 +6713,11 @@ The decisions it produced, so nobody undoes them:
   monthHalf>` (that plan selected) or `PREVIEW_PAYWALL_RUNG=<trial|halfMonth>` (that
   offer open). A plan the App Store is not selling falls back (`yearTrial` to
   `monthTrial`), so a new product can take a while to show in the sandbox.
+- **The listing leads with Otto, not Block** (Melvin, 2026-09-29: "Youre focusing
+  too much on the blocking aspect, thats just one feature"). Promotional text:
+  "Meditate consistently with Otto. He glows brighter every day you do, and blocks
+  your apps when you don't. Collect points to buy him hats from the Shop." The
+  description opens the same way; Block is one section, still described as
+  self-management of your own iPhone. This supersedes the earlier note that the
+  listing must lead with Block. Keywords drop 528hz/solfeggio/nature/rain for
+  mindfulness, guided, timer, stress, detox, selfcare, pet (`APP_STORE_PASTE.md`).

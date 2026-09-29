@@ -117,25 +117,25 @@ public claim, and none of the features they list has been verified in 808.
 
 ## Version 1.1
 
-**Promotional Text** (170 max; this one is 159; editable later without a new
+**Promotional Text** (170 max; this one is 151; editable later without a new
 review)
 
 ```
-Hold your most distracting apps until you've meditated. Otto glows brighter every day you sit, and every minute you meditate earns points for hats in his Shop.
+Meditate consistently with Otto. He glows brighter every day you do, and blocks your apps when you don't. Collect points to buy him hats from the Shop.
 ```
 
-**Description** (4000 max; this one is 3958)
+**Description** (4000 max; this one is 3975)
 
 ```
-Meditation is easy to start and hard to keep doing. 808 makes it a daily habit: pick the apps that pull you away, and 808 holds them until you've meditated.
+Meditate consistently with Otto, a sloth who meditates with you. He glows brighter every day you do, and blocks your apps when you don't. Every minute you meditate earns points to buy him hats from the Shop.
 
-HOLD THE APPS YOU CHOOSE UNTIL YOU MEDITATE
-Pick your most distracting apps with Apple's own picker and choose when 808 holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Meditate for five minutes or more and your apps open for the rest of that window. Need a moment? Tell Otto "Not now" for 10, 20 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
+OTTO GLOWS WITH YOUR PRACTICE
+Every day you meditate, Otto glows a little brighter, and your streak grows with him. Your streak allows one rest day a week.
 
-MEET OTTO
-Otto is a sloth who meditates with you. Every day you sit, he glows a little brighter, and your streak grows with him. Your streak allows one rest day a week.
+HE BLOCKS YOUR APPS UNTIL YOU MEDITATE
+Pick the apps that pull you away with Apple's own picker and choose when Otto holds them: all day, during hours you set, or once you reach a daily limit. Open one and Otto asks you to meditate first. Five minutes or more opens them for the rest of that window, or tell Otto "Not now" for 10, 20 or 30 minutes. Block manages your own iPhone, and the apps you pick stay private to your phone.
 
-DRESS OTTO UP
+COLLECT POINTS, BUY HIM HATS
 Every minute you meditate earns a point. Spend your points in the Shop on hats for Otto, from a beanie to a golden crown.
 
 MEDITATE YOUR WAY
@@ -176,11 +176,11 @@ Terms of Use: https://meditate808.com/terms
 Privacy Policy: https://meditate808.com/privacy
 ```
 
-**Keywords** (100 max; this is 94; no spaces after the commas, and none of the
+**Keywords** (100 max; this is 99; no spaces after the commas, and none of the
 name or subtitle words, which Apple already counts)
 
 ```
-mindful,relax,breathwork,timer,streak,guided,nature,rain,528hz,solfeggio,friends,focus,blocker
+mindfulness,guided,timer,streak,focus,stress,relax,breathing,blocker,detox,selfcare,pet,zen,friends
 ```
 
 **Support URL**
@@ -213,12 +213,12 @@ https://meditate808.com/privacy
 © 2026 Lock Out Inc.
 ```
 
-**What's New in This Version** (4000 max; this one is 985)
+**What's New in This Version** (4000 max; this one is 986)
 
 ```
-Block: pick the apps that pull you away, and 808 holds them until you've meditated. Five minutes of meditation opens them for the rest of the window you set.
-
 Meet Otto. He glows brighter every day you meditate, and in this update everyone's Otto starts at a 50% glow. Your history, streak and awards all carry over.
+
+Block: pick the apps that pull you away, and Otto holds them until you've meditated. Five minutes of meditation opens them for the rest of the window you set.
 
 Every minute you meditate earns a point. Spend them in the new Shop on hats for Otto.
 
