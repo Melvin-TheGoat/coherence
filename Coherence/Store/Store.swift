@@ -51,8 +51,11 @@ final class Store: ObservableObject {
         /// `monthHalf` the second, $3.99 every month after a free trial.
         static let monthTrial = "com.lockout.meditate808.monthlytrial"
         static let monthHalf = "com.lockout.meditate808.monthly50"
+        /// The yearly plan with the free trial, beside `monthTrial` on the
+        /// paywall once the trial rung is taken (Melvin, 2026-09-29).
+        static let yearTrial = "com.lockout.meditate808.yearlytrial"
 
-        static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf]
+        static let all = [monthly, yearly, lifetime, yearHalf, monthTrial, monthHalf, yearTrial]
         /// What must load for the store to count as selling: the two
         /// subscriptions every paywall shows (Aziz, 2026-09-26). The rungs
         /// are NOT in it:
@@ -73,6 +76,7 @@ final class Store: ObservableObject {
             case .yearHalf: return yearHalf
             case .monthTrial: return monthTrial
             case .monthHalf: return monthHalf
+            case .yearTrial: return yearTrial
             }
         }
     }
@@ -209,7 +213,7 @@ final class Store: ObservableObject {
         // The free trial is the ladder's (2026-09-29), so the trial rung's
         // offer is the length every general trial line states; the
         // half-price rung's only if it has none.
-        for source in [SubscriptionPlan.monthTrial, .monthHalf, .monthly, .yearly] {
+        for source in [SubscriptionPlan.monthTrial, .yearTrial, .monthHalf, .monthly, .yearly] {
             if let offer = product(for: source)?.subscription?.introductoryOffer,
                offer.paymentMode == .freeTrial {
                 trialDays = Self.days(in: offer.period)
@@ -410,7 +414,7 @@ final class Store: ObservableObject {
     /// a year, a year outranks a month, so a person mid-upgrade reads as the
     /// bigger plan.
     nonisolated static func planName(owning productIDs: [String]) -> String {
-        let ranked: [SubscriptionPlan] = [.lifetime, .yearly, .yearHalf, .monthly, .monthHalf, .monthTrial]
+        let ranked: [SubscriptionPlan] = [.lifetime, .yearly, .yearTrial, .yearHalf, .monthly, .monthHalf, .monthTrial]
         return ranked.first { productIDs.contains(ProductID.of($0)) }?.rawValue ?? "none"
     }
 }

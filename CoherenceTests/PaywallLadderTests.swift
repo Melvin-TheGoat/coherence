@@ -25,7 +25,36 @@ final class PaywallLadderTests: XCTestCase {
     /// Both rungs sell their own products, and both must restore and entitle.
     func test_bothRungProductsRestore() {
         XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthTrial))
+        XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.yearTrial))
         XCTAssertTrue(Store.ProductID.all.contains(Store.ProductID.monthHalf))
+    }
+
+    /// Taking the free trial offers it on BOTH Monthly and Yearly (Melvin,
+    /// 2026-09-29), each in its own card's place, never beside it: two yearly
+    /// cards at one price is a shell game. Lifetime is never swapped.
+    func test_theTrialRungPutsTheTrialOnBothPlans() {
+        let expected: [SubscriptionPlan] = [.monthTrial, .yearTrial, .lifetime]
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), expected)
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearTrial), expected)
+        XCTAssertTrue(SubscriptionPlan.yearTrial.designedWithTrial)
+        XCTAssertEqual(SubscriptionPlan.yearTrial.title, "Yearly")
+        XCTAssertEqual(SubscriptionPlan.yearTrial.price, SubscriptionPlan.yearly.price)
+        XCTAssertEqual(SubscriptionPlan.yearTrial.anchorPrice, SubscriptionPlan.yearly.anchorPrice,
+                       "the same yearly plan carries the same true reference price")
+        XCTAssertEqual(Store.ProductID.of(.yearTrial), "com.lockout.meditate808.yearlytrial")
+    }
+
+    /// The trial rung states what BOTH plans turn into after the free days
+    /// when the yearly one exists, and only the monthly's when it does not.
+    func test_theTrialRungStatesBothPrices() {
+        let both = DownsellRung.trial.subtitle(plan: .yearTrial, yearlyPrice: "$29.99",
+                                               trialPlanPrice: "$7.99", trialYearPrice: "$29.99",
+                                               trialDays: 3)
+        XCTAssertTrue(both.contains("$29.99 a year or $7.99 a month"), both)
+        let monthOnly = DownsellRung.trial.subtitle(plan: .monthTrial, yearlyPrice: "$29.99",
+                                                    trialPlanPrice: "$7.99", trialDays: 3)
+        XCTAssertTrue(monthOnly.contains("then $7.99 a month."), monthOnly)
+        XCTAssertFalse(monthOnly.contains("a year"), monthOnly)
     }
 
     /// The first rung is the first thing said after a "no", so it cannot open
@@ -137,18 +166,20 @@ final class PaywallLadderTests: XCTestCase {
 
     /// The discounted year replaces the year on the paywall rather than
     /// sitting beside it: two yearly cards at two prices is a shell game.
-    /// A rung's plan takes the monthly's place the same way.
+    /// A rung's plan takes the monthly's place the same way; the trial rung
+    /// takes both places, with the trial on each.
     func test_theDiscountedYearTakesTheYearsPlace() {
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearly), [.monthly, .yearly, .lifetime])
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .yearHalf), [.monthly, .yearHalf, .lifetime])
-        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.monthTrial, .yearly, .lifetime])
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthTrial), [.monthTrial, .yearTrial, .lifetime])
         XCTAssertEqual(SubscriptionPlan.cards(selecting: .monthHalf), [.monthHalf, .yearly, .lifetime])
     }
 
     // MARK: Lifetime is back (Melvin, 2026-09-29: "that should def be a thing")
 
     /// Lifetime is the third card whatever is selected, and nothing ever
-    /// takes its place: a rung replaces only the monthly.
+    /// takes its place: a rung replaces the monthly (and the trial rung the
+    /// yearly too, with its own trial plan).
     func test_lifetimeIsAlwaysTheThirdCard() {
         for plan in SubscriptionPlan.allCases {
             let cards = SubscriptionPlan.cards(selecting: plan)
@@ -156,10 +187,10 @@ final class PaywallLadderTests: XCTestCase {
             XCTAssertEqual(cards.last, .lifetime, "\(plan)")
             XCTAssertEqual(cards.filter { $0 == .lifetime }.count, 1, "\(plan)")
         }
-        for rung in DownsellRung.ladder {
-            XCTAssertEqual(SubscriptionPlan.cards(selecting: rung.plan),
-                           [rung.plan, .yearly, .lifetime], "a rung replaces the monthly card only")
-        }
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: DownsellRung.trial.plan),
+                       [.monthTrial, .yearTrial, .lifetime], "the trial is on both plans")
+        XCTAssertEqual(SubscriptionPlan.cards(selecting: DownsellRung.halfMonth.plan),
+                       [.monthHalf, .yearly, .lifetime], "half price replaces the monthly card only")
     }
 
     /// One charge, today, nothing renews: the button and the terms say so,
@@ -284,7 +315,7 @@ final class PaywallLadderTests: XCTestCase {
     /// would start with one, and never changes what Lifetime or the
     /// half-off year say.
     func test_aCardMentionsTheTrialOnlyWhenItGivesOne() {
-        for plan in [SubscriptionPlan.monthly, .yearly, .monthTrial, .monthHalf] {
+        for plan in [SubscriptionPlan.monthly, .yearly, .monthTrial, .monthHalf, .yearTrial] {
             XCTAssertTrue(plan.cadence(withTrial: true).contains("after the trial"), "\(plan)")
             XCTAssertFalse(plan.cadence(withTrial: false).contains("trial"), "\(plan)")
         }

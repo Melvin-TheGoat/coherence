@@ -71,6 +71,7 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
                   monthlyPrice: String = SubscriptionPlan.monthly.price,
                   halfMonthPrice: String = SubscriptionPlan.monthHalf.price,
                   trialPlanPrice: String = SubscriptionPlan.monthTrial.price,
+                  trialYearPrice: String? = nil,
                   trialDays: Int? = SubscriptionPlan.fallbackTrialDays) -> String {
         switch self {
         case .trial:
@@ -81,7 +82,11 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
             // cancelling in time. And the price after the free days is on
             // the rung itself (App Review, same day): a trial offer that does
             // not say what it turns into is the 3.1.2 rejection.
-            return "\(TrialCopy.length(days)) free, then \(trialPlanPrice) a month. Everything unlocked. Cancel at least 24 hours before the trial ends and you pay nothing."
+            // Both prices when the yearly-with-trial plan exists, since the
+            // paywall it returns to offers the trial on both.
+            let after = trialYearPrice.map { "\($0) a year or \(trialPlanPrice) a month" }
+                ?? "\(trialPlanPrice) a month"
+            return "\(TrialCopy.length(days)) free, then \(after). Everything unlocked. Cancel at least 24 hours before the trial ends and you pay nothing."
         case .halfMonth:
             let price = "\(halfMonthPrice) a month instead of \(monthlyPrice). Everything unlocked. It renews every month, and you can cancel any time."
             guard let trialDays else { return price }
@@ -132,6 +137,8 @@ struct DownsellSheet: View {
     var monthlyPrice: String = SubscriptionPlan.monthly.price
     var halfMonthPrice: String = SubscriptionPlan.monthHalf.price
     var trialPlanPrice: String = SubscriptionPlan.monthTrial.price
+    /// The yearly-with-trial plan's price when it is on sale, nil otherwise.
+    var trialYearPrice: String? = nil
     /// The free days this rung's own product gives this person
     /// (`Store.freeTrialDays(for:)`), nil for none.
     var trialDays: Int? = SubscriptionPlan.fallbackTrialDays
@@ -157,7 +164,7 @@ struct DownsellSheet: View {
                     .foregroundStyle(AppColor.textPrimary)
                 Text(rung.subtitle(plan: plan, yearlyPrice: yearlyPrice, monthlyPrice: monthlyPrice,
                                    halfMonthPrice: halfMonthPrice, trialPlanPrice: trialPlanPrice,
-                                   trialDays: trialDays))
+                                   trialYearPrice: trialYearPrice, trialDays: trialDays))
                     .font(.system(size: 17, weight: .semibold, design: .rounded))
                     .foregroundStyle(AppColor.textPrimary.opacity(0.72))
             }

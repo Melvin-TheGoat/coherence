@@ -122,6 +122,31 @@
         {
           "adHocOffers" : [],
           "codeOffers" : [],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "808000007",
+          "localizations" : [
+            {
+              "description" : "All of 808, yearly after a free trial.",
+              "displayName" : "Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.lockout.meditate808.yearlytrial",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly with free trial",
+          "subscriptionGroupID" : "808100001",
+          "type" : "RecurringSubscription",
+          "introductoryOffer" : {
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P3D",
+            "internalID" : "808200007"
+          }
+        },
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
           "displayPrice" : "3.99",
           "familyShareable" : false,
           "groupNumber" : 1,

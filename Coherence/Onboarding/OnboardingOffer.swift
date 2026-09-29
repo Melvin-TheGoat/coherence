@@ -29,13 +29,13 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// every screen that shows it says so.
     case yearHalf
     /// The ladder's plans, each its own product because a product carries
-    /// exactly one introductory offer. `monthHalf` is the one rung since
-    /// 2026-09-29 (Melvin: "3 day free trial plus half off forever"): $3.99
-    /// every month, starting with a free trial. `monthTrial`, the monthly
-    /// price with a free trial, is DORMANT: the paywall's own monthly and
-    /// yearly carry the trial again, so nothing offers it, and it stays so a
-    /// past purchase restores.
-    case monthTrial, monthHalf
+    /// exactly one introductory offer (Melvin, 2026-09-29: the free trial is
+    /// an upsell, hidden until someone declines). Rung 1, the free trial, puts
+    /// `monthTrial` and `yearTrial` in Monthly's and Yearly's places, Yearly
+    /// preselected ("should i not make a free trial version for yearly?"): a
+    /// trial on the monthly alone would steer everyone who takes it away from
+    /// the best value. Rung 2 is `monthHalf`, $3.99 every month after a trial.
+    case monthTrial, monthHalf, yearTrial
 
     var id: String { rawValue }
 
@@ -62,7 +62,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // game. Nothing ever takes Lifetime's.
         switch plan {
         case .yearHalf: return [.monthly, .yearHalf, .lifetime]
-        case .monthTrial: return [.monthTrial, .yearly, .lifetime]
+        case .monthTrial, .yearTrial: return [.monthTrial, .yearTrial, .lifetime]
         case .monthHalf: return [.monthHalf, .yearly, .lifetime]
         default: return [.monthly, .yearly, .lifetime]
         }
@@ -79,6 +79,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // card itself were free; the trial is stated on the cadence line.
         case .monthTrial: return "Monthly"
         case .monthHalf: return "Monthly, half price"
+        case .yearTrial: return "Yearly"
         }
     }
 
@@ -90,6 +91,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearHalf: return "$14.99"
         case .monthTrial: return "$7.99"
         case .monthHalf: return "$3.99"
+        case .yearTrial: return "$29.99"
         }
     }
 
@@ -125,6 +127,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // every month (2026-09-27), so the strikethrough stays a true
         // reference price.
         case .monthHalf: return "$7.99"
+        // The same yearly plan with a free trial first, so the same
+        // reference price is true of it.
+        case .yearTrial: return "$59.99"
         }
     }
 
@@ -165,7 +170,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     /// (`Store.freeTrialDays(for:)`), never this.
     var designedWithTrial: Bool {
         switch self {
-        case .monthTrial, .monthHalf: return true
+        case .monthTrial, .monthHalf, .yearTrial: return true
         case .monthly, .yearly: return Monetization.freeTrial
         case .lifetime, .yearHalf: return false
         }
@@ -179,7 +184,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         switch self {
         case .monthly, .monthTrial, .monthHalf:
             return trial ? "per month after the trial" : "per month"
-        case .yearly:
+        case .yearly, .yearTrial:
             return trial ? "per year after the trial" : "per year"
         case .lifetime, .yearHalf:
             return cadence
@@ -196,6 +201,7 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearHalf: return "first year, then $29.99 a year"
         case .monthTrial: return "per month after the trial"
         case .monthHalf: return "per month after the trial"
+        case .yearTrial: return "per year after the trial"
         }
     }
 
@@ -224,6 +230,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         case .yearHalf: return "$1.25 a month for the first year"
         case .monthTrial: return "Nothing to pay today"
         case .monthHalf: return "Half the monthly price, every month"
+        // $29.99 over 12 months, the same arithmetic as Yearly.
+        case .yearTrial: return "$2.50 a month"
         }
     }
 }
@@ -549,7 +557,7 @@ struct PaywallScreen: View {
     /// own purchase would start with.
     private func trialLength(for p: SubscriptionPlan) -> Int? {
         switch p {
-        case .monthTrial, .monthHalf: return store.freeTrialDays(for: p)
+        case .monthTrial, .monthHalf, .yearTrial: return store.freeTrialDays(for: p)
         case .lifetime, .yearHalf: return nil
         case .monthly, .yearly: return offerTrial ? store.freeTrialDays(for: p) : nil
         }
@@ -655,7 +663,22 @@ struct PaywallScreen: View {
     /// selling WITHOUT it, it hides rather than show a dollar fallback
     /// beside live prices and a button that could not buy it.
     private var cardsShown: [SubscriptionPlan] {
-        SubscriptionPlan.cards(selecting: plan).filter { $0 != .lifetime || lifetimeOnSale }
+        SubscriptionPlan.cards(selecting: plan)
+            .map { $0 == .yearTrial && !yearTrialOnSale ? .yearly : $0 }
+            .filter { $0 != .lifetime || lifetimeOnSale }
+    }
+
+    /// The yearly-with-trial plan exists in the App Store (or nothing has
+    /// loaded yet, a DEBUG demo). When it does not, taking the trial puts the
+    /// trial on Monthly only and Yearly stays as it was.
+    private var yearTrialOnSale: Bool {
+        store.state != .ready || store.product(for: .yearTrial) != nil
+    }
+
+    /// The plan the paywall preselects when a rung is taken: the trial rung
+    /// lands on Yearly with the trial where it exists, the best value.
+    private func landing(_ rung: DownsellRung) -> SubscriptionPlan {
+        rung == .trial && yearTrialOnSale ? .yearTrial : rung.plan
     }
 
     private var lifetimeOnSale: Bool {
@@ -728,6 +751,9 @@ struct PaywallScreen: View {
                                   ?? SubscriptionPlan.monthHalf.price,
                               trialPlanPrice: store.displayPrice(for: .monthTrial)
                                   ?? SubscriptionPlan.monthTrial.price,
+                              trialYearPrice: yearTrialOnSale
+                                  ? (store.displayPrice(for: .yearTrial) ?? SubscriptionPlan.yearTrial.price)
+                                  : nil,
                               trialDays: store.freeTrialDays(for: current.plan)) {
                     // Taking a rung PRESELECTS the plan and returns to the
                     // paywall; the purchase happens there and only there.
@@ -737,7 +763,7 @@ struct PaywallScreen: View {
                     // textbook 3.1.2 rejection. One screen holds every
                     // disclosure; every sale goes through it.
                     Analytics.track(.offerAccepted(rung: current.analyticsName))
-                    plan = current.plan
+                    plan = landing(current)
                     route = nil
                 } onDecline: {
                     Analytics.track(.offerDeclined(rung: current.analyticsName))
@@ -1000,7 +1026,7 @@ struct PaywallScreen: View {
             // A tag on the card's top edge. True arithmetic, not a slogan:
             // the year costs under a third of twelve months.
             .overlay(alignment: .topLeading) {
-                if p == .yearly || p == .yearHalf {
+                if p == .yearly || p == .yearHalf || p == .yearTrial {
                     Text("Best value")
                         .font(.system(size: 11, weight: .heavy, design: .rounded))
                         .foregroundStyle(.white)
