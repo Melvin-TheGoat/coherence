@@ -1234,7 +1234,8 @@ private struct PlanRow: View {
 /// "Your mind profile is" (Aziz, 2026-09-25, Brainrot's "Your attention
 /// profile is"), after "Tailoring 808 to you". One of five types
 /// (`MindProfile.of`), its line, and two bars read from their answers:
-/// Headspace (cluttered to clear) and Emotional balance (reactive to steady).
+/// Mental clarity (cluttered to clear; "Headspace" until 2026-09-29, renamed as a
+/// competitor's trademark) and Emotional balance (reactive to steady).
 /// Light rays fan up behind Otto's head. No percentages: the bars are their
 /// answers played back, not a measurement.
 ///
@@ -1292,7 +1293,7 @@ struct MindProfileScreen: View {
                         .padding(.top, 8)
 
                     VStack(spacing: 14) {
-                        ProfileBar(title: "Headspace", low: "Cluttered", high: "Clear",
+                        ProfileBar(title: "Mental clarity", low: "Cluttered", high: "Clear",
                                    value: barsShown ? MindProfile.headspace(answers) : 0)
                         ProfileBar(title: "Emotional balance", low: "Reactive", high: "Steady",
                                    value: barsShown ? MindProfile.balance(answers) : 0)

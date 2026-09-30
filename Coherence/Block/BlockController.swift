@@ -163,7 +163,10 @@ final class BlockController: ObservableObject {
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         guard settings.authorizationStatus == .notDetermined else { return }
-        _ = try? await center.requestAuthorization(options: [.alert, .sound, .badge])
+        // No `.badge`: 808 never sets a badge, and asking for a permission
+        // the app does not use is what App Review flags (App Review pass,
+        // 2026-09-29).
+        _ = try? await center.requestAuthorization(options: [.alert, .sound])
     }
 
     // MARK: - Changing

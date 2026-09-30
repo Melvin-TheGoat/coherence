@@ -1,29 +1,36 @@
 /**
- * 808 Friends reports → email + sheet
+ * 808 Friends reports → email
  * ---------------------------------------------------------------------------
- * The doorbell for guideline 1.2: when someone reports a post or a profile in
- * the app, this emails the team and logs a row, so a report is read within a
- * day without anyone watching the CloudKit Console. The CloudKit `Report`
- * record is still the record of truth; removal is done in the Console
- * (public database, delete the Post record named in the email).
+ * The doorbell for App Review guideline 1.2: when someone reports a profile in
+ * 808, this emails the team at once, so a report is read within a day without
+ * anyone watching the CloudKit Console. The CloudKit `Report` record is still
+ * the record of truth; removal is done in the Console.
  *
- * SETUP (once, before 1.1 ships)
- *  1. Create a Google Sheet "808 friends reports" in the shared 808 folder.
- *     Copy its id from the URL into SHEET_ID below.
- *  2. Extensions → Apps Script, paste this file, set NOTIFY to the inbox.
- *  3. Deploy → New deployment → Web app. Execute as: Me. Who has access: Anyone.
- *  4. Paste the /exec URL into `ReportClient.endpoint` in the app.
- *  After edits: Deploy → Manage deployments → pencil → New version. Never a
- *  new deployment: that changes the URL and strands shipped builds.
+ * Rewritten 2026-09-29 for 1.1: Friends has profiles only (no posts), so a
+ * report names a Profile record. 'post' is still accepted from older builds.
  *
- * Receives only ids, the kind ("post" | "profile"), the reason and the app
- * version. No names, handles, captions or photos.
+ * SETUP (once)
+ *  1. script.google.com → New project, named "808 friends reports". Replace
+ *     the default file with this one and save.
+ *  2. Run `testReport` once from the editor. Google asks to let the script
+ *     send email as you; allow it. A test email arrives at NOTIFY.
+ *  3. Deploy → New deployment → type "Web app". Execute as: Me. Who has
+ *     access: Anyone. Copy the URL ending in /exec.
+ *  4. Paste it into `ReportClient.endpoint` in the app.
+ *
+ * Email only, no sheet (2026-09-29): a sheet log made Google ask for access
+ * to every spreadsheet in the account, for a log nobody needed. The email and
+ * the CloudKit Report record are the log.
+ *  After edits: Deploy → Manage deployments → pencil → Version: New version.
+ *  Never a new deployment: that changes the URL and strands shipped builds.
+ *
+ * Receives only ids, the kind, the reason the reporter picked or typed, and
+ * the app version. Never a name, handle or photo.
  */
 
-var SHEET_ID = '';                         // fill in at setup
 var NOTIFY = 'support@meditate808.com';
 var APP_TOKEN = '808-reports-v1';          // equals ReportClient.token
-var HEADERS = ['timestamp', 'report_id', 'kind', 'target', 'reason', 'app_version', 'handled'];
+var CONTAINER = 'iCloud.com.lockout.meditate808';
 
 function doPost(e) {
   var data;
@@ -33,16 +40,31 @@ function doPost(e) {
     return json({ ok: false, error: 'bad json' });
   }
   if (data.token !== APP_TOKEN) return json({ ok: false, error: 'bad token' });
+  handle(data);
+  return json({ ok: true });
+}
 
-  var kind = data.kind === 'profile' ? 'profile' : 'post';
+function doGet() { return json({ ok: true, service: '808 friends reports' }); }
+
+/** Run from the editor after pasting: sends one test email. It is also what
+ *  asks for the permission to send mail. */
+function testReport() {
+  handle({ report_id: 'TEST-' + new Date().getTime(), kind: 'profile',
+           target: 'profile-test', reason: 'Test report from the Apps Script editor',
+           app_version: 'editor' });
+}
+
+function handle(data) {
+  var kind = data.kind === 'post' ? 'post' : 'profile';
   var row = [new Date(), clean(data.report_id), kind, clean(data.target),
-             clean(data.reason).slice(0, 500), clean(data.app_version), ''];
+             clean(data.reason).slice(0, 500), clean(data.app_version)];
 
-  if (SHEET_ID) {
-    var sheet = SpreadsheetApp.openById(SHEET_ID).getSheets()[0];
-    if (sheet.getLastRow() === 0) sheet.appendRow(HEADERS);
-    sheet.appendRow(row);
-  }
+  var remove = kind === 'profile'
+    ? ['To remove the account, in the Console delete the Profile record above AND',
+       'its Username record (named username-<their handle>, shown on the Profile).',
+       'Deleting both takes them off search and every friend list.']
+    : ['This came from an older build that still had posts. Delete the Post',
+       'record above in the Console if it breaks the rules.'];
 
   MailApp.sendEmail({
     to: NOTIFY,
@@ -51,24 +73,22 @@ function doPost(e) {
       'A ' + kind + ' was reported in 808.',
       '',
       'Reason: ' + (row[4] || '(none given)'),
-      'Record: ' + row[3] + '  (CloudKit Console → iCloud.com.lockout.meditate808 → Production → Public → ' +
-        (kind === 'post' ? 'Post' : 'Profile') + ')',
+      'Record: ' + row[3],
+      'Where: CloudKit Console → ' + CONTAINER + ' → Production → Public database → ' +
+        (kind === 'post' ? 'Post' : 'Profile'),
       'Report id: ' + row[1],
       'App version: ' + row[5],
+      ''
+    ].concat(remove).concat([
       '',
-      'Guideline 1.2 expects a timely response. Remove it in the Console if it breaks the rules,',
-      'and mark the row handled in the sheet.'
-    ].join('\n')
+      'Guideline 1.2 expects a timely response: the terms promise within 24 hours.'
+    ]).join('\n')
   });
-  return json({ ok: true });
 }
 
-function doGet() { return json({ ok: true, service: '808 friends reports' }); }
-
-/** Leading = + - @ would make Sheets run the cell as a formula. */
+/** Trims and stringifies whatever the app sent. */
 function clean(v) {
-  var s = String(v == null ? '' : v).trim();
-  return /^[=+\-@]/.test(s) ? "'" + s : s;
+  return String(v == null ? '' : v).trim();
 }
 
 function json(obj) {

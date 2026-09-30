@@ -6,11 +6,11 @@ import os
 /// Live preview only: nothing is captured, recorded, or saved anywhere, which
 /// is exactly what `NSCameraUsageDescription` promises for this screen.
 ///
-/// Starts the moment the screen appears, not on Accept, because the incoming
-/// state wants your own camera live behind the ringing card, the way iOS
-/// shows your own camera behind an incoming FaceTime call. It keeps running
-/// through both the ringing and answered states and stops when the screen
-/// goes away.
+/// Starts only when the person taps Accept, and only then asks for camera
+/// permission: the camera and its prompt come after a choice, never on a
+/// ringing screen a Block notification opened (App Review 5.1.1,
+/// 2026-09-29). It keeps running through the answered state and stops when
+/// the screen goes away.
 ///
 /// **One session for every FaceTime screen, and every call on it made on one
 /// serial queue, never the main thread** (2026-09-23, after Melvin's phone
@@ -36,8 +36,12 @@ final class FrontCamera: ObservableObject {
     /// camera at all (the simulator has none), leaves `ready` false for
     /// good, and every caller falls back gracefully rather than showing a
     /// black void.
+    ///
+    /// Call it from a `.task`: a task cancelled before or during a start
+    /// (the screen dismissed while the permission prompt is up) never
+    /// counts itself in or runs the session, so nothing is left in flight.
     func start() async {
-        guard !started else { return }
+        guard !started, !Task.isCancelled else { return }
         started = true
         FrontCameraEngine.log.info("start requested")
 
@@ -55,15 +59,15 @@ final class FrontCamera: ObservableObject {
         @unknown default:
             authorized = false
         }
-        guard authorized, started else { return }
+        guard authorized, started, !Task.isCancelled else { return }
 
         holding = true
         Self.holders += 1
-        guard await FrontCameraEngine.shared.configure(), started else { return }
+        guard await FrontCameraEngine.shared.configure(), started, !Task.isCancelled else { return }
         ready = true
         // One frame for the preview to attach before the session starts.
         try? await Task.sleep(for: .milliseconds(60))
-        guard started else { return }
+        guard started, !Task.isCancelled else { return }
         let running = await FrontCameraEngine.shared.startRunning()
         if !running, started { ready = false }
     }

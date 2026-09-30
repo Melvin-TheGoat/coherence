@@ -29,8 +29,8 @@ support for Apple Watch.
 - **We don't sell your data, run ads, or track you.** There are no advertising
   identifiers and no cross-app tracking. We collect pseudonymous usage
   analytics (which features are used, on what kind of iPhone, and roughly
-  where in the world), never what your body measured. See "Usage analytics"
-  below.
+  where in the world), never what your body measured, and you can turn them
+  off in Settings. See "Usage analytics" below.
 - **808 never sends your health data off your devices** unless you choose to
   share or save a session card. It's measured on your Apple Watch and turned
   into your session results on your own devices; we never receive it, never
@@ -46,10 +46,12 @@ support for Apple Watch.
 
 **Account information.** Signing in is optional. If you sign in with
 **Sign in with Apple**, the app receives and stores a unique Apple user
-identifier. If you choose to share them, it also receives your **name** and
-**email address** (which may be an Apple private "Hide My Email" relay
-address). These stay in the app and in your private iCloud, where we cannot
-read them. You may also set a display name. 808 does not send product or
+identifier. If you choose to share it, it also receives your **name**. 808
+does not ask Sign in with Apple for your email address. Earlier versions did,
+so an account created before version 1.1 may hold one (possibly an Apple
+private "Hide My Email" relay address). Your name, and any such address, stay
+in the app and in your private iCloud, where we cannot read them. You may
+also set a display name. 808 does not send product or
 marketing emails; if that ever changes, we will ask first and update this
 policy.
 
@@ -63,13 +65,12 @@ It sends them straight to your iPhone. A session you start on your iPhone
 without the Watch measuring runs a plain timer: it measures nothing about
 your body. Important details:
 
-- The app requests HealthKit permission only to **read heart rate and
-  workouts** and to **save workouts and mindful minutes**. Each measured
-  session is saved to Apple Health as a Mind and Body workout and as mindful
-  minutes, so it appears beside Apple's own. Heart rate is read **live during
-  a session** only. The permission sheet lists reading workouts, but 808
-  never reads your workout history; it only saves the workouts its own
-  sessions create. Nothing else in your Health history is read. Once saved,
+- The app requests HealthKit permission only to **read heart rate** and to
+  **save workouts and mindful minutes**. Each measured session is saved to
+  Apple Health as a Mind and Body workout and as mindful minutes, so it
+  appears beside Apple's own. Heart rate is read **live during a session**
+  only. 808 never reads your workout history; it only saves the workouts its
+  own sessions create. Nothing else in your Health history is read. Once saved,
   those workouts and mindful minutes are part of your Apple Health data and
   are handled under your own Health settings.
 - We store the **computed results**, not raw biometric samples. The iPhone reads
@@ -163,6 +164,11 @@ we can read them more easily: one row per install, with its random
 identifier, when it was installed and last opened, its app and iOS version,
 iPhone model, approximate location, the plan bought if any, and counts of
 what was used.
+
+**You can turn usage analytics off** at any time in the app's Settings with
+the **Share usage analytics** switch. While it is off, the app sends no usage
+events to PostHog at all, and it stays off until you turn it back on. It is
+on when you first install 808.
 
 **Your measurements are never in those events.** In 808 1.1 and later, no
 heart rate, breathing values, stillness, scores, or anything derived from
@@ -408,8 +414,11 @@ app usage or to any health data.
   deliver those emails. It never receives health data.
 - Audio in the app is bundled with the app; playing it sends no data about you.
 
-We otherwise do not share your information with third parties, and we never
-share health data with any third party.
+Each service provider above that handles your information for us is bound,
+under its terms with us, to protect it at least as well as this policy does
+and to use it only to provide its service to us. We otherwise do not share
+your information with third parties, and we never share health data with any
+third party.
 
 ## Data retention and deletion
 
@@ -420,21 +429,22 @@ account does not cancel a subscription: an active one keeps billing until
 you cancel it in the Settings app on your iPhone (tap your name, then
 Subscriptions). Here is exactly what happens:
 
-- **Right away:** you are signed out; your Friends profile and everything
-  you wrote to the shared area (except reports) is deleted, as described
-  under "Friends"; and the analytics identifier on your phone is replaced
-  with a new one.
-- **After 30 days:** the first time you open 808 on a device 30 or more days
-  after deleting, the app permanently removes your account, sessions,
-  results, photos, videos, and preferences from that device and from your
-  private iCloud. If you sign back in before then, your account and sessions
-  are restored, but your Friends profile is not.
+- **Right away, and permanently:** the app deletes your account, sessions,
+  results, reflections, photos, videos and preferences from your iPhone, and
+  the same deletion removes them from your private iCloud as it syncs (the
+  next time your iPhone reaches iCloud, if it can't at that moment). It also
+  deletes your Friends profile and everything you wrote to the shared area
+  (except reports), as described under "Friends", and replaces the
+  analytics identifier on your phone with a new one. Nothing can be
+  restored: signing in again with the same Apple ID starts a new, empty
+  account.
 - **What deleting your account does not remove:** the Mind and Body workouts
   and mindful minutes saved to Apple Health (you can delete them in the
   Health app); usage analytics already sent, which are tied only to the
   random identifier described under "Usage analytics," never to your name,
-  email, Apple ID or Friends username; and reports you filed. If you delete the app instead of opening
-  it again, the copy in your private iCloud stays until you remove it: on
+  email, Apple ID or Friends username; and reports you filed. If you delete
+  the app without deleting your account, the copy in your private iCloud
+  stays until you remove it: on
   your iPhone, go to Settings, tap your name, then iCloud, and delete 808's
   data from your iCloud storage.
 
@@ -452,6 +462,8 @@ long as we need them to moderate Friends.
 - **HealthKit:** you control heart-rate, workout, and mindful-minutes
   permissions in the iOS/watchOS Health and privacy settings at any time.
 - **Notifications:** you control them in iOS Settings at any time.
+- **Usage analytics:** turn them off or back on at any time with the
+  **Share usage analytics** switch in the app's Settings.
 - **Friends:** creating a profile is your choice, and deleting your account
   deletes it.
 - **Block and Screen Time:** you control every blocker in the app at any time,

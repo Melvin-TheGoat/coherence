@@ -420,12 +420,25 @@ struct SessionResultsView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 6)
 
+            // Said where the numbers are (App Review 1.4.1, 2026-09-29): a
+            // reading taken off a wrist is an estimate, and the only place
+            // that said so was the science page in Settings.
+            Text(Self.estimateNote)
+                .font(.caption2)
+                .foregroundStyle(AppColor.textSecondary.opacity(0.85))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 6)
+                .padding(.top, 2)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
         .padding(.horizontal, 14)
         .card(padding: 0)
     }
+
+    /// The one line of honesty under every score.
+    static let estimateNote = "Estimated from your Apple Watch's heart rate and motion sensors. Not a medical measurement."
 
     /// Otto, under the verdict: the spoken verdict is what the rules can
     /// say; Otto is where the person asks the follow-up. Teal mark, never
@@ -1220,7 +1233,11 @@ private struct ResonanceMeaningSheet: View {
                     .tracking(0.8)
                     .foregroundStyle(AppColor.accentGoldText)
                 Group {
-                    Text("In the opening minutes of this session you slowed your breathing to around six breaths a minute and held it there. That pace is special: breath, heart and blood pressure fall into step, and the nervous system settles toward its rest state. Researchers call it resonance breathing.")
+                    // Only what was measured (App Review 1.4.1, 2026-09-29):
+                    // 808 reads breathing from wrist motion and heart rate from
+                    // the Watch. It measures neither blood pressure nor the
+                    // nervous system, so it no longer says what they did.
+                    Text("In the opening minutes of this session you slowed your breathing well below a normal resting pace and held it there. Slow breathing like this, around six breaths a minute, is what researchers call resonance breathing, and many people use it to settle in.")
                     Text("The band marks the stretch that did it. It is the entry technique working: a few slow minutes to open the door, then your breath returns to normal.")
                 }
                 .font(AppFont.callout)

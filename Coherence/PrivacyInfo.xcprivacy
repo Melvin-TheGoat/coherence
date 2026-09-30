@@ -23,7 +23,8 @@
       boot time.
 
   Collected data, as 1.1 ships (Friends ON with profiles only and no posts,
-  Block OFF, Shop OFF, Otto chat OFF). Apple's "collect" means sent off the
+  Block ON, Shop ON, Otto chat OFF; Block sends nothing off the device and
+  the Shop's events are Product Interaction, so neither adds a type). Apple's "collect" means sent off the
   device where we or a third party can read it. Each type appears ONCE, so
   where two uses share a type the entry carries the stronger linkage and
   every purpose. Nothing is tracking.

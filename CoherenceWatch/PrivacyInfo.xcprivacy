@@ -4,10 +4,18 @@
   Privacy manifest for the watchOS app (required since 2024 for
   required-reason APIs). Comment rewritten for 1.1 (2026-09-29).
 
-  Accessed APIs: UserDefaults only, reason CA92.1 (the app reading its own
-  preferences: migration flags on shared code compiled into this target,
-  plus session state). Nothing else on Apple's required-reason list is used:
-  no file-timestamp reads, no disk space, no boot time, no keyboard APIs.
+  Accessed APIs:
+    - UserDefaults, reason CA92.1 (the app reading its own preferences:
+      migration flags on shared code compiled into this target, plus
+      session state).
+    - File timestamps, reason C617.1 (added 2026-09-29, App Review pass):
+      `Shared/Persistence.swift` reads the modification date of the app's
+      own store files when deciding which copy to keep, and Shared is
+      compiled into this target too. Declared rather than trusting the
+      linker to strip it: a missing declaration is an automatic ITMS-91053
+      rejection at upload.
+  Nothing else on Apple's required-reason list is used: no disk space, no
+  boot time, no keyboard APIs.
 
   Collected data is EMPTY for this target, on purpose. Apple defines
   "collect" as sending data off the device where the developer or a third
@@ -40,6 +48,14 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
 			</array>
 		</dict>
 	</array>

@@ -182,12 +182,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
         WCSession.default.activate()
     }
 
-    /// Requests the iOS workout authorization `startWatchApp` needs (share + read
-    /// of the workout type only — no biometric reads).
+    /// Requests the iOS workout authorization `startWatchApp` needs: share
+    /// of the workout type only. No reads of any kind (workout read was
+    /// dropped 2026-09-29, App Review 5.1.1(iii): 808 never read one).
     func requestWorkoutAuthorization() async {
         guard HKHealthStore.isHealthDataAvailable() else { return }
         let workout = HKObjectType.workoutType()
-        try? await healthStore.requestAuthorization(toShare: [workout], read: [workout])
+        try? await healthStore.requestAuthorization(toShare: [workout], read: [])
     }
 
     /// Begins a session. **It runs here. The Watch is not asked about**

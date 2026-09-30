@@ -111,6 +111,7 @@ struct AwardsView: View {
             .padding(AppMetrics.screenPadding)
         }
         .screenBackground()
+        .keepsDarkStatusBar()
         .navigationTitle("Awards")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: $showing) { AwardDetailView(item: $0) }

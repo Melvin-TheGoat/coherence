@@ -86,6 +86,17 @@ public enum AwardsInbox {
         UserDefaults.standard.set(currentCatalogVersion, forKey: catalogVersionKey)
     }
 
+    /// Forgets which awards were announced, when the person's account is
+    /// deleted (`SessionStore.forgetPersonOnDevice`): the next person on
+    /// this phone earns theirs from nothing, and each one has to announce.
+    /// The watermark moves to `now` (nothing was earned before it, since the
+    /// history is gone) and the catalog version stays, so neither the
+    /// first-look seed nor a catalog catch-up can swallow their first awards.
+    public static func forgetAnnounced(now: Date = Date(), in defaults: UserDefaults = .standard) {
+        defaults.removeObject(forKey: announcedKey)
+        defaults.set(now, forKey: lastCheckKey)
+    }
+
     #if DEBUG
     /// So the unlock screen can be reviewed without inventing a fresh history.
     public static func resetForPreview() {

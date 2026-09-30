@@ -62,6 +62,7 @@ struct InterventionView: View {
             .accessibilityLabel("Close")
         }
         .statusBarHidden(false)
+        .followsStatusBarRule()
     }
 
     /// "Not now" always goes straight to how long: there is no strict mode,
@@ -340,6 +341,7 @@ private struct TextThreadScene: View {
             }
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        .keepsDarkStatusBar()
         .task {
             for i in 1...lines.count {
                 try? await Task.sleep(for: .seconds(i == 1 ? 0.6 : 1.3))
@@ -422,21 +424,21 @@ private struct ReplyChip: View {
 
 // MARK: - 3. A FaceTime call
 
-/// Otto "calls" you, the way an incoming FaceTime call shows your own
-/// camera live behind the ringing screen. One camera, two states: it
-/// starts the moment this screen appears (not on Accept) and keeps running
-/// underneath both, live preview only, nothing recorded or saved
-/// (`NSCameraUsageDescription`).
+/// Otto "calls" you. One camera view, two states: the camera starts only
+/// on Accept, and permission is asked only then, because a Block
+/// notification opens this screen and nobody has chosen anything while it
+/// rings (App Review 5.1.1, 2026-09-29). Live preview only, nothing
+/// recorded or saved (`NSCameraUsageDescription`). Decline never touches
+/// the camera.
 ///
-/// **Ringing**: your live camera fills the screen, the way iOS shows your
-/// own face behind an incoming call, with the call card on top (a soft
-/// dark gradient keeps it legible over a moving background). No camera,
-/// denied, or restricted falls back to a soft dark card instead.
+/// **Ringing**: a soft dark card fills the screen with the call card on
+/// top. The camera is off, even when access was granted before.
 ///
 /// **Answered**: Otto full screen in the valley, exactly as every other
 /// intervention screen draws him (`ValleyStage`), his lines arriving in
 /// `OttoSpeech` bubbles one after another. The camera shrinks to a small
-/// mirrored self-view in the top right, FaceTime's own shape.
+/// mirrored self-view in the top right, FaceTime's own shape. No camera,
+/// denied, or restricted keeps a neutral placeholder there instead.
 private struct FaceTimeScene: View {
     let doors: InterventionDoors
     @State private var answered: Bool
@@ -489,12 +491,18 @@ private struct FaceTimeScene: View {
             }
         }
         .ignoresSafeArea()
-        .task { await camera.start() }
+        // Keyed to `answered`, so the camera (and its permission prompt)
+        // starts on Accept and never while ringing; the task is cancelled
+        // if the screen goes away first, and `start()` checks that.
+        .task(id: answered) {
+            if answered { await camera.start() }
+        }
         .onDisappear { camera.stop() }
     }
 
-    /// Your live mirrored camera, or, when it cannot run, a soft dark card
-    /// while ringing and a neutral placeholder once answered.
+    /// A soft dark card while ringing (the camera is off until Accept);
+    /// once answered, your live mirrored camera, or a neutral placeholder
+    /// while it starts or when it cannot run.
     @ViewBuilder
     private var cameraView: some View {
         if camera.ready {
@@ -514,7 +522,7 @@ private struct FaceTimeScene: View {
 
     private var ringing: some View {
         ZStack {
-            // Keeps the call card legible over a live, moving background.
+            // Keeps the call card legible over the dark card behind it.
             LinearGradient(colors: [.black.opacity(0.55), .black.opacity(0.05), .black.opacity(0.6)],
                            startPoint: .top, endPoint: .bottom)
             VStack(spacing: 10) {
@@ -569,7 +577,8 @@ private struct FaceTimeScene: View {
         return ""
     }
 
-    /// The camera shrinks into the corner the way FaceTime's does.
+    /// The camera view shrinks into the corner the way FaceTime's does, and
+    /// flipping `answered` is what starts the camera (the `.task(id:)`).
     private func answer() {
         withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) { answered = true }
     }
@@ -606,58 +615,79 @@ private struct BreatheWithMeScene: View {
         BreathExerciseScreen(title: "One breath with me, then decide.") {
             DoorButtons(doors: doors)
         }
+        // A white page: keep the status bar dark after dark (2026-09-30).
+        .keepsDarkStatusBar()
     }
 }
 
-// MARK: - 5. A voice note
+// MARK: - 5. A written note
 
+/// A short letter from Otto on lined paper (App Review pass, 2026-09-29,
+/// Aziz: "restyle as a written note"). It was a voice note: a play button,
+/// a waveform and "0:07" that played nothing, which a reviewer reads as a
+/// broken feature. Same words, now simply written down. The case keeps its
+/// name, `voiceNote`, so saved state and the gallery still line up.
 private struct VoiceNoteScene: View {
     let doors: InterventionDoors
-    @State private var playing: Date?
 
-    private static let bars: [CGFloat] = [0.3, 0.6, 0.9, 0.5, 0.8, 0.35, 0.7, 1.0, 0.55, 0.4, 0.75, 0.3, 0.6, 0.45, 0.85, 0.5]
-    private static let length: TimeInterval = 7
+    private static let lines = ["hey, it's me.", "five minutes,", "then it's all yours.", "promise."]
+    private static let rule: CGFloat = 38
 
     var body: some View {
         VStack(spacing: 0) {
-            ChatHeader()
-            VStack(alignment: .leading, spacing: 10) {
-                Button {
-                    playing = Date()
-                } label: {
-                    TimelineView(.animation(paused: playing == nil)) { context in
-                        let progress = playing.map { min(1, context.date.timeIntervalSince($0) / Self.length) } ?? 0
-                        HStack(spacing: 10) {
-                            Image(systemName: progress > 0 && progress < 1 ? "pause.fill" : "play.fill")
-                                .font(.system(size: 18, weight: .bold))
-                            HStack(alignment: .center, spacing: 3) {
-                                ForEach(Self.bars.indices, id: \.self) { i in
-                                    Capsule()
-                                        .fill(.white.opacity(Double(i) / Double(Self.bars.count) < progress ? 1 : 0.45))
-                                        .frame(width: 4, height: 26 * Self.bars[i])
-                                }
-                            }
-                            Text("0:07").font(.system(size: 14, weight: .medium)).monospacedDigit()
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 12)
-                        .background(AppColor.calmAccent, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+            Spacer()
+            ZStack(alignment: .topLeading) {
+                // The paper: cream, ruled, a red margin line.
+                VStack(spacing: 0) {
+                    ForEach(0..<7, id: \.self) { _ in
+                        Rectangle().fill(AppColor.skyDeep.opacity(0.28))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 1)
+                            .padding(.top, Self.rule - 1)
                     }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Otto's voice note")
-                Text("\"hey, it's me. five minutes, then it's all yours. promise.\"")
-                    .font(.system(size: 15))
-                    .italic()
-                    .foregroundStyle(AppColor.textSecondary)
+                .frame(maxWidth: .infinity)
+                .padding(.top, 20)
+                Rectangle().fill(Color(red: 0.86, green: 0.45, blue: 0.42).opacity(0.5))
+                    .frame(width: 1.5)
+                    .padding(.leading, 44)
+
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Self.lines, id: \.self) { line in
+                        Text(line)
+                            .font(.custom("MarkerFelt-Wide", size: 25))
+                            .frame(height: Self.rule, alignment: .bottom)
+                    }
+                    Text("O.")
+                        .font(.custom("MarkerFelt-Wide", size: 25))
+                        .frame(height: Self.rule, alignment: .bottom)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                        .padding(.trailing, 28)
+                }
+                .foregroundStyle(AppColor.textPrimary)
+                .padding(.leading, 58)
+                .padding(.top, 20 - 8)
             }
-            .padding(16)
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(width: 290, height: 20 + Self.rule * 7 + 18, alignment: .top)
+            .background(AppColor.backgroundSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .shadow(color: .black.opacity(0.14), radius: 14, y: 10)
+            .rotationEffect(.degrees(2))
+            .overlay(alignment: .bottomTrailing) {
+                Image("OttoHead")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 84, height: 84)
+                    .rotationEffect(.degrees(-8))
+                    .offset(x: 30, y: 30)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("A note from Otto: hey, it's me. Five minutes, then it's all yours. Promise.")
             Spacer()
             DoorButtons(doors: doors)
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        .keepsDarkStatusBar()
     }
 }
 
@@ -695,6 +725,7 @@ private struct FridgeNoteScene: View {
         }
         .frame(maxWidth: .infinity)
         .background(AppColor.backgroundSecondary.ignoresSafeArea())
+        .keepsDarkStatusBar()
     }
 }
 
@@ -857,6 +888,7 @@ private struct StickerScene: View {
             DoorButtons(doors: doors)
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
+        .keepsDarkStatusBar()
     }
 }
 

@@ -117,8 +117,15 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
     var anchorPrice: String? {
         switch self {
         case .monthly:  return nil
-        case .yearly:   return "$59.99"
-        case .lifetime: return "$199"
+        // No anchor on Yearly or Lifetime (App Review pass, 2026-09-29).
+        // $59.99 and $199 were intended list prices neither plan ever sold
+        // at, and App Review reads a struck-through price a product never
+        // charged as a misleading discount (5.6, 3.1.2); EU storefronts also
+        // require the lowest price of the prior 30 days. The prices
+        // themselves did not change. Only the half-price plans keep an
+        // anchor, because theirs is a price the full plan really charges.
+        case .yearly:   return nil
+        case .lifetime: return nil
         // The year's real price, which this is genuinely half of, so the
         // strikethrough is a true reference price and not a fake one.
         case .yearHalf: return "$29.99"
@@ -127,9 +134,8 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // every month (2026-09-27), so the strikethrough stays a true
         // reference price.
         case .monthHalf: return "$7.99"
-        // The same yearly plan with a free trial first, so the same
-        // reference price is true of it.
-        case .yearTrial: return "$59.99"
+        // The same yearly plan with a free trial first: no anchor, as Yearly.
+        case .yearTrial: return nil
         }
     }
 
@@ -531,10 +537,6 @@ struct PaywallScreen: View {
     /// A Try again is asking the App Store right now.
     @State private var retrying = false
 
-    /// "Three days free.", from the chosen plan's own trial length.
-    private func trialTitle(_ days: Int) -> String {
-        days == 1 ? "One day free." : "\(TrialCopy.spelled(days)) days free."
-    }
 
     /// Whether the free trial may be promised: 808 offers one at all
     /// (`Monetization.freeTrial`, back on since 2026-09-29), and StoreKit
@@ -585,12 +587,15 @@ struct PaywallScreen: View {
     /// The pale green the onboarding cards use, for the chosen plan.
     private static let chosenWash = Color(red: 0.87, green: 0.95, blue: 0.85)
 
-    /// The headline: the chosen plan's free trial when this person gets one,
-    /// otherwise Otto, who the reader just raised to his brightest on the
-    /// ascend screen.
+    /// The headline: Otto, who the reader just raised to his brightest on
+    /// the ascend screen. **Never the free trial** (App Review pass,
+    /// 2026-09-29): Apple's rule is that the billed amount is the most
+    /// prominent pricing element and a free trial sits in a subordinate
+    /// position and size. "Three days free." as a 32pt headline over a 19pt
+    /// price is the standard 3.1.2 rejection, so the trial is said in the
+    /// subtitle, beside what it becomes.
     private var title: String {
         guard selling else { return notSellingTitle }
-        if let days = trialLength { return trialTitle(days) }
         return "Keep Otto glowing."
     }
 
@@ -602,7 +607,11 @@ struct PaywallScreen: View {
         // The trial's cancel terms live in the footnote under the button,
         // said once. Repeating them here pushed Otto off the screen on an
         // iPhone 17 (Melvin, 2026-09-29).
-        return trialNow ? "Try all of 808 first." : Self.includesLine
+        // The trial and the price it becomes, in one line at one size.
+        if let days = trialLength {
+            return "\(TrialCopy.length(days)) free, then \(priceLine(withTrial: false))."
+        }
+        return Self.includesLine
     }
 
     /// What a membership opens, stated on the purchase screen itself (3.1.2:
@@ -1244,7 +1253,12 @@ struct SignInScreen: View {
             Spacer()
 
             SignInWithAppleButton(.signIn) { request in
-                request.requestedScopes = [.fullName, .email]
+                // Name only. Nothing in 808 sends mail to an account or
+                // needs an address to work, so the email scope is not asked
+                // for (App Review pass, 2026-09-29, guideline 5.1.1: collect
+                // only what the app's function needs). `credential.email`
+                // is therefore nil and the account stores none.
+                request.requestedScopes = [.fullName]
             } onCompletion: { result in
                 switch result {
                 case .success(let auth):

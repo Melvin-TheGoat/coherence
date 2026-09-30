@@ -9,11 +9,15 @@ import Foundation
 /// typed. Never a name, handle, caption or photo: whoever reads the email
 /// looks the post up in the Console.
 ///
-/// **Inert until deployed:** `endpoint` is empty, so nothing is sent. Deploy
-/// the script (steps in its header), paste the /exec URL here, and tick the
-/// 1.1 checklist item.
+/// **Live since 2026-09-29.** Deployed from Aziz's Google account as the
+/// Apps Script project "808 friends reports" (web app, runs as him, anyone
+/// may post; email permission only). Verified the same night: a GET answers,
+/// a report with the token is accepted and emailed to support@meditate808.com,
+/// a wrong token is refused. Editing the script means a NEW VERSION of this
+/// same deployment, never a new deployment, or this URL stops working in
+/// every shipped build.
 enum ReportClient {
-    static let endpoint = ""
+    static let endpoint = "https://script.google.com/macros/s/AKfycbz16p-AE4Wg7WXAGabuSHFWhhSioLqcXM1hUx-QYwGmqP9KOPZLju-NTsxVbxS6HTAV/exec"
     /// Must equal APP_TOKEN in the script. Not a secret; it keeps scrapers out.
     static let token = "808-reports-v1"
 

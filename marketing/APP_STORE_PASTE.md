@@ -32,8 +32,9 @@ every trial line below is corrected.
 New and the review notes.** `APP_STORE.md` points here rather than carrying
 copies, because copies drift and the drifted one is the one that gets pasted.
 
-**Before pasting the review notes, replace `@REVIEWER_HANDLE`** with the
-reviewer account's username (`RELEASE_CHECKLIST.md`, item R1).
+**No reviewer test account** (Aziz, 2026-09-29). The notes explain where
+Report, Block and Requests live instead of naming a profile to find
+(`RELEASE_CHECKLIST.md`, item R1).
 
 **The description's subscription block and the review notes say "3 day free
 trial" for the ladder plans only.** That must be what App Store Connect
@@ -302,22 +303,18 @@ Apple emails this address about the review).
 against the code the evening of 2026-09-29, Block paragraph included, and
 corrected later that day for the trial upsell: the paywall has no trial, and
 "No, I don't want to pay" offers the trial on Monthly or Yearly, then half
-price). A real
-@username is at most 21 characters against the placeholder's 16, so the notes
-stay under 4,000 either way. Replace `@REVIEWER_HANDLE` first, then count
-again.
+price). Count again after any edit.
 
 ```
 808 is a meditation app for iPhone with an optional Apple Watch app. No part of this review needs an Apple Watch.
 
 SUBSCRIPTION
-Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version and must load from the sandbox. Please buy with a sandbox account that has no active 808 subscription; onboarding skips the paywall for one that has.
-To reach the paywall, go through onboarding (about 30 short screens). On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
+Nothing past the paywall opens without buying or restoring. The in-app purchases are attached to this version and must load from the sandbox. Use a sandbox account with no active 808 subscription (one that has skips the paywall).
+To reach the paywall, go through onboarding. On "Ready to take control?", press and hold the round button for about three seconds until Otto rises and "Let's go!" appears, then tap Continue. The paywall is next.
 It sells Monthly ($7.99), Yearly ($29.99) and Lifetime ($99.99, one payment), with no free trial, plus Restore, Privacy Policy and Terms of Use. "No, I don't want to pay" then offers, one at a time: a 3 day free trial on Monthly or Yearly (then $7.99 a month or $29.99 a year), then Monthly, half price ($3.99 a month after a 3 day free trial). Choosing either returns to the paywall with those plans, where the purchase happens.
 One free trial per account across the group: a sandbox account that already had an 808 trial skips the trial offer and sees half price from today; one new to 808 sees both.
 If the paywall says "Plans aren't loading", the sandbox returned no products; Try again retries.
 People updating from 1.0 without a subscription meet the paywall at launch, with an Account link (Manage subscription, Redeem a code, Restore, Sign out, Delete account). Subscribers and Lifetime owners keep full access.
-Apple's rating prompt may appear once in onboarding, tied to no answer.
 
 BLOCK (part of 808 Premium)
 Uses Apple's Family Controls with individual authorization: a person manages their own iPhone. It is not a parental control. After the paywall, onboarding (or later the Block tab) asks for Screen Time permission, then apps are picked with Apple's picker. A held app shows Apple's shield. "Ask Otto" sends a notification that opens a short screen from Otto, ending in a meditation (five minutes or more opens the apps for the rest of that window) or "Not now" for 10, 20 or 30 minutes. Nothing from Screen Time leaves the device. A screen recording is available on request.
@@ -328,14 +325,14 @@ Tap the plus in the tab bar, then the first button ("Meditate") to choose:
 - With Apple Watch: dimmed unless a Watch is paired; it wakes the Watch app to measure.
 - Record one: logs a session done elsewhere.
 Sessions count from one minute. Please keep 808 open during an iPhone session. After more than 10 seconds away, including a locked screen, 808 says the session won't count, and "I was still meditating" keeps it.
-"Silence notifications" runs two Shortcuts, "808 Silence" and "808 Restore", added once from iCloud links the app opens. 808 never changes Focus itself.
+"Silence notifications" runs two Shortcuts, "808 Silence" and "808 Restore", added once from iCloud links the app opens (tap Add Shortcut on each). 808 never changes Focus itself.
 
 POINTS AND THE SHOP
 Each whole minute meditated earns one point, spent in the Shop tab on hats for Otto. Points cannot be bought and have no cash value.
 
 FRIENDS
-Opens from the circle at the top right of Home, and needs the device signed in to iCloud. No posts, comments or messages. A profile shows a name, @username, optional photo, practice summary and followers and following, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
-To try it, create a profile (any username), then search for @REVIEWER_HANDLE, a test account we run: request, report or block it. A block is private to the blocker.
+Opens from the circle at the top right of Home, and needs the device signed in to iCloud. No posts, comments or messages. A profile shows a name, @username, optional photo, practice summary and followers, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
+Create a profile to try it. Other people's profiles carry Report and Block (... menu); reports reach our inbox at once, and a reported profile or photo is removed within 24 hours. Seeing another person takes a second device on another iCloud account.
 Delete account (Settings: Profile tab, gear icon; or the paywall's Account link) removes the Friends profile, username and connections.
 
 HEALTH DATA

@@ -28,10 +28,13 @@ enum FrequencyCatalog {
         FrequencyPreset(id: "delta", title: "Deep Rest",       subtitle: "Delta · ~2.5 Hz", carrierHz: 261.63, beatHz: 2.5, bedResource: "bed-deep-rest"),
         // Pure "frequency" tones — the carrier IS the point. Traditional/cultural
         // associations (not lab-proven — the real, consistent effect is relaxation).
-        FrequencyPreset(id: "harmony",   title: "Harmony",   subtitle: "432 Hz · natural tuning", carrierHz: 432, beatHz: nil, bedResource: "bed-harmony"),
-        FrequencyPreset(id: "manifest",  title: "Manifest",  subtitle: "528 Hz · transformation", carrierHz: 528, beatHz: nil, bedResource: "bed-manifest"),
-        FrequencyPreset(id: "visualize", title: "Visualize", subtitle: "852 Hz · intuition", carrierHz: 852, beatHz: nil, bedResource: "bed-visualize"),
-        FrequencyPreset(id: "awaken",    title: "Awaken",    subtitle: "963 Hz · higher self", carrierHz: 963, beatHz: nil, bedResource: "bed-awaken"),
+        // Subtitles name the tradition, not an effect (App Review 1.4.1 pass,
+        // 2026-09-29): "transformation", "intuition" and "higher self" read as
+        // promises the tone keeps.
+        FrequencyPreset(id: "harmony",   title: "Harmony",   subtitle: "432 Hz · a traditional tuning", carrierHz: 432, beatHz: nil, bedResource: "bed-harmony"),
+        FrequencyPreset(id: "manifest",  title: "Manifest",  subtitle: "528 Hz · Solfeggio tradition", carrierHz: 528, beatHz: nil, bedResource: "bed-manifest"),
+        FrequencyPreset(id: "visualize", title: "Visualize", subtitle: "852 Hz · Solfeggio tradition", carrierHz: 852, beatHz: nil, bedResource: "bed-visualize"),
+        FrequencyPreset(id: "awaken",    title: "Awaken",    subtitle: "963 Hz · Solfeggio tradition", carrierHz: 963, beatHz: nil, bedResource: "bed-awaken"),
     ]
 
     static func preset(id: String?) -> FrequencyPreset? {

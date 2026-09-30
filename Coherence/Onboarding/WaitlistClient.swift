@@ -106,6 +106,12 @@ enum WaitlistClient {
         }
     }
 
+    /// Drops every address still waiting to be sent, when the person deletes
+    /// their account: it is their email, and they asked for it to go.
+    static func forgetPending() {
+        UserDefaults.standard.removeObject(forKey: pendingKey)
+    }
+
     private static func pending() -> [String] {
         UserDefaults.standard.stringArray(forKey: pendingKey) ?? []
     }

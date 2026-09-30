@@ -6483,6 +6483,102 @@ longer white (white on the daytime grass was 2:1).
   and hands every view `.environment(\.colorScheme, .light)`, so everything
   808 draws, sheets and system pickers included, renders as by day.
   Onboarding and the launch paywall always draw daytime and stay light.
+- **Cream under a white status bar is the trap, twice over (fixed same
+  day).** A cream page pushed full screen (Awards, Settings' document pages)
+  calls `.keepsDarkStatusBar()`, which RootView counts (`CreamPages`) to ask
+  for the dark bar while it shows. NOT `.preferredColorScheme(.light)` on
+  the page: tried first, and SwiftUI kept the popped page's preference, so
+  the night valley behind it lost its white bar. Scrolling valley pages
+  (Home, Profile, Block, the guide) fade grass in behind the status bar once
+  cards reach it (`StatusBarScrim`, as Friends and Settings already did).
+  Sheets need neither: their status bar belongs to the page underneath.
+
+### App Review pass on the paywall: presentation only, prices untouched (2026-09-29, Aziz)
+
+Aziz: fix the payments findings "but i dont want the pricing or anything to
+change at all". No price, plan, trial length, product or ladder step moved.
+- **No struck-through "was" price on Yearly, Yearly-with-trial or
+  Lifetime.** $59.99 and $199 were intended list prices those plans never
+  sold at; App Review reads that as a misleading discount (5.6, 3.1.2), and
+  EU storefronts need the prior 30 days' lowest price. Only the half-price
+  plans keep an anchor, because the full plan really charges it.
+  `test_onlyRealPricesAreStruckThrough` is the tripwire.
+- **The free trial is never the headline.** Apple: the billed amount is the
+  most prominent price and a free trial sits in a subordinate position and
+  size. The paywall's title stays "Keep Otto glowing." and the trial is its
+  subtitle ("3 days free, then $29.99 per year."); rung 1 reads "No
+  worries. Try it first." with the free days in the subtitle beside the
+  prices.
+- In RELEASE_CHECKLIST: remove monthly/yearly's intro offers as the LAST
+  step before Submit (the live 1.0 paywall still promises a free week), and
+  the trial products take distinct display names ("Monthly (free trial)").
+
+### App Review pass, the rest (2026-09-29, Aziz: "make sure we good to go")
+
+- **Delete account erases at once** (5.1.1(v)): `SessionStore.deleteAccountNow`
+  hard-deletes every user, session, stats, reflection, photo and preferences
+  row and clears the person's UserDefaults bookkeeping; no 30-day grace, no
+  "sign back in to restore". `purgeExpired` stays for rows older builds
+  soft-deleted. Verified on the simulator: no crash, the next account is empty.
+- **Otto's video call touches the camera only after Accept** (5.1.1): no
+  permission prompt, no camera, while it rings.
+- **Health claims cut to what is measured** (1.4.1): the resonance sheet no
+  longer mentions blood pressure or the nervous system, the score sheet no
+  longer mentions the subconscious or the stress system, and every score
+  carries "Estimated from your Apple Watch's heart rate and motion sensors.
+  Not a medical measurement." (`SessionResultsView.estimateNote`).
+- **The "Headspace" bar is "Mental clarity"**: a competitor's trademark.
+- **No workout READ permission**; HealthKit reads heart rate only.
+- **The Watch manifest declares file timestamps (C617.1)**: Shared's
+  Persistence reads store modification dates and compiles into the Watch.
+- **Reports are live.** `tools/community-reports.gs` rewritten for
+  profile-only reports and EMAIL ONLY (the optional sheet log made Google ask
+  for every spreadsheet in the account), deployed from Aziz's Google account
+  as "808 friends reports", URL in `ReportClient.endpoint`, verified with curl.
+  Edits are a new VERSION of that deployment, never a new deployment.
+- **No reviewer test account** (Aziz): the notes say where Report, Block
+  and Requests live. If App Review asks for one, claim a profile on any
+  iPhone signed in to iCloud and reply with the handle. (`@808team` was
+  considered; it is a reserved handle and stays one.)
+- **No App Store rating request in onboarding any more**, and the laurel row
+  that asked for it is gone; the only ask is `ReviewPrompt` after the third
+  session. "Regulate your emotions and stress" is now "Find calm when stress
+  builds".
+- Still the founders': the university logos, the celebrity faces, the Block
+  demo video.
+
+### App Review, second pass (2026-09-30)
+
+- **Silence notifications trusts only the Shortcut's callback.** `run()`
+  passes x-success, x-error and x-cancel back to `coherence808://focus/...`
+  (`.onOpenURL` in CoherenceApp); only an x-success records a silence or an
+  install, an x-error means "not installed" and reopens setup. An owed
+  restore is a one-tap alert ("Do Not Disturb from your session") that waits
+  for a clear screen, never a jump into Shortcuts at launch. The Focus-status
+  read (`INFocusStatusCenter`, its prompt, the settle window) is gone: it is
+  meant for messaging apps. Lesson: an alert raised at launch while a cover
+  is presenting can stop the cover ever opening.
+- **Usage analytics can be turned off** ("Share usage analytics" in
+  Settings, `analytics.optedOut.v1`, PostHog `optOut()`); the policy says so
+  and says third parties protect data as well as we do.
+- Notification permission asks alert and sound, no badge. Sign in with
+  Apple asks for the name only. No Files-app folder in Release.
+- Otto's voice note is a written note on lined paper (it had a play button
+  that played nothing). The tone subtitles name the tradition, not an
+  effect. The invite text dropped "the social media for meditation". Otto's
+  Ready line no longer names YouTube or Spotify. The old Muse/HeartMath
+  screen is routed past.
+- **The five-minute rule is said on the sit itself** when Block is holding
+  apps ("Meditate 5 minutes to open your apps", then "Five minutes done"),
+  since a sit started from Otto's notification skips the Ready screen.
+- **A full-screen cover takes its status bar from its own content.** Apply
+  `.followsStatusBarRule()` at the root of any cover that can show cream
+  (Settings, Otto's screens); cream pages inside call `keepsDarkStatusBar()`.
+- Simulator defaults: write them with `xcrun simctl spawn booted defaults
+  write <container>/Library/Preferences/<bundle id>`; a host-side plist edit
+  does not reach the running app.
+- Open, the founders': the science page's heart section (explained to Aziz),
+  the university logos, the celebrity faces, the Block demo video.
 
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 

@@ -33,7 +33,10 @@ struct ScoreMeaningSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 6)
 
-                    Text("Your body runs in two modes: **stress**, and **recovery**. The subconscious only opens in the second one.")
+                    // No claim about the subconscious or the stress system
+                    // (App Review 1.4.1, 2026-09-29): the score is built from
+                    // three readings and says only what they show.
+                    Text("The score reads how settled your body was: a heart rate that eased, a body that stayed still, and a slow start to your breathing.")
                         .font(AppFont.callout)
                         .foregroundStyle(AppColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -49,7 +52,7 @@ struct ScoreMeaningSheet: View {
                     // .30, breath .20 and binary). Breath used to lead from the
                     // era when it carried .45; Melvin caught the stale order.
                     input("heart.fill", "Heart, half the score.",
-                          "A heart that drifts down and stays down is the stress system letting go. The biggest single input.",
+                          "A heart rate that drifts down and stays down is a sign you settled. The biggest single input.",
                           AppColor.accentGold)
                     input("figure.mind.and.body", "Stillness.",
                           "A quiet body means a quiet system, measured the whole session.",
@@ -60,6 +63,12 @@ struct ScoreMeaningSheet: View {
                     input("clock", "Time.",
                           "Ten settled minutes can score 100. Longer sessions earn a small bonus, but thirty restless minutes never beat five settled ones.",
                           AppColor.accentGold)
+
+                    Text(SessionResultsView.estimateNote)
+                        .font(AppFont.caption)
+                        .foregroundStyle(AppColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 20)
                 }
                 .padding(AppMetrics.screenPadding)
             }

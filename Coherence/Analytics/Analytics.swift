@@ -299,7 +299,11 @@ enum Analytics {
         // into them. Events still print to the console sink below.
         return
         #else
-        guard !postHogKey.isEmpty else { return }
+        guard !postHogKey.isEmpty, !started else { return }
+        // Turned off in Settings: the SDK is never set up, so this launch
+        // makes no PostHog request of any kind, not even its remote config
+        // (App Review pass, 2026-09-29, guideline 5.1.1(ii)).
+        guard !isOptedOut else { return }
         let config = PostHogConfig(apiKey: postHogKey, host: postHogHost)
         // Manual events only. Autocapture would hoover screen names and taps
         // we never reviewed against the no-biometrics/no-text rules; every
@@ -338,6 +342,10 @@ enum Analytics {
         // line rather than on a default that could change in an update.
         config.errorTrackingConfig.autoCapture = false
         PostHogSDK.shared.setup(config)
+        // The SDK keeps its own opt-out flag on disk, and a person who turned
+        // analytics off in an earlier launch and back on in this one could
+        // still have it set. Ours is the only switch; make PostHog agree.
+        PostHogSDK.shared.optIn()
         applyTeamDevice()
         sink = { event in
             PostHogSDK.shared.capture(event.name, properties: event.properties)
@@ -355,6 +363,45 @@ enum Analytics {
     /// Whether `start()` set the SDK up. Release only; DEBUG never does.
     private static var started = false
 
+    // MARK: - Opt-out
+
+    /// The "Share usage analytics" switch in Settings (App Review pass,
+    /// 2026-09-29, guideline 5.1.1(ii): a person must be able to stop data
+    /// collection that the app's function does not need). Stored as OPTED
+    /// OUT so an absent key reads as the default, on, which is what every
+    /// install before this switch was doing.
+    ///
+    /// Off means nothing leaves the phone: `track` and person properties
+    /// return before any sink, the SDK is told `optOut()` at once, and on
+    /// the next launch `start()` does not set PostHog up at all.
+    private static let optedOutKey = "analytics.optedOut.v1"
+
+    static var isOptedOut: Bool {
+        UserDefaults.standard.bool(forKey: optedOutKey)
+    }
+
+    static var isSharing: Bool { !isOptedOut }
+
+    static func setSharing(_ on: Bool) {
+        UserDefaults.standard.set(!on, forKey: optedOutKey)
+        #if !DEBUG
+        if on {
+            if started {
+                PostHogSDK.shared.optIn()
+                applyTeamDevice()
+                personSink(person)
+            } else {
+                // Off at launch, so the SDK was never set up; set it up now.
+                start()
+            }
+        } else if started {
+            // Stops capture and the lifecycle integration straight away, and
+            // persists in the SDK's own storage as a second lock.
+            PostHogSDK.shared.optOut()
+        }
+        #endif
+    }
+
     // MARK: - Person properties
 
     /// Facts about this install, set on the ANONYMOUS PostHog person so a
@@ -369,6 +416,9 @@ enum Analytics {
 
     static func setPersonProperties(_ props: [String: Any]) {
         person.merge(props) { _, new in new }
+        // Kept locally so switching analytics back on sends the current
+        // facts, but never sent while the switch is off.
+        guard !isOptedOut else { return }
         personSink(props)
     }
 
@@ -386,7 +436,9 @@ enum Analytics {
     /// the person, so they are set again straight away.
     static func reset() {
         #if !DEBUG
-        guard started else { return }
+        // Skipped while analytics are off: PostHog's reset reloads its
+        // feature flags over the network, and off means no request at all.
+        guard started, !isOptedOut else { return }
         PostHogSDK.shared.reset()
         applyTeamDevice()
         personSink(person)
@@ -531,7 +583,12 @@ enum Analytics {
         #endif
     }
 
-    static func track(_ event: Event) { sink(event) }
+    static func track(_ event: Event) {
+        // The Settings switch is off: nothing is sent (App Review pass,
+        // 2026-09-29).
+        guard !isOptedOut else { return }
+        sink(event)
+    }
 
     /// Coarse bands, so a property can never reconstruct a precise value.
     static func durationBand(seconds: Int) -> String {

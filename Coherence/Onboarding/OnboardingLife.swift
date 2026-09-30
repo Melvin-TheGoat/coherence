@@ -1047,14 +1047,12 @@ struct ResearchScreen: View {
 /// "808 was made for people like you." (Aziz, 2026-09-26, Brainrot's rating
 /// screen), after the research screen. Two jobs:
 ///
-/// 1. **It asks for an App Store rating.** Apple's own sheet, asked once as
-///    the screen settles, for EVERYONE: no "do you like it?" question first,
-///    because routing only happy people to the sheet is ratings manipulation
-///    and a live rejection (see `ReviewPrompt`). This reverses the old
-///    "never inside onboarding" rule, at Aziz's call. It does not stamp
-///    `ReviewPrompt.lastAskedKey`, so the post-session ask still comes after
-///    the third real session; Apple caps its sheet at three a year whatever
-///    we call.
+/// 1. ~~It asks for an App Store rating.~~ **Not any more** (App Review
+///    pass, 2026-09-29, Aziz: "get rid of the rating request"). Asking
+///    before the person has done a single session is what 5.6.1 flags, so
+///    the sheet and the laurel row that asked for it are gone and the old
+///    "never inside onboarding" rule stands again: the only ask is
+///    `ReviewPrompt`, after the third completed session.
 /// 2. **Social proof from famous meditators, not user reviews.** 808 has too
 ///    few ratings to quote, and invented reviews are out. The three quotes
 ///    are the verbatim, on-the-record lines the old wall screen carried.
@@ -1070,11 +1068,9 @@ struct ResearchScreen: View {
 struct SocialProofScreen: View {
     let onContinue: () -> Void
 
-    @Environment(\.requestReview) private var requestReview
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var shown = 0
     @State private var quoteIndex = 0
-    @State private var asked = false
 
     private struct Voice {
         let image: String
@@ -1122,11 +1118,6 @@ struct SocialProofScreen: View {
                     .padding(.top, compact ? 12 : 18)
                     .opacity(shown > 1 ? 1 : 0)
                     .offset(y: shown > 1 ? 0 : 10)
-
-                ratingRow
-                    .padding(.top, compact ? 10 : 16)
-                    .opacity(shown > 2 ? 1 : 0)
-                    .offset(y: shown > 2 ? 0 : 10)
 
                 quoteCard
                     .padding(.top, compact ? 14 : 22)
@@ -1176,32 +1167,6 @@ struct SocialProofScreen: View {
             }
         }
         .accessibilityHidden(true)
-    }
-
-    /// Brainrot's laurel row, asking for the rating rather than quoting one.
-    private var ratingRow: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "laurel.leading")
-                .font(.system(size: 40, weight: .regular))
-                .foregroundStyle(Self.gold)
-            VStack(spacing: 4) {
-                HStack(spacing: 3) {
-                    ForEach(0..<5, id: \.self) { _ in
-                        Image(systemName: "star.fill")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(Self.gold)
-                    }
-                }
-                Text("Your rating helps others find 808")
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundStyle(AppColor.textPrimary.opacity(0.6))
-            }
-            Image(systemName: "laurel.trailing")
-                .font(.system(size: 40, weight: .regular))
-                .foregroundStyle(Self.gold)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Your rating helps others find 808")
     }
 
     /// One quote at a time, turning every few seconds.
@@ -1269,18 +1234,10 @@ struct SocialProofScreen: View {
                 try? await Task.sleep(for: .milliseconds(450))
             }
         }
-        // Apple's rating sheet, once the screen has settled.
-        try? await Task.sleep(for: .milliseconds(600))
-        // Once per onboarding, not once per visit: `asked` is reset every
-        // time the screen is rebuilt (Back and forward, a resume), so the
-        // flag lives in UserDefaults and is cleared with the resume record
-        // when onboarding ends or someone signs out.
-        guard !Task.isCancelled, !asked,
-              !UserDefaults.standard.bool(forKey: OnboardingResume.reviewAskedKey) else { return }
-        asked = true
-        UserDefaults.standard.set(true, forKey: OnboardingResume.reviewAskedKey)
-        Analytics.track(.ratingPrompted(placement: "onboarding"))
-        requestReview()
+        // No App Store rating request here (App Review pass, 2026-09-29,
+        // Aziz): asking before the person has done a single session is what
+        // 5.6.1 flags, so the only ask is `ReviewPrompt`, after the third
+        // completed session. The laurel row that asked for it went too.
     }
 
     private func rotate() async {
@@ -1324,7 +1281,10 @@ struct ThisWeekScreen: View {
             Row(icon: "wind", tint: Color(red: 0.25, green: 0.55, blue: 0.85),
                 text: "Improve your mental clarity"),
             Row(icon: "heart.fill", tint: Color(red: 0.87, green: 0.36, blue: 0.33),
-                text: "Regulate your emotions and stress"),
+                // Was "Regulate your emotions and stress" (App Review pass,
+                // 2026-09-29): a clinical outcome promised in a week is a
+                // 1.4.1 flag. This says what a daily habit offers instead.
+                text: "Find calm when stress builds"),
             Row(icon: "leaf.fill", tint: OnboardingGreen.shade,
                 text: "Be more present in your everyday life"),
         ]

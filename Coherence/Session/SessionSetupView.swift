@@ -205,6 +205,13 @@ struct SessionSetupView: View {
             if hosting, id == nil { dismiss() }
         }
         .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
+        // A shortcut answered x-error, which means it is not on this phone:
+        // the setup steps come back, quietly (App Review pass, 2026-09-29).
+        .onChange(of: focus.setupNeeded) { _, needed in
+            guard needed else { return }
+            focus.setupShown()
+            showFocusSetup = true
+        }
         .sheet(isPresented: $showWatchSetup) { WatchConnectSheet() }
         // The recorded sit's own page, for the photo or video that shows it
         // happened, and notes. Closing it closes this screen too.
@@ -219,10 +226,10 @@ struct SessionSetupView: View {
         }
         // NOT a permission prompt on appear. Somebody who opened this screen
         // is about to close their eyes, and a system dialog is the single
-        // worst thing to put in front of them. The prompt comes when they
-        // reach for the switch, which is the moment it is about anything.
+        // worst thing to put in front of them. (The Silence switch no longer
+        // asks for anything at all: the Focus status read is gone, App Review
+        // pass, 2026-09-29.)
         .onAppear {
-            focus.refreshStatus()
             if !lineTurnTaken {
                 lineTurnTaken = true
                 let d = UserDefaults.standard
@@ -237,7 +244,7 @@ struct SessionSetupView: View {
             }
         }
         .onChange(of: scenePhase) { _, phase in
-            if phase == .active { focus.refreshStatus(); watchLink.refresh() }
+            if phase == .active { watchLink.refresh() }
         }
         // Closed mid-count (swiped away, or dismissed from above): the count
         // must not run on and start a sit behind a screen that is gone.
@@ -314,7 +321,6 @@ struct SessionSetupView: View {
             Button {
                 Task {
                     guard focus.installed else { showFocusSetup = true; return }
-                    await focus.requestStatusAccess()
                     if focus.silenced { await focus.turnOff() }
                     else { await focus.silence() }
                 }
@@ -373,7 +379,15 @@ struct SessionSetupView: View {
     /// line, sometimes the Apple Watch, alternating each time the screen
     /// opens. The Watch line only with a Watch paired.
     private var readyLine: String {
-        let youtube = "Ready when you are. Start any YouTube or Spotify audio first."
+        // No app names (App Review pass, 2026-09-30): naming YouTube and
+        // Spotify reads as an integration we don't have, and YouTube keeps
+        // playing in the background only with Premium.
+        let youtube = "Ready when you are. Start your own audio first if you like."
+        // While Block holds apps, the one thing worth saying before Begin is
+        // what opens them (Aziz, 2026-09-29).
+        if FeatureFlags.block, !BlockController.shared.holding().isEmpty {
+            return "Ready when you are. \(Blocker.sessionMinutes) minutes opens your apps."
+        }
         guard mentionsWatch else { return youtube }
         switch watchLink.status {
         case .noWatch:
@@ -957,7 +971,9 @@ struct FocusSetupSheet: View {
     }
 
     /// Opens the next link. Only a link that actually opened counts, and the
-    /// switch counts as set up only once both have.
+    /// switch counts as set up only once both have. Opening is not proof they
+    /// were added, so an x-error from either shortcut later takes this back
+    /// and brings the steps up again (App Review pass, 2026-09-29).
     private func addNext() async {
         let link = added == 0 ? FocusShortcut.silenceInstallURL : FocusShortcut.restoreInstallURL
         guard await focus.openInstall(link) else { return }

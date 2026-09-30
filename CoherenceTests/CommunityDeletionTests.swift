@@ -3,8 +3,8 @@ import CloudKit
 @testable import Coherence
 
 /// Deleting an 808 account must also delete what the person published to
-/// Friends (App Review 5.1.1(v)): the local sign-out already happens
-/// (`SessionStore.softDeleteCurrentUser`), but a profile, posts and
+/// Friends (App Review 5.1.1(v)): the local deletion already happens
+/// (`SessionStore.deleteAccountNow`), but a profile, posts and
 /// reactions left behind in the PUBLIC database would still be visible to
 /// everyone else. Same two-store pattern as `CommunityStoreTests`.
 final class CommunityDeletionTests: XCTestCase {

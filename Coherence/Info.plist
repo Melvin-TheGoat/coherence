@@ -12,14 +12,10 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>808</string>
-	<!-- Documents visible in the Files app: motion-capture CSVs from the
-	     posture-free breathing / tremor experiments land in Documents and get
-	     pulled off the phone by AirDrop or devicectl. Harmless in release:
-	     Documents only ever holds these captures. -->
-	<key>UIFileSharingEnabled</key>
-	<true/>
-	<key>LSSupportsOpeningDocumentsInPlace</key>
-	<true/>
+	<!-- No Files-app folder (App Review pass, 2026-09-29): only DEBUG builds
+	     write to Documents (motion captures, selfie and AirPods diagnostics),
+	     so release users saw an empty "808" folder. Debug captures are still
+	     pulled with `devicectl device copy from ... appDataContainer`. -->
 	<key>UIAppFonts</key>
 	<array>
 		<string>Baloo2-600.ttf</string>
@@ -77,8 +73,9 @@
 			</array>
 		</dict>
 	</array>
-	<key>NSFocusStatusUsageDescription</key>
-	<string>808 checks whether a Focus is already on so the switch on the session screen tells you the truth about your phone.</string>
+	<!-- No NSFocusStatusUsageDescription (App Review pass, 2026-09-29): Focus
+	     status is for communication apps, so the Silence switch shows only
+	     what 808's own shortcut confirmed. See FocusShortcut. -->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

@@ -101,6 +101,9 @@ struct ProfileTab: View {
                 }
                 .scrollIndicators(.hidden)
                 .ignoresSafeArea(edges: .top)
+                // Cards scrolled under the status bar at night put its white
+                // text on cream (2026-09-29): a band of grass comes in behind it.
+                .modifier(StatusBarScrim(height: proxy.safeAreaInsets.top, threshold: 60))
                 .background(Self.meadow.ignoresSafeArea())
                 // The tab bar's inset does not reach inside this tab's own
                 // NavigationStack, so the bottom of the page scrolled under

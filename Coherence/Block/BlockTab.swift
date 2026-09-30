@@ -71,6 +71,8 @@ struct BlockTab: View {
             }
             .ignoresSafeArea(edges: .top)
             .scrollIndicators(.hidden)
+            // White status bar over cream cards at night (2026-09-29).
+            .modifier(StatusBarScrim(height: top, threshold: 60))
         }
         .background(Self.meadow.ignoresSafeArea())
         .sheet(item: $editing) { request in

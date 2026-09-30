@@ -711,7 +711,7 @@ struct InviteButton: View {
     /// Aziz's wording (2026-09-14). The App Store link stays on its own line
     /// so the message still gets a friend to the download.
     static func message(for username: String) -> String {
-        "Add me on 808 Meditate, the social media for meditation: @\(username)\n\(storeLink.absoluteString)"
+        "Add me on 808 Meditate: @\(username)\n\(storeLink.absoluteString)"
     }
 
     var body: some View {

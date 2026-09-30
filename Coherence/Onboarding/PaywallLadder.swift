@@ -53,7 +53,10 @@ enum DownsellRung: Int, CaseIterable, Identifiable {
     /// then the first thing said after their "no", so it cannot open "Then".
     func title(first: Bool) -> String {
         switch self {
-        case .trial:     return "No worries.\nTry it free first."
+        // Not "free" in the headline (App Review pass, 2026-09-29): the
+        // free days are said in the subtitle, the same size as the price
+        // they turn into, which is where 3.1.2 wants a free trial.
+        case .trial:     return "No worries.\nTry it first."
         case .halfMonth: return first ? "No worries.\nHave 808 at half price." : "Then have 808\nat half price."
         }
     }

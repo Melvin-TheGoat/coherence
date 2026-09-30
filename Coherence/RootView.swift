@@ -23,6 +23,7 @@ struct RootView: View {
     /// Whether the valley's sky is dark right now, so the status bar turns
     /// white (`statusScheme`). Re-read every minute and on every return.
     @State private var nightSky = RootView.skyIsDark
+    @ObservedObject private var creamPages = CreamPages.shared
 
     /// **808 is premium only again** (Melvin and Aziz, 2026-09-23;
     /// `Monetization`). A person with no subscription meets the paywall at
@@ -270,9 +271,57 @@ struct RootView: View {
     /// day. Onboarding, the launch paywall and the wait before it always draw
     /// a daytime valley, so they stay light.
     private var statusScheme: ColorScheme {
-        face == .app && nightSky ? .dark : .light
+        face == .app && nightSky && creamPages.showing == 0 ? .dark : .light
     }
 
     /// The same line the valley's words cross from dark ink to cream.
     private static var skyIsDark: Bool { DayLight.clockProgress() >= DayLight.inkTurn }
+}
+
+/// Cream pages that fill the screen, top edge included, and are on screen
+/// right now (`keepsDarkStatusBar()`). After dark RootView turns the status
+/// bar white for the night sky, and white on cream is no status bar at all,
+/// so while one of these shows the root asks for the dark one again.
+///
+/// Counted here and decided at the root, never with a `preferredColorScheme`
+/// on the page itself: that was tried first (2026-09-29) and SwiftUI kept
+/// the pushed page's preference after it was popped, leaving a dark status
+/// bar on the night sky behind it.
+@MainActor
+final class CreamPages: ObservableObject {
+    static let shared = CreamPages()
+    @Published private(set) var showing = 0
+    func enter() { showing += 1 }
+    func leave() { showing = max(0, showing - 1) }
+}
+
+private struct KeepsDarkStatusBar: ViewModifier {
+    @State private var counted = false
+    func body(content: Content) -> some View {
+        content
+            .onAppear { if !counted { counted = true; CreamPages.shared.enter() } }
+            .onDisappear { if counted { counted = false; CreamPages.shared.leave() } }
+    }
+}
+
+extension View {
+    /// For a cream page pushed or covered full screen, reaching under the
+    /// status bar: keeps the status bar dark at every hour. Not for sheets,
+    /// whose status bar belongs to the page underneath.
+    func keepsDarkStatusBar() -> some View { modifier(KeepsDarkStatusBar()) }
+
+    /// The root's status bar rule, for the top view of a full-screen cover
+    /// (2026-09-30). A cover takes its status bar from its own content, not
+    /// from RootView, so a cream page inside one (Settings' documents,
+    /// Otto's notes) kept the night's white bar. Applied at the cover's root,
+    /// never on a pushed page, so there is nothing for a pop to leave behind.
+    func followsStatusBarRule() -> some View { modifier(StatusBarRule()) }
+}
+
+private struct StatusBarRule: ViewModifier {
+    @ObservedObject private var creamPages = CreamPages.shared
+    func body(content: Content) -> some View {
+        let night = DayLight.clockProgress() >= DayLight.inkTurn
+        content.preferredColorScheme(night && creamPages.showing == 0 ? .dark : .light)
+    }
 }

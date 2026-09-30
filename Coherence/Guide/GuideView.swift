@@ -57,6 +57,8 @@ struct GuideView: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            // White status bar over cream cards at night (2026-09-29).
+            .modifier(StatusBarScrim(height: 60, threshold: 60))
             .modifier(NoTopEdgeHaze())
             .background(GuideGround.meadow.ignoresSafeArea())
             .navigationBarTitleDisplayMode(.inline)
@@ -321,6 +323,8 @@ struct MethodDetailView: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            // White status bar over cream cards at night (2026-09-29).
+            .modifier(StatusBarScrim(height: 60, threshold: 60))
             .modifier(NoTopEdgeHaze())
             // **An inset, not a ZStack.** Floated in a ZStack, Begin sat
             // behind the tab bar whenever the guide is a tab (the App Store

@@ -30,6 +30,9 @@ struct SettingsView: View {
                 }
             }
         }
+        // Settings opens as a full-screen cover, so the status bar rule has
+        // to be applied here for its cream document pages (2026-09-30).
+        .followsStatusBarRule()
     }
 
     private var currentUser: User? {
@@ -55,9 +58,11 @@ enum AccountActions {
     static let signOutMessage = "Your sessions and streak stay on this phone, but they stop syncing to iCloud until you sign back in. A lost phone would mean losing them."
 
     static let deleteTitle = "Delete your account?"
-    /// The 30-day grace period is real, but it only covers the local account;
-    /// a public Friends profile is not something we can leave sitting around
-    /// in the meantime for other people to see. No mention of posts: there
+    /// Deletion is immediate and permanent (2026-09-29, App Review
+    /// 5.1.1(v)). It used to promise removal after 30 days with sign-in
+    /// restoring everything in between, while every screen went on showing
+    /// the same sessions to whoever started over. Friends gets its own
+    /// sentence only on builds that have Friends. No mention of posts: there
     /// are none to delete since posting was removed (2026-09-27).
     ///
     /// **It says the subscription keeps billing** (Melvin, 2026-09-29, App
@@ -66,10 +71,11 @@ enum AccountActions {
     /// their account without saying so leaves them paying for nothing. The
     /// dialog offers Manage subscription beside Delete.
     static var deleteMessage: String {
-        let account = FeatureFlags.friends
-            ? "Your account and sessions are removed after 30 days. Sign back in before then to restore them. Your Friends profile and connections are deleted right away."
-            : "Your account and sessions are removed after 30 days. Sign back in before then to restore them."
-        return account + " " + subscriptionNote
+        let account = "This deletes your account, sessions and photos from this iPhone and your iCloud right away. It can't be undone."
+        let friends = FeatureFlags.friends
+            ? " Your Friends profile and connections are deleted too."
+            : ""
+        return account + friends + " " + subscriptionNote
     }
 
     static let subscriptionNote = "Deleting your account doesn't cancel your subscription. Cancel it in the Settings app under your name, Subscriptions."
@@ -98,8 +104,17 @@ enum AccountActions {
     static func deleteAccount(in context: ModelContext, community: CommunityModel) {
         Analytics.track(.accountDeleted)
         Analytics.reset()
-        SessionStore.softDeleteCurrentUser(in: context)
+        // Everything, now: every account row, session, measurement,
+        // reflection and photo on this phone (the synced ones leave iCloud
+        // as the deletion syncs), plus the per-person bookkeeping in
+        // UserDefaults. No 30-day window and no restore.
+        SessionStore.deleteAccountNow(in: context)
         OttoChatStore.deleteAll()
+        // An email typed on the no-Watch waitlist and not yet sent is theirs;
+        // it does not go out after they asked to be deleted.
+        WaitlistClient.forgetPending()
+        // The daily reminder was their setting, and its row is gone.
+        NotificationScheduler.apply(enabled: false, at: nil)
         // Friends: the public profile and everything it wrote go too, not
         // just the local sign-out (5.1.1(v)). The screen forgets them at
         // once; the deletion itself runs on without holding the screen, and
@@ -519,6 +534,21 @@ private struct SettingsForm: View {
                     navRow(icon: "atom", title: "The science", teal: true) { docPage("SCIENCE") }
                     divider
                     navRow(icon: "lock.shield", title: "Privacy policy") { docPage("PRIVACY_POLICY") }
+                    divider
+                    // App Review pass, 2026-09-29 (guideline 5.1.1(ii)): the
+                    // usage analytics the policy describes can be turned off
+                    // here, beside the policy that describes them. On by
+                    // default, which is what every earlier install did.
+                    row(icon: "chart.bar", title: "Share usage analytics",
+                        subtitle: "Anonymous app usage, never your health data") {
+                        Toggle("", isOn: Binding(
+                            get: { shareAnalytics },
+                            set: { on in
+                                shareAnalytics = on
+                                Analytics.setSharing(on)
+                            }
+                        )).labelsHidden().tint(AppColor.calmAccent)
+                    }
                     divider
                     navRow(icon: "doc.text", title: "Terms of service") { docPage("TERMS_OF_SERVICE") }
                 }
@@ -1018,6 +1048,7 @@ private struct SettingsForm: View {
 
     @State private var versionTaps = 0
     @State private var teamDevice = Analytics.isTeamDevice
+    @State private var shareAnalytics = Analytics.isSharing
 
     /// "Version 1.0 (202608251757)" from the bundle, never hardcoded: a
     /// hand-typed version is wrong the moment it is typed.
@@ -1031,6 +1062,7 @@ private struct SettingsForm: View {
     private func docPage(_ name: String) -> some View {
         ScrollView { MarkdownView(markdown: DocLoader.load(name)).padding() }
             .background(AppColor.backgroundPrimary)
+            .keepsDarkStatusBar()
     }
 
     private func timeString(_ date: Date?) -> String? {

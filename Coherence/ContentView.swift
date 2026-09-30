@@ -587,6 +587,10 @@ struct ContentView: View {
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
+            // The cards reach the top once the valley has scrolled away, and
+            // at night the status bar is white over cream (2026-09-29).
+            .modifier(StatusBarScrim(height: proxy.safeAreaInsets.top,
+                                     threshold: sceneHeight - proxy.safeAreaInsets.top - 60))
             .environment(\.tileDim, Self.tileDim)
             // The page is grass. The sky that shows when the top is pulled
             // down scrolls WITH the scene (see `homeScene`): a background

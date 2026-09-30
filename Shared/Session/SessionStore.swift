@@ -106,8 +106,10 @@ enum SessionStore {
     static func signIn(appleUserID: String, email: String?, displayName: String?,
                        completingOnboarding: Bool = true,
                        in context: ModelContext) -> User {
-        // a. Returning user? (Clear any pending soft-delete — signing back in
-        // reactivates the account.)
+        // a. Returning user? (Clear any pending soft-delete: signing back in
+        // reactivates an account an older build soft-deleted. Deletion is
+        // immediate since 2026-09-29, so a deleted account has no row left
+        // to find and this signs in a fresh one.)
         let byApple = FetchDescriptor<User>(predicate: #Predicate { $0.appleUserID == appleUserID })
         if let user = try? context.fetch(byApple).first {
             user.deletedAt = nil
@@ -160,14 +162,66 @@ enum SessionStore {
         try? context.save()
     }
 
-    /// Soft-deletes the account (Apple requirement): stamps `deletedAt` and
-    /// signs out. The launch-time `purgeExpired` hard-deletes after 30 days.
+    /// Deletes this phone's person, NOW (App Review 5.1.1(v), 2026-09-29):
+    /// every User row, signed in or bootstrap, and everything that belongs
+    /// to one: Preferences (owned hats, the worn hat, the invite reward),
+    /// Sessions, their MeditationStats (the device-local "HealthLocal"
+    /// store), SessionReflections and SessionPhotos. The synced rows leave
+    /// the private iCloud database as the deletion syncs.
     ///
-    /// **Every live user row on the device**, signed in or bootstrap, not one
-    /// of them (2026-09-29): a phone holds one person's data, Delete account
-    /// promises all of it goes, and a stray bootstrap row is exactly what let
-    /// sessions survive before. Signing back in with the same Apple ID inside
-    /// the 30 days still reactivates that account and its sessions.
+    /// **All of them, not only the rows keyed to a live user.** A phone
+    /// holds one person's data, and every screen reads every Session with no
+    /// owner filter, so a row left behind (an orphan, a stray bootstrap's)
+    /// is exactly what used to come back after someone started over. Built
+    /// tracks (`MeditationTrack`) are the app's catalog, not the person's,
+    /// and stay.
+    ///
+    /// It used to stamp `deletedAt` and leave the purge to a launch 30 days
+    /// later, with sign-in inside that window restoring everything. That is
+    /// gone: deletion is immediate and cannot be undone. The per-person
+    /// UserDefaults bookkeeping goes too (`forgetPersonOnDevice`).
+    static func deleteAccountNow(now: Date = Date(), in context: ModelContext,
+                                 defaults: UserDefaults = .standard) {
+        hardDelete(users: (try? context.fetch(FetchDescriptor<User>())) ?? [], in: context)
+        // Whatever no user owned: orphans, and rows under a user id that no
+        // longer exists. `MeditationTrack` is deliberately not in this list.
+        for row in (try? context.fetch(FetchDescriptor<MeditationStats>())) ?? [] { context.delete(row) }
+        for row in (try? context.fetch(FetchDescriptor<SessionReflection>())) ?? [] { context.delete(row) }
+        for row in (try? context.fetch(FetchDescriptor<SessionPhoto>())) ?? [] { context.delete(row) }
+        for row in (try? context.fetch(FetchDescriptor<Session>())) ?? [] { context.delete(row) }
+        for row in (try? context.fetch(FetchDescriptor<Preferences>())) ?? [] { context.delete(row) }
+        try? context.save()
+        forgetPersonOnDevice(now: now, defaults: defaults)
+    }
+
+    /// The UserDefaults that describe the person rather than the phone,
+    /// cleared so a fresh start on this phone starts fresh: announced awards
+    /// (or the next person's first award would never announce), Otto's glow
+    /// start (restarted today), the session still owed a save screen and
+    /// the Home toast, the onboarding resume record, and onboarding's
+    /// hand-off to the setup sheet.
+    ///
+    /// **Not touched, on purpose:** StoreKit and every entitlement or paywall
+    /// flag (a subscription belongs to the Apple ID, not to the account),
+    /// Block and Screen Time state (the device's own authorization), the
+    /// Friends pending-deletion retry, device settings (the Do Not Disturb
+    /// shortcuts, the Watch link, the last sound chosen), the rating-prompt
+    /// cooldown, one-time migrations, and DEBUG switches.
+    static func forgetPersonOnDevice(now: Date = Date(), defaults: UserDefaults = .standard) {
+        AwardsInbox.forgetAnnounced(now: now, in: defaults)
+        defaults.removeObject(forKey: OttoAura.glowStartKey)
+        OttoAura.markGlowStartIfNeeded(now: now, defaults: defaults)
+        PendingSave.clear(in: defaults)
+        SessionDetails.clear(in: defaults)
+        OnboardingResume.clear(from: defaults)
+        defaults.removeObject(forKey: OnboardingHandoff.key)
+    }
+
+    /// How builds before 2026-09-29 deleted an account: stamp `deletedAt` on
+    /// every live user row and sign out, leaving `purgeExpired` to remove the
+    /// rows 30 days later. The app no longer calls it (`deleteAccountNow`
+    /// does); it stays so tests can build the soft-deleted rows an older
+    /// build left on a phone, which `purgeExpired` still clears.
     static func softDeleteCurrentUser(now: Date = Date(), in context: ModelContext) {
         let users = (try? context.fetch(FetchDescriptor<User>())) ?? []
         for user in users where user.deletedAt == nil {
@@ -209,16 +263,28 @@ enum SessionStore {
     /// Hard-deletes Users soft-deleted more than `days` ago and every row FK'd to
     /// them (Preferences, Sessions, MeditationStats). Run on app launch. We store
     /// no raw biometrics, so nothing to delete from HealthKit.
+    ///
+    /// Deletion is immediate since 2026-09-29 (`deleteAccountNow`); this still
+    /// runs for the soft-deleted rows older builds left on phones.
     static func purgeExpired(olderThanDays days: Int = 30, now: Date = Date(), in context: ModelContext) {
         let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: now) ?? now
         let expired = ((try? context.fetch(FetchDescriptor<User>())) ?? [])
             .filter { ($0.deletedAt ?? .distantFuture) <= cutoff }
         guard !expired.isEmpty else { return }
+        hardDelete(users: expired, in: context)
+        try? context.save()
+    }
 
+    /// Deletes `users` and every row keyed to them: their Sessions, those
+    /// sessions' stats, reflections and photos, and their Preferences. The
+    /// one deletion body `purgeExpired` and `deleteAccountNow` share. Does
+    /// not save.
+    private static func hardDelete(users: [User], in context: ModelContext) {
+        guard !users.isEmpty else { return }
         let allStats = (try? context.fetch(FetchDescriptor<MeditationStats>())) ?? []
         let allReflections = (try? context.fetch(FetchDescriptor<SessionReflection>())) ?? []
         let allPhotos = (try? context.fetch(FetchDescriptor<SessionPhoto>())) ?? []
-        for user in expired {
+        for user in users {
             let uid = user.id
             let sessions = (try? context.fetch(FetchDescriptor<Session>(predicate: #Predicate { $0.userID == uid }))) ?? []
             let sessionIDs = Set(sessions.map(\.id))
@@ -237,7 +303,6 @@ enum SessionStore {
             }
             context.delete(user)
         }
-        try? context.save()
     }
 
     /// Sets `onboardingComplete` on the user's Preferences (creating the row if the

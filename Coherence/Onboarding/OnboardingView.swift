@@ -192,7 +192,7 @@ struct OnboardingView: View {
                  .sampleBuild, .proofYourWay, .commitment, .wall, .week,
                  .rating, .watchConnect, .breathe, .sessionResults, .paywall,
                  .watchGate, .watchSetup, .waitlist, .whatsWaiting, .blockIntro,
-                 .auraDemo, .bodyCuriosity, .recovery,
+                 .auraDemo, .bodyCuriosity, .recovery, .hardware,
                  // The old questions after the frequency slider: no screen
                  // asks them while the interview is redone, so a resume
                  // record on one rejoins the flow (`rejoinPoint`).
@@ -809,13 +809,13 @@ struct OnboardingView: View {
         case .bodyCuriosity, .bodyProof, .bodyTracking:
             Color.clear.onAppear { go(rejoinPoint) }
 
-        // No longer on the path (Melvin, 2026-09-14). A tester with no Watch
-        // met "$400" mid-interview and read it as an upsell aimed at someone
-        // else. The screen now lives in the paywall ladder, shown only to a
-        // person who has just declined to pay, where an anchor belongs. The
-        // Step case stays so ONBOARDING_STEP can still jump to it.
+        // No longer on the path (Melvin, 2026-09-14), and since the ladder
+        // lost its hardware rung, nowhere else either. Routed past like the
+        // other cut screens (App Review pass, 2026-09-30): it names Muse and
+        // HeartMath with prices, and an old resume record could still land
+        // on it. The Step case stays for those records.
         case .hardware:
-            HardwareScreen(onContinue: { go(rejoinPoint) })
+            Color.clear.onAppear { go(rejoinPoint) }
 
         // CUT 2026-09-22 (Melvin: "get rid of the watch screen"). A session
         // runs on the phone with or without a Watch since Aziz's valley
@@ -1132,7 +1132,8 @@ struct OnboardingView: View {
     /// the reminder too, whatever button brought the dialog up.
     private func requestNotifications() async -> Bool {
         (try? await UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+            // No `.badge`: 808 never sets one (App Review pass, 2026-09-29).
+            .requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
     /// Records the Apple credential. Finishing happens in `afterSignIn`,

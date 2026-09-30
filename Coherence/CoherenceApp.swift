@@ -28,7 +28,7 @@ struct CoherenceApp: App {
         Persistence.completeRescue(rescued, into: container)
         let setup = ModelContext(container)
         TrackSeeder.seedIfNeeded(in: setup)                     // Phase 5: built-in tracks
-        SessionStore.purgeExpired(in: setup)                    // Phase 7: 30-day account purge
+        SessionStore.purgeExpired(in: setup)                    // accounts older builds soft-deleted (deletion is immediate since 2026-09-29)
         SessionStore.repairOwnership(in: setup)                 // sessions filed under a stray bootstrap row (2026-09-29)
         OttoAura.markGlowStartIfNeeded()                        // Otto's glow counts from 1.1's first launch, at 50
         ScoreMigration.backfillIfNeeded(in: setup)              // v3 score across all history
@@ -102,9 +102,15 @@ struct CoherenceApp: App {
                 // while the app was closed.
                 .task { if FeatureFlags.friends { await community.load() } }
                 // Do Not Disturb that 808 still owes back: a sit that ended
-                // with the phone locked, or iOS closing 808 mid-sit. Only the
-                // foreground can reach Shortcuts, so it is paid here.
+                // with the phone locked, or iOS closing 808 mid-sit. Asked
+                // about with a one-tap alert, never opened by itself (App
+                // Review pass, 2026-09-29).
                 .task { await FocusShortcut.shared.becameActive() }
+                .modifier(FocusRestorePrompt())
+                // The Silence and Restore shortcuts answer here: x-success,
+                // x-error or x-cancel. Only a success counts (App Review
+                // pass, 2026-09-29; see FocusShortcut.handle).
+                .onOpenURL { url in FocusShortcut.shared.handle(url) }
                 // An account deletion whose Friends cleanup could not finish
                 // (no network, no iCloud, at the exact moment somebody left)
                 // retries here until it does. See

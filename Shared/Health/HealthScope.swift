@@ -27,11 +27,13 @@ enum HealthScope {
     /// Watch generates no SDNN sample during a session, so the permission
     /// asked for data 808 never used. `HRVRecorder` and the HRV fields on
     /// `MeditationStats` stay in place, unused.
+    ///
+    /// **No workout READ since 2026-09-29** (App Review 5.1.1(iii), the same
+    /// reason): 808 only SAVES the workouts its own sessions create and never
+    /// reads workout history. The workout session needs workout share plus
+    /// heart-rate read, nothing more.
     static var read: Set<HKObjectType> {
-        [
-            HKQuantityType(.heartRate),
-            HKObjectType.workoutType(),
-        ]
+        [HKQuantityType(.heartRate)]
     }
 
     /// The workout that keeps the Watch measuring, and the mindful minutes a

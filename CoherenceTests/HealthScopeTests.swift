@@ -8,11 +8,11 @@ import HealthKit
 /// silently dropped is a signal that stops arriving with no error anywhere.
 final class HealthScopeTests: XCTestCase {
 
-    func test_readScopeIsExactlyHeartRateAndWorkouts() {
-        XCTAssertEqual(HealthScope.read, [
-            HKQuantityType(.heartRate),
-            HKObjectType.workoutType(),
-        ])
+    /// Heart rate only. Workout READ left on 2026-09-29 (5.1.1(iii)): 808
+    /// saves workouts and never reads one.
+    func test_readScopeIsExactlyHeartRate() {
+        XCTAssertEqual(HealthScope.read, [HKQuantityType(.heartRate)])
+        XCTAssertFalse(HealthScope.read.contains(HKObjectType.workoutType()))
     }
 
     /// HRV left the permission sheet on 2026-09-29 (5.1.1(iii)): nothing

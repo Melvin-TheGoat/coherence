@@ -211,7 +211,7 @@ final class PaywallLadderTests: XCTestCase {
         for word in ["trial", "free", "renews automatically", "cancel"] {
             XCTAssertFalse(terms.lowercased().contains(word), word)
         }
-        XCTAssertNotNil(SubscriptionPlan.lifetime.anchorPrice, "its $199 anchor shows like the others")
+        XCTAssertNil(SubscriptionPlan.lifetime.anchorPrice, "Lifetime never sold at $199")
     }
 
     /// The subscriptions' terms say the trial, the price after it, that it
@@ -354,28 +354,28 @@ final class PaywallLadderTests: XCTestCase {
     /// currency: the live price scaled by the dollar anchor-to-price ratio,
     /// snapped to the live price's own ending.
     func test_theAnchorScalesIntoTheLiveCurrency() throws {
-        let yearly = try XCTUnwrap(SubscriptionPlan.yearly.anchorRatio)
-        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "29.99")!, ratio: yearly),
-                       Decimal(string: "59.99")!, "the dollar case reproduces the cleared $59.99")
-        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "24.99")!, ratio: yearly),
-                       Decimal(string: "49.99")!, "a price with cents keeps its cents")
-        XCTAssertEqual(Store.scaledAnchor(livePrice: 4500, ratio: yearly), 9000,
-                       "a whole price rounds to its own step, not to ¥9,002")
-        XCTAssertEqual(Store.scaledAnchor(livePrice: 2499, ratio: yearly), 4999)
-
         let yearHalf = try XCTUnwrap(SubscriptionPlan.yearHalf.anchorRatio)
         XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "14.99")!, ratio: yearHalf),
                        Decimal(string: "29.99")!)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: 2250, ratio: yearHalf), 4500,
+                       "a whole price rounds to its own step")
         let monthHalf = try XCTUnwrap(SubscriptionPlan.monthHalf.anchorRatio)
         XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "3.99")!, ratio: monthHalf),
                        Decimal(string: "7.99")!)
-        // Lifetime's anchor is a whole $199 beside $99.99, so it stays whole.
-        let lifetime = try XCTUnwrap(SubscriptionPlan.lifetime.anchorRatio)
-        XCTAssertFalse(SubscriptionPlan.lifetime.anchorKeepsCents)
-        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "99.99")!, ratio: lifetime,
-                                          keepsCents: false), 199)
-        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "109.99")!, ratio: lifetime,
-                                          keepsCents: false), 219)
+        XCTAssertEqual(Store.scaledAnchor(livePrice: Decimal(string: "2.99")!, ratio: monthHalf),
+                       Decimal(string: "5.99")!, "a price with cents keeps its cents")
+    }
+
+    /// A struck-through "was" price only where it is a price 808 really
+    /// charges (App Review pass, 2026-09-29): the half-price plans, beside
+    /// the full plan's price. Yearly and Lifetime never sold at $59.99 or
+    /// $199, and a fake reference price is a 5.6 / 3.1.2 rejection.
+    func test_onlyRealPricesAreStruckThrough() {
+        for plan in [SubscriptionPlan.yearly, .yearTrial, .lifetime, .monthly, .monthTrial] {
+            XCTAssertNil(plan.anchorPrice, "\(plan) never sold at a higher price")
+        }
+        XCTAssertEqual(SubscriptionPlan.monthHalf.anchorPrice, SubscriptionPlan.monthly.price)
+        XCTAssertEqual(SubscriptionPlan.yearHalf.anchorPrice, SubscriptionPlan.yearly.price)
     }
 
     /// In dollars, the scaled anchor is exactly the reference price the
@@ -394,15 +394,17 @@ final class PaywallLadderTests: XCTestCase {
     /// beside a euro price.
     func test_theAnchorIsSaidInTheLiveCurrency() {
         let euros = Decimal.FormatStyle.Currency(code: "EUR", locale: Locale(identifier: "de_DE"))
-        let text = Store.formattedAnchor(livePrice: Decimal(string: "29.99")!, plan: .yearly, style: euros)
+        let text = Store.formattedAnchor(livePrice: Decimal(string: "3.99")!, plan: .monthHalf, style: euros)
         XCTAssertNotNil(text)
-        XCTAssertTrue(text?.contains("59,99") == true, text ?? "nil")
+        XCTAssertTrue(text?.contains("7,99") == true, text ?? "nil")
         XCTAssertTrue(text?.contains("€") == true, text ?? "nil")
         XCTAssertFalse(text?.contains("$") == true, text ?? "nil")
 
         let dollars = Decimal.FormatStyle.Currency(code: "USD", locale: Locale(identifier: "en_US"))
-        XCTAssertEqual(Store.formattedAnchor(livePrice: Decimal(string: "29.99")!, plan: .yearly,
-                                             style: dollars), "$59.99")
+        XCTAssertEqual(Store.formattedAnchor(livePrice: Decimal(string: "3.99")!, plan: .monthHalf,
+                                             style: dollars), "$7.99")
+        XCTAssertNil(Store.formattedAnchor(livePrice: Decimal(string: "29.99")!, plan: .yearly,
+                                           style: dollars), "no anchor on Yearly")
     }
 
     /// Monthly sells at its old anchor, so it has none in any currency; and

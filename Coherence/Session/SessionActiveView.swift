@@ -87,6 +87,19 @@ struct SessionActiveView: View {
     }
 
     private var arriving: Bool { Double(elapsed) < Self.arrivalSec }
+
+    /// Block is holding apps as this session runs (Aziz, 2026-09-29: "add
+    /// somewhere that a meditation has to be 5 minutes long to count"). A
+    /// session started from Otto's notification skips the Ready screen, so
+    /// the sit itself has to say it: five minutes is what opens them
+    /// (`Blocker.sessionMinutes`). Read once, when the sit appears.
+    @State private var holdsApps = false
+    private static let opensAppsSec = Blocker.sessionMinutes * 60
+    /// The few seconds after five minutes, when the line comes back to say
+    /// the apps will open.
+    private var fiveMinutesDone: Bool {
+        holdsApps && elapsed >= Self.opensAppsSec && Double(elapsed - Self.opensAppsSec) < Self.arrivalSec
+    }
     /// The clock has run out. Whatever is measuring is wrapping up.
     private var finishing: Bool { plannedDurationSec != nil && displaySeconds == 0 }
 
@@ -134,7 +147,10 @@ struct SessionActiveView: View {
             coordinator.phoneScenePhaseChanged(phase)
             if phase == .active { SitDimmer.dim() } else { SitDimmer.restore() }
         }
-        .onAppear { SitDimmer.dim() }
+        .onAppear {
+            SitDimmer.dim()
+            holdsApps = FeatureFlags.block && !BlockController.shared.holding().isEmpty
+        }
         .onDisappear { SitDimmer.restore() }
     }
 
@@ -186,8 +202,9 @@ struct SessionActiveView: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .position(x: geo.size.width / 2, y: SitLayout.headlineY(in: geo.size, hat: hat))
-                .opacity(arriving || finishing ? 1 : 0)
+                .opacity(arriving || finishing || fiveMinutesDone ? 1 : 0)
                 .animation(.easeInOut(duration: 0.7), value: arriving)
+                .animation(.easeInOut(duration: 0.7), value: fiveMinutesDone)
                 .animation(.easeInOut(duration: 0.7), value: finishing)
 
                 VStack {
@@ -217,11 +234,16 @@ struct SessionActiveView: View {
     }
 
     private var headline: String {
-        finishing ? closingLine : "Let's start meditating"
+        if finishing { return closingLine }
+        if fiveMinutesDone { return "Five minutes done" }
+        return "Let's start meditating"
     }
 
     private var subhead: String {
-        finishing ? "Same time tomorrow?" : "Keep 808 open to ensure you are meditating"
+        if finishing { return "Same time tomorrow?" }
+        if fiveMinutesDone { return "Your apps open when you end" }
+        if holdsApps { return "Meditate \(Blocker.sessionMinutes) minutes to open your apps. Keep 808 open." }
+        return "Keep 808 open to ensure you are meditating"
     }
 
     /// "That's ten minutes." Spelled out because a numeral here would read as

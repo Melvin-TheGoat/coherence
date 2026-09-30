@@ -323,7 +323,7 @@ carry NO trial; the trial lives on the three ladder products.
 | `com.lockout.meditate808.monthly` | Auto-renewable | 1 month | $7.99 | **None.** Remove whatever offer it carries (a 3-day one added for the misread version, or 1.0's 7-day one). Remove the OFFER only, never the product. | Paywall | Yes |
 | `com.lockout.meditate808.yearly` | Auto-renewable | 1 year | $29.99 | **None.** Remove the 3-day offer if one was added. | Paywall | Yes |
 | `com.lockout.meditate808.lifetime` | Non-consumable | n/a | $99.99 | None ("charged today, nothing renews") | Paywall, third card | Yes, if Connect offers it (approved with 1.0); confirm **Cleared for Sale** |
-| `com.lockout.meditate808.monthlytrial` | Auto-renewable | 1 month | $7.99 | **Free trial, 3 days** | **Ladder, rung 1** ("No worries. Try it free first."), the Monthly card after it | **Yes, new** |
+| `com.lockout.meditate808.monthlytrial` | Auto-renewable | 1 month | $7.99 | **Free trial, 3 days** | **Ladder, rung 1** ("No worries. Try it first."), the Monthly card after it | **Yes, new** |
 | `com.lockout.meditate808.yearlytrial` | Auto-renewable | 1 year | $29.99 | **Free trial, 3 days** | **Ladder, rung 1**, the Yearly card after it (preselected, "Best value"); added 2026-09-29, commit 58281f4 | **Yes, new** |
 | `com.lockout.meditate808.monthly50` | Auto-renewable | 1 month | $3.99 | **Free trial, 3 days** | **Ladder, rung 2** ("Then have 808 at half price.") | **Yes, new.** Use the FULL ID: the first one was created as bare `monthly50`, which the app never fetches. Delete that one (never sold, so it is safe) and create this ID. |
 | `com.lockout.meditate808.yearly50` | Auto-renewable | 1 year | $29.99, first year $14.99 | Pay up front | **No screen sells it** | **No** |
@@ -421,7 +421,7 @@ description as above).
   `marketing/appstore/iap/paywall-review.png` is from 2026-09-01** and shows
   the old paywall; re-shoot it from the 1.1 Release build (the valley paywall,
   "Keep Otto glowing.").
-- monthlytrial: rung 1's screen ("No worries. Try it free first.", "Choose
+- monthlytrial: rung 1's screen ("No worries. Try it first.", "Choose
   this plan").
 - yearlytrial: the paywall after taking rung 1, the Monthly and Yearly cards
   both showing the trial, Yearly selected.
@@ -433,7 +433,7 @@ description as above).
   sees rung 1.
 - ~~monthly50: the rung's sheet ("No worries. Have 808 at half price.").~~
   (The misread one-rung title.)
-- ~~monthlytrial: the first rung's sheet ("No worries. Try it free first.").~~
+- ~~monthlytrial: the first rung's sheet ("No worries. Try it first.").~~
   ~~Dormant since 2026-09-29; nothing to shoot.~~ (Not dormant: rung 1 again,
   corrected later on 2026-09-29.)
 
@@ -590,8 +590,9 @@ what they say:
 - **The 10-second rule is disclosed** so a reviewer who locks the phone
   mid-session reads the "won't count" screen as designed, not as a bug.
 - **Friends needs iCloud** and has no posts, comments or messages. The
-  reviewer handle (`@REVIEWER_HANDLE` until the founders create it) gives them
-  a profile to find, request, report and block without a second device.
+  notes explain where Report, Block and Requests live; there is no reviewer
+  test account (Aziz, 2026-09-29), so seeing another person takes a second
+  device on a different iCloud account.
   **Search needs a profile first** (Friends opens on Create your profile
   until one exists), so the notes say to create one before searching. Since
   2026-09-29 Friends opens from a circle on Home (the Shop took its tab), and

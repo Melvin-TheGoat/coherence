@@ -182,13 +182,26 @@ same day, with the code in commits 9ffa513 and 58281f4; the rest stand.)
      product. While an offer stays, Apple's purchase sheet grants a trial the
      paywall never mentions (a 3.1.2 mismatch between the screen and the
      sheet), and the upsell is gone, because every buyer gets the trial.
+     **TIME IT (App Review pass, 2026-09-29).** Removing the offer takes
+     effect at once, for every binary, before 1.1 is reviewed, and the LIVE
+     1.0.x paywall hardcodes "Seven days free" / "Start my free week" gated
+     only on group eligibility (still true, since the new trial products sit
+     in the same group). From the moment the offer goes until 1.1 is out, a
+     1.0 user who taps "Start my free week" is charged at once. So: remove
+     it as the LAST step before pressing Submit, ask for expedited review,
+     and release 1.1 as soon as it is approved.
    - [ ] **CREATE `com.lockout.meditate808.monthlytrial`** in the same group:
      $7.99 a month, introductory offer a **3-day free trial**, display name
-     `Monthly`, description `All of 808, monthly after a free trial.`
+     `Monthly (free trial)`, description `All of 808, monthly after a free trial.`
+     **Not plain `Monthly`** (App Review pass, 2026-09-29): Manage
+     Subscriptions would list two identical "Monthly" rows at $7.99, which
+     in-app purchase review can bounce as duplicates. The paywall's card
+     titles are the app's own and stay "Monthly" / "Yearly".
    - [ ] **CREATE `com.lockout.meditate808.yearlytrial`** in the same group
      (added 2026-09-29, commit 58281f4: rung 1 offers the trial on Yearly
      too): $29.99 a year, introductory offer a **3-day free trial**, display
-     name `Yearly`, description `All of 808, yearly after a free trial.`
+     name `Yearly (free trial)` (not plain `Yearly`, same reason), description
+     `All of 808, yearly after a free trial.`
      Without it, rung 1 falls back to the monthly trial alone.
    - [ ] **(RE)CREATE `com.lockout.meditate808.monthly50`**: $3.99 a month,
      introductory offer a **3-day free trial**, display name `Monthly, half
@@ -534,16 +547,21 @@ order to read it in.
 Under an `## OPEN` heading so `tools/archive.sh` prints them at the end of
 every archive.
 
-- [ ] **R1. Reviewer handle.** [founders: create and insert a reviewer
-  handle] Make a standing Friends account on a spare Apple Account signed
-  in to iCloud, claim a handle, sit a session or two so its practice summary
-  shows something, then replace `@REVIEWER_HANDLE` in the review
-  notes in `marketing/APP_STORE_PASTE.md` with that handle. Keep the account
-  alive through review and accept any request it gets. It needs an active
-  subscription (an offer code or a founder's plan) to get past the paywall
-  to Friends. Also referenced in `APP_STORE.md`, "Review notes".
-- [ ] **R2. BLOCKER (App Review guideline 1.2): reports must reach a
-  person.** Deploy `tools/community-reports.gs` (steps in its header), set
+- [x] **R1. Reviewer handle: NONE, decided 2026-09-29 (Aziz).** No test
+  account: the review notes say where Report, Block and Requests live and
+  that seeing another person takes a second device. Accepted risk: a
+  reviewer may ask for an account to test Friends against. If they do,
+  claim a profile on any iPhone signed in to iCloud (no new Apple Account
+  needed) and reply with its handle.
+- [x] **R2. Reports reach a person: DONE 2026-09-29.** Script rewritten
+  for profile-only reports and email only (no Sheets permission), deployed
+  from Aziz's Google account as "808 friends reports", URL set in
+  `ReportClient.endpoint`, verified with curl (GET answers, a report is
+  accepted and emailed to support@meditate808.com, a wrong token refused).
+  Left: file one report from a Release build on a phone and see the email.
+  Original item:
+- [ ] ~~**R2. BLOCKER (App Review guideline 1.2): reports must reach a
+  person.**~~ Deploy `tools/community-reports.gs` (steps in its header), set
   `ReportClient.endpoint` to its `/exec` URL (a Swift change, not in this
   pass), file one real report from a Release build and confirm the email
   arrives. The Terms (section 6a) say reports reach us and are answered
