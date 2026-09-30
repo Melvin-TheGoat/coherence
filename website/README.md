@@ -59,3 +59,5 @@ Privacy Policy URL `https://meditate808.com/privacy`, Support URL
 The listing's Terms of Use link is `https://meditate808.com/terms`.
 Cloudflare Pages serves `privacy.html` and `terms.html` at the paths without
 the extension; the `.html` forms keep working.
+
+**Changing a screenshot in `img/app/`: bump its `?v=` tag in `index.html`.** Images are cached for four hours without a recheck, so a browser that visited before keeps showing the old picture after a redeploy (2026-09-29).
