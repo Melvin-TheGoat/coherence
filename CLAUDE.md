@@ -6577,8 +6577,12 @@ change at all". No price, plan, trial length, product or ladder step moved.
 - Simulator defaults: write them with `xcrun simctl spawn booted defaults
   write <container>/Library/Preferences/<bundle id>`; a host-side plist edit
   does not reach the running app.
-- Open, the founders': the science page's heart section (explained to Aziz),
-  the university logos, the celebrity faces, the Block demo video.
+- **The science page's "And the heart" section is cut** (Aziz, same day):
+  the "48% fewer deaths, heart attacks and strokes" trial read as an implied
+  cardiovascular benefit in an app that reads heart rate. Refs 9 and 10 went
+  with it; the reason is in SCIENCE.md's citation comment.
+- Open, the founders': the university logos, the celebrity faces, the Block
+  demo video.
 
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 

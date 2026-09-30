@@ -47,25 +47,6 @@ Slow breathing, under ten breaths a minute, is well studied. Reviews and meta-an
 increased **parasympathetic activity and relaxation**, with meaningful reductions in stress,
 anxiety, depression and anger.<sup>[6,7,8]</sup>
 
-## And the heart
-
-The American Heart Association has looked at this question directly. Its scientific statement
-concludes that meditation **may be considered as an addition to standard care** for reducing
-cardiovascular risk, while saying plainly that the overall quality and quantity of the evidence
-are modest, and that it is an addition and never a replacement for the treatment your doctor
-prescribes.<sup>[9]</sup>
-
-The most cited long-term trial, which had nothing to do with 808, randomized 201 Black adults who
-already had coronary heart disease to Transcendental Meditation or a health education class, and
-followed them a median of 5.4 years. The researchers reported that the meditation group had
-**48% fewer deaths, heart attacks and strokes** than the health education group.<sup>[10]</sup>
-That is their result, and we are not going to oversell it. The trial was run by the university
-institute that teaches the technique, an earlier version of the paper was withdrawn by
-*Archives of Internal Medicine* before being reanalyzed and published elsewhere, and it studied
-one technique in one population that was already ill. It is a reason researchers take the
-practice seriously. It is not a finding about 808 and not a promise about your heart: 808
-measures nothing cardiovascular, and it is no substitute for the care your doctor provides.
-
 ## What none of this proves
 
 Every study cited here is about meditation, or about slow breathing, or about measuring
@@ -104,15 +85,13 @@ nothing here is medical advice.
 8. Lehrer P, Kaur K, Sharma A, et al. (2020). Heart Rate Variability Biofeedback Improves
    Emotional and Physical Health and Performance: A Systematic Review and Meta-Analysis.
    *Applied Psychophysiology and Biofeedback*, 45(3):109–129. doi:10.1007/s10484-020-09466-z
-9. Levine GN, Lange RA, Bairey-Merz CN, et al. (2017). Meditation and Cardiovascular Risk
-   Reduction: A Scientific Statement From the American Heart Association. *Journal of the
-   American Heart Association*, 6(10):e002218. doi:10.1161/JAHA.117.002218
-10. Schneider RH, Grim CE, Rainforth MV, et al. (2012). Stress Reduction in the Secondary
-    Prevention of Cardiovascular Disease: Randomized, Controlled Trial of Transcendental
-    Meditation and Health Education in Blacks. *Circulation: Cardiovascular Quality and
-    Outcomes*, 5(6):750–758. doi:10.1161/CIRCOUTCOMES.112.967406
 
 <!-- Citation integrity (read before editing):
+- "And the heart" (the AHA statement and the Schneider 2012 TM trial, "48% fewer deaths,
+  heart attacks and strokes", refs 9 and 10) was CUT 2026-09-30 (Aziz), for App Review 1.4.1:
+  inside an app that reads heart rate, a cardiovascular outcome reads as an implied benefit,
+  and the trial itself is weak (run by the TM institute, an earlier version withdrawn). Do not
+  bring a cardiovascular outcome back to this page.
 - Refs 1–3 (theta/EEG) and 4 (wrist accelerometry respiration) verified against primary
   sources 2026-07-20; refs 5–8 from the 2026-07-14 pass.
 - Hughes, Liu & Zheng 2020 (sensor placement and posture) was dropped with the belly-breathing
