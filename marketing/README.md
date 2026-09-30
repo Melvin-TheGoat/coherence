@@ -2,22 +2,62 @@
 
 ## `appstore/`
 
-The eight iPhone 6.9" screenshots (1320x2868) for the App Store listing. Real
-screens captured on the iPhone 17 Pro Max simulator in dark theme with a 9:41
-status bar, then framed by `tools/store_shots.swift`.
+The eight iPhone 6.9" screenshots (1320x2868) for the App Store listing, in
+upload order: `01-otto` ... `08-awards`. Real screens captured on the iPhone 17
+Pro Max simulator with a 9:41 status bar, then framed by
+`tools/store_shots.swift`: the valley's daytime sky easing into cream, the far
+ridges behind the phone, SF Pro Rounded captions in the sky's ink, one warm sun
+haze as the only accent, and a drawn generic dark bezel. Captions and order
+live in `APP_STORE_PASTE.md` > Screenshots. Re-shot for 1.1 on 2026-09-29.
 
-To regenerate after a UI change:
+To regenerate after a UI change (every hook below is DEBUG only):
 
-1. Build and install on the Pro Max simulator, seeding demo data with
-   `SIMCTL_CHILD_SKIP_ONBOARDING=1` plus `PREVIEW_HISTORY=1` (three weeks of
-   history) and `PREVIEW_RESULTS=1` (the scored session the hero shot uses).
-2. `xcrun simctl io <udid> screenshot raw.png` on each screen.
-3. `swiftc -O -o /tmp/store_shots tools/store_shots.swift`
-4. `/tmp/store_shots raw.png out.png "Headline|second line" "Subhead"`
+1. Make your OWN simulator and give it the status bar:
+   `xcrun simctl create "808-store-shots" "iPhone 17 Pro Max"`, boot it, then
+   `xcrun simctl status_bar <udid> override --time "9:41" --batteryState discharging --batteryLevel 100 --cellularBars 4 --wifiBars 3 --dataNetwork wifi`
+   (`discharging` at 100: `charged` draws a green battery with a bolt).
+2. Build Debug for it (`xcodebuild -scheme Coherence -configuration Debug
+   -destination 'id=<udid>' -derivedDataPath /tmp/808-shots build`) and
+   install. On a FRESH install, before the first launch, mark the invite award
+   as seen so its unlock screen does not cover every shot, and push the rating
+   prompt's cooldown so it does not open over the results screen:
+   `xcrun simctl spawn <udid> defaults write <data container>/Library/Preferences/com.lockout.meditate808 awardsAnnounced.v1 -array friendBrought`
+   and the same for `reviewPrompt.lastAskedAt -date "<today> 12:00:00 +0000"`
+   (`xcrun simctl get_app_container <udid> com.lockout.meditate808 data`
+   gives the container).
+3. Every launch carries `SIMCTL_CHILD_` versions of: `SKIP_ONBOARDING=1`,
+   `DEMO_NAME=Maya`, `DEMO_USERNAME=maya` (never a founder's name),
+   `VALLEY_HOUR=9.7` (a morning sky and "Good Morning" to match 9:41),
+   `PREVIEW_PAID=1` (the curves unlocked) and `STORE_SHOTS=1` (hides the Block
+   and Friends test-mode cards, switches Otto's chat off as Release has it, and
+   seeds non-founder friends). Add `PREVIEW_HISTORY=1` for everything except
+   the Block shot.
+4. Per shot, in this order (the Block shot needs a day with no session, and
+   `PREVIEW_RESULTS` inserts a session every launch, so it goes last):
+   - 02 Block, FIRST, without `PREVIEW_HISTORY`: `PREVIEW_BLOCK=full PREVIEW_TAB=block`
+     (Mindful day holding, plus Wind down and Weekend unplug, whose "Waiting"
+     agrees with a weekday 9:41). The first launch of a fresh install shows
+     the invite-reward sheet once; launch again.
+   - 01 Otto: `OTTO_AURA=100`
+   - 03 Shop: `PREVIEW_TAB=shop PREVIEW_HAT=sunhat` (the hat is on him AND its
+     card is selected, so the button reads "Buy for 60 points")
+   - 04 Sounds: `PREVIEW_SETUP=sound` (the Ready screen opened on its sound list)
+   - 05 Profile: `PREVIEW_TAB=profile`
+   - 07 Friends: `PREVIEW_TAB=friends` (the cover Home's Friends circle opens)
+   - 08 Awards: `PREVIEW_TAB=profile PREVIEW_AWARDS=1`
+   - 06 Watch results, LAST: `PREVIEW_RESULTS=1`
+5. Wait about ten seconds, then `xcrun simctl io <udid> screenshot raw.png`.
+   **The clouds drift on the wall clock and birds fly through at random**, so
+   take a burst (a frame every 4 to 6 seconds for two minutes) and keep a
+   frame with nothing crossing the status bar or the headline.
+6. `swiftc -O -o /tmp/store_shots tools/store_shots.swift`, then
+   `/tmp/store_shots raw.png out.png "Headline|second line" "Subhead"`.
+   A `|` forces a line break in either caption; without one the subhead wraps
+   evenly. It refuses a caption carrying an em or en dash, and writes RGB with
+   no alpha channel.
 
-Captions live in `APP_STORE.md` and must name their subject: a store screenshot
-is met with no context at all, which is the same rule the onboarding screens
-follow.
+Captions must name their subject: a store screenshot is met with no context at
+all, which is the same rule the onboarding screens follow.
 
 **Uploading to App Store Connect, learned 2026-09-12:** Media Manager keeps
 screenshots in the order they FINISH uploading, not the order they were
@@ -91,6 +131,19 @@ for f in marketing/appstore/*.png; do
   sips --cropToHeightWidth 2778 1284 "marketing/appstore/65/$n" >/dev/null
 done
 ```
+
+## `appstore/watch/`
+
+The two Apple Watch screenshots, **422 x 514**, the Apple Watch Ultra 3 size
+(the largest App Store Connect takes): `01-begin` (start screen) and
+`02-measuring` (a live session). No frame. Captured from a watchOS simulator
+(`xcrun simctl create ... "Apple Watch Ultra 3 (49mm)"`), standalone, with the
+Watch app built Debug and launched with `SIMCTL_CHILD_PREVIEW_WATCH_SCREEN=start`
+or `=live`: that hook skips the HealthKit prompt and the phone's onboarding flag
+(neither can be answered without a tap), and `live` shows the live screen at
+7:12 with no workout running. The watchOS simulator refuses a status-bar
+override, so the corner clock is the real time. The simulator writes RGBA;
+flatten onto black before uploading.
 
 ## `appstore/iap/`
 

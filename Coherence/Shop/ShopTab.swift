@@ -29,7 +29,7 @@ struct ShopTab: View {
     /// Whichever card was last tapped, shown on Otto in place of the worn
     /// hat until it is bought, worn, or the screen is left. Nil means
     /// "whatever is actually worn."
-    @State private var previewing: String?
+    @State private var previewing: String? = OttoAuraFigure.previewHat
     @StateObject private var rig = OttoRigHolder()
     @ObservedObject private var block = BlockController.shared
 

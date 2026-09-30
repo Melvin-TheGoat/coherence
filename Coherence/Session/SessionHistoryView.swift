@@ -52,6 +52,10 @@ struct ProfileTab: View {
     @State private var pickingWeek = false
     /// Which way the next week arrives from. Set BEFORE the week changes.
     @State private var back = false
+    #if DEBUG
+    /// `PREVIEW_AWARDS=1` opens the full awards shelf on launch (store shots).
+    @State private var previewAwards = ProcessInfo.processInfo.environment["PREVIEW_AWARDS"] == "1"
+    #endif
 
 
     private let calendar = Calendar.current
@@ -105,6 +109,9 @@ struct ProfileTab: View {
                 .safeAreaPadding(.bottom, tabBarClearance)
             }
             .navigationBarHidden(true)
+            #if DEBUG
+            .navigationDestination(isPresented: $previewAwards) { AwardsView(earned: awardProgress) }
+            #endif
         }
         // The page settles rather than appearing all at once: the valley is
         // already there when the tab opens and the five cards come up out of

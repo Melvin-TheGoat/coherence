@@ -101,6 +101,20 @@ final class BlockController: ObservableObject {
               let i = state.blockers.firstIndex(where: { $0.kind == .mindfulDay }) else { return }
         state.blockers[i].hasApps = true
         state.blockers[i].isOn = true
+        // `PREVIEW_BLOCK=full` (store shots) adds Wind down and a weekend
+        // blocker, switched on: neither window is open on a weekday morning,
+        // so their "Waiting" agrees with a 9:41 status bar.
+        guard preview == "full" else { return }
+        if !state.blockers.contains(where: { $0.kind == .windDown }) {
+            var extra = Blocker.preset(.windDown)
+            extra.hasApps = true
+            extra.isOn = true
+            state.blockers.append(extra)
+        }
+        if !state.blockers.contains(where: { $0.kind == .custom }) {
+            state.blockers.append(Blocker(kind: .custom, name: "Weekend unplug", isOn: true,
+                                          weekdays: [1, 7], hasApps: true, symbol: "leaf.fill"))
+        }
     }
     #endif
 

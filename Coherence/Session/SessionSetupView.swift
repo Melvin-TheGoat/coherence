@@ -65,7 +65,11 @@ struct SessionSetupView: View {
     /// Done swaps it back. A sheet would slide a second surface over the
     /// scene and make it two screens, which is exactly the settings-panel
     /// feeling Aziz rejected.
+    #if DEBUG
+    @State private var choosingSound = ProcessInfo.processInfo.environment["PREVIEW_SETUP"] == "sound"
+    #else
     @State private var choosingSound = false
+    #endif
 
     /// How this sit is kept (Melvin, 2026-09-27): on the phone, unmeasured,
     /// or measured by the Watch. Remembered, like the sound. The third card,

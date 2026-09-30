@@ -250,9 +250,11 @@ enum DemoCommunity {
                                         displayName: env["DEMO_NAME"] ?? "Aziz")
         }
 
+        // STORE_SHOTS=1: no founder's name in a store screenshot.
+        let shots = StoreShots.on
         db.user = "_demo_melvin"
         let melvin = CommunityStore(database: db)
-        try? await melvin.claimUsername("melvin", displayName: "Melvin")
+        try? await melvin.claimUsername(shots ? "priya" : "melvin", displayName: shots ? "Priya" : "Melvin")
         try? await melvin.markFirstSession(at: Date().addingTimeInterval(-86_400 * 40))
         try? await melvin.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
         // How often Melvin meditates, so the friends list and his page have
@@ -320,6 +322,34 @@ enum DemoCommunity {
                                       ]),
                                       practicedAt: Date().addingTimeInterval(-86_400 * 2),
                                       title: "Morning session", sound: "Silence"))
+        // STORE_SHOTS=1: six more friends, so the list reads as a circle.
+        if shots {
+            let more: [(String, String, String, PracticeStats)] = [
+                ("_demo_theo", "theo", "Theo", .init(sessions7d: 7, minutes7d: 118, currentStreak: 21,
+                                                     totalSessions: 64, lastSessionAt: Date().addingTimeInterval(-5_400))),
+                ("_demo_ana", "ana.m", "Ana", .init(sessions7d: 5, minutes7d: 70, currentStreak: 5,
+                                                   totalSessions: 23, lastSessionAt: Date().addingTimeInterval(-10_800))),
+                ("_demo_dan", "dan.r", "Daniel", .init(sessions7d: 3, minutes7d: 36, currentStreak: 2,
+                                                       totalSessions: 12, lastSessionAt: Date().addingTimeInterval(-86_400))),
+                ("_demo_jonas", "jonas", "Jonas", .init(sessions7d: 6, minutes7d: 95, currentStreak: 12,
+                                                       totalSessions: 48, lastSessionAt: Date().addingTimeInterval(-3_000))),
+                ("_demo_mei", "mei.l", "Mei", .init(sessions7d: 4, minutes7d: 52, currentStreak: 4,
+                                                   totalSessions: 19, lastSessionAt: Date().addingTimeInterval(-14_400))),
+                ("_demo_noah", "noah.b", "Noah", .init(sessions7d: 2, minutes7d: 25, currentStreak: 1,
+                                                      totalSessions: 7, lastSessionAt: Date().addingTimeInterval(-20_000))),
+            ]
+            for (user, handle, name, stats) in more {
+                db.user = user
+                let friend = CommunityStore(database: db)
+                try? await friend.claimUsername(handle, displayName: name)
+                try? await friend.markFirstSession(at: Date().addingTimeInterval(-86_400 * 30))
+                try? await friend.sendRequest(to: CommunityNames.profile(user: "_demo_me"))
+                try? await friend.updatePracticeStats(stats)
+                db.user = "_demo_me"
+                try? await me.accept(CommunityNames.profile(user: user))
+            }
+            db.user = "_demo_me"
+        }
         return me
     }
 }

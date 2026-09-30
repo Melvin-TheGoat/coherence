@@ -36,7 +36,7 @@ enum FeatureFlags {
 
     static var otto: Bool {
         #if DEBUG
-        return true
+        return !StoreShots.on
         #else
         return ottoInRelease
         #endif
@@ -76,3 +76,13 @@ enum FeatureFlags {
         friends ? [] : ["friendBrought"]
     }
 }
+
+#if DEBUG
+/// `STORE_SHOTS=1` (simulator, DEBUG only): hides the development-only
+/// test-mode card on the Block tab and the test-mode pill on Friends, and
+/// switches Otto's chat off as Release has it, so App Store screenshots show
+/// the app the way a customer sees it (2026-09-29).
+enum StoreShots {
+    static let on = ProcessInfo.processInfo.environment["STORE_SHOTS"] == "1"
+}
+#endif

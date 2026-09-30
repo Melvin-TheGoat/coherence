@@ -42,10 +42,11 @@ enum DemoData {
         }
         let depth = (0..<n).map { _ in 0.08 }
 
-        // Pinned to mid-afternoon rather than "now": the store slides show
-        // this session twice, and a launch-time stamp had slide 1 saying
-        // 3:24 PM while slide 2 said 1:34 AM. Screenshots must agree.
-        let at = Calendar.current.date(bySettingHour: 15, minute: 24, second: 0,
+        // Pinned rather than "now": the store slides show this session twice,
+        // and a launch-time stamp had slide 1 saying 3:24 PM while slide 2
+        // said 1:34 AM. Screenshots must agree. Morning (2026-09-29), so it
+        // sits before the store shots' 9:41 status bar.
+        let at = Calendar.current.date(bySettingHour: 8, minute: 24, second: 0,
                                        of: Date()) ?? Date()
         let session = Session(mode: "nature", bellyBreathing: true,
                               frequencyID: "rain", startedAt: at, durationSec: 600)

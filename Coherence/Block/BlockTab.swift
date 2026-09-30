@@ -41,7 +41,7 @@ struct BlockTab: View {
                     band(top: top)
                     VStack(alignment: .leading, spacing: 14) {
                         #if DEBUG
-                        testCard
+                        if !StoreShots.on { testCard }
                         #endif
                         if !block.authorized { accessCard }
                         if let problem = block.problem { noticeCard(problem, settings: false) }

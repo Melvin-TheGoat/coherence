@@ -108,6 +108,16 @@ final class WatchSessionManager: NSObject, ObservableObject {
         authorized = workout.isWorkoutAuthorized
         workout.onFailure = { [weak self] in self?.workoutFailed() }
         activate()
+        #if DEBUG
+        // PREVIEW_WATCH_SCREEN=start|live (simulator, store shots): past the
+        // HealthKit prompt and the phone's onboarding flag, and for `live`
+        // the live screen at 7:12 with no workout running.
+        if let screen = ProcessInfo.processInfo.environment["PREVIEW_WATCH_SCREEN"] {
+            authorized = true
+            phoneOnboarded = true
+            if screen == "live" { phase = .running; elapsed = 7 * 60 + 12 }
+        }
+        #endif
     }
 
     private func activate() {

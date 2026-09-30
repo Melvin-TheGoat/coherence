@@ -378,7 +378,7 @@ struct FriendsHomeView: View {
                     band(top: top)
                     VStack(alignment: .leading, spacing: 14) {
                         #if DEBUG
-                        if model.testMode { testModePill }
+                        if model.testMode && !StoreShots.on { testModePill }
                         #endif
                         searchField
                         if searched { searchResult }

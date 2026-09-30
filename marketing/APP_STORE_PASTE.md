@@ -237,34 +237,52 @@ We also refined how an Apple Watch session's score adds up, so past scores may r
 
 ## Screenshots
 
-**The committed sets show the 1.0 app and must be re-shot from a Release 1.1
-build before submitting** (`RELEASE_CHECKLIST.md`, item R6). They
-carry the deleted dark theme, the retired flower mark, the Search tab, a
-seventeen-award shelf and Watch-only copy.
+**Re-shot for 1.1 on 2026-09-29** into `marketing/appstore/` (`01-otto.png`
+... `08-awards.png`, the 6.5 inch copies in `appstore/65/`, the Watch pair in
+`appstore/watch/`). Framed by `tools/store_shots.swift` in the valley's
+daytime sky, SF Pro Rounded captions, a drawn generic bezel. Captured on the
+iPhone 17 Pro Max simulator from a Debug build with `STORE_SHOTS=1`, which
+hides the development-only test-mode cards and switches Otto's chat off as
+Release has it; how to regenerate is in `marketing/README.md`.
 
-**iPhone 6.9 inch (required), proposed order and captions for the re-shoot.**
-The first three appear in search results, so they carry the argument: Block
-(the app's primary purpose for Family Controls), the companion, the practice.
-**Revised 2026-09-29 now that Block and the Shop ship.** The shield in shot 1
-can only be captured on a phone (the simulator cannot draw one).
+**iPhone 6.9 inch (required). The listing leads with Otto, not Block**
+(Melvin, 2026-09-29: "Youre focusing too much on the blocking aspect, thats
+just one feature"). Upload in this order:
+
+| # | File | Screen | Headline | Subhead |
+|---|---|---|---|---|
+| 1 | 01-otto | Home, Otto glowing at 100%, 7-day streak | Meditate consistently with Otto | He glows brighter every day you do |
+| 2 | 02-block | Block tab: Mindful day holding, Wind down, Weekend unplug | Otto blocks your apps until you meditate | Pick the apps and the hours. Meditate and they open. |
+| 3 | 03-shop | Shop, Otto trying on the Straw Sun Hat | Collect points, buy him hats | Every minute you meditate earns a point |
+| 4 | 04-sounds | The plus: the Ready screen's sound list | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
+| 5 | 05-profile | Profile: streak, stats, your minutes | Every day adds up | Your streak and your minutes at a glance |
+| 6 | 06-watch | A measured Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
+| 7 | 07-friends | Friends list, eight friends | Meditate with friends | See how often your friends meditate each week |
+| 8 | 08-awards | The awards shelf, 30 of 58 | More than fifty awards | For showing up, going longer and trying new ways in |
+
+**Superseded 2026-09-29 (evening), kept for the record:** the morning's
+Block-first order below.
 
 | # | Screen | Headline | Subhead |
 |---|---|---|---|
-| 1 | Block tab, or a held app's shield | Meditate first, then scroll | 808 holds the apps you choose until you've meditated |
-| 2 | Home, Otto glowing, streak | Meet Otto | He glows brighter every day you meditate |
-| 3 | The plus: Ready screen with sounds | Meditate your way | Silence, nature, tones, a guided journey or your own audio |
-| 4 | Shop, Otto in a hat | Dress Otto up | Every minute you meditate earns points for hats |
-| 5 | Home: this week and streak | Every day adds up | Your streak and your week at a glance |
-| 6 | A Watch session's results | Wear an Apple Watch for more | Heart rate, stillness and breathing, after each session |
-| 7 | Friends list | Meditate with friends | See how often your friends sit each week |
-| 8 | Awards shelf | More than fifty awards | For showing up, going longer and trying new ways in |
+| ~~1~~ | ~~Block tab, or a held app's shield~~ | ~~Meditate first, then scroll~~ | ~~808 holds the apps you choose until you've meditated~~ |
+| ~~2~~ | ~~Home, Otto glowing, streak~~ | ~~Meet Otto~~ | ~~He glows brighter every day you meditate~~ |
+| ~~3~~ | ~~The plus: Ready screen with sounds~~ | ~~Meditate your way~~ | ~~Silence, nature, tones, a guided journey or your own audio~~ |
+| ~~4~~ | ~~Shop, Otto in a hat~~ | ~~Dress Otto up~~ | ~~Every minute you meditate earns points for hats~~ |
+| ~~5~~ | ~~Home: this week and streak~~ | ~~Every day adds up~~ | ~~Your streak and your week at a glance~~ |
+| ~~6~~ | ~~A Watch session's results~~ | ~~Wear an Apple Watch for more~~ | ~~Heart rate, stillness and breathing, after each session~~ |
+| ~~7~~ | ~~Friends list~~ | ~~Meditate with friends~~ | ~~See how often your friends sit each week~~ |
+| ~~8~~ | ~~Awards shelf~~ | ~~More than fifty awards~~ | ~~For showing up, going longer and trying new ways in~~ |
 
-The morning's order (Otto, Ready, week, Friends, Watch, awards, Guide, Record
-one) is superseded. Guide and Record one stay in the description.
+The order before that (Otto, Ready, week, Friends, Watch, awards, Guide,
+Record one) was superseded earlier the same day. Guide and Record one stay in
+the description.
 
-**Apple Watch (required, we ship a Watch app)**: re-shoot both from the
-current Watch app (start screen, live session) into
-`marketing/appstore/watch/`.
+**Apple Watch (required, we ship a Watch app)**: `appstore/watch/01-begin.png`
+(start screen) and `02-measuring.png` (a live session), both 422 x 514, the
+Apple Watch Ultra 3 size, which is the largest App Store Connect takes. The
+watchOS simulator will not override its clock, so the corner shows whatever
+time they were captured at.
 
 No iPad set: the app is iPhone and Watch only (`TARGETED_DEVICE_FAMILY: 1`).
 

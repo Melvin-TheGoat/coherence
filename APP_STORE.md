@@ -215,11 +215,10 @@ a 2.3.7 look. Do not add "Apple Watch" or any other company's mark.
 
 ## Screenshots (6.9" required, 1320x2868)
 
-**The committed set at `marketing/appstore/` is the 1.0 app and must be
-re-shot from a Release 1.1 build** (`RELEASE_CHECKLIST.md`, item R6). It shows
-the deleted dark theme, the retired flower mark, the Search tab, a
-seventeen-award shelf and Watch-only captions ("Your Apple Watch knows"). The
-proposed 1.1 order and captions are in the paste sheet.
+**Re-shot for 1.1 on 2026-09-29** (`RELEASE_CHECKLIST.md`, item R6): the
+committed set at `marketing/appstore/` is now `01-otto` ... `08-awards`, led by
+Otto rather than Block, in the valley's light frame. The order and captions are
+in the paste sheet; how to regenerate is in `marketing/README.md`.
 
 `tools/store_shots.swift` composes the frames. Captions name their subject per
 the standing rule. The 1.0 table below is kept for the record only.

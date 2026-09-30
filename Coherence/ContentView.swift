@@ -478,8 +478,9 @@ struct ContentView: View {
                 sheet = .results(DemoData.seedResults(in: context))
             }
             // PREVIEW_SETUP=1 opens the Ready screen, so its layout can be
-            // checked on any simulator without tapping the plus.
-            if ProcessInfo.processInfo.environment["PREVIEW_SETUP"] == "1", sheet == nil {
+            // checked on any simulator without tapping the plus; `=sound`
+            // opens it on the sound list.
+            if ["1", "sound"].contains(ProcessInfo.processInfo.environment["PREVIEW_SETUP"]), sheet == nil {
                 sheet = .setup
             }
             // PREVIEW_AWARD=<award id> (e.g. streak-3) announces that award,
@@ -531,7 +532,10 @@ struct ContentView: View {
                 switch which {
                 case "block": tab = FeatureFlags.block ? .block : .guide
                 case "guide": tab = .guide
-                case "friends", "search": tab = .friends
+                // With the Shop in the bar, Friends is the cover its Home
+                // circle opens, so the preview opens that too.
+                case "friends", "search":
+                    if FeatureFlags.shop { if sheet == nil { sheet = .friends } } else { tab = .friends }
                 case "store", "shop": tab = FeatureFlags.shop ? .store : .home
                 case "profile": tab = .profile
                 default: tab = .home
@@ -1306,7 +1310,13 @@ struct ContentView: View {
 
     private var greeting: String {
         let base: String
-        switch Calendar.current.component(.hour, from: Date()) {
+        var hour = Calendar.current.component(.hour, from: Date())
+        #if DEBUG
+        // VALLEY_HOUR (store shots) sets the greeting's hour too, so the
+        // words agree with the sky and the 9:41 status bar.
+        if let forced = ProcessInfo.processInfo.environment["VALLEY_HOUR"].flatMap(Double.init) { hour = Int(forced) }
+        #endif
+        switch hour {
         // Title case, all four (Melvin, 2026-09-26: "capitalize Night").
         case 5..<12: base = "Good Morning"
         case 12..<17: base = "Good Afternoon"
