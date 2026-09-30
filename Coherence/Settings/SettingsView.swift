@@ -540,7 +540,7 @@ private struct SettingsForm: View {
                     // here, beside the policy that describes them. On by
                     // default, which is what every earlier install did.
                     row(icon: "chart.bar", title: "Share usage analytics",
-                        subtitle: "Anonymous app usage, never your health data") {
+                        subtitle: "Pseudonymous app usage, never your health data") {
                         Toggle("", isOn: Binding(
                             get: { shareAnalytics },
                             set: { on in

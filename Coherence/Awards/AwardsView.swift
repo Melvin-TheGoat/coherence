@@ -231,6 +231,11 @@ struct AwardUnlockView: View {
     /// Settings toggle now governs. The Watch plays none at all.
     @Query private var preferences: [Preferences]
     @State private var appeared = false
+    /// Where the award's words end, measured, so the badge never lands on
+    /// them (App Review pass, 2026-09-30: on an iPhone SE, and on an iPad
+    /// running 808 in its iPhone window, the badge covered lines 2 to 4 of
+    /// "The first step", the award every new account earns).
+    @State private var textBottom: CGFloat = 0
 
     /// In the valley (Aziz, 2026-09-22, `mockups/after-valley.html`): the
     /// award hangs in the sky in Otto's aura light, and he waves up at it
@@ -242,7 +247,14 @@ struct AwardUnlockView: View {
             // sky line (`SitLayout.skyTop`, roughly where the island stops)
             // places the words instead, as it does on the sit screen.
             let textTop = SitLayout.skyTop(in: geo.size) + 22
-            let badgeY = SitLayout.ottoTop(in: geo.size) - 88
+            // The badge sits between the words and Otto's head: at its usual
+            // place when there is room, pushed below the words when there is
+            // not, and smaller when even that would reach his head.
+            let ottoTop = SitLayout.ottoTop(in: geo.size)
+            let gap: CGFloat = 14
+            let room = max(0, ottoTop - 10 - (textBottom + gap))
+            let badge = min(118, max(64, room))
+            let badgeY = max(ottoTop - 88, textBottom + gap + badge / 2)
             ZStack {
                 ValleyScene(progress: 0, pose: .greeting, clock: true)
                 VStack(spacing: 7) {
@@ -260,12 +272,15 @@ struct AwardUnlockView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.horizontal, 30)
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named("awardUnlock")).maxY } action: {
+                    textBottom = $0
+                }
                 .opacity(appeared ? 1 : 0)
                 .frame(width: geo.size.width)
                 .frame(maxHeight: .infinity, alignment: .top)
                 .padding(.top, textTop)
 
-                AwardBadge(award: item.award, earned: true, size: 118)
+                AwardBadge(award: item.award, earned: true, size: badge)
                     .shadow(color: AppColor.auraGlow.opacity(0.95), radius: 28)
                     .scaleEffect(appeared ? 1 : 0.6)
                     .opacity(appeared ? 1 : 0)
@@ -280,6 +295,7 @@ struct AwardUnlockView: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
+            .coordinateSpace(name: "awardUnlock")
         }
         .ignoresSafeArea()
         .onAppear {

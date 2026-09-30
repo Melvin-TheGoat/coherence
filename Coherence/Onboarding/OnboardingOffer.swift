@@ -231,7 +231,9 @@ enum SubscriptionPlan: String, CaseIterable, Identifiable {
         // $29.99 over 12 months, and under a third of the monthly plan.
         case .yearly:   return "$2.50 a month"
         // $99.99 against $7.99 a month is 12.5 months.
-        case .lifetime: return "A year of monthly, then never again"
+        // "About": 12 months of Monthly is $95.88, not $99.99 (App Review
+        // pass, 2026-09-30). Copy only; no price changed.
+        case .lifetime: return "About a year of monthly, then never again"
         // $14.99 over 12 months, the same arithmetic as the year above it.
         case .yearHalf: return "$1.25 a month for the first year"
         case .monthTrial: return "Nothing to pay today"

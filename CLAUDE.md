@@ -6581,6 +6581,15 @@ change at all". No price, plan, trial length, product or ladder step moved.
   the "48% fewer deaths, heart attacks and strokes" trial read as an implied
   cardiovascular benefit in an app that reads heart rate. Refs 9 and 10 went
   with it; the reason is in SCIENCE.md's citation comment.
+- **Third pass (same day):** the award unlock screen measures where its
+  words end and keeps the badge below them, shrinking it on short screens
+  (on an iPhone SE, and on an iPad running 808 in its iPhone window, the
+  badge covered "The first step"'s text). **App Review tests iPhone apps on
+  iPad: check new full-screen layouts at 375x667.** The Settings analytics
+  subtitle says "Pseudonymous", matching the policy; Lifetime's line says
+  "About a year of monthly" ($95.88 vs $99.99). The review notes now say
+  808 briefly opens Shortcuts at a session's end, what the shield does
+  without notifications, and that recorded sessions earn no points.
 - Open, the founders': the university logos, the celebrity faces, the Block
   demo video.
 

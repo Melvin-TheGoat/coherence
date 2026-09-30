@@ -281,8 +281,8 @@ final class PaywallLadderTests: XCTestCase {
         XCTAssertTrue(SubscriptionPlan.yearly.note?.contains("$2.50") == true)
         // "less than one coffee" has to actually be a small number
         XCTAssertLessThan(yearly / 12, 4.0, "the coffee claim stopped being true")
-        // "A year of monthly": 99.99 / 7.99 is 12.5 months, a year rounded the
-        // honest direction (claiming less than it is, never more).
+        // "About a year of monthly": 99.99 / 7.99 is 12.5 months, so "about"
+        // (a flat "a year" was $95.88 against $99.99).
         XCTAssertEqual(lifetime / monthly, 12.5, accuracy: 0.2)
         XCTAssertGreaterThanOrEqual(lifetime / monthly, 12,
                                     "the note says a year; the ratio fell under one")
