@@ -6619,6 +6619,18 @@ change at all". No price, plan, trial length, product or ladder step moved.
 - Open, the founders': the university logos, the celebrity faces, the Block
   demo video.
 
+### No Watch switch on the + screen; Otto's "let's meditate" opens it (2026-09-30, Aziz)
+
+- **The Apple Watch switch is in Settings only** (Settings > Apple Watch >
+  Measure my sessions, `ready.sitKind`). The + screen has no Watch switch;
+  Otto's Watch lines point to Settings. (The switch had stayed on the +
+  screen since a73fd1d; the versions without it were only ever uncommitted
+  experiments, and "revert to exactly how it was" kept it. Say plainly what
+  a revert keeps.)
+- **"Okay, let's meditate" on Otto's screens opens the + screen** (timer,
+  sound, Begin) instead of starting a session at once, which was Melvin's
+  2026-09-22 choice. `beginFromOtto` is deleted.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley

@@ -81,7 +81,6 @@ struct SessionSetupView: View {
     /// only when it is chosen AND connected: a Watch that is not connected
     /// today never takes a sit, whatever was chosen.
     @ObservedObject private var watchLink = WatchLink.shared
-    @State private var showWatchSetup = false
     /// Whether Otto's line is the Watch one or the YouTube one. They take
     /// turns, one per opening (`ready.lineTurn`), so neither goes missing
     /// for long.
@@ -215,7 +214,6 @@ struct SessionSetupView: View {
             focus.setupShown()
             showFocusSetup = true
         }
-        .sheet(isPresented: $showWatchSetup) { WatchConnectSheet() }
         // The recorded sit's own page, for the photo or video that shows it
         // happened, and notes. Closing it closes this screen too.
         // A recorded sit is the end of this screen, so 808's own Do Not
@@ -400,7 +398,7 @@ struct SessionSetupView: View {
         case .connected:
             return kind == .watch
                 ? "Ready when you are. Your Apple Watch will read how you settle."
-                : "Ready when you are. Switch on your Watch below to see how you settle."
+                : "Ready when you are. Turn on your Watch in Settings to see how you settle."
         }
     }
 
@@ -443,8 +441,6 @@ struct SessionSetupView: View {
 
                 silenceControl(ink: day.ink, compact: compact)
 
-                watchControl
-
                 Button("Begin", action: begin)
                     .buttonStyle(PrimaryButtonStyle())
                     .padding(.top, 4)
@@ -457,80 +453,10 @@ struct SessionSetupView: View {
         .padding(.bottom, Self.controlsBottom)
     }
 
-    /// Measure with the Apple Watch, yes or no (Aziz, 2026-09-28): a small
-    /// switch under Silence notifications, deliberately smaller than the
-    /// pills, because the same choice inside the Meditate card is easy to
-    /// miss. It is `kindRaw`, the card's own value, so they cannot disagree.
-    /// Nothing at all without a paired Watch; "Not connected" and Set up when
-    /// the Watch is paired but 808 is not on it.
-    @ViewBuilder
-    private var watchControl: some View {
-        switch watchLink.status {
-        case .noWatch:
-            EmptyView()
-        case .connected:
-            Button {
-                let on = kind != .watch
-                withAnimation(.snappy(duration: 0.2)) {
-                    kindRaw = (on ? SitKind.watch : .unmeasured).rawValue
-                }
-                Analytics.track(.watchSwitch(on: on, source: "ready"))
-            } label: {
-                watchPill {
-                    Label("Connected", systemImage: "checkmark.circle.fill")
-                        .labelStyle(WatchCheckLabelStyle())
-                        .fixedSize()
-                    Toggle("", isOn: .constant(kind == .watch))
-                        .labelsHidden()
-                        .tint(OnboardingGreen.fill)
-                        .allowsHitTesting(false)
-                        .scaleEffect(0.72)
-                        .frame(width: 38, height: 24)
-                        .fixedSize()
-                }
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Measure with Apple Watch")
-            .accessibilityValue(kind == .watch ? "On" : "Off")
-        case .notInstalled:
-            Button {
-                Analytics.track(.watchSetupOpened(source: "ready"))
-                showWatchSetup = true
-            } label: {
-                watchPill {
-                    Text("Not connected")
-                        .font(.system(size: 12.5, weight: .semibold, design: .rounded))
-                        .foregroundStyle(AppColor.textSecondary)
-                    Text("Set up")
-                        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 4)
-                        .background(AppColor.skyDeep, in: Capsule())
-                }
-            }
-            .buttonStyle(.plain)
-        }
-    }
-
-    private func watchPill<Trailing: View>(@ViewBuilder _ trailing: () -> Trailing) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "applewatch")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(AppColor.textPrimary)
-            Text("Apple Watch")
-                .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-                .fixedSize()
-            trailing()
-        }
-        .padding(.leading, 14)
-        .padding(.trailing, 8)
-        .padding(.vertical, 5)
-        .frame(minHeight: 36)
-        .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
-    }
+    // No Apple Watch switch on this screen (Aziz, 2026-09-30: "settings
+    // only"). Measuring with the Watch is turned on and off in Settings >
+    // Apple Watch > Measure my sessions, which writes the same value
+    // (`ready.sitKind`) this screen reads.
 
     private var chevron: some View {
         Text("\u{203A}")
@@ -1260,16 +1186,5 @@ struct SoundBars: View {
         }
         .frame(height: 13)
         .onAppear { up = true }
-    }
-}
-
-/// A green check before "Connected".
-struct WatchCheckLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 3) {
-            configuration.icon.foregroundStyle(OnboardingGreen.fill)
-            configuration.title.foregroundStyle(OnboardingGreen.shade)
-        }
-        .font(.system(size: 12.5, weight: .heavy, design: .rounded))
     }
 }

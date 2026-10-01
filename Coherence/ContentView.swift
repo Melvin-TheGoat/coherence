@@ -308,9 +308,13 @@ struct ContentView: View {
         // destination carries its own Done or Cancel, so nothing needs the
         // swipe-down affordance.
         .fullScreenCover(item: $sheet, onDismiss: {
-            if let minutes = startAfterOtto {
+            // "Okay, let's meditate" opens the + screen (Aziz, 2026-09-30),
+            // not a session already running: the timer, sound and Begin are
+            // the person's to choose. It used to start at once (Melvin,
+            // 2026-09-22).
+            if startAfterOtto != nil {
                 startAfterOtto = nil
-                beginFromOtto(minutes: minutes == 0 ? nil : minutes)
+                sheet = .setup
                 return
             }
             if let next = pendingSheet {
@@ -402,21 +406,6 @@ struct ContentView: View {
                                    friendWhoSat: friend)
     }
 
-    /// "Okay, let's meditate": the session starts at once, with the sound
-    /// they last chose on the Ready screen (Melvin, 2026-09-22: straight into
-    /// the session, one less tap between them and their apps).
-    private func beginFromOtto(minutes: Int?) {
-        var soundID = UserDefaults.standard.string(forKey: "sessionSoundID") ?? ""
-        // The guided journey is paid; a free person starts in silence rather
-        // than being handed a track the Ready screen would have locked.
-        if GuidedCatalog.preset(id: soundID) != nil, !store.entitlements.guidedTrack { soundID = "" }
-        let id = soundID.isEmpty ? nil : soundID
-        coordinator.begin(mode: SoundCatalog.mode(for: id),
-                          trackID: nil,
-                          plannedDurationSec: minutes.map { $0 * 60 },
-                          hapticsEnabled: prefsRows.first?.hapticsEnabled ?? true,
-                          soundID: id)
-    }
 
     #if DEBUG
     /// The simulator review hooks (`PREVIEW_*`, `DEMO_*`). A function rather
@@ -800,7 +789,7 @@ struct ContentView: View {
             return "Put 808 on your Apple Watch to see how your body settled."
         case .connected:
             return sitKindRaw == SitKind.watch.rawValue ? nil
-                : "Turn on your Apple Watch at the plus to see how you settled."
+                : "Turn on your Apple Watch in Settings to see how you settled."
         }
     }
 
