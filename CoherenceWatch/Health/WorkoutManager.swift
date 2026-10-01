@@ -76,8 +76,10 @@ final class WorkoutManager: NSObject, ObservableObject {
     /// Plain words for the one way back once Workouts was declined. Shown on
     /// the first-run screen and on Ready, so it is one sentence in both
     /// (App Review, 2026-09-30: arrows read as a code, not a direction).
+    /// Settings rather than the Health app (2026-09-30): the Health app's
+    /// per-app list has moved between iOS versions, the Settings path has not.
     static let turnOnWorkoutsHelp =
-        "Turn on Workouts for 808 in the Health app on your iPhone: Sharing, Apps, 808."
+        "On your iPhone, open Settings, then Privacy & Security, Health, 808, and turn on Workouts."
 
     /// How many heart-rate samples have arrived this session. This is the only
     /// trustworthy signal that HR is actually readable: HealthKit hides read

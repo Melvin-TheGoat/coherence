@@ -150,10 +150,16 @@ struct SessionRewardView: View {
                     .allowsHitTesting(false)
 
                 if let stage = stageUp {
+                    // Where the ribbon wants to be, over Otto's head; on a
+                    // short screen that is under the title, so it is pushed
+                    // down and made smaller there, to cover less of his face
+                    // (2026-09-30).
+                    let wanted = ottoY - seated * 0.66
+                    let pushed = subtitleBottom + 12 + 21 > wanted
                     Text("Otto reached \(Self.name(stage)) ✦")
-                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .font(.system(size: pushed ? 13 : 16, weight: .black, design: .rounded))
                         .foregroundStyle(Color(red: 0.42, green: 0.29, blue: 0.06))
-                        .padding(.horizontal, 18).padding(.vertical, 9)
+                        .padding(.horizontal, pushed ? 12 : 18).padding(.vertical, pushed ? 6 : 9)
                         .background(LinearGradient(colors: [Color(red: 1, green: 0.91, blue: 0.65),
                                                             Color(red: 0.95, green: 0.73, blue: 0.29)],
                                                    startPoint: .top, endPoint: .bottom),
@@ -164,7 +170,7 @@ struct SessionRewardView: View {
                         .scaleEffect(ribbon ? 1 : 0.3)
                         .opacity(ribbon ? 1 : 0)
                         .position(x: size.width / 2,
-                                  y: max(ottoY - seated * 0.66, subtitleBottom + 12 + 21))
+                                  y: pushed ? subtitleBottom + 10 + 15 : wanted)
                 }
 
                 Color.white.opacity(flash ? 0.85 : 0).allowsHitTesting(false)

@@ -72,12 +72,18 @@ struct WatchContentView: View {
                         .tint(WatchPalette.gold)
                         .foregroundStyle(.black)
                 } else {
-                    Button("Try again") { manager.recheckAuthorization() }
+                    // Asks again, not only re-reads (2026-09-30): if the
+                    // iPhone's prompt was missed, re-reading kept the person
+                    // here for good. Once Workouts is decided HealthKit
+                    // returns at once with no UI, so this is safe when denied.
+                    Button("Try again") { Task { await manager.authorize() } }
                         .buttonStyle(.borderedProminent)
                         .tint(WatchPalette.gold)
                         .foregroundStyle(.black)
                 }
-                if let msg = manager.statusMessage, msg != manager.authorizeHelp {
+                // One message at a time: the help line, when there is one,
+                // already says what to do (2026-09-30).
+                if manager.authorizeHelp == nil, let msg = manager.statusMessage {
                     Text(msg).font(.system(size: 11))
                         .foregroundStyle(WatchPalette.inkMuted)
                         .multilineTextAlignment(.center)

@@ -237,6 +237,21 @@ final class FocusShortcut: ObservableObject {
     }
 
     private var promptTask: Task<Void, Never>?
+    private var failureTask: Task<Void, Never>?
+
+    /// Raises `restoreFailed` once nothing is presented over the root (the
+    /// reward screen closed), however long that takes while 808 is open.
+    private func raiseFailureWhenClear() async {
+        try? await Task.sleep(for: .seconds(2))
+        while !Task.isCancelled {
+            if UIApplication.shared.applicationState == .active,
+               !restorePrompt, !Self.somethingPresented() {
+                restoreFailed = true
+                return
+            }
+            try? await Task.sleep(for: .seconds(1))
+        }
+    }
 
     /// Raises `restorePrompt` once 808 has settled and nothing else is on
     /// screen over Home.
@@ -389,7 +404,12 @@ final class FocusShortcut: ObservableObject {
             markNotInstalled()
             if action == .restore {
                 forget()
-                restoreFailed = true
+                // Not raised at once: this answer lands as a session ends,
+                // the moment the reward cover opens, and a root alert raised
+                // then can stop the cover ever opening (2026-09-30). It waits
+                // for a clear screen, as the restore prompt does.
+                failureTask?.cancel()
+                failureTask = Task { [weak self] in await self?.raiseFailureWhenClear() }
             }
             silenced = weSilencedIt
             setupNeeded = true

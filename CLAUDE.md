@@ -6605,6 +6605,13 @@ change at all". No price, plan, trial length, product or ladder step moved.
   it couldn't send; the Watch's Allow becomes "Try again" with the Health
   app steps when Workouts was declined, its error lines are plain sentences,
   and an encode failure says "Not sent" instead of promising a later send.
+- **Fifth-pass fixes (same day):** "Do Not Disturb is still on" waits for
+  a clear screen before showing (raised at once it could stop the reward
+  cover opening, the trap the restore prompt already avoids); the Watch's
+  "Try again" asks HealthKit again instead of only re-reading; its
+  directions use Settings, Privacy & Security, Health, 808; one Watch
+  message at a time; a failed report says so once; the reward ribbon
+  shrinks when pushed down on a short screen.
 - **Agents never change the user's simulator settings** (content size,
   appearance): a review agent set the shared iPhone 17 to the largest text
   size and alarmed Aziz. Checks that need it run on a simulator the agent

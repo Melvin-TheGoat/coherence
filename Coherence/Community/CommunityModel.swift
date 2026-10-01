@@ -636,7 +636,8 @@ final class CommunityModel: ObservableObject {
             Analytics.track(.contentReported(kind: kind.rawValue))
             return true
         } catch {
-            errorText = Self.plain(error)
+            // The report sheet says it couldn't send; an alert as well would
+            // say it twice (2026-09-30).
             return false
         }
     }
