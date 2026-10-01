@@ -439,6 +439,11 @@ struct FriendsHomeView: View {
         .navigationDestination(for: String.self) { id in
             PersonView(id: id, model: model)
         }
+        .navigationDestination(for: FriendsRoute.self) { route in
+            switch route {
+            case .requests: RequestsView(model: model)
+            }
+        }
     }
 
     /// Every mutual friend, with how often they meditate — the thing that
@@ -558,10 +563,14 @@ struct FriendsHomeView: View {
     /// only screen in 808 where another person is waiting on the reader. It is
     /// gold when somebody is, the one gold thing in the sky, and a cream pill
     /// when nobody is, so the colour itself carries the news.
+    ///
+    /// Pushed by VALUE, like the profiles inside it (2026-10-01). A
+    /// destination-closure link here put Requests outside the stack's path,
+    /// so tapping a person in it appended them to the path UNDER Requests:
+    /// the page slid in, Requests came straight back on top, and Back
+    /// revealed the profile. Every link in this stack goes by value.
     private var requestsButton: some View {
-        NavigationLink {
-            RequestsView(model: model)
-        } label: {
+        NavigationLink(value: FriendsRoute.requests) {
             let waiting = !model.incoming.isEmpty
             Text(waiting
                  ? "\(model.incoming.count) request\(model.incoming.count == 1 ? "" : "s")"
@@ -865,6 +874,12 @@ func practiceLine(_ published: PracticeStats) -> String {
     }
     guard let last = stats.lastSessionAt else { return "No sessions yet" }
     return "Last meditated " + SessionListSupport.relativeDay(last).lowercased()
+}
+
+/// The pages Friends pushes that are not a person. A value, not a
+/// destination closure, so they share the stack's path with the profile ids.
+enum FriendsRoute: Hashable {
+    case requests
 }
 
 struct RequestsView: View {
