@@ -1114,6 +1114,8 @@ struct PersonView: View {
                 }
             }
             .scrollIndicators(.hidden)
+            // Pull to see a request or an accept the other phone just made.
+            .refreshable { await reload(); await model.loadFollowCounts(id) }
             .ignoresSafeArea(edges: .top)
             .modifier(NoTopEdgeHaze())
         }

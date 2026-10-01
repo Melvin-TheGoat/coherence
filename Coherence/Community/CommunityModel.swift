@@ -143,8 +143,12 @@ final class CommunityModel: ObservableObject {
         (friends.count + incoming.count, friends.count + sent.count)
     }
 
-    /// Someone else's counts, fetched once per profile and cached so a
-    /// profile page opened twice does not query twice.
+    /// Someone else's counts. Shown at once from the last fetch, then
+    /// refetched every time their page opens and after every request,
+    /// accept, remove or unblock involving them. They used to be fetched
+    /// once per launch and kept, so two people who opened each other's pages
+    /// before a request was accepted kept seeing 0 and 0 (Melvin and Aziz,
+    /// on two phones, 2026-10-01).
     @Published private(set) var followCounts: [String: (followers: Int, following: Int)] = [:]
 
     /// The people behind one of the two numbers, cached the same way. For my
@@ -168,7 +172,7 @@ final class CommunityModel: ObservableObject {
     }
 
     func loadFollowCounts(_ id: String) async {
-        guard let store, phase == .ready, followCounts[id] == nil, !isBlocked(id) else { return }
+        guard let store, phase == .ready, !isBlocked(id) else { return }
         guard let counts = try? await store.followCounts(of: id) else { return }
         followCounts[id] = counts
     }
@@ -444,6 +448,7 @@ final class CommunityModel: ObservableObject {
             try await store.sendRequest(to: id)
             Analytics.track(.friendRequestSent)
             try await refreshLists(store)
+            await loadFollowCounts(id)
         } catch { errorText = Self.plain(error) }
     }
 
@@ -454,12 +459,17 @@ final class CommunityModel: ObservableObject {
             try await store.accept(id)
             Analytics.track(.friendAccepted)
             try await refreshLists(store)
+            await loadFollowCounts(id)
         } catch { errorText = Self.plain(error) }
     }
 
     func remove(_ id: String) async {
         guard let store else { return }
-        do { try await store.removeFriend(id); try await refreshLists(store) } catch { errorText = Self.plain(error) }
+        do {
+            try await store.removeFriend(id)
+            try await refreshLists(store)
+            await loadFollowCounts(id)
+        } catch { errorText = Self.plain(error) }
     }
 
     func posts(by id: String) async -> [Post] {
@@ -618,6 +628,7 @@ final class CommunityModel: ObservableObject {
             // The name-only copy goes, so their page loads them in full again.
             people[id] = nil
             try await refreshLists(store)
+            await loadFollowCounts(id)
         } catch { errorText = Self.plain(error) }
     }
 
