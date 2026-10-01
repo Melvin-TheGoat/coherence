@@ -65,7 +65,7 @@ measure.
 
 ## Subtitle (30 max)
 
-**A meditation habit that sticks** *(30 chars)*, 1.1.
+**Build a daily meditation habit** *(30 chars)*, 1.1 (chosen 2026-10-01; it adds "meditation", "daily" and "habit" to search).
 
 Matches the website's headline ("The meditation app that makes it stick") and
 what the app now is: a habit app that happens to measure, not a measuring app.
