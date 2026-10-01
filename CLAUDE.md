@@ -6627,6 +6627,13 @@ change at all". No price, plan, trial length, product or ladder step moved.
   screen since a73fd1d; the versions without it were only ever uncommitted
   experiments, and "revert to exactly how it was" kept it. Say plainly what
   a revert keeps.)
+- **Otto mentions the Apple Watch periodically, to everyone** (Aziz, same
+  day): on Home it is his opening line every other day (unless a session
+  just landed or apps are held) and in his rotation every day; on the +
+  screen every other opening. Without a paired Watch it is an offer ("Got
+  an Apple Watch? ..."), never a statement of what is missing. This
+  replaces the earlier rule of never mentioning a Watch to someone without
+  one.
 - **"Okay, let's meditate" on Otto's screens opens the + screen** (timer,
   sound, Begin) instead of starting a session at once, which was Melvin's
   2026-09-22 choice. `beginFromOtto` is deleted.

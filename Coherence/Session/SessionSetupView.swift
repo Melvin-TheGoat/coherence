@@ -384,15 +384,19 @@ struct SessionSetupView: View {
         // Spotify reads as an integration we don't have, and YouTube keeps
         // playing in the background only with Premium.
         let youtube = "Ready when you are. Start your own audio first if you like."
-        // While Block holds apps, the one thing worth saying before Begin is
-        // what opens them (Aziz, 2026-09-29).
-        if FeatureFlags.block, !BlockController.shared.holding().isEmpty {
-            return "Ready when you are. \(Blocker.sessionMinutes) minutes opens your apps."
+        // Every other opening Otto mentions the Apple Watch, to everyone
+        // (Aziz, 2026-09-30: periodically, on Home and here). On the other
+        // openings, while Block holds apps, he says what opens them
+        // (2026-09-29); the sit screen says it as well.
+        guard mentionsWatch else {
+            if FeatureFlags.block, !BlockController.shared.holding().isEmpty {
+                return "Ready when you are. \(Blocker.sessionMinutes) minutes opens your apps."
+            }
+            return youtube
         }
-        guard mentionsWatch else { return youtube }
         switch watchLink.status {
         case .noWatch:
-            return youtube
+            return "Got an Apple Watch? 808 can measure your session with it."
         case .notInstalled:
             return "Ready when you are. Put 808 on your Watch to see how you settle."
         case .connected:

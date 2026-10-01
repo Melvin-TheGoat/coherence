@@ -746,7 +746,12 @@ struct ContentView: View {
         if FeatureFlags.block, !block.holding().isEmpty {
             lines.append("I'm holding your apps. A short session and they're yours.")
         }
-        if let nudge = watchNudge { lines.append(nudge) }
+        // The Apple Watch, periodically (Aziz, 2026-09-30: "make sure otto
+        // periodically reminds the people that they can use the apple
+        // watch"): his opening line every other day, unless a session just
+        // landed or apps are held, and in his rotation every day.
+        let watchLeads = Calendar.current.ordinality(of: .day, in: .era, for: Date()).map { $0 % 2 == 0 } ?? false
+        if let nudge = watchNudge, watchLeads { lines.append(nudge) }
         // His mood leads when it is the news: a sad Otto who says nothing
         // about it reads as a bug, and a glowing one has earned a word.
         switch auraStage {
@@ -777,14 +782,17 @@ struct ContentView: View {
         } else {
             lines.append("Whenever you're ready. One session is all today asks.")
         }
+        if let nudge = watchNudge, !watchLeads { lines.append(nudge) }
         return lines + OttoSayings.forDay(Date())
     }
 
-    /// Otto pointing at the Apple Watch, until it is measuring.
+    /// Otto pointing at the Apple Watch, until it is measuring. Said to
+    /// everyone, phrased as an offer rather than as something missing:
+    /// someone without a Watch hears that 808 can use one (2026-09-30).
     private var watchNudge: String? {
         switch watchLink.status {
         case .noWatch:
-            return nil
+            return "Got an Apple Watch? Put 808 on it and I'll show how your body settled."
         case .notInstalled:
             return "Put 808 on your Apple Watch to see how your body settled."
         case .connected:
