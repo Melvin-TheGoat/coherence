@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// Block's hooks on ContentView, kept off its chain the way `FriendsHooks` is
 /// (ContentView sits at the type checker's limit).
@@ -26,6 +27,7 @@ struct BlockHooks: ViewModifier {
     let present: (InterventionKind) -> Void
 
     @State private var waiting = false
+    @Environment(\.modelContext) private var context
 
     func body(content: Content) -> some View {
         content
@@ -49,12 +51,20 @@ struct BlockHooks: ViewModifier {
 
     private func catchUp() {
         guard FeatureFlags.block else { return }
+        // Read from the store, not the `sessions` the view last drew: the
+        // catch-up also takes back openings whose session is gone, so the
+        // list has to be complete and current, including a session saved a
+        // moment ago that no redraw has picked up yet. Two days back covers
+        // the 36 hours it judges, whatever the session's length.
+        let cutoff = Date().addingTimeInterval(-48 * 3600)
+        let fetched = (try? context.fetch(FetchDescriptor<Session>(
+            predicate: #Predicate { $0.startedAt >= cutoff }))) ?? sessions
         // A recorded sit never opens apps (`Session.isLogged`).
-        let recent = sessions.filter { !$0.isLogged }.prefix(24).map { session in
+        let recent = fetched.filter { !$0.isLogged }.map { session in
             (end: session.startedAt.addingTimeInterval(TimeInterval(session.durationSec)),
              durationSec: session.durationSec)
         }
-        block.catchUp(with: Array(recent))
+        block.catchUp(with: recent)
     }
 
     /// Otto only when something is still held once any new session has

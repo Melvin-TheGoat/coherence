@@ -265,13 +265,20 @@ final class BlockController: ObservableObject {
     /// Sessions that ended while 808 was closed (a Watch session delivered
     /// on the next launch, say). Idempotent, so calling it on every return to
     /// the foreground is fine.
+    ///
+    /// `sessions` must be EVERY stored session that ended in the last 36
+    /// hours: an opening in that span whose session is not in the list was
+    /// deleted, and is taken back (`BlockRules.forgetReleases`).
     func catchUp(with sessions: [(end: Date, durationSec: Int)], now: Date = Date()) {
         var released: [UUID] = []
-        for session in sessions where now.timeIntervalSince(session.end) < 36 * 3600 {
+        let since = now.addingTimeInterval(-36 * 3600)
+        for session in sessions where session.end >= since {
             released += BlockRules.recordSession(endingAt: session.end, durationSec: session.durationSec,
                                                  in: &state)
         }
-        if !released.isEmpty { commit(reschedule: false) }
+        let forgot = BlockRules.forgetReleases(withoutSessionsEnding: sessions.map(\.end),
+                                               since: since, in: &state)
+        if !released.isEmpty || forgot { commit(reschedule: false) }
     }
 
     func noteInterventionShown(_ kind: InterventionKind, at now: Date = Date()) {

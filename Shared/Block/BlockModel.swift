@@ -388,6 +388,23 @@ enum BlockRules {
         return released
     }
 
+    /// Takes back every opening whose session is gone (Aziz, 2026-10-01). A
+    /// session deleted from its page, or by deleting the account, used to
+    /// leave its release behind: the apps stayed open all day, the card said
+    /// "Open, you meditated", and the app held no session at all. `ends` is
+    /// when every session still stored ended; only releases since `since`
+    /// are judged, the span the caller's list is complete for. Returns
+    /// whether anything was taken back.
+    @discardableResult
+    static func forgetReleases(withoutSessionsEnding ends: [Date], since: Date,
+                               in state: inout BlockState) -> Bool {
+        let before = state.releases.count
+        state.releases.removeAll { release in
+            release.at >= since && !ends.contains { abs($0.timeIntervalSince(release.at)) < 2 }
+        }
+        return state.releases.count != before
+    }
+
     /// A daily limit ran out today.
     static func recordLimitHit(_ id: UUID, at now: Date, in state: inout BlockState,
                                calendar: Calendar = .current) {

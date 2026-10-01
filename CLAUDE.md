@@ -6723,6 +6723,18 @@ Same day: an edge written before either of its profiles existed is ignored
 (a deleted account's old friendship no longer revives), and Friends screens
 refresh every 10 s while open.
 
+## A DELETED SESSION TAKES BACK THE APPS IT OPENED (2026-10-01, Aziz)
+
+Found on Aziz's phone: a session at 12:08 AM opened Mindful day, then
+deleting the account (the Friends round trip, step 8) erased every session,
+and LinkedIn stayed open all day with "Open, you meditated" and no session
+in the app. `BlockRules.forgetReleases` now takes back any opening in the
+last 36 hours whose session is no longer stored; `BlockHooks.catchUp` runs
+it on every return to the app, reading sessions from the store (not the
+view's `@Query`) so a session saved a moment ago is never mistaken for a
+deleted one. A session just after midnight still counts for the new day:
+Block's day runs midnight to midnight.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley

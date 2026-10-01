@@ -38,6 +38,28 @@ final class BlockRulesTests: XCTestCase {
         XCTAssertTrue(BlockRules.holds(day, in: s, at: at(11, 1), calendar: cal))
     }
 
+    /// Aziz, 2026-10-01: a session just after midnight opened Mindful day,
+    /// then deleting the account erased the session, and the apps stayed
+    /// open all day with "Open, you meditated" and no session anywhere.
+    func test_aDeletedSessionTakesItsOpeningBack() {
+        let day = on(.mindfulDay)
+        var s = state(day)
+        let kept = at(9, 20), deleted = at(10, 0, 13)
+        BlockRules.recordSession(endingAt: kept, durationSec: 600, in: &s, calendar: cal)
+        BlockRules.recordSession(endingAt: deleted, durationSec: 300, in: &s, calendar: cal)
+        XCTAssertFalse(BlockRules.holds(day, in: s, at: at(10, 16), calendar: cal))
+
+        let since = at(10, 16).addingTimeInterval(-36 * 3600)
+        let forgot = BlockRules.forgetReleases(withoutSessionsEnding: [kept], since: since, in: &s)
+        XCTAssertTrue(forgot)
+        XCTAssertTrue(BlockRules.holds(day, in: s, at: at(10, 16), calendar: cal), "held again today")
+        XCTAssertFalse(BlockRules.holds(day, in: s, at: at(9, 21), calendar: cal),
+                       "the session still stored keeps its own day open")
+
+        let again = BlockRules.forgetReleases(withoutSessionsEnding: [kept], since: since, in: &s)
+        XCTAssertFalse(again, "nothing left to take back")
+    }
+
     /// Aziz, 2026-09-22: five minutes opens the apps, for every blocker.
     func test_fiveMinutesOpensTheAppsAndLessDoesNot() {
         let day = on(.mindfulDay)
