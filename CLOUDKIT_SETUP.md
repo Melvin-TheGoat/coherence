@@ -241,8 +241,16 @@ record name, never queried**, which is why they need no index at all.
 | Reaction | `post` | QUERYABLE |
 | Reaction | `author` | QUERYABLE |
 | Block | `from` | QUERYABLE |
+| Block | `createdBy` (system field) | QUERYABLE |
+| Report | `createdBy` (system field) | QUERYABLE, insurance only |
 
-Seven indexes, five record types. **`Block.to` is no longer needed
+Seven indexes, five record types, **plus `createdBy` on Block and Report
+(found 2026-09-30 on two phones: "Field 'createdBy' is not marked
+queryable").** A type whose `_world` role has no Read makes CloudKit add an
+implicit "created by me" filter to every query on it, and that filter needs
+the system `createdBy` field indexed QUERYABLE. Block is creator-only and is
+queried (`myBlocks`), so without it every Friends screen fails. Report is
+never queried; its index is insurance. **`Block.to` is no longer needed
 (2026-09-29)**: no code queries it any more, because nobody's app may read
 another person's blocks. If it is already in Development or Production,
 leave it: an index grants no read access (Security Roles decide that), and a
