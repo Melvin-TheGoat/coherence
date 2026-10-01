@@ -168,6 +168,7 @@ actor CommunityStore {
         if !previous.isEmpty, previous != handle {
             try? await db.delete(CommunityNames.username(previous))
         }
+        births[mine] = nil
         return Profile(record: saved) ?? profile
     }
 
@@ -258,7 +259,7 @@ actor CommunityStore {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                         filters: [.equals("from", .reference(mine))], limit: 500))
-        return Set(records.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:)).map(\.to))
+        return Set(try await live(records.filter { authored($0, by: "from") }).map(\.to))
     }
 
     /// Edges written towards me (requests to me and their half of friendships).
@@ -266,8 +267,60 @@ actor CommunityStore {
         let mine = try await me()
         let records = try await db.query(CommunityQuery(type: CommunityType.edge,
                                                         filters: [.equals("to", .reference(mine))], limit: 500))
-        return Set(records.filter { authored($0, by: "from") }.compactMap(FriendEdge.init(record:)).map(\.from))
+        return Set(try await live(records.filter { authored($0, by: "from") }).map(\.from))
     }
+
+    // MARK: Edges that outlived a profile
+
+    /// The edges that still mean something. **An edge belongs to the two
+    /// profiles that existed when it was written** (found on two phones,
+    /// 2026-10-01). Deleting an account deletes only the edges that person
+    /// wrote; the other side's half stays, because only its writer may
+    /// delete it. A profile is named after its iCloud user, so a new profile
+    /// made after a deletion has the SAME name, and that old half then met
+    /// the new person's first request and read as a friendship nobody
+    /// accepted. So an edge written before either of its profiles came into
+    /// being is ignored, and one I wrote is deleted on the spot (best
+    /// effort). A profile that does not exist at all leaves the edge alone,
+    /// as before: every screen already treats an unknown person as unknown.
+    private func live(_ records: [CKRecord]) async throws -> [FriendEdge] {
+        let mine = try await me()
+        var out: [FriendEdge] = []
+        for record in records {
+            guard let edge = FriendEdge(record: record) else { continue }
+            let written = record.creationDate ?? edge.createdAt
+            let from = try await born(edge.from), to = try await born(edge.to)
+            let outlived = (from.map { $0 > written } ?? false) || (to.map { $0 > written } ?? false)
+            if !outlived {
+                out.append(edge)
+            } else if edge.from == mine, to.map({ $0 > written }) == true {
+                // Only when THEY are the newer profile: a request I am
+                // sending while my own profile is being made is never lost.
+                try? await db.delete(edge.id)
+            }
+        }
+        return out
+    }
+
+    /// When a profile came into being, nil when it does not exist. CloudKit's
+    /// own creation date where there is one (no device clock can skew it),
+    /// the profile's `createdAt` otherwise. Remembered for a few seconds, so
+    /// one refresh, which reads edges three ways at once, fetches each
+    /// person once.
+    private func born(_ profile: String) async throws -> Date? {
+        if let known = births[profile], Date().timeIntervalSince(known.at) < 15 { return known.born }
+        let record = try await db.fetch(profile)
+        let born = record.map { $0.creationDate ?? ($0["createdAt"] as? Date) ?? .distantPast }
+        births[profile] = (born, Date())
+        return born
+    }
+    private var births: [String: (born: Date?, at: Date)] = [:]
+
+    #if DEBUG
+    /// For tests that delete and re-make a profile inside the few seconds a
+    /// date is remembered, which on a phone takes minutes.
+    func forgetProfileDates() { births = [:] }
+    #endif
 
     /// `.none` for anyone I blocked, whatever edges exist: a request of theirs
     /// never reads as `.incoming`, so their page never offers Accept.
@@ -339,8 +392,9 @@ actor CommunityStore {
         // for mine (only CloudKit's creator field proves an author, and it
         // names the edge's own writer), so an edge counts when its writer
         // wrote it: `from` is the author by construction of the record name.
-        let following = Set(out.compactMap(FriendEdge.init(record:)).filter { $0.from == person }.map(\.to))
-        let followers = Set(inn.compactMap(FriendEdge.init(record:)).filter { $0.to == person }.map(\.from))
+        // And only while both profiles it joined still exist (`live`).
+        let following = Set(try await live(out).filter { $0.from == person }.map(\.to))
+        let followers = Set(try await live(inn).filter { $0.to == person }.map(\.from))
         return (followers.subtracting(blocked).sorted(), following.subtracting(blocked).sorted())
     }
 
@@ -709,6 +763,7 @@ actor CommunityStore {
         } catch { firstError = firstError ?? error }
         do { try await db.delete(mine) }
         catch { firstError = firstError ?? error }
+        births = [:]
 
         if let firstError { throw firstError }
     }

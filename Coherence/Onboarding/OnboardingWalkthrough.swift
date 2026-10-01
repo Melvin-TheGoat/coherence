@@ -63,7 +63,8 @@ extension EnvironmentValues {
 /// along with the copy rules: no em dashes, no score, no Watch, no thanks.
 struct TourStop: Equatable {
     enum Stand {
-        /// Under the status bar, for a lit thing low on the screen.
+        /// Near the top, under Home's corner circles, for a lit thing low on
+        /// the screen.
         case top
         /// Just above the tab bar, and above the lit thing when that is in
         /// the bar. He stands beside the tab he is talking about, and the top
@@ -204,6 +205,9 @@ struct TourHomeScreen: View {
                 }
             }
             .sensoryFeedback(.selection, trigger: stop)
+            .onAppear { TourDim.shared.showing = true }
+            .onDisappear { TourDim.shared.showing = false }
+            .onChange(of: leaving) { _, now in if now { TourDim.shared.showing = false } }
     }
 
     // MARK: The overlay
@@ -246,11 +250,15 @@ struct TourHomeScreen: View {
         // or the cutout lands above the thing it frames (Aziz, 2026-08-29).
         let inset = proxy.safeAreaInsets
         let window = lit?.rect.offsetBy(dx: inset.leading, dy: inset.top) ?? .zero
-        // At the top of Home the streak and guide circles hold the corner, and
-        // he stops short of them: a bubble half over a circle leaves a sliver
-        // of its label peeking out from under the bubble.
-        let corner = stand == .top && !current.targets.contains(.streak)
-            ? anchors[.streak].map { max(0, proxy.size.width - proxy[$0].minX - 8) } : nil
+        // At the top of Home the streak, Friends and guide hold both corners,
+        // so he stands just under the lowest of them, at full width. He used
+        // to stop short of the streak's column on the right; since the streak
+        // moved to the top LEFT (2026-09-29) that left him almost no width,
+        // and his bubble and Next collapsed to nothing, a tall dark smear
+        // down the left of the screen that every tap advanced past (Aziz,
+        // 2026-10-01).
+        let corners = [TourTarget.streak, .guide, .friendsCircle].compactMap { anchors[$0].map { proxy[$0].maxY } }
+        let underCorners = stand == .top ? corners.max().map { $0 + 10 } : nil
 
         ZStack {
             SpotlightDim(window: window, radius: lit?.radius ?? 0)
@@ -268,8 +276,7 @@ struct TourHomeScreen: View {
             VStack(spacing: 0) {
                 if stand == .top {
                     narrator
-                        .padding(.top, 8)
-                        .padding(.trailing, corner ?? 0)
+                        .padding(.top, underCorners ?? 8)
                     Spacer(minLength: 0)
                 } else {
                     Spacer(minLength: 0)

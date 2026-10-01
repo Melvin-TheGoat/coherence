@@ -24,6 +24,7 @@ struct RootView: View {
     /// white (`statusScheme`). Re-read every minute and on every return.
     @State private var nightSky = RootView.skyIsDark
     @ObservedObject private var creamPages = CreamPages.shared
+    @ObservedObject private var tourDim = TourDim.shared
 
     /// **808 is premium only again** (Melvin and Aziz, 2026-09-23;
     /// `Monetization`). A person with no subscription meets the paywall at
@@ -271,7 +272,10 @@ struct RootView: View {
     /// day. Onboarding, the launch paywall and the wait before it always draw
     /// a daytime valley, so they stay light.
     private var statusScheme: ColorScheme {
-        face == .app && nightSky && creamPages.showing == 0 ? .dark : .light
+        // The tour dims the whole screen to near black at any hour, status
+        // bar included, so its clock is white too (2026-10-01).
+        if tourDim.showing { return .dark }
+        return face == .app && nightSky && creamPages.showing == 0 ? .dark : .light
     }
 
     /// The same line the valley's words cross from dark ink to cream.
@@ -287,6 +291,14 @@ struct RootView: View {
 /// on the page itself: that was tried first (2026-09-29) and SwiftUI kept
 /// the pushed page's preference after it was popped, leaving a dark status
 /// bar on the night sky behind it.
+/// Whether the onboarding tour's dim is up (`TourHomeScreen`), for the
+/// status bar.
+@MainActor
+final class TourDim: ObservableObject {
+    static let shared = TourDim()
+    @Published var showing = false
+}
+
 @MainActor
 final class CreamPages: ObservableObject {
     static let shared = CreamPages()

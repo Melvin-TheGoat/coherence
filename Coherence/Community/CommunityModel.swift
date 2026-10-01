@@ -278,9 +278,12 @@ final class CommunityModel: ObservableObject {
         }
     }
 
-    func refresh() async {
+    /// `quiet` for the timed refresh while a Friends screen is open
+    /// (`refreshesWhileShown`): a dropped connection must not raise an alert
+    /// every few seconds. A pull to refresh still says what went wrong.
+    func refresh(quiet: Bool = false) async {
         guard let store, phase == .ready else { return }
-        do { try await refreshLists(store) } catch { errorText = Self.plain(error) }
+        do { try await refreshLists(store) } catch { if !quiet { errorText = Self.plain(error) } }
     }
 
     private func refreshLists(_ store: CommunityStore) async throws {

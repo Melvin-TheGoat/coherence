@@ -104,6 +104,7 @@ struct FriendsTab: View {
             // was off and so never met onboarding's profile step with it.
             if tourTab == nil, model.hasProfile { model.resumePublishing() }
         }
+        .refreshesWhileShown(enabled: tourTab == nil) { await model.refresh(quiet: true) }
         .alert("Friends", isPresented: Binding(get: { model.errorText != nil }, set: { if !$0 { model.errorText = nil } })) {
             Button("OK") { model.errorText = nil }
         } message: {
@@ -154,6 +155,38 @@ private struct CloseCapsule: View {
 }
 
 // MARK: - The valley
+
+/// Checks again every few seconds while a Friends screen is on screen and
+/// the app is in front (Aziz, 2026-10-01: a request and an accept from the
+/// other phone only showed after leaving the app and coming back). There
+/// is no push from the public database, so this is how a request arriving,
+/// an accept, or a friend's new session shows up while somebody watches.
+/// Stops the moment the screen goes, and never runs in the background.
+private struct RefreshesWhileShown: ViewModifier {
+    let enabled: Bool
+    let action: () async -> Void
+    @Environment(\.scenePhase) private var scenePhase
+    static let every: Duration = .seconds(10)
+
+    func body(content: Content) -> some View {
+        content.task(id: enabled && scenePhase == .active) {
+            guard enabled, scenePhase == .active else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: Self.every)
+                // A cancelled sleep throws and falls through; it must not
+                // run the refresh on the way out.
+                guard !Task.isCancelled else { return }
+                await action()
+            }
+        }
+    }
+}
+
+extension View {
+    func refreshesWhileShown(enabled: Bool = true, _ action: @escaping () async -> Void) -> some View {
+        modifier(RefreshesWhileShown(enabled: enabled, action: action))
+    }
+}
 
 /// Meadow behind the status bar once the band has scrolled away. This page
 /// has no navigation bar, so iOS has no top edge to fade, and without this
@@ -918,6 +951,7 @@ struct RequestsView: View {
         // same stack, already routes profile ids. A second one for the same
         // type makes SwiftUI pick one arbitrarily.
         .task { await model.loadBlocked() }
+        .refreshesWhileShown { await model.refresh(quiet: true) }
     }
 
     /// One white card per group of people, rows on hairlines, rather than a
@@ -1155,6 +1189,7 @@ struct PersonView: View {
             Text("They won't be able to reach you, and they won't be told. You won't see them in Friends. You can undo this from Friends → Requests → Blocked.")
         }
         .task { await reload(); await model.loadFollowCounts(id) }
+        .refreshesWhileShown { await reload(); await model.loadFollowCounts(id) }
     }
 
     private func reload() async {

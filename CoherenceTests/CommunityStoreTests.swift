@@ -21,6 +21,47 @@ final class CommunityStoreTests: XCTestCase {
         _ = try await aziz.me()
     }
 
+    // MARK: Edges that outlived a profile (2026-10-01)
+
+    /// Found on two phones: Melvin deleted his account, made a new profile
+    /// (same iCloud user, so the same record name) and sent a request. Aziz's
+    /// half from the OLD friendship was still there, so the pair read as
+    /// friends without Aziz accepting, and his following went up by itself.
+    func test_aNewProfileDoesNotInheritAFriendshipFromADeletedOne() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        try await aziz.sendRequest(to: melvinID)
+        try await melvin.accept(azizID)
+        let before = try await aziz.friends()
+        XCTAssertEqual(before, [melvinID])
+
+        try await melvin.deleteEverythingOfMine()
+        let gone = try await aziz.friends()
+        XCTAssertEqual(gone, [])
+
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        try await melvin.sendRequest(to: azizID)
+        await aziz.forgetProfileDates()
+
+        let friends = try await aziz.friends()
+        XCTAssertEqual(friends, [], "nobody accepted the new profile's request")
+        let incoming = try await aziz.incomingRequests()
+        XCTAssertEqual(incoming, [melvinID], "it arrives as a request to answer")
+        let rel = try await aziz.relationship(with: melvinID)
+        XCTAssertEqual(rel, .incoming)
+        let azizFollows = try await aziz.follows(of: azizID)
+        XCTAssertEqual(azizFollows.following, [], "his following does not go up by itself")
+        XCTAssertEqual(azizFollows.followers, [melvinID])
+        let melvinRel = try await melvin.relationship(with: azizID)
+        XCTAssertEqual(melvinRel, .requested, "the new profile sees its own request waiting")
+        XCTAssertNil(db.records[CommunityNames.edge(from: azizID, to: melvinID)],
+                     "the old half is cleaned up by its writer's app")
+
+        try await aziz.accept(melvinID)
+        let after = try await aziz.friends()
+        XCTAssertEqual(after, [melvinID], "accepting makes them friends again")
+    }
+
     // MARK: Usernames
 
     func test_claimCreatesProfileAndSecondClaimIsRefused() async throws {
