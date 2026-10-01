@@ -235,9 +235,7 @@ struct ProfileTab: View {
                 if FeatureFlags.friends { profileActions.padding(.top, 10) }
                 if FeatureFlags.friends { whoCanSee.padding(.top, 12) }
                 if FeatureFlags.friends, community.phase == .ready {
-                    FollowLine(followers: community.follow.followers,
-                               following: community.follow.following,
-                               personID: community.myID)
+                    FriendsLine(count: community.friendCount, personID: community.myID)
                         .padding(.top, 11)
                 }
             }

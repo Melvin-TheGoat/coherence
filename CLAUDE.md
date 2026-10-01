@@ -6710,6 +6710,19 @@ detail. Supersedes "RESUME HERE (end of 2026-09-14)".
   simulator settings, above all the text size. An agent that needs another
   size or device creates its own simulator and deletes it after.
 
+## FRIENDS ONLY, NO FOLLOWERS (2026-10-01, Aziz)
+
+"Instead of following and followers it's just friends: I request someone,
+they accept, and only then are we friends." Profiles and a person's page
+show one line, "N friends" (`FriendsLine`), opening the mutual list
+(`FriendsListView`, `CommunityStore.friends(of:)`). A request appears only
+in Requests until it is accepted. The edges are unchanged underneath, so a
+pending request is still readable in the public database; the privacy
+policy says so. Supersedes the 2026-09-18 followers and following line.
+Same day: an edge written before either of its profiles existed is ignored
+(a deleted account's old friendship no longer revives), and Friends screens
+refresh every 10 s while open.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley

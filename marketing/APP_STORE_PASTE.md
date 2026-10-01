@@ -329,7 +329,7 @@ POINTS AND THE SHOP
 Each whole minute meditated earns one point, spent in the Shop tab on hats for Otto. Recorded sessions earn none and never open Block's apps. Points cannot be bought and have no cash value.
 
 FRIENDS
-Opens from the circle at the top right of Home; needs iCloud. No posts, comments or messages. A profile shows a name, @username, optional photo, practice summary and followers, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
+Opens from the circle at the top right of Home; needs iCloud. No posts, comments or messages. A profile shows a name, @username, optional photo, practice summary and friends, visible to anyone who looks up the username. It is optional and requires agreeing to the community rules.
 Create a profile to try it. Other people's profiles carry Report and Block (... menu); reports reach our inbox at once, and a reported profile or photo is removed within 24 hours. Seeing another person takes a second device on another iCloud account.
 Delete account (Settings: Profile tab, gear icon; for returning users also the launch paywall's Account link) removes the Friends profile, username and connections.
 

@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last updated: September 29, 2026**
+**Last updated: October 1, 2026**
 
 This Privacy Policy explains how **Lock Out Inc. ("we," "us")** handles
 information in the **808 Meditate** app ("808") for iPhone, with optional
@@ -255,14 +255,14 @@ deleted.
 **Who can see it:** anyone using 808 who looks up your username can see your
 profile: your name, username, photo if you added one, the month you created
 your profile, your streak, your sessions and minutes this week, your total
-number of sessions, the date of your last session, and who you have added
-and who has added you (your following and followers). This is not limited to
-people you have added.
+number of sessions, the date of your last session, and your friends. This is
+not limited to people you have added.
 
 Everything else 808 writes to the shared area is stored where other
 people's copies of 808 can read it too, even though the app does not show it
 to them. That includes the exact dates and times you created your profile,
-first meditated with 808, and last meditated. Reports and blocks are the
+first meditated with 808, and last meditated, and the friend requests you
+have sent and received that nobody has accepted yet. Reports and blocks are the
 exceptions: a report is kept where only we and the person who filed it can
 read it, and a block where only we and the person who made it can read it.
 We can read everything in the shared area, reports and blocks included,

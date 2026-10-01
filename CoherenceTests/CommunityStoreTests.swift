@@ -62,6 +62,23 @@ final class CommunityStoreTests: XCTestCase {
         XCTAssertEqual(after, [melvinID], "accepting makes them friends again")
     }
 
+    /// Friends only, no followers (Aziz, 2026-10-01): a request counts for
+    /// nobody until it is accepted.
+    func test_aRequestIsNotAFriendUntilAccepted() async throws {
+        try await aziz.claimUsername("aziz", displayName: "Aziz")
+        try await melvin.claimUsername("melvin", displayName: "Melvin")
+        try await melvin.sendRequest(to: azizID)
+        let waiting = try await aziz.friends(of: azizID)
+        XCTAssertEqual(waiting, [])
+        let hisWaiting = try await aziz.friends(of: melvinID)
+        XCTAssertEqual(hisWaiting, [])
+        try await aziz.accept(melvinID)
+        let mine = try await aziz.friends(of: azizID)
+        XCTAssertEqual(mine, [melvinID])
+        let his = try await aziz.friends(of: melvinID)
+        XCTAssertEqual(his, [azizID])
+    }
+
     // MARK: Usernames
 
     func test_claimCreatesProfileAndSecondClaimIsRefused() async throws {
@@ -990,8 +1007,8 @@ final class BlockPrivacyModelTests: XCTestCase {
         XCTAssertTrue(model.sent.isEmpty)
         XCTAssertEqual(model.person(otherID)?.displayName, "Melvin", "the Blocked list can still name them")
         XCTAssertEqual(model.person(otherID)?.practice, Coherence.PracticeStats.empty, "their practice summary is gone")
-        await model.loadFollowCounts(otherID)
-        XCTAssertNil(model.followCounts[otherID], "no follow lists for a blocked person")
+        await model.loadFriendCount(otherID)
+        XCTAssertNil(model.friendCounts[otherID], "no friends list for a blocked person")
         await model.loadPerson(otherID)
         XCTAssertEqual(model.person(otherID)?.practice, Coherence.PracticeStats.empty, "opening their page loads nothing")
 

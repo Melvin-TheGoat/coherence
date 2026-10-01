@@ -134,35 +134,23 @@ final class CommunityModel: ObservableObject {
 
     var friendCount: Int { friends.count }
 
-    /// My own following and followers, from the lists already loaded: the
-    /// edges I wrote are my friends plus the requests I have sent, and the
-    /// edges written at me are my friends plus the requests I have not
-    /// answered. No query (Melvin, 2026-09-18: "a follower/following for
-    /// each profile").
-    var follow: (followers: Int, following: Int) {
-        (friends.count + incoming.count, friends.count + sent.count)
-    }
-
-    /// Someone else's counts. Shown at once from the last fetch, then
+    /// Someone else's friend count. Shown at once from the last fetch, then
     /// refetched every time their page opens and after every request,
-    /// accept, remove or unblock involving them. They used to be fetched
-    /// once per launch and kept, so two people who opened each other's pages
-    /// before a request was accepted kept seeing 0 and 0 (Melvin and Aziz,
-    /// on two phones, 2026-10-01).
-    @Published private(set) var followCounts: [String: (followers: Int, following: Int)] = [:]
+    /// accept, remove or unblock involving them. Friends only: 808 has no
+    /// followers or following (Aziz, 2026-10-01). A request counts for
+    /// nobody until it is accepted. My own count is `friends.count`.
+    @Published private(set) var friendCounts: [String: Int] = [:]
 
-    /// The people behind one of the two numbers, cached the same way. For my
-    /// own id the lists are already loaded, so this is free.
-    func follows(_ list: FollowList) async -> [String] {
-        if list.person == myID {
-            let ids = list.which == .followers ? friends + incoming : friends + sent
-            await cacheIfNeeded(Set(ids))
-            return ids.sorted()
+    /// The friends behind a count. For my own id the list is already loaded,
+    /// so this is free.
+    func friendsList(of person: String) async -> [String] {
+        if person == myID {
+            await cacheIfNeeded(Set(friends))
+            return friends.sorted()
         }
-        guard let store, phase == .ready,
-              let both = try? await store.follows(of: list.person) else { return [] }
-        let ids = list.which == .followers ? both.followers : both.following
-        followCounts[list.person] = (both.followers.count, both.following.count)
+        guard let store, phase == .ready, !isBlocked(person),
+              let ids = try? await store.friends(of: person) else { return [] }
+        friendCounts[person] = ids.count
         await cacheIfNeeded(Set(ids))
         return ids
     }
@@ -171,10 +159,10 @@ final class CommunityModel: ObservableObject {
         try? await cache(names: names)
     }
 
-    func loadFollowCounts(_ id: String) async {
+    func loadFriendCount(_ id: String) async {
         guard let store, phase == .ready, !isBlocked(id) else { return }
-        guard let counts = try? await store.followCounts(of: id) else { return }
-        followCounts[id] = counts
+        guard let ids = try? await store.friends(of: id) else { return }
+        friendCounts[id] = ids.count
     }
 
     /// A session finished. Stamps the profile's first session once, which is
@@ -457,7 +445,7 @@ final class CommunityModel: ObservableObject {
             try await store.sendRequest(to: id)
             Analytics.track(.friendRequestSent)
             try await refreshLists(store)
-            await loadFollowCounts(id)
+            await loadFriendCount(id)
         } catch { errorText = Self.plain(error) }
     }
 
@@ -468,7 +456,7 @@ final class CommunityModel: ObservableObject {
             try await store.accept(id)
             Analytics.track(.friendAccepted)
             try await refreshLists(store)
-            await loadFollowCounts(id)
+            await loadFriendCount(id)
         } catch { errorText = Self.plain(error) }
     }
 
@@ -477,7 +465,7 @@ final class CommunityModel: ObservableObject {
         do {
             try await store.removeFriend(id)
             try await refreshLists(store)
-            await loadFollowCounts(id)
+            await loadFriendCount(id)
         } catch { errorText = Self.plain(error) }
     }
 
@@ -617,7 +605,7 @@ final class CommunityModel: ObservableObject {
     /// block, are dropped so no screen can show them.
     private func forgetBlockedPerson(_ id: String) {
         if let p = people[id] { people[id] = CommunityStore.nameOnly(p) }
-        followCounts[id] = nil
+        friendCounts[id] = nil
     }
 
     func loadBlocked() async {
@@ -637,7 +625,7 @@ final class CommunityModel: ObservableObject {
             // The name-only copy goes, so their page loads them in full again.
             people[id] = nil
             try await refreshLists(store)
-            await loadFollowCounts(id)
+            await loadFriendCount(id)
         } catch { errorText = Self.plain(error) }
     }
 
@@ -707,7 +695,7 @@ final class CommunityModel: ObservableObject {
         sent = []
         blocked = []
         reactions = [:]
-        followCounts = [:]
+        friendCounts = [:]
         rewardNews = nil
         errorText = nil
         lastSyncedPracticeStats = nil

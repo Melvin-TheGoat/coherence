@@ -374,6 +374,15 @@ actor CommunityStore {
     ///
     /// For my OWN profile the model already holds the lists and does this
     /// arithmetic without a query (`CommunityModel.follow`).
+    /// Anyone's friends: people with edges in both directions, which means
+    /// one asked and the other accepted. A request nobody answered is not a
+    /// friendship and is counted nowhere on a profile (Aziz, 2026-10-01:
+    /// "just friends ... only if they accept we are friends").
+    func friends(of person: String) async throws -> [String] {
+        let (followers, following) = try await follows(of: person)
+        return Set(followers).intersection(following).sorted()
+    }
+
     func followCounts(of person: String) async throws -> (followers: Int, following: Int) {
         let (followers, following) = try await follows(of: person)
         return (followers.count, following.count)

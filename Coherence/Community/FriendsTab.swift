@@ -994,62 +994,48 @@ struct RequestsView: View {
     }
 }
 
-/// "12 followers · 8 following" under a handle, the shape every social
-/// profile uses (Melvin, 2026-09-18). Both numbers come from the edges that
-/// already exist: following is who this person added, followers is who added
-/// them, and a mutual pair is a friendship. Nothing new is stored.
-///
-/// Each half opens its list in its OWN sheet, hung on this view rather than
-/// on the screen around it, because the Profile tab and the person page both
+/// "12 friends" under a handle. Friends only, no followers or following
+/// (Aziz, 2026-10-01: "only if they accept we are friends"): a request
+/// nobody answered counts for nobody. Tapping it opens the list, in its OWN
+/// sheet hung on this view, because the Profile tab and the person page both
 /// already present sheets and stacking them on one view is the
 /// only-one-presents trap.
-struct FollowLine: View {
-    let followers: Int
-    let following: Int
-    /// Whose lists to open. Nil (a profile still loading) shows the numbers
-    /// without making them tappable, rather than opening an empty list.
+struct FriendsLine: View {
+    let count: Int
+    /// Whose friends to open. Nil (a profile still loading) shows the number
+    /// without making it tappable, rather than opening an empty list.
     var personID: String?
 
     @EnvironmentObject private var model: CommunityModel
-    @State private var showing: FollowList?
+    @State private var showing: FriendsList?
 
     var body: some View {
-        HStack(spacing: 6) {
-            part(followers, followers == 1 ? "follower" : "followers", .followers)
-            Text("·").font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
-            part(following, "following", .following)
-        }
-        .sheet(item: $showing) { list in
-            FollowListView(list: list, model: model)
-        }
-    }
-
-    @ViewBuilder
-    private func part(_ count: Int, _ label: String, _ which: FollowList.Which) -> some View {
         let text = Text("\(count) ").font(AppFont.caption.weight(.semibold))
             .foregroundStyle(AppColor.textPrimary)
-            + Text(label).font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
-        if let personID, count > 0 {
-            Button { showing = FollowList(person: personID, which: which) } label: { text }
-                .buttonStyle(.plain)
-        } else {
-            text
+            + Text(count == 1 ? "friend" : "friends").font(AppFont.caption).foregroundStyle(AppColor.textSecondary)
+        Group {
+            if let personID, count > 0 {
+                Button { showing = FriendsList(person: personID) } label: { text }
+                    .buttonStyle(.plain)
+            } else {
+                text
+            }
+        }
+        .sheet(item: $showing) { list in
+            FriendsListView(list: list, model: model)
         }
     }
 }
 
-struct FollowList: Identifiable, Hashable {
-    enum Which: String, Hashable { case followers, following }
+struct FriendsList: Identifiable, Hashable {
     let person: String
-    let which: Which
-    var id: String { person + which.rawValue }
-    var title: String { which == .followers ? "Followers" : "Following" }
+    var id: String { person }
 }
 
-/// The people behind one of the two numbers. Tapping one opens their page,
-/// inside this sheet's own stack.
-struct FollowListView: View {
-    let list: FollowList
+/// The people behind the count. Tapping one opens their page, inside this
+/// sheet's own stack.
+struct FriendsListView: View {
+    let list: FriendsList
     @ObservedObject var model: CommunityModel
     @Environment(\.dismiss) private var dismiss
     @State private var ids: [String]?
@@ -1059,9 +1045,7 @@ struct FollowListView: View {
             Group {
                 if let ids {
                     if ids.isEmpty {
-                        Text(list.which == .followers
-                             ? "Nobody yet. Invite someone to sit with you."
-                             : "Nobody yet. Search for a friend by their username.")
+                        Text("No friends yet.")
                             .font(AppFont.callout)
                             .foregroundStyle(AppColor.textSecondary)
                             .multilineTextAlignment(.center)
@@ -1088,7 +1072,7 @@ struct FollowListView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .screenBackground()
-            .navigationTitle(list.title)
+            .navigationTitle("Friends")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: String.self) { PersonView(id: $0, model: model) }
             .toolbar {
@@ -1097,7 +1081,7 @@ struct FollowListView: View {
                 }
             }
         }
-        .task { ids = await model.follows(list) }
+        .task { ids = await model.friendsList(of: list.person) }
     }
 }
 
@@ -1149,7 +1133,7 @@ struct PersonView: View {
             }
             .scrollIndicators(.hidden)
             // Pull to see a request or an accept the other phone just made.
-            .refreshable { await reload(); await model.loadFollowCounts(id) }
+            .refreshable { await reload(); await model.loadFriendCount(id) }
             .ignoresSafeArea(edges: .top)
             .modifier(NoTopEdgeHaze())
         }
@@ -1188,8 +1172,8 @@ struct PersonView: View {
             // anyone with your username, them included.
             Text("They won't be able to reach you, and they won't be told. You won't see them in Friends. You can undo this from Friends → Requests → Blocked.")
         }
-        .task { await reload(); await model.loadFollowCounts(id) }
-        .refreshesWhileShown { await reload(); await model.loadFollowCounts(id) }
+        .task { await reload(); await model.loadFriendCount(id) }
+        .refreshesWhileShown { await reload(); await model.loadFriendCount(id) }
     }
 
     private func reload() async {
@@ -1209,8 +1193,8 @@ struct PersonView: View {
                 .compactMap { $0 }.joined(separator: " \u{00B7} "))
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
-            if !blocked, let counts = model.followCounts[id] {
-                FollowLine(followers: counts.followers, following: counts.following, personID: id)
+            if !blocked, let count = model.friendCounts[id] {
+                FriendsLine(count: count, personID: id)
                     .padding(.top, 2)
             }
             if blocked {

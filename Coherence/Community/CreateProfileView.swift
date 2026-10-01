@@ -411,7 +411,7 @@ struct CreateProfileView: View {
                 .foregroundStyle(AppColor.skyDeep)
                 .padding(.leading, 30)
 
-            Text("Anyone who looks up your @username sees your name, photo, streak, how often you meditate, and who you follow and who follows you.")
+            Text("Anyone who looks up your @username sees your name, photo, streak, how often you meditate, and your friends.")
                 .font(AppFont.caption)
                 .foregroundStyle(AppColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
