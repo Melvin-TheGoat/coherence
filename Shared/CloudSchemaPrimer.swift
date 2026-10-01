@@ -50,6 +50,7 @@ enum CloudSchemaPrimer {
         user.createdAt = now
         user.updatedAt = now
         user.deletedAt = now          // the one field nothing else ever writes
+        user.username = marker        // optional, so ordinary use may never write it
         context.insert(user)
 
         let prefs = Preferences(userID: userID)
@@ -103,6 +104,9 @@ enum CloudSchemaPrimer {
         // a nil Data writes no field. Matched for removal by session id.
         let photo = SessionPhoto(sessionID: sessionID, takenAt: now,
                                  jpeg: Data([0xFF]), thumbnail: Data([0xFF]), createdAt: now)
+        // Optional, so a nil never writes the field; 1.1's videos need it in
+        // Production (2026-09-30).
+        photo.video = Data([0xFF])
         context.insert(photo)
 
         try? context.save()
