@@ -1265,6 +1265,10 @@ struct ReportSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var reason: String = ""
     @State private var detail: String = ""
+    /// nil while choosing; true once saved (the sheet thanks them); false
+    /// when it couldn't be sent, so they can try again.
+    @State private var sent: Bool?
+    @State private var sending = false
 
     /// About a profile, since there are no posts to report any more (Melvin,
     /// 2026-09-29: "Not a meditation" was a reason for a post).
@@ -1272,6 +1276,42 @@ struct ReportSheet: View {
 
     var body: some View {
         NavigationStack {
+            Group {
+                if sent == true { thanks } else { form }
+            }
+            .screenBackground()
+            .navigationTitle("Report")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    if sent != true { Button("Cancel") { dismiss() } }
+                }
+            }
+        }
+    }
+
+    /// Said once the report is in (App Review pass, 2026-09-30).
+    private var thanks: some View {
+        VStack(spacing: 14) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(OnboardingGreen.fill)
+            Text("Thanks for telling us")
+                .font(AppFont.headline)
+                .foregroundStyle(AppColor.textPrimary)
+            Text("A person reads every report, usually within a day.")
+                .font(AppFont.callout)
+                .foregroundStyle(AppColor.textSecondary)
+                .multilineTextAlignment(.center)
+            Button("Done") { dismiss() }
+                .buttonStyle(PrimaryButtonStyle())
+                .padding(.top, 10)
+        }
+        .padding(AppMetrics.screenPadding)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var form: some View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("What's wrong with it?")
@@ -1299,23 +1339,25 @@ struct ReportSheet: View {
                     Text("A person reads every report, usually within a day. People who keep doing it are removed. support@meditate808.com")
                         .font(AppFont.caption)
                         .foregroundStyle(AppColor.textSecondary)
+                    if sent == false {
+                        Text("Couldn't send the report. Check your connection and try again.")
+                            .font(AppFont.caption.weight(.semibold))
+                            .foregroundStyle(AppColor.textPrimary)
+                    }
                     Button {
+                        sending = true
                         Task {
-                            await model.report(target.record, as: target.kind,
-                                               reason: [reason, detail].filter { !$0.isEmpty }.joined(separator: ": "))
-                            dismiss()
+                            let ok = await model.report(target.record, as: target.kind,
+                                                        reason: [reason, detail].filter { !$0.isEmpty }.joined(separator: ": "))
+                            sending = false
+                            withAnimation(.easeOut(duration: 0.2)) { sent = ok }
                         }
-                    } label: { Text("Send report") }
+                    } label: { Text(sending ? "Sending…" : "Send report") }
                     .buttonStyle(PrimaryButtonStyle())
-                    .disabled(reason.isEmpty)
+                    .disabled(reason.isEmpty || sending)
                     .opacity(reason.isEmpty ? 0.55 : 1)
                 }
                 .padding(AppMetrics.screenPadding)
             }
-            .screenBackground()
-            .navigationTitle("Report")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        }
     }
 }

@@ -6598,6 +6598,13 @@ change at all". No price, plan, trial length, product or ladder step moved.
   turn it off; "Otto's steady" no longer claims the first session added glow.
   `test_doorwayRequiresContiguityNotTotalReadableTime` takes ~8 s alone; its
   one crash came from two agents sharing a simulator.
+- **Fourth-pass fixes (same day):** onboarding's question screens scroll
+  (at the largest text sizes Continue fell off the bottom); the reward
+  ribbon stays below "Session complete!"; Create profile scrolls the
+  nickname field above the keyboard; a report thanks the reporter or says
+  it couldn't send; the Watch's Allow becomes "Try again" with the Health
+  app steps when Workouts was declined, its error lines are plain sentences,
+  and an encode failure says "Not sent" instead of promising a later send.
 - **Agents never change the user's simulator settings** (content size,
   appearance): a review agent set the shared iPhone 17 to the largest text
   size and alarmed Aziz. Checks that need it run on a simulator the agent

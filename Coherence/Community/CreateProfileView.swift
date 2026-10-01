@@ -72,6 +72,10 @@ struct CreateProfileView: View {
     @State private var showLibraryPicker = false
     @State private var suggestions: [String] = []
     @FocusState private var focused: Bool
+    /// The nickname field has the keyboard. On a short screen the pinned
+    /// buttons ride up with the keyboard and covered this field, so the page
+    /// scrolls it into view (App Review pass, 2026-09-30).
+    @FocusState private var nameFocused: Bool
     /// The community rules box (guideline 1.2). A new profile always starts
     /// unticked, whoever agreed on this phone before (Melvin, 2026-09-29: the
     /// box came up ticked for the next person to create a profile here).
@@ -108,6 +112,7 @@ struct CreateProfileView: View {
     var body: some View {
         GeometryReader { proxy in
             let top = proxy.safeAreaInsets.top
+            ScrollViewReader { reader in
             ScrollView {
                 VStack(spacing: 0) {
                     FriendsSky(height: top + 150, sceneHeight: (top + 150) / 0.62) {
@@ -155,6 +160,8 @@ struct CreateProfileView: View {
                         fieldLabel("Nickname")
                         TextField("What friends call you", text: $name)
                             .textContentType(.nickname)
+                            .focused($nameFocused)
+                            .id("nickname")
                             .font(AppFont.body)
                             .foregroundStyle(AppColor.textPrimary)
                             .padding(14)
@@ -185,6 +192,16 @@ struct CreateProfileView: View {
             .scrollIndicators(.hidden)
             .ignoresSafeArea(edges: .top)
             .background(ValleyGround.meadow.ignoresSafeArea())
+            .onChange(of: nameFocused) { _, now in
+                guard now else { return }
+                Task {
+                    // After the keyboard has risen, or the scroll aims at the
+                    // old visible area.
+                    try? await Task.sleep(for: .milliseconds(350))
+                    withAnimation(.easeOut(duration: 0.25)) { reader.scrollTo("nickname", anchor: .center) }
+                }
+            }
+            }
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 10) {

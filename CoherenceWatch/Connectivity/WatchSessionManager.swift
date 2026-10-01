@@ -53,6 +53,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
     @Published var countdown: Int?
     private var countdownTask: Task<Void, Never>?
     @Published var authorized = false
+    /// What the first-run screen says once Allow came back without Workouts
+    /// (2026-09-30, App Review: Allow looked dead). Nil until someone has
+    /// tried, so the first look at the screen asks rather than explains.
+    @Published var authorizeHelp: String?
     @Published var elapsed = 0
     @Published var params: SessionParams?
     @Published var statusMessage: String?
@@ -73,6 +77,10 @@ final class WatchSessionManager: NSObject, ObservableObject {
     /// Sent screen can say "Delivered" vs "Saved, syncing when in range"
     /// without guessing.
     @Published var deliveredImmediately = false
+    /// The payload could not be encoded, so nothing went to the phone and
+    /// nothing is queued to retry. The sent screen says so instead of
+    /// "Saved" (2026-09-30).
+    @Published var sendFailed = false
     /// True when this session began on the Watch (drives the silence note —
     /// phone-initiated sessions manage their own audio).
     @Published var startedOnWatch = false
@@ -127,9 +135,33 @@ final class WatchSessionManager: NSObject, ObservableObject {
     }
 
     /// One-time HealthKit workout authorization (first run).
+    ///
+    /// When Workouts was already declined (usually on the iPhone during
+    /// onboarding), HealthKit shows nothing and returns at once, so Allow used
+    /// to look as if it did nothing. Now the screen says where to turn it on
+    /// (2026-09-30). Not yet answered means the prompt is waiting on the
+    /// iPhone, which is the only place the system can show it.
     func authorize() async {
         _ = await HealthKitAuth.authorize()
+        recheckAuthorization()
+    }
+
+    /// Re-reads the Workouts answer without asking again: the "Try again"
+    /// button, and every return to the app, since the fix happens in the
+    /// Health app on the iPhone while this screen waits. `explain: false`
+    /// (the return to the app) updates the gate but adds no help to a screen
+    /// where nobody has tapped Allow yet.
+    func recheckAuthorization(explain: Bool = true) {
         authorized = workout.isWorkoutAuthorized
+        if authorized {
+            authorizeHelp = nil
+        } else if !explain {
+            return
+        } else if workout.isWorkoutDenied {
+            authorizeHelp = WorkoutManager.turnOnWorkoutsHelp
+        } else {
+            authorizeHelp = "Check your iPhone to allow 808, then tap Try again."
+        }
     }
 
     /// Begin from the wrist: the Watch composes its own params instead of
@@ -243,7 +275,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
         let started = await workout.start()
         guard started else {
             // workout.start() sets its own failure message; surface it on Ready.
-            statusMessage = workout.statusMessage ?? "Couldn't start (unknown)."
+            // The cause is in the Workout log; the wrist gets a sentence
+            // (App Review, 2026-09-30: "(unknown)" read as a debug code).
+            statusMessage = workout.statusMessage ?? "Couldn't start the session. Try again."
             report(.workoutNotAuthorized, sessionID: p.sessionID)
             params = nil
             return
@@ -503,6 +537,7 @@ final class WatchSessionManager: NSObject, ObservableObject {
     private func send(_ payload: SessionPayload) {
         // Don't swallow encode failures — a non-finite Double makes JSONEncoder
         // throw, which previously dropped the whole transfer silently (belly-nil bug).
+        sendFailed = false
         do {
             let data = try PayloadCoding.encode(payload)
             let dict: [String: Any] = [WCKeys.payload: data]
@@ -531,7 +566,11 @@ final class WatchSessionManager: NSObject, ObservableObject {
             log.debug("Sent payload for session \(payload.sessionID) (reachable=\(WCSession.default.isReachable))")
         } catch {
             log.error("Payload encode FAILED — session NOT sent: \(String(describing: error))")
-            statusMessage = "Send failed (encode)."
+            // Nothing was sent and nothing is queued, so say only that
+            // (App Review, 2026-09-30: "(encode)" read as a debug code).
+            deliveredImmediately = false
+            sendFailed = true
+            statusMessage = "Couldn't send this session."
         }
     }
 

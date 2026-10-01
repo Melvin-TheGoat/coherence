@@ -474,31 +474,40 @@ struct CornerQuestionScreen<Option: Identifiable & Hashable>: View {
             }
             .frame(height: 40)
 
-            Text(title)
-                .font(.system(size: 28, weight: .heavy, design: .rounded))
-                .foregroundStyle(AppColor.textPrimary)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity)
-                .padding(.top, 30)
+            // Scrolls (App Review pass, 2026-09-30): at the largest
+            // accessibility text sizes the answers outgrew the screen and
+            // pushed Continue off the bottom, so the first question could not
+            // be finished. At normal sizes it fits and does not bounce.
+            ScrollView {
+                VStack(spacing: 0) {
+                    Text(title)
+                        .font(.system(size: 28, weight: .heavy, design: .rounded))
+                        .foregroundStyle(AppColor.textPrimary)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 30)
 
-            VStack(spacing: 10) {
-                ForEach(options) { o in
-                    OnboardingOption(label: label(o), icon: icon(o),
-                                     selected: selected.contains(o), multi: !single) {
-                        if single {
-                            selected = [o]
-                        } else if selected.contains(o) {
-                            selected.remove(o)
-                        } else {
-                            selected.insert(o)
+                    VStack(spacing: 10) {
+                        ForEach(options) { o in
+                            OnboardingOption(label: label(o), icon: icon(o),
+                                             selected: selected.contains(o), multi: !single) {
+                                if single {
+                                    selected = [o]
+                                } else if selected.contains(o) {
+                                    selected.remove(o)
+                                } else {
+                                    selected.insert(o)
+                                }
+                            }
                         }
                     }
+                    .padding(.top, 24)
+                    .padding(.bottom, 12)
                 }
             }
-            .padding(.top, 24)
-
-            Spacer(minLength: 0)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
         }
         .padding(.horizontal, AppMetrics.screenPadding)
         .padding(.top, 12)

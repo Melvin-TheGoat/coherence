@@ -8,6 +8,7 @@ import SwiftUI
 /// "status" the live screen shows is a teal measuring dot.
 struct WatchContentView: View {
     @EnvironmentObject private var manager: WatchSessionManager
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showSoundPicker = false
 
     var body: some View {
@@ -18,6 +19,15 @@ struct WatchContentView: View {
         .sheet(isPresented: $showSoundPicker) {
             NavigationStack {
                 SoundPickerView(selectedID: $manager.soundID)
+            }
+        }
+        // Workouts gets turned on in the Health app on the iPhone while the
+        // first-run screen waits here; notice it on the way back without a
+        // tap (2026-09-30). Only while still locked out, so a session in
+        // progress is never sent back to the first-run screen.
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active, !manager.authorized {
+                manager.recheckAuthorization(explain: manager.authorizeHelp != nil)
             }
         }
     }
@@ -40,26 +50,42 @@ struct WatchContentView: View {
 
     // MARK: - First run
 
+    /// Allow asks HealthKit. When Workouts was already declined (often on the
+    /// iPhone during onboarding) HealthKit shows nothing, so the screen used
+    /// to sit there as if Allow were broken (App Review, 2026-09-30). After
+    /// an Allow that comes back without Workouts, the help replaces the intro
+    /// line and the button becomes Try again, which only re-reads the answer.
+    /// Scrolls, because the help runs to four lines on a 41 mm Watch.
     private var authorizeScreen: some View {
-        VStack(spacing: 10) {
-            markRow
-            Spacer()
-            Text("808 measures with your heart rate and motion.")
-                .font(.system(size: 13))
-                .foregroundStyle(WatchPalette.inkMuted)
-                .multilineTextAlignment(.center)
-            Button("Allow") { Task { await manager.authorize() } }
-                .buttonStyle(.borderedProminent)
-                .tint(WatchPalette.gold)
-                .foregroundStyle(.black)
-            if let msg = manager.statusMessage {
-                Text(msg).font(.system(size: 11))
-                    .foregroundStyle(WatchPalette.inkMuted)
+        ScrollView {
+            VStack(spacing: 10) {
+                markRow
+                Text(manager.authorizeHelp ?? "808 measures with your heart rate and motion.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(manager.authorizeHelp == nil ? WatchPalette.inkMuted : WatchPalette.ink)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 6)
+                if manager.authorizeHelp == nil {
+                    Button("Allow") { Task { await manager.authorize() } }
+                        .buttonStyle(.borderedProminent)
+                        .tint(WatchPalette.gold)
+                        .foregroundStyle(.black)
+                } else {
+                    Button("Try again") { manager.recheckAuthorization() }
+                        .buttonStyle(.borderedProminent)
+                        .tint(WatchPalette.gold)
+                        .foregroundStyle(.black)
+                }
+                if let msg = manager.statusMessage, msg != manager.authorizeHelp {
+                    Text(msg).font(.system(size: 11))
+                        .foregroundStyle(WatchPalette.inkMuted)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
-            Spacer()
+            .padding(.horizontal, 6)
         }
-        .padding(.horizontal, 6)
     }
 
     // MARK: - Phone not set up yet
@@ -137,11 +163,13 @@ struct WatchContentView: View {
             // Surfaces a start refusal (no HR, not authorized) on the screen
             // the user is actually looking at.
             if let msg = manager.statusMessage {
+                // Three lines: the Workouts help is one full sentence and was
+                // cut off at two (2026-09-30).
                 Text(msg)
                     .font(.system(size: 10))
                     .foregroundStyle(WatchPalette.gold)
                     .multilineTextAlignment(.center)
-                    .lineLimit(2)
+                    .lineLimit(3)
             }
         }
         .padding(.horizontal, 4)
@@ -247,13 +275,17 @@ struct WatchContentView: View {
 
     private var sentScreen: some View {
         VStack(spacing: 8) {
-            Image(systemName: "checkmark.seal.fill")
+            // An encode failure sends nothing and queues nothing, so it must
+            // not read "Saved" (2026-09-30).
+            Image(systemName: manager.sendFailed ? "exclamationmark.circle.fill" : "checkmark.seal.fill")
                 .font(.system(size: 30))
-                .foregroundStyle(WatchPalette.gold)
-            Text(manager.deliveredImmediately ? "Delivered" : "Saved")
+                .foregroundStyle(manager.sendFailed ? WatchPalette.inkMuted : WatchPalette.gold)
+            Text(manager.sendFailed ? "Not sent" : (manager.deliveredImmediately ? "Delivered" : "Saved"))
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundStyle(WatchPalette.ink)
-            Text(manager.deliveredImmediately
+            Text(manager.sendFailed
+                 ? "Couldn't send this session."
+                 : manager.deliveredImmediately
                  ? "Open 808 to see it."
                  : "It'll reach your iPhone\nwhen it's back in range.")
                 .font(.system(size: 11))

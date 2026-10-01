@@ -66,6 +66,19 @@ final class WorkoutManager: NSObject, ObservableObject {
         store.authorizationStatus(for: HKObjectType.workoutType()) == .sharingAuthorized
     }
 
+    /// True when the person has already answered no to Workouts. HealthKit
+    /// never shows that prompt again, so asking does nothing and the only way
+    /// back is the Health app's own settings on the iPhone (2026-09-30).
+    var isWorkoutDenied: Bool {
+        store.authorizationStatus(for: HKObjectType.workoutType()) == .sharingDenied
+    }
+
+    /// Plain words for the one way back once Workouts was declined. Shown on
+    /// the first-run screen and on Ready, so it is one sentence in both
+    /// (App Review, 2026-09-30: arrows read as a code, not a direction).
+    static let turnOnWorkoutsHelp =
+        "Turn on Workouts for 808 in the Health app on your iPhone: Sharing, Apps, 808."
+
     /// How many heart-rate samples have arrived this session. This is the only
     /// trustworthy signal that HR is actually readable: HealthKit hides read
     /// authorization, so nothing else can distinguish "denied" from "quiet".
@@ -90,7 +103,7 @@ final class WorkoutManager: NSObject, ObservableObject {
 
         guard isWorkoutAuthorized else {
             log.error("workoutType share not authorized")
-            statusMessage = "Enable Workouts for 808: iPhone Health app → Sharing → Apps → 808."
+            statusMessage = Self.turnOnWorkoutsHelp
             return false
         }
 
@@ -128,7 +141,9 @@ final class WorkoutManager: NSObject, ObservableObject {
             return true
         } catch {
             log.error("Failed to create workout session: \(error.localizedDescription)")
-            statusMessage = "Session error: \(error.localizedDescription)"
+            // The error stays in the log above; the wrist gets a sentence
+            // (App Review, 2026-09-30: raw system errors read as a crash).
+            statusMessage = "Couldn't start the session. Try again."
             teardown()
             return false
         }
@@ -317,7 +332,11 @@ extension WorkoutManager: HKWorkoutSessionDelegate {
     ) {
         Task { @MainActor in
             self.log.error("Workout session failed: \(error.localizedDescription)")
-            self.statusMessage = "Workout failed: \(error.localizedDescription)"
+            // Logged above in full; the wrist gets a sentence (2026-09-30).
+            // `onFailure` ends the session and ships what was captured, so
+            // this speaks for the workout only. A failure during `start()`
+            // is overwritten there by "Couldn't start the session."
+            self.statusMessage = "The session stopped early."
             // Only for OUR current workout: a failure reported late for one
             // already torn down must not end the next.
             guard self.session === workoutSession else { return }

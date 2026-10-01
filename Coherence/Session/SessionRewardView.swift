@@ -65,6 +65,11 @@ struct SessionRewardView: View {
     @State private var tileFrame: CGRect = .zero
     @State private var bankFrame: CGRect = .zero
     @State private var stackTop: CGFloat = 600
+    /// Where "N minutes, well spent" ends, so the stage-up ribbon never
+    /// lands on the title (App Review pass, 2026-09-30: on an iPhone SE, and
+    /// an iPad running 808 in its iPhone window, it covered "Session
+    /// complete!").
+    @State private var subtitleBottom: CGFloat = 0
 
     private static let space = "reward"
     private var haptics: Bool { prefsRows.first?.hapticsEnabled ?? true }
@@ -158,7 +163,8 @@ struct SessionRewardView: View {
                         .shadow(color: .black.opacity(0.18), radius: 8, y: 6)
                         .scaleEffect(ribbon ? 1 : 0.3)
                         .opacity(ribbon ? 1 : 0)
-                        .position(x: size.width / 2, y: ottoY - seated * 0.66)
+                        .position(x: size.width / 2,
+                                  y: max(ottoY - seated * 0.66, subtitleBottom + 12 + 21))
                 }
 
                 Color.white.opacity(flash ? 0.85 : 0).allowsHitTesting(false)
@@ -214,6 +220,9 @@ struct SessionRewardView: View {
                 .onValley(soft: true)
                 .opacity(subIn ? 1 : 0)
                 .offset(y: subIn ? 0 : 8)
+                .onGeometryChange(for: CGFloat.self) { $0.frame(in: .named(Self.space)).maxY } action: {
+                    subtitleBottom = $0
+                }
                 .padding(.top, 4)
 
             Spacer(minLength: 0)

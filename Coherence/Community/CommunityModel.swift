@@ -621,8 +621,11 @@ final class CommunityModel: ObservableObject {
         } catch { errorText = Self.plain(error) }
     }
 
-    func report(_ target: String, as kind: Report.Target, reason: String) async {
-        guard let store else { return }
+    /// True when the report was saved. The sheet thanks the person, or says
+    /// it couldn't send (App Review pass, 2026-09-30: it closed silently).
+    @discardableResult
+    func report(_ target: String, as kind: Report.Target, reason: String) async -> Bool {
+        guard let store else { return false }
         do {
             let report = try await store.report(target, as: kind, reason: reason)
             // Test mode reports a seeded, fake person into the in-memory
@@ -631,7 +634,11 @@ final class CommunityModel: ObservableObject {
                 ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
             }
             Analytics.track(.contentReported(kind: kind.rawValue))
-        } catch { errorText = Self.plain(error) }
+            return true
+        } catch {
+            errorText = Self.plain(error)
+            return false
+        }
     }
 
     // MARK: - Signing out and deleting the account
