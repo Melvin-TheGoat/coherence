@@ -638,9 +638,14 @@ final class CommunityModel: ObservableObject {
             let report = try await store.report(target, as: kind, reason: reason)
             // Test mode reports a seeded, fake person into the in-memory
             // database: emailing the real inbox about it is noise (2026-09-30).
+            // Test mode only exists in DEBUG, so a Release build always sends.
+            #if DEBUG
             if !testMode {
                 ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
             }
+            #else
+            ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
+            #endif
             Analytics.track(.contentReported(kind: kind.rawValue))
             return true
         } catch {
