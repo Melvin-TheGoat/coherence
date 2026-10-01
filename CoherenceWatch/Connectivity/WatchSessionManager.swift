@@ -146,9 +146,9 @@ final class WatchSessionManager: NSObject, ObservableObject {
         recheckAuthorization()
     }
 
-    /// Re-reads the Workouts answer without asking again: the "Try again"
-    /// button, and every return to the app, since the fix happens in the
-    /// Health app on the iPhone while this screen waits. `explain: false`
+    /// Re-reads the Workouts answer without asking again: every return to
+    /// the app, since the fix happens in Settings on the iPhone while this
+    /// screen waits, and the end of `authorize()` (which "Try again" calls). `explain: false`
     /// (the return to the app) updates the gate but adds no help to a screen
     /// where nobody has tapped Allow yet.
     func recheckAuthorization(explain: Bool = true) {

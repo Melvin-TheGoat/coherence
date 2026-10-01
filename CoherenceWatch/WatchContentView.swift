@@ -54,7 +54,8 @@ struct WatchContentView: View {
     /// iPhone during onboarding) HealthKit shows nothing, so the screen used
     /// to sit there as if Allow were broken (App Review, 2026-09-30). After
     /// an Allow that comes back without Workouts, the help replaces the intro
-    /// line and the button becomes Try again, which only re-reads the answer.
+    /// line and the button becomes Try again, which asks again and re-reads
+    /// the answer.
     /// Scrolls, because the help runs to four lines on a 41 mm Watch.
     private var authorizeScreen: some View {
         ScrollView {

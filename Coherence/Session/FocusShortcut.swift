@@ -240,12 +240,17 @@ final class FocusShortcut: ObservableObject {
     private var failureTask: Task<Void, Never>?
 
     /// Raises `restoreFailed` once nothing is presented over the root (the
-    /// reward screen closed), however long that takes while 808 is open.
+    /// reward screen closed). Only while it is still news: if the person
+    /// leaves 808 first, or ten minutes pass, it is dropped, so it never
+    /// appears hours later out of context (2026-09-30).
     private func raiseFailureWhenClear() async {
+        let started = Date()
         try? await Task.sleep(for: .seconds(2))
         while !Task.isCancelled {
-            if UIApplication.shared.applicationState == .active,
-               !restorePrompt, !Self.somethingPresented() {
+            guard UIApplication.shared.applicationState == .active,
+                  Date().timeIntervalSince(started) < 600
+            else { return }
+            if !restorePrompt, !Self.somethingPresented() {
                 restoreFailed = true
                 return
             }
