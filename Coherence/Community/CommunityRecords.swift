@@ -336,7 +336,12 @@ struct Report: Identifiable, Equatable {
 
     func apply(to record: CKRecord) {
         record["reporter"] = CommunityRecordValue.reference(reporter).ckValue
-        record["target"] = target
+        // A Reference, as the schema has always defined it (CLOUDKIT_SETUP.md).
+        // Written as a String from 2026-09-14, which CloudKit refused with
+        // "invalid attempt to set value type STRING for field 'target'", so
+        // every report failed; found on two phones 2026-10-01. A field's type
+        // can never change once in Production, so the app had to match.
+        record["target"] = CommunityRecordValue.reference(target).ckValue
         record["targetType"] = targetType.rawValue
         record["reason"] = reason
         record["createdAt"] = createdAt

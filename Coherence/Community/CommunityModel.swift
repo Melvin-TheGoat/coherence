@@ -655,6 +655,9 @@ final class CommunityModel: ObservableObject {
         } catch {
             // The report sheet says it couldn't send; an alert as well would
             // say it twice (2026-09-30).
+            #if DEBUG
+            NSLog("Friends report failed: %@", String(describing: error))
+            #endif
             return false
         }
     }

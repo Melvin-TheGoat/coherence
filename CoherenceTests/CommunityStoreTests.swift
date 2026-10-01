@@ -589,7 +589,9 @@ final class CommunityStoreTests: XCTestCase {
         let record = try XCTUnwrap(db.records[r.id])
         XCTAssertEqual(record.recordType, CommunityType.report)
         XCTAssertEqual((record["reporter"] as? CKRecord.Reference)?.recordID.recordName, azizID)
-        XCTAssertEqual(record["target"] as? String, post.id)
+        // A Reference, matching the CloudKit schema: a String is refused by the
+        // server and every report fails (2026-10-01).
+        XCTAssertEqual((record["target"] as? CKRecord.Reference)?.recordID.recordName, post.id)
         XCTAssertEqual(record["targetType"] as? String, "post")
     }
 
