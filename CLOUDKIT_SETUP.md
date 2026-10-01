@@ -92,8 +92,9 @@ writes must exist in Development BEFORE deploying, or the write fails in
 Production exactly the way 1.0's sync did. Step 2 is therefore adding the 14
 missing fields by hand, not creating types.
 
-Note: the 808 Dev beta writes to `iCloud.com.lockout.meditate808.dev`, a
-different container. Only a normal Xcode build on the production bundle id
+Note (corrected 2026-10-01): a beta installed WITHOUT `WITH_ICLOUD=1` has no
+iCloud at all; WITH it, it writes to `iCloud.com.lockout.meditate808`
+(Development). It never used a `.dev` container. Only a normal Xcode build on the production bundle id
 touches this one.
 
 ## Step 1: check what Development already has
@@ -390,7 +391,10 @@ prefix in the Console (`CD_video`, `CD_order` and so on).
 
 ## Step 5: the real round trip, BEFORE deploying to Production
 
-Two phones, both on the 808 Dev beta, different iCloud accounts. This is
+Two phones, both on the "808 Beta" installed with `WITH_ICLOUD=1
+./tools/beta_install.sh <UDID>` (it talks to `iCloud.com.lockout.meditate808`,
+Development environment), different iCloud accounts. Aziz's phone has it as
+of 2026-10-01. This is
 still Development, so mistakes are cheap. **Rewritten 2026-09-29 for profiles
 without posts.**
 

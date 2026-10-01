@@ -6638,6 +6638,33 @@ change at all". No price, plan, trial length, product or ladder step moved.
   sound, Begin) instead of starting a session at once, which was Melvin's
   2026-09-22 choice. `beginFromOtto` is deleted.
 
+### Installing the iCloud beta from Aziz's Mac (2026-10-01)
+
+For the Friends round trip (CLOUDKIT_SETUP.md Step 5): `WITH_ICLOUD=1
+./tools/beta_install.sh <UDID>` installs "808 Beta" (`com.lockout.meditate808
+.dev`) talking to `iCloud.com.lockout.meditate808`, DEVELOPMENT environment.
+Verified on Aziz's iPhone 17 Pro Max (devicectl id 50915950-93C2-59E9-854D-
+4A14C4863236): the launch log printed `container: iCloud.com.lockout.
+meditate808` and `iCloud account: available`.
+- **All SIX skip-worktree files carry Aziz's personal values, not two**:
+  project.yml, CoherenceWatch/Info.plist, and the four entitlements files
+  (app + three Block extensions hold `group.com.azizmahmud.808`). The script
+  only rewrites the Lock Out group to the .dev group, so all six must be
+  swapped to the committed versions for the run and restored after.
+- **A phone new to the Lock Out team fails with "isn't registered in your
+  developer account."** The script does not register devices; that run
+  needs `-allowProvisioningDeviceRegistration` added to its xcodebuild line
+  (done for one run, then reverted; it uses one of the team's yearly
+  device slots). Aziz's iPhone is now registered.
+- **Restore under a trap, never as a later step.** A run stopped mid-way
+  (the user interrupted the tool call) left the six files in the script's
+  half-swapped ".dev" state, because the restore was a separate command.
+  The working pattern is one script that backs up, swaps, installs and
+  restores in an EXIT/INT trap, refusing to start unless the files are the
+  personal ones. Check `grep -c azizmahmud` on all six afterwards.
+- The script's own trap restores Coherence/Info.plist and the extension
+  entitlements it edits; it does not know about the personal overrides.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley
