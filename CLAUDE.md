@@ -4572,7 +4572,7 @@ map.
   sentence case throughout. It is the only organic advertising 808 has, and a
   dark card sells a dark app.
 
-## RESUME HERE (end of 2026-09-14): state of play in one screen
+## ~~RESUME HERE (end of 2026-09-14)~~: superseded by "RESUME HERE (2026-10-01)"
 
 Read this first after a context reset; the sections below carry the detail.
 
@@ -6664,6 +6664,51 @@ meditate808` and `iCloud account: available`.
   personal ones. Check `grep -c azizmahmud` on all six afterwards.
 - The script's own trap restores Coherence/Info.plist and the extension
   entitlements it edits; it does not know about the personal overrides.
+
+## RESUME HERE (2026-10-01): where 1.1 stands
+
+Read this first after a context reset; the dated sections above carry the
+detail. Supersedes "RESUME HERE (end of 2026-09-14)".
+
+- **Branches:** `block`, `main` and `mvp` all point at the same commit on
+  GitHub and are pushed after every change (fast-forward only, checked with
+  `git merge-base --is-ancestor`). Melvin pushes to `block` too: fetch first,
+  rebase onto his commits (his last two: the Otto-meditating app icon, and
+  the schema primer writing username and session video).
+- **Six App Review passes are done** (2026-09-29 to 10-01) and converged: the
+  sixth found nothing new and recommended stopping code-reading passes.
+  Everything they found is fixed or founder-decided; the review notes in
+  `marketing/APP_STORE_PASTE.md` are accurate at 3,941 characters, **only
+  ~29 under the 4,000 limit (also counting line breaks twice): recount after
+  any edit.**
+- **Payments are frozen** (Aziz: "I don't want the pricing or anything to
+  change at all"). Only presentation changed: no struck "was" price on
+  Yearly or Lifetime, the trial is never the headline, "About a year of
+  monthly". Do not propose price, plan, product or ladder changes.
+- **Still owed before submitting, none of it code:**
+  1. The Friends round trip on two real phones (CLOUDKIT_SETUP.md Step 5),
+     then Melvin promotes Development to Production in the CloudKit Console
+     (Steps 3 and 4 first: seven indexes, Report and Block creator-only).
+     Aziz's phone has the iCloud beta (build 202610010350); Melvin's needs
+     it, on his own iCloud account.
+  2. App Store Connect, per RELEASE_CHECKLIST.md: remove the intro offer
+     from monthly and yearly LAST before Submit; name the trial products
+     "Monthly (free trial)" / "Yearly (free trial)"; attach the in-app
+     purchases; age rating; privacy labels.
+  3. Founders' calls: the university logos on the research screen, the
+     celebrity photos on the social-proof screen, attaching the Block screen
+     recording to App Review.
+  4. On real hardware: the Screen Time shield and Ask Otto, the Do Not
+     Disturb shortcuts (x-callbacks), a sandbox purchase and restore, the
+     Watch permission screen.
+- **No reviewer test account** (decided). If App Review asks for one, claim a
+  profile on any iPhone signed into iCloud and reply with the handle.
+- **The website** (meditate808.com) is current: 1.1 privacy policy and
+  terms, screenshots retaken in the 1.1 look with a `?v=` cache tag (bump it
+  when an image in `img/app/` changes). Deploy is the `deploy-website` skill.
+- **Simulator rule (Aziz was upset twice):** never change the user's
+  simulator settings, above all the text size. An agent that needs another
+  size or device creates its own simulator and deletes it after.
 
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
