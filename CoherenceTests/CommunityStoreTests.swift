@@ -908,15 +908,20 @@ final class PostRemovalTests: XCTestCase {
 }
 
 /// Records every record type queried, to prove what a screen never asks for.
-private final class TypeRecordingDatabase: CommunityDatabase {
+/// The lists load with several queries in flight at once, so the record is
+/// kept under a lock: a bare array appended from concurrent tasks crashed the
+/// test host (2026-10-01).
+private final class TypeRecordingDatabase: CommunityDatabase, @unchecked Sendable {
     let inner: MemoryCommunityDatabase
-    var types: [String] = []
+    private let lock = NSLock()
+    private var recorded: [String] = []
+    var types: [String] { lock.withLock { recorded } }
     init(inner: MemoryCommunityDatabase) { self.inner = inner }
     func currentUserRecordName() async throws -> String { try await inner.currentUserRecordName() }
     func save(_ record: CKRecord) async throws -> CKRecord { try await inner.save(record) }
     func create(_ record: CKRecord) async throws -> CKRecord { try await inner.create(record) }
     func fetch(_ recordName: String) async throws -> CKRecord? { try await inner.fetch(recordName) }
-    func query(_ query: CommunityQuery) async throws -> [CKRecord] { types.append(query.type); return try await inner.query(query) }
+    func query(_ query: CommunityQuery) async throws -> [CKRecord] { lock.withLock { recorded.append(query.type) }; return try await inner.query(query) }
     func delete(_ recordName: String) async throws { try await inner.delete(recordName) }
 }
 
