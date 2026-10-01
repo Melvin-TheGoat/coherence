@@ -55,10 +55,11 @@ trial is only offered after a "no".
 808 Meditate
 ```
 
-**Subtitle** (30 max; this one is 30)
+**Subtitle** (30 max; this one is 30; Melvin's pick 2026-10-01, it adds
+"meditation", "daily" and "habit" to search, none of which the keywords carry)
 
 ```
-A meditation habit that sticks
+Build a daily meditation habit
 ```
 
 **Category**: Primary `Health & Fitness` · Secondary `Lifestyle`
