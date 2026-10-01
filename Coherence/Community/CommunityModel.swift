@@ -298,7 +298,11 @@ final class CommunityModel: ObservableObject {
         // type or its index is missing that query fails and the whole tab
         // reads as broken. `clearMyPostsIfNeeded` still takes down anything
         // already shared, on its own path.
-        try await cache(names: Set(fr + inc + sn))
+        // Fetched again, not only when missing: a friend's practice summary
+        // changes every time they meditate, and a refresh that kept the copy
+        // from the app's launch showed old numbers until 808 was relaunched
+        // (found on two phones, 2026-10-01).
+        try await cache(names: Set(fr + inc + sn), refetch: true)
         try await checkRewards(store)
     }
 
@@ -315,10 +319,10 @@ final class CommunityModel: ObservableObject {
         }
     }
 
-    private func cache(names: Set<String>) async throws {
+    private func cache(names: Set<String>, refetch: Bool = false) async throws {
         guard let store else { return }
-        let missing = names.filter { people[$0] == nil }
-        for p in try await store.profiles(named: Array(missing)) { people[p.id] = p }
+        let wanted = refetch ? names : names.filter { people[$0] == nil }
+        for p in try await store.profiles(named: Array(wanted)) { people[p.id] = p }
     }
 
     func person(_ id: String) -> Profile? { people[id] }
@@ -328,11 +332,13 @@ final class CommunityModel: ObservableObject {
     /// practice stats) waits for a profile first.
     var hasProfile: Bool { !(profile?.username ?? "").isEmpty }
 
-    /// Loads one profile into the cache (a profile page opened for someone
-    /// the lists never mentioned).
+    /// Loads one profile into the cache, every time a profile page opens or
+    /// is pulled to refresh, so their practice summary is current. The cached
+    /// copy stays on screen while it loads and if the fetch fails. Someone I
+    /// blocked comes back nil and keeps the name-only copy.
     func loadPerson(_ id: String) async {
-        guard people[id] == nil, let store, let p = try? await store.profile(named: id) else { return }
-        people[id] = p
+        guard let store, let p = try? await store.profile(named: id) else { return }
+        people[id] = isBlocked(id) ? CommunityStore.nameOnly(p) : p
     }
 
     // MARK: - Username
