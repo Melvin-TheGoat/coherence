@@ -346,6 +346,9 @@ final class CommunityModel: ObservableObject {
     func availability(of handle: String) async -> Availability {
         guard let store else { return .failed(CommunityError.unavailable.localizedDescription) }
         guard let normalized = Username.normalize(handle) else { return .invalid }
+        // The handle this person already holds is always theirs to keep, even
+        // one claimed before the filters below existed (2026-09-30).
+        if normalized == profile?.username { return .available }
         // Decided on the phone, before any network: an offensive handle is
         // refused outright, and a reserved one ("admin", "otto", "808
         // support") reads as taken, which is what it is (Melvin, 2026-09-29).
@@ -622,7 +625,11 @@ final class CommunityModel: ObservableObject {
         guard let store else { return }
         do {
             let report = try await store.report(target, as: kind, reason: reason)
-            ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
+            // Test mode reports a seeded, fake person into the in-memory
+            // database: emailing the real inbox about it is noise (2026-09-30).
+            if !testMode {
+                ReportClient.send(reportID: report.id, target: target, kind: kind.rawValue, reason: reason)
+            }
             Analytics.track(.contentReported(kind: kind.rawValue))
         } catch { errorText = Self.plain(error) }
     }

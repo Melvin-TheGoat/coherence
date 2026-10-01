@@ -142,6 +142,10 @@ final class FocusShortcut: ObservableObject {
     /// to open Shortcuts by itself at launch and on every return, which threw
     /// the person into another app without a tap.
     @Published var restorePrompt = false
+    /// "808 Restore" answered x-error: Do Not Disturb is still on and 808
+    /// can't turn it off. Said once, with where to do it (2026-09-30); it
+    /// used to forget the silence and say nothing.
+    @Published var restoreFailed = false
 
     /// When 808 switched Do Not Disturb on, while it is still 808's to put
     /// back; nil otherwise. A Focus the user switched on themselves is
@@ -383,7 +387,10 @@ final class FocusShortcut: ObservableObject {
             // back and show the steps again, quietly.
             guard isCurrent else { return true }
             markNotInstalled()
-            if action == .restore { forget() }
+            if action == .restore {
+                forget()
+                restoreFailed = true
+            }
             silenced = weSilencedIt
             setupNeeded = true
         case (_, .cancel):
@@ -467,6 +474,13 @@ struct FocusRestorePrompt: ViewModifier {
             Button("Keep it on", role: .cancel) { focus.declineRestorePrompt() }
         } message: {
             Text("808 turned on Do Not Disturb for your last session. Turn it off now?")
+        }
+        .alert("Do Not Disturb is still on",
+               isPresented: Binding(get: { focus.restoreFailed && !focus.restorePrompt },
+                                    set: { if !$0 { focus.restoreFailed = false } })) {
+            Button("OK", role: .cancel) { focus.restoreFailed = false }
+        } message: {
+            Text("808 couldn't find the \"808 Restore\" shortcut. Turn Do Not Disturb off in Control Center, and add the shortcut again from the Silence notifications switch.")
         }
     }
 }

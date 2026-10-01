@@ -86,14 +86,18 @@ actor CommunityStore {
     /// free, so re-saving my own name never reads as taken.
     func isUsernameAvailable(_ raw: String) async throws -> Bool {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
+        let mine = try await me()
+        let owner = try await holder(of: handle)
+        // A handle already mine stays mine, even if it was claimed before the
+        // reserved-word and blocked-word rules existed (2026-09-30): checking
+        // the filter first locked those people out of every profile edit.
+        if owner == mine { return true }
         switch ContentFilter.checkHandle(handle) {
         case .blocked: throw CommunityError.contentBlocked
         case .reserved: return false
         case .ok: break
         }
-        let mine = try await me()
-        let owner = try await holder(of: handle)
-        return owner == nil || owner == mine
+        return owner == nil
     }
 
     /// Claim a handle, creating the profile if this is the first time.
@@ -105,20 +109,29 @@ actor CommunityStore {
     @discardableResult
     func claimUsername(_ raw: String, displayName: String) async throws -> Profile {
         guard let handle = Username.normalize(raw) else { throw CommunityError.usernameInvalid }
-        guard ContentFilter.check([handle, displayName]) == .ok else { throw CommunityError.contentBlocked }
+        let mine = try await me()
+        let currentHolder = try await holder(of: handle)
+        // A handle already mine is kept as it is: the filters below are for
+        // NEW claims, so someone who took "team" before those rules existed
+        // can still change their display name (2026-09-30).
+        let keepsOwn = currentHolder == mine
+        guard ContentFilter.check(keepsOwn ? [displayName] : [handle, displayName]) == .ok else {
+            throw CommunityError.contentBlocked
+        }
         // A handle is one word, so it gets the substring check too
         // ("fuckyou" is a single word in no list), and handles that would
         // read as 808 or its staff are never handed out (Melvin, 2026-09-29).
         // Enforced here, not only on the screen, so no door can skip it.
-        switch ContentFilter.checkHandle(handle) {
-        case .blocked: throw CommunityError.contentBlocked
-        case .reserved: throw CommunityError.usernameTaken
-        case .ok: break
+        if !keepsOwn {
+            switch ContentFilter.checkHandle(handle) {
+            case .blocked: throw CommunityError.contentBlocked
+            case .reserved: throw CommunityError.usernameTaken
+            case .ok: break
+            }
         }
-        let mine = try await me()
 
         var reservedNow = false
-        switch try await holder(of: handle) {
+        switch currentHolder {
         case .some(let owner) where owner != mine:
             throw CommunityError.usernameTaken
         case .some:

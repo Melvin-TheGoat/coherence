@@ -6590,6 +6590,18 @@ change at all". No price, plan, trial length, product or ladder step moved.
   "About a year of monthly" ($95.88 vs $99.99). The review notes now say
   808 briefly opens Shortcuts at a session's end, what the shield does
   without notifications, and that recorded sessions earn no points.
+- **Bug review of the two days' changes (2026-09-30):** a Friends user
+  keeps a handle claimed before the reserved/blocked-word rules (the filters
+  apply to NEW claims only; checking them first locked those people out of
+  every profile edit); Friends test mode sends no report emails; a missing
+  "808 Restore" shortcut now says "Do Not Disturb is still on" with where to
+  turn it off; "Otto's steady" no longer claims the first session added glow.
+  `test_doorwayRequiresContiguityNotTotalReadableTime` takes ~8 s alone; its
+  one crash came from two agents sharing a simulator.
+- **Agents never change the user's simulator settings** (content size,
+  appearance): a review agent set the shared iPhone 17 to the largest text
+  size and alarmed Aziz. Checks that need it run on a simulator the agent
+  creates and deletes itself.
 - Open, the founders': the university logos, the celebrity faces, the Block
   demo video.
 

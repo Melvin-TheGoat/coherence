@@ -207,7 +207,10 @@ struct SessionSetupView: View {
         .sheet(isPresented: $showFocusSetup) { FocusSetupSheet() }
         // A shortcut answered x-error, which means it is not on this phone:
         // the setup steps come back, quietly (App Review pass, 2026-09-29).
-        .onChange(of: focus.setupNeeded) { _, needed in
+        // `initial`: the flag is often raised while this screen is closed
+        // (a restore failing as the sit ends), and must still open the steps
+        // the next time the Ready screen appears (2026-09-30).
+        .onChange(of: focus.setupNeeded, initial: true) { _, needed in
             guard needed else { return }
             focus.setupShown()
             showFocusSetup = true

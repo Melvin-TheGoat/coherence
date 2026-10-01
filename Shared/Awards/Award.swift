@@ -326,12 +326,14 @@ public struct Award: Identifiable, Hashable {
 
         // MARK: Otto
 
+        // The first session can add nothing to his glow (a one-minute sit
+        // gains 0), so this marks meditating with him, not a gain (2026-09-30).
         Award(id: "ottoSteady", title: "Otto's steady",
-              blurb: "Added to Otto's glow for the first time.",
+              blurb: "Meditated with Otto for the first time.",
               group: .otto, face: .mark,
               meaning: """
-              Otto starts steady for everyone, his colour already in. Your \
-              first session was the first to add to his glow.
+              Otto starts steady for everyone, his colour already in. This \
+              marks your first session with him.
               """),
 
         Award(id: "ottoBright", title: "Otto's bright",
