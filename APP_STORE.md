@@ -462,7 +462,7 @@ worked answer, not a substitute for reading the live form.
 | Horror or Fear Themes | **No** | |
 | Alcohol, Tobacco, or Drug Use or References | **No** | |
 | Health or Wellness Topics | **Yes** | The guide's meditation techniques and the practice itself: self-care content. |
-| Medical or Treatment Information | **Infrequent** | `SCIENCE.md`, bundled and readable in the app, cites meditation research on cardiovascular risk (the AHA scientific statement, Levine 2017) and meta-analyses on anxiety and depression. It says plainly that 808 measures nothing cardiovascular, but the content is there, so None would be the evasive answer. |
+| Medical or Treatment Information | **Infrequent** | `SCIENCE.md`, bundled and readable in the app, cites meta-analyses finding meditation reduces anxiety, depression and anger, and onboarding's "Did you know?" quotes the anxiety finding (Goyal 2014). Those are medical conditions, so None would understate it. (The cardiovascular section was cut 2026-09-30; this answer no longer rests on it.) 1.0 answered None, before this content shipped. The tier stays 13+ either way: User-Generated Content and Social Media set it. |
 | Sexuality or Nudity (all levels) | **No** | |
 | Violence (all levels) | **No** | |
 | Chance-Based Activities (all kinds) | **No** | |
