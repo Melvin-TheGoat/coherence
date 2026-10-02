@@ -49,50 +49,53 @@ var NOT_INTERNAL =
   "OR ifNull(toString(properties.team_device), '') = 'true')";
 
 /**
- * Numbered human names for the onboarding screens, mirroring
- * Analytics.onboardingScreenName(for:) in the app. Events from 1.0.1 onward
- * carry the name themselves (`screen`); this map names the 1.0 events.
+ * Numbered human names for the onboarding screens, in the order 1.1 shows
+ * them, copied from Analytics.onboardingScreenName(for:) in the app (the
+ * lines that do not start "zz"). Rewritten 2026-10-01 for the 1.1 onboarding:
+ * the 1.0 list (Watch gate, calculating your plan, the sample session) named
+ * screens 1.1 never shows, so the tab read as zeros. When the app's list
+ * changes, change this one to match.
  */
 var SCREEN_NAMES = {
-  relief:            "01 Relief: you're not bad at meditation",
-  breath:            "02 One breath before we start",
-  baseline:          "03 How often do you meditate?",
-  motivation:        "04 What are you hoping for?",
-  stress:            "05 How stressed lately?",
-  aloneWithThoughts: "06a Alone with your thoughts? (not regulars)",
-  doingNothing:      "06b How long doing nothing? (not regulars)",
-  restarts:          "07a What made you stop? (restarters)",
-  intendedFor:       "07b How long meaning to start? (newcomers)",
-  bodyCuriosity:     "08a Wonder what your body is doing? (not newcomers)",
-  bodyProof:         "08b How do you know it worked? (not newcomers)",
-  bodyTracking:      "09 What do you already track?",
-  hardware:          "10 The hardware you'd otherwise need",
-  blindSpot:         "11 What can't you tell about your practice? (regulars)",
-  watchGate:         "12 Do you have an Apple Watch?",
-  watchSetup:        "12a 808 goes on your Watch (has Watch)",
-  waitlist:          "12b No-Watch waitlist",
-  anchor:            "13 When will you actually meditate?",
-  you:               "14 What should we call you?",
-  referral:          "15 How did you find us?",
-  calculating:       "16 Calculating your plan",
-  result:            "17 Here's what you told us",
-  cost:              "17b The cost (not routed to)",
-  wall:              "18 The wall: you'd be in company",
-  proofBody:         "19 Proof: the body is visible",
-  sampleStart:       "20 Sample session: start",
-  sampleBuild:       "21 Sample session: the score builds",
-  proofYourWay:      "22 Proof: your way",
-  commitment:        "23 Make it a promise",
-  permission:        "24 One nudge at your time (notifications)",
-  week:              "25 Your first week",
-  rating:            "26 Does this sound like it'd work?",
-  health:            "27 Health data consent",
-  tourHome:          "28 Tour: this is home",
-  watchConnect:      "29 Tour: put your Watch on",
-  breathe:           "30 Tour: two-minute demo",
-  sessionResults:    "31 Tour: demo results",
-  paywall:           "32 Paywall",
-  signIn:            "33 Sign in with Apple"
+  relief:           "01 Welcome, Otto waves",
+  breath:           "02 One breath (starts by itself)",
+  breathing:        "03 One breath done (in 4, hold 2, out 4)",
+  meetOtto:         "04 Meet your meditating partner: Otto",
+  ottoGrows:        "05 The more you meditate, the brighter he gets",
+  seeForYourself:   "06 See for yourself (drag Otto's glow)",
+  clutter:          "07 Your mind is just cluttered",
+  questionCount:    "08 Let's personalize 808 for you",
+  motivation:       "09 What's your goal with meditation?",
+  obstacles:        "10 What usually gets in the way?",
+  stress:           "11 How stressed have you been lately?",
+  wandering:        "12 How much of your day is your mind elsewhere?",
+  role:             "13 Which one sounds most like you?",
+  quietTime:        "14 When could you fit in a few quiet minutes?",
+  habitHistory:     "15 Tried to make meditation a habit before?",
+  age:              "16 How old are you?",
+  didYouKnow:       "17 Did you know? (four sourced facts)",
+  baseline:         "18 How often do you meditate right now?",
+  buildingPlan:     "19 Tailoring 808 to you",
+  mindProfile:      "20 Your mind profile",
+  lifeNumber:       "21 N years with your mind elsewhere (seasons clip)",
+  lifePause:        "22 What would you do with N years?",
+  lifeDots:         "23 This is your life (the dots)",
+  goodNews:         "24 The good news (a quarter back)",
+  lifeMoments:      "25 N more years of family, fun, this world",
+  attentionHacked:  "26 Your attention has been hacked",
+  whyItWorks:       "27 How 808 makes meditation stick",
+  research:         "28 808 is built on research",
+  socialProof:      "29 Made for people like you",
+  thisWeek:         "30 In 1 week, 808 will help you",
+  ascend:           "31 Ready to take control? (hold to ascend)",
+  paywall:          "32 Paywall",
+  permission:       "33 One nudge at your time (notifications)",
+  health:           "33a Health consent (Watch paired)",
+  blockApps:        "33b Which apps should Otto hold? (Block builds)",
+  blockSchedule:    "33c When should Otto hold them? (Block builds)",
+  signIn:           "34 Sign in with Apple",
+  profile:          "34a Create your profile (Friends builds)",
+  tourHome:         "35 Tour: this is home"
 };
 
 // ---------------------------------------------------------------------------
@@ -225,6 +228,9 @@ function writeScreens() {
     "count(DISTINCT person_id) AS people " +
     "FROM events WHERE event IN ('onboarding_step', 'onboarding_completed') " +
     "AND timestamp > now() - INTERVAL 30 DAY AND " + NOT_INTERNAL + " " +
+    // 1.1 onwards only: 1.0 used some of the same step ids (relief, breath,
+    // stress) for different screens in a different order.
+    "AND NOT startsWith(ifNull(toString(properties.$app_version), ''), '1.0') " +
     "GROUP BY step ORDER BY people DESC LIMIT 100";
   var res = query(sql);
   var counts = {};
@@ -236,20 +242,12 @@ function writeScreens() {
   // which is guarded to regulars only: it showed a 90% "drop" and then
   // -900% on the Watch gate, both pure routing.
   var BRANCH = {
-    aloneWithThoughts: 'not regulars', doingNothing: 'not regulars',
-    restarts: 'restarters only', intendedFor: 'newcomers only',
-    bodyCuriosity: 'not newcomers', bodyProof: 'not newcomers',
-    blindSpot: 'regulars only', watchSetup: 'has a Watch', waitlist: 'no Watch',
-    cost: 'not routed to (screen retired)',
-    paywall: 'only when plans are on sale, after the tour',
-    signIn: 'everyone reaches it, but from two places'
+    paywall: 'skipped by anyone who already pays',
+    health: 'only with an Apple Watch paired'
   };
   // Screens where the group of people changes, so "lost vs previous" would
   // count routing as churn. The number is shown; the drop is explained.
-  var REBASE = {
-    anchor: 'Both Watch-gate branches rejoin here. The drop is people who quit on 12a or 12b.',
-    tourHome: 'No-Watch people skip the tour and go straight to sign in, so most of this drop is routing, not churn. Compare with 12a (has a Watch).'
-  };
+  var REBASE = {};
 
   var rows = [['#', 'Screen', 'People who completed it (30d)', 'Lost vs previous screen', 'Note']];
   var prev = null;
@@ -265,13 +263,13 @@ function writeScreens() {
     } else if (prev) {
       lost = Math.round((1 - n / prev) * 100) + '%';
     }
-    // Apostrophe keeps "06a" and "09" as typed; Sheets would turn "09" into 9.
+    // Apostrophe keeps "33a" and "09" as typed; Sheets would turn "09" into 9.
     rows.push(["'" + name.split(' ')[0], name.replace(/^\S+\s/, ''), n, lost, note]);
     if (!BRANCH[id]) prev = n;
   });
   rows.push(['']);
   rows.push(['', 'Finished onboarding', counts['__finished'] || 0,
-    '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen.']);
+    '', 'An onboarding_step fires when a screen is LEFT, so each count is people who got past that screen. 1.1 and later only.']);
   rows.push(['', 'Who is counted', '', '',
     'Founders’ App Store installs and Apple’s reviewers are INCLUDED (see the Installs tab Note column). Read small numbers with that in mind.']);
   write('Screens', rows, [50, 380, 200, 170, 620]);
