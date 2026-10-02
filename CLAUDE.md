@@ -6667,6 +6667,18 @@ meditate808` and `iCloud account: available`.
 
 ## RESUME HERE (2026-10-01): where 1.1 stands
 
+**SUBMITTED FOR REVIEW 2026-10-01 (evening, Melvin): 1.1 build
+202610012355**, with the five new plans in the same submission (Lifetime
+unchanged, already approved), release set to MANUAL. When Apple approves:
+deploy the website first (`deploy-website`; the privacy policy and terms
+changed for 1.1), then press Release. Build 202610012237 was uploaded
+earlier and is superseded (it had the Requests navigation bug). If App
+Review asks for a Friends test account, claim a profile on any iPhone
+signed in to iCloud and reply with the handle. The CloudKit schema
+(Report and Block creator-only, the createdBy indexes) is deployed to
+Production. Still open, the founders' call: the Texas age law and the
+written procedure for reported photos (RELEASE_CHECKLIST.md 4).
+
 Read this first after a context reset; the dated sections above carry the
 detail. Supersedes "RESUME HERE (end of 2026-09-14)".
 
