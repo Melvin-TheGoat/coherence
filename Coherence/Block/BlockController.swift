@@ -394,8 +394,10 @@ final class BlockNotifications: NSObject, UNUserNotificationCenterDelegate {
         if info["block"] != nil {
             completionHandler([.banner, .sound])
         } else if info[SessionEndNotice.userInfoKey] != nil {
-            // The sit screen is already saying it is over: just the chime.
-            completionHandler([.sound])
+            // The sit screen is already saying it is over, and `SessionBell`
+            // is ringing (it sounds on silent; this sound would not), so
+            // nothing: two sounds at once would step on the bell.
+            completionHandler([])
         } else {
             completionHandler([])
         }

@@ -6762,6 +6762,17 @@ set to block Time Sensitive (on by default). Overriding silent mode needs
 Apple's Critical Alerts entitlement, which is for health and safety alerts,
 not a timer.
 
+**So 808 rings its own bell** (`SessionBell`, same day, Aziz: "add the
+bell"): a synthesized singing-bowl strike, about six seconds, played on the
+media channel with `.mixWithOthers`, which the ring switch does not silence
+and which plays over someone's own track instead of stopping it. It rings
+when a timed sit's timer runs out with 808 on screen (phone: in
+`finishPhoneSession`, only within 5 s of the planned end, never on a late
+finish; Watch: the re-anchored audio-stop timer). While 808 is open the end
+notification now presents nothing, so the two never sound together. It
+follows the MEDIA volume, so a phone with media volume at zero hears
+nothing. `SessionBellTests` pins no clipping and silence at both ends.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley

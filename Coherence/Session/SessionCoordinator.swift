@@ -430,6 +430,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
         phoneFinishTask?.cancel()
         phoneFinishTask = nil
         stopAudio(reason: "phone session ended")
+        // The bell, when the timer ran out with 808 on screen. Not on a late
+        // finish (the phone picked up long after the end), where it would
+        // ring at a time that means nothing.
+        if !early, let planned = current.plannedDurationSec,
+           abs(Date().timeIntervalSince(current.startedAt) - Double(planned)) < 5 {
+            SessionBell.ringIfOnScreen()
+        }
         // The silence was for the meditation and the meditation is over.
         // `restoreIfOurs` is the guard that matters: a Focus the user had on
         // before they sat down is theirs, and 808 must not switch it off.
@@ -671,6 +678,9 @@ final class SessionCoordinator: NSObject, ObservableObject {
                 try? await Task.sleep(for: .seconds(max(0, remaining)))
                 guard !Task.isCancelled else { return }
                 self?.tone.stop(reason: "planned timer (re-anchored, \(Int(remaining))s left)")
+                // The Watch's timer has just run out: the bell, as a phone
+                // sit rings it.
+                SessionBell.ringIfOnScreen()
             }
         }
     }
