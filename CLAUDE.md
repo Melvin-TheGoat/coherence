@@ -6747,6 +6747,21 @@ view's `@Query`) so a session saved a moment ago is never mistaken for a
 deleted one. A session just after midnight still counts for the new day:
 Block's day runs midnight to midnight.
 
+## EVERY TIMED SESSION RINGS AT ITS END, WATCH ONES TOO (2026-10-04, Aziz)
+
+"Make sure we have a notification letting the user know their meditation
+time is up that gets past Do Not Disturb." A timed phone sit already did
+(`SessionEndNotice`, Time Sensitive, the app holds the entitlement). A timed
+sit measured with the Apple Watch (`beginMeasured`) scheduled nothing, and
+the Watch plays no haptic, so its end was silent. It now schedules the same
+notice, moves it to the Watch's real start on the ack, and takes it back
+only when the sit ends early (`cancelEndNoticeIfEarly`); on time it rings.
+**What Time Sensitive cannot do:** play a sound with the ring switch on
+silent (the banner and vibration still come), or pass a Focus the person
+set to block Time Sensitive (on by default). Overriding silent mode needs
+Apple's Critical Alerts entitlement, which is for health and safety alerts,
+not a timer.
+
 ## THE WEBSITE IS BRAINROT'S SHAPE; ~45 BUGS FIXED; LEGAL SYNCED (2026-09-28, Aziz)
 
 - **meditate808.com rebuilt** after thebrainrotapp.com, in the app's valley

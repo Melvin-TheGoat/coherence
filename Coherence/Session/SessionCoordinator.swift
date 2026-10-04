@@ -271,6 +271,13 @@ final class SessionCoordinator: NSObject, ObservableObject {
                                soundTitle: SoundCatalog.title(for: soundID),
                                engine: .watch)
         startAudio(soundID: soundID, headphones: false, plannedDurationSec: plannedDurationSec)
+        // A timed sit measured on the Watch rings at its end too, through Do
+        // Not Disturb, the same as a phone sit (Aziz, 2026-10-04). The Watch
+        // plays no haptic, so without this its end was silent on the phone.
+        // Moved to the Watch's real start when it acknowledges.
+        if let planned = plannedDurationSec {
+            SessionEndNotice.schedule(for: params.sessionID, afterSeconds: planned, plannedSec: planned)
+        }
         status = "Starting on your Watch…"
         armStartWatchdog(for: params.sessionID)
 
@@ -653,6 +660,12 @@ final class SessionCoordinator: NSObject, ObservableObject {
                                engine: current.engine)
         if let planned = current.plannedDurationSec {
             let remaining = Double(planned) - Date().timeIntervalSince(startedAt)
+            // The end notice follows the Watch's real start, so it rings as
+            // the Watch's own timer ends rather than a few seconds early.
+            if remaining > 0 {
+                SessionEndNotice.schedule(for: current.id, afterSeconds: Int(remaining.rounded(.up)),
+                                          plannedSec: planned)
+            }
             audioStopTask?.cancel()
             audioStopTask = Task { @MainActor [weak self] in
                 try? await Task.sleep(for: .seconds(max(0, remaining)))
@@ -757,6 +770,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             finishPhoneSession(early: true)
             return
         }
+        cancelEndNoticeIfEarly(active)
         stopAudio(reason: "user ended on phone")
         let wc = WCSession.default
         let msg = [WCKeys.end: active.id.uuidString]
@@ -793,6 +807,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
         // No sit happened, so 808's own Do Not Disturb has nothing to cover.
         Task { await FocusShortcut.shared.restoreIfOurs() }
         if let id = currentAttemptID {
+            SessionEndNotice.cancel(for: id)
             Self.remember(id, in: &endedIDs)
             releaseWatch(from: id)
             sessionSources.removeValue(forKey: id)
@@ -803,6 +818,16 @@ final class SessionCoordinator: NSObject, ObservableObject {
         status = "Couldn't start: \(failure.rawValue)"
         Analytics.track(.sessionStartFailed(reason: failure.rawValue))
         log.error("session refused to start: \(failure.rawValue)")
+    }
+
+    /// A Watch sit that ended before its planned length must not ring later
+    /// claiming it is over. One that ended on time keeps it: it is ringing
+    /// at this moment, and it is the chime that says so.
+    private func cancelEndNoticeIfEarly(_ session: ActiveSession) {
+        guard let planned = session.plannedDurationSec else { return }
+        if Date() < session.startedAt.addingTimeInterval(TimeInterval(planned) - 2) {
+            SessionEndNotice.cancel(for: session.id)
+        }
     }
 
     /// Stops live-session audio (called when the session ends).
@@ -858,6 +883,7 @@ final class SessionCoordinator: NSObject, ObservableObject {
             // Session ended (Watch End for open-ended, or the Watch's own timer) —
             // stop the phone audio now. For timed sessions the parallel timer may
             // have already stopped it; stopAudio() is idempotent.
+            if let active, active.id == id { cancelEndNoticeIfEarly(active) }
             stopAudio(reason: "payload landed")
             Task { await FocusShortcut.shared.restoreIfOurs() }
             UIApplication.shared.isIdleTimerDisabled = false
@@ -1025,6 +1051,7 @@ extension SessionCoordinator: WCSessionDelegate {
         // The phone took this sit over; the Watch ending is not its end. The
         // payload is held and attached when the phone's own clock finishes.
         guard active?.engine != .phone else { return }
+        if let active { cancelEndNoticeIfEarly(active) }
         stopAudio(reason: "watch ending")
         UIApplication.shared.isIdleTimerDisabled = false
         active = nil
