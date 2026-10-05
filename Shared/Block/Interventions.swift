@@ -21,6 +21,10 @@ struct InterventionContext: Equatable {
     var aura: OttoAura.Stage
     /// A friend who meditated today, by first name, when Friends is on.
     var friendWhoSat: String?
+    /// Whether this person has a session today. Otto's text says "you
+    /// haven't meditated today" only when it is true: a Focus-hours blocker
+    /// can hold apps after a morning session (2026-10-04).
+    var meditatedToday = false
 
     var isMorning: Bool { (5..<11).contains(hour) }
     var isNight: Bool { hour >= 20 || hour < 4 }

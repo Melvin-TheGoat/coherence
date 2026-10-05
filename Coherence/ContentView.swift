@@ -403,7 +403,8 @@ struct ContentView: View {
         return InterventionContext(hour: Calendar.current.component(.hour, from: Date()),
                                    streak: StreakCalculator.streak(from: dates).current,
                                    aura: auraStage,
-                                   friendWhoSat: friend)
+                                   friendWhoSat: friend,
+                                   meditatedToday: dates.contains(where: Calendar.current.isDateInToday))
     }
 
 

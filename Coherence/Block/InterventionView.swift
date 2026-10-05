@@ -74,6 +74,12 @@ struct InterventionView: View {
             meditateFor: { onMeditate($0) },
             notNow: {
                 withAnimation(.easeInOut(duration: 0.3)) { step = .howLong }
+            },
+            pass: { minutes in
+                // The gallery rehearses with nothing real happening, as the
+                // how-long screen does.
+                if !rehearsal { block.takePass(minutes: minutes) }
+                onClose()
             })
     }
 }
@@ -89,6 +95,9 @@ struct InterventionDoors {
     /// A timed session, for the screens that say they will keep time.
     var meditateFor: (Int) -> Void = { _ in }
     let notNow: () -> Void
+    /// Opens the held apps for this many minutes and closes Otto, for a
+    /// screen that asks how long itself (the text thread, 2026-10-04).
+    var pass: (Int) -> Void = { _ in }
 }
 
 // MARK: - The bottom of every screen
@@ -136,7 +145,7 @@ private struct InterventionScene: View {
         case .standing:
             ValleyStage(pose: "OttoWave", line: "Got five minutes for me first?", doors: doors)
         case .textThread:
-            TextThreadScene(doors: doors)
+            TextThreadScene(doors: doors, meditatedToday: context.meditatedToday)
         case .faceTime:
             FaceTimeScene(doors: doors)
         case .breatheWithMe:
@@ -309,45 +318,155 @@ private struct OttoLine: View {
 
 // MARK: - 2. A text thread
 
+/// Otto texts you (Aziz, 2026-10-04): blue bubbles, one at a time, each
+/// after its typing dots, and the replies right under his last text rather
+/// than down at the bottom of the screen. What you tap is sent as your own
+/// text before anything happens, so it reads as a conversation.
+///
+/// "I'm busy" is not the end of it: he says once that a few minutes could
+/// help, then asks how long you need, 5, 10 or 30 minutes, which opens the
+/// held apps for that long (`doors.pass`), or "actually nvm", which goes to
+/// the + screen like every other "let's meditate".
 private struct TextThreadScene: View {
     let doors: InterventionDoors
-    @State private var shown = 0
+    let meditatedToday: Bool
 
-    private let lines = ["yo it's otto", "quick meditation before the scroll?"]
+    private struct Message: Identifiable, Equatable {
+        let id = UUID()
+        let mine: Bool
+        let text: String
+    }
+    private enum Replies { case none, first, howLong }
+
+    @State private var messages: [Message] = []
+    @State private var typing = false
+    @State private var replies: Replies = .none
+    /// Set once a reply is tapped, so a second tap does nothing.
+    @State private var answered = false
+
+    private var opener: String {
+        meditatedToday
+            ? "want to do a quick meditation before you open this?"
+            : "you haven't meditated today. want to do one before you open this?"
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             ChatHeader()
-            ScrollView {
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(0..<min(shown, lines.count), id: \.self) { i in
-                        ChatBubble(text: lines[i])
+            ScrollViewReader { scroll in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(messages) { m in
+                            ChatBubble(text: m.text, mine: m.mine)
+                                .frame(maxWidth: .infinity, alignment: m.mine ? .trailing : .leading)
+                        }
+                        if typing { TypingDots() }
+                        replyOptions
+                        Color.clear.frame(height: 1).id("end")
                     }
-                    if shown < lines.count { TypingDots() }
+                    .padding(16)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(16)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            Spacer(minLength: 0)
-            if shown >= lines.count {
-                VStack(alignment: .trailing, spacing: 8) {
-                    ReplyChip(text: "ok let's go", action: doors.meditate)
-                    ReplyChip(text: "later, open it", action: doors.notNow)
+                .onChange(of: messages.count) { _, _ in
+                    withAnimation(.easeOut(duration: 0.25)) { scroll.scrollTo("end", anchor: .bottom) }
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 20)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .onChange(of: replies) { _, _ in
+                    withAnimation(.easeOut(duration: 0.25)) { scroll.scrollTo("end", anchor: .bottom) }
+                }
             }
         }
         .background(AppColor.backgroundPrimary.ignoresSafeArea())
         .keepsDarkStatusBar()
         .task {
-            for i in 1...lines.count {
-                try? await Task.sleep(for: .seconds(i == 1 ? 0.6 : 1.3))
-                guard !Task.isCancelled else { return }
-                withAnimation(.easeOut(duration: 0.25)) { shown = i }
+            await otto("yo it's otto", wait: 0.6)
+            await otto(opener, wait: 1.3)
+            show(.first)
+        }
+    }
+
+    @ViewBuilder private var replyOptions: some View {
+        switch replies {
+        case .none:
+            EmptyView()
+        case .first:
+            options([
+                ("yeah you're right, let's meditate", { meditate("yeah you're right, let's meditate") }),
+                ("i'm busy right now, i need the app", { busy() }),
+            ])
+        case .howLong:
+            options([
+                ("5 min", { open(5) }),
+                ("10 min", { open(10) }),
+                ("30 min", { open(30) }),
+                ("actually nvm, i'll meditate", { meditate("actually nvm, i'll meditate") }),
+            ])
+        }
+    }
+
+    private func options(_ list: [(String, () -> Void)]) -> some View {
+        VStack(alignment: .trailing, spacing: 8) {
+            ForEach(list.indices, id: \.self) { i in
+                ReplyChip(text: list[i].0, action: list[i].1)
             }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.top, 6)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    // MARK: The conversation
+
+    private func otto(_ text: String, wait: Double) async {
+        withAnimation(.easeOut(duration: 0.2)) { typing = true }
+        try? await Task.sleep(for: .seconds(wait))
+        guard !Task.isCancelled else { return }
+        withAnimation(.easeOut(duration: 0.25)) {
+            typing = false
+            messages.append(Message(mine: false, text: text))
+        }
+    }
+
+    private func show(_ next: Replies) {
+        withAnimation(.easeOut(duration: 0.25)) { replies = next }
+    }
+
+    /// Your reply, sent as your own text, with the options taken away.
+    private func send(_ text: String) -> Bool {
+        guard !answered else { return false }
+        answered = true
+        withAnimation(.easeOut(duration: 0.25)) {
+            replies = .none
+            messages.append(Message(mine: true, text: text))
+        }
+        return true
+    }
+
+    private func meditate(_ reply: String) {
+        guard send(reply) else { return }
+        Task { @MainActor in
+            await otto("let's go. i'll meet you there", wait: 0.7)
+            try? await Task.sleep(for: .seconds(0.6))
+            doors.meditate()
+        }
+    }
+
+    private func busy() {
+        guard send("i'm busy right now, i need the app") else { return }
+        Task { @MainActor in
+            await otto("okay...", wait: 0.9)
+            await otto("just so you know, you could feel so much better after even a few minutes", wait: 1.4)
+            await otto("how long do you need?", wait: 1.0)
+            answered = false
+            show(.howLong)
+        }
+    }
+
+    private func open(_ minutes: Int) {
+        guard send("\(minutes) min") else { return }
+        Task { @MainActor in
+            await otto("ok, it's open for \(minutes) min. i'll be here", wait: 0.8)
+            try? await Task.sleep(for: .seconds(0.9))
+            doors.pass(minutes)
         }
     }
 }
@@ -373,16 +492,21 @@ private struct ChatHeader: View {
     }
 }
 
+/// One text. Otto's are blue with white words (Aziz, 2026-10-04: "make it
+/// blue"); yours are sand with dark words, on the right.
 private struct ChatBubble: View {
     let text: String
+    var mine = false
     var body: some View {
         Text(text)
             .font(.system(size: 17))
-            .foregroundStyle(.white)
+            .foregroundStyle(mine ? AppColor.textPrimary : .white)
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(AppColor.calmAccent, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .transition(.scale(scale: 0.85, anchor: .leading).combined(with: .opacity))
+            .background(mine ? AppColor.backgroundSecondary : AppColor.skyDeep,
+                        in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .frame(maxWidth: 290, alignment: mine ? .trailing : .leading)
+            .transition(.scale(scale: 0.85, anchor: mine ? .trailing : .leading).combined(with: .opacity))
     }
 }
 
@@ -412,11 +536,11 @@ private struct ReplyChip: View {
         Button(action: action) {
             Text(text)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundStyle(AppColor.textPrimary)
+                .foregroundStyle(AppColor.skyDeep)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 11)
                 .background(AppColor.backgroundPrimary, in: Capsule())
-                .overlay(Capsule().stroke(AppColor.accentGold, lineWidth: 2))
+                .overlay(Capsule().stroke(AppColor.skyDeep, lineWidth: 2))
         }
         .buttonStyle(.plain)
     }
