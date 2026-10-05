@@ -1114,10 +1114,15 @@ private struct HowLongScreen: View {
     /// The unblock-screens gallery: skip the real pass and Screen Time call.
     var rehearsal = false
 
-    @State private var minutes = 10
-    /// One row, three choices (Melvin, 2026-09-23: "change those to 10/20/30
-    /// and thats it").
-    private static let options = [10, 20, 30]
+    /// One row, three choices, each opening the apps for that long at once
+    /// (Aziz, 2026-10-04: 5, 10, 30, matching the text thread; it was 10, 20,
+    /// 30 with a separate "Open my apps" button).
+    private static let options = [5, 10, 30]
+
+    /// Otto put out by the "Not now" (Aziz, 2026-10-04): sitting, arms
+    /// down, a sideways look and a small frown. The drawing is the one from
+    /// `mockups/otto-v3/otto-frustrated.png`.
+    private static let pose = "OttoFrustratedSit"
 
     var body: some View {
         let ink = DayLight.now.ink
@@ -1140,11 +1145,11 @@ private struct HowLongScreen: View {
                     .frame(width: size.width, height: size.height, alignment: .bottom)
                 VStack {
                     Spacer(minLength: 0)
-                    OttoLine(text: "Fine. How long do you need?", progress: DayLight.clockProgress())
+                    OttoLine(text: "Fine... how much time do you need?", progress: DayLight.clockProgress())
                 }
                 .frame(width: min(size.width - 56, 330), height: max(0, ottoTop - 8 - 110))
                 .position(x: size.width / 2, y: 110 + max(0, ottoTop - 8 - 110) / 2)
-                Image("OttoAwake")
+                Image(Self.pose)
                     .resizable()
                     .scaledToFit()
                     .frame(height: ottoHeight)
@@ -1156,46 +1161,29 @@ private struct HowLongScreen: View {
                     HStack(spacing: 8) {
                         ForEach(Self.options, id: \.self) { m in
                             Button {
-                                minutes = m
+                                // The unblock-screens gallery rehearses this
+                                // screen with nothing real happening: skip the
+                                // real pass so it can never touch a real
+                                // blocker or Screen Time.
+                                if !rehearsal { block.takePass(minutes: m) }
+                                onClose()
                             } label: {
                                 Text("\(m) min")
-                                    .font(.system(size: 15, weight: .semibold))
+                                    .font(DisplayFont.display(16, .bold))
                                     .lineLimit(1)
                                     .foregroundStyle(AppColor.textPrimary)
                                     .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 10)
-                                    .background(minutes == m ? AppColor.accentGold.opacity(0.2)
-                                                             : AppColor.backgroundSecondary, in: Capsule())
-                                    .overlay(Capsule().stroke(minutes == m ? AppColor.accentGold : .clear,
-                                                              lineWidth: 2))
+                                    .padding(.vertical, 13)
+                                    .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
+                                    .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
                             }
                             .buttonStyle(.plain)
+                            .accessibilityLabel("Open my apps for \(m) minutes")
                         }
                     }
-                    .padding(12)
-                    .background(AppColor.backgroundPrimary.opacity(0.95),
-                                in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-                    .padding(.bottom, 8)
-                    Button("Actually, let's meditate", action: onMeditate)
+                    .padding(.bottom, 4)
+                    Button("Nah, actually let's meditate", action: onMeditate)
                         .buttonStyle(PrimaryButtonStyle())
-                    // A cream pill, not bare text: bare ink sat on the
-                    // meadow's flowers and could not be read (2026-09-23).
-                    Button {
-                        // The unblock-screens gallery rehearses this screen
-                        // with nothing real happening: skip the real pass so
-                        // it can never touch a real blocker or Screen Time.
-                        if !rehearsal { block.takePass(minutes: minutes) }
-                        onClose()
-                    } label: {
-                        Text("Open my apps for \(minutes) min")
-                            .font(DisplayFont.display(15, .bold))
-                            .foregroundStyle(AppColor.textPrimary)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(AppColor.backgroundPrimary.opacity(0.94), in: Capsule())
-                            .shadow(color: .black.opacity(0.14), radius: 8, y: 2)
-                    }
-                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, AppMetrics.screenPadding)
                 .padding(.bottom, 12)
