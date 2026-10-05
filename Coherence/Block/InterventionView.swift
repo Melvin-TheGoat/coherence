@@ -158,7 +158,7 @@ private struct InterventionScene: View {
         case .textThread:
             TextThreadScene(doors: doors, meditatedToday: context.meditatedToday)
         case .faceTime:
-            FaceTimeScene(doors: doors)
+            FaceTimeScene(doors: doors, meditatedToday: context.meditatedToday)
         case .breatheWithMe:
             BreatheWithMeScene(doors: doors, meditatedToday: context.meditatedToday)
         case .voiceNote:
@@ -578,15 +578,16 @@ private struct ReplyChip: View {
 /// denied, or restricted keeps a neutral placeholder there instead.
 private struct FaceTimeScene: View {
     let doors: InterventionDoors
+    let meditatedToday: Bool
     @State private var answered: Bool
     @StateObject private var camera = FrontCamera()
-    @State private var said = 0
 
     /// `PREVIEW_FACETIME_ANSWERED=1` (DEBUG) opens straight into the
     /// answered state, so it can be reviewed on the simulator (which has no
     /// camera to accept a call with) without any UI automation.
-    init(doors: InterventionDoors) {
+    init(doors: InterventionDoors, meditatedToday: Bool) {
         self.doors = doors
+        self.meditatedToday = meditatedToday
         var startAnswered = false
         #if DEBUG
         if ProcessInfo.processInfo.environment["PREVIEW_FACETIME_ANSWERED"] == "1" {
@@ -692,26 +693,17 @@ private struct FaceTimeScene: View {
         }
     }
 
+    /// Once answered he asks, as the standing screen does (Aziz,
+    /// 2026-10-04): one line, then "Okay, let's meditate" or "Yes, I really
+    /// do", which is the "Not now" and leads to the frustrated how-long
+    /// screen. It used to say "five minutes, i'll stay on", which promised
+    /// a call that ends the moment the session starts.
     private var answeredView: some View {
-        ValleyStage(pose: "OttoTalk", line: currentLine, doors: doors, secondary: "Hang up") { _, _ in
-            EmptyView()
-        }
-        .task {
-            for i in 1...2 {
-                try? await Task.sleep(for: .seconds(i == 1 ? 0.8 : 1.4))
-                guard !Task.isCancelled else { return }
-                withAnimation(.easeOut(duration: 0.25)) { said = i }
-            }
-        }
-    }
-
-    /// Fed to `ValleyStage`'s own `OttoSpeech` bubble, one line at a time:
-    /// changing the text (and its `.id(text)` inside `OttoLine`) is what
-    /// makes the bubble retype rather than append.
-    private var currentLine: String {
-        if said >= 2 { return "five minutes, i'll stay on" }
-        if said >= 1 { return "yo, meditation o'clock" }
-        return ""
+        ValleyStage(pose: "OttoTalk",
+                    line: meditatedToday
+                        ? "Are you sure you need this right now?"
+                        : "Are you sure you need this right now? You haven't meditated yet today.",
+                    doors: doors, secondary: "Yes, I really do")
     }
 
     /// The camera view shrinks into the corner the way FaceTime's does, and
