@@ -472,6 +472,20 @@ final class InterventionPickerTests: XCTestCase {
                                                    recent: [], using: &rng))
             }
         }
-        XCTAssertEqual(seen, Set(InterventionKind.allCases))
+        XCTAssertEqual(seen, Set(InterventionKind.inUse))
+    }
+
+    /// A retired screen is never picked, at any hour.
+    func test_aRetiredScreenIsNeverPicked() {
+        var rng = SystemRandomNumberGenerator()
+        for hour in [7, 14, 22] {
+            let ctx = context(hour: hour, streak: 5, friend: "Maya")
+            XCTAssertTrue(Set(InterventionPicker.eligible(ctx)).isDisjoint(with: InterventionKind.retired))
+            for _ in 0..<200 {
+                XCTAssertFalse(InterventionKind.retired.contains(
+                    InterventionPicker.pick(ctx, recent: [], using: &rng)))
+            }
+        }
+        XCTAssertTrue(InterventionKind.retired.contains(.stillThere))
     }
 }

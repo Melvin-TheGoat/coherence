@@ -52,7 +52,7 @@ struct InterventionGalleryView: View {
     var body: some View {
         List {
             Section("Intervention screens (20)") {
-                ForEach(InterventionKind.allCases, id: \.rawValue) { kind in
+                ForEach(InterventionKind.inUse, id: \.rawValue) { kind in
                     row(.kind(kind))
                 }
             }

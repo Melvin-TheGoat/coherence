@@ -12,6 +12,15 @@ enum InterventionKind: String, CaseIterable, Codable {
     case fridgeNote, stillThere, wakingOtto, sign, streak
     case glow, twoDoors, countdown, affirmation, bedtime
     case sticker, valley, friend, oneMinute, askWhy
+
+    /// Screens taken out of the rotation. The case stays, so a recent-screens
+    /// list saved on a phone still decodes, but nothing picks or shows it.
+    /// `stillThere` ("It'll all still be there in five minutes") went on
+    /// 2026-10-04 (Aziz: too close to the standing screen's "Are you sure?").
+    static let retired: Set<InterventionKind> = [.stillThere]
+
+    /// The screens in use: every case but the retired ones.
+    static var inUse: [InterventionKind] { allCases.filter { !retired.contains($0) } }
 }
 
 /// What Otto knows about the moment, so he only says what is true.
@@ -36,7 +45,7 @@ enum InterventionPicker {
     /// morning, bedtime only at night, the streak only when there is one, his
     /// glow only when there is some left to earn, a friend only when one sat.
     static func eligible(_ context: InterventionContext) -> [InterventionKind] {
-        InterventionKind.allCases.filter { kind in
+        InterventionKind.inUse.filter { kind in
             switch kind {
             case .wakingOtto, .affirmation: return context.isMorning
             case .bedtime: return context.isNight
