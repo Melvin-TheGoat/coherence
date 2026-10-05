@@ -6837,13 +6837,19 @@ offers on Monthly and Yearly (needs a signing key and code).
 ## OTTO'S CLIMB FOR MARKETING CLIPS (2026-10-05, Aziz)
 
 `PREVIEW_STAGE_REEL=green|valley` (DEBUG, `StageReel` in
-`Coherence/Shop/HatReel.swift`) loops Otto from look 1 to 13 in 2.02 s,
-matched frame by frame to the "only 1% can pause at the right time" reel Aziz
-sent (a 2.0 s loop; the walker creeps for most of it, rushes the last third
-of a second, and fits the outline for about one frame). Holds start at 0.44 s
-and each is 79% of the last, down to 0.033 s; Nirvana shows 0.05 s, then it
-loops. Driven by a `TimelineView` off the clock, because sleeps drift at
-holds this short. **Two Ottos, never one that changes shape**: `OttoAuraFigure`
+`Coherence/Shop/HatReel.swift`) loops Otto from look 1 to 13, shaped like the
+"only 1% can pause at the right time" reel Aziz sent (creeps, then rushes).
+**Holds are whole 30 fps frames (12, 11, 10 ... 6), every look at least 6,
+and Nirvana the shortest at 5 (~0.15 s on screen; the rig lags a beat), a
+bit above the 3-frame floor, so it is the hardest but fair**:
+Instagram and TikTok play reels at 30 fps and drop anything shorter, and
+~0.1 s is about the tightest window a viewer timing a tap to something
+predictable can hit (anticipation-timing errors run ~20 to 50 ms). The first
+cut used 33 ms holds and was unpausable. Driven by a `TimelineView` off the
+clock, because sleeps drift at holds this short. Green is chroma green for
+keying. Record with `simctl io recordVideo`, find a loop's start from the
+frame differences, cut one loop. A recording of the app's own rig, not
+generated video, so the "never generate video" rule is untouched. **Two Ottos, never one that changes shape**: `OttoAuraFigure`
 switches its frame from wide to tall at look 9 and the Rive view draws one
 stretched frame whenever it does (squeezed at 8 to 9, stretched at the wrap
 back to 1). The reel mounts a dim and a bright figure, swaps them by opacity,

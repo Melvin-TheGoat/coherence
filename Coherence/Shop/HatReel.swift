@@ -75,14 +75,18 @@ struct StageReel: View {
     @StateObject private var dimRig = OttoRigHolder()
     @StateObject private var brightRig = OttoRigHolder()
 
-    /// Seconds each of looks 1 to 12 holds before the next, matched to the
-    /// "only 1% can pause at the right time" reel Aziz sent: a 2 s loop that
-    /// creeps for most of its length and then rushes, the target on screen
-    /// for about one frame. 0.44 s, then each 79% of the last, down to
-    /// 0.033 s, so the climb is 1.97 s and Nirvana lands with one frame to go.
-    static let holds: [Double] = (0..<12).map { 0.44 * pow(0.79, Double($0)) }
-    /// How long Nirvana shows before the loop starts again.
-    static let flash = 0.05
+    /// Seconds each of looks 1 to 12 holds before the next, in whole 30 fps
+    /// frames because Instagram and TikTok play reels at 30 fps and drop
+    /// anything shorter. Shaped like the "only 1% can pause at the right
+    /// time" reel Aziz sent (it creeps, then rushes), but no look is shorter
+    /// than 6 frames. 3 frames (0.1 s) is about the tightest window a viewer
+    /// timing a tap to something predictable can still hit; Aziz asked for
+    /// every look to be pausable and "a bit above the bare minimum".
+    static let holds: [Double] = [12, 11, 10, 9, 8, 7, 7, 6, 6, 6, 6, 6].map { $0 / 30 }
+    /// Nirvana is the shortest of all, 5 frames (about 4.5 on screen, since
+    /// the rig takes a beat to switch looks), so it is the hardest pause
+    /// while still being a fair one.
+    static let flash = 5.0 / 30
     static var loop: Double { holds.reduce(0, +) + flash }
     /// The parked Otto stays a hair above zero: a Rive view at opacity 0
     /// stops drawing, so it would show its old look for a frame or two when
