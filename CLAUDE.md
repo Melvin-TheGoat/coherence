@@ -6837,8 +6837,9 @@ offers on Monthly and Yearly (needs a signing key and code).
 ## OTTO'S CLIMB FOR MARKETING CLIPS (2026-10-05, Aziz)
 
 `PREVIEW_STAGE_REEL=green|valley` (DEBUG, `StageReel` in
-`Coherence/Shop/HatReel.swift`) steps Otto from look 1 to 13, each hold 22%
-shorter than the last (0.95 s down to 0.12 s), then holds Nirvana. Green is
+`Coherence/Shop/HatReel.swift`) steps Otto from look 1 to 13, each hold 81%
+of the last (1 s down to 0.1 s, 4.9 s in all; Aziz wanted ~5 s with Nirvana
+only a flash), then holds Nirvana; cut the clip ~0.1 s after he lands. Green is
 chroma green for keying in an editor. Record it with `simctl io recordVideo`
 and trim the first ~2.6 s (the launch). It is a recording of the app's own
 rig, not generated video, so the "never generate video" rule is untouched.

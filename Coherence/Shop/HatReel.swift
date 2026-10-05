@@ -74,12 +74,11 @@ struct StageReel: View {
     @State private var look = 1
     @StateObject private var rig = OttoRigHolder()
 
-    /// Seconds each of looks 1 to 12 holds before the next.
-    static let holds: [Double] = {
-        var out: [Double] = [], d = 0.95
-        for _ in 1...12 { out.append(max(0.12, d)); d *= 0.78 }
-        return out
-    }()
+    /// Seconds each of looks 1 to 12 holds before the next: 1 s, then each
+    /// 81% of the one before, down to 0.1 s, so the climb is 4.9 s and
+    /// Nirvana only flashes (Aziz: "hard to actually tap when he's fully
+    /// enlightened"). Trim the clip about 0.1 s after Nirvana lands.
+    static let holds: [Double] = (0..<12).map { pow(0.811, Double($0)) }
 
     var body: some View {
         ZStack {
